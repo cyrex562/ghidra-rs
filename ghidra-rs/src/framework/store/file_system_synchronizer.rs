@@ -28,23 +28,35 @@ impl FileSystemSynchronizer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex, MutexGuard};
     use std::thread;
+
+    // These tests all read/write the process-global IS_SYNCHRONIZING flag. cargo runs tests
+    // in parallel, so without serialization they race with each other. Serialize them behind
+    // a shared guard (recovering from poisoning so one panicking test doesn't cascade).
+    static TEST_GUARD: Mutex<()> = Mutex::new(());
+
+    fn guard() -> MutexGuard<'static, ()> {
+        TEST_GUARD.lock().unwrap_or_else(|e| e.into_inner())
+    }
 
     #[test]
     fn initial_state_not_synchronizing() {
+        let _g = guard();
         FileSystemSynchronizer::set_synchronizing(false);
         assert!(!FileSystemSynchronizer::is_synchronizing());
     }
 
     #[test]
     fn set_synchronizing_true() {
+        let _g = guard();
         FileSystemSynchronizer::set_synchronizing(true);
         assert!(FileSystemSynchronizer::is_synchronizing());
     }
 
     #[test]
     fn set_synchronizing_false() {
+        let _g = guard();
         FileSystemSynchronizer::set_synchronizing(true);
         FileSystemSynchronizer::set_synchronizing(false);
         assert!(!FileSystemSynchronizer::is_synchronizing());
@@ -52,6 +64,7 @@ mod tests {
 
     #[test]
     fn toggle_synchronizing_state() {
+        let _g = guard();
         FileSystemSynchronizer::set_synchronizing(false);
         assert!(!FileSystemSynchronizer::is_synchronizing());
 
@@ -64,6 +77,7 @@ mod tests {
 
     #[test]
     fn concurrent_reads_during_synchronization() {
+        let _g = guard();
         FileSystemSynchronizer::set_synchronizing(true);
 
         let handles: Vec<_> = (0..5)
@@ -86,6 +100,7 @@ mod tests {
 
     #[test]
     fn concurrent_reads_not_synchronizing() {
+        let _g = guard();
         FileSystemSynchronizer::set_synchronizing(false);
 
         let handles: Vec<_> = (0..5)
@@ -106,6 +121,7 @@ mod tests {
 
     #[test]
     fn concurrent_reads_with_state_changes() {
+        let _g = guard();
         let counter = Arc::new(std::sync::Mutex::new(0));
 
         let counter_clone = Arc::clone(&counter);

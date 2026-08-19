@@ -1,0 +1,401 @@
+class	rust_is	should_be	rule	java_kind	location	why
+AIFFDataType	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/data/aiff_data_type.rs:96	concrete Java `class` that nothing extends
+AbstractAssemblyProduction	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/app/plugin/assembler/sleigh/grammars/abstract_assembly_production.rs:48	abstract class with 3 instance field(s) and 2 in-repo subclass(es)
+AbstractAssemblyResolution	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/app/plugin/assembler/sleigh/sem/abstract_assembly_resolution.rs:26	abstract class with 6 instance field(s) and 3 in-repo subclass(es)
+AbstractAssemblyState	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/app/plugin/assembler/sleigh/sem/abstract_assembly_state.rs:60	abstract class with 7 instance field(s) and 3 in-repo subclass(es)
+AbstractDBTraceSymbol	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/trace/database/symbol/abstract_db_trace_symbol.rs:76	abstract class with 5 instance field(s) and 2 in-repo subclass(es)
+AbstractDomainObjectListenerBuilder	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/framework/model/abstract_domain_object_listener_builder.rs:56	abstract class with 9 instance field(s) and 1 in-repo subclass(es)
+AbstractPcodeMachine	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/pcode/emu/abstract_pcode_machine.rs:495	abstract class with 13 instance field(s) and 2 in-repo subclass(es)
+AddressFactory	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/address/factory.rs:5	Java `interface` with 24 abstract method(s), 1 in-repo implementor(s)
+AddressFieldLocation	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/util/address_field_location.rs:24	concrete Java `class` that nothing extends
+AddressIteratorConverter	iterator_trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/util/address_iterator_converter.rs:29	concrete Java `class` that nothing extends
+AddressSourceInfo	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/mem/address_source_info.rs:29	concrete Java `class` that nothing extends
+AddressSpace	struct	trait	R9-open-interface	interface	ghidra-rs/src/program/model/address/mod.rs:83	Java `interface` with 48 abstract method(s), 1 in-repo implementor(s)
+AlignedStructurePacker	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/program/model/data/aligned_structure_packer.rs:78	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+Application	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/application.rs:93	concrete Java `class` that nothing extends
+ApplicationIdentifier	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/application_identifier.rs:32	concrete Java `class` that nothing extends
+ApplicationProperties	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/application_properties.rs:77	concrete Java `class` that nothing extends
+AssemblerBuilder	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/assembler/assembler_builder.rs:27	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+AssemblyExtendedGrammar	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/grammars/assembly_extended_grammar.rs:29	concrete Java `class` that nothing extends
+AssemblyExtendedNonTerminal	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/symbol/assembly_extended_non_terminal.rs:27	concrete Java `class` that nothing extends
+AssemblyFixedNumericTerminal	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/symbol/assembly_fixed_numeric_terminal.rs:67	concrete Java `class` that nothing extends
+AssemblyGrammar	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/grammars/assembly_grammar.rs:28	concrete Java `class` that nothing extends
+AssemblyParseActionGotoTable	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/parse/assembly_parse_action_goto_table.rs:124	concrete Java `class` that nothing extends
+AssemblyParseBranch	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/tree/assembly_parse_branch.rs:57	extends Iterable and declares no other API (0 abstract method(s))
+AssemblyParseNumericToken	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/tree/assembly_parse_numeric_token.rs:24	concrete Java `class` that nothing extends
+AssemblyParseTransitionTable	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/app/plugin/assembler/sleigh/parse/assembly_parse_transition_table.rs:37	concrete Java `class` that nothing extends
+AssemblyParser	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/parse/assembly_parser.rs:84	concrete Java `class` that nothing extends
+AssemblyResolution	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/assembler/sleigh/sem/assembly_resolution.rs:9	Java `interface` with 12 abstract method(s), 4 in-repo implementor(s)
+AssemblyResolvedBackfill	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/assembler/sleigh/sem/assembly_resolved_backfill.rs:12	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+AssemblyResolvedError	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/assembler/sleigh/sem/assembly_resolved_error.rs:6	extends/names a Java throwable (AssemblyResolution)
+AssemblyResolvedPatterns	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/assembler/sleigh/sem/assembly_resolved_patterns.rs:60	Java `interface` with 31 abstract method(s), 2 in-repo implementor(s)
+AssemblySelector	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/assembly_selector.rs:50	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+AssemblySentential	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/grammars/assembly_sentential.rs:59	extends Iterable and declares no other API (0 abstract method(s))
+AutoParameterImpl	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/auto_parameter_impl.rs:73	concrete Java `class` that nothing extends
+BasicCompilerSpec	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/basic_compiler_spec.rs:57	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+BasicLanguageDescription	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/basic_language_description.rs:13	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+BigFloat	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/pcode/floatformat/big_float.rs:66	concrete Java `class` that nothing extends
+BigRefListV0	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/database/references/big_ref_list_v0.rs:49	concrete Java `class` that nothing extends
+BinaryReader	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/util/bin/binary_reader.rs:30	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+BitFieldPacking	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/bit_field_packing.rs:6	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+BlockMap	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/block_map.rs:32	concrete Java `class` that nothing extends
+BlockStream	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/db/buffers/block_stream.rs:8	Java `interface` with 2 abstract method(s), 2 in-repo implementor(s)
+BlockStreamServer	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/server/stream/block_stream_server.rs:49	concrete Java `class` that nothing extends
+BufferFile	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/db/buffers/mod.rs:37	Java `interface` with 15 abstract method(s), 3 in-repo implementor(s)
+BufferFileAdapter	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/buffers/buffer_file_adapter.rs:15	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+BufferFileHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/db/buffers/buffer_file_handle.rs:11	Java `interface` with 19 abstract method(s), 2 in-repo implementor(s)
+BufferNode	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/buffers/buffer_node.rs:23	concrete Java `class` that nothing extends
+BuiltInSourceArchive	trait	struct	R13-singleton	class	ghidra-rs/src/app/plugin/core/datamgr/archive/built_in_source_archive.rs:18	singleton (private constructor + static INSTANCE) -- expose a `fn` or a `OnceLock`, not a global `Arc<Mutex<_>>`
+ByteDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/byte_data_type.rs:29	concrete Java `class` that nothing extends
+ByteTrieNodeIfc	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/search/trie/byte_trie_node.rs:17	Java `interface` with 4 abstract method(s), 1 in-repo implementor(s)
+C13FileChecksum	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/format/pdb2/pdbreader/c13_file_checksum.rs:16	concrete Java `class` that nothing extends
+CachedAddressSetView	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/address/cached_address_set_view.rs:18	concrete Java `class` that nothing extends
+CallingConvention	trait	enum	R1-java-enum	enum	ghidra-rs/src/format/pdb2/pdbreader/type/calling_convention.rs:14	Java `enum` with 27 constants
+Category	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/category.rs:32	Java `interface` with 22 abstract method(s), 1 in-repo implementor(s)
+ChangeMapFile	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/db/buffers/change_map_file.rs:11	concrete Java `class` that nothing extends
+ClassDir	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/util/classfinder/class_dir.rs:15	concrete Java `class` that nothing extends
+ClassSymbol	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/symbol/class_symbol.rs:11	concrete Java `class` that nothing extends
+CodeBlockModel	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/block/code_block_model.rs:35	Java `interface` with 16 abstract method(s), 2 in-repo implementor(s)
+CodeBlockReference	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/block/code_block_reference.rs:13	Java `interface` with 7 abstract method(s), 1 in-repo implementor(s)
+CodeSymbol	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/symbol/code_symbol.rs:40	concrete Java `class` that nothing extends
+CodeUnitFormat	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/code_unit_format.rs:80	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+CompilerSpec	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/compiler_spec.rs:72	Java `interface` with 30 abstract method(s), 1 in-repo implementor(s)
+CompilerSpecDescription	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/compiler_spec_description.rs:13	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+CompositeDataTypeElementInfo	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/util/composite_data_type_element_info.rs:10	concrete Java `class` that nothing extends
+ConsistencyChecker	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/decompiler/slgh_compile/consistency_checker.rs:20	concrete Java `class` that nothing extends
+ConstantSpace	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/decompiler/space/constant_space.rs:16	concrete Java `class` that nothing extends
+ContextCache	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/context_cache.rs:30	concrete Java `class` that nothing extends
+ContextEvaluator	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/util/context_evaluator.rs:24	Java `interface` with 10 abstract method(s), 2 in-repo implementor(s)
+ContextSet	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/decompiler/context/context_set.rs:15	concrete Java `class` that nothing extends
+CopyOnReadWeakSet	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/util/datastruct/copy_on_read_weak_set.rs:15	concrete Java `class` that nothing extends
+CountedDynamicDataType	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/model/data/counted_dynamic_data_type.rs:41	abstract class with no in-repo subclasses
+CreateFunctionCmd	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/cmd/function/create_function_cmd.rs:54	concrete Java `class` that nothing extends
+DBBuffer	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/db_buffer.rs:18	concrete Java `class` that nothing extends
+DBCachedDomainObjectAdapter	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/util/database/db_cached_domain_object_adapter.rs:20	abstract class with no instance state and 1 in-repo subclass(es)
+DBCachedObjectIndex	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/database/db_cached_object_index.rs:58	concrete Java `class` that nothing extends
+DBCachedObjectStoreEntrySet	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/database/db_cached_object_store_entry_set.rs:40	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+DBCachedObjectStoreKeySet	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/database/db_cached_object_store_key_set.rs:35	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+DBCachedObjectStoreMap	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/database/db_cached_object_store_map.rs:45	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+DBObjectColumn	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/database/db_object_column.rs:21	concrete Java `class` that nothing extends
+DBTraceAddressSnapRangePropertyMapAddressSetView	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/trace/database/map/db_trace_address_snap_range_property_map_address_set_view.rs:38	concrete Java `class` that nothing extends
+DBTraceAddressSnapRangePropertyMapTree	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/map/db_trace_address_snap_range_property_map_tree.rs:49	concrete Java `class` that nothing extends
+DBTraceCodeSpace	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/listing/db_trace_code_space.rs:62	concrete Java `class` that nothing extends
+DBTraceData	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/listing/db_trace_data.rs:36	concrete Java `class` that nothing extends
+DBTraceDefinedUnitsView	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/listing/db_trace_defined_units_view.rs:48	concrete Java `class` that nothing extends
+DBTraceEquate	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/symbol/db_trace_equate.rs:34	concrete Java `class` that nothing extends
+DBTraceNamespaceSymbol	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/symbol/db_trace_namespace_symbol.rs:53	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+DBTraceObjectValueData	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/target/db_trace_object_value_data.rs:37	concrete Java `class` that nothing extends
+DBTraceObjectValueRStarTree	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/database/target/db_trace_object_value_r_star_tree.rs:21	concrete Java `class` that nothing extends
+DWordDataType	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/data/dword_data_type.rs:27	concrete Java `class` that nothing extends
+DataDBAdapter	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/database/code/data_db_adapter.rs:37	abstract class with no instance state and 1 in-repo subclass(es)
+DataFileHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/store/data_file_handle.rs:4	Java `interface` with 11 abstract method(s), 1 in-repo implementor(s)
+DataFileItem	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/store/data_file_item.rs:11	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+DataLocationListContext	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/context/data_location_list_context.rs:10	Java `interface` with 4 abstract method(s), 1 in-repo implementor(s)
+DataOrganization	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/data_organization.rs:12	Java `interface` with 23 abstract method(s), 1 in-repo implementor(s)
+DataOrganizationImpl	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/data_organization_impl.rs:104	concrete Java `class` that nothing extends
+DataRefType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/symbol/data_ref_type.rs:14	concrete Java `class` that nothing extends
+DataTable	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/util/datastruct/data_table.rs:14	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+DataTypeArchive	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/listing/data_type_archive.rs:22	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
+DataTypeArchiveDB	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/data_type_archive_db.rs:30	concrete Java `class` that nothing extends
+DataTypeArchiveIdDumper	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/data/data_type_archive_id_dumper.rs:36	concrete Java `class` that nothing extends
+DataTypeComponent	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/data_type_component.rs:26	Java `interface` with 15 abstract method(s), 3 in-repo implementor(s)
+DataTypeConflictHandler	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/model/data/data_type_conflict_handler.rs:59	abstract class with no instance state and 1 in-repo subclass(es)
+DataTypeDiffInput	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/util/html/data_type_diff_input.rs:6	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+DataTypeDisplayOptions	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/data_type_display_options.rs:8	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+DataTypeInstance	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/data_type_instance.rs:84	concrete Java `class` that nothing extends
+DataTypeTransferable	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/data_type_transferable.rs:48	concrete Java `class` that nothing extends
+DatatypeFilter	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/protorules/datatype_filter.rs:19	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
+DebuggerListing	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/debug/api/listing/debugger_listing.rs:14	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
+Decoder	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/pcode/decoder.rs:23	Java `interface` with 24 abstract method(s), 2 in-repo implementor(s)
+Decoder	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/debug/api/val_str.rs:18	Java `interface` with 24 abstract method(s), 2 in-repo implementor(s)
+DecompileFunctionTask	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/feature/bsim/query/decompile_function_task.rs:13	Java `interface` with 4 abstract method(s), 1 in-repo implementor(s)
+DecryptedPacket	enum	struct	R14a-concrete-leaf	class	ghidra-rs/src/file/crypto/decrypted_packet.rs:8	concrete Java `class` that nothing extends
+DefaultAssemblyResolvedBackfill	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/sem/default_assembly_resolved_backfill.rs:15	concrete Java `class` that nothing extends
+DefaultDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/default_data_type.rs:78	concrete Java `class` that nothing extends
+DefaultGhidraProtocolHandler	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/protocol/ghidra/default_ghidra_protocol_handler.rs:23	concrete Java `class` that nothing extends
+DefaultProjectData	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/data/default_project_data.rs:86	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+DefaultTraceObjectSchema	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/model/target/schema/default_trace_object_schema.rs:39	concrete Java `class` that nothing extends
+DependencyGraph	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/util/graph/dependency_graph.rs:19	concrete Java `class` that nothing extends
+DepthFirstSearch	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/graph/depth_first_search.rs:21	concrete Java `class` that nothing extends
+DirectedGraph	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/graph/directed_graph.rs:40	concrete Java `class` that 2 classes extend -- it is BOTH instantiable and a base, so the shared state needs a struct and the overridable behaviour a trait
+DomainFileFilter	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/domain_file_filter.rs:18	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+DomainFolder	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/domain_folder.rs:127	Java `interface` with 26 abstract method(s), 2 in-repo implementor(s)
+DomainFolderFilter	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/domain_folder_filter.rs:9	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
+DynamicEntry	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/dynamic_entry.rs:46	concrete Java `class` that nothing extends
+DynamicHash	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/dynamic_hash.rs:271	concrete Java `class` that nothing extends
+DynamicVariableStorage	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/lang/dynamic_variable_storage.rs:44	concrete Java `class` that nothing extends
+Edge	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/graph/edge.rs:17	concrete Java `class` that nothing extends
+EdgeSet	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/graph/edge_set.rs:18	concrete Java `class` that nothing extends
+EmptyFunctionIterator	struct	enum	R1-java-enum	enum	ghidra-rs/src/program/model/listing/function_iterator.rs:13	Java `enum` with 1 constants
+EmptyFunctionIterator	struct	enum	R1-java-enum	enum	ghidra-rs/src/trace/util/empty_function_iterator.rs:11	Java `enum` with 1 constants
+Encoder	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/pcode/encoder.rs:21	Java `interface` with 11 abstract method(s), 2 in-repo implementor(s)
+EqualEquation	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/decompiler/slghpatexpress/equal_equation.rs:19	concrete Java `class` that nothing extends
+ErrorLogger	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/error_logger.rs:3	Java `interface` with 10 abstract method(s), 3 in-repo implementor(s)
+EuclideanHyperSpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/database/spatial/hyper/euclidean_hyper_space.rs:11	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
+EuclideanSpace2D	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/database/spatial/rect/euclidean_space2d.rs:15	Java `interface` with 7 abstract method(s), 1 in-repo implementor(s)
+ExprTree	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/decompiler/slgh_compile/expr_tree.rs:20	concrete Java `class` that nothing extends
+ExpressionEvaluator	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/generic/expressions/expression_evaluator.rs:20	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+ExpressionOperator	trait	STRUCT	convention STRUCT	enum	ghidra-rs/src/generic/expressions/expression_operator.rs:16	Java `enum` with 21 constants
+ExtensionDetails	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/extensions/extension_details.rs:25	concrete Java `class` that nothing extends
+ExternalLocation	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/symbol/external_location.rs:32	Java `interface` with 20 abstract method(s), 1 in-repo implementor(s)
+ExternalReference	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/symbol/external_reference.rs:6	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+FidHasher	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/feature/fid/hash/fid_hasher.rs:12	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+FieldIndexTable	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/field_index_table.rs:16	concrete Java `class` that nothing extends
+FieldSpan	trait	STRUCT	convention STRUCT	interface/sealed	ghidra-rs/src/util/database/field_span.rs:26	Java `sealed interface` -- the permitted set is closed: its nested implementors
+FileBytes	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/mem/file_bytes.rs:67	concrete Java `class` that nothing extends
+FileSystemInfoRec	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/filesystem/gfilesystem/factory/file_system_info_rec.rs:24	concrete Java `class` that nothing extends
+FileSystemInitializer	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/store/file_system_initializer.rs:17	concrete Java `class` that nothing extends
+FileSystemRef	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/filesystem/gfilesystem/file_system_ref.rs:35	concrete Java `class` that nothing extends
+FixedKeyFixedRecNode	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/fixed_key_fixed_rec_node.rs:20	concrete Java `class` that nothing extends
+FixedKeyInteriorNode	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/db/fixed_key_interior_node.rs:30	concrete Java `class` that nothing extends
+FixedKeyVarRecNode	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/fixed_key_var_rec_node.rs:16	concrete Java `class` that nothing extends
+FragmentDBAdapter	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/database/module/fragment_db_adapter.rs:38	abstract class with no instance state and 1 in-repo subclass(es)
+FunctionDefinition	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/function_definition.rs:15	Java `interface` with 8 abstract method(s), 2 in-repo implementor(s)
+FunctionDefinitionDataType	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/program/model/data/function_definition_data_type.rs:128	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+FunctionHasher	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/match/function_hasher.rs:8	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+FunctionMerge	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/util/function_merge.rs:53	concrete Java `class` that nothing extends
+FunctionPrototype	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/function_prototype.rs:46	concrete Java `class` that nothing extends
+FunctionSignature	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/listing/function_signature.rs:16	Java `interface` with 11 abstract method(s), 1 in-repo implementor(s)
+FunctionSignatureImpl	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/function_signature_impl.rs:29	concrete Java `class` that nothing extends
+FunctionSymbol	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/symbol/function_symbol.rs:32	concrete Java `class` that nothing extends
+GDirectedGraph	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/graph/g_directed_graph.rs:9	Java `interface` with 19 abstract method(s), 4 in-repo implementor(s)
+GFile	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/filesystem/gfilesystem/g_file.rs:10	Java `interface` with 7 abstract method(s), 1 in-repo implementor(s)
+GFileSystemFactoryIgnore	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/filesystem/gfilesystem/factory/g_file_system_factory_ignore.rs:10	concrete Java `class` that nothing extends
+GImplicitDirectedGraph	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/graph/g_implicit_directed_graph.rs:11	Java `interface` with 3 abstract method(s), 3 in-repo implementor(s)
+GhidraDataTypeArchiveMergeManagerFactory	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/database/ghidra_data_type_archive_merge_manager_factory.rs:16	concrete Java `class` that nothing extends
+GhidraFileFilter	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/filechooser/ghidra_file_filter.rs:11	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+GhidraFolderData	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/data/ghidra_folder_data.rs:42	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+GhidraJarBuilder	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/ghidra_jar_builder.rs:54	concrete Java `class` that nothing extends
+GhidraObjectInputFilter	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/remote/ghidra_object_input_filter.rs:105	concrete Java `class` that nothing extends
+GhidraProgramMultiUserMergeManagerFactory	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/database/ghidra_program_multi_user_merge_manager_factory.rs:15	concrete Java `class` that nothing extends
+GhidraServer	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/server/remote/ghidra_server.rs:34	concrete Java `class` that nothing extends
+GhidraServerHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/remote/ghidra_server_handle.rs:66	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+GhidraToolState	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/data/ghidra_tool_state.rs:33	concrete Java `class` that nothing extends
+GhidraURLConnection	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/protocol/ghidra/ghidra_url_connection.rs:115	concrete Java `class` that nothing extends
+GlobalSymbolMap	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/global_symbol_map.rs:24	concrete Java `class` that nothing extends
+HighCodeSymbol	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/high_code_symbol.rs:36	concrete Java `class` that nothing extends
+HighConstant	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/high_constant.rs:42	concrete Java `class` that nothing extends
+HighFunction	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/high_function.rs:93	concrete Java `class` that nothing extends
+HighFunctionDBUtil	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/high_function_db_util.rs:94	concrete Java `class` that nothing extends
+HighParamID	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/high_param_id.rs:63	concrete Java `class` that nothing extends
+HighVariable	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/model/pcode/high_variable.rs:67	abstract class with 6 instance field(s) and 4 in-repo subclass(es)
+ImmutableTraceAddressSnapRange	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/model/immutable_trace_address_snap_range.rs:30	concrete Java `class` that nothing extends
+ImmutableValueBox	trait	struct	R3-record	record	ghidra-rs/src/trace/database/target/immutable_value_box.rs:20	Java `record` -- an immutable value type
+IndexField	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/index_field.rs:21	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+IndexedLocalFileSystem	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/framework/store/local/indexed_local_file_system.rs:47	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+InjectPayloadCallfixup	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/inject_payload_callfixup.rs:23	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+InstructionAdapterFromPrototype	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/util/instruction_adapter_from_prototype.rs:69	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
+InstructionBlock	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/instruction_block.rs:16	extends Iterable and declares no other API (0 abstract method(s))
+InstructionDecoder	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/pcode/emu/instruction_decoder.rs:10	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
+InstructionPcodeOverride	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/instruction_pcode_override.rs:27	concrete Java `class` that nothing extends
+InstructionPrototype	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/instruction_prototype.rs:48	Java `interface` with 32 abstract method(s), 2 in-repo implementor(s)
+InstructionStub	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/listing/instruction_stub.rs:52	concrete Java `class` that nothing extends
+Int16TDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/int16_t_data_type.rs:38	concrete Java `class` that nothing extends
+Int32TDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/int32_t_data_type.rs:38	concrete Java `class` that nothing extends
+Int64TDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/int64_t_data_type.rs:40	concrete Java `class` that nothing extends
+Int8TDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/int8_t_data_type.rs:40	concrete Java `class` that nothing extends
+Integer16DataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/integer16_data_type.rs:37	concrete Java `class` that nothing extends
+Integer3DataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/integer3_data_type.rs:37	concrete Java `class` that nothing extends
+Integer5DataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/integer5_data_type.rs:37	concrete Java `class` that nothing extends
+Integer6DataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/integer6_data_type.rs:37	concrete Java `class` that nothing extends
+Integer7DataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/integer7_data_type.rs:37	concrete Java `class` that nothing extends
+IntegerDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/integer_data_type.rs:28	concrete Java `class` that nothing extends
+InternalDataTypeComponent	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/internal_data_type_component.rs:10	Java `interface` with 2 abstract method(s), 3 in-repo implementor(s)
+InvalidPrototype	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/program/model/lang/invalid_prototype.rs:44	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+JdiEventsListenerAdapter	struct	trait	R9-open-interface	interface	ghidra-rs/src/debug/dbg/jdi/manager/jdi_events_listener_adapter.rs:16	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
+KeySpan	trait	STRUCT	convention STRUCT	interface/sealed	ghidra-rs/src/util/database/key_span.rs:17	Java `sealed interface` -- the permitted set is closed: its nested implementors
+LanguageDescription	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/language_description.rs:18	Java `interface` with 13 abstract method(s), 1 in-repo implementor(s)
+LanguageVersionException	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/language_version_exception.rs:26	extends/names a Java throwable (VersionException)
+Library	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/listing/library.rs:12	Java `interface` with 2 abstract method(s), 3 in-repo implementor(s)
+ListenerErrorHandler	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/datastruct/listener_error_handler.rs:6	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+ListingDB	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/listing_db.rs:28	concrete Java `class` that nothing extends
+ListingField	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/util/viewer/field/listing_field.rs:14	Java `interface` with 3 abstract method(s), 4 in-repo implementor(s)
+ListingModel	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/util/viewer/listingpanel/listing_model.rs:51	Java `interface` with 27 abstract method(s), 4 in-repo implementor(s)
+Loaded	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/util/opinion/loaded.rs:62	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+LocalVariable	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/listing/local_variable.rs:7	Java `interface` with 1 abstract method(s), 2 in-repo implementor(s)
+LongDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/long_data_type.rs:31	concrete Java `class` that nothing extends
+LongLongDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/long_long_data_type.rs:32	concrete Java `class` that nothing extends
+ManagedBufferFileAdapter	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/db/buffers/managed_buffer_file_adapter.rs:13	concrete Java `class` that nothing extends
+ManagedBufferFileHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/db/buffers/managed_buffer_file_handle.rs:11	Java `interface` with 10 abstract method(s), 1 in-repo implementor(s)
+Mask	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/mask.rs:9	Java `interface` with 9 abstract method(s), 1 in-repo implementor(s)
+MemoryBlockDefinition	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/generic/memory_block_definition.rs:99	concrete Java `class` that nothing extends
+MemoryFaultHandler	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/pcode/memstate/memory_fault_handler.rs:16	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+MemoryMapDBAdapter	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/database/mem/memory_map_db_adapter.rs:73	abstract class with no instance state and 3 in-repo subclass(es)
+MemoryState	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/pcode/memstate/memory_state.rs:23	Java `interface` with 21 abstract method(s), 1 in-repo implementor(s)
+MultEntSubModel	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/block/mult_ent_sub_model.rs:27	concrete Java `class` that nothing extends
+NoisyStructureBuilder	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/noisy_structure_builder.rs:72	concrete Java `class` that nothing extends
+ObjectStorageStreamAdapter	enum	struct	R14a-concrete-leaf	class	ghidra-rs/src/util/object_storage_stream_adapter.rs:15	concrete Java `class` that nothing extends
+OffsetFieldLocation	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/util/offset_field_location.rs:18	concrete Java `class` that nothing extends
+OldFunctionDataDB	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/oldfunction/old_function_data_db.rs:77	concrete Java `class` that nothing extends
+OldRegisterVariableDBAdapter	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/database/oldfunction/old_register_variable_db_adapter.rs:47	abstract class with no instance state and 1 in-repo subclass(es)
+OpTplWalker	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/op_tpl_walker.rs:32	concrete Java `class` that nothing extends
+OperandRepresentationList	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/operand_representation_list.rs:64	concrete Java `class` that nothing extends
+Options	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/options/options.rs:40	Java `interface` with 63 abstract method(s), 2 in-repo implementor(s)
+OtherSpace	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/decompiler/space/other_space.rs:15	concrete Java `class` that nothing extends
+OutputBlockStream	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/db/buffers/output_block_stream.rs:11	Java `interface` with 1 abstract method(s), 2 in-repo implementor(s)
+OverlapCodeSubModel	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/block/overlap_code_sub_model.rs:27	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+PackedDatabase	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/store/db/packed_database.rs:33	concrete Java `class` that nothing extends
+ParallelInstructionLanguageHelper	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/parallel_instruction_language_helper.rs:14	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+ParamEntry	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/param_entry.rs:34	concrete Java `class` that nothing extends
+ParamList	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/param_list.rs:26	Java `interface` with 11 abstract method(s), 1 in-repo implementor(s)
+ParamListRegisterOut	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/lang/param_list_register_out.rs:22	concrete Java `class` that nothing extends
+ParamListStandard	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/param_list_standard.rs:64	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+ParamListStandardOut	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/program/model/lang/param_list_standard_out.rs:40	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+Parameter	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/listing/parameter.rs:15	Java `interface` with 5 abstract method(s), 2 in-repo implementor(s)
+ParameterDefinitionImpl	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/parameter_definition_impl.rs:132	concrete Java `class` that nothing extends
+ParentChildDBAdapter	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/database/module/parent_child_db_adapter.rs:39	abstract class with no instance state and 1 in-repo subclass(es)
+PartialUnion	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/pcode/partial_union.rs:63	concrete Java `class` that nothing extends
+PartitionCodeSubModel	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/block/partition_code_sub_model.rs:28	concrete Java `class` that nothing extends
+PatchEncoder	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/pcode/patch_encoder.rs:15	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+PatternEquation	enum	struct_trait	R11-abstract-stateful	class/abstract	ghidra-rs/src/sleigh/grammar/frontend/ast.rs:556	abstract class with 3 instance field(s) and 8 in-repo subclass(es)
+PcodeBlockBasic	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/pcode/pcode_block_basic.rs:54	concrete Java `class` that nothing extends
+PcodeDebuggerAccess	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/debug/api/emulation/pcode_debugger_access.rs:17	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+PcodeDebuggerMemoryAccess	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/debug/api/emulation/pcode_debugger_memory_access.rs:17	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+PcodeDebuggerRegistersAccess	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/debug/api/emulation/pcode_debugger_registers_access.rs:16	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+PcodeEmitObjects	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/app/plugin/processors/sleigh/pcode_emit_objects.rs:24	concrete Java `class` that nothing extends
+PcodeEmitPacked	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/pcode_emit_packed.rs:51	concrete Java `class` that nothing extends
+PcodeFactory	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/pcode/pcode_factory.rs:48	Java `interface` with 18 abstract method(s), 1 in-repo implementor(s)
+PcodeMachine	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/pcode/emu/pcode_machine.rs:79	Java `interface` with 21 abstract method(s), 2 in-repo implementor(s)
+PcodeOpEntryVisitor	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/languages/sleigh/pcode_op_entry_visitor.rs:17	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+PcodeOverride	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/pcode/pcode_override.rs:15	Java `interface` with 16 abstract method(s), 1 in-repo implementor(s)
+PcodeTraceDataAccess	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/pcode/exec/trace/data/pcode_trace_data_access.rs:15	Java `interface` with 8 abstract method(s), 4 in-repo implementor(s)
+PcodeTracePropertyAccess	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/pcode/exec/trace/data/pcode_trace_property_access.rs:17	Java `interface` with 7 abstract method(s), 1 in-repo implementor(s)
+PcodeTraceRegistersAccess	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/pcode/exec/trace/data/pcode_trace_registers_access.rs:11	Java `interface` with 1 abstract method(s), 3 in-repo implementor(s)
+PeekableIterators	iterator_trait	enum	R1-java-enum	enum	ghidra-rs/src/generic/util/peekable_iterators.rs:15	Java `enum` with 0 constants
+Platform	trait	STRUCT	convention STRUCT	enum	ghidra-rs/src/framework/platform.rs:15	Java `enum` with 14 constants
+PluginDescription	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/plugintool/util/plugin_description.rs:33	concrete Java `class` that nothing extends
+PluginInstaller	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/plugintool/plugin_installer.rs:14	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+PointerSizedIntegerDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/pointer_sized_integer_data_type.rs:39	concrete Java `class` that nothing extends
+PointerType	trait	enum	R1-java-enum	enum	ghidra-rs/src/program/model/data/pointer_type.rs:20	Java `enum` with 4 constants
+PointerTypedefBuilder	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/pointer_typedef_builder.rs:21	concrete Java `class` that nothing extends
+PrimitiveTraceObjectSchema	trait	STRUCT	convention STRUCT	enum	ghidra-rs/src/trace/model/target/schema/primitive_trace_object_schema.rs:34	Java `enum` with 1 constants with constant-specific bodies -> `match self` in each method
+PrivateDatabase	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/store/db/private_database.rs:41	concrete Java `class` that nothing extends
+ProgramAddressFactory	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/program_address_factory.rs:39	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+ProgramArchitecture	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/lang/program_architecture.rs:13	Java `interface` with 3 abstract method(s), 2 in-repo implementor(s)
+ProgramArchitectureTranslator	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/data/program_architecture_translator.rs:49	concrete Java `class` that nothing extends
+ProgramCompilerSpec	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/program_compiler_spec.rs:47	concrete Java `class` that nothing extends
+ProgramMerge	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/util/program_merge.rs:77	concrete Java `class` that nothing extends
+ProgramUserData	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/listing/program_user_data.rs:27	Java `interface` with 16 abstract method(s), 1 in-repo implementor(s)
+Project	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/project.rs:50	Java `interface` with 28 abstract method(s), 1 in-repo implementor(s)
+ProjectData	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/project_data.rs:47	Java `interface` with 25 abstract method(s), 1 in-repo implementor(s)
+ProjectLocator	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/model/project_locator.rs:52	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+PropertyFile	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/property_file.rs:19	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+PrototypeModel	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/lang/prototype_model.rs:39	concrete Java `class` that 2 classes extend -- it is BOTH instantiable and a base, so the shared state needs a struct and the overridable behaviour a trait
+PseudoData	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/util/pseudo_data.rs:17	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+PseudoDisassembler	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/util/pseudo_disassembler.rs:85	concrete Java `class` that nothing extends
+QWordDataType	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/data/qword_data_type.rs:27	concrete Java `class` that nothing extends
+RecursiveDescentSolver	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/expr/recursive_descent_solver.rs:46	concrete Java `class` that nothing extends
+RefListFlagsV0	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/database/references/ref_list_flags_v0.rs:113	concrete Java `class` that nothing extends
+RefListV0	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/database/references/ref_list_v0.rs:42	concrete Java `class` that nothing extends
+RegisterState	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/emulator/state/register_state.rs:8	Java `interface` with 6 abstract method(s), 1 in-repo implementor(s)
+RelocationManager	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/database/reloc/relocation_manager.rs:36	concrete Java `class` that nothing extends
+RemoteBufferFileHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/db/buffers/remote_buffer_file_handle.rs:14	Java `interface` with 19 abstract method(s), 1 in-repo implementor(s)
+RemoteManagedBufferFileHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/db/buffers/remote_managed_buffer_file_handle.rs:16	Java `interface` with 29 abstract method(s), 1 in-repo implementor(s)
+RemoteRepositoryHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/remote/remote_repository_handle.rs:15	Java `interface` with 31 abstract method(s), 1 in-repo implementor(s)
+RemoteRepositoryServerHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/remote/remote_repository_server_handle.rs:13	Java `interface` with 12 abstract method(s), 1 in-repo implementor(s)
+RepositoryAdapter	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/client/repository_adapter.rs:56	concrete Java `class` that nothing extends
+RepositoryFile	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/server/store/repository_file.rs:65	concrete Java `class` that nothing extends
+RepositoryHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/remote/repository_handle.rs:46	Java `interface` with 31 abstract method(s), 1 in-repo implementor(s)
+RepositoryHandleImpl	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/server/remote/repository_handle_impl.rs:45	concrete Java `class` that nothing extends
+RepositoryLogger	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/store/local/repository_logger.rs:2	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+RepositoryServerAdapter	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/client/repository_server_adapter.rs:70	concrete Java `class` that nothing extends
+RepositoryServerHandle	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/remote/repository_server_handle.rs:12	Java `interface` with 12 abstract method(s), 1 in-repo implementor(s)
+RepositoryServerHandleImpl	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/server/remote/repository_server_handle_impl.rs:48	concrete Java `class` that nothing extends
+SchemaContext	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/target/schema/schema_context.rs:7	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+ShortDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/short_data_type.rs:28	concrete Java `class` that nothing extends
+SimpleBlockModel	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/block/simple_block_model.rs:50	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+SimpleDiffUtility	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/util/simple_diff_utility.rs:65	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+SleighAssemblerBuilder	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/assembler/sleigh/sleigh_assembler_builder.rs:30	concrete Java `class` that nothing extends
+SleighCompile	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/decompiler/slgh_compile/sleigh_compile.rs:35	concrete Java `class` that nothing extends
+SleighDebugLogger	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/sleigh_debug_logger.rs:64	concrete Java `class` that nothing extends
+SleighInstructionPrototype	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/sleigh_instruction_prototype.rs:285	concrete Java `class` that nothing extends
+SleighLanguageDescription	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/sleigh_language_description.rs:27	concrete Java `class` that nothing extends
+SleighLanguageFile	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/sleigh_language_file.rs:46	concrete Java `class` that nothing extends
+SleighParserContext	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/plugin/processors/sleigh/sleigh_parser_context.rs:29	concrete Java `class` that nothing extends
+SourceFileManagerDB	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/sourcemap/source_file_manager_db.rs:72	concrete Java `class` that nothing extends
+SourceMapEntry	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/sourcemap/source_map_entry.rs:24	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
+SpatialMap	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/database/spatial/spatial_map.rs:15	Java `interface` with 16 abstract method(s), 4 in-repo implementor(s)
+StackFrameImpl	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/util/stack_frame_impl.rs:84	concrete Java `class` that nothing extends
+Stepper	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/time/schedule/stepper.rs:7	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+StringDataInstance	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/program/model/data/string_data_instance.rs:78	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+StringSettingsDefinition	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/docking/settings/string_settings_definition.rs:11	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+Structure	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/data/structure.rs:31	Java `interface` with 19 abstract method(s), 9 in-repo implementor(s)
+StubListing	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/listing/stub_listing.rs:37	concrete Java `class` that nothing extends
+StubMemory	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/mem/stub_memory.rs:86	concrete Java `class` that nothing extends
+SubroutineBlockModel	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/program/model/block/subroutine_block_model.rs:6	Java `interface` with 1 abstract method(s), 3 in-repo implementor(s)
+SubtableEntryVisitor	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/plugin/languages/sleigh/subtable_entry_visitor.rs:15	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+SymbolPath	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/app/util/symbol_path.rs:41	concrete Java `class` that nothing extends
+SymbolUtilities	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/symbol/symbol_utilities.rs:150	concrete Java `class` that nothing extends
+SymbolicPropogator	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/util/symbolic_propogator.rs:105	concrete Java `class` that nothing extends
+TableEntryKey	trait	struct	R14b-concrete-one-subclass	class	ghidra-rs/src/app/plugin/assembler/sleigh/util/table_entry_key.rs:30	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+Terminal	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/services/terminal.rs:5	Java `interface` with 22 abstract method(s), 1 in-repo implementor(s)
+TerminatingConsumer	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/util/function/mod.rs:175	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
+ThunkFunctionAdapter	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/database/function/thunk_function_adapter.rs:51	abstract class with 1 instance field(s) and 1 in-repo subclass(es)
+TimerCallback	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/generic/timer/timer_callback.rs:2	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TokenPattern	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/decompiler/slghpatexpress/token_pattern.rs:12	concrete Java `class` that nothing extends
+ToolChest	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/tool_chest.rs:6	Java `interface` with 8 abstract method(s), 1 in-repo implementor(s)
+ToolConnection	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/tool_connection.rs:6	Java `interface` with 6 abstract method(s), 1 in-repo implementor(s)
+ToolTemplate	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/tool_template.rs:27	Java `interface` with 10 abstract method(s), 1 in-repo implementor(s)
+Trace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/trace.rs:54	Java `interface` with 31 abstract method(s), 1 in-repo implementor(s)
+TraceAddressSnapRangePropertyMap	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/map/trace_address_snap_range_property_map.rs:18	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+TraceAddressSnapRangePropertyMapOperations	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/map/trace_address_snap_range_property_map_operations.rs:34	Java `interface` with 3 abstract method(s), 3 in-repo implementor(s)
+TraceAddressSnapRangePropertyMapSpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/map/trace_address_snap_range_property_map_space.rs:17	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceBookmark	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/bookmark/trace_bookmark.rs:20	Java `interface` with 6 abstract method(s), 1 in-repo implementor(s)
+TraceBreakpointLocation	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/breakpoint/trace_breakpoint_location.rs:29	Java `interface` with 13 abstract method(s), 1 in-repo implementor(s)
+TraceBreakpointSpec	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/breakpoint/trace_breakpoint_spec.rs:38	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
+TraceClassSymbolView	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_class_symbol_view.rs:33	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceCodeSpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/listing/trace_code_space.rs:16	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceConflictedMappingException	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/trace/model/modules/trace_conflicted_mapping_exception.rs:20	extends/names a Java throwable (RuntimeException)
+TraceEquate	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_equate.rs:25	Java `interface` with 15 abstract method(s), 1 in-repo implementor(s)
+TraceEquateSpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_equate_space.rs:10	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceGuestPlatform	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/guest/trace_guest_platform.rs:15	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+TraceGuestPlatformMappedRange	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/guest/trace_guest_platform_mapped_range.rs:16	Java `interface` with 9 abstract method(s), 1 in-repo implementor(s)
+TraceInstruction	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/listing/trace_instruction.rs:27	Java `interface` with 6 abstract method(s), 2 in-repo implementor(s)
+TraceLabelSymbol	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_label_symbol.rs:9	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceLabelSymbolView	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_label_symbol_view.rs:36	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceLocation	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/trace_location.rs:19	Java `interface` with 4 abstract method(s), 1 in-repo implementor(s)
+TraceMemoryRegion	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/memory/trace_memory_region.rs:74	Java `interface` with 24 abstract method(s), 1 in-repo implementor(s)
+TraceMemorySpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/memory/trace_memory_space.rs:16	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+TraceModule	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/modules/trace_module.rs:34	Java `interface` with 22 abstract method(s), 1 in-repo implementor(s)
+TraceModuleOperations	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/modules/trace_module_operations.rs:15	Java `interface` with 7 abstract method(s), 2 in-repo implementor(s)
+TraceNamespaceSymbol	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_namespace_symbol.rs:39	Java `interface` with 5 abstract method(s), 2 in-repo implementor(s)
+TraceNamespaceSymbolView	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_namespace_symbol_view.rs:32	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceObject	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/target/trace_object.rs:104	Java `interface` with 45 abstract method(s), 1 in-repo implementor(s)
+TraceObjectValPath	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/target/trace_object_val_path.rs:38	Java `interface` with 10 abstract method(s), 1 in-repo implementor(s)
+TraceObjectValue	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/target/trace_object_value.rs:46	Java `interface` with 18 abstract method(s), 1 in-repo implementor(s)
+TraceOffsetReference	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_offset_reference.rs:25	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
+TraceProgramView	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/program/trace_program_view.rs:19	Java `interface` with 5 abstract method(s), 2 in-repo implementor(s)
+TraceProgramViewListing	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/program/trace_program_view_listing.rs:11	Java `interface` with 1 abstract method(s), 2 in-repo implementor(s)
+TraceProgramViewMemory	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/program/trace_program_view_memory.rs:17	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
+TracePropertyMapSpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/property/trace_property_map_space.rs:31	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+TraceReference	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_reference.rs:32	Java `interface` with 9 abstract method(s), 4 in-repo implementor(s)
+TraceReferenceSpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_reference_space.rs:10	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceRegisterContextSpace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/context/trace_register_context_space.rs:9	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
+TraceSection	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/modules/trace_section.rs:31	Java `interface` with 11 abstract method(s), 1 in-repo implementor(s)
+TraceShiftedReference	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_shifted_reference.rs:20	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
+TraceSnapshot	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/time/trace_snapshot.rs:23	Java `interface` with 17 abstract method(s), 1 in-repo implementor(s)
+TraceStack	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/stack/trace_stack.rs:23	Java `interface` with 9 abstract method(s), 1 in-repo implementor(s)
+TraceStackFrame	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/stack/trace_stack_frame.rs:18	Java `interface` with 9 abstract method(s), 1 in-repo implementor(s)
+TraceStaticMapping	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/modules/trace_static_mapping.rs:15	Java `interface` with 13 abstract method(s), 1 in-repo implementor(s)
+TraceSymbol	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_symbol.rs:45	Java `interface` with 9 abstract method(s), 3 in-repo implementor(s)
+TraceSymbolView	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_symbol_view.rs:26	Java `interface` with 7 abstract method(s), 4 in-repo implementor(s)
+TraceSymbolWithAddressView	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/symbol/trace_symbol_with_address_view.rs:29	Java `interface` with 3 abstract method(s), 2 in-repo implementor(s)
+TraceThread	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/thread/trace_thread.rs:29	Java `interface` with 12 abstract method(s), 1 in-repo implementor(s)
+TraceTimeViewport	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/trace_time_viewport.rs:158	Java `interface` with 14 abstract method(s), 1 in-repo implementor(s)
+TraceVariableSnapProgramView	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/trace/model/program/trace_variable_snap_program_view.rs:10	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
+TransientProjectData	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/framework/protocol/ghidra/transient_project_data.rs:41	concrete Java `class` that nothing extends
+Undefined1DataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/undefined1_data_type.rs:66	concrete Java `class` that nothing extends
+UndefinedFunction	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/util/undefined_function.rs:156	concrete Java `class` that nothing extends
+UniqueSpace	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/decompiler/space/unique_space.rs:14	concrete Java `class` that nothing extends
+UnsupportedMapDB	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/database/properties/unsupported_map_db.rs:37	concrete Java `class` that nothing extends
+ValidatableLine	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/app/util/html/mod.rs:45	Java `interface` with 8 abstract method(s), 4 in-repo implementor(s)
+ValueStoragePage	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/map/value_storage_page.rs:19	concrete Java `class` that nothing extends
+VarKeyInteriorNode	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/framework/db/var_key_interior_node.rs:19	concrete Java `class` that nothing extends
+VariableImpl	trait	STRUCT	convention STRUCT	class/abstract	ghidra-rs/src/program/model/listing/variable_impl.rs:378	abstract class with 6 instance field(s) and 2 in-repo subclass(es)
+VariableOffset	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/variable_offset.rs:54	concrete Java `class` that nothing extends
+VariableStorage	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/variable_storage.rs:62	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
+VariableUtilities	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/program/model/listing/variable_utilities.rs:46	concrete Java `class` that nothing extends
+Vertex	trait	STRUCT	convention STRUCT	class	ghidra-rs/src/util/graph/vertex.rs:21	concrete Java `class` that nothing extends
+WatchRow	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/debug/api/watch/watch_row.rs:13	Java `interface` with 25 abstract method(s), 1 in-repo implementor(s)
+WordDataType	trait	struct	R14a-concrete-leaf	class	ghidra-rs/src/program/model/data/word_data_type.rs:27	concrete Java `class` that nothing extends
+Workspace	trait	STRUCT	convention STRUCT	interface	ghidra-rs/src/framework/model/workspace.rs:9	Java `interface` with 6 abstract method(s), 1 in-repo implementor(s)

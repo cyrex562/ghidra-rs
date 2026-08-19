@@ -1,24 +1,56 @@
 pub mod bookmark;
 pub mod code;
 pub mod data;
+pub mod data_type_archive_db;
+pub mod db_cache;
+pub mod db_factory;
+pub mod db_object;
+pub mod external;
 pub mod function;
+pub mod ghidra_data_type_archive_merge_manager_factory;
+pub mod ghidra_program_multi_user_merge_manager_factory;
+pub mod listing_db;
 pub mod manager_db;
 pub mod map;
 pub mod mem;
 pub mod merge_program_generator;
+pub mod module;
+pub mod oldfunction;
+pub mod overlay_region_supplier;
+pub mod overlay_space_db_adapter;
+pub mod program_address_factory;
+pub mod program_compiler_spec;
 pub mod program_db;
 pub mod program_modifier_listener;
 pub mod properties;
 pub mod references;
+pub mod reloc;
 pub mod sourcemap;
 pub mod symbol;
 pub mod util;
 
 pub use bookmark::OldBookmark;
 pub use code::StringDiff;
+pub use data_type_archive_db::DataTypeArchiveDB;
+pub use db_cache::{DbCache, DbCacheHandle};
+pub use db_factory::DbFactory;
+pub use db_object::{DbObject, DbObjectState};
+pub use external::{ExternalLocationDb, ExternalManagerDb, SetSymbolNameAndNamespaceError};
 pub use function::OverlappingFunctionException;
+pub use ghidra_data_type_archive_merge_manager_factory::GhidraDataTypeArchiveMergeManagerFactory;
+pub use ghidra_program_multi_user_merge_manager_factory::GhidraProgramMultiUserMergeManagerFactory;
+pub use listing_db::ListingDB;
 pub use manager_db::ManagerDB;
 pub use merge_program_generator::MergeProgramGenerator;
+pub use oldfunction::{OldFunctionDBAdapter, OldStackVariableDBAdapter};
+pub use overlay_region_supplier::OverlayRegionSupplier;
+pub use overlay_space_db_adapter::{CreateOverlaySpaceError, OverlaySpaceDBAdapter};
+pub use program_address_factory::{CheckOverlayNameError, ProgramAddressFactory};
+pub use program_compiler_spec::{enable_java_language_decompilation, ProgramCompilerSpec};
 pub use program_db::ProgramDB;
 pub use program_modifier_listener::ProgramModifierListener;
-pub use properties::TestSaveable;
+pub use properties::{
+    get_table_name, DBPropertyMapManager, PropertiesDBAdapter, ProgramReadyError, PropertyMapDB,
+    TestSaveable, PROPERTY_TABLE_PREFIX,
+};
+pub use reloc::{RelocationDBAdapter, RelocationManager};

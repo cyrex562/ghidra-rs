@@ -128,6 +128,19 @@ impl MemoryMapDB {
     pub fn add_block(&mut self, block: Arc<RwLock<dyn MemoryBlock>>) {
         self.blocks.push(block);
     }
+
+    /// Total size in bytes of all memory blocks. Mirrors `Memory.getSize()`.
+    pub fn size(&self) -> u64 {
+        self.blocks.iter().map(|b| b.read().unwrap().get_size()).sum()
+    }
+
+    /// Whether `addr` falls within any memory block. Mirrors `Memory.contains(Address)`.
+    pub fn contains(&self, addr: &Address) -> bool {
+        self.blocks.iter().any(|b| {
+            let b = b.read().unwrap();
+            addr >= &b.get_start() && addr <= &b.get_end()
+        })
+    }
 }
 
 impl Memory for MemoryMapDB {

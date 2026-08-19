@@ -1,0 +1,4621 @@
+//! Minimal placeholder traits for core types that a ported interface references before the real
+//! Rust port of that type exists yet. Each stub exposes only the members needed by the
+//! interface(s) that currently reference it, and is expected to be replaced (or grown into a
+//! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
+
+pub use crate::program::model::address::Address as AddressType;
+pub use crate::feature::vt::api::markuptype::vt_markup_type::{VtMarkupType, VtMarkupTypeBase};
+pub use crate::feature::vt::api::main::vt_association::VtAssociation;
+pub use crate::feature::vt::api::main::vt_markup_item::VtMarkupItem;
+pub use crate::feature::vt::api::main::vt_match::VtMatch;
+pub use crate::feature::bsim::query::protocol::{BSimQuery, QueryResponseRecord, QueryResponseRecordBase};
+pub use crate::util::seam_stubs::XmlPullParser;
+
+use crate::feature::bsim::query::function_database::FunctionDatabase;
+use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
+use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
+use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
+use crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrackingApplyException;
+use crate::framework::remote::User;
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
+
+use std::sync::Arc;
+
+/// Placeholder for `VTSession`.
+pub trait VtSession: Send + Sync {
+    fn get_name(&self) -> &str;
+}
+
+/// Placeholder for `ToolOptions`.
+pub trait ToolOptions: Send + Sync {
+    fn get_option(&self, key: &str) -> Option<String>;
+}
+
+/// Placeholder for `VTMarkupItemConsideredStatus`.
+pub trait VtMarkupItemConsideredStatus: Send + Sync {
+    fn is_considered(&self) -> bool;
+
+    /// Java: `VTMarkupItemConsideredStatus.getMarkupItemStatus()`, the status
+    /// `MarkupItemImpl.setConsidered` writes to the item's storage. Grown for the
+    /// [`MarkupItemImpl`] port.
+    fn get_markup_item_status(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus;
+}
+
+/// Placeholder for `ProgramLocation`.
+pub trait ProgramLocation: Send + Sync {
+    fn get_address(&self) -> AddressType;
+}
+
+/// Placeholder for `Stringable`.
+pub trait Stringable: Send + Sync {
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `VTMatchInfo`, referenced by `VTMatchSet::add_match`.
+/// `VTMatchInfo` is a concrete Java class (not an interface), so this stub is a struct rather
+/// than a trait. Generated stub: shape hint only, no fields yet since nothing in the crate reads
+/// them. Replace with the real port when available.
+#[derive(Debug, Default, Clone)]
+pub struct VtMatchInfo;
+
+/// Placeholder for the unported Java type `VTMatchSet`, referenced by `VTSession`.
+/// Generated stub: only a shape hint. `add_match`/`get_program_correlator_info` are omitted
+/// pending ports of `VTMatchInfo`/`VTProgramCorrelatorInfo`, which have no known shape yet.
+/// Replace with the real port when available.
+pub trait VtMatchSet: Send + Sync {
+    fn get_session(&self) -> Box<dyn VtSession>;
+    fn get_matches(&self) -> Vec<Box<dyn VtMatch>>;
+    fn get_match_count(&self) -> i32;
+    fn get_id(&self) -> i32;
+    fn delete_match(&self, match_item: &dyn VtMatch);
+    fn remove_match(&self, match_item: &dyn VtMatch) -> bool;
+    fn has_removable_matches(&self) -> bool;
+}
+
+/// Placeholder for the unported Java type `VTOptions`, referenced by `VTProgramCorrelatorFactory`.
+/// `VTOptions` is a concrete Java class (not an interface), so this stub is a struct rather than a
+/// trait. Generated stub: shape hint only, no fields yet since nothing in the crate reads them.
+/// Replace with the real port when available.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct VtOptions;
+
+/// Placeholder for the unported Java type `VTMatchTagDBAdapterV0`, referenced by
+/// `VTMatchTagDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_match_tag_db_adapter`. `VTMatchTagDBAdapterV0` is a
+/// concrete Java class (not an interface), so this stub is a struct that implements the real
+/// `VTMatchTagDBAdapter` trait using already-ported `Table`/`DBHandle` machinery. Replace with the
+/// real port when `VTMatchTagDBAdapterV0.java` is ported.
+pub struct VTMatchTagDBAdapterV0 {
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTMatchTagDBAdapterV0 {
+    pub fn create(
+        db_handle: &mut crate::framework::db::DBHandle,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle.create_table(table_name.to_string(), schema)?;
+        Ok(Self { table })
+    }
+
+    pub fn open(
+        db_handle: &crate::framework::db::DBHandle,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = db_handle.get_table(table_name).ok_or_else(|| {
+            crate::util::exception::VersionException::with_message(format!(
+                "Missing Table: {table_name}"
+            ))
+        })?;
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { table })
+    }
+}
+
+/// Placeholder for the unported Java type `VTMatchInfo`, referenced by
+/// `VTMatchTableDBAdapter::insert_match_record`. Trimmed to the accessors that
+/// `VTMatchTableDBAdapterV0.insertMatchRecord` actually reads (similarity/confidence score,
+/// source/destination length); see `VTMatchInfo.java` for the type's full public surface.
+/// Replace with the real port when available.
+pub trait VTMatchInfo: Send + Sync {
+    fn get_similarity_score(&self) -> crate::feature::vt::api::main::vt_score::VtScore;
+    fn get_confidence_score(&self) -> crate::feature::vt::api::main::vt_score::VtScore;
+    fn get_source_length(&self) -> i32;
+    fn get_destination_length(&self) -> i32;
+
+    /// Java: `VTMatchInfo.getSourceAddress()`. Grown for the
+    /// [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB) port, whose
+    /// `addMatch` reads it to look the association up.
+    fn get_source_address(&self) -> AddressType;
+
+    /// Java: `VTMatchInfo.getDestinationAddress()`. See [`get_source_address`](Self::get_source_address).
+    fn get_destination_address(&self) -> AddressType;
+
+    /// Java: `VTMatchInfo.getAssociationType()`. See [`get_source_address`](Self::get_source_address).
+    fn get_association_type(&self) -> VtAssociationType;
+
+    /// Java: `VTMatchInfo.getTag()`. See [`get_source_address`](Self::get_source_address).
+    fn get_tag(&self) -> crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
+}
+
+/// Placeholder for the unported Java type `VTMatchDB`, the database-backed
+/// [`VtMatch`](crate::feature::vt::api::main::vt_match::VtMatch) that
+/// [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB) creates and caches.
+///
+/// `VTMatchDB` is a concrete Java class (`extends DbObject implements VTMatch`), so this stub is a
+/// struct implementing the already-ported [`DbObject`](crate::program::database::db_object::DbObject)
+/// trait. One deliberate deviation: Java's `VTMatchDB` holds a `VTMatchSetDB matchSet`
+/// back-reference and reaches through it for its association, programs and tag. Storing that here
+/// would make the owning match set's own match cache (a *strong* `HashMap<i64, Arc<VTMatchDB>>`) an
+/// unreclaimable reference cycle -- the same reasoning already documented on
+/// [`VTAssociationDB`](crate::feature::vt::api::db::vt_association_db::VTAssociationDB) -- so this
+/// stub keeps only the owning set's id plus the accessors that read straight off its own record.
+/// Replace with the real port when `VTMatchDB.java` is ported.
+pub struct VTMatchDB {
+    state: crate::program::database::db_object::DbObjectState,
+    record: std::sync::Mutex<crate::framework::db::DBRecord>,
+    match_set_id: i64,
+}
+
+impl VTMatchDB {
+    /// Java: package-private constructor `VTMatchDB(DBRecord, VTMatchSetDB)`, with the match set
+    /// narrowed to its id for the reason documented on the type.
+    pub fn new(record: crate::framework::db::DBRecord, match_set_id: i64) -> Self {
+        let key = record.get_key().get_long_value();
+        Self {
+            state: crate::program::database::db_object::DbObjectState::new(key),
+            record: std::sync::Mutex::new(record),
+            match_set_id,
+        }
+    }
+
+    /// Java: `VTMatchDB.getRecord()` (package-private).
+    pub fn get_record(&self) -> crate::framework::db::DBRecord {
+        self.record.lock().unwrap().clone()
+    }
+
+    /// Java: `matchSet.getID()`, reached through the back-reference this stub does not hold.
+    pub fn get_match_set_id(&self) -> i64 {
+        self.match_set_id
+    }
+
+    /// The `ASSOCIATION_COL` of this match's row -- the key Java's `getAssociation()` resolves
+    /// through `matchSet.getAssociationManager().getAssociation(key)`.
+    pub fn get_association_key(&self) -> i64 {
+        self.record
+            .lock()
+            .unwrap()
+            .get_long(
+                crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription::AssociationCol
+                    .column(),
+            )
+            .unwrap_or(-1)
+    }
+
+    /// The `TAG_KEY_COL` of this match's row; `-1` means untagged (Java: `VTMatchTag.UNTAGGED`).
+    pub fn get_tag_key(&self) -> i64 {
+        self.record
+            .lock()
+            .unwrap()
+            .get_long(
+                crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription::TagKeyCol
+                    .column(),
+            )
+            .unwrap_or(-1)
+    }
+}
+
+impl crate::program::database::db_object::DbObject for VTMatchDB {
+    fn state(&self) -> &crate::program::database::db_object::DbObjectState {
+        &self.state
+    }
+
+    /// Java: `VTMatchDB.refresh(DBRecord)`, minus the `record == null` branch that re-reads the row
+    /// through `matchSet.getMatchRecord(key)`; the owning cache always has a record in hand.
+    fn refresh(&self, record: Option<&crate::framework::db::DBRecord>) -> bool {
+        if let Some(record) = record {
+            *self.record.lock().unwrap() = record.clone();
+        }
+        true
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.feature.vt.api.impl.ProgramCorrelatorInfoImpl`,
+/// the [`VtProgramCorrelatorInfo`](crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo)
+/// that [`VTMatchSetDB::get_program_correlator_info`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB::get_program_correlator_info)
+/// hands back.
+///
+/// `ProgramCorrelatorInfoImpl` is a concrete Java class, so this stub is a struct implementing the
+/// already-ported trait. Deviation: Java holds a `VTMatchSetDB` back-reference and pulls each of
+/// its five values lazily on first access, caching it. Holding that back-reference here would be a
+/// reference cycle (the match set owns the info object), so this stub takes the same five values up
+/// front instead. The two are equivalent: every one of them is derived from columns of the match
+/// set's record, which is `final` and never rewritten for the life of the match set. Replace with
+/// the real port when `ProgramCorrelatorInfoImpl.java` is ported.
+pub struct ProgramCorrelatorInfoImpl {
+    correlator_class_name: String,
+    name: String,
+    source_address_set: crate::program::model::address::AddressSet,
+    destination_address_set: crate::program::model::address::AddressSet,
+    options: Box<dyn crate::framework::options::Options + Send + Sync>,
+}
+
+impl ProgramCorrelatorInfoImpl {
+    /// Java: `ProgramCorrelatorInfoImpl(VTMatchSetDB)` plus the five lazy pulls it would perform.
+    /// Java's `getSourceAddressSet`/`getDestinationAddressSet` report the `IOException` through
+    /// `Msg.showError` and return `null`; the caller passes an empty set for that case instead.
+    pub fn new(
+        correlator_class_name: String,
+        name: String,
+        source_address_set: crate::program::model::address::AddressSet,
+        destination_address_set: crate::program::model::address::AddressSet,
+        options: Box<dyn crate::framework::options::Options + Send + Sync>,
+    ) -> Self {
+        Self { correlator_class_name, name, source_address_set, destination_address_set, options }
+    }
+}
+
+impl crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo
+    for ProgramCorrelatorInfoImpl
+{
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn get_correlator_class_name(&self) -> &str {
+        &self.correlator_class_name
+    }
+
+    fn get_options(&self) -> &dyn crate::framework::options::Options {
+        self.options.as_ref()
+    }
+
+    fn get_destination_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
+        &self.destination_address_set
+    }
+
+    fn get_source_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
+        &self.source_address_set
+    }
+}
+
+/// Java: `VTAssociationStatus.values()[ordinal]`, mirroring the ported enum's declaration order
+/// (the ported enum exposes no `ordinal()`, so the mapping is spelled out, matching
+/// `VTAssociationTableDBAdapterV0`'s own hand-rolled mapping above).
+pub fn association_status_from_ordinal(
+    ordinal: i8,
+) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
+    use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus as Status;
+    match ordinal {
+        0 => Status::Available,
+        1 => Status::Accepted,
+        2 => Status::Blocked,
+        3 => Status::Rejected,
+        other => panic!("invalid VTAssociationStatus ordinal {other}"),
+    }
+}
+
+/// Java: `VTAssociationStatus.ordinal()`. Inverse of [`association_status_from_ordinal`].
+pub fn association_status_ordinal(
+    status: crate::feature::vt::api::main::vt_association_status::VtAssociationStatus,
+) -> i8 {
+    use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus as Status;
+    match status {
+        Status::Available => 0,
+        Status::Accepted => 1,
+        Status::Blocked => 2,
+        Status::Rejected => 3,
+    }
+}
+
+/// Java: `VTAssociationType.values()[ordinal]`.
+pub fn association_type_from_ordinal(
+    ordinal: i8,
+) -> crate::feature::vt::api::main::vt_association_type::VtAssociationType {
+    use crate::feature::vt::api::main::vt_association_type::VtAssociationType as Type;
+    match ordinal {
+        0 => Type::Function,
+        1 => Type::Data,
+        other => panic!("invalid VTAssociationType ordinal {other}"),
+    }
+}
+
+/// Placeholder for the unported Java type `VTSessionDB`, the concrete session that owns an
+/// [`AssociationDatabaseManager`](crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager).
+/// `VTSessionDB` is a concrete Java class (`extends DomainObjectAdapterDB implements VTSession`),
+/// but it sits on the far side of a dependency cycle from the manager, so it is stubbed here as a
+/// trait: the manager only ever calls it, never constructs it, and a trait keeps the two ports
+/// decoupled until the real class lands.
+///
+/// Trimmed to the members `AssociationDatabaseManager` (and, through it, `MarkupItemStorageDB`)
+/// actually calls: the shared [`ReentrantLock`](crate::util::lock::ReentrantLock) both classes
+/// guard their records with, the four address<->long translations, the two program accessors, the
+/// `dbError` funnel every swallowed `IOException` goes through, and `setChanged`. Replace with the
+/// real port when `VTSessionDB.java` is ported.
+pub trait VTSessionDB: Send + Sync {
+    /// Java: `VTSessionDB.getLock()`.
+    fn get_lock(&self) -> std::sync::Arc<crate::util::lock::ReentrantLock>;
+
+    /// Java: `DomainObjectAdapterDB.dbError(IOException)`, which wraps and rethrows. Ports that
+    /// call it treat the failure as swallowed, matching how the Java callers here proceed.
+    fn db_error(&self, error: std::io::Error);
+
+    /// Java: `VTSessionDB.getSourceProgram()`.
+    fn get_source_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
+
+    /// Java: `VTSessionDB.getDestinationProgram()`.
+    fn get_destination_program(
+        &self,
+    ) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
+
+    /// Java: `VTSessionDB.getLongFromSourceAddress(Address)`.
+    fn get_long_from_source_address(&self, address: &AddressType) -> i64;
+
+    /// Java: `VTSessionDB.getLongFromDestinationAddress(Address)`.
+    fn get_long_from_destination_address(&self, address: &AddressType) -> i64;
+
+    /// Java: `VTSessionDB.getSourceAddressFromLong(long)`.
+    fn get_source_address_from_long(&self, value: i64) -> AddressType;
+
+    /// Java: `VTSessionDB.getDestinationAddressFromLong(long)`.
+    fn get_destination_address_from_long(&self, value: i64) -> AddressType;
+
+    /// Java: `VTSessionDB.setChanged(VTEvent, Object, Object)`. The generic `Object` values are
+    /// narrowed to associations, which is all `AssociationDatabaseManager` ever passes.
+    fn set_changed(
+        &self,
+        event_type: crate::feature::vt::api::implementation::vt_event::VtEvent,
+        old_value: Option<
+            std::sync::Arc<crate::feature::vt::api::db::vt_association_db::VTAssociationDB>,
+        >,
+        new_value: Option<
+            std::sync::Arc<crate::feature::vt::api::db::vt_association_db::VTAssociationDB>,
+        >,
+    );
+
+    /// Java: `setObjectChanged(VTEvent.MARKUP_ITEM_STATUS_CHANGED, markupItemStorage, oldStatus,
+    /// newStatus)`, fired by `MarkupItemImpl.fireMarkupItemStatusChanged`. Narrowed to that one
+    /// event the way [`set_changed`](Self::set_changed) above is narrowed to associations, with
+    /// the affected object reported as the markup item rather than the storage behind it (the two
+    /// are one-to-one, and the item is the handle every consumer can use). Defaulted to a no-op so
+    /// existing implementors keep compiling.
+    ///
+    /// Grown for the [`MarkupItemImpl`] port.
+    fn markup_item_status_changed(
+        &self,
+        markup_item: &dyn VtMarkupItem,
+        old_status: crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus,
+        new_status: crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus,
+    ) {
+        let _ = (markup_item, old_status, new_status);
+    }
+
+    /// Java: `setObjectChanged(VTEvent.MARKUP_ITEM_DESTINATION_CHANGED, markupItem,
+    /// oldDestinationAddress, newDestinationAddress)`, fired by
+    /// `MarkupItemImpl.doSetDestinationAddress`. See
+    /// [`markup_item_status_changed`](Self::markup_item_status_changed).
+    ///
+    /// Grown for the [`MarkupItemImpl`] port.
+    fn markup_item_destination_changed(
+        &self,
+        markup_item: &dyn VtMarkupItem,
+        old_destination: Option<&AddressType>,
+        new_destination: &AddressType,
+    ) {
+        let _ = (markup_item, old_destination, new_destination);
+    }
+
+    /// Java: `VTSessionDB.getSourceAddressSet(DBRecord)` (package-private), which forwards to
+    /// `matchSetTableAdapter.getSourceAddressSet(record, sourceProgram.getAddressMap())`. `None`
+    /// mirrors the adapter's own nullable return.
+    ///
+    /// Grown for the [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB)
+    /// port. Defaulted so existing implementors keep compiling.
+    fn get_source_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        let _ = record;
+        unimplemented!("VTSessionDB::get_source_address_set is not provided by this implementation")
+    }
+
+    /// Java: `VTSessionDB.getDestinationAddressSet(DBRecord)`. See
+    /// [`get_source_address_set`](Self::get_source_address_set).
+    fn get_destination_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        let _ = record;
+        unimplemented!(
+            "VTSessionDB::get_destination_address_set is not provided by this implementation"
+        )
+    }
+
+    /// Java: `VTSessionDB.getAssociationManagerDBM()`.
+    ///
+    /// Grown for the [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB)
+    /// port. Defaulted so existing implementors keep compiling.
+    fn get_association_manager_dbm(
+        &self,
+    ) -> Arc<crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager>
+    {
+        unimplemented!(
+            "VTSessionDB::get_association_manager_dbm is not provided by this implementation"
+        )
+    }
+
+    /// Java: `VTSessionDB.getOrCreateMatchTagDB(VTMatchTag)`, which returns `null` for
+    /// [`VtMatchTag::Untagged`](crate::feature::vt::api::main::vt_match_tag::VtMatchTag::Untagged) --
+    /// hence the `Option`, and hence the `None` default.
+    fn get_or_create_match_tag_db(
+        &self,
+        tag: &crate::feature::vt::api::main::vt_match_tag::VtMatchTag,
+    ) -> Option<Arc<dyn VTMatchTagDB>> {
+        let _ = tag;
+        None
+    }
+
+    /// Java: `VTSessionDB.getMatches(VTAssociation)`, narrowed to the database-backed association
+    /// and match types that are the only ones a session ever actually holds -- the same narrowing
+    /// [`set_changed`](Self::set_changed) already applies.
+    fn get_matches_for_association(
+        &self,
+        association: &Arc<crate::feature::vt::api::db::vt_association_db::VTAssociationDB>,
+    ) -> Vec<Arc<VTMatchDB>> {
+        let _ = association;
+        Vec::new()
+    }
+
+    /// Java: `setObjectChanged(VTEvent.MATCH_ADDED, newMatch, null, newMatch)`, fired by
+    /// `VTMatchSetDB.addMatch`. Narrowed to that one event the way
+    /// [`markup_item_status_changed`](Self::markup_item_status_changed) is.
+    fn match_added(&self, match_db: &Arc<VTMatchDB>) {
+        let _ = match_db;
+    }
+
+    /// Java: `setObjectChanged(VTEvent.MATCH_DELETED, match, deletedMatch, null)`, fired by
+    /// `VTMatchSetDB.deleteMatch`. See [`match_added`](Self::match_added).
+    fn match_deleted(
+        &self,
+        match_db: &Arc<VTMatchDB>,
+        deleted_match: &crate::feature::vt::api::main::db::deleted_match::DeletedMatch,
+    ) {
+        let _ = (match_db, deleted_match);
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.feature.vt.api.util.VTAssociationStatusException`,
+/// the checked exception `AssociationDatabaseManager.setAssociationAccepted`/
+/// `clearAcceptedAssociation` throw when a status transition is not legal. The Java class carries
+/// nothing but its message. Replace with the real port when `VTAssociationStatusException.java` is
+/// ported.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VTAssociationStatusException {
+    message: String,
+}
+
+impl VTAssociationStatusException {
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into() }
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl std::fmt::Display for VTAssociationStatusException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for VTAssociationStatusException {}
+
+/// Placeholder for the unported Java type `MarkupItemStorageImpl`, the purely in-memory
+/// [`MarkupItemStorage`] that [`MarkupItemImpl::new`] builds for a markup item that has no
+/// database row yet.
+///
+/// `MarkupItemStorageImpl` is a concrete Java class (not an interface), so this stub is a struct
+/// implementing the already-ported [`MarkupItemStorage`] trait. One deliberate deviation, forced
+/// by that trait's signatures: in Java each setter returns a `MarkupItemStorage` and returns
+/// `associationDBM.addMarkupItem(this)` -- i.e. it *promotes* the item into the database and hands
+/// back a `MarkupItemStorageDB` in its place. The ported setters return `()` and cannot swap the
+/// caller's storage for one of a different concrete type, so this stub records the change in
+/// memory only; the promotion is left for the real port. Replace with the real port when
+/// `MarkupItemStorageImpl.java` is ported.
+pub struct MarkupItemStorageImpl {
+    association: std::sync::Arc<dyn VtAssociation>,
+    markup_type: std::sync::Arc<dyn VtMarkupType>,
+    source_address: AddressType,
+    destination_address: std::sync::Mutex<Option<AddressType>>,
+    destination_address_source: std::sync::Mutex<Option<String>>,
+    status: std::sync::Mutex<crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus>,
+    status_description: std::sync::Mutex<Option<String>>,
+    source_value: std::sync::Mutex<Option<String>>,
+    destination_value: std::sync::Mutex<Option<String>>,
+}
+
+impl MarkupItemStorageImpl {
+    /// Java: `MarkupItemStorageImpl(VTAssociation, VTMarkupType, Address)`, which delegates to the
+    /// five-argument constructor with a null destination address and address source.
+    pub fn new(
+        association: std::sync::Arc<dyn VtAssociation>,
+        markup_type: std::sync::Arc<dyn VtMarkupType>,
+        source_address: AddressType,
+    ) -> Self {
+        Self::with_destination(association, markup_type, source_address, None, None)
+    }
+
+    /// Java: `MarkupItemStorageImpl(VTAssociation, VTMarkupType, Address, Address, String)`.
+    pub fn with_destination(
+        association: std::sync::Arc<dyn VtAssociation>,
+        markup_type: std::sync::Arc<dyn VtMarkupType>,
+        source_address: AddressType,
+        destination_address: Option<AddressType>,
+        destination_address_source: Option<String>,
+    ) -> Self {
+        Self {
+            association,
+            markup_type,
+            source_address,
+            destination_address: std::sync::Mutex::new(destination_address),
+            destination_address_source: std::sync::Mutex::new(destination_address_source),
+            status: std::sync::Mutex::new(
+                crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus::Unapplied,
+            ),
+            status_description: std::sync::Mutex::new(None),
+            source_value: std::sync::Mutex::new(None),
+            destination_value: std::sync::Mutex::new(None),
+        }
+    }
+}
+
+impl MarkupItemStorage for MarkupItemStorageImpl {
+    fn get_markup_type(&self) -> Box<dyn VtMarkupType> {
+        Box::new(self.markup_type.clone())
+    }
+
+    fn get_association(&self) -> Box<dyn VtAssociation> {
+        Box::new(ArcVtAssociation(self.association.clone()))
+    }
+
+    fn get_source_address(&self) -> AddressType {
+        self.source_address.clone()
+    }
+
+    fn has_destination_address(&self) -> bool {
+        self.destination_address.lock().unwrap().is_some()
+    }
+
+    fn get_destination_address(&self) -> AddressType {
+        self.destination_address
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("MarkupItemStorageImpl has no destination address; check has_destination_address")
+    }
+
+    fn get_destination_address_source(&self) -> String {
+        self.destination_address_source.lock().unwrap().clone().unwrap_or_default()
+    }
+
+    fn get_status(&self) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
+        *self.status.lock().unwrap()
+    }
+
+    fn get_status_description(&self) -> String {
+        self.status_description.lock().unwrap().clone().unwrap_or_default()
+    }
+
+    fn get_source_value(&self) -> Box<dyn Stringable> {
+        Box::new(PlainStringable(self.source_value.lock().unwrap().clone().unwrap_or_default()))
+    }
+
+    fn get_destination_value(&self) -> Box<dyn Stringable> {
+        Box::new(PlainStringable(self.destination_value.lock().unwrap().clone().unwrap_or_default()))
+    }
+
+    fn set_status(
+        &mut self,
+        status: crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus,
+    ) {
+        *self.status.lock().unwrap() = status;
+    }
+
+    fn reset(&mut self) {
+        // Java: `reset()` returns `this` -- an in-memory item has no database row to drop.
+    }
+
+    fn set_destination_address(&mut self, address: AddressType, address_source: String) {
+        *self.destination_address.lock().unwrap() = Some(address);
+        *self.destination_address_source.lock().unwrap() = Some(address_source);
+    }
+
+    fn set_apply_failed(&mut self, message: String) {
+        *self.status.lock().unwrap() =
+            crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus::FailedApply;
+        *self.status_description.lock().unwrap() = Some(message);
+    }
+
+    fn set_source_destination_values(
+        &mut self,
+        source_value: Box<dyn Stringable>,
+        destination_value: Box<dyn Stringable>,
+    ) {
+        *self.source_value.lock().unwrap() = Some(source_value.to_string());
+        *self.destination_value.lock().unwrap() = Some(destination_value.to_string());
+    }
+}
+
+/// Hands a shared [`VtAssociation`] back as the owned `Box<dyn VtAssociation>` that
+/// [`MarkupItemStorage::get_association`] returns, without requiring `Clone` on the trait. Mirrors
+/// the wrapper `MarkupItemStorageDB` uses for the same purpose.
+struct ArcVtAssociation(std::sync::Arc<dyn VtAssociation>);
+
+impl VtAssociation for ArcVtAssociation {
+    fn get_type(&self) -> VtAssociationType {
+        self.0.get_type()
+    }
+
+    fn get_session(&self) -> Box<dyn crate::feature::vt::api::main::vt_session::VTSession> {
+        self.0.get_session()
+    }
+
+    fn get_markup_items(
+        &self,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Vec<Box<dyn VtMarkupItem>>, CancelledException> {
+        self.0.get_markup_items(monitor)
+    }
+
+    fn has_applied_markup_items(&self) -> bool {
+        self.0.has_applied_markup_items()
+    }
+
+    fn get_source_address(&self) -> AddressType {
+        self.0.get_source_address()
+    }
+
+    fn get_destination_address(&self) -> AddressType {
+        self.0.get_destination_address()
+    }
+
+    fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>> {
+        self.0.get_related_associations()
+    }
+
+    fn set_markup_status(&self, markup_items_status: VtAssociationMarkupStatus) {
+        self.0.set_markup_status(markup_items_status)
+    }
+
+    fn get_markup_status(&self) -> VtAssociationMarkupStatus {
+        self.0.get_markup_status()
+    }
+
+    fn get_status(&self) -> VtAssociationStatus {
+        self.0.get_status()
+    }
+
+    fn set_accepted(&self) -> Result<(), VTAssociationStatusException> {
+        self.0.set_accepted()
+    }
+
+    fn clear_status(&self) -> Result<(), VTAssociationStatusException> {
+        self.0.clear_status()
+    }
+
+    fn set_rejected(&self) -> Result<(), VTAssociationStatusException> {
+        self.0.set_rejected()
+    }
+
+    fn get_vote_count(&self) -> i32 {
+        self.0.get_vote_count()
+    }
+
+    fn set_vote_count(&self, vote_count: i32) {
+        self.0.set_vote_count(vote_count)
+    }
+
+    fn get_key(&self) -> i64 {
+        self.0.get_key()
+    }
+
+    fn get_session_db(&self) -> Option<std::sync::Arc<dyn VTSessionDB>> {
+        self.0.get_session_db()
+    }
+
+    fn markup_item_status_changed(&self, markup_item: &dyn VtMarkupItem) {
+        self.0.markup_item_status_changed(markup_item)
+    }
+}
+
+/// The minimal [`Stringable`] this file needs: a value that is already just its rendered string.
+/// Mirrors `MarkupItemStorageDB`'s `RawStringable`.
+struct PlainStringable(String);
+
+impl Stringable for PlainStringable {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
+/// Placeholder for the unported Java type `VTMatchTagDB`, referenced by
+/// `VTMatchTableDBAdapter::insert_match_record`. Trimmed to `get_key`, the (inherited
+/// `DBAnnotatedObject`) accessor that `VTMatchTableDBAdapterV0.insertMatchRecord` actually reads;
+/// see `VTMatchTagDB.java` for the type's full public surface. Replace with the real port when
+/// available.
+pub trait VTMatchTagDB: Send + Sync {
+    fn get_key(&self) -> i64;
+}
+
+/// Placeholder for the unported Java type `VTMatchTableDBAdapterV0`, referenced by
+/// `VTMatchTableDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_match_table_db_adapter`. `VTMatchTableDBAdapterV0` is a
+/// concrete Java class (not an interface), so this stub is a struct that implements the real
+/// `VTMatchTableDBAdapter` trait using already-ported `Table`/`DBHandle` machinery. Replace with
+/// the real port when `VTMatchTableDBAdapterV0.java` is ported.
+pub struct VTMatchTableDBAdapterV0 {
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTMatchTableDBAdapterV0 {
+    pub fn create(
+        db_handle: &mut crate::framework::db::DBHandle,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle.create_table(table_name.to_string(), schema)?;
+        Ok(Self { table })
+    }
+
+    pub fn open(
+        db_handle: &crate::framework::db::DBHandle,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = db_handle.get_table(table_name).ok_or_else(|| {
+            crate::util::exception::VersionException::with_message(format!(
+                "Missing Table: {table_name}"
+            ))
+        })?;
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { table })
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_match_table_db_adapter::VTMatchTableDBAdapter
+    for VTMatchTableDBAdapterV0
+{
+    fn insert_match_record(
+        &self,
+        info: &dyn VTMatchInfo,
+        _match_set: &crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB,
+        association: &crate::feature::vt::api::db::vt_association_db::VTAssociationDB,
+        tag: Option<&dyn VTMatchTagDB>,
+    ) -> std::io::Result<crate::framework::db::DBRecord> {
+        use crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription;
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_long(ColumnDescription::TagKeyCol.column(), tag.map_or(-1, |t| t.get_key()));
+        record.set_string(
+            ColumnDescription::SimilarityScoreCol.column(),
+            Some(info.get_similarity_score().to_storage_string()),
+        );
+        record.set_string(
+            ColumnDescription::ConfidenceScoreCol.column(),
+            Some(info.get_confidence_score().to_storage_string()),
+        );
+        record.set_long(ColumnDescription::AssociationCol.column(), association.get_key());
+        record.set_int(ColumnDescription::SourceLengthCol.column(), info.get_source_length());
+        record.set_int(
+            ColumnDescription::DestinationLengthCol.column(),
+            info.get_destination_length(),
+        );
+
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn get_records(&self) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+
+    fn get_match_record(
+        &self,
+        match_record_key: i64,
+    ) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(match_record_key)))
+    }
+
+    fn get_record_count(&self) -> usize {
+        self.table.read().unwrap().get_record_count()
+    }
+
+    fn update_record(&self, record: &crate::framework::db::DBRecord) -> std::io::Result<()> {
+        self.table.write().unwrap().put_record(record.clone())
+    }
+
+    fn delete_record(&self, match_record_key: i64) -> std::io::Result<bool> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(match_record_key)))
+    }
+
+    fn get_records_for_association(
+        &self,
+        association_id: i64,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        use crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription;
+
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            if record.get_long(ColumnDescription::AssociationCol.column()) == Some(association_id)
+            {
+                records.push(record);
+            }
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+}
+
+/// Owned (non-borrowing) record iterator used by [`VTMatchTagDBAdapterV0::get_records`], since
+/// `Table::get_record_iterator` borrows the `RwLockReadGuard` it is called on.
+struct VecRecordIterator {
+    records: std::vec::IntoIter<crate::framework::db::DBRecord>,
+}
+
+impl crate::framework::db::RecordIterator for VecRecordIterator {
+    fn next(&mut self) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        Ok(self.records.next())
+    }
+    fn has_next(&self) -> bool {
+        self.records.len() > 0
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_match_tag_db_adapter::VTMatchTagDBAdapter
+    for VTMatchTagDBAdapterV0
+{
+    fn insert_record(&self, tag_name: &str) -> std::io::Result<crate::framework::db::DBRecord> {
+        if tag_name.trim().is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Cannot create an empty string tag",
+            ));
+        }
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_string(
+            crate::feature::vt::api::main::db::vt_match_tag_db_adapter::ColumnDescription::TagNameCol
+                .column(),
+            Some(tag_name.to_string()),
+        );
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn get_records(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+
+    fn get_record(
+        &self,
+        tag_record_key: i64,
+    ) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(tag_record_key)))
+    }
+
+    fn get_record_count(&self) -> usize {
+        self.table.read().unwrap().get_record_count()
+    }
+
+    fn update_record(&self, record: &crate::framework::db::DBRecord) -> std::io::Result<()> {
+        self.table.write().unwrap().put_record(record.clone())
+    }
+
+    fn delete_record(&self, tag_record_key: i64) -> std::io::Result<bool> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(tag_record_key)))
+    }
+}
+
+/// Placeholder for the unported Java type `VTMatchSetTableDBAdapterV0`, referenced by
+/// `VTMatchSetTableDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_match_set_table_db_adapter`. `VTMatchSetTableDBAdapterV0`
+/// is a concrete Java class (not an interface), so this stub is a struct that implements the real
+/// `VTMatchSetTableDBAdapter` trait using already-ported `Table`/`DBHandle` machinery.
+///
+/// Two simplifications versus the real Java `VTMatchSetTableDBAdapterV0`:
+///   - `CORRELATOR_CLASS_COL` stores the correlator's display name (`get_name()`) rather than a
+///     reflected Java class name, since `VTProgramCorrelator` (the already-ported trait) has no
+///     class-name accessor.
+///   - `create_match_set_record` does not persist the source/destination address-range sub-tables
+///     that the Java version writes via `program.getAddressMap()`, since the ported `Program`
+///     trait does not yet expose an address map accessor; `get_source_address_set` /
+///     `get_destination_address_set` still read those tables back correctly if/when something
+///     populates them.
+/// Replace with the real port when `VTMatchSetTableDBAdapterV0.java` is ported.
+pub struct VTMatchSetTableDBAdapterV0 {
+    db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTMatchSetTableDBAdapterV0 {
+    pub fn create(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle
+            .write()
+            .unwrap()
+            .create_table(table_name.to_string(), schema)?;
+        Ok(Self { db_handle, table })
+    }
+
+    pub fn open(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = {
+            let dbh = db_handle.read().unwrap();
+            dbh.get_table(table_name).ok_or_else(|| {
+                crate::util::exception::VersionException::with_message(format!(
+                    "Missing Table: {table_name}"
+                ))
+            })?
+        };
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { db_handle, table })
+    }
+
+    fn source_table_name(record: &crate::framework::db::DBRecord) -> String {
+        format!("Source Address Set {}", record.get_key().get_long_value())
+    }
+
+    fn destination_table_name(record: &crate::framework::db::DBRecord) -> String {
+        format!("Destination Address Set {}", record.get_key().get_long_value())
+    }
+
+    fn read_address_set(
+        &self,
+        table_name: &str,
+        address_map: &dyn crate::program::database::map::address_map::AddressMap,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        let addr_table = {
+            let dbh = self.db_handle.read().unwrap();
+            match dbh.get_table(table_name) {
+                Some(t) => t,
+                None => return Ok(None),
+            }
+        };
+
+        let mut address_set = crate::program::model::address::AddressSet::new();
+        let table = addr_table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        while let Some(rec) = iter.next()? {
+            let addr1 = address_map.decode_address(rec.get_long(0).unwrap_or(0));
+            let addr2 = address_map.decode_address(rec.get_long(1).unwrap_or(0));
+            address_set.add_range(&addr1, &addr2);
+        }
+        Ok(Some(address_set))
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_match_set_table_db_adapter::VTMatchSetTableDBAdapter
+    for VTMatchSetTableDBAdapterV0
+{
+    fn create_match_set_record(
+        &self,
+        key: i64,
+        correlator: &dyn crate::feature::vt::api::main::vt_program_correlator::VTProgramCorrelator,
+    ) -> std::io::Result<crate::framework::db::DBRecord> {
+        use crate::feature::vt::api::main::db::vt_match_set_table_db_adapter::ColumnDescription;
+
+        let mut table = self.table.write().unwrap();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_string(
+            ColumnDescription::CorrelatorClassCol.column(),
+            Some(correlator.get_name()),
+        );
+        record.set_string(
+            ColumnDescription::CorrelatorNameCol.column(),
+            Some(correlator.get_name()),
+        );
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn get_records(&self) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+
+    fn get_source_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+        address_map: &dyn crate::program::database::map::address_map::AddressMap,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        self.read_address_set(&Self::source_table_name(record), address_map)
+    }
+
+    fn get_destination_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+        address_map: &dyn crate::program::database::map::address_map::AddressMap,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        self.read_address_set(&Self::destination_table_name(record), address_map)
+    }
+
+    fn get_next_match_set_id(&self) -> i64 {
+        self.table.write().unwrap().get_next_key()
+    }
+
+    fn get_record(&self, key: i64) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(key)))
+    }
+}
+
+/// Placeholder for the unported Java type `VTAssociationTableDBAdapterV0`, referenced by
+/// `VTAssociationTableDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_association_table_db_adapter`.
+/// `VTAssociationTableDBAdapterV0` is a concrete Java class (not an interface), so this stub is a
+/// struct that implements the real `VTAssociationTableDBAdapter` trait using already-ported
+/// `Table`/`DBHandle` machinery. `getRecordsForSourceAddress`/`getRecordsForDestinationAddress`
+/// use `Table.indexIterator` in the real Java implementation; since the ported `Table` has no
+/// field-index support yet, these scan and filter instead (same simplification already used by
+/// `VTMatchTableDBAdapterV0::get_records_for_association` above). Replace with the real port when
+/// `VTAssociationTableDBAdapterV0.java` is ported.
+pub struct VTAssociationTableDBAdapterV0 {
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTAssociationTableDBAdapterV0 {
+    pub fn create(
+        db_handle: &mut crate::framework::db::DBHandle,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle.create_table(table_name.to_string(), schema)?;
+        Ok(Self { table })
+    }
+
+    pub fn open(
+        db_handle: &crate::framework::db::DBHandle,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = db_handle.get_table(table_name).ok_or_else(|| {
+            crate::util::exception::VersionException::with_message(format!(
+                "Missing Table: {table_name}"
+            ))
+        })?;
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { table })
+    }
+
+    fn scan_by_long_column(
+        &self,
+        column: usize,
+        value: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            if record.get_long(column) == Some(value) {
+                records.push(record);
+            }
+        }
+        Ok(records)
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_association_table_db_adapter::VTAssociationTableDBAdapter
+    for VTAssociationTableDBAdapterV0
+{
+    fn insert_record(
+        &self,
+        source_address_id: i64,
+        destination_address_id: i64,
+        association_type: crate::feature::vt::api::main::vt_association_type::VtAssociationType,
+        status: crate::feature::vt::api::main::vt_association_status::VtAssociationStatus,
+        vote_count: i32,
+    ) -> std::io::Result<crate::framework::db::DBRecord> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+        use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+        use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
+
+        // Java: `type.ordinal()` / `lockedStatus.ordinal()`. Neither ported enum exposes an
+        // `ordinal()` accessor, so the enum-declaration order is mirrored here by hand.
+        let type_ordinal: i8 = match association_type {
+            VtAssociationType::Function => 0,
+            VtAssociationType::Data => 1,
+        };
+        let status_ordinal: i8 = match status {
+            VtAssociationStatus::Available => 0,
+            VtAssociationStatus::Accepted => 1,
+            VtAssociationStatus::Blocked => 2,
+            VtAssociationStatus::Rejected => 3,
+        };
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_long(ColumnDescription::SourceAddressCol.column(), source_address_id);
+        record.set_long(ColumnDescription::DestinationAddressCol.column(), destination_address_id);
+        record.set_byte(ColumnDescription::TypeCol.column(), type_ordinal);
+        record.set_byte(ColumnDescription::StatusCol.column(), status_ordinal);
+        record.set_int(ColumnDescription::VoteCountCol.column(), vote_count);
+
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn delete_record(&self, key: i64) -> std::io::Result<()> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(key)))?;
+        Ok(())
+    }
+
+    fn get_records_for_source_address(
+        &self,
+        address_id: i64,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let records =
+            self.scan_by_long_column(ColumnDescription::SourceAddressCol.column(), address_id)?;
+        Ok(Box::new(VecRecordIterator { records: records.into_iter() }))
+    }
+
+    fn get_records_for_destination_address(
+        &self,
+        address_id: i64,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let records = self
+            .scan_by_long_column(ColumnDescription::DestinationAddressCol.column(), address_id)?;
+        Ok(Box::new(VecRecordIterator { records: records.into_iter() }))
+    }
+
+    fn get_record_count(&self) -> usize {
+        self.table.read().unwrap().get_record_count()
+    }
+
+    fn get_records(&self) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator { records: records.into_iter() }))
+    }
+
+    fn get_record(&self, key: i64) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(key)))
+    }
+
+    fn get_related_association_records_by_source_and_destination_address(
+        &self,
+        source_address_id: i64,
+        destination_address_id: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let mut records =
+            self.scan_by_long_column(ColumnDescription::SourceAddressCol.column(), source_address_id)?;
+        records.extend(self.scan_by_long_column(
+            ColumnDescription::DestinationAddressCol.column(),
+            destination_address_id,
+        )?);
+        dedupe_records_by_key(&mut records);
+        Ok(records)
+    }
+
+    fn get_related_association_records_by_source_address(
+        &self,
+        source_address_id: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let mut records =
+            self.scan_by_long_column(ColumnDescription::SourceAddressCol.column(), source_address_id)?;
+        dedupe_records_by_key(&mut records);
+        Ok(records)
+    }
+
+    fn get_related_association_records_by_destination_address(
+        &self,
+        destination_address_id: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let mut records = self.scan_by_long_column(
+            ColumnDescription::DestinationAddressCol.column(),
+            destination_address_id,
+        )?;
+        dedupe_records_by_key(&mut records);
+        Ok(records)
+    }
+
+    fn update_record(&self, record: &crate::framework::db::DBRecord) -> std::io::Result<()> {
+        self.table.write().unwrap().put_record(record.clone())
+    }
+
+    fn remove_association(&self, id: i64) -> std::io::Result<()> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(id)))?;
+        Ok(())
+    }
+}
+
+/// Java: `HashSet<DBRecord>` construction, where `DBRecord.equals()`/`hashCode()` compare by key
+/// (see `db.DBRecord`). Deduplicates by primary key, which is equivalent here since two records
+/// sharing a key are necessarily the same row.
+fn dedupe_records_by_key(records: &mut Vec<crate::framework::db::DBRecord>) {
+    let mut seen = std::collections::HashSet::new();
+    records.retain(|r| seen.insert(r.get_key().get_long_value()));
+}
+
+/// Placeholder for the unported Java type `VTAddressCorrelationAdapterV0`, referenced by
+/// `VTAddressCorrelatorAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_address_correlator_adapter`.
+/// `VTAddressCorrelationAdapterV0` is a concrete Java class (not an interface), so this stub is a
+/// struct that implements the real `VTAddressCorrelatorAdapter` trait using already-ported
+/// `Table`/`DBHandle` machinery. Replace with the real port when
+/// `VTAddressCorrelationAdapterV0.java` is ported.
+pub struct VTAddressCorrelationAdapterV0 {
+    base: crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase,
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTAddressCorrelationAdapterV0 {
+    pub fn create(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle
+            .write()
+            .unwrap()
+            .create_table(table_name.to_string(), schema)?;
+        Ok(Self {
+            base: crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase::new(db_handle),
+            table,
+        })
+    }
+
+    pub fn open(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = {
+            let dbh = db_handle.read().unwrap();
+            dbh.get_table(table_name).ok_or_else(|| {
+                crate::util::exception::VersionException::with_message(format!(
+                    "Missing Table: {table_name}"
+                ))
+            })?
+        };
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self {
+            base: crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase::new(db_handle),
+            table,
+        })
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapter
+    for VTAddressCorrelationAdapterV0
+{
+    fn base(
+        &self,
+    ) -> &crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase
+    {
+        &self.base
+    }
+
+    fn create_address_record(
+        &self,
+        _source_entry_long: i64,
+        source_long: i64,
+        destination_long: i64,
+    ) -> std::io::Result<()> {
+        use crate::feature::vt::api::main::db::vt_address_correlator_adapter::ColumnDescription;
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        // Faithful port of the Java source: SOURCE_ENTRY_COL is populated with `source_long`,
+        // not `source_entry_long` -- see `VTAddressCorrelationAdapterV0.createAddressRecord`.
+        record.set_long(ColumnDescription::SourceEntryCol.column(), source_long);
+        record.set_long(ColumnDescription::SourceAddressCol.column(), source_long);
+        record.set_long(ColumnDescription::DestinationAddressCol.column(), destination_long);
+
+        table.put_record(record)
+    }
+
+    fn get_address_records(
+        &self,
+        source_entry_long: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_address_correlator_adapter::ColumnDescription;
+
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            if record.get_long(ColumnDescription::SourceEntryCol.column()) == Some(source_entry_long)
+            {
+                records.push(record);
+            }
+        }
+        Ok(records)
+    }
+}
+
+
+/// Placeholder for the unported Java type `EolCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). `EolCommentMarkupType`
+/// is a concrete Java class (not an interface), so this is a unit struct rather than a trait.
+/// Trimmed to implementing the already-ported [`VtMarkupType`] trait with the display name read
+/// off the Java constructor (`super("EOL Comment")`), since that is all the factory needs.
+/// Replace with the real port when `EolCommentMarkupType.java` is ported.
+pub struct EolCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl EolCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("EOL Comment") }
+    }
+}
+
+impl Default for EolCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for EolCommentMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionNameMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `FunctionNameMarkupType.java` is ported.
+pub struct FunctionNameMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl FunctionNameMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Function Name") }
+    }
+}
+
+impl Default for FunctionNameMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for FunctionNameMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+
+    /// Java: `FunctionNameMarkupType extends FunctionEntryPointBasedAbstractMarkupType`.
+    fn is_function_entry_point_based(&self) -> bool {
+        true
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionSignatureMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `FunctionSignatureMarkupType.java` is ported.
+pub struct FunctionSignatureMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl FunctionSignatureMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Function Signature") }
+    }
+}
+
+impl Default for FunctionSignatureMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for FunctionSignatureMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+
+    /// Java: `FunctionSignatureMarkupType extends FunctionEntryPointBasedAbstractMarkupType`.
+    fn is_function_entry_point_based(&self) -> bool {
+        true
+    }
+}
+
+/// Placeholder for the unported Java type `LabelMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `LabelMarkupType.java` is ported.
+pub struct LabelMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl LabelMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Label") }
+    }
+}
+
+impl Default for LabelMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for LabelMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+}
+
+/// Placeholder for the unported Java type `PlateCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `PlateCommentMarkupType.java` is ported.
+pub struct PlateCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl PlateCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Plate Comment") }
+    }
+}
+
+impl Default for PlateCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for PlateCommentMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+}
+
+/// Placeholder for the unported Java type `PostCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `PostCommentMarkupType.java` is ported.
+pub struct PostCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl PostCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Post Comment") }
+    }
+}
+
+impl Default for PostCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for PostCommentMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+}
+
+/// Placeholder for the unported Java type `PreCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `PreCommentMarkupType.java` is ported.
+pub struct PreCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl PreCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Pre Comment") }
+    }
+}
+
+impl Default for PreCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for PreCommentMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+}
+
+/// Placeholder for the unported Java type `RepeatableCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `RepeatableCommentMarkupType.java` is ported.
+pub struct RepeatableCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl RepeatableCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Repeatable Comment") }
+    }
+}
+
+impl Default for RepeatableCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for RepeatableCommentMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+}
+
+/// Placeholder for the unported Java type `DataTypeMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `DataTypeMarkupType.java` is ported.
+pub struct DataTypeMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl DataTypeMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Data Type") }
+    }
+}
+
+impl Default for DataTypeMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VtMarkupType for DataTypeMarkupType {
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
+    }
+
+    /// Java: the `type instanceof DataTypeMarkupType` branch of
+    /// `MarkupItemImpl.getDestinationAddressEditStatus()`.
+    fn is_data_type_based(&self) -> bool {
+        true
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.app.util.dialog.CheckoutDialog`, referenced by
+/// `do_optional_destination_program_checkout` in
+/// [`vt_session_file_util`](crate::feature::vt::api::util::vt_session_file_util). Minimal
+/// placeholder: only the members that call site needs. The real `CheckoutDialog` blocks on a
+/// Swing modal dialog asking the user whether to check out a file; this port has no GUI to show
+/// one, so [`show_dialog`](Self::show_dialog) always reports [`CANCEL`](Self::CANCEL) and no
+/// checkout is ever attempted. Replace with the real port once a GUI layer exists.
+pub struct CheckoutDialog {
+    pub path_name: String,
+    pub user: Option<User>,
+}
+
+impl CheckoutDialog {
+    pub const CHECKOUT: i32 = 0;
+    pub const CANCEL: i32 = 1;
+
+    pub fn new(path_name: String, user: Option<User>) -> Self {
+        Self { path_name, user }
+    }
+
+    pub fn show_dialog(&self) -> i32 {
+        Self::CANCEL
+    }
+
+    pub fn exclusive_checkout(&self) -> bool {
+        false
+    }
+}
+
+/// Placeholder for `ghidra.features.base.memsearch.gui.SearchSettings`, referenced by
+/// [`SearchFormat`](crate::feature::base::memsearch::format::search_format::SearchFormat) before
+/// the real class is ported. `SearchFormat` only ever passes this type through as a parameter, so
+/// no members are needed yet.
+pub trait SearchSettings: Send + Sync {}
+
+/// Placeholder for `ghidra.features.base.memsearch.matcher.SearchData`, the name/input/settings
+/// triple every `UserInputByteMatcher` carries (`SearchData` is itself the `T` that
+/// `UserInputByteMatcher implements ByteMatcher<SearchData>` matches produce). `SearchData` is a
+/// concrete Java class (not an interface), so this stub is a struct rather than the placeholder
+/// trait an auto-generated shape hint would suggest. Trimmed to the accessors
+/// [`UserInputByteMatcherBase`] needs (`hashCode`/`equals` are omitted -- nothing compares two
+/// `SearchData`s yet). Replace with the real port when `SearchData.java` is ported.
+pub struct SearchData {
+    name: String,
+    input: String,
+    settings: Option<Box<dyn SearchSettings>>,
+}
+
+impl SearchData {
+    /// Java: `SearchData(String name, String input, SearchSettings settings)`.
+    pub fn new(
+        name: impl Into<String>,
+        input: impl Into<String>,
+        settings: Option<Box<dyn SearchSettings>>,
+    ) -> Self {
+        Self { name: name.into(), input: input.into(), settings }
+    }
+
+    /// Java: `getName()`.
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    /// Java: `getInput()`.
+    pub fn get_input(&self) -> &str {
+        &self.input
+    }
+
+    /// Java: `getSettings()`.
+    pub fn get_settings(&self) -> Option<&dyn SearchSettings> {
+        self.settings.as_deref()
+    }
+}
+
+/// Placeholder for the shared state of `ghidra.features.base.memsearch.matcher.UserInputByteMatcher`,
+/// the abstract Java base that `InvalidByteMatcher`, `MaskedByteSequenceByteMatcher`, and
+/// `RegExByteMatcher` all extend. Rust has no field inheritance, so this holds the one
+/// `searchData` field the Java class carries; a concrete matcher embeds it and implements
+/// [`UserInputByteMatcher`] for the abstract methods (the same [`SearchFormatBase`]/[`SearchFormat`]
+/// split, for the same reason -- see
+/// [`SearchFormatBase`](crate::feature::base::memsearch::format::search_format::SearchFormatBase)).
+/// Replace with the real port when `UserInputByteMatcher.java` is ported.
+pub struct UserInputByteMatcherBase {
+    search_data: SearchData,
+}
+
+impl UserInputByteMatcherBase {
+    /// Java: `UserInputByteMatcher(String name, String input, SearchSettings settings)`.
+    pub fn new(
+        name: impl Into<String>,
+        input: impl Into<String>,
+        settings: Option<Box<dyn SearchSettings>>,
+    ) -> Self {
+        Self { search_data: SearchData::new(name, input, settings) }
+    }
+
+    /// Java: `getName()`.
+    pub fn get_name(&self) -> &str {
+        self.search_data.get_name()
+    }
+
+    /// Java: `getInput()`.
+    pub fn get_input(&self) -> &str {
+        self.search_data.get_input()
+    }
+
+    /// Java: `getSettings()`.
+    pub fn get_settings(&self) -> Option<&dyn SearchSettings> {
+        self.search_data.get_settings()
+    }
+
+    /// Java: `getSearchData()`.
+    pub fn get_search_data(&self) -> &SearchData {
+        &self.search_data
+    }
+}
+
+/// Placeholder for `ghidra.features.base.memsearch.matcher.UserInputByteMatcher`, referenced by
+/// [`SearchFormat`](crate::feature::base::memsearch::format::search_format::SearchFormat) (whose
+/// `parse` returns one, and whose `is_valid_text` default method calls
+/// [`is_valid_search`](Self::is_valid_search) on the result) and implemented by
+/// [`InvalidByteMatcher`](crate::feature::base::memsearch::matcher::invalid_byte_matcher::InvalidByteMatcher)
+/// before the real class is ported. `UserInputByteMatcher implements ByteMatcher<SearchData>` in
+/// Java, so the already-ported
+/// [`ByteMatcher`](crate::feature::base::memsearch::matcher::ByteMatcher) trait is a supertrait
+/// here rather than being re-declared. `getName`/`getInput`/`getSettings`/`getSearchData`/
+/// `toString` are concrete methods every subclass inherits unchanged, so they are default methods
+/// reading [`base`](Self::base) (mirroring `SearchFormat`'s `get_name`/`to_string`); `hashCode`/
+/// `equals` are omitted, since nothing compares two matchers yet. See `UserInputByteMatcher.java`
+/// for the type's full public surface. Replace with the real port when available.
+pub trait UserInputByteMatcher:
+    crate::feature::base::memsearch::matcher::ByteMatcher<SearchData> + Send + Sync
+{
+    /// The shared state (search data) every user-input matcher carries.
+    fn base(&self) -> &UserInputByteMatcherBase;
+
+    /// Java: `getToolTip()` (abstract). Additional info about this matcher (typically the mask
+    /// bytes); Java's nullable return maps to `None`.
+    fn get_tool_tip(&self) -> Option<String>;
+
+    /// Java: `isValidSearch()`. Returns true if this matcher is valid and can be used to perform a
+    /// search. Defaults to `true`, overridable.
+    fn is_valid_search(&self) -> bool {
+        true
+    }
+
+    /// Java: `isValidInput()`. Returns true if this matcher has valid (but possibly incomplete)
+    /// input text. Defaults to `true`, overridable.
+    fn is_valid_input(&self) -> bool {
+        true
+    }
+
+    /// Java: `getName()`.
+    fn get_name(&self) -> &str {
+        self.base().get_name()
+    }
+
+    /// Java: `getInput()`.
+    fn get_input(&self) -> &str {
+        self.base().get_input()
+    }
+
+    /// Java: `getSettings()`.
+    fn get_settings(&self) -> Option<&dyn SearchSettings> {
+        self.base().get_settings()
+    }
+
+    /// Java: `getSearchData()`.
+    fn get_search_data(&self) -> &SearchData {
+        self.base().get_search_data()
+    }
+
+    /// Java: `toString()`, which returns `searchData.getInput()`.
+    fn to_string(&self) -> String {
+        self.base().get_input().to_string()
+    }
+}
+
+/// Placeholder for the unported Java type `HexSearchFormat`, one of
+/// [`SearchFormat`](crate::feature::base::memsearch::format::search_format::SearchFormat)'s six
+/// concrete subclasses, referenced by `SearchFormat.HEX`/`SearchFormat.ALL`. `HexSearchFormat` is
+/// a concrete Java class (not an interface), so this stub is a struct implementing the real
+/// `SearchFormat` trait rather than a `dyn`-dispatched placeholder trait of its own. `parse` and
+/// `convert_text` are the format's actual byte-parsing logic and are left `unimplemented!()`
+/// pending that file's own port; `get_tool_tip`/`get_format_type` mirror the real
+/// `HexSearchFormat.java` since they cost nothing to copy faithfully. Replace with the real port
+/// when `HexSearchFormat.java` is ported.
+pub struct HexSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl HexSearchFormat {
+    /// Java: `HexSearchFormat()`, which calls `super("Hex")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Hex",
+            ),
+        }
+    }
+}
+
+impl Default for HexSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for HexSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("HexSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a sequence of hex numbers, separated by spaces. Enter '.' or '?' for \
+         a wildcard match"
+            .to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("HexSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::Byte
+    }
+}
+
+/// Placeholder for the unported Java type `BinarySearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `BinarySearchFormat.java` is ported.
+pub struct BinarySearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl BinarySearchFormat {
+    /// Java: `BinarySearchFormat()`, which calls `super("Binary")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Binary",
+            ),
+        }
+    }
+}
+
+impl Default for BinarySearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for BinarySearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("BinarySearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a sequence of binary digits. Spaces will start the next byte. Bit \
+         sequences less than 8 bits are padded with 0's to the left. Enter 'x', '.' or '?' for a \
+         wildcard bit"
+            .to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("BinarySearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::Byte
+    }
+}
+
+/// Placeholder for the unported Java type `DecimalSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `DecimalSearchFormat.java` is ported.
+pub struct DecimalSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl DecimalSearchFormat {
+    /// Java: `DecimalSearchFormat()`, which calls `super("Decimal")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Decimal",
+            ),
+        }
+    }
+}
+
+impl Default for DecimalSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for DecimalSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("DecimalSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret values as a sequence of decimal numbers, separated by spaces".to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("DecimalSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::Integer
+    }
+}
+
+/// Placeholder for the unported Java type `StringSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `StringSearchFormat.java` is ported.
+pub struct StringSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl StringSearchFormat {
+    /// Java: `StringSearchFormat()`, which calls `super("String")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "String",
+            ),
+        }
+    }
+}
+
+impl Default for StringSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for StringSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("StringSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a sequence of characters.".to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("StringSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::StringType
+    }
+}
+
+/// Placeholder for the unported Java type `RegExSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `RegExSearchFormat.java` is ported.
+pub struct RegExSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl RegExSearchFormat {
+    /// Java: `RegExSearchFormat()`, which calls `super("Reg Ex")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Reg Ex",
+            ),
+        }
+    }
+}
+
+impl Default for RegExSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for RegExSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("RegExSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a regular expression.".to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("RegExSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::StringType
+    }
+}
+
+/// Placeholder for the unported Java type `FloatSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Unlike the other five, Java's `FloatSearchFormat` is constructed twice with
+/// different arguments (`SearchFormat.FLOAT = new FloatSearchFormat("Float", "Floating Point", 4)`
+/// and `SearchFormat.DOUBLE = new FloatSearchFormat("Double", "Floating Point (8)", 8)`), so this
+/// stub keeps the `longName`/`byteSize` fields Java stores for those two call sites even though
+/// nothing here reads them yet (the real port's `getToolTip`/`getValue` do). Replace with the real
+/// port when `FloatSearchFormat.java` is ported.
+pub struct FloatSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+    long_name: String,
+    byte_size: i32,
+}
+
+impl FloatSearchFormat {
+    /// Java: `FloatSearchFormat(String name, String longName, int size)`.
+    pub fn new(name: impl Into<String>, long_name: impl Into<String>, byte_size: i32) -> Self {
+        assert!(byte_size == 4 || byte_size == 8, "Only supports 4 or 8 byte floating point numbers");
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                name,
+            ),
+            long_name: long_name.into(),
+            byte_size,
+        }
+    }
+
+    /// Java: `SearchFormat.FLOAT = new FloatSearchFormat("Float", "Floating Point", 4)`.
+    pub fn new_float() -> Self {
+        Self::new("Float", "Floating Point", 4)
+    }
+
+    /// Java: `SearchFormat.DOUBLE = new FloatSearchFormat("Double", "Floating Point (8)", 8)`.
+    pub fn new_double() -> Self {
+        Self::new("Double", "Floating Point (8)", 8)
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for FloatSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("FloatSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        format!("Interpret values as a sequence of {} numbers, separated by spaces", self.long_name)
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("FloatSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        let _ = self.byte_size;
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::FloatingPoint
+    }
+}
+
+// ---------------------------------------------------------------------------
+// `ghidra.features.bsim.query.description` placeholders
+//
+// `FunctionDescription` sits on a dependency cycle with `CallgraphEntry` (each names the other
+// in a field) and with `ExecutableRecord`/`SignatureRecord` (which the real
+// `DescriptionManager` port interns and hands out). The placeholders below break that cycle;
+// each is a concrete Java class, so each stub is a struct rather than a trait. See `STUBS.tsv`
+// for provenance.
+// ---------------------------------------------------------------------------
+
+/// The state of an [`ExecutableRecord`] that the owning `DescriptionManager` mutates after the
+/// record has been shared.
+///
+/// Java mutates these fields through whatever reference happens to be at hand -- the record in
+/// the manager's set and the record every [`FunctionDescription`] points at are one object, so
+/// `populateExecutableXref` followed by `saveXml` observes the indices it just assigned. The
+/// Rust records are shared through [`Arc`], so that aliasing is modelled with a lock rather than
+/// with `&mut`.
+///
+/// [`FunctionDescription`]: crate::feature::bsim::query::description::FunctionDescription
+#[derive(Debug, Default, Clone)]
+struct ExecutableState {
+    /// Java `rowid`, reduced to its long (see the note on `FunctionDescription`'s id).
+    row_id: Option<i64>,
+    /// Java flag `ALREADY_STORED`.
+    already_stored: bool,
+    /// Java flag `CATEGORIES_SET`.
+    categories_set: bool,
+    /// Java `usercat`, kept sorted.
+    usercat: Option<Vec<crate::feature::bsim::query::description::CategoryRecord>>,
+    repository: Option<String>,
+    path: Option<String>,
+    xref_index: i32,
+}
+
+/// Placeholder for the unported Java type `ExecutableRecord`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription`] and by
+/// [`crate::feature::bsim::query::description::DescriptionManager`].
+///
+/// Only the members those two types need are present. Equality, ordering and hashing are by md5
+/// alone, matching the Java original. The Java `Date` of ingest is held as milliseconds since
+/// the epoch (what `Date.getTime()` returns), and the repository URL is stored verbatim rather
+/// than being normalised through `GhidraURL`.
+/// Replace with the real port when `ExecutableRecord.java` is ported.
+#[derive(Debug, Default)]
+pub struct ExecutableRecord {
+    md5sum: String,
+    executable_name: String,
+    architecture: String,
+    compiler_name: String,
+    library: bool,
+    /// Java `date`, as milliseconds since the epoch. `0` is Java's `EMPTY_DATE`.
+    date: i64,
+    state: std::sync::Mutex<ExecutableState>,
+}
+
+impl ExecutableRecord {
+    /// Java: `ExecutableRecord.EMPTY_DATE`, which is `new Date(0)`.
+    pub const EMPTY_DATE: i64 = 0;
+
+    /// Java: `ExecutableRecord.METADATA_NAME` and friends, the bits `compare_metadata` returns.
+    pub const METADATA_NAME: i32 = 1;
+    pub const METADATA_ARCH: i32 = 2;
+    pub const METADATA_COMP: i32 = 4;
+    pub const METADATA_DATE: i32 = 8;
+    pub const METADATA_REPO: i32 = 16;
+    pub const METADATA_PATH: i32 = 32;
+    pub const METADATA_LIBR: i32 = 64;
+
+    /// Java: `ExecutableRecord(String md5, String enm, String cnm, String arc, ...)`.
+    ///
+    /// Note the argument order, which follows the field order of the struct rather than the
+    /// Java constructor's; [`new_full`](Self::new_full) follows Java.
+    pub fn new(
+        md5sum: impl Into<String>,
+        executable_name: impl Into<String>,
+        architecture: impl Into<String>,
+        compiler_name: impl Into<String>,
+    ) -> Self {
+        Self {
+            md5sum: md5sum.into(),
+            executable_name: executable_name.into(),
+            architecture: architecture.into(),
+            compiler_name: compiler_name.into(),
+            library: false,
+            date: 0,
+            state: std::sync::Mutex::new(ExecutableState::default()),
+        }
+    }
+
+    /// Java: `ExecutableRecord(String md5, String execName, String compilerName,
+    /// String architecture, Date date, RowKey id, String repo, String path)`.
+    pub fn new_full(
+        md5sum: impl Into<String>,
+        executable_name: impl Into<String>,
+        compiler_name: impl Into<String>,
+        architecture: impl Into<String>,
+        date: i64,
+        row_id: Option<i64>,
+        repository: Option<&str>,
+        path: Option<&str>,
+    ) -> Self {
+        let res = Self {
+            md5sum: md5sum.into(),
+            executable_name: executable_name.into(),
+            architecture: architecture.into(),
+            compiler_name: compiler_name.into(),
+            library: false,
+            date,
+            state: std::sync::Mutex::new(ExecutableState { row_id, ..Default::default() }),
+        };
+        res.set_repository(repository, path);
+        res
+    }
+
+    /// Java: the library constructor `ExecutableRecord(String enm, String arc, RowKey id)`,
+    /// which sets the `LIBRARY` flag and synthesizes a placeholder md5 via
+    /// [`calc_library_md5_placeholder`](Self::calc_library_md5_placeholder).
+    pub fn new_library_with_id(
+        executable_name: impl Into<String>,
+        architecture: impl Into<String>,
+        row_id: Option<i64>,
+    ) -> Self {
+        let executable_name = executable_name.into();
+        let architecture = architecture.into();
+        Self {
+            md5sum: Self::calc_library_md5_placeholder(&executable_name, &architecture),
+            executable_name,
+            architecture,
+            compiler_name: String::new(),
+            library: true,
+            date: 0,
+            state: std::sync::Mutex::new(ExecutableState { row_id, ..Default::default() }),
+        }
+    }
+
+    /// The library constructor without a database id.
+    pub fn new_library(executable_name: impl Into<String>, architecture: impl Into<String>) -> Self {
+        Self::new_library_with_id(executable_name, architecture, None)
+    }
+
+    /// Java: `ExecutableRecord.calcLibraryMd5Placeholder(String enm, String arc)`, the stand-in
+    /// hash a library record uses in place of a real md5.
+    pub fn calc_library_md5_placeholder(enm: &str, arc: &str) -> String {
+        use crate::generic::hash::simple_crc32::SimpleCRC32;
+
+        fn word_to_ascii(val: u32, buf: &mut String) {
+            for i in (0..=28).rev().step_by(4) {
+                let nibble = (val >> i) & 0xf;
+                buf.push(char::from_digit(nibble, 16).unwrap());
+            }
+        }
+
+        let mut hi: u32 = 0x00b1_b110;
+        let mut lo: u32 = 0xfaba_faba;
+        // Java iterates over UTF-16 code units and masks each to a byte.
+        for c in enm.encode_utf16() {
+            let feed = lo >> 24;
+            lo = SimpleCRC32::hash_one_byte(lo, u32::from(c) & 0xff);
+            hi = SimpleCRC32::hash_one_byte(hi, feed);
+        }
+        lo ^= 0xf1b1_f1b1;
+        for c in arc.encode_utf16() {
+            let feed = lo >> 24;
+            lo = SimpleCRC32::hash_one_byte(lo, u32::from(c) & 0xff);
+            hi = SimpleCRC32::hash_one_byte(hi, feed);
+        }
+        let mut buf = String::from("bbbbbbbbaaaaaaaa");
+        word_to_ascii(hi, &mut buf);
+        word_to_ascii(lo, &mut buf);
+        buf
+    }
+
+    pub fn get_md5(&self) -> &str {
+        &self.md5sum
+    }
+
+    pub fn get_name_exec(&self) -> &str {
+        &self.executable_name
+    }
+
+    pub fn get_architecture(&self) -> &str {
+        &self.architecture
+    }
+
+    pub fn get_name_compiler(&self) -> &str {
+        &self.compiler_name
+    }
+
+    pub fn is_library(&self) -> bool {
+        self.library
+    }
+
+    /// Java: `getDate()`, as milliseconds since the epoch.
+    pub fn get_date(&self) -> i64 {
+        self.date
+    }
+
+    /// Java: `getRowId()`, reduced to the key's long.
+    pub fn get_row_id(&self) -> Option<i64> {
+        self.state.lock().unwrap().row_id
+    }
+
+    pub fn is_already_stored(&self) -> bool {
+        self.state.lock().unwrap().already_stored
+    }
+
+    pub fn categories_are_set(&self) -> bool {
+        self.state.lock().unwrap().categories_set
+    }
+
+    /// Java: `getAllCategories()`, which returns null when no category is set.
+    pub fn get_all_categories(
+        &self,
+    ) -> Option<Vec<crate::feature::bsim::query::description::CategoryRecord>> {
+        self.state.lock().unwrap().usercat.clone()
+    }
+
+    pub fn get_repository(&self) -> Option<String> {
+        self.state.lock().unwrap().repository.clone()
+    }
+
+    pub fn get_path(&self) -> Option<String> {
+        self.state.lock().unwrap().path.clone()
+    }
+
+    pub fn get_xref_index(&self) -> i32 {
+        self.state.lock().unwrap().xref_index
+    }
+
+    /// Java: `setXrefIndex(int)`.
+    pub fn set_xref_index(&self, val: i32) {
+        self.state.lock().unwrap().xref_index = val;
+    }
+
+    /// Java: `setRowId(RowKey)`, reduced to the key's long.
+    pub fn set_row_id(&self, id: i64) {
+        self.state.lock().unwrap().row_id = Some(id);
+    }
+
+    /// Java: `setAlreadyStored()`.
+    pub fn set_already_stored(&self) {
+        self.state.lock().unwrap().already_stored = true;
+    }
+
+    /// Java: `setCategory(List<CategoryRecord>)`. Categories count as *set* even when the list
+    /// is empty or absent, and are kept sorted.
+    pub fn set_category(
+        &self,
+        cats: Option<Vec<crate::feature::bsim::query::description::CategoryRecord>>,
+    ) {
+        let mut state = self.state.lock().unwrap();
+        state.categories_set = true;
+        match cats {
+            Some(mut cats) if !cats.is_empty() => {
+                cats.sort();
+                state.usercat = Some(cats);
+            }
+            _ => state.usercat = None,
+        }
+    }
+
+    /// Java: `cloneCategories(ExecutableRecord op2)`.
+    pub fn clone_categories(&self, op2: &ExecutableRecord) {
+        let (set, cats) = {
+            let other = op2.state.lock().unwrap();
+            (other.categories_set, other.usercat.clone())
+        };
+        let mut state = self.state.lock().unwrap();
+        state.categories_set = set;
+        state.usercat = cats;
+    }
+
+    /// Java: `setRepository(String repo, String newpath)`, minus the `GhidraURL` normalisation
+    /// of `repo`. A leading or trailing slash is stripped from the path, and a path of just
+    /// `"/"` becomes absent, as in Java.
+    pub fn set_repository(&self, repo: Option<&str>, newpath: Option<&str>) {
+        let mut path = newpath.map(str::to_string);
+        if let Some(p) = path.take() {
+            let p = p.strip_suffix('/').unwrap_or(&p).to_string();
+            let p = p.strip_prefix('/').unwrap_or(&p).to_string();
+            path = if p.is_empty() { None } else { Some(p) };
+        }
+        let mut state = self.state.lock().unwrap();
+        state.repository = repo.map(str::to_string);
+        state.path = path;
+    }
+
+    /// Java: `compareMetadata(ExecutableRecord o)`, a bit-field of the `METADATA_*` fields that
+    /// differ. Zero means the two records describe the same executable.
+    pub fn compare_metadata(&self, o: &ExecutableRecord) -> i32 {
+        let mut res = 0;
+        if self.executable_name != o.executable_name {
+            res |= Self::METADATA_NAME;
+        }
+        if self.architecture != o.architecture {
+            res |= Self::METADATA_ARCH;
+        }
+        if self.library != o.library {
+            res |= Self::METADATA_LIBR;
+        }
+        if self.library {
+            return res; // Remaining fields aren't compared for libraries
+        }
+        if self.compiler_name != o.compiler_name {
+            res |= Self::METADATA_COMP;
+        }
+        if self.date != o.date {
+            res |= Self::METADATA_DATE;
+        }
+        let (mine, theirs) = (self.state.lock().unwrap(), o.state.lock().unwrap());
+        if mine.repository != theirs.repository {
+            res |= Self::METADATA_REPO;
+        }
+        if mine.path != theirs.path {
+            res |= Self::METADATA_PATH;
+        }
+        res
+    }
+
+    /// Java: `ExecutableRecord.printRaw()`.
+    pub fn print_raw(&self) -> String {
+        format!(
+            "{} {} {} {}",
+            self.md5sum, self.executable_name, self.architecture, self.compiler_name
+        )
+    }
+
+    /// Java: `ExecutableRecord.saveXml(Writer)`.
+    pub fn save_xml<W: std::io::Write>(&self, fwrite: &mut W) -> std::io::Result<()> {
+        use crate::util::xml::spec_xml_utils;
+
+        write!(fwrite, "<exe")?;
+        if self.library {
+            write!(fwrite, " library=\"true\"")?;
+        }
+        write!(fwrite, ">\n  <md5>{}</md5>\n  <name>", self.md5sum)?;
+        spec_xml_utils::xml_escape_writer(fwrite, &self.executable_name)?;
+        write!(fwrite, "</name>\n  <arch>")?;
+        spec_xml_utils::xml_escape_writer(fwrite, &self.architecture)?;
+        write!(fwrite, "</arch>\n  <compiler>")?;
+        spec_xml_utils::xml_escape_writer(fwrite, &self.compiler_name)?;
+        write!(fwrite, "</compiler>\n")?;
+        let millis = self.date % 1000;
+        let seconds = self.date / 1000;
+        write!(
+            fwrite,
+            "  <date millis=\"{}\">{}</date>\n",
+            spec_xml_utils::encode_unsigned_integer(millis),
+            spec_xml_utils::encode_unsigned_integer(seconds)
+        )?;
+        let (repository, path, usercat) = {
+            let state = self.state.lock().unwrap();
+            (state.repository.clone(), state.path.clone(), state.usercat.clone())
+        };
+        if let Some(repository) = repository {
+            write!(fwrite, "  <repository>")?;
+            spec_xml_utils::xml_escape_writer(fwrite, &repository)?;
+            write!(fwrite, "</repository>\n")?;
+        }
+        if let Some(path) = path {
+            write!(fwrite, "  <path>")?;
+            spec_xml_utils::xml_escape_writer(fwrite, &path)?;
+            write!(fwrite, "</path>\n")?;
+        }
+        for element in usercat.iter().flatten() {
+            element.save_xml(fwrite)?;
+        }
+        write!(fwrite, "</exe>\n")
+    }
+
+    /// Java: `ExecutableRecord.restoreXml(XmlPullParser, DescriptionManager)`, which registers
+    /// the parsed record with `man` and returns the interned instance.
+    pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
+        parser: &mut P,
+        man: &mut crate::feature::bsim::query::description::DescriptionManager,
+    ) -> Result<Arc<ExecutableRecord>, crate::feature::bsim::query::LshException> {
+        use crate::feature::bsim::query::LshException;
+        use crate::feature::bsim::query::description::CategoryRecord;
+        use crate::util::xml::spec_xml_utils;
+        use crate::util::xml::xml_element::XmlElement;
+
+        let xml_err = |e: crate::util::xml::xml_exception::XmlException| {
+            LshException::new(e.to_string())
+        };
+
+        let el = parser.start(&["exe"]).map_err(xml_err)?;
+        let islib = el
+            .get_attribute("library")
+            .map(|v| spec_xml_utils::decode_boolean(&v))
+            .unwrap_or(false);
+        parser.start(&["md5"]).map_err(xml_err)?;
+        let md5sum = parser.end().map_err(xml_err)?.get_text().to_string();
+        parser.start(&["name"]).map_err(xml_err)?;
+        let name_exec = parser.end().map_err(xml_err)?.get_text().to_string();
+        let mut name_compiler = String::new();
+        let mut architecture = String::new();
+        let mut seconds: i64 = 0;
+        let mut millis: i64 = 0;
+        // Java never reads a row id back from the XML.
+        let id: Option<i64> = None;
+        let mut repo: Option<String> = None;
+        let mut path: Option<String> = None;
+        let mut cats: Option<Vec<CategoryRecord>> = None;
+        while parser.peek().is_start() {
+            if parser.peek().get_name() == "category" {
+                cats.get_or_insert_with(Vec::new).push(CategoryRecord::restore_xml(parser)?);
+                continue;
+            }
+            let subel = parser.start(&[]).map_err(xml_err)?;
+            match subel.get_name() {
+                "arch" => architecture = parser.end().map_err(xml_err)?.get_text().to_string(),
+                "compiler" => name_compiler = parser.end().map_err(xml_err)?.get_text().to_string(),
+                "date" => {
+                    millis = spec_xml_utils::decode_long(subel.get_attribute("millis").as_deref());
+                    if !(0..=1000).contains(&millis) {
+                        millis = 0;
+                    }
+                    let text = parser.end().map_err(xml_err)?.get_text().to_string();
+                    seconds = spec_xml_utils::decode_long(Some(&text));
+                }
+                "repository" => {
+                    repo = Some(parser.end().map_err(xml_err)?.get_text().to_string())
+                }
+                "path" => path = Some(parser.end().map_err(xml_err)?.get_text().to_string()),
+                _ => {
+                    parser.end().map_err(xml_err)?;
+                }
+            }
+        }
+        parser.end().map_err(xml_err)?;
+
+        let res = if islib {
+            let res = man.new_executable_library(&name_exec, &architecture, id)?;
+            if res.get_md5() != md5sum {
+                return Err(LshException::new(
+                    "Read bad library placeholder md5 for ExecutableRecord",
+                ));
+            }
+            res
+        } else {
+            man.new_executable_record(
+                &md5sum,
+                &name_exec,
+                &name_compiler,
+                &architecture,
+                seconds * 1000 + millis,
+                repo.as_deref(),
+                path.as_deref(),
+                id,
+            )?
+        };
+        res.set_category(cats);
+        Ok(res)
+    }
+}
+
+impl Clone for ExecutableRecord {
+    fn clone(&self) -> Self {
+        Self {
+            md5sum: self.md5sum.clone(),
+            executable_name: self.executable_name.clone(),
+            architecture: self.architecture.clone(),
+            compiler_name: self.compiler_name.clone(),
+            library: self.library,
+            date: self.date,
+            state: std::sync::Mutex::new(self.state.lock().unwrap().clone()),
+        }
+    }
+}
+
+impl PartialEq for ExecutableRecord {
+    fn eq(&self, other: &Self) -> bool {
+        self.md5sum == other.md5sum
+    }
+}
+
+impl Eq for ExecutableRecord {}
+
+impl std::hash::Hash for ExecutableRecord {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.md5sum.hash(state);
+    }
+}
+
+impl PartialOrd for ExecutableRecord {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ExecutableRecord {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.md5sum.cmp(&other.md5sum)
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionTagBSimFilterType`, referenced by
+/// [`crate::feature::bsim::query::gen_signatures::GenSignatures`].
+///
+/// The real filter type participates in BSim's filter/SQL machinery; all `GenSignatures` needs
+/// are the bit assignments of the function-flag field it fills in, so only those are modelled.
+/// Replace with the real port when `FunctionTagBSimFilterType.java` is ported.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FunctionTagBSimFilterType;
+
+impl FunctionTagBSimFilterType {
+    /// The number of low bits of the flag field reserved for the built-in tags below; the first
+    /// user-defined tag starts at `1 << RESERVED_BITS`.
+    pub const RESERVED_BITS: i32 = 3;
+
+    /// The most user-defined tags that fit in the remaining bits of the 32-bit flag field.
+    pub const MAX_TAG_COUNT: i32 = 32 - Self::RESERVED_BITS;
+
+    /// The function is known to come from a library.
+    pub const KNOWN_LIBRARY_MASK: i32 = 1;
+
+    /// The decompiler hit an unimplemented instruction while decompiling the function.
+    pub const HAS_UNIMPLEMENTED_MASK: i32 = 2;
+
+    /// Instruction flow ran into bad data while decompiling the function.
+    pub const HAS_BADDATA_MASK: i32 = 4;
+}
+
+/// A predicate over a program and one of its function descriptions, as held by [`PreFilter`].
+///
+/// Stands in for Java's `BiPredicate<Program, FunctionDescription>`.
+pub type PreFilterPredicate = Box<
+    dyn Fn(
+            &dyn crate::program::model::listing::Program,
+            &crate::feature::bsim::query::description::FunctionDescription,
+        ) -> bool
+        + Send
+        + Sync,
+>;
+
+/// Placeholder for the unported Java type `PreFilter`, referenced by
+/// [`GenSignatures::transfer_cached_functions`](crate::feature::bsim::query::gen_signatures::GenSignatures::transfer_cached_functions).
+///
+/// A set of predicates applied to functions before they are handed to the database. Java stores
+/// `BiPredicate<Program, FunctionDescription>` objects and reduces them with `and`/`or`; the
+/// placeholder keeps the same shape with boxed closures. Replace with the real port when
+/// `PreFilter.java` is ported.
+#[derive(Default)]
+pub struct PreFilter {
+    pre_filters: Vec<PreFilterPredicate>,
+}
+
+impl PreFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Java: `addPredicate(BiPredicate<Program, FunctionDescription>)`.
+    pub fn add_predicate(&mut self, predicate: PreFilterPredicate) {
+        self.pre_filters.push(predicate);
+    }
+
+    /// Java: `getAndReducedPredicate()`, which reduces the filters with `and` starting from a
+    /// predicate that accepts everything -- so an empty filter set accepts every function.
+    pub fn get_and_reduced_predicate(
+        &self,
+    ) -> impl Fn(
+        &dyn crate::program::model::listing::Program,
+        &crate::feature::bsim::query::description::FunctionDescription,
+    ) -> bool
+           + '_ {
+        move |program, desc| self.pre_filters.iter().all(|f| f(program, desc))
+    }
+
+    /// Java: `getOrReducedPredicate()`, which reduces the filters with `or` starting from a
+    /// predicate that rejects everything -- so an empty filter set rejects every function.
+    pub fn get_or_reduced_predicate(
+        &self,
+    ) -> impl Fn(
+        &dyn crate::program::model::listing::Program,
+        &crate::feature::bsim::query::description::FunctionDescription,
+    ) -> bool
+           + '_ {
+        move |program, desc| self.pre_filters.iter().any(|f| f(program, desc))
+    }
+
+    /// Java: `clearFilters()`.
+    pub fn clear_filters(&mut self) {
+        self.pre_filters.clear();
+    }
+}
+
+impl std::fmt::Debug for PreFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PreFilter").field("pre_filters", &self.pre_filters.len()).finish()
+    }
+}
+
+/// Placeholder for the unported Java type `SignatureRecord`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription`].
+///
+/// The real record wraps an `LSHVector`; the placeholder carries only the duplicate count that
+/// `FunctionDescription::save_xml` writes as the `sigdup` attribute, and the vector id that
+/// `DescriptionManager::attach_signature` copies onto the function. Replace with the real port
+/// when `SignatureRecord.java` is ported.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SignatureRecord {
+    count: i32,
+    vectorid: i64,
+}
+
+impl SignatureRecord {
+    pub fn new(count: i32) -> Self {
+        Self { count, vectorid: 0 }
+    }
+
+    /// Java: `SignatureRecord.getCount()`, the number of functions sharing this signature.
+    pub fn get_count(&self) -> i32 {
+        self.count
+    }
+
+    /// Java: package-private `setCount(int)`.
+    pub(crate) fn set_count(&mut self, c: i32) {
+        self.count = c;
+    }
+
+    /// Java: `SignatureRecord.getVectorId()`.
+    pub fn get_vector_id(&self) -> i64 {
+        self.vectorid
+    }
+
+    /// Java: package-private `setVectorId(long)`.
+    pub(crate) fn set_vector_id(&mut self, i: i64) {
+        self.vectorid = i;
+    }
+
+    /// Java: `SignatureRecord.saveXml(Writer)`, which delegates to the vector's `saveXml`.
+    /// The placeholder holds no vector, so it writes nothing.
+    pub fn save_xml<W: std::io::Write>(&self, _fwrite: &mut W) -> std::io::Result<()> {
+        Ok(())
+    }
+
+    /// Java: `SignatureRecord.restoreXml(...)`, which builds a record through the manager and
+    /// attaches it to `fdesc`. The manager's factory discards the `<lshcosine>` subtree, since
+    /// the placeholder record holds no vector, so the surrounding parse stays well formed.
+    pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
+        parser: &mut P,
+        vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
+        man: &mut crate::feature::bsim::query::description::DescriptionManager,
+        fdesc: &mut crate::feature::bsim::query::description::FunctionDescription,
+        count: i32,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        let srec = man.new_signature_from_xml(parser, vector_factory, count);
+        man.attach_signature(fdesc, Arc::new(srec));
+        Ok(())
+    }
+}
+
+/// Placeholder for the unported Java type `CallgraphEntry`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription`].
+///
+/// A single edge of the call graph: the called function plus a hash of the call site. The
+/// callee is shared with whatever container owns it (Java holds a bare reference), so it is
+/// held by [`Arc`] here -- `FunctionDescription::sort_callgraph` dedups by pointer identity
+/// exactly as the Java does. Replace with the real port when `CallgraphEntry.java` is ported.
+#[derive(Debug, Clone)]
+pub struct CallgraphEntry {
+    dest: Arc<crate::feature::bsim::query::description::FunctionDescription>,
+    lochash: i32,
+}
+
+impl CallgraphEntry {
+    /// Java: `CallgraphEntry(FunctionDescription d, int lhash)`.
+    pub fn new(
+        dest: Arc<crate::feature::bsim::query::description::FunctionDescription>,
+        lochash: i32,
+    ) -> Self {
+        Self { dest, lochash }
+    }
+
+    /// The called function. Returned as the [`Arc`] itself so callers can compare identity.
+    pub fn get_function_description(
+        &self,
+    ) -> &Arc<crate::feature::bsim::query::description::FunctionDescription> {
+        &self.dest
+    }
+
+    pub fn get_local_hash(&self) -> i32 {
+        self.lochash
+    }
+
+    /// Java: `CallgraphEntry.saveXml(FunctionDescription src, Writer fwrite)`.
+    pub fn save_xml<W: std::io::Write>(
+        &self,
+        src: &crate::feature::bsim::query::description::FunctionDescription,
+        fwrite: &mut W,
+    ) -> std::io::Result<()> {
+        use crate::util::xml::spec_xml_utils;
+
+        let mut buf = String::new();
+        buf.push_str("<call");
+        spec_xml_utils::xml_escape_attribute(&mut buf, "dest", self.dest.get_function_name());
+        if self.dest.get_address() != -1 {
+            spec_xml_utils::encode_unsigned_integer_attribute(
+                &mut buf,
+                "addr",
+                self.dest.get_address(),
+            );
+        }
+        if self.lochash != 0 {
+            spec_xml_utils::encode_unsigned_integer_attribute(
+                &mut buf,
+                "local",
+                self.lochash as i64,
+            );
+        }
+        let srcexe = src.get_executable_record();
+        let destexe = self.dest.get_executable_record();
+        if !Arc::ptr_eq(srcexe, destexe) {
+            buf.push_str(">\n");
+            if !destexe.is_library() {
+                buf.push_str("  <md5>");
+                buf.push_str(destexe.get_md5());
+                buf.push_str("</md5>\n");
+            }
+            buf.push_str("  <name>");
+            spec_xml_utils::xml_escape(&mut buf, destexe.get_name_exec());
+            buf.push_str("</name>\n");
+            if srcexe.get_architecture() != destexe.get_architecture() {
+                buf.push_str("  <arch>");
+                spec_xml_utils::xml_escape(&mut buf, destexe.get_architecture());
+                buf.push_str("</arch>\n");
+            }
+            if srcexe.get_name_compiler() != destexe.get_name_compiler() {
+                buf.push_str("  <compiler>");
+                spec_xml_utils::xml_escape(&mut buf, destexe.get_name_compiler());
+                buf.push_str("</compiler>\n");
+            }
+            buf.push_str("</call>\n");
+        } else {
+            buf.push_str("/>\n");
+        }
+        fwrite.write_all(buf.as_bytes())
+    }
+
+    /// Java: `CallgraphEntry.restoreXml(...)`, which resolves the callee through the manager and
+    /// records the link. The placeholder discards the `<call>` subtree -- no link is created --
+    /// so that the surrounding parse stays well formed and terminates.
+    pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
+        parser: &mut P,
+        _man: &mut crate::feature::bsim::query::description::DescriptionManager,
+        _src: &mut crate::feature::bsim::query::description::FunctionDescription,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        parser.discard_sub_tree();
+        Ok(())
+    }
+}
+
+impl PartialEq for CallgraphEntry {
+    fn eq(&self, other: &Self) -> bool {
+        *self.dest == *other.dest
+    }
+}
+
+impl Eq for CallgraphEntry {}
+
+impl PartialOrd for CallgraphEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for CallgraphEntry {
+    /// Java: `compareTo` defers entirely to the called function's ordering.
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.dest.cmp(&other.dest)
+    }
+}
+
+/// Placeholder for `ResponseAdjustIndex` type. Response from vector index adjustment operations.
+pub trait ResponseAdjustIndex: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `ResponsePassword` type. Response from password change operations.
+pub trait ResponsePassword: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `ResponseInsert` type. Response from an insert-request operation.
+pub trait ResponseInsert: Send + Sync {
+    fn merge_results(&self, subresponse: &dyn QueryResponseRecord);
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `ResponsePrewarm` type. Response from a prewarm-request operation.
+pub trait ResponsePrewarm: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `ResponseChildren` type. Response from a query-children operation.
+pub trait ResponseChildren: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `FunctionEntry` type. A saved key referencing a specific function by name
+/// (and optionally address) within an executable, used by [`crate::feature::bsim::query::protocol::QueryChildren`].
+pub trait FunctionEntry: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+}
+
+/// Placeholder for `ResponseCluster` type. Response from a query-cluster operation, used by
+/// [`crate::feature::bsim::query::protocol::QueryCluster`].
+pub trait ResponseCluster: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `ExeSpecifier` type. Specifies an executable for query operations.
+pub trait ExeSpecifier: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser);
+}
+
+/// Placeholder for `ResponseDelete` type. Response from a query-delete operation.
+pub trait ResponseDelete: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser);
+}
+
+/// Placeholder for `BSimFilter` type. Filters applied to a BSim query, used by
+/// [`crate::feature::bsim::query::protocol::QueryNearest`].
+pub trait BSimFilter: Send + Sync {
+    fn clone(&self) -> Box<dyn BSimFilter>;
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser);
+}
+
+/// Placeholder for `ResponseNearest` type. Response from a query-nearest operation, used by
+/// [`crate::feature::bsim::query::protocol::QueryNearest`].
+pub trait ResponseNearest: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `ResponseNearestVector` type. Response from a query-nearest-vector operation,
+/// used by [`crate::feature::bsim::query::protocol::query_nearest_vector::QueryNearestVector`].
+pub trait ResponseNearestVector: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `LSHVectorFactory` type. Factory for creating and restoring LSH vectors.
+pub trait LSHVectorFactory: Send + Sync {
+    fn build_zero_vector(&self) -> Box<dyn LSHVector>;
+    fn build_vector(&self, feature: &[i32]) -> Box<dyn LSHVector>;
+    fn restore_vector_from_xml(&self, parser: &dyn XmlPullParser) -> Box<dyn LSHVector>;
+    fn restore_vector_from_sql(&self, sql: &str) -> std::io::Result<Box<dyn LSHVector>>;
+    fn set(&self, w_factory: &dyn WeightFactory, i_lookup: &dyn IDFLookup, settings: i32);
+    fn is_loaded(&self) -> bool;
+    fn get_significance_scale(&self) -> f64;
+    fn get_significance_addend(&self) -> f64;
+    fn get_settings(&self) -> i32;
+    fn get_self_significance(&self, vector: &dyn LSHVector) -> f64;
+    fn calculate_significance(&self, data: &dyn VectorCompare) -> f64;
+    fn read_weights(&self, parser: &dyn XmlPullParser) -> std::io::Result<()>;
+}
+
+
+/// Placeholder for `DescriptionManager` type.
+pub trait DescriptionManager: Send + Sync {}
+
+/// Placeholder for `Configuration` type.
+pub trait Configuration: Send + Sync {
+    /// Java: `Configuration.loadTemplate(ResourceFile rootPath, String filename)`, used by
+    /// [`load_configuration_template`](crate::feature::bsim::query::function_database::load_configuration_template).
+    fn load_template(
+        &mut self,
+        root_path: &crate::generic::jar::resource_file::ResourceFile,
+        filename: &str,
+    ) -> std::io::Result<()>;
+}
+
+/// Placeholder for `WeightedLSHCosineVectorFactory` type.
+pub trait WeightedLSHCosineVectorFactory: Send + Sync {}
+
+/// Placeholder for `LSHVectorFactory` type.
+pub trait LSHVectorFactoryStub: Send + Sync {}
+
+/// Placeholder for `LSHVector` type.
+pub trait LSHVector: Send + Sync {}
+
+/// Placeholder for `WeightFactory` type.
+pub trait WeightFactory: Send + Sync {}
+
+/// Placeholder for `IDFLookup` type.
+pub trait IDFLookup: Send + Sync {}
+
+/// Placeholder for `VectorCompare` type.
+pub trait VectorCompare: Send + Sync {}
+
+/// Placeholder for the unported Java type `ResponseUpdate`, referenced by `QueryUpdate`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ResponseUpdate: Send + Sync {
+    fn save_xml(&self, fwrite: &dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> std::io::Result<()>;
+}
+
+/// Placeholder for the unported Java type `ResponseVectorId`, referenced by `QueryVectorId`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ResponseVectorId: Send + Sync {
+    fn save_xml(&self, fwrite: &dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> std::io::Result<()>;
+}
+
+/// Placeholder for the unported Java type `VectorResult`, referenced by
+/// [`ExecutableComparison`](crate::feature::bsim::query::client::ExecutableComparison).
+///
+/// A vector recovered from the database, together with how many functions instantiate it. The
+/// Java field is an `LSHVector`; the ported trait is not object safe, so the placeholder holds
+/// the one concrete vector the placeholder factory builds. Replace with the real port when
+/// `VectorResult.java` is ported.
+#[derive(Debug, Clone, Default)]
+pub struct VectorResult {
+    /// Id of the vector.
+    pub vectorid: i64,
+    /// Similarity score.
+    pub sim: f64,
+    /// Significance score.
+    pub signif: f64,
+    /// Number of functions instantiating this vector.
+    pub hitcount: i32,
+    /// The vector itself.
+    pub vec: crate::generic::seam_stubs::WeightedLSHCosineVector,
+}
+
+impl VectorResult {
+    /// Java: `VectorResult(long vid, int cnt, double sm, double sg, LSHVector v)`.
+    pub fn new(
+        vectorid: i64,
+        hitcount: i32,
+        sim: f64,
+        signif: f64,
+        vec: crate::generic::seam_stubs::WeightedLSHCosineVector,
+    ) -> Self {
+        Self { vectorid, sim, signif, hitcount, vec }
+    }
+}
+
+impl PartialEq for VectorResult {
+    /// Java: `equals` compares the vector id alone.
+    fn eq(&self, other: &Self) -> bool {
+        self.vectorid == other.vectorid
+    }
+}
+
+impl Eq for VectorResult {}
+
+/// Placeholder for the unported Java types `ExecutableScorer` and its subclass
+/// `ExecutableScorerSingle`, referenced by
+/// [`ExecutableComparison`](crate::feature::bsim::query::client::ExecutableComparison), which
+/// constructs one of the two and drives it.
+///
+/// The two Java classes are modelled as one struct with a "single" mode, because the only thing
+/// the comparison does with the distinction is `instanceof` plus the handful of methods that
+/// behave differently (`checkPreliminaryPairThreshold`, `commitSelfScore`, `prefetchSelfScores`);
+/// the comparison has to *construct* the scorer, so a trait object is not an option.
+///
+/// The score matrix itself is not modelled: accumulating scores needs `LSHVector::compare`,
+/// which the placeholder vector does not implement, so [`score_cluster`](Self::score_cluster)
+/// only applies the pair-count threshold that decides whether a cluster contributes at all.
+/// Replace with the real port when `ExecutableScorer.java` is ported.
+pub struct ExecutableScorer {
+    /// Java: `simThreshold`, the similarity threshold associated with the scores, or -1.0.
+    pub sim_threshold: f64,
+    /// Java: `sigThreshold`, the significance threshold associated with the scores, or -1.0.
+    pub sig_threshold: f64,
+    /// Java: `executableSet`, the set of executables being compared.
+    pub executable_set: crate::feature::bsim::query::description::DescriptionManager,
+    /// The self-score cache of `ExecutableScorerSingle`; `None` for the matrix scorer.
+    cache: Option<Box<dyn crate::feature::bsim::query::client::ScoreCaching>>,
+    /// Java: `singleExeXref`, the xref index of the singled-out executable, or -1.
+    single_exe_xref: i32,
+    /// Whether this is the single-executable (row) scorer.
+    single: bool,
+    /// Number of clusters that [`score_cluster`](Self::score_cluster) accepted.
+    clusters_scored: i32,
+}
+
+impl ExecutableScorer {
+    /// Java: `ExecutableScorer()`, the matrix scorer that compares everybody to everybody.
+    pub fn new() -> Self {
+        Self {
+            sim_threshold: -1.0,
+            sig_threshold: -1.0,
+            executable_set: crate::feature::bsim::query::description::DescriptionManager::new(),
+            cache: None,
+            single_exe_xref: -1,
+            single: false,
+            clusters_scored: 0,
+        }
+    }
+
+    /// Java: `ExecutableScorerSingle(ScoreCaching cache)`, the row scorer that compares one
+    /// executable to all the others. A `None` cache is Java's `TemporaryScoreCaching`, which
+    /// starts out unconfigured, hence the -1.0 thresholds.
+    pub fn new_single(
+        cache: Option<Box<dyn crate::feature::bsim::query::client::ScoreCaching>>,
+    ) -> Result<Self, crate::feature::bsim::query::LshException> {
+        let mut scorer = Self::new();
+        scorer.single = true;
+        if let Some(cache) = cache {
+            scorer.sim_threshold = cache.get_sim_threshold()?;
+            scorer.sig_threshold = cache.get_sig_threshold()?;
+            scorer.cache = Some(cache);
+        }
+        Ok(scorer)
+    }
+
+    /// True if this is the row scorer, i.e. Java's `scorer instanceof ExecutableScorerSingle`.
+    pub fn is_single(&self) -> bool {
+        self.single
+    }
+
+    /// Java: `getSimThreshold()`.
+    pub fn get_sim_threshold(&self) -> f64 {
+        self.sim_threshold
+    }
+
+    /// Java: `getSigThreshold()`.
+    pub fn get_sig_threshold(&self) -> f64 {
+        self.sig_threshold
+    }
+
+    /// Java: `numExecutables()`.
+    pub fn num_executables(&self) -> usize {
+        self.executable_set.num_executables()
+    }
+
+    /// Java: `transferSettings(DatabaseInformation)`.
+    pub fn transfer_settings(
+        &mut self,
+        info: &crate::feature::bsim::query::description::DatabaseInformation,
+    ) {
+        self.executable_set.set_version(info.major, info.minor);
+        self.executable_set.set_settings(info.settings);
+    }
+
+    /// Java: `addExecutable(ExecutableRecord)`, which transfers the record into the scorer's
+    /// own container.
+    pub fn add_executable(
+        &mut self,
+        exe_record: &ExecutableRecord,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        self.executable_set.transfer_executable(exe_record)?;
+        Ok(())
+    }
+
+    /// Java: `populateExecutableIndex()`.
+    pub fn populate_executable_index(&mut self) {
+        self.executable_set.populate_executable_xref();
+    }
+
+    /// Java: `setSingleExecutable(String)`. The row scorer refuses to re-single an executable.
+    pub fn set_single_executable(
+        &mut self,
+        md5: &str,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        if self.single && self.single_exe_xref >= 0 {
+            return Err(crate::feature::bsim::query::LshException::new(
+                "Cannot reset singled executable",
+            ));
+        }
+        self.single_exe_xref = self.executable_set.find_executable(md5)?.get_xref_index();
+        Ok(())
+    }
+
+    /// Java: `getSingularExecutable().getXrefIndex()`, or -1 before an executable is singled out.
+    pub fn get_single_exe_xref(&self) -> i32 {
+        self.single_exe_xref
+    }
+
+    /// Java: `initializeScores()`, which zeroes the score matrix (or the single row).
+    pub fn initialize_scores(&mut self) {
+        self.clusters_scored = 0;
+    }
+
+    /// Java: `labelAndFilter(DescriptionManager)`, which copies xref indices onto the queried
+    /// executables, zeroing the ones outside the scoring set.
+    pub fn label_and_filter(
+        &self,
+        manage: &crate::feature::bsim::query::description::DescriptionManager,
+    ) {
+        manage.match_and_set_xrefs(&self.executable_set);
+    }
+
+    /// Java: `checkPreliminaryPairThreshold(int, int)`. The matrix scorer compares the full
+    /// triangular pair count against the threshold; the row scorer defers the decision and only
+    /// rejects on the raw hit count.
+    pub fn check_preliminary_pair_threshold(&self, hitcount: i32, pair_threshold: i32) -> bool {
+        if self.single {
+            return hitcount < pair_threshold;
+        }
+        hitcount * (hitcount + 1) / 2 <= pair_threshold
+    }
+
+    /// Java: `scoreCluster(...)`, which pairs up every function in the cluster and accumulates
+    /// their significance into the score matrix, returning false if the pair threshold is
+    /// exceeded. The placeholder keeps the threshold decision and counts accepted clusters.
+    pub fn score_cluster(
+        &mut self,
+        _vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
+        _vec2_functions: &[crate::feature::bsim::query::description::DescriptionManager],
+        _vectors: &[VectorResult],
+        hitcount: i32,
+        pair_threshold: i32,
+    ) -> bool {
+        if hitcount * (hitcount + 1) / 2 > pair_threshold {
+            return false;
+        }
+        self.clusters_scored += 1;
+        true
+    }
+
+    /// The number of clusters accepted by [`score_cluster`](Self::score_cluster) since the last
+    /// [`initialize_scores`](Self::initialize_scores). Not a Java method; it stands in for
+    /// inspecting the score matrix, which the placeholder does not build.
+    pub fn clusters_scored(&self) -> i32 {
+        self.clusters_scored
+    }
+
+    /// Java: `resetStorage(double, double)`, which drops old scores and, for the row scorer,
+    /// resets the cache to the new thresholds.
+    pub fn reset_storage(
+        &mut self,
+        sim_thresh: f64,
+        sig_thresh: f64,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        self.sim_threshold = sim_thresh;
+        self.sig_threshold = sig_thresh;
+        self.clusters_scored = 0;
+        if let Some(cache) = self.cache.as_mut() {
+            cache.reset_storage(sim_thresh, sig_thresh)?;
+        }
+        Ok(())
+    }
+
+    /// Java: `commitSelfScore(String, float)`. The matrix scorer has nowhere to put the score.
+    pub fn commit_self_score(
+        &mut self,
+        md5: &str,
+        self_score: f32,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        match self.cache.as_mut() {
+            Some(cache) => cache.commit_self_score(md5, self_score),
+            None => Err(crate::feature::bsim::query::LshException::new(
+                "Cannot commit self-score with the matrix scorer",
+            )),
+        }
+    }
+
+    /// Java: `ExecutableScorerSingle.prefetchSelfScores(List)`, which asks the cache to pre-load
+    /// the registered executables' self-scores and reports the ones it has no score for.
+    ///
+    /// Java hands the whole record set to `ScoreCaching.prefetchScores`, which takes ownership of
+    /// the set; the manager's records are shared, so the placeholder derives the same "missing"
+    /// list by probing the cache one md5 at a time.
+    pub fn prefetch_self_scores(
+        &self,
+        missing: &mut Vec<Arc<ExecutableRecord>>,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        let Some(cache) = self.cache.as_ref() else {
+            return Ok(());
+        };
+        for exe in self.executable_set.get_executable_record_set() {
+            if cache.get_self_score(exe.get_md5()).is_err() {
+                missing.push(Arc::clone(exe));
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Default for ExecutableScorer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::fmt::Debug for ExecutableScorer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExecutableScorer")
+            .field("single", &self.single)
+            .field("sim_threshold", &self.sim_threshold)
+            .field("sig_threshold", &self.sig_threshold)
+            .field("num_executables", &self.executable_set.num_executables())
+            .finish()
+    }
+}
+
+/// Fills in every [`FunctionDatabase`] method a `BSimClientFactory` protocol-dispatch stub
+/// doesn't need with `unimplemented!()`, leaving only construction and the URL/label accessors
+/// real. `BSimClientFactory` only ever constructs and returns these objects -- it never calls into
+/// them -- so a full behavioral port isn't needed to unblock its own port.
+macro_rules! impl_bsim_function_database_stub {
+    ($ty:ident, $label:literal) => {
+        impl FunctionDatabase for $ty {
+            fn get_status(&self) -> crate::feature::bsim::query::function_database::Status {
+                unimplemented!(concat!($label, "::get_status is not ported yet"))
+            }
+
+            fn get_connection_type(
+                &self,
+            ) -> crate::feature::bsim::query::function_database::ConnectionType {
+                unimplemented!(concat!($label, "::get_connection_type is not ported yet"))
+            }
+
+            fn get_user_name(&self) -> String {
+                unimplemented!(concat!($label, "::get_user_name is not ported yet"))
+            }
+
+            fn get_lsh_vector_factory(&self) -> Arc<crate::generic::seam_stubs::LSHVectorFactory> {
+                unimplemented!(concat!($label, "::get_lsh_vector_factory is not ported yet"))
+            }
+
+            fn get_info(
+                &self,
+            ) -> Option<crate::feature::bsim::query::description::DatabaseInformation> {
+                unimplemented!(concat!($label, "::get_info is not ported yet"))
+            }
+
+            fn compare_layout(&self) -> i32 {
+                unimplemented!(concat!($label, "::compare_layout is not ported yet"))
+            }
+
+            fn get_server_info(&self) -> crate::feature::bsim::query::BSimServerInfo {
+                unimplemented!(concat!($label, "::get_server_info is not ported yet"))
+            }
+
+            fn get_url_string(&self) -> String {
+                self.url.clone()
+            }
+
+            fn initialize(&self) -> bool {
+                unimplemented!(concat!($label, "::initialize is not ported yet"))
+            }
+
+            fn close(&self) {}
+
+            fn get_last_error(&self) -> crate::feature::bsim::query::function_database::BSimError {
+                unimplemented!(concat!($label, "::get_last_error is not ported yet"))
+            }
+
+            fn query(&self, _query: &dyn BSimQuery) -> Option<Box<dyn QueryResponseRecord>> {
+                unimplemented!(concat!($label, "::query is not ported yet"))
+            }
+        }
+
+        impl std::fmt::Display for $ty {
+            /// Java: the stubbed database's `toString()`, which names the class and its URL.
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}({})", $label, self.url)
+            }
+        }
+    };
+}
+
+/// Placeholder for the unported Java type `PostgresFunctionDatabase`, referenced by
+/// [`crate::feature::bsim::query::b_sim_client_factory`]. Java's `PostgresFunctionDatabase` is a
+/// concrete `final class` (not an interface), so it is mirrored as a concrete struct rather than a
+/// trait object; only [`FunctionDatabase`], the interface it implements, needs `dyn`. Replace with
+/// the real port when `PostgresFunctionDatabase.java` is ported.
+pub struct PostgresFunctionDatabase {
+    url: String,
+    /// Java: `async`, whether database commits should be asynchronous.
+    pub is_async: bool,
+}
+
+impl PostgresFunctionDatabase {
+    /// Java: `PostgresFunctionDatabase(URL postgresUrl, boolean async)`.
+    pub fn new(postgres_url: &str, is_async: bool) -> Self {
+        Self { url: postgres_url.to_string(), is_async }
+    }
+}
+
+impl_bsim_function_database_stub!(PostgresFunctionDatabase, "PostgresFunctionDatabase");
+
+/// Placeholder for the unported Java type `ElasticDatabase`, referenced by
+/// [`crate::feature::bsim::query::b_sim_client_factory`]. Java's `ElasticDatabase` is a concrete
+/// class implementing the `FunctionDatabase` interface, so it is mirrored as a concrete struct
+/// rather than a trait object; only [`FunctionDatabase`] itself needs `dyn`. Replace with the real
+/// port when `ElasticDatabase.java` is ported.
+pub struct ElasticDatabase {
+    url: String,
+}
+
+impl ElasticDatabase {
+    /// Java: `ElasticDatabase(URL baseURL)`.
+    pub fn new(base_url: &str) -> Self {
+        Self { url: base_url.to_string() }
+    }
+}
+
+impl_bsim_function_database_stub!(ElasticDatabase, "ElasticDatabase");
+
+/// Placeholder for the unported Java type `H2FileFunctionDatabase`, referenced by
+/// [`crate::feature::bsim::query::b_sim_client_factory`]. Java's `H2FileFunctionDatabase` is a
+/// concrete class (extending `AbstractSQLFunctionDatabase`, which implements `FunctionDatabase`
+/// transitively), so it is mirrored as a concrete struct rather than a trait object; only
+/// [`FunctionDatabase`] itself needs `dyn`. Replace with the real port when
+/// `H2FileFunctionDatabase.java` is ported.
+pub struct H2FileFunctionDatabase {
+    url: String,
+}
+
+impl H2FileFunctionDatabase {
+    /// Java: `H2FileFunctionDatabase(URL bsimURL)`.
+    pub fn new(bsim_url: &str) -> Self {
+        Self { url: bsim_url.to_string() }
+    }
+}
+
+impl_bsim_function_database_stub!(H2FileFunctionDatabase, "H2FileFunctionDatabase");
+
+/// Placeholder for the unported Java type `AbstractSQLFunctionDatabase`, referenced by
+/// [`crate::feature::bsim::query::client::id_sql_resolution`]. Java's
+/// `AbstractSQLFunctionDatabase<VF extends LSHVectorFactory> implements SQLFunctionDatabase`, so
+/// this stub extends the already-ported
+/// [`SQLFunctionDatabase`](crate::feature::bsim::query::sql_function_database::SQLFunctionDatabase)
+/// trait rather than repeating its members. Trimmed to the four package-private query helpers
+/// `IDSQLResolution`'s subclasses call (`queryArchString`, `queryCompilerString`,
+/// `queryCategoryString`, `recoverExternalFunctionId`); see `AbstractSQLFunctionDatabase.java` for
+/// the type's full surface. Each Java method `throws SQLException` (and
+/// `recoverExternalFunctionId` also `throws LSHException`, which `IDSQLResolution.ExternalFunction`
+/// rewraps into a `SQLException`); both collapse to `io::Error` here. Replace with the real port
+/// when `AbstractSQLFunctionDatabase.java` is ported.
+pub trait AbstractSQLFunctionDatabase:
+    crate::feature::bsim::query::sql_function_database::SQLFunctionDatabase
+{
+    /// Java: `queryArchString(String value)`.
+    fn query_arch_string(&self, value: &str) -> std::io::Result<i64>;
+
+    /// Java: `queryCompilerString(String value)`.
+    fn query_compiler_string(&self, value: &str) -> std::io::Result<i64>;
+
+    /// Java: `queryCategoryString(String value)`.
+    fn query_category_string(&self, value: &str) -> std::io::Result<i64>;
+
+    /// Java: `recoverExternalFunctionId(String exename, String functionname, String reparch)`.
+    fn recover_external_function_id(
+        &self,
+        exe_name: &str,
+        func_name: &str,
+        rep_arch: &str,
+    ) -> std::io::Result<i64>;
+}
+
+/// Combines the checked exceptions declared on `FidFile.getFidDB(boolean)`.
+#[derive(thiserror::Error, Debug)]
+pub enum GetFidDbError {
+    #[error(transparent)]
+    Version(#[from] crate::util::exception::VersionException),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
+
+/// Placeholder for the unported Java type `FidFile`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`] and
+/// [`crate::feature::fid::db::fid_query_service::FidQueryService`]. Stubs the members those types
+/// call: the installation/packed distinction that decides how the database handle is opened, the
+/// two name accessors, the close callback, and the active/language-filtering/database-opening
+/// surface used to build a `FidQueryService`. Replace with the real port when `FidFile.java` is
+/// ported.
+pub trait FidFile: Send + Sync {
+    /// Java: `FidFile.getName()`, the simple file name of the backing FID database file.
+    fn get_name(&self) -> String;
+
+    /// Java: `FidFile.getPath()`, the absolute path of the backing FID database file.
+    fn get_path(&self) -> String;
+
+    /// Java: `FidFile.isInstalled()`, true for the read-only raw database files shipped with
+    /// Ghidra (which can never be opened for update).
+    fn is_installed(&self) -> bool;
+
+    /// Java: `FidFile.closingFidDB(FidDB)`, which clears the file's cached updateable handle when
+    /// the database it points at is actually closed.
+    fn closing_fid_db(&self, fid_db: &crate::feature::fid::db::fid_db::FidDB);
+
+    /// Java: `FidFile.isActive()`, whether this file should be included when building a
+    /// `FidQueryService`.
+    fn is_active(&self) -> bool;
+
+    /// Java: `FidFile.canProcessLanguage(Language)`, whether the underlying database is
+    /// applicable to the given language.
+    fn can_process_language(&self, language: &dyn crate::program::model::lang::language::Language) -> bool;
+
+    /// Java: `FidFile.getFidDB(boolean)`, opening (or returning the cached) `FidDB` for this file.
+    fn get_fid_db(&self, open_for_update: bool) -> Result<crate::feature::fid::db::fid_db::FidDB, GetFidDbError>;
+}
+
+/// Placeholder for the unported Java type `LibrariesTable`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`]. Java's static `createTable(DBHandle)` is omitted
+/// because `FidDB` only calls it from `createNewFidDatabase`, which needs the unported
+/// `PackedDBHandle`. Replace with the real port when `LibrariesTable.java` is ported.
+pub trait LibrariesTable: Send + Sync {
+    /// Java: `createLibrary(...)`, returning the newly inserted library record.
+    #[allow(clippy::too_many_arguments)]
+    fn create_library(
+        &self,
+        library_family_name: &str,
+        library_version: &str,
+        library_variant: &str,
+        ghidra_version: &str,
+        language_id: &crate::program::model::lang::language_id::LanguageID,
+        language_version: i32,
+        language_minor_version: i32,
+        compiler_spec_id: &crate::program::model::lang::compiler_spec_id::CompilerSpecID,
+    ) -> std::io::Result<crate::framework::db::record::DBRecord>;
+
+    /// Java: `getLibraries()`.
+    fn get_libraries(
+        &self,
+    ) -> std::io::Result<Vec<crate::feature::fid::db::library_record::LibraryRecord>>;
+
+    /// Java: `getLibrariesByName(String family, String version, String variant)`, where the
+    /// version and variant are optional filters (Java passes `null` to mean "any").
+    fn get_libraries_by_name(
+        &self,
+        family: &str,
+        version: Option<&str>,
+        variant: Option<&str>,
+    ) -> std::io::Result<Vec<crate::feature::fid::db::library_record::LibraryRecord>>;
+
+    /// Java: `getLibraryByID(long id)`, which returns `null` when no such library exists.
+    fn get_library_by_id(
+        &self,
+        id: i64,
+    ) -> std::io::Result<Option<crate::framework::db::record::DBRecord>>;
+}
+
+/// Placeholder for the unported Java type `StringRecord`, referenced by
+/// [`crate::feature::fid::db::function_record::FunctionRecord`]. `StringRecord` is a concrete
+/// Java class (a thin wrapper around a stored string), not an interface, so this stub is a
+/// concrete struct rather than a trait -- see the "Trait objects" note on this type. Replace with
+/// the real port when `StringRecord.java` is ported.
+pub struct StringRecord {
+    value: String,
+}
+
+impl StringRecord {
+    pub fn new(value: String) -> Self {
+        Self { value }
+    }
+
+    /// Java: `StringRecord.getValue()`.
+    pub fn get_value(&self) -> String {
+        self.value.clone()
+    }
+}
+
+/// Placeholder for the unported Java type `StringsTable`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`] and
+/// [`crate::feature::fid::db::function_record::FunctionRecord`]. Replace with the real port when
+/// `StringsTable.java` is ported.
+pub trait StringsTable: Send + Sync {
+    /// Java: `StringsTable.lookupString(long id)`, returning `None` when no string with that id
+    /// exists.
+    fn lookup_string(&self, id: i64) -> Option<StringRecord>;
+}
+
+/// Placeholder for the unported Java type `FunctionsTable`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`]. Replace with the real port when
+/// `FunctionsTable.java` is ported.
+pub trait FunctionsTable: Send + Sync {
+    /// Java: `getFullHashValueAtOrAfter(long value)`, which returns `null` when the database
+    /// holds no hash at or after `value`.
+    fn get_full_hash_value_at_or_after(&self, value: i64) -> std::io::Result<Option<i64>>;
+
+    /// Java: `getFunctionRecordsBySpecificHash(long hash)`.
+    fn get_function_records_by_specific_hash(
+        &self,
+        hash: i64,
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByFullHash(long hash)`.
+    fn get_function_records_by_full_hash(
+        &self,
+        hash: i64,
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
+
+    /// Java: `createFunctionRecord(long libraryID, FidHashQuad, String name, long entryPoint,
+    /// String domainPath, boolean hasTerminator)`.
+    fn create_function_record(
+        &self,
+        library_id: i64,
+        hash_quad: &dyn crate::feature::fid::hash::fid_hash_quad::FidHashQuad,
+        name: &str,
+        entry_point: i64,
+        domain_path: &str,
+        has_terminator: bool,
+    ) -> std::io::Result<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
+
+    /// Java: `getFunctionRecordsByNameSubstring(String nameSearch)`.
+    fn get_function_records_by_name_substring(
+        &self,
+        name_search: &str,
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByNameRegex(String regex)`.
+    fn get_function_records_by_name_regex(
+        &self,
+        regex: &str,
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
+
+    /// Java: `getFunctionByID(long functionID)`, which returns `null` for an unknown id.
+    fn get_function_by_id(
+        &self,
+        function_id: i64,
+    ) -> std::io::Result<Option<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByDomainPathSubstring(String domainPathSearch)`.
+    fn get_function_records_by_domain_path_substring(
+        &self,
+        domain_path_search: &str,
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByLibraryAndName(LibraryRecord library, String name)`.
+    fn get_function_records_by_library_and_name(
+        &self,
+        library: &crate::feature::fid::db::library_record::LibraryRecord,
+        name: &str,
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
+
+    /// Java: `modifyFlags(long functionID, int flagMask, boolean value)`, which errors when the
+    /// function record does not exist.
+    fn modify_flags(&self, function_id: i64, flag_mask: i32, value: bool) -> std::io::Result<()>;
+}
+
+// ---------------------------------------------------------------------------
+// Placeholders for the `ghidra.feature.fid` types that
+// [`FidService`](crate::feature::fid::service::fid_service::FidService) reaches for before their
+// own ports land. See `STUBS.tsv` for provenance.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for the unported Java type `FidFileManager`, referenced by
+/// [`FidService`](crate::feature::fid::service::fid_service::FidService). Stubs only the two
+/// members `FidService` calls. Java's `FidFileManager.getInstance()` singleton accessor is
+/// deliberately absent: there is no file-manager state to hand out yet, so `FidService` takes the
+/// manager by injection until `FidFileManager.java` is ported.
+pub trait FidFileManager: Send + Sync {
+    /// Java: `FidFileManager.canQuery(Language)`, true when at least one active FID database can
+    /// process programs with the given language.
+    fn can_query(&self, language: &dyn crate::program::model::lang::language::Language) -> bool;
+
+    /// Java: `FidFileManager.openFidQueryService(Language, boolean)`, which opens every
+    /// applicable database and hands back the query service that owns them.
+    fn open_fid_query_service(
+        &self,
+        language: &dyn crate::program::model::lang::language::Language,
+        open_for_update: bool,
+    ) -> Result<crate::feature::fid::db::fid_query_service::FidQueryService, GetFidDbError>;
+}
+
+/// Placeholder for the unported Java type `FunctionBodyFunctionExtentGenerator`, the extent
+/// generator [`FidService`](crate::feature::fid::service::fid_service::FidService) installs by
+/// default. Real extent calculation needs the listing walk from
+/// `FunctionBodyFunctionExtentGenerator.java`; until that lands this yields no code units, which
+/// puts every function below the short-hash length threshold.
+pub struct FunctionBodyFunctionExtentGenerator;
+
+impl crate::feature::fid::hash::FunctionExtentGenerator for FunctionBodyFunctionExtentGenerator {
+    fn calculate_extent(
+        &self,
+        _func: &dyn crate::program::model::listing::Function,
+    ) -> Vec<Arc<dyn crate::program::model::listing::CodeUnit>> {
+        Vec::new()
+    }
+}
+
+/// Placeholder for the unported Java type `MessageDigestFidHasher`, the
+/// [`FidHasher`](crate::feature::fid::hash::FidHasher) that `FidService::get_hasher` builds. The
+/// constructor arguments Java passes are retained and readable, so callers can confirm how the
+/// service configured the hasher; the digesting itself lands with the port of
+/// `MessageDigestFidHasher.java`.
+pub struct MessageDigestFidHasher {
+    generator: Arc<dyn crate::feature::fid::hash::FunctionExtentGenerator + Send + Sync>,
+    code_unit_threshold: i8,
+    digest_factory: Arc<dyn crate::generic::hash::MessageDigestFactory + Send + Sync>,
+    skippers: Vec<Arc<dyn crate::util::search::instruction_skipper::InstructionSkipper + Send + Sync>>,
+}
+
+impl MessageDigestFidHasher {
+    /// Java: `new MessageDigestFidHasher(FunctionExtentGenerator, int, MessageDigestFactory,
+    /// List<InstructionSkipper>)`.
+    pub fn new(
+        generator: Arc<dyn crate::feature::fid::hash::FunctionExtentGenerator + Send + Sync>,
+        code_unit_threshold: i8,
+        digest_factory: Arc<dyn crate::generic::hash::MessageDigestFactory + Send + Sync>,
+        skippers: Vec<Arc<dyn crate::util::search::instruction_skipper::InstructionSkipper + Send + Sync>>,
+    ) -> Self {
+        Self { generator, code_unit_threshold, digest_factory, skippers }
+    }
+
+    /// The code unit count below which a function is too short to hash.
+    pub fn code_unit_threshold(&self) -> i8 {
+        self.code_unit_threshold
+    }
+
+    /// The instruction skippers this hasher was configured with, in the order supplied.
+    pub fn skippers(&self) -> &[Arc<dyn crate::util::search::instruction_skipper::InstructionSkipper + Send + Sync>] {
+        &self.skippers
+    }
+
+    /// The extent generator this hasher was configured with.
+    pub fn generator(
+        &self,
+    ) -> &Arc<dyn crate::feature::fid::hash::FunctionExtentGenerator + Send + Sync> {
+        &self.generator
+    }
+
+    /// The digest factory this hasher was configured with.
+    pub fn digest_factory(
+        &self,
+    ) -> &Arc<dyn crate::generic::hash::MessageDigestFactory + Send + Sync> {
+        &self.digest_factory
+    }
+}
+
+impl crate::feature::fid::hash::FidHasher for MessageDigestFidHasher {
+    fn hash(
+        &self,
+        _func: &dyn crate::program::model::listing::Function,
+    ) -> Result<
+        Option<Arc<dyn crate::feature::fid::hash::FidHashQuad>>,
+        crate::program::model::mem::MemoryAccessException,
+    > {
+        Ok(None)
+    }
+}
+
+/// Placeholder for the unported Java type `FidSearchResult`, the per-function result
+/// `FidProgramSeeker.search` produces. Java's `function`/`hashQuad`/`matches` fields arrive with
+/// the port of `FidSearchResult.java`.
+pub struct FidSearchResult;
+
+impl FidSearchResult {
+    /// Java: `FidSearchResult.filterBySymbolPrefix(String prefix)`, which drops matches whose
+    /// name does not start with the prefix.
+    pub fn filter_by_symbol_prefix(&mut self, _prefix: &str) {}
+}
+
+/// Placeholder for the unported Java type `FidProgramSeeker`, the search context
+/// `FidService::get_program_seeker` hands out. The configuration Java passes to the constructor
+/// is retained and readable; the hash search itself lands with the port of
+/// `FidProgramSeeker.java`.
+pub struct FidProgramSeeker {
+    program: Arc<dyn crate::program::model::listing::Program>,
+    hasher: Arc<dyn crate::feature::fid::hash::FidHasher>,
+    short_hash_code_unit_length: i8,
+    medium_hash_code_unit_length_limit: i8,
+    score_threshold: f32,
+}
+
+impl FidProgramSeeker {
+    /// Java: `new FidProgramSeeker(FidQueryService, Program, FidHasher, int, int, float)`, which
+    /// declares `VersionException`/`IOException` because it eagerly reads from the query service.
+    /// The query service is accepted but not retained until the real seeker lands.
+    pub fn new(
+        _fid_query_service: &crate::feature::fid::db::fid_query_service::FidQueryService,
+        program: Arc<dyn crate::program::model::listing::Program>,
+        hasher: Arc<dyn crate::feature::fid::hash::FidHasher>,
+        short_hash_code_unit_length: i8,
+        medium_hash_code_unit_length_limit: i8,
+        score_threshold: f32,
+    ) -> Result<Self, GetFidDbError> {
+        Ok(Self {
+            program,
+            hasher,
+            short_hash_code_unit_length,
+            medium_hash_code_unit_length_limit,
+            score_threshold,
+        })
+    }
+
+    /// The program this seeker searches.
+    pub fn program(&self) -> &Arc<dyn crate::program::model::listing::Program> {
+        &self.program
+    }
+
+    /// The hasher this seeker was configured with.
+    pub fn hasher(&self) -> &Arc<dyn crate::feature::fid::hash::FidHasher> {
+        &self.hasher
+    }
+
+    /// The short-hash length (in code units) this seeker was configured with.
+    pub fn short_hash_code_unit_length(&self) -> i8 {
+        self.short_hash_code_unit_length
+    }
+
+    /// The medium-hash length limit (in code units) this seeker was configured with.
+    pub fn medium_hash_code_unit_length_limit(&self) -> i8 {
+        self.medium_hash_code_unit_length_limit
+    }
+
+    /// The code unit score a match must meet to be reported.
+    pub fn score_threshold(&self) -> f32 {
+        self.score_threshold
+    }
+
+    /// Java: `FidProgramSeeker.search(TaskMonitor)`.
+    pub fn search(
+        &self,
+        _monitor: &dyn TaskMonitor,
+    ) -> Result<Vec<FidSearchResult>, CancelledException> {
+        Ok(Vec::new())
+    }
+}
+
+/// Placeholder for the unported Java type `FidPopulateResult`, the report
+/// `FidServiceLibraryIngest.create()` returns. Java's tallies and disposition maps arrive with
+/// the port of `FidPopulateResult.java`.
+pub struct FidPopulateResult;
+
+/// Placeholder for the unported Java type `FidServiceLibraryIngest`, which
+/// `FidService::create_new_library_from_programs` drives. The library coordinates Java passes to
+/// the constructor are retained; the ingest itself lands with the port of
+/// `FidServiceLibraryIngest.java`.
+pub struct FidServiceLibraryIngest {
+    library_family_name: String,
+    library_version: String,
+    library_variant: String,
+    language_id: Option<crate::program::model::lang::language_id::LanguageID>,
+    common_symbols: Vec<String>,
+}
+
+impl FidServiceLibraryIngest {
+    /// Java: `new FidServiceLibraryIngest(FidDB, FidService, String, String, String,
+    /// List<DomainFile>, Predicate<Pair<Function, FidHashQuad>>, LanguageID, List<LibraryRecord>,
+    /// TaskMonitor)`. Everything the real ingest would consume while walking the programs -- the
+    /// database, the service, the domain files, the function filter, the link libraries and the
+    /// monitor -- is accepted but not retained yet.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        _fid_db: &crate::feature::fid::db::fid_db::FidDB,
+        _service: &crate::feature::fid::service::fid_service::FidService,
+        library_family_name: &str,
+        library_version: &str,
+        library_variant: &str,
+        _program_domain_files: &[Arc<dyn crate::framework::model::DomainFile>],
+        _function_filter: &dyn Fn(
+            &dyn crate::program::model::listing::Function,
+            &dyn crate::feature::fid::hash::FidHashQuad,
+        ) -> bool,
+        language_id: Option<&crate::program::model::lang::language_id::LanguageID>,
+        _link_libraries: &[crate::feature::fid::db::library_record::LibraryRecord],
+        _monitor: &dyn TaskMonitor,
+    ) -> Self {
+        Self {
+            library_family_name: library_family_name.to_string(),
+            library_version: library_version.to_string(),
+            library_variant: library_variant.to_string(),
+            language_id: language_id.cloned(),
+            common_symbols: Vec::new(),
+        }
+    }
+
+    /// The library family name this ingest was configured with.
+    pub fn library_family_name(&self) -> &str {
+        &self.library_family_name
+    }
+
+    /// The library version this ingest was configured with.
+    pub fn library_version(&self) -> &str {
+        &self.library_version
+    }
+
+    /// The library variant this ingest was configured with.
+    pub fn library_variant(&self) -> &str {
+        &self.library_variant
+    }
+
+    /// The language id this ingest filters programs on, if any.
+    pub fn language_id(&self) -> Option<&crate::program::model::lang::language_id::LanguageID> {
+        self.language_id.as_ref()
+    }
+
+    /// The symbols marked as common, for which no relations are generated.
+    pub fn common_symbols(&self) -> &[String] {
+        &self.common_symbols
+    }
+
+    /// Java: `FidServiceLibraryIngest.markCommonChildReferences(List<String>)`.
+    pub fn mark_common_child_references(&mut self, symbols: &[String]) {
+        self.common_symbols = symbols.to_vec();
+    }
+
+    /// Java: `FidServiceLibraryIngest.create()`.
+    pub fn create(&mut self) -> std::io::Result<FidPopulateResult> {
+        Ok(FidPopulateResult)
+    }
+}
+
+/// Placeholder for the unported Java type `InstructionSequence`
+/// (`ghidra.bitpatterns.info.InstructionSequence`), referenced by
+/// [`FunctionBitPatternInfo`](crate::feature::bitpatterns::info::function_bit_pattern_info::FunctionBitPatternInfo).
+///
+/// `InstructionSequence` is a concrete Java class (not an interface), so this stub is a struct
+/// rather than a trait. It carries only what `FunctionBitPatternInfo` needs: the three parallel
+/// slot arrays (mnemonic, size, comma-separated operands) that the data-gathering constructor
+/// fills in, plus the `toString` rendering that `FunctionBitPatternInfo.toString` embeds.
+/// Java's arrays are pre-sized to the sequence length and left holding nulls for slots that were
+/// never reached, which is why each slot is an `Option` here. Replace with the real port when
+/// `InstructionSequence.java` is ported.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+pub struct InstructionSequence {
+    instructions: Vec<Option<String>>,
+    sizes: Vec<Option<i32>>,
+    comma_separated_operands: Vec<Option<String>>,
+}
+
+impl InstructionSequence {
+    /// Java: `new InstructionSequence(int length)` - allocates `length` empty slots.
+    pub fn with_length(length: usize) -> Self {
+        Self {
+            instructions: vec![None; length],
+            sizes: vec![None; length],
+            comma_separated_operands: vec![None; length],
+        }
+    }
+
+    /// Java: `getInstructions()`.
+    pub fn get_instructions(&self) -> &[Option<String>] {
+        &self.instructions
+    }
+
+    /// Mutable view of the mnemonic slots, standing in for Java's array writes
+    /// (`getInstructions()[j] = ...`).
+    pub fn instructions_mut(&mut self) -> &mut [Option<String>] {
+        &mut self.instructions
+    }
+
+    /// Java: `getSizes()`.
+    pub fn get_sizes(&self) -> &[Option<i32>] {
+        &self.sizes
+    }
+
+    /// Mutable view of the size slots, standing in for Java's `getSizes()[j] = ...`.
+    pub fn sizes_mut(&mut self) -> &mut [Option<i32>] {
+        &mut self.sizes
+    }
+
+    /// Java: `getCommaSeparatedOperands()`.
+    pub fn get_comma_separated_operands(&self) -> &[Option<String>] {
+        &self.comma_separated_operands
+    }
+
+    /// Mutable view of the operand slots, standing in for Java's
+    /// `getCommaSeparatedOperands()[j] = ...`.
+    pub fn comma_separated_operands_mut(&mut self) -> &mut [Option<String>] {
+        &mut self.comma_separated_operands
+    }
+}
+
+impl std::fmt::Display for InstructionSequence {
+    /// Mirrors `InstructionSequence.toString()`: `mnemonic:size (operands)` per slot, separated by
+    /// a single space. Java renders unset slots through `StringBuilder.append((Object) null)`,
+    /// i.e. the literal text `null`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let size = self.instructions.len();
+        for i in 0..size {
+            let mnemonic = self.instructions[i].as_deref().unwrap_or("null");
+            let operands = self.comma_separated_operands[i].as_deref().unwrap_or("null");
+            match self.sizes[i] {
+                Some(s) => write!(f, "{}:{} ({})", mnemonic, s, operands)?,
+                None => write!(f, "{}:null ({})", mnemonic, operands)?,
+            }
+            if i != size - 1 {
+                write!(f, " ")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Z3 seam (referenced by `SymValueZ3`)
+//
+// `com.microsoft.z3.*` is a third-party binding that this crate has no Rust equivalent for yet
+// (there is no `z3` dependency in `Cargo.toml`). `SymValueZ3` stores only *serialized* SMT-LIB2
+// text, so the only thing it needs from Z3 is a factory for expressions plus SMT-LIB2
+// serialization/parsing. The traits below are that seam: exactly the surface `SymValueZ3` uses,
+// named after the Java methods they stand in for. A real `z3` binding (or an in-crate SMT term
+// builder) implements `Z3Context` and the two expression traits, and nothing in `SymValueZ3`
+// changes.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for `com.microsoft.z3.Expr`: anything that renders as SMT-LIB2 text.
+pub trait Expr: Send + Sync {
+    /// Java: `Expr.toString()`, the SMT-LIB2 rendering of this expression.
+    fn to_smt_string(&self) -> String;
+}
+
+/// Placeholder for `com.microsoft.z3.BitVecExpr` (and the `BitVecNum` accessors `SymValueZ3`
+/// reaches for once an expression turns out to be a numeral).
+pub trait BitVecExpr: Expr {
+    /// Upcast to [`Expr`], so an expression can be handed to [`Z3InfixPrinter::infix`].
+    fn as_expr(&self) -> &dyn Expr;
+
+    /// Java: `BitVecExpr.getSortSize()`, the width of this bit-vector in bits.
+    fn sort_size(&self) -> u32;
+
+    /// Java: `Expr.isNumeral()`.
+    fn is_numeral(&self) -> bool;
+
+    /// Java: `BitVecNum.getBigInteger()`, or `None` if this is not a numeral. Arbitrary-precision
+    /// integers are modelled as `i128` throughout this crate.
+    fn to_big_integer(&self) -> Option<i128>;
+
+    /// Java: `BitVecNum.getLong()`, or `None` if this is not a numeral or does not fit.
+    fn to_long(&self) -> Option<i64>;
+}
+
+/// Placeholder for `com.microsoft.z3.BoolExpr`.
+pub trait BoolExpr: Expr {
+    /// Upcast to [`Expr`], so an expression can be handed to [`Z3InfixPrinter::infix`].
+    fn as_expr(&self) -> &dyn Expr;
+
+    /// Java: `(BitVecExpr) Expr.getArgs()[index]`. `SymValueZ3` uses this to unwrap the
+    /// `(= b b)` assertion its bit-vector serialization is wrapped in.
+    fn bit_vec_arg(&self, index: usize) -> Option<Box<dyn BitVecExpr>>;
+}
+
+/// Placeholder for `com.microsoft.z3.Context`, restricted to the expression constructors and the
+/// SMT-LIB2 serialization/parsing that `SymValueZ3` performs.
+pub trait Z3Context: Send + Sync {
+    /// Java: `ctx.mkSolver(); solver.add(ctx.mkEq(b, b)); solver.toString()`. A bit-vector has no
+    /// SMT-LIB2 assertion form of its own, so Z3 round-trips it as the trivial equality
+    /// (see <https://github.com/Z3Prover/z3/issues/2674>).
+    fn smt_lib_for_bit_vec(&self, b: &dyn BitVecExpr) -> String;
+
+    /// Java: `ctx.mkSolver(); solver.add(b); solver.toString()`.
+    fn smt_lib_for_bool(&self, b: &dyn BoolExpr) -> String;
+
+    /// Java: `ctx.parseSMTLIB2String(smt, null, null, null, null)[0]`, i.e. the first assertion.
+    fn parse_smt_lib2(&self, smt: &str) -> Option<Box<dyn BoolExpr>>;
+
+    /// Java: `ctx.mkBV(value, size_bits)`.
+    fn mk_bv(&self, value: i64, size_bits: u32) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkTrue()`.
+    fn mk_true(&self) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkFalse()`.
+    fn mk_false(&self) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkEq(l, r)`.
+    fn mk_eq(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `(BitVecExpr) ctx.mkITE(predicate, t, f)`.
+    fn mk_ite_bv(
+        &self,
+        predicate: &dyn BoolExpr,
+        t: &dyn BitVecExpr,
+        f: &dyn BitVecExpr,
+    ) -> Box<dyn BitVecExpr>;
+
+    /// Java: `(BoolExpr) ctx.mkITE(predicate, t, f)`.
+    fn mk_ite_bool(
+        &self,
+        predicate: &dyn BoolExpr,
+        t: &dyn BoolExpr,
+        f: &dyn BoolExpr,
+    ) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVSLT(l, r)`.
+    fn mk_bvslt(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVSLE(l, r)`.
+    fn mk_bvsle(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVULT(l, r)`.
+    fn mk_bvult(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVULE(l, r)`.
+    fn mk_bvule(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVAddNoOverflow(l, r, signed)`.
+    fn mk_bv_add_no_overflow(
+        &self,
+        l: &dyn BitVecExpr,
+        r: &dyn BitVecExpr,
+        signed: bool,
+    ) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVSubNoOverflow(l, r)`.
+    fn mk_bv_sub_no_overflow(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVAdd(l, r)`.
+    fn mk_bvadd(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVSub(l, r)`.
+    fn mk_bvsub(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVXOR(l, r)`.
+    fn mk_bvxor(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVAND(l, r)`.
+    fn mk_bvand(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVOR(l, r)`.
+    fn mk_bvor(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVMul(l, r)`.
+    fn mk_bvmul(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVUDiv(l, r)`.
+    fn mk_bvudiv(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVSDiv(l, r)`.
+    fn mk_bvsdiv(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVSHL(l, r)`.
+    fn mk_bvshl(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVLSHR(l, r)`.
+    fn mk_bvlshr(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVASHR(l, r)`.
+    fn mk_bvashr(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkConcat(l, r)`.
+    fn mk_concat(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkZeroExt(bits, b)`.
+    fn mk_zero_ext(&self, bits: u32, b: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkSignExt(bits, b)`.
+    fn mk_sign_ext(&self, bits: u32, b: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkExtract(high, low, b)`.
+    fn mk_extract(&self, high: u32, low: u32, b: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkNot(u)`.
+    fn mk_not(&self, u: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkXor(l, r)`.
+    fn mk_xor(&self, l: &dyn BoolExpr, r: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkAnd(l, r)`.
+    fn mk_and(&self, l: &dyn BoolExpr, r: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkOr(l, r)`.
+    fn mk_or(&self, l: &dyn BoolExpr, r: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+}
+
+/// Placeholder for the unported Java type `Z3InfixPrinter`, referenced by `SymValueZ3::to_display`.
+/// Only the one method `SymValueZ3` calls is stubbed here; the rest of the printer's surface comes
+/// with the real port of `ghidra.pcode.emu.symz3.lib.Z3InfixPrinter`.
+pub trait Z3InfixPrinter: Send + Sync {
+    /// Java: `Z3InfixPrinter.infix(Expr)`, the human-readable infix rendering of an expression.
+    fn infix(&self, e: &dyn Expr) -> String;
+}
+
+// ---------------------------------------------------------------------------
+// BSim query staging + facade seam
+//
+// Placeholders for the unported Java types that
+// `ghidra.features.bsim.query.facade.SimilarFunctionQueryService` reaches for. Only the surface
+// that service actually uses is modelled here; each is replaced by the real port when its Java
+// file comes up.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for the unported Java type `StagingManager`, referenced by
+/// `SimilarFunctionQueryService`.
+///
+/// Java's `StagingManager` is an abstract class holding `globalQuery`, `totalsize` and
+/// `queriesmade`; the two counter accessors are concrete and the rest is abstract. Here the whole
+/// surface is a trait, because that concrete state cannot be shared through a Rust supertype.
+///
+/// Java's `getQuery()` hands back the query the manager is currently staging. `NullStaging`
+/// returns the *global* query it was handed by `initialize`; a Rust manager cannot hold that
+/// borrow, so [`get_query`](StagingManager::get_query) returns [`None`] to mean "the global query
+/// itself" and callers substitute the query they passed to `initialize`.
+pub trait StagingManager: Send + Sync {
+    /// Java: `getTotalSize()`, the total number of separate queries being staged.
+    fn get_total_size(&self) -> i32;
+
+    /// Java: `getQueriesMade()`, the number of queries sent so far.
+    fn get_queries_made(&self) -> i32;
+
+    /// Java: `getQuery()`. [`None`] means "the global query passed to
+    /// [`initialize`](StagingManager::initialize)".
+    fn get_query(
+        &mut self,
+    ) -> Option<&mut (dyn crate::feature::bsim::query::protocol::BSimQuery + 'static)>;
+
+    /// Java: `initialize(BSimQuery)`, establishing the first query stage. Returns `true` if an
+    /// initial stage was constructed.
+    fn initialize(
+        &mut self,
+        query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
+    ) -> Result<bool, crate::feature::bsim::query::LshException>;
+
+    /// Java: `nextStage()`, establishing the next query stage. Returns `true` if one was built.
+    fn next_stage(&mut self) -> Result<bool, crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for the unported Java type `NullStaging`, referenced by
+/// `SimilarFunctionQueryService::createStagingManager`.
+///
+/// The staging arithmetic is ported exactly; only the identity of the staged query differs (see
+/// [`StagingManager::get_query`]).
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct NullStaging {
+    total_size: i32,
+    queries_made: i32,
+}
+
+impl NullStaging {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl StagingManager for NullStaging {
+    fn get_total_size(&self) -> i32 {
+        self.total_size
+    }
+
+    fn get_queries_made(&self) -> i32 {
+        self.queries_made
+    }
+
+    fn get_query(
+        &mut self,
+    ) -> Option<&mut (dyn crate::feature::bsim::query::protocol::BSimQuery + 'static)> {
+        None // Java returns `globalQuery`.
+    }
+
+    fn initialize(
+        &mut self,
+        query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
+    ) -> Result<bool, crate::feature::bsim::query::LshException> {
+        self.total_size = 0;
+        self.queries_made = 0;
+        let Some(imanage) = query.get_description_manager() else {
+            return Ok(true);
+        };
+        self.total_size = imanage.num_functions() as i32;
+        Ok(self.total_size != 0) // Is there any data at all for an initial stage
+    }
+
+    fn next_stage(&mut self) -> Result<bool, crate::feature::bsim::query::LshException> {
+        self.queries_made = self.total_size;
+        Ok(false) // There is always only one stage
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionStaging`, referenced by
+/// `SimilarFunctionQueryService::createStagingManager`.
+///
+/// The stage accounting (`totalsize`, `queriesmade`, and how many functions each stage claims) is
+/// ported exactly. Copying the functions of a stage into the staged query's `DescriptionManager`
+/// needs `DescriptionManager.listAllFunctions`, which is not ported yet, so the staged query is
+/// created but left empty.
+pub struct FunctionStaging {
+    stage_size: i32,
+    total_size: i32,
+    queries_made: i32,
+    local_query: Option<Box<dyn crate::feature::bsim::query::protocol::BSimQuery>>,
+}
+
+impl FunctionStaging {
+    /// Java: `FunctionStaging(int stagesize)`.
+    pub fn new(stage_size: i32) -> Self {
+        Self { stage_size, total_size: 0, queries_made: 0, local_query: None }
+    }
+
+    /// The number of functions each stage claims.
+    pub fn get_stage_size(&self) -> i32 {
+        self.stage_size
+    }
+
+    /// Claim up to `stage_size` more functions, as Java's transfer loop does, and report how many
+    /// were claimed.
+    fn claim_stage(&mut self) -> i32 {
+        let count = (self.total_size - self.queries_made).clamp(0, self.stage_size);
+        self.queries_made += count;
+        count
+    }
+}
+
+impl StagingManager for FunctionStaging {
+    fn get_total_size(&self) -> i32 {
+        self.total_size
+    }
+
+    fn get_queries_made(&self) -> i32 {
+        self.queries_made
+    }
+
+    fn get_query(
+        &mut self,
+    ) -> Option<&mut (dyn crate::feature::bsim::query::protocol::BSimQuery + 'static)> {
+        self.local_query.as_deref_mut()
+    }
+
+    fn initialize(
+        &mut self,
+        query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
+    ) -> Result<bool, crate::feature::bsim::query::LshException> {
+        let Some(gmanage) = query.get_description_manager() else {
+            return Err(crate::feature::bsim::query::LshException::new(
+                "Query cannot be function staged",
+            ));
+        };
+        self.total_size = gmanage.num_functions() as i32;
+        self.queries_made = 0;
+        self.local_query = query.get_local_staging_copy();
+        Ok(self.claim_stage() != 0)
+    }
+
+    fn next_stage(&mut self) -> Result<bool, crate::feature::bsim::query::LshException> {
+        Ok(self.claim_stage() != 0)
+    }
+}
+
+/// Placeholder for the unported Java type `SFQueryInfo`, referenced by
+/// `SimilarFunctionQueryService::querySimilarFunctions`.
+///
+/// Only the four accessors the service calls are modelled. Java's `getPreFilter()` returns the
+/// stored [`PreFilter`], which holds boxed closures and so is lent out rather than copied.
+pub trait SFQueryInfo: Send + Sync {
+    /// Java: `buildQueryNearest()`.
+    fn build_query_nearest(&self) -> crate::feature::bsim::query::protocol::QueryNearest;
+
+    /// Java: `getFunctions()`, the set of function symbols to query for.
+    fn get_functions(&self) -> Vec<Box<dyn crate::program::database::symbol::FunctionSymbol>>;
+
+    /// Java: `getPreFilter()`.
+    fn get_pre_filter(&self) -> &PreFilter;
+
+    /// Java: `getNumberOfStages(int queriesPerStage)`.
+    fn get_number_of_stages(&self, queries_per_stage: i32) -> i32;
+}
+
+/// Placeholder for the unported Java type `SFOverviewInfo`, referenced by
+/// `SimilarFunctionQueryService::overviewSimilarFunctions`. The overview counterpart of
+/// [`SFQueryInfo`].
+pub trait SFOverviewInfo: Send + Sync {
+    /// Java: `buildQueryNearestVector()`.
+    fn build_query_nearest_vector(
+        &self,
+    ) -> crate::feature::bsim::query::protocol::QueryNearestVector;
+
+    /// Java: `getFunctions()`, the set of function symbols to query for.
+    fn get_functions(&self) -> Vec<Box<dyn crate::program::database::symbol::FunctionSymbol>>;
+
+    /// Java: `getPreFilter()`.
+    fn get_pre_filter(&self) -> &PreFilter;
+
+    /// Java: `getNumberOfStages(int queriesPerStage)`.
+    fn get_number_of_stages(&self, queries_per_stage: i32) -> i32;
+}
+
+/// Placeholder for the unported Java type `SFQueryResult`, referenced by
+/// `SimilarFunctionQueryService::querySimilarFunctions`, which is the only thing that constructs
+/// one.
+///
+/// Java holds the originating `SFQueryInfo`, the `DatabaseInfo` built from the server URL plus
+/// `DatabaseInformation`, and `ResponseNearest.result` (a `List<SimilarityResult>`). The facade
+/// `DatabaseInfo` is ported, so it is stored for real; the similarity list needs `ResponseNearest`,
+/// so the whole response is kept instead. The originating query info is not stored: it arrives as
+/// a borrowed `&dyn SFQueryInfo` that the result would have to outlive.
+#[derive(Clone)]
+pub struct SFQueryResult {
+    database_info: crate::feature::bsim::query::facade::DatabaseInfo,
+    response: std::sync::Arc<dyn crate::feature::bsim::query::protocol::QueryResponseRecord>,
+}
+
+impl SFQueryResult {
+    /// Java: `SFQueryResult(SFQueryInfo, String serverURL, DatabaseInformation, ResponseNearest)`,
+    /// whose first act is `new DatabaseInfo(serverURL, databaseInformation)`.
+    pub fn new(
+        database_info: crate::feature::bsim::query::facade::DatabaseInfo,
+        response: std::sync::Arc<dyn crate::feature::bsim::query::protocol::QueryResponseRecord>,
+    ) -> Self {
+        Self { database_info, response }
+    }
+
+    /// Java: `getDatabaseInfo()`.
+    pub fn get_database_info(&self) -> &crate::feature::bsim::query::facade::DatabaseInfo {
+        &self.database_info
+    }
+
+    /// Stands in for Java's `getSimilarityResults()`, which reads `ResponseNearest.result`.
+    pub fn get_response(
+        &self,
+    ) -> &std::sync::Arc<dyn crate::feature::bsim::query::protocol::QueryResponseRecord> {
+        &self.response
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.machinelearning.functionfinding.FunctionStartRFParamsDialog`,
+/// referenced by
+/// [`RandomForestFunctionFinderPlugin`](crate::feature::machine_learning::function_finding::random_forest_function_finder_plugin::RandomForestFunctionFinderPlugin).
+/// `FunctionStartRFParamsDialog` is a concrete Java class (not an interface), so this stub is a
+/// struct. Trimmed to the members the plugin actually calls: the training program the dialog was
+/// built for (`getTrainingSource()`, read back by `programClosed` to decide whether to dismiss the
+/// dialog), and the two lifecycle calls (`dispose()`, `dismissCallback()`). The real dialog's
+/// parameter-selection UI (`addGeneralActions`, model training, etc.) is out of scope until the
+/// class itself is ported.
+pub struct FunctionStartRFParamsDialog {
+    training_source: Arc<dyn crate::program::model::listing::program::Program>,
+}
+
+impl FunctionStartRFParamsDialog {
+    /// Java: `FunctionStartRFParamsDialog(RandomForestFunctionFinderPlugin)`, narrowed to the
+    /// training program the real constructor reads off the plugin's active navigation context.
+    pub fn new(training_source: Arc<dyn crate::program::model::listing::program::Program>) -> Self {
+        Self { training_source }
+    }
+
+    /// Java: `getTrainingSource()`.
+    pub fn get_training_source(&self) -> &Arc<dyn crate::program::model::listing::program::Program> {
+        &self.training_source
+    }
+
+    /// Java: `dispose()`. No-op until the real dialog (and anything it would need to release) is
+    /// ported.
+    pub fn dispose(&self) {}
+
+    /// Java: `dismissCallback()`. No-op until the real dialog is ported.
+    pub fn dismiss_callback(&self) {}
+}
+
+/// Placeholder for the unported Java type
+/// `ghidra.machinelearning.functionfinding.ProgramAssociatedComponentProviderAdapter`, referenced
+/// by
+/// [`RandomForestFunctionFinderPlugin`](crate::feature::machine_learning::function_finding::random_forest_function_finder_plugin::RandomForestFunctionFinderPlugin).
+/// Trimmed to the two members `addProvider`/`removeProvider`/`programClosed` actually call:
+/// `getProgram()` (used to key the plugin's `programsToProviders` map) and `closeComponent()`.
+/// `as_any_arc` mirrors the same re-erasure
+/// [`ListingContextAction::as_any_arc`](crate::app::seam_stubs::ListingContextAction::as_any_arc)
+/// uses, so a provider can be handed to
+/// [`PluginTool::add_component_provider`](crate::framework::seam_stubs::PluginTool::add_component_provider).
+pub trait ProgramAssociatedComponentProviderAdapter: Send + Sync {
+    /// Java: `getProgram()`.
+    fn get_program(&self) -> Arc<dyn crate::program::model::listing::program::Program>;
+
+    /// Java: `closeComponent()`.
+    fn close_component(&self);
+
+    /// Re-erases this provider so it can be handed to
+    /// [`PluginTool::add_component_provider`](crate::framework::seam_stubs::PluginTool::add_component_provider).
+    fn as_any_arc(self: Arc<Self>) -> Arc<dyn std::any::Any + Send + Sync>;
+}
+
+/// Placeholder for `ghidra.MiscellaneousPluginPackage`, referenced by
+/// [`RandomForestFunctionFinderPlugin`](crate::feature::machine_learning::function_finding::random_forest_function_finder_plugin::RandomForestFunctionFinderPlugin)'s
+/// `@PluginInfo` metadata (`packageName = MiscellaneousPluginPackage.NAME`) before the real class
+/// is ported. Only its `NAME` is needed, mirroring
+/// [`CorePluginPackage`](crate::app::seam_stubs::CorePluginPackage); the real class also carries
+/// the package's icon and description.
+pub struct MiscellaneousPluginPackage;
+
+impl MiscellaneousPluginPackage {
+    /// Mirrors `MiscellaneousPluginPackage.NAME`.
+    pub const NAME: &'static str = "Miscellaneous";
+}
+
+impl crate::framework::seam_stubs::PluginPackageLike for MiscellaneousPluginPackage {
+    fn name(&self) -> String {
+        Self::NAME.to_string()
+    }
+}

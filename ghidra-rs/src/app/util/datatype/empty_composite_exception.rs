@@ -83,12 +83,12 @@ mod tests {
     #[test]
     fn from_composite_formats_message() {
         struct MockComposite;
-        impl crate::program::model::data::data_type::DataType for MockComposite {}
-        impl Composite for MockComposite {
+        impl crate::program::model::data::data_type::DataType for MockComposite {
             fn get_display_name(&self) -> String {
                 "TestStruct".to_string()
             }
         }
+        impl Composite for MockComposite {}
 
         let composite = MockComposite;
         let error = EmptyCompositeException::from_composite(&composite);

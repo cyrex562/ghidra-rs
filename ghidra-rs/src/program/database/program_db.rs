@@ -82,6 +82,14 @@ impl Program for ProgramDB {
     fn get_address_factory(&self) -> Option<std::sync::Arc<dyn crate::program::model::address::AddressFactory>> {
         Some(self.language.get_address_factory())
     }
+
+    fn get_loaded_and_initialized_address_set(&self) -> std::boxed::Box<dyn crate::program::model::address::AddressSetView> {
+        std::boxed::Box::new(crate::program::model::address::AddressSet::new())
+    }
+
+    fn get_all_initialized_address_set(&self) -> std::boxed::Box<dyn crate::program::model::address::AddressSetView> {
+        std::boxed::Box::new(crate::program::model::address::AddressSet::new())
+    }
 }
 
 #[cfg(test)]

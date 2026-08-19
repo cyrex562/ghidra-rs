@@ -1,10 +1,12 @@
 pub mod commands;
 pub mod dyld;
 pub mod prelink;
+pub mod relocation;
 pub mod threadcommand;
 pub mod cpu_sub_types;
 pub mod mach_constants;
 pub mod mach_exception;
+pub mod mach_header_file_types;
 pub mod mach_header_flags;
 pub mod obsolete_exception;
 pub mod section_attributes;

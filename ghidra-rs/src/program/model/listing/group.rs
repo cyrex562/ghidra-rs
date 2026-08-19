@@ -68,6 +68,26 @@ pub trait Group: Any {
         names.push(self.get_name());
         GroupPath::new(names)
     }
+
+    /// Returns this group viewed as a [`ProgramModule`] when it is one.
+    ///
+    /// Mirrors Java's `child instanceof ProgramModule` check. The default returns
+    /// `None`; program-module implementations override it to return `Some(self)`.
+    fn as_program_module(
+        &self,
+    ) -> Option<&dyn crate::program::model::listing::program_module::ProgramModule> {
+        None
+    }
+
+    /// Returns this group viewed as a [`ProgramFragment`] when it is one.
+    ///
+    /// Mirrors Java's `child instanceof ProgramFragment` check. The default returns
+    /// `None`; program-fragment implementations override it to return `Some(self)`.
+    fn as_program_fragment(
+        &self,
+    ) -> Option<&dyn crate::program::model::listing::program_fragment::ProgramFragment> {
+        None
+    }
 }
 
 /// Builds the ancestor path (oldest ancestor first, this group last) by following the first

@@ -14,12 +14,11 @@ pub enum SleighError {
     MemoryAccess(#[from] MemoryAccessException),
 }
 
-pub trait MemBuffer: Send + Sync {
-    fn get_address(&self) -> Address;
-    fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException>;
-    fn get_bytes(&self, buf: &mut [u8], offset: i32) -> usize;
-    fn is_big_endian(&self) -> bool;
-}
+// `MemBuffer` was defined here, four methods deep, while Java puts it in
+// `ghidra.program.model.mem` -- and a second, unrelated definition lived in program/seam_stubs.rs.
+// The canonical port now lives in program/model/mem/mem_buffer.rs; this re-export keeps the 19
+// call sites that reached for it here working unchanged.
+pub use crate::program::model::mem::MemBuffer;
 
 pub struct ParserContext {
     pub addr: Address,

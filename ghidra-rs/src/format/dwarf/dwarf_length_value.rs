@@ -222,7 +222,10 @@ mod tests {
 
     #[test]
     fn zero_length_with_no_trailing_data_is_invalid() {
-        let mut r = MockReader::new(vec![0x00, 0x00, 0x00, 0x00], true);
+        // A zero length followed by non-zero (non-padding) data is not trailing
+        // padding, so `read` must reject it with the "Invalid DWARF length 0" error
+        // rather than treating it as an all-zeros-to-EOF pad.
+        let mut r = MockReader::new(vec![0x00, 0x00, 0x00, 0x00, 0x01], true);
         let err = DWARFLengthValue::read(&mut r, 4).unwrap_err();
         assert!(err.to_string().contains("Invalid DWARF length 0"));
     }

@@ -22,7 +22,7 @@ impl ExtRegisterReference {
     /// and primary status from the given reference.
     pub fn new(reference: &dyn Reference) -> Self {
         let reference_type = reference.reference_type();
-        let index = (reference_type.value() as u8).to_string();
+        let index = reference_type.value().to_string();
         let kind = reference_type.name().to_string();
         let op_index = reference.operand_index();
         let source_type = reference.source().display_string().to_string();
@@ -48,6 +48,16 @@ mod tests {
     use crate::program::model::address::Address;
     use crate::program::model::symbol::{RefType, SourceType};
 
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     struct MockReference {
         ref_type: RefType,
         operand_index: i32,
@@ -57,8 +67,12 @@ mod tests {
     }
 
     impl Reference for MockReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn to_address(&self) -> Address {
@@ -128,7 +142,7 @@ mod tests {
             ref_type: RefType::Data,
             operand_index: 0,
             source: SourceType::Default,
-            to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x1000),
+            to_address: Address::new(default_space(), 0x1000),
             is_primary: false,
         };
         let ext_ref = ExtRegisterReference::new(&mock_ref);
@@ -141,7 +155,7 @@ mod tests {
             ref_type: RefType::UnconditionalCall,
             operand_index: 1,
             source: SourceType::Default,
-            to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x2000),
+            to_address: Address::new(default_space(), 0x2000),
             is_primary: false,
         };
         let ext_ref = ExtRegisterReference::new(&mock_ref);
@@ -154,7 +168,7 @@ mod tests {
             ref_type: RefType::Data,
             operand_index: 2,
             source: SourceType::Default,
-            to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x3000),
+            to_address: Address::new(default_space(), 0x3000),
             is_primary: false,
         };
         let ext_ref = ExtRegisterReference::new(&mock_ref);
@@ -163,7 +177,7 @@ mod tests {
 
     #[test]
     fn extracts_to_address() {
-        let to_addr = Address::new(crate::program::model::address::AddressSpace::default_space(), 0x4000);
+        let to_addr = Address::new(default_space(), 0x4000);
         let mock_ref = MockReference {
             ref_type: RefType::Data,
             operand_index: 0,
@@ -181,7 +195,7 @@ mod tests {
             ref_type: RefType::Data,
             operand_index: 0,
             source: SourceType::Default,
-            to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x5000),
+            to_address: Address::new(default_space(), 0x5000),
             is_primary: true,
         };
         let ext_ref_primary = ExtRegisterReference::new(&mock_ref_primary);
@@ -191,7 +205,7 @@ mod tests {
             ref_type: RefType::Data,
             operand_index: 0,
             source: SourceType::Default,
-            to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x6000),
+            to_address: Address::new(default_space(), 0x6000),
             is_primary: false,
         };
         let ext_ref_secondary = ExtRegisterReference::new(&mock_ref_secondary);
@@ -213,7 +227,7 @@ mod tests {
                 ref_type: RefType::Data,
                 operand_index: 0,
                 source,
-                to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x7000),
+                to_address: Address::new(default_space(), 0x7000),
                 is_primary: false,
             };
             let ext_ref = ExtRegisterReference::new(&mock_ref);
@@ -228,7 +242,7 @@ mod tests {
             ref_type: RefType::Data,
             operand_index: 0,
             source: SourceType::Default,
-            to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x8000),
+            to_address: Address::new(default_space(), 0x8000),
             is_primary: false,
         };
         let ext_ref = ExtRegisterReference::new(&mock_ref);
@@ -251,7 +265,7 @@ mod tests {
                 ref_type,
                 operand_index: 0,
                 source: SourceType::Default,
-                to_address: Address::new(crate::program::model::address::AddressSpace::default_space(), 0x9000),
+                to_address: Address::new(default_space(), 0x9000),
                 is_primary: false,
             };
             let ext_ref = ExtRegisterReference::new(&mock_ref);
@@ -262,7 +276,7 @@ mod tests {
 
     #[test]
     fn preserves_all_fields_with_various_values() {
-        let to_addr = Address::new(crate::program::model::address::AddressSpace::default_space(), 0xdeadbeef);
+        let to_addr = Address::new(default_space(), 0xdeadbeef);
         let mock_ref = MockReference {
             ref_type: RefType::Read,
             operand_index: 3,

@@ -1,10 +1,14 @@
+pub mod action;
+pub mod action_context;
 pub mod actions;
+pub mod docking_context_listener;
 pub mod drop_target_handler;
 pub mod edit_listener;
 pub mod menu;
 pub mod options;
 pub mod seam_stubs;
 pub mod settings;
+pub mod spy;
 pub mod theme;
 pub mod util;
 pub mod widgets;

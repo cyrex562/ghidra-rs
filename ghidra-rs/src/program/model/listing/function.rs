@@ -7,7 +7,9 @@ use crate::program::model::address::{Address, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};
 use crate::program::model::symbol::{ExternalLocation, Namespace, NamespaceType, SourceType};
-use crate::program::seam_stubs::{PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+use crate::program::model::lang::prototype_model::PrototypeModel;
+use crate::program::seam_stubs::{StackFrame, VariableFilter};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::util::task::TaskMonitor;
 
@@ -507,12 +509,13 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)

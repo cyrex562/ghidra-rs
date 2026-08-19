@@ -1,0 +1,498 @@
+use std::collections::HashMap;
+
+use crate::program::model::lang::{Language, LanguageID};
+
+/// Manages options and metadata for a trace.
+///
+/// Port of `ghidra.trace.model.TraceOptionsManager`.
+///
+/// This trait provides access to and modification of trace-level configuration including:
+/// - Trace name
+/// - Creation date (as milliseconds since Unix epoch)
+/// - Base language and compiler specification
+/// - Platform identifier
+/// - Executable path
+pub trait TraceOptionsManager {
+    /// Returns all options as a map of string key-value pairs.
+    fn as_map(&self) -> HashMap<String, String>;
+
+    /// Sets the name of this trace.
+    fn set_name(&mut self, name: String);
+
+    /// Returns the name of this trace.
+    fn get_name(&self) -> &str;
+
+    /// Returns the creation date as milliseconds since Unix epoch.
+    fn get_creation_date(&self) -> i64;
+
+    /// Returns the base language of this trace.
+    fn get_base_language(&self) -> Box<dyn Language>;
+
+    /// Returns the base language ID of this trace.
+    fn get_base_language_id(&self) -> &LanguageID;
+
+    /// Returns the base language ID as a string.
+    fn get_base_language_id_name(&self) -> &str;
+
+    /// Sets the platform for this trace.
+    fn set_platform(&mut self, platform: String);
+
+    /// Returns the platform of this trace.
+    fn get_platform(&self) -> &str;
+
+    /// Sets the executable path for this trace.
+    fn set_executable_path(&mut self, path: String);
+
+    /// Returns the executable path of this trace.
+    fn get_executable_path(&self) -> &str;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+    struct MockLanguageID;
+
+    impl MockLanguageID {
+        fn new() -> LanguageID {
+            LanguageID::new("test:LE:32:default").unwrap()
+        }
+    }
+
+    struct MockLanguage;
+
+    impl crate::program::model::lang::Language for MockLanguage {
+        fn get_language_id(&self) -> LanguageID {
+            MockLanguageID::new()
+        }
+
+        fn get_language_description(&self) -> Box<dyn crate::program::model::lang::language_description::LanguageDescription> {
+            unimplemented!()
+        }
+
+        fn get_parallel_instruction_helper(
+            &self,
+        ) -> Option<Box<dyn crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper>> {
+            None
+        }
+
+        fn get_processor(&self) -> Box<dyn crate::program::seam_stubs::Processor> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_version(&self) -> i32 {
+            0
+        }
+
+        fn get_minor_version(&self) -> i32 {
+            0
+        }
+
+        fn get_address_factory(&self) -> Box<dyn crate::program::model::address::AddressFactory> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_default_space(&self) -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_default_data_space(
+            &self,
+        ) -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn is_big_endian(&self) -> bool {
+            false
+        }
+
+        fn get_instruction_alignment(&self) -> i32 {
+            1
+        }
+
+        fn supports_pcode(&self) -> bool {
+            true
+        }
+
+        fn is_volatile(&self, _addr: &crate::program::model::address::Address) -> bool {
+            false
+        }
+
+        fn parse(
+            &self,
+            _buf: &dyn crate::program::model::mem::MemBuffer,
+            _context: &mut dyn crate::program::model::lang::processor_context::ProcessorContext,
+            _in_delay_slot: bool,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype>,
+            crate::program::model::lang::language::ParseError,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_number_of_user_defined_op_names(&self) -> i32 {
+            0
+        }
+
+        fn get_user_defined_op_name(&self, _index: i32) -> Option<String> {
+            None
+        }
+
+        fn get_registers_at(
+            &self,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register_in_space(
+            &self,
+            _addrspc: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _offset: i64,
+            _size: i32,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_registers(&self) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register_names(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn get_register_by_name(
+            &self,
+            _name: &str,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_register_at(
+            &self,
+            _addr: &crate::program::model::address::Address,
+            _size: i32,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_program_counter(
+            &self,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_context_base_register(
+            &self,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_context_registers(&self) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_default_memory_blocks(
+            &self,
+        ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
+            Vec::new()
+        }
+
+        fn get_default_symbols(
+            &self,
+        ) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+            Vec::new()
+        }
+
+        fn get_segmented_space(&self) -> String {
+            String::new()
+        }
+
+        fn get_volatile_addresses(
+            &self,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn apply_context_settings(
+            &self,
+            _ctx: &mut dyn crate::program::model::listing::default_program_context::DefaultProgramContext,
+        ) {
+        }
+
+        fn reload_language(
+            &self,
+            _task_monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+
+        fn get_compatible_compiler_spec_descriptions(
+            &self,
+        ) -> Vec<Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>>
+        {
+            Vec::new()
+        }
+
+        fn get_compiler_spec_by_id(
+            &self,
+            _compiler_spec_id: &crate::program::model::lang::compiler_spec_id::CompilerSpecID,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
+            crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_default_compiler_spec(
+            &self,
+        ) -> Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn has_property(&self, _key: &str) -> bool {
+            false
+        }
+
+        fn get_property_as_int(&self, _key: &str, default_int: i32) -> i32 {
+            default_int
+        }
+
+        fn get_property_as_boolean(&self, _key: &str, default_boolean: bool) -> bool {
+            default_boolean
+        }
+
+        fn get_property_or(&self, _key: &str, default_string: &str) -> String {
+            default_string.to_string()
+        }
+
+        fn get_property(&self, _key: &str) -> Option<String> {
+            None
+        }
+
+        fn get_property_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+
+        fn has_manual(&self) -> bool {
+            false
+        }
+
+        fn get_manual_entry(
+            &self,
+            _instruction_mnemonic: &str,
+        ) -> Option<crate::util::manual_entry::ManualEntry> {
+            None
+        }
+
+        fn get_manual_instruction_mnemonic_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+
+        fn get_manual_exception(
+            &self,
+        ) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+            None
+        }
+
+        fn get_sorted_vector_registers(
+            &self,
+        ) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register_addresses(
+            &self,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_maximum_instruction_length(&self) -> Option<i32> {
+            None
+        }
+    }
+
+    struct MockTraceOptionsManager {
+        name: String,
+        creation_date: i64,
+        base_language_id: LanguageID,
+        platform: String,
+        executable_path: String,
+    }
+
+    impl MockTraceOptionsManager {
+        fn new() -> Self {
+            Self {
+                name: "test_trace".to_string(),
+                creation_date: 1234567890000,
+                base_language_id: MockLanguageID::new(),
+                platform: "x86".to_string(),
+                executable_path: "/bin/test".to_string(),
+            }
+        }
+    }
+
+    impl TraceOptionsManager for MockTraceOptionsManager {
+        fn as_map(&self) -> HashMap<String, String> {
+            let mut map = HashMap::new();
+            map.insert("name".to_string(), self.name.clone());
+            map.insert("creationDate".to_string(), self.creation_date.to_string());
+            map.insert(
+                "baseLanguageID".to_string(),
+                self.base_language_id.get_id_as_string().to_string(),
+            );
+            map.insert("platform".to_string(), self.platform.clone());
+            map.insert("executablePath".to_string(), self.executable_path.clone());
+            map
+        }
+
+        fn set_name(&mut self, name: String) {
+            self.name = name;
+        }
+
+        fn get_name(&self) -> &str {
+            &self.name
+        }
+
+        fn get_creation_date(&self) -> i64 {
+            self.creation_date
+        }
+
+        fn get_base_language(&self) -> Box<dyn Language> {
+            Box::new(MockLanguage)
+        }
+
+        fn get_base_language_id(&self) -> &LanguageID {
+            &self.base_language_id
+        }
+
+        fn get_base_language_id_name(&self) -> &str {
+            self.base_language_id.get_id_as_string()
+        }
+
+        fn set_platform(&mut self, platform: String) {
+            self.platform = platform;
+        }
+
+        fn get_platform(&self) -> &str {
+            &self.platform
+        }
+
+        fn set_executable_path(&mut self, path: String) {
+            self.executable_path = path;
+        }
+
+        fn get_executable_path(&self) -> &str {
+            &self.executable_path
+        }
+    }
+
+    #[test]
+    fn as_map_returns_all_options() {
+        let manager = MockTraceOptionsManager::new();
+        let map = manager.as_map();
+
+        assert_eq!(map.get("name"), Some(&"test_trace".to_string()));
+        assert_eq!(map.get("creationDate"), Some(&"1234567890000".to_string()));
+        assert_eq!(
+            map.get("baseLanguageID"),
+            Some(&"test:LE:32:default".to_string())
+        );
+        assert_eq!(map.get("platform"), Some(&"x86".to_string()));
+        assert_eq!(map.get("executablePath"), Some(&"/bin/test".to_string()));
+    }
+
+    #[test]
+    fn set_name_updates_name() {
+        let mut manager = MockTraceOptionsManager::new();
+        assert_eq!(manager.get_name(), "test_trace");
+
+        manager.set_name("updated_trace".to_string());
+        assert_eq!(manager.get_name(), "updated_trace");
+    }
+
+    #[test]
+    fn get_creation_date_returns_milliseconds() {
+        let manager = MockTraceOptionsManager::new();
+        assert_eq!(manager.get_creation_date(), 1234567890000);
+    }
+
+    #[test]
+    fn get_base_language_returns_language() {
+        let manager = MockTraceOptionsManager::new();
+        let language = manager.get_base_language();
+        assert_eq!(
+            language.get_language_id().get_id_as_string(),
+            "test:LE:32:default"
+        );
+    }
+
+    #[test]
+    fn get_base_language_id_returns_language_id() {
+        let manager = MockTraceOptionsManager::new();
+        assert_eq!(
+            manager.get_base_language_id().get_id_as_string(),
+            "test:LE:32:default"
+        );
+    }
+
+    #[test]
+    fn get_base_language_id_name_returns_string() {
+        let manager = MockTraceOptionsManager::new();
+        assert_eq!(
+            manager.get_base_language_id_name(),
+            "test:LE:32:default"
+        );
+    }
+
+    #[test]
+    fn set_platform_updates_platform() {
+        let mut manager = MockTraceOptionsManager::new();
+        assert_eq!(manager.get_platform(), "x86");
+
+        manager.set_platform("arm".to_string());
+        assert_eq!(manager.get_platform(), "arm");
+    }
+
+    #[test]
+    fn set_executable_path_updates_path() {
+        let mut manager = MockTraceOptionsManager::new();
+        assert_eq!(manager.get_executable_path(), "/bin/test");
+
+        manager.set_executable_path("/usr/bin/myapp".to_string());
+        assert_eq!(manager.get_executable_path(), "/usr/bin/myapp");
+    }
+
+    #[test]
+    fn as_map_reflects_after_set_name() {
+        let mut manager = MockTraceOptionsManager::new();
+        manager.set_name("new_name".to_string());
+
+        let map = manager.as_map();
+        assert_eq!(map.get("name"), Some(&"new_name".to_string()));
+    }
+
+    #[test]
+    fn as_map_reflects_after_set_platform() {
+        let mut manager = MockTraceOptionsManager::new();
+        manager.set_platform("mips".to_string());
+
+        let map = manager.as_map();
+        assert_eq!(map.get("platform"), Some(&"mips".to_string()));
+    }
+
+    #[test]
+    fn as_map_reflects_after_set_executable_path() {
+        let mut manager = MockTraceOptionsManager::new();
+        manager.set_executable_path("/path/to/binary".to_string());
+
+        let map = manager.as_map();
+        assert_eq!(
+            map.get("executablePath"),
+            Some(&"/path/to/binary".to_string())
+        );
+    }
+}

@@ -3,7 +3,7 @@ use crate::program::model::lang::parser_context::ParserContext;
 use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::unknown_context_exception::UnknownContextException;
 use crate::program::model::mem::MemoryAccessException;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Utilized by a shared instruction prototype to access all relevant instruction data
 /// and context-register storage needed during instruction parse and semantic pcode generation.
@@ -84,14 +84,22 @@ impl std::error::Error for InstructionContextError {}
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
-    use crate::program::seam_stubs::ParserContext as SeamParserContext;
     use std::sync::Arc;
 
     struct MockMemBuffer;
 
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
-            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Memory, 1);
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
             Address::new(space, 0x1000)
         }
     }
@@ -135,7 +143,7 @@ mod tests {
 
     struct MockParserContext;
 
-    impl SeamParserContext for MockParserContext {
+    impl ParserContext for MockParserContext {
         fn get_prototype(&self) -> Arc<dyn crate::program::model::lang::InstructionPrototype> {
             unimplemented!()
         }
@@ -145,7 +153,7 @@ mod tests {
 
     impl InstructionContext for MockInstructionContext {
         fn get_address(&self) -> Address {
-            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Memory, 1);
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
             Address::new(space, 0x2000)
         }
 
@@ -173,7 +181,7 @@ mod tests {
     fn get_address_returns_instruction_address() {
         let ctx = MockInstructionContext;
         let addr = ctx.get_address();
-        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Memory, 1);
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         assert_eq!(addr, Address::new(space, 0x2000));
     }
 
@@ -189,7 +197,7 @@ mod tests {
         let ctx = MockInstructionContext;
         let buf = ctx.get_mem_buffer();
         let addr = buf.get_address();
-        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Memory, 1);
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         assert_eq!(addr, Address::new(space, 0x1000));
     }
 
@@ -202,7 +210,7 @@ mod tests {
     #[test]
     fn get_parser_context_at_succeeds() {
         let ctx = MockInstructionContext;
-        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Memory, 1);
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         let result = ctx.get_parser_context_at(Address::new(space, 0x3000));
         assert!(result.is_ok());
     }
@@ -244,7 +252,7 @@ mod tests {
     fn usable_as_trait_object() {
         let ctx: Box<dyn InstructionContext> = Box::new(MockInstructionContext);
         let addr = ctx.get_address();
-        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Memory, 1);
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         assert_eq!(addr, Address::new(space, 0x2000));
         assert!(ctx.get_parser_context().is_ok());
     }

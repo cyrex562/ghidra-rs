@@ -73,13 +73,15 @@ mod tests {
         name: String,
     }
 
+    impl crate::framework::model::DomainObject for MockProgram {}
+
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            &self.name
+        fn get_name(&self) -> String {
+            self.name.clone()
         }
 
-        fn get_language_id(&self) -> &str {
-            "x86"
+        fn get_language_id(&self) -> String {
+            "x86".to_string()
         }
     }
 
@@ -94,7 +96,7 @@ mod tests {
 
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let addr = space.address(0x1000);
-        let program = Arc::new(MockProgram {
+        let program: Arc<dyn Program> = Arc::new(MockProgram {
             name: "test_prog".to_string(),
         });
 
@@ -114,7 +116,7 @@ mod tests {
 
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let addr = space.address(0x2000);
-        let program = Arc::new(MockProgram {
+        let program: Arc<dyn Program> = Arc::new(MockProgram {
             name: "test_prog".to_string(),
         });
 
@@ -134,7 +136,7 @@ mod tests {
 
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let addr = space.address(0x3000);
-        let program = Arc::new(MockProgram {
+        let program: Arc<dyn Program> = Arc::new(MockProgram {
             name: "test_prog".to_string(),
         });
 
@@ -145,7 +147,7 @@ mod tests {
             order_key: 1,
         };
 
-        assert_eq!(displayable.get_program().get_name(), "test_prog");
+        assert_eq!(Program::get_name(&*displayable.get_program()), "test_prog");
     }
 
     #[test]
@@ -153,7 +155,7 @@ mod tests {
         use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
-        let program = Arc::new(MockProgram {
+        let program: Arc<dyn Program> = Arc::new(MockProgram {
             name: "test_prog".to_string(),
         });
 
@@ -180,7 +182,7 @@ mod tests {
         use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
-        let program = Arc::new(MockProgram {
+        let program: Arc<dyn Program> = Arc::new(MockProgram {
             name: "test_prog".to_string(),
         });
 
@@ -198,6 +200,6 @@ mod tests {
             order_key: 1,
         };
 
-        assert_eq!(displayable1, displayable2);
+        assert!(displayable1 == displayable2);
     }
 }

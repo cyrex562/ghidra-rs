@@ -2,6 +2,7 @@ pub mod byte_trie_node;
 pub mod case_insensitive_byte_trie_node;
 pub mod op;
 pub mod search_result;
+pub mod byte_trie_ifc;
 
 pub use byte_trie_node::{ByteTrieNode, ByteTrieNodeIfc, NodeRef, WeakNodeRef};
 pub use case_insensitive_byte_trie_node::{
@@ -9,3 +10,4 @@ pub use case_insensitive_byte_trie_node::{
 };
 pub use op::Op;
 pub use search_result::SearchResult;
+pub use byte_trie_ifc::ByteTrieIfc;

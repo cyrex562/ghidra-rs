@@ -1,5 +1,5 @@
 use crate::program::model::address::Address;
-use crate::program::model::symbol::{validate_name, EquateReference, SimpleEquateReference};
+use crate::program::model::symbol::{DefaultSymbolUtilities, EquateReference, SimpleEquateReference, SymbolUtilities};
 use std::fmt;
 
 /// Universal identifier used by enum-backed equates.
@@ -91,7 +91,7 @@ impl SimpleEquate {
         enum_uuid: Option<UniversalId>,
     ) -> Result<Self, String> {
         let name = name.into();
-        validate_name(Some(&name))?;
+        DefaultSymbolUtilities.validate_name(Some(&name)).map_err(|e| e.to_string())?;
         Ok(Self {
             name,
             value,
@@ -151,7 +151,7 @@ impl Equate for SimpleEquate {
     }
 
     fn rename_equate(&mut self, new_name: &str) -> Result<(), String> {
-        validate_name(Some(new_name))?;
+        DefaultSymbolUtilities.validate_name(Some(new_name)).map_err(|e| e.to_string())?;
         self.name = new_name.to_string();
         Ok(())
     }

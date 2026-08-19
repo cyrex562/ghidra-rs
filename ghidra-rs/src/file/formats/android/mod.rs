@@ -1,12 +1,17 @@
 pub mod apex;
 pub mod art;
 pub mod bootimg;
+pub mod bootldr;
 pub mod cdex;
 pub mod dex;
+pub mod fbpk;
 pub mod oat;
+pub mod odex;
 pub mod ota_update;
+pub mod prof;
 pub mod util;
 pub mod vdex;
 pub mod verifier;
 pub mod versions;
 pub mod wdex;
+pub mod xml;

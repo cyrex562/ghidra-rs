@@ -1,12 +1,15 @@
 pub mod address_change_set;
+pub mod auto_parameter_impl;
 pub mod auto_parameter_type;
 pub mod bookmark;
 pub mod bookmark_comparator;
+pub mod bookmark_manager;
 pub mod bookmark_type;
 pub mod bookmark_type_comparator;
 pub mod circular_dependency_exception;
 pub mod code_unit;
 pub mod code_unit_comments;
+pub mod code_unit_format;
 pub mod code_unit_iterator;
 pub mod comment_history;
 pub mod comment_type;
@@ -14,51 +17,71 @@ pub mod context_change_exception;
 pub mod data;
 pub mod data_buffer;
 pub mod data_iterator;
+pub mod data_type_archive;
 pub mod data_type_archive_change_set;
 pub mod data_type_change_set;
+pub mod default_program_context;
 pub mod domain_object_change_set;
 pub mod duplicate_group_exception;
 pub mod function;
 pub mod function_iterator;
+pub mod function_manager;
 pub mod function_overlap_exception;
 pub mod function_signature;
+pub mod function_signature_impl;
 pub mod function_tag;
 pub mod function_tag_change_set;
 pub mod function_tag_manager;
 pub mod ghidra_class;
 pub mod group;
+pub mod group_tree;
 pub mod incompatible_language_exception;
 pub mod instruction;
 pub mod instruction_iterator;
+pub mod instruction_pcode_override;
+pub mod instruction_stub;
+pub mod label_string;
 pub mod library;
 pub mod listing;
 pub mod local_variable;
+pub mod operand_representation_list;
 pub mod parameter;
+pub mod parameter_impl;
 pub mod program;
 pub mod program_change_set;
 pub mod program_context;
 pub mod program_fragment;
 pub mod program_module;
 pub mod program_tree_change_set;
+pub mod program_user_data;
 pub mod register_change_set;
 pub mod repeatable_comment;
 pub mod stack_frame;
 pub mod stack_variable_comparator;
+pub mod stub_listing;
 pub mod symbol_change_set;
 pub mod thunk_function;
 pub mod variable;
 pub mod variable_filter;
+pub mod variable_impl;
+pub mod variable_offset;
 pub mod variable_size_exception;
+pub mod variable_storage;
+pub mod variable_utilities;
 
 pub use address_change_set::AddressChangeSet;
 pub use auto_parameter_type::AutoParameterType;
 pub use bookmark::Bookmark;
 pub use bookmark_comparator::BookmarkComparator;
+pub use bookmark_manager::{
+    BookmarkManager, OLD_BOOKMARK_PROPERTY_OBJECT_CLASS1, OLD_BOOKMARK_PROPERTY_OBJECT_CLASS2,
+};
 pub use bookmark_type::{BookmarkType, MarkerColor, ANALYSIS, ERROR, INFO, NOTE, WARNING};
 pub use bookmark_type_comparator::BookmarkTypeComparator;
 pub use circular_dependency_exception::CircularDependencyException;
 pub use code_unit::CodeUnit;
 pub use code_unit_comments::CodeUnitComments;
+pub use code_unit_format::{CodeUnitFormat, DefaultCodeUnitFormat};
 pub use code_unit_iterator::{CodeUnitIterator, CodeUnitIteratorAdapter, EmptyCodeUnitIterator};
 pub use comment_history::CommentHistory;
 pub use comment_type::CommentType;
@@ -66,16 +89,24 @@ pub use context_change_exception::ContextChangeException;
 pub use data::Data;
 pub use data_buffer::DataBuffer;
 pub use data_iterator::{DataIterator, EmptyDataIterator, ListDataIterator};
+pub use data_type_archive::{
+    DataTypeArchive, CREATED_WITH_GHIDRA_VERSION, DATA_TYPE_ARCHIVE_INFO,
+    DATA_TYPE_ARCHIVE_SETTINGS, DATE_CREATED, JANUARY_1_1970,
+};
 pub use data_type_archive_change_set::DataTypeArchiveChangeSet;
 pub use data_type_change_set::DataTypeChangeSet;
+pub use default_program_context::DefaultProgramContext;
 pub use domain_object_change_set::DomainObjectChangeSet;
 pub use duplicate_group_exception::DuplicateGroupException;
 pub use function::{Function, FunctionUpdateType};
 pub use function_iterator::{EmptyFunctionIterator, FunctionIterator, ListFunctionIterator};
+pub use function_manager::FunctionManager;
 pub use function_overlap_exception::FunctionOverlapException;
 pub use function_signature::{
     FunctionSignature, NORETURN_DISPLAY_STRING, VAR_ARGS_DISPLAY_STRING, VOID_PARAM_DISPLAY_STRING,
 };
+#[allow(deprecated)]
+pub use function_signature_impl::FunctionSignatureImpl;
 pub use function_tag::FunctionTag;
 pub use function_tag_change_set::FunctionTagChangeSet;
 pub use function_tag_manager::FunctionTagManager;
@@ -84,22 +115,32 @@ pub use group::Group;
 pub use incompatible_language_exception::IncompatibleLanguageException;
 pub use instruction::{Instruction, OperandValue, INVALID_DEPTH_CHANGE, MAX_LENGTH_OVERRIDE};
 pub use instruction_iterator::{EmptyInstructionIterator, InstructionIterator, ListInstructionIterator};
+pub use instruction_pcode_override::{InstructionPcodeOverride, InstructionPcodeOverrideImpl};
+pub use instruction_stub::InstructionStub;
+pub use label_string::{LabelString, LabelType};
 pub use library::{Library, UNKNOWN as UNKNOWN_LIBRARY_NAME};
 pub use listing::{CreateFunctionError, Listing, DEFAULT_TREE_NAME};
 pub use local_variable::LocalVariable;
+pub use operand_representation_list::{
+    OperandRepresentationElement, OperandRepresentationList, OperandRepresentationListImpl,
+};
 pub use parameter::Parameter;
-pub use program::Program;
+pub use program::{
+    Program, ANALYSIS_PROPERTIES, ANALYZED_OPTION_NAME, DISASSEMBLER_PROPERTIES, PROGRAM_INFO,
+};
 pub use program_change_set::ProgramChangeSet;
 pub use program_context::ProgramContext;
 pub use program_fragment::ProgramFragment;
 pub use program_module::{AddModuleError, ProgramModule};
 pub use program_tree_change_set::ProgramTreeChangeSet;
+pub use program_user_data::ProgramUserData;
 pub use register_change_set::RegisterChangeSet;
 pub use repeatable_comment::RepeatableComment;
 pub use stack_frame::{
     CreateStackVariableError, StackFrame, GROWS_NEGATIVE, GROWS_POSITIVE, UNKNOWN_PARAM_OFFSET,
 };
 pub use stack_variable_comparator::{StackVariableComparator, StackVariableOperand};
+pub use stub_listing::StubListing;
 pub use symbol_change_set::SymbolChangeSet;
 pub use thunk_function::ThunkFunction;
 pub use variable::Variable;
@@ -107,4 +148,7 @@ pub use variable_filter::{
     CompoundStackVariableFilter, LocalVariableFilter, MemoryVariableFilter, ParameterFilter,
     RegisterVariableFilter, StackVariableFilter, UniqueVariableFilter, VariableFilter,
 };
+pub use variable_offset::{ReplacedElement, VariableOffset, VariableOffsetImpl, VariableOffsetObject};
 pub use variable_size_exception::VariableSizeException;
+pub use variable_storage::{BadStorage, UnassignedStorage, VariableStorage, VariableStorageImpl, VoidStorage};
+pub use variable_utilities::{VariableConflictHandler, VariableUtilities};

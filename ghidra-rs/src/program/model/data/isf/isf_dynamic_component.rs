@@ -60,13 +60,26 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_organization::DataOrganization;
     use crate::docking::settings::settings::Settings;
-    use crate::program::model::seam_stubs::MemBuffer;
+    use crate::program::model::mem::MemBuffer;
 
     struct MockSettings;
     impl Settings for MockSettings {}
 
     struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {}
+    impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
 
     struct MockDynamic {
         name: String,
@@ -89,7 +102,7 @@ mod tests {
 
         fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
             use crate::program::model::data::category_path::CategoryPath;
-            CategoryPath::from_path(&self.category_path)
+            CategoryPath::parse(&self.category_path).unwrap()
         }
     }
 
@@ -118,7 +131,7 @@ mod tests {
 
                 fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
                     use crate::program::model::data::category_path::CategoryPath;
-                    CategoryPath::from_path("/")
+                    CategoryPath::parse("/").unwrap()
                 }
             }
             Box::new(ReplacementBaseType)

@@ -1,4 +1,9 @@
 pub mod squash_constants;
+pub mod square_fragment;
+pub mod squash_directory_table_entry;
+pub mod squash_directory_table_header;
+pub mod squash_metablock;
+pub mod squash_super_block;
 
 pub use squash_constants::{
     ALWAYS_FRAGMENT, COMPRESSION_OPTIONS_EXIST, COMPRESSION_TYPE_GZIP, COMPRESSION_TYPE_LZ4,
@@ -14,3 +19,8 @@ pub use squash_constants::{
     NO_XATTRS, SECTION_OMITTED, UNCOMPRESSED_DATA_BLOCKS, UNCOMPRESSED_FRAGMENTS,
     UNCOMPRESSED_IDS, UNCOMPRESSED_INODES, UNCOMPRESSED_XATTRS, UNUSED_FLAG,
 };
+pub use square_fragment::SquashFragment;
+pub use squash_directory_table_entry::SquashDirectoryTableEntry;
+pub use squash_directory_table_header::SquashDirectoryTableHeader;
+pub use squash_metablock::SquashMetablock;
+pub use squash_super_block::SquashSuperBlock;

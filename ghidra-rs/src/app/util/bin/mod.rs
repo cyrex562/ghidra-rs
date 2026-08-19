@@ -1,9 +1,14 @@
 pub mod binary_reader;
+pub mod byte_array_converter;
+pub mod byte_provider_input_stream;
 pub mod byte_provider_padded_input_stream;
+pub mod ghidra_random_access_file;
 pub mod input_stream_byte_provider;
 pub mod invalid_data_exception;
 pub mod leb128_info;
+pub mod mem_buffer_byte_provider;
 pub mod mutable_byte_provider;
 pub mod obfuscated_input_stream;
 pub mod obfuscated_output_stream;
 pub mod random_access_mutable_byte_provider;
+pub mod struct_converter;

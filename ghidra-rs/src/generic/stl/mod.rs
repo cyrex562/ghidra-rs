@@ -1,7 +1,10 @@
 pub mod algorithms;
+pub mod comparable_multi_map_stl;
+pub mod comparable_multi_set_stl;
 pub mod empty_iterator_stl;
 pub mod iterator_stl;
 pub mod list_node_stl;
+pub mod list_stl;
 pub mod quad;
 pub mod red_black_node;
 pub mod reverse_vector_iterator;

@@ -19,7 +19,7 @@ impl ExtReference {
     /// from the given reference and stores them as strings.
     pub fn new(reference: &dyn Reference) -> Self {
         let reference_type = reference.reference_type();
-        let index = (reference_type.value() as u8).to_string();
+        let index = reference_type.value().to_string();
         let kind = reference_type.name().to_string();
         let op_index = reference.operand_index();
         let source_type = reference.source().display_string().to_string();
@@ -41,6 +41,16 @@ mod tests {
     use crate::program::model::address::Address;
     use crate::program::model::symbol::{RefType, SourceType};
 
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     struct MockReference {
         ref_type: RefType,
         operand_index: i32,
@@ -48,12 +58,16 @@ mod tests {
     }
 
     impl Reference for MockReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn to_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn is_primary(&self) -> bool {

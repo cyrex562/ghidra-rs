@@ -104,7 +104,9 @@ mod tests {
     use crate::framework::model::DomainFile;
     use crate::program::model::symbol::ExternalReference;
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, RefType, Reference};
+    use crate::program::seam_stubs::{RefType, Reference};
+use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
     use std::any::TypeId;
 
     fn mock_address(offset: i64) -> Address {
@@ -113,12 +115,13 @@ mod tests {
     }
 
     struct MockProgram;
+    impl crate::framework::model::DomainObject for MockProgram {}
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            "test.bin"
+        fn get_name(&self) -> String {
+            "test.bin".to_string()
         }
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
     }
 
@@ -133,7 +136,20 @@ mod tests {
 
     struct MockData;
 
-    impl MemBuffer for MockData {}
+    impl MemBuffer for MockData {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
     impl PropertySet for MockData {}
 
     impl CodeUnit for MockData {
@@ -459,7 +475,7 @@ mod tests {
 
         let dyn_mgr: &mut dyn ProgramBasedDataTypeManager = &mut mgr;
         assert_eq!(dyn_mgr.get_path(), "/tmp/prog.gpr");
-        assert_eq!(dyn_mgr.get_program().get_name(), "test.bin");
+        assert_eq!(Program::get_name(dyn_mgr.get_program().as_ref()), "test.bin");
         assert!(dyn_mgr.is_change_allowed(&data, &settings_def));
         assert!(dyn_mgr.set_long_settings_value(&data, "size", 4));
         assert!(dyn_mgr.is_empty_setting(&data));

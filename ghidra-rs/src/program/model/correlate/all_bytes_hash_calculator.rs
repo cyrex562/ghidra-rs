@@ -30,7 +30,9 @@ mod tests {
     use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::RefType;
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+    use crate::program::seam_stubs::{FlowOverride, InstructionContext, RegisterValue};
+use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
     use crate::program::model::listing::{OperandValue, program::Program};
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::pcode::PcodeOp;
@@ -41,7 +43,20 @@ mod tests {
         bytes: Vec<u8>,
     }
 
-    impl MemBuffer for TestInstruction {}
+    impl MemBuffer for TestInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            mock_address(0x1000)
+        }
+    }
     impl PropertySet for TestInstruction {}
 
     impl ProcessorContextView for TestInstruction {
@@ -279,7 +294,7 @@ mod tests {
         }
 
         fn get_operand_ref_type(&self, _operand_index: i32) -> RefType {
-            RefType::default()
+            RefType::Invalid
         }
 
         fn get_default_fall_through_offset(&self) -> i32 {
@@ -307,7 +322,7 @@ mod tests {
         }
 
         fn get_flow_type(&self) -> RefType {
-            RefType::default()
+            RefType::Invalid
         }
 
         fn is_fallthrough(&self) -> bool {
@@ -378,10 +393,6 @@ mod tests {
 
         fn is_length_overridden(&self) -> bool {
             false
-        }
-
-        fn clear_length_override(&mut self) -> Result<(), crate::program::util::CodeUnitInsertionException> {
-            Ok(())
         }
     }
 

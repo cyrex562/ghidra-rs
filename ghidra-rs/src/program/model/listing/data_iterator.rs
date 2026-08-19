@@ -67,13 +67,29 @@ mod tests {
     use crate::program::model::symbol::{ExternalReference, Symbol};
     use crate::docking::settings::settings::Settings;
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, RefType, Reference};
+    use crate::program::seam_stubs::{RefType, Reference};
+use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
     use std::any::{Any, TypeId};
     use std::sync::Arc;
 
     struct MockData;
 
-    impl MemBuffer for MockData {}
+    impl MemBuffer for MockData {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+            Address::new(space, 0)
+        }
+    }
     impl PropertySet for MockData {}
 
     impl CodeUnit for MockData {
@@ -186,13 +202,14 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl crate::program::model::listing::Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock.bin"
+                fn get_name(&self) -> String {
+                    "mock.bin".to_string()
                 }
 
-                fn get_language_id(&self) -> &str {
-                    "test:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "test:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)

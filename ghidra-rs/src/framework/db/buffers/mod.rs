@@ -1,6 +1,36 @@
 use crate::framework::db::buffer::DataBuffer;
+pub mod block_stream;
+pub mod block_stream_handle;
+pub mod buffer_file_adapter;
+pub mod buffer_file_handle;
+pub mod buffer_file_manager;
+pub mod buffer_node;
+pub mod change_map_file;
+pub mod input_block_stream;
 pub mod local_buffer_file;
+pub mod managed_buffer_file;
+pub mod managed_buffer_file_adapter;
+pub mod managed_buffer_file_handle;
+pub mod output_block_stream;
+pub mod recovery_file_test;
+pub mod remote_buffer_file_handle;
+pub mod remote_managed_buffer_file_handle;
+pub use block_stream::BlockStream;
+pub use block_stream_handle::BlockStreamHandle;
+pub use buffer_file_adapter::BufferFileAdapter;
+pub use buffer_file_handle::BufferFileHandle;
+pub use buffer_file_manager::BufferFileManager;
+pub use buffer_node::{BufferNode, BufferNodeRef};
+pub use change_map_file::ChangeMapFile;
+pub use input_block_stream::InputBlockStream;
 pub use local_buffer_file::LocalBufferFile;
+pub use managed_buffer_file::ManagedBufferFile;
+pub use managed_buffer_file_adapter::ManagedBufferFileAdapter;
+pub use managed_buffer_file_handle::ManagedBufferFileHandle;
+pub use output_block_stream::OutputBlockStream;
+pub use recovery_file_test::RecoveryFileTest;
+pub use remote_buffer_file_handle::RemoteBufferFileHandle;
+pub use remote_managed_buffer_file_handle::RemoteManagedBufferFileHandle;
 
 use std::io;
 

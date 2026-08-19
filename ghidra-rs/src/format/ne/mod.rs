@@ -1,3 +1,4 @@
+pub mod entry_table_bundle;
 pub mod imported_name_table;
 pub mod invalid_windows_header_exception;
 pub mod length_string_ordinal_set;
@@ -10,7 +11,11 @@ pub mod relocation_internal_ref;
 pub mod relocation_os_fixup;
 pub mod resident_name_table;
 pub mod resource_name;
+pub mod resource_table;
+pub mod segment;
+pub mod windows_header;
 
+pub use entry_table_bundle::EntryTableBundle;
 pub use imported_name_table::ImportedNameTable;
 pub use invalid_windows_header_exception::InvalidWindowsHeaderException;
 pub use length_string_ordinal_set::LengthStringOrdinalSet;
@@ -23,3 +28,6 @@ pub use relocation_internal_ref::RelocationInternalRef;
 pub use relocation_os_fixup::RelocationOSFixup;
 pub use resident_name_table::ResidentNameTable;
 pub use resource_name::ResourceName;
+pub use resource_table::ResourceTable;
+pub use segment::Segment;
+pub use windows_header::WindowsHeader;

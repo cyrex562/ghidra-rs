@@ -1,0 +1,279 @@
+//! Minimal placeholder traits for core types not yet ported, used to break
+//! dependency cycles. Each placeholder is replaced by the real port later.
+
+use std::sync::Arc;
+
+use super::fcg_vertex_expansion_listener::FcgVertexExpansionListener;
+use super::function_call_graph::FunctionCallGraph;
+use super::g_directed_graph::GDirectedGraph;
+use super::g_edge::GEdge;
+use crate::program::model::address::Address;
+use crate::program::model::listing::Function;
+use crate::util::task::TaskMonitor;
+
+/// Placeholder for `ghidra.graph.algo.GraphNavigator`, referenced by
+/// [`GraphAlgorithms`](crate::graph::graph_algorithms::GraphAlgorithms)'s
+/// `getVerticesInPostOrder`/`getVerticesInPreOrder` methods before the real port exists.
+/// `GraphNavigator` and `GraphAlgorithms` reference each other in Java (`GraphNavigator`'s
+/// `getSources`/`getSinks`/`getVerticesInPostOrder` call back into the corresponding
+/// `GraphAlgorithms` static methods), forming the cycle this stub breaks. Only the
+/// direction-aware edge/vertex accessors `GraphAlgorithms` needs are declared here.
+pub trait GraphNavigatorSeam<V, E> {
+    /// True if this navigator walks from source to sink (mirrors `isTopDown()`).
+    fn is_top_down(&self) -> bool;
+
+    /// Gets the edges leaving `v`, in the direction this navigator walks (mirrors `getEdges`).
+    fn get_edges(&self, g: &dyn GDirectedGraph<V, E>, v: &V) -> Vec<E>;
+
+    /// Gets the vertex at the far end of `e`, in the direction this navigator walks (mirrors
+    /// `getEnd`).
+    fn get_end(&self, e: &E) -> V;
+}
+
+/// Stand-in for `GraphNavigator.topDownNavigator()`, walking from source to sink.
+pub struct TopDownNavigator;
+
+/// Stand-in for `GraphNavigator.bottomUpNavigator()`, walking from sink to source.
+pub struct BottomUpNavigator;
+
+impl<V: Clone + PartialEq, E: GEdge<V> + Clone> GraphNavigatorSeam<V, E> for TopDownNavigator {
+    fn is_top_down(&self) -> bool {
+        true
+    }
+
+    fn get_edges(&self, g: &dyn GDirectedGraph<V, E>, v: &V) -> Vec<E> {
+        g.get_out_edges(v)
+    }
+
+    fn get_end(&self, e: &E) -> V {
+        e.get_end().clone()
+    }
+}
+
+impl<V: Clone + PartialEq, E: GEdge<V> + Clone> GraphNavigatorSeam<V, E> for BottomUpNavigator {
+    fn is_top_down(&self) -> bool {
+        false
+    }
+
+    fn get_edges(&self, g: &dyn GDirectedGraph<V, E>, v: &V) -> Vec<E> {
+        g.get_in_edges(v)
+    }
+
+    fn get_end(&self, e: &E) -> V {
+        e.get_start().clone()
+    }
+}
+
+/// Placeholder for `ghidra.util.task.TimeoutTaskMonitor`, referenced by
+/// [`GraphAlgorithms`](crate::graph::graph_algorithms::GraphAlgorithms)'s timeout-bounded
+/// `findCircuits`/`findPaths` overloads before the real port exists. `TimeoutTaskMonitor`
+/// implements `TaskMonitor` in Java and adds timeout-specific members (`finished()`, a timeout
+/// listener); `GraphAlgorithms` itself never calls those, only using the type to signal (at the
+/// API level) that callers should pass a timeout-bounded monitor for large graphs, so this stub
+/// declares no members beyond the `TaskMonitor` supertrait bound.
+pub trait TimeoutTaskMonitorSeam: TaskMonitor {}
+
+/// Placeholder for the unported Java type `VisualEdge`, referenced by `FGEdge`.
+/// VisualEdge is generic over vertex and edge types in Java; here we use `any::Any` for those.
+/// This is a partial stub; replace with the real port when available.
+pub trait VisualEdge: Send + Sync {
+    fn set_selected(&self, selected: bool);
+    fn is_selected(&self) -> bool;
+    fn set_in_hovered_vertex_path(&self, in_path: bool);
+    fn is_in_hovered_vertex_path(&self) -> bool;
+    fn set_in_focused_vertex_path(&self, in_path: bool);
+    fn is_in_focused_vertex_path(&self) -> bool;
+    fn get_articulation_points(&self) -> Vec<Box<dyn std::any::Any>>;
+    fn set_articulation_points(&self, points: Vec<Box<dyn std::any::Any>>);
+    fn clone_edge(&self, start: &dyn std::any::Any, end: &dyn std::any::Any) -> Box<dyn VisualEdge>;
+    fn set_emphasis(&self, emphasis_level: f64);
+    fn get_emphasis(&self) -> f64;
+    fn set_alpha(&self, alpha: f64);
+    fn get_alpha(&self) -> f64;
+}
+
+/// Placeholder for the unported Java type `VisualGraph`, referenced by `FGLayout`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle where FGLayout
+/// references VisualGraph. Replace with the real port when available.
+pub trait VisualGraph: Send + Sync {
+    fn vertex_location_changed(&self, v: &dyn std::any::Any, point: &dyn std::any::Any, change_type: &dyn std::any::Any);
+    fn get_focused_vertex(&self) -> Box<dyn std::any::Any>;
+    fn set_vertex_focused(&self, v: &dyn std::any::Any, b: bool);
+    fn clear_selected_vertices(&self);
+    fn set_selected_vertices(&self, vertices: Vec<Box<dyn std::any::Any>>);
+    fn get_selected_vertices(&self) -> Vec<Box<dyn std::any::Any>>;
+    fn add_graph_change_listener(&self, l: &dyn std::any::Any);
+    fn remove_graph_change_listener(&self, l: &dyn std::any::Any);
+    fn get_layout(&self) -> Box<dyn VisualGraphLayout>;
+    fn copy(&self) -> Box<dyn VisualGraph>;
+}
+
+/// Placeholder for the unported Java type `VisualGraphLayout`, referenced by `FGLayout`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle where FGLayout
+/// references VisualGraphLayout. Replace with the real port when available.
+pub trait VisualGraphLayout: Send + Sync {
+    fn add_layout_listener(&self, listener: &dyn std::any::Any);
+    fn remove_layout_listener(&self, listener: &dyn std::any::Any);
+    fn uses_edge_articulations(&self) -> bool;
+    fn calculate_locations(&self, graph: &dyn VisualGraph, monitor: &dyn TaskMonitor) -> Box<dyn std::any::Any>;
+    fn clone_layout(&self, new_graph: &dyn VisualGraph) -> Box<dyn VisualGraphLayout>;
+    fn set_location(&self, v: &dyn std::any::Any, location: &dyn std::any::Any, change_type: &dyn std::any::Any);
+    fn get_visual_graph(&self) -> Box<dyn VisualGraph>;
+    fn get_edge_renderer(&self) -> Box<dyn std::any::Any>;
+    fn get_edge_shape_transformer(&self, context: &dyn std::any::Any) -> Box<dyn std::any::Any>;
+    fn get_edge_label_renderer(&self) -> Box<dyn std::any::Any>;
+    fn dispose(&self);
+}
+
+/// Placeholder for the unported Java type `VisualVertex`, referenced by `LayoutProviderExtensionPoint`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle where LayoutProviderExtensionPoint
+/// references VisualVertex. Replace with the real port when available.
+pub trait VisualVertex: Send + Sync {
+    fn get_component(&self) -> Box<dyn std::any::Any>;
+    fn set_focused(&self, focused: bool);
+    fn is_focused(&self) -> bool;
+    fn set_selected(&self, selected: bool);
+    fn is_selected(&self) -> bool;
+    fn set_hovered(&self, hovered: bool);
+    fn is_hovered(&self) -> bool;
+    fn set_location(&self, p: &dyn std::any::Any);
+    fn get_location(&self) -> Box<dyn std::any::Any>;
+    fn is_grabbable(&self, c: &dyn std::any::Any) -> bool;
+    fn dispose(&self);
+    fn set_emphasis(&self, emphasis_level: f64);
+    fn get_emphasis(&self) -> f64;
+    fn set_alpha(&self, alpha: f64);
+    fn get_alpha(&self) -> f64;
+}
+
+/// Placeholder for the unported Java type `LayoutProvider`, referenced by `LayoutProviderExtensionPoint`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle. Replace with the real port when available.
+pub trait LayoutProvider<V: VisualVertex + ?Sized, E: VisualEdge + ?Sized, G: VisualGraph + ?Sized>: Send + Sync {
+    fn get_layout(&self, graph: &G, monitor: &dyn TaskMonitor) -> Result<Box<dyn VisualGraphLayout>, std::io::Error>;
+    fn get_layout_name(&self) -> String;
+    fn get_action_icon(&self) -> Option<Box<dyn std::any::Any>>;
+    fn get_priority_level(&self) -> i32;
+}
+
+/// Placeholder for the unported Java type `FcgVertex`, referenced by
+/// `FcgVertexExpansionListener` and `FunctionCallGraph`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+///
+/// `get_function`/`get_address`/`get_level`/`clone_vertex` are typed using the now-ported
+/// [`Function`], [`Address`] and [`FcgLevel`]/[`FcgVertexExpansionListener`] types (`FunctionCallGraph`
+/// needs concrete values from these, not `Any`); the remaining methods are left as `Any`-erased
+/// placeholders since nothing ported so far calls them.
+pub trait FcgVertex: Send + Sync {
+    fn clone_vertex(&self, new_listener: &dyn FcgVertexExpansionListener) -> Box<dyn FcgVertex>;
+    fn get_function(&self) -> Arc<dyn Function>;
+    fn get_address(&self) -> Address;
+    fn get_options(&self) -> Box<dyn std::any::Any>;
+    fn get_level(&self) -> FcgLevel;
+    fn get_degree(&self) -> i32;
+    fn get_direction(&self) -> Box<dyn std::any::Any>;
+    fn set_hovered(&self, hovered: bool);
+    fn get_incoming_toggle_button(&self) -> Box<dyn std::any::Any>;
+    fn get_outgoing_toggle_button(&self) -> Box<dyn std::any::Any>;
+    fn set_has_incoming_references(&self, has_incoming: bool);
+    fn set_has_outgoing_references(&self, has_outgoing: bool);
+    fn set_too_many_incoming_references(&self, too_many: bool);
+    fn set_too_many_outgoing_references(&self, too_many: bool);
+    fn has_too_many_incoming_references(&self) -> bool;
+    fn has_too_many_outgoing_references(&self) -> bool;
+    fn is_incoming_expanded(&self) -> bool;
+    fn is_outgoing_expanded(&self) -> bool;
+    fn is_expanded(&self) -> bool;
+    fn can_expand(&self) -> bool;
+    fn can_expand_incoming_references(&self) -> bool;
+    fn can_expand_outgoing_references(&self) -> bool;
+    fn set_incoming_expanded(&self, set_expanded: bool);
+    fn set_outgoing_expanded(&self, set_expanded: bool);
+    fn to_string(&self) -> String;
+    fn hash_code(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn dispose(&self);
+}
+
+/// Placeholder for the unported Java type `FcgLevel`, referenced by `FunctionCallGraph`.
+/// `FcgLevel` is a concrete, dependency-free value class (row + direction) in Java, not an
+/// interface, so this stub is a plain struct rather than the `dyn`-shaped placeholders above.
+/// Only the constructor and accessors `FunctionCallGraph` needs are included (`parent`/`child`/
+/// `compareTo`/etc. are unused here); replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FcgLevel {
+    row: i32,
+    direction: super::fcg_direction::FcgDirection,
+}
+
+impl FcgLevel {
+    /// Mirrors `FcgLevel(int distance, FcgDirection direction)`.
+    pub fn new(distance: i32, direction: super::fcg_direction::FcgDirection) -> Self {
+        let row = Self::to_row(distance, direction);
+        assert_ne!(row, 0, "The FcgLevel uses a 1-based row system");
+        assert!(
+            !(row == 1 && direction != super::fcg_direction::FcgDirection::InAndOut),
+            "Row 1 must be FcgDirection.IN_AND_OUT"
+        );
+        Self { row, direction }
+    }
+
+    fn to_row(distance: i32, direction: super::fcg_direction::FcgDirection) -> i32 {
+        let one_based = distance + 1;
+        if direction == super::fcg_direction::FcgDirection::Out {
+            -one_based
+        } else {
+            one_based
+        }
+    }
+
+    pub fn get_row(&self) -> i32 {
+        self.row
+    }
+
+    pub fn get_direction(&self) -> super::fcg_direction::FcgDirection {
+        self.direction
+    }
+}
+
+/// Placeholder for the unported Java type `FcgEdge`, referenced by `FunctionCallGraph`.
+/// `FcgEdge` is a concrete, final class in Java (extends `AbstractVisualEdge<FcgVertex>`), not
+/// an interface, so this stub is a plain struct rather than a `dyn`-shaped placeholder. Only the
+/// constructor/accessors `FunctionCallGraph` needs are included (`isDirectEdge` is unused here);
+/// replace with the real port when available.
+#[derive(Clone)]
+pub struct FcgEdge {
+    start: Arc<dyn FcgVertex>,
+    end: Arc<dyn FcgVertex>,
+}
+
+impl FcgEdge {
+    pub fn new(start: Arc<dyn FcgVertex>, end: Arc<dyn FcgVertex>) -> Self {
+        Self { start, end }
+    }
+
+    pub fn get_start(&self) -> &Arc<dyn FcgVertex> {
+        &self.start
+    }
+
+    pub fn get_end(&self) -> &Arc<dyn FcgVertex> {
+        &self.end
+    }
+
+    /// Mirrors `FcgEdge.cloneEdge(FcgVertex, FcgVertex)`.
+    pub fn clone_edge(&self, start: Arc<dyn FcgVertex>, end: Arc<dyn FcgVertex>) -> FcgEdge {
+        FcgEdge::new(start, end)
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.graph.viewer.layout.VisualGraphLayout<FcgVertex,
+/// FcgEdge>`, the layout algorithm plugged into a `FunctionCallGraph`. The real Java interface is
+/// generic over vertex/edge/graph types and is shared across graph features; [`VisualGraphLayout`]
+/// above already stubs it for the (unrelated) function-graph feature using `Any`-erased
+/// parameters tied to the [`VisualGraph`] placeholder. That shape doesn't fit here because
+/// `FunctionCallGraph` must stay a concrete struct and never appear as `&dyn VisualGraph`, so
+/// this is a second, `FunctionCallGraph`-scoped instantiation with only the method
+/// `FunctionCallGraph::clone_graph` needs. Replace both with the real generic port when available.
+pub trait FcgVisualGraphLayout: Send + Sync {
+    fn clone_layout(&self, new_graph: &FunctionCallGraph) -> Box<dyn FcgVisualGraphLayout>;
+}

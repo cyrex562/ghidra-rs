@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::program::model::address::Address;
 use crate::program::model::symbol::{RefType, SourceType};
 
@@ -10,7 +11,7 @@ pub const OTHER: i32 = RefType::OTHER;
 ///
 /// This mirrors Ghidra's `Reference` contract while using Rust naming
 /// conventions.
-pub trait Reference: Send + Sync {
+pub trait Reference: Send + Sync + Any {
     /// Gets the address of the code unit making the reference.
     fn from_address(&self) -> Address;
 
@@ -58,6 +59,41 @@ pub trait Reference: Send + Sync {
 
     /// Gets the source of this reference.
     fn source(&self) -> SourceType;
+
+    /// Returns a reference to self as Any for downcasting.
+    fn as_any(&self) -> &dyn Any;
+
+    /// Returns this reference viewed as an [`OffsetReference`] when it is one.
+    ///
+    /// Mirrors Ghidra's `(OffsetReference) ref` cast. The default returns
+    /// `None`; offset references override it to return `Some(self)`.
+    fn as_offset_reference(&self) -> Option<&dyn crate::program::model::symbol::OffsetReference> {
+        None
+    }
+
+    /// Returns this reference viewed as a [`StackReference`](crate::program::model::symbol::StackReference)
+    /// when it is one.
+    ///
+    /// Mirrors Ghidra's `(StackReference) ref` cast (guarded by `instanceof StackReference`),
+    /// used by
+    /// [`VariableOffset`](crate::program::model::listing::variable_offset::VariableOffset)'s
+    /// explicit-reference constructor. The default returns `None`; stack references override it
+    /// to return `Some(self)`.
+    fn as_stack_reference(&self) -> Option<&dyn crate::program::model::symbol::StackReference> {
+        None
+    }
+
+    /// Returns this reference viewed as an [`ExternalReference`](crate::program::model::symbol::ExternalReference)
+    /// when it is one.
+    ///
+    /// Mirrors Ghidra's `(ExternalReference) ref` cast (guarded by `instanceof
+    /// ExternalReference`), used by
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s port of
+    /// the private `DataUtilities.restoreReference`. The default returns `None`; external
+    /// references override it to return `Some(self)`.
+    fn as_external_reference(&self) -> Option<&dyn crate::program::model::symbol::ExternalReference> {
+        None
+    }
 }
 
 /// Marker trait for dynamically determined references that may not be

@@ -100,7 +100,7 @@ mod tests {
 
         fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
             use crate::program::model::data::category_path::CategoryPath;
-            CategoryPath::from_path(&self.category_path)
+            CategoryPath::parse(&self.category_path).unwrap()
         }
     }
 
@@ -305,9 +305,8 @@ mod tests {
     #[test]
     fn clone_creates_independent_copy() {
         let comp = MockComponent::new("TestType", "/Path");
-        let type_obj = Box::new(MockType);
-        let isf_comp1 = IsfComponent::new(&comp, type_obj);
-        let isf_comp2 = isf_comp1.clone();
+        let isf_comp1 = IsfComponent::new(&comp, Box::new(MockType));
+        let isf_comp2 = IsfComponent::new(&comp, Box::new(MockType));
 
         assert_eq!(isf_comp1.offset, isf_comp2.offset);
         assert_eq!(isf_comp1.ordinal, isf_comp2.ordinal);

@@ -226,7 +226,8 @@ mod tests {
 
         let mut r = MockReader::new(data);
         let _ = Omf51Fixup::new(&mut r, false).unwrap();
-        assert_eq!(r.get_pointer_index(), 6);
+        // 2 (ref_loc) + 1 (ref_type) + 1 (block_type) + 1 (small block_id) + 2 (offset) = 7
+        assert_eq!(r.get_pointer_index(), 7);
     }
 
     #[test]
@@ -241,7 +242,8 @@ mod tests {
 
         let mut r = MockReader::new(data);
         let _ = Omf51Fixup::new(&mut r, true).unwrap();
-        assert_eq!(r.get_pointer_index(), 7);
+        // 2 (ref_loc) + 1 (ref_type) + 1 (block_type) + 2 (large block_id) + 2 (offset) = 8
+        assert_eq!(r.get_pointer_index(), 8);
     }
 
     #[test]

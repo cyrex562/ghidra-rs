@@ -1,13 +1,28 @@
+pub mod b_sim_client_factory;
+pub mod b_sim_initializer;
+pub mod b_sim_jdbc_data_source;
+pub mod b_sim_server_info;
 pub mod client;
 pub mod decompile_function_task;
 pub mod description;
 pub mod elastic;
 pub mod facade;
+pub mod function_database;
+pub mod gen_signatures;
 pub mod lsh_exception;
 pub mod minimal_error_logger;
 pub mod postgresql;
+pub mod protocol;
 pub mod server_config;
+pub mod sql_function_database;
 
+pub use b_sim_initializer::BSimInitializer;
+pub use b_sim_jdbc_data_source::{BSimJDBCDataSource, Status, ConnectionType};
+pub use function_database::{BSimError, DatabaseNonFatalException, ErrorCategory, FunctionDatabase, InsertSettingsError};
+pub use b_sim_server_info::{BSimServerInfo, DBType};
 pub use decompile_function_task::DecompileFunctionTask;
+pub use gen_signatures::{CallRecord, GenSignatures};
 pub use lsh_exception::LshException;
 pub use minimal_error_logger::MinimalErrorLogger;
+pub use protocol::{AdjustVectorIndex, BSimQuery, BSimQueryBase, InsertRequest, PasswordChange, QueryResponseRecord, QueryResponseRecordBase};
+pub use sql_function_database::SQLFunctionDatabase;

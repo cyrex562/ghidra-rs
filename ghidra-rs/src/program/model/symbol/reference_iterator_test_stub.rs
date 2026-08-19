@@ -26,12 +26,10 @@ impl ReferenceIteratorTestStub {
 
 use crate::program::model::symbol::ReferenceIterator;
 
-impl ReferenceIterator for ReferenceIteratorTestStub {
-    fn has_next(&self) -> bool {
-        self.index < self.references.len()
-    }
+impl Iterator for ReferenceIteratorTestStub {
+    type Item = Arc<dyn Reference>;
 
-    fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    fn next(&mut self) -> Option<Self::Item> {
         if !self.has_next() {
             return None;
         }
@@ -40,6 +38,14 @@ impl ReferenceIterator for ReferenceIteratorTestStub {
         Some(reference)
     }
 }
+
+impl ReferenceIteratorTestStub {
+    fn has_next(&self) -> bool {
+        self.index < self.references.len()
+    }
+}
+
+impl ReferenceIterator for ReferenceIteratorTestStub {}
 
 #[cfg(test)]
 mod tests {
@@ -60,6 +66,10 @@ mod tests {
     }
 
     impl Reference for TestReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             self.from_address.clone()
         }
@@ -134,8 +144,7 @@ mod tests {
     fn empty_stub_has_no_references() {
         let mut stub = ReferenceIteratorTestStub::new(vec![]);
 
-        assert!(!stub.has_next());
-        assert!(stub.next_reference().is_none());
+        assert!(stub.next().is_none());
     }
 
     #[test]
@@ -149,21 +158,20 @@ mod tests {
 
         assert!(stub.has_next());
         assert_eq!(
-            stub.next_reference().unwrap().from_address(),
+            stub.next().unwrap().from_address(),
             addr(0x1000)
         );
         assert!(stub.has_next());
         assert_eq!(
-            stub.next_reference().unwrap().from_address(),
+            stub.next().unwrap().from_address(),
             addr(0x1001)
         );
         assert!(stub.has_next());
         assert_eq!(
-            stub.next_reference().unwrap().from_address(),
+            stub.next().unwrap().from_address(),
             addr(0x1002)
         );
-        assert!(!stub.has_next());
-        assert!(stub.next_reference().is_none());
+        assert!(stub.next().is_none());
     }
 
     #[test]
@@ -173,9 +181,8 @@ mod tests {
         let mut stub = ReferenceIteratorTestStub::new(references);
 
         assert!(stub.has_next());
-        stub.next_reference();
-        assert!(!stub.has_next());
-        assert!(stub.next_reference().is_none());
-        assert!(stub.next_reference().is_none());
+        stub.next();
+        assert!(stub.next().is_none());
+        assert!(stub.next().is_none());
     }
 }

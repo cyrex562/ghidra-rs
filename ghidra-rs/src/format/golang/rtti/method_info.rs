@@ -36,7 +36,7 @@ mod tests {
     #[test]
     fn new_stores_address() {
         let addr = create_test_address(0x1000);
-        let method_info = MethodInfo::new(addr);
+        let method_info = MethodInfo::new(addr.clone());
         assert_eq!(method_info.address(), addr);
     }
 
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn clone_preserves_address() {
         let addr = create_test_address(0x5000);
-        let info = MethodInfo::new(addr);
+        let info = MethodInfo::new(addr.clone());
         let cloned = info.clone();
 
         assert_eq!(info, cloned);
@@ -69,7 +69,7 @@ mod tests {
         use std::collections::HashSet;
 
         let addr = create_test_address(0x3000);
-        let info1 = MethodInfo::new(addr);
+        let info1 = MethodInfo::new(addr.clone());
         let info2 = MethodInfo::new(addr);
 
         let mut set = HashSet::new();

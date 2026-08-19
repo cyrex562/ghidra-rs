@@ -3,60 +3,50 @@ use std::sync::Arc;
 
 /// Iterator that returns references.
 ///
-/// This mirrors Ghidra's `ReferenceIterator`, using `Option` in place of
-/// Java's null return when no reference is available.
-pub trait ReferenceIterator {
-    /// Returns true when another reference is available.
-    fn has_next(&self) -> bool;
-
-    /// Returns the next reference, or `None` when no reference is available.
-    fn next_reference(&mut self) -> Option<Arc<dyn Reference>>;
-}
+/// Mirrors Ghidra's `ReferenceIterator`, which extends `java.util.Iterator<Reference>`.
+///
+/// A marker supertrait over [`Iterator`] rather than a hand-rolled `has_next`/`next_reference`
+/// pair: with one cursor-advancing operation, `for`/`while let` cannot express the
+/// double-advance that dropped every other element in the regression recorded in AGENTS.md.
+pub trait ReferenceIterator: Iterator<Item = Arc<dyn Reference>> {}
 
 /// Empty reference iterator.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct EmptyReferenceIterator;
 
-impl ReferenceIterator for EmptyReferenceIterator {
-    fn has_next(&self) -> bool {
-        false
-    }
+impl Iterator for EmptyReferenceIterator {
+    type Item = Arc<dyn Reference>;
 
-    fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    fn next(&mut self) -> Option<Self::Item> {
         None
     }
 }
 
+impl ReferenceIterator for EmptyReferenceIterator {}
+
 /// Adapter from a vector of references to a `ReferenceIterator`.
 pub struct ReferenceIteratorAdapter {
-    references: Vec<Arc<dyn Reference>>,
-    index: usize,
+    iter: std::vec::IntoIter<Arc<dyn Reference>>,
 }
 
 impl ReferenceIteratorAdapter {
     /// Creates an adapter over the supplied references.
     pub fn new(references: Vec<Arc<dyn Reference>>) -> Self {
         Self {
-            references,
-            index: 0,
+            iter: references.into_iter(),
         }
     }
 }
 
-impl ReferenceIterator for ReferenceIteratorAdapter {
-    fn has_next(&self) -> bool {
-        self.index < self.references.len()
-    }
+impl Iterator for ReferenceIteratorAdapter {
+    type Item = Arc<dyn Reference>;
 
-    fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
-        if !self.has_next() {
-            return None;
-        }
-        let reference = self.references[self.index].clone();
-        self.index += 1;
-        Some(reference)
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
+
+impl ReferenceIterator for ReferenceIteratorAdapter {}
 
 /// Adapter that wraps any iterator of references.
 ///
@@ -64,7 +54,6 @@ impl ReferenceIterator for ReferenceIteratorAdapter {
 /// a convenient way to wrap a boxed iterator to implement the `ReferenceIterator` trait.
 pub struct ReferenceAdapter {
     iter: Box<dyn Iterator<Item = Arc<dyn Reference>>>,
-    current: Option<Arc<dyn Reference>>,
 }
 
 impl ReferenceAdapter {
@@ -73,23 +62,20 @@ impl ReferenceAdapter {
     /// # Arguments
     ///
     /// * `iter` - A boxed iterator that yields references
-    pub fn new(mut iter: Box<dyn Iterator<Item = Arc<dyn Reference>>>) -> Self {
-        let current = iter.next();
-        Self { iter, current }
+    pub fn new(iter: Box<dyn Iterator<Item = Arc<dyn Reference>>>) -> Self {
+        Self { iter }
     }
 }
 
-impl ReferenceIterator for ReferenceAdapter {
-    fn has_next(&self) -> bool {
-        self.current.is_some()
-    }
+impl Iterator for ReferenceAdapter {
+    type Item = Arc<dyn Reference>;
 
-    fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
-        let result = self.current.take();
-        self.current = self.iter.next();
-        result
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
+
+impl ReferenceIterator for ReferenceAdapter {}
 
 #[cfg(test)]
 mod tests {
@@ -101,8 +87,7 @@ mod tests {
     fn empty_iterator_has_no_references() {
         let mut iterator = EmptyReferenceIterator;
 
-        assert!(!iterator.has_next());
-        assert!(iterator.next_reference().is_none());
+        assert!(iterator.next().is_none());
     }
 
     #[test]
@@ -112,19 +97,33 @@ mod tests {
             Arc::new(TestReference::new(0x1001)),
         ];
         let mut iterator = ReferenceIteratorAdapter::new(references);
-
-        assert!(iterator.has_next());
         assert_eq!(
-            iterator.next_reference().unwrap().from_address(),
+            iterator.next().unwrap().from_address(),
             addr(0x1000)
         );
-        assert!(iterator.has_next());
         assert_eq!(
-            iterator.next_reference().unwrap().from_address(),
+            iterator.next().unwrap().from_address(),
             addr(0x1001)
         );
-        assert!(!iterator.has_next());
-        assert!(iterator.next_reference().is_none());
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn adapter_yields_every_reference_when_driven_by_a_for_loop() {
+        // The regression this shape exists to prevent. With a has_next/next_reference pair a
+        // caller could write `while it.has_next() { v.push(it.next_reference()) }`, advance the
+        // cursor twice per turn and silently keep only every other reference -- it compiled, and
+        // it is recorded in AGENTS.md under "Compiling is not evidence". Under `Iterator` there
+        // is one cursor-advancing operation and the loop cannot express it.
+        let references: Vec<Arc<dyn Reference>> = (0..6)
+            .map(|i| Arc::new(TestReference::new(0x1000 + i)) as Arc<dyn Reference>)
+            .collect();
+
+        let seen: Vec<i64> = ReferenceIteratorAdapter::new(references)
+            .map(|r| r.from_address().offset())
+            .collect();
+
+        assert_eq!(seen, vec![0x1000, 0x1001, 0x1002, 0x1003, 0x1004, 0x1005]);
     }
 
     #[test]
@@ -137,24 +136,19 @@ mod tests {
         let boxed_iter: Box<dyn Iterator<Item = Arc<dyn Reference>>> =
             Box::new(references.into_iter());
         let mut adapter = ReferenceAdapter::new(boxed_iter);
-
-        assert!(adapter.has_next());
         assert_eq!(
-            adapter.next_reference().unwrap().from_address(),
+            adapter.next().unwrap().from_address(),
             addr(0x1000)
         );
-        assert!(adapter.has_next());
         assert_eq!(
-            adapter.next_reference().unwrap().from_address(),
+            adapter.next().unwrap().from_address(),
             addr(0x1001)
         );
-        assert!(adapter.has_next());
         assert_eq!(
-            adapter.next_reference().unwrap().from_address(),
+            adapter.next().unwrap().from_address(),
             addr(0x1002)
         );
-        assert!(!adapter.has_next());
-        assert!(adapter.next_reference().is_none());
+        assert!(adapter.next().is_none());
     }
 
     #[test]
@@ -164,8 +158,7 @@ mod tests {
             Box::new(references.into_iter());
         let mut adapter = ReferenceAdapter::new(boxed_iter);
 
-        assert!(!adapter.has_next());
-        assert!(adapter.next_reference().is_none());
+        assert!(adapter.next().is_none());
     }
 
     fn addr(offset: i64) -> Address {
@@ -186,6 +179,10 @@ mod tests {
     }
 
     impl Reference for TestReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             self.from_address.clone()
         }

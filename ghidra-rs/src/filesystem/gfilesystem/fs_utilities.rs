@@ -1,6 +1,33 @@
 pub const SEPARATOR_CHARS: &str = "/\\:";
 pub const SEPARATOR: char = '/';
 
+/// Characters that are escaped even though they fall in the printable ASCII range, because
+/// they are used as FSRL portion separators (`%` for the escape marker itself, `?` for the
+/// parameter separator, `|` for the FSRL-part separator).
+const ESCAPE_CHARS: &str = "%?|";
+
+/// Returns a copy of `s` with FSRL-problematic characters escaped as `%nn` sequences, where
+/// `nn` are hexdigits specifying the byte value (UTF-8 encoded for non-ASCII characters).
+///
+/// Mirrors `FSUtilities.escapeEncode(String)`. The inverse (`escapeDecode`) is not ported here;
+/// nothing in the current port needs to parse FSRL strings back into structured values yet.
+pub fn escape_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        let cv = c as u32;
+        if !(32..=126).contains(&cv) || ESCAPE_CHARS.contains(c) {
+            let mut buf = [0u8; 4];
+            for b in c.encode_utf8(&mut buf).as_bytes() {
+                out.push('%');
+                out.push_str(&format!("{:02x}", b));
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
 /// Concatenates path strings, ensuring correct separators between parts.
 ///
 /// Handles both forward and back slashes in input but only inserts a forward slash
@@ -37,6 +64,15 @@ pub fn append_path(paths: &[Option<&str>]) -> Option<String> {
     }
 
     Some(buffer)
+}
+
+/// Converts a native OS path (which may use `\` separators) into an absolute unix-style path.
+///
+/// Mirrors `FSUtilities.normalizeNativePath(String)`, which is
+/// `appendPath("/", FilenameUtils.separatorsToUnix(path))`.
+pub fn normalize_native_path(path: &str) -> String {
+    let unix_path = path.replace('\\', "/");
+    append_path(&[Some("/"), Some(&unix_path)]).unwrap_or_else(|| "/".to_string())
 }
 
 /// Returns the file extension of `path` at the given extension depth.
@@ -186,6 +222,29 @@ mod tests {
             append_path(&[Some("\\\\"), Some("\\\\")]).as_deref(),
             Some("\\\\\\")
         );
+    }
+
+    // -- escape_encode ----------------------------------------------------------
+
+    #[test]
+    fn escape_encode_leaves_normal_ascii_untouched() {
+        assert_eq!(escape_encode("dir/example.zip"), "dir/example.zip");
+    }
+
+    #[test]
+    fn escape_encode_escapes_separator_characters() {
+        assert_eq!(escape_encode("a%b?c|d"), "a%25b%3fc%7cd");
+    }
+
+    #[test]
+    fn escape_encode_escapes_control_characters() {
+        assert_eq!(escape_encode("a\tb"), "a%09b");
+    }
+
+    #[test]
+    fn escape_encode_escapes_non_ascii_as_utf8_bytes() {
+        // '\u{e9}' (LATIN SMALL LETTER E WITH ACUTE) encodes to 2 UTF-8 bytes: 0xC3 0xA9.
+        assert_eq!(escape_encode("caf\u{e9}"), "caf%c3%a9");
     }
 
     // -- get_extension --------------------------------------------------------

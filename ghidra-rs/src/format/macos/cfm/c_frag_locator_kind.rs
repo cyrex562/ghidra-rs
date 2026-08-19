@@ -194,7 +194,7 @@ mod tests {
     fn get_reads_byte() {
         let mut reader = MockReader::new(vec![0]);
         let result = CFragLocatorKind::get(&mut reader);
-        assert_eq!(result, Ok(CFragLocatorKind::KMemoryCFragLocator));
+        assert_eq!(result.unwrap(), CFragLocatorKind::KMemoryCFragLocator);
         assert_eq!(reader.position, 1);
     }
 
@@ -219,7 +219,7 @@ mod tests {
         for (byte_val, expected) in &test_cases {
             let mut reader = MockReader::new(vec![*byte_val]);
             let result = CFragLocatorKind::get(&mut reader);
-            assert_eq!(result, Ok(*expected));
+            assert_eq!(result.unwrap(), *expected);
         }
     }
 

@@ -1,8 +1,20 @@
+pub mod build_error;
+pub mod bundle_host_listener;
+pub mod bundle_status_change_request_listener;
+pub mod ghidra_bundle;
 pub mod ghidra_bundle_activator;
+pub mod ghidra_bundle_exception;
 pub mod osgi_exception;
+pub mod osgi_utils;
 
+pub use build_error::BuildError;
+pub use bundle_host_listener::BundleHostListener;
+pub use bundle_status_change_request_listener::BundleStatusChangeRequestListener;
+pub use ghidra_bundle::{GhidraBundle, GhidraBundleBase, GhidraBundleType};
 pub use ghidra_bundle_activator::GhidraBundleActivator;
+pub use ghidra_bundle_exception::{Bundle, BundleException, GhidraBundleException};
 pub use osgi_exception::OSGiException;
+pub use osgi_utils::{BundleCapability, BundleEventType, BundleRequirement, BundleState, OSGiUtils};
 
 /// Represents the OSGi bundle context. This is a marker type for the context in which
 /// a bundle operates. In the full OSGi framework, this would contain references to services,

@@ -7,9 +7,11 @@ use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::enum_::Enum;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
-use crate::program::seam_stubs::{DataTypePath, MemBuffer};
+use crate::program::seam_stubs::{DataTypePath};
+use crate::program::model::mem::MemBuffer;
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::util::exception::{DuplicateNameException, InvalidNameException};
@@ -81,7 +83,7 @@ impl std::error::Error for UnsupportedOperationError {}
 ///
 /// The Java static singleton fields `DEFAULT` and `VOID` are omitted since they require
 /// `DefaultDataType`/`VoidDataType`, which are not yet ported.
-pub trait DataType {
+pub trait DataType: Send + Sync {
     /// Indicates if the length of this data-type is determined based upon the
     /// `DataOrganization` obtained from the associated `DataTypeManager`.
     fn has_language_dependant_length(&self) -> bool {
@@ -464,6 +466,206 @@ pub trait DataType {
     fn is_pointer(&self) -> bool {
         false
     }
+
+    /// Stands in for `instanceof AbstractFloatDataType`, used by
+    /// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)'s
+    /// port of `ParamEntry.getBasicTypeClass`.
+    fn is_floating_point(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof AbstractIntegerDataType`, used by
+    /// [`HighConstant::get_scalar`](crate::program::model::pcode::high_constant::HighConstant::get_scalar)'s
+    /// port of `HighConstant.getScalar()`. Implementors representing an abstract integer type are
+    /// expected to override this (and [`is_signed_integer_type`](Self::is_signed_integer_type)) to
+    /// return `true`/their signedness.
+    fn is_integer_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `((AbstractIntegerDataType) dt).isSigned()`, used by the same port as
+    /// [`is_integer_type`](Self::is_integer_type); only meaningful when that returns `true`.
+    fn is_signed_integer_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof ghidra.program.model.data.DefaultDataType`, used by
+    /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Implementors of
+    /// [`DefaultDataType`](crate::program::model::data::default_data_type::DefaultDataType) are
+    /// expected to override this to return `true`.
+    fn is_default_data_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof Undefined`, used by
+    /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Implementors of
+    /// [`Undefined`](crate::program::model::data::undefined::Undefined) are expected to override
+    /// this to return `true`.
+    fn is_undefined_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof VoidDataType`, used by the
+    /// [`is_void_data_type`](crate::program::seam_stubs::is_void_data_type) placeholder for
+    /// `VoidDataType.isVoidDataType`, since the real `VoidDataType` class is not yet ported; see
+    /// `STUBS.tsv`. Implementors representing the `void` type are expected to override this to
+    /// return `true`.
+    fn is_void_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof BitFieldDataType`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before the real `BitFieldDataType` class is ported. Implementors representing a bitfield
+    /// are expected to override this to return `true`.
+    fn is_bit_field_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof Dynamic`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before the real `Dynamic` interface is ported. Implementors representing a dynamically
+    /// sized data type are expected to override this to return `true`.
+    fn is_dynamic_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof FactoryDataType`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before the real `FactoryDataType` interface is ported. Implementors representing a
+    /// factory-produced data type are expected to override this to return `true`.
+    fn is_factory_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof FunctionDefinition`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before a downcast from `&dyn DataType` to `&dyn FunctionDefinition` is available.
+    /// Implementors representing a function-signature data type are expected to override this to
+    /// return `true`.
+    fn is_function_definition_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof BooleanDataType`, used by
+    /// [`PcodeDataTypeManager::get_metatype`](crate::program::model::pcode::pcode_data_type_manager::get_metatype)'s
+    /// port of `PcodeDataTypeManager.getMetatype(DataType)`. Checked ahead of
+    /// [`is_integer_type`](Self::is_integer_type) since `BooleanDataType` is itself (in Java) an
+    /// `AbstractUnsignedIntegerDataType` subclass. Implementors representing the boolean type are
+    /// expected to override this to return `true`.
+    fn is_boolean_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof WideCharDataType || instanceof WideChar16DataType || instanceof
+    /// WideChar32DataType`, used by the same `get_metatype` port. Implementors representing any
+    /// of those wide-character types are expected to override this to return `true`.
+    fn is_wide_char_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `dt instanceof Enum ? (Enum) dt : null`, used by the same `get_metatype`
+    /// port to recover [`Enum::is_signed`]. See [`as_pointer`](Self::as_pointer) for why this is
+    /// by-reference rather than by-value.
+    fn as_enum(&self) -> Option<&dyn Enum> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Array ? (Array) dt : null`, used by
+    /// [`is_undefined_array`](crate::program::model::data::undefined::is_undefined_array) to
+    /// recover an array's element type. Mirrors the existing `into_composite`/
+    /// `into_array_stringable` downcast stand-ins.
+    fn into_array(self: Box<Self>) -> Option<Box<dyn crate::program::model::data::array::Array>> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Composite ? (Composite) dt : null`, used by
+    /// [`CompositeTestUtils::dump`](crate::program::model::data::composite_test_utils::dump) to
+    /// recurse into a component's data type only when it is itself a composite.
+    fn into_composite(
+        self: Box<Self>,
+    ) -> Option<Box<dyn crate::program::model::data::composite::Composite>> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Pointer ? (Pointer) dt : null`, used by
+    /// [`NoisyStructureBuilder::add_data_type`](crate::program::model::data::noisy_structure_builder::NoisyStructureBuilder::add_data_type).
+    /// A by-reference sibling of [`into_array_stringable`](Self::into_array_stringable)/
+    /// [`into_composite`](Self::into_composite) (which consume `Box<Self>`): that caller only
+    /// ever holds an `Arc<dyn DataType>`, from which a `Box<Self>` cannot be recovered, so the
+    /// downcast is exposed by reference instead.
+    fn as_pointer(&self) -> Option<&dyn crate::program::model::data::pointer::Pointer> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Structure ? (Structure) dt : null`, used by the same port to
+    /// check whether a pointer-reference target is an already-populated Structure. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Array ? (Array) dt : null`, used by
+    /// [`VariableOffset`](crate::program::model::listing::variable_offset::VariableOffset)'s
+    /// `getObjects()` port to resolve array-indexed sub-operand names. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
+        None
+    }
+
+    /// Stands in for `dt instanceof PartialUnion ? (PartialUnion) dt : null`, used by the same
+    /// port. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather than
+    /// by-value.
+    fn as_partial_union(
+        &self,
+    ) -> Option<&dyn crate::program::model::pcode::partial_union::PartialUnion> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Dynamic ? (Dynamic) dt : null`, used by
+    /// [`DataTypeInstance`](crate::program::model::data::data_type_instance::DataTypeInstance)'s
+    /// port of `DataTypeInstance.getDataTypeInstance(...)` to recover
+    /// [`Dynamic::can_specify_length`]/[`Dynamic::get_dynamic_length`]. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_dynamic(&self) -> Option<&dyn crate::program::model::data::dynamic::Dynamic> {
+        None
+    }
+
+    /// Stands in for `dt instanceof FactoryDataType ? (FactoryDataType) dt : null`, used by the
+    /// same `DataTypeInstance` port to recover [`FactoryDataType::get_data_type`]. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_factory(&self) -> Option<&dyn crate::program::model::data::factory_data_type::FactoryDataType> {
+        None
+    }
+
+    /// Stands in for `dt instanceof TypeDef ? (TypeDef) dt : null`, used by
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s port of
+    /// the private `DataUtilities.isDefaultData(DataType)`, which needs
+    /// [`TypeDef::is_auto_named`]/[`TypeDef::get_data_type`] without consuming ownership of the
+    /// borrowed `dt`. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather
+    /// than by-value.
+    fn as_typedef(&self) -> Option<&dyn crate::program::model::data::typedef::TypeDef> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Composite ? (Composite) dt : null`, used by
+    /// [`data_organization_impl`](crate::program::model::data::data_organization_impl)'s port of
+    /// `DataOrganizationImpl.getAlignment(DataType)` to recover a composite's own computed
+    /// alignment. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather than
+    /// by-value.
+    fn as_composite(&self) -> Option<&dyn crate::program::model::data::composite::Composite> {
+        None
+    }
+
+    /// Stands in for `dt instanceof BitFieldDataType ? (BitFieldDataType) dt : null`, used by the
+    /// same `DataOrganizationImpl.getAlignment(DataType)` port to recover a bitfield's base data
+    /// type. The real `BitFieldDataType` class is not yet ported, so the downcast target is the
+    /// [`seam_stubs::BitFieldDataType`](crate::program::seam_stubs::BitFieldDataType) placeholder;
+    /// see `STUBS.tsv`. Implementors representing a bitfield are expected to override both this
+    /// and [`is_bit_field_type`](Self::is_bit_field_type).
+    fn as_bit_field(&self) -> Option<&dyn crate::program::seam_stubs::BitFieldDataType> {
+        None
+    }
 }
 
 /// Trivial fallback used by this trait's default methods where the Java interface has no
@@ -540,7 +742,20 @@ mod tests {
         impl DataType for NotEncodable {}
 
         struct MockBuf;
-        impl MemBuffer for MockBuf {}
+        impl MemBuffer for MockBuf {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+            fn get_address(&self) -> crate::program::model::address::Address {
+                crate::program::model::address::SpecialAddress::no_address()
+            }
+        }
 
         struct MockSettings;
         impl Settings for MockSettings {}

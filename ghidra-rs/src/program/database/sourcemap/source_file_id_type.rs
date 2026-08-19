@@ -2,7 +2,10 @@
 ///
 /// Each variant carries a fixed byte length for the corresponding identifier payload.
 /// A byte length of `0` means there is no length restriction.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+///
+/// Declaration order matches the Java enum's ordinal order, so the derived [`Ord`] reproduces
+/// `SourceFileIdType`'s Java `compareTo` (ordinal comparison).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SourceFileIdType {
     /// No identifier; identifier length is unconstrained.
     None,

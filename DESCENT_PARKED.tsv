@@ -1,0 +1,51 @@
+ts	reason	path
+2026-08-01T02:39	timeout	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeUtilities.java
+2026-08-01T03:19	timeout	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureDataType.java
+2026-08-01T04:47	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Type.java
+2026-08-01T21:40	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Section.java
+2026-08-01T22:20	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/DebugHeader.java
+2026-08-01T23:06	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/MDDataType.java
+2026-08-02T01:18	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNestedName.java
+2026-08-02T01:58	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java
+2026-08-03T02:05	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDFuzzyFit.java
+2026-08-03T02:45	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDCVMod.java
+2026-08-03T03:25	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangVS2015.java
+2026-08-03T04:05	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMang.java
+2026-08-03T21:37	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/VtShapeDescriptorMsProperty.java
+2026-08-03T22:02	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/LanguageName.java
+2026-08-03T22:27	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/AbstractCompile2MsSymbol.java
+2026-08-03T22:52	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/DataHighLevelShaderLanguageSymbolInternals.java
+2026-08-03T23:17	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/AbstractDefinedSingleAddressRangeMsSymbol.java
+2026-08-03T23:42	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/InstructionAnnotation.java
+2026-08-04T00:07	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/InlinedFunctionCallsiteExtendedMsSymbol.java
+2026-08-04T02:13	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbLog.java
+2026-08-04T02:38	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/EmptyTPI.java
+2026-08-04T03:25	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SymbolRecords.java
+2026-08-04T06:05	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbDebugInfo.java
+2026-08-08T03:56	timeout	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceCodeUnitAdapter.java
+2026-08-08T08:44	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEventScope.java
+2026-08-09T05:34	shape-undecided (R8b-marker)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceActivatable.java
+2026-08-09T05:34	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEnvironment.java
+2026-08-09T05:34	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceFocusScope.java
+2026-08-09T05:34	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceMethod.java
+2026-08-09T21:16	shape-undecided (R8b-marker)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/PcodeTraceMemoryAccess.java
+2026-08-10T04:12	shape-undecided (R4-annotation)	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/annotation/AutoOptionDefined.java
+2026-08-10T04:12	shape-undecided (R8a-constants-interface)	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/AutoOptions.java
+2026-08-10T05:27	shape-undecided (R8b-marker)	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/FieldMouseHandlerExtension.java
+2026-08-11T03:52	shape-undecided (R8a-constants-interface)	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/GenConsts.java
+2026-08-11T03:58	shape-undecided (R8b-marker)	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Check.java
+2026-08-11T03:58	shape-undecided (R8b-marker)	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Fld.java
+2026-08-11T05:25	shape-undecided (R8b-marker)	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitMemoryVar.java
+2026-08-12T23:31	timeout	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowModel.java
+2026-08-14T21:26	timeout-retry	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowUseropLibrary.java
+2026-08-14T21:51	timeout-retry	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowUseropLibrary.java
+2026-08-14T22:16	timeout	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowUseropLibrary.java
+2026-08-15T04:19	timeout-retry	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
+2026-08-15T04:44	timeout-retry	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
+2026-08-15T05:10	timeout	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
+2026-08-15T05:56	shape-undecided (R4-annotation)	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldOutput.java
+2026-08-16T22:09	shape-undecided (R8b-marker)	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DecompilerHoverService.java
+2026-08-17T01:23	timeout-retry	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchSetDB.java
+2026-08-17T03:56	shape-undecided (R8b-marker)	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java
+2026-08-17T22:02	shape-undecided (R8b-marker)	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/UniversalDataFormatModel.java
+2026-08-18T02:32	timeout	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/disassemble/DebuggerDisassemblerPlugin.java

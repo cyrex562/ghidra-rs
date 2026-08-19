@@ -11,13 +11,15 @@ use crate::program::model::lang::{
 };
 use crate::program::model::listing::instruction::OperandValue;
 use crate::program::model::mem::MemoryAccessException;
+use crate::program::model::pcode::PatchEncoder;
 use crate::program::model::pcode::PcodeOp;
+use crate::program::model::pcode::PcodeOverride;
 use crate::program::model::scalar::Scalar;
+use crate::program::model::lang::language::Language;
 use crate::program::model::lang::Mask;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{
-    Language, MemBuffer, ParserContext, PatchEncoder, PcodeOverride,
-};
+use crate::program::seam_stubs::{ParserContext};
+use crate::program::model::mem::MemBuffer;
 
 /// Sentinel value to indicate an invalid depth change.
 ///
@@ -485,5 +487,36 @@ mod tests {
     }
 
     struct MockContext;
-    impl InstructionContext for MockContext {}
+    impl InstructionContext for MockContext {
+        fn get_address(&self) -> Address {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_processor_context(&self) -> &dyn ProcessorContextView {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_mem_buffer(&self) -> &dyn MemBuffer {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_parser_context(
+            &self,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::parser_context::ParserContext>,
+            MemoryAccessException,
+        > {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_parser_context_at(
+            &self,
+            _instruction_address: Address,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::parser_context::ParserContext>,
+            crate::program::model::lang::instruction_context::InstructionContextError,
+        > {
+            unimplemented!("not needed for this smoke test")
+        }
+    }
 }

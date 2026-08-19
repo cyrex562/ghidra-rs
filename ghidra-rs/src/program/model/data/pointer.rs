@@ -1,5 +1,5 @@
 use crate::program::model::data::data_type::DataType;
-use crate::program::seam_stubs::PointerTypedefBuilder;
+use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
 
 /// Pointer representation used when unable to generate a suitable address.
 pub const NAP: &str = "NaP";

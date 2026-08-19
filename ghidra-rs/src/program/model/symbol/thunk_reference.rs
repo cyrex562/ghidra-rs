@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::program::model::address::Address;
 use crate::program::model::symbol::{DynamicReference, RefType, Reference, SourceType};
 use std::cmp::Ordering;
@@ -102,6 +103,10 @@ impl Reference for ThunkReference {
 
     fn source(&self) -> SourceType {
         SourceType::Default
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -244,6 +249,10 @@ mod tests {
     }
 
     impl Reference for TestReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             self.from_address.clone()
         }

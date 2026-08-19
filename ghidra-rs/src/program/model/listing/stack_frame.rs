@@ -154,7 +154,7 @@ mod tests {
         fn set_data_type_with_storage(
             &mut self,
             _data_type: Box<dyn DataType>,
-            _storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
+            _storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage>,
             _force: bool,
             _source: SourceType,
         ) -> Result<(), InvalidInputException> {
@@ -197,12 +197,13 @@ mod tests {
 
         fn get_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl crate::program::model::listing::Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:32:default".to_string()
                 }
             }
             std::sync::Arc::new(MockProgram)
@@ -227,7 +228,7 @@ mod tests {
 
         fn set_comment(&mut self, _comment: Option<String>) {}
 
-        fn get_variable_storage(&self) -> Option<Box<dyn crate::program::seam_stubs::VariableStorage>> {
+        fn get_variable_storage(&self) -> Option<Box<dyn crate::program::model::listing::variable_storage::VariableStorage>> {
             None
         }
 
@@ -450,9 +451,15 @@ mod tests {
             .create_variable("local_1", -4, Box::new(MockDataType), SourceType::UserDefined)
             .unwrap();
 
-        let err = frame
-            .create_variable("local_1", -8, Box::new(MockDataType), SourceType::UserDefined)
-            .unwrap_err();
+        let err = match frame.create_variable(
+            "local_1",
+            -8,
+            Box::new(MockDataType),
+            SourceType::UserDefined,
+        ) {
+            Err(e) => e,
+            Ok(_) => panic!("expected duplicate name error"),
+        };
         assert!(matches!(err, CreateStackVariableError::Duplicate(_)));
     }
 

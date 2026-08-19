@@ -1,6 +1,6 @@
 use crate::program::model::address::Address;
 use crate::program::model::lang::processor_context::ProcessorContext;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Port of `ghidra.app.plugin.processors.generic.Position`.
 ///
@@ -70,6 +70,15 @@ mod tests {
     }
 
     impl MemBuffer for TestMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
             Address::new(space, self.addr_offset)
@@ -87,7 +96,39 @@ mod tests {
     /// Mock implementation of ProcessorContext for testing.
     struct TestProcessorContext;
 
-    impl ProcessorContextView for TestProcessorContext {}
+    impl ProcessorContextView for TestProcessorContext {
+        fn get_base_context_register(
+            &self,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_registers(&self) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register(
+            &self,
+            _name: &str,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
+            None
+        }
+
+        fn get_register_value(
+            &self,
+            _register: &Register,
+        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+            None
+        }
+
+        fn has_value(&self, _register: &Register) -> bool {
+            false
+        }
+    }
 
     impl ProcessorContext for TestProcessorContext {
         fn set_value(

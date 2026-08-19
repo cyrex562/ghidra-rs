@@ -195,7 +195,8 @@ mod tests {
         SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
     use std::sync::Arc;
 
     struct MockDataType;
@@ -217,7 +218,20 @@ mod tests {
         constant: bool,
     }
 
-    impl MemBuffer for MockData {}
+    impl MemBuffer for MockData {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            mock_address(0)
+        }
+    }
     impl PropertySet for MockData {}
 
     impl CodeUnit for MockData {
@@ -303,12 +317,13 @@ mod tests {
         }
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock.bin"
+                fn get_name(&self) -> String {
+                    "mock.bin".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "test:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "test:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)
@@ -500,10 +515,10 @@ mod tests {
         };
         let dyn_data: &dyn Data = &data;
         assert_eq!(
-            dyn_data.get_value().and_then(|v| v.downcast::<i32>().ok()),
+            Data::get_value(dyn_data).and_then(|v| v.downcast::<i32>().ok()),
             Some(Box::new(42))
         );
-        assert!(dyn_data.is_immutable_settings());
+        assert!(Data::is_immutable_settings(dyn_data));
         assert!(dyn_data.is_constant());
         assert!(!dyn_data.is_writable());
         assert_eq!(

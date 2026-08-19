@@ -1,0 +1,1796 @@
+use crate::program::model::address::AddressFactory;
+use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
+use crate::program::model::lang::{CompilerSpec, Language};
+use crate::trace::model::breakpoint::trace_breakpoint_manager::TraceBreakpointManager;
+use crate::trace::model::listing::TraceCodeManager;
+use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
+use crate::trace::model::program::TraceProgramView;
+use crate::trace::model::time::trace_time_manager::TraceTimeManager;
+use crate::trace::model::target::trace_object_manager::TraceObjectManager;
+use crate::trace::model::thread::TraceThreadManager;
+use crate::trace::model::symbol::trace_equate_manager::TraceEquateManager;
+use crate::trace::model::symbol::trace_reference_manager::TraceReferenceManager;
+use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
+use crate::trace::model::trace_time_viewport::TraceTimeViewport;
+use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
+use crate::trace::model::program::TraceVariableSnapProgramView;
+use crate::trace::model::stack::trace_stack_manager::TraceStackManager;
+use crate::trace::model::property::TraceAddressPropertyManager;
+use crate::trace::model::memory::trace_memory_manager::TraceMemoryManager;
+use crate::trace::seam_stubs::{
+    TraceBasedDataTypeManager, TraceBookmarkManager,
+    TraceRegisterContextManager,
+};
+use crate::util::lock_hold::{Lock, LockHold};
+
+/// Reference identity for traces, matching Java: `Trace` (like every `DomainObject`) inherits
+/// `Object`'s `equals`/`hashCode`, so a `Set<Trace>` or `Map<Trace, ?>` keys on the instance, not
+/// on its contents. Two handles are the same trace exactly when they point at the same object.
+impl PartialEq for dyn Trace {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(
+            self as *const dyn Trace as *const (),
+            other as *const dyn Trace as *const (),
+        )
+    }
+}
+
+impl Eq for dyn Trace {}
+
+impl std::hash::Hash for dyn Trace {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        (self as *const dyn Trace as *const ()).hash(state);
+    }
+}
+
+/// Notified when a new [`TraceProgramView`] is created for a [`Trace`].
+///
+/// Port of `ghidra.trace.model.Trace.TraceProgramViewListener`.
+pub trait TraceProgramViewListener {
+    /// Called when a new program view has been created.
+    fn view_created(&self, view: &dyn TraceProgramView);
+}
+
+/// An indexed record of observations over the course of a target's execution.
+///
+/// Conceptually, this is the same as a `Program`, but multiplied by a concrete dimension of time
+/// and organized into snapshots. This also includes information about other objects not
+/// ordinarily of concern for static analysis, for example threads, modules, and breakpoints. To
+/// view a specific snapshot and/or manipulate the trace as if it were a program, use
+/// [`Trace::get_program_view`].
+///
+/// Port of `ghidra.trace.model.Trace`.
+///
+/// The `TRACE_ICON` constant is omitted: it is a Swing `Icon`, and no GUI icon type has been
+/// ported into this crate yet.
+///
+/// The `getDataTypeManager()` default method (which simply delegates to
+/// [`Trace::get_base_data_type_manager`]) is not re-declared here, since Rust does not support
+/// covariant trait-method overrides: it would collide with
+/// [`DataTypeManagerOwner::get_data_type_manager`](crate::app::merge::DataTypeManagerOwner::get_data_type_manager),
+/// which this trait already inherits (via [`DataTypeManagerDomainObject`]) and which returns a
+/// different (non-covariant) type. Implementors of `Trace` should implement that supertrait
+/// method to delegate to `get_base_data_type_manager`, mirroring the Java default.
+pub trait Trace: DataTypeManagerDomainObject {
+    /// Returns the base (host) language of this trace.
+    fn get_base_language(&self) -> Box<dyn Language>;
+
+    /// Returns the base (host) compiler spec of this trace.
+    fn get_base_compiler_spec(&self) -> Box<dyn CompilerSpec>;
+
+    /// Sets the emulator cache version, effectively invalidating any cached emulator states from
+    /// prior versions.
+    fn set_emulator_cache_version(&mut self, version: i64);
+
+    /// Gets the current emulator cache version.
+    fn get_emulator_cache_version(&self) -> i64;
+
+    /// Returns the base address factory of this trace.
+    fn get_base_address_factory(&self) -> Box<dyn AddressFactory>;
+
+    /// Returns the manager for address-keyed properties.
+    fn get_address_property_manager(&self) -> Box<dyn TraceAddressPropertyManager>;
+
+    /// Returns the bookmark manager.
+    fn get_bookmark_manager(&self) -> Box<dyn TraceBookmarkManager>;
+
+    /// Returns the breakpoint manager.
+    fn get_breakpoint_manager(&self) -> Box<dyn TraceBreakpointManager>;
+
+    /// Returns the code manager.
+    fn get_code_manager(&self) -> Box<dyn TraceCodeManager>;
+
+    /// Returns the "base" or "host" data type manager. For platform-specific managers, see
+    /// `TracePlatform::get_data_type_manager`.
+    fn get_base_data_type_manager(&self) -> Box<dyn TraceBasedDataTypeManager>;
+
+    /// Returns the equate manager.
+    fn get_equate_manager(&self) -> Box<dyn TraceEquateManager>;
+
+    /// Returns the platform manager.
+    fn get_platform_manager(&self) -> Box<dyn TracePlatformManager>;
+
+    /// Returns the memory manager.
+    fn get_memory_manager(&self) -> Box<dyn TraceMemoryManager>;
+
+    /// Returns the module manager.
+    fn get_module_manager(&self) -> Box<dyn TraceModuleManager>;
+
+    /// Returns the object manager.
+    fn get_object_manager(&self) -> Box<dyn TraceObjectManager>;
+
+    /// Returns the reference manager.
+    fn get_reference_manager(&self) -> Box<dyn TraceReferenceManager>;
+
+    /// Returns the register context manager.
+    fn get_register_context_manager(&self) -> Box<dyn TraceRegisterContextManager>;
+
+    /// Returns the stack manager.
+    fn get_stack_manager(&self) -> Box<dyn TraceStackManager>;
+
+    /// Returns the static mapping manager.
+    fn get_static_mapping_manager(&self) -> Box<dyn TraceStaticMappingManager>;
+
+    /// Returns the symbol manager.
+    fn get_symbol_manager(&self) -> Box<dyn TraceSymbolManager>;
+
+    /// Returns the thread manager.
+    fn get_thread_manager(&self) -> Box<dyn TraceThreadManager>;
+
+    /// Returns the time manager.
+    fn get_time_manager(&self) -> Box<dyn TraceTimeManager>;
+
+    /// Returns a fixed (single-snapshot) program view at the given snap.
+    fn get_fixed_program_view(&self, snap: i64) -> Box<dyn TraceProgramView>;
+
+    /// Creates a new variable-snap program view starting at the given snap.
+    fn create_program_view(&self, snap: i64) -> Box<dyn TraceVariableSnapProgramView>;
+
+    /// Collects all program views, fixed or variable, of this trace.
+    fn get_all_program_views(&self) -> Vec<Box<dyn TraceProgramView>>;
+
+    /// Gets the "canonical" program view for this trace.
+    ///
+    /// This view is the view returned, e.g., by `TraceCodeUnit::get_program`, no matter which
+    /// view was actually used to retrieve that unit.
+    fn get_program_view(&self) -> Box<dyn TraceVariableSnapProgramView>;
+
+    /// Creates a new time viewport over this trace.
+    fn create_time_viewport(&self) -> Box<dyn TraceTimeViewport>;
+
+    /// Adds a listener to be notified when new program views are created.
+    fn add_program_view_listener(&mut self, listener: Box<dyn TraceProgramViewListener>);
+
+    /// Removes a previously-added program view listener.
+    fn remove_program_view_listener(&mut self, listener: &dyn TraceProgramViewListener);
+
+    /// Acquires the read lock, releasing it when the returned guard is dropped.
+    fn lock_read(&self) -> LockHold<'_, dyn Lock>;
+
+    /// Acquires the write lock, releasing it when the returned guard is dropped.
+    fn lock_write(&self) -> LockHold<'_, dyn Lock>;
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::trace::model::lifespan::Lifespan;
+    use super::*;
+    use crate::framework::model::DomainObject;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
+    use crate::app::merge::DataTypeManagerOwner;
+
+    struct MockLock;
+    impl Lock for MockLock {
+        fn lock(&self) {}
+        fn unlock(&self) {}
+    }
+
+    struct MockDataTypeManager;
+    impl DataTypeManager for MockDataTypeManager {}
+
+    struct MockTraceBasedDataTypeManager;
+    impl DataTypeManager for MockTraceBasedDataTypeManager {}
+    impl TraceBasedDataTypeManager for MockTraceBasedDataTypeManager {}
+
+    struct MockTrace {
+        lock: MockLock,
+        emulator_cache_version: i64,
+    }
+
+    impl DomainObject for MockTrace {}
+
+    impl DataTypeManagerOwner for MockTrace {
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
+        }
+    }
+
+    impl DataTypeManagerDomainObject for MockTrace {}
+
+    struct MockAddressPropertyManager;
+    impl TraceAddressPropertyManager for MockAddressPropertyManager {}
+    struct MockBookmarkManager;
+    impl TraceBookmarkManager for MockBookmarkManager {}
+    struct MockBreakpointManager;
+    impl TraceBreakpointManager for MockBreakpointManager {
+        fn add_breakpoint(
+            &mut self,
+            _path: &str,
+            _lifespan: Lifespan,
+            _range: crate::program::model::address::AddressRange,
+            _threads: &[Box<dyn crate::trace::model::thread::TraceThread>],
+            _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
+            _enabled: bool,
+            _comment: &str,
+        ) -> Result<
+            Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn place_breakpoint(
+            &mut self,
+            _path: &str,
+            _snap: i64,
+            _range: crate::program::model::address::AddressRange,
+            _threads: &[Box<dyn crate::trace::model::thread::TraceThread>],
+            _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
+            _enabled: bool,
+            _comment: &str,
+        ) -> Result<
+            Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn place_breakpoint_at_address(
+            &mut self,
+            _path: &str,
+            _snap: i64,
+            _address: crate::program::model::address::Address,
+            _threads: &[Box<dyn crate::trace::model::thread::TraceThread>],
+            _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
+            _enabled: bool,
+            _comment: &str,
+        ) -> Result<
+            Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_breakpoint_specifications(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_breakpoint_locations(&self) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoint_specifications_by_path(
+            &self,
+            _path: &str,
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoint_locations_by_path(
+            &self,
+            _path: &str,
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_placed_breakpoint_by_path(
+            &self,
+            _snap: i64,
+            _path: &str,
+        ) -> Option<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoints_at(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoints_intersecting(
+            &self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockCodeManager;
+    impl crate::trace::model::listing::TraceCodeOperations for MockCodeManager {
+        fn code_units(&self) -> Box<dyn crate::trace::model::listing::TraceCodeUnitsView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn instructions(&self) -> Box<dyn crate::trace::model::listing::TraceInstructionsView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn data(&self) -> Box<dyn crate::trace::model::listing::TraceDataView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn defined_data(&self) -> Box<dyn crate::trace::model::listing::TraceDefinedDataView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn undefined_data(&self) -> Box<dyn crate::trace::model::listing::TraceUndefinedDataView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn defined_units(&self) -> Box<dyn crate::trace::model::listing::TraceDefinedUnitsView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceCodeManager for MockCodeManager {
+        fn get_code_space(
+            &self,
+            _space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_register_space(
+            &self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_register_space_for_frame_level(
+            &self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _frame_level: i32,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_register_space_for_stack_frame(
+            &self,
+            _frame: &dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_added(
+            &self,
+            _from: i64,
+            _to: i64,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_removed(
+            &self,
+            _from: i64,
+            _to: i64,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockEquateManager;
+    impl crate::trace::model::symbol::trace_equate_operations::TraceEquateOperations for MockEquateManager {
+        fn get_referring_addresses(
+            &self,
+            _span: Lifespan,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references(
+            &mut self,
+            _span: Lifespan,
+            _asv: &dyn crate::program::model::address::AddressSetView,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references_range(
+            &mut self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_referenced_by_value(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+            _operand_index: i32,
+            _value: i64,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_referenced(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_referenced_all_operands(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceEquateManager for MockEquateManager {
+        fn get_equate_space(
+            &mut self,
+            _space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_equate_register_space_for_thread(
+            &mut self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_equate_register_space_for_frame(
+            &mut self,
+            _frame: &dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn create(
+            &mut self,
+            _name: &str,
+            _value: i64,
+        ) -> Result<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_by_name(&self, _name: &str) -> Option<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_by_key(&self, _key: i64) -> Option<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_by_value(&self, _value: i64) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_all(&self) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockPlatformManager;
+    impl TracePlatformManager for MockPlatformManager {
+        fn get_host_platform(&self) -> Box<dyn crate::trace::model::guest::trace_platform::TracePlatform> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockMemoryManager;
+    impl crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations for MockMemoryManager {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_state(
+            &mut self,
+            _snap: i64,
+            _range: &crate::program::model::address::AddressRange,
+            _state: crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_state(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> crate::trace::model::memory::trace_memory_state::TraceMemoryState {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_view_state(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> (i64, crate::trace::model::memory::trace_memory_state::TraceMemoryState) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_most_recent_state_entry(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Option<(
+            Box<dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_view_most_recent_state_entry(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Option<(
+            Box<dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_view_most_recent_state_entry_where(
+            &self,
+            _snap: i64,
+            _range: &crate::program::model::address::AddressRange,
+            _predicate: &dyn Fn(crate::trace::model::memory::trace_memory_state::TraceMemoryState) -> bool,
+        ) -> Option<(
+            Box<dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_addresses_with_state_in(
+            &self,
+            _span: Lifespan,
+            _set: &dyn crate::program::model::address::AddressSetView,
+            _predicate: &dyn Fn(crate::trace::model::memory::trace_memory_state::TraceMemoryState) -> bool,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_addresses_with_state(
+            &self,
+            _snap: i64,
+            _predicate: &dyn Fn(crate::trace::model::memory::trace_memory_state::TraceMemoryState) -> bool,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_addresses_with_state_over(
+            &self,
+            _lifespan: Lifespan,
+            _predicate: &dyn Fn(crate::trace::model::memory::trace_memory_state::TraceMemoryState) -> bool,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_states(
+            &self,
+            _snap: i64,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<(
+            Box<dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_most_recent_states(
+            &self,
+            _within: &dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange,
+        ) -> Vec<(
+            Box<dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_most_recent_states_in(
+            &self,
+            _snap: i64,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<(
+            Box<dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn put_bytes(
+            &mut self,
+            _snap: i64,
+            _start: &crate::program::model::address::Address,
+            _buf: &mut [u8],
+        ) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_bytes(
+            &self,
+            _snap: i64,
+            _start: &crate::program::model::address::Address,
+            _buf: &mut [u8],
+        ) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_view_bytes(
+            &self,
+            _snap: i64,
+            _start: &crate::program::model::address::Address,
+            _buf: &mut [u8],
+        ) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn find_bytes(
+            &self,
+            _snap: i64,
+            _range: &crate::program::model::address::AddressRange,
+            _data: &[u8],
+            _mask: Option<&[u8]>,
+            _forward: bool,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Option<crate::program::model::address::Address> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn remove_bytes(&mut self, _snap: i64, _start: &crate::program::model::address::Address, _len: i32) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_buffer_at(
+            &self,
+            _snap: i64,
+            _start: &crate::program::model::address::Address,
+            _big_endian: bool,
+        ) -> Box<dyn crate::program::model::mem::MemBuffer> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_snap_of_most_recent_change_to_block(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Option<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_block_size(&self) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn pack(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceMemoryManager for MockMemoryManager {
+        fn create_overlay_address_space(
+            &self,
+            _name: &str,
+            _base: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+        ) -> Result<
+            std::sync::Arc<crate::program::model::address::AddressSpace>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_or_create_overlay_address_space(
+            &self,
+            _name: &str,
+            _base: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+        ) -> Option<std::sync::Arc<crate::program::model::address::AddressSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn delete_overlay_address_space(&self, _name: &str) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_region(
+            &self,
+            _path: &str,
+            _lifespan: Lifespan,
+            _range: crate::program::model::address::AddressRange,
+            _flags: &[crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag],
+        ) -> Result<
+            Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>,
+            Box<dyn crate::trace::seam_stubs::TraceOverlappedRegionException>,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_all_regions(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_live_region_by_path(
+            &self,
+            _snap: i64,
+            _path: &str,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_region_containing(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_regions_intersecting(
+            &self,
+            _lifespan: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_regions_at_snap(
+            &self,
+            _snap: i64,
+        ) -> Vec<Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_regions_address_set(
+            &self,
+            _snap: i64,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_regions_address_set_with(
+            &self,
+            _snap: i64,
+            _predicate: &dyn Fn(&dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion) -> bool,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_memory_space(
+            &self,
+            _space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_memory_register_space_at_frame(
+            &self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _frame: i32,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_memory_register_space(
+            &self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_memory_register_space_for_frame(
+            &self,
+            _frame: &dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_state_changes(
+            &self,
+            _from: i64,
+            _to: i64,
+        ) -> Vec<(
+            Box<dyn crate::trace::model::trace_address_snap_range::TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockModuleManager;
+    impl crate::trace::model::modules::TraceModuleOperations for MockModuleManager {
+        fn get_all_modules(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_loaded_modules(
+            &self,
+            _snap: i64,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_modules_at(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_modules_intersecting(
+            &self,
+            _lifespan: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_sections(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_sections_at(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_sections_intersecting(
+            &self,
+            _lifespan: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceModuleManager for MockModuleManager {
+        fn add_module(
+            &mut self,
+            _module_path: &str,
+            _module_name: &str,
+            _range: crate::program::model::address::AddressRange,
+            _lifespan: Lifespan,
+        ) -> Result<
+            Box<dyn crate::trace::model::modules::TraceModule>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn add_loaded_module(
+            &mut self,
+            _module_path: &str,
+            _module_name: &str,
+            _range: crate::program::model::address::AddressRange,
+            _snap: i64,
+        ) -> Result<
+            Box<dyn crate::trace::model::modules::TraceModule>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_modules_by_path(
+            &self,
+            _module_path: &str,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_loaded_module_by_path(
+            &self,
+            _snap: i64,
+            _module_path: &str,
+        ) -> Option<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_sections_by_path(
+            &self,
+            _section_path: &str,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_loaded_section_by_path(
+            &self,
+            _snap: i64,
+            _section_path: &str,
+        ) -> Option<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockObjectManager;
+    impl TraceObjectManager for MockObjectManager {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_root_object(
+            &mut self,
+            _schema: Box<dyn crate::trace::seam_stubs::TraceObjectSchema>,
+        ) -> Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_object(
+            &mut self,
+            _path: &crate::trace::model::target::path::key_path::KeyPath,
+        ) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_root_schema(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceObjectSchema>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_root_object(&self) -> Option<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_object_by_id(&self, _key: i64) -> Option<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_object_by_canonical_path(
+            &self,
+            _path: &crate::trace::model::target::path::key_path::KeyPath,
+        ) -> Option<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_objects_by_path(
+            &self,
+            _span: Lifespan,
+            _path: &crate::trace::model::target::path::key_path::KeyPath,
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_value_paths(
+            &self,
+            _span: Lifespan,
+            _predicates: &dyn crate::trace::model::target::path::PathFilter,
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object_val_path::TraceObjectValPath>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_objects(&self) -> Vec<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_object_count(&self) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_values(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_values_intersecting(
+            &self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+            _entry_key: Option<&str>,
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn query_all_interface<I: crate::trace::model::target::iface::TraceObjectInterface>(
+            &self,
+            _span: Lifespan,
+        ) -> Vec<I>
+        where
+            Self: Sized,
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn cull_disconnected_objects(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn clear(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn without_write_cache(
+            &mut self,
+        ) -> Box<dyn crate::trace::model::target::trace_object_manager::BypassWriteCache> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockReferenceManager;
+    impl crate::trace::model::symbol::trace_reference_operations::TraceReferenceOperations for MockReferenceManager {
+        fn add_reference(
+            &mut self,
+            _reference: &dyn crate::trace::model::symbol::trace_reference::TraceReference,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_reference_for_lifespan(
+            &mut self,
+            _lifespan: Lifespan,
+            _reference: &dyn crate::program::model::symbol::Reference,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_memory_reference(
+            &mut self,
+            _lifespan: Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_range: crate::program::model::address::AddressRange,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_offset_reference(
+            &mut self,
+            _lifespan: Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_address: &crate::program::model::address::Address,
+            _to_addr_is_base: bool,
+            _offset: i64,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_offset_reference::TraceOffsetReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_shifted_reference(
+            &mut self,
+            _lifespan: Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_address: &crate::program::model::address::Address,
+            _shift: i32,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_shifted_reference::TraceShiftedReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_register_reference(
+            &mut self,
+            _lifespan: Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_register: &crate::program::model::lang::Register,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_stack_reference(
+            &mut self,
+            _lifespan: Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_stack_offset: i32,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _to_range: crate::program::model::address::AddressRange,
+            _operand_index: i32,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_to_address(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _to_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_from_operand(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_from_range(
+            &self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_primary_reference_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_flow_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references_from(
+            &mut self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_to(
+            &self,
+            _snap: i64,
+            _to_address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references_to(
+            &mut self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_to_range(
+            &self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+            _order: Option<&dyn crate::trace::seam_stubs::Rectangle2DDirection>,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_to_range_unordered(
+            &self,
+            _span: Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_references_from_operand(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_flow_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_references_to(
+            &self,
+            _snap: i64,
+            _to_address: &crate::program::model::address::Address,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_sources(
+            &self,
+            _span: Lifespan,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_destinations(
+            &self,
+            _span: Lifespan,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_count_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_count_to(
+            &self,
+            _snap: i64,
+            _to_address: &crate::program::model::address::Address,
+        ) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceReferenceManager for MockReferenceManager {
+        fn get_reference_space(
+            &mut self,
+            _space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_register_space_for_thread(
+            &mut self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_register_space_for_frame(
+            &mut self,
+            _frame: &dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockRegisterContextManager;
+    impl TraceRegisterContextManager for MockRegisterContextManager {}
+    struct MockStackManager;
+    impl TraceStackManager for MockStackManager {
+        fn get_stack(
+            &self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _snap: i64,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::stack::trace_stack::TraceStack>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_latest_stack(
+            &self,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
+            _snap: i64,
+        ) -> Option<Box<dyn crate::trace::model::stack::trace_stack::TraceStack>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_frames_in(
+            &self,
+            _set: &dyn crate::program::model::address::AddressSetView,
+        ) -> Vec<Box<dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockStaticMappingManager;
+    impl TraceStaticMappingManager for MockStaticMappingManager {
+        fn add(
+            &mut self,
+            _range: crate::program::model::address::AddressRange,
+            _lifespan: Lifespan,
+            _to_program_url: &str,
+            _to_address: &str,
+        ) -> Result<
+            Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>,
+            Box<
+                dyn crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException,
+            >,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_entries(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_containing(
+            &self,
+            _address: &crate::program::model::address::Address,
+            _snap: i64,
+        ) -> Option<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_any_conflicting(
+            &self,
+            _range: &crate::program::model::address::AddressRange,
+            _lifespan: Lifespan,
+            _to_program_url: &str,
+            _to_address: &str,
+        ) -> Option<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_all_overlapping(
+            &self,
+            _range: &crate::program::model::address::AddressRange,
+            _lifespan: Lifespan,
+        ) -> Vec<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockSymbolManager;
+    impl TraceSymbolManager for MockSymbolManager {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_global_namespace(
+            &self,
+        ) -> std::sync::Arc<
+            dyn crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn labels(&self) -> Box<dyn crate::trace::model::symbol::trace_label_symbol_view::TraceLabelSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_namespace_symbol_view::TraceNamespaceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn classes(&self) -> Box<dyn crate::trace::model::symbol::trace_class_symbol_view::TraceClassSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn all_namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn not_labels(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_no_duplicates_view::TraceSymbolNoDuplicatesView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn all_symbols(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_ids_added(&self, _from: i64, _to: i64) -> Vec<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_ids_removed(&self, _from: i64, _to: i64) -> Vec<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockThreadManager;
+    impl TraceThreadManager for MockThreadManager {
+        fn add_thread(
+            &mut self,
+            _path: &str,
+            _lifespan: Lifespan,
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn add_thread_with_display(
+            &mut self,
+            _path: &str,
+            _display: &str,
+            _lifespan: Lifespan,
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_thread(
+            &mut self,
+            _path: &str,
+            _creation_snap: i64,
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_thread_with_display(
+            &mut self,
+            _path: &str,
+            _display: &str,
+            _creation_snap: i64,
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_threads(&self) -> Vec<Box<dyn crate::trace::model::thread::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_threads_by_path(&self, _name: &str) -> Vec<Box<dyn crate::trace::model::thread::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_live_thread_by_path(
+            &self,
+            _snap: i64,
+            _path: &str,
+        ) -> Option<Box<dyn crate::trace::model::thread::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_thread(&self, _key: i64) -> Option<Box<dyn crate::trace::model::thread::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_live_threads(&self, _snap: i64) -> Vec<Box<dyn crate::trace::model::thread::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockTimeManager;
+    impl TraceTimeManager for MockTimeManager {
+        fn create_snapshot(
+            &self,
+            _description: &str,
+        ) -> Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshot(
+            &self,
+            _snap: i64,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_snapshot(
+            &self,
+            _snap: i64,
+        ) -> Option<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_fork(&self, _snap: i64) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshots_with_schedule(
+            &self,
+            _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
+        ) -> Vec<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_scratch_snapshot(
+            &self,
+            _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
+        ) -> Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_snapshot_with_nearest_prefix(
+            &self,
+            _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
+        ) -> Option<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_snapshots(&self) -> Vec<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshots(
+            &self,
+            _from_snap: i64,
+            _from_inclusive: bool,
+            _to_snap: i64,
+            _to_inclusive: bool,
+        ) -> Vec<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_snap(&self) -> Option<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshot_count(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_time_radix(&mut self, _radix: Box<dyn crate::trace::seam_stubs::TimeRadix>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_time_radix(&self) -> Box<dyn crate::trace::seam_stubs::TimeRadix> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    struct MockProgramView;
+
+    impl DomainObject for MockProgramView {}
+
+    impl crate::program::model::listing::program::Program for MockProgramView {
+        fn get_name(&self) -> String {
+            "mock-view".to_string()
+        }
+
+        fn get_language_id(&self) -> String {
+            "mock:LE:64:default".to_string()
+        }
+    }
+
+    impl TraceProgramView for MockProgramView {
+        fn get_trace_program_view_memory(
+            &self,
+        ) -> Box<dyn crate::trace::model::program::TraceProgramViewMemory> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_viewport(&self) -> Box<dyn TraceTimeViewport> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_snap(&self) -> Option<i64> {
+            None
+        }
+    }
+
+    struct MockVariableSnapProgramView;
+
+    impl DomainObject for MockVariableSnapProgramView {}
+
+    impl crate::program::model::listing::program::Program for MockVariableSnapProgramView {
+        fn get_name(&self) -> String {
+            "mock-variable-snap-view".to_string()
+        }
+
+        fn get_language_id(&self) -> String {
+            "mock:LE:64:default".to_string()
+        }
+    }
+
+    impl TraceProgramView for MockVariableSnapProgramView {
+        fn get_trace_program_view_memory(
+            &self,
+        ) -> Box<dyn crate::trace::model::program::TraceProgramViewMemory> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_viewport(&self) -> Box<dyn TraceTimeViewport> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_snap(&self) -> Option<i64> {
+            None
+        }
+    }
+
+    impl TraceVariableSnapProgramView for MockVariableSnapProgramView {
+        fn set_snap(&mut self, _snap: i64) {}
+
+        fn set_platform(&mut self, _platform: Box<dyn crate::trace::model::guest::trace_platform::TracePlatform>) {}
+    }
+    struct MockTimeViewport;
+    impl TraceTimeViewport for MockTimeViewport {
+        fn set_snap(&mut self, _snap: i64) {}
+
+        fn add_change_listener(&mut self, _l: crate::util::function::Runnable) {}
+
+        fn remove_change_listener(&mut self, _l: &crate::util::function::Runnable) {}
+
+        fn is_forked(&self) -> bool {
+            false
+        }
+
+        fn contains_any_upper(&self, _lifespan: Lifespan) -> bool {
+            false
+        }
+
+        fn is_completely_visible(
+            &self,
+            _range: &crate::program::model::address::range::AddressRange,
+            _lifespan: Lifespan,
+            _object: &dyn std::any::Any,
+            _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
+        ) -> bool {
+            true
+        }
+
+        fn compute_visible_parts(
+            &self,
+            _set: &dyn crate::program::model::address::address_set::AddressSetView,
+            _lifespan: Lifespan,
+            _object: &dyn std::any::Any,
+            _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
+        ) -> crate::program::model::address::address_set::AddressSet {
+            crate::program::model::address::address_set::AddressSet::new()
+        }
+
+        fn get_ordered_spans(&self) -> Vec<Lifespan> {
+            Vec::new()
+        }
+
+        fn get_reversed_spans(&self) -> Vec<Lifespan> {
+            Vec::new()
+        }
+
+        fn get_ordered_snaps(&self) -> Vec<i64> {
+            Vec::new()
+        }
+
+        fn get_reversed_snaps(&self) -> Vec<i64> {
+            Vec::new()
+        }
+
+        fn get_top(
+            &self,
+            _func: &dyn Fn(i64) -> Option<Box<dyn std::any::Any>>,
+        ) -> Option<Box<dyn std::any::Any>> {
+            None
+        }
+
+        fn merged_iterator(
+            &self,
+            _iter_func: &dyn Fn(i64) -> Box<dyn Iterator<Item = Box<dyn std::any::Any>>>,
+            _comparator: &dyn Fn(&dyn std::any::Any, &dyn std::any::Any) -> std::cmp::Ordering,
+        ) -> Box<dyn Iterator<Item = Box<dyn std::any::Any>>> {
+            Box::new(std::iter::empty())
+        }
+
+        fn unioned_addresses(
+            &self,
+            _set_func: &dyn Fn(i64) -> Box<dyn crate::program::model::address::address_set::AddressSetView>,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            Box::new(crate::program::model::address::address_set::AddressSet::new())
+        }
+    }
+
+    impl Trace for MockTrace {
+        fn get_base_language(&self) -> Box<dyn Language> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_base_compiler_spec(&self) -> Box<dyn CompilerSpec> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_emulator_cache_version(&mut self, version: i64) {
+            self.emulator_cache_version = version;
+        }
+
+        fn get_emulator_cache_version(&self) -> i64 {
+            self.emulator_cache_version
+        }
+
+        fn get_base_address_factory(&self) -> Box<dyn AddressFactory> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_address_property_manager(&self) -> Box<dyn TraceAddressPropertyManager> {
+            Box::new(MockAddressPropertyManager)
+        }
+
+        fn get_bookmark_manager(&self) -> Box<dyn TraceBookmarkManager> {
+            Box::new(MockBookmarkManager)
+        }
+
+        fn get_breakpoint_manager(&self) -> Box<dyn TraceBreakpointManager> {
+            Box::new(MockBreakpointManager)
+        }
+
+        fn get_code_manager(&self) -> Box<dyn TraceCodeManager> {
+            Box::new(MockCodeManager)
+        }
+
+        fn get_base_data_type_manager(&self) -> Box<dyn TraceBasedDataTypeManager> {
+            Box::new(MockTraceBasedDataTypeManager)
+        }
+
+        fn get_equate_manager(&self) -> Box<dyn TraceEquateManager> {
+            Box::new(MockEquateManager)
+        }
+
+        fn get_platform_manager(&self) -> Box<dyn TracePlatformManager> {
+            Box::new(MockPlatformManager)
+        }
+
+        fn get_memory_manager(&self) -> Box<dyn TraceMemoryManager> {
+            Box::new(MockMemoryManager)
+        }
+
+        fn get_module_manager(&self) -> Box<dyn TraceModuleManager> {
+            Box::new(MockModuleManager)
+        }
+
+        fn get_object_manager(&self) -> Box<dyn TraceObjectManager> {
+            Box::new(MockObjectManager)
+        }
+
+        fn get_reference_manager(&self) -> Box<dyn TraceReferenceManager> {
+            Box::new(MockReferenceManager)
+        }
+
+        fn get_register_context_manager(&self) -> Box<dyn TraceRegisterContextManager> {
+            Box::new(MockRegisterContextManager)
+        }
+
+        fn get_stack_manager(&self) -> Box<dyn TraceStackManager> {
+            Box::new(MockStackManager)
+        }
+
+        fn get_static_mapping_manager(&self) -> Box<dyn TraceStaticMappingManager> {
+            Box::new(MockStaticMappingManager)
+        }
+
+        fn get_symbol_manager(&self) -> Box<dyn TraceSymbolManager> {
+            Box::new(MockSymbolManager)
+        }
+
+        fn get_thread_manager(&self) -> Box<dyn TraceThreadManager> {
+            Box::new(MockThreadManager)
+        }
+
+        fn get_time_manager(&self) -> Box<dyn TraceTimeManager> {
+            Box::new(MockTimeManager)
+        }
+
+        fn get_fixed_program_view(&self, _snap: i64) -> Box<dyn TraceProgramView> {
+            Box::new(MockProgramView)
+        }
+
+        fn create_program_view(&self, _snap: i64) -> Box<dyn TraceVariableSnapProgramView> {
+            Box::new(MockVariableSnapProgramView)
+        }
+
+        fn get_all_program_views(&self) -> Vec<Box<dyn TraceProgramView>> {
+            vec![Box::new(MockProgramView)]
+        }
+
+        fn get_program_view(&self) -> Box<dyn TraceVariableSnapProgramView> {
+            Box::new(MockVariableSnapProgramView)
+        }
+
+        fn create_time_viewport(&self) -> Box<dyn TraceTimeViewport> {
+            Box::new(MockTimeViewport)
+        }
+
+        fn add_program_view_listener(&mut self, _listener: Box<dyn TraceProgramViewListener>) {}
+
+        fn remove_program_view_listener(&mut self, _listener: &dyn TraceProgramViewListener) {}
+
+        fn lock_read(&self) -> LockHold<'_, dyn Lock> {
+            LockHold::lock(&self.lock)
+        }
+
+        fn lock_write(&self) -> LockHold<'_, dyn Lock> {
+            LockHold::lock(&self.lock)
+        }
+    }
+
+    struct MockListener;
+    impl TraceProgramViewListener for MockListener {
+        fn view_created(&self, _view: &dyn TraceProgramView) {}
+    }
+
+    #[test]
+    fn usable_as_trait_object() {
+        let mut trace: Box<dyn Trace> = Box::new(MockTrace {
+            lock: MockLock,
+            emulator_cache_version: 0,
+        });
+
+        assert_eq!(trace.get_emulator_cache_version(), 0);
+        trace.set_emulator_cache_version(7);
+        assert_eq!(trace.get_emulator_cache_version(), 7);
+
+        {
+            let _read = trace.lock_read();
+        }
+        {
+            let _write = trace.lock_write();
+        }
+
+        assert_eq!(trace.get_all_program_views().len(), 1);
+
+        trace.add_program_view_listener(Box::new(MockListener));
+        let listener = MockListener;
+        trace.remove_program_view_listener(&listener);
+    }
+}

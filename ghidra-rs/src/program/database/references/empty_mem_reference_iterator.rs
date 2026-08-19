@@ -12,29 +12,25 @@ use std::sync::Arc;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct EmptyMemReferenceIterator;
 
-impl ReferenceIterator for EmptyMemReferenceIterator {
-    fn has_next(&self) -> bool {
-        false
-    }
+impl Iterator for EmptyMemReferenceIterator {
+    type Item = Arc<dyn Reference>;
 
-    fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    fn next(&mut self) -> Option<Self::Item> {
         None
     }
 }
 
+impl ReferenceIterator for EmptyMemReferenceIterator {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::symbol::{RefType, SourceType};
 
     #[test]
     fn empty_iterator_never_yields_references() {
         let mut iter = EmptyMemReferenceIterator;
-        assert!(!iter.has_next());
-        assert!(iter.next_reference().is_none());
-        assert!(!iter.has_next());
-        assert!(iter.next_reference().is_none());
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
     }
 
     #[test]
@@ -46,16 +42,15 @@ mod tests {
 
     #[test]
     fn empty_iterator_is_default_constructible() {
-        let iter = EmptyMemReferenceIterator::default();
-        assert!(!iter.has_next());
+        let mut iter = EmptyMemReferenceIterator::default();
+        assert!(iter.next().is_none());
     }
 
     #[test]
     fn multiple_calls_remain_consistent() {
         let mut iter = EmptyMemReferenceIterator;
         for _ in 0..10 {
-            assert!(!iter.has_next());
-            assert!(iter.next_reference().is_none());
+            assert!(iter.next().is_none());
         }
     }
 }

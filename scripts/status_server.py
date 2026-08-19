@@ -35,6 +35,7 @@ MANIFEST = os.path.join(REPO, "PORT_MANIFEST.tsv")
 RESULTS = os.path.join(REPO, "tick2_results.tsv")
 STATUS = os.path.join(REPO, "tick2.status")
 PARKED = os.path.join(REPO, "PORT_PARKED.tsv")
+HISTORY = os.path.join(REPO, "port_history.tsv")
 SUMMARY = os.path.join(os.path.expanduser("~"), "agents", "logs", "ghidra", "port-summary.log")
 PORT = int(os.environ.get("PORT", "8765"))
 HOST = os.environ.get("HOST", "0.0.0.0")  # all interfaces -> reachable via LAN/Tailscale IP
@@ -163,7 +164,81 @@ def compute():
         except (OSError, ValueError):
             dep = None
     m["dep"] = dep
+    m["burndown"] = load_history(dep)
     return m
+
+
+def load_history(dep):
+    """Read port_history.tsv, aggregate to one point/day, fit a recent-rate line, project completion.
+
+    UI classes are auto-parked (deferred), so essentially all `done` growth is non-UI; the
+    burn-down tracks NON-UI remaining to zero. Rate = least-squares slope of done vs day over the
+    last few daily points (the current seam-era regime)."""
+    try:
+        lines = [l.rstrip("\n") for l in open(HISTORY, encoding="utf-8") if l.strip()]
+    except OSError:
+        return None
+    daily = {}  # 'YYYY-MM-DD' -> (done, todo, nonui); keep the latest (max-done) sample each day
+    for l in lines[1:]:
+        c = l.split("\t")
+        if len(c) < 4:
+            continue
+        try:
+            day, done, todo, nonui = c[0][:10], int(c[1]), int(c[2]), int(c[3])
+        except ValueError:
+            continue
+        if day not in daily or done >= daily[day][0]:
+            daily[day] = (done, todo, nonui)
+    if len(daily) < 2:
+        return None
+    series = [(datetime.strptime(d, "%Y-%m-%d"), *daily[d]) for d in sorted(daily)]  # (date,done,todo,nonui)
+    recent = series[-min(len(series), 5):]
+    xs = [p[0].toordinal() for p in recent]
+    ys = [p[1] for p in recent]
+    n, sx, sy = len(xs), sum(xs), sum(ys)
+    denom = n * sum(x * x for x in xs) - sx * sx
+    slope = (n * sum(x * y for x, y in zip(xs, ys)) - sx * sy) / denom if denom else 0.0
+    last = series[-1]
+    nonui_now = dep["nonui"] if dep else last[3]
+    todo_now = dep["todo"] if dep else last[2]
+    eta_nonui = last[0] + timedelta(days=nonui_now / slope) if slope > 0 else None
+    eta_total = last[0] + timedelta(days=todo_now / slope) if slope > 0 else None
+    return {"series": series, "slope": slope, "nonui_now": nonui_now, "todo_now": todo_now,
+            "eta_nonui": eta_nonui, "eta_total": eta_total, "last_date": last[0], "npts": len(recent)}
+
+
+def svg_burndown(bd):
+    """Inline SVG line chart: non-UI remaining vs date, with a dashed projection to zero."""
+    if not bd:
+        return ""
+    pts = [(p[0], p[3]) for p in bd["series"]]  # (date, non-UI remaining)
+    eta, slope = bd["eta_nonui"], bd["slope"]
+    W, H, ml, mr, mt, mb = 640, 260, 52, 18, 16, 34
+    pw, ph = W - ml - mr, H - mt - mb
+    d0 = pts[0][0]
+    dend = eta if (eta and eta > pts[-1][0]) else pts[-1][0]
+    span = max(1, (dend - d0).days)
+    ymax = (max(v for _, v in pts) or 1) * 1.05
+    def X(dt): return ml + pw * ((dt - d0).days) / span
+    def Y(v): return mt + ph * (1 - v / ymax)
+    poly = " ".join(f"{X(dt):.1f},{Y(v):.1f}" for dt, v in pts)
+    dots = "".join(f"<circle cx='{X(dt):.1f}' cy='{Y(v):.1f}' r='2.6' fill='#3ba875'/>" for dt, v in pts)
+    proj = axis_eta = ""
+    if eta and slope > 0:
+        lx, ly = pts[-1]
+        proj = (f"<line x1='{X(lx):.1f}' y1='{Y(ly):.1f}' x2='{X(eta):.1f}' y2='{Y(0):.1f}' "
+                f"stroke='#c9a227' stroke-width='2' stroke-dasharray='5 4'/>")
+        axis_eta = (f"<line x1='{X(eta):.1f}' y1='{mt}' x2='{X(eta):.1f}' y2='{Y(0):.1f}' stroke='#c9a227' stroke-width='1' opacity='.35'/>"
+                    f"<text x='{X(eta):.1f}' y='{H-mb+18:.0f}' text-anchor='end' fill='#c9a227' font-size='11'>{eta.strftime('%b %-d %Y')}</text>")
+    yaxis = (f"<line x1='{ml}' y1='{mt}' x2='{ml}' y2='{Y(0):.1f}' stroke='#2a3340'/>"
+             f"<line x1='{ml}' y1='{Y(0):.1f}' x2='{W-mr}' y2='{Y(0):.1f}' stroke='#2a3340'/>"
+             f"<text x='{ml-8}' y='{Y(0):.1f}' text-anchor='end' fill='#6b7480' font-size='11' dominant-baseline='middle'>0</text>"
+             f"<text x='{ml-8}' y='{Y(ymax):.1f}' text-anchor='end' fill='#6b7480' font-size='11' dominant-baseline='middle'>{int(ymax):,}</text>")
+    xstart = f"<text x='{ml}' y='{H-mb+18:.0f}' text-anchor='start' fill='#6b7480' font-size='11'>{d0.strftime('%b %-d')}</text>"
+    return (f"<svg viewBox='0 0 {W} {H}' width='100%' style='max-width:{W}px' role='img' "
+            f"aria-label='non-UI remaining burn-down'>{yaxis}{axis_eta}"
+            f"<polyline points='{poly}' fill='none' stroke='#3ba875' stroke-width='2'/>{dots}{proj}"
+            f"{xstart}</svg>")
 
 
 def render(m):
@@ -227,6 +302,27 @@ def render(m):
         </div>
         <table><tr><th>remaining deps</th><th class=num>non-UI</th><th class=num>UI</th><th class=num>total</th></tr>{rows}</table>"""
 
+    # burn-down + projected completion
+    burn_html = ""
+    bd = m.get("burndown")
+    if bd:
+        rate = bd["slope"]
+        eta_n, eta_t = bd["eta_nonui"], bd["eta_total"]
+        etxt_n = eta_n.strftime("%Y-%m-%d") if eta_n else "&mdash;"
+        etxt_t = eta_t.strftime("%Y-%m-%d") if eta_t else "&mdash;"
+        days_n = f"~{(eta_n - bd['last_date']).days}d" if eta_n else "n/a"
+        ui_n = (m.get("dep") or {}).get("ui", 0)
+        burn_html = f"""
+        <h2>Burn-down &amp; projected completion</h2>
+        <div class=cards>
+          <div class=card><div class=big>{rate:.0f}</div><div class=lbl>classes / day (recent rate)</div></div>
+          <div class=card><div class=big style='font-size:20px'>{etxt_n}</div><div class=lbl>non-UI complete ({days_n})</div></div>
+          <div class=card><div class=big style='font-size:20px'>{etxt_t}</div><div class=lbl>incl. UI (deferred phase)</div></div>
+        </div>
+        <div class=chart>{svg_burndown(bd)}</div>
+        <div class=sub>Non-UI remaining ({bd['nonui_now']:,}) burned down at the recent {rate:.0f}/day rate;
+        UI ({ui_n:,}) is a separate deferred phase. Linear projection from the last {bd['npts']} daily points &mdash; a rough guide, not a commitment.</div>"""
+
     return f"""<!doctype html><html><head><meta charset=utf-8>
 <meta http-equiv=refresh content=60>
 <title>ghidra-rs porting status</title>
@@ -251,12 +347,14 @@ th{{color:#8b95a3;font-weight:600}} .num{{text-align:right;font-variant-numeric:
 .mbar div{{height:100%;background:#3ba875}}
 code{{background:#1b212b;padding:1px 5px;border-radius:4px;font-size:12px}}
 .sumline{{font-family:ui-monospace,monospace;font-size:12px;color:#aeb7c4;padding:2px 0}}
+.chart{{background:#161b22;border:1px solid #232a34;border-radius:8px;padding:14px 8px;margin-bottom:8px}}
 </style></head><body><div class=wrap>
 <h1>ghidra-rs &mdash; Java&rarr;Rust porting</h1>
 <div class=sub>generated {e(m['generated'])} &middot; auto-refresh 60s &middot; {m['done']:,} of {m['total']:,} total classes</div>
 {bar}
 {run_html}
 {cards}
+{burn_html}
 {dep_html}
 <h2>Progress by module</h2>
 <table><tr><th>module</th><th class=num>done</th><th class=num>total</th><th>progress</th><th class=num>%</th></tr>{mod_rows}</table>

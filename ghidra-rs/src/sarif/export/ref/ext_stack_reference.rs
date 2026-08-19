@@ -21,7 +21,7 @@ impl ExtStackReference {
     /// from the given stack reference.
     pub fn new(reference: &dyn StackReference) -> Self {
         let reference_type = reference.reference_type();
-        let index = (reference_type.value() as u8).to_string();
+        let index = reference_type.value().to_string();
         let kind = reference_type.name().to_string();
         let op_index = reference.operand_index();
         let source_type = reference.source().display_string().to_string();
@@ -43,6 +43,17 @@ impl IsfObject for ExtStackReference {}
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace};
+
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     use crate::program::model::symbol::{RefType, SourceType};
 
     struct MockStackReference {
@@ -59,12 +70,16 @@ mod tests {
     }
 
     impl crate::program::model::symbol::Reference for MockStackReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn to_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn is_primary(&self) -> bool {
@@ -261,7 +276,7 @@ mod tests {
             ref_type: RefType::Read,
             operand_index: 3,
             source: SourceType::UserDefined,
-            stack_offset: -0xdeadbeef,
+            stack_offset: 0xdeadbeefu32 as i32,
         };
         let ext_ref = ExtStackReference::new(&mock_ref);
 
@@ -269,6 +284,6 @@ mod tests {
         assert_eq!(ext_ref.index, RefType::Read.value().to_string());
         assert_eq!(ext_ref.op_index, 3);
         assert_eq!(ext_ref.source_type, SourceType::UserDefined.display_string());
-        assert_eq!(ext_ref.offset, -0xdeadbeef);
+        assert_eq!(ext_ref.offset, 0xdeadbeefu32 as i32);
     }
 }

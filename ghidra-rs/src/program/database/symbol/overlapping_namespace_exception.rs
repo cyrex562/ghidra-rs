@@ -36,8 +36,7 @@ impl fmt::Display for OverlappingNamespaceException {
         write!(
             f,
             "Overlapping namespace from {} to {}",
-            self.start.offset(),
-            self.end.offset()
+            self.start, self.end
         )
     }
 }

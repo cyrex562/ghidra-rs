@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn reads_zero_ordinal_entry() {
-        let mut data = vec![3, b'z', b'e', b'r', b'o'];
+        let mut data = vec![4, b'z', b'e', b'r', b'o'];
         data.extend_from_slice(&0i16.to_le_bytes());
         data.push(0);
 

@@ -73,6 +73,13 @@ def main():
          'buckets':buckets,'bucket_order':ORDER,'keystone_scc':biggest[0],
          'seam_done':seam_done,'seam_total':seam_tot}
     with open(os.path.join(REPO,'dep_stats.json'),'w') as fh: json.dump(out,fh)
+    # append a burn-down history point (iso, done, todo, nonui, ui, scc) for the dashboard chart
+    from datetime import datetime
+    hp=os.path.join(REPO,'port_history.tsv')
+    new=not os.path.exists(hp)
+    with open(hp,'a') as fh:
+        if new: fh.write('iso\tdone\ttodo\tnonui\tui\tscc\n')
+        fh.write(f"{datetime.now().isoformat(timespec='minutes')}\t{done}\t{todo}\t{nonui}\t{ui}\t{biggest[0]}\n")
     print(f"dep_stats.json written: todo={todo} ui={ui} nonui={nonui} keystoneSCC={biggest[0]} seam={seam_done}/{seam_tot}")
 
 if __name__=='__main__': main()

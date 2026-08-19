@@ -1,1 +1,2 @@
 pub mod object_oriented_class_layout;
+pub mod pdb_register_name_to_program_register_mapper;

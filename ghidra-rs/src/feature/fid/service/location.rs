@@ -141,7 +141,7 @@ mod tests {
             Some("foo".to_string()),
             Some(make_address(0x1000)),
         );
-        assert_eq!(a, b);
+        assert!(a == b);
     }
 
     #[test]
@@ -156,7 +156,7 @@ mod tests {
             Some("foo".to_string()),
             Some(make_address(0x1000)),
         );
-        assert_ne!(a, b);
+        assert!(a != b);
     }
 
     #[test]
@@ -164,8 +164,8 @@ mod tests {
         let a = Location::new(None, Some("foo".to_string()), Some(make_address(0x1000)));
         let b = Location::new(None, Some("bar".to_string()), Some(make_address(0x1000)));
         let c = Location::new(None, Some("foo".to_string()), Some(make_address(0x2000)));
-        assert_ne!(a, b);
-        assert_ne!(a, c);
+        assert!(a != b);
+        assert!(a != c);
     }
 
     #[test]
@@ -176,7 +176,7 @@ mod tests {
             Some("foo".to_string()),
             None,
         );
-        assert_eq!(a, b);
+        assert!(a == b);
     }
 
     #[test]
@@ -199,7 +199,7 @@ mod tests {
             Some("foo".to_string()),
             Some(make_address(0x1000)),
         );
-        assert_eq!(a, b);
+        assert!(a == b);
         assert_eq!(hash_of(&a), hash_of(&b));
     }
 

@@ -1,5 +1,5 @@
 use crate::program::model::address::{
-    Address, AddressIterator, AddressIteratorAdapter, AddressRange, AddressRangeIterator,
+    Address, BoxedAddressIterator, AddressIteratorAdapter, AddressRange, AddressRangeIterator,
     AddressRangeIteratorAdapter, EmptyAddressIterator, EmptyAddressRangeIterator,
 };
 use crate::program::model::listing::Program;
@@ -19,8 +19,8 @@ pub trait AddressSetView {
     fn address_ranges_ordered(&self, forward: bool) -> Box<dyn AddressRangeIterator>;
     fn address_ranges_from(&self, start: &Address, forward: bool) -> Box<dyn AddressRangeIterator>;
     fn num_addresses(&self) -> u64;
-    fn addresses(&self, forward: bool) -> Box<dyn AddressIterator>;
-    fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn AddressIterator>;
+    fn addresses(&self, forward: bool) -> BoxedAddressIterator;
+    fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator;
     fn intersects_set(&self, set: &dyn AddressSetView) -> bool;
     fn intersects_range(&self, start: &Address, end: &Address) -> bool;
     fn intersect(&self, set: &dyn AddressSetView) -> AddressSet;
@@ -107,7 +107,7 @@ impl AddressSet {
 
     pub fn add_set(&mut self, set: &dyn AddressSetView) {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             self.ranges.push(range);
         }
         self.normalize();
@@ -139,7 +139,7 @@ impl AddressSet {
 
     pub fn delete_set(&mut self, set: &dyn AddressSetView) {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             self.delete_range_object(&range);
         }
     }
@@ -206,7 +206,7 @@ impl AddressSetView for AddressSet {
 
     fn contains_set(&self, set: &dyn AddressSetView) -> bool {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             if !self.contains_range(range.min_address(), range.max_address()) {
                 return false;
             }
@@ -268,7 +268,7 @@ impl AddressSetView for AddressSet {
         self.ranges.iter().map(AddressRange::length).sum()
     }
 
-    fn addresses(&self, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses(&self, forward: bool) -> BoxedAddressIterator {
         let mut addresses: Vec<_> = self
             .ranges
             .iter()
@@ -284,7 +284,7 @@ impl AddressSetView for AddressSet {
         }
     }
 
-    fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
         let mut addresses: Vec<_> = self
             .ranges
             .iter()
@@ -309,7 +309,7 @@ impl AddressSetView for AddressSet {
 
     fn intersects_set(&self, set: &dyn AddressSetView) -> bool {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             if self.intersects_range(range.min_address(), range.max_address()) {
                 return true;
             }
@@ -327,7 +327,7 @@ impl AddressSetView for AddressSet {
     fn intersect(&self, set: &dyn AddressSetView) -> AddressSet {
         let mut result = AddressSet::new();
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             result.add_set(&self.intersect_range(range.min_address(), range.max_address()));
         }
         result
@@ -463,16 +463,16 @@ mod tests {
         set.add_range(&addr(0x2000), &addr(0x2001));
 
         let mut forward = set.addresses(true);
-        assert_eq!(forward.next_address(), Some(addr(0x1000)));
-        assert_eq!(forward.next_address(), Some(addr(0x1001)));
+        assert_eq!(forward.next(), Some(addr(0x1000)));
+        assert_eq!(forward.next(), Some(addr(0x1001)));
 
         let mut reverse = set.addresses(false);
-        assert_eq!(reverse.next_address(), Some(addr(0x2001)));
-        assert_eq!(reverse.next_address(), Some(addr(0x2000)));
+        assert_eq!(reverse.next(), Some(addr(0x2001)));
+        assert_eq!(reverse.next(), Some(addr(0x2000)));
 
         let mut from = set.address_ranges_from(&addr(0x1001), true);
-        assert_eq!(from.next_range().unwrap().min_address(), &addr(0x1000));
-        assert_eq!(from.next_range().unwrap().min_address(), &addr(0x2000));
+        assert_eq!(from.next().unwrap().min_address(), &addr(0x1000));
+        assert_eq!(from.next().unwrap().min_address(), &addr(0x2000));
     }
 
     #[test]
@@ -499,13 +499,15 @@ mod tests {
         factory: Arc<DefaultAddressFactory>,
     }
 
+    impl crate::framework::model::DomainObject for TestProgram {}
+
     impl Program for TestProgram {
-        fn get_name(&self) -> &str {
-            "test"
+        fn get_name(&self) -> String {
+            "test".to_string()
         }
 
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
 
         fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {

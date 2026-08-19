@@ -48,6 +48,10 @@ mod tests {
     }
 
     impl Reference for TestShiftedReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             addr(0x2000)
         }

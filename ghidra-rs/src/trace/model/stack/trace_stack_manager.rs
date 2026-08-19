@@ -1,0 +1,269 @@
+use crate::program::model::address::AddressSetView;
+use crate::trace::model::stack::trace_stack::TraceStack;
+use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
+use crate::trace::model::thread::TraceThread;
+
+/// Manages the stacks of threads observed over time in a trace.
+///
+/// Port of `ghidra.trace.model.stack.TraceStackManager`.
+pub trait TraceStackManager {
+    /// Get the stack of a given thread at a given snap.
+    ///
+    /// # Arguments
+    /// * `thread` - the thread
+    /// * `snap` - the snap
+    /// * `create_if_absent` - create a new (empty) stack if it doesn't already exist
+    ///
+    /// Returns the stack, or `None` if absent and not created.
+    fn get_stack(
+        &self,
+        thread: &dyn TraceThread,
+        snap: i64,
+        create_if_absent: bool,
+    ) -> Option<Box<dyn TraceStack>>;
+
+    /// Get the most recent stack of a given thread since a given snap.
+    ///
+    /// Returns the stack, or `None`.
+    fn get_latest_stack(&self, thread: &dyn TraceThread, snap: i64) -> Option<Box<dyn TraceStack>>;
+
+    /// Get the frames whose program counters are within a given address set.
+    fn get_frames_in(&self, set: &dyn AddressSetView) -> Vec<Box<dyn TraceStackFrame>>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::program::model::address::{AddressSet, AddressSpace, AddressSpaceType};
+    use std::sync::Mutex;
+
+    struct MockThread(&'static str);
+
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockThread {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockThread {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceThread for MockThread {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_key(&self) -> i64 {
+            0
+        }
+        fn get_path(&self) -> String {
+            self.0.to_string()
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            self.0.to_string()
+        }
+        fn set_name(&mut self, _lifespan: crate::trace::model::lifespan::Lifespan, _name: &str) {}
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+        fn set_comment(&mut self, _snap: i64, _comment: Option<&str>) {}
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+        fn delete(&mut self) {}
+        fn remove(&mut self, _snap: i64) {}
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+        fn is_alive(&self, _span: crate::trace::model::lifespan::Lifespan) -> bool {
+            true
+        }
+    }
+
+    struct MockFrame(i32);
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockFrame {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceStackFrame for MockFrame {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_stack(&self) -> Box<dyn TraceStack> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_level(&self) -> i32 {
+            self.0
+        }
+
+        fn get_program_counter(&self, _snap: i64) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_program_counter(
+            &mut self,
+            _span: crate::trace::model::lifespan::Lifespan,
+            _pc: crate::program::model::address::Address,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_stack_pointer(&self, _snap: i64) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_stack_pointer(
+            &mut self,
+            _span: crate::trace::model::lifespan::Lifespan,
+            _sp: crate::program::model::address::Address,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_comment(&mut self, _snap: i64, _comment: Option<String>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    struct MockStack(i32);
+
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockStack {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockStack {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceStack for MockStack {
+        fn get_thread(&self) -> Box<dyn TraceThread> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_depth(&self, _snap: i64) -> i32 {
+            0
+        }
+        fn set_depth(&mut self, _snap: i64, _depth: i32, _at_inner: bool) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_frame(
+            &self,
+            _snap: i64,
+            _level: i32,
+            _ensure_depth: bool,
+        ) -> Option<Box<dyn TraceStackFrame>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_frames(&self, _snap: i64) -> Vec<Box<dyn TraceStackFrame>> {
+            Vec::new()
+        }
+        fn delete(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn remove(&mut self, _snap: i64) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+        fn has_fixed_frames(&self) -> bool {
+            true
+        }
+    }
+
+    struct MockStackManager {
+        stacks: Mutex<Vec<(&'static str, i64, i32)>>,
+    }
+
+    impl TraceStackManager for MockStackManager {
+        fn get_stack(
+            &self,
+            thread: &dyn TraceThread,
+            snap: i64,
+            create_if_absent: bool,
+        ) -> Option<Box<dyn TraceStack>> {
+            let _ = thread;
+            let mut stacks = self.stacks.lock().unwrap();
+            if let Some((_, _, id)) = stacks.iter().find(|(t, s, _)| *t == "t1" && *s == snap) {
+                return Some(Box::new(MockStack(*id)));
+            }
+            if create_if_absent {
+                let id = stacks.len() as i32;
+                stacks.push(("t1", snap, id));
+                return Some(Box::new(MockStack(id)));
+            }
+            None
+        }
+
+        fn get_latest_stack(
+            &self,
+            thread: &dyn TraceThread,
+            snap: i64,
+        ) -> Option<Box<dyn TraceStack>> {
+            let _ = thread;
+            let stacks = self.stacks.lock().unwrap();
+            stacks
+                .iter()
+                .filter(|(t, s, _)| *t == "t1" && *s <= snap)
+                .max_by_key(|(_, s, _)| *s)
+                .map(|(_, _, id)| Box::new(MockStack(*id)) as Box<dyn TraceStack>)
+        }
+
+        fn get_frames_in(&self, set: &dyn AddressSetView) -> Vec<Box<dyn TraceStackFrame>> {
+            if set.is_empty() {
+                Vec::new()
+            } else {
+                vec![Box::new(MockFrame(0))]
+            }
+        }
+    }
+
+    #[test]
+    fn usable_as_trait_object_and_tracks_stacks() {
+        let manager: Box<dyn TraceStackManager> = Box::new(MockStackManager {
+            stacks: Mutex::new(Vec::new()),
+        });
+        let thread = MockThread("t1");
+
+        assert!(manager.get_stack(&thread, 0, false).is_none());
+        assert!(manager.get_stack(&thread, 0, true).is_some());
+        assert!(manager.get_stack(&thread, 0, false).is_some());
+
+        manager.get_stack(&thread, 5, true);
+        let latest = manager.get_latest_stack(&thread, 100);
+        assert!(latest.is_some());
+        assert!(manager.get_latest_stack(&thread, -1).is_none());
+    }
+
+    #[test]
+    fn get_frames_in_reflects_address_set_emptiness() {
+        let manager = MockStackManager {
+            stacks: Mutex::new(Vec::new()),
+        };
+        let empty = AddressSet::new();
+        assert!(manager.get_frames_in(&empty).is_empty());
+
+        let space = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
+        let mut non_empty = AddressSet::new();
+        non_empty.add_range(&space.address(0x1000), &space.address(0x1010));
+        assert_eq!(manager.get_frames_in(&non_empty).len(), 1);
+    }
+}

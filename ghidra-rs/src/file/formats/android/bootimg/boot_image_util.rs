@@ -92,6 +92,36 @@ mod tests {
     use std::rc::Rc;
     use std::sync::Arc;
 
+    fn test_language() -> Arc<SleighLanguage> {
+        use crate::program::model::address::DefaultAddressFactory;
+        use crate::program::model::pcode::PackedDecode;
+        let mut data = vec![];
+        // <sleigh version="4" bigendian="false">
+        data.extend_from_slice(&[0x60, 0xA1, 0xE0, 0xA2, 0x21, 4, 0xE0, 0xA3, 0x10]);
+        // <spaces defaultspace="ram">
+        data.extend_from_slice(&[0x60, 0xA2, 0xE0, 0xA9, 0x71, 3, b'r', b'a', b'm']);
+        // <space_other/>
+        data.extend_from_slice(&[0x60, 0xAD, 0xA0, 0xAD]);
+        // <space name="ram" size="4" index="1" delay="1"/>
+        data.extend_from_slice(&[
+            0x60, 0xA5, 0xCC, 0x71, 3, b'r', b'a', b'm', 0xCF, 0x21, 4, 0xC9, 0x21, 1, 0xE0, 0xAA,
+            0x21, 1, 0xA0, 0xA5,
+        ]);
+        // </spaces>
+        data.extend_from_slice(&[0xA0, 0x80 | 34]);
+        // <symbol_table scopesize="1" symbolsize="0">
+        data.extend_from_slice(&[0x60, 0xA6, 0xE0, 0xAD, 0x21, 1, 0xE0, 0xAE, 0x21, 0]);
+        // <scope id="0" parent="0"/>
+        data.extend_from_slice(&[0x56, 0xC3, 0x41, 0, 0xD6, 0x41, 0, 0x96]);
+        // </symbol_table>
+        data.extend_from_slice(&[0xA0, 0x80 | 38]);
+        // </sleigh>
+        data.extend_from_slice(&[0xA0, 0x80 | 33]);
+        let factory = Arc::new(DefaultAddressFactory::new(vec![]));
+        let decoder = PackedDecode::new(factory, data);
+        Arc::new(SleighLanguage::decode(&decoder, "test".to_string()).unwrap())
+    }
+
     struct MockReader {
         bytes: Vec<u8>,
         position: usize,
@@ -168,7 +198,7 @@ mod tests {
 
     #[test]
     fn is_boot_image_returns_false_when_program_has_no_address_factory() {
-        let language = Arc::new(SleighLanguage::default());
+        let language = test_language();
         let program = match ProgramDB::new("test".to_string(), language) {
             Ok(p) => p,
             Err(_) => return,
@@ -179,7 +209,7 @@ mod tests {
 
     #[test]
     fn is_vendor_boot_image_returns_false_when_program_has_no_address_factory() {
-        let language = Arc::new(SleighLanguage::default());
+        let language = test_language();
         let program = match ProgramDB::new("test".to_string(), language) {
             Ok(p) => p,
             Err(_) => return,

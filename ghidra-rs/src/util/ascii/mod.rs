@@ -1,8 +1,10 @@
 pub mod ascii_char_set_recognizer;
 pub mod char_width;
+pub mod byte_stream_char_matcher;
 
 pub use ascii_char_set_recognizer::AsciiCharSetRecognizer;
 pub use char_width::CharWidth;
+pub use byte_stream_char_matcher::ByteStreamCharMatcher;
 
 /// Trait mirroring `ghidra.util.ascii.CharSetRecognizer`.
 ///

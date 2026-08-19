@@ -1,3 +1,4 @@
+pub mod abstract_address_space;
 pub mod address_collectors;
 pub mod address_format_exception;
 pub mod address_iterator_test_stub;
@@ -10,6 +11,7 @@ pub mod address_set;
 pub mod address_set_collection;
 pub mod address_set_mapping;
 pub mod address_set_view_adapter;
+pub mod cached_address_set_view;
 pub mod factory;
 pub mod global_namespace;
 pub mod immutable_address_set;
@@ -26,6 +28,7 @@ pub mod special_address;
 use std::fmt;
 use std::sync::Arc;
 
+pub use abstract_address_space::AbstractAddressSpace;
 pub use address_format_exception::AddressFormatException;
 pub use address_iterator_test_stub::AddressIteratorTestStub;
 pub use address_map_impl::AddressMapImpl;
@@ -37,13 +40,14 @@ pub use address_set::{AddressSet, AddressSetView};
 pub use address_set_collection::{AddressSetCollection, SingleAddressSetCollection};
 pub use address_set_mapping::AddressSetMapping;
 pub use address_set_view_adapter::AddressSetViewAdapter;
+pub use cached_address_set_view::{CachedAddressSetView, CachedAddressSetViewImpl};
 pub use factory::{AddressFactory, DefaultAddressFactory};
 pub use global_namespace::{
     GlobalNamespace, GlobalSymbol, GLOBAL_NAMESPACE_ID, GLOBAL_NAMESPACE_NAME, GLOBAL_SYMBOL_NAME,
 };
 pub use immutable_address_set::ImmutableAddressSet;
 pub use iterator::{
-    AddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
+    BoxedAddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
     EmptyAddressIterator, EmptyAddressRangeIterator,
 };
 pub use key_range::KeyRange;
@@ -164,6 +168,17 @@ impl AddressSpace {
     }
     pub fn unique(&self) -> i32 {
         self._unique
+    }
+
+    /// Port of `AbstractAddressSpace.getPointerSize`: the number of bytes needed to hold an
+    /// offset into this space.
+    pub fn pointer_size(&self) -> i32 {
+        let ptr_size = self.size / 8;
+        if self.size % 8 != 0 {
+            ptr_size + 1
+        } else {
+            ptr_size
+        }
     }
 
     pub fn min_offset(&self) -> i64 {
@@ -557,8 +572,20 @@ impl Address {
         self.offset.wrapping_sub(other.offset)
     }
 
+    /// Whether this address immediately follows `other`.
+    ///
+    /// Mirrors `AbstractAddressSpace.isSuccessor(addr1, addr2)`, which this had duplicated
+    /// rather than delegated to -- and in duplicating it, dropped the guard that matters: an
+    /// address space does NOT wrap around. Without the `max_offset` check, offset 0 was reported
+    /// as the successor of the last address in the space, so anything walking or coalescing
+    /// ranges at the top of a space (address iteration, `AddressSet` range merging) could join
+    /// the final range to the first. Caught by the Ghidra differential fixture
+    /// (`tests/address_golden.rs`), which is the only test in the crate that compares against
+    /// real Ghidra rather than against what the porter believed.
     pub fn is_successor(&self, other: &Address) -> bool {
-        self.space() == other.space() && self.offset == other.offset.wrapping_add(1)
+        self.space() == other.space()
+            && other.offset != other.space().max_offset()
+            && self.offset == other.offset.wrapping_add(1)
     }
 
     pub fn same_address_space(&self, other: &Address) -> bool {
@@ -591,6 +618,10 @@ impl Address {
 
     pub fn is_special_address(&self) -> bool {
         self.space.space_type() == AddressSpaceType::None && self.space.size() == 0
+    }
+
+    pub fn is_external_address(&self) -> bool {
+        self.space.space_type() == AddressSpaceType::External
     }
 
     pub fn to_string_with_prefix(&self, prefix: &str) -> String {

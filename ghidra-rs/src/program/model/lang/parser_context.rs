@@ -21,7 +21,7 @@ mod tests {
     impl InstructionPrototype for MockPrototype {
         fn get_parser_context(
             &self,
-            _buf: &dyn crate::program::seam_stubs::MemBuffer,
+            _buf: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn crate::program::model::lang::ProcessorContextView,
         ) -> Result<Box<dyn crate::program::seam_stubs::ParserContext>, crate::program::model::mem::MemoryAccessException>
         {
@@ -31,7 +31,7 @@ mod tests {
         fn get_pseudo_parser_context(
             &self,
             _address: &crate::program::model::address::Address,
-            _buffer: &dyn crate::program::seam_stubs::MemBuffer,
+            _buffer: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn crate::program::model::lang::ProcessorContextView,
         ) -> Result<Box<dyn crate::program::seam_stubs::ParserContext>, crate::program::model::lang::instruction_prototype::GetPseudoParserContextError>
         {
@@ -50,7 +50,7 @@ mod tests {
             false
         }
 
-        fn get_mnemonic(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> String {
+        fn get_mnemonic(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> String {
             "TEST".to_string()
         }
 
@@ -58,19 +58,19 @@ mod tests {
             4
         }
 
-        fn get_instruction_mask(&self) -> Option<Box<dyn crate::program::seam_stubs::Mask>> {
+        fn get_instruction_mask(&self) -> Option<Box<dyn crate::program::model::lang::Mask>> {
             None
         }
 
-        fn get_operand_value_mask(&self, _operand_index: i32) -> Option<Box<dyn crate::program::seam_stubs::Mask>> {
+        fn get_operand_value_mask(&self, _operand_index: i32) -> Option<Box<dyn crate::program::model::lang::Mask>> {
             None
         }
 
-        fn get_flow_type(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> crate::program::model::symbol::RefType {
+        fn get_flow_type(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> crate::program::model::symbol::RefType {
             unimplemented!()
         }
 
-        fn get_delay_slot_depth(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> i32 {
+        fn get_delay_slot_depth(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> i32 {
             0
         }
 
@@ -86,19 +86,19 @@ mod tests {
             0
         }
 
-        fn get_op_type(&self, _operand_index: i32, _context: &dyn crate::program::seam_stubs::InstructionContext) -> i32 {
+        fn get_op_type(&self, _operand_index: i32, _context: &dyn crate::program::model::lang::InstructionContext) -> i32 {
             0
         }
 
-        fn get_fall_through(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> Option<crate::program::model::address::Address> {
+        fn get_fall_through(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> Option<crate::program::model::address::Address> {
             None
         }
 
-        fn get_fall_through_offset(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> i32 {
+        fn get_fall_through_offset(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> i32 {
             4
         }
 
-        fn get_flows(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> Option<Vec<crate::program::model::address::Address>> {
+        fn get_flows(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> Option<Vec<crate::program::model::address::Address>> {
             None
         }
 
@@ -109,7 +109,7 @@ mod tests {
         fn get_op_representation_list(
             &self,
             _operand_index: i32,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
+            _context: &dyn crate::program::model::lang::InstructionContext,
         ) -> Option<Vec<crate::program::model::listing::instruction::OperandValue>> {
             None
         }
@@ -117,7 +117,7 @@ mod tests {
         fn get_address(
             &self,
             _operand_index: i32,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
+            _context: &dyn crate::program::model::lang::InstructionContext,
         ) -> Option<crate::program::model::address::Address> {
             None
         }
@@ -125,7 +125,7 @@ mod tests {
         fn get_register(
             &self,
             _operand_index: i32,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
+            _context: &dyn crate::program::model::lang::InstructionContext,
         ) -> Option<crate::program::model::lang::RegisterRef> {
             None
         }
@@ -133,7 +133,7 @@ mod tests {
         fn get_scalar(
             &self,
             _operand_index: i32,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
+            _context: &dyn crate::program::model::lang::InstructionContext,
         ) -> Option<crate::program::model::scalar::Scalar> {
             None
         }
@@ -141,7 +141,7 @@ mod tests {
         fn get_op_objects(
             &self,
             _operand_index: i32,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
+            _context: &dyn crate::program::model::lang::InstructionContext,
         ) -> Vec<crate::program::model::listing::instruction::OperandValue> {
             Vec::new()
         }
@@ -149,8 +149,8 @@ mod tests {
         fn get_operand_ref_type(
             &self,
             _operand_index: i32,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
-            _override_: Option<&dyn crate::program::seam_stubs::PcodeOverride>,
+            _context: &dyn crate::program::model::lang::InstructionContext,
+            _override_: Option<&dyn crate::program::model::pcode::PcodeOverride>,
         ) -> crate::program::model::symbol::RefType {
             unimplemented!()
         }
@@ -159,40 +159,40 @@ mod tests {
             false
         }
 
-        fn get_input_objects(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> Vec<crate::program::model::listing::instruction::OperandValue> {
+        fn get_input_objects(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> Vec<crate::program::model::listing::instruction::OperandValue> {
             Vec::new()
         }
 
-        fn get_result_objects(&self, _context: &dyn crate::program::seam_stubs::InstructionContext) -> Vec<crate::program::model::listing::instruction::OperandValue> {
+        fn get_result_objects(&self, _context: &dyn crate::program::model::lang::InstructionContext) -> Vec<crate::program::model::listing::instruction::OperandValue> {
             Vec::new()
         }
 
         fn get_pcode(
             &self,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
-            _override_: Option<&dyn crate::program::seam_stubs::PcodeOverride>,
+            _context: &dyn crate::program::model::lang::InstructionContext,
+            _override_: Option<&dyn crate::program::model::pcode::PcodeOverride>,
         ) -> Vec<crate::program::model::pcode::PcodeOp> {
             Vec::new()
         }
 
         fn get_pcode_packed(
             &self,
-            _encoder: &mut dyn crate::program::seam_stubs::PatchEncoder,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
-            _override_: Option<&dyn crate::program::seam_stubs::PcodeOverride>,
+            _encoder: &mut dyn crate::program::model::pcode::PatchEncoder,
+            _context: &dyn crate::program::model::lang::InstructionContext,
+            _override_: Option<&dyn crate::program::model::pcode::PcodeOverride>,
         ) -> io::Result<()> {
             Ok(())
         }
 
         fn get_pcode_for_operand(
             &self,
-            _context: &dyn crate::program::seam_stubs::InstructionContext,
+            _context: &dyn crate::program::model::lang::InstructionContext,
             _operand_index: i32,
         ) -> Vec<crate::program::model::pcode::PcodeOp> {
             Vec::new()
         }
 
-        fn get_language(&self) -> Arc<dyn crate::program::seam_stubs::Language> {
+        fn get_language(&self) -> Arc<dyn crate::program::model::lang::language::Language> {
             unimplemented!()
         }
     }

@@ -1,27 +1,80 @@
+pub mod address_xml;
+pub mod block_graph;
+pub mod block_map;
 pub mod byte_ingest;
+pub mod cached_encoder;
 pub mod decoder;
 pub mod decoder_exception;
+pub mod dynamic_entry;
+pub mod dynamic_hash;
+pub mod encoder;
+pub mod function_prototype;
+pub mod global_symbol_map;
+pub mod high_code_symbol;
+pub mod high_constant;
+pub mod high_function;
+pub mod high_function_db_util;
+pub mod high_param_id;
+pub mod high_variable;
 pub mod ids;
 pub mod linked_byte_buffer;
 pub mod list_linked;
 pub mod packed;
 pub mod packed_bytes;
+pub mod partial_union;
+pub mod patch_encoder;
+pub mod pcode_block_basic;
+pub mod pcode_data_type_manager;
 pub mod pcode_exception;
+pub mod pcode_factory;
+pub mod pcode_override;
 pub mod string_ingest;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
 use std::sync::Arc;
 
+pub use address_xml::{
+    decode, decode_from_attributes, decode_storage_from_attributes, encode_addr,
+    encode_addr_with_size, encode_attributes, encode_attributes_range, encode_attributes_with_size,
+    encode_varnodes, restore_range_xml, restore_xml, restore_xml_with_language, AddressXml,
+    DefaultAddressXml, MAX_PIECES,
+};
+pub use block_graph::BlockGraph;
+pub use block_map::BlockMap;
 pub use byte_ingest::ByteIngest;
+pub use cached_encoder::CachedEncoder;
 pub use decoder::{Decoder, DecoderError};
 pub use decoder_exception::DecoderException;
+pub use dynamic_entry::{DefaultDynamicEntry, DynamicEntry};
+pub use dynamic_hash::DynamicHash;
+pub use encoder::Encoder;
+pub use function_prototype::FunctionPrototype;
+pub use global_symbol_map::GlobalSymbolMap;
+pub use high_code_symbol::HighCodeSymbol;
+pub use high_constant::HighConstant;
+pub use high_function::{
+    collapse_to_global, encode_namespace, find_create_override_space, find_override_space,
+    is_override_namespace, tag_find_exclude, HighFunction, OVERRIDE_NAMESPACE_NAME,
+};
+pub use high_function_db_util::{HighFunctionDb, HighFunctionDBUtil, ReturnCommitOption, AUTO_CAT};
+pub use high_param_id::{HighParamID, DECOMPILER_TAG_MAP};
+pub use high_variable::{HighVariable, HighVariableKind};
 pub use ids::*;
 pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition};
 pub use list_linked::{LinkedIter, ListLinked};
 pub use packed::PackedDecode;
 pub use packed_bytes::PackedBytes;
+pub use partial_union::PartialUnion;
+pub use patch_encoder::PatchEncoder;
+pub use pcode_block_basic::PcodeBlockBasic;
+pub use pcode_data_type_manager::{
+    find_pointer_relative_inner, get_metatype, get_metatype_from_string, get_metatype_string,
+    CoreTypeEntry, PcodeDataTypeManager,
+};
 pub use pcode_exception::PcodeException;
+pub use pcode_factory::PcodeFactory;
+pub use pcode_override::PcodeOverride;
 pub use string_ingest::StringIngest;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -336,7 +389,17 @@ impl PartialEq for Varnode {
 
 impl Eq for Varnode {}
 
-#[derive(Debug, Clone)]
+/// Counterpart to Java's `Varnode.hashCode()`, which hashes the same address/size pair that
+/// `equals` compares. Needed so varnodes can key hashed collections, as they do in Java (e.g.
+/// `JitVarScopeModel`'s live-varnode sets).
+impl std::hash::Hash for Varnode {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.address.hash(state);
+        self.size.hash(state);
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PcodeOp {
     pub opcode: OpCode,
     pub seqnum: SequenceNumber,

@@ -4,6 +4,7 @@ pub mod floating_point_precision_settings_definition;
 pub mod format_settings_definition;
 pub mod integer_signedness_formatting_mode_settings_definition;
 pub mod java_enum_settings_definition;
+pub mod number_settings_definition;
 pub mod settings;
 pub mod settings_definition;
 pub mod string_settings_definition;

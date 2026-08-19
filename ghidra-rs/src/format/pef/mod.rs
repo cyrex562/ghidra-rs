@@ -1,3 +1,6 @@
+pub mod abstract_symbol;
+pub mod loader_info_header;
+pub mod loader_relocation_header;
 pub mod packed_data_opcodes;
 pub mod pef_constants;
 pub mod pef_exception;

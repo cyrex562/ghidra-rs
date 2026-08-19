@@ -84,13 +84,15 @@ mod tests {
         name: String,
     }
 
+    impl crate::framework::model::DomainObject for TestProgram {}
+
     impl Program for TestProgram {
-        fn get_name(&self) -> &str {
-            &self.name
+        fn get_name(&self) -> String {
+            self.name.clone()
         }
 
-        fn get_language_id(&self) -> &str {
-            "test"
+        fn get_language_id(&self) -> String {
+            "test".to_string()
         }
     }
 
@@ -119,7 +121,7 @@ mod tests {
         let lookup_addr = Address::new(space.clone(), 0x1000);
         let program: Arc<dyn Program> = Arc::new(TestProgram { name: "test".to_string() });
 
-        translator.add_program_address(program.clone(), addr);
+        translator.add_program_address(program.clone(), addr.clone());
 
         let result = translator.translate(lookup_addr, program.as_ref(), program.as_ref());
         assert_eq!(result, addr);
@@ -132,7 +134,7 @@ mod tests {
         let lookup_addr = Address::new(space.clone(), 0x1000);
         let program: Arc<dyn Program> = Arc::new(TestProgram { name: "test".to_string() });
 
-        let result = translator.translate(lookup_addr, program.as_ref(), program.as_ref());
+        let result = translator.translate(lookup_addr.clone(), program.as_ref(), program.as_ref());
         assert_eq!(result, lookup_addr);
     }
 

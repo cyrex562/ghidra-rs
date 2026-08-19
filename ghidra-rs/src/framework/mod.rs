@@ -1,14 +1,20 @@
+pub mod application;
+pub mod application_identifier;
+pub mod application_properties;
 pub mod client;
 pub mod cmd;
 pub mod data;
 pub mod db;
 pub mod generic;
+pub mod generic_run_info;
 pub mod key_store_password_provider;
 pub mod log4j_error_logger;
 pub mod main;
 pub mod model;
+pub mod module_initializer;
 pub mod options;
 pub mod os;
+pub mod platform;
 pub mod plugintool;
 pub mod pluggable_service_registry_exception;
 pub mod project;
@@ -21,12 +27,22 @@ pub mod shutdown_priority;
 pub mod store;
 pub mod version;
 
-pub use cmd::Command;
-pub use data::{CheckinHandler, DomainObjectFileListener, OpenMode};
+pub use application::{Application, OSFileNotFoundError};
+pub use application_identifier::ApplicationIdentifier;
+pub use application_properties::ApplicationProperties;
+pub use cmd::{BinaryAnalysisCommand, Command};
+pub use data::{
+    CheckinHandler, DomainObjectAdapterDB, DomainObjectDBChangeSet, DomainObjectFileListener,
+    GhidraToolState, OpenMode,
+};
+pub use generic_run_info::GenericRunInfo;
 pub use log4j_error_logger::Log4jErrorLogger;
+pub use module_initializer::ModuleInitializer;
 pub use os::OperatingSystem;
+pub use platform::Platform;
 pub use pluggable_service_registry_exception::PluggableServiceRegistryException;
 pub use plugintool::{ServiceListener, ServiceProvider};
+pub use project::ProjectDataService;
 pub use service::{PluggableServiceRegistry, PluggableServiceRegistryError};
 pub use shutdown_hook_registry::{ShutdownHook, ShutdownHookRegistry};
 pub use shutdown_priority::ShutdownPriority;

@@ -25,51 +25,6 @@ pub trait FidHasher: Send + Sync {
 mod tests {
     use super::*;
 
-    struct MockCodeUnit;
-    impl crate::program::model::listing::CodeUnit for MockCodeUnit {
-        fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {
-            "0x1000".to_string()
-        }
-
-        fn get_label(&self) -> Option<String> {
-            None
-        }
-
-        fn get_symbols(&self) -> Vec<Arc<dyn crate::program::model::symbol::Symbol>> {
-            Vec::new()
-        }
-
-        fn get_primary_symbol(&self) -> Option<Arc<dyn crate::program::model::symbol::Symbol>> {
-            None
-        }
-
-        fn get_min_address(&self) -> crate::program::model::address::Address {
-            crate::program::model::address::Address::new(0x1000)
-        }
-
-        fn get_max_address(&self) -> crate::program::model::address::Address {
-            crate::program::model::address::Address::new(0x1000)
-        }
-
-        fn get_mnemonic_string(&self) -> String {
-            "test".to_string()
-        }
-
-        fn get_comment(
-            &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
-        ) -> Option<String> {
-            None
-        }
-
-        fn get_comment_as_array(
-            &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
-        ) -> Vec<String> {
-            Vec::new()
-        }
-    }
-
     struct MockHashQuad;
     impl FidHashQuad for MockHashQuad {
         fn code_unit_size(&self) -> i16 {

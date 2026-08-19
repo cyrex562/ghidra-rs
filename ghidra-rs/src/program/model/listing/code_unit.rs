@@ -9,7 +9,8 @@ use crate::program::model::symbol::{
     ExternalLocation, ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{CommentType, MemBuffer};
+use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
 
 /// Indicator for a mnemonic (versus an operand).
 pub const MNEMONIC: i32 = -1;
@@ -262,6 +263,28 @@ pub trait CodeUnit: MemBuffer + PropertySet {
     /// Returns the scalar at the given operand index, or `None` if no scalar exists at that
     /// index. Data objects have one operand (the value).
     fn get_scalar(&self, op_index: i32) -> Option<Scalar>;
+
+    /// Stands in for `cu instanceof Data ? (Data) cu : null`, used by
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s ports of
+    /// `getMaxAddressOfUndefinedRange`/`isUndefinedRange`, which walk a mixed
+    /// instruction/data code-unit sequence and need to know whether each unit is `Data` without
+    /// a general trait-object downcast being available. Implementors of
+    /// [`Data`](crate::program::model::listing::data::Data) are expected to override this to
+    /// return `Some(self)`.
+    fn as_data(&self) -> Option<&dyn crate::program::model::listing::data::Data> {
+        None
+    }
+
+    /// Stands in for `cu instanceof Instruction ? (Instruction) cu : null`, used by
+    /// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat)'s
+    /// port of `getRepresentationString`/`getOperandRepresentationList`, which need to branch on
+    /// whether a code unit is an instruction without a general trait-object downcast being
+    /// available. Implementors of
+    /// [`Instruction`](crate::program::model::listing::instruction::Instruction) are expected to
+    /// override this to return `Some(self)`.
+    fn as_instruction(&self) -> Option<&dyn crate::program::model::listing::instruction::Instruction> {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -297,6 +320,9 @@ mod tests {
 
     struct MockReference;
     impl Reference for MockReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
         fn from_address(&self) -> Address {
             mock_address(0x100)
         }
@@ -349,6 +375,9 @@ mod tests {
 
     struct MockExternalReference;
     impl Reference for MockExternalReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
         fn from_address(&self) -> Address {
             mock_address(0x100)
         }
@@ -416,12 +445,13 @@ mod tests {
     }
 
     struct MockProgram;
+    impl crate::framework::model::DomainObject for MockProgram {}
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            "mock.bin"
+        fn get_name(&self) -> String {
+            "mock.bin".to_string()
         }
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
     }
 
@@ -429,11 +459,10 @@ mod tests {
         references: Vec<Arc<dyn Reference>>,
         index: usize,
     }
-    impl ReferenceIterator for MockReferenceIterator {
-        fn has_next(&self) -> bool {
-            self.index < self.references.len()
-        }
-        fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    impl Iterator for MockReferenceIterator {
+        type Item = Arc<dyn Reference>;
+
+        fn next(&mut self) -> Option<Self::Item> {
             let next = self.references.get(self.index).cloned();
             if next.is_some() {
                 self.index += 1;
@@ -442,13 +471,28 @@ mod tests {
         }
     }
 
+    impl ReferenceIterator for MockReferenceIterator {}
+
     struct MockCodeUnit {
         min_address: Address,
         length: i32,
         comment: Option<String>,
     }
 
-    impl MemBuffer for MockCodeUnit {}
+    impl MemBuffer for MockCodeUnit {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            self.min_address.clone()
+        }
+    }
     impl PropertySet for MockCodeUnit {}
 
     impl CodeUnit for MockCodeUnit {
@@ -651,6 +695,8 @@ mod tests {
 
         assert_eq!(unit.get_scalar(0), Some(Scalar::new(32, 42)));
         assert_eq!(unit.get_scalar(1), None);
-        assert_eq!(unit.get_bytes().unwrap(), vec![0x90; 4]);
+        // `CodeUnit::get_bytes()` and `MemBuffer::get_bytes(buf, off)` are overloads in Java;
+        // Rust needs the call site to name the trait.
+        assert_eq!(CodeUnit::get_bytes(unit.as_ref()).unwrap(), vec![0x90; 4]);
     }
 }

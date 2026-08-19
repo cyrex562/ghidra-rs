@@ -1,0 +1,1344 @@
+#!/usr/bin/env python3
+"""Decide the Rust SHAPE a Java source file should port to, from the Java source.
+
+Why this exists
+---------------
+`desc_order.py` emits a binary `mode` column: `trait` if the class is a DFS back-edge
+cut-point or a Java `interface`, else `struct`. Java has more than two shapes, so that
+column has been wrong in bulk:
+
+  * 133 queued Java `enum`s and 121 `record`s were told "map the class to a Rust struct
+    with an impl block";
+  * 405 queued Java classes/records/enums were told to become traits because they sat on
+    a dependency cycle;
+  * `Lifespan` -- `public sealed interface Lifespan`, a closed set over a long range --
+    became `pub trait Lifespan`, and the crate now carries 613 `dyn Lifespan` uses.
+
+A cycle cut-point is a statement about the dependency graph, not about the type. This
+module answers the type question separately, from `orig_src` only -- never from the Rust
+tree, which measures how far the port got rather than how code should be shaped
+(AGENTS.md, "Diagnosing the Port").
+
+Shapes
+------
+  enum         Rust `enum` + `match`. Closed set of alternatives.
+  struct       Rust `struct` + `impl`.
+  module       Module of `pub const` items / free `pub fn`s and NO type of that name.
+  trait        Rust `trait`. Genuine open extension point.
+  struct_trait Shared-state `struct` + `trait` for the abstract operations.
+  error        `struct`/`enum` implementing `std::error::Error` + `Display`.
+  iterator     A type implementing `std::iter::Iterator`.
+  park         Cannot be decided mechanically -- stop and ask.
+
+Usage
+-----
+  shape_rules.py index [--out SHAPES.tsv]      build/refresh the shape table
+  shape_rules.py classify <rel-java-path>      one file, JSON to stdout
+  shape_rules.py directive <rel-java-path>     prompt block for the porting harness
+  shape_rules.py audit [--out SHAPE_DEBT.tsv]  shipped Rust decls vs. the rules
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+ORIG = os.path.join(REPO, "orig_src")
+SHAPES = os.path.join(REPO, "SHAPES.tsv")
+
+# ---------------------------------------------------------------------------
+# Java surface parsing
+#
+# This is a scanner, not a parser. It only has to be right about the *primary*
+# declaration in a file (the type whose name matches the file stem), which Java
+# guarantees is public and top-level. Everything nested is deliberately ignored.
+# ---------------------------------------------------------------------------
+
+_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+_LINE_COMMENT = re.compile(r"//[^\n]*")
+_STRING = re.compile(r'"(?:\\.|[^"\\])*"')
+_CHAR = re.compile(r"'(?:\\.|[^'\\])'")
+
+MODS = r"(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp|@\w+(?:\([^)]*\))?|\s)*"
+
+THROWABLE_SUFFIXES = ("Exception", "Error", "Throwable")
+
+# Java cursor supertypes: the type IS a position in a sequence. Porting these literally is
+# what produced the `while it.has_next() { push(it.next()) }` double-consume bug in AGENTS.md.
+CURSOR_SUPERS = {"Iterator", "ListIterator", "Enumeration"}
+
+# `Iterable` is NOT a cursor -- it means "you can iterate me", which any collection says. A
+# rich interface that happens to be Iterable is still that interface: `AddressSetView` extends
+# `Iterable<AddressRange>` and declares 28 other abstract methods, and 833 `dyn AddressSetView`
+# uses hang off it. Treating it as a cursor would have been a far worse instruction than the
+# one it replaced. Only an Iterable with essentially no other API is really a sequence.
+ITERABLE_SUPERS = {"Iterable", "Collection"}
+ITERABLE_API_CUTOFF = 1
+
+
+def strip_java(src: str) -> str:
+    """Remove comments and literal contents so brace/keyword scanning is safe."""
+    src = _BLOCK_COMMENT.sub(" ", src)
+    src = _LINE_COMMENT.sub(" ", src)
+    src = _STRING.sub('""', src)
+    src = _CHAR.sub("' '", src)
+    return src
+
+
+def find_primary(src: str, name: str):
+    """Locate the top-level declaration named `name`. Returns (kind, mods, header_end)."""
+    # `@interface` must be tried before `interface`, and `interface` must be forbidden from
+    # matching the tail of `@interface`. There is a word boundary between `@` and `i`, so a
+    # bare `\b(interface)` happily matches inside `@interface Foo` with empty modifiers --
+    # which classified all 39 annotation types in the tree as plain interfaces and meant
+    # rule R4 never once fired.
+    pat = re.compile(
+        r"(?P<mods>" + MODS + r")"
+        r"(?P<kind>@interface\b|(?<!@)\b(?:class|interface|enum|record)\b)\s+"
+        + re.escape(name)
+        + r"\b"
+    )
+    for m in pat.finditer(src):
+        # Reject matches nested inside another type body by checking brace depth.
+        if src.count("{", 0, m.start()) == src.count("}", 0, m.start()):
+            return m.group("kind"), m.group("mods") or "", m.end()
+    return None, "", -1
+
+
+def header_and_body(src: str, start: int):
+    """Split the declaration header (up to `{`) from its brace-matched body."""
+    open_at = src.find("{", start)
+    if open_at < 0:
+        return src[start:].strip(), ""
+    header = src[start:open_at]
+    depth, i = 0, open_at
+    while i < len(src):
+        if src[i] == "{":
+            depth += 1
+        elif src[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return header, src[open_at + 1 : i]
+        i += 1
+    return header, src[open_at + 1 :]
+
+
+def split_types(clause: str):
+    """Split an extends/implements clause on top-level commas (generics-aware)."""
+    out, depth, cur = [], 0, ""
+    for ch in clause:
+        if ch == "<":
+            depth += 1
+        elif ch == ">":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        out.append(cur)
+    return [re.sub(r"<.*", "", t).strip().split(".")[-1] for t in out if t.strip()]
+
+
+def strip_type_params(header: str) -> str:
+    """Drop the generic parameter list a declaration header opens with.
+
+    `class AbstractAssemblyGrammar<NT extends AssemblyNonTerminal, P extends ...>` puts an
+    `extends` INSIDE the type parameters, and a regex looking for the first `extends` in the
+    header reads the bound as a supertype. That invented an edge saying AssemblyGrammar
+    implements AssemblyNonTerminal -- a grammar is not a non-terminal -- and 354 Java files
+    declare a bounded type parameter, so it inflated implementer counts across the tree.
+    """
+    i = 0
+    while i < len(header) and header[i].isspace():
+        i += 1
+    if i >= len(header) or header[i] != "<":
+        return header
+    depth = 0
+    while i < len(header):
+        if header[i] == "<":
+            depth += 1
+        elif header[i] == ">":
+            depth -= 1
+            if depth == 0:
+                return header[i + 1:]
+        i += 1
+    return header  # unbalanced -- leave it alone rather than truncate
+
+
+def parse_header(header: str):
+    """Pull extends / implements / permits lists out of a declaration header."""
+    header = strip_type_params(header)
+    ext = re.search(r"\bextends\b(.*?)(?=\bimplements\b|\bpermits\b|$)", header, re.S)
+    imp = re.search(r"\bimplements\b(.*?)(?=\bpermits\b|$)", header, re.S)
+    per = re.search(r"\bpermits\b(.*)$", header, re.S)
+    return (
+        split_types(ext.group(1)) if ext else [],
+        split_types(imp.group(1)) if imp else [],
+        split_types(per.group(1)) if per else [],
+    )
+
+
+def enum_constants(body: str):
+    """Enum constant names, and whether any constant carries a class body."""
+    head = body.split(";", 1)[0] if ";" in body else body
+    consts, depth, cur = [], 0, ""
+    for ch in head:
+        if ch in "({<":
+            depth += 1
+        elif ch in ")}>":
+            depth -= 1
+        if ch == "," and depth == 0:
+            consts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    consts.append(cur)
+    names, bodies = [], False
+    for c in consts:
+        m = re.match(r"\s*(?:@\w+\s*)*([A-Z_][A-Za-z0-9_]*)", c)
+        if m:
+            names.append(m.group(1))
+            if "{" in c:
+                bodies = True
+    return names, bodies
+
+
+def _top_level_members(body: str):
+    """Yield member declarations at brace depth 0 of a type body."""
+    depth, cur = 0, ""
+    for ch in body:
+        if ch == "{":
+            depth += 1
+            if depth == 1:
+                # Method/initialiser body -- emit the signature, skip the body.
+                yield cur
+                cur = ""
+                continue
+        elif ch == "}":
+            depth -= 1
+            continue
+        if depth == 0:
+            if ch == ";":
+                yield cur
+                cur = ""
+            else:
+                cur += ch
+    if cur.strip():
+        yield cur
+
+
+def analyse_body(kind: str, body: str, name: str):
+    """Count the members that decide a shape."""
+    static_fields = instance_fields = 0
+    abstract_methods = concrete_methods = static_methods = 0
+    nested_types = 0
+    private_ctor = public_ctor = False
+    has_instance_singleton = False
+
+    for decl in _top_level_members(body):
+        d = decl.strip()
+        if not d or d.startswith("@") and "\n" not in d and "(" not in d:
+            continue
+        is_static = re.search(r"\bstatic\b", d) is not None
+        is_abstract = re.search(r"\babstract\b", d) is not None
+        # A constructor: the type's own name opening the declaration, after modifiers
+        # only. Anchoring matters -- an unanchored search also matches the `new
+        # Registry()` inside `static final Registry INSTANCE = new Registry()`, which
+        # read the singleton's field as a public constructor and hid rule R13.
+        ctor = re.match(
+            r"\s*(?:(?:public|protected|private|static|final|abstract|synchronized"
+            r"|native|@\w+(?:\([^)]*\))?|<[^<>]*>)\s+)*" + re.escape(name) + r"\s*\(",
+            d,
+        )
+        if ctor and not re.search(r"\b(class|interface|enum|record)\b", d):
+            if re.search(r"\bprivate\b", d):
+                private_ctor = True
+            else:
+                public_ctor = True
+            continue
+        # A nested TYPE, not a member. A `record Foo(int a, int b)` header ends in `)` with
+        # no `=`, so the method-signature test below claimed it, and inside an interface a
+        # method with no `default` counts as abstract: `Misc` reported "1 abstract method"
+        # when it has none (four statics and a nested record), so R9 called it an open
+        # interface and the porter was told to emit a trait. It parked twice, correctly, at
+        # about $3.26 a turn. Nested types are indexed by `nested_declarations`; here they
+        # are simply not members of the enclosing type.
+        #
+        # Anchored deliberately. An unanchored `\brecord\b` also matches the parameter in
+        # `void add(DBRecord record)`, which would drop real methods.
+        if re.match(
+            r"\s*(?:(?:public|protected|private|static|final|abstract|sealed|non-sealed"
+            r"|strictfp|@\w+(?:\([^)]*\))?)\s+)*(?:class|interface|enum|record)\s+\w+",
+            d,
+        ):
+            nested_types += 1
+            continue
+        # A `=` ahead of any `(` means an initialised field, not a method -- otherwise
+        # `static final Registry INSTANCE = new Registry()` reads as a method signature
+        # (it does end in `)`) and the singleton rule never fires.
+        eq, par = d.find("="), d.find("(")
+        initialised_field = eq >= 0 and (par < 0 or eq < par)
+        if not initialised_field and "(" in d and re.search(r"\)\s*(throws[\w\s,.]*)?$", d):
+            # Method signature.
+            if is_static:
+                static_methods += 1
+            elif is_abstract or (kind == "interface" and not re.search(r"\bdefault\b", d)):
+                abstract_methods += 1
+            else:
+                concrete_methods += 1
+            continue
+        if initialised_field or re.search(r"[\w\]>]\s+\w+\s*(=|$)", d):
+            # Interface fields are implicitly public static final; the keyword is almost
+            # never written, so trusting `is_static` here counts every interface constant
+            # as instance state and hides R8a behind R8b.
+            if is_static or kind == "interface":
+                static_fields += 1
+                if re.search(r"\b(INSTANCE|DEFAULT)\b", d) and re.search(r"\bfinal\b", d):
+                    has_instance_singleton = True
+            else:
+                instance_fields += 1
+
+    return dict(
+        static_fields=static_fields,
+        instance_fields=instance_fields,
+        abstract_methods=abstract_methods,
+        concrete_methods=concrete_methods,
+        static_methods=static_methods,
+        nested_types=nested_types,
+        private_ctor=private_ctor,
+        public_ctor=public_ctor,
+        singleton=private_ctor and has_instance_singleton,
+    )
+
+
+def parse_file(path: str, name: str):
+    """Parse one Java file into the facts the rules consume. None if unparseable."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            raw = fh.read()
+    except OSError:
+        return None
+    src = strip_java(raw)
+    kind, mods, end = find_primary(src, name)
+    if kind is None:
+        return None
+    header, body = header_and_body(src, end)
+    extends, implements, permits = parse_header(header)
+    facts = dict(
+        name=name,
+        kind=kind,
+        sealed="sealed" in mods and "non-sealed" not in mods,
+        abstract="abstract" in mods,
+        final=re.search(r"\bfinal\b", mods) is not None,
+        extends=extends,
+        implements=implements,
+        permits=permits,
+        annotations=re.findall(r"@(\w+)", mods),
+    )
+    if kind == "enum":
+        consts, bodies = enum_constants(body)
+        facts["enum_constants"] = consts
+        facts["enum_constant_bodies"] = bodies
+    facts.update(analyse_body(kind, body, name))
+    return facts
+
+
+# ---------------------------------------------------------------------------
+# Subtype index -- "how many things extend/implement this?", answered from
+# orig_src. Counting implementers in the Rust tree is the mistake AGENTS.md
+# documents four times over; orig_src is the authority.
+# ---------------------------------------------------------------------------
+
+
+# Ghidra is a plugin architecture and says so in the type system: an extension point reaches
+# one of these in its supertype closure. Those are the interfaces where runtime polymorphism
+# over unknown implementers is the actual requirement.
+EXTENSION_POINT_ROOTS = {
+    "ExtensionPoint", "Service", "Plugin", "Analyzer", "Loader", "Exporter", "FileSystem",
+}
+
+# Names that mark a test double rather than a real alternative representation. Counting
+# `StubProgram` as an implementation of `Program` is what makes a single-implementation
+# interface look like a closed set of two -- AGENTS.md records the same mistake being made
+# from the Rust side ("Are the only implementers test doubles? Then you are looking at an
+# unfinished port"). Deliberately does NOT include `*Adapter`: in this codebase that suffix
+# usually marks a real implementation (`BufferFileAdapter`), not a double.
+_DOUBLE_RE = re.compile(r"^(Stub|Mock|Dummy|Fake|TestDouble|TestDummy)|(Stub|Mock|Dummy|Fake)$")
+
+
+_PLACEHOLDER_FQN = re.compile(
+    r"Placeholder for `((?:[a-z][\w]*\.)+[A-Z]\w*)`", re.S)
+
+
+def placeholder_target(name, rust_path):
+    """The fully-qualified Java name a seam_stubs.rs placeholder says it stands for.
+
+    A stub does not sit in the package path of the class it replaces, so path agreement
+    cannot resolve it -- but the stub says so itself: "Placeholder for
+    `ghidra.program.model.lang.Processor`". That doc comment is the authoritative answer and
+    it is already written on 369 of them.
+    """
+    try:
+        with open(rust_path, encoding="utf-8", errors="replace") as fh:
+            src = fh.read()
+    except OSError:
+        return None
+    m = re.search(r"(?m)^\s*pub (?:trait|struct|enum) " + re.escape(name) + r"\b", src)
+    if not m:
+        return None
+    # the doc block immediately above the declaration
+    head = src[:m.start()]
+    block = []
+    for line in reversed(head.rstrip().split("\n")):
+        if line.lstrip().startswith("///") or line.lstrip().startswith("//"):
+            block.append(line)
+        else:
+            break
+    fq = _PLACEHOLDER_FQN.search("\n".join(reversed(block)))
+    return fq.group(1) if fq else None
+
+
+# The port renames as it goes, in two systematic ways, and a basename index sees neither:
+#   * acronym case. Ghidra writes MDMang, FSRL, MDObjectCPP; Rust writes MdMang, Fsrl,
+#     MdObjectCpp. 47 rows looked like invented abstractions purely because of capitalisation.
+#   * a `Like`/`Trait` suffix marks a seam trait standing in for a type -- MdMangLike is a
+#     seam for MDMang, AddressKeyIteratorLike for AddressKeyIterator. 55 more.
+_SEAM_SUFFIX = re.compile(r"(Like|Trait)$")
+
+
+def lookup(name, facts, _ci_cache={}):
+    """Java entries for a Rust type name, tolerating the port's renaming conventions.
+
+    Tried in order: the name as written, then case-insensitively, then with a Like/Trait seam
+    suffix removed (also case-insensitively). Exact always wins, so a real `FooLike` class
+    could never be shadowed by `Foo`.
+    """
+    if name in facts:
+        return facts[name]
+    key = id(facts)
+    ci = _ci_cache.get(key)
+    if ci is None:
+        ci = {}
+        for k, v in facts.items():
+            ci.setdefault(k.lower(), (k, v))
+        _ci_cache[key] = ci
+    hit = ci.get(name.lower())
+    if hit:
+        return hit[1]
+    base = _SEAM_SUFFIX.sub("", name)
+    if base != name:
+        if base in facts:
+            return facts[base]
+        hit = ci.get(base.lower())
+        if hit:
+            return hit[1]
+    return None
+
+
+def resolve_by_path(name, rust_path, facts):
+    """Pick which Java class a Rust declaration models, from where it sits.
+
+    A bare name cannot say: `PatternExpression` is the sleigh runtime expression AND the
+    pcodeCPort AST node. But the Rust tree already answers it by placement -- the pcodeCPort
+    one is at decompiler/slghpatexpress/, and its own doc comment says "Models
+    ghidra.pcodeCPort.slghpatexpress.PatternValue". Scoring candidates by how many trailing
+    package segments their Java path shares with the Rust path recovers that, and it is what
+    turns 32 "ask a human" rows into a handful.
+
+    Returns the winning facts dict, or None when it is genuinely undecidable (no overlap, or a
+    tie).
+    """
+    cands = facts.get(name) or []
+    if len(cands) <= 1:
+        return cands[0] if cands else None
+
+    # A placeholder names its target outright; trust that over any path heuristic.
+    fq = placeholder_target(name, rust_path)
+    if fq:
+        want = fq.replace(".", "/") + ".java"
+        for e in cands:
+            if e["rel"].replace("\\", "/").endswith(want):
+                return e
+        return None       # it names something not among the candidates -- do not guess
+
+    rust_segs = [x for x in os.path.dirname(rust_path).split(os.sep) if x not in ("ghidra-rs", "src", "")]
+
+    def score(e):
+        java_segs = [x for x in os.path.dirname(e["rel"]).split("/")
+                     if x not in ("Ghidra", "src", "main", "java", "ghidra")]
+        # longest common suffix of package segments, compared case-insensitively because the
+        # Rust tree is snake_case (slghpatexpress -> slghpatexpress, pdb2/pdbreader -> pdb2/pdbreader)
+        n = 0
+        for a, b in zip(reversed([x.lower() for x in java_segs]),
+                        reversed([x.replace("_", "").lower() for x in rust_segs])):
+            if a.replace("_", "").lower() == b:
+                n += 1
+            else:
+                break
+        return n
+
+    scored = sorted(((score(e), e) for e in cands), key=lambda t: -t[0])
+    if scored[0][0] and not (len(scored) > 1 and scored[0][0] == scored[1][0]):
+        return scored[0][1]
+
+    # Fallback: a package segment appearing ANYWHERE in the Rust path, for the cases where the
+    # module tree reorganises rather than mirrors -- db/buffers/DataBuffer.java lives at
+    # framework/db/buffer.rs, and app/plugin/processors/sleigh/Constructor.java at
+    # program/model/lang/sleigh/constructor/. Strict suffix alignment scores both zero.
+    rust_set = {x.replace("_", "").lower() for x in rust_segs}
+
+    def overlap(e):
+        java_segs = [x for x in os.path.dirname(e["rel"]).split("/")
+                     if x not in ("Ghidra", "src", "main", "java", "ghidra")]
+        return len({x.replace("_", "").lower() for x in java_segs} & rust_set)
+
+    ov = sorted(((overlap(e), e) for e in cands), key=lambda t: -t[0])
+    if ov[0][0] and not (len(ov) > 1 and ov[0][0] == ov[1][0]):
+        return ov[0][1]
+    return None
+
+
+def is_extension_point(name, facts):
+    """True if `name` reaches an extension-point root through its supertypes."""
+    seen, stack = set(), [name]
+    while stack:
+        n = stack.pop()
+        if n in seen:
+            continue
+        seen.add(n)
+        if n in EXTENSION_POINT_ROOTS:
+            return True
+        for e in facts.get(n, []):
+            stack.extend(e["extends"] + e["implements"])
+    return False
+
+
+def concrete_implementers(name, facts, subtypes, _cache=None):
+    """Transitive CONCRETE class implementers of `name`, excluding test doubles.
+
+    Transitive because Java hierarchies interpose sub-interfaces: `TraceCodeUnit`'s direct
+    subtypes are `TraceData` and `TraceInstruction`, both interfaces, so a direct count says
+    zero implementations when the truth is "whatever implements those". Concrete because an
+    abstract base is not an alternative representation either. Both corrections move types
+    between "collapse this" and "leave it alone", so neither is optional.
+    """
+    if _cache is None:
+        _cache = {}
+    if name in _cache:
+        return _cache[name]
+    _cache[name] = set()  # cycle guard
+    out, seen, stack = set(), set(), [name]
+    while stack:
+        x = stack.pop()
+        if x in seen:
+            continue
+        seen.add(x)
+        for sub in subtypes.get(x, ()):
+            e = facts.get(sub)
+            if not e:
+                continue
+            # A record or an enum implementing an interface is as concrete as a class.
+            # Counting only `class` hid Lifespan.Impl (a record) and every enum-based
+            # implementation, understating closed sets that the ENUM verdict turns on.
+            if (e[0]["kind"] in ("class", "record", "enum") and not e[0]["abstract"]
+                    and not _DOUBLE_RE.search(sub)):
+                out.add(sub)
+            stack.append(sub)
+    _cache[name] = out
+    return out
+
+
+# Java sourcesets that are not production code. `desc_order.py` already keeps the porting
+# frontier off these ("test-fixture classes exercise Java internals; production Rust never
+# depends on them"), but the shape index was reading all 15,613 files, so 1,944 test-sourceset
+# classes and 10 bundled example scripts counted as implementers. That is how `Util`, from
+# Extensions/bundle_examples/scripts_lib, became an implementer of `Library` -- and every test
+# double implementing a production interface inflated that interface's implementer count,
+# which is the number every verdict in CONVENTION_QUEUE.tsv turns on.
+def is_non_production(rel: str) -> bool:
+    return (
+        "/src/test/" in rel
+        or "/src/test." in rel
+        or "/bundle_examples/" in rel
+        or "/GhidraDocs/" in rel
+    )
+
+
+_NESTED = re.compile(
+    r"(?m)^[ \t]+(?:(?:public|protected|private|static|final|abstract|sealed|non-sealed)\s+)*"
+    r"(class|interface|enum|record)\s+([A-Z]\w*)([^{]*)")
+
+
+def nested_declarations(src, rel):
+    """Type declarations nested inside another Java file.
+
+    Java requires only the PUBLIC top-level type to match the filename, so nested types have
+    no file of their own -- `Lifespan.LifeSet`, `TraceSchedule.TimeRadix`,
+    `PcodeUseropLibrary.PcodeUseropDefinition`. An index keyed on basenames cannot see them,
+    so 34 of them looked like abstractions the port had invented.
+    """
+    # The header matters as much as the name. Capturing only (name, kind) made every nested
+    # implementation invisible as a subtype, so 40 interfaces -- Lifespan.LifeSet, FieldSpan,
+    # Occlusion, TraceObjectSchema.AttributeSchema -- read as "no implementer anywhere" when
+    # their implementations were nested in the very same file.
+    out = []
+    for m in _NESTED.finditer(src):
+        ext, imp, per = parse_header(m.group(3) or "")
+        out.append((m.group(2), m.group(1), ext, imp, per))
+    return out
+
+
+def build_index(verbose=False):
+    files, facts = [], {}
+    for root, _dirs, names in os.walk(ORIG):
+        for f in names:
+            if not f.endswith(".java"):
+                continue
+            p = os.path.join(root, f)
+            if is_non_production(os.path.relpath(p, ORIG)):
+                continue
+            files.append(p)
+    subtypes: dict[str, set] = {}
+    nested: dict[str, list] = {}
+    for i, p in enumerate(sorted(files)):
+        name = os.path.basename(p)[:-5]
+        rel = os.path.relpath(p, ORIG)
+        fa = parse_file(p, name)
+        if fa is None:
+            continue
+        fa["rel"] = rel
+        facts.setdefault(name, []).append(fa)
+        try:
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                _src = strip_java(fh.read())
+        except OSError:
+            _src = ""
+        for nname, nkind, next_, nimp, nper in nested_declarations(_src, rel):
+            if nname == name:
+                continue
+            for sup in next_ + nimp:
+                subtypes.setdefault(sup, set()).add(nname)
+            nested.setdefault(nname, []).append(dict(
+                name=nname, kind=nkind, sealed=False, abstract=False, extends=next_,
+                implements=nimp, permits=nper, annotations=[], rel=rel, nested_in=name,
+                static_fields=0, instance_fields=0, abstract_methods=0, concrete_methods=0,
+                static_methods=0, private_ctor=False, public_ctor=False, singleton=False))
+        for sup in fa["extends"] + fa["implements"]:
+            subtypes.setdefault(sup, set()).add(name)
+        if verbose and i % 2000 == 0:
+            print(f"  indexed {i}/{len(files)}", file=sys.stderr)
+    # Nested types only fill gaps -- a top-level declaration of the same name always wins.
+    for n, entries in nested.items():
+        facts.setdefault(n, entries)
+    return facts, subtypes
+
+
+# ---------------------------------------------------------------------------
+# Rules
+# ---------------------------------------------------------------------------
+
+# shape -> the directive injected into the porting prompt. Kept terse on purpose:
+# every one of these is paid for on every port.
+DIRECTIVES = {
+    "enum": """SHAPE: Rust `enum`. This Java type is a CLOSED set of alternatives ({why}).
+Emit `pub enum {name}` with one variant per alternative and implement its methods with
+`match self`. Do NOT emit a trait: a trait would reopen a set the Java source deliberately
+closed, and every caller would then take `&dyn {name}` for what is a plain value.""",
+    "struct": """SHAPE: Rust `struct` + `impl`. This Java type is a concrete data type ({why}).
+Emit `pub struct {name}` and take/return it BY VALUE or by `&`/`&mut` reference. Do NOT emit a
+trait and do NOT let it appear as `Box<dyn {name}>`/`Arc<dyn {name}>` anywhere.""",
+    "module": """SHAPE: a plain module -- `pub const` items and/or free `pub fn`s, and NO type
+named `{name}` at all ({why}).
+Java needs a class to hang statics off; Rust does not. Emit the constants and functions directly
+in the module. A field-less struct that is never instantiated is not the port of a statics holder,
+and it drags an unnecessary `impl` block and receiver argument through every call site.""",
+    "trait": """SHAPE: Rust `trait`. This is a genuine open extension point ({why}).
+Emit `pub trait {name}`. Use `&dyn {name}`/`Box<dyn {name}>` ONLY where the call site really is
+polymorphic over unknown implementers; prefer a generic `impl {name}` parameter otherwise.""",
+    "struct_trait": """SHAPE: shared-state `struct` + `trait` for the abstract operations ({why}).
+Java abstract classes carry BOTH state and behaviour. Split them: `pub struct {name}Base` (or
+give the shared fields to each concrete type) holds the fields and the concrete methods; `pub
+trait {name}` declares ONLY the abstract methods. Do not emit a bare trait -- the shared state
+has to live somewhere, and a trait cannot hold it.""",
+    "error": """SHAPE: an error type ({why}). Emit a `struct`/`enum` implementing
+`std::fmt::Display` and `std::error::Error`, returned as `Err(...)` from `Result`. Do NOT model
+the Java exception hierarchy as a Rust trait hierarchy, and do NOT panic where Java throws.""",
+    "iterator": """SHAPE: implement `std::iter::Iterator` ({why}).
+Emit a type whose `Iterator::next` returns `Option<Item>`. Do NOT port `hasNext()`/`next()` as a
+pair of Rust methods: `while it.has_next() {{ v.push(it.next()) }}` advanced the cursor twice per
+turn and silently dropped every other element (AGENTS.md, "Compiling is not evidence").""",
+    "park": """SHAPE: UNDECIDED. {why}
+Do not guess. Port nothing and end with: PORT_RESULT: PARKED shape undecided -- {why}""",
+}
+
+
+def classify(facts: dict, subtype_count: int, permits_resolved=None,
+             marker_use=None) -> dict:
+    """Apply the shape rules. Returns {shape, rule, why, confidence}."""
+    name, kind = facts["name"], facts["kind"]
+    all_supers = facts["extends"] + facts["implements"]
+
+    # A rich interface that also happens to be Iterable keeps its own shape, but the porter
+    # still needs telling how to carry the iteration across -- otherwise `iterator()` comes
+    # over as a has_next/next pair, which is the double-consume bug all over again.
+    iterable_note = ""
+    if any(s in ITERABLE_SUPERS for s in all_supers) and not any(
+        s in CURSOR_SUPERS for s in all_supers
+    ):
+        iterable_note = (
+            "\nALSO: the Java type is `Iterable`. Implement `IntoIterator` (and/or an `iter()` "
+            "returning a concrete iterator) for it. Do NOT port `iterator()`/`hasNext()`/`next()` "
+            "as a pair of Rust methods -- `while it.has_next() { v.push(it.next()) }` advanced "
+            "the cursor twice per turn and silently dropped every other element."
+        )
+
+    def r(rule, shape, why, conf="hard"):
+        return dict(shape=shape, rule=rule, why=why, confidence=conf, name=name,
+                    extra=iterable_note)
+
+    # R1 -- Java enum. Always a Rust enum, constant bodies or not.
+    if kind == "enum":
+        n = len(facts.get("enum_constants", []))
+        extra = " with constant-specific bodies -> `match self` in each method" if facts.get(
+            "enum_constant_bodies"
+        ) else ""
+        return r("R1-java-enum", "enum", f"Java `enum` with {n} constants{extra}")
+
+    # R2 -- sealed type. `permits` IS the variant list; this is the Lifespan case.
+    if facts["sealed"]:
+        p = permits_resolved or facts["permits"]
+        listed = ", ".join(p) if p else "its nested implementors"
+        return r(
+            "R2-sealed",
+            "enum",
+            f"Java `sealed {kind}` -- the permitted set is closed: {listed}",
+        )
+
+    # R3 -- record. An immutable value; accessors are field reads.
+    if kind == "record":
+        return r("R3-record", "struct", "Java `record` -- an immutable value type")
+
+    # R4 -- annotation type. Not a runtime type at all.
+    if kind == "@interface":
+        return r(
+            "R4-annotation",
+            "park",
+            "Java annotation type -- has no direct Rust equivalent; decide with a human",
+            "ambiguous",
+        )
+
+    # R5 -- exception. Decided by supertype/name before any structural rule.
+    supers = all_supers
+    if any(s.endswith(THROWABLE_SUFFIXES) for s in supers) or name.endswith(THROWABLE_SUFFIXES):
+        return r("R5-exception", "error", f"extends/names a Java throwable ({', '.join(supers) or name})")
+
+    # R6a -- a cursor. Must become a real Iterator, never a has_next/next pair.
+    cursors = [s for s in supers if s in CURSOR_SUPERS]
+    if cursors:
+        return r("R6a-cursor", "iterator", f"extends {', '.join(cursors)}")
+
+    # R6b -- iterable with essentially no other API: also a sequence.
+    iterables = [s for s in supers if s in ITERABLE_SUPERS]
+    if iterables and facts["abstract_methods"] <= ITERABLE_API_CUTOFF:
+        return r(
+            "R6b-bare-iterable",
+            "iterator",
+            f"extends {', '.join(iterables)} and declares no other API "
+            f"({facts['abstract_methods']} abstract method(s))",
+        )
+
+    # R7 -- statics holder: a class that exists only because Java has nowhere else to put
+    # constants and free functions. No instance state, no instance methods.
+    if (
+        kind == "class"
+        and facts["instance_fields"] == 0
+        and facts["concrete_methods"] == 0
+        and facts["abstract_methods"] == 0
+        and (facts["static_fields"] > 0 or facts["static_methods"] > 0)
+        and not facts["public_ctor"]
+    ):
+        bits = []
+        if facts["static_fields"]:
+            bits.append(f"{facts['static_fields']} static field(s)")
+        if facts["static_methods"]:
+            bits.append(f"{facts['static_methods']} static method(s)")
+        return r(
+            "R7-statics-holder",
+            "module",
+            f"{' and '.join(bits)}, no instance state and no instance methods",
+        )
+
+    # R7b -- a pure namespace: no members at all, only nested types. VTMatchApplyChoices is
+    # eight nested enums and nothing else; GThemeDefaults is nested static classes. Rust
+    # spells that as a module holding the ported nested types, never as an empty struct.
+    # These two reached `module` before by accident -- the nested headers were miscounted as
+    # static fields -- so fixing that accounting would have demoted them to R14a struct.
+    if (
+        kind in ("class", "interface")
+        and facts.get("nested_types", 0) > 0
+        and facts["instance_fields"] == 0
+        and facts["static_fields"] == 0
+        and facts["concrete_methods"] == 0
+        and facts["abstract_methods"] == 0
+        and facts["static_methods"] == 0
+        and not facts["public_ctor"]
+    ):
+        return r(
+            "R7b-namespace",
+            "module",
+            f"no members at all, only {facts['nested_types']} nested type(s) -- a namespace, "
+            "not a type. Port it as a module holding the nested types; do NOT emit an empty "
+            f"struct named `{name}`",
+        )
+
+    if kind == "interface":
+        if facts["abstract_methods"] == 0 and facts["concrete_methods"] == 0:
+            # R8 -- an interface with no methods is either a constants holder, a type
+            # tag, or dead weight, and the declaration alone does not say which. It
+            # used to park all 141 of them for a human. But the question ("does
+            # anything dispatch on this?") is one the Java tree answers, so the R8
+            # verdict is driven by MARKER_USE.tsv -- the comment-stripped, path-scoped
+            # usage scan from `shape_rules.py index`. Only a type something actually
+            # branches on still needs a person.
+            consts = facts["static_fields"] > 0
+            tag = "R8a-constants-interface" if consts else "R8b-marker"
+            use = marker_use or {}
+
+            if use.get("ambiguous"):
+                # Same basename declared at more than one path: the evidence cannot be
+                # attributed to this one. Same guard `write_implementers` applies.
+                return r(tag, "park",
+                         "interface with no methods, and its basename is declared at more "
+                         "than one path -- usage evidence cannot be attributed to this "
+                         "declaration, so the tag/constants question stays open",
+                         "ambiguous")
+            if not use:
+                # No scan available (MARKER_USE.tsv missing). Park rather than guess.
+                return r(tag, "park",
+                         "interface with no methods and no usage scan available -- run "
+                         "`shape_rules.py index` to regenerate MARKER_USE.tsv",
+                         "ambiguous")
+            if use.get("instanceof"):
+                # Real runtime narrowing: something asks "is this THAT specific marker?" and
+                # branches on the answer. Rust has no closed-world `instanceof` -- this needs an
+                # enum discriminant, a downcast seam, or a predicate method, and which one is a
+                # human call.
+                return r(tag, "park",
+                         f"interface with no methods that {use['instanceof']} site(s) branch on "
+                         "via `instanceof` -- a genuine runtime type tag. Rust has no "
+                         "equivalent: it needs an enum discriminant, a downcast seam, or a "
+                         "predicate method. Decide with a human",
+                         "ambiguous")
+            if use.get("reflection") and not consts:
+                # Reflection-only dispatch (`X.class` used purely as a registry key, e.g.
+                # `tool.getServices(X.class)`), with zero `instanceof` and no constants of its
+                # own to carry -- nothing actually narrows on runtime type, it's Java's
+                # Class<T>-keyed service lookup. This codebase already has a working, proven
+                # recipe for exactly that case: DecompilerHoverService
+                # (ghidra.app.decompiler.component.hover) is an empty marker trait keyed by
+                # `TypeId::of::<dyn X>()`, standing in for the `.class` token, and it is live in
+                # DecompilePlugin's service registry. Apply the same recipe here instead of
+                # parking for a decision this codebase has already made.
+                return r("R8g-reflection-only-marker", "trait",
+                         f"interface with no methods used only as a `.class` registry key "
+                         f"({use['reflection']} site(s)), never via `instanceof` -- Java's "
+                         "Class<T>-keyed service lookup, not runtime type narrowing. Emit an "
+                         "empty marker trait (`pub trait X: ParentTrait {}`) and key the "
+                         "registry on `TypeId::of::<dyn X>()`, the same recipe already proven by "
+                         "`DecompilerHoverService`")
+            if use.get("reflection"):
+                # Same reflection-only shape, but this one also carries constants -- the marker
+                # recipe alone would drop them on the floor, and whether those constants belong
+                # on the trait or beside it is not yet a decision this codebase has made anywhere
+                # else. Keep parking this combination for a human.
+                return r(tag, "park",
+                         f"interface with no methods that {use['reflection']} site(s) use as a "
+                         "`.class` registry key, and it also declares constants -- the marker-"
+                         "trait recipe alone would drop the constants; decide with a human "
+                         "whether they belong on the trait or in a separate module",
+                         "ambiguous")
+            # An interface can carry `static` methods without being dispatchable. They are
+            # free functions, not trait items -- emitting only the marker trait would drop
+            # them on the floor.
+            statics = ""
+            if facts["static_methods"]:
+                statics = (f" It also declares {facts['static_methods']} `static` method(s): "
+                           "port those as free functions in the same module, NOT as trait "
+                           "methods -- nothing dispatches on them.")
+
+            if use.get("typepos"):
+                return r("R8c-marker-as-bound", "trait",
+                         f"interface with no instance methods used as a type in "
+                         f"{use['typepos']} place(s) but never branched on -- an empty "
+                         "marker trait carries it: `pub trait X {}` plus `impl X for ..` "
+                         "on each implementor." + statics)
+            # Nothing dispatches on it and nothing names it as a type, but it carries static
+            # methods: Java's "interface as a namespace for statics" idiom, the same thing R7
+            # recognises for classes. A trait would be empty and implemented by nobody.
+            if facts["static_methods"] and not consts:
+                return r("R8f-statics-module", "module",
+                         f"interface with {facts['static_methods']} `static` method(s), no "
+                         "instance methods, no constants, and nothing branching on it or "
+                         "naming it as a type -- Java's interface-as-namespace idiom. Port "
+                         "the statics as free functions in a plain module; there is nothing "
+                         "to implement and nothing to dispatch over")
+            if consts:
+                return r("R8d-constants-module", "module",
+                         f"interface with {facts['static_fields']} constant(s), no methods, "
+                         f"{use.get('const_read', 0)} external constant read(s), and nothing "
+                         "branching on it or naming it as a type -- Java's constant-interface "
+                         "antipattern. Port the constants as a plain `pub const` module. Note "
+                         "Java implementors inherit these names unqualified, so a class that "
+                         "`implements` it and writes a bare `KEY_FOO` needs a `use` of the "
+                         "module in Rust -- not an empty trait to carry the names across")
+            return r("R8e-inert-marker", "trait",
+                     "marker interface with no instance methods, no constants, and no use "
+                     "as a type or dispatch target anywhere in the tree -- emit "
+                     "`pub trait X {}` and implement it on the implementors; it costs "
+                     "nothing and keeps the Java hierarchy legible")
+        # R9 -- open interface. The one case a trait is unambiguously right.
+        return r(
+            "R9-open-interface",
+            "trait",
+            f"Java `interface` with {facts['abstract_methods']} abstract method(s), "
+            f"{subtype_count} in-repo implementor(s)",
+        )
+
+    # kind == class from here.
+    if facts["abstract"]:
+        # R10 -- abstract base with no subclasses left in-repo: nothing to abstract over.
+        if subtype_count == 0:
+            return r("R10-abstract-orphan", "struct", "abstract class with no in-repo subclasses")
+        # R11 -- abstract base carrying state: needs the struct half.
+        if facts["instance_fields"] > 0:
+            return r(
+                "R11-abstract-stateful",
+                "struct_trait",
+                f"abstract class with {facts['instance_fields']} instance field(s) and "
+                f"{subtype_count} in-repo subclass(es)",
+            )
+        # R12 -- pure abstract base: behaves as an interface.
+        return r(
+            "R12-abstract-pure",
+            "trait",
+            f"abstract class with no instance state and {subtype_count} in-repo subclass(es)",
+        )
+
+    # R13 -- singleton. Concrete, but its instance identity is the point.
+    if facts["singleton"]:
+        return r(
+            "R13-singleton",
+            "struct",
+            "singleton (private constructor + static INSTANCE) -- expose a `fn` or a "
+            "`OnceLock`, not a global `Arc<Mutex<_>>`",
+        )
+
+    # R14 -- concrete class. The default, and the largest bucket. Split by whether anything
+    # actually extends it: the old single rule printed the subclass count in its own note and
+    # then ignored it, so `DBAnnotatedObject` (40 subclasses), `CodeUnitLocation` (31) and
+    # `InjectPayloadSleigh` (18) were all reported as "there is no hierarchy to dispatch over".
+    if subtype_count == 0:
+        return r("R14a-concrete-leaf", "struct", "concrete Java `class` that nothing extends")
+    if subtype_count == 1:
+        return r("R14b-concrete-one-subclass", "struct",
+                 "concrete Java `class` with a single subclass -- inheritance for reuse; port it "
+                 "as a struct and let the subclass embed it")
+    if subtype_count <= 3:
+        return r("R14c-concrete-small-hierarchy", "struct_trait",
+                 f"concrete Java `class` that {subtype_count} classes extend -- it is BOTH "
+                 f"instantiable and a base, so the shared state needs a struct and the "
+                 f"overridable behaviour a trait")
+    return r("R14d-concrete-base", "struct_trait",
+             f"concrete Java `class` that {subtype_count} classes extend -- a real hierarchy, "
+             f"not a leaf; shared state in a struct, overridable behaviour in a trait")
+
+
+def directive_for(res: dict) -> str:
+    return DIRECTIVES[res["shape"]].format(name=res["name"], why=res["why"]) + res.get("extra", "")
+
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+COLS = ["path", "class", "kind", "shape", "rule", "confidence", "subtypes", "why"]
+
+
+IMPLEMENTERS = os.path.join(REPO, "IMPLEMENTERS.tsv")
+IMPL_COLS = ["class", "kind", "n_concrete", "extension_point", "concrete_implementers"]
+
+
+def write_implementers(facts, subtypes, out=IMPLEMENTERS, cap=40):
+    """Materialise the concrete-implementer closure so callers need not rebuild the index.
+
+    `build_index` walks 15,601 Java files and costs ~14s. `dep_context.py` runs once per
+    port inside the nightly loop, so recomputing there would burn a quarter-hour a night to
+    re-derive something `orig_src` fixes for good. Written alongside SHAPES.tsv and tracked
+    for the same reason: the harnesses run `git reset --hard`, and untracked state would be
+    thrown away mid-run.
+    """
+    cache = {}
+    rows = []
+    for name in facts:
+        if len(facts[name]) > 1:
+            continue  # ambiguous basename -- callers must not resolve it
+        impls = sorted(concrete_implementers(name, facts, subtypes, cache))
+        rows.append([
+            name,
+            facts[name][0]["kind"],
+            str(len(impls)),
+            "1" if is_extension_point(name, facts) else "0",
+            ",".join(impls[:cap]),
+        ])
+    rows.sort()
+    with open(out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(IMPL_COLS) + "\n")
+        for r in rows:
+            fh.write("\t".join(c.replace("\t", " ") for c in r) + "\n")
+    return len(rows)
+
+
+def load_implementers(path=IMPLEMENTERS):
+    """{class: {kind, n_concrete, extension_point, concrete_implementers}} or None."""
+    if not os.path.exists(path):
+        return None
+    out = {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            next(fh, None)
+            for line in fh:
+                c = line.rstrip("\n").split("\t")
+                if len(c) != len(IMPL_COLS):
+                    continue
+                out[c[0]] = dict(kind=c[1], n_concrete=int(c[2]),
+                                 extension_point=c[3] == "1",
+                                 concrete_implementers=[x for x in c[4].split(",") if x])
+    except Exception:
+        return None
+    return out or None
+
+
+MARKER_USE = os.path.join(REPO, "MARKER_USE.tsv")
+MARKER_COLS = ["class", "ambiguous", "instanceof", "reflection", "typepos", "const_read"]
+
+
+def marker_candidates(facts):
+    """{name: n_declarations} for every method-less interface -- the R8 population.
+
+    Keyed by basename because that is what a Java reference site gives us. Names declared
+    at more than one path are still returned, flagged, so `classify` can park them instead
+    of attributing another type's `instanceof` sites to this one.
+    """
+    out = {}
+    for name, entries in facts.items():
+        prim = entries[0]
+        if prim["kind"] != "interface":
+            continue
+        if prim["abstract_methods"] or prim["concrete_methods"]:
+            continue
+        out[name] = len(entries)
+    return out
+
+
+def _marker_patterns(names):
+    alt = "|".join(sorted(names, key=len, reverse=True))
+    return [
+        ("instanceof", re.compile(r"\binstanceof\s+(?:final\s+)?(%s)\b" % alt)),
+        ("reflection", re.compile(r"\b(%s)\s*\.\s*class\b" % alt)),
+        ("const_read", re.compile(r"\b(%s)\s*\.\s*[A-Z][A-Z0-9_]*\b" % alt)),
+        ("typepos", re.compile(
+            r"[(,]\s*(?:final\s+)?(%s)\s+[a-z]\w*" % alt              # parameter
+            + r"|<\s*(?:\?\s+extends\s+)?(%s)\s*[,>]" % alt           # generic argument
+            + r"|<\s*\w+\s+extends\s+(%s)\b" % alt                    # generic bound
+            + r"|\(\s*(%s)\s*\)\s*[\w(]" % alt                        # cast
+            + r"|(?:^|[;{}])\s*(?:private|public|protected|static|final|\s)*"
+              r"(%s)\s+[a-z]\w*\s*[=;(]" % alt)),                     # field / local / return
+    ]
+
+
+def scan_marker_use(facts, verbose=False):
+    """{name: {instanceof, reflection, typepos, const_read}} for the R8 population.
+
+    Answers the question R8 used to park on: does anything actually branch on this marker,
+    name it as a type, or read its constants? Scans `strip_java`-ed source, because the raw
+    text is mostly prose -- matching `Check` against unstripped files pulled 1,436 lines,
+    nearly all of them javadoc sentences starting "Check that ...".
+    """
+    cand = marker_candidates(facts)
+    ev = {n: dict.fromkeys(("instanceof", "reflection", "typepos", "const_read"), 0)
+          for n in cand}
+    if not cand:
+        return ev
+    pats = _marker_patterns(cand)
+    import_re = re.compile(r"^\s*(?:import|package)\b")
+    for root, _dirs, names in os.walk(ORIG):
+        for f in names:
+            if not f.endswith(".java"):
+                continue
+            p = os.path.join(root, f)
+            if is_non_production(os.path.relpath(p, ORIG)):
+                continue
+            own = f[:-5]
+            try:
+                with open(p, encoding="utf-8", errors="replace") as fh:
+                    src = strip_java(fh.read())
+            except OSError:
+                continue
+            if not any(n in src for n in cand):
+                continue
+            for line in src.splitlines():
+                if import_re.match(line):
+                    continue
+                for kind, rx in pats:
+                    for m in rx.finditer(line):
+                        n = next(g for g in m.groups() if g)
+                        # A type's own file says nothing about how the rest of the tree
+                        # uses it -- and its `implements` clause is not a use at all.
+                        if n != own:
+                            ev[n][kind] += 1
+    return ev
+
+
+def write_marker_use(facts, out=MARKER_USE, verbose=False):
+    cand = marker_candidates(facts)
+    ev = scan_marker_use(facts, verbose=verbose)
+    rows = [[n, "1" if cand[n] > 1 else "0", str(ev[n]["instanceof"]),
+             str(ev[n]["reflection"]), str(ev[n]["typepos"]), str(ev[n]["const_read"])]
+            for n in sorted(cand)]
+    with open(out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(MARKER_COLS) + "\n")
+        for r_ in rows:
+            fh.write("\t".join(r_) + "\n")
+    return len(rows)
+
+
+def load_marker_use(path=MARKER_USE):
+    """{class: {ambiguous, instanceof, reflection, typepos, const_read}} or None."""
+    if not os.path.exists(path):
+        return None
+    out = {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            next(fh, None)
+            for line in fh:
+                c = line.rstrip("\n").split("\t")
+                if len(c) != len(MARKER_COLS):
+                    continue
+                out[c[0]] = dict(ambiguous=c[1] == "1", instanceof=int(c[2]),
+                                 reflection=int(c[3]), typepos=int(c[4]),
+                                 const_read=int(c[5]))
+    except Exception:
+        return None
+    return out or None
+
+
+def cmd_index(args):
+    facts, subtypes = build_index(verbose=True)
+    n = write_implementers(facts, subtypes)
+    print(f"wrote {n} rows to {IMPLEMENTERS}")
+    n = write_marker_use(facts, verbose=True)
+    print(f"wrote {n} rows to {MARKER_USE}")
+    markers = load_marker_use()
+    rows = []
+    for name, entries in facts.items():
+        for fa in entries:
+            # SHAPES.tsv is keyed by PATH and read that way -- descent_night.sh takes the first
+            # row matching the file it is about to port. A nested type shares its parent's
+            # path, so writing nested entries here put 1,850 duplicate paths in the table and
+            # could hand a porter the shape of `SaveTraceAction` for DebuggerResources.java.
+            # Nested types belong in the name index (for lookup), never in the path table.
+            if fa.get("nested_in"):
+                continue
+            res = classify(fa, len(subtypes.get(name, ())),
+                           marker_use=(markers or {}).get(name))
+            rows.append(
+                [
+                    fa["rel"],
+                    name,
+                    fa["kind"] + ("/sealed" if fa["sealed"] else "") + ("/abstract" if fa["abstract"] else ""),
+                    res["shape"],
+                    res["rule"],
+                    res["confidence"],
+                    str(len(subtypes.get(name, ()))),
+                    res["why"],
+                ]
+            )
+    rows.sort(key=lambda r: r[0])
+    with open(args.out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(COLS) + "\n")
+        for r in rows:
+            fh.write("\t".join(c.replace("\t", " ").replace("\n", " ") for c in r) + "\n")
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r[3]] = counts.get(r[3], 0) + 1
+    print(f"wrote {len(rows)} rows to {args.out}")
+    for k, v in sorted(counts.items(), key=lambda x: -x[1]):
+        print(f"  {v:6d}  {k}")
+    return 0
+
+
+def _lookup(rel: str):
+    """Shape row for a path, from SHAPES.tsv when present, else parsed live."""
+    rel = rel[len("orig_src/") :] if rel.startswith("orig_src/") else rel
+    if os.path.exists(SHAPES):
+        with open(SHAPES, encoding="utf-8") as fh:
+            next(fh, None)
+            for line in fh:
+                c = line.rstrip("\n").split("\t")
+                if c and c[0] == rel:
+                    return dict(zip(COLS, c)) | {"name": c[1]}
+    name = os.path.basename(rel)[:-5]
+    fa = parse_file(os.path.join(ORIG, rel), name)
+    if fa is None:
+        return None
+    _facts, subtypes = build_index()
+    res = classify(fa, len(subtypes.get(name, ())),
+                   marker_use=(load_marker_use() or {}).get(name))
+    return dict(path=rel, **{k: res[k] for k in ("shape", "rule", "confidence", "why", "name")})
+
+
+def cmd_classify(args):
+    row = _lookup(args.path)
+    if row is None:
+        print(json.dumps({"shape": "park", "why": "could not parse the Java declaration"}))
+        return 1
+    print(json.dumps(row, indent=2))
+    return 0
+
+
+def cmd_directive(args):
+    row = _lookup(args.path)
+    if row is None:
+        return 1
+    print(DIRECTIVES[row["shape"]].format(name=row["name"], why=row["why"]))
+    return 0
+
+
+def cmd_audit(args):
+    """Compare shipped Rust declarations against the rules.
+
+    A trait standing in for a still-TODO Java class is a deliberate seam, not a defect
+    (AGENTS.md), so those are excluded. So are ambiguous basenames: `PatternExpression`
+    is two unrelated Java classes, and pairing by basename has produced confident wrong
+    answers before.
+    """
+    if not os.path.exists(SHAPES):
+        print(f"{SHAPES} missing -- run `shape_rules.py index` first", file=sys.stderr)
+        return 1
+    shapes: dict[str, list] = {}
+    with open(SHAPES, encoding="utf-8") as fh:
+        next(fh, None)
+        for line in fh:
+            c = line.rstrip("\n").split("\t")
+            if len(c) == len(COLS):
+                shapes.setdefault(c[1], []).append(dict(zip(COLS, c)))
+    status = {}
+    with open(os.path.join(REPO, "PORT_MANIFEST.tsv"), encoding="utf-8") as fh:
+        for line in fh:
+            c = line.split("\t")
+            if len(c) > 1:
+                status[c[0]] = c[1].strip()
+
+    decl = re.compile(r"^\s*pub (trait|struct|enum) ([A-Za-z0-9_]+)(.*)$")
+    rust: dict[str, list] = {}
+    for root, _d, files in os.walk(os.path.join(REPO, "ghidra-rs", "src")):
+        for f in files:
+            if not f.endswith(".rs") or f == "seam_stubs.rs":
+                continue
+            p = os.path.join(root, f)
+            for i, line in enumerate(open(p, encoding="utf-8", errors="replace"), 1):
+                m = decl.match(line)
+                if not m:
+                    continue
+                kind = m.group(1)
+                # `pub trait FunctionIterator: Iterator<Item = Arc<dyn Function>> {}` is the
+                # established way this crate names an iterator without giving up the domain
+                # vocabulary: a marker supertrait plus a blanket impl. It IS an iterator, so
+                # counting it as a trait/iterator mismatch is a false positive -- and it flagged
+                # four already-correct types before this check existed.
+                if kind == "trait" and re.search(r":\s*[^{]*\bIterator\b", m.group(3)):
+                    kind = "iterator_trait"
+                rust.setdefault(m.group(2), []).append((kind, os.path.relpath(p, REPO), i))
+
+    # A DECIDED convention outranks the shape rule. `DBAnnotatedObject` is ARENA,
+    # `CodeUnitLocation` ACCEPT, `BlockGraph` GRAPH, `HighSymbol` ENUM -- all decided
+    # deliberately, and all reported here as "should be struct". Reporting a type as debt
+    # against a shape nobody intends to build sends a remediation pass the wrong way.
+    decided = {}
+    qp = os.path.join(REPO, "CONVENTION_QUEUE.tsv")
+    if os.path.exists(qp):
+        import csv as _csv
+        with open(qp, newline="", encoding="utf-8") as fh:
+            for r in _csv.DictReader(fh, delimiter="\t"):
+                v = (r.get("verdict") or "").strip()
+                t = (r.get("type") or "").strip()
+                if t and v in ("ACCEPT", "ARENA", "ENUM", "ITER", "GRAPH", "STRUCT", "PARK"):
+                    decided[t] = v
+    # what a decided convention implies the Rust declaration should be
+    CONV_OK = {"ACCEPT": {"trait", "iterator_trait"}, "ARENA": {"struct", "trait", "iterator_trait"},
+               "ENUM": {"enum", "struct", "trait", "iterator_trait"},
+               "GRAPH": {"enum", "struct", "trait", "iterator_trait"},
+               "ITER": {"iterator_trait", "struct", "trait"},
+               "STRUCT": {"struct", "enum"}, "PARK": {"struct", "enum", "trait", "iterator_trait"}}
+
+    want = {"enum": "enum", "struct": "struct", "trait": ("trait", "iterator_trait"),
+            "iterator": ("struct", "enum", "iterator_trait"),
+            "error": ("struct", "enum"), "struct_trait": ("struct", "trait")}
+    rows = []
+    for name, decls in sorted(rust.items()):
+        cand = shapes.get(name)
+        if not cand or len(cand) > 1:
+            continue  # unmatched, or an ambiguous basename -- do not guess
+        sh = cand[0]
+        if sh["shape"] not in want:
+            continue
+        if status.get("orig_src/" + sh["path"]) != "DONE":
+            continue  # trait standing in for an unported class = deliberate seam
+        conv = decided.get(name)
+        if conv:
+            ok = CONV_OK.get(conv, set())
+        else:
+            ok = want[sh["shape"]]
+            ok = (ok,) if isinstance(ok, str) else ok
+        kinds = {d[0] for d in decls}
+        if kinds & set(ok):
+            continue
+        for k, p, ln in decls:
+            rows.append([name, k, conv or sh["shape"], (f"convention {conv}" if conv else sh["rule"]),
+                         sh["kind"], f"{p}:{ln}", sh["why"]])
+
+    hdr = ["class", "rust_is", "should_be", "rule", "java_kind", "location", "why"]
+    with open(args.out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(hdr) + "\n")
+        for r in rows:
+            fh.write("\t".join(str(c).replace("\t", " ") for c in r) + "\n")
+    print(f"wrote {len(rows)} shape mismatches to {args.out}")
+    by: dict[str, int] = {}
+    for r in rows:
+        by[f"{r[1]} -> {r[2]} ({r[3]})"] = by.get(f"{r[1]} -> {r[2]} ({r[3]})", 0) + 1
+    for k, v in sorted(by.items(), key=lambda x: -x[1])[:12]:
+        print(f"  {v:5d}  {k}")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    p = sub.add_parser("index"); p.add_argument("--out", default=SHAPES); p.set_defaults(fn=cmd_index)
+    p = sub.add_parser("classify"); p.add_argument("path"); p.set_defaults(fn=cmd_classify)
+    p = sub.add_parser("directive"); p.add_argument("path"); p.set_defaults(fn=cmd_directive)
+    p = sub.add_parser("audit"); p.add_argument("--out", default=os.path.join(REPO, "SHAPE_DEBT.tsv"))
+    p.set_defaults(fn=cmd_audit)
+    args = ap.parse_args()
+    return args.fn(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -80,8 +80,8 @@ mod tests {
     #[test]
     fn test_get_function_returns_none() {
         let corr = SimpleTestCorrelation;
-        assert_eq!(corr.get_function(Side::Left), None);
-        assert_eq!(corr.get_function(Side::Right), None);
+        assert!(corr.get_function(Side::Left).is_none());
+        assert!(corr.get_function(Side::Right).is_none());
     }
 
     #[test]

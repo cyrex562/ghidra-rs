@@ -1,0 +1,7 @@
+suffix	verdict	note
+Iterator	ITER	Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
+Listener	ACCEPT	Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+Service	ACCEPT	Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+Provider	ACCEPT	Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+Monitor	ACCEPT	Progress/cancellation callback supplied by the caller. The textbook open extension point.
+Manager	ARENA	Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.

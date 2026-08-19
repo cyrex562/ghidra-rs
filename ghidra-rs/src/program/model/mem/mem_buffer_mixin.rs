@@ -1,4 +1,4 @@
-use crate::program::model::lang::sleigh::walker::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::mem::MemoryAccessException;
 
 /// Trait providing default implementations for integer reads from a memory buffer.
@@ -6,70 +6,15 @@ use crate::program::model::mem::MemoryAccessException;
 /// This is a mixin trait that extends [`MemBuffer`] and provides convenient methods for
 /// reading multi-byte values. All methods use the underlying `get_bytes` implementation.
 /// Byte order (endianness) is handled according to the buffer's `is_big_endian()` setting.
+/// Extension trait for reads that are not part of [`MemBuffer`] itself.
+///
+/// Java splits `MemBuffer` (the interface) from `MemBufferMixin` (default bodies for the derived
+/// reads). The port cannot: nearly every caller here holds a `&dyn MemBuffer`, and a trait object
+/// cannot reach methods on a separate extension trait -- `get_int` alone has 96 call sites. So
+/// the derived reads are defaulted on [`MemBuffer`] directly and this trait keeps only what is
+/// genuinely additional. Duplicating them here as well produced `E0034: multiple applicable
+/// items in scope` at every call site that had both traits imported.
 pub trait MemBufferMixin: MemBuffer {
-    /// Reads the specified number of bytes into a newly allocated buffer.
-    ///
-    /// # Errors
-    /// Returns an error if the requested number of bytes cannot be read at the specified offset.
-    fn get_bytes_in_full(&self, offset: i32, len: usize) -> Result<Vec<u8>, MemoryAccessException> {
-        let mut buf = vec![0u8; len];
-        let bytes_read = self.get_bytes(&mut buf, offset);
-        if bytes_read != len {
-            return Err(MemoryAccessException::new("Could not read enough bytes"));
-        }
-        if !self.is_big_endian() {
-            buf.reverse();
-        }
-        Ok(buf)
-    }
-
-    /// Reads a 16-bit signed integer (short) from the specified offset.
-    ///
-    /// Respects the buffer's endianness setting.
-    ///
-    /// # Errors
-    /// Returns an error if 2 bytes cannot be read at the specified offset.
-    fn get_short(&self, offset: i32) -> Result<i16, MemoryAccessException> {
-        let buf = self.get_bytes_in_full(offset, 2)?;
-        let bytes = [buf[0], buf[1]];
-        Ok(i16::from_be_bytes(bytes))
-    }
-
-    /// Reads a 32-bit signed integer from the specified offset.
-    ///
-    /// Respects the buffer's endianness setting.
-    ///
-    /// # Errors
-    /// Returns an error if 4 bytes cannot be read at the specified offset.
-    fn get_int(&self, offset: i32) -> Result<i32, MemoryAccessException> {
-        let buf = self.get_bytes_in_full(offset, 4)?;
-        let bytes = [buf[0], buf[1], buf[2], buf[3]];
-        Ok(i32::from_be_bytes(bytes))
-    }
-
-    /// Reads a 64-bit signed integer from the specified offset.
-    ///
-    /// Respects the buffer's endianness setting.
-    ///
-    /// # Errors
-    /// Returns an error if 8 bytes cannot be read at the specified offset.
-    fn get_long(&self, offset: i32) -> Result<i64, MemoryAccessException> {
-        let buf = self.get_bytes_in_full(offset, 8)?;
-        let mut bytes = [0u8; 8];
-        bytes.copy_from_slice(&buf[..8]);
-        Ok(i64::from_be_bytes(bytes))
-    }
-
-    /// Reads a variable-length big integer from the specified offset.
-    ///
-    /// The integer is constructed from `size` bytes. If `signed` is true, the bytes are
-    /// interpreted as a two's complement signed integer; otherwise, they are interpreted
-    /// as an unsigned integer.
-    ///
-    /// The returned bytes are in big-endian order regardless of the buffer's endianness,
-    /// making them suitable for constructing arbitrary-precision integers.
-    ///
-    /// # Errors
     /// Returns an error if the requested `size` bytes cannot be read at the specified offset.
     fn get_big_integer(
         &self,
@@ -98,7 +43,7 @@ pub trait MemBufferMixin: MemBuffer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::Address;
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::mem::MemoryAccessException;
 
     struct MockMemBuffer {
@@ -124,7 +69,8 @@ mod tests {
 
     impl MemBuffer for MockMemBuffer {
         fn get_address(&self) -> Address {
-            Address::default()
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+            Address::new(space, 0)
         }
 
         fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
@@ -187,7 +133,8 @@ mod tests {
     fn get_short_little_endian() {
         let mock = MockMemBuffer::little_endian(vec![0x12, 0x34]);
         let result = mock.get_short(0).unwrap();
-        assert_eq!(result, 0x1234i16);
+        // Little-endian: least-significant byte first, so [0x12, 0x34] -> 0x3412.
+        assert_eq!(result, 0x3412i16);
     }
 
     #[test]
@@ -201,7 +148,8 @@ mod tests {
     fn get_int_little_endian() {
         let mock = MockMemBuffer::little_endian(vec![0x12, 0x34, 0x56, 0x78]);
         let result = mock.get_int(0).unwrap();
-        assert_eq!(result, 0x12345678i32);
+        // Little-endian: [0x12, 0x34, 0x56, 0x78] -> 0x78563412.
+        assert_eq!(result, 0x78563412i32);
     }
 
     #[test]
@@ -217,7 +165,8 @@ mod tests {
             0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
         ]);
         let result = mock.get_long(0).unwrap();
-        assert_eq!(result, 0x123456789abcdef0i64);
+        // Little-endian: byte order reversed -> 0xf0debc9a78563412.
+        assert_eq!(result, 0xf0debc9a78563412u64 as i64);
     }
 
     #[test]

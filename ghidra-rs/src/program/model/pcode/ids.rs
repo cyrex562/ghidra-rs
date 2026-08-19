@@ -99,6 +99,8 @@ pub const ELEM_CONST_FLOWREF_SIZE: ElementId = ElementId::new("const_flowref_siz
 pub const ELEM_CONST_FLOWDEST: ElementId = ElementId::new("const_flowdest", 87);
 pub const ELEM_CONST_FLOWDEST_SIZE: ElementId = ElementId::new("const_flowdest_size", 88);
 
+pub const ELEM_INST: ElementId = ElementId::new("inst", 98);
+
 // Added legacy or missing IDs if needed, but keeping SlaFormat primary
 pub const ELEM_DATA: ElementId = ElementId::new("data", 100); // Dummy for now if not in SlaFormat
 pub const ELEM_INPUT: ElementId = ElementId::new("input", 101);
@@ -119,6 +121,109 @@ pub const ELEM_SPACE_BASE: ElementId = ElementId::new("space_base", 115);
 pub const ELEM_SPACE_OVERLAY: ElementId = ElementId::new("space_overlay", 116);
 pub const ELEM_TRUNCATE_SPACE: ElementId = ElementId::new("truncate_space", 117);
 pub const ELEM_OP: ElementId = ElementId::new("op", 118);
+// Real Ghidra id is 102 (`ElementId.java`'s `ELEM_BHEAD`), but that collides with this file's
+// own `ELEM_OFF_EL` at 102 under its internal (non-wire-compatible) numbering scheme, so it is
+// renumbered to continue the local counter above instead.
+pub const ELEM_BHEAD: ElementId = ElementId::new("bhead", 119);
+// Real Ghidra id is 160 (`ElementId.java`'s `ELEM_GROUP`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_GROUP: ElementId = ElementId::new("group", 120);
+// Real Ghidra id is 168 (`ElementId.java`'s `ELEM_PENTRY`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_PENTRY: ElementId = ElementId::new("pentry", 121);
+// Real Ghidra id is 73 (`ElementId.java`'s `ELEM_HASH`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_HASH: ElementId = ElementId::new("hash", 122);
+// Continuing the local counter above per the same non-wire-compatible numbering scheme as
+// `ELEM_BHEAD`.
+pub const ELEM_PARENT: ElementId = ElementId::new("parent", 123);
+pub const ELEM_VAL: ElementId = ElementId::new("val", 124);
+// Real Ghidra id is 3 (`ElementId.java`'s `ELEM_OFF`), but that collides with this file's own
+// `ELEM_CONST_SPACEID` at 3, so it is renumbered to continue the local counter above instead per
+// the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_OFF: ElementId = ElementId::new("off", 125);
+// Real Ghidra id is 41 (`ElementId.java`'s `ELEM_CORETYPES`), renumbered per the same scheme.
+pub const ELEM_CORETYPES: ElementId = ElementId::new("coretypes", 126);
+// Real Ghidra id is 43 (`ElementId.java`'s `ELEM_DEF`), renumbered per the same scheme.
+pub const ELEM_DEF: ElementId = ElementId::new("def", 127);
+// Real Ghidra id is 49 (`ElementId.java`'s `ELEM_FIELD`), renumbered per the same scheme.
+pub const ELEM_FIELD: ElementId = ElementId::new("field", 128);
+// Real Ghidra id is 60 (`ElementId.java`'s `ELEM_TYPE`), renumbered per the same scheme.
+pub const ELEM_TYPE: ElementId = ElementId::new("type", 129);
+// Real Ghidra id is 63 (`ElementId.java`'s `ELEM_TYPEREF`), renumbered per the same scheme.
+pub const ELEM_TYPEREF: ElementId = ElementId::new("typeref", 130);
+// Real Ghidra id is 289 (`ElementId.java`'s `ELEM_BITFIELD`), renumbered per the same scheme.
+pub const ELEM_BITFIELD: ElementId = ElementId::new("bitfield", 131);
+// Real Ghidra id is 110 (`ElementId.java`'s `ELEM_CPOOLREC`), but that collides with this file's
+// own `ELEM_RANGELIST` at 110, so it is renumbered to continue the local counter above instead
+// per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_CPOOLREC: ElementId = ElementId::new("cpoolrec", 132);
+// Real Ghidra id is 9 (`ElementId.java`'s `ELEM_VALUE`), but that collides with this file's own
+// `ELEM_PAIR` at 9, so it is renumbered per the same scheme.
+pub const ELEM_VALUE: ElementId = ElementId::new("value", 133);
+// Real Ghidra id is 112 (`ElementId.java`'s `ELEM_TOKEN`), but that collides with this file's own
+// `ELEM_SEQNUM` at 112, so it is renumbered per the same scheme.
+pub const ELEM_TOKEN: ElementId = ElementId::new("token", 134);
+// Real Ghidra id is 113 (`ElementId.java`'s `ELEM_IOP`), but that collides with this file's own
+// `ELEM_VARNODE` at 113, so it is renumbered to continue the local counter above instead per the
+// same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_IOP: ElementId = ElementId::new("iop", 135);
+// Real Ghidra ids are 37/38/39/40/42/44/45/46/47/50/51/52/53/54/55/56/57/58/59/65
+// (`ElementId.java`'s `ELEM_ABSOLUTE_MAX_ALIGNMENT`/`ELEM_BITFIELD_PACKING`/`ELEM_CHAR_SIZE`/
+// `ELEM_CHAR_TYPE`/`ELEM_DATA_ORGANIZATION`/`ELEM_DEFAULT_ALIGNMENT`/
+// `ELEM_DEFAULT_POINTER_ALIGNMENT`/`ELEM_DOUBLE_SIZE`/`ELEM_ENTRY`/`ELEM_FLOAT_SIZE`/
+// `ELEM_INTEGER_SIZE`/`ELEM_LONG_DOUBLE_SIZE`/`ELEM_LONG_LONG_SIZE`/`ELEM_LONG_SIZE`/
+// `ELEM_MACHINE_ALIGNMENT`/`ELEM_POINTER_SHIFT`/`ELEM_POINTER_SIZE`/`ELEM_SHORT_SIZE`/
+// `ELEM_SIZE_ALIGNMENT_MAP`/`ELEM_WCHAR_SIZE`), all of which collide with other entries already
+// in this table, so they continue the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_ABSOLUTE_MAX_ALIGNMENT: ElementId = ElementId::new("absolute_max_alignment", 136);
+pub const ELEM_BITFIELD_PACKING: ElementId = ElementId::new("bitfield_packing", 137);
+pub const ELEM_CHAR_SIZE: ElementId = ElementId::new("char_size", 138);
+pub const ELEM_CHAR_TYPE: ElementId = ElementId::new("char_type", 139);
+pub const ELEM_DATA_ORGANIZATION: ElementId = ElementId::new("data_organization", 140);
+pub const ELEM_DEFAULT_ALIGNMENT: ElementId = ElementId::new("default_alignment", 141);
+pub const ELEM_DEFAULT_POINTER_ALIGNMENT: ElementId =
+    ElementId::new("default_pointer_alignment", 142);
+pub const ELEM_DOUBLE_SIZE: ElementId = ElementId::new("double_size", 143);
+pub const ELEM_ENTRY: ElementId = ElementId::new("entry", 144);
+pub const ELEM_FLOAT_SIZE: ElementId = ElementId::new("float_size", 145);
+pub const ELEM_INTEGER_SIZE: ElementId = ElementId::new("integer_size", 146);
+pub const ELEM_LONG_DOUBLE_SIZE: ElementId = ElementId::new("long_double_size", 147);
+pub const ELEM_LONG_LONG_SIZE: ElementId = ElementId::new("long_long_size", 148);
+pub const ELEM_LONG_SIZE: ElementId = ElementId::new("long_size", 149);
+pub const ELEM_MACHINE_ALIGNMENT: ElementId = ElementId::new("machine_alignment", 150);
+pub const ELEM_POINTER_SHIFT: ElementId = ElementId::new("pointer_shift", 151);
+pub const ELEM_POINTER_SIZE: ElementId = ElementId::new("pointer_size", 152);
+pub const ELEM_SHORT_SIZE: ElementId = ElementId::new("short_size", 153);
+pub const ELEM_SIZE_ALIGNMENT_MAP: ElementId = ElementId::new("size_alignment_map", 154);
+pub const ELEM_WCHAR_SIZE: ElementId = ElementId::new("wchar_size", 155);
+// Real Ghidra id is 20 (`ElementId.java`'s `ELEM_FUNCPROTO`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_FUNCPROTO: ElementId = ElementId::new("funcproto", 156);
+// Real Ghidra id is 22 (`ElementId.java`'s `ELEM_RETURN_TYPE`), continuing the local counter above.
+pub const ELEM_RETURN_TYPE: ElementId = ElementId::new("return_type", 157);
+// Real Ghidra id is 23 (`ElementId.java`'s `ELEM_STATEMENT`), continuing the local counter above.
+pub const ELEM_STATEMENT: ElementId = ElementId::new("statement", 158);
+// Real Ghidra id is 25 (`ElementId.java`'s `ELEM_VARDECL`), continuing the local counter above.
+pub const ELEM_VARDECL: ElementId = ElementId::new("vardecl", 159);
+// Real Ghidra id is 103 (`ElementId.java`'s `ELEM_BLOCK`), continuing the local counter above
+// (this file's own id 103 is already taken by `ELEM_OUTPUT`, an unrelated sleigh element).
+pub const ELEM_BLOCK: ElementId = ElementId::new("block", 160);
+// Real Ghidra ids are 17/19/21/24/26/86 (`ElementId.java`'s `ELEM_BREAK`/`ELEM_FUNCNAME`/
+// `ELEM_LABEL`/`ELEM_SYNTAX`/`ELEM_VARIABLE`/`ELEM_COMMENT`), all of which collide with other
+// entries already in this table, so they continue the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`. These are the token element ids
+// `ClangToken::build_token` dispatches on.
+pub const ELEM_BREAK: ElementId = ElementId::new("break", 161);
+pub const ELEM_FUNCNAME: ElementId = ElementId::new("funcname", 162);
+pub const ELEM_LABEL: ElementId = ElementId::new("label", 163);
+pub const ELEM_SYNTAX: ElementId = ElementId::new("syntax", 164);
+pub const ELEM_VARIABLE: ElementId = ElementId::new("variable", 165);
+pub const ELEM_COMMENT: ElementId = ElementId::new("comment", 166);
+pub const ELEM_BLOCKSIG: ElementId = ElementId::new("blocksig", 258);
+pub const ELEM_COPYSIG: ElementId = ElementId::new("copysig", 263);
+pub const ELEM_VARSIG: ElementId = ElementId::new("varsig", 269);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
@@ -187,9 +292,66 @@ pub const ATTRIB_I: AttributeId = AttributeId::new("i", 52);
 pub const ATTRIB_NUMCT: AttributeId = AttributeId::new("numct", 53);
 pub const ATTRIB_SECTION: AttributeId = AttributeId::new("section", 54);
 pub const ATTRIB_LABELS: AttributeId = AttributeId::new("labels", 55);
+pub const ATTRIB_LAST: AttributeId = AttributeId::new("last", 56);
 
 pub const ATTRIB_OFFSET: AttributeId = AttributeId::new("offset", 16); // Alias for ATTRIB_BASE? No, SlaFormat uses 16 for TABLE
 pub const ATTRIB_VALUE: AttributeId = AttributeId::new("value", 25); // Alias for ATTRIB_SOURCE?
 pub const ATTRIB_TYPE: AttributeId = AttributeId::new("type", 22); // Alias for ATTRIB_PARENT?
 pub const ATTRIB_SIGNED: AttributeId = AttributeId::new("signed", 57);
+// Real Ghidra ids are 208/119/125 (`AttributeId.java`'s `ATTRIB_THISBEFORERETPOINTER`/
+// `ATTRIB_KILLEDBYCALL`/`ATTRIB_SEPARATEFLOAT`), continuing the local counter above instead per
+// the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_THISBEFORERETPOINTER: AttributeId =
+    AttributeId::new("thisbeforeretpointer", 58);
+pub const ATTRIB_KILLEDBYCALL: AttributeId = AttributeId::new("killedbycall", 59);
+pub const ATTRIB_SEPARATEFLOAT: AttributeId = AttributeId::new("separatefloat", 60);
+// Real Ghidra id is 68 (`AttributeId.java`'s `ATTRIB_SYMREF`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_SYMREF: AttributeId = AttributeId::new("symref", 61);
+// Real Ghidra ids are 121/120/149/116 (`AttributeId.java`'s `ATTRIB_MINSIZE`/`ATTRIB_MAXSIZE`/
+// `ATTRIB_STORAGE`/`ATTRIB_EXTENSION`), continuing the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_MINSIZE: AttributeId = AttributeId::new("minsize", 62);
+pub const ATTRIB_MAXSIZE: AttributeId = AttributeId::new("maxsize", 63);
+pub const ATTRIB_STORAGE: AttributeId = AttributeId::new("storage", 64);
+pub const ATTRIB_EXTENSION: AttributeId = AttributeId::new("extension", 65);
+// Continuing the local counter above per the same non-wire-compatible numbering scheme as
+// `ELEM_BHEAD`.
+pub const ATTRIB_LABEL: AttributeId = AttributeId::new("label", 66);
 pub const ATTRIB_UNKNOWN: AttributeId = AttributeId::new("XMLunknown", 159);
+// Real Ghidra id is 7 (`AttributeId.java`'s `ATTRIB_FORMAT`), but that collides with this file's
+// own `ATTRIB_CODE` at 7, so it is renumbered to continue the local counter above instead per the
+// same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_FORMAT: AttributeId = AttributeId::new("format", 160);
+// Real Ghidra id is 12 (`AttributeId.java`'s `ATTRIB_METATYPE`), renumbered per the same scheme.
+pub const ATTRIB_METATYPE: AttributeId = AttributeId::new("metatype", 161);
+// Real Ghidra id is 47 (`AttributeId.java`'s `ATTRIB_ALIGNMENT`), renumbered per the same scheme.
+pub const ATTRIB_ALIGNMENT: AttributeId = AttributeId::new("alignment", 162);
+// Real Ghidra id is 48 (`AttributeId.java`'s `ATTRIB_ARRAYSIZE`), renumbered per the same scheme.
+pub const ATTRIB_ARRAYSIZE: AttributeId = AttributeId::new("arraysize", 163);
+// Real Ghidra id is 49 (`AttributeId.java`'s `ATTRIB_CHAR`), renumbered per the same scheme.
+pub const ATTRIB_CHAR: AttributeId = AttributeId::new("char", 164);
+// Real Ghidra id is 52 (`AttributeId.java`'s `ATTRIB_INCOMPLETE`), renumbered per the same scheme.
+pub const ATTRIB_INCOMPLETE: AttributeId = AttributeId::new("incomplete", 165);
+// Real Ghidra id is 56 (`AttributeId.java`'s `ATTRIB_OPAQUESTRING`), renumbered per the same
+// scheme.
+pub const ATTRIB_OPAQUESTRING: AttributeId = AttributeId::new("opaquestring", 166);
+// Real Ghidra id is 59 (`AttributeId.java`'s `ATTRIB_UTF`), renumbered per the same scheme.
+pub const ATTRIB_UTF: AttributeId = AttributeId::new("utf", 167);
+// Real Ghidra id is 60 (`AttributeId.java`'s `ATTRIB_VARLENGTH`), renumbered per the same scheme.
+pub const ATTRIB_VARLENGTH: AttributeId = AttributeId::new("varlength", 168);
+// Real Ghidra id is 18 (`AttributeId.java`'s `ATTRIB_REF`), but that collides with this file's
+// own `ATTRIB_MINLEN` at 18, so it is renumbered per the same scheme.
+pub const ATTRIB_REF: AttributeId = AttributeId::new("ref", 169);
+// Real Ghidra id is 83 (`AttributeId.java`'s `ATTRIB_TAG`), renumbered per the same scheme.
+pub const ATTRIB_TAG: AttributeId = AttributeId::new("tag", 170);
+// Real Ghidra id is 4 (`AttributeId.java`'s `ATTRIB_CONSTRUCTOR`), but that collides with this
+// file's own `ATTRIB_SPACE` at 4, so it is renumbered per the same scheme.
+pub const ATTRIB_CONSTRUCTOR: AttributeId = AttributeId::new("constructor", 171);
+// Real Ghidra id is 92 (`AttributeId.java`'s `ATTRIB_LOGICALSIZE`), continuing the local counter
+// above instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_LOGICALSIZE: AttributeId = AttributeId::new("logicalsize", 172);
+// Real Ghidra id is 37 (`AttributeId.java`'s `ATTRIB_COLOR`), but that collides with this file's
+// own `ATTRIB_UNIQBASE` at 37, so it is renumbered per the same scheme. Carries a
+// `ClangToken` syntax-highlight color.
+pub const ATTRIB_COLOR: AttributeId = AttributeId::new("color", 173);

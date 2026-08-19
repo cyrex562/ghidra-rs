@@ -30,7 +30,7 @@ impl ExtFragment {
         let mut ranges = Vec::new();
         let mut iter = fragment.address_ranges();
 
-        while let Some(range) = iter.next_range() {
+        while let Some(range) = iter.next() {
             ranges.push(ExtFragmentRange::new(&range));
         }
 
@@ -73,8 +73,7 @@ mod tests {
             for (start, end) in ranges {
                 let start_addr = test_address(start);
                 let end_addr = test_address(end);
-                let range = AddressRange::new(start_addr, end_addr);
-                addresses.add_range(&range);
+                addresses.add_range(&start_addr, &end_addr);
             }
             Self {
                 name: name.to_string(),
@@ -124,11 +123,11 @@ mod tests {
         }
 
         fn get_min_address(&self) -> Option<Address> {
-            self.addresses.min_address()
+            crate::program::model::address::AddressSetView::min_address(&self.addresses)
         }
 
         fn get_max_address(&self) -> Option<Address> {
-            self.addresses.max_address()
+            crate::program::model::address::AddressSetView::max_address(&self.addresses)
         }
     }
 
@@ -177,11 +176,11 @@ mod tests {
             self.addresses.num_addresses()
         }
 
-        fn addresses(&self, forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses(&self, forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             crate::program::model::address::AddressSetView::addresses(&self.addresses, forward)
         }
 
-        fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses_from(&self, start: &Address, forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             self.addresses.addresses_from(start, forward)
         }
 

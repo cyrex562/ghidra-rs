@@ -1,10 +1,11 @@
 use crate::program::model::address::AddressSpace;
 use crate::program::model::pcode::{
-    Decoder, DecoderError, ATTRIB_PLUS, ATTRIB_S, ATTRIB_SPACE, ATTRIB_VAL, ELEM_CONST_CURSPACE,
-    ELEM_CONST_CURSPACE_SIZE, ELEM_CONST_FLOWDEST, ELEM_CONST_FLOWDEST_SIZE, ELEM_CONST_FLOWREF,
-    ELEM_CONST_FLOWREF_SIZE, ELEM_CONST_HANDLE, ELEM_CONST_NEXT, ELEM_CONST_NEXT2, ELEM_CONST_REAL,
-    ELEM_CONST_RELATIVE, ELEM_CONST_SPACEID, ELEM_CONST_START,
+    Decoder, DecoderError, Encoder, ATTRIB_PLUS, ATTRIB_S, ATTRIB_SPACE, ATTRIB_VAL,
+    ELEM_CONST_CURSPACE, ELEM_CONST_CURSPACE_SIZE, ELEM_CONST_FLOWDEST, ELEM_CONST_FLOWDEST_SIZE,
+    ELEM_CONST_FLOWREF, ELEM_CONST_FLOWREF_SIZE, ELEM_CONST_HANDLE, ELEM_CONST_NEXT,
+    ELEM_CONST_NEXT2, ELEM_CONST_REAL, ELEM_CONST_RELATIVE, ELEM_CONST_SPACEID, ELEM_CONST_START,
 };
+use std::io;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -106,5 +107,90 @@ impl ConstTpl {
         }
         decoder.close_element(el)?;
         Ok(())
+    }
+
+    /// Returns true if this is a real constant with value zero.
+    pub fn is_zero(&self) -> bool {
+        self.tp == ConstTplType::Real && self.value_real == 0
+    }
+
+    /// Remaps a handle-typed constant's index through `handmap` (replaces old handles with new
+    /// handles, e.g. when a macro's operands are substituted into its caller).
+    pub fn change_handle_index(&mut self, handmap: &[i32]) {
+        if self.tp == ConstTplType::Handle {
+            self.handle_index = handmap[self.handle_index as usize] as i16;
+        }
+    }
+
+    pub fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
+        match self.tp {
+            ConstTplType::Real => {
+                encoder.open_element(ELEM_CONST_REAL)?;
+                encoder.write_unsigned_integer(ATTRIB_VAL, self.value_real)?;
+                encoder.close_element(ELEM_CONST_REAL)
+            }
+            ConstTplType::Handle => {
+                encoder.open_element(ELEM_CONST_HANDLE)?;
+                encoder.write_signed_integer(ATTRIB_VAL, self.handle_index as i64)?;
+                let select = self
+                    .select
+                    .expect("handle-typed ConstTpl must have a select field");
+                encoder.write_signed_integer(ATTRIB_S, select as i64)?;
+                if select == ConstTplSelect::VOffsetPlus {
+                    encoder.write_unsigned_integer(ATTRIB_PLUS, self.value_real)?;
+                }
+                encoder.close_element(ELEM_CONST_HANDLE)
+            }
+            ConstTplType::JStart => {
+                encoder.open_element(ELEM_CONST_START)?;
+                encoder.close_element(ELEM_CONST_START)
+            }
+            ConstTplType::JNext => {
+                encoder.open_element(ELEM_CONST_NEXT)?;
+                encoder.close_element(ELEM_CONST_NEXT)
+            }
+            ConstTplType::JNext2 => {
+                encoder.open_element(ELEM_CONST_NEXT2)?;
+                encoder.close_element(ELEM_CONST_NEXT2)
+            }
+            ConstTplType::JCurSpace => {
+                encoder.open_element(ELEM_CONST_CURSPACE)?;
+                encoder.close_element(ELEM_CONST_CURSPACE)
+            }
+            ConstTplType::JCurSpaceSize => {
+                encoder.open_element(ELEM_CONST_CURSPACE_SIZE)?;
+                encoder.close_element(ELEM_CONST_CURSPACE_SIZE)
+            }
+            ConstTplType::SpaceId => {
+                encoder.open_element(ELEM_CONST_SPACEID)?;
+                let spc = self
+                    .value_spaceid
+                    .as_ref()
+                    .expect("spaceid-typed ConstTpl must have a space");
+                encoder.write_space(ATTRIB_SPACE, spc)?;
+                encoder.close_element(ELEM_CONST_SPACEID)
+            }
+            ConstTplType::JRelative => {
+                encoder.open_element(ELEM_CONST_RELATIVE)?;
+                encoder.write_unsigned_integer(ATTRIB_VAL, self.value_real)?;
+                encoder.close_element(ELEM_CONST_RELATIVE)
+            }
+            ConstTplType::JFlowRef => {
+                encoder.open_element(ELEM_CONST_FLOWREF)?;
+                encoder.close_element(ELEM_CONST_FLOWREF)
+            }
+            ConstTplType::JFlowRefSize => {
+                encoder.open_element(ELEM_CONST_FLOWREF_SIZE)?;
+                encoder.close_element(ELEM_CONST_FLOWREF_SIZE)
+            }
+            ConstTplType::JFlowDest => {
+                encoder.open_element(ELEM_CONST_FLOWDEST)?;
+                encoder.close_element(ELEM_CONST_FLOWDEST)
+            }
+            ConstTplType::JFlowDestSize => {
+                encoder.open_element(ELEM_CONST_FLOWDEST_SIZE)?;
+                encoder.close_element(ELEM_CONST_FLOWDEST_SIZE)
+            }
+        }
     }
 }

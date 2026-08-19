@@ -43,13 +43,21 @@ impl<'a> LcsTrait<CodeUnitContainer> for CodeUnitLcs<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::listing::{CodeUnit as _, MNEMONIC};
-    use crate::program::model::address::Address;
+    use crate::program::model::listing::CodeUnit as _;
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
     use crate::util::task::DummyMonitor;
     use std::fmt;
     use std::sync::Arc;
+
+    fn addr(offset: i64) -> Address {
+        Address::new(
+            AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1),
+            offset,
+        )
+    }
 
     struct MockCodeUnit {
         mnemonic: String,
@@ -74,12 +82,17 @@ mod tests {
     }
 
     impl MemBuffer for MockCodeUnit {
-        fn get_bytes(
-            &self,
-            _offset: i32,
-            _length: i32,
-        ) -> Result<Vec<u8>, crate::program::model::mem::MemoryAccessException> {
-            Ok(vec![])
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            self.address.clone()
         }
     }
 
@@ -194,43 +207,55 @@ mod tests {
             None
         }
 
-        fn add_external_operand_reference(
+        fn get_references_from(&self) -> Vec<Arc<dyn crate::program::model::symbol::Reference>> {
+            vec![]
+        }
+
+        fn get_reference_iterator_to(
+            &self,
+        ) -> Box<dyn crate::program::model::symbol::ReferenceIterator> {
+            unimplemented!()
+        }
+
+        fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
+            unimplemented!()
+        }
+
+        fn remove_external_reference(&mut self, _op_index: i32) {}
+
+        fn set_primary_memory_reference(
             &mut self,
-            _index: i32,
-            _lib_name: &str,
-            _ext_label: &str,
-            _ext_addr: Option<Address>,
-            _ref_type: crate::program::model::symbol::RefType,
+            _reference: Arc<dyn crate::program::model::symbol::Reference>,
+        ) {
+        }
+
+        fn set_stack_reference(
+            &mut self,
+            _op_index: i32,
+            _offset: i32,
             _source_type: crate::program::model::symbol::SourceType,
-        ) {}
+            _ref_type: crate::program::model::symbol::RefType,
+        ) {
+        }
 
-        fn remove_external_operand_reference(&mut self, _index: i32, _lib_name: &str, _label: &str) {}
-
-        fn get_fallthrough_address(&self) -> Option<Address> {
-            None
+        fn set_register_reference(
+            &mut self,
+            _op_index: i32,
+            _reg: &crate::program::model::lang::register::Register,
+            _source_type: crate::program::model::symbol::SourceType,
+            _ref_type: crate::program::model::symbol::RefType,
+        ) {
         }
 
         fn get_num_operands(&self) -> i32 {
             self.num_operands
         }
 
-        fn get_operand_representation(&self, _index: i32) -> String {
-            String::new()
-        }
-
-        fn get_default_operand_representation(&self, _index: i32) -> String {
-            String::new()
-        }
-
-        fn get_operand_reftype(&self, _index: i32) -> crate::program::model::symbol::RefType {
-            crate::program::model::symbol::RefType::Flow
-        }
-
-        fn as_instruction(&self) -> Option<&dyn crate::program::model::listing::Instruction> {
+        fn get_address(&self, _op_index: i32) -> Option<Address> {
             None
         }
 
-        fn as_defined_data(&self) -> Option<&dyn crate::program::model::listing::Data> {
+        fn get_scalar(&self, _op_index: i32) -> Option<crate::program::model::scalar::Scalar> {
             None
         }
     }
@@ -246,14 +271,16 @@ mod tests {
 
     #[test]
     fn single_element_lists_match() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("MOV", 2, addr2);
         let container1 = CodeUnitContainer::new(code_unit1);
         let container2 = CodeUnitContainer::new(code_unit2);
 
-        let lcs = CodeUnitLcs::new(&[container1.clone()], &[container2]);
+        let x_binding = [container1.clone()];
+        let y_binding = [container2];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         let monitor = DummyMonitor;
         let result = lcs.get_lcs(&monitor).unwrap();
         assert_eq!(result.len(), 1);
@@ -263,9 +290,9 @@ mod tests {
 
     #[test]
     fn matching_mnemonics_and_arity() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
-        let addr3 = Address::new_default_space(0x3000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
+        let addr3 = addr(0x3000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("MOV", 2, addr2);
         let code_unit3 = MockCodeUnit::new("MOV", 2, addr3);
@@ -273,7 +300,9 @@ mod tests {
         let container2 = CodeUnitContainer::new(code_unit2);
         let container3 = CodeUnitContainer::new(code_unit3);
 
-        let lcs = CodeUnitLcs::new(&[container1], &[container2, container3]);
+        let x_binding = [container1];
+        let y_binding = [container2, container3];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         let monitor = DummyMonitor;
         let result = lcs.get_lcs(&monitor).unwrap();
         assert_eq!(result.len(), 1);
@@ -281,38 +310,42 @@ mod tests {
 
     #[test]
     fn different_mnemonics() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("JMP", 1, addr2);
         let container1 = CodeUnitContainer::new(code_unit1);
         let container2 = CodeUnitContainer::new(code_unit2);
 
-        let lcs = CodeUnitLcs::new(&[container1], &[container2]);
+        let x_binding = [container1];
+        let y_binding = [container2];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         assert!(!lcs.matches(&lcs.x_list[0], &lcs.y_list[0]));
     }
 
     #[test]
     fn different_arity() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("MOV", 3, addr2);
         let container1 = CodeUnitContainer::new(code_unit1);
         let container2 = CodeUnitContainer::new(code_unit2);
 
-        let lcs = CodeUnitLcs::new(&[container1], &[container2]);
+        let x_binding = [container1];
+        let y_binding = [container2];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         assert!(!lcs.matches(&lcs.x_list[0], &lcs.y_list[0]));
     }
 
     #[test]
     fn partial_sequence_match() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x1001);
-        let addr3 = Address::new_default_space(0x1002);
-        let addr4 = Address::new_default_space(0x2000);
-        let addr5 = Address::new_default_space(0x2001);
-        let addr6 = Address::new_default_space(0x2002);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x1001);
+        let addr3 = addr(0x1002);
+        let addr4 = addr(0x2000);
+        let addr5 = addr(0x2001);
+        let addr6 = addr(0x2002);
 
         let c1 = CodeUnitContainer::new(MockCodeUnit::new("MOV", 2, addr1));
         let c2 = CodeUnitContainer::new(MockCodeUnit::new("ADD", 3, addr2));
@@ -322,7 +355,9 @@ mod tests {
         let c5 = CodeUnitContainer::new(MockCodeUnit::new("XOR", 2, addr5));
         let c6 = CodeUnitContainer::new(MockCodeUnit::new("JMP", 1, addr6));
 
-        let lcs = CodeUnitLcs::new(&[c1, c2, c3], &[c4, c5, c6]);
+        let x_binding = [c1, c2, c3];
+        let y_binding = [c4, c5, c6];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         let monitor = DummyMonitor;
         let result = lcs.get_lcs(&monitor).unwrap();
         assert_eq!(result.len(), 2);

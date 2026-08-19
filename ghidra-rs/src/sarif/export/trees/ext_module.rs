@@ -39,10 +39,10 @@ impl ExtModule {
             for child in children {
                 let child_name = child.get_name();
 
-                if let Some(module_child) = downcast_to_program_module(&*child) {
+                if let Some(module_child) = child.as_program_module() {
                     let ext_module = ExtModule::new(&child_name, module_child, visited);
                     modules.push(ext_module);
-                } else if let Some(fragment_child) = downcast_to_program_fragment(&*child) {
+                } else if let Some(fragment_child) = child.as_program_fragment() {
                     let ext_fragment = ExtFragment::new(fragment_child, visited);
                     fragments.push(ext_fragment);
                 }
@@ -59,18 +59,6 @@ impl ExtModule {
 }
 
 impl IsfObject for ExtModule {}
-
-fn downcast_to_program_module(group: &dyn Group) -> Option<&dyn ProgramModule> {
-    (group as &dyn std::any::Any)
-        .downcast_ref::<&dyn ProgramModule>()
-        .copied()
-}
-
-fn downcast_to_program_fragment(group: &dyn Group) -> Option<&dyn crate::program::model::listing::program_fragment::ProgramFragment> {
-    (group as &dyn std::any::Any)
-        .downcast_ref::<&dyn crate::program::model::listing::program_fragment::ProgramFragment>()
-        .copied()
-}
 
 #[cfg(test)]
 mod tests {
@@ -149,6 +137,10 @@ mod tests {
         fn get_max_address(&self) -> Option<Address> {
             None
         }
+
+        fn as_program_fragment(&self) -> Option<&dyn ProgramFragment> {
+            Some(self)
+        }
     }
 
     impl crate::program::model::address::AddressSetView for MockProgramFragment {
@@ -196,11 +188,11 @@ mod tests {
             self.addresses.num_addresses()
         }
 
-        fn addresses(&self, forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses(&self, forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             crate::program::model::address::AddressSetView::addresses(&self.addresses, forward)
         }
 
-        fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses_from(&self, start: &Address, forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             self.addresses.addresses_from(start, forward)
         }
 
@@ -328,6 +320,10 @@ mod tests {
         fn get_max_address(&self) -> Option<Address> {
             None
         }
+
+        fn as_program_module(&self) -> Option<&dyn ProgramModule> {
+            Some(self)
+        }
     }
 
     impl crate::program::model::address::AddressSetView for MockProgramModule {
@@ -378,12 +374,12 @@ mod tests {
             0
         }
 
-        fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses(&self, _forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             use crate::program::model::address::EmptyAddressIterator;
             Box::new(EmptyAddressIterator)
         }
 
-        fn addresses_from(&self, _start: &Address, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses_from(&self, _start: &Address, _forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             use crate::program::model::address::EmptyAddressIterator;
             Box::new(EmptyAddressIterator)
         }
@@ -438,6 +434,14 @@ mod tests {
     }
 
     impl ProgramModule for MockProgramModule {
+        fn get_min_address(&self) -> Option<crate::program::model::address::Address> {
+            None
+        }
+
+        fn get_max_address(&self) -> Option<crate::program::model::address::Address> {
+            None
+        }
+
         fn contains_fragment(&self, _fragment: &dyn ProgramFragment) -> bool {
             false
         }
@@ -452,14 +456,16 @@ mod tests {
 
         fn get_children(&self) -> Vec<Box<dyn Group>> {
             self.children.iter().map(|c| {
-                if let Some(module) = downcast_to_program_module(c.as_ref()) {
+                if let Some(_module) = c.as_program_module() {
                     let name = c.get_name();
                     let mock = MockProgramModule::new(&name);
                     Box::new(mock) as Box<dyn Group>
-                } else if let Some(_fragment) = downcast_to_program_fragment(c.as_ref()) {
-                    c.clone_box()
+                } else if let Some(_fragment) = c.as_program_fragment() {
+                    let name = c.get_name();
+                    Box::new(MockProgramFragment::new(&name)) as Box<dyn Group>
                 } else {
-                    c.clone_box()
+                    let name = c.get_name();
+                    Box::new(MockProgramFragment::new(&name)) as Box<dyn Group>
                 }
             }).collect()
         }

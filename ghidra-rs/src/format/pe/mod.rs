@@ -1,4 +1,7 @@
 pub mod chpe;
+pub mod com_descriptor_data_directory;
+pub mod debug_data_directory;
+pub mod exception_data_directory;
 pub mod resource;
 pub mod rich;
 pub mod cli;
@@ -13,4 +16,9 @@ pub mod machine_name;
 pub mod offset_validator;
 pub mod optional_header_rom;
 pub mod pe_subsystem;
+pub mod pe_markupable;
+pub mod rich_header;
+pub mod rich_table;
 pub mod section_flags;
+pub mod image_runtime_function_entries;
+pub mod pex64_unwind_info;

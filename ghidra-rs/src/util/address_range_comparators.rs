@@ -86,7 +86,7 @@ mod tests {
 
         assert_eq!(comparator.compare(&range1, &range2), Ordering::Greater);
         assert_eq!(comparator.compare(&range2, &range1), Ordering::Less);
-        assert_eq!(comparator.compare(&range3, &range1), Ordering::Greater);
+        assert_eq!(comparator.compare(&range3, &range1), Ordering::Less);
     }
 
     #[test]

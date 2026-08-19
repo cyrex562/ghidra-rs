@@ -139,7 +139,7 @@ mod tests {
         assert!(td.is_auto_named());
 
         let dyn_td: &dyn TypeDef = &td;
-        assert!(dyn_td.is_pointer());
+        assert!(TypeDef::is_pointer(dyn_td));
     }
 
     #[test]

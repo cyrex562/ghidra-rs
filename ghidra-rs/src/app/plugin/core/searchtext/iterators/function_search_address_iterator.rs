@@ -1,4 +1,4 @@
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 use crate::program::model::listing::FunctionIterator;
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -30,17 +30,10 @@ impl FunctionSearchAddressIterator {
     }
 }
 
-impl AddressIterator for FunctionSearchAddressIterator {
-    fn has_next(&self) -> bool {
-        self.ensure_cached();
-        self.cached_next
-            .borrow()
-            .as_ref()
-            .map(|opt| opt.is_some())
-            .unwrap_or(false)
-    }
+impl Iterator for FunctionSearchAddressIterator {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
+    fn next(&mut self) -> Option<Address> {
         self.ensure_cached();
         self.cached_next
             .borrow_mut()
@@ -116,7 +109,7 @@ mod tests {
             &mut self,
             _name: &str,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::SetFunctionNameError> {
+        ) -> Result<(), crate::program::model::listing::function::SetFunctionNameError> {
             Ok(())
         }
 
@@ -128,12 +121,13 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl crate::program::model::listing::Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:64:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:64:default".to_string()
                 }
             }
             Arc::new(MockProgram)
@@ -182,7 +176,7 @@ mod tests {
         fn set_return(
             &mut self,
             _data_type: Box<dyn crate::program::model::data::data_type::DataType>,
-            _storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
+            _storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage>,
             _source: crate::program::model::symbol::SourceType,
         ) -> Result<(), crate::util::exception::InvalidInputException> {
             Ok(())
@@ -230,7 +224,7 @@ mod tests {
 
                 fn get_calling_convention(
                     &self,
-                ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+                ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
                     None
                 }
 
@@ -344,7 +338,7 @@ mod tests {
             &mut self,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!("not needed for this test")
         }
 
@@ -354,7 +348,7 @@ mod tests {
             _ordinal: i32,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!("not needed for this test")
         }
 
@@ -364,7 +358,7 @@ mod tests {
             _update_type: crate::program::model::listing::FunctionUpdateType,
             _force: bool,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::FunctionEditError> {
+        ) -> Result<(), crate::program::model::listing::function::FunctionEditError> {
             Ok(())
         }
 
@@ -376,7 +370,7 @@ mod tests {
             _update_type: crate::program::model::listing::FunctionUpdateType,
             _force: bool,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::FunctionEditError> {
+        ) -> Result<(), crate::program::model::listing::function::FunctionEditError> {
             Ok(())
         }
 
@@ -441,7 +435,7 @@ mod tests {
             &mut self,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Variable>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Variable>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!("not needed for this test")
         }
 
@@ -478,7 +472,7 @@ mod tests {
 
         fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
 
-        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
 
@@ -542,18 +536,17 @@ mod tests {
     fn empty_function_iterator_has_no_next() {
         let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![];
         let test_iter = TestFunctionIterator::new(functions);
-        let iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
-        assert!(!iter.has_next());
+        let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
     fn iterator_with_functions_has_next() {
         let addr1 = test_address(0x1000);
         let func1 = Arc::new(MockFunction { entry_point: addr1 });
-        let functions = vec![func1];
+        let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![func1];
         let test_iter = TestFunctionIterator::new(functions);
-        let iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
-        assert!(iter.has_next());
+        let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
     }
 
     #[test]
@@ -566,21 +559,15 @@ mod tests {
         let func2 = Arc::new(MockFunction { entry_point: addr2.clone() });
         let func3 = Arc::new(MockFunction { entry_point: addr3.clone() });
 
-        let functions = vec![func1, func2, func3];
+        let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![func1, func2, func3];
         let test_iter = TestFunctionIterator::new(functions);
         let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
+        assert_eq!(iter.next(), Some(addr1));
+        assert_eq!(iter.next(), Some(addr2));
+        assert_eq!(iter.next(), Some(addr3));
 
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr1));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr2));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr3));
-
-        assert!(!iter.has_next());
-        assert_eq!(iter.next_address(), None);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
@@ -588,8 +575,8 @@ mod tests {
         let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![];
         let test_iter = TestFunctionIterator::new(functions);
         let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
-        assert_eq!(iter.next_address(), None);
-        assert_eq!(iter.next_address(), None);
-        assert_eq!(iter.next_address(), None);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 }

@@ -1,11 +1,17 @@
 pub mod plugin_construction_exception;
+pub mod plugin_description;
+pub mod plugin_event_listener;
 pub mod plugin_exception;
 pub mod plugin_package_state;
 pub mod plugin_status;
+pub mod plugin_utils;
 pub mod service_listener;
 
 pub use plugin_construction_exception::PluginConstructionException;
+pub use plugin_description::PluginDescription;
+pub use plugin_event_listener::PluginEventListener;
 pub use plugin_exception::PluginException;
 pub use plugin_package_state::PluginPackageState;
 pub use plugin_status::PluginStatus;
+pub use plugin_utils::PluginUtils;
 pub use service_listener::ServiceListener;
