@@ -132,13 +132,162 @@ pub trait VTMatchInfo: Send + Sync {
     fn get_confidence_score(&self) -> crate::feature::vt::api::main::vt_score::VtScore;
     fn get_source_length(&self) -> i32;
     fn get_destination_length(&self) -> i32;
+
+    /// Java: `VTMatchInfo.getSourceAddress()`. Grown for the
+    /// [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB) port, whose
+    /// `addMatch` reads it to look the association up.
+    fn get_source_address(&self) -> AddressType;
+
+    /// Java: `VTMatchInfo.getDestinationAddress()`. See [`get_source_address`](Self::get_source_address).
+    fn get_destination_address(&self) -> AddressType;
+
+    /// Java: `VTMatchInfo.getAssociationType()`. See [`get_source_address`](Self::get_source_address).
+    fn get_association_type(&self) -> VtAssociationType;
+
+    /// Java: `VTMatchInfo.getTag()`. See [`get_source_address`](Self::get_source_address).
+    fn get_tag(&self) -> crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
 }
 
-/// Placeholder for the unported Java type `VTMatchSetDB`, referenced by
-/// `VTMatchTableDBAdapter::insert_match_record`. The parameter is unused by
-/// `VTMatchTableDBAdapterV0.insertMatchRecord` in the real Java implementation, so this stub
-/// carries no members. Replace with the real port when available.
-pub trait VTMatchSetDB: Send + Sync {}
+/// Placeholder for the unported Java type `VTMatchDB`, the database-backed
+/// [`VtMatch`](crate::feature::vt::api::main::vt_match::VtMatch) that
+/// [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB) creates and caches.
+///
+/// `VTMatchDB` is a concrete Java class (`extends DbObject implements VTMatch`), so this stub is a
+/// struct implementing the already-ported [`DbObject`](crate::program::database::db_object::DbObject)
+/// trait. One deliberate deviation: Java's `VTMatchDB` holds a `VTMatchSetDB matchSet`
+/// back-reference and reaches through it for its association, programs and tag. Storing that here
+/// would make the owning match set's own match cache (a *strong* `HashMap<i64, Arc<VTMatchDB>>`) an
+/// unreclaimable reference cycle -- the same reasoning already documented on
+/// [`VTAssociationDB`](crate::feature::vt::api::db::vt_association_db::VTAssociationDB) -- so this
+/// stub keeps only the owning set's id plus the accessors that read straight off its own record.
+/// Replace with the real port when `VTMatchDB.java` is ported.
+pub struct VTMatchDB {
+    state: crate::program::database::db_object::DbObjectState,
+    record: std::sync::Mutex<crate::framework::db::DBRecord>,
+    match_set_id: i64,
+}
+
+impl VTMatchDB {
+    /// Java: package-private constructor `VTMatchDB(DBRecord, VTMatchSetDB)`, with the match set
+    /// narrowed to its id for the reason documented on the type.
+    pub fn new(record: crate::framework::db::DBRecord, match_set_id: i64) -> Self {
+        let key = record.get_key().get_long_value();
+        Self {
+            state: crate::program::database::db_object::DbObjectState::new(key),
+            record: std::sync::Mutex::new(record),
+            match_set_id,
+        }
+    }
+
+    /// Java: `VTMatchDB.getRecord()` (package-private).
+    pub fn get_record(&self) -> crate::framework::db::DBRecord {
+        self.record.lock().unwrap().clone()
+    }
+
+    /// Java: `matchSet.getID()`, reached through the back-reference this stub does not hold.
+    pub fn get_match_set_id(&self) -> i64 {
+        self.match_set_id
+    }
+
+    /// The `ASSOCIATION_COL` of this match's row -- the key Java's `getAssociation()` resolves
+    /// through `matchSet.getAssociationManager().getAssociation(key)`.
+    pub fn get_association_key(&self) -> i64 {
+        self.record
+            .lock()
+            .unwrap()
+            .get_long(
+                crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription::AssociationCol
+                    .column(),
+            )
+            .unwrap_or(-1)
+    }
+
+    /// The `TAG_KEY_COL` of this match's row; `-1` means untagged (Java: `VTMatchTag.UNTAGGED`).
+    pub fn get_tag_key(&self) -> i64 {
+        self.record
+            .lock()
+            .unwrap()
+            .get_long(
+                crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription::TagKeyCol
+                    .column(),
+            )
+            .unwrap_or(-1)
+    }
+}
+
+impl crate::program::database::db_object::DbObject for VTMatchDB {
+    fn state(&self) -> &crate::program::database::db_object::DbObjectState {
+        &self.state
+    }
+
+    /// Java: `VTMatchDB.refresh(DBRecord)`, minus the `record == null` branch that re-reads the row
+    /// through `matchSet.getMatchRecord(key)`; the owning cache always has a record in hand.
+    fn refresh(&self, record: Option<&crate::framework::db::DBRecord>) -> bool {
+        if let Some(record) = record {
+            *self.record.lock().unwrap() = record.clone();
+        }
+        true
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.feature.vt.api.impl.ProgramCorrelatorInfoImpl`,
+/// the [`VtProgramCorrelatorInfo`](crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo)
+/// that [`VTMatchSetDB::get_program_correlator_info`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB::get_program_correlator_info)
+/// hands back.
+///
+/// `ProgramCorrelatorInfoImpl` is a concrete Java class, so this stub is a struct implementing the
+/// already-ported trait. Deviation: Java holds a `VTMatchSetDB` back-reference and pulls each of
+/// its five values lazily on first access, caching it. Holding that back-reference here would be a
+/// reference cycle (the match set owns the info object), so this stub takes the same five values up
+/// front instead. The two are equivalent: every one of them is derived from columns of the match
+/// set's record, which is `final` and never rewritten for the life of the match set. Replace with
+/// the real port when `ProgramCorrelatorInfoImpl.java` is ported.
+pub struct ProgramCorrelatorInfoImpl {
+    correlator_class_name: String,
+    name: String,
+    source_address_set: crate::program::model::address::AddressSet,
+    destination_address_set: crate::program::model::address::AddressSet,
+    options: Box<dyn crate::framework::options::Options + Send + Sync>,
+}
+
+impl ProgramCorrelatorInfoImpl {
+    /// Java: `ProgramCorrelatorInfoImpl(VTMatchSetDB)` plus the five lazy pulls it would perform.
+    /// Java's `getSourceAddressSet`/`getDestinationAddressSet` report the `IOException` through
+    /// `Msg.showError` and return `null`; the caller passes an empty set for that case instead.
+    pub fn new(
+        correlator_class_name: String,
+        name: String,
+        source_address_set: crate::program::model::address::AddressSet,
+        destination_address_set: crate::program::model::address::AddressSet,
+        options: Box<dyn crate::framework::options::Options + Send + Sync>,
+    ) -> Self {
+        Self { correlator_class_name, name, source_address_set, destination_address_set, options }
+    }
+}
+
+impl crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo
+    for ProgramCorrelatorInfoImpl
+{
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn get_correlator_class_name(&self) -> &str {
+        &self.correlator_class_name
+    }
+
+    fn get_options(&self) -> &dyn crate::framework::options::Options {
+        self.options.as_ref()
+    }
+
+    fn get_destination_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
+        &self.destination_address_set
+    }
+
+    fn get_source_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
+        &self.source_address_set
+    }
+}
 
 /// Java: `VTAssociationStatus.values()[ordinal]`, mirroring the ported enum's declaration order
 /// (the ported enum exposes no `ordinal()`, so the mapping is spelled out, matching
@@ -264,6 +413,84 @@ pub trait VTSessionDB: Send + Sync {
         new_destination: &AddressType,
     ) {
         let _ = (markup_item, old_destination, new_destination);
+    }
+
+    /// Java: `VTSessionDB.getSourceAddressSet(DBRecord)` (package-private), which forwards to
+    /// `matchSetTableAdapter.getSourceAddressSet(record, sourceProgram.getAddressMap())`. `None`
+    /// mirrors the adapter's own nullable return.
+    ///
+    /// Grown for the [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB)
+    /// port. Defaulted so existing implementors keep compiling.
+    fn get_source_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        let _ = record;
+        unimplemented!("VTSessionDB::get_source_address_set is not provided by this implementation")
+    }
+
+    /// Java: `VTSessionDB.getDestinationAddressSet(DBRecord)`. See
+    /// [`get_source_address_set`](Self::get_source_address_set).
+    fn get_destination_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        let _ = record;
+        unimplemented!(
+            "VTSessionDB::get_destination_address_set is not provided by this implementation"
+        )
+    }
+
+    /// Java: `VTSessionDB.getAssociationManagerDBM()`.
+    ///
+    /// Grown for the [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB)
+    /// port. Defaulted so existing implementors keep compiling.
+    fn get_association_manager_dbm(
+        &self,
+    ) -> Arc<crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager>
+    {
+        unimplemented!(
+            "VTSessionDB::get_association_manager_dbm is not provided by this implementation"
+        )
+    }
+
+    /// Java: `VTSessionDB.getOrCreateMatchTagDB(VTMatchTag)`, which returns `null` for
+    /// [`VtMatchTag::Untagged`](crate::feature::vt::api::main::vt_match_tag::VtMatchTag::Untagged) --
+    /// hence the `Option`, and hence the `None` default.
+    fn get_or_create_match_tag_db(
+        &self,
+        tag: &crate::feature::vt::api::main::vt_match_tag::VtMatchTag,
+    ) -> Option<Arc<dyn VTMatchTagDB>> {
+        let _ = tag;
+        None
+    }
+
+    /// Java: `VTSessionDB.getMatches(VTAssociation)`, narrowed to the database-backed association
+    /// and match types that are the only ones a session ever actually holds -- the same narrowing
+    /// [`set_changed`](Self::set_changed) already applies.
+    fn get_matches_for_association(
+        &self,
+        association: &Arc<crate::feature::vt::api::db::vt_association_db::VTAssociationDB>,
+    ) -> Vec<Arc<VTMatchDB>> {
+        let _ = association;
+        Vec::new()
+    }
+
+    /// Java: `setObjectChanged(VTEvent.MATCH_ADDED, newMatch, null, newMatch)`, fired by
+    /// `VTMatchSetDB.addMatch`. Narrowed to that one event the way
+    /// [`markup_item_status_changed`](Self::markup_item_status_changed) is.
+    fn match_added(&self, match_db: &Arc<VTMatchDB>) {
+        let _ = match_db;
+    }
+
+    /// Java: `setObjectChanged(VTEvent.MATCH_DELETED, match, deletedMatch, null)`, fired by
+    /// `VTMatchSetDB.deleteMatch`. See [`match_added`](Self::match_added).
+    fn match_deleted(
+        &self,
+        match_db: &Arc<VTMatchDB>,
+        deleted_match: &crate::feature::vt::api::main::db::deleted_match::DeletedMatch,
+    ) {
+        let _ = (match_db, deleted_match);
     }
 }
 
@@ -577,7 +804,7 @@ impl crate::feature::vt::api::main::db::vt_match_table_db_adapter::VTMatchTableD
     fn insert_match_record(
         &self,
         info: &dyn VTMatchInfo,
-        _match_set: &dyn VTMatchSetDB,
+        _match_set: &crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB,
         association: &crate::feature::vt::api::db::vt_association_db::VTAssociationDB,
         tag: Option<&dyn VTMatchTagDB>,
     ) -> std::io::Result<crate::framework::db::DBRecord> {
