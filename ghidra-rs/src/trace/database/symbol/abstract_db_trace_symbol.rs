@@ -507,7 +507,7 @@ mod tests {
     fn set_name_updates_name_and_source() {
         let mut sym = make_label();
         assert_eq!(Symbol::get_name(&sym), "foo");
-        sym.set_name("bar", SourceType::UserDefined).unwrap();
+        AbstractDBTraceSymbol::set_name(&mut sym, "bar", SourceType::UserDefined).unwrap();
         assert_eq!(Symbol::get_name(&sym), "bar");
         assert_eq!(Symbol::get_source(&sym), SourceType::UserDefined);
     }

@@ -177,6 +177,27 @@ pub trait Symbol: Send + Sync {
         let _ = namespace;
         Err(SetParentNamespaceError::InvalidInput(InvalidInputException::new()))
     }
+
+    /// Rename this symbol. Stands in for `Symbol.setName(String, SourceType)`.
+    ///
+    /// Defaults to rejecting the change so existing implementors are unaffected; concrete
+    /// implementations should override once symbol renaming is fully ported. Added for
+    /// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
+    /// port of `createCieLabel`, which renames an existing primary symbol to the CIE label.
+    fn set_name(&mut self, name: &str, source: SourceType) -> Result<(), SetSymbolNameError> {
+        let _ = (name, source);
+        Err(SetSymbolNameError::InvalidInput(InvalidInputException::new()))
+    }
+}
+
+/// Error produced by [`Symbol::set_name`], mirroring the two checked exceptions
+/// `Symbol.setName(String, SourceType)` declares.
+#[derive(thiserror::Error, Debug, PartialEq)]
+pub enum SetSymbolNameError {
+    #[error(transparent)]
+    Duplicate(#[from] DuplicateNameException),
+    #[error(transparent)]
+    InvalidInput(#[from] InvalidInputException),
 }
 
 /// Error produced by [`SymbolTable::get_or_create_name_space`], mirroring the two checked
