@@ -6,6 +6,7 @@ use std::io::{self, Write};
 
 use crate::feature::bsim::query::description::DescriptionManager;
 use crate::feature::bsim::query::lsh_exception::LshException;
+use crate::feature::bsim::query::protocol::{BSimQuery, BSimQueryBase};
 use crate::feature::seam_stubs::{BSimFilter, LSHVectorFactory, ResponseNearest};
 use crate::util::seam_stubs::XmlPullParser;
 use crate::util::xml::spec_xml_utils;
@@ -51,7 +52,8 @@ pub struct QueryNearest {
     /// Filters for the query.
     pub bsim_filter: Option<Box<dyn BSimFilter>>,
 
-    name: &'static str,
+    /// The name/response state every `BSimQuery` carries.
+    base: BSimQueryBase,
 }
 
 impl QueryNearest {
@@ -68,7 +70,7 @@ impl QueryNearest {
             vectormax: 0,
             fillin_categories: true,
             bsim_filter: None,
-            name: "querynearest",
+            base: BSimQueryBase::new("querynearest"),
         }
     }
 
@@ -76,7 +78,7 @@ impl QueryNearest {
     ///
     /// Java: `getName()` (inherited from `BSimQuery`).
     pub fn get_name(&self) -> &str {
-        self.name
+        self.base.get_name()
     }
 
     /// Build the response template for this query.
@@ -117,7 +119,7 @@ impl QueryNearest {
     ///
     /// Java: `saveXml(Writer)`.
     pub fn save_xml<W: Write>(&self, fwrite: &mut W) -> io::Result<()> {
-        write!(fwrite, "<{}>\n", self.name)?;
+        write!(fwrite, "<{}>\n", self.get_name())?;
         self.manage.save_xml(fwrite)?;
         write!(fwrite, "<simthresh>{}</simthresh>\n", self.thresh)?;
         write!(fwrite, "<signifthresh>{}</signifthresh>\n", self.signifthresh)?;
@@ -139,7 +141,7 @@ impl QueryNearest {
         if let Some(filter) = &self.bsim_filter {
             filter.save_xml(fwrite)?;
         }
-        write!(fwrite, "</{}>\n", self.name)?;
+        write!(fwrite, "</{}>\n", self.get_name())?;
         Ok(())
     }
 
@@ -189,6 +191,42 @@ impl QueryNearest {
 impl Default for QueryNearest {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Java: `QueryNearest extends BSimQuery<ResponseNearest>`. Each method forwards to the inherent
+/// one of the same name, which is where the behaviour lives.
+impl BSimQuery for QueryNearest {
+    fn base(&self) -> &BSimQueryBase {
+        &self.base
+    }
+
+    fn base_mut(&mut self) -> &mut BSimQueryBase {
+        &mut self.base
+    }
+
+    fn build_response_template(&mut self) {
+        QueryNearest::build_response_template(self)
+    }
+
+    fn save_xml(&self, mut fwrite: &mut dyn Write) -> io::Result<()> {
+        QueryNearest::save_xml(self, &mut fwrite)
+    }
+
+    fn restore_xml(
+        &mut self,
+        parser: &dyn XmlPullParser,
+        vector_factory: &dyn LSHVectorFactory,
+    ) -> Result<(), LshException> {
+        QueryNearest::restore_xml(self, parser, vector_factory)
+    }
+
+    fn get_description_manager(&self) -> Option<&DescriptionManager> {
+        Some(QueryNearest::get_description_manager(self))
+    }
+
+    fn get_local_staging_copy(&self) -> Option<Box<dyn BSimQuery>> {
+        Some(Box::new(QueryNearest::get_local_staging_copy(self)))
     }
 }
 

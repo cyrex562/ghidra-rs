@@ -1262,3 +1262,9 @@ ts	stub_class	referenced_by
 2026-08-19T05:04:33.180057+00:00	GTaskResult	GTaskListener
 2026-08-19T05:05:00+00:00	Exception	GTaskListener
 2026-08-19T05:30:00.000000+00:00	GTaskResultStub	GTaskManager
+2026-08-19T06:20:00.000000+00:00	StagingManager	SimilarFunctionQueryService
+2026-08-19T06:20:00.000000+00:00	NullStaging	SimilarFunctionQueryService
+2026-08-19T06:20:00.000000+00:00	FunctionStaging	SimilarFunctionQueryService
+2026-08-19T06:20:00.000000+00:00	SFQueryInfo	SimilarFunctionQueryService
+2026-08-19T06:20:00.000000+00:00	SFOverviewInfo	SimilarFunctionQueryService
+2026-08-19T06:20:00.000000+00:00	SFQueryResult	SimilarFunctionQueryService

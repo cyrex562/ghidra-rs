@@ -10,6 +10,7 @@ use crate::feature::bsim::query::lsh_exception::LshException;
 use crate::feature::bsim::query::protocol::query_nearest::{
     DEFAULT_SIGNIFICANCE_THRESHOLD, DEFAULT_SIMILARITY_THRESHOLD,
 };
+use crate::feature::bsim::query::protocol::{BSimQuery, BSimQueryBase};
 use crate::feature::seam_stubs::{LSHVectorFactory, ResponseNearestVector};
 use crate::util::seam_stubs::XmlPullParser;
 use crate::util::xml::spec_xml_utils;
@@ -34,7 +35,8 @@ pub struct QueryNearestVector {
     /// Maximum number of unique vectors that can be returned. Zero means "no limit".
     pub vectormax: i32,
 
-    name: &'static str,
+    /// The name/response state every `BSimQuery` carries.
+    base: BSimQueryBase,
 }
 
 impl QueryNearestVector {
@@ -48,7 +50,7 @@ impl QueryNearestVector {
             thresh: DEFAULT_SIMILARITY_THRESHOLD,
             signifthresh: DEFAULT_SIGNIFICANCE_THRESHOLD,
             vectormax: 0,
-            name: "querynearestvector",
+            base: BSimQueryBase::new("querynearestvector"),
         }
     }
 
@@ -56,7 +58,7 @@ impl QueryNearestVector {
     ///
     /// Java: `getName()` (inherited from `BSimQuery`).
     pub fn get_name(&self) -> &str {
-        self.name
+        self.base.get_name()
     }
 
     /// Build the response template for this query.
@@ -92,7 +94,7 @@ impl QueryNearestVector {
     ///
     /// Java: `saveXml(Writer)`.
     pub fn save_xml<W: Write>(&self, fwrite: &mut W) -> io::Result<()> {
-        write!(fwrite, "<{}>\n", self.name)?;
+        write!(fwrite, "<{}>\n", self.get_name())?;
         self.manage.save_xml(fwrite)?;
         write!(fwrite, "<simthresh>{}</simthresh>\n", self.thresh)?;
         write!(fwrite, "<signifthresh>{}</signifthresh>\n", self.signifthresh)?;
@@ -103,7 +105,7 @@ impl QueryNearestVector {
                 spec_xml_utils::encode_signed_integer(self.vectormax as i64)
             )?;
         }
-        write!(fwrite, "</{}>\n", self.name)?;
+        write!(fwrite, "</{}>\n", self.get_name())?;
         Ok(())
     }
 
@@ -141,6 +143,42 @@ impl QueryNearestVector {
 impl Default for QueryNearestVector {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Java: `QueryNearestVector extends BSimQuery<ResponseNearestVector>`. Each method forwards to
+/// the inherent one of the same name, which is where the behaviour lives.
+impl BSimQuery for QueryNearestVector {
+    fn base(&self) -> &BSimQueryBase {
+        &self.base
+    }
+
+    fn base_mut(&mut self) -> &mut BSimQueryBase {
+        &mut self.base
+    }
+
+    fn build_response_template(&mut self) {
+        QueryNearestVector::build_response_template(self)
+    }
+
+    fn save_xml(&self, mut fwrite: &mut dyn Write) -> io::Result<()> {
+        QueryNearestVector::save_xml(self, &mut fwrite)
+    }
+
+    fn restore_xml(
+        &mut self,
+        parser: &dyn XmlPullParser,
+        vector_factory: &dyn LSHVectorFactory,
+    ) -> Result<(), LshException> {
+        QueryNearestVector::restore_xml(self, parser, vector_factory)
+    }
+
+    fn get_description_manager(&self) -> Option<&DescriptionManager> {
+        Some(QueryNearestVector::get_description_manager(self))
+    }
+
+    fn get_local_staging_copy(&self) -> Option<Box<dyn BSimQuery>> {
+        Some(Box::new(QueryNearestVector::get_local_staging_copy(self)))
     }
 }
 

@@ -53,6 +53,14 @@ impl BSimQueryBase {
     pub fn set_response(&mut self, response: Box<dyn QueryResponseRecord>) {
         self.response = Some(response);
     }
+
+    /// Move the response out of this query, leaving it cleared.
+    ///
+    /// Java hands out `getResponse()` and lets callers keep the reference alongside the query's
+    /// own; a Rust caller that needs to own the accumulating global response takes it instead.
+    pub fn take_response(&mut self) -> Option<Box<dyn QueryResponseRecord>> {
+        self.response.take()
+    }
 }
 
 /// The abstract and overridable operations of a `BSimQuery`, plus the concrete convenience
