@@ -6532,7 +6532,7 @@ impl SymStateSpace {
 /// collection operations `StackUnwinder` performs are modeled here. It is a `Vec`, not a set:
 /// [`StackUnwindWarning`](crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning)
 /// is neither `Eq` nor `Hash`, so duplicates cannot be recognized yet.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct StackUnwindWarningSet {
     warnings: Vec<
         Arc<dyn crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning>,
@@ -6582,6 +6582,15 @@ impl StackUnwindWarningSet {
         dyn crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning,
     >] {
         &self.warnings
+    }
+
+    /// `StackUnwindWarningSet.summarize()`: the lines a caller joins for display.
+    ///
+    /// Java folds warnings that share a `moots` relationship into one line first; with no set
+    /// semantics here (see the type docs), this is simply each warning's message in insertion
+    /// order.
+    pub fn summarize(&self) -> Vec<String> {
+        self.warnings.iter().map(|w| w.get_message()).collect()
     }
 }
 
@@ -6789,6 +6798,14 @@ impl UnwindInfo {
         self.depth.map(|depth| sp_val.add_wrap(-depth))
     }
 
+    /// `UnwindInfo.ofReturn(Address)`: where this frame stored the return address, i.e. the
+    /// recorded offset taken from the frame's base pointer. `None` when the location is unknown.
+    pub fn of_return_at(&self, base: &Address) -> StdOption<Address> {
+        self.of_return
+            .as_ref()
+            .map(|of_return| base.add_wrap(of_return.offset()))
+    }
+
     /// `UnwindInfo.computeNextSp(Address)`: the caller's stack pointer. `None` when the
     /// adjustment is unknown.
     pub fn compute_next_sp(&self, base: &Address) -> StdOption<Address> {
@@ -6808,7 +6825,7 @@ impl UnwindInfo {
     ///
     /// `None` when the return address' location is unknown, or when the state cannot concretize
     /// the bytes there.
-    pub fn compute_next_pc<S>(
+    pub fn compute_next_pc<T, S>(
         &self,
         base: &Address,
         state: &S,
@@ -6816,10 +6833,7 @@ impl UnwindInfo {
         pc: &crate::program::model::lang::register::RegisterRef,
     ) -> StdOption<Address>
     where
-        S: crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece<
-            crate::pcode::exec::debugger_pcode_utils::WatchValue,
-            crate::pcode::exec::debugger_pcode_utils::WatchValue,
-        >,
+        S: crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece<T, T>,
     {
         let of_return = self.of_return.as_ref()?;
         let at = base.add_wrap(of_return.offset());
@@ -6829,98 +6843,70 @@ impl UnwindInfo {
     }
 }
 
-/// Placeholder for `ghidra.app.plugin.core.debug.stack.AnalysisUnwoundFrame<T>`.
+/// Placeholder for `ghidra.app.plugin.core.debug.stack.FrameStructureBuilder`, referenced by
+/// [`AnalysisUnwoundFrame`](crate::app::plugin::core::debug::stack::analysis_unwound_frame).
 ///
-/// Java's version is a concrete `UnwoundFrame` implementation that also keeps the tool, the
-/// p-code state it evaluates variables against, and a back-reference to the `StackUnwinder` that
-/// produced it (the dependency cycle that brought `StackUnwinder` up for porting). None of the
-/// three can be modeled yet -- `PcodeExecutorState` is not object-safe, so the state cannot be
-/// stored without making every holder generic -- so this placeholder keeps only the frame
-/// description that `StackUnwinder` itself reads back.
-pub struct AnalysisUnwoundFrame {
-    coordinates: crate::debug::api::tracemgr::debugger_coordinates::DebuggerCoordinates,
-    program_counter: Address,
-    stack_pointer: Address,
-    static_pc: StdOption<Address>,
-    info: UnwindInfo,
-    /// The map of registers saved by the frames nearer the target than this one.
-    ///
-    /// Java declares this field package-private and `StackUnwinder` reads it directly.
-    pub register_map: SavedRegisterMap,
+/// The real builder lays out a frame's structure by walking the allocating function's stack
+/// variables, the registers this frame saved, and the return address, all relative to the frame's
+/// base pointer. That needs the decompiler's parameter analysis (`UnwindInfo.computeParamSize`)
+/// and the high-p-code frame analysis, neither of which is ported, so [`build`](Self::build) is
+/// left unimplemented; the frame's own error path (which never reaches the builder) is what the
+/// unwinder exercises today.
+pub struct FrameStructureBuilder {
+    /// The language whose data organization the layout is computed against.
+    pub language: Arc<dyn crate::program::model::lang::language::Language>,
+    /// The (static) program counter the frame is laid out at.
+    pub static_pc: StdOption<Address>,
+    /// The unwind info describing the frame's contents.
+    pub info: UnwindInfo,
+    /// The number of bytes the next frame down's parameters occupy.
+    pub prev_param_size: i32,
 }
 
-impl AnalysisUnwoundFrame {
-    /// `new AnalysisUnwoundFrame(PluginTool, DebuggerCoordinates, StackUnwinder,
-    /// PcodeExecutorState, Address, Address, Address, UnwindInfo, SavedRegisterMap)`, less the
-    /// three components this placeholder cannot hold.
+impl FrameStructureBuilder {
+    /// `new FrameStructureBuilder(Language, Address, UnwindInfo, int)`.
     pub fn new(
-        coordinates: crate::debug::api::tracemgr::debugger_coordinates::DebuggerCoordinates,
-        program_counter: Address,
-        stack_pointer: Address,
+        language: Arc<dyn crate::program::model::lang::language::Language>,
         static_pc: StdOption<Address>,
         info: UnwindInfo,
-        register_map: SavedRegisterMap,
+        prev_param_size: i32,
     ) -> Self {
-        AnalysisUnwoundFrame {
-            coordinates,
-            program_counter,
-            stack_pointer,
+        FrameStructureBuilder {
+            language,
             static_pc,
             info,
-            register_map,
+            prev_param_size,
         }
     }
 
-    /// `UnwoundFrame.getLevel()`.
-    pub fn get_level(&self) -> i32 {
-        self.coordinates.get_frame()
-    }
-
-    /// The coordinates this frame was unwound at.
-    pub fn coordinates(
+    /// `FrameStructureBuilder.build(CategoryPath, String, DataTypeManager)`.
+    pub fn build(
         &self,
-    ) -> &crate::debug::api::tracemgr::debugger_coordinates::DebuggerCoordinates {
-        &self.coordinates
+        _path: &crate::program::model::data::category_path::CategoryPath,
+        _name: &str,
+        _dtm: &mut dyn crate::trace::seam_stubs::TraceBasedDataTypeManager,
+    ) -> Box<dyn crate::program::model::data::structure::Structure> {
+        unimplemented!(
+            "FrameStructureBuilder needs the decompiler's frame analysis, which is not ported"
+        )
     }
+}
 
-    /// `UnwoundFrame.getProgramCounter()`, dynamic.
-    pub fn get_program_counter(&self) -> &Address {
-        &self.program_counter
-    }
+/// Placeholder for `ghidra.app.plugin.core.bookmark.BookmarkNavigator`, referenced by
+/// [`AnalysisUnwoundFrame`](crate::app::plugin::core::debug::stack::analysis_unwound_frame).
+///
+/// The real class is the marker-margin navigator for a program's bookmarks. Only its static
+/// `defineBookmarkTypes`, which registers the built-in types (note, info, warning, error,
+/// analysis) with a program's bookmark manager, is reached from here.
+pub struct BookmarkNavigator;
 
-    /// `UnwoundFrame.getStackPointer()`.
-    pub fn get_stack_pointer(&self) -> &Address {
-        &self.stack_pointer
-    }
-
-    /// The program counter mapped into the static (program database) image, if it mapped.
-    pub fn get_static_pc(&self) -> StdOption<&Address> {
-        self.static_pc.as_ref()
-    }
-
-    /// `UnwoundFrame.getBasePointer()`.
-    pub fn get_base_pointer(&self) -> StdOption<Address> {
-        self.info.compute_base(&self.stack_pointer)
-    }
-
-    /// `UnwoundFrame.getUnwindInfo()`.
-    pub fn get_unwind_info(&self) -> &UnwindInfo {
-        &self.info
-    }
-
-    /// `UnwoundFrame.getFunction()`.
-    pub fn get_function(&self) -> StdOption<&Arc<dyn Function>> {
-        self.info.function.as_ref()
-    }
-
-    /// `UnwoundFrame.getWarnings()`.
-    pub fn get_warnings(&self) -> &StackUnwindWarningSet {
-        &self.info.warnings
-    }
-
-    /// `UnwoundFrame.getError()`.
-    pub fn get_error(&self) -> StdOption<&Arc<dyn std::error::Error + Send + Sync>> {
-        self.info.error.as_ref()
+impl BookmarkNavigator {
+    /// `BookmarkNavigator.defineBookmarkTypes(Program)`, which defines the built-in bookmark types
+    /// on the given program if they are not already defined.
+    pub fn define_bookmark_types(
+        _program: &dyn crate::trace::model::program::TraceVariableSnapProgramView,
+    ) {
+        unimplemented!("BookmarkNavigator is not ported")
     }
 }
 

@@ -1,4 +1,5 @@
 pub mod abstract_unwound_frame;
+pub mod analysis_unwound_frame;
 pub mod dynamic_mapping_exception;
 pub mod evaluation_exception;
 pub mod stack_unwind_warning;
