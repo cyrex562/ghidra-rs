@@ -4126,3 +4126,182 @@ impl std::fmt::Display for InstructionSequence {
         Ok(())
     }
 }
+
+// ---------------------------------------------------------------------------
+// Z3 seam (referenced by `SymValueZ3`)
+//
+// `com.microsoft.z3.*` is a third-party binding that this crate has no Rust equivalent for yet
+// (there is no `z3` dependency in `Cargo.toml`). `SymValueZ3` stores only *serialized* SMT-LIB2
+// text, so the only thing it needs from Z3 is a factory for expressions plus SMT-LIB2
+// serialization/parsing. The traits below are that seam: exactly the surface `SymValueZ3` uses,
+// named after the Java methods they stand in for. A real `z3` binding (or an in-crate SMT term
+// builder) implements `Z3Context` and the two expression traits, and nothing in `SymValueZ3`
+// changes.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for `com.microsoft.z3.Expr`: anything that renders as SMT-LIB2 text.
+pub trait Expr: Send + Sync {
+    /// Java: `Expr.toString()`, the SMT-LIB2 rendering of this expression.
+    fn to_smt_string(&self) -> String;
+}
+
+/// Placeholder for `com.microsoft.z3.BitVecExpr` (and the `BitVecNum` accessors `SymValueZ3`
+/// reaches for once an expression turns out to be a numeral).
+pub trait BitVecExpr: Expr {
+    /// Upcast to [`Expr`], so an expression can be handed to [`Z3InfixPrinter::infix`].
+    fn as_expr(&self) -> &dyn Expr;
+
+    /// Java: `BitVecExpr.getSortSize()`, the width of this bit-vector in bits.
+    fn sort_size(&self) -> u32;
+
+    /// Java: `Expr.isNumeral()`.
+    fn is_numeral(&self) -> bool;
+
+    /// Java: `BitVecNum.getBigInteger()`, or `None` if this is not a numeral. Arbitrary-precision
+    /// integers are modelled as `i128` throughout this crate.
+    fn to_big_integer(&self) -> Option<i128>;
+
+    /// Java: `BitVecNum.getLong()`, or `None` if this is not a numeral or does not fit.
+    fn to_long(&self) -> Option<i64>;
+}
+
+/// Placeholder for `com.microsoft.z3.BoolExpr`.
+pub trait BoolExpr: Expr {
+    /// Upcast to [`Expr`], so an expression can be handed to [`Z3InfixPrinter::infix`].
+    fn as_expr(&self) -> &dyn Expr;
+
+    /// Java: `(BitVecExpr) Expr.getArgs()[index]`. `SymValueZ3` uses this to unwrap the
+    /// `(= b b)` assertion its bit-vector serialization is wrapped in.
+    fn bit_vec_arg(&self, index: usize) -> Option<Box<dyn BitVecExpr>>;
+}
+
+/// Placeholder for `com.microsoft.z3.Context`, restricted to the expression constructors and the
+/// SMT-LIB2 serialization/parsing that `SymValueZ3` performs.
+pub trait Z3Context: Send + Sync {
+    /// Java: `ctx.mkSolver(); solver.add(ctx.mkEq(b, b)); solver.toString()`. A bit-vector has no
+    /// SMT-LIB2 assertion form of its own, so Z3 round-trips it as the trivial equality
+    /// (see <https://github.com/Z3Prover/z3/issues/2674>).
+    fn smt_lib_for_bit_vec(&self, b: &dyn BitVecExpr) -> String;
+
+    /// Java: `ctx.mkSolver(); solver.add(b); solver.toString()`.
+    fn smt_lib_for_bool(&self, b: &dyn BoolExpr) -> String;
+
+    /// Java: `ctx.parseSMTLIB2String(smt, null, null, null, null)[0]`, i.e. the first assertion.
+    fn parse_smt_lib2(&self, smt: &str) -> Option<Box<dyn BoolExpr>>;
+
+    /// Java: `ctx.mkBV(value, size_bits)`.
+    fn mk_bv(&self, value: i64, size_bits: u32) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkTrue()`.
+    fn mk_true(&self) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkFalse()`.
+    fn mk_false(&self) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkEq(l, r)`.
+    fn mk_eq(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `(BitVecExpr) ctx.mkITE(predicate, t, f)`.
+    fn mk_ite_bv(
+        &self,
+        predicate: &dyn BoolExpr,
+        t: &dyn BitVecExpr,
+        f: &dyn BitVecExpr,
+    ) -> Box<dyn BitVecExpr>;
+
+    /// Java: `(BoolExpr) ctx.mkITE(predicate, t, f)`.
+    fn mk_ite_bool(
+        &self,
+        predicate: &dyn BoolExpr,
+        t: &dyn BoolExpr,
+        f: &dyn BoolExpr,
+    ) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVSLT(l, r)`.
+    fn mk_bvslt(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVSLE(l, r)`.
+    fn mk_bvsle(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVULT(l, r)`.
+    fn mk_bvult(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVULE(l, r)`.
+    fn mk_bvule(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVAddNoOverflow(l, r, signed)`.
+    fn mk_bv_add_no_overflow(
+        &self,
+        l: &dyn BitVecExpr,
+        r: &dyn BitVecExpr,
+        signed: bool,
+    ) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVSubNoOverflow(l, r)`.
+    fn mk_bv_sub_no_overflow(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkBVAdd(l, r)`.
+    fn mk_bvadd(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVSub(l, r)`.
+    fn mk_bvsub(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVXOR(l, r)`.
+    fn mk_bvxor(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVAND(l, r)`.
+    fn mk_bvand(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVOR(l, r)`.
+    fn mk_bvor(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVMul(l, r)`.
+    fn mk_bvmul(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVUDiv(l, r)`.
+    fn mk_bvudiv(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVSDiv(l, r)`.
+    fn mk_bvsdiv(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVSHL(l, r)`.
+    fn mk_bvshl(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVLSHR(l, r)`.
+    fn mk_bvlshr(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBVASHR(l, r)`.
+    fn mk_bvashr(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkConcat(l, r)`.
+    fn mk_concat(&self, l: &dyn BitVecExpr, r: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkZeroExt(bits, b)`.
+    fn mk_zero_ext(&self, bits: u32, b: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkSignExt(bits, b)`.
+    fn mk_sign_ext(&self, bits: u32, b: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkExtract(high, low, b)`.
+    fn mk_extract(&self, high: u32, low: u32, b: &dyn BitVecExpr) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkNot(u)`.
+    fn mk_not(&self, u: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkXor(l, r)`.
+    fn mk_xor(&self, l: &dyn BoolExpr, r: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkAnd(l, r)`.
+    fn mk_and(&self, l: &dyn BoolExpr, r: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+
+    /// Java: `ctx.mkOr(l, r)`.
+    fn mk_or(&self, l: &dyn BoolExpr, r: &dyn BoolExpr) -> Box<dyn BoolExpr>;
+}
+
+/// Placeholder for the unported Java type `Z3InfixPrinter`, referenced by `SymValueZ3::to_display`.
+/// Only the one method `SymValueZ3` calls is stubbed here; the rest of the printer's surface comes
+/// with the real port of `ghidra.pcode.emu.symz3.lib.Z3InfixPrinter`.
+pub trait Z3InfixPrinter: Send + Sync {
+    /// Java: `Z3InfixPrinter.infix(Expr)`, the human-readable infix rendering of an expression.
+    fn infix(&self, e: &dyn Expr) -> String;
+}
