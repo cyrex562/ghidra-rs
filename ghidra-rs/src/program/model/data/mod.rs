@@ -143,6 +143,7 @@ pub mod render_unicode_settings_definition;
 pub mod resource;
 pub mod rgb16_encoding_settings_definition;
 pub mod rgb32_encoding_settings_definition;
+pub mod segmented_code_pointer_data_type;
 pub mod short_data_type;
 pub mod signed_byte_data_type;
 pub mod signed_char_data_type;
