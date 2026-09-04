@@ -7,6 +7,17 @@ const MARKED_FLAG: u32 = 8;
 /// An operand symbol in SLEIGH.
 ///
 /// Models `ghidra.pcodeCPort.slghsymbol.OperandSymbol`.
+///
+/// INCOMPLETE (found phantom-DONE 2026-09, reverted to TODO in PORT_MANIFEST.tsv): this only
+/// covers `reloffset`/`offsetbase`/the `marked` flag. Still missing, per the real Java class:
+/// `minimumlength`, `hand` (handle index), `localexp` (an `OperandValue`, needs a `VarnodeTpl`
+/// three-arg `(location, hand, zerosize)` constructor this crate's `VarnodeTpl` doesn't have
+/// yet either), `triple`/`defexp` (the defining symbol/expression, set via two `defineOperand`
+/// overloads that both throw `SleighError` on redefinition), `code_address`/`variable_len`
+/// flags, `SpecificSymbol`/`TripleSymbol` impls (`get_varnode`, `get_size`,
+/// `collect_local_values`, `get_pattern_expression`), and `encode`/`encode_header`. Needed by
+/// `Constructor`/`SubtableSymbol` (`ghidra.pcodeCPort.slghsymbol.{Constructor,SubtableSymbol}`,
+/// still `TODO`), which is how this gap was found.
 pub struct OperandSymbol {
     symbol: SleighSymbol,
     pub flags: u32,

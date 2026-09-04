@@ -2,6 +2,17 @@ use super::const_tpl::ConstTpl;
 use crate::program::model::pcode::{Decoder, DecoderError, Encoder, ELEM_VARNODE_TPL};
 use std::io;
 
+/// Models `ghidra.pcodeCPort.semantics.VarnodeTpl`. Deliberately shared between the pcodeCPort
+/// compiler and sleigh runtime representations -- both need the same .sla-serializable template
+/// format (see `decompiler::slghsymbol::specific_symbol::SpecificSymbol::get_varnode`'s callers).
+///
+/// INCOMPLETE relative to the real class (found while sizing `OperandSymbol`'s own port gap,
+/// 2026-09): missing the `location: Location` field, `unnamed_flag`, `is_local_temp()`,
+/// `transfer(&[HandleTpl])`, `set_offset`/`set_relative`/`set_size`/`is_relative`, and three of
+/// Java's five constructors -- notably `VarnodeTpl(Location, int hand, boolean zerosize)`
+/// (builds a `ConstTpl::const_type::handle`-typed space/offset/size from a handle index, used by
+/// `OperandSymbol.getVarnode()` for both the "definite constant handle" and "possible dynamic
+/// handle" cases).
 #[derive(Debug, Clone)]
 pub struct VarnodeTpl {
     pub space: ConstTpl,
