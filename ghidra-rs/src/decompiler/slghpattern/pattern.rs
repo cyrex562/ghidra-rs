@@ -19,8 +19,13 @@ use crate::program::model::pcode::Encoder;
 /// The base pattern type: something that can be matched against an instruction/context, and
 /// combined with other patterns via AND/OR/simplification.
 ///
-/// Models the abstract class `ghidra.pcodeCPort.slghpattern.Pattern`.
-pub trait Pattern: Send + Sync {
+/// Models the abstract class `ghidra.pcodeCPort.slghpattern.Pattern`. Several of Java's
+/// overrides on concrete subclasses (`ContextPattern.doOr`, `InstructionPattern.doAnd`, ...)
+/// dispatch on `b instanceof SomeConcreteSiblingType`; Java's single-inheritance RTTI has no
+/// direct Rust equivalent for a `&dyn Pattern`, so this trait requires `Any` (which every
+/// `'static` type gets for free -- no existing `impl Pattern for X` needs to change) purely so
+/// those sites can `downcast_ref` the same way `instanceof` does.
+pub trait Pattern: Send + Sync + std::any::Any {
     /// Releases any resources held by this pattern. No-op by default, matching Java's
     /// non-abstract `dispose()`.
     fn dispose(&mut self) {}
