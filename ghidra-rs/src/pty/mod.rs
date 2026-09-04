@@ -7,6 +7,7 @@ pub mod pty_parent;
 pub mod pty_session;
 pub mod shell_utils;
 pub mod stream_pumper;
+pub mod unix;
 pub mod windows;
 
 pub use local_process_pty_session::LocalProcessPtySession;
