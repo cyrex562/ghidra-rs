@@ -172,6 +172,7 @@ TODO	trait	0	3	15	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph
 TODO	trait	0	3	1	script	Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraConsole.java
 TODO	trait	0	3	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphSatelliteActionContext.java
 TODO	trait	0	3	28	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/VarnodeTemplate.java
+TODO	trait	0	3	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/InstructionPattern.java
 TODO	trait	0	2	2	filesystem	GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgFileReader.java
 TODO	trait	0	2	1	debug	Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfClientHandler.java
 TODO	trait	0	2	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/context/TraceRegisterContextManager.java
@@ -3520,6 +3521,8 @@ TODO	struct	0	3	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app
 TODO	struct	1	2	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/OpTemplate.java
 TODO	struct	0	3	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/InstructionPattern.java
 TODO	struct	0	3	48	pcode	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/utils/SlaFormat.java
+TODO	struct	0	3	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/ContextPattern.java
+TODO	struct	1	2	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/CombinePattern.java
 TODO	struct	0	3	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CodeUnitCache.java
 TODO	struct	0	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ArrayDBAdapterV0.java
 TODO	struct	0	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ArrayDBAdapterV1.java
@@ -3840,7 +3843,6 @@ TODO	struct	0	2	17	framework	Ghidra/Framework/Project/src/main/java/ghidra/frame
 TODO	struct	0	2	37	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/WorkspaceImpl.java
 TODO	struct	0	2	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/util/TableEntry.java
 TODO	struct	0	2	0	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/SleighSubtableTraversal.java
-TODO	struct	0	2	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/CombinePattern.java
 TODO	struct	0	2	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/merge/EnumMerger.java
 TODO	struct	0	2	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/LocalVariableDB.java
 TODO	struct	0	2	30	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/FragmentDB.java
