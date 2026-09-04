@@ -125,6 +125,17 @@ impl PatternEquationOps for OperandEquation {
     fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
         self.token_pattern = Some(pattern);
     }
+
+    /// Models Java's `operandOrder(Constructor ct, VectorSTL<OperandSymbol> order)`: appends
+    /// this equation's own operand index if it hasn't already been recorded. See the trait
+    /// method's own doc comment for why this is index-based rather than the `Vec<OperandSymbol>`
+    /// form [`OperandEquation::operand_order`] (the inherent method above) uses.
+    fn operand_order(&self, order: &mut Vec<i32>, marked: &mut [bool]) {
+        if self.index >= 0 && (self.index as usize) < marked.len() && !marked[self.index as usize] {
+            order.push(self.index);
+            marked[self.index as usize] = true;
+        }
+    }
 }
 
 #[cfg(test)]

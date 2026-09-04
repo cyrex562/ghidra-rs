@@ -94,6 +94,10 @@ impl PatternEquationOps for EquationLeftEllipsis {
     fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
         self.eq.set_token_pattern(pattern)
     }
+
+    fn operand_order(&self, order: &mut Vec<i32>, marked: &mut [bool]) {
+        self.eq.operand_order(order, marked);
+    }
 }
 
 #[cfg(test)]

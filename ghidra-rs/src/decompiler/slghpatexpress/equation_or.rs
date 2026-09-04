@@ -132,6 +132,11 @@ impl PatternEquationOps for EquationOr {
     fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
         self.set_token_pattern(pattern)
     }
+
+    fn operand_order(&self, order: &mut Vec<i32>, marked: &mut [bool]) {
+        self.left.operand_order(order, marked); // List operands left
+        self.right.operand_order(order, marked); //  to right
+    }
 }
 
 #[cfg(test)]

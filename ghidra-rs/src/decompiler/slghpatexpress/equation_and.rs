@@ -31,6 +31,27 @@ pub trait PatternEquationOps: Send + Sync {
 
     /// Sets the token pattern for this equation.
     fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>);
+
+    /// Appends, in pattern-match order, the index of every operand this equation (or, for a
+    /// composite equation, any of its sub-equations) directly references, and marks each one
+    /// `true` in `marked` the first time it's appended (Java's `operandOrder(Constructor ct,
+    /// VectorSTL<OperandSymbol> order)`).
+    ///
+    /// Java's version takes the owning `Constructor` and pushes direct `OperandSymbol`
+    /// references, relying on `order`'s entries aliasing the same objects `ct.operands` holds so
+    /// that marking one through `order` is visible through `ct` too. Rust can't alias a `Vec`
+    /// element as both an owned collection member and a separately mutable reference at once, so
+    /// this indexes into `marked`/pushes into `order` instead of touching `OperandSymbol`'s own
+    /// mark flag or needing the `Constructor` at all -- the caller
+    /// ([`crate::decompiler::slghsymbol::Constructor::order_operands`]) owns `operands` and
+    /// reads/writes marks through this same `marked` slice throughout, so the two stay in sync
+    /// without aliasing.
+    ///
+    /// Defaults to a no-op, matching Java's `PatternEquation.operandOrder` base implementation
+    /// ("by default do nothing") -- comparison equations (`EqualEquation` and siblings) and
+    /// [`crate::decompiler::slghpatexpress::UnconstrainedEquation`] don't reference a specific
+    /// operand by position, so they inherit this default unchanged, the same way they do in Java.
+    fn operand_order(&self, _order: &mut Vec<i32>, _marked: &mut [bool]) {}
 }
 
 /// Combines two pattern equations with an AND operation.
@@ -161,6 +182,11 @@ impl PatternEquationOps for EquationAnd {
 
     fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
         self.set_token_pattern(pattern)
+    }
+
+    fn operand_order(&self, order: &mut Vec<i32>, marked: &mut [bool]) {
+        self.left.operand_order(order, marked); // List operands left
+        self.right.operand_order(order, marked); //  to right
     }
 }
 
