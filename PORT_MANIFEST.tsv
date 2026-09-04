@@ -12921,8 +12921,8 @@ orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtyParent.java	D
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtySessionLeader.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/Util.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/AnsiBufferedInputStream.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPty.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyChild.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPty.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyChild.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyEndpoint.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyFactory.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyParent.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows
