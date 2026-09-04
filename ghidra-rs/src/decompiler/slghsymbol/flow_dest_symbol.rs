@@ -4,7 +4,6 @@ use super::patternless_symbol::PatternlessSymbol;
 use super::specific_symbol::SpecificSymbol;
 use super::symbol_type::SymbolType;
 use super::triple_symbol::TripleSymbol;
-use crate::decompiler::seam_stubs::VarnodeTpl as VarnodeTplTrait;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::sleigh::template::{ConstTpl, ConstTplType, VarnodeTpl};
 use crate::sleigh::grammar::location::Location;
@@ -54,7 +53,7 @@ impl TripleSymbol for FlowDestSymbol {
 }
 
 impl SpecificSymbol for FlowDestSymbol {
-    fn get_varnode(&self) -> Box<dyn VarnodeTplTrait> {
+    fn get_varnode(&self) -> Box<VarnodeTpl> {
         let space_const = ConstTpl {
             tp: ConstTplType::SpaceId,
             value_real: 0,
@@ -161,8 +160,7 @@ mod tests {
         let space = mock_space();
         let fds = FlowDestSymbol::new(loc(), "test", space.clone());
         let varnode = fds.get_varnode();
-        let varnode_tpl = &*varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
-        let vt = unsafe { &*varnode_tpl };
+        let vt = &*varnode;
         assert!(vt.space.value_spaceid.is_some());
     }
 }

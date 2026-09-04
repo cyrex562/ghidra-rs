@@ -46,10 +46,6 @@ pub trait PatternExpression: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.pcodeCPort.semantics.VarnodeTpl`, needed by
-/// [`crate::decompiler::slghsymbol::SpecificSymbol::get_varnode`].
-pub trait VarnodeTpl: Send + Sync {}
-
 /// Placeholder for `ghidra.pcodeCPort.slghsymbol.ValueSymbol`, needed as the supertype of
 /// [`crate::decompiler::slghsymbol::ContextSymbol`] (`ContextSymbol extends ValueSymbol` in
 /// Java). The real `ValueSymbol` in turn extends `FamilySymbol`, which is not yet ported either;

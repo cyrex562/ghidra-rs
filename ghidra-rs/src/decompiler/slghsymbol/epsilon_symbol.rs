@@ -4,7 +4,6 @@ use super::patternless_symbol::PatternlessSymbol;
 use super::specific_symbol::SpecificSymbol;
 use super::symbol_type::SymbolType;
 use super::triple_symbol::TripleSymbol;
-use crate::decompiler::seam_stubs::VarnodeTpl as VarnodeTplTrait;
 use crate::program::model::lang::sleigh::template::{ConstTpl, VarnodeTpl};
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::{ATTRIB_ID, ELEM_EPSILON_SYM, ELEM_EPSILON_SYM_HEAD};
@@ -69,7 +68,7 @@ impl TripleSymbol for EpsilonSymbol {
 }
 
 impl SpecificSymbol for EpsilonSymbol {
-    fn get_varnode(&self) -> Box<dyn VarnodeTplTrait> {
+    fn get_varnode(&self) -> Box<VarnodeTpl> {
         let space_const = ConstTpl::new();
         let offset_const = ConstTpl::new();
         let size_const = ConstTpl::new();

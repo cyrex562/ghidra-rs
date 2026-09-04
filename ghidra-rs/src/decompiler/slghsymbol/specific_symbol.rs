@@ -1,7 +1,7 @@
 //! Models `ghidra.pcodeCPort.slghsymbol.SpecificSymbol`.
 
 use super::triple_symbol::TripleSymbol;
-use crate::decompiler::seam_stubs::VarnodeTpl;
+use crate::program::model::lang::sleigh::template::VarnodeTpl;
 
 /// A symbol that resolves to a concrete varnode during constructor semantics (as opposed to
 /// symbols that only participate in parsing/printing).
@@ -10,19 +10,17 @@ use crate::decompiler::seam_stubs::VarnodeTpl;
 /// `TripleSymbol`.
 pub trait SpecificSymbol: TripleSymbol {
     /// The varnode template this symbol resolves to.
-    fn get_varnode(&self) -> Box<dyn VarnodeTpl>;
+    fn get_varnode(&self) -> Box<VarnodeTpl>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::decompiler::seam_stubs::PatternExpression;
+    use crate::program::model::lang::sleigh::template::ConstTpl;
 
     struct MockPattern;
     impl PatternExpression for MockPattern {}
-
-    struct MockVarnode;
-    impl VarnodeTpl for MockVarnode {}
 
     struct FixedSymbol;
     impl TripleSymbol for FixedSymbol {
@@ -32,8 +30,12 @@ mod tests {
     }
 
     impl SpecificSymbol for FixedSymbol {
-        fn get_varnode(&self) -> Box<dyn VarnodeTpl> {
-            Box::new(MockVarnode)
+        fn get_varnode(&self) -> Box<VarnodeTpl> {
+            Box::new(VarnodeTpl {
+                space: ConstTpl::new(),
+                offset: ConstTpl::new(),
+                size: ConstTpl::new(),
+            })
         }
     }
 

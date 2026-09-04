@@ -4,7 +4,6 @@ use super::sleigh_symbol::SleighSymbol;
 use super::specific_symbol::SpecificSymbol;
 use super::symbol_type::SymbolType;
 use super::triple_symbol::TripleSymbol;
-use crate::decompiler::seam_stubs::VarnodeTpl as VarnodeTplTrait;
 use crate::decompiler::slghpatexpress::StartInstructionValue;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::sleigh::template::{ConstTpl, ConstTplType, VarnodeTpl};
@@ -97,7 +96,7 @@ impl TripleSymbol for StartSymbol {
 }
 
 impl SpecificSymbol for StartSymbol {
-    fn get_varnode(&self) -> Box<dyn VarnodeTplTrait> {
+    fn get_varnode(&self) -> Box<VarnodeTpl> {
         let const_space = self
             .const_space
             .as_ref()
@@ -223,8 +222,7 @@ mod tests {
         let space = mock_space();
         let start = StartSymbol::with_name(loc(), "inst_start", space);
         let varnode = start.get_varnode();
-        let varnode_tpl = &*varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
-        let vt = unsafe { &*varnode_tpl };
+        let vt = &*varnode;
         assert!(vt.space.value_spaceid.is_some());
         assert_eq!(vt.offset.tp, ConstTplType::JStart);
     }

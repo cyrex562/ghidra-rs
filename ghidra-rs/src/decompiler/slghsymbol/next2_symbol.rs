@@ -4,7 +4,6 @@ use super::sleigh_symbol::SleighSymbol;
 use super::specific_symbol::SpecificSymbol;
 use super::symbol_type::SymbolType;
 use super::triple_symbol::TripleSymbol;
-use crate::decompiler::seam_stubs::VarnodeTpl as VarnodeTplTrait;
 use crate::decompiler::slghpatexpress::Next2InstructionValue;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::sleigh::template::{ConstTpl, ConstTplType, VarnodeTpl};
@@ -97,7 +96,7 @@ impl TripleSymbol for Next2Symbol {
 }
 
 impl SpecificSymbol for Next2Symbol {
-    fn get_varnode(&self) -> Box<dyn VarnodeTplTrait> {
+    fn get_varnode(&self) -> Box<VarnodeTpl> {
         let const_space = self
             .const_space
             .as_ref()
@@ -223,8 +222,7 @@ mod tests {
         let space = mock_space();
         let next2 = Next2Symbol::with_name(loc(), "inst_next2", space);
         let varnode = next2.get_varnode();
-        let varnode_tpl = &*varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
-        let vt = unsafe { &*varnode_tpl };
+        let vt = &*varnode;
         assert!(vt.space.value_spaceid.is_some());
         assert_eq!(vt.offset.tp, ConstTplType::JNext2);
     }
