@@ -19,7 +19,11 @@ use std::io;
 /// `with_handle` (added while sizing `OperandSymbol`'s own port gap, 2026-09) is Java's
 /// `VarnodeTpl(Location, int hand, boolean zerosize)` minus the unused location parameter --
 /// used by `OperandSymbol.getVarnode()` for both its "definite constant handle" and "possible
-/// dynamic handle" branches.
+/// dynamic handle" branches. `with_fields` (added while sizing `VarnodeSymbol`'s own port gap,
+/// 2026-09) is the remaining ported constructor, `VarnodeTpl(Location, ConstTpl, ConstTpl,
+/// ConstTpl)`, likewise minus location -- used by `VarnodeSymbol.getVarnode()` for a fixed
+/// global varnode. Only the clone constructor (`VarnodeTpl(Location, VarnodeTpl)`, redundant
+/// with `#[derive(Clone)]`) remains unported.
 #[derive(Debug, Clone)]
 pub struct VarnodeTpl {
     pub space: ConstTpl,
@@ -64,6 +68,14 @@ impl VarnodeTpl {
             offset: handle_const(ConstTplSelect::VOffset),
             size,
         }
+    }
+
+    /// Builds a varnode directly from its space/offset/size constants (Java's `VarnodeTpl
+    /// (Location, ConstTpl sp, ConstTpl off, ConstTpl sz)`, minus the unused `location`
+    /// parameter -- see this type's own doc comment). Used by `VarnodeSymbol.getVarnode()` for a
+    /// fixed global varnode (a real, constant space/offset/size, not resolved through a handle).
+    pub fn with_fields(space: ConstTpl, offset: ConstTpl, size: ConstTpl) -> Self {
+        Self { space, offset, size }
     }
 
     pub fn decode(&mut self, decoder: &dyn Decoder) -> Result<(), DecoderError> {
