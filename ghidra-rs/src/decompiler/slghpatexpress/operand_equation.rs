@@ -123,13 +123,6 @@ impl PatternEquationOps for OperandEquation {
     }
 }
 
-impl OperandSymbol {
-    /// Returns whether this operand's offset is irrelevant.
-    pub fn is_offset_irrelevant(&self) -> bool {
-        (self.flags & 2) != 0
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
