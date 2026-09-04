@@ -43,7 +43,11 @@ pub trait ValueSymbol: FamilySymbol {
 /// would -- `patval` is stored behind an `Arc` precisely so this wrapper can cheaply share it
 /// rather than needing to reconstruct an equivalent value from an opaque trait object (which
 /// isn't possible in general; `PatternValue` has no generic clone-and-recreate capability).
-struct SharedPatternExpression(Arc<dyn PatternValue>);
+///
+/// `pub(crate)`: every other `ValueSymbol` descendant with the same `Arc<dyn PatternValue>`
+/// field (e.g. `VarnodeListSymbol`) has the identical problem, so this is shared rather than
+/// re-defined per type.
+pub(crate) struct SharedPatternExpression(pub(crate) Arc<dyn PatternValue>);
 
 impl PatternExpression for SharedPatternExpression {
     fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
