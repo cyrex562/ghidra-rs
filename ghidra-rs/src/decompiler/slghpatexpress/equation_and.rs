@@ -17,6 +17,18 @@ pub trait PatternEquationOps: Send + Sync {
     /// Returns the generated token pattern.
     fn get_token_pattern(&self) -> Option<&dyn TokenPattern>;
 
+    /// Returns a mutable reference to the generated token pattern, if any.
+    ///
+    /// Needed by wrapper equations (`EquationLeftEllipsis`/`EquationRightEllipsis`) that must
+    /// flip a flag (`set_left_ellipsis`/`set_right_ellipsis`) on the *same* pattern object their
+    /// wrapped equation already produced, matching Java's `genPattern()`, which mutates the
+    /// shared `TokenPattern` reference directly (Java has no immutable/mutable reference
+    /// distinction). Defaults to `None`; composite equations that own a `token_pattern` field
+    /// override it to expose that field directly.
+    fn get_token_pattern_mut(&mut self) -> Option<&mut dyn TokenPattern> {
+        None
+    }
+
     /// Sets the token pattern for this equation.
     fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>);
 }
@@ -127,6 +139,28 @@ impl EquationAnd {
         }
 
         true
+    }
+}
+
+impl PatternEquationOps for EquationAnd {
+    fn gen_pattern(&mut self) {
+        self.gen_pattern()
+    }
+
+    fn resolve_operand_left(&self, state: &mut OperandResolve) -> bool {
+        self.resolve_operand_left(state)
+    }
+
+    fn get_token_pattern(&self) -> Option<&dyn TokenPattern> {
+        self.get_token_pattern()
+    }
+
+    fn get_token_pattern_mut(&mut self) -> Option<&mut dyn TokenPattern> {
+        match &mut self.token_pattern { Some(p) => Some(&mut **p), None => None }
+    }
+
+    fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
+        self.set_token_pattern(pattern)
     }
 }
 
@@ -370,5 +404,40 @@ mod tests {
 
         assert_eq!(state.cur_rightmost, 5);
         assert_eq!(state.size, 10);
+    }
+
+    /// Regression test for a real bug found while porting `Constructor`: none of the composite
+    /// equation types (`EquationAnd`/`Or`/`Cat`/`LeftEllipsis`/`RightEllipsis`) actually
+    /// implemented `PatternEquationOps` -- they only had matching inherent methods -- so a
+    /// composite equation could never be nested inside another one (`(a & b) & c` couldn't be
+    /// constructed at all, since `EquationAnd::new` requires `Box<dyn PatternEquationOps>` for
+    /// its operands). This proves an `EquationAnd` now satisfies that bound and that a doubly
+    /// nested AND correctly combines all three leaves' patterns.
+    #[test]
+    fn equation_and_can_be_nested_inside_another_equation_and() {
+        let location = Location::new("test.sleigh", 1);
+
+        let mut inner_left = MockEquation::new();
+        inner_left.set_token_pattern(Box::new(TestTokenPattern::new(location.clone())));
+        let mut inner_right = MockEquation::new();
+        inner_right.set_token_pattern(Box::new(TestTokenPattern::new(location.clone())));
+
+        let inner: Box<dyn PatternEquationOps> = Box::new(EquationAnd::new(
+            location.clone(),
+            Box::new(inner_left),
+            Box::new(inner_right),
+        ));
+
+        let mut outer_right = MockEquation::new();
+        outer_right.set_token_pattern(Box::new(TestTokenPattern::new(location.clone())));
+
+        let mut outer = EquationAnd::new(location, inner, Box::new(outer_right));
+        outer.gen_pattern();
+
+        // Only reachable if the inner EquationAnd genuinely satisfies Box<dyn
+        // PatternEquationOps> (the bug: it didn't) *and* its own gen_pattern actually ran and
+        // combined its two leaves, since the outer AND only combines patterns when both sides
+        // report Some.
+        assert!(outer.get_token_pattern().is_some());
     }
 }

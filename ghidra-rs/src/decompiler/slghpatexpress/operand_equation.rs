@@ -118,6 +118,10 @@ impl PatternEquationOps for OperandEquation {
         self.token_pattern.as_deref()
     }
 
+    fn get_token_pattern_mut(&mut self) -> Option<&mut dyn TokenPattern> {
+        match &mut self.token_pattern { Some(p) => Some(&mut **p), None => None }
+    }
+
     fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
         self.token_pattern = Some(pattern);
     }

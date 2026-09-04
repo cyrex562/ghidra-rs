@@ -112,6 +112,28 @@ impl EquationOr {
     }
 }
 
+impl PatternEquationOps for EquationOr {
+    fn gen_pattern(&mut self) {
+        self.gen_pattern()
+    }
+
+    fn resolve_operand_left(&self, state: &mut OperandResolve) -> bool {
+        self.resolve_operand_left(state)
+    }
+
+    fn get_token_pattern(&self) -> Option<&dyn TokenPattern> {
+        self.get_token_pattern()
+    }
+
+    fn get_token_pattern_mut(&mut self) -> Option<&mut dyn TokenPattern> {
+        match &mut self.token_pattern { Some(p) => Some(&mut **p), None => None }
+    }
+
+    fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
+        self.set_token_pattern(pattern)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

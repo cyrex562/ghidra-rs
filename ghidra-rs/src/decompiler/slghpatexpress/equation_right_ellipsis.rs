@@ -50,11 +50,8 @@ impl EquationRightEllipsis {
     pub fn gen_pattern(&mut self) {
         self.eq.gen_pattern();
 
-        if let Some(eq_pattern) = self.eq.get_token_pattern() {
-            let pattern_ptr = eq_pattern as *const dyn TokenPattern as *mut dyn TokenPattern;
-            unsafe {
-                (*pattern_ptr).set_right_ellipsis(true);
-            }
+        if let Some(eq_pattern) = self.eq.get_token_pattern_mut() {
+            eq_pattern.set_right_ellipsis(true);
         }
     }
 
@@ -70,6 +67,28 @@ impl EquationRightEllipsis {
         }
         state.size = -1;
         true
+    }
+}
+
+impl PatternEquationOps for EquationRightEllipsis {
+    fn gen_pattern(&mut self) {
+        self.gen_pattern()
+    }
+
+    fn resolve_operand_left(&self, state: &mut OperandResolve) -> bool {
+        self.resolve_operand_left(state)
+    }
+
+    fn get_token_pattern(&self) -> Option<&dyn TokenPattern> {
+        self.get_token_pattern()
+    }
+
+    fn get_token_pattern_mut(&mut self) -> Option<&mut dyn TokenPattern> {
+        self.eq.get_token_pattern_mut()
+    }
+
+    fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
+        self.eq.set_token_pattern(pattern)
     }
 }
 
@@ -98,6 +117,13 @@ mod tests {
 
         fn get_token_pattern(&self) -> Option<&dyn TokenPattern> {
             self.token_pattern.as_deref()
+        }
+
+        fn get_token_pattern_mut(&mut self) -> Option<&mut dyn TokenPattern> {
+            match &mut self.token_pattern {
+                Some(p) => Some(&mut **p),
+                None => None,
+            }
         }
 
         fn set_token_pattern(&mut self, pattern: Box<dyn TokenPattern>) {
