@@ -12911,8 +12911,8 @@ orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/macos/MacosIoctls.java	TO
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/macos/MacosPtyFactory.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty macos 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/macos/MacosPtySessionLeader.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty macos 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/Err.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/FdInputStream.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty unix 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/FdOutputStream.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty unix 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/FdInputStream.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/FdOutputStream.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/PosixC.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPty.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtyChild.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty unix 
