@@ -455,6 +455,8 @@ mod tests {
         fn id(&self) -> u64 {
             0
         }
+        fn set_id(&mut self, _id: u64) {}
+        fn collect_local_exports(&self, _results: &mut Vec<i64>) {}
         fn num_operands(&self) -> i32 {
             0
         }

@@ -45,6 +45,16 @@ pub trait Constructor: Send + Sync {
     /// This constructor's own id (`Constructor.getId()`).
     fn id(&self) -> u64;
 
+    /// Sets this constructor's own id (`Constructor.setId`), used by
+    /// `SubtableSymbol.addConstructor` to assign each constructor its index within the
+    /// subtable's own constructor list.
+    fn set_id(&mut self, id: u64);
+
+    /// Collects every locally-exported value across this constructor's p-code result handle,
+    /// appending onto `results` (`Constructor.collectLocalExports`), used by
+    /// `SubtableSymbol.collectLocalValues`.
+    fn collect_local_exports(&self, results: &mut Vec<i64>);
+
     /// The number of operands defined so far (`Constructor.getNumOperands`), used by
     /// `SleighCompile.newOperand`/`defineInvisibleOperand` to assign the next operand's index.
     fn num_operands(&self) -> i32;

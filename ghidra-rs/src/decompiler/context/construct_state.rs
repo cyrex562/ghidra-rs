@@ -82,6 +82,10 @@ mod tests {
         fn id(&self) -> u64 {
             self.id
         }
+        fn set_id(&mut self, id: u64) {
+            self.id = id;
+        }
+        fn collect_local_exports(&self, _results: &mut Vec<i64>) {}
         fn num_operands(&self) -> i32 {
             1
         }
