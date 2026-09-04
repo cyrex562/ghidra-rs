@@ -14002,12 +14002,12 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SegmentedCodePointerDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ShiftedAddressDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ShortDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedByteDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedCharDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedDWordDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedByteDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedCharDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedDWordDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedLeb128DataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedQWordDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedWordDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedQWordDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SignedWordDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SourceArchive.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StandAloneDataTypeManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StringDataInstance.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
