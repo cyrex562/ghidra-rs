@@ -72,6 +72,31 @@ Delete files; force-push; push to or merge into `main`; `git reset --hard` a sha
 rewrite published history; weaken, skip, or delete tests to make a build pass; add
 unapproved stubs/placeholders/`TODO`s; revert or overwrite uncommitted user changes.
 
+### Definition of "ported" / DONE (read before flipping a manifest row)
+
+A class's `PORT_MANIFEST.tsv` row may be set to `DONE` **only when both** are true:
+
+1. **Fully implemented.** A real Rust implementation exists — not a `seam_stubs.rs`
+   placeholder standing in for it. `seam_stubs.rs` placeholders exist precisely so a
+   dependent class can compile before its dependency is really ported; the placeholder being
+   present is not evidence the dependency is done, it's the opposite. Before marking a class
+   `DONE`, `grep` its name across every `seam_stubs.rs` in the crate — if it only resolves to
+   a `Placeholder for \`...\`` trait/struct there, it is **not** ported yet.
+2. **Has unit tests that pass.** `#[cfg(test)]` tests exercising the ported behavior exist,
+   at least covering the Java parity/boundary cases this file's own Testing Requirements call
+   for, and `cargo test` passes for them. An implementation with zero tests is not done, no
+   matter how complete it looks.
+
+This is not new policy — "Choosing What To Port Next" step 5, "Porting Workflow" step 7, and
+the Review Checklist already said this — but it was violated at scale before being called out
+this explicitly: a repo-wide audit (2026-09) found dozens of classes marked `DONE`, including
+central types like `Program`, `DataTypeManager`, `Reference`, `Parameter`, `TaskMonitor`, and
+`Processor`, that were only `seam_stubs.rs` placeholders. Anything depending on one of those
+inherited a false "0 remaining dependencies" reading from the frontier tooling
+(`sync_check.py`/`desc_order.py`), which is how the gap propagated silently instead of getting
+caught at review. If you find another one, don't just skip it — flip its row back to `TODO`
+and say so in your commit message, the same as any other correction to `PORT_MANIFEST.tsv`.
+
 ## Repository Structure
 
 - `orig_src/`: Original Ghidra Java source. Treat this as the source of truth for parity work.
@@ -366,7 +391,9 @@ Two shortcuts worth trying before deciding by hand:
 - The Rust code maps clearly to the Java source and preserves important semantics.
 - Public APIs have Rustdoc where appropriate.
 - New code has tests and those tests pass locally.
-- `PORT_MANIFEST.tsv` is updated to DONE only for completed, verified work.
+- `PORT_MANIFEST.tsv` is updated to DONE only for completed, verified work — see "Definition
+  of 'ported' / DONE" above; in particular, grep every dependency's name across
+  `seam_stubs.rs` before trusting that it's really done.
 - No placeholders, stubs, or unapproved `TODO`s were added.
 - No new `Rc<RefCell<_>>`/`Arc<Mutex<_>>`/`Box<dyn Trait>` was added to a shared/graph type
   without following `OWNERSHIP_MIGRATION.md`'s conventions (or parking per the trigger above
