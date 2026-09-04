@@ -107,6 +107,7 @@ pub mod parameter_definition_impl;
 pub mod playable;
 pub mod png_resource;
 pub mod pointer;
+pub mod pointer32_data_type;
 pub mod pointer_data_type;
 pub mod pointer_sized_integer_data_type;
 pub mod pointer_type;
