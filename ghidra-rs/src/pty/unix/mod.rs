@@ -2,10 +2,14 @@ pub mod err;
 pub mod fd_input_stream;
 pub mod fd_output_stream;
 pub mod posix_c;
+pub mod unix_pty_endpoint;
+pub mod unix_pty_parent;
 pub mod util;
 
 pub use err::check_lt0;
 pub use fd_input_stream::FdInputStream;
 pub use fd_output_stream::FdOutputStream;
 pub use posix_c::{Ioctls, PosixC, PosixCImpl, Winsize};
+pub use unix_pty_endpoint::UnixPtyEndpoint;
+pub use unix_pty_parent::UnixPtyParent;
 pub use util::{Util, UtilImpl};

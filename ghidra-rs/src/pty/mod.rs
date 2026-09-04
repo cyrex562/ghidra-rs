@@ -1,5 +1,7 @@
 pub mod abstract_pty_test;
+pub mod linux;
 pub mod local_process_pty_session;
+pub mod macos;
 pub mod pty;
 pub mod pty_child;
 pub mod pty_endpoint;
