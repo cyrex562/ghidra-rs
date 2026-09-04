@@ -1,7 +1,9 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.PlusExpression`.
 
-use crate::decompiler::seam_stubs::PatternExpression;
 use crate::decompiler::slghpatexpress::BinaryExpression;
+use crate::decompiler::slghpatexpress::{PatternExpression, PatternValue};
+use crate::decompiler::utils::MutableInt;
+use crate::generic::stl::vector_stl::VectorStl;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::ELEM_PLUS_EXP;
 use crate::sleigh::grammar::Location;
@@ -62,7 +64,30 @@ impl PlusExpression {
     }
 }
 
-impl crate::decompiler::seam_stubs::PatternExpression for PlusExpression {}
+impl PatternExpression for PlusExpression {
+    fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
+        self.binary.list_values(list);
+    }
+
+    fn get_min_max(&self, minlist: &mut VectorStl<i64>, maxlist: &mut VectorStl<i64>) {
+        self.binary.get_min_max(minlist, maxlist);
+    }
+
+    /// Models `PlusExpression.getSubValue`: evaluates the left operand first (Java relies on this
+    /// evaluation order to advance `listpos` correctly), then the right, then combines them
+    /// with `+`.
+    fn get_sub_value(&self, replace: &VectorStl<i64>, listpos: &mut MutableInt) -> i64 {
+        let left = self.binary.get_left().expect("PlusExpression requires a left operand");
+        let leftval = left.get_sub_value(replace, listpos); // Must be left first
+        let right = self.binary.get_right().expect("PlusExpression requires a right operand");
+        let rightval = right.get_sub_value(replace, listpos);
+        leftval + rightval
+    }
+
+    fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
+        self.encode(encoder)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -79,7 +104,20 @@ mod tests {
         let location = Location::new("test.sleigh", 1);
 
         struct DummyOperand;
-        impl PatternExpression for DummyOperand {}
+        impl PatternExpression for DummyOperand {
+            fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+                unimplemented!("not exercised by this test")
+            }
+            fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
+                Ok(())
+            }
+        }
 
         let left = Box::new(DummyOperand);
         let right = Box::new(DummyOperand);
@@ -93,7 +131,20 @@ mod tests {
         let location = Location::new("test.sleigh", 1);
 
         struct DummyOperand;
-        impl PatternExpression for DummyOperand {}
+        impl PatternExpression for DummyOperand {
+            fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+                unimplemented!("not exercised by this test")
+            }
+            fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
+                Ok(())
+            }
+        }
 
         let left = Box::new(DummyOperand);
         let right = Box::new(DummyOperand);
@@ -106,7 +157,20 @@ mod tests {
         let location = Location::new("test.sleigh", 1);
 
         struct DummyOperand;
-        impl PatternExpression for DummyOperand {}
+        impl PatternExpression for DummyOperand {
+            fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+                unimplemented!("not exercised by this test")
+            }
+            fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
+                Ok(())
+            }
+        }
 
         let left = Box::new(DummyOperand);
         let right = Box::new(DummyOperand);
@@ -343,6 +407,15 @@ mod tests {
         }
 
         impl PatternExpression for CountingOperand {
+            fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+                unimplemented!("not exercised by this test")
+            }
             fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
                 self.encoded.store(true, Ordering::SeqCst);
                 Ok(())

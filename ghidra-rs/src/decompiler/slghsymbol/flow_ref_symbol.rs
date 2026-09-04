@@ -47,7 +47,7 @@ impl FlowRefSymbol {
 }
 
 impl TripleSymbol for FlowRefSymbol {
-    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::seam_stubs::PatternExpression> {
+    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::slghpatexpress::PatternExpression> {
         self.patternless.get_pattern_expression()
     }
 }

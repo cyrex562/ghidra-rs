@@ -1,7 +1,7 @@
 //! Models `ghidra.pcodeCPort.slghsymbol.PatternlessSymbol`.
 
 use super::sleigh_symbol::SleighSymbol;
-use crate::decompiler::seam_stubs::PatternExpression;
+use crate::decompiler::slghpatexpress::PatternExpression;
 use crate::decompiler::slghpatexpress::ConstantValue;
 use crate::decompiler::slghsymbol::triple_symbol::TripleSymbol;
 use crate::sleigh::grammar::location::Location;

@@ -1,7 +1,7 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.EqualEquation`.
 
 use crate::decompiler::context::SleighError;
-use crate::decompiler::seam_stubs::PatternExpression;
+use crate::decompiler::slghpatexpress::PatternExpression;
 use crate::decompiler::slghpatexpress::express_utils::{advance_combo, build_pattern};
 use crate::decompiler::slghpatexpress::val_express_equation::ValExpressEquation;
 use crate::decompiler::slghpatexpress::{PatternValue, TokenPattern};
@@ -242,7 +242,26 @@ mod tests {
         target: i64,
     }
 
-    impl PatternExpression for LeafValue {}
+    impl PatternExpression for LeafValue {
+        fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
+            list.push(self);
+        }
+
+        fn get_min_max(&self, minlist: &mut VectorStl<i64>, maxlist: &mut VectorStl<i64>) {
+            minlist.push_back(self.min_value());
+            maxlist.push_back(self.max_value());
+        }
+
+        fn get_sub_value(&self, replace: &VectorStl<i64>, listpos: &mut MutableInt) -> i64 {
+            let res = *replace.get(listpos.get() as usize);
+            listpos.increment();
+            res
+        }
+
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     impl PatternValue for LeafValue {
         fn gen_pattern(&self, val: i64) -> Box<dyn TokenPattern> {
@@ -265,6 +284,13 @@ mod tests {
     }
 
     impl PatternExpression for FixedValuesExpression {
+        /// This mock stands in for a whole composite sub-expression's combinatorics, not a
+        /// single leaf, so it has no individual `PatternValue` leaves of its own to report;
+        /// `gen_equal_pattern` degrades gracefully with an empty `semval`
+        /// ([`crate::decompiler::slghpatexpress::express_utils::build_pattern`] with no operands
+        /// just returns `lhs.gen_pattern(lhsval)` unchanged).
+        fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn PatternValue>) {}
+
         fn get_min_max(&self, minlist: &mut VectorStl<i64>, maxlist: &mut VectorStl<i64>) {
             minlist.push_back(0);
             maxlist.push_back(self.values.len() as i64 - 1);
@@ -274,6 +300,10 @@ mod tests {
             let idx = *replace.get(listpos.get() as usize);
             listpos.increment();
             self.values[idx as usize]
+        }
+
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
         }
     }
 

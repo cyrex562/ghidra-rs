@@ -99,7 +99,40 @@ impl OperandValue {
     }
 }
 
-impl crate::decompiler::seam_stubs::PatternExpression for OperandValue {}
+impl crate::decompiler::slghpatexpress::PatternExpression for OperandValue {
+    fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+        list.push(self);
+    }
+
+    /// Matches Java: `PatternValue.getMinMax` (inherited, not overridden by `OperandValue`)
+    /// pushes `minValue()`/`maxValue()`, and both of those panic for an operand reference (see
+    /// [`OperandValue::operand_used_in_pattern_error`]).
+    fn get_min_max(
+        &self,
+        minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+        maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+    ) {
+        use crate::decompiler::slghpatexpress::PatternValue;
+        minlist.push_back(self.min_value());
+        maxlist.push_back(self.max_value());
+    }
+
+    /// Models `OperandValue.getSubValue`, which delegates to the defining constructor's operand
+    /// at this value's index rather than reading `replace` directly.
+    fn get_sub_value(
+        &self,
+        replace: &crate::generic::stl::vector_stl::VectorStl<i64>,
+        listpos: &mut MutableInt,
+    ) -> i64 {
+        let ct = self.resolved_constructor();
+        let replace_vec: Vec<i64> = replace.iter().copied().collect();
+        ct.get_operand_sub_value(self.index, &replace_vec, listpos)
+    }
+
+    fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
+        self.encode(encoder)
+    }
+}
 
 impl crate::decompiler::slghpatexpress::PatternValue for OperandValue {
     fn gen_pattern(&self, _val: i64) -> Box<dyn TokenPattern> {

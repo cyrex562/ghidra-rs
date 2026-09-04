@@ -1,7 +1,7 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.StartInstructionValue`.
 
 use crate::decompiler::slghpattern::Pattern;
-use crate::decompiler::slghpatexpress::TokenPattern;
+use crate::decompiler::slghpatexpress::{PatternValue, TokenPattern};
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::ELEM_START_EXP;
 use crate::sleigh::grammar::Location;
@@ -144,7 +144,34 @@ impl StartInstructionValue {
     }
 }
 
-impl crate::decompiler::seam_stubs::PatternExpression for StartInstructionValue {}
+impl crate::decompiler::slghpatexpress::PatternExpression for StartInstructionValue {
+    fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+        list.push(self);
+    }
+
+    fn get_min_max(
+        &self,
+        minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+        maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+    ) {
+        minlist.push_back(self.min_value());
+        maxlist.push_back(self.max_value());
+    }
+
+    fn get_sub_value(
+        &self,
+        replace: &crate::generic::stl::vector_stl::VectorStl<i64>,
+        listpos: &mut crate::decompiler::utils::MutableInt,
+    ) -> i64 {
+        let res = *replace.get(listpos.get() as usize);
+        listpos.increment();
+        res
+    }
+
+    fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
+        self.encode(encoder)
+    }
+}
 
 impl crate::decompiler::slghpatexpress::PatternValue for StartInstructionValue {
     fn gen_pattern(&self, _val: i64) -> Box<dyn TokenPattern> {

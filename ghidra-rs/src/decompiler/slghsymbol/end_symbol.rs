@@ -86,7 +86,7 @@ impl EndSymbol {
 }
 
 impl TripleSymbol for EndSymbol {
-    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::seam_stubs::PatternExpression> {
+    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::slghpatexpress::PatternExpression> {
         Box::new(
             self.patexp
                 .clone()

@@ -1,51 +1,6 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
-use std::io;
-
-/// Placeholder for `ghidra.pcodeCPort.slghpatexpress.PatternExpression`, needed by
-/// [`crate::decompiler::slghpatexpress::PatternValue`] as its supertype (`PatternValue extends
-/// PatternExpression` in Java).
-pub trait PatternExpression: Send + Sync {
-    /// Encodes this pattern expression to the given encoder.
-    /// This method is required by subclasses that need to serialize their structure.
-    fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::encoder::Encoder) -> io::Result<()> {
-        Ok(())
-    }
-
-    /// Collects every `PatternValue` leaf reachable from this expression into `list` (Java's
-    /// abstract `listValues(VectorSTL<PatternValue>)`). Defaults to a no-op since none of this
-    /// trait's real subclasses are ported yet; a leaf `PatternValue` implementation overrides
-    /// this to push itself, and a composite expression would override it to recurse into its
-    /// operands.
-    fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {}
-
-    /// Appends this expression's min/max bounds, one entry per `PatternValue` leaf, to
-    /// `minlist`/`maxlist` (Java's abstract `getMinMax`). Defaults to a no-op for the same
-    /// reason as [`PatternExpression::list_values`].
-    fn get_min_max(
-        &self,
-        _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
-        _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
-    ) {
-    }
-
-    /// Evaluates this expression given per-leaf replacement values, consuming entries from
-    /// `replace` starting at `listpos` (Java's abstract `getSubValue(VectorSTL<Long>,
-    /// MutableInt)`). Defaults to reading and advancing past the next replacement value, which
-    /// matches the behavior a leaf `PatternValue` needs; a composite expression would override
-    /// this to combine the sub-values of its operands.
-    fn get_sub_value(
-        &self,
-        replace: &crate::generic::stl::vector_stl::VectorStl<i64>,
-        listpos: &mut crate::decompiler::utils::MutableInt,
-    ) -> i64 {
-        let res = *replace.get(listpos.get() as usize);
-        listpos.increment();
-        res
-    }
-}
-
 /// Placeholder for `ghidra.pcodeCPort.slghsymbol.ValueSymbol`, needed as the supertype of
 /// [`crate::decompiler::slghsymbol::ContextSymbol`] (`ContextSymbol extends ValueSymbol` in
 /// Java). The real `ValueSymbol` in turn extends `FamilySymbol`, which is not yet ported either;

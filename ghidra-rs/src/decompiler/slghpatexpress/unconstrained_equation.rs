@@ -1,6 +1,6 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.UnconstrainedEquation`.
 
-use crate::decompiler::seam_stubs::PatternExpression;
+use crate::decompiler::slghpatexpress::PatternExpression;
 use crate::decompiler::slghpatexpress::{OperandResolve, TokenPattern};
 use crate::sleigh::grammar::Location;
 
@@ -94,7 +94,28 @@ mod tests {
     use super::*;
 
     struct DummyExpression;
-    impl PatternExpression for DummyExpression {}
+    impl PatternExpression for DummyExpression {
+        fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_min_max(
+            &self,
+            _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+            _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_sub_value(
+            &self,
+            _replace: &crate::generic::stl::vector_stl::VectorStl<i64>,
+            _listpos: &mut crate::decompiler::utils::MutableInt,
+        ) -> i64 {
+            unimplemented!("not exercised by these tests")
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     #[test]
     fn new_stores_location_and_expression() {

@@ -1,6 +1,6 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.GreaterEqualEquation`.
 
-use crate::decompiler::seam_stubs::PatternExpression;
+use crate::decompiler::slghpatexpress::PatternExpression;
 use crate::decompiler::slghpatexpress::comparison_equation::gen_comparison_pattern;
 use crate::decompiler::slghpatexpress::val_express_equation::ValExpressEquation;
 use crate::decompiler::slghpatexpress::{PatternValue, TokenPattern};

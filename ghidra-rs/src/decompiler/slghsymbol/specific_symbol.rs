@@ -16,11 +16,24 @@ pub trait SpecificSymbol: TripleSymbol {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::decompiler::seam_stubs::PatternExpression;
+    use crate::decompiler::slghpatexpress::PatternExpression;
     use crate::program::model::lang::sleigh::template::ConstTpl;
 
     struct MockPattern;
-    impl PatternExpression for MockPattern {}
+    impl PatternExpression for MockPattern {
+        fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     struct FixedSymbol;
     impl TripleSymbol for FixedSymbol {

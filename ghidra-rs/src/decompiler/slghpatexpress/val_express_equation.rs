@@ -1,7 +1,6 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.ValExpressEquation`.
 
-use crate::decompiler::seam_stubs::PatternExpression;
-use crate::decompiler::slghpatexpress::{OperandResolve, PatternValue, TokenPattern};
+use crate::decompiler::slghpatexpress::{OperandResolve, PatternExpression, PatternValue, TokenPattern};
 use crate::sleigh::grammar::Location;
 
 /// An abstract equation for pattern matching against a pattern value and expression.
@@ -187,10 +186,55 @@ mod tests {
     }
 
     struct MockPatternExpression;
-    impl PatternExpression for MockPatternExpression {}
+    impl PatternExpression for MockPatternExpression {
+        fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn PatternValue>) {
+            unimplemented!("not exercised by this test")
+        }
+        fn get_min_max(
+            &self,
+            _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+            _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+        ) {
+            unimplemented!("not exercised by this test")
+        }
+        fn get_sub_value(
+            &self,
+            _replace: &crate::generic::stl::vector_stl::VectorStl<i64>,
+            _listpos: &mut crate::decompiler::utils::MutableInt,
+        ) -> i64 {
+            unimplemented!("not exercised by this test")
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     struct MockPatternValue;
-    impl PatternExpression for MockPatternValue {}
+    impl PatternExpression for MockPatternValue {
+        fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
+            list.push(self);
+        }
+        fn get_min_max(
+            &self,
+            minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+            maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+        ) {
+            minlist.push_back(self.min_value());
+            maxlist.push_back(self.max_value());
+        }
+        fn get_sub_value(
+            &self,
+            replace: &crate::generic::stl::vector_stl::VectorStl<i64>,
+            listpos: &mut crate::decompiler::utils::MutableInt,
+        ) -> i64 {
+            let res = *replace.get(listpos.get() as usize);
+            listpos.increment();
+            res
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
     impl PatternValue for MockPatternValue {
         fn gen_pattern(&self, _val: i64) -> Box<dyn TokenPattern> {
             Box::new(MockTokenPattern::new(Location::new("test.sleigh", 1)))

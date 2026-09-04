@@ -2,7 +2,7 @@
 //! this file and keeps its own private copy; the five comparison-equation ports added
 //! alongside this file share these instead of each repeating the same ~150 lines).
 
-use crate::decompiler::seam_stubs::PatternExpression;
+use crate::decompiler::slghpatexpress::PatternExpression;
 use crate::decompiler::slghpattern::Pattern;
 use crate::decompiler::slghpatexpress::{PatternValue, TokenPattern};
 use crate::decompiler::utils::MutableInt;
@@ -124,7 +124,26 @@ impl LeafValue {
     }
 }
 
-impl PatternExpression for LeafValue {}
+impl PatternExpression for LeafValue {
+    fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
+        list.push(self);
+    }
+
+    fn get_min_max(&self, minlist: &mut VectorStl<i64>, maxlist: &mut VectorStl<i64>) {
+        minlist.push_back(self.min_value());
+        maxlist.push_back(self.max_value());
+    }
+
+    fn get_sub_value(&self, replace: &VectorStl<i64>, listpos: &mut MutableInt) -> i64 {
+        let res = *replace.get(listpos.get() as usize);
+        listpos.increment();
+        res
+    }
+
+    fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+        Ok(())
+    }
+}
 
 impl PatternValue for LeafValue {
     fn gen_pattern(&self, val: i64) -> Box<dyn TokenPattern> {
@@ -153,6 +172,10 @@ impl FixedValuesExpression {
 }
 
 impl PatternExpression for FixedValuesExpression {
+    /// See the identical note on this same mock in `equal_equation.rs`'s own copy: this stands
+    /// in for a whole composite sub-expression, not a single leaf, so it has no leaves to report.
+    fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn PatternValue>) {}
+
     fn get_min_max(&self, minlist: &mut VectorStl<i64>, maxlist: &mut VectorStl<i64>) {
         minlist.push_back(0);
         maxlist.push_back(self.values.len() as i64 - 1);
@@ -162,6 +185,10 @@ impl PatternExpression for FixedValuesExpression {
         let idx = *replace.get(listpos.get() as usize);
         listpos.increment();
         self.values[idx as usize]
+    }
+
+    fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+        Ok(())
     }
 }
 

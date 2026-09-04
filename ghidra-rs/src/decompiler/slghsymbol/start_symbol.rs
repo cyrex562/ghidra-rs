@@ -86,7 +86,7 @@ impl StartSymbol {
 }
 
 impl TripleSymbol for StartSymbol {
-    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::seam_stubs::PatternExpression> {
+    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::slghpatexpress::PatternExpression> {
         Box::new(
             self.patexp
                 .clone()

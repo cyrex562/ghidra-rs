@@ -1,7 +1,9 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.NotExpression`.
 
-use crate::decompiler::seam_stubs::PatternExpression;
 use crate::decompiler::slghpatexpress::UnaryExpression;
+use crate::decompiler::slghpatexpress::{PatternExpression, PatternValue};
+use crate::decompiler::utils::MutableInt;
+use crate::generic::stl::vector_stl::VectorStl;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::ELEM_NOT_EXP;
 use crate::sleigh::grammar::Location;
@@ -55,7 +57,26 @@ impl NotExpression {
     }
 }
 
-impl crate::decompiler::seam_stubs::PatternExpression for NotExpression {}
+impl PatternExpression for NotExpression {
+    fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
+        self.unary.list_values(list);
+    }
+
+    fn get_min_max(&self, minlist: &mut VectorStl<i64>, maxlist: &mut VectorStl<i64>) {
+        self.unary.get_min_max(minlist, maxlist);
+    }
+
+    /// Models `NotExpression.getSubValue`: evaluates the operand, then applies bitwise NOT (`~`).
+    fn get_sub_value(&self, replace: &VectorStl<i64>, listpos: &mut MutableInt) -> i64 {
+        let operand = self.get_unary().expect("NotExpression requires an operand");
+        let val = operand.get_sub_value(replace, listpos);
+        !val
+    }
+
+    fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
+        self.encode(encoder)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -72,7 +93,20 @@ mod tests {
         let location = Location::new("test.sleigh", 1);
 
         struct DummyOperand;
-        impl PatternExpression for DummyOperand {}
+        impl PatternExpression for DummyOperand {
+            fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+                unimplemented!("not exercised by this test")
+            }
+            fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
+                Ok(())
+            }
+        }
 
         let operand = Box::new(DummyOperand);
         let expr = NotExpression::with_operand(location, operand);
@@ -84,7 +118,20 @@ mod tests {
         let location = Location::new("test.sleigh", 1);
 
         struct DummyOperand;
-        impl PatternExpression for DummyOperand {}
+        impl PatternExpression for DummyOperand {
+            fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+                unimplemented!("not exercised by this test")
+            }
+            fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
+                Ok(())
+            }
+        }
 
         let operand = Box::new(DummyOperand);
         let expr = NotExpression::with_operand(location, operand);
@@ -316,6 +363,15 @@ mod tests {
         }
 
         impl PatternExpression for CountingOperand {
+            fn list_values<'a>(&'a self, _list: &mut Vec<&'a dyn crate::decompiler::slghpatexpress::PatternValue>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_min_max(&self, _minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, _maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+                unimplemented!("not exercised by this test")
+            }
+            fn get_sub_value(&self, _replace: &crate::generic::stl::vector_stl::VectorStl<i64>, _listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+                unimplemented!("not exercised by this test")
+            }
             fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
                 self.encoded
                     .store(true, std::sync::atomic::Ordering::SeqCst);

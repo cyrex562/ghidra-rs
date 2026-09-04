@@ -1,8 +1,7 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.PatternValue`.
 
-use crate::decompiler::seam_stubs::PatternExpression;
 use crate::decompiler::slghpattern::Pattern;
-use crate::decompiler::slghpatexpress::TokenPattern;
+use crate::decompiler::slghpatexpress::{PatternExpression, TokenPattern};
 use crate::decompiler::utils::MutableInt;
 use crate::sleigh::grammar::Location;
 
@@ -11,7 +10,17 @@ use crate::sleigh::grammar::Location;
 /// addresses, and operand references are all pattern values.
 ///
 /// Models the abstract class `ghidra.pcodeCPort.slghpatexpress.PatternValue`, which extends
-/// `PatternExpression` (stubbed as [`PatternExpression`] pending its own port).
+/// `PatternExpression`. `PatternExpression`'s own `list_values`/`get_min_max`/`get_sub_value`
+/// cover the leaf behavior every `PatternValue` needs (push self; push
+/// `min_value()`/`max_value()`; read-and-advance through the replacement list) -- this trait
+/// does not redeclare them under the same names, since a subtrait method can't override a
+/// supertrait method of the same name in Rust (they'd be two distinct, ambiguous items rather
+/// than one overriding the other, as found while promoting `Pattern`). Each concrete
+/// `PatternValue` implementation provides that shared leaf body directly in its own
+/// `impl PatternExpression for ...` block instead (see e.g.
+/// [`crate::decompiler::slghpatexpress::ConstantValue`]); [`PatternValue::get_sub_value`]
+/// below is a convenience overload used by callers that already have a plain slice, not part of
+/// the `PatternExpression` contract.
 pub trait PatternValue: PatternExpression {
     /// Generates the token pattern that constrains this value to equal `val`.
     fn gen_pattern(&self, val: i64) -> Box<dyn TokenPattern>;
@@ -22,21 +31,13 @@ pub trait PatternValue: PatternExpression {
     /// The largest value this pattern value can take on.
     fn max_value(&self) -> i64;
 
-    /// Appends `self` to `list`, since a pattern value is itself a leaf of the expression tree.
-    fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>)
-    where
-        Self: Sized,
-    {
-        list.push(self);
-    }
-
-    /// Appends this value's min/max bounds to `minlist`/`maxlist`.
-    fn get_min_max(&self, minlist: &mut Vec<i64>, maxlist: &mut Vec<i64>) {
-        minlist.push(self.min_value());
-        maxlist.push(self.max_value());
-    }
-
     /// Consumes the next replacement value at `listpos`, advancing `listpos` by one.
+    ///
+    /// A `&[i64]`-based convenience overload of [`PatternExpression::get_sub_value`] for callers
+    /// that already have a plain slice rather than a `VectorStl`. Not itself part of the
+    /// `PatternExpression` contract (see this trait's own docs) -- most callers should use
+    /// `PatternExpression::get_sub_value` so the call also works polymorphically through
+    /// `&dyn PatternExpression`.
     fn get_sub_value(&self, replace: &[i64], listpos: &mut MutableInt) -> i64 {
         let res = replace[listpos.get() as usize];
         listpos.increment();
@@ -167,7 +168,34 @@ mod tests {
         }
     }
 
-    impl PatternExpression for FixedValue {}
+    impl PatternExpression for FixedValue {
+        fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
+            list.push(self);
+        }
+
+        fn get_min_max(
+            &self,
+            minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+            maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>,
+        ) {
+            minlist.push_back(self.min_value());
+            maxlist.push_back(self.max_value());
+        }
+
+        fn get_sub_value(
+            &self,
+            replace: &crate::generic::stl::vector_stl::VectorStl<i64>,
+            listpos: &mut MutableInt,
+        ) -> i64 {
+            let res = *replace.get(listpos.get() as usize);
+            listpos.increment();
+            res
+        }
+
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     impl PatternValue for FixedValue {
         fn gen_pattern(&self, _val: i64) -> Box<dyn TokenPattern> {
@@ -192,12 +220,14 @@ mod tests {
 
     #[test]
     fn get_min_max_pushes_bounds() {
+        use crate::generic::stl::vector_stl::VectorStl;
+
         let value = FixedValue { min: 1, max: 5 };
-        let mut mins = Vec::new();
-        let mut maxs = Vec::new();
-        PatternValue::get_min_max(&value, &mut mins, &mut maxs);
-        assert_eq!(mins, vec![1]);
-        assert_eq!(maxs, vec![5]);
+        let mut mins = VectorStl::new();
+        let mut maxs = VectorStl::new();
+        PatternExpression::get_min_max(&value, &mut mins, &mut maxs);
+        assert_eq!(*mins.get(0), 1);
+        assert_eq!(*maxs.get(0), 5);
     }
 
     #[test]
@@ -214,7 +244,7 @@ mod tests {
     fn list_values_appends_self() {
         let value = FixedValue { min: 0, max: 0 };
         let mut list: Vec<&dyn PatternValue> = Vec::new();
-        PatternValue::list_values(&value, &mut list);
+        PatternExpression::list_values(&value, &mut list);
         assert_eq!(list.len(), 1);
     }
 }

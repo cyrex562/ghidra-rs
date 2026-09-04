@@ -86,7 +86,7 @@ impl Next2Symbol {
 }
 
 impl TripleSymbol for Next2Symbol {
-    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::seam_stubs::PatternExpression> {
+    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::slghpatexpress::PatternExpression> {
         Box::new(
             self.patexp
                 .clone()

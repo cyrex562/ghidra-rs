@@ -72,7 +72,7 @@ pub trait NameSymbol: ValueSymbol {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::decompiler::seam_stubs::PatternExpression;
+    use crate::decompiler::slghpatexpress::PatternExpression;
     use crate::decompiler::slghpatexpress::{PatternValue, TokenPattern};
     use crate::sleigh::grammar::location::Location;
 
@@ -81,7 +81,23 @@ mod tests {
         max: i64,
     }
 
-    impl PatternExpression for MockPatternValue {}
+    impl PatternExpression for MockPatternValue {
+        fn list_values<'a>(&'a self, list: &mut Vec<&'a dyn PatternValue>) {
+            list.push(self);
+        }
+        fn get_min_max(&self, minlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>, maxlist: &mut crate::generic::stl::vector_stl::VectorStl<i64>) {
+            minlist.push_back(self.min_value());
+            maxlist.push_back(self.max_value());
+        }
+        fn get_sub_value(&self, replace: &crate::generic::stl::vector_stl::VectorStl<i64>, listpos: &mut crate::decompiler::utils::MutableInt) -> i64 {
+            let res = *replace.get(listpos.get() as usize);
+            listpos.increment();
+            res
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
     impl PatternValue for MockPatternValue {
         fn gen_pattern(&self, _val: i64) -> Box<dyn TokenPattern> {
             unimplemented!("not exercised by this smoke test")

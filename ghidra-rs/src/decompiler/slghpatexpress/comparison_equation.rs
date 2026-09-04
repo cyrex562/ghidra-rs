@@ -12,7 +12,7 @@
 //! `gen_equal_pattern` rather than sharing this one.
 
 use crate::decompiler::context::SleighError;
-use crate::decompiler::seam_stubs::PatternExpression;
+use crate::decompiler::slghpatexpress::PatternExpression;
 use crate::decompiler::slghpatexpress::express_utils::{advance_combo, build_pattern};
 use crate::decompiler::slghpatexpress::{PatternValue, TokenPattern};
 use crate::decompiler::utils::MutableInt;
