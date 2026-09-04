@@ -2,14 +2,41 @@
 //! this file and keeps its own private copy; the five comparison-equation ports added
 //! alongside this file share these instead of each repeating the same ~150 lines).
 
-use crate::decompiler::seam_stubs::{Pattern, PatternExpression};
+use crate::decompiler::seam_stubs::PatternExpression;
+use crate::decompiler::slghpattern::Pattern;
 use crate::decompiler::slghpatexpress::{PatternValue, TokenPattern};
 use crate::decompiler::utils::MutableInt;
 use crate::generic::stl::vector_stl::VectorStl;
 use crate::sleigh::grammar::Location;
 
 pub(crate) struct MockPattern;
-impl Pattern for MockPattern {}
+impl Pattern for MockPattern {
+    fn simplify_clone(&self) -> Box<dyn Pattern> {
+        Box::new(MockPattern)
+    }
+    fn shift_instruction(&mut self, _sa: i32) {}
+    fn do_or(&self, _b: &dyn Pattern, _sa: i32) -> Box<dyn Pattern> {
+        Box::new(MockPattern)
+    }
+    fn do_and(&self, _b: &dyn Pattern, _sa: i32) -> Box<dyn Pattern> {
+        Box::new(MockPattern)
+    }
+    fn common_sub_pattern(&self, _b: &dyn Pattern, _sa: i32) -> Box<dyn Pattern> {
+        Box::new(MockPattern)
+    }
+    fn always_true(&self) -> bool {
+        false
+    }
+    fn always_false(&self) -> bool {
+        false
+    }
+    fn always_instruction_true(&self) -> bool {
+        false
+    }
+    fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+        Ok(())
+    }
+}
 
 #[derive(Clone)]
 pub(crate) struct MockTokenPattern {

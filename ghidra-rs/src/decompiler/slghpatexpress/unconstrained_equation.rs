@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn resolve_operand_left_sets_cur_rightmost_to_minus_one() {
-        use crate::decompiler::seam_stubs::Pattern;
+        use crate::decompiler::slghpattern::Pattern;
         use crate::sleigh::grammar::Location;
 
         struct TestTokenPattern {
@@ -166,7 +166,33 @@ mod tests {
         }
 
         struct EmptyPattern;
-        impl Pattern for EmptyPattern {}
+        impl Pattern for EmptyPattern {
+        fn simplify_clone(&self) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn shift_instruction(&mut self, _sa: i32) {}
+        fn do_or(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn do_and(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn common_sub_pattern(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn always_true(&self) -> bool {
+            false
+        }
+        fn always_false(&self) -> bool {
+            false
+        }
+        fn always_instruction_true(&self) -> bool {
+            false
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
         impl TokenPattern for TestTokenPattern {
             fn location(&self) -> &Location {
@@ -245,7 +271,7 @@ mod tests {
 
     #[test]
     fn resolve_operand_left_sets_size_based_on_ellipsis() {
-        use crate::decompiler::seam_stubs::Pattern;
+        use crate::decompiler::slghpattern::Pattern;
         use crate::sleigh::grammar::Location;
 
         struct TestTokenPattern {
@@ -265,7 +291,33 @@ mod tests {
         }
 
         struct EmptyPattern;
-        impl Pattern for EmptyPattern {}
+        impl Pattern for EmptyPattern {
+        fn simplify_clone(&self) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn shift_instruction(&mut self, _sa: i32) {}
+        fn do_or(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn do_and(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn common_sub_pattern(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn always_true(&self) -> bool {
+            false
+        }
+        fn always_false(&self) -> bool {
+            false
+        }
+        fn always_instruction_true(&self) -> bool {
+            false
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
         impl TokenPattern for TestTokenPattern {
             fn location(&self) -> &Location {
@@ -346,7 +398,7 @@ mod tests {
 
     #[test]
     fn resolve_operand_left_sets_size_to_minimum_length_without_ellipsis() {
-        use crate::decompiler::seam_stubs::Pattern;
+        use crate::decompiler::slghpattern::Pattern;
         use crate::sleigh::grammar::Location;
 
         struct TestTokenPattern {
@@ -360,7 +412,33 @@ mod tests {
         }
 
         struct EmptyPattern;
-        impl Pattern for EmptyPattern {}
+        impl Pattern for EmptyPattern {
+        fn simplify_clone(&self) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn shift_instruction(&mut self, _sa: i32) {}
+        fn do_or(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn do_and(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn common_sub_pattern(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn always_true(&self) -> bool {
+            false
+        }
+        fn always_false(&self) -> bool {
+            false
+        }
+        fn always_instruction_true(&self) -> bool {
+            false
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
         impl TokenPattern for TestTokenPattern {
             fn location(&self) -> &Location {

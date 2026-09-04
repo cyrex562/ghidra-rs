@@ -124,9 +124,35 @@ mod tests {
             &self.location
         }
 
-        fn get_pattern(&self) -> &dyn crate::decompiler::seam_stubs::Pattern {
+        fn get_pattern(&self) -> &dyn crate::decompiler::slghpattern::Pattern {
             struct EmptyPattern;
-            impl crate::decompiler::seam_stubs::Pattern for EmptyPattern {}
+            impl crate::decompiler::slghpattern::Pattern for EmptyPattern {
+        fn simplify_clone(&self) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn shift_instruction(&mut self, _sa: i32) {}
+        fn do_or(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn do_and(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn common_sub_pattern(&self, _b: &dyn crate::decompiler::slghpattern::Pattern, _sa: i32) -> Box<dyn crate::decompiler::slghpattern::Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn always_true(&self) -> bool {
+            false
+        }
+        fn always_false(&self) -> bool {
+            false
+        }
+        fn always_instruction_true(&self) -> bool {
+            false
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
             &EmptyPattern
         }
 

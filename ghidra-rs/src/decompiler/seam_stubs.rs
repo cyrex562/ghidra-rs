@@ -46,10 +46,6 @@ pub trait PatternExpression: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.pcodeCPort.slghpattern.Pattern`, needed by
-/// [`crate::decompiler::slghpatexpress::TokenPattern::get_pattern`].
-pub trait Pattern: Send + Sync {}
-
 /// Placeholder for `ghidra.pcodeCPort.semantics.VarnodeTpl`, needed by
 /// [`crate::decompiler::slghsymbol::SpecificSymbol::get_varnode`].
 pub trait VarnodeTpl: Send + Sync {}

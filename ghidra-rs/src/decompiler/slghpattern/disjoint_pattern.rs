@@ -2,28 +2,20 @@
 
 use std::fmt;
 
-use crate::decompiler::seam_stubs::Pattern;
+use crate::decompiler::slghpattern::pattern::Pattern;
 use crate::decompiler::slghpattern::PatternBlock;
 
 /// A pattern whose instruction-bit and context-bit constraints are each captured by a single
 /// [`PatternBlock`], rather than by an OR of several sub-patterns.
 ///
 /// Models the abstract class `ghidra.pcodeCPort.slghpattern.DisjointPattern`, which extends
-/// `Pattern` (stubbed as [`Pattern`] pending its own port).
+/// [`Pattern`]. `numDisjoint()`/`getDisjoint()` are not redeclared here -- `Pattern`'s own
+/// defaults (`0`/`None`) already are Java's `DisjointPattern` override; an implementor only
+/// needs its own `impl Pattern for X` block to pick those defaults up unchanged.
 pub trait DisjointPattern: Pattern {
     /// The context block (`context == true`) or instruction block (`context == false`), or
     /// `None` if this pattern places no constraint on that half.
     fn get_block(&self, context: bool) -> Option<&PatternBlock>;
-
-    /// The number of disjuncts making up this pattern; always `0` for a plain disjoint pattern.
-    fn num_disjoint(&self) -> i32 {
-        0
-    }
-
-    /// The `i`th disjunct; always `None` for a plain disjoint pattern.
-    fn get_disjoint(&self, _i: i32) -> Option<&dyn DisjointPattern> {
-        None
-    }
 
     /// `size` mask bits starting at `startbit` of the instruction or context block.
     fn get_mask(&self, startbit: i32, size: i32, context: bool) -> i32 {
@@ -195,7 +187,33 @@ mod tests {
         context: Option<PatternBlock>,
     }
 
-    impl Pattern for MockDisjoint {}
+    impl Pattern for MockDisjoint {
+        fn simplify_clone(&self) -> Box<dyn Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn shift_instruction(&mut self, _sa: i32) {}
+        fn do_or(&self, _b: &dyn Pattern, _sa: i32) -> Box<dyn Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn do_and(&self, _b: &dyn Pattern, _sa: i32) -> Box<dyn Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn common_sub_pattern(&self, _b: &dyn Pattern, _sa: i32) -> Box<dyn Pattern> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn always_true(&self) -> bool {
+            false
+        }
+        fn always_false(&self) -> bool {
+            false
+        }
+        fn always_instruction_true(&self) -> bool {
+            false
+        }
+        fn encode(&self, _encoder: &mut dyn crate::program::model::pcode::Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     impl DisjointPattern for MockDisjoint {
         fn get_block(&self, context: bool) -> Option<&PatternBlock> {
