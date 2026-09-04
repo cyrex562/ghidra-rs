@@ -564,6 +564,25 @@ pub trait DataType: Send + Sync {
         false
     }
 
+    /// Stands in for `instanceof ArrayStringable`, used by
+    /// [`MetaDataType::get_meta`](crate::program::model::data::meta_data_type::get_meta) (port of
+    /// `ghidra.program.model.data.MetaDataType.getMeta(DataType)`) ahead of a full downcast being
+    /// available via [`into_array_stringable`](Self::into_array_stringable) (which requires an
+    /// owned `Box<Self>` that a plain `&dyn DataType` parameter cannot supply). Implementors of
+    /// [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable) are
+    /// expected to override this to return `true`.
+    fn is_array_stringable_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof AbstractStringDataType`, used by the same `MetaDataType::get_meta`
+    /// port. Implementors of
+    /// [`AbstractStringDataType`](crate::program::model::data::abstract_string_data_type::AbstractStringDataType)
+    /// are expected to override this to return `true`.
+    fn is_string_type(&self) -> bool {
+        false
+    }
+
     /// Stands in for `dt instanceof Enum ? (Enum) dt : null`, used by the same `get_metatype`
     /// port to recover [`Enum::is_signed`]. See [`as_pointer`](Self::as_pointer) for why this is
     /// by-reference rather than by-value.

@@ -111,6 +111,7 @@ pub mod long_double_complex_data_type;
 pub mod long_double_data_type;
 pub mod long_long_data_type;
 pub mod mem_buffer_image_input_stream;
+pub mod meta_data_type;
 pub mod mutability_settings_definition;
 pub mod noisy_structure_builder;
 pub mod offset_mask_settings_definition;
