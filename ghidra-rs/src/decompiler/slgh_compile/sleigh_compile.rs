@@ -1,9 +1,10 @@
 //! Models `ghidra.pcodeCPort.slgh_compile.SleighCompile`.
 
-use crate::decompiler::seam_stubs::{Constructor, SubtableSymbol, TokenSymbol, ValueSymbol};
+use crate::decompiler::seam_stubs::{Constructor, SubtableSymbol, TokenSymbol};
 use crate::decompiler::sleigh_base::SleighBase;
 use crate::decompiler::slgh_compile::{ExprTree, FieldQuality, SectionVector, SpaceQuality};
 use crate::decompiler::slghpatexpress::{PatternEquationOps, PatternExpression};
+use crate::decompiler::slghsymbol::ValueSymbol;
 use crate::decompiler::slghsymbol::{ContextChange, ContextSymbol, MacroSymbol, OperandSymbol, SpaceSymbol, TripleSymbol, VarnodeSymbol};
 use crate::program::model::lang::sleigh::template::{ConstructTpl, OpTpl};
 use crate::sleigh::grammar::Location;

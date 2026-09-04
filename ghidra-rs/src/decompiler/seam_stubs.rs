@@ -1,16 +1,6 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
-/// Placeholder for `ghidra.pcodeCPort.slghsymbol.ValueSymbol`, needed as the supertype of
-/// [`crate::decompiler::slghsymbol::ContextSymbol`] (`ContextSymbol extends ValueSymbol` in
-/// Java). The real `ValueSymbol` in turn extends `FamilySymbol`, which is not yet ported either;
-/// only the member this interface actually needs (the backing pattern value) is stubbed here.
-pub trait ValueSymbol: Send + Sync {
-    /// The pattern value this symbol resolves to (the Java `patval` field, exposed via
-    /// `ValueSymbol.getPatternValue`).
-    fn get_pattern_value(&self) -> &dyn crate::decompiler::slghpatexpress::PatternValue;
-}
-
 /// Placeholder for `ghidra.pcodeCPort.address.RangeList`, needed by
 /// [`crate::decompiler::translate::Translate::high_ptr_possible`] (backs the Java `nohighptr`
 /// field).

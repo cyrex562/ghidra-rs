@@ -2,7 +2,7 @@
 
 use super::sleigh_symbol::SleighSymbol;
 use super::symbol_type::SymbolType;
-use crate::decompiler::seam_stubs::ValueSymbol;
+use crate::decompiler::slghsymbol::ValueSymbol;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::{
     ATTRIB_ID, ATTRIB_VAL, ELEM_VALUEMAP_SYM, ELEM_VALUEMAP_SYM_HEAD, ELEM_VALUETAB,
@@ -119,11 +119,19 @@ mod tests {
         patval: MockPatternValue,
     }
 
-    impl ValueSymbol for MockValueMapSymbol {
+    impl crate::decompiler::slghsymbol::TripleSymbol for MockValueMapSymbol {
+        fn get_pattern_expression(&self) -> Box<dyn PatternExpression> {
+            Box::new(MockPatternValue { min: self.patval.min, max: self.patval.max })
+        }
+    }
+
+    impl crate::decompiler::slghsymbol::FamilySymbol for MockValueMapSymbol {
         fn get_pattern_value(&self) -> &dyn PatternValue {
             &self.patval
         }
     }
+
+    impl ValueSymbol for MockValueMapSymbol {}
 
     impl ValueMapSymbol for MockValueMapSymbol {
         fn symbol(&self) -> &SleighSymbol {
@@ -154,7 +162,7 @@ mod tests {
     #[test]
     fn symbol_type_defaults_to_valuemap_symbol() {
         let sym = mock(0, 1, vec![10, 20]);
-        assert_eq!(sym.symbol_type(), SymbolType::ValuemapSymbol);
+        assert_eq!(ValueMapSymbol::symbol_type(&sym), SymbolType::ValuemapSymbol);
     }
 
     #[test]

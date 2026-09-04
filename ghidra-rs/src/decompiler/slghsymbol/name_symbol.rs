@@ -2,7 +2,7 @@
 
 use super::sleigh_symbol::SleighSymbol;
 use super::symbol_type::SymbolType;
-use crate::decompiler::seam_stubs::ValueSymbol;
+use crate::decompiler::slghsymbol::ValueSymbol;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::{
     ATTRIB_ID, ATTRIB_NAME, ELEM_NAMETAB, ELEM_NAME_SYM, ELEM_NAME_SYM_HEAD,
@@ -116,11 +116,19 @@ mod tests {
         patval: MockPatternValue,
     }
 
-    impl ValueSymbol for MockNameSymbol {
+    impl crate::decompiler::slghsymbol::TripleSymbol for MockNameSymbol {
+        fn get_pattern_expression(&self) -> Box<dyn PatternExpression> {
+            Box::new(MockPatternValue { min: self.patval.min, max: self.patval.max })
+        }
+    }
+
+    impl crate::decompiler::slghsymbol::FamilySymbol for MockNameSymbol {
         fn get_pattern_value(&self) -> &dyn PatternValue {
             &self.patval
         }
     }
+
+    impl ValueSymbol for MockNameSymbol {}
 
     impl NameSymbol for MockNameSymbol {
         fn symbol(&self) -> &SleighSymbol {
@@ -151,7 +159,7 @@ mod tests {
     #[test]
     fn symbol_type_defaults_to_name_symbol() {
         let sym = mock(0, 1, vec![Some("a".into()), Some("b".into())]);
-        assert_eq!(sym.symbol_type(), SymbolType::NameSymbol);
+        assert_eq!(NameSymbol::symbol_type(&sym), SymbolType::NameSymbol);
     }
 
     #[test]

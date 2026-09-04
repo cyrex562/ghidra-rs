@@ -3,7 +3,7 @@
 use super::sleigh_symbol::SleighSymbol;
 use super::symbol_type::SymbolType;
 use super::varnode_symbol::VarnodeSymbol;
-use crate::decompiler::seam_stubs::ValueSymbol;
+use crate::decompiler::slghsymbol::ValueSymbol;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::{
     ATTRIB_FLOW, ATTRIB_HIGH, ATTRIB_ID, ATTRIB_LOW, ATTRIB_VARNODE, ELEM_CONTEXT_SYM,
@@ -109,11 +109,19 @@ mod tests {
         patval: MockPatternValue,
     }
 
-    impl ValueSymbol for MockContextSymbol {
+    impl crate::decompiler::slghsymbol::TripleSymbol for MockContextSymbol {
+        fn get_pattern_expression(&self) -> Box<dyn PatternExpression> {
+            Box::new(MockPatternValue)
+        }
+    }
+
+    impl crate::decompiler::slghsymbol::FamilySymbol for MockContextSymbol {
         fn get_pattern_value(&self) -> &dyn PatternValue {
             &self.patval
         }
     }
+
+    impl ValueSymbol for MockContextSymbol {}
 
     impl ContextSymbol for MockContextSymbol {
         fn symbol(&self) -> &SleighSymbol {
@@ -162,7 +170,7 @@ mod tests {
     #[test]
     fn symbol_type_defaults_to_context_symbol() {
         let sym = mock();
-        assert_eq!(sym.symbol_type(), SymbolType::ContextSymbol);
+        assert_eq!(ContextSymbol::symbol_type(&sym), SymbolType::ContextSymbol);
     }
 
     #[derive(Default)]
