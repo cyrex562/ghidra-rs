@@ -12915,7 +12915,7 @@ orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/FdInputStream.java	D
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/FdOutputStream.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/PosixC.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPty.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty unix 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtyChild.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty unix 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtyChild.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtyEndpoint.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtyParent.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/unix/UnixPtySessionLeader.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty unix 
