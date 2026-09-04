@@ -60,17 +60,6 @@ pub trait ValueSymbol: Send + Sync {
     fn get_pattern_value(&self) -> &dyn crate::decompiler::slghpatexpress::PatternValue;
 }
 
-/// Placeholder for `ghidra.pcodeCPort.translate.BasicSpaceProvider`, needed as the supertrait of
-/// [`crate::decompiler::translate::Translate`] (`Translate implements BasicSpaceProvider` in
-/// Java).
-pub trait BasicSpaceProvider: Send + Sync {
-    /// The processor's official default address space (usually the main RAM databus).
-    fn get_default_space(&self) -> &dyn crate::decompiler::space::AddrSpace;
-
-    /// The address space used to encode constant values.
-    fn get_constant_space(&self) -> &dyn crate::decompiler::space::AddrSpace;
-}
-
 /// Placeholder for `ghidra.pcodeCPort.address.RangeList`, needed by
 /// [`crate::decompiler::translate::Translate::high_ptr_possible`] (backs the Java `nohighptr`
 /// field).
