@@ -2,7 +2,12 @@ use crate::program::model::pcode::Encoder;
 use std::io;
 
 /// Models `ghidra.pcodeCPort.slghsymbol.ContextChange`.
-pub trait ContextChange {
+///
+/// `Send + Sync` (added while porting `Constructor`, which holds `Vec<Box<dyn ContextChange>>`
+/// and itself needs to satisfy `Send + Sync` for `seam_stubs::Constructor`) is free for every
+/// existing implementor: both are auto-implemented for any ordinary `'static` type, so this adds
+/// no new obligation to any `impl ContextChange for X` block.
+pub trait ContextChange: Send + Sync {
     /// Validate this context change.
     fn validate(&self);
 

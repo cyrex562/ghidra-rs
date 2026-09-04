@@ -1,4 +1,5 @@
 pub mod bitrange_symbol;
+pub mod constructor;
 pub mod context_change;
 pub mod context_commit;
 pub mod context_symbol;
@@ -30,6 +31,7 @@ pub mod value_symbol;
 pub mod varnode_symbol;
 
 pub use bitrange_symbol::BitrangeSymbol;
+pub use constructor::Constructor;
 pub use context_change::ContextChange;
 pub use context_commit::ContextCommit;
 pub use context_symbol::ContextSymbol;

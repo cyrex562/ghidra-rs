@@ -278,6 +278,42 @@ impl OperandSymbol {
         }
     }
 
+    /// The `SleighSymbol` id of this operand's defining symbol, if any (Java compares
+    /// `sym == parent` by object identity in `Constructor.isRecursive`; this crate's
+    /// `OperandDefiningSymbol` already captures each variant's id for
+    /// [`crate::decompiler::slghsymbol::Constructor::encode`]'s `ATTRIB_SUBSYM`, so
+    /// `Constructor::is_recursive` reuses it for the same comparison, by id instead of identity).
+    pub fn defining_symbol_id(&self) -> Option<u64> {
+        match &self.defined_as {
+            Some(OperandDefinition::Symbol(sym)) => Some(sym.id()),
+            _ => None,
+        }
+    }
+
+    /// Reassigns this operand's handle index, used by
+    /// [`crate::decompiler::slghsymbol::Constructor::order_operands`] to fix up indices after
+    /// reordering (Java's `newops.get(i).hand = i`).
+    pub fn set_hand(&mut self, hand: i32) {
+        self.hand = hand;
+    }
+
+    /// Reassigns the index this operand's own `localexp` resolves to, matching
+    /// [`OperandSymbol::set_hand`] (Java's `newops.get(i).localexp.changeIndex(i)`).
+    ///
+    /// # Panics
+    /// Panics if this operand's `localexp` has already been shared out (e.g. via
+    /// [`TripleSymbol::get_pattern_expression`]) to more than one owner -- `order_operands` is
+    /// expected to run before a constructor's operands are exposed that way, matching Java's own
+    /// call order (`orderOperands` runs near the end of `buildPattern`, which is what first makes
+    /// a constructor's pattern -- and so its operands' pattern expressions -- externally visible).
+    pub fn change_local_expression_index(&mut self, new_index: i32) {
+        if let Some(localexp) = &mut self.localexp {
+            std::sync::Arc::get_mut(localexp)
+                .expect("OperandSymbol::change_local_expression_index called after localexp was shared out")
+                .change_index(new_index);
+        }
+    }
+
     /// Defines this operand's pattern directly from `pe` (Java's `defineOperand(PatternExpression
     /// pe)`).
     ///
