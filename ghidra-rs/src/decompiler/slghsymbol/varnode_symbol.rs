@@ -5,6 +5,17 @@ use crate::sleigh::grammar::location::Location;
 /// A symbol representing a global varnode in SLEIGH.
 ///
 /// Models `ghidra.pcodeCPort.slghsymbol.VarnodeSymbol`.
+///
+/// INCOMPLETE (found phantom-DONE 2026-09, reverted to TODO in PORT_MANIFEST.tsv, while sizing
+/// `VarnodeListSymbol.java`, which extends this class): only covers the base `SleighSymbol`
+/// identity (name/id/scope) and `symbol_type()`. Missing the real class's `fix: VarnodeData`
+/// field (space/offset/size, with the real constructor's overflow-checking `SleighError` on a
+/// varnode that would extend beyond the end of its address space), `get_fixed_varnode`,
+/// `get_size`/`collect_local_values`/`get_varnode` (`SpecificSymbol`/`TripleSymbol` overrides --
+/// `get_varnode` needs `VarnodeTpl`'s `(Location, ConstTpl, ConstTpl, ConstTpl)` constructor,
+/// which also isn't ported yet -- see `VarnodeTpl`'s own doc comment), and `encode`/
+/// `encode_header`. Needed by `VarnodeListSymbol`/`SymbolTable` (`ghidra.pcodeCPort.slghsymbol.
+/// {VarnodeListSymbol,SymbolTable}`, still `TODO`), which is how this gap was found.
 pub struct VarnodeSymbol {
     symbol: SleighSymbol,
 }
