@@ -119,9 +119,3 @@ pub trait TokenSymbol: Send + Sync {
     /// The token this symbol wraps (`TokenSymbol.getToken`).
     fn token(&self) -> &crate::decompiler::context::Token;
 }
-
-/// Placeholder for `ghidra.pcodeCPort.context.ConstructState`, needed by
-/// [`crate::decompiler::context::ContextSet::point`]. `ContextSet` itself doesn't call any
-/// methods on `ConstructState` (it just holds a reference to the parse-tree point where the
-/// context set was made), so this seam has no members yet.
-pub trait ConstructState: Send + Sync {}

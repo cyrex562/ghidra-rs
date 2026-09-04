@@ -1,6 +1,6 @@
 //! Models `ghidra.pcodeCPort.context.ContextSet`.
 
-use crate::decompiler::seam_stubs::ConstructState;
+use crate::decompiler::context::ConstructState;
 use crate::decompiler::slghsymbol::TripleSymbol;
 
 /// A single context register modification to apply during disassembly/parsing.
@@ -17,7 +17,7 @@ pub trait ContextSet: Send + Sync {
     fn sym(&self) -> &dyn TripleSymbol;
 
     /// The point in the parse tree at which the context set was made (Java's `point` field).
-    fn point(&self) -> &dyn ConstructState;
+    fn point(&self) -> &ConstructState;
 
     /// The number of the context word affected (Java's `num` field).
     fn num(&self) -> i32;
@@ -60,12 +60,9 @@ mod tests {
         }
     }
 
-    struct MockConstructState;
-    impl ConstructState for MockConstructState {}
-
     struct TestContextSet {
         sym: MockSymbol,
-        point: MockConstructState,
+        point: ConstructState,
         num: i32,
         mask: i32,
         value: i32,
@@ -77,7 +74,7 @@ mod tests {
             &self.sym
         }
 
-        fn point(&self) -> &dyn ConstructState {
+        fn point(&self) -> &ConstructState {
             &self.point
         }
 
@@ -102,7 +99,7 @@ mod tests {
     fn exposes_fields_via_accessors() {
         let set = TestContextSet {
             sym: MockSymbol,
-            point: MockConstructState,
+            point: ConstructState::new(),
             num: 1,
             mask: 0x0000_ffff,
             value: 0x0000_00a5,
@@ -121,7 +118,7 @@ mod tests {
     fn works_as_trait_object() {
         let set: Box<dyn ContextSet> = Box::new(TestContextSet {
             sym: MockSymbol,
-            point: MockConstructState,
+            point: ConstructState::new(),
             num: 2,
             mask: 0x0f0f_0f0f,
             value: 0,
