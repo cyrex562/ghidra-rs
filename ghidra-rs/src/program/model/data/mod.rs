@@ -130,5 +130,6 @@ pub mod undefined;
 pub mod undefined1_data_type;
 pub mod union;
 pub mod union_internal;
+pub mod void_data_type;
 pub mod word_data_type;
 pub mod isf;
