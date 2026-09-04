@@ -1741,3 +1741,6 @@ rem=215	struct	215	188	app	Ghidra/Processors/SuperH4/src/main/java/ghidra/app/pl
 rem=162	struct	162	92	app	Ghidra/Processors/SuperH4/src/main/java/ghidra/app/plugin/core/analysis/SH4EarlyAddressAnalyzer.java
 rem=183	struct	183	432	app	Ghidra/Processors/eBPF/src/main/java/ghidra/app/plugin/core/analysis/eBPFHelperDataTypes.java
 rem=163	struct	163	100	app	Ghidra/Processors/x86/src/main/java/ghidra/app/plugin/core/analysis/X86Analyzer.java
+descoped	struct	0	98	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Token.java
+descoped	struct	8	40	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Yylval.java
+descoped	struct	0	208	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ParseException.java

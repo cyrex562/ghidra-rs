@@ -1,6 +1,12 @@
 /// A token in the pcode context, representing a named byte field with endianness.
 ///
-/// Corresponds to `ghidra.pcodeCPort.context.Token`.
+/// Corresponds to `ghidra.pcodeCPort.context.Token` -- NOT `ghidra.pcodeCPort.slgh_compile.Token`
+/// (the JavaCC-generated lexer token with `kind`/`beginLine`/`next` fields, unrelated to this
+/// type despite the shared simple name). `PORT_MANIFEST.tsv` briefly had the JavaCC one marked
+/// DONE against this file -- a basename mix-up, reverted 2026-09; see `DESCENT_DEFERRED.tsv`
+/// (`slgh_compile/Token.java`, reason `descoped`) for why that class isn't ported: this crate's
+/// SLEIGH front-end (`sleigh/grammar/frontend/`) is hand-written, not JavaCC-generated, so there
+/// is no token stream for a literal translation of the JavaCC token to plug into.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
     name: String,
