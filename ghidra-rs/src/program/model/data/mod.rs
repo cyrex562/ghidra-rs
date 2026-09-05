@@ -145,6 +145,7 @@ pub mod program_based_data_type_manager;
 pub mod project_archive_based_data_type_manager;
 pub mod qword_data_type;
 pub mod render_unicode_settings_definition;
+pub mod repeat_count_data_type;
 pub mod resource;
 pub mod rgb16_encoding_settings_definition;
 pub mod rgb32_encoding_settings_definition;
