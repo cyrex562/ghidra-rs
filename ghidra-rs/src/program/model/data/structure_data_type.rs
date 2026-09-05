@@ -81,10 +81,19 @@
 //! `getNumComponents`, `getNumDefinedComponents`, `getDefinedComponents`, `getComponents`,
 //! `getComponent(int)` (including undefined-filler synthesis), `add(DataType, int, String,
 //! String)` (`doAdd`), `insert(int, DataType, int, String, String)`, `insertAtOffset(int,
-//! DataType, int, String, String)` (plus their shared private helpers `shiftOffsets`,
+//! DataType, int, String, String)`, `delete(int)`, `delete(Set<Integer>)`, `deleteAtOffset`,
+//! `clearAtOffset`, `clearComponent`, `deleteAll`, `growStructure`, `setLength`,
+//! `getComponentContaining`, `getComponentsContaining`, `getDefinedComponentAtOrAfterOffset`,
+//! `getDataTypeAt`, `isEquivalent`, and the non-packed half of `repack`/
+//! `adjustNonPackedComponents` (plus their shared private helpers: `shiftOffsets`,
 //! `backupToFirstComponentContainingOffset`, `afterNonZeroComponentsAtOffset`,
-//! `advanceToLastComponentContainingOffset`), `isEquivalent`, and the non-packed half of
-//! `repack`/`adjustNonPackedComponents`.
+//! `advanceToLastComponentContainingOffset`, `doDelete`, `doDeleteWithComponentShift`,
+//! `generateUndefinedComponent`, `indexOfFirstNonZeroLenComponentContainingOffset`). Rust's
+//! `Vec::binary_search_by` returns a plain `Result<usize, usize>` rather than `Collections
+//! .binarySearch`'s single negative-encoded `int` (`-insertionPoint - 1` when absent), so callers
+//! below never need Java's encode/decode dance; a couple of Java call sites round-trip through it
+//! pointlessly (encoding an already-in-hand index just to immediately decode it back inside
+//! `generateUndefinedComponent`/`getComponentsContaining`), which is elided here as a no-op.
 //!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
@@ -98,11 +107,6 @@
 //!     case; for a packing-enabled composite they fall back to simple sequential-append placement
 //!     without alignment padding, which is a known, documented deviation from Java rather than a
 //!     silent bug -- callers should not rely on packed-structure offsets/length being correct yet.
-//!   - `delete(int)`, `delete(Set<Integer>)`, `deleteAtOffset`, `clearAtOffset`, `clearComponent`,
-//!     `deleteAll`, `growStructure`, `setLength`, `getComponentContaining`,
-//!     `getComponentsContaining`, `getDefinedComponentAtOrAfterOffset`, and `getDataTypeAt` are not
-//!     ported yet, despite [`structure_data_type_advance_to_last_component_containing_offset`](StructureDataType::structure_data_type_advance_to_last_component_containing_offset)
-//!     (one of their shared helpers) already being ported ahead of them.
 //!   - `addBitField`/`insertBitField`/`insertBitFieldAt` (bitfield support) are not ported. These
 //!     require the `BitOffsetComparator`-based overlap/conflict detection across bit-granular
 //!     ranges, which is a substantial, mostly-independent algorithm; see
@@ -722,6 +726,476 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
             .zip(other_components.iter())
             .all(|(a, b)| a.is_equivalent(b))
     }
+
+    /// Port of the private `StructureDataType.doDelete(int)`. See the module docs re:
+    /// `dtc.getDataType().removeParent(this)` being skipped (no parent-notification wiring).
+    fn structure_data_type_do_delete(&mut self, index: usize) -> DataTypeComponentImpl {
+        self.components_mut().remove(index)
+    }
+
+    /// Port of the private `StructureDataType.doDeleteWithComponentShift(int, boolean)`.
+    fn structure_data_type_do_delete_with_component_shift(
+        &mut self,
+        index: usize,
+        disable_offset_shift: bool,
+    ) -> DataTypeComponentImpl {
+        let dtc = self.structure_data_type_do_delete(index);
+        if self.is_packing_enabled() {
+            return dtc;
+        }
+        let shift_amount = if disable_offset_shift || dtc.is_bit_field_component() {
+            0
+        } else {
+            dtc.get_length()
+        };
+        self.structure_data_type_shift_offsets(index, -1, -shift_amount);
+        dtc
+    }
+
+    /// Port of `StructureDataType.delete(int)`.
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`).
+    fn structure_data_type_delete(&mut self, ordinal: i32) -> Result<(), String> {
+        if ordinal < 0 || ordinal >= self.stored_num_components() {
+            return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
+        }
+        if self.is_packing_enabled() {
+            self.structure_data_type_do_delete_with_component_shift(ordinal as usize, false);
+        } else {
+            match self
+                .components()
+                .binary_search_by(|dtc| compare_component_to_ordinal(dtc, ordinal))
+            {
+                Ok(idx) => {
+                    self.structure_data_type_do_delete_with_component_shift(idx, false);
+                }
+                Err(idx) => {
+                    // Assume non-packed removal of an undefined (DEFAULT) filler component.
+                    self.structure_data_type_shift_offsets(idx, -1, -1);
+                }
+            }
+        }
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.delete(Set<Integer>)`: batch-delete every listed ordinal in a
+    /// single pass, correctly accounting for undefined-filler ordinals interleaved between the
+    /// listed ones (non-packed case) rather than repeatedly calling
+    /// [`structure_data_type_delete`](StructureDataType::structure_data_type_delete) per ordinal
+    /// (which the `ordinals.size() == 1` fast path below still does, matching Java).
+    ///
+    /// # Errors
+    /// Returns `Err` if any ordinal is out of bounds (mirrors `IndexOutOfBoundsException`).
+    fn structure_data_type_delete_ordinals(&mut self, ordinals: &HashSet<i32>) -> Result<(), String> {
+        if ordinals.is_empty() {
+            return Ok(());
+        }
+        if ordinals.len() == 1 {
+            let ordinal = *ordinals.iter().next().expect("checked len == 1 above");
+            return self.structure_data_type_delete(ordinal);
+        }
+
+        use std::collections::BTreeSet;
+        use std::ops::Bound::{Excluded, Unbounded};
+
+        let sorted_ordinals: BTreeSet<i32> = ordinals.iter().copied().collect();
+        let first_ordinal = *sorted_ordinals.iter().next().expect("checked non-empty above");
+        let last_ordinal = *sorted_ordinals.iter().next_back().expect("checked non-empty above");
+        let num_components = self.stored_num_components();
+        if first_ordinal < 0 || last_ordinal >= num_components {
+            return Err(format!(
+                "IndexOutOfBoundsException: {} ordinals specified",
+                ordinals.len()
+            ));
+        }
+
+        let mut next_ordinal = Some(first_ordinal);
+        let mut ordinal_adjustment = 0i32;
+        let mut offset_adjustment = 0i32;
+        let mut last_defined_ordinal = -1i32;
+        let is_packed = self.is_packing_enabled();
+        let mut bitfield_removed = false;
+
+        let old_components = std::mem::take(self.components_mut());
+        let mut new_components = Vec::with_capacity(old_components.len());
+
+        for mut dtc in old_components {
+            let ordinal = dtc.get_ordinal();
+            if !is_packed {
+                if let Some(next) = next_ordinal {
+                    if next < ordinal {
+                        let removed_filler: Vec<i32> = sorted_ordinals
+                            .range((Excluded(last_defined_ordinal), Excluded(ordinal)))
+                            .copied()
+                            .collect();
+                        if !removed_filler.is_empty() {
+                            let undefined_remove_count = removed_filler.len() as i32;
+                            ordinal_adjustment -= undefined_remove_count;
+                            offset_adjustment -= undefined_remove_count;
+                            let last_removed = *removed_filler.last().expect("checked non-empty above");
+                            next_ordinal = sorted_ordinals
+                                .range((Excluded(last_removed), Unbounded))
+                                .next()
+                                .copied();
+                        }
+                    }
+                }
+            }
+
+            if next_ordinal == Some(ordinal) {
+                if dtc.is_bit_field_component() {
+                    bitfield_removed = true;
+                } else {
+                    offset_adjustment -= dtc.get_length();
+                }
+                ordinal_adjustment -= 1;
+                last_defined_ordinal = ordinal;
+                next_ordinal = sorted_ordinals
+                    .range((Excluded(ordinal), Unbounded))
+                    .next()
+                    .copied();
+            } else {
+                if ordinal_adjustment != 0 {
+                    dtc.set_offset(dtc.get_offset() + offset_adjustment);
+                    dtc.set_ordinal(dtc.get_ordinal() + ordinal_adjustment);
+                }
+                last_defined_ordinal = ordinal;
+                new_components.push(dtc);
+            }
+        }
+
+        if !is_packed {
+            let removed_filler_count = sorted_ordinals
+                .range((Excluded(last_defined_ordinal), Excluded(num_components)))
+                .count() as i32;
+            if removed_filler_count > 0 {
+                ordinal_adjustment -= removed_filler_count;
+                offset_adjustment -= removed_filler_count;
+            }
+        }
+
+        *self.components_mut() = new_components;
+        self.set_stored_num_components(num_components + ordinal_adjustment);
+
+        if is_packed {
+            self.structure_data_type_repack(true);
+        } else {
+            self.set_stored_struct_length(self.stored_struct_length() + offset_adjustment);
+            if bitfield_removed {
+                self.structure_data_type_repack(false);
+            }
+            // notifySizeChanged(): no-op, see module docs.
+        }
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.deleteAtOffset(int)`.
+    ///
+    /// # Errors
+    /// Returns `Err` if `offset` is negative (mirrors `IllegalArgumentException`).
+    fn structure_data_type_delete_at_offset(&mut self, offset: i32) -> Result<(), String> {
+        if offset < 0 {
+            return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
+        }
+        if offset > self.stored_struct_length() {
+            return Ok(());
+        }
+        match self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_offset(dtc, offset))
+        {
+            Err(insert_at) => {
+                if offset == self.stored_struct_length() {
+                    return Ok(());
+                }
+                self.structure_data_type_shift_offsets(insert_at, -1, -1);
+            }
+            Ok(found) => {
+                let mut index = self
+                    .structure_data_type_advance_to_last_component_containing_offset(found as i32, offset);
+                while index >= 0
+                    && self.components()[index as usize].contains_offset(offset)
+                {
+                    self.structure_data_type_do_delete_with_component_shift(index as usize, false);
+                    index -= 1;
+                }
+            }
+        }
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.clearAtOffset(int)`: like
+    /// [`structure_data_type_delete_at_offset`](StructureDataType::structure_data_type_delete_at_offset)
+    /// but preserves the structure length and placement of other components (clears in place
+    /// rather than shifting).
+    ///
+    /// # Errors
+    /// Returns `Err` if `offset` is negative (mirrors `IllegalArgumentException`).
+    fn structure_data_type_clear_at_offset(&mut self, offset: i32) -> Result<(), String> {
+        if offset < 0 {
+            return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
+        }
+        if offset > self.stored_struct_length() {
+            return Ok(());
+        }
+        if let Ok(found) = self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_offset(dtc, offset))
+        {
+            let mut index =
+                self.structure_data_type_advance_to_last_component_containing_offset(found as i32, offset);
+            while index >= 0 && self.components()[index as usize].contains_offset(offset) {
+                self.structure_data_type_do_delete_with_component_shift(index as usize, true);
+                index -= 1;
+            }
+        }
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.clearComponent(int)`.
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`).
+    fn structure_data_type_clear_component(&mut self, ordinal: i32) -> Result<(), String> {
+        if self.is_packing_enabled() {
+            return self.structure_data_type_delete(ordinal);
+        }
+        if ordinal < 0 || ordinal >= self.stored_num_components() {
+            return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
+        }
+        if let Ok(idx) = self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_ordinal(dtc, ordinal))
+        {
+            let dtc = self.components_mut().remove(idx);
+            let len = dtc.get_length();
+            if len > 1 {
+                self.structure_data_type_shift_offsets(idx, len - 1, 0);
+            }
+            self.structure_data_type_repack(false);
+        }
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.deleteAll()`.
+    fn structure_data_type_delete_all(&mut self) {
+        self.components_mut().clear();
+        self.set_stored_struct_length(0);
+        self.set_stored_num_components(0);
+        // notifySizeChanged(): no-op, see module docs.
+    }
+
+    /// Port of the private `StructureDataType.doGrowStructure(int)` plus the public
+    /// `growStructure(int)` wrapper (their split exists in Java only so `setLength` can call the
+    /// former without `repack`/`notifySizeChanged`, which this crate has no equivalent caller
+    /// for yet, so they are merged here).
+    ///
+    /// # Errors
+    /// Returns `Err` if `amount` is negative (mirrors `IllegalArgumentException`).
+    fn structure_data_type_grow_structure(&mut self, amount: i32) -> Result<(), String> {
+        if amount < 0 {
+            return Err(format!("IllegalArgumentException: Invalid growth amount: {amount}"));
+        }
+        if amount == 0 || self.is_packing_enabled() {
+            return Ok(());
+        }
+        let new_num = self.stored_num_components() + amount;
+        self.set_stored_num_components(new_num);
+        let new_length = self.stored_struct_length() + amount;
+        self.set_stored_struct_length(new_length);
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.setLength(int)`.
+    ///
+    /// # Errors
+    /// Returns `Err` if `len` is negative (mirrors `IllegalArgumentException`).
+    fn structure_data_type_set_length(&mut self, len: i32) -> Result<(), String> {
+        if len < 0 {
+            return Err(format!("IllegalArgumentException: Invalid length: {len}"));
+        }
+        if len == self.stored_struct_length() || self.is_packing_enabled() {
+            return Ok(());
+        }
+        if len < self.stored_struct_length() {
+            let index = match self
+                .components()
+                .binary_search_by(|dtc| compare_component_to_offset(dtc, len))
+            {
+                Err(insert_at) => insert_at as i32,
+                Ok(found) => {
+                    let mut idx = self
+                        .structure_data_type_backup_to_first_component_containing_offset(found as i32, len);
+                    idx = self.structure_data_type_after_non_zero_components_at_offset(idx, len);
+                    idx
+                }
+            };
+            let defined_component_count = self.components().len() as i32;
+            if index >= 0 && index < defined_component_count {
+                self.components_mut().truncate(index as usize);
+            }
+        } else {
+            let delta = len - self.stored_struct_length();
+            self.set_stored_num_components(self.stored_num_components() + delta);
+        }
+        self.set_stored_struct_length(len);
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+        Ok(())
+    }
+
+    /// Port of the private `StructureDataType.generateUndefinedComponent(int, int)`. Unlike
+    /// Java's negative-index-encoded `missingComponentIndex` parameter (`Collections.binarySearch`'s
+    /// raw "not found" return value, `-insertionPoint - 1`), `missing_component_index` here is
+    /// already the plain, non-negative insertion point -- Rust's `Vec::binary_search_by` never
+    /// uses Java's encoding trick, so every caller below passes the decoded value directly (the
+    /// encode-then-immediately-decode round trip Java performs in a couple of call sites is a
+    /// no-op and is elided).
+    fn structure_data_type_generate_undefined_component(
+        &self,
+        offset: i32,
+        missing_component_index: i32,
+    ) -> DataTypeComponentImpl {
+        let mut ordinal = offset;
+        if missing_component_index > 0 {
+            let dtc = &self.components()[(missing_component_index - 1) as usize];
+            ordinal = dtc.get_ordinal() + offset - dtc.get_end_offset();
+            if dtc.get_length() == 0 {
+                ordinal += 1;
+            }
+        }
+        DataTypeComponentImpl::new(undefined_filler_data_type(), None, 1, ordinal, offset, None, None)
+    }
+
+    /// Port of the private `StructureDataType.indexOfFirstNonZeroLenComponentContainingOffset(int,
+    /// int)`.
+    fn structure_data_type_index_of_first_non_zero_len_component_containing_offset(
+        &self,
+        index: i32,
+        offset: i32,
+    ) -> i32 {
+        let mut index = self.structure_data_type_backup_to_first_component_containing_offset(index, offset);
+        loop {
+            let is_zero_len = self.components()[index as usize].get_length() == 0;
+            if !is_zero_len || (index as usize) >= self.components().len() - 1 {
+                break;
+            }
+            let next_contains = self.components()[(index + 1) as usize].contains_offset(offset);
+            if !next_contains {
+                break;
+            }
+            index += 1;
+        }
+        index
+    }
+
+    /// Port of `StructureDataType.getDefinedComponentAtOrAfterOffset(int)`.
+    fn structure_data_type_get_defined_component_at_or_after_offset(
+        &self,
+        offset: i32,
+    ) -> Option<DataTypeComponentImpl> {
+        if offset > self.stored_struct_length() || offset < 0 {
+            return None;
+        }
+        match self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_offset(dtc, offset))
+        {
+            Ok(found) => {
+                let index =
+                    self.structure_data_type_backup_to_first_component_containing_offset(found as i32, offset);
+                Some(self.components()[index as usize].snapshot())
+            }
+            Err(insert_at) => self.components().get(insert_at).map(DataTypeComponentImpl::snapshot),
+        }
+    }
+
+    /// Port of `StructureDataType.getComponentContaining(int)`.
+    fn structure_data_type_get_component_containing(&self, offset: i32) -> Option<DataTypeComponentImpl> {
+        if offset > self.stored_struct_length() || offset < 0 {
+            return None;
+        }
+        match self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_offset(dtc, offset))
+        {
+            Ok(found) => {
+                let index = self
+                    .structure_data_type_index_of_first_non_zero_len_component_containing_offset(
+                        found as i32,
+                        offset,
+                    );
+                let dtc = &self.components()[index as usize];
+                if dtc.get_length() != 0 {
+                    return Some(dtc.snapshot());
+                }
+                if offset != self.stored_struct_length() && !self.is_packing_enabled() {
+                    return Some(self.structure_data_type_generate_undefined_component(offset, index));
+                }
+                None
+            }
+            Err(insert_at) => {
+                if offset != self.stored_struct_length() && !self.is_packing_enabled() {
+                    Some(self.structure_data_type_generate_undefined_component(offset, insert_at as i32))
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
+    /// Port of `StructureDataType.getComponentsContaining(int)`.
+    fn structure_data_type_get_components_containing(&self, offset: i32) -> Vec<DataTypeComponentImpl> {
+        let mut list = Vec::new();
+        if offset > self.stored_struct_length() || offset < 0 {
+            return list;
+        }
+        let mut has_sized_component = false;
+        let insertion_index = match self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_offset(dtc, offset))
+        {
+            Ok(found) => {
+                let mut index =
+                    self.structure_data_type_backup_to_first_component_containing_offset(found as i32, offset);
+                while (index as usize) < self.components().len() {
+                    let dtc = &self.components()[index as usize];
+                    if !dtc.contains_offset(offset) {
+                        break;
+                    }
+                    has_sized_component |= dtc.get_length() != 0;
+                    list.push(dtc.snapshot());
+                    index += 1;
+                }
+                index
+            }
+            Err(insert_at) => insert_at as i32,
+        };
+        if !has_sized_component && offset != self.stored_struct_length() && !self.is_packing_enabled() {
+            list.push(self.structure_data_type_generate_undefined_component(offset, insertion_index));
+        }
+        list
+    }
+
+    /// Port of `StructureDataType.getDataTypeAt(int)`: the lowest-level component containing
+    /// `offset`, recursing into a nested `Structure` component if one is found there.
+    fn structure_data_type_get_data_type_at(&self, offset: i32) -> Option<Box<dyn DataTypeComponent>> {
+        let dtc = self.structure_data_type_get_component_containing(offset)?;
+        let dt = dtc.get_data_type();
+        if let Some(inner_struct) = dt.as_structure() {
+            return inner_struct.get_data_type_at(offset - dtc.get_offset());
+        }
+        Some(Box::new(dtc))
+    }
 }
 
 #[cfg(test)]
@@ -1144,6 +1618,160 @@ mod tests {
         assert!(s
             .structure_data_type_insert_at_offset(-1, byte_data_type("byte", 1), -1, None, None)
             .is_err());
+    }
+
+    /// Builds a 3-component non-packed structure: int@0 (ordinal 0), short@4 (ordinal 1),
+    /// byte@6 (ordinal 2), structLength=7.
+    fn three_component_sample() -> MockStructureDataType {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("a".to_string()), None)
+            .unwrap();
+        s.structure_data_type_add(byte_data_type("short", 2), -1, Some("b".to_string()), None)
+            .unwrap();
+        s.structure_data_type_add(byte_data_type("byte", 1), -1, Some("c".to_string()), None)
+            .unwrap();
+        assert_eq!(s.stored_struct_length(), 7);
+        s
+    }
+
+    #[test]
+    fn delete_removes_component_and_shifts_following_offsets() {
+        let mut s = three_component_sample();
+        s.structure_data_type_delete(1).unwrap(); // remove "b" (short@4)
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+        assert_eq!(s.stored_struct_length(), 5);
+        let c = s.structure_data_type_get_component(1).unwrap();
+        assert_eq!(c.get_field_name(), Some("c".to_string()));
+        assert_eq!(c.get_offset(), 4);
+    }
+
+    #[test]
+    fn delete_rejects_out_of_bounds_ordinal() {
+        let mut s = three_component_sample();
+        assert!(s.structure_data_type_delete(10).is_err());
+    }
+
+    #[test]
+    fn delete_ordinals_batch_matches_sequential_deletes() {
+        let mut s = three_component_sample();
+        let mut ordinals = HashSet::new();
+        ordinals.insert(0);
+        ordinals.insert(2);
+        s.structure_data_type_delete_ordinals(&ordinals).unwrap();
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 1);
+        let remaining = s.structure_data_type_get_component(0).unwrap();
+        assert_eq!(remaining.get_field_name(), Some("b".to_string()));
+        assert_eq!(remaining.get_offset(), 0);
+        assert_eq!(s.stored_struct_length(), 2);
+    }
+
+    #[test]
+    fn delete_ordinals_empty_set_is_no_op() {
+        let mut s = three_component_sample();
+        s.structure_data_type_delete_ordinals(&HashSet::new()).unwrap();
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 3);
+    }
+
+    #[test]
+    fn delete_at_offset_removes_containing_component_and_shifts() {
+        let mut s = three_component_sample();
+        s.structure_data_type_delete_at_offset(4).unwrap(); // removes "b" (short@4..5)
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+        assert_eq!(s.stored_struct_length(), 5);
+    }
+
+    #[test]
+    fn clear_at_offset_preserves_length_and_leaves_undefined_gap() {
+        let mut s = three_component_sample();
+        s.structure_data_type_clear_at_offset(4).unwrap(); // clears "b" in place
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+        // Structure length unchanged (clear does not shift trailing components).
+        assert_eq!(s.stored_struct_length(), 7);
+        let filler = s.structure_data_type_get_component(1).unwrap();
+        assert!(filler.is_undefined());
+    }
+
+    #[test]
+    fn clear_component_removes_defined_component_without_shifting_offset() {
+        let mut s = three_component_sample();
+        s.structure_data_type_clear_component(1).unwrap();
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+        assert_eq!(s.stored_struct_length(), 7);
+    }
+
+    #[test]
+    fn delete_all_resets_structure() {
+        let mut s = three_component_sample();
+        s.structure_data_type_delete_all();
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 0);
+        assert_eq!(s.structure_data_type_get_num_components(), 0);
+        assert_eq!(s.stored_struct_length(), 0);
+    }
+
+    #[test]
+    fn grow_structure_adds_undefined_bytes_at_end() {
+        let mut s = three_component_sample();
+        s.structure_data_type_grow_structure(3).unwrap();
+        assert_eq!(s.stored_struct_length(), 10);
+        assert_eq!(s.structure_data_type_get_num_components(), 6);
+        assert!(s.structure_data_type_grow_structure(-1).is_err());
+    }
+
+    #[test]
+    fn set_length_grows_and_shrinks() {
+        let mut s = three_component_sample();
+        s.structure_data_type_set_length(10).unwrap();
+        assert_eq!(s.stored_struct_length(), 10);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 3);
+
+        s.structure_data_type_set_length(5).unwrap();
+        assert_eq!(s.stored_struct_length(), 5);
+        // Truncates the "b" (short@4..5) and "c" (byte@6) components since they fall at/after
+        // offset 5.
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 1);
+        assert!(s.structure_data_type_set_length(-1).is_err());
+    }
+
+    #[test]
+    fn get_component_containing_and_at_or_after_offset() {
+        let s = three_component_sample();
+        let containing = s.structure_data_type_get_component_containing(5).unwrap();
+        assert_eq!(containing.get_field_name(), Some("b".to_string()));
+
+        // Offset 5 falls within "b" (short@4, occupying offsets 4-5), so the "at or after" query
+        // returns "b" itself, not the next component.
+        let at_or_after = s
+            .structure_data_type_get_defined_component_at_or_after_offset(5)
+            .unwrap();
+        assert_eq!(at_or_after.get_field_name(), Some("b".to_string()));
+
+        // Offset 6 falls exactly at the start of "c" (byte@6).
+        let at_c = s
+            .structure_data_type_get_defined_component_at_or_after_offset(6)
+            .unwrap();
+        assert_eq!(at_c.get_field_name(), Some("c".to_string()));
+
+        assert!(s.structure_data_type_get_component_containing(-1).is_none());
+        assert!(s.structure_data_type_get_component_containing(100).is_none());
+    }
+
+    #[test]
+    fn get_components_containing_includes_undefined_filler() {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, None, None)
+            .unwrap();
+        s.set_stored_struct_length(6); // 2 trailing undefined bytes
+        s.set_stored_num_components(6);
+        let containing = s.structure_data_type_get_components_containing(4);
+        assert_eq!(containing.len(), 1);
+        assert!(containing[0].is_undefined());
+    }
+
+    #[test]
+    fn get_data_type_at_returns_component_containing_offset() {
+        let s = three_component_sample();
+        let dtc = s.structure_data_type_get_data_type_at(5).unwrap();
+        assert_eq!(dtc.get_field_name(), Some("b".to_string()));
     }
 
     struct MockBuf;
