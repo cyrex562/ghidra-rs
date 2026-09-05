@@ -151,6 +151,16 @@
 //! (`doReplaceWithPacked`) and constructing components directly (preserving `other`'s
 //! offsets/ordinals/field names verbatim) for the non-packed case (`doReplaceWithNonPacked`).
 //!
+//! `DataTypeUtilities.checkAncestry` (cyclic-dependency rejection) is now ported too, as
+//! [`structure_data_type_check_ancestry`](StructureDataType::structure_data_type_check_ancestry),
+//! and wired into `structure_data_type_add`/`_insert`/`_insert_at_offset`/`_replace_with` at the
+//! same call sites Java's `checkAncestry(this, dataType)` occupies: adding a data type that would
+//! create a cyclic composite is now rejected here, matching Java. It reuses the walk already
+//! ported for [`CompositeDataTypeImpl::composite_impl_is_part_of`] (`isSecondPartOfFirst`) in the
+//! opposite direction, via a new borrowing-only sibling helper
+//! ([`is_part_of_data_type_by_ref`]) rather than that method's own ownership-consuming one, since
+//! every caller here still needs its `data_type` afterward.
+//!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
 //! is agreed):
@@ -166,10 +176,6 @@
 //!     implementor -- which alone knows how to build a fresh instance of itself -- can wire
 //!     `copy`/`clone` up, by calling its own constructor and then
 //!     `structure_data_type_replace_with`.
-//!   - `DataTypeUtilities.checkAncestry` (cyclic-dependency rejection) is not ported anywhere in
-//!     this crate yet, so it is not called from `structure_data_type_add`/`_insert`/
-//!     `_insert_at_offset` below (unlike Java, adding a data type that would create a cyclic
-//!     composite is not currently rejected here).
 //!   - `dataType.clone(dataMgr)` (deep-cloning an inserted data type against this structure's own
 //!     `DataTypeManager`) is skipped; the data type is stored as given.
 //!   - `data_type.addParent(this)`/`removeParent(this)` (the child `DataType`'s own
@@ -247,6 +253,38 @@ fn is_dynamic_with_specifiable_length(data_type: &dyn DataType) -> bool {
         .as_dynamic()
         .map(|d| d.can_specify_length())
         .unwrap_or(false)
+}
+
+/// Port of the relevant cases of `DataTypeUtilities.isSecondPartOfFirst(DataType, DataType)`,
+/// used by [`structure_data_type_check_ancestry`] to walk into `data_type`'s own composition
+/// tree looking for `target`. A near-duplicate of
+/// [`composite_data_type_impl::is_part_of_data_type`](super::composite_data_type_impl), which
+/// exists separately (rather than being reused directly) because that helper needs *ownership*
+/// of `data_type` only to reach [`DataType::into_composite`]'s consuming downcast, whereas every
+/// caller here already owns `data_type` for other purposes afterward (e.g. to build the new
+/// component being inserted) and cannot give it up; the borrowing
+/// [`DataType::as_composite`] downcast sidesteps that. See that sibling helper's own doc comment
+/// for the identical `Array`-case caveat (conservatively treated as "not part of").
+fn is_part_of_data_type_by_ref(data_type: &dyn DataType, target: &dyn DataType) -> bool {
+    if data_type.is_pointer() || target.is_pointer() {
+        return false;
+    }
+    if data_type.get_data_type_path() == target.get_data_type_path() {
+        return true;
+    }
+    if data_type.is_typedef() {
+        return match data_type.typedef_base_data_type() {
+            Some(inner) => is_part_of_data_type_by_ref(inner.as_ref(), target),
+            None => false,
+        };
+    }
+    match data_type.as_composite() {
+        Some(composite) => composite
+            .get_defined_components()
+            .into_iter()
+            .any(|dtc| is_part_of_data_type_by_ref(dtc.get_data_type().as_ref(), target)),
+        None => false,
+    }
 }
 
 /// Adapter routing a real [`DataTypeComponentImpl`]'s state through the
@@ -535,15 +573,39 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
             .collect()
     }
 
+    /// Port of `DataTypeUtilities.checkAncestry(DataType, DataType)`, called as
+    /// `checkAncestry(this, componentDataType)` throughout this trait's `add`/`insert`/
+    /// `insertAtOffset`/`replaceWith` methods. Rejects `component_data_type` if adding it to this
+    /// structure would create a cyclic composite (i.e. this structure is already reachable
+    /// somewhere within `component_data_type`'s own composition tree).
+    ///
+    /// # Errors
+    /// Returns `Err` if `component_data_type` has this structure within it (mirrors
+    /// `DataTypeDependencyException`).
+    fn structure_data_type_check_ancestry(&self, component_data_type: &dyn DataType) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        if is_part_of_data_type_by_ref(component_data_type, self) {
+            return Err(format!(
+                "DataTypeDependencyException: Data type {} has {} within it.",
+                component_data_type.get_display_name(),
+                self.get_display_name()
+            ));
+        }
+        Ok(())
+    }
+
     /// Port of the private `StructureDataType.doAdd(DataType, int, String, String, boolean)`,
     /// called with `packAndNotify = true` (matching the public
     /// `add(DataType, int, String, String)` entry point; see the module docs for what is skipped
-    /// -- `dataType.clone(dataMgr)`/`checkAncestry`/`data_type.add_parent(self)`/real
-    /// packed-structure repacking).
+    /// -- `dataType.clone(dataMgr)`/`data_type.add_parent(self)`/real packed-structure
+    /// repacking).
     ///
     /// # Errors
     /// Returns `Err` if a positive length cannot be determined for the specified data type
-    /// (mirrors `IllegalArgumentException`/`DataTypeDependencyException`).
+    /// (mirrors `IllegalArgumentException`), or if `data_type` would create a cyclic composite
+    /// (mirrors `DataTypeDependencyException`).
     fn structure_data_type_add(
         &mut self,
         data_type: Box<dyn DataType>,
@@ -555,6 +617,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         Self: Sized,
     {
         let data_type = self.composite_impl_validate_data_type(data_type)?;
+        self.structure_data_type_check_ancestry(data_type.as_ref())?;
 
         let num_components = self.stored_num_components();
         let struct_length = self.stored_struct_length();
@@ -676,11 +739,12 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
 
     /// Port of `StructureDataType.insertAtOffset(int, DataType, int, String, String)`. See the
     /// module docs for what is skipped (`BitFieldDataType` handling, `dataType.clone(dataMgr)`,
-    /// `checkAncestry`, real packed-structure repacking).
+    /// real packed-structure repacking).
     ///
     /// # Errors
     /// Returns `Err` if `offset` is negative, or a positive length cannot be determined for the
-    /// specified data type (mirrors `IllegalArgumentException`).
+    /// specified data type (mirrors `IllegalArgumentException`), or if `data_type` would create a
+    /// cyclic composite (mirrors `DataTypeDependencyException`).
     fn structure_data_type_insert_at_offset(
         &mut self,
         offset: i32,
@@ -697,6 +761,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         }
 
         let data_type = self.composite_impl_validate_data_type(data_type)?;
+        self.structure_data_type_check_ancestry(data_type.as_ref())?;
         let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
         let length = self.composite_impl_preferred_component_length_default(
             data_type.as_ref(),
@@ -767,12 +832,13 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     }
 
     /// Port of `StructureDataType.insert(int, DataType, int, String, String)`. See the module
-    /// docs for what is skipped (bitfield-overlap shifting, `dataType.clone(dataMgr)`,
-    /// `checkAncestry`, real packed-structure repacking).
+    /// docs for what is skipped (bitfield-overlap shifting, `dataType.clone(dataMgr)`, real
+    /// packed-structure repacking).
     ///
     /// # Errors
-    /// Returns `Err` if `ordinal` is out of bounds, or a positive length cannot be determined for
-    /// the specified data type (mirrors `IndexOutOfBoundsException`/`IllegalArgumentException`).
+    /// Returns `Err` if `ordinal` is out of bounds, a positive length cannot be determined for
+    /// the specified data type (mirrors `IndexOutOfBoundsException`/`IllegalArgumentException`),
+    /// or `data_type` would create a cyclic composite (mirrors `DataTypeDependencyException`).
     fn structure_data_type_insert(
         &mut self,
         ordinal: i32,
@@ -792,6 +858,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         }
 
         let data_type = self.composite_impl_validate_data_type(data_type)?;
+        self.structure_data_type_check_ancestry(data_type.as_ref())?;
 
         let idx = if self.is_packing_enabled() {
             ordinal
@@ -1217,8 +1284,14 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// NOTE: unlike adding new components (which guarantees field-name uniqueness), this preserves
     /// `other`'s component names verbatim, matching Java. See the module docs for what is skipped
-    /// (`checkAncestry`, `dataType.clone(dataMgr)`, `data_type.removeParent(this)`/`addParent(this)`,
-    /// and the `structAlignment = -1` reset, since no such field is tracked by this port).
+    /// (`dataType.clone(dataMgr)`, `data_type.removeParent(this)`/`addParent(this)`, and the
+    /// `structAlignment = -1` reset, since no such field is tracked by this port).
+    ///
+    /// # Errors
+    /// Returns `Err` if any of `other`'s (non-packed) component data types would create a cyclic
+    /// composite (mirrors `DataTypeDependencyException`), or if the underlying
+    /// [`structure_data_type_add`](StructureDataType::structure_data_type_add) call fails for the
+    /// packed case.
     fn structure_data_type_replace_with(&mut self, other: &dyn StructureDataType) -> Result<(), String>
     where
         Self: Sized,
@@ -1251,7 +1324,8 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
             let count = other_components.len();
             for (i, dtc) in other_components.iter().enumerate() {
                 let dt = dtc.get_data_type();
-                // dt.clone(dataMgr) / checkAncestry(self, dt): skipped, see module docs.
+                // dt.clone(dataMgr): skipped, see module docs.
+                self.structure_data_type_check_ancestry(dt.as_ref())?;
                 let is_dynamic = dt.as_dynamic().is_some();
                 let length = if dtc.is_bit_field_component() || is_dynamic {
                     dtc.get_length()
@@ -1902,6 +1976,12 @@ mod tests {
         fn get_data_organization(&self) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
             Box::new(MockDataOrganization)
         }
+        fn as_composite(&self) -> Option<&dyn Composite> {
+            Some(self)
+        }
+        fn get_length(&self) -> i32 {
+            StructureDataType::length(self)
+        }
     }
 
     impl Composite for MockStructureDataType {
@@ -1910,6 +1990,17 @@ mod tests {
         }
         fn get_packing_type(&self) -> PackingType {
             self.packing_type
+        }
+        // Bridges the placeholder `Composite::get_defined_components` default to this mock's
+        // real `components` storage -- needed so `is_part_of_data_type_by_ref`'s recursive walk
+        // (used by `structure_data_type_check_ancestry`) can actually see nested components when
+        // a `MockStructureDataType` itself appears as another structure's component data type,
+        // exactly as the module docs describe a real concrete `impl Composite for ...` doing.
+        fn get_defined_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+            self.components
+                .iter()
+                .map(|dtc| Box::new(dtc.snapshot()) as Box<dyn DataTypeComponent>)
+                .collect()
         }
     }
 
@@ -2187,6 +2278,43 @@ mod tests {
         assert_eq!(dtc2.get_ordinal(), 1);
         assert_eq!(s.stored_struct_length(), 6);
         assert_eq!(s.structure_data_type_get_num_components(), 2);
+    }
+
+    #[test]
+    fn add_rejects_cyclic_component_via_check_ancestry() {
+        // "Outer" contains "Inner" contains a same-named-and-pathed "Outer" -- adding this
+        // three-level "Inner" (which already has "Outer" within it) to "Outer" itself would be
+        // cyclic, matching Java's `DataTypeUtilities.checkAncestry` rejection.
+        let mut nested_outer = sample();
+        nested_outer.name = "Outer".to_string();
+
+        let mut inner = sample();
+        inner.name = "Inner".to_string();
+        inner
+            .structure_data_type_add(Box::new(nested_outer), -1, Some("back_ref".to_string()), None)
+            .unwrap();
+
+        let mut outer = sample();
+        outer.name = "Outer".to_string();
+        let err = match outer.structure_data_type_add(Box::new(inner), -1, None, None) {
+            Err(e) => e,
+            Ok(_) => panic!("expected a cyclic-dependency rejection"),
+        };
+        assert!(err.contains("DataTypeDependencyException"));
+        // The rejected add must not have partially mutated the structure.
+        assert_eq!(outer.structure_data_type_get_num_defined_components(), 0);
+    }
+
+    #[test]
+    fn add_accepts_non_cyclic_component() {
+        // A plain (non-composite) component is never "part of" anything -- check_ancestry must
+        // not spuriously reject ordinary adds (already exercised implicitly by every other test
+        // in this module, but asserted explicitly here as the direct counterpart to the rejection
+        // test above).
+        let mut s = sample();
+        assert!(s
+            .structure_data_type_add(byte_data_type("int", 4), -1, None, None)
+            .is_ok());
     }
 
     #[test]
