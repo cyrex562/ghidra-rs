@@ -95,18 +95,32 @@
 //! pointlessly (encoding an already-in-hand index just to immediately decode it back inside
 //! `generateUndefinedComponent`/`getComponentsContaining`), which is elided here as a no-op.
 //!
+//! ## Packed-structure layout (2026-09 extension, continued)
+//!
+//! **Packed-structure (`isPackingEnabled() == true`) layout is now computed** via a real
+//! [`AlignedStructurePacker`](AlignedStructurePacker) integration: this trait now requires
+//! `Self: AlignedStructurePacker` (a new supertrait bound), and
+//! [`structure_data_type_pack`](StructureDataType::structure_data_type_pack) (called from the
+//! packed branch of [`structure_data_type_repack`](StructureDataType::structure_data_type_repack),
+//! mirroring Java's `repack(boolean)`) converts this structure's `Vec<DataTypeComponentImpl>`
+//! to and from the `Box<dyn InternalDataTypeComponent>` shape
+//! [`AlignedStructurePacker::pack_components`] requires via the [`PackableComponent`] adapter
+//! (an `Arc<dyn DataType>`-backed proxy, needed since `dyn DataType` has no `Clone` bound and
+//! [`DataTypeComponent::get_data_type`] must be answerable repeatedly from `&self`; no downcast
+//! back to the concrete adapter is ever needed since every mutated field is read back out
+//! through ordinary trait methods -- see [`PackableComponent`]'s own doc comment). **The wiring
+//! is real, but its output quality depends entirely on whichever
+//! [`AlignedStructurePacker::create_component_packer`] a concrete implementor supplies**: this
+//! crate still has no production (bitfield-aware) `AlignedComponentPacker` port -- only test
+//! doubles exist (here and in `aligned_structure_packer`'s own tests) -- so a real implementor
+//! must currently supply a simplistic packer or wait on that separate port. Unlike Java, no
+//! `structAlignment` field is cached/compared for the "changed" return value (see
+//! [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)'s own doc
+//! comment for why this only matters for the no-op `notify` path).
+//!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
 //! is agreed):
-//!   - **Packed-structure (`isPackingEnabled() == true`) layout is not computed.** Java's `repack`
-//!     calls `AlignedStructurePacker.packComponents` for the packed case to compute
-//!     alignment-driven offsets/padding/length; that integration is not wired here (the
-//!     `AlignedStructurePacker` trait itself requires its own per-implementor accessors that a
-//!     `StructureDataType` concrete type has not been given yet). The methods below still update
-//!     `components`/`numComponents`/`structLength` bookkeeping correctly for the *non-packed*
-//!     case; for a packing-enabled composite they fall back to simple sequential-append placement
-//!     without alignment padding, which is a known, documented deviation from Java rather than a
-//!     silent bug -- callers should not rely on packed-structure offsets/length being correct yet.
 //!   - `addBitField`/`insertBitField`/`insertBitFieldAt` (bitfield support) are not ported. These
 //!     require the `BitOffsetComparator`-based overlap/conflict detection across bit-granular
 //!     ranges, which is a substantial, mostly-independent algorithm; see
@@ -146,6 +160,7 @@
 //!     here: nothing in this crate yet tracks a `StructureDataType` composite's own parents.
 
 use crate::docking::settings::settings::Settings;
+use crate::program::model::data::aligned_structure_packer::AlignedStructurePacker;
 use crate::program::model::data::composite_data_type_impl::CompositeDataTypeImpl;
 use crate::program::model::data::composite_internal::{
     compare_component_to_offset, compare_component_to_ordinal,
@@ -153,11 +168,14 @@ use crate::program::model::data::composite_internal::{
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl;
+use crate::program::model::data::internal_data_type_component::InternalDataTypeComponent;
 use crate::program::model::data::structure_internal::StructureInternal;
 use crate::program::model::mem::MemBuffer;
+use crate::program::seam_stubs::share_data_type;
+use std::cmp::Ordering;
 use std::collections::HashSet;
+use std::sync::Arc;
 
-/// Local stand-in for Ghidra's `DataType.DEFAULT` singleton (an instance of
 /// `ghidra.program.model.data.DefaultDataType`), used only to synthesize the implicit "undefined"
 /// filler components a non-packed structure reports between/after its explicitly defined
 /// components. [`DefaultDataType`](super::default_data_type::DefaultDataType) is itself only a
@@ -193,13 +211,106 @@ fn is_dynamic_with_specifiable_length(data_type: &dyn DataType) -> bool {
         .unwrap_or(false)
 }
 
+/// Adapter routing a real [`DataTypeComponentImpl`]'s state through the
+/// `Box<dyn InternalDataTypeComponent>` shape that
+/// [`AlignedStructurePacker::pack_components`](AlignedStructurePacker::pack_components) requires,
+/// used only by [`StructureDataType::structure_data_type_pack`].
+///
+/// `data_type` is kept as an `Arc<dyn DataType>` (mirroring
+/// [`DataTypeComponentImpl`]'s own storage strategy, and using the same
+/// [`share_data_type`] convention as [`BitFieldDataType::get_base_data_type`]) rather than a
+/// `Box<dyn DataType>`, since [`DataTypeComponent::get_data_type`] must be answerable repeatedly
+/// from a `&self` borrow and `dyn DataType` has no `Clone` bound. This lets
+/// [`structure_data_type_pack`](StructureDataType::structure_data_type_pack) read every field this
+/// adapter carries back out through ordinary (object-safe) [`DataTypeComponent`]/
+/// [`InternalDataTypeComponent`] trait methods once packing completes -- no downcast back to the
+/// concrete adapter type is ever needed, since nothing in [`AlignedStructurePacker::pack_components`]
+/// replaces list elements, only mutates them in place via `&mut dyn InternalDataTypeComponent`.
+struct PackableComponent {
+    data_type: Arc<dyn DataType>,
+    ordinal: i32,
+    offset: i32,
+    length: i32,
+    is_bit_field: bool,
+    field_name: Option<String>,
+    comment: Option<String>,
+}
+
+impl PackableComponent {
+    fn from_snapshot(dtc: &DataTypeComponentImpl) -> Self {
+        PackableComponent {
+            data_type: Arc::from(dtc.get_data_type()),
+            ordinal: dtc.get_ordinal(),
+            offset: dtc.get_offset(),
+            length: dtc.get_length(),
+            is_bit_field: dtc.is_bit_field_component(),
+            field_name: dtc.get_field_name(),
+            comment: dtc.get_comment(),
+        }
+    }
+}
+
+impl DataTypeComponent for PackableComponent {
+    fn get_ordinal(&self) -> i32 {
+        self.ordinal
+    }
+    fn get_offset(&self) -> i32 {
+        self.offset
+    }
+    fn get_length(&self) -> i32 {
+        self.length
+    }
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        share_data_type(&self.data_type)
+    }
+    fn get_data_type_name(&self) -> String {
+        self.data_type.get_name()
+    }
+    fn get_field_name(&self) -> Option<String> {
+        self.field_name.clone()
+    }
+    fn get_comment(&self) -> Option<String> {
+        self.comment.clone()
+    }
+    fn is_bit_field_component(&self) -> bool {
+        self.is_bit_field
+    }
+}
+
+impl InternalDataTypeComponent for PackableComponent {
+    fn set_data_type(&mut self, data_type: Box<dyn DataType>) {
+        self.is_bit_field = data_type.is_bit_field_type();
+        self.data_type = Arc::from(data_type);
+    }
+    fn update(&mut self, ordinal: i32, offset: i32, length: i32) {
+        self.ordinal = ordinal;
+        self.offset = offset;
+        self.length = length;
+    }
+}
+
+/// Rebuilds an owned [`DataTypeComponentImpl`] from a packed [`PackableComponent`] (accessed only
+/// through its object-safe [`InternalDataTypeComponent`]/[`DataTypeComponent`] interface -- see
+/// [`PackableComponent`]'s own doc comment for why no downcast is needed).
+fn rebuild_packed_component(boxed: Box<dyn InternalDataTypeComponent>) -> DataTypeComponentImpl {
+    DataTypeComponentImpl::new(
+        boxed.get_data_type(),
+        None,
+        boxed.get_length(),
+        boxed.get_ordinal(),
+        boxed.get_offset(),
+        boxed.get_field_name(),
+        boxed.get_comment(),
+    )
+}
+
 /// Basic (in-memory, non-database-backed) implementation of the structure data type.
 ///
 /// Port of `ghidra.program.model.data.StructureDataType`. See the module-level documentation for
 /// what was ported, defaulted, and intentionally omitted.
 ///
 /// NOTE: Implementation is not thread safe (matches the Java class's documented contract).
-pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
+pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + AlignedStructurePacker {
     /// Backing storage for the private `structLength` field.
     fn stored_struct_length(&self) -> i32;
 
@@ -367,7 +478,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String> {
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
         let data_type = self.composite_impl_validate_data_type(data_type)?;
 
         let num_components = self.stored_num_components();
@@ -502,7 +616,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String> {
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
         if offset < 0 {
             return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
         }
@@ -591,7 +708,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String> {
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
         if ordinal < 0 || ordinal > self.stored_num_components() {
             return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
         }
@@ -644,23 +764,74 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
         Ok(self.components()[idx as usize].snapshot())
     }
 
-    /// Port of `StructureDataType.repack(boolean)`. See the module docs for why the
-    /// packing-enabled branch (`AlignedStructurePacker` integration) is not implemented here --
-    /// this only performs the non-packed adjustment
+    /// Port of `StructureDataType.repack(boolean)`. Returns `true` if a layout change was
+    /// detected.
+    ///
+    /// The packing-enabled branch delegates to
+    /// [`structure_data_type_pack`](StructureDataType::structure_data_type_pack) (real
+    /// `AlignedStructurePacker` integration); the non-packed branch performs the adjustment
     /// ([`structure_data_type_adjust_non_packed_components`](StructureDataType::structure_data_type_adjust_non_packed_components))
-    /// faithfully, matching Java's `!isPackingEnabled()` branch. Returns `true` if a layout
-    /// change was detected.
-    fn structure_data_type_repack(&mut self, notify: bool) -> bool {
+    /// faithfully, matching Java's `!isPackingEnabled()` branch. Unlike Java, no `structAlignment`
+    /// field is cached/compared here (see the module docs on `composite_impl_alignment`), so an
+    /// alignment-only change with an unchanged length/component-count is not separately detected
+    /// as "changed" -- this only matters for the `notify` path, which is a no-op in this port
+    /// regardless (see the module docs on `notifySizeChanged`/`notifyAlignmentChanged`).
+    fn structure_data_type_repack(&mut self, notify: bool) -> bool
+    where
+        Self: Sized,
+    {
         let old_length = self.stored_struct_length();
         let changed = if !self.is_packing_enabled() {
             self.structure_data_type_adjust_non_packed_components()
         } else {
-            false
+            self.structure_data_type_pack()
         };
         if changed && notify && old_length != self.stored_struct_length() {
             // notifySizeChanged(): no-op, see module docs.
         }
         changed
+    }
+
+    /// Port of the packing-enabled branch of `StructureDataType.repack(boolean)`: delegates the
+    /// actual alignment-driven layout computation to
+    /// [`AlignedStructurePacker::pack_components`](AlignedStructurePacker::pack_components) (this
+    /// trait's new [`AlignedStructurePacker`] supertrait bound), converting this structure's
+    /// `Vec<DataTypeComponentImpl>` to and from the `Box<dyn InternalDataTypeComponent>` shape
+    /// that method requires via the [`PackableComponent`] adapter. Returns `true` if a layout
+    /// change was detected, matching Java's `componentsChanged || (structLength changed) ||
+    /// (numComponents changed)` (the `structAlignment` comparison term is dropped -- see
+    /// [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)'s own doc
+    /// comment).
+    ///
+    /// NOTE: the quality of the computed layout depends entirely on whatever
+    /// [`AlignedStructurePacker::create_component_packer`] a concrete `StructureDataType`
+    /// implementor supplies -- this crate has no production (bitfield-aware) `AlignedComponentPacker`
+    /// port yet (only test doubles), so a real implementor must currently either accept a
+    /// simplistic sequential packer or wait on that separate port. The wiring itself, though, is
+    /// real: once a faithful `AlignedComponentPacker` exists, this method needs no further changes.
+    fn structure_data_type_pack(&mut self) -> bool
+    where
+        Self: Sized,
+    {
+        let old_length = self.stored_struct_length();
+        let old_num_components = self.stored_num_components();
+
+        let old_components = std::mem::take(self.components_mut());
+        let mut packable: Vec<Box<dyn InternalDataTypeComponent>> = old_components
+            .iter()
+            .map(|dtc| Box::new(PackableComponent::from_snapshot(dtc)) as Box<dyn InternalDataTypeComponent>)
+            .collect();
+
+        let result = self.pack_components(&*self, &mut packable);
+
+        *self.components_mut() = packable.into_iter().map(rebuild_packed_component).collect();
+
+        self.set_stored_struct_length(result.structure_length);
+        self.set_stored_num_components(result.num_components);
+
+        result.components_changed
+            || old_length != result.structure_length
+            || old_num_components != result.num_components
     }
 
     /// Port of the private `StructureDataType.adjustNonPackedComponents()`: recompute each
@@ -756,7 +927,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
     ///
     /// # Errors
     /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`).
-    fn structure_data_type_delete(&mut self, ordinal: i32) -> Result<(), String> {
+    fn structure_data_type_delete(&mut self, ordinal: i32) -> Result<(), String>
+    where
+        Self: Sized,
+    {
         if ordinal < 0 || ordinal >= self.stored_num_components() {
             return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
         }
@@ -789,7 +963,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
     ///
     /// # Errors
     /// Returns `Err` if any ordinal is out of bounds (mirrors `IndexOutOfBoundsException`).
-    fn structure_data_type_delete_ordinals(&mut self, ordinals: &HashSet<i32>) -> Result<(), String> {
+    fn structure_data_type_delete_ordinals(&mut self, ordinals: &HashSet<i32>) -> Result<(), String>
+    where
+        Self: Sized,
+    {
         if ordinals.is_empty() {
             return Ok(());
         }
@@ -896,7 +1073,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
     ///
     /// # Errors
     /// Returns `Err` if `offset` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_delete_at_offset(&mut self, offset: i32) -> Result<(), String> {
+    fn structure_data_type_delete_at_offset(&mut self, offset: i32) -> Result<(), String>
+    where
+        Self: Sized,
+    {
         if offset < 0 {
             return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
         }
@@ -936,7 +1116,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
     ///
     /// # Errors
     /// Returns `Err` if `offset` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_clear_at_offset(&mut self, offset: i32) -> Result<(), String> {
+    fn structure_data_type_clear_at_offset(&mut self, offset: i32) -> Result<(), String>
+    where
+        Self: Sized,
+    {
         if offset < 0 {
             return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
         }
@@ -963,7 +1146,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
     ///
     /// # Errors
     /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`).
-    fn structure_data_type_clear_component(&mut self, ordinal: i32) -> Result<(), String> {
+    fn structure_data_type_clear_component(&mut self, ordinal: i32) -> Result<(), String>
+    where
+        Self: Sized,
+    {
         if self.is_packing_enabled() {
             return self.structure_data_type_delete(ordinal);
         }
@@ -999,7 +1185,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
     ///
     /// # Errors
     /// Returns `Err` if `amount` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_grow_structure(&mut self, amount: i32) -> Result<(), String> {
+    fn structure_data_type_grow_structure(&mut self, amount: i32) -> Result<(), String>
+    where
+        Self: Sized,
+    {
         if amount < 0 {
             return Err(format!("IllegalArgumentException: Invalid growth amount: {amount}"));
         }
@@ -1019,7 +1208,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
     ///
     /// # Errors
     /// Returns `Err` if `len` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_set_length(&mut self, len: i32) -> Result<(), String> {
+    fn structure_data_type_set_length(&mut self, len: i32) -> Result<(), String>
+    where
+        Self: Sized,
+    {
         if len < 0 {
             return Err(format!("IllegalArgumentException: Invalid length: {len}"));
         }
@@ -1223,9 +1415,103 @@ mod tests {
         components: Vec<DataTypeComponentImpl>,
     }
 
+    /// Minimal [`DataOrganization`] stand-in, needed only so
+    /// [`AlignedStructurePacker::pack_components`]'s default body has something to call
+    /// `get_machine_alignment()`/`is_big_endian()`/`get_bit_field_packing()` on -- matches the
+    /// identical mock already used by
+    /// [`aligned_structure_packer`](crate::program::model::data::aligned_structure_packer)'s own
+    /// tests.
+    struct MockDataOrganization;
+    impl crate::program::model::data::data_organization::DataOrganization for MockDataOrganization {
+        fn is_big_endian(&self) -> bool {
+            false
+        }
+        fn get_pointer_size(&self) -> i32 {
+            8
+        }
+        fn get_pointer_shift(&self) -> i32 {
+            0
+        }
+        fn is_signed_char(&self) -> bool {
+            true
+        }
+        fn get_char_size(&self) -> i32 {
+            1
+        }
+        fn get_wide_char_size(&self) -> i32 {
+            2
+        }
+        fn get_short_size(&self) -> i32 {
+            2
+        }
+        fn get_integer_size(&self) -> i32 {
+            4
+        }
+        fn get_long_size(&self) -> i32 {
+            8
+        }
+        fn get_long_long_size(&self) -> i32 {
+            8
+        }
+        fn get_float_size(&self) -> i32 {
+            4
+        }
+        fn get_double_size(&self) -> i32 {
+            8
+        }
+        fn get_long_double_size(&self) -> i32 {
+            8
+        }
+        fn get_absolute_max_alignment(&self) -> i32 {
+            0
+        }
+        fn get_machine_alignment(&self) -> i32 {
+            8
+        }
+        fn get_default_alignment(&self) -> i32 {
+            1
+        }
+        fn get_default_pointer_alignment(&self) -> i32 {
+            8
+        }
+        fn get_size_alignment(&self, _size: i32) -> i32 {
+            1
+        }
+        fn get_bit_field_packing(&self) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
+            struct MockBitFieldPacking;
+            impl crate::program::model::data::bit_field_packing::BitFieldPacking for MockBitFieldPacking {
+                fn use_ms_convention(&self) -> bool {
+                    false
+                }
+                fn is_type_alignment_enabled(&self) -> bool {
+                    true
+                }
+                fn get_zero_length_boundary(&self) -> i32 {
+                    0
+                }
+            }
+            Box::new(MockBitFieldPacking)
+        }
+        fn get_size_alignment_count(&self) -> i32 {
+            0
+        }
+        fn get_sizes(&self) -> Vec<i32> {
+            vec![]
+        }
+        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
+            String::new()
+        }
+        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
+            1
+        }
+    }
+
     impl DataType for MockStructureDataType {
         fn get_name(&self) -> String {
             self.name.clone()
+        }
+        fn get_data_organization(&self) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
+            Box::new(MockDataOrganization)
         }
     }
 
@@ -1313,6 +1599,45 @@ mod tests {
         }
     }
 
+    /// Sequential, non-bitfield-aware stand-in for the real (not-yet-ported) `AlignedComponentPacker`
+    /// algorithm, matching the identical test double already used by
+    /// [`aligned_structure_packer`](crate::program::model::data::aligned_structure_packer)'s own
+    /// tests: packs each component immediately after the previous one, aligned to its own length.
+    struct SequentialComponentPacker {
+        next_offset: i32,
+        max_length: i32,
+    }
+
+    impl crate::program::seam_stubs::AlignedComponentPacker for SequentialComponentPacker {
+        fn add_component(&mut self, dtc: &mut dyn InternalDataTypeComponent, _is_last_component: bool) {
+            let length = dtc.get_length().max(1);
+            self.max_length = self.max_length.max(length);
+            let offset = crate::program::seam_stubs::get_aligned_offset(length, self.next_offset);
+            let component_length = dtc.get_length();
+            dtc.update(dtc.get_ordinal(), offset, component_length);
+            self.next_offset = offset + component_length;
+        }
+        fn get_default_alignment(&self) -> i32 {
+            self.max_length
+        }
+        fn get_length(&self) -> i32 {
+            self.next_offset
+        }
+        fn components_changed(&self) -> bool {
+            false
+        }
+    }
+
+    impl AlignedStructurePacker for MockStructureDataType {
+        fn create_component_packer(
+            &self,
+            _pack_value: i32,
+            _data_organization: &dyn crate::program::model::data::data_organization::DataOrganization,
+        ) -> Box<dyn crate::program::seam_stubs::AlignedComponentPacker> {
+            Box::new(SequentialComponentPacker { next_offset: 0, max_length: 1 })
+        }
+    }
+
     impl StructureDataType for MockStructureDataType {
         fn stored_struct_length(&self) -> i32 {
             self.struct_length
@@ -1365,7 +1690,6 @@ mod tests {
             length,
         })
     }
-
     #[test]
     fn usable_as_trait_object() {
         let s = sample();
@@ -1504,6 +1828,37 @@ mod tests {
         assert_eq!(s.structure_data_type_get_num_components(), 5);
 
         // Running repack again with nothing changed should report no change.
+        assert!(!s.structure_data_type_repack(false));
+    }
+
+    #[test]
+    fn packed_repack_computes_layout_via_aligned_structure_packer() {
+        let mut s = sample();
+        s.packing_type = PackingType::Default;
+
+        // The test-double `SequentialComponentPacker` places each component immediately after
+        // the previous one, aligned to its own length (matching
+        // `aligned_structure_packer`'s own test module's identical packer).
+        s.structure_data_type_add(byte_data_type("byte", 1), -1, Some("a".to_string()), None)
+            .unwrap();
+        assert_eq!(s.stored_struct_length(), 1);
+
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("b".to_string()), None)
+            .unwrap();
+
+        // "a" (len 1) stays at offset 0; "b" (len 4) is aligned up from next_offset=1 to offset
+        // 4; overall length (10 -> aligned to 4-byte alignment) is 8.
+        assert_eq!(s.structure_data_type_get_num_components(), 2);
+        assert_eq!(s.stored_struct_length(), 8);
+        let a = s.structure_data_type_get_component(0).unwrap();
+        assert_eq!(a.get_offset(), 0);
+        assert_eq!(a.get_field_name(), Some("a".to_string()));
+        let b = s.structure_data_type_get_component(1).unwrap();
+        assert_eq!(b.get_offset(), 4);
+        assert_eq!(b.get_length(), 4);
+        assert_eq!(b.get_field_name(), Some("b".to_string()));
+
+        // Repacking again with a stable layout reports no further change.
         assert!(!s.structure_data_type_repack(false));
     }
 
