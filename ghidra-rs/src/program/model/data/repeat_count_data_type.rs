@@ -15,23 +15,32 @@
 //! [`repeat_count_all_components`](RepeatCountDataType::repeat_count_all_components). A concrete
 //! `impl DynamicDataType for ...` should delegate `get_all_components` to it.
 //!
-//! Two of the Java method's own dependencies are themselves not yet ported
-//! (`MemoryBufferImpl`/`ReadOnlyDataTypeComponent`), so this port reproduces the same observable
-//! algorithm without them:
+//! Two of the Java method's own dependencies were not yet ported when this was first written
+//! (`MemoryBufferImpl`/`ReadOnlyDataTypeComponent`, both real as of the `descent` commits that
+//! landed them), so this port reproduces the same observable algorithm without them:
 //! - `MemoryBufferImpl` (a fresh, independently-advanceable [`MemBuffer`] view starting at `buf`'s
 //!   address) is replaced by [`OffsetMemBuffer`], a private, purely-additive offset wrapper around
-//!   the original `buf` -- avoiding both the not-yet-ported concrete type and the need for any
-//!   `&mut` "advance" mutation, since each loop iteration can simply compute a fresh cumulative
-//!   offset instead of mutating shared state. This also means the Java `catch
+//!   the original `buf` -- avoiding both the (at the time) not-yet-ported concrete type and the
+//!   need for any `&mut` "advance" mutation, since each loop iteration can simply compute a fresh
+//!   cumulative offset instead of mutating shared state. This also means the Java `catch
 //!   (AddressOverflowException | AddressOutOfBoundsException ...)` guard around
 //!   `newBuf.advance(len)` has no counterpart here: no address arithmetic that could overflow or
 //!   go out of bounds is performed, since offsets are tracked as plain `i32`s relative to the
 //!   original `buf`, not as real advancing addresses. `MemoryAccessException` from the initial
-//!   `buf.getByte(0)`/`buf.getByte(1)` reads *is* ported, collapsing to `None` via `?`.
+//!   `buf.getByte(0)`/`buf.getByte(1)` reads *is* ported, collapsing to `None` via `?`. Now that
+//!   the real `MemoryBufferImpl` exists, it could in principle replace `OffsetMemBuffer`, but
+//!   doing so would reintroduce the `&mut`/overflow-handling machinery this design specifically
+//!   avoids for no behavioral gain, so it is left as-is.
 //! - `ReadOnlyDataTypeComponent`'s constructor calls are replaced by a private
 //!   [`RepeatCountComponent`] struct implementing [`DataTypeComponent`] (whose every method
 //!   already has a default -- see that trait's own documentation -- so only the handful of fields
-//!   this class actually sets need overriding).
+//!   this class actually sets need overriding). The real
+//!   [`ReadOnlyDataTypeComponent`](super::read_only_data_type_component::ReadOnlyDataTypeComponent)
+//!   is not a clean swap for it even now that it exists: its constructor needs an
+//!   `Arc<dyn DynamicDataType>` for the *parent* component, but
+//!   [`repeat_count_all_components`](RepeatCountDataType::repeat_count_all_components) only ever
+//!   has `&self` (a bare `&dyn RepeatCountDataType`) to work with -- there is no way to conjure an
+//!   `Arc` pointing at "myself" from a plain borrow, so this stand-in remains.
 //! - `new WordDataType()` (for the leading "Size" component's data type) has no concrete
 //!   constructible counterpart yet (`WordDataType` is a trait with only `Mock*` test
 //!   implementors, per this crate's established convention for such leaf types), so a minimal

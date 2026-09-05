@@ -154,6 +154,7 @@ pub mod program_architecture_translator;
 pub mod program_based_data_type_manager;
 pub mod project_archive_based_data_type_manager;
 pub mod qword_data_type;
+pub mod read_only_data_type_component;
 pub mod render_unicode_settings_definition;
 pub mod repeat_count_data_type;
 pub mod repeated_string_data_type;
