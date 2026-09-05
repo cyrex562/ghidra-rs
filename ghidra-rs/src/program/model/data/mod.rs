@@ -87,6 +87,8 @@ pub mod function_definition;
 pub mod function_definition_data_type;
 pub mod generic_calling_convention;
 pub mod generic_data_type;
+pub mod ibo32_data_type;
+pub mod ibo64_data_type;
 pub mod icategory;
 pub mod illegal_rename_exception;
 pub mod int16_t_data_type;
