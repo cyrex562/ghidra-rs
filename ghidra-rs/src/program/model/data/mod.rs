@@ -78,6 +78,7 @@ pub mod dynamic;
 pub mod dynamic_data_type;
 pub mod endian_settings_definition;
 pub mod enum_;
+pub mod enum_data_type;
 pub mod enum_value_partitioner;
 pub mod factory_data_type;
 pub mod file_archive_based_data_type_manager;
