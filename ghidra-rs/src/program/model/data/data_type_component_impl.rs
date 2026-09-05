@@ -15,13 +15,20 @@
 //! (a `DataType` with every method left at its default) rather than a null, since the shared
 //! [`DataTypeComponent`] trait's `get_parent` signature is not `Option`-shaped.
 //!
-//! `comment`/`field_name`/`default_settings` are held behind [`std::cell::RefCell`]: the
+//! `comment`/`field_name`/`default_settings` are held behind [`std::sync::Mutex`] (not
+//! [`std::cell::RefCell`], despite the interior-mutability need described below being otherwise
+//! identical to a `RefCell`'s: [`DataType`] carries a `Send + Sync` supertrait bound, so any
+//! concrete type composing a `Vec<DataTypeComponentImpl>` as a field -- e.g. a real
+//! `StructureDataType`/`UnionDataType` implementor -- must itself be `Sync`, which a `RefCell`
+//! field would make impossible; a single-threaded-only `Mutex::lock().unwrap()` has the same
+//! effective semantics here as `RefCell::borrow_mut()` since nothing in this crate shares a
+//! `DataTypeComponentImpl` across real threads): the
 //! [`DataTypeComponent`] trait declares `set_comment`/`set_field_name`/`get_default_settings` as
 //! `&self` methods (matching that trait's general "immutable value type" convention), but Java's
 //! `DataTypeComponentImpl` genuinely mutates `this` in place and returns it from `setComment`/
 //! `setFieldName` -- a real difference from
 //! [`ReadOnlyDataTypeComponent`](super::read_only_data_type_component::ReadOnlyDataTypeComponent),
-//! whose identical-looking setters are no-ops. Mutating a `RefCell`-backed field through `&self`
+//! whose identical-looking setters are no-ops. Mutating a `Mutex`-backed field through `&self`
 //! reproduces that in-place mutation faithfully (any other holder of the same `&self` reference
 //! observes the change too, exactly like Java's shared object reference), while the trait's
 //! required `Box<dyn DataTypeComponent>` return value is a freshly built snapshot sharing the same
@@ -30,7 +37,7 @@
 //! instead (matching [`InternalDataTypeComponent::set_data_type`]/
 //! [`InternalDataTypeComponent::update`], and this struct's own `set_offset`/`set_length`/
 //! `set_ordinal` for the package-private Java setters of the same names), so they need no
-//! `RefCell`.
+//! interior mutability at all.
 //!
 //! `getDefaultSettings()`'s lazily-built `new SettingsImpl(immutableSettings)` is reproduced
 //! directly as [`ComponentDefaultSettings`], the same approach
@@ -60,8 +67,7 @@
 //! [`ReadOnlyDataTypeComponent`](super::read_only_data_type_component::ReadOnlyDataTypeComponent).
 
 use std::any::Any;
-use std::cell::RefCell;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
@@ -173,10 +179,10 @@ pub struct DataTypeComponentImpl {
     parent: Option<Arc<dyn CompositeDataTypeImpl>>,
     offset: i32,
     ordinal: i32,
-    field_name: RefCell<Option<String>>,
-    comment: RefCell<Option<String>>,
+    field_name: Mutex<Option<String>>,
+    comment: Mutex<Option<String>>,
     length: i32,
-    default_settings: RefCell<Option<Arc<dyn Settings>>>,
+    default_settings: Mutex<Option<Arc<dyn Settings>>>,
 }
 
 impl DataTypeComponentImpl {
@@ -210,10 +216,10 @@ impl DataTypeComponentImpl {
             parent,
             offset,
             ordinal,
-            field_name: RefCell::new(cleanup_field_name(field_name.as_deref())),
-            comment: RefCell::new(clean_comment(comment)),
+            field_name: Mutex::new(cleanup_field_name(field_name.as_deref())),
+            comment: Mutex::new(clean_comment(comment)),
             length,
-            default_settings: RefCell::new(None),
+            default_settings: Mutex::new(None),
         }
     }
 
@@ -260,7 +266,7 @@ impl DataTypeComponentImpl {
 
     /// Port of the package-private `invalidateSettings()`.
     pub fn invalidate_settings(&self) {
-        *self.default_settings.borrow_mut() = None;
+        *self.default_settings.lock().unwrap() = None;
     }
 
     /// Port of the package-private `update(String, DataType, String)`: perform a special-case
@@ -268,8 +274,8 @@ impl DataTypeComponentImpl {
     /// [`InternalDataTypeComponent::update`] (Java overloads both as `update`; Rust cannot).
     pub fn update_special(&mut self, name: Option<String>, new_data_type: Box<dyn DataType>, new_comment: Option<String>) {
         self.data_type = Arc::from(new_data_type);
-        *self.field_name.borrow_mut() = cleanup_field_name(name.as_deref());
-        *self.comment.borrow_mut() = clean_comment(new_comment);
+        *self.field_name.lock().unwrap() = cleanup_field_name(name.as_deref());
+        *self.comment.lock().unwrap() = clean_comment(new_comment);
     }
 
     /// Port of `DataTypeComponentImpl.equals(Object)`. See the module docs for why this isn't
@@ -311,16 +317,21 @@ impl DataTypeComponentImpl {
         my_dt.get_name() == other_dt.get_name()
     }
 
-    fn snapshot(&self) -> DataTypeComponentImpl {
+    /// Duplicate this component (sharing the same underlying `Arc`s, matching Java's
+    /// object-reference `return this;`/copy-construction idioms). `pub(crate)` since it is a
+    /// crate-internal cloning primitive rather than part of the ported public API; used by
+    /// [`StructureDataType`](super::structure_data_type::StructureDataType) to hand back an owned
+    /// component from `getComponent`-style queries without exposing a full `Clone` impl.
+    pub(crate) fn snapshot(&self) -> DataTypeComponentImpl {
         DataTypeComponentImpl {
             data_type: self.data_type.clone(),
             parent: self.parent.clone(),
             offset: self.offset,
             ordinal: self.ordinal,
-            field_name: RefCell::new(self.field_name.borrow().clone()),
-            comment: RefCell::new(self.comment.borrow().clone()),
+            field_name: Mutex::new(self.field_name.lock().unwrap().clone()),
+            comment: Mutex::new(self.comment.lock().unwrap().clone()),
             length: self.length,
-            default_settings: RefCell::new(self.default_settings.borrow().clone()),
+            default_settings: Mutex::new(self.default_settings.lock().unwrap().clone()),
         }
     }
 }
@@ -425,11 +436,11 @@ impl DataTypeComponent for DataTypeComponentImpl {
     }
 
     fn get_comment(&self) -> Option<String> {
-        self.comment.borrow().clone()
+        self.comment.lock().unwrap().clone()
     }
 
     fn set_comment(&self, comment: Option<String>) -> Box<dyn DataTypeComponent> {
-        *self.comment.borrow_mut() = clean_comment(comment);
+        *self.comment.lock().unwrap() = clean_comment(comment);
         Box::new(self.snapshot())
     }
 
@@ -437,11 +448,11 @@ impl DataTypeComponent for DataTypeComponentImpl {
         if self.is_zero_bit_field_component() {
             return None;
         }
-        self.field_name.borrow().clone()
+        self.field_name.lock().unwrap().clone()
     }
 
     fn set_field_name(&self, field_name: Option<String>) -> Box<dyn DataTypeComponent> {
-        *self.field_name.borrow_mut() = cleanup_field_name(field_name.as_deref());
+        *self.field_name.lock().unwrap() = cleanup_field_name(field_name.as_deref());
         Box::new(self.snapshot())
     }
 
@@ -466,7 +477,7 @@ impl DataTypeComponent for DataTypeComponentImpl {
 
     fn get_default_settings(&self) -> Box<dyn Settings> {
         {
-            let mut cache = self.default_settings.borrow_mut();
+            let mut cache = self.default_settings.lock().unwrap();
             if cache.is_none() {
                 let Some(parent) = &self.parent else {
                     return Box::new(NoDefaultSettings);
@@ -480,7 +491,7 @@ impl DataTypeComponent for DataTypeComponentImpl {
                 *cache = Some(Arc::new(ComponentDefaultSettings { fallback, immutable }) as Arc<dyn Settings>);
             }
         }
-        let cache = self.default_settings.borrow();
+        let cache = self.default_settings.lock().unwrap();
         Box::new(SharedSettings(cache.as_ref().expect("just populated above").clone()))
     }
 
