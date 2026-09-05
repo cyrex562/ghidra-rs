@@ -142,14 +142,30 @@
 //! methods were added to its forwarded set (a strict completeness fix, not a behavior change, for
 //! that shared crate-wide utility).
 //!
+//! `replaceWith(DataType)` is also now ported, as
+//! [`structure_data_type_replace_with`](StructureDataType::structure_data_type_replace_with)
+//! (same `&dyn StructureDataType` convention as `structure_data_type_is_equivalent`, standing in
+//! for Java's `instanceof StructureInternal` downcast): clears this structure's components and
+//! packing/alignment settings and repopulates them from `other`, delegating to
+//! [`structure_data_type_add`](StructureDataType::structure_data_type_add) for the packed case
+//! (`doReplaceWithPacked`) and constructing components directly (preserving `other`'s
+//! offsets/ordinals/field names verbatim) for the non-packed case (`doReplaceWithNonPacked`).
+//!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
 //! is agreed):
 //!   - `replace`/`replaceAtOffset`/`dataTypeSizeChanged`/`dataTypeAlignmentChanged`/
-//!     `dataTypeDeleted`/`dataTypeReplaced`/`replaceWith`/`copy`/`clone` are not ported. `replace`
+//!     `dataTypeDeleted`/`dataTypeReplaced`/`copy`/`clone` are not ported. `replace`
 //!     in particular has an intricate multi-case algorithm (bit-field-overlap consolidation,
 //!     "quick update" fast path, `LinkedList<DataTypeComponentImpl>` sequence replacement) that
-//!     was not reached this session.
+//!     was not reached this session. `copy`/`clone` additionally have no home as trait default
+//!     methods at all in this architecture: both Java bodies construct a brand-new
+//!     `StructureDataType` instance (`new StructureDataType(...)`) and then call `replaceWith`
+//!     on it, but a Rust trait default method cannot return a sized, constructible `Self` (see
+//!     this module's very first doc paragraph re: the five constructors); only a concrete
+//!     implementor -- which alone knows how to build a fresh instance of itself -- can wire
+//!     `copy`/`clone` up, by calling its own constructor and then
+//!     `structure_data_type_replace_with`.
 //!   - `DataTypeUtilities.checkAncestry` (cyclic-dependency rejection) is not ported anywhere in
 //!     this crate yet, so it is not called from `structure_data_type_add`/`_insert`/
 //!     `_insert_at_offset` below (unlike Java, adding a data type that would create a cyclic
@@ -1193,6 +1209,84 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
             .all(|(a, b)| a.is_equivalent(b))
     }
 
+    /// Port of `StructureDataType.replaceWith(DataType)`, generalized over any other
+    /// `StructureDataType` implementor (same `&dyn StructureDataType` convention as
+    /// [`structure_data_type_is_equivalent`](StructureDataType::structure_data_type_is_equivalent),
+    /// standing in for Java's `instanceof StructureInternal` downcast). Replaces this structure's
+    /// internal components with those of `other`, including packing and alignment settings.
+    ///
+    /// NOTE: unlike adding new components (which guarantees field-name uniqueness), this preserves
+    /// `other`'s component names verbatim, matching Java. See the module docs for what is skipped
+    /// (`checkAncestry`, `dataType.clone(dataMgr)`, `data_type.removeParent(this)`/`addParent(this)`,
+    /// and the `structAlignment = -1` reset, since no such field is tracked by this port).
+    fn structure_data_type_replace_with(&mut self, other: &dyn StructureDataType) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        // dtc.getDataType().removeParent(this) for each existing component: skipped, see module
+        // docs re: parent-notification wiring.
+        self.components_mut().clear();
+        self.set_stored_num_components(0);
+        self.set_stored_struct_length(0);
+
+        self.set_stored_packing_value_raw(other.get_stored_packing_value());
+        self.set_stored_minimum_alignment_value(other.get_stored_minimum_alignment());
+
+        if other.is_packing_enabled() {
+            for dtc in other.components() {
+                let dt = dtc.get_data_type();
+                let length = if dt.as_dynamic().is_some() { dtc.get_length() } else { -1 };
+                self.structure_data_type_add(dt, length, dtc.get_field_name(), dtc.get_comment())?;
+            }
+        } else if !other.composite_impl_is_not_yet_defined() {
+            let new_length = if other.structure_data_type_is_zero_length() {
+                0
+            } else {
+                other.length()
+            };
+            self.set_stored_struct_length(new_length);
+            self.set_stored_num_components(new_length);
+
+            let other_components = other.components();
+            let count = other_components.len();
+            for (i, dtc) in other_components.iter().enumerate() {
+                let dt = dtc.get_data_type();
+                // dt.clone(dataMgr) / checkAncestry(self, dt): skipped, see module docs.
+                let is_dynamic = dt.as_dynamic().is_some();
+                let length = if dtc.is_bit_field_component() || is_dynamic {
+                    dtc.get_length()
+                } else {
+                    let max_offset = if i + 1 < count {
+                        other_components[i + 1].get_offset()
+                    } else {
+                        self.stored_struct_length()
+                    };
+                    let max_length = max_offset - dtc.get_offset();
+                    self.composite_impl_preferred_component_length(
+                        dt.as_ref(),
+                        is_dynamic_with_specifiable_length(dt.as_ref()),
+                        -1,
+                        max_length,
+                    )?
+                };
+                let new_dtc = DataTypeComponentImpl::new(
+                    dt,
+                    None,
+                    length,
+                    dtc.get_ordinal(),
+                    dtc.get_offset(),
+                    dtc.get_field_name(),
+                    dtc.get_comment(),
+                );
+                self.components_mut().push(new_dtc);
+            }
+        }
+
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+        Ok(())
+    }
+
     /// Port of the private `StructureDataType.doDelete(int)`. See the module docs re:
     /// `dtc.getDataType().removeParent(this)` being skipped (no parent-notification wiring).
     fn structure_data_type_do_delete(&mut self, index: usize) -> DataTypeComponentImpl {
@@ -1843,9 +1937,25 @@ mod tests {
         }
         fn set_stored_minimum_alignment_value(&mut self, _minimum_alignment: i32) {}
         fn stored_packing_value(&self) -> i32 {
-            0
+            // Mirrors `get_stored_packing_value` below -- both derive from the single
+            // `packing_type` field so a `structure_data_type_replace_with` (which only ever
+            // writes through this raw setter) is observable via `is_packing_enabled()`/
+            // `get_packing_type()` too, exactly as a real concrete implementor would wire it.
+            if self.packing_type == PackingType::Disabled {
+                crate::program::model::data::composite_internal::NO_PACKING
+            } else {
+                crate::program::model::data::composite_internal::DEFAULT_PACKING
+            }
         }
-        fn set_stored_packing_value_raw(&mut self, _packing: i32) {}
+        fn set_stored_packing_value_raw(&mut self, packing: i32) {
+            self.packing_type = if packing < crate::program::model::data::composite_internal::DEFAULT_PACKING {
+                PackingType::Disabled
+            } else if packing == crate::program::model::data::composite_internal::DEFAULT_PACKING {
+                PackingType::Default
+            } else {
+                PackingType::Explicit
+            };
+        }
         fn set_stored_name(&mut self, name: String) {
             self.name = name;
         }
@@ -2210,6 +2320,66 @@ mod tests {
             .unwrap();
         d.set_stored_struct_length(9);
         assert!(!a.structure_data_type_is_equivalent(&d));
+    }
+
+    #[test]
+    fn replace_with_copies_non_packed_components_and_settings() {
+        let mut source = sample();
+        source
+            .structure_data_type_add(byte_data_type("int", 4), -1, Some("a".to_string()), None)
+            .unwrap();
+        source
+            .structure_data_type_add(byte_data_type("short", 2), -1, Some("b".to_string()), None)
+            .unwrap();
+
+        let mut target = sample();
+        // Pre-existing (now-stale) state that replaceWith must fully discard.
+        target
+            .structure_data_type_add(byte_data_type("byte", 1), -1, Some("stale".to_string()), None)
+            .unwrap();
+
+        target.structure_data_type_replace_with(&source).unwrap();
+
+        assert_eq!(target.stored_struct_length(), 6);
+        assert_eq!(target.structure_data_type_get_num_defined_components(), 2);
+        let a = target.structure_data_type_get_component(0).unwrap();
+        assert_eq!(a.get_field_name(), Some("a".to_string()));
+        assert_eq!(a.get_offset(), 0);
+        let b = target.structure_data_type_get_component(1).unwrap();
+        assert_eq!(b.get_field_name(), Some("b".to_string()));
+        assert_eq!(b.get_offset(), 4);
+    }
+
+    #[test]
+    fn replace_with_empty_source_clears_target() {
+        let source = sample(); // isNotYetDefined() -- no components, non-packed
+        let mut target = three_component_sample();
+
+        target.structure_data_type_replace_with(&source).unwrap();
+
+        assert_eq!(target.structure_data_type_get_num_defined_components(), 0);
+        assert_eq!(target.stored_struct_length(), 0);
+    }
+
+    #[test]
+    fn replace_with_packed_source_uses_add_and_computes_layout() {
+        let mut source = sample();
+        source.packing_type = PackingType::Default;
+        source
+            .structure_data_type_add(byte_data_type("byte", 1), -1, Some("a".to_string()), None)
+            .unwrap();
+        source
+            .structure_data_type_add(byte_data_type("int", 4), -1, Some("b".to_string()), None)
+            .unwrap();
+
+        let mut target = sample();
+        target.structure_data_type_replace_with(&source).unwrap();
+
+        assert!(target.is_packing_enabled());
+        assert_eq!(target.structure_data_type_get_num_defined_components(), 2);
+        assert_eq!(target.stored_struct_length(), 8); // matches the sequential test packer's layout
+        let b = target.structure_data_type_get_component(1).unwrap();
+        assert_eq!(b.get_offset(), 4);
     }
 
     #[test]
