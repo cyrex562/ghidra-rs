@@ -187,6 +187,7 @@ pub mod string_layout_enum;
 pub mod string_render_builder;
 pub mod string_utf8_data_type;
 pub mod structure;
+pub mod structure_data_type;
 pub mod structure_factory;
 pub mod structure_internal;
 pub mod structured_dynamic_data_type;

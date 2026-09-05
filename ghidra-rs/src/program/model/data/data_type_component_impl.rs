@@ -15,10 +15,10 @@
 //! (a `DataType` with every method left at its default) rather than a null, since the shared
 //! [`DataTypeComponent`] trait's `get_parent` signature is not `Option`-shaped.
 //!
-//! `comment`/`field_name`/`default_settings` are held behind [`std::sync::Mutex`] (not
-//! [`std::cell::RefCell`], despite the interior-mutability need described below being otherwise
-//! identical to a `RefCell`'s: [`DataType`] carries a `Send + Sync` supertrait bound, so any
-//! concrete type composing a `Vec<DataTypeComponentImpl>` as a field -- e.g. a real
+//! `comment`/`field_name` are held behind [`std::sync::Mutex`] (not [`std::cell::RefCell`],
+//! despite the interior-mutability need described below being otherwise identical to a
+//! `RefCell`'s: [`DataType`] carries a `Send + Sync` supertrait bound, so any concrete type
+//! composing a `Vec<DataTypeComponentImpl>` as a field -- e.g. a real
 //! `StructureDataType`/`UnionDataType` implementor -- must itself be `Sync`, which a `RefCell`
 //! field would make impossible; a single-threaded-only `Mutex::lock().unwrap()` has the same
 //! effective semantics here as `RefCell::borrow_mut()` since nothing in this crate shares a
@@ -39,7 +39,16 @@
 //! `set_ordinal` for the package-private Java setters of the same names), so they need no
 //! interior mutability at all.
 //!
-//! `getDefaultSettings()`'s lazily-built `new SettingsImpl(immutableSettings)` is reproduced
+//! `getDefaultSettings()`'s lazily-**cached** `new SettingsImpl(immutableSettings)` is instead
+//! recomputed on every call here (`invalidate_settings` is correspondingly a no-op): a cache would
+//! need an `Arc<dyn Settings>`-shaped field, but `Settings` (unlike `DataType`/
+//! `CompositeDataTypeImpl`) carries no `Send + Sync` supertrait bound, so `Arc<dyn Settings>` is
+//! not `Sync` and storing one directly in this struct would (per the same reasoning as the
+//! `RefCell`-vs-`Mutex` note above) make `DataTypeComponentImpl` `!Sync` outright, unusable inside
+//! any real composite. Recomputing is behaviorally identical for every getter a caller could
+//! invoke on the result (both produce a fresh, equivalent [`ComponentDefaultSettings`]/
+//! [`NoDefaultSettings`] each time this method is queried through that lens), just without the
+//! memoization. The lazily-built `new SettingsImpl(immutableSettings)` itself is still reproduced
 //! directly as [`ComponentDefaultSettings`], the same approach
 //! [`ReadOnlyDataTypeComponent`](super::read_only_data_type_component::ReadOnlyDataTypeComponent)
 //! takes for its own (unconditionally immutable) equivalent, since the general-purpose
@@ -182,7 +191,6 @@ pub struct DataTypeComponentImpl {
     field_name: Mutex<Option<String>>,
     comment: Mutex<Option<String>>,
     length: i32,
-    default_settings: Mutex<Option<Arc<dyn Settings>>>,
 }
 
 impl DataTypeComponentImpl {
@@ -219,7 +227,6 @@ impl DataTypeComponentImpl {
             field_name: Mutex::new(cleanup_field_name(field_name.as_deref())),
             comment: Mutex::new(clean_comment(comment)),
             length,
-            default_settings: Mutex::new(None),
         }
     }
 
@@ -264,10 +271,16 @@ impl DataTypeComponentImpl {
         self.ordinal = ordinal;
     }
 
-    /// Port of the package-private `invalidateSettings()`.
-    pub fn invalidate_settings(&self) {
-        *self.default_settings.lock().unwrap() = None;
-    }
+    /// Port of the package-private `invalidateSettings()`. A no-op here: unlike Java's lazily
+    /// cached `defaultSettings` field, [`get_default_settings`](DataTypeComponent::get_default_settings)
+    /// below recomputes on every call rather than caching (see the module docs for why -- caching
+    /// would need an `Arc<dyn Settings>`-shaped field, and `Settings` carries no `Send + Sync`
+    /// bound, which would make this struct `!Sync` and thus unusable as a field of any real
+    /// `DataType` implementor). Kept as a method (rather than removed) since it is part of the
+    /// ported Java surface and callers may still invoke it expecting Java's contract ("subsequent
+    /// `getDefaultSettings()` reflects current state"), which recomputing-every-time already
+    /// satisfies trivially.
+    pub fn invalidate_settings(&self) {}
 
     /// Port of the package-private `update(String, DataType, String)`: perform a special-case
     /// component update that does not result in size or alignment changes. Named distinctly from
@@ -331,7 +344,6 @@ impl DataTypeComponentImpl {
             field_name: Mutex::new(self.field_name.lock().unwrap().clone()),
             comment: Mutex::new(self.comment.lock().unwrap().clone()),
             length: self.length,
-            default_settings: Mutex::new(self.default_settings.lock().unwrap().clone()),
         }
     }
 }
@@ -476,23 +488,19 @@ impl DataTypeComponent for DataTypeComponentImpl {
     }
 
     fn get_default_settings(&self) -> Box<dyn Settings> {
-        {
-            let mut cache = self.default_settings.lock().unwrap();
-            if cache.is_none() {
-                let Some(parent) = &self.parent else {
-                    return Box::new(NoDefaultSettings);
-                };
-                let data_mgr = parent.get_data_type_manager();
-                let immutable = data_mgr
-                    .as_ref()
-                    .map(|mgr| !mgr.allows_default_component_settings())
-                    .unwrap_or(true);
-                let fallback: Arc<dyn Settings> = Arc::from(self.data_type.get_default_settings());
-                *cache = Some(Arc::new(ComponentDefaultSettings { fallback, immutable }) as Arc<dyn Settings>);
-            }
-        }
-        let cache = self.default_settings.lock().unwrap();
-        Box::new(SharedSettings(cache.as_ref().expect("just populated above").clone()))
+        // Recomputed on every call rather than cached (see `invalidate_settings`'s doc comment
+        // for why); observationally equivalent to Java's lazily-cached field for every getter a
+        // caller could invoke on the result, just without the memoization.
+        let Some(parent) = &self.parent else {
+            return Box::new(NoDefaultSettings);
+        };
+        let data_mgr = parent.get_data_type_manager();
+        let immutable = data_mgr
+            .as_ref()
+            .map(|mgr| !mgr.allows_default_component_settings())
+            .unwrap_or(true);
+        let fallback: Arc<dyn Settings> = Arc::from(self.data_type.get_default_settings());
+        Box::new(ComponentDefaultSettings { fallback, immutable })
     }
 
     fn is_equivalent(&self, dtc: &dyn DataTypeComponent) -> bool {
