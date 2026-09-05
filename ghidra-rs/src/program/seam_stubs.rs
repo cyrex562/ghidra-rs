@@ -89,6 +89,13 @@ impl VariableStorage for HashVariableStorage {
 /// underlying value, since `dyn DataType` has no `Clone` bound. Not a port of any specific Java
 /// class; used where Java code reuses the same `DataType` object reference across several calls
 /// (e.g. assigning the same data type to every variable in a merge set).
+///
+/// Forwards every `&self`-receiver [`DataType`] method (including the `instanceof`-standin
+/// downcasts like [`DataType::as_pointer`]/[`DataType::as_typedef`]) so that a handle obtained via
+/// [`share_data_type`] behaves indistinguishably from the real wrapped value for any caller that
+/// only ever borrows it. Methods consuming `self: Box<Self>` (the `into_*` downcast family) are
+/// not forwarded, since this wrapper only ever holds a shared `Arc`, never unique ownership of the
+/// underlying value.
 struct SharedDataType(Arc<dyn DataType>);
 
 impl DataType for SharedDataType {
@@ -110,6 +117,137 @@ impl DataType for SharedDataType {
 
     fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
         self.0.clone_data_type(dtm)
+    }
+
+    fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.copy_data_type(dtm)
+    }
+
+    fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
+        self.0.get_category_path()
+    }
+
+    fn get_display_name(&self) -> String {
+        self.0.get_display_name()
+    }
+
+    fn get_description(&self) -> String {
+        self.0.get_description()
+    }
+
+    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
+        self.0.get_mnemonic(settings)
+    }
+
+    fn has_language_dependant_length(&self) -> bool {
+        self.0.has_language_dependant_length()
+    }
+
+    fn is_zero_length(&self) -> bool {
+        self.0.is_zero_length()
+    }
+
+    fn get_aligned_length(&self) -> i32 {
+        self.0.get_aligned_length()
+    }
+
+    fn is_default_data_type(&self) -> bool {
+        self.0.is_default_data_type()
+    }
+
+    fn is_deleted(&self) -> bool {
+        self.0.is_deleted()
+    }
+
+    fn depends_on(&self, dt: &dyn DataType) -> bool {
+        self.0.depends_on(dt)
+    }
+
+    fn get_data_type_manager(&self) -> Option<Box<dyn DataTypeManager>> {
+        self.0.get_data_type_manager()
+    }
+
+    fn get_default_settings(&self) -> Box<dyn Settings> {
+        self.0.get_default_settings()
+    }
+
+    fn get_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
+        self.0.get_settings_definitions()
+    }
+
+    fn get_type_def_settings_definitions(
+        &self,
+    ) -> Vec<Box<dyn crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition>>
+    {
+        self.0.get_type_def_settings_definitions()
+    }
+
+    fn is_pointer(&self) -> bool {
+        self.0.is_pointer()
+    }
+
+    fn as_pointer(&self) -> Option<&dyn crate::program::model::data::pointer::Pointer> {
+        self.0.as_pointer()
+    }
+
+    fn is_typedef(&self) -> bool {
+        self.0.is_typedef()
+    }
+
+    fn as_typedef(&self) -> Option<&dyn crate::program::model::data::typedef::TypeDef> {
+        self.0.as_typedef()
+    }
+
+    fn typedef_base_data_type(&self) -> Option<Box<dyn DataType>> {
+        self.0.typedef_base_data_type()
+    }
+
+    fn is_array(&self) -> bool {
+        self.0.is_array()
+    }
+
+    fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
+        self.0.as_array()
+    }
+
+    fn is_structure(&self) -> bool {
+        self.0.is_structure()
+    }
+
+    fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
+        self.0.as_structure()
+    }
+
+    fn is_union(&self) -> bool {
+        self.0.is_union()
+    }
+
+    fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+        self.0.as_union()
+    }
+
+    fn as_composite(&self) -> Option<&dyn crate::program::model::data::composite::Composite> {
+        self.0.as_composite()
+    }
+
+    fn as_enum(&self) -> Option<&dyn crate::program::model::data::enum_::Enum> {
+        self.0.as_enum()
+    }
+
+    fn as_function_definition(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::function_definition::FunctionDefinition> {
+        self.0.as_function_definition()
+    }
+
+    fn as_built_in_data_type(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::built_in_data_type::BuiltInDataType> {
+        self.0.as_built_in_data_type()
+    }
+
+    fn as_built_in(&self) -> Option<&dyn crate::program::model::data::built_in::BuiltIn> {
+        self.0.as_built_in()
     }
 }
 
@@ -2905,6 +3043,50 @@ impl DataType for TypedefDataTypePlaceholder {
 
     fn is_typedef(&self) -> bool {
         true
+    }
+}
+
+#[cfg(test)]
+mod share_data_type_tests {
+    use super::*;
+    use crate::program::model::data::pointer::Pointer;
+    use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
+
+    struct MockPointerTypedefBuilder;
+    impl PointerTypedefBuilder for MockPointerTypedefBuilder {}
+
+    struct MockPointer;
+    impl DataType for MockPointer {
+        fn get_name(&self) -> String {
+            "ptr".to_string()
+        }
+        fn is_pointer(&self) -> bool {
+            true
+        }
+        fn as_pointer(&self) -> Option<&dyn Pointer> {
+            Some(self)
+        }
+    }
+    impl Pointer for MockPointer {
+        fn get_data_type(&self) -> Option<Box<dyn DataType>> {
+            None
+        }
+        fn new_pointer(&self, data_type: Box<dyn DataType>) -> Box<dyn Pointer> {
+            let _ = data_type;
+            Box::new(MockPointer)
+        }
+        fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
+            Box::new(MockPointerTypedefBuilder)
+        }
+    }
+
+    #[test]
+    fn share_data_type_forwards_as_pointer_downcast() {
+        let arc: Arc<dyn DataType> = Arc::new(MockPointer);
+        let shared = share_data_type(&arc);
+        assert!(shared.is_pointer());
+        assert!(shared.as_pointer().is_some());
+        assert_eq!(shared.get_name(), "ptr");
     }
 }
 
