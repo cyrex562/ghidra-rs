@@ -55,6 +55,7 @@ pub mod data_type_manager;
 pub mod data_type_comparator;
 pub mod data_type_manager_change_listener;
 pub mod data_type_manager_change_listener_adapter;
+pub mod data_type_manager_change_listener_handler;
 pub mod data_type_manager_domain_object;
 pub mod data_type_mnemonic_settings_definition;
 pub mod data_type_name_comparator;
