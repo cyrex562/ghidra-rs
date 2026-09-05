@@ -224,6 +224,15 @@ pub const ELEM_COMMENT: ElementId = ElementId::new("comment", 166);
 pub const ELEM_BLOCKSIG: ElementId = ElementId::new("blocksig", 258);
 pub const ELEM_COPYSIG: ElementId = ElementId::new("copysig", 263);
 pub const ELEM_VARSIG: ElementId = ElementId::new("varsig", 269);
+// Real Ghidra ids are 61/64/66 (`ElementId.java`'s `ELEM_TYPE_ALIGNMENT_ENABLED`/
+// `ELEM_USE_MS_CONVENTION`/`ELEM_ZERO_LENGTH_BOUNDARY`), all of which collide with other entries
+// already in this table, so they continue the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`. Used by
+// `BitFieldPackingImpl::encode`/`restore_xml`.
+pub const ELEM_TYPE_ALIGNMENT_ENABLED: ElementId =
+    ElementId::new("type_alignment_enabled", 270);
+pub const ELEM_USE_MS_CONVENTION: ElementId = ElementId::new("use_MS_convention", 271);
+pub const ELEM_ZERO_LENGTH_BOUNDARY: ElementId = ElementId::new("zero_length_boundary", 272);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {

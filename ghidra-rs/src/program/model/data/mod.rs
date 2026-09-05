@@ -17,6 +17,7 @@ pub mod array;
 pub mod array_stringable;
 pub mod bad_data_type;
 pub mod bit_field_packing;
+pub mod bit_field_packing_impl;
 pub mod bit_group;
 pub mod boolean_data_type;
 pub mod built_in;
