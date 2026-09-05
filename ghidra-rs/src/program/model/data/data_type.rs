@@ -718,11 +718,29 @@ pub trait DataType: Send + Sync {
 
     /// Stands in for `dt instanceof BitFieldDataType ? (BitFieldDataType) dt : null`, used by the
     /// same `DataOrganizationImpl.getAlignment(DataType)` port to recover a bitfield's base data
-    /// type. The real `BitFieldDataType` class is not yet ported, so the downcast target is the
-    /// [`seam_stubs::BitFieldDataType`](crate::program::seam_stubs::BitFieldDataType) placeholder;
-    /// see `STUBS.tsv`. Implementors representing a bitfield are expected to override both this
-    /// and [`is_bit_field_type`](Self::is_bit_field_type).
+    /// type. Predates the real [`BitFieldDataType`](crate::program::model::data::bit_field_data_type::BitFieldDataType)
+    /// port, so the downcast target is still the
+    /// [`seam_stubs::BitFieldDataType`](crate::program::seam_stubs::BitFieldDataType) placeholder
+    /// (kept as-is to avoid disturbing its existing call sites); see
+    /// [`as_bit_field_data_type`](Self::as_bit_field_data_type) for a downcast to the real,
+    /// full-fidelity type. Implementors representing a bitfield are expected to override both
+    /// this and [`is_bit_field_type`](Self::is_bit_field_type).
     fn as_bit_field(&self) -> Option<&dyn crate::program::seam_stubs::BitFieldDataType> {
+        None
+    }
+
+    /// Stands in for `dt instanceof BitFieldDataType ? (BitFieldDataType) dt : null`, downcasting
+    /// to the real, fully-ported
+    /// [`BitFieldDataType`](crate::program::model::data::bit_field_data_type::BitFieldDataType)
+    /// struct rather than the older [`as_bit_field`](Self::as_bit_field) placeholder trait target.
+    /// Used by [`BitFieldDataType::is_equivalent`][bfeq]'s port of
+    /// `BitFieldDataType.isEquivalent(DataType)`, which needs the other side's declared (not
+    /// effective) `bitSize` field -- not exposed by the placeholder trait's `get_bit_size()`.
+    ///
+    /// [bfeq]: crate::program::model::data::bit_field_data_type::BitFieldDataType
+    fn as_bit_field_data_type(
+        &self,
+    ) -> Option<&crate::program::model::data::bit_field_data_type::BitFieldDataType> {
         None
     }
 }

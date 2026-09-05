@@ -221,7 +221,13 @@ fn resolve_big_endian(settings: &dyn Settings, buf: &dyn MemBuffer) -> bool {
 /// int, boolean)`, used by [`AbstractIntegerDataType::integer_representation`]. Always reads the
 /// format via the literal [`FormatSettingsDefinition::DEF_HEX`] (not a per-instance override),
 /// exactly matching the Java source.
-fn format_integer_representation(mut big_int: i128, settings: &dyn Settings, bit_length: i32, is_signed: bool) -> String {
+///
+/// `pub(crate)` (rather than private) because the Java method is itself package-private, not
+/// `private`: `BitFieldDataType.getRepresentation` (same `ghidra.program.model.data` package)
+/// calls it directly too (`AbstractIntegerDataType.getRepresentation(big, settings,
+/// effectiveBitSize, isSigned)`), and `bit_field_data_type.rs` reuses this exact function for
+/// that cross-module call.
+pub(crate) fn format_integer_representation(mut big_int: i128, settings: &dyn Settings, bit_length: i32, is_signed: bool) -> String {
     let padded = PaddingSettingsDefinition::DEF.is_padded(Some(settings));
     let negative = big_int < 0;
     let format = FormatSettingsDefinition::DEF_HEX.get_choice(settings);
