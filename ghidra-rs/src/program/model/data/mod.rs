@@ -169,6 +169,7 @@ pub mod structure_internal;
 pub mod terminated_settings_definition;
 pub mod translation_settings_definition;
 pub mod typedef;
+pub mod typedef_data_type;
 pub mod typedef_settings_definition;
 pub mod undefined;
 pub mod undefined1_data_type;
