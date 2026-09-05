@@ -8,13 +8,21 @@
 //!
 //! ## `get_data_type` is real, not a stub
 //!
-//! Unlike most of this crate's other cut-point traits, [`FactoryDataType::get_data_type`] (the
-//! method this whole class exists to implement) has **no default** on its own supertrait -- so,
-//! unlike a same-named *default* method (which Rust forbids redeclaring on a subtrait without
-//! creating an ambiguous call site), this trait *can* and does supply one here, built on
-//! [`populate_dynamic_structure`](Self::populate_dynamic_structure) (still required, mirroring the
-//! Java `abstract` method) and [`new_empty_structure`](Self::new_empty_structure) (a second,
-//! *new* required method -- see below).
+//! [`FactoryDataType::get_data_type`] (the method this whole class exists to implement) has no
+//! default on its own supertrait, so this trait is free to declare its *own* `get_data_type` with
+//! a real body (no ambiguous-override concern, since there is no existing default to collide
+//! with). Note that -- exactly like
+//! [`CountedDynamicDataType::counted_all_components`](super::counted_dynamic_data_type::CountedDynamicDataType::counted_all_components)'s
+//! identical situation with `DynamicDataType::get_all_components` -- a subtrait method of the same
+//! name as a supertrait's required (no-default) method is still a *distinct* trait item in Rust;
+//! it does not automatically satisfy the supertrait's requirement. A concrete type implementing
+//! both `FactoryDataType` and `FactoryStructureDataType` must still give its own
+//! `FactoryDataType::get_data_type` a one-line body delegating to
+//! `FactoryStructureDataType::get_data_type(self, buf)` (see this module's own tests for a
+//! working example). The real logic lives here, built on
+//! [`populate_dynamic_structure`](Self::populate_dynamic_structure) (required, mirroring the Java
+//! `abstract` method) and [`new_empty_structure`](Self::new_empty_structure) (a second, new
+//! required method -- see below).
 //!
 //! ## The one genuine blocker: constructing `new StructureDataType(getName(), 0)`
 //!
@@ -138,11 +146,13 @@ pub trait FactoryStructureDataType: BuiltIn + FactoryDataType {
 
     /// Port of `FactoryStructureDataType.getDataType(MemBuffer)`.
     ///
-    /// [`FactoryDataType::get_data_type`] has no default of its own to collide with, so this
-    /// default fully implements it. Unlike the Java original's `if (buf != null)` guard -- for
-    /// which there is no null `MemBuffer` in this port's non-optional `&dyn MemBuffer` signature
-    /// (a decision already made when [`FactoryDataType`] itself was ported) -- population and
-    /// category assignment always run.
+    /// See the module docs: a concrete type must still delegate its own
+    /// `FactoryDataType::get_data_type` to this method by name (this trait method does not
+    /// automatically satisfy that supertrait's requirement, even though the names match and the
+    /// supertrait method has no default of its own). Unlike the Java original's `if (buf != null)`
+    /// guard -- for which there is no null `MemBuffer` in this port's non-optional `&dyn MemBuffer`
+    /// signature (a decision already made when [`FactoryDataType`] itself was ported) -- population
+    /// and category assignment always run.
     fn get_data_type(&self, buf: &dyn MemBuffer) -> Box<dyn DataType> {
         let mut structure = self.new_empty_structure();
         self.populate_dynamic_structure(buf, structure.as_mut());
