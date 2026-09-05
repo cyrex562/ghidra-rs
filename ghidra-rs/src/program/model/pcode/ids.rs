@@ -1,3 +1,25 @@
+//! Port of `ghidra.program.model.pcode.ElementId` (and the SLA-format element ids from
+//! `SlaFormat`/related sleigh classes), plus `ghidra.program.model.pcode.AttributeId`.
+//!
+//! **Audit note (2026-09, PORT_MANIFEST audit of `ElementId.java`)**: numeric ids in this file
+//! are deliberately renumbered relative to Java's `ElementId.java` (see the inline comments
+//! below, e.g. near `ELEM_BHEAD`) — only the string `name` needs to round-trip to the real `.sla`
+//! wire format, not the raw int, so collisions are resolved by continuing a local counter. That
+//! divergence is intentional and safe.
+//!
+//! However, the audit also found this file is **not** a complete port of `ElementId.java`: of the
+//! 280 real (non-commented-out) `ELEM_*` constants declared there, only 79 have a
+//! same-named counterpart here — the other 201 are simply absent (e.g. `ELEM_FUNCTION`,
+//! `ELEM_AST`, `ELEM_SYMBOLLIST`, `ELEM_JUMPTABLE`, `ELEM_PARAMMEASURES`, `ELEM_CONSTANTPOOL`,
+//! all `ELEM_COMMAND_GET*` remote-command ids, most `options`/`prettyprint`/`architecture`/
+//! `database` section constants, etc. — grep `ElementId.java` for the full list). This file's
+//! `ELEM_*` set appears to have grown organically to cover only what specific ported callers
+//! (`data_organization_impl.rs`, `BitFieldPackingImpl`, `ClangToken::build_token`, sleigh SLA
+//! decoding) needed so far, not as a deliberate full port of the Java class. Do not flip
+//! `ghidra.program.model.pcode.ElementId.java`'s `PORT_MANIFEST.tsv` row to `DONE` until the
+//! remaining ~201 constants are added (with the same renumbering discipline used below) or a
+//! narrower definition of "done" for this file is agreed.
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ElementId {
     pub name: &'static str,
