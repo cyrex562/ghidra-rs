@@ -164,6 +164,7 @@ pub mod signed_qword_data_type;
 pub mod source_archive;
 pub mod stand_alone_data_type_manager;
 pub mod string_data_instance;
+pub mod string_data_type;
 pub mod string_layout_enum;
 pub mod string_render_builder;
 pub mod structure;
