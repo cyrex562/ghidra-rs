@@ -81,6 +81,7 @@ pub mod enum_;
 pub mod enum_data_type;
 pub mod enum_value_partitioner;
 pub mod factory_data_type;
+pub mod factory_structure_data_type;
 pub mod file_archive_based_data_type_manager;
 pub mod file_based_data_type_manager;
 pub mod file_data_type_manager;
