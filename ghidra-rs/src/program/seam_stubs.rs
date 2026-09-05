@@ -269,6 +269,23 @@ impl DataType for SharedDataType {
     fn get_alignment(&self) -> i32 {
         self.0.get_alignment()
     }
+
+    // The two overrides below were found missing (like the three above) while porting
+    // `StructureDataType`/`UnionDataType`'s `dataType*Changed`/`dataTypeReplaced` bitfield-update
+    // paths: `DataTypeComponentImpl::get_data_type()` hands back a `share_data_type`-wrapped
+    // handle, so any caller trying to downcast a *bitfield* component's data type after going
+    // through that handle (e.g. via `as_bit_field_data_type()`) would otherwise silently see
+    // `None` even when the underlying shared value really is a `BitFieldDataType`. A strict
+    // completeness fix, not a behavior change, for this shared crate-wide utility. (`as_bit_field`
+    // -- the older, pre-`BitFieldDataType`-port placeholder downcast -- is left unforwarded since
+    // no call site reaches it through a `SharedDataType` handle.)
+    fn is_bit_field_type(&self) -> bool {
+        self.0.is_bit_field_type()
+    }
+
+    fn as_bit_field_data_type(&self) -> Option<&crate::program::model::data::bit_field_data_type::BitFieldDataType> {
+        self.0.as_bit_field_data_type()
+    }
 }
 
 /// Hands back a fresh `Box<dyn DataType>` sharing `data_type`'s underlying value. See

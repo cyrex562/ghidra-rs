@@ -172,14 +172,59 @@
 //! `StructureDataType.copy`/`.clone`'s actual Java bodies) -- see [`StructureDataTypeImpl`]'s own
 //! doc comment for exactly what it does and does not cover.
 //!
+//! ## `dataType*Changed`/`dataTypeDeleted`/`dataTypeReplaced` now real (2026-09, continued)
+//!
+//! `dataTypeSizeChanged`/`dataTypeAlignmentChanged`/`dataTypeDeleted`/`dataTypeReplaced` are now
+//! ported, as [`structure_data_type_data_type_size_changed`](StructureDataType::structure_data_type_data_type_size_changed)/
+//! [`structure_data_type_data_type_alignment_changed`](StructureDataType::structure_data_type_data_type_alignment_changed)/
+//! [`structure_data_type_data_type_deleted`](StructureDataType::structure_data_type_data_type_deleted)/
+//! [`structure_data_type_data_type_replaced`](StructureDataType::structure_data_type_data_type_replaced),
+//! backed by two new small private helpers ([`structure_data_type_get_available_component_space`](StructureDataType::structure_data_type_get_available_component_space)/
+//! [`structure_data_type_consume_bytes_after`](StructureDataType::structure_data_type_consume_bytes_after))
+//! and one new "update a bitfield in place" helper
+//! ([`structure_data_type_update_bit_field_data_type`](StructureDataType::structure_data_type_update_bit_field_data_type),
+//! which operates directly on this structure's own `Vec<DataTypeComponentImpl>` rather than
+//! through the pre-existing but object-unsafe-in-practice
+//! [`CompositeDataTypeImpl::composite_impl_update_bit_field_data_type`], which stays stubbed at
+//! `Ok(false)`). The first three are wired all the way into `StructureDataTypeImpl`'s own `impl
+//! DataType` ([`DataType::data_type_size_changed`]/[`data_type_alignment_changed`]/
+//! [`data_type_deleted`]) since they only ever need to *compare against* the notified data type
+//! (via [`DataType::get_data_type_path`] equality, this crate's established reference-identity
+//! approximation); `dataTypeReplaced` cannot be wired the same way since it needs to *store* an
+//! owned copy of the replacement, which the generic `data_type_replaced(&mut self, old_dt, new_dt:
+//! &dyn DataType)` placeholder has no way to hand over without a `Clone` bound on [`DataType`] --
+//! see [`structure_data_type_data_type_replaced`]'s own doc comment for the full explanation and
+//! for why `StructureDataTypeImpl` therefore leaves that one override at its inherited default.
+//!
+//! Two singleton stand-ins were added, mirroring [`UndefinedFillerDataType`]'s existing precedent
+//! for `DataType.DEFAULT`: [`BadDataTypeStandIn`]/[`bad_data_type_stand_in`] for
+//! `BadDataType.dataType` (used by `dataTypeDeleted`) and [`Undefined1StandIn`]/
+//! [`undefined1_stand_in`] for `Undefined1DataType.dataType` (used by `dataTypeReplaced`'s
+//! packed-structure fallback) -- both traits remain concrete-singleton-less in this crate (see
+//! their own module docs), and a previous session's attempt at this same porting task had flagged
+//! that gap as a hard blocker; it is not, once a minimal local stand-in (matching every property
+//! its own call sites actually read) is written the same way [`UndefinedFillerDataType`] already
+//! was for `DataType.DEFAULT`.
+//!
+//! While porting this, [`crate::program::seam_stubs::SharedDataType`] (the same shared utility
+//! flagged once already above for a different forwarding gap) was found *again* to not forward
+//! `is_bit_field_type`/`as_bit_field_data_type`: any caller downcasting a bitfield component's data
+//! type after routing it through [`DataTypeComponent::get_data_type`] (which returns a
+//! `share_data_type`-wrapped handle) would silently see "not a bitfield" even when the underlying
+//! shared value really is one. Both were added to its forwarded set (again a strict completeness
+//! fix, not a behavior change).
+//!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
 //! is agreed):
-//!   - `replace`/`replaceAtOffset`/`dataTypeSizeChanged`/`dataTypeAlignmentChanged`/
-//!     `dataTypeDeleted`/`dataTypeReplaced` are not ported. `replace` in particular has an
-//!     intricate multi-case algorithm (bit-field-overlap consolidation, "quick update" fast path,
-//!     `LinkedList<DataTypeComponentImpl>` sequence replacement) that was not reached this
-//!     session.
+//!   - `replace`/`replaceAtOffset` are not ported: an intricate multi-case algorithm
+//!     (bit-field-overlap consolidation, "quick update" fast path, `LinkedList<DataTypeComponentImpl>`
+//!     sequence replacement) that was not reached this session.
+//!   - Within `dataTypeDeleted`, the case where a *bitfield's* base type (rather than a plain
+//!     component's data type) is deleted -- which Java reverts to the base type's own primitive
+//!     integer type via `BitFieldDataType.getPrimitiveBaseDataType()` (walking through
+//!     `TypeDef`/`Enum` down to an `AbstractIntegerDataType`) -- is not ported, since that method
+//!     does not exist in this crate yet; such a bitfield is left unchanged instead of reverted.
 //!   - `dataType.clone(dataMgr)` (deep-cloning an inserted data type against this structure's own
 //!     `DataTypeManager`) is skipped; the data type is stored as given.
 //!   - `data_type.addParent(this)`/`removeParent(this)` (the child `DataType`'s own
@@ -207,7 +252,8 @@ use crate::program::model::data::aligned_structure_inspector::AlignedStructureIn
 use crate::program::model::data::aligned_structure_packer::AlignedStructurePacker;
 use crate::program::model::data::alignment_type::AlignmentType;
 use crate::program::model::data::bit_field_data_type::{
-    check_base_data_type, get_effective_bit_size, get_minimum_storage_size_no_offset, BitFieldDataType,
+    check_base_data_type, get_effective_bit_size, get_minimum_storage_size_no_offset, is_valid_base_data_type,
+    BitFieldDataType,
 };
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::composite::Composite;
@@ -260,6 +306,69 @@ fn undefined_filler_data_type() -> Box<dyn DataType> {
     Box::new(UndefinedFillerDataType)
 }
 
+/// Local stand-in for Ghidra's `BadDataType.dataType` singleton (an instance of the private
+/// `ghidra.program.model.data.BadDataType`), used by
+/// [`structure_data_type_data_type_deleted`](StructureDataType::structure_data_type_data_type_deleted)
+/// in place of a deleted (non-bitfield) component's data type, matching Java's
+/// `setComponentDataType(dtc, BadDataType.dataType, i)`. [`BadDataType`](super::bad_data_type::BadDataType)
+/// is itself only a trait in this crate with no ready-made concrete singleton instance (see its
+/// module docs, which flag this exact gap), so -- mirroring [`UndefinedFillerDataType`] above --
+/// this minimal local type stands in for just the two properties every call site actually needs:
+/// `getName()` (`"-BAD-"`) and `getLength()` (`-1`, real Java's documented "unknown length"
+/// sentinel). Since `-1` is not `> 0`, [`preferred_component_length_for_data_type`](super::composite_data_type_impl::preferred_component_length_for_data_type)
+/// always falls through to returning the *original* component length unchanged for this stand-in
+/// (matching Java's own `dtcLen`-preserving behavior for a real `BadDataType`, which has the
+/// identical `getLength() == -1`), so the fact that this stand-in does not also implement the real
+/// `BadDataType`/`Dynamic` traits (unlike the genuine Java singleton, which is `Dynamic`) has no
+/// observable effect on any computation performed here -- see
+/// [`structure_data_type_set_component_data_type`](StructureDataType::structure_data_type_set_component_data_type)'s
+/// own doc comment for the arithmetic that makes the two paths converge.
+#[derive(Debug, Clone, Copy)]
+struct BadDataTypeStandIn;
+
+impl DataType for BadDataTypeStandIn {
+    fn get_name(&self) -> String {
+        "-BAD-".to_string()
+    }
+    fn get_length(&self) -> i32 {
+        -1
+    }
+    fn get_description(&self) -> String {
+        "** Bad Data Type **".to_string()
+    }
+}
+
+fn bad_data_type_stand_in() -> Box<dyn DataType> {
+    Box::new(BadDataTypeStandIn)
+}
+
+/// Local stand-in for Ghidra's `Undefined1DataType.dataType` singleton, used by
+/// [`structure_data_type_data_type_replaced`](StructureDataType::structure_data_type_data_type_replaced)
+/// as the packed-structure fallback replacement when validation/ancestry-checking the real
+/// replacement data type fails, matching Java's `replacementDt = isPackingEnabled() ?
+/// Undefined1DataType.dataType : DataType.DEFAULT`. [`Undefined1DataType`](super::undefined1_data_type)
+/// is itself only a trait in this crate with no ready-made concrete singleton instance (see its
+/// module docs, which flag this exact gap) -- this minimal local type stands in for the one
+/// property every call site actually needs: a fixed, positive `getLength() == 1`.
+#[derive(Debug, Clone, Copy)]
+struct Undefined1StandIn;
+
+impl DataType for Undefined1StandIn {
+    fn get_name(&self) -> String {
+        "undefined1".to_string()
+    }
+    fn get_length(&self) -> i32 {
+        1
+    }
+    fn is_undefined_type(&self) -> bool {
+        true
+    }
+}
+
+fn undefined1_stand_in() -> Box<dyn DataType> {
+    Box::new(Undefined1StandIn)
+}
+
 /// Port of `DataTypeComponentImpl.isUndefined()`'s test, applied to a freshly-constructed
 /// component's data type (`dataType == DataType.DEFAULT`), used below in place of
 /// `dtc.isUndefined()` where only the data type (not yet wrapped in a component) is at hand.
@@ -300,6 +409,89 @@ fn is_part_of_data_type_by_ref(data_type: &dyn DataType, target: &dyn DataType) 
             .any(|dtc| is_part_of_data_type_by_ref(dtc.get_data_type().as_ref(), target)),
         None => false,
     }
+}
+
+/// Port of the private `DataTypeUtilities.checkValidReplacementDataType(DataType)`, used by
+/// [`check_valid_replacement`]. Unlike Java, there is no early return for a `DataTypeDB`-backed
+/// `data_type` (this crate's [`DataType`] trait has no `is_data_type_db`-style marker yet to
+/// recognize a database-backed implementor generically), so every candidate is checked against the
+/// same void/default/bitfield/factory/dynamic rules Java applies to non-`DataTypeDB` types.
+fn check_valid_replacement_data_type(data_type: &dyn DataType) -> Result<(), String> {
+    if data_type.is_void_type() {
+        return Err("IllegalArgumentException: Replacement data type may not be 'void' data type".to_string());
+    }
+    if data_type.is_default_data_type() {
+        return Err(
+            "IllegalArgumentException: Replacement data type may not be 'default' undefined data type".to_string(),
+        );
+    }
+    if data_type.is_bit_field_type() {
+        return Err(format!(
+            "IllegalArgumentException: Replacement data type may not be a bitfield: {}",
+            data_type.get_name()
+        ));
+    }
+    if data_type.is_factory_type() {
+        return Err(format!(
+            "IllegalArgumentException: Replacement data type may not be a Factory data type: {}",
+            data_type.get_name()
+        ));
+    }
+    if data_type.is_dynamic_type() {
+        return Err(format!(
+            "IllegalArgumentException: Replacement data type may not be a Dynamic data type: {}",
+            data_type.get_name()
+        ));
+    }
+    Ok(())
+}
+
+/// Port of the private `DataTypeUtilities.checkForInvalidFunctionDefinitionReplacement(DataType,
+/// DataType)`, used by [`check_valid_replacement`].
+fn check_for_invalid_function_definition_replacement(
+    replaced_dt: &dyn DataType,
+    replacement_dt: &dyn DataType,
+) -> Result<(), String> {
+    let replaced_base_owned;
+    let replaced_base: &dyn DataType = if replaced_dt.is_typedef() {
+        replaced_base_owned = replaced_dt.typedef_base_data_type();
+        replaced_base_owned.as_deref().unwrap_or(replaced_dt)
+    } else {
+        replaced_dt
+    };
+    let replacement_base_owned;
+    let replacement_base: &dyn DataType = if replacement_dt.is_typedef() {
+        replacement_base_owned = replacement_dt.typedef_base_data_type();
+        replacement_base_owned.as_deref().unwrap_or(replacement_dt)
+    } else {
+        replacement_dt
+    };
+
+    if replaced_base.is_function_definition_type() {
+        if !replacement_base.is_function_definition_type() {
+            return Err(format!(
+                "IllegalArgumentException: Existing function definition \"{}\" may not be replaced with \"{}\"",
+                replaced_dt.get_name(),
+                replacement_dt.get_name()
+            ));
+        }
+    } else if replacement_base.is_function_definition_type() {
+        return Err(format!(
+            "IllegalArgumentException: Existing data type \"{}\" may not be replaced with function definition \"{}\"",
+            replaced_dt.get_name(),
+            replacement_dt.get_name()
+        ));
+    }
+    Ok(())
+}
+
+/// Port of `DataTypeUtilities.checkValidReplacement(DataType, DataType)`, used by
+/// [`StructureDataType::structure_data_type_data_type_replaced`] ahead of (and, matching Java,
+/// unguarded by the same try/catch as) the validate/clone/check-ancestry sequence that follows it.
+fn check_valid_replacement(replaced_dt: &dyn DataType, replacement_dt: &dyn DataType) -> Result<(), String> {
+    check_valid_replacement_data_type(replaced_dt)?;
+    check_valid_replacement_data_type(replacement_dt)?;
+    check_for_invalid_function_definition_replacement(replaced_dt, replacement_dt)
 }
 
 /// Adapter routing a real [`DataTypeComponentImpl`]'s state through the
@@ -1866,6 +2058,350 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         }
         Some(Box::new(dtc))
     }
+
+    /// Port of the private `StructureDataType.getAvailableComponentSpace(int)`: the available
+    /// space for an existing defined component (identified by its index into
+    /// [`components`](StructureDataType::components), *not* its ordinal) in relation to the next
+    /// defined component or the end of the structure. Returns `-1` if packing is enabled
+    /// (matching Java), or `i32::MAX` (Java's `Integer.MAX_VALUE`) if `index` is the last defined
+    /// component of a non-packed structure.
+    fn structure_data_type_get_available_component_space(&self, index: usize) -> i32
+    where
+        Self: Sized,
+    {
+        if self.is_packing_enabled() {
+            return -1;
+        }
+        let next_index = index + 1;
+        if next_index < self.components().len() {
+            let offset = self.components()[index].get_offset();
+            return self.components()[next_index].get_offset() - offset;
+        }
+        i32::MAX
+    }
+
+    /// Port of the private `StructureDataType.consumeBytesAfter(int, int)`, including its inlined
+    /// call to `doGrowStructure(int)` for the last-component case (unlike
+    /// [`structure_data_type_grow_structure`](StructureDataType::structure_data_type_grow_structure),
+    /// which additionally repacks/notifies to serve as the public `growStructure(int)` entry
+    /// point, the growth performed here is the bare field update only, matching Java's private
+    /// `doGrowStructure` exactly -- every caller below already performs its own repack
+    /// afterward). Returns the number of bytes actually consumed.
+    fn structure_data_type_consume_bytes_after(&mut self, index: usize, num_bytes: i32) -> i32
+    where
+        Self: Sized,
+    {
+        let this_len = self.components()[index].get_length();
+        let this_offset = self.components()[index].get_offset();
+        let next_offset = this_offset + this_len;
+        let available = if index == self.components().len() - 1 {
+            let mut available = self.stored_struct_length() - next_offset;
+            if num_bytes > available {
+                let amount = num_bytes - available;
+                self.set_stored_num_components(self.stored_num_components() + amount);
+                self.set_stored_struct_length(self.stored_struct_length() + amount);
+                available = num_bytes;
+            }
+            available
+        } else {
+            self.components()[index + 1].get_offset() - next_offset
+        };
+        if num_bytes <= available {
+            self.components_mut()[index].set_length(this_len + num_bytes);
+            num_bytes
+        } else {
+            self.components_mut()[index].set_length(this_len + available);
+            available
+        }
+    }
+
+    /// Port of `StructureDataType.dataTypeSizeChanged(DataType)`: react to a component's data type
+    /// resizing, shrinking or growing that component (absorbing/releasing undefined filler bytes
+    /// around it via [`structure_data_type_shift_offsets`](StructureDataType::structure_data_type_shift_offsets)/
+    /// [`structure_data_type_consume_bytes_after`](StructureDataType::structure_data_type_consume_bytes_after))
+    /// as needed, or -- for a packing-enabled structure -- simply repacking. Bitfield components
+    /// are skipped entirely (matching Java's "unsupported" comment: a bitfield's own base type
+    /// should not itself trigger this notification for the bitfield component).
+    ///
+    /// # Errors
+    /// Returns `Err` if a positive preferred length cannot be determined for `dt` at some matching
+    /// component (mirrors `IllegalArgumentException`, propagated unguarded exactly as Java leaves
+    /// it uncaught).
+    fn structure_data_type_data_type_size_changed(&mut self, dt: &dyn DataType) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        if dt.is_bit_field_type() {
+            return Ok(());
+        }
+        if self.is_packing_enabled() {
+            self.structure_data_type_repack(true);
+            return Ok(());
+        }
+        let old_length = self.stored_struct_length();
+        let mut changed = false;
+        let target_path = dt.get_data_type_path();
+        let is_dynamic = is_dynamic_with_specifiable_length(dt);
+        let n = self.components().len();
+        let mut i = 0;
+        while i < n {
+            if self.components()[i].get_data_type().get_data_type_path() == target_path {
+                let dtc_len = self.components()[i].get_length();
+                let available = self.structure_data_type_get_available_component_space(i);
+                let length =
+                    self.composite_impl_preferred_component_length(dt, is_dynamic, dtc_len, available)?;
+                if length < dtc_len {
+                    self.components_mut()[i].set_length(length);
+                    self.structure_data_type_shift_offsets(i + 1, dtc_len - length, 0);
+                    changed = true;
+                } else if length > dtc_len {
+                    let consumed = self.structure_data_type_consume_bytes_after(i, length - dtc_len);
+                    if consumed > 0 {
+                        self.structure_data_type_shift_offsets(i + 1, -consumed, 0);
+                        changed = true;
+                    }
+                }
+            }
+            i += 1;
+        }
+        if changed {
+            self.structure_data_type_repack(false);
+            if old_length != self.stored_struct_length() {
+                // notifySizeChanged(): no-op, see module docs.
+            }
+        }
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.dataTypeAlignmentChanged(DataType)`: only a packing-enabled
+    /// structure's layout can depend on a component's alignment, so this is a no-op otherwise.
+    fn structure_data_type_data_type_alignment_changed(&mut self, dt: &dyn DataType)
+    where
+        Self: Sized,
+    {
+        let _ = dt;
+        if self.is_packing_enabled() {
+            self.structure_data_type_repack(true);
+        }
+    }
+
+    /// Port of the protected `CompositeDataTypeImpl.updateBitFieldDataType(DataTypeComponentImpl,
+    /// DataType, DataType)`, specialized to operate directly on this structure's own
+    /// `Vec<DataTypeComponentImpl>` storage (identifying the target component by `index` rather
+    /// than by value) rather than through the object-unsafe `Box<dyn DataTypeComponent>`-based
+    /// [`CompositeDataTypeImpl::composite_impl_update_bit_field_data_type`], which remains stubbed
+    /// at `Ok(false)` for exactly this reason -- see that method's own doc comment. `old_dt`
+    /// identity is approximated the same way every other `== `-style comparison in this module is
+    /// (via [`DataType::get_data_type_path`] equality, not true reference identity); `new_dt` is an
+    /// `Arc` (rather than a plain `Box`) so a single replacement value can be reused across
+    /// multiple matching bitfield components in one caller's loop, mirroring
+    /// [`PackableComponent`]'s own reason for the same choice.
+    ///
+    /// # Errors
+    /// Returns `Err` if the component at `index` is not actually a bit-field component (mirrors
+    /// the Java `AssertException`), or if reconstructing the bitfield around the new base type
+    /// fails (also mirrors an `AssertException`, since Java treats that as "unexpected").
+    fn structure_data_type_update_bit_field_data_type(
+        &mut self,
+        index: usize,
+        old_dt: &dyn DataType,
+        new_dt: Option<&Arc<dyn DataType>>,
+    ) -> Result<bool, String>
+    where
+        Self: Sized,
+    {
+        if !self.components()[index].is_bit_field_component() {
+            return Err("AssertException: expected bitfield component".to_string());
+        }
+        let Some(new_dt) = new_dt else {
+            // BitFieldDataType.isValidBaseDataType(null) is always false in Java, so a `null`
+            // replacement always short-circuits to "not modified" here too.
+            return Ok(false);
+        };
+        if !is_valid_base_data_type(new_dt.as_ref()) {
+            return Ok(false);
+        }
+        let (base_path, declared_bit_size, bit_offset, bit_size) = {
+            let dt = self.components()[index].get_data_type();
+            let bitfield = dt
+                .as_bit_field_data_type()
+                .expect("is_bit_field_component() implies as_bit_field_data_type() returns Some");
+            (
+                bitfield.get_base_data_type().get_data_type_path(),
+                bitfield.get_declared_bit_size(),
+                bitfield.get_bit_offset(),
+                bitfield.get_bit_size(),
+            )
+        };
+        if base_path != old_dt.get_data_type_path() {
+            return Ok(false);
+        }
+        let max_bit_size = 8 * new_dt.get_length();
+        if bit_size > max_bit_size {
+            return Ok(false);
+        }
+        let new_bitfield = BitFieldDataType::new(share_data_type(new_dt), declared_bit_size, bit_offset)
+            .map_err(|e| format!("AssertException: {}", e.message()))?;
+        self.components_mut()[index].set_data_type(Box::new(new_bitfield));
+        // oldDt.removeParent(this)/newDt.addParent(this): no-op, see module docs.
+        Ok(true)
+    }
+
+    /// Port of the private `StructureDataType.setComponentDataType(DataTypeComponentImpl,
+    /// DataType, int)`. Note that for a replacement data type whose `getLength()` is negative
+    /// (e.g. [`bad_data_type_stand_in`]'s stand-in for the real `BadDataType.dataType`, which
+    /// mirrors the genuine singleton's own `getLength() == -1`), the preferred-length computation
+    /// always yields the *original* `old_len` back unchanged (`dtLength >= 0` fails, so neither
+    /// the `max_length`-clamped candidate nor the final `dtLength`-clamped candidate ever
+    /// overrides it) -- so the resize branches below never actually trigger for that caller,
+    /// matching the "Should be no impact" comment on Java's `dataTypeDeleted` above its `repack`
+    /// call.
+    ///
+    /// # Errors
+    /// Returns `Err` if a positive preferred length cannot be determined for `new_dt` (mirrors
+    /// `IllegalArgumentException`); unreachable for [`bad_data_type_stand_in`] per the above.
+    fn structure_data_type_set_component_data_type(
+        &mut self,
+        index: usize,
+        new_dt: Box<dyn DataType>,
+    ) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        // comp.getDataType().removeParent(this)/newDt.addParent(this): no-op, see module docs.
+        self.components_mut()[index].set_data_type(new_dt);
+        if self.is_packing_enabled() {
+            return Ok(());
+        }
+        let old_len = self.components()[index].get_length();
+        let current_dt = self.components()[index].get_data_type();
+        let is_dynamic = is_dynamic_with_specifiable_length(current_dt.as_ref());
+        let available = self.structure_data_type_get_available_component_space(index);
+        let length =
+            self.composite_impl_preferred_component_length(current_dt.as_ref(), is_dynamic, old_len, available)?;
+        if length < old_len {
+            self.components_mut()[index].set_length(length);
+            self.structure_data_type_shift_offsets(index + 1, old_len - length, 0);
+        } else if length > old_len {
+            let consumed = self.structure_data_type_consume_bytes_after(index, length - old_len);
+            if consumed > 0 {
+                self.structure_data_type_shift_offsets(index + 1, -consumed, 0);
+            }
+        }
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.dataTypeDeleted(DataType)`. See the module docs for what is
+    /// skipped: the bitfield-base-type-deleted "revert to primitive type" case (Java's
+    /// `updateBitFieldDataType(dtc, dt, bitfieldDt.getPrimitiveBaseDataType())` branch), which
+    /// needs `BitFieldDataType.getPrimitiveBaseDataType()` (walking through `TypeDef`/`Enum` down
+    /// to a primitive `AbstractIntegerDataType`), not yet ported in this crate -- a bitfield whose
+    /// base type is deleted is therefore left unchanged here rather than reverted, and does not
+    /// contribute to `changed` below.
+    ///
+    /// # Errors
+    /// Returns `Err` if [`structure_data_type_set_component_data_type`](StructureDataType::structure_data_type_set_component_data_type)
+    /// fails for some matching component (see its own doc comment; unreachable in practice here
+    /// since the substituted [`bad_data_type_stand_in`] always succeeds).
+    fn structure_data_type_data_type_deleted(&mut self, dt: &dyn DataType) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        let target_path = dt.get_data_type_path();
+        let mut changed = false;
+        let n = self.components().len();
+        for i in (0..n).rev() {
+            if self.components()[i].is_bit_field_component() {
+                // Bitfield-base-type-deleted revert-to-primitive-type case: not ported, see this
+                // method's own doc comment.
+                continue;
+            }
+            if self.components()[i].get_data_type().get_data_type_path() == target_path {
+                self.structure_data_type_set_component_data_type(i, bad_data_type_stand_in())?;
+                changed = true;
+            }
+        }
+        if changed && !self.is_packing_enabled() {
+            self.structure_data_type_repack(true);
+        }
+        Ok(())
+    }
+
+    /// Port of `StructureDataType.dataTypeReplaced(DataType, DataType)`. Exposed taking an owned
+    /// `new_dt: Box<dyn DataType>` rather than the borrowed `&dyn DataType` the generic
+    /// [`DataType::data_type_replaced`] placeholder default uses: this method needs to *store* the
+    /// (possibly re-validated) replacement inside a component, which is impossible to do
+    /// generically from a borrowed reference without a `Clone` bound on [`DataType`] (the same
+    /// class of ownership problem [`PackableComponent`]'s own doc comment describes) -- so unlike
+    /// [`structure_data_type_data_type_size_changed`](StructureDataType::structure_data_type_data_type_size_changed)/
+    /// [`structure_data_type_data_type_alignment_changed`](StructureDataType::structure_data_type_data_type_alignment_changed)/
+    /// [`structure_data_type_data_type_deleted`](StructureDataType::structure_data_type_data_type_deleted)
+    /// (all three of which only ever need to *compare against* the notified data type, and so keep
+    /// the generic default's `&dyn DataType` shape and are wired into
+    /// [`StructureDataTypeImpl`]'s own `impl DataType`), this method cannot be reached from a
+    /// concrete implementor's `DataType::data_type_replaced` override without that implementor
+    /// separately tracking its own way to reconstruct an owned replacement (e.g. its own
+    /// `DataTypeManager` handle) -- out of scope here, so `StructureDataTypeImpl` leaves
+    /// `DataType::data_type_replaced` at its inherited placeholder default.
+    ///
+    /// See the module docs for what is skipped (`dataType.clone(dataMgr)`, parent-notification
+    /// wiring).
+    ///
+    /// # Errors
+    /// Returns `Err` if `old_dt`/`new_dt` fail `DataTypeUtilities.checkValidReplacement`'s checks
+    /// (mirrors `IllegalArgumentException`, and matching Java, *not* subject to the fallback the
+    /// validate/ancestry-check sequence below gets), or if
+    /// [`structure_data_type_update_bit_field_data_type`](StructureDataType::structure_data_type_update_bit_field_data_type)
+    /// fails for some matching bitfield component.
+    fn structure_data_type_data_type_replaced(
+        &mut self,
+        old_dt: &dyn DataType,
+        new_dt: Box<dyn DataType>,
+    ) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        check_valid_replacement(old_dt, new_dt.as_ref())?;
+
+        let replacement_dt: Box<dyn DataType> = {
+            let validated = self.composite_impl_validate_data_type(new_dt);
+            // replacementDt.clone(dataMgr): skipped, see module docs.
+            let checked = validated.and_then(|dt| {
+                self.structure_data_type_check_ancestry(dt.as_ref())?;
+                Ok(dt)
+            });
+            match checked {
+                Ok(dt) => dt,
+                Err(_) => {
+                    if self.is_packing_enabled() {
+                        undefined1_stand_in()
+                    } else {
+                        undefined_filler_data_type()
+                    }
+                }
+            }
+        };
+        let replacement_arc: Arc<dyn DataType> = Arc::from(replacement_dt);
+
+        let old_path = old_dt.get_data_type_path();
+        let mut changed = false;
+        let n = self.components().len();
+        for i in (0..n).rev() {
+            if self.components()[i].is_bit_field_component() {
+                if self.structure_data_type_update_bit_field_data_type(i, old_dt, Some(&replacement_arc))? {
+                    changed = true;
+                }
+            } else if self.components()[i].get_data_type().get_data_type_path() == old_path {
+                self.structure_data_type_set_component_data_type(i, share_data_type(&replacement_arc))?;
+                changed = true;
+            }
+        }
+        if changed {
+            self.structure_data_type_repack(false);
+            // notifySizeChanged(): no-op, see module docs.
+        }
+        Ok(())
+    }
 }
 
 /// Placeholder [`DataOrganization`] used by [`StructureDataTypeImpl::get_data_organization`] until
@@ -2254,6 +2790,31 @@ impl DataType for StructureDataTypeImpl {
             .expect("replaceWith from a well-formed StructureDataTypeImpl cannot fail");
         Box::new(clone)
     }
+
+    /// Port of `StructureDataType.dataTypeSizeChanged(DataType)`. See
+    /// [`structure_data_type_data_type_size_changed`](StructureDataType::structure_data_type_data_type_size_changed)'s
+    /// own doc comment for the ported algorithm; a genuinely invalid preferred length (mirroring
+    /// Java's uncaught `IllegalArgumentException`) is treated here as "nothing to do" rather than
+    /// panicking, since this override's signature has no `Result` to propagate through.
+    fn data_type_size_changed(&mut self, dt: &dyn DataType) {
+        let _ = self.structure_data_type_data_type_size_changed(dt);
+    }
+
+    /// Port of `StructureDataType.dataTypeAlignmentChanged(DataType)`.
+    fn data_type_alignment_changed(&mut self, dt: &dyn DataType) {
+        self.structure_data_type_data_type_alignment_changed(dt);
+    }
+
+    /// Port of `StructureDataType.dataTypeDeleted(DataType)`. See
+    /// [`structure_data_type_data_type_deleted`](StructureDataType::structure_data_type_data_type_deleted)'s
+    /// own doc comment for what is skipped (the bitfield-base-type-deleted revert case).
+    fn data_type_deleted(&mut self, dt: &dyn DataType) {
+        let _ = self.structure_data_type_data_type_deleted(dt);
+    }
+
+    // `data_type_replaced` is intentionally left at its inherited placeholder default: see
+    // `structure_data_type_data_type_replaced`'s own doc comment for why it cannot be reached
+    // generically from this override's borrowed `new_dt: &dyn DataType`.
 }
 
 impl Composite for StructureDataTypeImpl {
@@ -3890,6 +4451,124 @@ mod tests {
         let alignment = DataType::get_alignment(&s);
         assert!(alignment >= 1);
         assert!(s.is_packing_enabled());
+    }
+
+    #[test]
+    fn data_type_size_changed_shrinks_component_and_opens_undefined_gap() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        s.structure_data_type_add(dt("wide", 8), -1, None, None).unwrap();
+        s.structure_data_type_add(dt("short", 2), -1, None, None).unwrap();
+        assert_eq!(s.stored_struct_length(), 10);
+
+        // Simulate "wide"'s own data type shrinking from 8 bytes to 4.
+        s.structure_data_type_data_type_size_changed(dt("wide", 4).as_ref()).unwrap();
+
+        assert_eq!(s.components()[0].get_length(), 4);
+        assert_eq!(s.components()[1].get_offset(), 8); // unmoved: the freed bytes become undefined filler
+        assert_eq!(s.components()[1].get_ordinal(), 5); // 1 + 4 newly-opened undefined ordinals
+        assert_eq!(s.stored_struct_length(), 10); // overall length unchanged
+        assert_eq!(s.stored_num_components(), 6); // 2 defined + 4 undefined filler
+    }
+
+    #[test]
+    fn data_type_size_changed_grows_last_component_and_grows_structure() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        s.structure_data_type_add(dt("small", 2), -1, None, None).unwrap();
+        assert_eq!(s.stored_struct_length(), 2);
+
+        // Simulate "small"'s own data type growing from 2 bytes to 6: no room after it, so the
+        // structure itself must grow (exercising the private `doGrowStructure` path inlined into
+        // `consumeBytesAfter`).
+        s.structure_data_type_data_type_size_changed(dt("small", 6).as_ref()).unwrap();
+
+        assert_eq!(s.components()[0].get_length(), 6);
+        assert_eq!(s.stored_struct_length(), 6);
+        assert_eq!(s.stored_num_components(), 1); // fully consumed, no leftover undefined bytes
+    }
+
+    #[test]
+    fn data_type_alignment_changed_is_no_op_when_non_packed() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        s.structure_data_type_add(dt("int", 4), -1, None, None).unwrap();
+        let length_before = s.stored_struct_length();
+        s.structure_data_type_data_type_alignment_changed(dt("int", 4).as_ref());
+        assert_eq!(s.stored_struct_length(), length_before);
+    }
+
+    #[test]
+    fn data_type_alignment_changed_repacks_when_packing_enabled() {
+        let mut s = StructureDataTypeImpl::new("Packed", 0);
+        s.set_packing_enabled(true);
+        s.add(dt("int", 4)).expect("add int");
+        // Must not panic reaching into `DefaultDataOrganization`/`BasicComponentPacker`, and must
+        // leave the structure in a consistent, still-packed state.
+        s.structure_data_type_data_type_alignment_changed(dt("int", 4).as_ref());
+        assert!(s.is_packing_enabled());
+        assert_eq!(Composite::get_num_components(&s), 1);
+    }
+
+    #[test]
+    fn data_type_deleted_substitutes_bad_data_type_stand_in_preserving_length() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        s.structure_data_type_add(dt("int", 4), -1, Some("a".to_string()), None).unwrap();
+        s.structure_data_type_add(dt("short", 2), -1, Some("b".to_string()), None).unwrap();
+
+        s.structure_data_type_data_type_deleted(dt("int", 4).as_ref()).unwrap();
+
+        assert_eq!(s.components()[0].get_data_type().get_name(), "-BAD-");
+        assert_eq!(s.components()[0].get_length(), 4); // BadDataType's getLength()==-1 preserves oldLen
+        assert_eq!(s.components()[1].get_data_type().get_name(), "short"); // unaffected
+        assert_eq!(s.stored_struct_length(), 6); // no impact on overall layout
+    }
+
+    #[test]
+    fn data_type_replaced_swaps_component_and_grows_to_new_length() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        s.structure_data_type_add(dt("int", 4), -1, Some("a".to_string()), None).unwrap();
+
+        s.structure_data_type_data_type_replaced(dt("int", 4).as_ref(), dt("long", 8)).unwrap();
+
+        assert_eq!(s.components()[0].get_data_type().get_name(), "long");
+        assert_eq!(s.components()[0].get_length(), 8);
+        assert_eq!(s.stored_struct_length(), 8);
+        assert_eq!(s.stored_num_components(), 1);
+    }
+
+    #[test]
+    fn data_type_replaced_falls_back_to_default_on_ancestry_rejection() {
+        let mut outer = StructureDataTypeImpl::new("Outer", 0);
+        outer.structure_data_type_add(dt("int", 4), -1, Some("x".to_string()), None).unwrap();
+
+        // "Inner" contains a field path-equal to "Outer" itself, so replacing Outer's "int"
+        // component with an Inner instance would create a cyclic composite; checkAncestry should
+        // reject it, falling back to the non-packed `DataType.DEFAULT` stand-in.
+        let mut inner = StructureDataTypeImpl::new("Inner", 0);
+        inner.structure_data_type_add(dt("Outer", 4), -1, Some("back".to_string()), None).unwrap();
+
+        outer
+            .structure_data_type_data_type_replaced(dt("int", 4).as_ref(), Box::new(inner))
+            .unwrap();
+
+        assert!(outer.components()[0].get_data_type().is_default_data_type());
+        assert_eq!(outer.components()[0].get_length(), 1);
+        assert_eq!(outer.stored_struct_length(), 4); // unchanged: substituting a 1-byte filler just
+                                                       // opens undefined bytes, doesn't shrink the struct
+        assert_eq!(outer.stored_num_components(), 4);
+    }
+
+    #[test]
+    fn data_type_replaced_updates_bitfield_base_type() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        s.structure_data_type_add_bit_field(int_data_type("int", 4), 5, Some("flags".to_string()), None)
+            .unwrap();
+
+        s.structure_data_type_data_type_replaced(int_data_type("int", 4).as_ref(), int_data_type("long", 8))
+            .unwrap();
+
+        let stored = s.components()[0].get_data_type();
+        let bitfield = stored.as_bit_field_data_type().expect("still a bitfield");
+        assert_eq!(bitfield.get_base_data_type().get_name(), "long");
+        assert_eq!(bitfield.get_declared_bit_size(), 5);
     }
 
     struct MockBuf;
