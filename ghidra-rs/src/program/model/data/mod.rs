@@ -190,5 +190,7 @@ pub mod unsigned_short_data_type;
 pub mod union;
 pub mod union_internal;
 pub mod void_data_type;
+pub mod wide_char16_data_type;
+pub mod wide_char32_data_type;
 pub mod word_data_type;
 pub mod isf;
