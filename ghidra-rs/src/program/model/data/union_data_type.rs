@@ -21,19 +21,107 @@
 //! direct answer to `getComponent(ordinal)` -- no `compare_component_to_ordinal` binary search is
 //! needed the way [`StructureDataType`] needs one.
 //!
-//! ## Porting progress (2026-09, incremental)
+//! ## What is *not* repeated here (already covered by an ancestor trait)
 //!
-//! This is being built up in the same incremental, build+test-gated fashion
-//! [`StructureDataType`] was. So far this covers: the private-field accessors, the small
-//! `getLength`/`isZeroLength`/`hasLanguageDependantLength`/`getRepresentation`/
-//! `getDefaultLabelPrefix` deltas, the read-only component-query surface
-//! (`getNumComponents`/`getNumDefinedComponents`/`getComponent`/`getComponents`/
-//! `getDefinedComponents`), and `DataTypeUtilities.checkAncestry`. Still to come in later
-//! commits: `getAlignment`/`repack`, `add`/`insert`/`addBitField`/`insertBitField`, and
-//! `delete`/`delete(Set)`/`isEquivalent`/`replaceWith`. Do not flip `UnionDataType.java`'s
-//! `PORT_MANIFEST.tsv` row to `DONE` until all of that lands (and even then, see the eventual
-//! final module doc's own "explicitly not yet ported" list for `dataTypeAlignmentChanged`-family
-//! methods and `copy`/`clone`, which mirror [`StructureDataType`]'s identical omissions).
+//! `forEachDefinedComponent` and the abstract `getAlignment()`/`repack(boolean)` already exist as
+//! required [`CompositeDataTypeImpl`] methods (`for_each_defined_component`,
+//! `composite_impl_alignment`, `repack_with_notify`) -- unlike [`StructureDataType`] (which leaves
+//! `composite_impl_alignment` entirely unimplemented pending a helper class port), this trait
+//! *does* supply real logic for both, as [`union_data_type_alignment`](UnionDataType::union_data_type_alignment)
+//! and [`union_data_type_repack`](UnionDataType::union_data_type_repack) -- see their own doc
+//! comments for how a concrete implementor should wire them up (the `composite_impl_alignment`
+//! required-method signature is `&self`-only, so the wiring is not perfectly one-to-one; see
+//! below).
+//!
+//! ## Small deltas (same `union_data_type_*`/unprefixed naming convention as `StructureDataType`)
+//!
+//! - [`union_data_type_is_zero_length`](UnionDataType::union_data_type_is_zero_length) /
+//!   [`length`](UnionDataType::length), needing the private `unionLength` field -- exposed via
+//!   the required [`stored_union_length`](UnionDataType::stored_union_length)/
+//!   [`set_stored_union_length`](UnionDataType::set_stored_union_length) accessors.
+//! - [`union_data_type_has_language_dependant_length`](UnionDataType::union_data_type_has_language_dependant_length),
+//!   which always answers `true` (Java: "Assume any component may have a language-dependent
+//!   length"), needing no new state.
+//! - [`representation`](UnionDataType::representation), which returns `"<Empty-Union>"` when not
+//!   yet defined instead of [`DataType::get_representation`]'s empty-string default, built on the
+//!   already-real [`CompositeDataTypeImpl::composite_impl_is_not_yet_defined`].
+//! - [`default_label_prefix`](UnionDataType::default_label_prefix), which returns `"UNION_" +
+//!   name` instead of [`DataType::get_default_label_prefix`]'s `None` default.
+//!
+//! ## Component-management surface
+//!
+//! Backed by one new required accessor pair beyond the length one above --
+//! [`components`](UnionDataType::components)/[`components_mut`](UnionDataType::components_mut)
+//! for the private `List<DataTypeComponentImpl> components` field (there is no separate
+//! `numComponents` field to mirror on the Java side: `getNumComponents()` is just
+//! `components.size()`) -- this trait ports, faithfully translating the Java algorithms:
+//! `getComponent(int)`, `getComponents()`, `getDefinedComponents()` (identical to
+//! `getComponents()` in Java too), `getNumComponents()`, `getNumDefinedComponents()`,
+//! `add(DataType, int, String, String)` (`doAdd`), `insert(int, DataType, int, String, String)`,
+//! `addBitField`/`insertBitField`, `delete(int)`, `delete(Set<Integer>)`, `isEquivalent`,
+//! `replaceWith`, `repack(boolean)`, the private `adjustBitField`/`getBitFieldAllocation`/
+//! `shiftOrdinals` helpers, and `DataTypeUtilities.checkAncestry` (ported the same way
+//! [`StructureDataType::structure_data_type_check_ancestry`] is, reusing an identical
+//! borrowing-only `is_part_of_data_type_by_ref` walk).
+//!
+//! ## `getAlignment()`/`repack(boolean)` wiring, and one genuine caching divergence
+//!
+//! Java's `getAlignment()` lazily computes **and caches** into the private `unionAlignment`
+//! field (`if (unionAlignment > 0) return unionAlignment; ... unionAlignment = ...; return
+//! unionAlignment;`), and `repack(boolean)` forces a fresh computation by first resetting that
+//! field to `-1`. The required [`CompositeDataTypeImpl::composite_impl_alignment`] method this
+//! trait's `getAlignment()` delta must eventually answer is declared `&self`-only, so it cannot
+//! itself *write* the cache the way Java's getter does. [`union_data_type_alignment`] is therefore
+//! written to *read* the cache (returning it immediately when positive, exactly like Java) but
+//! only ever *write* it when called through [`union_data_type_repack`] (an `&mut self` method,
+//! which explicitly resets the field to a sentinel and then stores the freshly computed value --
+//! this part matches Java exactly). The result is behaviorally identical (every caller sees the
+//! same values Java would), but a call to `union_data_type_alignment` made *before* the first
+//! `repack` (e.g. from `union_data_type_add`/`_insert`/`_delete`'s own `oldAlignment`/
+//! `newAlignment` capture, mirroring Java's identical calls) recomputes from scratch every time
+//! rather than caching that first computation the way Java's field-mutating getter would -- a
+//! harmless performance-only divergence, not a correctness one.
+//!
+//! [`union_data_type_repack`] itself needs no `AlignedStructurePacker`-style helper trait (unlike
+//! [`StructureDataType::structure_data_type_pack`]): Java's `Union.repack(boolean)` body is
+//! entirely self-contained (`unionLength = max over components of (bitfield-adjusted) length`,
+//! then aligned up via `DataOrganizationImpl.getAlignedOffset` when packing is enabled), so it is
+//! ported directly here as ordinary trait logic, calling the already-ported free functions
+//! [`composite_alignment_helper::get_alignment`] and
+//! [`crate::program::seam_stubs::get_aligned_offset`].
+//!
+//! ## Explicitly and intentionally **not yet ported**
+//!
+//! Do not flip `UnionDataType.java`'s `PORT_MANIFEST.tsv` row to `DONE` until these are addressed
+//! or a narrower definition of "done" is agreed:
+//!   - `dataTypeAlignmentChanged`/`dataTypeSizeChanged`/`dataTypeReplaced`/`dataTypeDeleted` are
+//!     not ported, for the same reason [`StructureDataType`] leaves its own four analogues
+//!     unported: none was reached this session, and (for `dataTypeDeleted` specifically) the
+//!     Java body needs the `BadDataType.dataType`/`Undefined1DataType.dataType` singletons, which
+//!     (per [`BadDataType`](super::bad_data_type::BadDataType)'s and
+//!     [`Undefined1DataType`](super::undefined1_data_type)'s own module docs) do not exist as
+//!     constructible values in this crate (both were themselves promoted to traits with no
+//!     singleton field).
+//!   - `copy`/`clone` are not ported, for the identical structural reason
+//!     [`StructureDataType`]'s module docs give: both Java bodies construct a brand-new
+//!     `UnionDataType` instance and then call `replaceWith` on it, but a Rust trait default
+//!     method cannot return a sized, constructible `Self`; only a concrete implementor can wire
+//!     `copy`/`clone` up, by calling its own constructor and then
+//!     [`union_data_type_replace_with`](UnionDataType::union_data_type_replace_with).
+//!   - `dataType.clone(dataMgr)` (deep-cloning an inserted/base data type against this union's own
+//!     `DataTypeManager`, called from `doAdd`, `insert`, `insertBitField`, `adjustBitField`, and
+//!     `replaceWith`) is skipped throughout; the data type is stored/used as given.
+//!   - `data_type.addParent(this)`/`removeParent(this)` is **not** wired from any method below,
+//!     for the identical upcasting-avoidance reason [`StructureDataType`]'s module docs give.
+//!   - `DataTypeComponentImpl`'s `parent` back-reference is always `None` for every component
+//!     constructed by the methods below (same reason and same caveat as
+//!     [`StructureDataType`]'s: this only affects parent-dependent lookups on a *component*, e.g.
+//!     [`composite_alignment_helper::get_packed_alignment`]'s zero-length-bitfield-in-a-union
+//!     exemption, which needs `component.get_parent().is_union()` and will always see `false`
+//!     here; it does not affect any of the ordinal/length bookkeeping ported above).
+//!   - `notifySizeChanged()`/`notifyAlignmentChanged()` are no-ops here, identically to
+//!     [`StructureDataType`]'s treatment, since nothing in this crate yet tracks a `UnionDataType`
+//!     composite's own parents.
 
 use crate::program::model::data::bit_field_data_type::{
     check_base_data_type, get_effective_bit_size, get_minimum_storage_size_no_offset, BitFieldDataType,
@@ -46,6 +134,7 @@ use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl
 use crate::program::model::data::union_internal::UnionInternal;
 use crate::program::model::mem::MemBuffer;
 use crate::docking::settings::settings::Settings;
+use std::collections::HashSet;
 
 /// Port of the relevant cases of `DataTypeUtilities.isSecondPartOfFirst(DataType, DataType)`, used
 /// by [`union_data_type_check_ancestry`]. A near-duplicate of
@@ -539,6 +628,133 @@ pub trait UnionDataType: UnionInternal + CompositeDataTypeImpl {
         }
         changed
     }
+
+    /// Port of `UnionDataType.isEquivalent(DataType)`, generalized over any other
+    /// `UnionDataType` implementor (Java's `dataType instanceof UnionInternal` downcast has no
+    /// direct `dyn Trait` equivalent, so callers compare against a known `&dyn UnionDataType`
+    /// rather than a `&dyn DataType`). The `dt == this`/`dt == null` checks are left to the
+    /// concrete `impl DataType::is_equivalent` wrapper, matching
+    /// [`StructureDataType::structure_data_type_is_equivalent`]'s identical precedent.
+    fn union_data_type_is_equivalent(&self, other: &dyn UnionDataType) -> bool {
+        if self.get_stored_packing_value() != other.get_stored_packing_value()
+            || self.get_stored_minimum_alignment() != other.get_stored_minimum_alignment()
+        {
+            // rely on component match instead of checking length since dynamic component sizes
+            // could affect length
+            return false;
+        }
+        let my_components = self.components();
+        let other_components = other.components();
+        if my_components.len() != other_components.len() {
+            return false;
+        }
+        my_components
+            .iter()
+            .zip(other_components.iter())
+            .all(|(a, b)| a.is_equivalent(b))
+    }
+
+    /// Port of `UnionDataType.replaceWith(DataType)`, generalized over any other `UnionDataType`
+    /// implementor (same `&dyn UnionDataType` convention as
+    /// [`union_data_type_is_equivalent`](UnionDataType::union_data_type_is_equivalent), standing
+    /// in for Java's `instanceof UnionInternal` downcast). Replaces this union's components with
+    /// those of `other`, including packing and alignment settings.
+    ///
+    /// # Errors
+    /// Returns `Err` if any of `other`'s component data types would create a cyclic composite
+    /// (mirrors `DataTypeDependencyException`, via [`union_data_type_do_add`]'s own ancestry
+    /// check).
+    fn union_data_type_replace_with(&mut self, other: &dyn UnionDataType) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        // dtc.getDataType().removeParent(this) for each existing component: skipped, see module
+        // docs re: parent-notification wiring.
+        self.components_mut().clear();
+        self.set_stored_union_alignment(-1);
+
+        self.set_stored_packing_value_raw(other.get_stored_packing_value());
+        self.set_stored_minimum_alignment_value(other.get_stored_minimum_alignment());
+
+        for dtc in other.components() {
+            let dt = dtc.get_data_type();
+            self.union_data_type_do_add(dt, dtc.get_length(), dtc.get_field_name(), dtc.get_comment())?;
+        }
+
+        self.union_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+        Ok(())
+    }
+
+    /// Port of `UnionDataType.delete(int)`.
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`).
+    fn union_data_type_delete(&mut self, ordinal: i32) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        if ordinal < 0 || ordinal as usize >= self.components().len() {
+            return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
+        }
+        let old_alignment = self.union_data_type_alignment();
+        let removed = self.components_mut().remove(ordinal as usize);
+        let _ = removed; // dtc.getDataType().removeParent(this): skipped, see module docs.
+        self.union_data_type_shift_ordinals(ordinal, -1);
+
+        if !self.union_data_type_repack(true)
+            && self.is_packing_enabled()
+            && old_alignment != self.union_data_type_alignment()
+        {
+            // notifyAlignmentChanged(): no-op, see module docs.
+        }
+        Ok(())
+    }
+
+    /// Port of `UnionDataType.delete(Set<Integer>)`.
+    fn union_data_type_delete_set(&mut self, ordinals: &HashSet<i32>) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        if ordinals.is_empty() {
+            return Ok(());
+        }
+        if ordinals.len() == 1 {
+            let ordinal = *ordinals.iter().next().expect("len() == 1");
+            return self.union_data_type_delete(ordinal);
+        }
+
+        let old_alignment = self.union_data_type_alignment();
+
+        let old_components = std::mem::take(self.components_mut());
+        let mut new_components = Vec::with_capacity(old_components.len());
+        let mut new_length = 0i32;
+        let mut ordinal_adjustment = 0i32;
+        for mut dtc in old_components {
+            let ordinal = dtc.get_ordinal();
+            if ordinals.contains(&ordinal) {
+                ordinal_adjustment -= 1;
+                // dtc.getDataType().removeParent(this): skipped, see module docs.
+            } else {
+                if ordinal_adjustment != 0 {
+                    dtc.set_ordinal(dtc.get_ordinal() + ordinal_adjustment);
+                }
+                new_length = new_length.max(dtc.get_length());
+                new_components.push(dtc);
+            }
+        }
+        *self.components_mut() = new_components;
+
+        if self.is_packing_enabled() {
+            if !self.union_data_type_repack(true) && old_alignment != self.union_data_type_alignment() {
+                // notifyAlignmentChanged(): no-op, see module docs.
+            }
+        } else if self.stored_union_length() != new_length {
+            self.set_stored_union_length(new_length);
+            // notifySizeChanged(): no-op, see module docs.
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -837,6 +1053,9 @@ mod tests {
             fn get_alignment(&self) -> i32 {
                 self.length.max(1)
             }
+            fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+                self.name == dt.get_name() && self.length == dt.get_length()
+            }
         }
         Box::new(SimpleDataType {
             name: name.to_string(),
@@ -1068,6 +1287,97 @@ mod tests {
         let dyn_union: &mut dyn crate::program::model::data::union::Union = &mut u;
         let result = dyn_union.insert_bit_field(0, int_data_type("int", 4), 3, None, None);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn delete_removes_component_and_shifts_ordinals() {
+        let mut u = sample();
+        u.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        u.union_data_type_add(byte_data_type("dword", 4), -1, None, None).unwrap();
+        u.union_data_type_add(byte_data_type("word", 2), -1, None, None).unwrap();
+        assert_eq!(u.length(), 4);
+
+        u.union_data_type_delete(1).unwrap(); // remove "dword"
+        assert_eq!(u.union_data_type_get_num_components(), 2);
+        assert_eq!(u.union_data_type_get_component(1).unwrap().get_data_type_name(), "word");
+        // max remaining component length is now 2 ("byte"=1, "word"=2)
+        assert_eq!(u.length(), 2);
+    }
+
+    #[test]
+    fn delete_rejects_out_of_bounds_ordinal() {
+        let mut u = sample();
+        assert!(u.union_data_type_delete(0).is_err());
+    }
+
+    #[test]
+    fn delete_set_empty_is_no_op() {
+        let mut u = sample();
+        u.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        assert!(u.union_data_type_delete_set(&HashSet::new()).is_ok());
+        assert_eq!(u.union_data_type_get_num_components(), 1);
+    }
+
+    #[test]
+    fn delete_set_single_matches_delete() {
+        let mut u = sample();
+        u.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        u.union_data_type_add(byte_data_type("dword", 4), -1, None, None).unwrap();
+        let mut ordinals = HashSet::new();
+        ordinals.insert(1);
+        u.union_data_type_delete_set(&ordinals).unwrap();
+        assert_eq!(u.union_data_type_get_num_components(), 1);
+        assert_eq!(u.length(), 1);
+    }
+
+    #[test]
+    fn delete_set_multiple_shifts_and_recomputes_length() {
+        let mut u = sample();
+        u.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        u.union_data_type_add(byte_data_type("dword", 4), -1, None, None).unwrap();
+        u.union_data_type_add(byte_data_type("word", 2), -1, None, None).unwrap();
+        u.union_data_type_add(byte_data_type("qword", 8), -1, None, None).unwrap();
+
+        let mut ordinals = HashSet::new();
+        ordinals.insert(0);
+        ordinals.insert(3);
+        u.union_data_type_delete_set(&ordinals).unwrap();
+
+        assert_eq!(u.union_data_type_get_num_components(), 2);
+        assert_eq!(u.union_data_type_get_component(0).unwrap().get_data_type_name(), "dword");
+        assert_eq!(u.union_data_type_get_component(0).unwrap().get_ordinal(), 0);
+        assert_eq!(u.union_data_type_get_component(1).unwrap().get_data_type_name(), "word");
+        assert_eq!(u.union_data_type_get_component(1).unwrap().get_ordinal(), 1);
+        assert_eq!(u.length(), 4);
+    }
+
+    #[test]
+    fn is_equivalent_compares_packing_and_components() {
+        let mut u1 = sample();
+        u1.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        let mut u2 = sample();
+        u2.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        assert!(u1.union_data_type_is_equivalent(&u2));
+
+        u2.union_data_type_add(byte_data_type("word", 2), -1, None, None).unwrap();
+        assert!(!u1.union_data_type_is_equivalent(&u2));
+    }
+
+    #[test]
+    fn replace_with_copies_components_and_settings() {
+        let mut source = sample();
+        source.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        source.union_data_type_add(byte_data_type("dword", 4), -1, None, None).unwrap();
+
+        let mut target = sample();
+        target.union_data_type_add(byte_data_type("qword", 8), -1, None, None).unwrap();
+
+        target.union_data_type_replace_with(&source).unwrap();
+
+        assert_eq!(target.union_data_type_get_num_components(), 2);
+        assert_eq!(target.length(), 4);
+        assert_eq!(target.union_data_type_get_component(0).unwrap().get_data_type_name(), "byte");
+        assert_eq!(target.union_data_type_get_component(1).unwrap().get_data_type_name(), "dword");
     }
 
     struct MockBuf;
