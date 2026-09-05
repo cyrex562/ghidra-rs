@@ -95,6 +95,7 @@ pub mod ibo32_data_type;
 pub mod ibo64_data_type;
 pub mod icategory;
 pub mod illegal_rename_exception;
+pub mod indexed_dynamic_data_type;
 pub mod int16_t_data_type;
 pub mod int32_t_data_type;
 pub mod integer16_data_type;
