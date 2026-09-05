@@ -210,6 +210,14 @@ impl DataType for SharedDataType {
         self.0.as_array()
     }
 
+    fn into_array(self: Box<Self>) -> Option<Box<dyn crate::program::model::data::array::Array>> {
+        if self.0.as_array().is_some() {
+            Some(Box::new(SharedArray(self.0)))
+        } else {
+            None
+        }
+    }
+
     fn is_structure(&self) -> bool {
         self.0.is_structure()
     }
@@ -255,6 +263,90 @@ impl DataType for SharedDataType {
 /// [`SharedDataType`].
 pub fn share_data_type(data_type: &Arc<dyn DataType>) -> Box<dyn DataType> {
     Box::new(SharedDataType(data_type.clone()))
+}
+
+/// Backs [`SharedDataType::into_array`]'s consuming downcast: wraps the same `Arc<dyn DataType>`
+/// as [`SharedDataType`] but additionally implements
+/// [`Array`](crate::program::model::data::array::Array) by re-deriving the
+/// [`DataType::as_array`] downcast on every call, since an `Arc<dyn DataType>` already confirmed
+/// to implement `Array` cannot itself be reinterpreted as an `Arc<dyn Array>` without knowing the
+/// concrete type (no supertrait-upcasting equivalent exists for sibling trait objects sharing a
+/// common subject).
+struct SharedArray(Arc<dyn DataType>);
+
+impl DataType for SharedArray {
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
+    fn get_length(&self) -> i32 {
+        self.0.get_length()
+    }
+    fn is_void_type(&self) -> bool {
+        self.0.is_void_type()
+    }
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        self.0.is_equivalent(dt)
+    }
+    fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.clone_data_type(dtm)
+    }
+    fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.copy_data_type(dtm)
+    }
+    fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
+        self.0.get_category_path()
+    }
+    fn get_display_name(&self) -> String {
+        self.0.get_display_name()
+    }
+    fn get_description(&self) -> String {
+        self.0.get_description()
+    }
+    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
+        self.0.get_mnemonic(settings)
+    }
+    fn has_language_dependant_length(&self) -> bool {
+        self.0.has_language_dependant_length()
+    }
+    fn is_zero_length(&self) -> bool {
+        self.0.is_zero_length()
+    }
+    fn get_aligned_length(&self) -> i32 {
+        self.0.get_aligned_length()
+    }
+    fn is_default_data_type(&self) -> bool {
+        self.0.is_default_data_type()
+    }
+    fn is_deleted(&self) -> bool {
+        self.0.is_deleted()
+    }
+    fn depends_on(&self, dt: &dyn DataType) -> bool {
+        self.0.depends_on(dt)
+    }
+    fn get_data_type_manager(&self) -> Option<Box<dyn DataTypeManager>> {
+        self.0.get_data_type_manager()
+    }
+    fn get_default_settings(&self) -> Box<dyn Settings> {
+        self.0.get_default_settings()
+    }
+    fn is_array(&self) -> bool {
+        true
+    }
+    fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
+        self.0.as_array()
+    }
+}
+
+impl crate::program::model::data::array::Array for SharedArray {
+    fn get_num_elements(&self) -> i32 {
+        self.0.as_array().expect("SharedArray always wraps a real Array").get_num_elements()
+    }
+    fn get_element_length(&self) -> i32 {
+        self.0.as_array().expect("SharedArray always wraps a real Array").get_element_length()
+    }
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        self.0.as_array().expect("SharedArray always wraps a real Array").get_data_type()
+    }
 }
 
 /// Rust-ergonomics helper letting multiple independent `Box<dyn VariableStorage>` handles share

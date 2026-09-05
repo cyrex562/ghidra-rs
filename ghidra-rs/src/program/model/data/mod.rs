@@ -14,6 +14,7 @@ pub mod alignment_type;
 pub mod annotation_handler;
 pub mod archive_type;
 pub mod array;
+pub mod array_data_type;
 pub mod array_stringable;
 pub mod bad_data_type;
 pub mod bit_field_packing;
