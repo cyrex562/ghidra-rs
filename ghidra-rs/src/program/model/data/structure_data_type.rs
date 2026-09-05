@@ -95,39 +95,56 @@
 //! pointlessly (encoding an already-in-hand index just to immediately decode it back inside
 //! `generateUndefinedComponent`/`getComponentsContaining`), which is elided here as a no-op.
 //!
-//! ## Packed-structure layout (2026-09 extension, continued)
+//! ## Packed-structure layout and bitfield support (2026-09 extension, continued)
 //!
-//! **Packed-structure (`isPackingEnabled() == true`) layout is now computed** via a real
-//! [`AlignedStructurePacker`](AlignedStructurePacker) integration: this trait now requires
-//! `Self: AlignedStructurePacker` (a new supertrait bound), and
-//! [`structure_data_type_pack`](StructureDataType::structure_data_type_pack) (called from the
-//! packed branch of [`structure_data_type_repack`](StructureDataType::structure_data_type_repack),
-//! mirroring Java's `repack(boolean)`) converts this structure's `Vec<DataTypeComponentImpl>`
-//! to and from the `Box<dyn InternalDataTypeComponent>` shape
-//! [`AlignedStructurePacker::pack_components`] requires via the [`PackableComponent`] adapter
-//! (an `Arc<dyn DataType>`-backed proxy, needed since `dyn DataType` has no `Clone` bound and
-//! [`DataTypeComponent::get_data_type`] must be answerable repeatedly from `&self`; no downcast
-//! back to the concrete adapter is ever needed since every mutated field is read back out
-//! through ordinary trait methods -- see [`PackableComponent`]'s own doc comment). **The wiring
-//! is real, but its output quality depends entirely on whichever
-//! [`AlignedStructurePacker::create_component_packer`] a concrete implementor supplies**: this
-//! crate still has no production (bitfield-aware) `AlignedComponentPacker` port -- only test
-//! doubles exist (here and in `aligned_structure_packer`'s own tests) -- so a real implementor
-//! must currently supply a simplistic packer or wait on that separate port. Unlike Java, no
-//! `structAlignment` field is cached/compared for the "changed" return value (see
-//! [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)'s own doc
-//! comment for why this only matters for the no-op `notify` path).
+//! Two of the previously-open gaps above are now closed:
+//!
+//! - **Packed-structure (`isPackingEnabled() == true`) layout is now computed** via a real
+//!   [`AlignedStructurePacker`](AlignedStructurePacker) integration: this trait now requires
+//!   `Self: AlignedStructurePacker` (a new supertrait bound), and
+//!   [`structure_data_type_pack`](StructureDataType::structure_data_type_pack) (called from the
+//!   packed branch of [`structure_data_type_repack`](StructureDataType::structure_data_type_repack),
+//!   mirroring Java's `repack(boolean)`) converts this structure's `Vec<DataTypeComponentImpl>`
+//!   to and from the `Box<dyn InternalDataTypeComponent>` shape
+//!   [`AlignedStructurePacker::pack_components`] requires via the [`PackableComponent`] adapter
+//!   (an `Arc<dyn DataType>`-backed proxy, needed since `dyn DataType` has no `Clone` bound and
+//!   [`DataTypeComponent::get_data_type`] must be answerable repeatedly from `&self`; no downcast
+//!   back to the concrete adapter is ever needed since every mutated field is read back out
+//!   through ordinary trait methods -- see [`PackableComponent`]'s own doc comment). **The wiring
+//!   is real, but its output quality depends entirely on whichever
+//!   [`AlignedStructurePacker::create_component_packer`] a concrete implementor supplies**: this
+//!   crate still has no production (bitfield-aware) `AlignedComponentPacker` port -- only test
+//!   doubles exist (here and in `aligned_structure_packer`'s own tests) -- so a real implementor
+//!   must currently supply a simplistic packer or wait on that separate port. Unlike Java, no
+//!   `structAlignment` field is cached/compared for the "changed" return value (see
+//!   [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)'s own doc
+//!   comment for why this only matters for the no-op `notify` path).
+//! - **`addBitField`/`insertBitField`/`insertBitFieldAt` are now ported** as
+//!   [`structure_data_type_add_bit_field`](StructureDataType::structure_data_type_add_bit_field)/
+//!   [`structure_data_type_insert_bit_field`](StructureDataType::structure_data_type_insert_bit_field)/
+//!   [`structure_data_type_insert_bit_field_at`](StructureDataType::structure_data_type_insert_bit_field_at),
+//!   including the `BitOffsetComparator`-based overlap/conflict detection across bit-granular
+//!   ranges (ported as the private [`compare_component_to_bit_offset`] helper, building on
+//!   [`get_normalized_bitfield_offset`](super::structure::get_normalized_bitfield_offset), which
+//!   was already ported). `structure_data_type_insert_bit_field_at`'s own doc comment flags one
+//!   Java quirk ported verbatim rather than "fixed": calling it directly against a
+//!   packing-enabled structure triggers a nested insertion whose return value is discarded, after
+//!   which the method still unconditionally inserts its own component. `structure_data_type_insert`'s
+//!   separate bitfield-overlap shift adjustment (Java's `existingDtc.isBitFieldComponent()` branch
+//!   inside plain, non-bitfield `insert`) remains unported -- it is independent of the three
+//!   bitfield entry points above.
+//!
+//! While porting the above, [`crate::program::seam_stubs::SharedDataType`] (backing
+//! [`crate::program::seam_stubs::share_data_type`], used by [`PackableComponent`] and by the
+//! bitfield methods' internal re-sharing of a caller-supplied base data type) was found to not
+//! forward `is_integer_type`/`is_signed_integer_type`/`get_alignment`, silently breaking bitfield
+//! base-type validation for any base type reached only through a shared handle; those three
+//! methods were added to its forwarded set (a strict completeness fix, not a behavior change, for
+//! that shared crate-wide utility).
 //!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
 //! is agreed):
-//!   - `addBitField`/`insertBitField`/`insertBitFieldAt` (bitfield support) are not ported. These
-//!     require the `BitOffsetComparator`-based overlap/conflict detection across bit-granular
-//!     ranges, which is a substantial, mostly-independent algorithm; see
-//!     [`get_normalized_bitfield_offset`](super::structure::get_normalized_bitfield_offset) for
-//!     the one piece of that machinery already ported. `structure_data_type_insert`'s bitfield-
-//!     overlap shift adjustment (Java's `existingDtc.isBitFieldComponent()` branch) is likewise
-//!     skipped for the same reason.
 //!   - `replace`/`replaceAtOffset`/`dataTypeSizeChanged`/`dataTypeAlignmentChanged`/
 //!     `dataTypeDeleted`/`dataTypeReplaced`/`replaceWith`/`copy`/`clone` are not ported. `replace`
 //!     in particular has an intricate multi-case algorithm (bit-field-overlap consolidation,
@@ -161,6 +178,9 @@
 
 use crate::docking::settings::settings::Settings;
 use crate::program::model::data::aligned_structure_packer::AlignedStructurePacker;
+use crate::program::model::data::bit_field_data_type::{
+    check_base_data_type, get_effective_bit_size, get_minimum_storage_size_no_offset, BitFieldDataType,
+};
 use crate::program::model::data::composite_data_type_impl::CompositeDataTypeImpl;
 use crate::program::model::data::composite_internal::{
     compare_component_to_offset, compare_component_to_ordinal,
@@ -169,6 +189,7 @@ use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl;
 use crate::program::model::data::internal_data_type_component::InternalDataTypeComponent;
+use crate::program::model::data::structure::get_normalized_bitfield_offset;
 use crate::program::model::data::structure_internal::StructureInternal;
 use crate::program::model::mem::MemBuffer;
 use crate::program::seam_stubs::share_data_type;
@@ -176,6 +197,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+/// Local stand-in for Ghidra's `DataType.DEFAULT` singleton (an instance of
 /// `ghidra.program.model.data.DefaultDataType`), used only to synthesize the implicit "undefined"
 /// filler components a non-packed structure reports between/after its explicitly defined
 /// components. [`DefaultDataType`](super::default_data_type::DefaultDataType) is itself only a
@@ -302,6 +324,40 @@ fn rebuild_packed_component(boxed: Box<dyn InternalDataTypeComponent>) -> DataTy
         boxed.get_field_name(),
         boxed.get_comment(),
     )
+}
+
+/// Port of `Structure.BitOffsetComparator.compare(Object, Object)`, specialized to the one
+/// direction every caller here needs (comparing a defined component against a normalized target
+/// bit offset -- Java's symmetric `Integer`-vs-`DataTypeComponent` overload handling is therefore
+/// unnecessary). Follows the same `compare(component, target)` convention as
+/// [`compare_component_to_offset`]/[`compare_component_to_ordinal`]: a component is "equal" if the
+/// target bit offset falls within its normalized bit footprint.
+fn compare_component_to_bit_offset(dtc: &DataTypeComponentImpl, bit_offset: i32, big_endian: bool) -> Ordering {
+    let (start_bit, end_bit) = if dtc.is_bit_field_component() {
+        let dt = dtc.get_data_type();
+        let bitfield = dt
+            .as_bit_field()
+            .expect("is_bit_field_component() implies as_bit_field() returns Some");
+        let bit_size = bitfield.get_bit_size();
+        let start = get_normalized_bitfield_offset(
+            dtc.get_offset(),
+            dtc.get_length(),
+            bit_size,
+            bitfield.get_bit_offset(),
+            big_endian,
+        );
+        (start, start + bit_size - 1)
+    } else {
+        let start = 8 * dtc.get_offset();
+        (start, start + 8 * dtc.get_length() - 1)
+    };
+    if bit_offset < start_bit {
+        Ordering::Greater
+    } else if bit_offset > end_bit {
+        Ordering::Less
+    } else {
+        Ordering::Equal
+    }
 }
 
 /// Basic (in-memory, non-database-backed) implementation of the structure data type.
@@ -762,6 +818,245 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         // notifySizeChanged(): no-op, see module docs.
 
         Ok(self.components()[idx as usize].snapshot())
+    }
+
+    /// Port of `StructureDataType.addBitField(DataType, int, String, String)`. See the module
+    /// docs for what is skipped (`baseDataType.clone(dataMgr)`, `data_type.add_parent(self)`).
+    ///
+    /// # Errors
+    /// Returns `Err` if `base_data_type` is not a valid bitfield base type (mirrors
+    /// `InvalidDataTypeException`), or if a positive length cannot be determined (mirrors
+    /// `IllegalArgumentException`, via [`structure_data_type_add`](StructureDataType::structure_data_type_add)).
+    fn structure_data_type_add_bit_field(
+        &mut self,
+        base_data_type: Box<dyn DataType>,
+        bit_size: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        check_base_data_type(base_data_type.as_ref())
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        // baseDataType.clone(dataMgr) skipped, see module docs.
+        let bit_field_dt = BitFieldDataType::new_at_offset_zero(base_data_type, bit_size)
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        let storage_size = bit_field_dt.get_storage_size();
+        self.structure_data_type_add(Box::new(bit_field_dt), storage_size, component_name, comment)
+    }
+
+    /// Port of `StructureDataType.insertBitField(int, int, int, DataType, int, String, String)`.
+    /// See the module docs for what is skipped (`baseDataType.clone(dataMgr)`).
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`), if
+    /// `base_data_type` is not a valid bitfield base type (mirrors `InvalidDataTypeException`), or
+    /// if a positive length cannot be determined (mirrors `IllegalArgumentException`).
+    fn structure_data_type_insert_bit_field(
+        &mut self,
+        ordinal: i32,
+        byte_width: i32,
+        bit_offset: i32,
+        base_data_type: Box<dyn DataType>,
+        bit_size: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        if ordinal < 0 || ordinal > self.stored_num_components() {
+            return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
+        }
+        check_base_data_type(base_data_type.as_ref())
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        // baseDataType.clone(dataMgr) skipped, see module docs.
+
+        if !self.is_packing_enabled() {
+            let offset = if ordinal < self.stored_num_components() {
+                self.structure_data_type_get_component(ordinal)?.get_offset()
+            } else {
+                self.stored_struct_length()
+            };
+            return self.structure_data_type_insert_bit_field_at(
+                offset,
+                byte_width,
+                bit_offset,
+                base_data_type,
+                bit_size,
+                component_name,
+                comment,
+            );
+        }
+
+        // handle aligned bitfield insertion
+        let bit_field_dt = BitFieldDataType::new_at_offset_zero(base_data_type, bit_size)
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        let storage_size = bit_field_dt.get_storage_size();
+        self.structure_data_type_insert(ordinal, Box::new(bit_field_dt), storage_size, component_name, comment)
+    }
+
+    /// Port of `StructureDataType.insertBitFieldAt(int, int, int, DataType, int, String,
+    /// String)`. Intended for use with non-packed structures where the bitfield must be placed
+    /// precisely; see the module docs for what is skipped (`baseDataType.clone(dataMgr)`,
+    /// `bitfieldDt.addParent(this)`).
+    ///
+    /// NOTE: matching Java exactly, the `is_packing_enabled()` branch below performs a *nested*
+    /// [`structure_data_type_insert_bit_field`](StructureDataType::structure_data_type_insert_bit_field)
+    /// call whose return value is discarded, purely for its side effect on `components`/
+    /// `numComponents`/`structLength` -- and this method still unconditionally inserts its *own*
+    /// component afterward too. This looks like a latent quirk in the original Java (calling this
+    /// particular entry point directly against a packing-enabled structure is unusual; ordinary
+    /// packed-bitfield insertion goes through
+    /// [`structure_data_type_insert_bit_field`](StructureDataType::structure_data_type_insert_bit_field)
+    /// directly, which never reaches this method), but it is ported verbatim rather than "fixed"
+    /// per this crate's faithful-porting policy.
+    ///
+    /// # Errors
+    /// Returns `Err` if `byte_offset`/`bit_size` is negative or `byte_width` is non-positive, or
+    /// too small for the requested bitfield (mirrors `IllegalArgumentException`), or if
+    /// `base_data_type` is not a valid bitfield base type (mirrors `InvalidDataTypeException`).
+    fn structure_data_type_insert_bit_field_at(
+        &mut self,
+        byte_offset: i32,
+        byte_width: i32,
+        bit_offset: i32,
+        base_data_type: Box<dyn DataType>,
+        bit_size: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        if byte_offset < 0 || bit_size < 0 {
+            return Err(
+                "IllegalArgumentException: Negative values not permitted when defining bitfield".to_string(),
+            );
+        }
+        if byte_width <= 0 {
+            return Err("IllegalArgumentException: Invalid byteWidth".to_string());
+        }
+
+        check_base_data_type(base_data_type.as_ref())
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        // baseDataType.clone(dataMgr) skipped, see module docs.
+        let base_data_type: Arc<dyn DataType> = Arc::from(base_data_type);
+
+        let effective_bit_size = get_effective_bit_size(bit_size, base_data_type.get_length());
+
+        let min_byte_width = get_minimum_storage_size_no_offset(effective_bit_size + bit_offset);
+        if byte_width < min_byte_width {
+            return Err("IllegalArgumentException: Bitfield does not fit within specified constraints".to_string());
+        }
+
+        let big_endian = self.get_data_organization().is_big_endian();
+
+        let mut has_conflict = false;
+        let mut additional_shift = 0i32;
+
+        let start_bit_offset =
+            get_normalized_bitfield_offset(byte_offset, byte_width, effective_bit_size, bit_offset, big_endian);
+
+        let start_index = match self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_bit_offset(dtc, start_bit_offset, big_endian))
+        {
+            Err(insert_at) => insert_at as i32,
+            Ok(found) => {
+                has_conflict = true;
+                let dtc = &self.components()[found];
+                if bit_size == 0 || dtc.is_zero_bit_field_component() {
+                    has_conflict = dtc.get_offset() != (start_bit_offset / 8);
+                }
+                if has_conflict {
+                    additional_shift = byte_offset - dtc.get_offset();
+                }
+                found as i32
+            }
+        };
+
+        let ordinal = if (start_index as usize) < self.components().len() {
+            self.components()[start_index as usize].get_ordinal()
+        } else {
+            start_index
+        };
+
+        if self.is_packing_enabled() {
+            // See this method's own doc comment: ported verbatim, including the discarded return
+            // value and the unconditional insertion that still follows below.
+            let _ = self.structure_data_type_insert_bit_field(
+                ordinal,
+                0,
+                0,
+                share_data_type(&base_data_type),
+                effective_bit_size,
+                component_name.clone(),
+                comment.clone(),
+            );
+        }
+
+        let mut end_index = start_index;
+        if (start_index as usize) < self.components().len() {
+            let mut end_bit_offset = start_bit_offset;
+            if effective_bit_size != 0 {
+                end_bit_offset += effective_bit_size - 1;
+            }
+            end_index = match self
+                .components()
+                .binary_search_by(|dtc| compare_component_to_bit_offset(dtc, end_bit_offset, big_endian))
+            {
+                Err(insert_at) => insert_at as i32,
+                Ok(found) => {
+                    if effective_bit_size != 0 {
+                        has_conflict = true;
+                    }
+                    found as i32
+                }
+            };
+        }
+
+        if start_index != end_index {
+            has_conflict = true;
+        }
+
+        if has_conflict {
+            self.structure_data_type_shift_offsets(start_index as usize, 1, byte_width + additional_shift);
+        }
+
+        let required_length = byte_offset + byte_width;
+        if required_length > self.stored_struct_length() {
+            self.set_stored_struct_length(required_length);
+        }
+
+        let storage_bit_offset = bit_offset % 8;
+        let revised_offset = if big_endian {
+            byte_offset + byte_width - ((effective_bit_size + bit_offset + 7) / 8)
+        } else {
+            byte_offset + (bit_offset / 8)
+        };
+
+        let bit_field_dt = BitFieldDataType::new(share_data_type(&base_data_type), bit_size, storage_bit_offset)
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        let storage_size = bit_field_dt.get_storage_size();
+
+        let dtc = DataTypeComponentImpl::new(
+            Box::new(bit_field_dt),
+            None,
+            storage_size,
+            ordinal,
+            revised_offset,
+            component_name,
+            comment,
+        );
+        // bitfieldDt.addParent(this): no-op, see module docs.
+        self.components_mut().insert(start_index as usize, dtc);
+
+        self.structure_data_type_adjust_non_packed_components();
+        // notifySizeChanged(): no-op, see module docs.
+
+        Ok(self.components()[start_index as usize].snapshot())
     }
 
     /// Port of `StructureDataType.repack(boolean)`. Returns `true` if a layout change was
@@ -1690,6 +1985,35 @@ mod tests {
             length,
         })
     }
+
+    /// Valid bitfield base type (unlike [`byte_data_type`], which does not report
+    /// `is_integer_type()`): a minimal signed integer stand-in accepted by
+    /// [`check_base_data_type`].
+    fn int_data_type(name: &str, length: i32) -> Box<dyn DataType> {
+        struct IntDataType {
+            name: String,
+            length: i32,
+        }
+        impl DataType for IntDataType {
+            fn get_name(&self) -> String {
+                self.name.clone()
+            }
+            fn get_length(&self) -> i32 {
+                self.length
+            }
+            fn is_integer_type(&self) -> bool {
+                true
+            }
+            fn is_signed_integer_type(&self) -> bool {
+                true
+            }
+        }
+        Box::new(IntDataType {
+            name: name.to_string(),
+            length,
+        })
+    }
+
     #[test]
     fn usable_as_trait_object() {
         let s = sample();
@@ -2127,6 +2451,97 @@ mod tests {
         let s = three_component_sample();
         let dtc = s.structure_data_type_get_data_type_at(5).unwrap();
         assert_eq!(dtc.get_field_name(), Some("b".to_string()));
+    }
+
+    #[test]
+    fn add_bit_field_appends_bitfield_component() {
+        let mut s = sample();
+        let dtc = s
+            .structure_data_type_add_bit_field(int_data_type("int", 4), 3, Some("flag".to_string()), None)
+            .unwrap();
+        assert!(dtc.is_bit_field_component());
+        assert_eq!(dtc.get_offset(), 0);
+        assert_eq!(dtc.get_length(), 1); // storage size for a 3-bit field at offset 0
+        assert_eq!(s.stored_struct_length(), 1);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 1);
+    }
+
+    #[test]
+    fn add_bit_field_rejects_invalid_base_type() {
+        let mut s = sample();
+        let err = match s.structure_data_type_add_bit_field(byte_data_type("notint", 4), 3, None, None) {
+            Err(e) => e,
+            Ok(_) => panic!("expected an invalid-base-type error"),
+        };
+        assert!(err.contains("InvalidDataTypeException"));
+    }
+
+    #[test]
+    fn insert_bit_field_at_places_bitfield_at_requested_offset() {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("a".to_string()), None)
+            .unwrap();
+
+        // Insert a 4-bit field at bit-offset 2 within byte offset 4 (right after "a"), byteWidth 1.
+        let dtc = s
+            .structure_data_type_insert_bit_field_at(4, 1, 2, int_data_type("byte", 1), 4, Some("bits".to_string()), None)
+            .unwrap();
+        assert!(dtc.is_bit_field_component());
+        assert_eq!(dtc.get_offset(), 4);
+        assert_eq!(dtc.get_length(), 1);
+        assert_eq!(s.stored_struct_length(), 5);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+    }
+
+    #[test]
+    fn insert_bit_field_at_rejects_negative_offset_and_bad_byte_width() {
+        let mut s = sample();
+        assert!(s
+            .structure_data_type_insert_bit_field_at(-1, 1, 0, int_data_type("byte", 1), 4, None, None)
+            .is_err());
+        assert!(s
+            .structure_data_type_insert_bit_field_at(0, 0, 0, int_data_type("byte", 1), 4, None, None)
+            .is_err());
+        assert!(s
+            .structure_data_type_insert_bit_field_at(0, 1, 0, byte_data_type("notint", 1), 4, None, None)
+            .is_err());
+    }
+
+    #[test]
+    fn insert_bit_field_non_packed_delegates_to_insert_bit_field_at() {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("a".to_string()), None)
+            .unwrap();
+        // Non-packed insertBitField(ordinal) resolves the byte offset from the target ordinal's
+        // component (here, appending past the end -> offset == current struct length).
+        let dtc = s
+            .structure_data_type_insert_bit_field(1, 1, 0, int_data_type("byte", 1), 4, Some("bits".to_string()), None)
+            .unwrap();
+        assert!(dtc.is_bit_field_component());
+        assert_eq!(dtc.get_offset(), 4);
+        assert_eq!(s.stored_struct_length(), 5);
+    }
+
+    #[test]
+    fn insert_bit_field_packed_delegates_to_insert() {
+        let mut s = sample();
+        s.packing_type = PackingType::Default;
+        s.structure_data_type_add(byte_data_type("byte", 1), -1, Some("a".to_string()), None)
+            .unwrap();
+
+        let dtc = s
+            .structure_data_type_insert_bit_field(1, 0, 0, int_data_type("int", 4), 4, Some("bits".to_string()), None)
+            .unwrap();
+        assert!(dtc.is_bit_field_component());
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+    }
+
+    #[test]
+    fn insert_bit_field_rejects_out_of_bounds_ordinal() {
+        let mut s = sample();
+        assert!(s
+            .structure_data_type_insert_bit_field(5, 1, 0, int_data_type("byte", 1), 4, None, None)
+            .is_err());
     }
 
     struct MockBuf;

@@ -257,6 +257,18 @@ impl DataType for SharedDataType {
     fn as_built_in(&self) -> Option<&dyn crate::program::model::data::built_in::BuiltIn> {
         self.0.as_built_in()
     }
+
+    fn is_integer_type(&self) -> bool {
+        self.0.is_integer_type()
+    }
+
+    fn is_signed_integer_type(&self) -> bool {
+        self.0.is_signed_integer_type()
+    }
+
+    fn get_alignment(&self) -> i32 {
+        self.0.get_alignment()
+    }
 }
 
 /// Hands back a fresh `Box<dyn DataType>` sharing `data_type`'s underlying value. See
