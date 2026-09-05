@@ -34,6 +34,7 @@ pub mod complex16_data_type;
 pub mod complex32_data_type;
 pub mod component_offset_settings_definition;
 pub mod composite;
+pub mod composite_alignment_helper;
 pub mod composite_data_type_impl;
 pub mod composite_internal;
 pub mod composite_test_utils;
