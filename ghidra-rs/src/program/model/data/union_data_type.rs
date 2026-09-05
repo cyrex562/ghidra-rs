@@ -35,8 +35,11 @@
 //! final module doc's own "explicitly not yet ported" list for `dataTypeAlignmentChanged`-family
 //! methods and `copy`/`clone`, which mirror [`StructureDataType`]'s identical omissions).
 
+use crate::program::model::data::bit_field_data_type::BitFieldDataType;
+use crate::program::model::data::composite_alignment_helper;
 use crate::program::model::data::composite_data_type_impl::CompositeDataTypeImpl;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl;
 use crate::program::model::data::union_internal::UnionInternal;
 use crate::program::model::mem::MemBuffer;
@@ -207,6 +210,102 @@ pub trait UnionDataType: UnionInternal + CompositeDataTypeImpl {
         }
         Ok(())
     }
+
+    /// Port of the private `UnionDataType.getBitFieldAllocation(BitFieldDataType)`: the number of
+    /// bytes a bitfield component contributes to the union's overall packed length, per the
+    /// target compiler's bitfield packing convention.
+    fn union_data_type_get_bit_field_allocation(&self, bitfield: &BitFieldDataType) -> i32 {
+        let bit_field_packing = self.get_data_organization().get_bit_field_packing();
+        if bit_field_packing.use_ms_convention() {
+            return bitfield.get_base_type_size();
+        }
+        if bitfield.get_bit_size() == 0 {
+            return 0;
+        }
+        let mut length = bitfield.get_base_type_size();
+        let packing = self.stored_packing_value();
+        if packing > 0 && length > packing {
+            length = crate::program::model::data::data_organization_impl::get_least_common_multiple(
+                bitfield.get_storage_size(),
+                packing,
+            );
+        }
+        length
+    }
+
+    /// Port of `UnionDataType.getAlignment()`. Exposed under a distinct name since
+    /// [`CompositeDataTypeImpl::composite_impl_alignment`] is required (abstract in Java too)
+    /// with no default of its own; a concrete implementation should delegate its answer to this.
+    ///
+    /// Java's `getAlignment()` lazily computes **and caches** into the private `unionAlignment`
+    /// field (`if (unionAlignment > 0) return unionAlignment; ...`). The required
+    /// `composite_impl_alignment` this delta answers is declared `&self`-only, so it cannot write
+    /// that cache itself; this method therefore only *reads* the cache (returning it immediately
+    /// when positive, exactly like Java) and leaves *writing* it to
+    /// [`union_data_type_repack`](UnionDataType::union_data_type_repack) (an `&mut self` method,
+    /// which resets the field to a sentinel and stores the freshly computed value -- matching
+    /// Java's `repack(boolean)` body exactly). Net effect: identical values to Java, just
+    /// recomputed (harmlessly) more often before the first `repack` runs.
+    fn union_data_type_alignment(&self) -> i32
+    where
+        Self: Sized,
+    {
+        let cached = self.stored_union_alignment();
+        if cached > 0 {
+            return cached;
+        }
+        if self.is_packing_enabled() {
+            let data_organization = self.get_data_organization();
+            composite_alignment_helper::get_alignment(data_organization.as_ref(), self)
+        } else {
+            self.composite_impl_non_packed_alignment()
+        }
+    }
+
+    /// Port of `UnionDataType.repack(boolean)`. Returns `true` if a layout change was detected.
+    /// Unlike [`StructureDataType::structure_data_type_pack`](super::structure_data_type::StructureDataType::structure_data_type_pack),
+    /// no `AlignedStructurePacker`-style helper trait is needed here: Java's `Union.repack` body
+    /// is entirely self-contained (`unionLength = max over components of (bitfield-adjusted)
+    /// length`, then aligned up via `DataOrganizationImpl.getAlignedOffset` when packing is
+    /// enabled).
+    fn union_data_type_repack(&mut self, notify: bool) -> bool
+    where
+        Self: Sized,
+    {
+        let old_length = self.stored_union_length();
+        let old_alignment = self.union_data_type_alignment();
+
+        let packing_enabled = self.is_packing_enabled();
+        let mut new_length = 0i32;
+        for dtc in self.components() {
+            let mut length = dtc.get_length();
+            if packing_enabled && dtc.is_bit_field_component() {
+                let dt = dtc.get_data_type();
+                if let Some(bitfield) = dt.as_bit_field_data_type() {
+                    length = self.union_data_type_get_bit_field_allocation(bitfield);
+                }
+            }
+            new_length = new_length.max(length);
+        }
+        self.set_stored_union_length(new_length);
+
+        // force recompute of unionAlignment, matching Java's `unionAlignment = -1; getAlignment();`
+        self.set_stored_union_alignment(-1);
+        let new_alignment = self.union_data_type_alignment();
+        self.set_stored_union_alignment(new_alignment);
+
+        if packing_enabled {
+            new_length = crate::program::seam_stubs::get_aligned_offset(new_alignment, new_length);
+            self.set_stored_union_length(new_length);
+        }
+
+        let changed = old_length != new_length || old_alignment != new_alignment;
+
+        if changed && notify {
+            // notifySizeChanged()/notifyAlignmentChanged(): no-op, see module docs.
+        }
+        changed
+    }
 }
 
 #[cfg(test)]
@@ -228,9 +327,102 @@ mod tests {
         components: Vec<DataTypeComponentImpl>,
     }
 
+    /// Minimal [`DataOrganization`](crate::program::model::data::data_organization::DataOrganization)
+    /// stand-in, needed only so [`UnionDataType::union_data_type_alignment`]/
+    /// [`UnionDataType::union_data_type_get_bit_field_allocation`] have something to call
+    /// `get_machine_alignment()`/`is_big_endian()`/`get_bit_field_packing()` on -- matches the
+    /// identical mock already used by `StructureDataType`'s own tests.
+    struct MockDataOrganization;
+    impl crate::program::model::data::data_organization::DataOrganization for MockDataOrganization {
+        fn is_big_endian(&self) -> bool {
+            false
+        }
+        fn get_pointer_size(&self) -> i32 {
+            8
+        }
+        fn get_pointer_shift(&self) -> i32 {
+            0
+        }
+        fn is_signed_char(&self) -> bool {
+            true
+        }
+        fn get_char_size(&self) -> i32 {
+            1
+        }
+        fn get_wide_char_size(&self) -> i32 {
+            2
+        }
+        fn get_short_size(&self) -> i32 {
+            2
+        }
+        fn get_integer_size(&self) -> i32 {
+            4
+        }
+        fn get_long_size(&self) -> i32 {
+            8
+        }
+        fn get_long_long_size(&self) -> i32 {
+            8
+        }
+        fn get_float_size(&self) -> i32 {
+            4
+        }
+        fn get_double_size(&self) -> i32 {
+            8
+        }
+        fn get_long_double_size(&self) -> i32 {
+            8
+        }
+        fn get_absolute_max_alignment(&self) -> i32 {
+            0
+        }
+        fn get_machine_alignment(&self) -> i32 {
+            8
+        }
+        fn get_default_alignment(&self) -> i32 {
+            1
+        }
+        fn get_default_pointer_alignment(&self) -> i32 {
+            8
+        }
+        fn get_size_alignment(&self, _size: i32) -> i32 {
+            1
+        }
+        fn get_bit_field_packing(&self) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
+            struct MockBitFieldPacking;
+            impl crate::program::model::data::bit_field_packing::BitFieldPacking for MockBitFieldPacking {
+                fn use_ms_convention(&self) -> bool {
+                    false
+                }
+                fn is_type_alignment_enabled(&self) -> bool {
+                    true
+                }
+                fn get_zero_length_boundary(&self) -> i32 {
+                    0
+                }
+            }
+            Box::new(MockBitFieldPacking)
+        }
+        fn get_size_alignment_count(&self) -> i32 {
+            0
+        }
+        fn get_sizes(&self) -> Vec<i32> {
+            vec![]
+        }
+        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
+            String::new()
+        }
+        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
+            1
+        }
+    }
+
     impl DataType for MockUnionDataType {
         fn get_name(&self) -> String {
             self.name.clone()
+        }
+        fn get_data_organization(&self) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
+            Box::new(MockDataOrganization)
         }
         fn as_composite(&self) -> Option<&dyn Composite> {
             Some(self)
@@ -318,13 +510,11 @@ mod tests {
         fn composite_impl_has_language_dependant_length(&self) -> bool {
             UnionDataType::union_data_type_has_language_dependant_length(self)
         }
-        fn repack_with_notify(&mut self, _notify: bool) -> bool {
-            // Wired up to the real `union_data_type_repack` port in a later commit.
-            false
+        fn repack_with_notify(&mut self, notify: bool) -> bool {
+            UnionDataType::union_data_type_repack(self, notify)
         }
         fn composite_impl_alignment(&self) -> i32 {
-            // Wired up to the real `union_data_type_alignment` port in a later commit.
-            1
+            UnionDataType::union_data_type_alignment(self)
         }
         fn for_each_defined_component(&self, consumer: &mut dyn FnMut(&dyn DataTypeComponent)) {
             for dtc in self.components() {
@@ -411,6 +601,9 @@ mod tests {
             fn get_length(&self) -> i32 {
                 self.length
             }
+            fn get_alignment(&self) -> i32 {
+                self.length.max(1)
+            }
         }
         Box::new(SimpleDataType {
             name: name.to_string(),
@@ -495,6 +688,35 @@ mod tests {
         let u = sample();
         let dt = byte_data_type("byte", 1);
         assert!(u.union_data_type_check_ancestry(dt.as_ref()).is_ok());
+    }
+
+    #[test]
+    fn non_packed_alignment_defaults_to_one() {
+        let u = sample();
+        assert_eq!(u.union_data_type_alignment(), 1);
+    }
+
+    #[test]
+    fn repack_non_packed_recomputes_length_from_max_component() {
+        let mut u = sample();
+        u.components_mut().push(DataTypeComponentImpl::new(byte_data_type("byte", 1), None, 1, 0, 0, None, None));
+        u.components_mut().push(DataTypeComponentImpl::new(byte_data_type("dword", 4), None, 4, 1, 0, None, None));
+        let changed = u.union_data_type_repack(false);
+        assert!(changed);
+        assert_eq!(u.length(), 4);
+        // repacking again with no changes should report no change
+        assert!(!u.union_data_type_repack(false));
+    }
+
+    #[test]
+    fn repack_packed_aligns_length_and_computes_positive_alignment() {
+        let mut u = sample();
+        u.packing_type = PackingType::Default;
+        u.components_mut().push(DataTypeComponentImpl::new(byte_data_type("dword", 4), None, 4, 0, 0, None, None));
+        let changed = u.union_data_type_repack(false);
+        assert!(changed);
+        assert_eq!(u.length(), 4);
+        assert!(u.union_data_type_alignment() > 0);
     }
 
     struct MockBuf;
