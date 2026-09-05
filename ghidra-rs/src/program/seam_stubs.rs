@@ -1434,6 +1434,11 @@ impl SettingsDefinition for CharsetSettingsDefinition {
     }
 }
 
+/// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF8`, referenced by
+/// [`StringUTF8DataType`](crate::program::model::data::string_utf8_data_type::StringUTF8DataType)
+/// before the real class is ported.
+pub const CHARSET_UTF8: &str = "UTF-8";
+
 /// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF16`, referenced by
 /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)
 /// before the real class is ported.
