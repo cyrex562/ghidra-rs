@@ -45,6 +45,7 @@ pub mod data_organization_impl;
 pub mod data_type;
 pub mod data_type_archive_id_dumper;
 pub mod data_type_component;
+pub mod data_type_component_impl;
 pub mod data_type_conflict_handler;
 pub mod data_type_dependency_exception;
 pub mod data_type_encode_exception;
