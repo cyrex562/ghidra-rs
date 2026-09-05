@@ -41,15 +41,24 @@
 //! Java's `getDefaultSettings()`/`isAllowedSetting` machinery is backed by a real, shared
 //! `SettingsImpl` object that every caller mutates in place. Since
 //! [`DataType::get_default_settings`] is `&self -> Box<dyn Settings>` (an owned, detached value),
-//! there is no way for a caller who mutates the returned box to have that mutation observed by a
-//! later call through the trait alone -- the same "fresh value each call" limitation documented
-//! elsewhere in this crate (see `DataTypeUtilities`'s module docs). This port stores the real
-//! setting values directly as fields ([`TypedefDataType`]'s `setting_longs`/`setting_strings`)
-//! and [`DataType::get_default_settings`] builds a read-consistent (but write-disconnected)
-//! snapshot from them each call. Code that holds a concrete `&mut TypedefDataType` (as opposed to
-//! `&mut dyn DataType`/`&mut dyn TypeDef`) -- e.g. a composing `PointerTypedef` -- should instead
-//! call [`TypedefDataType::set_type_def_setting_long`]/[`TypedefDataType::set_type_def_setting_string`]
-//! directly, which do persist.
+//! a naive per-call snapshot (a plain `HashMap` field, cloned into each returned `Box`) would
+//! leave every mutation through the returned object disconnected from `self` -- the same "fresh
+//! value each call" limitation documented elsewhere in this crate (see `DataTypeUtilities`'s
+//! module docs). This port instead stores the setting values behind `Arc<Mutex<...>>`
+//! ([`TypedefDataType`]'s `settings` field) and hands out a [`TypedefSettingsSnapshot`] that
+//! clones the `Arc` (cheap, shares the same lock) rather than the map itself, so writes through
+//! the returned `Settings` object *do* persist back into `self` -- matching Java's shared-reference
+//! semantics far more closely than a disconnected snapshot would. `Mutex` (rather than `RefCell`)
+//! is required here since [`DataType`] itself is declared `Send + Sync`. This is what lets
+//! `PointerTypedef` (composing over this struct) implement its `PointerTypeSettingsDefinition`/
+//! `ComponentOffsetSettingsDefinition`/`AddressSpaceSettingsDefinition`-setting constructors by
+//! calling `.set_long()`/`.set_string()` directly on `get_default_settings()`'s return value, the
+//! same way the Java constructors do.
+//!
+//! Code that holds a concrete `&mut TypedefDataType` can still bypass the `Settings` indirection
+//! entirely via [`TypedefDataType::set_type_def_setting_long`]/
+//! [`TypedefDataType::set_type_def_setting_string`], which are equivalent but avoid the lock/trait
+//! object overhead.
 //!
 //! ## Other dropped/simplified pieces
 //!
@@ -73,7 +82,7 @@
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, Mutex, Weak};
 
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
@@ -118,8 +127,15 @@ pub struct TypedefDataType {
     last_change_time: i64,
     last_change_time_in_source_archive: i64,
     parents: Vec<Weak<dyn DataType>>,
-    setting_longs: HashMap<String, i64>,
-    setting_strings: HashMap<String, String>,
+    settings: Arc<Mutex<TypedefSettingsStore>>,
+}
+
+/// Shared, lockable backing store for a [`TypedefDataType`]'s type-def settings. See the module
+/// docs for why this is behind `Arc<Mutex<...>>` rather than plain fields.
+#[derive(Default, Clone)]
+struct TypedefSettingsStore {
+    longs: HashMap<String, i64>,
+    strings: HashMap<String, String>,
 }
 
 impl TypedefDataType {
@@ -212,8 +228,7 @@ impl TypedefDataType {
             last_change_time,
             last_change_time_in_source_archive,
             parents: Vec::new(),
-            setting_longs: HashMap::new(),
-            setting_strings: HashMap::new(),
+            settings: Arc::new(Mutex::new(TypedefSettingsStore::default())),
         }
     }
 
@@ -229,23 +244,27 @@ impl TypedefDataType {
         self.source_archive_id
     }
 
-    /// Directly persist a type-def setting long value, bypassing the write-disconnected
-    /// [`DataType::get_default_settings`] snapshot -- see the module docs.
+    /// Directly persist a type-def setting long value. Equivalent to (but cheaper than) calling
+    /// `.set_long()` on the `Box<dyn Settings>` returned by `get_default_settings()` -- both
+    /// routes share the same underlying store. See the module docs.
     pub fn set_type_def_setting_long(&mut self, name: impl Into<String>, value: i64) {
-        self.setting_longs.insert(name.into(), value);
+        let mut store = self.settings.lock().expect("typedef settings mutex poisoned");
+        store.longs.insert(name.into(), value);
     }
 
     /// Directly persist a type-def setting string value. See
     /// [`set_type_def_setting_long`](Self::set_type_def_setting_long).
     pub fn set_type_def_setting_string(&mut self, name: impl Into<String>, value: impl Into<String>) {
-        self.setting_strings.insert(name.into(), value.into());
+        let mut store = self.settings.lock().expect("typedef settings mutex poisoned");
+        store.strings.insert(name.into(), value.into());
     }
 
     /// Directly clear a type-def setting. See
     /// [`set_type_def_setting_long`](Self::set_type_def_setting_long).
     pub fn clear_type_def_setting(&mut self, name: &str) {
-        self.setting_longs.remove(name);
-        self.setting_strings.remove(name);
+        let mut store = self.settings.lock().expect("typedef settings mutex poisoned");
+        store.longs.remove(name);
+        store.strings.remove(name);
     }
 
     /// Owned-parameter equivalent of [`DataType::data_type_replaced`], able to actually swap the
@@ -282,20 +301,24 @@ impl TypedefDataType {
     /// specialized to two concrete [`TypedefDataType`]s (see the module docs for why the
     /// Settings-trait-object route can't round-trip a real copy).
     pub fn copy_type_def_settings_from(&mut self, src: &TypedefDataType, clear_before_copy: bool) {
+        let src_store = src.settings.lock().expect("typedef settings mutex poisoned").clone();
+        let mut dest_store = self.settings.lock().expect("typedef settings mutex poisoned");
         if clear_before_copy {
-            self.setting_longs.clear();
-            self.setting_strings.clear();
+            dest_store.longs.clear();
+            dest_store.strings.clear();
         }
-        if src.setting_longs.is_empty() && src.setting_strings.is_empty() {
+        if src_store.longs.is_empty() && src_store.strings.is_empty() {
             return;
         }
+        drop(dest_store);
         for def in self.get_type_def_settings_definitions() {
             let key = def.get_storage_key();
-            if let Some(v) = src.setting_longs.get(&key) {
-                self.setting_longs.insert(key.clone(), *v);
+            let mut dest_store = self.settings.lock().expect("typedef settings mutex poisoned");
+            if let Some(v) = src_store.longs.get(&key) {
+                dest_store.longs.insert(key.clone(), *v);
             }
-            if let Some(v) = src.setting_strings.get(&key) {
-                self.setting_strings.insert(key, v.clone());
+            if let Some(v) = src_store.strings.get(&key) {
+                dest_store.strings.insert(key, v.clone());
             }
         }
     }
@@ -334,12 +357,6 @@ impl TypedefDataType {
         copied.is_auto_named = self.is_auto_named;
         copied.copy_type_def_settings_from(self, false);
         copied
-    }
-
-    fn is_allowed_setting(&self, storage_key: &str) -> bool {
-        self.get_type_def_settings_definitions()
-            .iter()
-            .any(|def| def.get_storage_key() == storage_key)
     }
 }
 
@@ -535,8 +552,7 @@ impl DataType for TypedefDataType {
 
     fn get_default_settings(&self) -> Box<dyn Settings> {
         Box::new(TypedefSettingsSnapshot {
-            longs: self.setting_longs.clone(),
-            strings: self.setting_strings.clone(),
+            store: Arc::clone(&self.settings),
             immutable: self.get_type_def_settings_definitions().is_empty(),
             allowed_keys: self
                 .get_type_def_settings_definitions()
@@ -554,11 +570,12 @@ impl DataTypeImpl for TypedefDataType {
     }
 
     fn set_stored_default_settings(&mut self, settings: Box<dyn Settings>) {
+        let mut store = self.settings.lock().expect("typedef settings mutex poisoned");
         for name in settings.get_names() {
             if let Some(v) = settings.get_long(&name) {
-                self.setting_longs.insert(name, v);
+                store.longs.insert(name, v);
             } else if let Some(v) = settings.get_string(&name) {
-                self.setting_strings.insert(name, v);
+                store.strings.insert(name, v);
             }
         }
     }
@@ -634,12 +651,12 @@ impl std::fmt::Display for TypedefDataType {
     }
 }
 
-/// Read-consistent, write-disconnected [`Settings`] snapshot returned by
-/// [`TypedefDataType`]'s `get_default_settings`. See the module docs for why writes through this
-/// object do not persist back into the owning [`TypedefDataType`].
+/// [`Settings`] handle returned by [`TypedefDataType`]'s `get_default_settings`. Shares the same
+/// underlying `Arc<Mutex<TypedefSettingsStore>>` as the owning [`TypedefDataType`] (rather than a
+/// disconnected clone of its contents), so writes through this object persist back -- see the
+/// module docs.
 struct TypedefSettingsSnapshot {
-    longs: HashMap<String, i64>,
-    strings: HashMap<String, String>,
+    store: Arc<Mutex<TypedefSettingsStore>>,
     immutable: bool,
     allowed_keys: Vec<String>,
     fallback: Box<dyn Settings>,
@@ -658,43 +675,51 @@ impl Settings for TypedefSettingsSnapshot {
     }
 
     fn get_long(&self, name: &str) -> Option<i64> {
-        self.longs.get(name).copied().or_else(|| self.fallback.get_long(name))
+        let store = self.store.lock().expect("typedef settings mutex poisoned");
+        store.longs.get(name).copied().or_else(|| self.fallback.get_long(name))
     }
 
     fn get_string(&self, name: &str) -> Option<String> {
-        self.strings.get(name).cloned().or_else(|| self.fallback.get_string(name))
+        let store = self.store.lock().expect("typedef settings mutex poisoned");
+        store.strings.get(name).cloned().or_else(|| self.fallback.get_string(name))
     }
 
     fn set_long(&mut self, name: &str, value: i64) {
         if !self.immutable && self.allowed_keys.iter().any(|k| k == name) {
-            self.longs.insert(name.to_string(), value);
+            let mut store = self.store.lock().expect("typedef settings mutex poisoned");
+            store.longs.insert(name.to_string(), value);
         }
     }
 
     fn set_string(&mut self, name: &str, value: &str) {
         if !self.immutable && self.allowed_keys.iter().any(|k| k == name) {
-            self.strings.insert(name.to_string(), value.to_string());
+            let mut store = self.store.lock().expect("typedef settings mutex poisoned");
+            store.strings.insert(name.to_string(), value.to_string());
         }
     }
 
     fn clear_setting(&mut self, name: &str) {
-        self.longs.remove(name);
-        self.strings.remove(name);
+        let mut store = self.store.lock().expect("typedef settings mutex poisoned");
+        store.longs.remove(name);
+        store.strings.remove(name);
     }
 
     fn clear_all_settings(&mut self) {
-        self.longs.clear();
-        self.strings.clear();
+        let mut store = self.store.lock().expect("typedef settings mutex poisoned");
+        store.longs.clear();
+        store.strings.clear();
     }
 
     fn get_names(&self) -> Vec<String> {
-        let mut names: Vec<String> = self.longs.keys().cloned().collect();
-        names.extend(self.strings.keys().cloned());
+        let store = self.store.lock().expect("typedef settings mutex poisoned");
+        let mut names: Vec<String> = store.longs.keys().cloned().collect();
+        names.extend(store.strings.keys().cloned());
         names
     }
 
     fn is_empty(&self) -> bool {
-        self.longs.is_empty() && self.strings.is_empty()
+        let store = self.store.lock().expect("typedef settings mutex poisoned");
+        store.longs.is_empty() && store.strings.is_empty()
     }
 }
 
@@ -803,6 +828,54 @@ mod tests {
         assert!(DataType::is_equivalent(&a, &b));
         assert!(DataType::is_equivalent(&a, &c)); // conflict suffix ignored
         assert!(!DataType::is_equivalent(&a, &d));
+    }
+
+    #[test]
+    fn get_default_settings_reflects_direct_setting_writes() {
+        let mut td = TypedefDataType::new_in_root("Foo", leaf("int", 4)).unwrap();
+        td.set_type_def_setting_long("k", 7);
+        let settings = DataType::get_default_settings(&td);
+        assert_eq!(settings.get_long("k"), Some(7));
+    }
+
+    struct MockTypeDefSettingsDef;
+    impl SettingsDefinition for MockTypeDefSettingsDef {
+        fn get_storage_key(&self) -> String {
+            "my_key".to_string()
+        }
+    }
+    impl TypeDefSettingsDefinition for MockTypeDefSettingsDef {
+        fn get_attribute_specification(&self, _settings: &dyn Settings) -> Option<String> {
+            None
+        }
+    }
+
+    struct MockLeafWithTypeDefSettings {
+        name: String,
+    }
+    impl DataType for MockLeafWithTypeDefSettings {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+        fn get_type_def_settings_definitions(&self) -> Vec<Box<dyn TypeDefSettingsDefinition>> {
+            vec![Box::new(MockTypeDefSettingsDef)]
+        }
+    }
+
+    #[test]
+    fn writes_through_default_settings_handle_persist_back() {
+        let td = TypedefDataType::new_in_root(
+            "Foo",
+            Box::new(MockLeafWithTypeDefSettings { name: "widget".to_string() }),
+        )
+        .unwrap();
+
+        // Two independent calls to get_default_settings() should share the same backing store
+        // (mirroring Java's shared SettingsImpl reference), not each be a disconnected snapshot.
+        let mut first = DataType::get_default_settings(&td);
+        first.set_long("my_key", 99);
+        let second = DataType::get_default_settings(&td);
+        assert_eq!(second.get_long("my_key"), Some(99));
     }
 
     #[test]
