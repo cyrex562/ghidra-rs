@@ -35,7 +35,9 @@
 //! final module doc's own "explicitly not yet ported" list for `dataTypeAlignmentChanged`-family
 //! methods and `copy`/`clone`, which mirror [`StructureDataType`]'s identical omissions).
 
-use crate::program::model::data::bit_field_data_type::BitFieldDataType;
+use crate::program::model::data::bit_field_data_type::{
+    check_base_data_type, get_effective_bit_size, get_minimum_storage_size_no_offset, BitFieldDataType,
+};
 use crate::program::model::data::composite_alignment_helper;
 use crate::program::model::data::composite_data_type_impl::CompositeDataTypeImpl;
 use crate::program::model::data::data_type::DataType;
@@ -71,6 +73,18 @@ fn is_part_of_data_type_by_ref(data_type: &dyn DataType, target: &dyn DataType) 
             .any(|dtc| is_part_of_data_type_by_ref(dtc.get_data_type().as_ref(), target)),
         None => false,
     }
+}
+
+/// Port of `DataTypeComponentImpl.isUndefined()`'s test applied to a not-yet-wrapped data type
+/// (`(dataType instanceof Dynamic dynamic) && dynamic.canSpecifyLength()`), used in place of
+/// `dtc.isUndefined()` where only the data type is at hand. Identical to
+/// [`structure_data_type::is_dynamic_with_specifiable_length`](super::structure_data_type), kept
+/// as its own private copy for the same reason as [`is_part_of_data_type_by_ref`] above.
+fn is_dynamic_with_specifiable_length(data_type: &dyn DataType) -> bool {
+    data_type
+        .as_dynamic()
+        .map(|d| d.can_specify_length())
+        .unwrap_or(false)
 }
 
 /// Basic (in-memory, non-database-backed) implementation of the union data type.
@@ -209,6 +223,225 @@ pub trait UnionDataType: UnionInternal + CompositeDataTypeImpl {
             ));
         }
         Ok(())
+    }
+
+    /// Port of the private `UnionDataType.adjustBitField(DataType)`: normalizes a `BitFieldDataType`
+    /// component so it always starts at bit-0 (lsb) of byte-0 for little-endian, or bit-7 (msb)
+    /// of byte-0 for big-endian -- both aligned and non-packed unions use this same adjustment
+    /// ("non-packed must force bitfield placement at byte offset 0"). Non-bitfield data types
+    /// pass through unchanged.
+    fn union_data_type_adjust_bit_field(&self, data_type: Box<dyn DataType>) -> Box<dyn DataType> {
+        if !data_type.is_bit_field_type() {
+            return data_type;
+        }
+        let extracted = {
+            let bitfield = match data_type.as_bit_field_data_type() {
+                Some(bf) => bf,
+                None => return data_type,
+            };
+            (
+                bitfield.get_base_data_type(),
+                bitfield.get_declared_bit_size(),
+                bitfield.get_bit_size(),
+                bitfield.get_bit_offset(),
+            )
+        };
+        let (base_data_type, declared_bit_size, existing_effective_bit_size, existing_bit_offset) = extracted;
+
+        let effective_bit_size = get_effective_bit_size(declared_bit_size, base_data_type.get_length());
+
+        let big_endian = self.get_data_organization().is_big_endian();
+        let storage_bit_offset = if big_endian {
+            if declared_bit_size == 0 {
+                7
+            } else {
+                let storage_size = get_minimum_storage_size_no_offset(effective_bit_size);
+                8 * storage_size - effective_bit_size
+            }
+        } else {
+            0
+        };
+
+        if effective_bit_size != existing_effective_bit_size || storage_bit_offset != existing_bit_offset {
+            match BitFieldDataType::new(base_data_type, effective_bit_size, storage_bit_offset) {
+                Ok(new_bitfield) => Box::new(new_bitfield),
+                // unexpected since deriving from existing bitfield; ignore and use existing bitfield
+                Err(_) => data_type,
+            }
+        } else {
+            data_type
+        }
+    }
+
+    /// Port of the private `UnionDataType.shiftOrdinals(int, int)`, specialized to Union's
+    /// always-`+1`/`-1` call sites (Java's general `deltaOrdinal` parameter is kept for fidelity
+    /// even though every real caller below only ever passes `1` or `-1`).
+    fn union_data_type_shift_ordinals(&mut self, ordinal: i32, delta_ordinal: i32) {
+        for dtc in self.components_mut().iter_mut().skip(ordinal as usize) {
+            dtc.set_ordinal(dtc.get_ordinal() + delta_ordinal);
+        }
+    }
+
+    /// Port of the private `UnionDataType.doAdd(DataType, int, String, String)`. See the module
+    /// docs for what is skipped (`dataType.clone(dataMgr)`, `data_type.addParent(self)`).
+    ///
+    /// # Errors
+    /// Returns `Err` if a positive length cannot be determined for the specified data type
+    /// (mirrors `IllegalArgumentException`), or if `data_type` would create a cyclic composite
+    /// (mirrors `DataTypeDependencyException`).
+    fn union_data_type_do_add(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        let data_type = self.composite_impl_validate_data_type(data_type)?;
+        let data_type = self.union_data_type_adjust_bit_field(data_type);
+        // dataType.clone(dataMgr): skipped, see module docs.
+        self.union_data_type_check_ancestry(data_type.as_ref())?;
+
+        let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
+        let length = self.composite_impl_preferred_component_length_default(
+            data_type.as_ref(),
+            dynamic_specifiable,
+            length,
+        )?;
+
+        let ordinal = self.components().len() as i32;
+        let dtc = DataTypeComponentImpl::new(data_type, None, length, ordinal, 0, component_name, comment);
+        // data_type.addParent(this): skipped, see module docs.
+        self.components_mut().push(dtc);
+        Ok(self.components().last().expect("just pushed").snapshot())
+    }
+
+    /// Port of `UnionDataType.add(DataType, int, String, String)`.
+    ///
+    /// # Errors
+    /// See [`union_data_type_do_add`](UnionDataType::union_data_type_do_add).
+    fn union_data_type_add(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        let old_alignment = self.union_data_type_alignment();
+        let dtc = self.union_data_type_do_add(data_type, length, component_name, comment)?;
+        if !self.union_data_type_repack(true)
+            && self.is_packing_enabled()
+            && old_alignment != self.union_data_type_alignment()
+        {
+            // notifyAlignmentChanged(): no-op, see module docs.
+        }
+        Ok(dtc)
+    }
+
+    /// Port of `UnionDataType.insert(int, DataType, int, String, String)`. See the module docs
+    /// for what is skipped (`dataType.clone(dataMgr)`, `data_type.addParent(self)`). Unlike Java
+    /// (which lets `components.add(ordinal, dtc)` throw `IndexOutOfBoundsException` only after
+    /// doing all the validation/adjustment work), the ordinal bounds check happens first here --
+    /// an intentional reordering with no externally observable difference beyond avoiding
+    /// wasted work on an already-doomed call.
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds, a positive length cannot be determined for
+    /// the specified data type (mirrors `IndexOutOfBoundsException`/`IllegalArgumentException`),
+    /// or `data_type` would create a cyclic composite (mirrors `DataTypeDependencyException`).
+    fn union_data_type_insert(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        if ordinal < 0 || ordinal as usize > self.components().len() {
+            return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
+        }
+
+        let data_type = self.composite_impl_validate_data_type(data_type)?;
+        let old_alignment = self.union_data_type_alignment();
+        let data_type = self.union_data_type_adjust_bit_field(data_type);
+        // dataType.clone(dataMgr): skipped, see module docs.
+        self.union_data_type_check_ancestry(data_type.as_ref())?;
+
+        let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
+        let length = self.composite_impl_preferred_component_length_default(
+            data_type.as_ref(),
+            dynamic_specifiable,
+            length,
+        )?;
+
+        let dtc = DataTypeComponentImpl::new(data_type, None, length, ordinal, 0, component_name, comment);
+        // data_type.addParent(this): skipped, see module docs.
+        self.union_data_type_shift_ordinals(ordinal, 1);
+        self.components_mut().insert(ordinal as usize, dtc);
+
+        if !self.union_data_type_repack(true)
+            && self.is_packing_enabled()
+            && old_alignment != self.union_data_type_alignment()
+        {
+            // notifyAlignmentChanged(): no-op, see module docs.
+        }
+        Ok(self.components()[ordinal as usize].snapshot())
+    }
+
+    /// Port of `UnionDataType.addBitField(DataType, int, String, String)`.
+    ///
+    /// # Errors
+    /// See [`union_data_type_insert_bit_field`](UnionDataType::union_data_type_insert_bit_field).
+    fn union_data_type_add_bit_field(
+        &mut self,
+        base_data_type: Box<dyn DataType>,
+        bit_size: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        let ordinal = self.components().len() as i32;
+        self.union_data_type_insert_bit_field(ordinal, base_data_type, bit_size, component_name, comment)
+    }
+
+    /// Port of `UnionDataType.insertBitField(int, DataType, int, String, String)`. See the module
+    /// docs for what is skipped (`baseDataType.clone(dataMgr)`).
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`), if
+    /// `base_data_type` is not a valid bitfield base type (mirrors `InvalidDataTypeException`),
+    /// or if a positive length cannot be determined (mirrors `IllegalArgumentException`).
+    fn union_data_type_insert_bit_field(
+        &mut self,
+        ordinal: i32,
+        base_data_type: Box<dyn DataType>,
+        bit_size: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        if ordinal < 0 || ordinal as usize > self.components().len() {
+            return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
+        }
+        check_base_data_type(base_data_type.as_ref())
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        // baseDataType.clone(dataMgr): skipped, see module docs.
+        let bit_field_dt = BitFieldDataType::new_at_offset_zero(base_data_type, bit_size)
+            .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
+        let storage_size = bit_field_dt.get_storage_size();
+        self.union_data_type_insert(ordinal, Box::new(bit_field_dt), storage_size, component_name, comment)
     }
 
     /// Port of the private `UnionDataType.getBitFieldAllocation(BitFieldDataType)`: the number of
@@ -466,14 +699,14 @@ mod tests {
         }
         fn insert_bit_field(
             &mut self,
-            _ordinal: i32,
-            _base_data_type: Box<dyn DataType>,
-            _bit_size: i32,
-            _component_name: Option<String>,
-            _comment: Option<String>,
+            ordinal: i32,
+            base_data_type: Box<dyn DataType>,
+            bit_size: i32,
+            component_name: Option<String>,
+            comment: Option<String>,
         ) -> Result<Box<dyn DataTypeComponent>, String> {
-            // Wired up to the real `union_data_type_insert_bit_field` port in a later commit.
-            Err("not yet ported".to_string())
+            self.union_data_type_insert_bit_field(ordinal, base_data_type, bit_size, component_name, comment)
+                .map(|dtc| Box::new(dtc) as Box<dyn DataTypeComponent>)
         }
     }
 
@@ -523,24 +756,24 @@ mod tests {
         }
         fn composite_impl_add_with_length_and_name(
             &mut self,
-            _data_type: Box<dyn DataType>,
-            _length: i32,
-            _field_name: Option<String>,
-            _comment: Option<String>,
+            data_type: Box<dyn DataType>,
+            length: i32,
+            field_name: Option<String>,
+            comment: Option<String>,
         ) -> Result<Box<dyn DataTypeComponent>, String> {
-            // Wired up to the real `union_data_type_add` port in a later commit.
-            Err("not yet ported".to_string())
+            self.union_data_type_add(data_type, length, field_name, comment)
+                .map(|dtc| Box::new(dtc) as Box<dyn DataTypeComponent>)
         }
         fn composite_impl_insert_with_length_and_name(
             &mut self,
-            _ordinal: i32,
-            _data_type: Box<dyn DataType>,
-            _length: i32,
-            _field_name: Option<String>,
-            _comment: Option<String>,
+            ordinal: i32,
+            data_type: Box<dyn DataType>,
+            length: i32,
+            field_name: Option<String>,
+            comment: Option<String>,
         ) -> Result<Box<dyn DataTypeComponent>, String> {
-            // Wired up to the real `union_data_type_insert` port in a later commit.
-            Err("not yet ported".to_string())
+            self.union_data_type_insert(ordinal, data_type, length, field_name, comment)
+                .map(|dtc| Box::new(dtc) as Box<dyn DataTypeComponent>)
         }
         fn composite_impl_validate_data_type(
             &self,
@@ -606,6 +839,37 @@ mod tests {
             }
         }
         Box::new(SimpleDataType {
+            name: name.to_string(),
+            length,
+        })
+    }
+
+    /// Valid bitfield base type (unlike [`byte_data_type`], which does not report
+    /// `is_integer_type()`): a minimal signed integer stand-in accepted by
+    /// [`check_base_data_type`].
+    fn int_data_type(name: &str, length: i32) -> Box<dyn DataType> {
+        struct IntDataType {
+            name: String,
+            length: i32,
+        }
+        impl DataType for IntDataType {
+            fn get_name(&self) -> String {
+                self.name.clone()
+            }
+            fn get_length(&self) -> i32 {
+                self.length
+            }
+            fn get_alignment(&self) -> i32 {
+                self.length
+            }
+            fn is_integer_type(&self) -> bool {
+                true
+            }
+            fn is_signed_integer_type(&self) -> bool {
+                true
+            }
+        }
+        Box::new(IntDataType {
             name: name.to_string(),
             length,
         })
@@ -717,6 +981,93 @@ mod tests {
         assert!(changed);
         assert_eq!(u.length(), 4);
         assert!(u.union_data_type_alignment() > 0);
+    }
+
+    #[test]
+    fn add_appends_component_at_offset_zero_and_grows_to_max_length() {
+        let mut u = sample();
+        let dtc1 = u.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        assert_eq!(dtc1.get_ordinal(), 0);
+        assert_eq!(dtc1.get_offset(), 0);
+        assert_eq!(u.length(), 1);
+
+        let dtc2 = u
+            .union_data_type_add(byte_data_type("dword", 4), -1, Some("field2".to_string()), None)
+            .unwrap();
+        assert_eq!(dtc2.get_ordinal(), 1);
+        assert_eq!(dtc2.get_offset(), 0);
+        assert_eq!(u.length(), 4);
+        assert_eq!(u.union_data_type_get_num_components(), 2);
+        assert_eq!(u.union_data_type_get_num_defined_components(), 2);
+    }
+
+    #[test]
+    fn insert_shifts_existing_ordinals_and_keeps_offset_zero() {
+        let mut u = sample();
+        u.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        u.union_data_type_add(byte_data_type("word", 2), -1, None, None).unwrap();
+
+        let inserted = u
+            .union_data_type_insert(1, byte_data_type("dword", 4), -1, None, None)
+            .unwrap();
+        assert_eq!(inserted.get_ordinal(), 1);
+        assert_eq!(inserted.get_offset(), 0);
+
+        // the component that used to be at ordinal 1 shifted to ordinal 2
+        assert_eq!(u.union_data_type_get_component(2).unwrap().get_data_type_name(), "word");
+        assert_eq!(u.length(), 4);
+    }
+
+    #[test]
+    fn insert_at_num_components_behaves_like_add() {
+        let mut u = sample();
+        u.union_data_type_add(byte_data_type("byte", 1), -1, None, None).unwrap();
+        let inserted = u
+            .union_data_type_insert(1, byte_data_type("dword", 4), -1, None, None)
+            .unwrap();
+        assert_eq!(inserted.get_ordinal(), 1);
+        assert_eq!(u.union_data_type_get_num_components(), 2);
+    }
+
+    #[test]
+    fn insert_rejects_out_of_bounds_ordinal() {
+        let mut u = sample();
+        let result = u.union_data_type_insert(5, byte_data_type("byte", 1), -1, None, None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn add_bit_field_appends_bitfield_component() {
+        let mut u = sample();
+        let dtc = u
+            .union_data_type_add_bit_field(int_data_type("int", 4), 3, Some("flag".to_string()), None)
+            .unwrap();
+        assert_eq!(dtc.get_ordinal(), 0);
+        assert_eq!(dtc.get_offset(), 0);
+        assert!(dtc.is_bit_field_component());
+        assert_eq!(u.union_data_type_get_num_components(), 1);
+    }
+
+    #[test]
+    fn add_bit_field_rejects_invalid_base_type() {
+        let mut u = sample();
+        let result = u.union_data_type_add_bit_field(byte_data_type("byte", 1), 3, None, None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn insert_bit_field_rejects_out_of_bounds_ordinal() {
+        let mut u = sample();
+        let result = u.union_data_type_insert_bit_field(5, int_data_type("int", 4), 3, None, None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn union_trait_insert_bit_field_delegates_to_union_data_type_insert_bit_field() {
+        let mut u = sample();
+        let dyn_union: &mut dyn crate::program::model::data::union::Union = &mut u;
+        let result = dyn_union.insert_bit_field(0, int_data_type("int", 4), 3, None, None);
+        assert!(result.is_ok());
     }
 
     struct MockBuf;
