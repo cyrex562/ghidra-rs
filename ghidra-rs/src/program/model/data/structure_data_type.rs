@@ -79,11 +79,12 @@
 //! Ported so far, faithfully translating the Java algorithms (binary search over `components` by
 //! offset/ordinal via [`compare_component_to_offset`]/[`compare_component_to_ordinal`]):
 //! `getNumComponents`, `getNumDefinedComponents`, `getDefinedComponents`, `getComponents`,
-//! `getComponent(int)`, `add(DataType, int, String, String)` (`doAdd`), `insert(int, DataType,
-//! int, String, String)`, `insertAtOffset`, `delete(int)`, `delete(Set<Integer>)`,
-//! `deleteAtOffset`, `clearAtOffset`, `clearComponent`, `deleteAll`, `growStructure`, `setLength`,
-//! `getComponentContaining`, `getComponentsContaining`, `getDefinedComponentAtOrAfterOffset`,
-//! `getDataTypeAt`, `isEquivalent`, and the non-packed half of `repack`/`adjustNonPackedComponents`.
+//! `getComponent(int)` (including undefined-filler synthesis), `add(DataType, int, String,
+//! String)` (`doAdd`), `insert(int, DataType, int, String, String)`, `insertAtOffset(int,
+//! DataType, int, String, String)` (plus their shared private helpers `shiftOffsets`,
+//! `backupToFirstComponentContainingOffset`, `afterNonZeroComponentsAtOffset`,
+//! `advanceToLastComponentContainingOffset`), `isEquivalent`, and the non-packed half of
+//! `repack`/`adjustNonPackedComponents`.
 //!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
@@ -97,33 +98,45 @@
 //!     case; for a packing-enabled composite they fall back to simple sequential-append placement
 //!     without alignment padding, which is a known, documented deviation from Java rather than a
 //!     silent bug -- callers should not rely on packed-structure offsets/length being correct yet.
+//!   - `delete(int)`, `delete(Set<Integer>)`, `deleteAtOffset`, `clearAtOffset`, `clearComponent`,
+//!     `deleteAll`, `growStructure`, `setLength`, `getComponentContaining`,
+//!     `getComponentsContaining`, `getDefinedComponentAtOrAfterOffset`, and `getDataTypeAt` are not
+//!     ported yet, despite [`structure_data_type_advance_to_last_component_containing_offset`](StructureDataType::structure_data_type_advance_to_last_component_containing_offset)
+//!     (one of their shared helpers) already being ported ahead of them.
 //!   - `addBitField`/`insertBitField`/`insertBitFieldAt` (bitfield support) are not ported. These
 //!     require the `BitOffsetComparator`-based overlap/conflict detection across bit-granular
 //!     ranges, which is a substantial, mostly-independent algorithm; see
 //!     [`get_normalized_bitfield_offset`](super::structure::get_normalized_bitfield_offset) for
-//!     the one piece of that machinery already ported.
+//!     the one piece of that machinery already ported. `structure_data_type_insert`'s bitfield-
+//!     overlap shift adjustment (Java's `existingDtc.isBitFieldComponent()` branch) is likewise
+//!     skipped for the same reason.
 //!   - `replace`/`replaceAtOffset`/`dataTypeSizeChanged`/`dataTypeAlignmentChanged`/
 //!     `dataTypeDeleted`/`dataTypeReplaced`/`replaceWith`/`copy`/`clone` are not ported. `replace`
 //!     in particular has an intricate multi-case algorithm (bit-field-overlap consolidation,
 //!     "quick update" fast path, `LinkedList<DataTypeComponentImpl>` sequence replacement) that
 //!     was not reached this session.
 //!   - `DataTypeUtilities.checkAncestry` (cyclic-dependency rejection) is not ported anywhere in
-//!     this crate yet, so it is not called from `structure_data_type_add`/`_insert`/`_insert_at_offset`
-//!     below (unlike Java, adding a data type that would create a cyclic composite is not
-//!     currently rejected here).
+//!     this crate yet, so it is not called from `structure_data_type_add`/`_insert`/
+//!     `_insert_at_offset` below (unlike Java, adding a data type that would create a cyclic
+//!     composite is not currently rejected here).
 //!   - `dataType.clone(dataMgr)` (deep-cloning an inserted data type against this structure's own
 //!     `DataTypeManager`) is skipped; the data type is stored as given.
-//!   - `DataTypeComponentImpl`'s `parent` back-reference is always `None` for components created
-//!     here (see [`build_component`] below) rather than an `Arc` to the owning structure, since
+//!   - `data_type.addParent(this)`/`removeParent(this)` (the child `DataType`'s own
+//!     parent-notification list, used for size/alignment-change fan-out) is **not** wired from
+//!     `structure_data_type_add`/`_insert`/`_insert_at_offset`: doing so from a default trait
+//!     method would need to upcast `&mut self` (typed as `&mut Self: StructureDataType`) to
+//!     `&dyn DataType`, which is not attempted this session to avoid depending on trait-object
+//!     upcasting support; a concrete implementor's own `impl Composite for ...`/`impl Structure
+//!     for ...` wrapper is free to call it itself after delegating here.
+//!   - `DataTypeComponentImpl`'s `parent` back-reference is always `None` for every component
+//!     constructed by the methods above, rather than an `Arc` to the owning structure, since
 //!     wiring a genuine self-referential `Arc<Self>` would require every concrete
 //!     `StructureDataType` implementor to be constructed via `Arc::new_cyclic`, a much bigger
 //!     architectural change than this session's scope. This only affects
 //!     [`DataTypeComponent::get_parent`]/parent-dependent settings lookups on a *component*
 //!     (e.g. `getDefaultSettings()`'s `DataTypeManager`-based immutability check always falls back
 //!     to "immutable" since no parent is found); it does not affect any of the offset/ordinal/
-//!     length bookkeeping ported above. `data_type.add_parent(self)`/`remove_parent(self)` (a
-//!     *different*, unrelated parent-notification list living on the child `DataType` itself, not
-//!     on the component) **is** wired for real, since it needs no such self-reference.
+//!     length bookkeeping ported above.
 //!   - `notifySizeChanged()`/`notifyAlignmentChanged()` (walking the *composite's own* parent
 //!     chain to fan out change notifications, plus `DataTypeManager` notification) are no-ops
 //!     here: nothing in this crate yet tracks a `StructureDataType` composite's own parents.
@@ -409,6 +422,222 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl {
         // notifySizeChanged(): no-op, see module docs.
 
         Ok(stored)
+    }
+
+    /// Port of `StructureDataType.shiftOffsets(int, int, int)`: shift every defined component
+    /// from `index` onward by `delta_ordinal`/`delta_offset`, and adjust `structLength`/
+    /// `numComponents` to match.
+    fn structure_data_type_shift_offsets(&mut self, index: usize, delta_ordinal: i32, delta_offset: i32) {
+        if delta_offset == 0 && delta_ordinal == 0 {
+            return;
+        }
+        for dtc in self.components_mut().iter_mut().skip(index) {
+            dtc.set_offset(dtc.get_offset() + delta_offset);
+            dtc.set_ordinal(dtc.get_ordinal() + delta_ordinal);
+        }
+        let new_length = self.stored_struct_length() + delta_offset;
+        self.set_stored_struct_length(new_length);
+        let new_num = self.stored_num_components() + delta_ordinal;
+        self.set_stored_num_components(new_num);
+    }
+
+    /// Port of the private `StructureDataType.backupToFirstComponentContainingOffset(int, int)`.
+    fn structure_data_type_backup_to_first_component_containing_offset(&self, index: i32, offset: i32) -> i32 {
+        if index == 0 {
+            return 0;
+        }
+        let mut index = index;
+        while index != 0 {
+            let previous = &self.components()[(index - 1) as usize];
+            if !previous.contains_offset(offset) {
+                break;
+            }
+            index -= 1;
+        }
+        index
+    }
+
+    /// Port of the private `StructureDataType.afterNonZeroComponentsAtOffset(int, int)`.
+    fn structure_data_type_after_non_zero_components_at_offset(&self, index: i32, offset: i32) -> i32 {
+        let max_index = self.components().len() as i32;
+        let mut index = index;
+        while index < max_index {
+            let dtc = &self.components()[index as usize];
+            if dtc.get_offset() != offset || dtc.get_length() != 0 {
+                break;
+            }
+            index += 1;
+        }
+        index
+    }
+
+    /// Port of the private `StructureDataType.advanceToLastComponentContainingOffset(int, int)`.
+    fn structure_data_type_advance_to_last_component_containing_offset(&self, index: i32, offset: i32) -> i32 {
+        let mut index = index;
+        while (index as usize) < self.components().len().saturating_sub(1) {
+            let next = &self.components()[(index + 1) as usize];
+            if !next.contains_offset(offset) {
+                break;
+            }
+            index += 1;
+        }
+        index
+    }
+
+    /// Port of `StructureDataType.insertAtOffset(int, DataType, int, String, String)`. See the
+    /// module docs for what is skipped (`BitFieldDataType` handling, `dataType.clone(dataMgr)`,
+    /// `checkAncestry`, real packed-structure repacking).
+    ///
+    /// # Errors
+    /// Returns `Err` if `offset` is negative, or a positive length cannot be determined for the
+    /// specified data type (mirrors `IllegalArgumentException`).
+    fn structure_data_type_insert_at_offset(
+        &mut self,
+        offset: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String> {
+        if offset < 0 {
+            return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
+        }
+
+        let data_type = self.composite_impl_validate_data_type(data_type)?;
+        let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
+        let length = self.composite_impl_preferred_component_length_default(
+            data_type.as_ref(),
+            dynamic_specifiable,
+            length,
+        )?;
+
+        if offset > self.stored_struct_length() && !self.is_packing_enabled() {
+            let grow = offset - self.stored_struct_length();
+            self.set_stored_num_components(self.stored_num_components() + grow);
+            self.set_stored_struct_length(offset);
+        }
+
+        let search = self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_offset(dtc, offset));
+        let mut additional_shift = 0;
+        let index = match search {
+            Ok(found) => {
+                let mut idx = self
+                    .structure_data_type_backup_to_first_component_containing_offset(found as i32, offset);
+                idx = self.structure_data_type_after_non_zero_components_at_offset(idx, offset);
+                if length != 0 && (idx as usize) < self.components().len() {
+                    let dtc = &self.components()[idx as usize];
+                    additional_shift = offset - dtc.get_offset();
+                }
+                idx
+            }
+            Err(insert_at) => insert_at as i32,
+        };
+
+        let mut ordinal = offset;
+        if index > 0 {
+            let dtc = &self.components()[(index - 1) as usize];
+            ordinal = dtc.get_ordinal();
+            if dtc.get_offset() == offset {
+                ordinal += 1;
+            } else {
+                ordinal += offset - dtc.get_end_offset();
+            }
+        }
+
+        if data_type.is_default_data_type() {
+            self.structure_data_type_shift_offsets(
+                index as usize,
+                1 + additional_shift,
+                1 + additional_shift,
+            );
+            return Ok(DataTypeComponentImpl::new(data_type, None, 1, ordinal, offset, None, None));
+        }
+
+        let dtc = DataTypeComponentImpl::new(
+            data_type,
+            None,
+            length,
+            ordinal,
+            offset,
+            component_name,
+            comment,
+        );
+        self.structure_data_type_shift_offsets(index as usize, 1 + additional_shift, length + additional_shift);
+        self.components_mut().insert(index as usize, dtc);
+
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+
+        Ok(self.components()[index as usize].snapshot())
+    }
+
+    /// Port of `StructureDataType.insert(int, DataType, int, String, String)`. See the module
+    /// docs for what is skipped (bitfield-overlap shifting, `dataType.clone(dataMgr)`,
+    /// `checkAncestry`, real packed-structure repacking).
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds, or a positive length cannot be determined for
+    /// the specified data type (mirrors `IndexOutOfBoundsException`/`IllegalArgumentException`).
+    fn structure_data_type_insert(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String> {
+        if ordinal < 0 || ordinal > self.stored_num_components() {
+            return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
+        }
+        if ordinal == self.stored_num_components() {
+            return self.structure_data_type_add(data_type, length, component_name, comment);
+        }
+
+        let data_type = self.composite_impl_validate_data_type(data_type)?;
+
+        let idx = if self.is_packing_enabled() {
+            ordinal
+        } else {
+            match self
+                .components()
+                .binary_search_by(|dtc| compare_component_to_ordinal(dtc, ordinal))
+            {
+                Ok(found) => found as i32,
+                Err(insert_at) => insert_at as i32,
+            }
+        };
+
+        if data_type.is_default_data_type() {
+            self.structure_data_type_shift_offsets(idx as usize, 1, 1);
+            return self.structure_data_type_get_component(ordinal);
+        }
+
+        let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
+        let length = self.composite_impl_preferred_component_length_default(
+            data_type.as_ref(),
+            dynamic_specifiable,
+            length,
+        )?;
+
+        let offset = self.structure_data_type_get_component(ordinal)?.get_offset();
+        let dtc = DataTypeComponentImpl::new(
+            data_type,
+            None,
+            length,
+            ordinal,
+            offset,
+            component_name,
+            comment,
+        );
+        self.structure_data_type_shift_offsets(idx as usize, 1, length);
+        self.components_mut().insert(idx as usize, dtc);
+
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+
+        Ok(self.components()[idx as usize].snapshot())
     }
 
     /// Port of `StructureDataType.repack(boolean)`. See the module docs for why the
@@ -828,6 +1057,93 @@ mod tests {
             .unwrap();
         d.set_stored_struct_length(9);
         assert!(!a.structure_data_type_is_equivalent(&d));
+    }
+
+    #[test]
+    fn insert_at_offset_shifts_existing_defined_components() {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("a".to_string()), None)
+            .unwrap();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("b".to_string()), None)
+            .unwrap();
+        assert_eq!(s.stored_struct_length(), 8);
+
+        // Insert a 2-byte component right at offset 4 (between the two existing components):
+        // the second component should shift from offset 4 to offset 6.
+        let inserted = s
+            .structure_data_type_insert_at_offset(4, byte_data_type("short", 2), -1, Some("mid".to_string()), None)
+            .unwrap();
+        assert_eq!(inserted.get_offset(), 4);
+        assert_eq!(inserted.get_ordinal(), 1);
+        assert_eq!(s.stored_struct_length(), 10);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 3);
+
+        let shifted = s.structure_data_type_get_component(2).unwrap();
+        assert_eq!(shifted.get_offset(), 6);
+        assert_eq!(shifted.get_field_name(), Some("b".to_string()));
+    }
+
+    #[test]
+    fn insert_at_offset_beyond_current_length_grows_structure_with_padding() {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, None, None)
+            .unwrap();
+        // Insert at offset 8 (4 bytes past the current 4-byte end) -- Java grows the structure
+        // with undefined padding first, then places the new component at offset 8.
+        let inserted = s
+            .structure_data_type_insert_at_offset(8, byte_data_type("byte", 1), -1, None, None)
+            .unwrap();
+        assert_eq!(inserted.get_offset(), 8);
+        assert_eq!(s.stored_struct_length(), 9);
+        // 1 defined int (ordinal 0, occupying offsets 0-3) + 4 undefined single-byte fillers
+        // (offsets 4-7, one ordinal each) + 1 defined byte (offset 8) = 6 ordinals total; the
+        // structLength (9, one past the last occupied byte) is a byte count, not an ordinal count.
+        assert_eq!(s.structure_data_type_get_num_components(), 6);
+    }
+
+    #[test]
+    fn insert_at_ordinal_shifts_and_inserts_before_existing_component() {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("a".to_string()), None)
+            .unwrap();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("b".to_string()), None)
+            .unwrap();
+
+        // Insert at ordinal 1 (before "b") -- matches Java's insert(int, DataType, int, String,
+        // String).
+        let inserted = s
+            .structure_data_type_insert(1, byte_data_type("short", 2), -1, Some("mid".to_string()), None)
+            .unwrap();
+        assert_eq!(inserted.get_offset(), 4);
+        assert_eq!(inserted.get_ordinal(), 1);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 3);
+
+        let b = s.structure_data_type_get_component(2).unwrap();
+        assert_eq!(b.get_field_name(), Some("b".to_string()));
+        assert_eq!(b.get_offset(), 6);
+    }
+
+    #[test]
+    fn insert_at_ordinal_equal_to_num_components_delegates_to_add() {
+        let mut s = sample();
+        s.structure_data_type_add(byte_data_type("int", 4), -1, None, None)
+            .unwrap();
+        let inserted = s
+            .structure_data_type_insert(1, byte_data_type("byte", 1), -1, None, None)
+            .unwrap();
+        assert_eq!(inserted.get_offset(), 4);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+    }
+
+    #[test]
+    fn insert_rejects_out_of_bounds_ordinal() {
+        let mut s = sample();
+        assert!(s
+            .structure_data_type_insert(1, byte_data_type("byte", 1), -1, None, None)
+            .is_err());
+        assert!(s
+            .structure_data_type_insert_at_offset(-1, byte_data_type("byte", 1), -1, None, None)
+            .is_err());
     }
 
     struct MockBuf;
