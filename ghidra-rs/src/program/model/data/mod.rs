@@ -223,6 +223,7 @@ pub mod unsigned_leb128_data_type;
 pub mod unsigned_pointer_sized_integer_data_type;
 pub mod unsigned_short_data_type;
 pub mod union;
+pub mod union_data_type;
 pub mod union_internal;
 pub mod void_data_type;
 pub mod wide_char16_data_type;
