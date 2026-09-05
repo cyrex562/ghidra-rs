@@ -1388,52 +1388,6 @@ pub fn is_void_data_type(dt: Option<&dyn DataType>) -> bool {
 /// so no members are needed yet.
 pub trait ByteMappingScheme {}
 
-/// Placeholder for `ghidra.program.model.data.CharsetSettingsDefinition`, referenced by
-/// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)
-/// before the real class is ported. Only the `CHARSET` singleton and its `getCharset` accessor
-/// are modeled; it also implements [`SettingsDefinition`] with the real name/storage
-/// key/description so it can be placed alongside genuine settings definitions.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CharsetSettingsDefinition;
-
-impl CharsetSettingsDefinition {
-    /// The singleton instance of this settings definition.
-    pub const CHARSET: CharsetSettingsDefinition = CharsetSettingsDefinition;
-
-    /// Stands in for `CharsetSettingsDefinition.getCharset(Settings, String)`.
-    pub fn get_charset(&self, settings: &dyn Settings, default_value: &str) -> String {
-        settings
-            .get_string("charset")
-            .unwrap_or_else(|| default_value.to_string())
-    }
-}
-
-impl SettingsDefinition for CharsetSettingsDefinition {
-    fn get_name(&self) -> String {
-        "Charset".to_string()
-    }
-
-    fn get_storage_key(&self) -> String {
-        "charset".to_string()
-    }
-
-    fn get_description(&self) -> String {
-        "Character set".to_string()
-    }
-
-    fn has_value(&self, settings: &dyn Settings) -> bool {
-        settings.get_value("charset").is_some()
-    }
-
-    fn get_value_string(&self, settings: &dyn Settings) -> Option<String> {
-        settings.get_string("charset")
-    }
-
-    fn clear(&self, settings: &mut dyn Settings) {
-        settings.clear_setting("charset");
-    }
-}
-
 /// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF8`, referenced by
 /// [`StringUTF8DataType`](crate::program::model::data::string_utf8_data_type::StringUTF8DataType)
 /// before the real class is ported.

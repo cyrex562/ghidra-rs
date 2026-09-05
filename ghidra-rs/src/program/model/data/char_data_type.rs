@@ -8,8 +8,9 @@ use crate::program::model::data::data_type_with_charset::DataTypeWithCharset;
 use crate::program::model::data::endian_settings_definition::EndianSettingsDefinition;
 use crate::program::model::data::padding_settings_definition::PaddingSettingsDefinition;
 use crate::program::model::data::render_unicode_settings_definition::RenderUnicodeSettingsDefinition;
+use crate::program::model::data::charset_settings_definition::CharsetSettingsDefinition;
 use crate::program::model::data::string_data_instance::DEFAULT_CHARSET_NAME;
-use crate::program::seam_stubs::{CharsetSettingsDefinition, CHARSET_UTF16, CHARSET_UTF32};
+use crate::program::seam_stubs::{CHARSET_UTF16, CHARSET_UTF32};
 use crate::program::model::mem::MemBuffer;
 
 /// Provides a definition of a primitive char in a program. The size and signed-ness of this type
@@ -90,7 +91,7 @@ pub trait CharDataType: DataType + DataTypeWithCharset + BuiltInDataType {
             Box::new(DataTypeMnemonicSettingsDefinition::DEF),
         ];
         if !self.is_wide_utf_char() {
-            defs.push(Box::new(CharsetSettingsDefinition::CHARSET));
+            defs.push(Box::new(CharsetSettingsDefinition::charset().clone()));
         }
         defs.push(Box::new(RenderUnicodeSettingsDefinition::DEF));
         defs
@@ -102,7 +103,7 @@ pub trait CharDataType: DataType + DataTypeWithCharset + BuiltInDataType {
     /// should delegate `get_charset_name` to this.
     fn char_charset_name(&self, settings: &dyn Settings) -> String {
         match self.get_length() {
-            1 => CharsetSettingsDefinition::CHARSET.get_charset(settings, DEFAULT_CHARSET_NAME),
+            1 => CharsetSettingsDefinition::charset().get_charset(settings, DEFAULT_CHARSET_NAME),
             2 => CHARSET_UTF16.to_string(),
             4 => CHARSET_UTF32.to_string(),
             _ => DEFAULT_CHARSET_NAME.to_string(),

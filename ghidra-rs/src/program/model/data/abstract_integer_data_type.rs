@@ -96,10 +96,10 @@ use crate::program::model::data::data_type_mnemonic_settings_definition::{
 };
 use crate::program::model::data::endian_settings_definition::{self, EndianSettingsDefinition};
 use crate::program::model::data::padding_settings_definition::PaddingSettingsDefinition;
+use crate::program::model::data::charset_settings_definition::CharsetSettingsDefinition;
 use crate::program::model::data::string_data_instance::{StringDataInstance, DEFAULT_CHARSET_NAME};
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::scalar::Scalar;
-use crate::program::seam_stubs::{CharsetSettingsDefinition};
 use crate::program::model::mem::MemBuffer;
 use crate::util::StringFormat;
 
@@ -591,7 +591,7 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
     /// `buf`'s lifetime (`'a`) rather than being `'static`, so a concrete
     /// `impl ArrayStringable::string_data_instance` cannot delegate to this directly.
     fn build_char_view<'a>(&self, buf: &'a dyn MemBuffer, settings: &dyn Settings, len: i32) -> Box<dyn StringDataInstance + 'a> {
-        let charset_name = CharsetSettingsDefinition::CHARSET.get_charset(settings, DEFAULT_CHARSET_NAME);
+        let charset_name = CharsetSettingsDefinition::charset().get_charset(settings, DEFAULT_CHARSET_NAME);
         let char_size = charset_char_size(&charset_name);
         let endian_setting = match EndianSettingsDefinition::DEF.get_choice(settings) {
             endian_settings_definition::BIG => Some(Endian::Big),

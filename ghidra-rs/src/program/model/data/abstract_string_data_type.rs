@@ -77,6 +77,7 @@ use std::any::TypeId;
 use crate::docking::settings::enum_settings_definition::EnumSettingsDefinition;
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
+use crate::program::model::data::charset_settings_definition::CharsetSettingsDefinition;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_with_charset::{DataTypeEncodeError, DataTypeWithCharset};
@@ -87,7 +88,6 @@ use crate::program::model::data::string_data_instance::{encode_string, StringDat
 use crate::program::model::data::string_layout_enum::StringLayoutEnum;
 use crate::program::model::data::translation_settings_definition::TranslationSettingsDefinition;
 use crate::program::model::lang::endian::Endian;
-use crate::program::seam_stubs::{CharsetSettingsDefinition};
 use crate::program::model::mem::MemBuffer;
 
 /// Port of `AbstractStringDataType.DEFAULT_UNICODE_LABEL`.
@@ -125,7 +125,7 @@ pub fn common_string_settings_defs() -> Vec<Box<dyn SettingsDefinition>> {
 /// (`SettingsDefinition.concat(COMMON_STRING_SETTINGS_DEFS, CHARSET)`).
 pub fn common_with_charset_string_settings_defs() -> Vec<Box<dyn SettingsDefinition>> {
     let mut defs = common_string_settings_defs();
-    defs.push(Box::new(CharsetSettingsDefinition::CHARSET));
+    defs.push(Box::new(CharsetSettingsDefinition::charset().clone()));
     defs
 }
 
@@ -332,7 +332,7 @@ pub trait AbstractStringDataType: DataType + Dynamic + DataTypeWithCharset {
     fn string_charset_name(&self, settings: &dyn Settings) -> String {
         match self.charset_name_override() {
             Some(name) => name,
-            None => CharsetSettingsDefinition::CHARSET.get_charset(settings, DEFAULT_CHARSET_NAME),
+            None => CharsetSettingsDefinition::charset().get_charset(settings, DEFAULT_CHARSET_NAME),
         }
     }
 

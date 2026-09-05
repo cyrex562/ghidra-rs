@@ -26,6 +26,7 @@ pub mod byte_data_type;
 pub mod category;
 pub mod category_path;
 pub mod char_data_type;
+pub mod charset_settings_definition;
 pub mod complex8_data_type;
 pub mod complex16_data_type;
 pub mod complex32_data_type;
