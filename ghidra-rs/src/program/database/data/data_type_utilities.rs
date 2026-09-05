@@ -1184,6 +1184,8 @@ mod tests {
     use super::*;
     use crate::program::model::data::composite::Composite;
     use crate::program::model::data::data_type_component::DataTypeComponent;
+    use crate::program::model::data::structure::Structure;
+    use crate::program::model::data::union::Union;
 
     struct Marker;
     impl DataTypeUtilities for Marker {}
@@ -1277,5 +1279,100 @@ mod tests {
         assert!(util.is_conflict_data_type_name("Foo.conflict"));
         assert!(util.is_conflict_data_type_name("Foo.conflict12"));
         assert!(!util.is_conflict_data_type_name("Foo"));
+    }
+
+    #[derive(Clone)]
+    struct MockStruct {
+        name: String,
+    }
+
+    impl DataType for MockStruct {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+
+        fn is_structure(&self) -> bool {
+            true
+        }
+
+        fn as_structure(&self) -> Option<&dyn Structure> {
+            Some(self)
+        }
+    }
+
+    impl Composite for MockStruct {}
+    impl Structure for MockStruct {}
+
+    #[derive(Clone)]
+    struct MockUnion {
+        name: String,
+    }
+
+    impl DataType for MockUnion {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+
+        fn is_union(&self) -> bool {
+            true
+        }
+
+        fn as_union(&self) -> Option<&dyn Union> {
+            Some(self)
+        }
+    }
+
+    impl Composite for MockUnion {}
+    impl Union for MockUnion {
+        fn clone_union(&self, _dtm: &dyn DataTypeManager) -> Box<dyn Union> {
+            Box::new(self.clone())
+        }
+
+        fn insert_bit_field(
+            &mut self,
+            _ordinal: i32,
+            _base_data_type: Box<dyn DataType>,
+            _bit_size: i32,
+            _field_name: Option<String>,
+            _comment: Option<String>,
+        ) -> Result<Box<dyn DataTypeComponent>, String> {
+            Err("not exercised by these tests".to_string())
+        }
+    }
+
+    #[test]
+    fn get_merger_succeeds_for_matching_structures() {
+        let util = Marker;
+        let s1 = MockStruct { name: "Foo".into() };
+        let s2 = MockStruct { name: "Foo".into() };
+        assert!(util.get_merger(&s1, &s2).is_ok());
+    }
+
+    #[test]
+    fn get_merger_succeeds_for_matching_unions() {
+        let util = Marker;
+        let u1 = MockUnion { name: "Bar".into() };
+        let u2 = MockUnion { name: "Bar".into() };
+        assert!(util.get_merger(&u1, &u2).is_ok());
+    }
+
+    #[test]
+    fn get_merger_errors_for_mismatched_kinds() {
+        let util = Marker;
+        let s1 = MockStruct { name: "Foo".into() };
+        let u2 = MockUnion { name: "Bar".into() };
+        let err = match util.get_merger(&s1, &u2) {
+            Err(e) => e,
+            Ok(_) => panic!("expected mismatched structure/union merge to fail"),
+        };
+        assert!(err.to_string().contains("structure"));
+    }
+
+    #[test]
+    fn get_merger_errors_for_unsupported_kind() {
+        let util = Marker;
+        let leaf1 = LeafDataType { name: "int".into() };
+        let leaf2 = LeafDataType { name: "int".into() };
+        assert!(util.get_merger(&leaf1, &leaf2).is_err());
     }
 }

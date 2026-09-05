@@ -8,9 +8,13 @@ use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::pcode::floatformat::big_float::BigFloat;
 use crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException;
 use crate::program::model::address::{Address, AddressRange, AddressSetView, AddressSpace};
+use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::enum_::Enum;
+use crate::program::model::data::structure::Structure;
+use crate::program::model::data::union::Union;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
@@ -2742,6 +2746,165 @@ impl InjectPayloadCallother {
     /// Returns the source name for this inject payload.
     pub fn get_source_name(&self) -> &str {
         &self.source_name
+    }
+}
+
+/// Placeholder for `ghidra.program.database.data.merge.DataTypeMerger<T>`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real per-kind merge algorithms (`StructureMerger`, `UnionMerger`, `EnumMerger`) are
+/// ported. Object-safe trait standing in for the Java generic abstract base class; [`merge`]
+/// stands in for the real `merge()` template method, whose actual field-by-field merge logic is
+/// out of scope for this placeholder and belongs to those still-unported classes.
+///
+/// [`merge`]: DataTypeMerger::merge
+pub trait DataTypeMerger {
+    /// Stands in for `DataTypeMerger.merge()`. This placeholder always fails since the real
+    /// per-kind merge algorithm has not yet been ported.
+    fn merge(&self) -> Result<Box<dyn DataType>, String> {
+        Err("DataTypeMerger seam stub: real per-kind merge algorithm not yet ported".to_string())
+    }
+
+    /// Stands in for `DataTypeMerger.getWarnings()`.
+    fn get_warnings(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Stands in for `DataTypeMerger.hasWarnings()`.
+    fn has_warnings(&self) -> bool {
+        false
+    }
+}
+
+/// Placeholder for `ghidra.program.database.data.merge.StructureMerger`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real class is ported. Retains only the operand names, for diagnostics; see
+/// [`DataTypeMerger`] for why the real merge algorithm is unimplemented here.
+pub struct StructureMergerPlaceholder {
+    struct1_name: String,
+    struct2_name: String,
+}
+
+impl StructureMergerPlaceholder {
+    /// Stands in for `new StructureMerger(Structure, Structure)`.
+    pub fn new(struct1: &dyn Structure, struct2: &dyn Structure) -> Self {
+        StructureMergerPlaceholder {
+            struct1_name: struct1.get_name(),
+            struct2_name: struct2.get_name(),
+        }
+    }
+
+    /// Name of the first operand supplied to the constructor.
+    pub fn struct1_name(&self) -> &str {
+        &self.struct1_name
+    }
+
+    /// Name of the second operand supplied to the constructor.
+    pub fn struct2_name(&self) -> &str {
+        &self.struct2_name
+    }
+}
+
+impl DataTypeMerger for StructureMergerPlaceholder {}
+
+/// Placeholder for `ghidra.program.database.data.merge.UnionMerger`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real class is ported. See [`StructureMergerPlaceholder`] for the pattern.
+pub struct UnionMergerPlaceholder {
+    union1_name: String,
+    union2_name: String,
+}
+
+impl UnionMergerPlaceholder {
+    /// Stands in for `new UnionMerger(Union, Union)`.
+    pub fn new(union1: &dyn Union, union2: &dyn Union) -> Self {
+        UnionMergerPlaceholder {
+            union1_name: union1.get_name(),
+            union2_name: union2.get_name(),
+        }
+    }
+
+    /// Name of the first operand supplied to the constructor.
+    pub fn union1_name(&self) -> &str {
+        &self.union1_name
+    }
+
+    /// Name of the second operand supplied to the constructor.
+    pub fn union2_name(&self) -> &str {
+        &self.union2_name
+    }
+}
+
+impl DataTypeMerger for UnionMergerPlaceholder {}
+
+/// Placeholder for `ghidra.program.database.data.merge.EnumMerger`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real class is ported. See [`StructureMergerPlaceholder`] for the pattern.
+pub struct EnumMergerPlaceholder {
+    enum1_name: String,
+    enum2_name: String,
+}
+
+impl EnumMergerPlaceholder {
+    /// Stands in for `new EnumMerger(Enum, Enum)`.
+    pub fn new(enum1: &dyn Enum, enum2: &dyn Enum) -> Self {
+        EnumMergerPlaceholder {
+            enum1_name: enum1.get_name(),
+            enum2_name: enum2.get_name(),
+        }
+    }
+
+    /// Name of the first operand supplied to the constructor.
+    pub fn enum1_name(&self) -> &str {
+        &self.enum1_name
+    }
+
+    /// Name of the second operand supplied to the constructor.
+    pub fn enum2_name(&self) -> &str {
+        &self.enum2_name
+    }
+}
+
+impl DataTypeMerger for EnumMergerPlaceholder {}
+
+/// Placeholder for `ghidra.program.model.data.TypedefDataType`, referenced by
+/// [`DataTypeUtilities::get_typedef_replacement`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_typedef_replacement)
+/// before the real class is ported. Wraps just enough state (category path, name, and referenced
+/// data type) to stand in as an opaque [`DataType`] for the replacement typedef the Java method
+/// constructs; once the real `TypedefDataType` lands this can be replaced with it directly.
+pub struct TypedefDataTypePlaceholder {
+    category_path: CategoryPath,
+    name: String,
+    data_type: Box<dyn DataType>,
+}
+
+impl TypedefDataTypePlaceholder {
+    /// Stands in for the 3-arg `new TypedefDataType(CategoryPath, String, DataType)` overload
+    /// used by `DataTypeUtilities` (which resolves the data type manager from `dataType` itself).
+    pub fn new(category_path: CategoryPath, name: String, data_type: Box<dyn DataType>) -> Self {
+        TypedefDataTypePlaceholder { category_path, name, data_type }
+    }
+
+    /// The wrapped referenced data type, mirroring `TypeDef.getDataType()`.
+    pub fn referenced_data_type(&self) -> &dyn DataType {
+        self.data_type.as_ref()
+    }
+}
+
+impl DataType for TypedefDataTypePlaceholder {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_category_path(&self) -> CategoryPath {
+        self.category_path.clone()
+    }
+
+    fn get_length(&self) -> i32 {
+        self.data_type.get_length()
+    }
+
+    fn is_typedef(&self) -> bool {
+        true
     }
 }
 

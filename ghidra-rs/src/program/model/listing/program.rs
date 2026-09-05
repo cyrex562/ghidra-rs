@@ -1,6 +1,7 @@
 use crate::framework::model::DomainObject;
 use crate::program::database::map::address_map::AddressMap;
 use crate::program::model::address::{Address, AddressFactory, AddressSet, AddressSetView};
+use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
@@ -288,6 +289,21 @@ pub trait Program: DomainObject + Send + Sync {
     /// before `ProgramDB`'s architecture wiring is ported.
     fn get_compiler_spec(&self) -> Option<Box<dyn CompilerSpec>> {
         None
+    }
+
+    /// Gets the preferred root data type category path which corresponds to the global namespace
+    /// of a namespace-based storage area. Preference is given to this category when searching
+    /// for data types within a specific namespace. See
+    /// [`DataTypeUtilities`](crate::program::database::data::data_type_utilities::DataTypeUtilities)
+    /// and its various `find_*` methods for usage details.
+    ///
+    /// Java returns a nullable `CategoryPath` (`null` if not set or invalid); this port instead
+    /// defaults to [`CategoryPath::ROOT`](ROOT), since the "no namespace constraint" fallback
+    /// used throughout `DataTypeUtilities`'s category-matching logic already treats the root
+    /// category as the "unconstrained" sentinel. A real `ProgramDB`-equivalent implementor with a
+    /// genuine preferred-root-namespace setting should override this.
+    fn get_preferred_root_namespace_category_path(&self) -> CategoryPath {
+        ROOT.clone()
     }
 
     /// Get the program context (register value ranges keyed by address) associated with this

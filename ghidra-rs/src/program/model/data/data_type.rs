@@ -676,6 +676,46 @@ pub trait DataType: Send + Sync {
         None
     }
 
+    /// Stands in for `dt instanceof Union ? (Union) dt : null`, used by
+    /// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+    /// to recover a union operand for merging. See [`as_pointer`](Self::as_pointer) for why this
+    /// is by-reference rather than by-value.
+    fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+        None
+    }
+
+    /// Stands in for `dt instanceof FunctionDefinition ? (FunctionDefinition) dt : null`, used by
+    /// [`DataTypeUtilities`](crate::program::database::data::data_type_utilities::DataTypeUtilities)'s
+    /// port of `getDirectContainedDatatypes` to recover a function definition's return type and
+    /// arguments. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather than
+    /// by-value.
+    fn as_function_definition(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::function_definition::FunctionDefinition> {
+        None
+    }
+
+    /// Stands in for `dt instanceof BuiltInDataType ? (BuiltInDataType) dt : null`, used by
+    /// [`DataTypeUtilities::is_same_kind_data_type`](crate::program::database::data::data_type_utilities::DataTypeUtilities::is_same_kind_data_type)
+    /// to detect its "same kind" fallback case for built-in types. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_built_in_data_type(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::built_in_data_type::BuiltInDataType> {
+        None
+    }
+
+    /// Stands in for `dt instanceof BuiltIn ? (BuiltIn) dt : null`, used by the same port to
+    /// distinguish a shared-superclass `BuiltIn` implementation (which shares "same kind" status
+    /// with other implementations of the same concrete superclass) from other `BuiltInDataType`
+    /// implementations (which must match exactly), and by
+    /// [`DataTypeUtilities`](crate::program::database::data::data_type_utilities::DataTypeUtilities)'s
+    /// `canHaveConflictName` port to exclude most `BuiltIn` types from conflict-name handling. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_built_in(&self) -> Option<&dyn crate::program::model::data::built_in::BuiltIn> {
+        None
+    }
+
     /// Stands in for `dt instanceof BitFieldDataType ? (BitFieldDataType) dt : null`, used by the
     /// same `DataOrganizationImpl.getAlignment(DataType)` port to recover a bitfield's base data
     /// type. The real `BitFieldDataType` class is not yet ported, so the downcast target is the

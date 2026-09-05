@@ -268,6 +268,21 @@ pub trait DataTypeManager {
         None
     }
 
+    /// Stands in for `dtm instanceof ProgramBasedDataTypeManager ? (ProgramBasedDataTypeManager)
+    /// dtm : null`, used by
+    /// [`DataTypeUtilities`](crate::program::database::data::data_type_utilities::DataTypeUtilities)'s
+    /// namespace-qualified datatype search to recover the manager's preferred root namespace
+    /// category path via [`Program::get_preferred_root_namespace_category_path`]. Defaults to
+    /// `None`; a real `ProgramBasedDataTypeManager` implementor should override this to return
+    /// `Some(self)`.
+    fn as_program_based(
+        &self,
+    ) -> Option<
+        &dyn crate::program::model::data::program_based_data_type_manager::ProgramBasedDataTypeManager,
+    > {
+        None
+    }
+
     /// Add a listener that is notified when the dataTypeManger changes.
     fn add_data_type_manager_listener(&mut self, listener: Box<dyn DataTypeManagerChangeListener>) {
         let _ = listener;
