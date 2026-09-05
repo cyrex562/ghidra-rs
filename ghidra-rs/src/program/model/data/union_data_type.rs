@@ -90,6 +90,18 @@
 //! [`composite_alignment_helper::get_alignment`] and
 //! [`crate::program::seam_stubs::get_aligned_offset`].
 //!
+//! ## `copy`/`clone` now real (2026-09, concrete `UnionDataTypeImpl`)
+//!
+//! [`UnionDataTypeImpl`] is now this crate's first real, production concrete implementation of
+//! this trait (previously every test exercised these default methods against a
+//! `#[cfg(test)]`-scoped `MockUnionDataType` double), mirroring
+//! [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s identical
+//! precedent. It supplies real constructors and wires `copy`/`clone`/[`Union::clone_union`] for
+//! real (construct a fresh `UnionDataTypeImpl` and call
+//! [`union_data_type_replace_with`](UnionDataType::union_data_type_replace_with) on it, matching
+//! `UnionDataType`'s actual Java `copy`/`clone` bodies) -- see [`UnionDataTypeImpl`]'s own doc
+//! comment for exactly what it does and does not cover.
+//!
 //! ## Explicitly and intentionally **not yet ported**
 //!
 //! Do not flip `UnionDataType.java`'s `PORT_MANIFEST.tsv` row to `DONE` until these are addressed
@@ -102,12 +114,6 @@
 //!     [`Undefined1DataType`](super::undefined1_data_type)'s own module docs) do not exist as
 //!     constructible values in this crate (both were themselves promoted to traits with no
 //!     singleton field).
-//!   - `copy`/`clone` are not ported, for the identical structural reason
-//!     [`StructureDataType`]'s module docs give: both Java bodies construct a brand-new
-//!     `UnionDataType` instance and then call `replaceWith` on it, but a Rust trait default
-//!     method cannot return a sized, constructible `Self`; only a concrete implementor can wire
-//!     `copy`/`clone` up, by calling its own constructor and then
-//!     [`union_data_type_replace_with`](UnionDataType::union_data_type_replace_with).
 //!   - `dataType.clone(dataMgr)` (deep-cloning an inserted/base data type against this union's own
 //!     `DataTypeManager`, called from `doAdd`, `insert`, `insertBitField`, `adjustBitField`, and
 //!     `replaceWith`) is skipped throughout; the data type is stored/used as given.

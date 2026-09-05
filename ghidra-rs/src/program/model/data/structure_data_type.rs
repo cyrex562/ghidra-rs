@@ -161,21 +161,25 @@
 //! ([`is_part_of_data_type_by_ref`]) rather than that method's own ownership-consuming one, since
 //! every caller here still needs its `data_type` afterward.
 //!
+//! ## `copy`/`clone` now real (2026-09, concrete `StructureDataTypeImpl`)
+//!
+//! [`StructureDataTypeImpl`] is now this crate's first real, production concrete implementation
+//! of this trait (previously every test exercised these default methods against a
+//! `#[cfg(test)]`-scoped `MockStructureDataType` double). It supplies the real constructors this
+//! module's first doc paragraph said a trait default method cannot provide, and wires
+//! `copy`/`clone` for real ([`DataType::copy_data_type`]/[`DataType::clone_data_type`]: construct
+//! a fresh `StructureDataTypeImpl` and call [`structure_data_type_replace_with`] on it, matching
+//! `StructureDataType.copy`/`.clone`'s actual Java bodies) -- see [`StructureDataTypeImpl`]'s own
+//! doc comment for exactly what it does and does not cover.
+//!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
 //! is agreed):
 //!   - `replace`/`replaceAtOffset`/`dataTypeSizeChanged`/`dataTypeAlignmentChanged`/
-//!     `dataTypeDeleted`/`dataTypeReplaced`/`copy`/`clone` are not ported. `replace`
-//!     in particular has an intricate multi-case algorithm (bit-field-overlap consolidation,
-//!     "quick update" fast path, `LinkedList<DataTypeComponentImpl>` sequence replacement) that
-//!     was not reached this session. `copy`/`clone` additionally have no home as trait default
-//!     methods at all in this architecture: both Java bodies construct a brand-new
-//!     `StructureDataType` instance (`new StructureDataType(...)`) and then call `replaceWith`
-//!     on it, but a Rust trait default method cannot return a sized, constructible `Self` (see
-//!     this module's very first doc paragraph re: the five constructors); only a concrete
-//!     implementor -- which alone knows how to build a fresh instance of itself -- can wire
-//!     `copy`/`clone` up, by calling its own constructor and then
-//!     `structure_data_type_replace_with`.
+//!     `dataTypeDeleted`/`dataTypeReplaced` are not ported. `replace` in particular has an
+//!     intricate multi-case algorithm (bit-field-overlap consolidation, "quick update" fast path,
+//!     `LinkedList<DataTypeComponentImpl>` sequence replacement) that was not reached this
+//!     session.
 //!   - `dataType.clone(dataMgr)` (deep-cloning an inserted data type against this structure's own
 //!     `DataTypeManager`) is skipped; the data type is stored as given.
 //!   - `data_type.addParent(this)`/`removeParent(this)` (the child `DataType`'s own
