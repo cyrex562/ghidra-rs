@@ -14020,7 +14020,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureFactory.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureInternal.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructuredDynamicDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructuredDynamicDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TerminatedSettingsDefinition.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TerminatedStringDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TerminatedUnicode32DataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 

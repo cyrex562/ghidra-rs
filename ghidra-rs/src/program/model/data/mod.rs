@@ -187,6 +187,7 @@ pub mod string_utf8_data_type;
 pub mod structure;
 pub mod structure_factory;
 pub mod structure_internal;
+pub mod structured_dynamic_data_type;
 pub mod terminated_settings_definition;
 pub mod terminated_string_data_type;
 pub mod terminated_unicode32_data_type;
