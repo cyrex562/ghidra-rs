@@ -126,14 +126,25 @@
 use crate::program::model::data::bit_field_data_type::{
     check_base_data_type, get_effective_bit_size, get_minimum_storage_size_no_offset, BitFieldDataType,
 };
+use crate::program::model::data::category_path::{CategoryPath, ROOT};
+use crate::program::model::data::composite::Composite;
 use crate::program::model::data::composite_alignment_helper;
 use crate::program::model::data::composite_data_type_impl::CompositeDataTypeImpl;
-use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::composite_internal::{CompositeInternal, DEFAULT_ALIGNMENT, NO_PACKING};
+use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_type::{DataType, SetDataTypeNameError, UnsupportedOperationError};
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl;
+use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::packing_type::PackingType;
+use crate::program::model::data::alignment_type::AlignmentType;
+use crate::program::model::data::source_archive::SourceArchive;
+use crate::program::model::data::union::Union;
 use crate::program::model::data::union_internal::UnionInternal;
 use crate::program::model::mem::MemBuffer;
 use crate::docking::settings::settings::Settings;
+use crate::util::exception::DuplicateNameException;
+use crate::util::UniversalID;
 use std::collections::HashSet;
 
 /// Port of the relevant cases of `DataTypeUtilities.isSecondPartOfFirst(DataType, DataType)`, used
@@ -754,6 +765,659 @@ pub trait UnionDataType: UnionInternal + CompositeDataTypeImpl {
             // notifySizeChanged(): no-op, see module docs.
         }
         Ok(())
+    }
+}
+
+/// Placeholder [`DataOrganization`] used by [`UnionDataTypeImpl::get_data_organization`] until a
+/// real per-program `DataOrganization` can be wired through a `DataTypeManager`. See
+/// [`structure_data_type::DefaultDataOrganization`](super::structure_data_type)'s identical
+/// module doc for why this exists (this crate has no production `DataOrganization` implementation
+/// yet) -- the same LP64-like values, promoted out of `#[cfg(test)]` so
+/// [`UnionDataTypeImpl`]'s packing-enabled alignment/bitfield-allocation computations have
+/// something real to call.
+struct DefaultDataOrganization;
+
+impl DataOrganization for DefaultDataOrganization {
+    fn is_big_endian(&self) -> bool {
+        false
+    }
+    fn get_pointer_size(&self) -> i32 {
+        8
+    }
+    fn get_pointer_shift(&self) -> i32 {
+        0
+    }
+    fn is_signed_char(&self) -> bool {
+        true
+    }
+    fn get_char_size(&self) -> i32 {
+        1
+    }
+    fn get_wide_char_size(&self) -> i32 {
+        2
+    }
+    fn get_short_size(&self) -> i32 {
+        2
+    }
+    fn get_integer_size(&self) -> i32 {
+        4
+    }
+    fn get_long_size(&self) -> i32 {
+        8
+    }
+    fn get_long_long_size(&self) -> i32 {
+        8
+    }
+    fn get_float_size(&self) -> i32 {
+        4
+    }
+    fn get_double_size(&self) -> i32 {
+        8
+    }
+    fn get_long_double_size(&self) -> i32 {
+        8
+    }
+    fn get_absolute_max_alignment(&self) -> i32 {
+        0
+    }
+    fn get_machine_alignment(&self) -> i32 {
+        8
+    }
+    fn get_default_alignment(&self) -> i32 {
+        1
+    }
+    fn get_default_pointer_alignment(&self) -> i32 {
+        8
+    }
+    fn get_size_alignment(&self, _size: i32) -> i32 {
+        1
+    }
+    fn get_bit_field_packing(&self) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
+        struct DefaultBitFieldPacking;
+        impl crate::program::model::data::bit_field_packing::BitFieldPacking for DefaultBitFieldPacking {
+            fn use_ms_convention(&self) -> bool {
+                false
+            }
+            fn is_type_alignment_enabled(&self) -> bool {
+                true
+            }
+            fn get_zero_length_boundary(&self) -> i32 {
+                0
+            }
+        }
+        Box::new(DefaultBitFieldPacking)
+    }
+    fn get_size_alignment_count(&self) -> i32 {
+        0
+    }
+    fn get_sizes(&self) -> Vec<i32> {
+        vec![]
+    }
+    fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
+        String::new()
+    }
+    fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
+        1
+    }
+}
+
+/// Port of `DataUtilities.isValidDataTypeName(String)`'s check as applied by the
+/// `GenericDataType` constructor chain (`UnionDataType`'s Java superclass), used by
+/// [`UnionDataTypeImpl::new_in_category`]. See
+/// [`structure_data_type`](super::structure_data_type)'s identical local duplicate for why this
+/// isn't shared from `composite_data_type_impl::check_valid_name` (private to its own module, and
+/// used for a different, checked-exception-returning call site).
+fn is_valid_union_name(name: &str) -> bool {
+    !name.trim().is_empty() && !name.chars().any(|c| c.is_control())
+}
+
+/// The first real, concrete, production implementation of [`UnionDataType`] in this crate.
+///
+/// Port of `ghidra.program.model.data.UnionDataType` itself (the trait of the same name in this
+/// module exists only because it was promoted to a trait as a dependency-cycle cut-point -- see
+/// this module's top-level doc comment). Mirrors
+/// [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s identical
+/// precedent: every previous test of [`UnionDataType`]'s default methods exercised them against a
+/// `#[cfg(test)]`-scoped `MockUnionDataType` double; this type is the real thing, with real
+/// Java-faithful constructors and a real `copy`/`clone` (via
+/// [`Union::clone_union`]/[`DataType::clone_data_type`]/[`DataType::copy_data_type`], none of
+/// which have a home as trait default methods, since a trait default method cannot return a
+/// sized, constructible `Self`).
+///
+/// Unlike [`StructureDataTypeImpl`], a union has no `length` constructor parameter at all (its
+/// length is always computed from its components -- see [`UnionDataType::length`]), matching
+/// `UnionDataType.java`'s own constructors.
+///
+/// Known, intentional gaps (beyond the ones already documented for the [`UnionDataType`] trait
+/// itself -- `dataType*Changed`/`dataType.clone(dataMgr)`/parent tracking):
+///   - [`get_data_organization`](DataType::get_data_organization) returns a fixed
+///     [`DefaultDataOrganization`], matching
+///     [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s identical
+///     simplification (no `DataTypeManager` is tracked).
+///   - [`DataType::is_equivalent`]/[`DataType::replace_with`] are left at their generic
+///     placeholder defaults, for the identical reason
+///     [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s own doc
+///     comment gives (no `&dyn DataType` -> `&dyn UnionDataType` downcast hook exists). Callers
+///     with two [`UnionDataType`] implementors in hand can call
+///     [`union_data_type_is_equivalent`](UnionDataType::union_data_type_is_equivalent)/
+///     [`union_data_type_replace_with`](UnionDataType::union_data_type_replace_with) directly,
+///     exactly as [`copy_data_type`](DataType::copy_data_type)/
+///     [`clone_data_type`](DataType::clone_data_type) below do.
+pub struct UnionDataTypeImpl {
+    category_path: CategoryPath,
+    name: String,
+    description: Option<String>,
+    minimum_alignment_value: i32,
+    packing_value: i32,
+    union_length: i32,
+    union_alignment: i32,
+    components: Vec<DataTypeComponentImpl>,
+    universal_id: UniversalID,
+    source_archive_id: Option<UniversalID>,
+    last_change_time: i64,
+    last_change_time_in_source_archive: i64,
+}
+
+impl UnionDataTypeImpl {
+    /// Construct a new empty union with the given name. The root category is used.
+    ///
+    /// Port of the 1-arg Java constructor `UnionDataType(String)`.
+    ///
+    /// # Panics
+    /// Panics (standing in for `IllegalArgumentException`) if `name` is not a valid data-type
+    /// name.
+    pub fn new(name: impl Into<String>) -> Self {
+        Self::new_in_category(ROOT.clone(), name)
+    }
+
+    /// Construct a new empty union with the given name within the specified category.
+    ///
+    /// Port of the 3-arg Java constructor `UnionDataType(CategoryPath, String, DataTypeManager)`
+    /// (collapsed with its 2-arg `dataMgr`-less overload, matching
+    /// [`StructureDataTypeImpl::new_in_category`](super::structure_data_type::StructureDataTypeImpl::new_in_category)'s
+    /// identical simplification: `dataMgr` is not tracked).
+    ///
+    /// # Panics
+    /// See [`new`](Self::new).
+    pub fn new_in_category(category_path: CategoryPath, name: impl Into<String>) -> Self {
+        let name = name.into();
+        if !is_valid_union_name(&name) {
+            panic!("IllegalArgumentException: Invalid DataType name: {name}");
+        }
+        UnionDataTypeImpl {
+            category_path,
+            name,
+            description: None,
+            minimum_alignment_value: DEFAULT_ALIGNMENT,
+            packing_value: NO_PACKING,
+            union_length: 0,
+            union_alignment: 0,
+            components: Vec::new(),
+            universal_id: UniversalID::new(0),
+            source_archive_id: None,
+            last_change_time: 0,
+            last_change_time_in_source_archive: 0,
+        }
+    }
+
+    /// Construct a new empty union with an explicit archive identity.
+    ///
+    /// Port of the 7-arg Java constructor taking `universalID`/`sourceArchive`/`lastChangeTime`/
+    /// `lastChangeTimeInSourceArchive`. `source_archive` is tracked only by ID, matching
+    /// [`StructureDataTypeImpl::with_archive_identity`](super::structure_data_type::StructureDataTypeImpl::with_archive_identity)'s
+    /// identical simplification.
+    ///
+    /// # Panics
+    /// See [`new`](Self::new).
+    #[allow(clippy::too_many_arguments)]
+    pub fn with_archive_identity(
+        category_path: CategoryPath,
+        name: impl Into<String>,
+        universal_id: UniversalID,
+        source_archive: Option<&dyn SourceArchive>,
+        last_change_time: i64,
+        last_change_time_in_source_archive: i64,
+    ) -> Self {
+        let mut u = Self::new_in_category(category_path, name);
+        u.universal_id = universal_id;
+        u.source_archive_id = source_archive.map(|a| a.source_archive_id());
+        u.last_change_time = last_change_time;
+        u.last_change_time_in_source_archive = last_change_time_in_source_archive;
+        u
+    }
+}
+
+impl DataType for UnionDataTypeImpl {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn set_name(&mut self, name: &str) -> Result<(), SetDataTypeNameError> {
+        self.composite_impl_set_name(name)?;
+        Ok(())
+    }
+
+    fn get_category_path(&self) -> CategoryPath {
+        self.category_path.clone()
+    }
+
+    fn set_category_path(&mut self, path: CategoryPath) -> Result<(), DuplicateNameException> {
+        self.category_path = path;
+        Ok(())
+    }
+
+    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        Box::new(DefaultDataOrganization)
+    }
+
+    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
+        self.composite_impl_mnemonic(settings)
+    }
+
+    fn get_length(&self) -> i32 {
+        UnionDataType::length(self)
+    }
+
+    fn is_zero_length(&self) -> bool {
+        self.union_data_type_is_zero_length()
+    }
+
+    fn has_language_dependant_length(&self) -> bool {
+        self.union_data_type_has_language_dependant_length()
+    }
+
+    fn get_alignment(&self) -> i32 {
+        self.composite_impl_alignment()
+    }
+
+    fn get_representation(&self, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32) -> String {
+        UnionDataType::representation(self, buf, settings, length)
+    }
+
+    fn get_default_label_prefix(&self) -> Option<String> {
+        UnionDataType::default_label_prefix(self)
+    }
+
+    fn get_description(&self) -> String {
+        self.composite_impl_description()
+    }
+
+    fn set_description(&mut self, description: &str) -> Result<(), UnsupportedOperationError> {
+        self.composite_impl_set_description(Some(description));
+        Ok(())
+    }
+
+    fn is_not_yet_defined(&self) -> bool {
+        self.composite_impl_is_not_yet_defined()
+    }
+
+    fn is_union(&self) -> bool {
+        true
+    }
+
+    fn as_composite(&self) -> Option<&dyn Composite> {
+        Some(self)
+    }
+
+    fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+        Some(self)
+    }
+
+    /// Port of `CompositeDataTypeImpl.copy(DataTypeManager)` as inherited by `UnionDataType`:
+    /// constructs a brand-new `UnionDataTypeImpl` (new identity, no source archive) and
+    /// repopulates it from `self` via
+    /// [`union_data_type_replace_with`](UnionDataType::union_data_type_replace_with).
+    fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        let _ = dtm;
+        let mut copy = UnionDataTypeImpl::new_in_category(self.get_category_path(), self.get_name());
+        copy.composite_impl_set_description(Some(&self.get_description()));
+        copy.union_data_type_replace_with(self)
+            .expect("replaceWith from a well-formed UnionDataTypeImpl cannot fail");
+        Box::new(copy)
+    }
+
+    /// Port of `UnionDataType.clone(DataTypeManager)`: like [`copy_data_type`](Self::copy_data_type)
+    /// but preserves this union's archive identity on the clone. Java short-circuits and returns
+    /// `this` when `dataMgr == dataMgr`; since `dataMgr` is not tracked here at all (see the
+    /// struct docs), that identity check can never apply and this always produces a fresh clone.
+    fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        let _ = dtm;
+        Box::new(self.clone_union_impl())
+    }
+}
+
+impl UnionDataTypeImpl {
+    /// Shared body for [`DataType::clone_data_type`] and [`Union::clone_union`] (which differ only
+    /// in return type: `Box<dyn DataType>` vs `Box<dyn Union>`).
+    fn clone_union_impl(&self) -> UnionDataTypeImpl {
+        let mut clone = UnionDataTypeImpl::with_archive_identity(
+            self.get_category_path(),
+            self.get_name(),
+            self.universal_id,
+            None,
+            self.last_change_time,
+            self.last_change_time_in_source_archive,
+        );
+        clone.source_archive_id = self.source_archive_id;
+        clone.composite_impl_set_description(Some(&self.get_description()));
+        clone
+            .union_data_type_replace_with(self)
+            .expect("replaceWith from a well-formed UnionDataTypeImpl cannot fail");
+        clone
+    }
+}
+
+impl Composite for UnionDataTypeImpl {
+    fn get_num_components(&self) -> i32 {
+        self.union_data_type_get_num_components()
+    }
+
+    fn get_num_defined_components(&self) -> i32 {
+        self.union_data_type_get_num_defined_components()
+    }
+
+    fn get_component(&self, ordinal: i32) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.union_data_type_get_component(ordinal)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
+
+    fn get_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+        self.union_data_type_get_components()
+            .into_iter()
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .collect()
+    }
+
+    fn get_defined_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+        self.union_data_type_get_components()
+            .into_iter()
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .collect()
+    }
+
+    fn add(&mut self, data_type: Box<dyn DataType>) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.composite_impl_add(data_type)
+    }
+
+    fn add_with_length(&mut self, data_type: Box<dyn DataType>, length: i32) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.composite_impl_add_with_length(data_type, length)
+    }
+
+    fn add_with_name(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.composite_impl_add_with_name(data_type, component_name, comment)
+    }
+
+    fn add_with_length_and_name(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.composite_impl_add_with_length_and_name(data_type, length, component_name, comment)
+    }
+
+    fn add_bit_field(
+        &mut self,
+        base_data_type: Box<dyn DataType>,
+        bit_size: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.union_data_type_add_bit_field(base_data_type, bit_size, component_name, comment)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
+
+    fn insert(&mut self, ordinal: i32, data_type: Box<dyn DataType>) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.composite_impl_insert(ordinal, data_type)
+    }
+
+    fn insert_with_length(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.composite_impl_insert_with_length(ordinal, data_type, length)
+    }
+
+    fn insert_with_length_and_name(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.composite_impl_insert_with_length_and_name(ordinal, data_type, length, component_name, comment)
+    }
+
+    fn delete(&mut self, ordinal: i32) -> Result<(), String> {
+        self.union_data_type_delete(ordinal)
+    }
+
+    fn delete_set(&mut self, ordinals: &HashSet<i32>) -> Result<(), String> {
+        self.union_data_type_delete_set(ordinals)
+    }
+
+    fn is_part_of(&self, data_type: &dyn DataType) -> bool {
+        self.composite_impl_is_part_of(data_type)
+    }
+
+    fn repack(&mut self) {
+        self.composite_impl_repack();
+    }
+
+    fn get_packing_type(&self) -> PackingType {
+        self.composite_impl_packing_type()
+    }
+
+    fn set_packing_enabled(&mut self, enabled: bool) {
+        self.composite_impl_set_packing_enabled(enabled);
+    }
+
+    fn set_to_default_packing(&mut self) {
+        self.composite_impl_set_to_default_packing();
+    }
+
+    fn get_explicit_packing_value(&self) -> i32 {
+        self.composite_impl_explicit_packing_value()
+    }
+
+    fn set_explicit_packing_value(&mut self, packing_value: i32) -> Result<(), String> {
+        self.composite_impl_set_explicit_packing_value(packing_value)
+    }
+
+    fn pack(&mut self, packing_value: i32) -> Result<(), String> {
+        self.composite_impl_set_explicit_packing_value(packing_value)
+    }
+
+    fn get_alignment_type(&self) -> AlignmentType {
+        self.composite_impl_alignment_type()
+    }
+
+    fn set_to_default_aligned(&mut self) {
+        self.composite_impl_set_to_default_aligned();
+    }
+
+    fn set_to_machine_aligned(&mut self) {
+        self.composite_impl_set_to_machine_aligned();
+    }
+
+    fn get_explicit_minimum_alignment(&self) -> i32 {
+        self.composite_impl_explicit_minimum_alignment()
+    }
+
+    fn set_explicit_minimum_alignment(&mut self, minimum_alignment: i32) -> Result<(), String> {
+        self.composite_impl_set_explicit_minimum_alignment(minimum_alignment)
+    }
+}
+
+impl CompositeInternal for UnionDataTypeImpl {
+    fn get_stored_packing_value(&self) -> i32 {
+        self.composite_impl_stored_packing_value()
+    }
+
+    fn get_stored_minimum_alignment(&self) -> i32 {
+        self.composite_impl_stored_minimum_alignment()
+    }
+}
+
+impl Union for UnionDataTypeImpl {
+    fn clone_union(&self, dtm: &dyn DataTypeManager) -> Box<dyn Union> {
+        let _ = dtm;
+        Box::new(self.clone_union_impl())
+    }
+
+    fn insert_bit_field(
+        &mut self,
+        ordinal: i32,
+        base_data_type: Box<dyn DataType>,
+        bit_size: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.union_data_type_insert_bit_field(ordinal, base_data_type, bit_size, component_name, comment)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
+}
+
+impl UnionInternal for UnionDataTypeImpl {}
+
+impl CompositeDataTypeImpl for UnionDataTypeImpl {
+    fn stored_description(&self) -> String {
+        self.description.clone().unwrap_or_default()
+    }
+
+    fn set_stored_description(&mut self, description: String) {
+        self.description = if description.is_empty() { None } else { Some(description) };
+    }
+
+    fn stored_minimum_alignment_value(&self) -> i32 {
+        self.minimum_alignment_value
+    }
+
+    fn set_stored_minimum_alignment_value(&mut self, minimum_alignment: i32) {
+        self.minimum_alignment_value = minimum_alignment;
+    }
+
+    fn stored_packing_value(&self) -> i32 {
+        self.packing_value
+    }
+
+    fn set_stored_packing_value_raw(&mut self, packing: i32) {
+        self.packing_value = packing;
+    }
+
+    fn set_stored_name(&mut self, name: String) {
+        self.name = name;
+    }
+
+    fn composite_impl_has_language_dependant_length(&self) -> bool {
+        self.union_data_type_has_language_dependant_length()
+    }
+
+    fn repack_with_notify(&mut self, notify: bool) -> bool {
+        self.union_data_type_repack(notify)
+    }
+
+    fn composite_impl_alignment(&self) -> i32 {
+        self.union_data_type_alignment()
+    }
+
+    fn for_each_defined_component(&self, consumer: &mut dyn FnMut(&dyn DataTypeComponent)) {
+        for dtc in &self.components {
+            consumer(dtc);
+        }
+    }
+
+    fn composite_impl_add_with_length_and_name(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        field_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.union_data_type_add(data_type, length, field_name, comment)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
+
+    fn composite_impl_insert_with_length_and_name(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        field_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.union_data_type_insert(ordinal, data_type, length, field_name, comment)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
+
+    /// See [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s
+    /// identical `composite_impl_validate_data_type` for what is skipped (the
+    /// `DataType.DEFAULT`/`Undefined1DataType.dataType`/`FactoryDataType` cases).
+    fn composite_impl_validate_data_type(&self, data_type: Box<dyn DataType>) -> Result<Box<dyn DataType>, String> {
+        if data_type.is_default_data_type() {
+            return Ok(data_type);
+        }
+        if let Some(dynamic) = data_type.as_dynamic() {
+            if !dynamic.can_specify_length() {
+                return Err(format!(
+                    "IllegalArgumentException: The \"{}\" data type is not allowed in a composite data type.",
+                    data_type.get_name()
+                ));
+            }
+        } else if data_type.get_length() <= 0 {
+            return Err(format!(
+                "IllegalArgumentException: The \"{}\" data type is not allowed in a composite data type.",
+                data_type.get_name()
+            ));
+        }
+        Ok(data_type)
+    }
+
+    /// Not wired: the only Java caller, `dataTypeReplaced`, is not ported (see the module docs'
+    /// "explicitly and intentionally not yet ported" list).
+    fn composite_impl_update_bit_field_data_type(
+        &mut self,
+        bitfield_component: Box<dyn DataTypeComponent>,
+        old_dt: &dyn DataType,
+        new_dt: Option<&dyn DataType>,
+    ) -> Result<bool, String> {
+        let (_, _, _) = (bitfield_component, old_dt, new_dt);
+        Ok(false)
+    }
+}
+
+impl UnionDataType for UnionDataTypeImpl {
+    fn stored_union_length(&self) -> i32 {
+        self.union_length
+    }
+
+    fn set_stored_union_length(&mut self, length: i32) {
+        self.union_length = length;
+    }
+
+    fn stored_union_alignment(&self) -> i32 {
+        self.union_alignment
+    }
+
+    fn set_stored_union_alignment(&mut self, alignment: i32) {
+        self.union_alignment = alignment;
+    }
+
+    fn components(&self) -> &Vec<DataTypeComponentImpl> {
+        &self.components
+    }
+
+    fn components_mut(&mut self) -> &mut Vec<DataTypeComponentImpl> {
+        &mut self.components
     }
 }
 
@@ -1378,6 +2042,165 @@ mod tests {
         assert_eq!(target.length(), 4);
         assert_eq!(target.union_data_type_get_component(0).unwrap().get_data_type_name(), "byte");
         assert_eq!(target.union_data_type_get_component(1).unwrap().get_data_type_name(), "dword");
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // `UnionDataTypeImpl`: the first real, production concrete `UnionDataType` (as opposed to the
+    // `#[cfg(test)]`-scoped `MockUnionDataType` above). Mirrors
+    // `structure_data_type`'s identical `StructureDataTypeImpl` test coverage.
+    // ------------------------------------------------------------------------------------------
+
+    #[test]
+    fn new_creates_empty_root_category_union() {
+        let u = UnionDataTypeImpl::new("Foo");
+        assert_eq!(u.get_name(), "Foo");
+        assert_eq!(u.get_category_path(), ROOT.clone());
+        assert!(u.union_data_type_is_zero_length());
+        assert_eq!(DataType::get_length(&u), 1);
+        assert!(u.is_not_yet_defined());
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid DataType name")]
+    fn new_rejects_invalid_name() {
+        UnionDataTypeImpl::new("   ");
+    }
+
+    #[test]
+    fn new_in_category_uses_specified_category() {
+        let path = CategoryPath::new(ROOT.clone(), &["cat"]).expect("valid category path");
+        let u = UnionDataTypeImpl::new_in_category(path.clone(), "Foo");
+        assert_eq!(u.get_category_path(), path);
+    }
+
+    #[test]
+    fn with_archive_identity_preserves_universal_id_and_change_times() {
+        let u = UnionDataTypeImpl::with_archive_identity(ROOT.clone(), "Foo", UniversalID::new(42), None, 100, 200);
+        assert_eq!(u.universal_id, UniversalID::new(42));
+        assert_eq!(u.last_change_time, 100);
+        assert_eq!(u.last_change_time_in_source_archive, 200);
+    }
+
+    #[test]
+    fn add_insert_delete_via_composite_trait_object() {
+        let mut u = UnionDataTypeImpl::new("Foo");
+        let composite: &mut dyn Composite = &mut u;
+        composite.add(byte_data_type("int", 4)).expect("add int");
+        composite.add_with_name(byte_data_type("short", 2), Some("field1".to_string()), None).expect("add short");
+        assert_eq!(composite.get_num_components(), 2);
+        assert_eq!(composite.get_num_defined_components(), 2);
+
+        composite.insert(1, byte_data_type("byte", 1)).expect("insert byte");
+        assert_eq!(composite.get_num_components(), 3);
+        assert_eq!(composite.get_component(1).unwrap().get_data_type_name(), "byte");
+
+        composite.delete(0).expect("delete ordinal 0");
+        assert_eq!(composite.get_num_components(), 2);
+        assert_eq!(composite.get_component(0).unwrap().get_data_type_name(), "byte");
+    }
+
+    #[test]
+    fn get_components_via_union_trait_object() {
+        let mut u = UnionDataTypeImpl::new("Foo");
+        u.add(byte_data_type("int", 4)).expect("add int");
+        u.add(byte_data_type("short", 2)).expect("add short");
+
+        let union: &dyn crate::program::model::data::union::Union = &u;
+        assert_eq!(union.get_num_components(), 2);
+        let components = union.get_components();
+        assert_eq!(components.len(), 2);
+        assert_eq!(components[0].get_data_type_name(), "int");
+        assert_eq!(components[1].get_data_type_name(), "short");
+        // union length is the max of its components' lengths.
+        assert_eq!(DataType::get_length(&u), 4);
+    }
+
+    #[test]
+    fn is_equivalent_between_two_real_unions() {
+        let mut a = UnionDataTypeImpl::new("A");
+        a.union_data_type_add(byte_data_type("int", 4), -1, Some("x".to_string()), None).unwrap();
+
+        let mut b = UnionDataTypeImpl::new("B");
+        b.union_data_type_add(byte_data_type("int", 4), -1, Some("x".to_string()), None).unwrap();
+
+        assert!(a.union_data_type_is_equivalent(&b));
+
+        b.union_data_type_add(byte_data_type("short", 2), -1, Some("y".to_string()), None).unwrap();
+        assert!(!a.union_data_type_is_equivalent(&b));
+    }
+
+    #[test]
+    fn copy_data_type_produces_independent_equivalent_union() {
+        struct NoopDtm;
+        impl DataTypeManager for NoopDtm {}
+
+        let mut original = UnionDataTypeImpl::new("Original");
+        original.add_with_name(byte_data_type("int", 4), Some("field0".to_string()), None).unwrap();
+        original.set_description("a description").unwrap();
+
+        let copy = original.copy_data_type(&NoopDtm);
+        let copy_union = copy.as_union().expect("copy is a Union");
+        assert_eq!(copy.get_name(), "Original");
+        assert_eq!(copy.get_description(), "a description");
+        assert_eq!(copy_union.get_num_components(), 1);
+        assert_eq!(
+            Composite::get_component(copy_union, 0).unwrap().get_data_type_name(),
+            "int"
+        );
+
+        // Independent: mutating the original does not affect the copy.
+        original.add_with_name(byte_data_type("short", 2), Some("field1".to_string()), None).unwrap();
+        assert_eq!(Composite::get_num_components(&original), 2);
+        assert_eq!(copy_union.get_num_components(), 1);
+    }
+
+    #[test]
+    fn clone_data_type_preserves_archive_identity() {
+        struct NoopDtm;
+        impl DataTypeManager for NoopDtm {}
+
+        let mut original =
+            UnionDataTypeImpl::with_archive_identity(ROOT.clone(), "Original", UniversalID::new(7), None, 10, 20);
+        original.add_with_name(byte_data_type("int", 4), Some("field0".to_string()), None).unwrap();
+
+        let cloned = original.clone_data_type(&NoopDtm);
+        let cloned_union = cloned.as_union().expect("clone is a Union");
+        assert_eq!(cloned.get_name(), "Original");
+        assert_eq!(cloned_union.get_num_components(), 1);
+    }
+
+    #[test]
+    fn clone_union_via_union_trait_object_preserves_components() {
+        let mut original = UnionDataTypeImpl::new("Original");
+        original.add(byte_data_type("int", 4)).unwrap();
+
+        struct NoopDtm;
+        impl DataTypeManager for NoopDtm {}
+
+        let union_ref: &dyn crate::program::model::data::union::Union = &original;
+        let cloned = union_ref.clone_union(&NoopDtm);
+        assert_eq!(cloned.get_num_components(), 1);
+    }
+
+    #[test]
+    fn non_packed_alignment_defaults_to_one_and_machine_alignment_uses_data_organization() {
+        let u = UnionDataTypeImpl::new("Foo");
+        assert_eq!(DataType::get_alignment(&u), 1);
+
+        let mut machine_aligned = UnionDataTypeImpl::new("Bar");
+        machine_aligned.set_to_machine_aligned();
+        assert_eq!(DataType::get_alignment(&machine_aligned), 8); // DefaultDataOrganization::get_machine_alignment
+    }
+
+    #[test]
+    fn packing_enabled_union_computes_alignment_without_panicking() {
+        let mut u = UnionDataTypeImpl::new("Packed");
+        u.set_packing_enabled(true);
+        u.add(byte_data_type("int", 4)).expect("add int");
+        u.add(byte_data_type("byte", 1)).expect("add byte");
+        let alignment = DataType::get_alignment(&u);
+        assert!(alignment >= 1);
+        assert!(u.is_packing_enabled());
     }
 
     struct MockBuf;
