@@ -139,6 +139,7 @@ pub mod pointer_data_type;
 pub mod pointer_sized_integer_data_type;
 pub mod pointer_type;
 pub mod pointer_type_settings_definition;
+pub mod pointer_typedef;
 pub mod pointer_typedef_builder;
 pub mod program_architecture_translator;
 pub mod program_based_data_type_manager;
