@@ -3,6 +3,7 @@ pub mod addable_long_double_hashtable;
 pub mod addable_long_int_hashtable;
 pub mod attributes;
 pub mod dependency_graph;
+pub mod deterministic_dependency_graph;
 pub mod depth_first_search;
 pub mod directed_graph;
 pub mod edge;
@@ -15,6 +16,7 @@ pub mod vertex;
 
 pub use abstract_dependency_graph::{AbstractDependencyGraph, CycleDetectedError};
 pub use dependency_graph::DependencyGraph;
+pub use deterministic_dependency_graph::DeterministicDependencyGraph;
 #[allow(deprecated)]
 pub use addable_long_double_hashtable::AddableLongDoubleHashtable;
 #[allow(deprecated)]
