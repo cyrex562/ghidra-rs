@@ -9,12 +9,42 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field, RecordTranslator};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, RecordTranslator, Schema};
 use crate::program::util::DBRecordAdapter;
 
 /// Name of the database table used to store enumeration data type values.
 pub const ENUM_VALUE_TABLE_NAME: &str = "Enumeration Values";
+
+/// Schema version implemented by the current (`EnumValueDBAdapterV1`) table layout.
+pub const CURRENT_VERSION: i32 = 1;
+
+/// Build the current enumeration values table schema, as defined by
+/// `EnumValueDBAdapter.ENUM_VALUE_SCHEMA` (an alias for `EnumValueDBAdapterV1.SCHEMA`). Exposed
+/// as a function (rather than a `Schema` constant) since `Schema` construction is not `const`;
+/// used both by the live `V1` adapter and by `V0` to translate old-format records into the
+/// current record layout.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Enum Value ID".to_string(),
+        vec![
+            FieldType::String,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::String,
+        ],
+        vec![
+            "Name".to_string(),
+            "Value".to_string(),
+            "Enum ID".to_string(),
+            "Comment".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Column index of the enum value's name, as defined by `EnumValueDBAdapterV1`.
 pub const ENUMVAL_NAME_COL: usize = 0;
