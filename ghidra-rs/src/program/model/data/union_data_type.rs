@@ -1468,6 +1468,16 @@ impl DataType for UnionDataTypeImpl {
         Some(self)
     }
 
+    /// Stands in for `(Composite) this` where the caller needs to *consume* ownership rather
+    /// than merely borrow (see [`DataType::into_composite`]'s own doc comment). Added for
+    /// [`DataTypeWriter`](crate::program::model::data::data_type_writer::DataTypeWriter)'s port
+    /// of `doWrite`, which needs to convert an owned `Box<dyn DataType>` known (via
+    /// [`as_union`](Self::as_union)) to be a `Union` into an owned `Box<dyn Composite>` for its
+    /// dependency-graph bookkeeping, without cloning the underlying data.
+    fn into_composite(self: Box<Self>) -> Option<Box<dyn Composite>> {
+        Some(self)
+    }
+
     /// Port of `CompositeDataTypeImpl.copy(DataTypeManager)` as inherited by `UnionDataType`:
     /// constructs a brand-new `UnionDataTypeImpl` (new identity, no source archive) and
     /// repopulates it from `self` via

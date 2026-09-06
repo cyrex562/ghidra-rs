@@ -3333,6 +3333,16 @@ impl DataType for StructureDataTypeImpl {
         Some(self)
     }
 
+    /// Stands in for `(Composite) this` where the caller needs to *consume* ownership rather
+    /// than merely borrow (see [`DataType::into_composite`]'s own doc comment). Added for
+    /// [`DataTypeWriter`](crate::program::model::data::data_type_writer::DataTypeWriter)'s port
+    /// of `doWrite`, which needs to convert an owned `Box<dyn DataType>` known (via
+    /// [`as_structure`](Self::as_structure)) to be a `Structure` into an owned `Box<dyn
+    /// Composite>` for its dependency-graph bookkeeping, without cloning the underlying data.
+    fn into_composite(self: Box<Self>) -> Option<Box<dyn Composite>> {
+        Some(self)
+    }
+
     /// Port of `StructureDataType.copy(DataTypeManager)`: constructs a brand-new
     /// `StructureDataTypeImpl` (new identity, no source archive) and repopulates it from `self` via
     /// [`structure_data_type_replace_with`](StructureDataType::structure_data_type_replace_with).

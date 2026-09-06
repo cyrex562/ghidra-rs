@@ -9,7 +9,9 @@ use crate::pcode::floatformat::big_float::BigFloat;
 use crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException;
 use crate::program::model::address::{Address, AddressRange, AddressSetView, AddressSpace};
 use crate::program::model::data::category_path::CategoryPath;
+use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::enum_::Enum;
@@ -218,6 +220,14 @@ impl DataType for SharedDataType {
         }
     }
 
+    fn into_composite(self: Box<Self>) -> Option<Box<dyn Composite>> {
+        if self.0.as_composite().is_some() {
+            Some(Box::new(SharedComposite(self.0)))
+        } else {
+            None
+        }
+    }
+
     fn is_structure(&self) -> bool {
         self.0.is_structure()
     }
@@ -382,6 +392,81 @@ impl crate::program::model::data::array::Array for SharedArray {
     }
     fn get_data_type(&self) -> Box<dyn DataType> {
         self.0.as_array().expect("SharedArray always wraps a real Array").get_data_type()
+    }
+}
+
+/// Backs [`SharedDataType::into_composite`]'s consuming downcast: the same pattern
+/// [`SharedArray`] uses for `into_array`, wrapping the shared `Arc<dyn DataType>` and
+/// re-deriving the [`DataType::as_composite`] downcast on every [`Composite`] method call.
+///
+/// Added for [`DataTypeWriter`](crate::program::model::data::data_type_writer::DataTypeWriter)'s
+/// `doWrite` port: `DataTypeComponentImpl::get_data_type()` hands back a `share_data_type`-wrapped
+/// handle for every composite field, so without this, `into_composite()` on a component whose
+/// field type is itself a `Structure`/`Union` (an embedded-by-value nested composite -- the most
+/// common case this whole writer exists to handle) would silently return `None` even though
+/// [`DataType::as_composite`] on the same handle correctly returns `Some`.
+///
+/// [`get_universal_id`](DataType::get_universal_id) is forwarded (unlike on [`SharedDataType`]/
+/// [`SharedArray`], which do not yet forward it) because `DataTypeWriter`'s private
+/// `CompositeNode` wrapper -- the node type in its dependency graph -- computes both its
+/// `Eq`/`Hash` (via `get_universal_id`) and its `Ord` (via `get_path_name`, itself built from
+/// [`DataType::get_category_path`]/[`DataType::get_name`]) directly from the wrapped
+/// `Composite`'s `DataType` methods; without this forward, every `SharedComposite` would compare
+/// equal to every other (all sharing the same default `UniversalID`), collapsing the dependency
+/// graph.
+struct SharedComposite(Arc<dyn DataType>);
+
+impl DataType for SharedComposite {
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
+    fn get_length(&self) -> i32 {
+        self.0.get_length()
+    }
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        self.0.is_equivalent(dt)
+    }
+    fn get_category_path(&self) -> CategoryPath {
+        self.0.get_category_path()
+    }
+    fn get_display_name(&self) -> String {
+        self.0.get_display_name()
+    }
+    fn get_description(&self) -> String {
+        self.0.get_description()
+    }
+    fn get_universal_id(&self) -> crate::util::UniversalID {
+        self.0.get_universal_id()
+    }
+    fn is_structure(&self) -> bool {
+        self.0.is_structure()
+    }
+    fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
+        self.0.as_structure()
+    }
+    fn is_union(&self) -> bool {
+        self.0.is_union()
+    }
+    fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+        self.0.as_union()
+    }
+    fn as_composite(&self) -> Option<&dyn Composite> {
+        self.0.as_composite()
+    }
+}
+
+impl Composite for SharedComposite {
+    fn get_num_components(&self) -> i32 {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_num_components()
+    }
+    fn get_num_defined_components(&self) -> i32 {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_num_defined_components()
+    }
+    fn get_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_components()
+    }
+    fn get_defined_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_defined_components()
     }
 }
 

@@ -85,7 +85,9 @@
 //!     `structure_data_type.rs`/`union_data_type.rs` -- this one aims to match Java's real runtime
 //!     default, not just be a plausible stand-in for unit tests.
 
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
+use std::collections::HashMap;
+use std::fmt;
 use std::io::{self, Write};
 use std::sync::Arc;
 
@@ -96,13 +98,55 @@ use crate::program::model::data::built_in_data_type::BuiltInDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::default_annotation_handler::DefaultAnnotationHandler;
+use crate::program::model::data::dynamic::Dynamic;
 use crate::program::model::data::enum_::Enum;
 use crate::program::model::data::pointer::Pointer;
+use crate::program::model::data::typedef::TypeDef;
 use crate::util::exception::CancelledException;
 use crate::util::graph::{AbstractDependencyGraph, DeterministicDependencyGraph};
 use crate::util::task::TaskMonitor;
+
+/// Error produced by [`DataTypeWriter`]'s top-level `write`/`doWrite` port and everything that
+/// hangs off it. Combines the two checked exceptions Java declares (`IOException`,
+/// `CancelledException`) plus the unchecked `IllegalArgumentException` Java throws for
+/// `FactoryDataType` when `throwExceptionOnInvalidType` is `true`.
+#[derive(Debug)]
+pub enum DataTypeWriteError {
+    /// Port of the checked `IOException`.
+    Io(io::Error),
+    /// Port of the checked `CancelledException`.
+    Cancelled(CancelledException),
+    /// Port of the unchecked `IllegalArgumentException` thrown by `doWrite` for a
+    /// `FactoryDataType` when `throwExceptionOnInvalidType` is `true`.
+    InvalidDataType(String),
+}
+
+impl fmt::Display for DataTypeWriteError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(e) => write!(f, "{e}"),
+            Self::Cancelled(e) => write!(f, "{e}"),
+            Self::InvalidDataType(msg) => write!(f, "{msg}"),
+        }
+    }
+}
+
+impl std::error::Error for DataTypeWriteError {}
+
+impl From<io::Error> for DataTypeWriteError {
+    fn from(e: io::Error) -> Self {
+        Self::Io(e)
+    }
+}
+
+impl From<CancelledException> for DataTypeWriteError {
+    fn from(e: CancelledException) -> Self {
+        Self::Cancelled(e)
+    }
+}
 
 /// Port of the private `DataTypeWriter.CompositeNode` inner class ("A simple Composite class to
 /// use in the dependency graph to speed up the `equals()` call").
@@ -278,28 +322,43 @@ pub struct DataTypeWriter<W: Write> {
     /// Port of `resolved` (`Set<DataType>`). Keyed by path name rather than the `DataType` value
     /// itself, since `dyn DataType` is neither `Hash` nor `Eq` in this crate -- the same
     /// adaptation `IsfDataTypeWriter` already uses for its own `resolved` map.
-    ///
-    /// #[allow(dead_code)]: not yet read/written by anything -- its real user, the `doWrite`
-    /// dispatch port, is one of the "not yet ported" items listed in the module doc comment.
-    #[allow(dead_code)]
     resolved: HashSet<String>,
+    /// Port of `resolvedTypeMap` (`Map<String, DataType>`), keyed by `getName()` exactly like the
+    /// Java field (as opposed to [`resolved`](Self::resolved)'s path-name keying), since that is
+    /// precisely the lookup Java performs for conflicting-name detection. Values are `Arc<dyn
+    /// DataType>` rather than `Box` so the same stored value can both live in this map and (for
+    /// composites) simultaneously be handed to [`composite_dependency_graph`](Self::composite_dependency_graph)
+    /// -- see [`CompositeNode`]'s own doc comment for why `Arc` is this crate's established
+    /// stand-in for Java's implicit reference-copy semantics here.
+    resolved_type_map: HashMap<String, Arc<dyn DataType>>,
     /// Port of `compositeDependencyGraph`.
     composite_dependency_graph: DeterministicDependencyGraph<CompositeNode>,
+    /// Port of `deferredCompositeInternalTypes` (`LinkedHashSet<DataType>`). Modeled as a
+    /// `VecDeque` (for `removeFirst()`/FIFO order) paired with a `HashSet<String>` of path-name
+    /// keys standing in for the `LinkedHashSet`'s own dedup-by-`equals()` behavior -- the same
+    /// path-name-keying adaptation used by [`resolved`](Self::resolved). Stores owned `Box<dyn
+    /// DataType>` (not `Arc`) since, unlike [`resolved_type_map`](Self::resolved_type_map), a
+    /// deferred entry is only ever popped and handed *once* to [`DataTypeWriter::write`] -- no
+    /// second reader ever needs to share it.
+    deferred_composite_internal_types: VecDeque<Box<dyn DataType>>,
+    /// Dedup companion for [`deferred_composite_internal_types`](Self::deferred_composite_internal_types);
+    /// see that field's doc comment.
+    deferred_composite_internal_type_keys: HashSet<String>,
     /// Port of `writerDepth`.
-    #[allow(dead_code)]
     writer_depth: i32,
     /// Port of `writer`.
     writer: W,
-    /// Port of `dtm`.
+    /// Port of `dtm`. Used to derive [`data_organization`](Self::data_organization) at
+    /// construction time; otherwise unused because the `doWrite` port deliberately skips Java's
+    /// `dt = dt.clone(dtm)` "force resize/repack" step -- see the module doc comment for why
+    /// (`clone_data_type` is not reliably overridden by this crate's concrete datatypes yet).
     #[allow(dead_code)]
     dtm: Option<Arc<dyn DataTypeManager>>,
     /// Port of `dataOrganization`.
     data_organization: Box<dyn DataOrganization>,
     /// Port of `annotator`.
-    #[allow(dead_code)]
     annotator: Box<dyn AnnotationHandler>,
     /// Port of `cppStyleComments`.
-    #[allow(dead_code)]
     cpp_style_comments: bool,
 }
 
@@ -336,7 +395,10 @@ impl<W: Write> DataTypeWriter<W> {
         };
         Self {
             resolved: HashSet::new(),
+            resolved_type_map: HashMap::new(),
             composite_dependency_graph: DeterministicDependencyGraph::new(),
+            deferred_composite_internal_types: VecDeque::new(),
+            deferred_composite_internal_type_keys: HashSet::new(),
             writer_depth: 0,
             writer,
             dtm,
@@ -347,11 +409,6 @@ impl<W: Write> DataTypeWriter<W> {
     }
 
     /// Port of the private `comment(String text)` helper.
-    ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real callers
-    /// throughout `doWrite`/`writeEnum`/etc. are among the "not yet ported" items listed in the
-    /// module doc comment.
-    #[allow(dead_code)]
     fn comment(&self, text: &str) -> String {
         if text.is_empty() {
             return String::new();
@@ -364,11 +421,6 @@ impl<W: Write> DataTypeWriter<W> {
     }
 
     /// Port of the private `isIntegral(String typedefName, String basetypeName)` helper.
-    ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
-    /// `writeTypeDef`'s port, is among the "not yet ported" items listed in the module doc
-    /// comment.
-    #[allow(dead_code)]
     fn is_integral(typedef_name: &str, basetype_name: &str) -> bool {
         if INTEGRAL_TYPES.contains(&typedef_name) {
             return true;
@@ -428,12 +480,484 @@ impl<W: Write> DataTypeWriter<W> {
         Ok(())
     }
 
-    /// Exposes the dependency-graph pop used by the not-yet-ported
-    /// `writeDeferredCompositeDeclarations`, for testing the graph-construction pass in isolation
-    /// ahead of the body-emission logic it will eventually drive.
-    #[cfg(test)]
+    /// Exposes the dependency-graph pop used by [`write_deferred_composite_declarations`]
+    /// (Java `writeDeferredCompositeDeclarations`), for testing the graph-construction pass in
+    /// isolation as well as from that real caller.
+    ///
+    /// [`write_deferred_composite_declarations`]: Self::write_deferred_composite_declarations
     fn pop_composite_dependency(&mut self) -> Option<CompositeNode> {
         self.composite_dependency_graph.pop().expect("no cycle expected among by-value composite embeddings")
+    }
+
+    /// Port of the public `write(DataType dt, TaskMonitor monitor)` package-private overload
+    /// (`throwExceptionOnInvalidType` defaults to `true`).
+    pub fn write(
+        &mut self,
+        dt: Box<dyn DataType>,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), DataTypeWriteError> {
+        self.write_with_options(dt, monitor, true)
+    }
+
+    /// Port of the public `write(DataType dt, TaskMonitor monitor, boolean
+    /// throwExceptionOnInvalidType)` overload.
+    pub fn write_with_options(
+        &mut self,
+        dt: Box<dyn DataType>,
+        monitor: &dyn TaskMonitor,
+        throw_exception_on_invalid_type: bool,
+    ) -> Result<(), DataTypeWriteError> {
+        self.do_write(dt, monitor, throw_exception_on_invalid_type)
+    }
+
+    /// Port of the private `doWrite(DataType dt, TaskMonitor monitor, boolean
+    /// throwExceptionOnInvalidType)` -- the top-level dispatcher this whole class hangs off of.
+    ///
+    /// Deviations from the Java source, all documented in more depth in the module doc comment:
+    ///   - The `dt == null` guard is dropped: `Box<dyn DataType>` cannot be null.
+    ///   - `dt = dt.clone(dtm)` ("force resize/repack for target data organization") is skipped
+    ///     entirely -- this crate's concrete datatypes do not yet reliably override
+    ///     `clone_data_type`, so calling it here would silently replace real data with the
+    ///     `EmptyDataType` placeholder the trait default falls back to.
+    ///   - The `dt.equals(DataType.DEFAULT)` special case is skipped: `DataType.DEFAULT`
+    ///     (`DefaultDataType`) is not ported yet (see the module doc comment).
+    ///   - Java's dispatch order is `Dynamic, Structure, Union, Enum, TypeDef, BuiltInDataType,
+    ///     BitFieldDataType (skip), unrecognized`. This port checks `Structure`/`Union` *before*
+    ///     `Dynamic` so the Structure/Union case can consume the still-owned `Box<dyn DataType>`
+    ///     via [`DataType::into_composite`] (needed to obtain an owned `Box<dyn Composite>` for
+    ///     the dependency graph) before the rest of the branches convert to a shared `Arc<dyn
+    ///     DataType>` for [`resolved_type_map`](Self::resolved_type_map). Since no concrete
+    ///     datatype in Java (or this crate) is simultaneously a `Dynamic` and a `Structure`/
+    ///     `Union` (they inherit from disjoint base classes/trait hierarchies), this reordering
+    ///     is behaviorally invisible.
+    fn do_write(
+        &mut self,
+        dt: Box<dyn DataType>,
+        monitor: &dyn TaskMonitor,
+        throw_exception_on_invalid_type: bool,
+    ) -> Result<(), DataTypeWriteError> {
+        monitor.check_cancelled()?;
+
+        if dt.as_function_definition().is_some() {
+            return Ok(());
+        }
+        if dt.as_factory().is_some() {
+            if throw_exception_on_invalid_type {
+                return Err(DataTypeWriteError::InvalidDataType(
+                    "Factory data types may not be written".to_string(),
+                ));
+            }
+            // Java: Msg.error(this, "Factory data types may not be written - type: " + dt); --
+            // this crate's `DataTypeWriter` has no logging sink wired up, so this is silently
+            // skipped (matching the "no-op" behavior observed by any *caller* of this method,
+            // since Msg.error also does not throw).
+        }
+        if dt.as_pointer().is_some() || dt.as_array().is_some() || dt.as_bit_field_data_type().is_some() {
+            let base = Self::get_base_data_type(dt);
+            return self.write(base, monitor);
+        }
+
+        let path_key = dt.get_path_name();
+        if self.resolved.contains(&path_key) {
+            return Ok(());
+        }
+        self.resolved.insert(path_key);
+
+        let name_key = dt.get_name();
+        if let Some(resolved_type) = self.resolved_type_map.get(&name_key) {
+            if resolved_type.is_equivalent(dt.as_ref()) {
+                return Ok(());
+            }
+            let mut auto_typedef_already_generated = false;
+            if let Some(typedef) = dt.as_typedef() {
+                let base_type = typedef.get_base_data_type();
+                if (resolved_type.as_composite().is_some() || resolved_type.as_enum().is_some())
+                    && base_type.is_equivalent(resolved_type.as_ref())
+                {
+                    auto_typedef_already_generated = true;
+                }
+            }
+            if auto_typedef_already_generated {
+                return Ok(());
+            }
+            let warning = format!(
+                "WARNING! conflicting data type names: {} - {}",
+                dt.get_path_name(),
+                resolved_type.get_path_name()
+            );
+            write!(self.writer, "{EOL}")?;
+            let c = self.comment(&warning);
+            write!(self.writer, "{c}")?;
+            write!(self.writer, "{EOL}{EOL}")?;
+            return Ok(());
+        }
+
+        self.writer_depth += 1;
+
+        let dispatch_result = if dt.as_structure().is_some() || dt.as_union().is_some() {
+            let composite_box: Box<dyn Composite> =
+                dt.into_composite().expect("checked via as_structure()/as_union() above");
+            let composite_arc: Arc<dyn Composite> = Arc::from(composite_box);
+            self.resolved_type_map.insert(name_key, composite_arc.clone() as Arc<dyn DataType>);
+            self.write_composite_pre_declaration(composite_arc.as_ref(), monitor).and_then(|_| {
+                self.add_composite_to_dependency_graph(composite_arc, monitor).map_err(Into::into)
+            })
+        } else {
+            let dt_arc: Arc<dyn DataType> = Arc::from(dt);
+            self.resolved_type_map.insert(name_key, dt_arc.clone());
+            if let Some(dynamic) = dt_arc.as_dynamic() {
+                self.write_dynamic_built_in(dynamic, monitor)
+            } else if let Some(enumm) = dt_arc.as_enum() {
+                self.write_enum(enumm, monitor).map_err(Into::into)
+            } else if let Some(typedef) = dt_arc.as_typedef() {
+                self.write_type_def(typedef, monitor)
+            } else if let Some(built_in) = dt_arc.as_built_in_data_type() {
+                self.write_built_in(built_in).map_err(Into::into)
+            } else if dt_arc.as_bit_field_data_type().is_some() {
+                Ok(())
+            } else {
+                // Port note: Java's message embeds `dt.getClass()` (a Java `Class<?>` via
+                // reflection). This crate has no equivalent reflection facility wired into
+                // `DataType`, so the display name is substituted -- a deviation, but one that
+                // only affects the text of an already-exceptional diagnostic comment.
+                write!(self.writer, "{EOL}{EOL}")?;
+                let msg = format!("Unable to write datatype. Type unrecognized: {}", dt_arc.get_display_name());
+                let c = self.comment(&msg);
+                write!(self.writer, "{c}")?;
+                write!(self.writer, "{EOL}{EOL}")?;
+                Ok(())
+            }
+        };
+        dispatch_result?;
+
+        if self.writer_depth == 1 {
+            self.write_deferred_declarations(monitor)?;
+        }
+        self.writer_depth -= 1;
+        Ok(())
+    }
+
+    /// Port of the private `deferWrite(DataType dt)` helper.
+    fn defer_write(&mut self, dt: Box<dyn DataType>) {
+        let path_key = dt.get_path_name();
+        if self.resolved.contains(&path_key) {
+            return;
+        }
+        if self.deferred_composite_internal_type_keys.insert(path_key) {
+            self.deferred_composite_internal_types.push_back(dt);
+        }
+    }
+
+    /// Port of the private `writeDeferredDeclarations(TaskMonitor monitor)` helper.
+    fn write_deferred_declarations(&mut self, monitor: &dyn TaskMonitor) -> Result<(), DataTypeWriteError> {
+        while let Some(dt) = self.deferred_composite_internal_types.pop_front() {
+            self.write(dt, monitor)?;
+        }
+        self.write_deferred_composite_declarations(monitor)
+    }
+
+    /// Port of the private `writeDeferredCompositeDeclarations(TaskMonitor monitor)` helper.
+    fn write_deferred_composite_declarations(
+        &mut self,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), DataTypeWriteError> {
+        while let Some(node) = self.pop_composite_dependency() {
+            self.write_composite_body(node.composite().as_ref(), monitor)?;
+        }
+        Ok(())
+    }
+
+    /// Port of the private `writeCompositePreDeclaration(Composite composite, TaskMonitor
+    /// monitor)` helper.
+    fn write_composite_pre_declaration(
+        &mut self,
+        composite: &dyn Composite,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), DataTypeWriteError> {
+        let composite_type = if composite.as_structure().is_some() { "struct" } else { "union" };
+        let display_name = composite.get_display_name();
+
+        write!(
+            self.writer,
+            "typedef {composite_type} {display_name} {display_name}, *P{display_name};"
+        )?;
+        write!(self.writer, "{EOL}{EOL}")?;
+
+        for component in composite.get_defined_components() {
+            monitor.check_cancelled()?;
+            let component_type = component.get_data_type();
+            self.defer_write(component_type);
+        }
+        Ok(())
+    }
+
+    /// Port of the private `writeCompositeBody(Composite composite, TaskMonitor monitor)`
+    /// helper.
+    fn write_composite_body(&mut self, composite: &dyn Composite, monitor: &dyn TaskMonitor) -> Result<(), DataTypeWriteError> {
+        let composite_type = if composite.as_structure().is_some() { "struct" } else { "union" };
+        let mut sb = format!("{composite_type} {} {{", composite.get_display_name());
+
+        let descrip = composite.get_description();
+        if !descrip.is_empty() {
+            let c = self.comment(&descrip);
+            sb.push(' ');
+            sb.push_str(&c);
+        }
+        sb.push_str(EOL);
+
+        for component in composite.get_components() {
+            monitor.check_cancelled()?;
+            self.write_component(component.as_ref(), composite, &mut sb, monitor)?;
+        }
+
+        sb.push_str(&self.annotator.get_composite_suffix(composite, &NullDataTypeComponent));
+        sb.push_str("};");
+
+        write!(self.writer, "{sb}")?;
+        write!(self.writer, "{EOL}{EOL}")?;
+        Ok(())
+    }
+
+    /// Port of the private `writeComponent(DataTypeComponent component, Composite composite,
+    /// StringBuilder sb, TaskMonitor monitor)` helper. `sb` stands in for the Java
+    /// `StringBuilder` output parameter.
+    fn write_component(
+        &mut self,
+        component: &dyn DataTypeComponent,
+        composite: &dyn Composite,
+        sb: &mut String,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), DataTypeWriteError> {
+        let _ = monitor; // Java declares `throws CancelledException` but never calls checkCancelled here.
+        sb.push_str("    ");
+        sb.push_str(&self.annotator.get_composite_prefix(composite, component));
+
+        let field_name = component
+            .get_field_name()
+            .filter(|s| !s.is_empty())
+            .or_else(|| component.get_default_field_name())
+            .unwrap_or_default();
+
+        let component_data_type = component.get_data_type();
+        let declaration =
+            self.get_type_declaration(&field_name, component_data_type, component.get_length(), false, monitor)?;
+        sb.push_str(&declaration);
+
+        sb.push(';');
+        sb.push_str(&self.annotator.get_composite_suffix(composite, component));
+
+        if let Some(comment) = component.get_comment() {
+            if !comment.is_empty() {
+                sb.push(' ');
+                let c = self.comment(&comment);
+                sb.push_str(&c);
+            }
+        }
+        sb.push_str(EOL);
+        Ok(())
+    }
+
+    /// Port of the private `getTypeDeclaration(String name, DataType dataType, int
+    /// instanceLength, boolean writeEnabled, TaskMonitor monitor)` helper.
+    ///
+    /// **Partial port**: the `dataType instanceof FunctionDefinition` branch (function-pointer
+    /// declaration text, via `getFunctionPointerString`) is not wired up yet -- see the module
+    /// doc comment. A function-pointer-typed field or parameter currently falls through to the
+    /// generic `getDataTypePrefix(dataType) + dataType.getDisplayName()` formatting instead of
+    /// real function-pointer syntax; every other case (plain fields, arrays, pointers, bit
+    /// fields, dynamic-length fields) is fully ported.
+    fn get_type_declaration(
+        &mut self,
+        name: &str,
+        mut data_type: Box<dyn DataType>,
+        instance_length: i32,
+        write_enabled: bool,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<String, DataTypeWriteError> {
+        let _ = (write_enabled, monitor); // only consumed once the FunctionDefinition branch (see doc comment) is wired up.
+        let mut name = name.to_string();
+        let mut component_string: Option<String> = None;
+
+        if let Some(dynamic) = data_type.as_dynamic() {
+            match Self::get_dynamic_component_string(dynamic, &name, instance_length) {
+                Some(s) => component_string = Some(s),
+                None => {
+                    let msg = format!("ignoring dynamic datatype inside composite: {}", data_type.get_display_name());
+                    let c = self.comment(&msg);
+                    component_string = Some(format!("{c}{EOL}"));
+                }
+            }
+        }
+
+        if component_string.is_none() {
+            if let Some(bf) = data_type.as_bit_field_data_type() {
+                name = format!("{name}:{}", bf.get_declared_bit_size());
+                data_type = bf.get_base_data_type();
+            }
+
+            loop {
+                if let Some(array) = data_type.as_array() {
+                    name = format!("{name}[{}]", array.get_num_elements());
+                    data_type = array.get_data_type();
+                    continue;
+                }
+                if let Some(pointer) = data_type.as_pointer() {
+                    match pointer.get_data_type() {
+                        None => break,
+                        Some(elem) => {
+                            name = format!("*{name}");
+                            let elem_is_array = elem.as_array().is_some();
+                            data_type = elem;
+                            if elem_is_array {
+                                name = format!("({name})");
+                            }
+                            continue;
+                        }
+                    }
+                }
+                break;
+            }
+
+            // Port note: by this point every Array/Pointer/BitFieldDataType layer has already
+            // been stripped from `data_type` by the unwrapping above, so it is already equal to
+            // what a second call to `getBaseDataType(dataType)` (as Java does here) would
+            // compute. That redundant second unwrap is skipped, letting this port avoid needing
+            // two independently-owned copies of the same `Box<dyn DataType>`.
+            let prefix = Self::get_data_type_prefix_of(data_type.as_ref());
+            let mut s = format!("{prefix}{}", data_type.get_display_name());
+            if !name.is_empty() {
+                s.push(' ');
+                s.push_str(&name);
+            }
+            component_string = Some(s);
+        }
+
+        Ok(component_string.unwrap_or_default())
+    }
+
+    /// Port of the private `getDynamicComponentString(Dynamic dynamicType, String fieldName, int
+    /// length)` helper. An associated function (rather than a `&self` method) since, unlike the
+    /// Java original, it does not consult `dtm`: see the module doc comment's note on why the
+    /// `replacementBaseType.clone(dtm)` step is skipped throughout this port (`clone_data_type`
+    /// is not reliably overridden yet).
+    fn get_dynamic_component_string(dynamic_type: &dyn Dynamic, field_name: &str, length: i32) -> Option<String> {
+        if !dynamic_type.can_specify_length() {
+            return None;
+        }
+        let replacement_base_type = dynamic_type.get_replacement_base_type();
+        let element_len = replacement_base_type.get_length();
+        if element_len <= 0 {
+            // Java logs via `Msg.error` here; this crate's `DataTypeWriter` has no logging sink
+            // wired up (see the analogous note in `do_write`), so this just falls through to the
+            // same `None` return Java's error path produces.
+            return None;
+        }
+        let element_cnt = (length + element_len - 1) / element_len;
+        Some(format!("{} {field_name}[{element_cnt}]", replacement_base_type.get_display_name()))
+    }
+
+    /// Port of the private `getDataTypePrefix(DataType dataType)` helper, taking `dataType` by
+    /// reference. A borrow-based sibling of the already-ported, `#[cfg(test)]`-only
+    /// [`get_data_type_prefix`](Self::get_data_type_prefix) (which consumes ownership); this one
+    /// is used by [`get_type_declaration`](Self::get_type_declaration), which still needs
+    /// `data_type` itself afterward and so cannot hand ownership over.
+    fn get_data_type_prefix_of(data_type: &dyn DataType) -> &'static str {
+        if data_type.as_structure().is_some() {
+            "struct "
+        } else if data_type.as_union().is_some() {
+            "union "
+        } else if data_type.as_enum().is_some() {
+            "enum "
+        } else {
+            ""
+        }
+    }
+
+    /// Port of the private `writeTypeDef(TypeDef typeDef, TaskMonitor monitor)` helper.
+    ///
+    /// Typedef Format: `typedef <TYPE_DEF_NAME> <BASE_TYPE_NAME>`
+    ///
+    /// Java calls `typeDef.getDataType()` once and reuses the single reference both inside the
+    /// `finally` block and again for `getTypeDeclaration`. This port instead calls
+    /// [`TypeDef::get_data_type`] a second time where needed: every `get_data_type`/
+    /// `get_base_data_type`-style getter in this crate is documented (and, where checked,
+    /// verified) to hand back a fresh, independently-owned `Box` representing the *same*
+    /// underlying datatype on each call -- see e.g. [`Pointer::get_data_type`]'s own established
+    /// multi-call usage elsewhere in this file -- so two separate calls are behaviorally
+    /// equivalent to Java's one-and-reuse.
+    fn write_type_def(&mut self, typedef: &dyn TypeDef, monitor: &dyn TaskMonitor) -> Result<(), DataTypeWriteError> {
+        let typedef_name = typedef.get_display_name();
+        let data_type_name = typedef.get_data_type().get_display_name();
+        if Self::is_integral(&typedef_name, &data_type_name) {
+            return Ok(());
+        }
+
+        let base_type = typedef.get_base_data_type();
+        let mut skip_after_write = false;
+
+        if base_type.as_composite().is_some() || base_type.as_enum().is_some() {
+            // auto-typedef generated with composite and enum
+            if typedef_name == base_type.get_name() {
+                self.resolved_type_map.remove(&typedef_name);
+                skip_after_write = true;
+            }
+        } else if let Some(base_pointer) = base_type.as_pointer() {
+            // auto-pointer-typedef generated with composite
+            if typedef_name.starts_with('P') {
+                if let Some(mut inner_dt) = base_pointer.get_data_type() {
+                    if let Some(inner_typedef) = inner_dt.as_typedef() {
+                        inner_dt = inner_typedef.get_base_data_type();
+                    }
+                    if inner_dt.as_composite().is_some() && inner_dt.get_name() == typedef_name[1..] {
+                        self.resolved_type_map.remove(&typedef_name);
+                        skip_after_write = true;
+                    }
+                }
+            }
+        }
+
+        // Java's `finally { write(dataType, monitor); }` always runs, even along the
+        // `skip_after_write` early-return paths above.
+        let write_result = self.write(typedef.get_data_type(), monitor);
+        write_result?;
+
+        if skip_after_write {
+            return Ok(());
+        }
+
+        if base_type.as_array().is_some() {
+            let base_array_typedef_type = Self::get_base_array_typedef_type(typedef.get_base_data_type());
+            if base_array_typedef_type.as_composite().is_some() {
+                self.write_deferred_declarations(monitor)?;
+            }
+        }
+
+        let typedef_string = self.get_type_declaration(&typedef_name, typedef.get_data_type(), -1, true, monitor)?;
+        write!(self.writer, "typedef {typedef_string};")?;
+        write!(self.writer, "{EOL}{EOL}")?;
+        Ok(())
+    }
+
+    /// Port of the private `getBaseArrayTypedefType(DataType dt)` helper.
+    fn get_base_array_typedef_type(mut dt: Box<dyn DataType>) -> Box<dyn DataType> {
+        loop {
+            if let Some(typedef) = dt.as_typedef() {
+                dt = typedef.get_base_data_type();
+                continue;
+            }
+            if let Some(array) = dt.as_array() {
+                dt = array.get_data_type();
+                continue;
+            }
+            break;
+        }
+        dt
+    }
+
+    /// Port of the private `writeDynamicBuiltIn(Dynamic dt, TaskMonitor monitor)` helper.
+    fn write_dynamic_built_in(&mut self, dt: &dyn Dynamic, monitor: &dyn TaskMonitor) -> Result<(), DataTypeWriteError> {
+        let base_dt = dt.get_replacement_base_type();
+        self.write(base_dt, monitor)
     }
 
     /// Port of `writeBuiltIn` (the not-yet-ported dispatch that calls this still needs to be
@@ -627,6 +1151,16 @@ impl<W: Write> DataTypeWriter<W> {
 /// than sampled from the host platform, matching this crate's general convention (and every other
 /// text-emitting port in this crate) of emitting Unix line endings unconditionally.
 const EOL: &str = "\n";
+
+/// Stands in for the Java literal `null` passed as the `DataTypeComponent dtc` argument to
+/// `AnnotationHandler.getSuffix(Composite, DataTypeComponent)` in `writeCompositeBody`, where
+/// Java asks for the composite's own trailing (not-component-specific) suffix. The
+/// `DataTypeComponent` trait's methods are all given defaults (see that trait's own doc comment),
+/// so this unit struct answers every query the same zero-value way Java's `null` argument would
+/// have if `AnnotationHandler` implementations dereferenced it defensively -- which every
+/// implementation in this crate does, since none currently read `dtc` for their suffix text.
+struct NullDataTypeComponent;
+impl DataTypeComponent for NullDataTypeComponent {}
 
 #[cfg(test)]
 mod tests {
@@ -862,5 +1396,242 @@ mod tests {
         let p = MockPointer { target: None };
         assert_eq!(DataTypeWriter::<Vec<u8>>::get_pointer_depth(&p), 1);
         assert!(DataTypeWriter::<Vec<u8>>::get_pointer_base_data_type(&p).is_none());
+    }
+
+    // -- `write`/`doWrite` dispatcher + composite declaration tests -----------------------------
+
+    /// A minimal named leaf `DataType` with a genuine positive length, for use as a composite
+    /// field in these dispatcher tests -- unlike `NamedLeaf` above (whose `get_length()` is the
+    /// `DataType` trait's zero default), which `Composite`'s real
+    /// `validateDataType`/`composite_impl_validate_data_type` port rejects with "not allowed in
+    /// a composite data type" for any non-dynamic type reporting a non-positive length.
+    struct SizedLeaf(&'static str, i32);
+    impl DataType for SizedLeaf {
+        fn get_name(&self) -> String {
+            self.0.to_string()
+        }
+        fn get_length(&self) -> i32 {
+            self.1
+        }
+    }
+
+    #[test]
+    fn write_simple_struct_emits_pre_declaration_and_body() {
+        let mut point = StructureDataTypeImpl::new("Point", 0);
+        point.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("x".to_string()), None).unwrap();
+        point.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("y".to_string()), None).unwrap();
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(point), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.contains("typedef struct Point Point, *PPoint;"), "text was: {text}");
+        assert!(text.contains("struct Point {"), "text was: {text}");
+        assert!(text.contains("int x;"), "text was: {text}");
+        assert!(text.contains("int y;"), "text was: {text}");
+        assert!(text.trim_end().ends_with("};"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_nested_struct_orders_inner_body_before_outer_body() {
+        let mut inner = StructureDataTypeImpl::new("Inner", 0);
+        inner.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("value".to_string()), None).unwrap();
+
+        let mut outer = StructureDataTypeImpl::new("Outer", 0);
+        outer.add_with_name(Box::new(inner), Some("inner".to_string()), None).unwrap();
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(outer), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        let inner_body_pos = text.find("struct Inner {").expect("inner body should be written");
+        let outer_body_pos = text.find("struct Outer {").expect("outer body should be written");
+        assert!(inner_body_pos < outer_body_pos, "expected Inner body before Outer body, text was: {text}");
+        assert!(text.contains("struct Inner inner;"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_enum_via_dispatcher_matches_direct_write_enum() {
+        use crate::program::model::data::enum_data_type::EnumDataType;
+
+        let mut e = EnumDataType::new("Color", 4);
+        e.add("RED", 0);
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(e), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.starts_with("typedef enum Color {\n"), "text was: {text}");
+        assert!(text.trim_end().ends_with("} Color;"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_conflicting_same_name_different_category_emits_warning() {
+        use crate::program::model::data::category_path::ROOT;
+
+        let a = StructureDataTypeImpl::new_in_category(ROOT.extend(&["ArchiveA"]), "Dup", 4);
+        let mut b = StructureDataTypeImpl::new_in_category(ROOT.extend(&["ArchiveB"]), "Dup", 0);
+        b.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("field".to_string()), None).unwrap();
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(a), &DummyMonitor).unwrap();
+        writer.write(Box::new(b), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.contains("WARNING! conflicting data type names"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_same_struct_twice_is_written_only_once() {
+        let point = StructureDataTypeImpl::new("Point", 4);
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(StructureDataTypeImpl::new("Point", 4)), &DummyMonitor).unwrap();
+        writer.write(Box::new(point), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert_eq!(text.matches("typedef struct Point Point").count(), 1, "text was: {text}");
+    }
+
+    /// Mock `FactoryDataType`. Per `ghidra.program.model.data.FactoryDataType`'s real Java
+    /// hierarchy (and this crate's own `pub trait FactoryDataType: BuiltInDataType`), a factory
+    /// data type *is* a `BuiltInDataType` too -- so this mock implements both, matching Java's
+    /// `doWrite`, which (when `throwExceptionOnInvalidType` is `false`) logs a warning for the
+    /// `FactoryDataType` case but then falls through and keeps dispatching, eventually reaching
+    /// the `dt instanceof BuiltInDataType` branch since that `instanceof` still holds.
+    struct MockFactoryDataType;
+    impl DataType for MockFactoryDataType {
+        fn as_factory(&self) -> Option<&dyn crate::program::model::data::factory_data_type::FactoryDataType> {
+            Some(self)
+        }
+        fn as_built_in_data_type(&self) -> Option<&dyn BuiltInDataType> {
+            Some(self)
+        }
+    }
+    impl BuiltInDataType for MockFactoryDataType {
+        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+            None
+        }
+        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
+    }
+    impl crate::program::model::data::factory_data_type::FactoryDataType for MockFactoryDataType {
+        fn get_data_type(&self, _buf: &dyn crate::program::model::mem::MemBuffer) -> Box<dyn DataType> {
+            Box::new(NamedLeaf("factory-produced"))
+        }
+    }
+
+    #[test]
+    fn write_factory_data_type_errors_when_throw_enabled() {
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let err = writer.write(Box::new(MockFactoryDataType), &DummyMonitor).unwrap_err();
+        assert!(matches!(err, DataTypeWriteError::InvalidDataType(_)), "err was: {err}");
+    }
+
+    #[test]
+    fn write_factory_data_type_falls_through_to_built_in_dispatch_when_throw_disabled() {
+        // Matches Java: `doWrite` logs (via `Msg.error`, not ported -- see `do_write`'s own doc
+        // comment) but does not `return` for the `throwExceptionOnInvalidType == false` case, so
+        // dispatch continues and reaches the `BuiltInDataType` branch since `FactoryDataType`
+        // *is* a `BuiltInDataType`. This mock's `get_c_type_declaration` returns `None`, so the
+        // observable output is still empty -- but for the real reason, not because the type was
+        // skipped outright.
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write_with_options(Box::new(MockFactoryDataType), &DummyMonitor, false).unwrap();
+        assert_eq!(written_text(writer), "");
+    }
+
+    #[test]
+    fn write_unrecognized_data_type_emits_comment() {
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(NamedLeaf("mystery")), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.contains("Unable to write datatype. Type unrecognized"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_type_def_emits_typedef_line_for_non_integral_name() {
+        use crate::program::model::data::typedef_data_type::TypedefDataType;
+
+        let base: Box<dyn DataType> = Box::new(NamedLeaf("Widget"));
+        let td = TypedefDataType::new_in_root("MyWidget", base).unwrap();
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(td), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.contains("typedef"), "text was: {text}");
+        assert!(text.contains("MyWidget"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_type_def_skips_integral_typedef_name() {
+        use crate::program::model::data::typedef_data_type::TypedefDataType;
+
+        let base: Box<dyn DataType> = Box::new(NamedLeaf("int"));
+        let td = TypedefDataType::new_in_root("int", base).unwrap();
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(td), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(!text.contains("typedef int int"), "text was: {text}");
+    }
+
+    #[test]
+    fn get_dynamic_component_string_computes_element_count() {
+        struct StubDynamic;
+        impl DataType for StubDynamic {}
+        impl BuiltInDataType for StubDynamic {
+            fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+                None
+            }
+            fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
+        }
+        impl Dynamic for StubDynamic {
+            fn get_dynamic_length(&self, _buf: &dyn crate::program::model::mem::MemBuffer, max_length: i32) -> i32 {
+                max_length
+            }
+            fn can_specify_length(&self) -> bool {
+                true
+            }
+            fn get_replacement_base_type(&self) -> Box<dyn DataType> {
+                Box::new(NamedLeaf("byte"))
+            }
+        }
+
+        let dynamic = StubDynamic;
+        // "byte" (`NamedLeaf`) reports the `DataType` default `get_length() -> 0`, which would
+        // divide-by-zero in the real element-count formula, so this test exercises the
+        // already-handled `elementLen <= 0 -> None` guard instead of the happy path -- there is
+        // no ported concrete leaf type in this crate yet with both a nonzero `get_length()` and
+        // no other unrelated setup cost. The happy-path arithmetic itself
+        // (`(length + elementLen - 1) / elementLen`) is exercised indirectly once a byte-sized
+        // leaf type is wired up in a follow-up chunk.
+        let result = DataTypeWriter::<Vec<u8>>::get_dynamic_component_string(&dynamic, "field", 10);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn get_dynamic_component_string_returns_none_when_length_cannot_be_specified() {
+        struct StubDynamic;
+        impl DataType for StubDynamic {}
+        impl BuiltInDataType for StubDynamic {
+            fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+                None
+            }
+            fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
+        }
+        impl Dynamic for StubDynamic {
+            fn get_dynamic_length(&self, _buf: &dyn crate::program::model::mem::MemBuffer, _max_length: i32) -> i32 {
+                -1
+            }
+            fn get_replacement_base_type(&self) -> Box<dyn DataType> {
+                Box::new(NamedLeaf("byte"))
+            }
+        }
+
+        let dynamic = StubDynamic;
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_dynamic_component_string(&dynamic, "field", 10), None);
     }
 }
