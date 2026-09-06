@@ -69,6 +69,7 @@ pub mod data_type_object_comparator;
 pub mod data_type_path;
 pub mod data_type_transferable;
 pub mod data_type_with_charset;
+pub mod data_type_writer;
 pub mod data_utilities;
 pub mod default_annotation_handler;
 pub mod default_data_type;
