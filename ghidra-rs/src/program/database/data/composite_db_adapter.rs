@@ -9,8 +9,9 @@
 //! concrete adapters. This trait was itself selected as a dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, Schema};
 use crate::program::util::DBRecordAdapter;
 use crate::util::UniversalID;
 
@@ -20,6 +21,54 @@ pub const COMPOSITE_TABLE_NAME: &str = "Composite Data Types";
 /// Schema version at/after which Structure flex-array components were eliminated, as defined by
 /// `CompositeDBAdapter`.
 pub const FLEX_ARRAY_ELIMINATION_SCHEMA_VERSION: i32 = 6;
+
+/// Schema version implemented by the current (`CompositeDBAdapterV5V6`) table layout. Alias of
+/// [`FLEX_ARRAY_ELIMINATION_SCHEMA_VERSION`] -- the physical column layout has been stable since
+/// schema version 5; version 6 only changed the semantics (Structure flex-array elimination),
+/// not the columns.
+pub const CURRENT_VERSION: i32 = FLEX_ARRAY_ELIMINATION_SCHEMA_VERSION;
+
+/// Build the current composite table schema, as defined by
+/// `CompositeDBAdapterV5V6.V5V6_COMPOSITE_SCHEMA`. Exposed as a function (rather than a `Schema`
+/// constant) since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Data Type ID".to_string(),
+        vec![
+            FieldType::String,
+            FieldType::String,
+            FieldType::Boolean,
+            FieldType::Long,
+            FieldType::Int,
+            FieldType::Int,
+            FieldType::Int,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Int,
+            FieldType::Int,
+        ],
+        vec![
+            "Name".to_string(),
+            "Comment".to_string(),
+            "Is Union".to_string(),
+            "Category ID".to_string(),
+            "Length".to_string(),
+            "Alignment".to_string(),
+            "Number Of Components".to_string(),
+            "Source Archive ID".to_string(),
+            "Source Data Type ID".to_string(),
+            "Source Sync Time".to_string(),
+            "Last Change Time".to_string(),
+            "Pack".to_string(),
+            "MinAlign".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Column index of the composite's name, as defined by `CompositeDBAdapterV5V6`.
 pub const COMPOSITE_NAME_COL: usize = 0;
