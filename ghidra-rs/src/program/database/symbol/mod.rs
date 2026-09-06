@@ -32,6 +32,7 @@ pub mod variable_storage_db_adapter;
 pub mod variable_storage_db_adapter_no_table;
 pub mod variable_storage_db_adapter_v2;
 pub mod variable_storage_manager;
+pub mod variable_storage_manager_db;
 
 pub use address_set_filtered_symbol_iterator::AddressSetFilteredSymbolIterator;
 pub use class_symbol::ClassSymbol;
@@ -75,3 +76,4 @@ pub use variable_storage_db_adapter::VariableStorageDBAdapter;
 pub use variable_storage_db_adapter_no_table::VariableStorageDBAdapterNoTable;
 pub use variable_storage_db_adapter_v2::VariableStorageDBAdapterV2;
 pub use variable_storage_manager::VariableStorageManager;
+pub use variable_storage_manager_db::VariableStorageManagerDB;
