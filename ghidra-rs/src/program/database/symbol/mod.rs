@@ -13,6 +13,8 @@ pub mod library_db;
 pub mod namespace_db;
 pub mod namespace_manager;
 pub mod namespace_symbol;
+pub mod old_variable_storage_db_adapter_v0v1;
+pub mod old_variable_storage_manager_db;
 pub mod overlapping_namespace_exception;
 pub mod symbol_database_adapter;
 pub mod symbol_db;
@@ -41,6 +43,8 @@ pub use library_db::LibraryDb;
 pub use namespace_db::NamespaceDb;
 pub use namespace_manager::NamespaceManagerDB;
 pub use namespace_symbol::NamespaceSymbol;
+pub use old_variable_storage_db_adapter_v0v1::OldVariableStorageDBAdapterV0V1;
+pub use old_variable_storage_manager_db::OldVariableStorageManagerDB;
 pub use overlapping_namespace_exception::OverlappingNamespaceException;
 pub use symbol_database_adapter::{
     decode_source_type_from_flags, get_source_type_flags_bits, SymbolDatabaseAdapter,
