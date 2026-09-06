@@ -9,13 +9,49 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, Schema};
 use crate::program::util::DBRecordAdapter;
 use crate::util::UniversalID;
 
 /// Name of the database table used to store enumeration data types.
 pub const ENUM_TABLE_NAME: &str = "Enumeration Data Types";
+
+/// Schema version implemented by the current (`EnumDBAdapterV1`) table layout.
+pub const CURRENT_VERSION: i32 = 1;
+
+/// Build the current enumeration table schema, as defined by
+/// `EnumDBAdapterV1.V1_ENUM_SCHEMA`. Exposed as a function (rather than a `Schema` constant)
+/// since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Enum ID".to_string(),
+        vec![
+            FieldType::String,
+            FieldType::String,
+            FieldType::Long,
+            FieldType::Byte,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+        ],
+        vec![
+            "Name".to_string(),
+            "Comment".to_string(),
+            "Category ID".to_string(),
+            "Size".to_string(),
+            "Source Archive ID".to_string(),
+            "Source Data Type ID".to_string(),
+            "Source Sync Time".to_string(),
+            "Last Change Time".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Column index of the enum's name, as defined by `EnumDBAdapterV1`.
 pub const ENUM_NAME_COL: usize = 0;

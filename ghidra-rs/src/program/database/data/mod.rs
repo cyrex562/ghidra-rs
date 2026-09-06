@@ -18,6 +18,8 @@ pub mod data_type_utilities;
 pub mod enum_db;
 pub mod enum_db_adapter;
 pub mod enum_db_adapter_no_table;
+pub mod enum_db_adapter_v0;
+pub mod enum_db_adapter_v1;
 pub mod enum_signed_state;
 pub mod enum_value_db_adapter;
 pub mod enum_value_db_adapter_no_table;
