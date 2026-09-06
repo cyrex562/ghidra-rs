@@ -67,6 +67,7 @@ pub mod signedness_format_mode;
 pub mod string_format;
 pub mod string_utilities;
 pub mod universal_id;
+pub mod universal_id_generator;
 pub mod classfinder;
 pub mod compiler_constraint;
 pub mod constraint;
