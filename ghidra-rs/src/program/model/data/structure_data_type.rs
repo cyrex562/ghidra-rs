@@ -2059,6 +2059,568 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         Some(Box::new(dtc))
     }
 
+    /// Port of the private `StructureDataType.doComponentReplacement(LinkedList<DataTypeComponentImpl>,
+    /// int, DataType, int, String, String)`: attempt a "quick update" of a single defined component
+    /// in place (no size/alignment/offset change, matching Java's fast-path condition exactly,
+    /// including its `dataType.getAlignment() == oldDt.getAlignment()` packed-structure check), or
+    /// else fall through to the full [`structure_data_type_replace_components`] sequence-replacement
+    /// algorithm followed by a repack.
+    ///
+    /// `replaced_components` must be non-empty (mirrors Java's unconditional `.get(0)` on a
+    /// caller-populated `LinkedList` -- every caller below always populates at least one entry).
+    /// The quick-update path is only ever reachable when `replaced_components[0]` is a genuine
+    /// defined component already present in [`components`](StructureDataType::components) (a
+    /// synthesized undefined-filler placeholder's data type is always the [`UndefinedFillerDataType`]
+    /// stand-in, which trips the `oldDt != DEFAULT` check below and forces the full path) -- its
+    /// exact list slot is relocated by ordinal (stable at this point, since nothing has been
+    /// mutated yet) rather than threaded through as a separate index parameter, since Java relies on
+    /// `oldComponent` being the very same object reference stored in `components`.
+    ///
+    /// # Errors
+    /// Returns `Err` if the quick-update path's target ordinal cannot be relocated in
+    /// [`components`](StructureDataType::components) (should be unreachable, see above), or
+    /// whatever [`structure_data_type_replace_components`] itself can return.
+    fn structure_data_type_do_component_replacement(
+        &mut self,
+        replaced_components: &[DataTypeComponentImpl],
+        offset: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        field_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Option<DataTypeComponentImpl>, String>
+    where
+        Self: Sized,
+    {
+        let old_component = &replaced_components[0];
+        let old_dt = old_component.get_data_type();
+
+        let quick_update = replaced_components.len() == 1
+            && !old_dt.is_default_data_type()
+            && !data_type.is_default_data_type()
+            && length == old_component.get_length()
+            && offset == old_component.get_offset()
+            && (!self.is_packing_enabled() || data_type.get_alignment() == old_dt.get_alignment());
+
+        if quick_update {
+            let target_ordinal = old_component.get_ordinal();
+            let idx = self
+                .components()
+                .binary_search_by(|dtc| compare_component_to_ordinal(dtc, target_ordinal))
+                .map_err(|_| {
+                    "AssertException: quick-update target component not found".to_string()
+                })?;
+            self.components_mut()[idx].update_special(field_name, data_type, comment);
+            return Ok(Some(self.components()[idx].snapshot()));
+        }
+
+        let new_component = self.structure_data_type_replace_components(
+            replaced_components,
+            data_type,
+            offset,
+            length,
+            field_name,
+            comment,
+        )?;
+
+        self.structure_data_type_repack(false);
+        // notifySizeChanged(): no-op, see module docs.
+
+        Ok(new_component)
+    }
+
+    /// Port of `StructureDataType.replace(int, DataType, int, String, String)` (the public 3-arg
+    /// `replace(int, DataType, int)` overload is just this with `None`/`None` names -- a concrete
+    /// `impl Structure for ...` wires both the same way [`Structure::replace`]'s own default
+    /// documents). Replaces the defined or synthesized-undefined component at `ordinal` with a new
+    /// component of `data_type`, gathering every bit-field that overlaps the replaced component's
+    /// byte range (case 3 below) so the whole overlapping run is replaced atomically, matching
+    /// Java's `LinkedList`-based `replacedComponents` sequence exactly.
+    ///
+    /// # Errors
+    /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`), a
+    /// zero-length component would be replaced with a non-zero-length one outside a packed
+    /// structure, a positive length cannot be determined for `data_type`, `data_type` would create
+    /// a cyclic composite (mirrors `DataTypeDependencyException`), or there is not enough undefined
+    /// space to fit the replacement (all three mirror `IllegalArgumentException`).
+    fn structure_data_type_replace(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        if ordinal < 0 || ordinal >= self.stored_num_components() {
+            return Err(format!(
+                "IndexOutOfBoundsException: ordinal {ordinal} out of bounds"
+            ));
+        }
+
+        let data_type = self.composite_impl_validate_data_type(data_type)?;
+        // dataType.clone(dataMgr): skipped, see module docs.
+        self.structure_data_type_check_ancestry(data_type.as_ref())?;
+
+        let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
+        let length = self.composite_impl_preferred_component_length_default(
+            data_type.as_ref(),
+            dynamic_specifiable,
+            length,
+        )?;
+
+        let is_packed = self.is_packing_enabled();
+        let index_search = if is_packed {
+            Ok(ordinal as usize)
+        } else {
+            self.components()
+                .binary_search_by(|dtc| compare_component_to_ordinal(dtc, ordinal))
+        };
+
+        let mut replaced_components: Vec<DataTypeComponentImpl> = Vec::new();
+        let offset;
+
+        match index_search {
+            Ok(idx) => {
+                let orig_dtc = self.components()[idx].snapshot();
+                offset = orig_dtc.get_offset();
+
+                if is_packed || length == 0 {
+                    // case 1: packed structure or zero-length replacement - do 1-for-1 replacement
+                    replaced_components.push(orig_dtc);
+                } else if orig_dtc.get_length() == 0 {
+                    // case 2: replaced component is zero-length (like-for-like replacement handled
+                    // by case 1 above)
+                    return Err(
+                        "IllegalArgumentException: Zero-length component may only be replaced with another zero-length component"
+                            .to_string(),
+                    );
+                } else if orig_dtc.is_bit_field_component() {
+                    // case 3: replacing bit-field (must replace all bit-fields which overlap)
+                    let min_offset = orig_dtc.get_offset();
+                    let max_offset = orig_dtc.get_end_offset();
+                    replaced_components.push(orig_dtc);
+
+                    // consume bit-field overlaps before
+                    let mut i = idx as i32 - 1;
+                    while i >= 0 {
+                        let cand = self.components()[i as usize].snapshot();
+                        if cand.get_length() == 0 || !cand.contains_offset(min_offset) {
+                            break;
+                        }
+                        replaced_components.insert(0, cand);
+                        i -= 1;
+                    }
+
+                    // consume bit-field overlaps after
+                    let mut i = idx + 1;
+                    while i < self.components().len() {
+                        let cand = self.components()[i].snapshot();
+                        if cand.get_length() == 0 || !cand.contains_offset(max_offset) {
+                            break;
+                        }
+                        replaced_components.push(cand);
+                        i += 1;
+                    }
+                } else {
+                    // case 4: sized component replacement - do 1-for-1 replacement
+                    replaced_components.push(orig_dtc);
+                }
+            }
+            Err(insert_at) => {
+                // case 5: undefined component replaced (non-packed only)
+                let mut off = ordinal;
+                if insert_at > 0 {
+                    let dtc = &self.components()[insert_at - 1];
+                    off = dtc.get_end_offset() + ordinal - dtc.get_ordinal();
+                    if dtc.get_length() == 0 {
+                        off -= 1;
+                    }
+                }
+                offset = off;
+                let orig_dtc = DataTypeComponentImpl::new(
+                    undefined_filler_data_type(),
+                    None,
+                    1,
+                    ordinal,
+                    offset,
+                    None,
+                    None,
+                );
+                if data_type.is_default_data_type() {
+                    return Ok(orig_dtc); // no change
+                }
+                replaced_components.push(orig_dtc);
+            }
+        }
+
+        let replace_component = self.structure_data_type_do_component_replacement(
+            &replaced_components,
+            offset,
+            data_type,
+            length,
+            component_name,
+            comment,
+        )?;
+
+        match replace_component {
+            Some(c) => Ok(c),
+            None => self.structure_data_type_get_component(ordinal),
+        }
+    }
+
+    /// Port of `StructureDataType.replaceAtOffset(int, DataType, int, String, String)`. Replaces
+    /// every defined component containing `offset` (or, for a packed structure with no component
+    /// there, inserts instead -- cases 4/1 below early-return through
+    /// [`structure_data_type_insert`] exactly as Java's `insert(...)` calls do) with a new
+    /// component of `data_type`.
+    ///
+    /// Unlike [`structure_data_type_replace`], the preferred-length computation happens *after*
+    /// the component search (matching Java's method body order exactly), so the early-return
+    /// `insert` calls below receive the raw, caller-supplied `length` -- [`structure_data_type_insert`]
+    /// computes its own preferred length internally anyway.
+    ///
+    /// # Errors
+    /// Returns `Err` if `offset` is negative or beyond the end of the structure, a positive length
+    /// cannot be determined for `data_type`, `data_type` would create a cyclic composite (mirrors
+    /// `DataTypeDependencyException`), or there is not enough undefined space to fit the
+    /// replacement (all mirror `IllegalArgumentException`).
+    fn structure_data_type_replace_at_offset(
+        &mut self,
+        offset: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<DataTypeComponentImpl, String>
+    where
+        Self: Sized,
+    {
+        if offset < 0 {
+            return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
+        }
+        if offset >= self.stored_struct_length() {
+            return Err(format!(
+                "IllegalArgumentException: Offset {offset} is beyond end of structure ({}).",
+                self.stored_struct_length()
+            ));
+        }
+
+        let data_type = self.composite_impl_validate_data_type(data_type)?;
+        // dataType.clone(dataMgr): skipped, see module docs.
+        self.structure_data_type_check_ancestry(data_type.as_ref())?;
+
+        let mut replaced_components: Vec<DataTypeComponentImpl> = Vec::new();
+
+        let search = self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_offset(dtc, offset));
+
+        match search {
+            Ok(found) => {
+                let index = self
+                    .structure_data_type_advance_to_last_component_containing_offset(found as i32, offset);
+                let orig_dtc = self.components()[index as usize].snapshot();
+
+                if orig_dtc.get_length() == 0 {
+                    // case 1: only defined component(s) at offset are zero-length
+                    if self.is_packing_enabled() {
+                        // if packed: insert after zero-length component
+                        return self.structure_data_type_insert(
+                            index + 1,
+                            data_type,
+                            length,
+                            component_name,
+                            comment,
+                        );
+                    }
+                    // if non-packed: replace undefined component which immediately follows the
+                    // zero-length component
+                    replaced_components.push(DataTypeComponentImpl::new(
+                        undefined_filler_data_type(),
+                        None,
+                        1,
+                        orig_dtc.get_ordinal() + 1,
+                        offset,
+                        None,
+                        None,
+                    ));
+                } else if orig_dtc.is_bit_field_component() {
+                    // case 2: sized component at offset is bit-field (must replace all bit-fields
+                    // which contain offset)
+                    replaced_components.push(orig_dtc);
+                    let mut i = index - 1;
+                    while i >= 0 {
+                        let cand = self.components()[i as usize].snapshot();
+                        if cand.get_length() == 0 || !cand.contains_offset(offset) {
+                            break;
+                        }
+                        replaced_components.insert(0, cand);
+                        i -= 1;
+                    }
+                } else {
+                    // case 3: normal replacement of sized component
+                    replaced_components.push(orig_dtc);
+                }
+            }
+            Err(insert_at) => {
+                // defined component not found
+                if self.is_packing_enabled() {
+                    // case 4: if replacing padding for packed struction perform insert at correct
+                    // ordinal
+                    return self.structure_data_type_insert(
+                        insert_at as i32,
+                        data_type,
+                        length,
+                        component_name,
+                        comment,
+                    );
+                }
+
+                // case 5: replace undefined component at offset - compute undefined component to
+                // be replaced
+                let mut ordinal = offset;
+                if insert_at > 0 {
+                    let dtc = &self.components()[insert_at - 1];
+                    ordinal = dtc.get_ordinal() + offset - dtc.get_end_offset();
+                }
+                let orig_dtc = DataTypeComponentImpl::new(
+                    undefined_filler_data_type(),
+                    None,
+                    1,
+                    ordinal,
+                    offset,
+                    None,
+                    None,
+                );
+                if data_type.is_default_data_type() {
+                    return Ok(orig_dtc); // no change
+                }
+                replaced_components.push(orig_dtc);
+            }
+        }
+
+        let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
+        let length = self.composite_impl_preferred_component_length_default(
+            data_type.as_ref(),
+            dynamic_specifiable,
+            length,
+        )?;
+
+        let replace_component = self.structure_data_type_do_component_replacement(
+            &replaced_components,
+            offset,
+            data_type,
+            length,
+            component_name,
+            comment,
+        )?;
+
+        match replace_component {
+            Some(c) => Ok(c),
+            None => self.structure_data_type_get_component_containing(offset).ok_or_else(|| {
+                "AssertException: no component containing offset after replacement".to_string()
+            }),
+        }
+    }
+
+    /// Port of the private `StructureDataType.checkUndefinedSpaceAvailabilityAfter(int, int,
+    /// DataType, int)`: verify (and, where the replaced run reaches the last defined component,
+    /// grow the structure to make) enough trailing undefined byte space for a
+    /// [`structure_data_type_replace_components`] call.
+    ///
+    /// # Errors
+    /// Returns `Err` if there is not enough undefined space and the replaced run does not reach
+    /// the last defined component (mirrors `IllegalArgumentException`).
+    fn structure_data_type_check_undefined_space_availability_after(
+        &mut self,
+        last_ordinal_replaced_or_updated: i32,
+        bytes_needed: i32,
+        new_data_type: &dyn DataType,
+        offset: i32,
+    ) -> Result<(), String>
+    where
+        Self: Sized,
+    {
+        if bytes_needed <= 0 {
+            return Ok(());
+        }
+        let bytes_available =
+            self.structure_data_type_get_num_undefined_bytes(last_ordinal_replaced_or_updated + 1);
+        if bytes_available < bytes_needed {
+            if last_ordinal_replaced_or_updated == self.structure_data_type_get_last_defined_component_ordinal() {
+                self.structure_data_type_grow_structure(bytes_needed - bytes_available)?;
+            } else {
+                return Err(format!(
+                    "IllegalArgumentException: Not enough undefined bytes to fit {} in structure {} at offset 0x{:x}. It needs {} more byte(s) to be able to fit.",
+                    new_data_type.get_path_name(),
+                    self.get_path_name(),
+                    offset,
+                    bytes_needed - bytes_available
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Port of the private `StructureDataType.replaceComponents(LinkedList<DataTypeComponentImpl>,
+    /// DataType, int, int, String, String)`: replace an ordered, adjacent run of components
+    /// (`orig_components`) with a single new component (or, if `data_type` is the
+    /// [`UndefinedFillerDataType`] `DataType.DEFAULT` stand-in, perform a clear-only operation with
+    /// no replacement component). For a non-packed structure, only the replaced run's own defined
+    /// list entries are removed/inserted -- every *other* defined component's absolute byte offset
+    /// is left untouched, and only its ordinal shifts (by `deltaOrdinal`) to reflect how many
+    /// implicit undefined-byte ordinals now separate it from its neighbor; this mirrors Java's
+    /// `shiftOffsets(index + 1, deltaOrdinal, 0)` call (`deltaOffset` is always `0` here).
+    ///
+    /// # Errors
+    /// Returns `Err` if `new_offset` falls outside `orig_components`' bounds, `orig_components`
+    /// contains an undefined component alongside others or non-sequential ordinals (both mirror
+    /// `AssertException`), the deleted run does not match `orig_components` ordinal-for-ordinal
+    /// (mirrors `AssertException`), or there is not enough undefined space to fit the replacement
+    /// (mirrors `IllegalArgumentException`, via
+    /// [`structure_data_type_check_undefined_space_availability_after`]).
+    fn structure_data_type_replace_components(
+        &mut self,
+        orig_components: &[DataTypeComponentImpl],
+        data_type: Box<dyn DataType>,
+        new_offset: i32,
+        length: i32,
+        field_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Option<DataTypeComponentImpl>, String>
+    where
+        Self: Sized,
+    {
+        let clear_only = data_type.is_default_data_type();
+        let length = if clear_only { 0 } else { length };
+
+        let orig_first = &orig_components[0];
+        let orig_last = &orig_components[orig_components.len() - 1];
+        let orig_first_ordinal = orig_first.get_ordinal();
+        let orig_last_ordinal = orig_last.get_ordinal();
+        let min_replaced_offset = orig_first.get_offset();
+        let max_replaced_offset = orig_last.get_end_offset();
+
+        // Perform origComponents checks
+        if new_offset < min_replaced_offset || new_offset > max_replaced_offset {
+            return Err("AssertException: newOffset not contained within origComponents".to_string());
+        }
+        if orig_components.len() > 1 {
+            let mut check_ordinal = orig_first_ordinal;
+            for dtc in orig_components {
+                if dtc.is_undefined() {
+                    return Err(
+                        "AssertException: undefined component within multi-component sequence".to_string(),
+                    );
+                }
+                if dtc.get_ordinal() != check_ordinal {
+                    return Err("AssertException: non-sequential components specified".to_string());
+                }
+                check_ordinal += 1;
+            }
+        }
+
+        let leading_unused_bytes = new_offset - min_replaced_offset;
+        let is_packed = self.is_packing_enabled();
+        let mut new_ordinal = orig_first_ordinal;
+        if !is_packed {
+            new_ordinal += leading_unused_bytes; // leading unused bytes will become undefined components
+        }
+
+        // compute space freed by component removal
+        let mut orig_length = 0;
+        if orig_last.get_length() != 0 {
+            orig_length = max_replaced_offset - min_replaced_offset + 1;
+        }
+
+        if !clear_only && !is_packed {
+            let bytes_needed = length - orig_length + leading_unused_bytes;
+            self.structure_data_type_check_undefined_space_availability_after(
+                orig_last_ordinal,
+                bytes_needed,
+                data_type.as_ref(),
+                new_offset,
+            )?;
+        }
+
+        // determine defined component list insertion point, remove old components
+        // and insert new component in list
+        let raw_index: Result<usize, usize> = if is_packed {
+            Ok(new_ordinal as usize)
+        } else {
+            self.components()
+                .binary_search_by(|dtc| compare_component_to_ordinal(dtc, orig_first_ordinal))
+        };
+
+        let index = match raw_index {
+            Ok(idx) => {
+                for orig_dtc in orig_components {
+                    let removed = self.structure_data_type_do_delete(idx);
+                    if removed.get_ordinal() != orig_dtc.get_ordinal() {
+                        return Err("AssertException: component replacement mismatch".to_string());
+                    }
+                }
+                idx
+            }
+            Err(insert_at) => insert_at, // undefined component replacement
+        };
+
+        let mut new_dtc = None;
+        if !clear_only {
+            // insert new component
+            let component = DataTypeComponentImpl::new(
+                data_type,
+                None,
+                length,
+                new_ordinal,
+                new_offset,
+                field_name,
+                comment,
+            );
+            self.components_mut().insert(index, component);
+            new_dtc = Some(self.components()[index].snapshot());
+            // dataType.addParent(this): skipped, see module docs.
+        }
+
+        // adjust ordinals of trailing components - defer if packing is enabled
+        if !is_packed {
+            let delta_ordinal = -(orig_components.len() as i32) + orig_length - length;
+            self.structure_data_type_shift_offsets(index + 1, delta_ordinal, 0);
+        }
+        Ok(new_dtc)
+    }
+
+    /// Port of the private `StructureDataType.getLastDefinedComponentOrdinal()`.
+    fn structure_data_type_get_last_defined_component_ordinal(&self) -> i32 {
+        match self.components().last() {
+            None => 0,
+            Some(dtc) => dtc.get_ordinal(),
+        }
+    }
+
+    /// Port of the protected `StructureDataType.getNumUndefinedBytes(int)`: the number of
+    /// contiguous undefined bytes beginning at the component ordinal `index`.
+    fn structure_data_type_get_num_undefined_bytes(&self, index: i32) -> i32 {
+        if index >= self.stored_num_components() {
+            return 0;
+        }
+        match self
+            .components()
+            .binary_search_by(|dtc| compare_component_to_ordinal(dtc, index))
+        {
+            Ok(_) => 0,
+            Err(insert_at) => {
+                if insert_at >= self.components().len() {
+                    return self.stored_num_components() - index;
+                }
+                self.components()[insert_at].get_ordinal() - index
+            }
+        }
+    }
+
     /// Port of the private `StructureDataType.getAvailableComponentSpace(int)`: the available
     /// space for an existing defined component (identified by its index into
     /// [`components`](StructureDataType::components), *not* its ordinal) in relation to the next
@@ -3095,9 +3657,39 @@ impl Structure for StructureDataTypeImpl {
         self.structure_data_type_set_length(length)
     }
 
-    // `replace`/`replace_with_name`/`replace_at_offset` are intentionally left at their
-    // placeholder defaults -- see the module docs' "explicitly and intentionally not yet ported"
-    // list; `Structure.replace(...)`'s real Java algorithm was never ported.
+    fn replace(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.structure_data_type_replace(ordinal, data_type, length, None, None)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
+
+    fn replace_with_name(
+        &mut self,
+        ordinal: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.structure_data_type_replace(ordinal, data_type, length, component_name, comment)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
+
+    fn replace_at_offset(
+        &mut self,
+        offset: i32,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+    ) -> Result<Box<dyn DataTypeComponent>, String> {
+        self.structure_data_type_replace_at_offset(offset, data_type, length, component_name, comment)
+            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+    }
 }
 
 impl StructureInternal for StructureDataTypeImpl {}
@@ -4569,6 +5161,264 @@ mod tests {
         let bitfield = stored.as_bit_field_data_type().expect("still a bitfield");
         assert_eq!(bitfield.get_base_data_type().get_name(), "long");
         assert_eq!(bitfield.get_declared_bit_size(), 5);
+    }
+
+    // --------------------------------------------------------------------------------------
+    // `replace`/`replaceAtOffset`: ported from `StructureDataType.replace`/`.replaceAtOffset`'s
+    // real Java algorithm. Several of these are direct Rust ports of the verified Java JUnit
+    // fixtures in `StructureDBTest` (`testReplace1`/`testReplace2`/`testReplace3`/
+    // `testReplaceFailure`/`testReplaceAt`), reusing that file's exact same non-packed
+    // byte/word/dword/byte fixture (offsets 0/1/3/7, lengths 1/2/4/1, total length 8) so the
+    // expected final ordinals/offsets below are cross-checked against real Ghidra behavior
+    // rather than hand-derived.
+    // --------------------------------------------------------------------------------------
+
+    /// Matches `StructureDBTest.setUp()`'s fixture: four real (non-packed) components with no
+    /// gaps -- offsets 0/1/3/7, lengths 1/2/4/1, total length 8.
+    fn byte_word_dword_byte_struct() -> StructureDataTypeImpl {
+        let mut s = StructureDataTypeImpl::new("Test", 0);
+        s.structure_data_type_add(dt("byte1", 1), -1, Some("field1".to_string()), None)
+            .unwrap();
+        s.structure_data_type_add(dt("word", 2), -1, None, None).unwrap();
+        s.structure_data_type_add(dt("dword", 4), -1, Some("field3".to_string()), None)
+            .unwrap();
+        s.structure_data_type_add(dt("byte4", 1), -1, Some("field4".to_string()), None)
+            .unwrap();
+        s
+    }
+
+    #[test]
+    fn replace_same_size_quick_updates_in_place() {
+        // Port of `StructureDBTest.testReplace2` ("same size").
+        let mut s = byte_word_dword_byte_struct();
+        let replaced = s
+            .structure_data_type_replace(0, dt("char", 1), 1, None, None)
+            .unwrap();
+        assert_eq!(replaced.get_data_type().get_name(), "char");
+        assert_eq!(s.stored_struct_length(), 8);
+        assert_eq!(s.structure_data_type_get_num_components(), 4);
+        // Every other component is untouched by an in-place quick update.
+        assert_eq!(s.components()[1].get_offset(), 1);
+        assert_eq!(s.components()[1].get_ordinal(), 1);
+        assert_eq!(s.components()[1].get_data_type().get_name(), "word");
+    }
+
+    #[test]
+    fn replace_smaller_opens_undefined_gap_and_shifts_trailing_ordinals() {
+        // Port of `StructureDBTest.testReplace3` ("smaller").
+        let mut s = byte_word_dword_byte_struct();
+        let replaced = s
+            .structure_data_type_replace(1, dt("char", 1), 1, None, None)
+            .unwrap();
+        assert_eq!(replaced.get_data_type().get_name(), "char");
+        assert_eq!(replaced.get_offset(), 1);
+        assert_eq!(replaced.get_ordinal(), 1);
+
+        assert_eq!(s.stored_struct_length(), 8);
+        // Total ordinal count grows by one (the byte freed by the 2->1 byte shrink becomes a
+        // new undefined ordinal); the defined-component count itself is unchanged (still 4 real
+        // entries -- this is a like-for-like swap, not a removal).
+        assert_eq!(s.structure_data_type_get_num_components(), 5);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 4);
+        assert_eq!(s.components()[2].get_data_type().get_name(), "dword");
+        assert_eq!(s.components()[2].get_offset(), 3); // unmoved: non-packed offsets never shift
+        assert_eq!(s.components()[2].get_ordinal(), 3); // shifted from 2 by the newly-opened gap
+    }
+
+    #[test]
+    fn replace_fails_when_not_enough_undefined_space_and_not_last_component() {
+        // Port of `StructureDBTest.testReplaceFailure` ("bigger, no space below").
+        let mut s = byte_word_dword_byte_struct();
+        let err = match s.structure_data_type_replace(0, dt("qword", 8), 8, None, None) {
+            Err(e) => e,
+            Ok(_) => panic!("expected an IllegalArgumentException-style error"),
+        };
+        assert!(err.contains("Not enough undefined bytes"));
+        // A failed replace must leave the structure untouched.
+        assert_eq!(s.stored_struct_length(), 8);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 4);
+        assert_eq!(s.components()[0].get_data_type().get_name(), "byte1");
+    }
+
+    #[test]
+    fn replace_growing_into_available_trailing_undefined_space_fits_exactly() {
+        let mut s = StructureDataTypeImpl::new("Foo", 4); // 4 bytes, entirely undefined
+        let dtc = s
+            .structure_data_type_replace(0, dt("small", 1), 1, Some("a".to_string()), None)
+            .unwrap();
+        assert_eq!(dtc.get_offset(), 0);
+        assert_eq!(s.stored_struct_length(), 4);
+        assert_eq!(s.stored_num_components(), 4); // 1 defined + 3 undefined filler
+
+        // Growing "small" (1 byte) to 4 bytes exactly consumes the 3 remaining undefined bytes
+        // -- no structure growth needed, since it is the last (only) defined component.
+        let dtc2 = s
+            .structure_data_type_replace(0, dt("wide", 4), 4, Some("a2".to_string()), None)
+            .unwrap();
+        assert_eq!(dtc2.get_offset(), 0);
+        assert_eq!(dtc2.get_length(), 4);
+        assert_eq!(s.stored_struct_length(), 4); // fit entirely within existing space
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 1);
+        assert_eq!(s.stored_num_components(), 1); // no leftover undefined bytes
+    }
+
+    #[test]
+    fn replace_growing_beyond_available_space_grows_the_structure() {
+        let mut s = StructureDataTypeImpl::new("Foo", 4); // 4 bytes, entirely undefined
+        s.structure_data_type_replace(0, dt("small", 1), 1, Some("a".to_string()), None)
+            .unwrap();
+        assert_eq!(s.stored_struct_length(), 4);
+
+        // Growing "small" (1 byte, the last/only defined component) to 5 bytes needs one more
+        // byte than the 3 remaining undefined bytes provide, so the structure itself must grow
+        // (exercising `checkUndefinedSpaceAvailabilityAfter`'s `growStructure` call).
+        let dtc = s
+            .structure_data_type_replace(0, dt("wide", 5), 5, Some("a2".to_string()), None)
+            .unwrap();
+        assert_eq!(dtc.get_offset(), 0);
+        assert_eq!(dtc.get_length(), 5);
+        assert_eq!(s.stored_struct_length(), 5); // grew by one byte
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 1);
+        assert_eq!(s.stored_num_components(), 1);
+    }
+
+    #[test]
+    fn replace_consolidates_overlapping_bitfields_sharing_a_byte() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        // Two 4-bit fields packed into the same single byte (offset 0), occupying disjoint bit
+        // ranges (bits 0-3 and 4-7) but the same byte-level footprint.
+        s.structure_data_type_insert_bit_field_at(0, 1, 0, int_data_type("byte", 1), 4, Some("lo".to_string()), None)
+            .unwrap();
+        s.structure_data_type_insert_bit_field_at(0, 1, 4, int_data_type("byte", 1), 4, Some("hi".to_string()), None)
+            .unwrap();
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+        assert_eq!(s.stored_struct_length(), 1);
+
+        // Replacing either bitfield must consume both: `StructureDataType.replace`'s bit-field
+        // overlap check (case 3) operates at byte granularity via `containsOffset`, matching
+        // Java exactly, so both bit-fields sharing this byte are replaced atomically.
+        let replaced = s
+            .structure_data_type_replace(0, dt("merged", 1), 1, Some("merged".to_string()), None)
+            .unwrap();
+        assert_eq!(replaced.get_data_type().get_name(), "merged");
+        assert_eq!(replaced.get_offset(), 0);
+        assert!(!replaced.is_bit_field_component());
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 1);
+        assert_eq!(s.stored_struct_length(), 1);
+        assert_eq!(s.stored_num_components(), 1);
+        assert!(!s.components()[0].is_bit_field_component());
+    }
+
+    #[test]
+    fn replace_in_packed_structure_quick_updates_when_length_and_alignment_match() {
+        let mut s = StructureDataTypeImpl::new("Packed", 0);
+        s.set_packing_enabled(true);
+        s.structure_data_type_add(dt("byte1", 1), -1, Some("a".to_string()), None).unwrap();
+        s.structure_data_type_add(dt("byte2", 1), -1, Some("b".to_string()), None).unwrap();
+
+        // Same length (1) and same (default) alignment as the replaced component triggers the
+        // quick-update fast path even though packing is enabled (`doComponentReplacement`'s
+        // `dataType.getAlignment() == oldDt.getAlignment()` check).
+        let replaced = s
+            .structure_data_type_replace(0, dt("replacement", 1), 1, Some("a2".to_string()), None)
+            .unwrap();
+        assert_eq!(replaced.get_data_type().get_name(), "replacement");
+        assert_eq!(replaced.get_ordinal(), 0);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+        assert_eq!(s.components()[0].get_data_type().get_name(), "replacement");
+        // Untouched by the quick update (no repack performed on this path).
+        assert_eq!(s.components()[1].get_data_type().get_name(), "byte2");
+        assert_eq!(s.components()[1].get_ordinal(), 1);
+    }
+
+    #[test]
+    fn replace_in_packed_structure_falls_back_to_full_replacement_when_size_differs() {
+        let mut s = StructureDataTypeImpl::new("Packed", 0);
+        s.set_packing_enabled(true);
+        s.structure_data_type_add(dt("byte1", 1), -1, Some("a".to_string()), None).unwrap();
+        s.structure_data_type_add(dt("byte2", 1), -1, Some("b".to_string()), None).unwrap();
+
+        let replaced = s
+            .structure_data_type_replace(0, dt("replacement", 4), 4, Some("a2".to_string()), None)
+            .unwrap();
+        assert_eq!(replaced.get_data_type().get_name(), "replacement");
+        // Packed structures always do a direct 1-for-1 component swap regardless of size change
+        // -- undefined-space bookkeeping is exclusive to non-packed structures.
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 2);
+        assert_eq!(s.components()[0].get_data_type().get_name(), "replacement");
+        assert_eq!(s.components()[1].get_data_type().get_name(), "byte2");
+    }
+
+    #[test]
+    fn replace_at_offset_matches_verified_java_fixture() {
+        // Port of `StructureDBTest.testReplaceAt`.
+        let mut s = byte_word_dword_byte_struct();
+        assert_eq!(s.stored_struct_length(), 8);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 4);
+
+        s.structure_data_type_replace_at_offset(0, undefined_filler_data_type(), -1, Some("a".to_string()), None)
+            .unwrap();
+        s.structure_data_type_replace_at_offset(1, dt("byteb", 1), -1, Some("b".to_string()), None)
+            .unwrap();
+        s.structure_data_type_replace_at_offset(2, dt("bytec", 1), -1, Some("c".to_string()), None)
+            .unwrap();
+        s.structure_data_type_replace_at_offset(4, dt("chard", 1), -1, Some("d".to_string()), None)
+            .unwrap();
+
+        assert_eq!(s.stored_struct_length(), 8);
+        assert_eq!(s.structure_data_type_get_num_defined_components(), 4);
+
+        assert_eq!(s.components()[0].get_offset(), 1);
+        assert_eq!(s.components()[0].get_ordinal(), 1);
+        assert_eq!(s.components()[0].get_data_type().get_name(), "byteb");
+
+        assert_eq!(s.components()[1].get_offset(), 2);
+        assert_eq!(s.components()[1].get_ordinal(), 2);
+        assert_eq!(s.components()[1].get_data_type().get_name(), "bytec");
+
+        assert_eq!(s.components()[2].get_offset(), 4);
+        assert_eq!(s.components()[2].get_ordinal(), 4);
+        assert_eq!(s.components()[2].get_data_type().get_name(), "chard");
+
+        assert_eq!(s.components()[3].get_offset(), 7);
+        assert_eq!(s.components()[3].get_ordinal(), 7);
+        assert_eq!(s.components()[3].get_data_type().get_name(), "byte4");
+    }
+
+    #[test]
+    fn replace_at_offset_rejects_negative_and_out_of_bounds_offsets() {
+        let mut s = byte_word_dword_byte_struct();
+        match s.structure_data_type_replace_at_offset(-1, dt("x", 1), 1, None, None) {
+            Err(e) => assert!(e.contains("negative")),
+            Ok(_) => panic!("expected an error for a negative offset"),
+        }
+        match s.structure_data_type_replace_at_offset(8, dt("x", 1), 1, None, None) {
+            Err(e) => assert!(e.contains("beyond end")),
+            Ok(_) => panic!("expected an error for an out-of-bounds offset"),
+        }
+    }
+
+    #[test]
+    fn replace_and_replace_with_name_via_structure_trait_object() {
+        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        s.add(dt("int", 4)).expect("add int");
+        s.add(dt("short", 2)).expect("add short");
+
+        {
+            let structure: &mut dyn Structure = &mut s;
+            let replaced = structure
+                .replace_with_name(0, dt("uint", 4), 4, Some("f".to_string()), None)
+                .expect("replace_with_name ordinal 0");
+            assert_eq!(replaced.get_data_type().get_name(), "uint");
+            assert_eq!(replaced.get_field_name(), Some("f".to_string()));
+
+            let replaced_at = structure
+                .replace_at_offset(4, dt("ushort", 2), 2, Some("g".to_string()), None)
+                .expect("replace_at_offset offset 4");
+            assert_eq!(replaced_at.get_data_type().get_name(), "ushort");
+        }
+
+        assert_eq!(Composite::get_num_defined_components(&s), 2);
     }
 
     struct MockBuf;
