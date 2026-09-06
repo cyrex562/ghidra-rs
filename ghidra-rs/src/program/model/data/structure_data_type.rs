@@ -214,12 +214,65 @@
 //! shared value really is one. Both were added to its forwarded set (again a strict completeness
 //! fix, not a behavior change).
 //!
+//! ## `replace`/`replaceAtOffset` now real (2026-09, final gap closed)
+//!
+//! `replace(int, DataType, int[, String, String])` and `replaceAtOffset(int, DataType, int,
+//! String, String)` -- the one gap the rest of this trait's own doc comment used to flag as
+//! blocking `DONE` -- are now ported for real, as
+//! [`structure_data_type_replace`](StructureDataType::structure_data_type_replace)/
+//! [`structure_data_type_replace_at_offset`](StructureDataType::structure_data_type_replace_at_offset),
+//! wired into `StructureDataTypeImpl`'s `impl Structure` (`replace`/`replace_with_name`/
+//! `replace_at_offset`). Every private helper in Java's call graph is ported alongside them:
+//! [`structure_data_type_do_component_replacement`](StructureDataType::structure_data_type_do_component_replacement)
+//! (the "quick update" fast path -- mutate a single matching-length/offset/(packed-)alignment
+//! component in place via [`DataTypeComponentImpl::update_special`] rather than a full
+//! delete-and-reinsert),
+//! [`structure_data_type_replace_components`](StructureDataType::structure_data_type_replace_components)
+//! (the general sequence-replacement algorithm; Java's `LinkedList<DataTypeComponentImpl>`
+//! parameter becomes a plain `&[DataTypeComponentImpl]` slice of owned
+//! [`DataTypeComponentImpl::snapshot`]s here, since nothing below needs list-splicing, only
+//! ordered iteration and a `get(0)`/`getLast()`-equivalent),
+//! [`structure_data_type_check_undefined_space_availability_after`](StructureDataType::structure_data_type_check_undefined_space_availability_after),
+//! [`structure_data_type_get_num_undefined_bytes`](StructureDataType::structure_data_type_get_num_undefined_bytes),
+//! and
+//! [`structure_data_type_get_last_defined_component_ordinal`](StructureDataType::structure_data_type_get_last_defined_component_ordinal).
+//!
+//! A subtlety worth flagging for future readers: `replace_components`'s own `shiftOffsets`-based
+//! ordinal bookkeeping (`deltaOrdinal = -origComponents.size() + origLength - length`) is only
+//! ever an intermediate, sometimes-inexact adjustment for a non-packed structure -- verified by
+//! hand-tracing it against `StructureDBTest.testReplace3`'s real expected output, where the
+//! formula alone does not yet land on the right final ordinal. What actually guarantees
+//! correctness is that
+//! [`structure_data_type_do_component_replacement`](StructureDataType::structure_data_type_do_component_replacement)
+//! *always* calls [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)
+//! immediately afterward on its non-quick-update path, and a non-packed `repack` fully
+//! recomputes every ordinal and `numComponents` from scratch
+//! ([`structure_data_type_adjust_non_packed_components`](StructureDataType::structure_data_type_adjust_non_packed_components),
+//! already ported) by walking the actual post-mutation `components` list and counting real
+//! byte-offset gaps -- exactly mirroring Java's own `repack(false)` call at the same call site.
+//! This crate's tests below therefore assert final post-repack state (as the Java JUnit fixtures
+//! they are ported from do too), not the intermediate `shiftOffsets` result.
+//!
+//! Two more `PORT_MANIFEST`-relevant fixes fell out of writing the bit-field-overlap-consolidation
+//! test (case 3 of `replace`/case 2 of `replaceAtOffset`, which -- like Java's own `replace`/
+//! `replaceAtOffset` bit-field handling -- detects overlap at byte granularity via `containsOffset`,
+//! not bit granularity): [`crate::program::seam_stubs::SharedDataType`] (flagged twice already
+//! above for other forwarding gaps) was found a third time to not forward
+//! [`DataType::as_bit_field`] -- unlike the two fixes above, this one was a genuine *reachable*
+//! bug, not a completeness nicety: the private [`compare_component_to_bit_offset`] helper (already
+//! ported, used by `insertBitFieldAt`'s own bit-offset binary search) calls
+//! `dtc.get_data_type().as_bit_field()` on an *existing* component's data type, and
+//! `get_data_type()` always returns a `share_data_type`-wrapped handle; inserting a second
+//! bit-field adjacent to (or sharing a byte with) an already-inserted one therefore panicked
+//! before this fix. `as_bit_field` was added to `SharedDataType`'s forwarded set.
+//!
 //! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
 //! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
-//! is agreed):
-//!   - `replace`/`replaceAtOffset` are not ported: an intricate multi-case algorithm
-//!     (bit-field-overlap consolidation, "quick update" fast path, `LinkedList<DataTypeComponentImpl>`
-//!     sequence replacement) that was not reached this session.
+//! is agreed) -- a 2026-09 method-by-method re-read of the full 1958-line Java source against
+//! this file's current state, done specifically to decide whether `replace`/`replaceAtOffset`
+//! landing above was enough to flip the manifest, confirmed every item below is still real and
+//! accurate (none are stale), and found no *additional* gaps beyond them; the manifest row is
+//! therefore intentionally left `TODO` rather than `DONE`:
 //!   - Within `dataTypeDeleted`, the case where a *bitfield's* base type (rather than a plain
 //!     component's data type) is deleted -- which Java reverts to the base type's own primitive
 //!     integer type via `BitFieldDataType.getPrimitiveBaseDataType()` (walking through
