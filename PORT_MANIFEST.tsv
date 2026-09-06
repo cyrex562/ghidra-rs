@@ -13489,7 +13489,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerDBAdapterV0.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerDBAdapterV1.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerDBAdapterV2.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerTypedefInspector.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerTypedefInspector.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ProgramBasedDataTypeManagerDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ProgramDataTypeManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/SettingDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 

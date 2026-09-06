@@ -50,6 +50,7 @@ pub mod pointer_db_adapter;
 pub mod pointer_db_adapter_v0;
 pub mod pointer_db_adapter_v1;
 pub mod pointer_db_adapter_v2;
+pub mod pointer_typedef_inspector;
 pub mod setting_db;
 pub mod settings_cache;
 pub mod settings_db_adapter;
