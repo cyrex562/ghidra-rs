@@ -10,13 +10,15 @@
 //! taking `structure` and `components` as parameters rather than storing them as fields.
 //!
 //! `pack()` builds a private `AlignedComponentPacker` to do the actual bitfield/alignment
-//! arithmetic. That class is not yet ported (it depends on `BitFieldDataType` and
-//! `CompositeAlignmentHelper`, neither of which exist in the crate yet), so it is represented here
-//! by a minimal placeholder trait,
-//! [`seam_stubs::AlignedComponentPacker`](crate::program::seam_stubs::AlignedComponentPacker),
-//! exposing only the four members `pack()` actually calls. Since this trait cannot construct one
-//! itself, [`create_component_packer`](AlignedStructurePacker::create_component_packer) is left as
-//! a required method so a concrete implementor can supply one (the eventual real
+//! arithmetic. That class is now ported for real, as
+//! [`aligned_component_packer::AlignedComponentPacker`](crate::program::model::data::aligned_component_packer::AlignedComponentPacker),
+//! but this trait still talks to it only through the narrow
+//! [`seam_stubs::AlignedComponentPacker`](crate::program::seam_stubs::AlignedComponentPacker)
+//! seam trait (exposing the four members `pack()` actually calls, plus one Rust-specific addition
+//! -- see that trait's own doc comment) rather than depending on the concrete module directly, to
+//! avoid a dependency-direction cycle between the two files. Since this trait cannot construct a
+//! packer itself, [`create_component_packer`](AlignedStructurePacker::create_component_packer) is
+//! left as a required method so a concrete implementor can supply one (the real
 //! `AlignedComponentPacker` port, or a test double).
 //!
 //! `pack()` also calls the static utility `DataOrganizationImpl.getAlignedOffset(int, int)`.
@@ -120,6 +122,11 @@ pub trait AlignedStructurePacker {
             let is_last_component = index as i32 == last_index;
             packer.add_component(component.as_mut(), is_last_component);
         }
+
+        // Give the packer a chance to retroactively fix up any earlier component it couldn't
+        // reach during its own turn (see `AlignedComponentPacker::finalize_pending_updates`'s doc
+        // comment) before reading final packing results below.
+        packer.finalize_pending_updates(components);
 
         let default_alignment = packer.get_default_alignment();
         let mut length = packer.get_length();

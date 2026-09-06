@@ -111,12 +111,12 @@
 //!   [`DataTypeComponent::get_data_type`] must be answerable repeatedly from `&self`; no downcast
 //!   back to the concrete adapter is ever needed since every mutated field is read back out
 //!   through ordinary trait methods -- see [`PackableComponent`]'s own doc comment). **The wiring
-//!   is real, but its output quality depends entirely on whichever
-//!   [`AlignedStructurePacker::create_component_packer`] a concrete implementor supplies**: this
-//!   crate still has no production (bitfield-aware) `AlignedComponentPacker` port -- only test
-//!   doubles exist (here and in `aligned_structure_packer`'s own tests) -- so a real implementor
-//!   must currently supply a simplistic packer or wait on that separate port. Unlike Java, no
-//!   `structAlignment` field is cached/compared for the "changed" return value (see
+//!   is real, and (2026-09, continued) so is the packer**:
+//!   [`StructureDataTypeImpl::create_component_packer`] now returns the genuine, bitfield-aware
+//!   [`aligned_component_packer::AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)
+//!   port rather than the simplistic sequential `BasicComponentPacker` stand-in this doc comment
+//!   used to describe (deleted; its role is now filled for real). Unlike Java, no `structAlignment`
+//!   field is cached/compared for the "changed" return value (see
 //!   [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)'s own doc
 //!   comment for why this only matters for the no-op `notify` path).
 //! - **`addBitField`/`insertBitField`/`insertBitFieldAt` are now ported** as
@@ -301,6 +301,7 @@
 //!     here: nothing in this crate yet tracks a `StructureDataType` composite's own parents.
 
 use crate::docking::settings::settings::Settings;
+use crate::program::model::data::aligned_component_packer::AlignedComponentPacker as RealAlignedComponentPacker;
 use crate::program::model::data::aligned_structure_inspector::AlignedStructureInspector;
 use crate::program::model::data::aligned_structure_packer::AlignedStructurePacker;
 use crate::program::model::data::alignment_type::AlignmentType;
@@ -1443,10 +1444,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// NOTE: the quality of the computed layout depends entirely on whatever
     /// [`AlignedStructurePacker::create_component_packer`] a concrete `StructureDataType`
-    /// implementor supplies -- this crate has no production (bitfield-aware) `AlignedComponentPacker`
-    /// port yet (only test doubles), so a real implementor must currently either accept a
-    /// simplistic sequential packer or wait on that separate port. The wiring itself, though, is
-    /// real: once a faithful `AlignedComponentPacker` exists, this method needs no further changes.
+    /// implementor supplies; [`StructureDataTypeImpl`] (this crate's real, production
+    /// implementation) supplies the genuine, bitfield-aware
+    /// [`aligned_component_packer::AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)
+    /// port (2026-09).
     fn structure_data_type_pack(&mut self) -> bool
     where
         Self: Sized,
@@ -3115,39 +3116,6 @@ impl DataOrganization for DefaultDataOrganization {
     }
 }
 
-/// Simplistic, non-bitfield-aware stand-in for the real (not-yet-ported) `AlignedComponentPacker`
-/// algorithm: packs each component immediately after the previous one, aligned to its own length.
-/// Mirrors the identical test double already used by this module's and
-/// [`aligned_structure_packer`](super::aligned_structure_packer)'s tests, promoted here (rather
-/// than kept `#[cfg(test)]`-only) so [`StructureDataTypeImpl`]'s packing-enabled path has a real
-/// (if not bitfield-aware) packer to call -- see
-/// [`StructureDataType`]'s own module docs on why no production `AlignedComponentPacker` exists
-/// yet.
-struct BasicComponentPacker {
-    next_offset: i32,
-    max_length: i32,
-}
-
-impl AlignedComponentPacker for BasicComponentPacker {
-    fn add_component(&mut self, dtc: &mut dyn InternalDataTypeComponent, _is_last_component: bool) {
-        let length = dtc.get_length().max(1);
-        self.max_length = self.max_length.max(length);
-        let offset = crate::program::seam_stubs::get_aligned_offset(length, self.next_offset);
-        let component_length = dtc.get_length();
-        dtc.update(dtc.get_ordinal(), offset, component_length);
-        self.next_offset = offset + component_length;
-    }
-    fn get_default_alignment(&self) -> i32 {
-        self.max_length
-    }
-    fn get_length(&self) -> i32 {
-        self.next_offset
-    }
-    fn components_changed(&self) -> bool {
-        false
-    }
-}
-
 /// Port of `DataUtilities.isValidDataTypeName(String)`'s check as applied by the
 /// `GenericDataType` constructor chain (`StructureDataType`'s Java superclass), used by
 /// [`StructureDataTypeImpl::new_in_category`]. A local duplicate of
@@ -3183,9 +3151,9 @@ fn is_valid_structure_name(name: &str) -> bool {
 ///     [`DefaultDataOrganization`] rather than one derived from an associated `DataTypeManager`,
 ///     since `dataMgr` is not tracked at all (matching
 ///     [`EnumDataType`](super::enum_data_type::EnumDataType)'s identical simplification).
-///   - [`AlignedStructurePacker::create_component_packer`] returns a [`BasicComponentPacker`], a
-///     simplistic sequential (non-bitfield-aware) packer, since this crate has no production
-///     `AlignedComponentPacker` port yet.
+///   - [`AlignedStructurePacker::create_component_packer`] returns the real
+///     [`aligned_component_packer::AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)
+///     port (2026-09; previously a simplistic sequential, non-bitfield-aware stand-in).
 ///   - [`DataType::is_equivalent`]/[`DataType::replace_with`] are left at their generic
 ///     placeholder defaults (matching `MockStructureDataType`'s own precedent): both would need to
 ///     downcast an arbitrary `&dyn DataType` to `&dyn StructureDataType` specifically (not just
@@ -3870,10 +3838,10 @@ impl CompositeDataTypeImpl for StructureDataTypeImpl {
 impl AlignedStructurePacker for StructureDataTypeImpl {
     fn create_component_packer(
         &self,
-        _pack_value: i32,
-        _data_organization: &dyn DataOrganization,
+        pack_value: i32,
+        data_organization: &dyn DataOrganization,
     ) -> Box<dyn AlignedComponentPacker> {
-        Box::new(BasicComponentPacker { next_offset: 0, max_length: 1 })
+        Box::new(RealAlignedComponentPacker::new(pack_value, data_organization))
     }
 }
 
@@ -5092,7 +5060,7 @@ mod tests {
         s.set_packing_enabled(true);
         s.add(dt("int", 4)).expect("add int");
         s.add(dt("byte", 1)).expect("add byte");
-        // Must not panic reaching into `DefaultDataOrganization`/`BasicComponentPacker`.
+        // Must not panic reaching into `DefaultDataOrganization`/`AlignedComponentPacker`.
         let alignment = DataType::get_alignment(&s);
         assert!(alignment >= 1);
         assert!(s.is_packing_enabled());
@@ -5145,7 +5113,7 @@ mod tests {
         let mut s = StructureDataTypeImpl::new("Packed", 0);
         s.set_packing_enabled(true);
         s.add(dt("int", 4)).expect("add int");
-        // Must not panic reaching into `DefaultDataOrganization`/`BasicComponentPacker`, and must
+        // Must not panic reaching into `DefaultDataOrganization`/`AlignedComponentPacker`, and must
         // leave the structure in a consistent, still-packed state.
         s.structure_data_type_data_type_alignment_changed(dt("int", 4).as_ref());
         assert!(s.is_packing_enabled());

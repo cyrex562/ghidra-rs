@@ -2493,11 +2493,15 @@ pub trait GhidraLaunchable {
     fn launch(&mut self, layout: &dyn GhidraApplicationLayout, args: &[String]) -> io::Result<()>;
 }
 
-/// Placeholder for `ghidra.program.model.data.AlignedComponentPacker`, referenced by
-/// [`AlignedStructurePacker`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker)
-/// before the real class (and its bitfield/alignment packing algorithm) is ported. Exposes only
-/// the four members `AlignedStructurePacker.pack()` calls on its per-call packer instance; the
-/// constructor and all bitfield-packing internals stay out of scope until the real class lands.
+/// Seam trait standing in for `ghidra.program.model.data.AlignedComponentPacker`'s call surface,
+/// used by [`AlignedStructurePacker`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker)
+/// so its `pack_components` default method can drive any concrete packer implementation without
+/// depending on this crate's real
+/// [`aligned_component_packer::AlignedComponentPacker`](crate::program::model::data::aligned_component_packer::AlignedComponentPacker)
+/// port directly (avoiding a dependency-direction cycle between the two modules). Exposes the four
+/// members `AlignedStructurePacker.pack()` calls on its per-call packer instance, plus one
+/// Rust-specific addition ([`finalize_pending_updates`](Self::finalize_pending_updates)) that has
+/// no Java counterpart -- see its own doc comment for why.
 pub trait AlignedComponentPacker {
     /// Stands in for `AlignedComponentPacker.addComponent(InternalDataTypeComponent, boolean)`.
     fn add_component(
@@ -2505,6 +2509,27 @@ pub trait AlignedComponentPacker {
         dtc: &mut dyn crate::program::model::data::internal_data_type_component::InternalDataTypeComponent,
         is_last_component: bool,
     );
+
+    /// Gives a packer a final chance to retroactively fix up an *earlier* component's
+    /// ordinal/offset/length, given mutable access to the full component list.
+    ///
+    /// Has no Java counterpart: Java's `AlignedComponentPacker` holds a live `lastComponent`
+    /// object reference across `addComponent` calls, so when a zero-length bitfield's true final
+    /// offset can only be determined once the *next* component is seen (its alignment may exceed
+    /// the zero-length bitfield's own), Java simply mutates that still-held reference in place
+    /// (`adjustZeroLengthBitField`). This trait's `add_component` only ever hands a packer the
+    /// *current* component per call (no lifetime parameter ties a stored reference across calls),
+    /// so a real, bitfield-aware implementation instead records the intended write internally and
+    /// flushes it here, once
+    /// [`AlignedStructurePacker::pack_components`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker::pack_components)
+    /// hands back the full slice after its main loop. Defaulted to a no-op so every
+    /// non-bitfield-aware packer (every implementor before this method was added) keeps compiling
+    /// unchanged.
+    fn finalize_pending_updates(
+        &mut self,
+        _components: &mut [Box<dyn crate::program::model::data::internal_data_type_component::InternalDataTypeComponent>],
+    ) {
+    }
 
     /// Stands in for `AlignedComponentPacker.getDefaultAlignment()`.
     fn get_default_alignment(&self) -> i32;
