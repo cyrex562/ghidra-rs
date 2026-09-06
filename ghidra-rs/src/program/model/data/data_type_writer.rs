@@ -1,54 +1,46 @@
 //! Port of `ghidra.program.model.data.DataTypeWriter`.
 //!
-//! **Status: partial.** This 916-line Java class converts a set of data types into ANSI-C-like
-//! textual declarations. This file lands it in the incremental chunks called for by this port's
-//! process notes; see the running tally below for exactly what is real versus still missing.
+//! **Status: complete.** This 916-line Java class converts a set of data types into ANSI-C-like
+//! textual declarations. Every method in the Java source has a corresponding port here (checked
+//! method-by-method against `orig_src/.../DataTypeWriter.java` -- see the "Fidelity notes" section
+//! below for every place a deliberate deviation was necessary and why).
 //!
-//! ## Done
-//!   - The struct itself, its `new`/`with_annotator` constructors (mirroring the four Java
-//!     overloaded constructors, collapsed since Rust has no overloading), and the
-//!     `comment`/`is_integral` private helpers.
-//!   - [`CompositeNode`] (the private `DataTypeWriter.CompositeNode` inner class) and
+//! ## What's ported
+//!   - The struct itself, its `new`/`with_annotator`/`with_cpp_style_comments` constructors
+//!     (mirroring the four Java overloaded constructors, collapsed since Rust has no
+//!     overloading), and the `comment`/`isIntegral` private helpers.
+//!   - The public entry points: `write(TaskMonitor)` → [`DataTypeWriter::write_all_from_manager`],
+//!     `write(Category, TaskMonitor)` → [`DataTypeWriter::write_category`],
+//!     `write(DataType[]|List<DataType>, TaskMonitor[, boolean])` →
+//!     [`DataTypeWriter::write_many`]/[`DataTypeWriter::write_many_with_options`], and the
+//!     package-private `write(DataType, TaskMonitor[, boolean])` →
+//!     [`DataTypeWriter::write`]/[`DataTypeWriter::write_with_options`] (all renamed since Rust
+//!     has no overloading).
+//!   - The top-level dispatcher `doWrite` → [`DataTypeWriter::do_write`]: conflicting-name
+//!     detection (`resolved`/`resolvedTypeMap`) and the full switch over `Structure`/`Union`/
+//!     `Enum`/`TypeDef`/`Dynamic`/`BuiltInDataType`/`BitFieldDataType`/unrecognized.
+//!   - [`CompositeNode`] (the private `DataTypeWriter.CompositeNode` inner class),
 //!     [`DataTypeWriter::add_composite_to_dependency_graph`] (Java
-//!     `addCompositeToDependencyGraph`), which populate the
-//!     [`DeterministicDependencyGraph`](crate::util::graph::DeterministicDependencyGraph)`<CompositeNode>`
-//!     built in Part 1 of this same session so that a composite's member composites are ordered
-//!     before it.
-//!   - [`DataTypeWriter::write_built_in`] (Java `writeBuiltIn`), a thin call to the already-real
-//!     [`BuiltInDataType::get_c_type_declaration`] -- no new C-declaration formatting was written
-//!     for it, per this crate's existing precedent.
+//!     `addCompositeToDependencyGraph`), and the deferred-declaration machinery:
+//!     `deferWrite`/`writeDeferredDeclarations`/`writeDeferredCompositeDeclarations`.
+//!   - `writeCompositePreDeclaration`/`writeCompositeBody`/`writeComponent` (struct/union body
+//!     emission) and `getTypeDeclaration`/`getDataTypePrefix`/`getDynamicComponentString`
+//!     (per-field C declaration text, including array/pointer name mangling, bit-field suffixes,
+//!     and function-pointer fields).
+//!   - `writeTypeDef` (including the `isIntegral`-suppression and auto-typedef/
+//!     auto-pointer-typedef detection it guards) and its `getBaseArrayTypedefType` helper.
+//!   - `writeDynamicBuiltIn`, [`DataTypeWriter::write_built_in`] (Java `writeBuiltIn`, a thin call
+//!     to the already-real [`BuiltInDataType::get_c_type_declaration`] -- no new C-declaration
+//!     formatting was written for it, per this crate's existing precedent), and
+//!     [`DataTypeWriter::write_built_in_declarations`] (Java `writeBuiltInDeclarations`).
 //!   - [`DataTypeWriter::write_enum`] (Java `writeEnum`), including the `#define` shortcut for
 //!     single-value `define_`-prefixed enums.
-//!   - The small recursive traversal helpers `getBaseDataType`/`getArrayBaseType`/
-//!     `getPointerBaseDataType`/`getPointerDepth`/`getArrayDimensions`/`getDataTypePrefix`, ported
-//!     as private associated functions. These are exercised only from `#[cfg(test)]` so far (hence
-//!     each carries an `#[allow(dead_code)]`) -- their real callers, `getTypeDeclaration` and
-//!     `getFunctionPointerString`, are listed as not yet ported below.
+//!   - `getFunctionPointerString`/`getParameterListString` (function-pointer/parameter-list
+//!     text), and the small recursive traversal helpers `getBaseDataType`/`getArrayBaseType`/
+//!     `getPointerBaseDataType`/`getPointerDepth`/`getArrayDimensions` they and `getTypeDeclaration`
+//!     build on.
 //!
-//! ## Not yet ported (left for a follow-up session)
-//!   - The public `write(...)` entry points (`write(TaskMonitor)`, `write(Category, TaskMonitor)`,
-//!     `write(DataType[], TaskMonitor)`, `write(List<DataType>, ...)`) and the top-level dispatcher
-//!     `doWrite`/`write(DataType, TaskMonitor, boolean)` that switches on the runtime kind of a
-//!     `DataType` (`Structure`/`Union`/`Enum`/`TypeDef`/`BuiltInDataType`/`Dynamic`/
-//!     `BitFieldDataType`/unrecognized) and drives resolution bookkeeping (`resolved`,
-//!     `resolvedTypeMap`, conflicting-name detection).
-//!   - `writeDeferredDeclarations`/`writeDeferredCompositeDeclarations` (draining
-//!     `deferredCompositeInternalTypes` and popping `compositeDependencyGraph`).
-//!   - `writeCompositePreDeclaration`/`writeCompositeBody`/`writeComponent` (struct/union body
-//!     emission).
-//!   - `getTypeDeclaration`/`getDynamicComponentString` (per-field C declaration text, including
-//!     array/pointer name mangling and bit-field suffixes -- built on the already-ported
-//!     `getDataTypePrefix` above).
-//!   - `writeTypeDef` (including the `isIntegral`-suppression and auto-typedef/
-//!     auto-pointer-typedef detection it guards), `writeDynamicBuiltIn` (needs the top-level
-//!     `write` dispatch to recurse into the replacement base type), `writeBuiltInDeclarations`.
-//!   - `getFunctionPointerString`/`getParameterListString` (function-pointer/parameter-list text,
-//!     built on the already-ported `getArrayBaseType`/`getPointerBaseDataType`/`getPointerDepth`/
-//!     `getArrayDimensions` above; blocked on the top-level `write` dispatch for their
-//!     conditional recursive `write(returnType/paramType, monitor)` calls).
-//!   - `getBaseArrayTypedefType` (small recursive helper feeding `writeTypeDef`).
-//!
-//! ## Fidelity notes for what *is* ported so far
+//! ## Fidelity notes
 //!   - Java's `CompositeNode` merely wraps a `Composite` object reference (trivially "cloned" as a
 //!     reference copy) and compares by `getPathName()`/equals by `getUniversalID()`. Rust has no
 //!     such implicit reference-copy semantics for `Box<dyn Composite>`, and the dependency graph
@@ -70,9 +62,12 @@
 //!     comments) plus builder-style [`DataTypeWriter::with_annotator`]/
 //!     [`DataTypeWriter::with_cpp_style_comments`], rather than four overloads.
 //!   - Java's constructor calls `writeBuiltInDeclarations(dtm)` as a side effect whenever `dtm !=
-//!     null`. Since that method is not ported yet (see the "not yet ported" list above),
-//!     [`DataTypeWriter::new`] does not perform this side effect -- it is `TODO` alongside the rest
-//!     of the top-level dispatch it depends on (`write`/`writeBuiltIn`).
+//!     null`. [`DataTypeWriter::new`]/`with_cpp_style_comments`/`with_annotator` do **not**
+//!     perform this side effect -- callers that want it must call
+//!     [`DataTypeWriter::write_built_in_declarations`] explicitly. Reproducing it as a real
+//!     constructor side effect is awkward in Rust for an unrelated, structural reason: at
+//!     construction time `writer`/`annotator`/`cpp_style_comments` (all needed by the write path)
+//!     have not been moved into `self` yet, and `write_built_in_declarations` needs `&mut self`.
 //!   - When no `DataTypeManager` is supplied, Java falls back to
 //!     `DataOrganizationImpl.getDefaultOrganization()`. No concrete zero-argument
 //!     `DataOrganization` factory exists yet in this crate (see
@@ -84,6 +79,68 @@
 //!     (64-bit-pointer) test-support `DefaultDataOrganization` structs private to
 //!     `structure_data_type.rs`/`union_data_type.rs` -- this one aims to match Java's real runtime
 //!     default, not just be a plausible stand-in for unit tests.
+//!   - `doWrite`'s `dt = dt.clone(dtm)` ("force resize/repack for target data organization") step
+//!     is skipped everywhere in [`DataTypeWriter::do_write`]/its helpers. This crate's concrete
+//!     datatypes do not yet reliably override [`DataType::clone_data_type`] (most inherit the
+//!     trait default, which returns an `EmptyDataType` placeholder) -- calling it here would
+//!     silently discard real field/name/length data rather than "resize/repack" it. The `dt ==
+//!     null` guard at the top of `doWrite` is dropped outright: `Box<dyn DataType>` cannot be
+//!     null.
+//!   - `doWrite`'s `dt.equals(DataType.DEFAULT)` special case (`typedef unsigned char undefined;`)
+//!     is skipped: `DataType.DEFAULT` (`DefaultDataType`) is not ported in this crate yet.
+//!     `writeBuiltInDeclarations`'s own `write(DataType.DEFAULT, TaskMonitor.DUMMY)` leading call
+//!     is dropped for the same reason.
+//!   - Java's dispatch order in `doWrite` is `Dynamic, Structure, Union, Enum, TypeDef,
+//!     BuiltInDataType, BitFieldDataType (skip), unrecognized`. [`DataTypeWriter::do_write`]
+//!     checks `Structure`/`Union` *before* `Dynamic` instead, so the Structure/Union case can
+//!     consume the still-owned `Box<dyn DataType>` via [`DataType::into_composite`] (needed to
+//!     obtain an owned `Box<dyn Composite>` for the dependency graph) before the other branches
+//!     convert to a shared `Arc<dyn DataType>` for [`resolved_type_map`](DataTypeWriter::resolved_type_map).
+//!     No concrete datatype in Java (or this crate) is simultaneously a `Dynamic` and a
+//!     `Structure`/`Union`, so this reordering is behaviorally invisible. Two small, real
+//!     `DataType::into_composite` overrides were added to
+//!     [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)/
+//!     [`UnionDataTypeImpl`](super::union_data_type::UnionDataTypeImpl) to make this possible (the
+//!     trait default returns `None`), and a `SharedComposite` wrapper was added to
+//!     `program::seam_stubs` (mirroring its pre-existing `SharedArray`) so a composite field read
+//!     back through `DataTypeComponentImpl::get_data_type()`'s `share_data_type()` handle can
+//!     still be downcast this way -- without it, nested by-value composite fields (the primary
+//!     use case for this whole class) silently failed dependency-graph registration.
+//!   - `doWrite`'s `Msg.error(this, "Factory data types may not be written - type: " + dt)` (the
+//!     `throwExceptionOnInvalidType == false` path for a `FactoryDataType`) is a silent no-op:
+//!     this crate's `DataTypeWriter` has no logging sink wired up. Java does **not** `return`
+//!     after logging, so dispatch continues into the rest of `doWrite` exactly as this port does
+//!     (a `FactoryDataType` also `extends BuiltInDataType`, so it still reaches the
+//!     `BuiltInDataType` branch). The analogous `Msg.error` calls in `getDynamicComponentString`
+//!     (bad `replacementBaseType` length) are dropped the same way, falling through to the same
+//!     `None` return their Java error paths produce.
+//!   - `doWrite`'s final `else` branch embeds `dt.getClass()` (a Java `Class<?>`, via reflection)
+//!     in its "Type unrecognized" diagnostic comment. This crate's `DataType` trait has no
+//!     reflection equivalent, so [`DataType::get_display_name`] is substituted -- a deviation,
+//!     but one that only affects the text of an already-exceptional diagnostic.
+//!   - `getFunctionPointerString(FunctionDefinition fd, String name, DataType
+//!     functionPointerArrayType, ...)` takes `fd` and `functionPointerArrayType` as two
+//!     independent parameters (the caller may pass an already-unwrapped `fd` alongside a
+//!     still-array/pointer-wrapped `functionPointerArrayType` representing the *same* logical
+//!     value). [`DataTypeWriter::get_function_pointer_string`] collapses them into one owned
+//!     `function_pointer_array_type` parameter and re-derives `fd` from it *after* stripping its
+//!     Array/Pointer layers, since `Box<dyn DataType>` has no `Clone`; see that method's own doc
+//!     comment for why this is safe at both of its real call sites, and for the one narrow
+//!     (believed unreachable for any well-formed `DataType` graph) fallback this forces plus a
+//!     purely cosmetic reordering of two diagnostic writer side effects.
+//!   - `getTypeDeclaration`'s final `DataType baseDataType = getBaseDataType(dataType);` re-strip
+//!     (immediately after its own Array/Pointer/BitFieldDataType unwrapping loop) is skipped in
+//!     [`DataTypeWriter::get_type_declaration`] as a proven no-op -- see that method's own inline
+//!     port note for the reasoning -- letting this port avoid needing two independently-owned
+//!     copies of the same `Box<dyn DataType>`.
+//!   - `writeTypeDef` calls `typeDef.getDataType()` once and reuses the single Java reference both
+//!     inside its `finally` block and again for `getTypeDeclaration`.
+//!     [`DataTypeWriter::write_type_def`] instead calls [`TypeDef::get_data_type`] a second time
+//!     where needed: every `get_data_type`/`get_base_data_type`-style getter in this crate hands
+//!     back a fresh, independently-owned `Box` representing the *same* underlying datatype on
+//!     each call, so two separate calls are behaviorally equivalent to Java's one-and-reuse (and
+//!     this same substitution is used throughout `get_function_pointer_string`/
+//!     `get_parameter_list_string` for `fd.getReturnType()`/parameter data types).
 
 use std::collections::{HashSet, VecDeque};
 use std::collections::HashMap;
@@ -103,6 +160,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::default_annotation_handler::DefaultAnnotationHandler;
 use crate::program::model::data::dynamic::Dynamic;
 use crate::program::model::data::enum_::Enum;
+use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::typedef::TypeDef;
 use crate::util::exception::CancelledException;
@@ -305,15 +363,9 @@ impl DataOrganization for FallbackDataOrganization {
 //   matches or ends with a specified name.  It's unclear if this is an appropriate
 //   check for suppressing a typedef.
 // NOTE: '__int64' is only a primitive type for MSVC where 'unsigned __int64' is allowed.
-//
-// #[allow(dead_code)]: only consumed by `is_integral`, which today is exercised solely from
-// `#[cfg(test)]` -- its real caller, `writeTypeDef`'s port, is one of the "not yet ported" items
-// listed in the module doc comment.
-#[allow(dead_code)]
 const INTEGRAL_TYPES: &[&str] =
     &["char", "short", "int", "long", "long long", "__int64", "float", "double", "long double", "void"];
 
-#[allow(dead_code)]
 const INTEGRAL_MODIFIERS: &[&str] = &["signed", "unsigned", "const", "static", "volatile", "mutable"];
 
 /// Port of `ghidra.program.model.data.DataTypeWriter`. See the module doc comment for what is and
@@ -349,10 +401,10 @@ pub struct DataTypeWriter<W: Write> {
     /// Port of `writer`.
     writer: W,
     /// Port of `dtm`. Used to derive [`data_organization`](Self::data_organization) at
-    /// construction time; otherwise unused because the `doWrite` port deliberately skips Java's
-    /// `dt = dt.clone(dtm)` "force resize/repack" step -- see the module doc comment for why
-    /// (`clone_data_type` is not reliably overridden by this crate's concrete datatypes yet).
-    #[allow(dead_code)]
+    /// construction time and by [`DataTypeWriter::write_all_from_manager`]. Note that the
+    /// `doWrite` port deliberately skips Java's `dt = dt.clone(dtm)` "force resize/repack" step --
+    /// see the module doc comment for why (`clone_data_type` is not reliably overridden by this
+    /// crate's concrete datatypes yet).
     dtm: Option<Arc<dyn DataTypeManager>>,
     /// Port of `dataOrganization`.
     data_organization: Box<dyn DataOrganization>,
@@ -823,13 +875,6 @@ impl<W: Write> DataTypeWriter<W> {
 
     /// Port of the private `getTypeDeclaration(String name, DataType dataType, int
     /// instanceLength, boolean writeEnabled, TaskMonitor monitor)` helper.
-    ///
-    /// **Partial port**: the `dataType instanceof FunctionDefinition` branch (function-pointer
-    /// declaration text, via `getFunctionPointerString`) is not wired up yet -- see the module
-    /// doc comment. A function-pointer-typed field or parameter currently falls through to the
-    /// generic `getDataTypePrefix(dataType) + dataType.getDisplayName()` formatting instead of
-    /// real function-pointer syntax; every other case (plain fields, arrays, pointers, bit
-    /// fields, dynamic-length fields) is fully ported.
     fn get_type_declaration(
         &mut self,
         name: &str,
@@ -838,17 +883,27 @@ impl<W: Write> DataTypeWriter<W> {
         write_enabled: bool,
         monitor: &dyn TaskMonitor,
     ) -> Result<String, DataTypeWriteError> {
-        let _ = (write_enabled, monitor); // only consumed once the FunctionDefinition branch (see doc comment) is wired up.
         let mut name = name.to_string();
+        // Port of the local `StringBuilder sb`/`String componentString` pair. Java's `sb`
+        // *accumulates*: when `dataType` is `Dynamic` but `getDynamicComponentString` returns
+        // `null`, Java appends the "ignoring dynamic datatype" comment to `sb` *and* -- since
+        // `componentString` itself stays `null` -- still falls through to the generic
+        // array/pointer/prefix formatting below, appending *that* to the same `sb` too. Using a
+        // single `Option<String>` "either the dynamic string or the fallback string" (as an
+        // earlier revision of this port did) would silently drop the leading comment in that
+        // case; `sb` is threaded through explicitly here instead to keep both appends.
+        let mut sb = String::new();
         let mut component_string: Option<String> = None;
 
         if let Some(dynamic) = data_type.as_dynamic() {
-            match Self::get_dynamic_component_string(dynamic, &name, instance_length) {
-                Some(s) => component_string = Some(s),
+            component_string = Self::get_dynamic_component_string(dynamic, &name, instance_length);
+            match &component_string {
+                Some(s) => sb.push_str(s),
                 None => {
                     let msg = format!("ignoring dynamic datatype inside composite: {}", data_type.get_display_name());
                     let c = self.comment(&msg);
-                    component_string = Some(format!("{c}{EOL}"));
+                    sb.push_str(&c);
+                    sb.push_str(EOL);
                 }
             }
         }
@@ -887,16 +942,27 @@ impl<W: Write> DataTypeWriter<W> {
             // what a second call to `getBaseDataType(dataType)` (as Java does here) would
             // compute. That redundant second unwrap is skipped, letting this port avoid needing
             // two independently-owned copies of the same `Box<dyn DataType>`.
-            let prefix = Self::get_data_type_prefix_of(data_type.as_ref());
-            let mut s = format!("{prefix}{}", data_type.get_display_name());
-            if !name.is_empty() {
-                s.push(' ');
-                s.push_str(&name);
+            if data_type.as_function_definition().is_some() {
+                // `fd` and `data_type` are the same object here (see the port note above), so
+                // rather than trying to keep both an owned `Box<dyn DataType>` and a borrowed
+                // `&dyn FunctionDefinition` derived from it alive at once, `data_type` is handed
+                // to `get_function_pointer_string` directly as the "array/pointer wrapper"
+                // argument (already-unwrapped, so its own internal Array/Pointer handling is a
+                // no-op here) -- it re-derives `fd` from that same value internally.
+                let s = self.get_function_pointer_string(data_type, &name, write_enabled, monitor)?;
+                sb.push_str(&s);
+            } else {
+                let prefix = Self::get_data_type_prefix_of(data_type.as_ref());
+                sb.push_str(prefix);
+                sb.push_str(&data_type.get_display_name());
+                if !name.is_empty() {
+                    sb.push(' ');
+                    sb.push_str(&name);
+                }
             }
-            component_string = Some(s);
         }
 
-        Ok(component_string.unwrap_or_default())
+        Ok(sb)
     }
 
     /// Port of the private `getDynamicComponentString(Dynamic dynamicType, String fieldName, int
@@ -1024,6 +1090,132 @@ impl<W: Write> DataTypeWriter<W> {
         self.write(base_dt, monitor)
     }
 
+    /// Port of the private `getFunctionPointerString(FunctionDefinition fd, String name,
+    /// DataType functionPointerArrayType, boolean writeEnabled, TaskMonitor monitor)` helper.
+    ///
+    /// Java takes `fd` and `functionPointerArrayType` as two independent parameters (the caller
+    /// may pass an already-unwrapped `fd` alongside a still-array/pointer-wrapped
+    /// `functionPointerArrayType` representing the *same* logical value). This port collapses
+    /// them into the single `function_pointer_array_type` parameter and re-derives `fd` from it
+    /// (via [`DataType::as_function_definition`]) *after* stripping its Array/Pointer layers,
+    /// since `Box<dyn DataType>` has no `Clone` and this is the only call shape that lets a
+    /// single owned value serve both roles at every real call site:
+    ///   - The top-level call from [`get_type_declaration`](Self::get_type_declaration) already
+    ///     passes an unwrapped `FunctionDefinition` (see that method's own port note), so the
+    ///     Array/Pointer stripping below is a no-op there and `fd` is available immediately.
+    ///   - The recursive tail call below (for a function returning a function pointer) passes
+    ///     the *not-yet-stripped* return type as `function_pointer_array_type`, and this method's
+    ///     own stripping derives the same base value Java's separately-computed `baseReturnType`
+    ///     would.
+    ///
+    /// One narrow behavioral gap results: if `function_pointer_array_type`, after stripping, is
+    /// *not* actually a `FunctionDefinition` (a malformed/inconsistent `DataType` graph -- not
+    /// expected in practice, and not reachable through either call site above for a well-formed
+    /// graph), Java's independently-tracked `fd` parameter would still be valid and this method
+    /// would still emit a full parameter list; this port instead falls back to a degenerate
+    /// `"void (...)"` string, documented at that `return` site below. A second, purely cosmetic
+    /// deviation: Java's `write(returnType, monitor)` "publish the return type as a dependency"
+    /// call happens *before* the Array/Pointer-stripping/decoration text is built; this port
+    /// necessarily performs it just after (once `fd` has been derived), so in the rare case where
+    /// *both* that recursive write *and* the "invalid function pointer" diagnostic comment below
+    /// fire in the same call, their relative order in the emitted text is swapped versus Java.
+    fn get_function_pointer_string(
+        &mut self,
+        mut function_pointer_array_type: Box<dyn DataType>,
+        name: &str,
+        write_enabled: bool,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<String, DataTypeWriteError> {
+        let original_display_name = function_pointer_array_type.get_display_name();
+        let mut buf = String::from("(");
+        let mut array_decorations = String::new();
+
+        if let Some(array) = function_pointer_array_type.as_array() {
+            array_decorations = Self::get_array_dimensions(array);
+            function_pointer_array_type = Self::get_array_base_type(array);
+        }
+        if let Some(pointer) = function_pointer_array_type.as_pointer() {
+            let depth = Self::get_pointer_depth(pointer);
+            for _ in 0..depth {
+                buf.push('*');
+            }
+            buf.push(' ');
+            let base = Self::get_pointer_base_data_type(pointer);
+            if let Some(base) = base {
+                function_pointer_array_type = base;
+            }
+        }
+
+        if function_pointer_array_type.as_function_definition().is_none() {
+            let msg = format!(
+                "Attempting output of invalid function pointer type declaration: {original_display_name}"
+            );
+            let c = self.comment(&msg);
+            write!(self.writer, "{c}")?;
+        }
+
+        buf.push_str(name);
+        if !array_decorations.is_empty() {
+            buf.push_str(&array_decorations);
+        }
+        buf.push(')');
+
+        let Some(fd) = function_pointer_array_type.as_function_definition() else {
+            // See this method's own doc comment: the malformed-datatype-graph fallback Java does
+            // not need (it tracks `fd` independently of `functionPointerArrayType`).
+            return Ok(format!("void {buf}"));
+        };
+
+        if write_enabled {
+            self.write(fd.get_return_type(), monitor)?;
+        }
+        buf.push_str(&self.get_parameter_list_string(fd, false, write_enabled, monitor)?);
+
+        let base_return_type = Self::get_base_data_type(fd.get_return_type());
+        if base_return_type.as_function_definition().is_some() {
+            return self.get_function_pointer_string(fd.get_return_type(), &buf, write_enabled, monitor);
+        }
+        Ok(format!("{} {buf}", fd.get_return_type().get_display_name()))
+    }
+
+    /// Port of the private `getParameterListString(FunctionDefinition fd, boolean
+    /// includeParamNames, boolean writeEnabled, TaskMonitor monitor)` helper.
+    fn get_parameter_list_string(
+        &mut self,
+        fd: &dyn FunctionDefinition,
+        include_param_names: bool,
+        write_enabled: bool,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<String, DataTypeWriteError> {
+        let mut buf = String::from("(");
+        let has_var_args = fd.has_var_args();
+        let parameters = fd.get_arguments();
+        let n = parameters.len();
+        for (i, param) in parameters.iter().enumerate() {
+            let param_name = if include_param_names { param.get_name() } else { None };
+            let data_type = param.get_data_type();
+            if write_enabled {
+                self.write(param.get_data_type(), monitor)?;
+            }
+            let name_str = param_name.unwrap_or_default();
+            let argument =
+                self.get_type_declaration(&name_str, data_type, param.get_length(), write_enabled, monitor)?;
+            buf.push_str(&argument);
+
+            if i + 1 < n || has_var_args {
+                buf.push_str(", ");
+            }
+        }
+        if has_var_args {
+            buf.push_str(crate::program::model::listing::VAR_ARGS_DISPLAY_STRING);
+        }
+        if n == 0 && !has_var_args {
+            buf.push_str("void");
+        }
+        buf.push(')');
+        Ok(buf)
+    }
+
     /// Port of `writeBuiltIn` (the not-yet-ported dispatch that calls this still needs to be
     /// wired up): calls the already-real [`BuiltInDataType::get_c_type_declaration`] rather than
     /// re-deriving any C-declaration formatting, per this crate's established precedent (see the
@@ -1139,12 +1331,6 @@ impl<W: Write> DataTypeWriter<W> {
 
     /// Port of the private `getBaseDataType(DataType dt)` helper: strips `Array`/`Pointer`/
     /// `BitFieldDataType` layers to find the underlying data type.
-    ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today (via
-    /// [`Self::get_data_type_prefix`]) -- its other real callers (`getTypeDeclaration`,
-    /// `getFunctionPointerString`) are among the "not yet ported" items listed in the module doc
-    /// comment.
-    #[allow(dead_code)]
     fn get_base_data_type(mut dt: Box<dyn DataType>) -> Box<dyn DataType> {
         loop {
             if let Some(array) = dt.as_array() {
@@ -1170,11 +1356,6 @@ impl<W: Write> DataTypeWriter<W> {
     }
 
     /// Port of the private `getArrayBaseType(Array arrayDt)` helper.
-    ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
-    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
-    /// comment.
-    #[allow(dead_code)]
     fn get_array_base_type(array: &dyn Array) -> Box<dyn DataType> {
         let mut data_type = array.get_data_type();
         while let Some(inner_array) = data_type.as_array() {
@@ -1184,11 +1365,6 @@ impl<W: Write> DataTypeWriter<W> {
     }
 
     /// Port of the private `getPointerBaseDataType(Pointer p)` helper.
-    ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
-    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
-    /// comment.
-    #[allow(dead_code)]
     fn get_pointer_base_data_type(
         pointer: &dyn Pointer,
     ) -> Option<Box<dyn DataType>> {
@@ -1203,11 +1379,6 @@ impl<W: Write> DataTypeWriter<W> {
     }
 
     /// Port of the private `getPointerDepth(Pointer p)` helper.
-    ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
-    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
-    /// comment.
-    #[allow(dead_code)]
     fn get_pointer_depth(pointer: &dyn Pointer) -> i32 {
         let mut depth = 1;
         let mut current = pointer.get_data_type();
@@ -1224,11 +1395,6 @@ impl<W: Write> DataTypeWriter<W> {
     }
 
     /// Port of the private `static String getArrayDimensions(Array arrayDt)` helper.
-    ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
-    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
-    /// comment.
-    #[allow(dead_code)]
     fn get_array_dimensions(array: &dyn Array) -> String {
         let mut dimensions = format!("[{}]", array.get_num_elements());
         if let Some(inner_array) = array.get_data_type().as_array() {
@@ -1239,8 +1405,10 @@ impl<W: Write> DataTypeWriter<W> {
 
     /// Port of the private `getDataTypePrefix(DataType dataType)` helper.
     ///
-    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
-    /// `getTypeDeclaration`, is among the "not yet ported" items listed in the module doc comment.
+    /// #[allow(dead_code)]: this by-value variant is exercised only from `#[cfg(test)]` --
+    /// [`get_type_declaration`](Self::get_type_declaration) (the real caller, mirroring Java's
+    /// only call site) needs `data_type` back afterward and so uses the borrow-based sibling
+    /// [`get_data_type_prefix_of`](Self::get_data_type_prefix_of) instead.
     #[allow(dead_code)]
     fn get_data_type_prefix(dt: Box<dyn DataType>) -> &'static str {
         let base = Self::get_base_data_type(dt);
@@ -1748,6 +1916,55 @@ mod tests {
         assert_eq!(DataTypeWriter::<Vec<u8>>::get_dynamic_component_string(&dynamic, "field", 10), None);
     }
 
+    #[test]
+    fn get_type_declaration_appends_both_ignoring_comment_and_fallback_when_dynamic_string_is_none() {
+        // Regression test: Java's `getTypeDeclaration` accumulates into one `StringBuilder` --
+        // when `getDynamicComponentString` returns `null`, the "ignoring dynamic datatype"
+        // comment is appended *and* control still falls through to also append the generic
+        // fallback declaration (since the local `componentString` variable itself stays `null`).
+        // See `get_type_declaration`'s own inline doc comment for why this needs a `String`
+        // accumulator rather than an `Option<String>` "either/or" value.
+        struct UnspecifiableDynamic;
+        impl DataType for UnspecifiableDynamic {
+            fn get_display_name(&self) -> String {
+                "UnspecifiableDynamic".to_string()
+            }
+            fn as_dynamic(&self) -> Option<&dyn Dynamic> {
+                Some(self)
+            }
+        }
+        impl BuiltInDataType for UnspecifiableDynamic {
+            fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+                None
+            }
+            fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
+        }
+        impl Dynamic for UnspecifiableDynamic {
+            fn get_dynamic_length(&self, _buf: &dyn crate::program::model::mem::MemBuffer, _max_length: i32) -> i32 {
+                -1
+            }
+            fn can_specify_length(&self) -> bool {
+                false
+            }
+            fn get_replacement_base_type(&self) -> Box<dyn DataType> {
+                Box::new(NamedLeaf("byte"))
+            }
+        }
+
+        // `data_type` needs to be simultaneously `Dynamic` (to enter the branch under test) and
+        // report a `get_display_name`/prefix for the generic fallback branch afterward -- a
+        // single mock covers both roles, since `get_type_declaration` reads `data_type` by
+        // reference throughout this path (it is never actually unwrapped: `UnspecifiableDynamic`
+        // is not an `Array`/`Pointer`/`BitFieldDataType`/`FunctionDefinition`).
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let s = writer
+            .get_type_declaration("field", Box::new(UnspecifiableDynamic), 10, false, &DummyMonitor)
+            .unwrap();
+
+        assert!(s.contains("ignoring dynamic datatype inside composite: UnspecifiableDynamic"), "text was: {s}");
+        assert!(s.contains("UnspecifiableDynamic field"), "text was: {s}");
+    }
+
     // -- entry-point overload tests -------------------------------------------------------------
 
     #[test]
@@ -1840,5 +2057,263 @@ mod tests {
         let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
         writer.write_built_in_declarations(&NoArchiveManager).unwrap();
         assert_eq!(written_text(writer), "");
+    }
+
+    // -- getFunctionPointerString / getParameterListString tests --------------------------------
+
+    struct MockParamDef {
+        name: Option<String>,
+        type_name: &'static str,
+        length: i32,
+    }
+    impl crate::program::model::data::parameter_definition::ParameterDefinition for MockParamDef {
+        fn get_ordinal(&self) -> i32 {
+            0
+        }
+        fn get_data_type(&self) -> Box<dyn DataType> {
+            Box::new(SizedLeaf(self.type_name, self.length))
+        }
+        fn set_data_type(&mut self, _data_type: Box<dyn DataType>) -> Result<(), String> {
+            Ok(())
+        }
+        fn get_name(&self) -> Option<String> {
+            self.name.clone()
+        }
+        fn get_length(&self) -> i32 {
+            self.length
+        }
+        fn set_name(&mut self, _name: Option<String>) {}
+        fn get_comment(&self) -> Option<String> {
+            None
+        }
+        fn set_comment(&mut self, _comment: Option<String>) {}
+        fn is_equivalent_variable(&self, _variable: &dyn crate::program::model::listing::Variable) -> bool {
+            false
+        }
+        fn is_equivalent_parameter(
+            &self,
+            _parm: &dyn crate::program::model::data::parameter_definition::ParameterDefinition,
+        ) -> bool {
+            false
+        }
+        fn compare_to(
+            &self,
+            _other: &dyn crate::program::model::data::parameter_definition::ParameterDefinition,
+        ) -> std::cmp::Ordering {
+            std::cmp::Ordering::Equal
+        }
+    }
+
+    /// Mock `FunctionDefinition` used to test [`DataTypeWriter::get_function_pointer_string`]/
+    /// [`DataTypeWriter::get_parameter_list_string`] without needing this crate's real (heavier)
+    /// `FunctionDefinitionDataType`.
+    struct MockFunctionDefinition {
+        return_type: &'static str,
+        return_length: i32,
+        params: Vec<(&'static str, &'static str, i32)>,
+        var_args: bool,
+    }
+    impl DataType for MockFunctionDefinition {
+        fn as_function_definition(&self) -> Option<&dyn FunctionDefinition> {
+            Some(self)
+        }
+    }
+    impl crate::program::model::listing::FunctionSignature for MockFunctionDefinition {
+        fn get_name(&self) -> String {
+            "FUNCPTR".to_string()
+        }
+        fn get_prototype_string_with_calling_convention(&self, _include_calling_convention: bool) -> String {
+            String::new()
+        }
+        fn get_arguments(&self) -> Vec<Box<dyn crate::program::model::data::parameter_definition::ParameterDefinition>> {
+            self.params
+                .iter()
+                .map(|(name, ty, len)| {
+                    Box::new(MockParamDef { name: Some(name.to_string()), type_name: ty, length: *len })
+                        as Box<dyn crate::program::model::data::parameter_definition::ParameterDefinition>
+                })
+                .collect()
+        }
+        fn get_return_type(&self) -> Box<dyn DataType> {
+            Box::new(SizedLeaf(self.return_type, self.return_length))
+        }
+        fn get_comment(&self) -> Option<String> {
+            None
+        }
+        fn has_var_args(&self) -> bool {
+            self.var_args
+        }
+        fn has_no_return(&self) -> bool {
+            false
+        }
+        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+            None
+        }
+        fn get_calling_convention_name(&self) -> String {
+            String::new()
+        }
+        fn is_equivalent_signature(&self, _signature: &dyn crate::program::model::listing::FunctionSignature) -> bool {
+            false
+        }
+    }
+    impl FunctionDefinition for MockFunctionDefinition {
+        fn set_arguments(
+            &mut self,
+            _args: Vec<Box<dyn crate::program::model::data::parameter_definition::ParameterDefinition>>,
+        ) {
+        }
+        fn set_return_type(&mut self, _data_type: Box<dyn DataType>) -> Result<(), String> {
+            Ok(())
+        }
+        fn set_comment(&mut self, _comment: Option<String>) {}
+        fn set_var_args(&mut self, _has_var_args: bool) {}
+        fn set_no_return(&mut self, _has_no_return: bool) {}
+        fn set_generic_calling_convention(
+            &mut self,
+            _generic_calling_convention: &dyn crate::program::seam_stubs::GenericCallingConvention,
+        ) {
+        }
+        fn set_calling_convention(
+            &mut self,
+            _convention_name: Option<String>,
+        ) -> Result<(), crate::util::exception::InvalidInputException> {
+            Ok(())
+        }
+        fn replace_argument(
+            &mut self,
+            _ordinal: i32,
+            _name: Option<String>,
+            _dt: Box<dyn DataType>,
+            _comment: Option<String>,
+            _source: crate::program::model::symbol::source_type::SourceType,
+        ) {
+        }
+    }
+
+    #[test]
+    fn get_parameter_list_string_formats_typed_params_without_names() {
+        let fd = MockFunctionDefinition {
+            return_type: "int",
+            return_length: 4,
+            params: vec![("a", "int", 4), ("b", "char", 1)],
+            var_args: false,
+        };
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let s = writer.get_parameter_list_string(&fd, false, false, &DummyMonitor).unwrap();
+        assert_eq!(s, "(int, char)");
+    }
+
+    #[test]
+    fn get_parameter_list_string_uses_void_for_no_parameters() {
+        let fd = MockFunctionDefinition { return_type: "void", return_length: 0, params: vec![], var_args: false };
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let s = writer.get_parameter_list_string(&fd, false, false, &DummyMonitor).unwrap();
+        assert_eq!(s, "(void)");
+    }
+
+    #[test]
+    fn get_parameter_list_string_appends_varargs_ellipsis() {
+        let fd = MockFunctionDefinition {
+            return_type: "int",
+            return_length: 4,
+            params: vec![("a", "int", 4)],
+            var_args: true,
+        };
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let s = writer.get_parameter_list_string(&fd, false, false, &DummyMonitor).unwrap();
+        assert_eq!(s, "(int, ...)");
+    }
+
+    #[test]
+    fn get_function_pointer_string_formats_plain_signature() {
+        let fd = MockFunctionDefinition {
+            return_type: "int",
+            return_length: 4,
+            params: vec![("a", "int", 4), ("b", "char", 1)],
+            var_args: false,
+        };
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let s = writer.get_function_pointer_string(Box::new(fd), "cb", false, &DummyMonitor).unwrap();
+        assert_eq!(s, "int (cb)(int, char)");
+    }
+
+    #[test]
+    fn get_type_declaration_dispatches_bare_function_definition_to_function_pointer_string() {
+        let fd = MockFunctionDefinition { return_type: "int", return_length: 4, params: vec![], var_args: false };
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let s = writer.get_type_declaration("cb", Box::new(fd), -1, false, &DummyMonitor).unwrap();
+        assert_eq!(s, "int (cb)(void)");
+    }
+
+    /// Minimal `Pointer`-to-`FunctionDefinition` pair used only to exercise
+    /// `get_function_pointer_string`'s *own* internal Array/Pointer-stripping branch, which (per
+    /// that method's own doc comment) is normally only reached via its recursive
+    /// "function-returning-a-function-pointer" tail call rather than through
+    /// `get_type_declaration` (whose own separate unwrap loop handles the far more common
+    /// "struct field is a function pointer" case by prepending `*` to the field name before ever
+    /// calling this method). Forwards `as_function_definition`/`get_display_name` all the way
+    /// through, unlike this file's other, more minimal `SharedDataType` test helper.
+    struct FuncPtrPointer(Arc<dyn DataType>);
+    impl DataType for FuncPtrPointer {
+        fn get_length(&self) -> i32 {
+            4
+        }
+        fn as_pointer(&self) -> Option<&dyn Pointer> {
+            Some(self)
+        }
+    }
+    impl Pointer for FuncPtrPointer {
+        fn get_data_type(&self) -> Option<Box<dyn DataType>> {
+            Some(Box::new(FuncPtrPointee(self.0.clone())))
+        }
+        fn new_pointer(&self, _data_type: Box<dyn DataType>) -> Box<dyn Pointer> {
+            unimplemented!("not needed by this test")
+        }
+        fn typedef_builder(&self) -> Box<dyn crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder> {
+            unimplemented!("not needed by this test")
+        }
+    }
+    struct FuncPtrPointee(Arc<dyn DataType>);
+    impl DataType for FuncPtrPointee {
+        fn get_display_name(&self) -> String {
+            self.0.get_display_name()
+        }
+        fn as_function_definition(&self) -> Option<&dyn FunctionDefinition> {
+            self.0.as_function_definition()
+        }
+    }
+
+    #[test]
+    fn get_function_pointer_string_adds_pointer_star_for_pointer_wrapped_function() {
+        let fd: Arc<dyn DataType> =
+            Arc::new(MockFunctionDefinition { return_type: "void", return_length: 0, params: vec![], var_args: false });
+        let pointer = FuncPtrPointer(fd);
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        let s = writer.get_function_pointer_string(Box::new(pointer), "cb", false, &DummyMonitor).unwrap();
+        // Matches Java's own literal `sb.append(' ')` placement inside the pointer-stripping
+        // branch (see `get_function_pointer_string`'s doc comment): the space lands between the
+        // pointer stars and the name.
+        assert_eq!(s, "void (* cb)(void)");
+    }
+
+    #[test]
+    fn write_struct_field_with_function_pointer_type_emits_full_signature() {
+        let fd: Arc<dyn DataType> = Arc::new(MockFunctionDefinition {
+            return_type: "int",
+            return_length: 4,
+            params: vec![("a", "int", 4), ("b", "char", 1)],
+            var_args: false,
+        });
+        let pointer = FuncPtrPointer(fd);
+
+        let mut s = StructureDataTypeImpl::new("HasCallback", 0);
+        s.add_with_length_and_name(Box::new(pointer), 4, Some("cb".to_string()), None).unwrap();
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write(Box::new(s), &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.contains("int (*cb)(int, char);"), "text was: {text}");
     }
 }
