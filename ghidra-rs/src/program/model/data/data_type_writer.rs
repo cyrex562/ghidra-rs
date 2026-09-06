@@ -489,6 +489,70 @@ impl<W: Write> DataTypeWriter<W> {
         self.composite_dependency_graph.pop().expect("no cycle expected among by-value composite embeddings")
     }
 
+    /// Port of the public `write(TaskMonitor monitor)` overload ("Converts all data types in the
+    /// data type manager into ANSI-C code"). Named `write_all_from_manager` rather than `write`
+    /// since Rust has no overloading; requires a `DataTypeManager` to have been supplied at
+    /// construction (mirroring the `NullPointerException` Java would throw from `dtm
+    /// .getRootCategory()` if `dtm` were null here).
+    pub fn write_all_from_manager(&mut self, monitor: &dyn TaskMonitor) -> Result<(), DataTypeWriteError> {
+        let dtm = self.dtm.clone().ok_or_else(|| {
+            DataTypeWriteError::InvalidDataType(
+                "NullPointerException: no DataTypeManager was supplied to this DataTypeWriter".to_string(),
+            )
+        })?;
+        let root = dtm.get_root_category();
+        self.write_category(root.as_ref(), monitor)
+    }
+
+    /// Port of the public `write(Category category, TaskMonitor monitor)` overload. Named
+    /// `write_category` rather than `write` since Rust has no overloading.
+    pub fn write_category(
+        &mut self,
+        category: &dyn crate::program::model::data::category::Category,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), DataTypeWriteError> {
+        self.write_many(category.get_data_types(), monitor)?;
+
+        for sub_category in category.get_categories() {
+            if monitor.is_cancelled() {
+                return Ok(());
+            }
+            self.write_category(sub_category.as_ref(), monitor)?;
+        }
+        Ok(())
+    }
+
+    /// Port of the public `write(DataType[] dataTypes, TaskMonitor monitor)` /
+    /// `write(List<DataType> dataTypes, TaskMonitor monitor)` overloads, collapsed into one since
+    /// Rust's `Vec` already covers both Java call shapes. `throwExceptionOnInvalidType` defaults
+    /// to `true`, matching the array overload and the 2-argument list overload alike.
+    pub fn write_many(
+        &mut self,
+        data_types: Vec<Box<dyn DataType>>,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), DataTypeWriteError> {
+        self.write_many_with_options(data_types, monitor, true)
+    }
+
+    /// Port of the public `write(List<DataType> dataTypes, TaskMonitor monitor, boolean
+    /// throwExceptionOnInvalidType)` overload.
+    pub fn write_many_with_options(
+        &mut self,
+        data_types: Vec<Box<dyn DataType>>,
+        monitor: &dyn TaskMonitor,
+        throw_exception_on_invalid_type: bool,
+    ) -> Result<(), DataTypeWriteError> {
+        monitor.initialize(data_types.len() as i64);
+        let mut cnt: i64 = 0;
+        for dt in data_types {
+            monitor.check_cancelled()?;
+            self.write_with_options(dt, monitor, throw_exception_on_invalid_type)?;
+            cnt += 1;
+            monitor.set_progress(cnt);
+        }
+        Ok(())
+    }
+
     /// Port of the public `write(DataType dt, TaskMonitor monitor)` package-private overload
     /// (`throwExceptionOnInvalidType` defaults to `true`).
     pub fn write(
@@ -975,6 +1039,51 @@ impl<W: Write> DataTypeWriter<W> {
         Ok(())
     }
 
+    /// Port of the private `writeBuiltInDeclarations(DataTypeManager manager)` helper ("Write all
+    /// built-in data types declarations into ANSI-C code").
+    ///
+    /// Deviations from the Java source:
+    ///   - The leading `write(DataType.DEFAULT, TaskMonitor.DUMMY)` call is skipped: `DataType
+    ///     .DEFAULT` (`DefaultDataType`) is not ported yet -- see the module doc comment.
+    ///   - Java's `catch (CancelledException e) { // ignore }` is reproduced by matching on
+    ///     [`DataTypeWriteError::Cancelled`] specifically and discarding it, while any
+    ///     [`DataTypeWriteError::Io`] still propagates as a real `io::Error` (this method's Java
+    ///     signature only declares `throws IOException`) and
+    ///     [`DataTypeWriteError::InvalidDataType`] is surfaced the same way (it cannot actually
+    ///     occur here since every candidate is filtered to exclude `FactoryDataType` before
+    ///     `write` is called, matching Java's own `dt instanceof FactoryDataType` filter below).
+    pub fn write_built_in_declarations(&mut self, manager: &dyn DataTypeManager) -> io::Result<()> {
+        let monitor = crate::util::task::DummyMonitor;
+        match self.write_built_in_declarations_inner(manager, &monitor) {
+            Ok(()) | Err(DataTypeWriteError::Cancelled(_)) => {}
+            Err(DataTypeWriteError::Io(e)) => return Err(e),
+            Err(DataTypeWriteError::InvalidDataType(msg)) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, msg));
+            }
+        }
+        self.writer.flush()
+    }
+
+    fn write_built_in_declarations_inner(
+        &mut self,
+        manager: &dyn DataTypeManager,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), DataTypeWriteError> {
+        let Some(built_in_archive) =
+            manager.get_source_archive(crate::program::model::data::data_type_manager::built_in_archive_universal_id())
+        else {
+            return Ok(());
+        };
+
+        for dt in manager.get_data_types_from_archive(built_in_archive.as_ref()) {
+            if dt.as_pointer().is_some() || dt.as_factory().is_some() || dt.as_dynamic().is_some() {
+                continue;
+            }
+            self.write(dt, monitor)?;
+        }
+        Ok(())
+    }
+
     /// Port of the private `writeEnum(Enum enumm, TaskMonitor monitor)` helper. `monitor` is
     /// accepted (matching the Java signature) but unused: the Java method never calls
     /// `monitor.checkCancelled()` in its body either, and it declares no `CancelledException` in
@@ -1270,7 +1379,11 @@ mod tests {
     }
 
     struct MockBuiltIn(Option<String>);
-    impl DataType for MockBuiltIn {}
+    impl DataType for MockBuiltIn {
+        fn as_built_in_data_type(&self) -> Option<&dyn BuiltInDataType> {
+            Some(self)
+        }
+    }
     impl BuiltInDataType for MockBuiltIn {
         fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
             self.0.clone()
@@ -1633,5 +1746,99 @@ mod tests {
 
         let dynamic = StubDynamic;
         assert_eq!(DataTypeWriter::<Vec<u8>>::get_dynamic_component_string(&dynamic, "field", 10), None);
+    }
+
+    // -- entry-point overload tests -------------------------------------------------------------
+
+    #[test]
+    fn write_many_writes_every_data_type_and_reports_progress() {
+        use crate::program::model::data::enum_data_type::EnumDataType;
+
+        let mut a = EnumDataType::new("A", 4);
+        a.add("A1", 1);
+        let mut b = EnumDataType::new("B", 4);
+        b.add("B1", 2);
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer
+            .write_many(vec![Box::new(a) as Box<dyn DataType>, Box::new(b) as Box<dyn DataType>], &DummyMonitor)
+            .unwrap();
+
+        let text = written_text(writer);
+        assert!(text.contains("typedef enum A {"), "text was: {text}");
+        assert!(text.contains("typedef enum B {"), "text was: {text}");
+    }
+
+    /// Mock `SourceArchive` standing in for the built-in archive, and a mock `DataTypeManager`
+    /// exposing it -- both required since `write_built_in_declarations` looks the archive up by
+    /// [`built_in_archive_universal_id`](crate::program::model::data::data_type_manager::built_in_archive_universal_id)
+    /// and then asks the manager for that archive's data types.
+    struct MockBuiltInArchive;
+    impl crate::program::model::data::source_archive::SourceArchive for MockBuiltInArchive {
+        fn source_archive_id(&self) -> crate::util::UniversalID {
+            crate::program::model::data::data_type_manager::built_in_archive_universal_id()
+        }
+        fn domain_file_id(&self) -> String {
+            String::new()
+        }
+        fn archive_type(&self) -> crate::program::model::data::archive_type::ArchiveType {
+            crate::program::model::data::archive_type::ArchiveType::BuiltIn
+        }
+        fn name(&self) -> String {
+            "BuiltInTypes".to_string()
+        }
+        fn last_sync_time(&self) -> i64 {
+            0
+        }
+        fn is_dirty(&self) -> bool {
+            false
+        }
+        fn set_last_sync_time(&mut self, _time: i64) {}
+        fn set_name(&mut self, _name: String) {}
+        fn set_dirty_flag(&mut self, _dirty: bool) {}
+    }
+
+    struct MockBuiltInArchiveManager;
+    impl DataTypeManager for MockBuiltInArchiveManager {
+        fn get_source_archive(
+            &self,
+            source_id: crate::util::UniversalID,
+        ) -> Option<Box<dyn crate::program::model::data::source_archive::SourceArchive>> {
+            if source_id == crate::program::model::data::data_type_manager::built_in_archive_universal_id() {
+                Some(Box::new(MockBuiltInArchive))
+            } else {
+                None
+            }
+        }
+        fn get_data_types_from_archive(
+            &self,
+            _source_archive: &dyn crate::program::model::data::source_archive::SourceArchive,
+        ) -> Vec<Box<dyn DataType>> {
+            vec![
+                Box::new(MockBuiltIn(Some("typedef unsigned long uintptr_t;".to_string()))),
+                // A pointer-flavored built-in must be filtered out by `write_built_in_declarations`
+                // before ever reaching `write` (Java: `dt instanceof Pointer` skip).
+                Box::new(MockPointer { target: None }),
+            ]
+        }
+    }
+
+    #[test]
+    fn write_built_in_declarations_writes_non_pointer_archive_members() {
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write_built_in_declarations(&MockBuiltInArchiveManager).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.contains("typedef unsigned long uintptr_t;"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_built_in_declarations_is_a_no_op_when_archive_missing() {
+        struct NoArchiveManager;
+        impl DataTypeManager for NoArchiveManager {}
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write_built_in_declarations(&NoArchiveManager).unwrap();
+        assert_eq!(written_text(writer), "");
     }
 }
