@@ -7,8 +7,42 @@
 //! concrete adapter. This trait was itself selected as a dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, Field, RecordIterator};
+use crate::framework::db::{DBRecord, Field, FieldType, RecordIterator, Schema};
+
+/// Name of the database table used to store built-in data types.
+pub const BUILT_IN_TABLE_NAME: &str = "Built-in datatypes";
+
+/// Column index of the built-in data type's name, as defined by `BuiltinDBAdapterV0`.
+pub const BUILT_IN_NAME_COL: usize = 0;
+
+/// Column index of the built-in data type's Java class name, as defined by `BuiltinDBAdapterV0`.
+pub const BUILT_IN_CLASSNAME_COL: usize = 1;
+
+/// Column index of the built-in data type's category ID, as defined by `BuiltinDBAdapterV0`.
+pub const BUILT_IN_CAT_COL: usize = 2;
+
+/// Schema version implemented by the current (and, so far, only) `BuiltinDBAdapterV0` table
+/// layout.
+pub const CURRENT_VERSION: i32 = 0;
+
+/// Build the built-ins table schema, as defined by `BuiltinDBAdapterV0.V0_SCHEMA`. Exposed as a
+/// function (rather than a `Schema` constant) since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Data Type ID".to_string(),
+        vec![FieldType::String, FieldType::String, FieldType::Long],
+        vec![
+            "Name".to_string(),
+            "Class Name".to_string(),
+            "Category ID".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Database adapter for managing built-in data types.
 ///

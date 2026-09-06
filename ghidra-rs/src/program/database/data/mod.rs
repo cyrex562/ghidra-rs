@@ -1,10 +1,13 @@
 pub mod array_db;
 pub mod array_db_adapter;
 pub mod builtin_db_adapter;
+pub mod builtin_db_adapter_v0;
 pub mod calling_convention_db_adapter;
 pub mod calling_convention_db_adapter_no_table;
 pub mod category_db_adapter;
+pub mod category_db_adapter_v0;
 pub mod component_db_adapter;
+pub mod component_db_adapter_v0;
 pub mod composite_db;
 pub mod composite_db_adapter;
 pub mod data_type_db;
@@ -23,6 +26,7 @@ pub mod function_definition_db_adapter;
 pub mod function_definition_db_adapter_no_table;
 pub mod function_parameter_adapter;
 pub mod function_parameter_adapter_no_table;
+pub mod function_parameter_adapter_v1;
 pub mod lazy_loading_caching_map;
 pub mod merge;
 pub mod parent_child_adapter;
@@ -43,16 +47,19 @@ pub mod typedef_db_adapter;
 pub use array_db::ArrayDb;
 pub use array_db_adapter::ArrayDBAdapter;
 pub use builtin_db_adapter::BuiltinDBAdapter;
+pub use builtin_db_adapter_v0::BuiltinDBAdapterV0;
 pub use calling_convention_db_adapter::{
     CallingConventionDBAdapter, DEFAULT_CALLING_CONVENTION_ID, FIRST_CALLING_CONVENTION_ID,
     UNKNOWN_CALLING_CONVENTION_ID,
 };
 pub use calling_convention_db_adapter_no_table::CallingConventionDBAdapterNoTable;
 pub use category_db_adapter::{CategoryDBAdapter, CATEGORY_NAME_COL, CATEGORY_PARENT_COL};
+pub use category_db_adapter_v0::CategoryDBAdapterV0;
 pub use component_db_adapter::{
     ComponentDBAdapter, COMPONENT_COMMENT_COL, COMPONENT_DT_ID_COL, COMPONENT_FIELD_NAME_COL,
     COMPONENT_OFFSET_COL, COMPONENT_ORDINAL_COL, COMPONENT_PARENT_ID_COL, COMPONENT_SIZE_COL,
 };
+pub use component_db_adapter_v0::ComponentDBAdapterV0;
 pub use composite_db::CompositeDb;
 pub use data_type_db::{prepend_comment, DataTypeDb, DoSetNameRecordError, SetNameError};
 pub use data_type_manager_db::{DataTypeManagerDb, GetCallingConventionIdError};
@@ -93,6 +100,7 @@ pub use function_parameter_adapter::{
     PARAMETER_NAME_COL, PARAMETER_ORDINAL_COL, PARAMETER_PARENT_ID_COL, PARAMETER_TABLE_NAME,
 };
 pub use function_parameter_adapter_no_table::FunctionParameterAdapterNoTable;
+pub use function_parameter_adapter_v1::FunctionParameterAdapterV1;
 pub use lazy_loading_caching_map::LazyLoadingCachingMap;
 pub use merge::DataTypeMergeException;
 pub use parent_child_adapter::{ParentChildAdapter, PARENT_CHILD_TABLE_NAME};

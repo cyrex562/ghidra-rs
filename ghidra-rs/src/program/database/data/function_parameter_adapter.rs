@@ -13,11 +13,43 @@
 //! `get_records` is declared directly on this trait instead of via that supertrait.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field, RecordIterator};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, RecordIterator, Schema};
 
 /// Name of the database table used to store function signature definition parameters.
 pub const PARAMETER_TABLE_NAME: &str = "Function Parameters";
+
+/// Schema version implemented by the current (`FunctionParameterAdapterV1`) table layout.
+pub const CURRENT_VERSION: i32 = 1;
+
+/// Build the current function parameters table schema, as defined by
+/// `FunctionParameterAdapterV1.V1_PARAMETER_SCHEMA`. Exposed as a function (rather than a
+/// `Schema` constant) since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Parameter ID".to_string(),
+        vec![
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::String,
+            FieldType::String,
+            FieldType::Int,
+            FieldType::Int,
+        ],
+        vec![
+            "Parent ID".to_string(),
+            "Data Type ID".to_string(),
+            "Name".to_string(),
+            "Comment".to_string(),
+            "Ordinal".to_string(),
+            "Data Type Length".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Column index of the parameter's parent function definition ID, as defined by
 /// `FunctionParameterAdapterV1`.

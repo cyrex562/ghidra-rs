@@ -38,6 +38,16 @@ impl Table {
         self.max_key
     }
 
+    /// Ensure the next value returned by [`get_next_key`](Self::get_next_key) is at least
+    /// `floor + 1`. Used by callers that reserve a floor for externally-chosen keys (e.g. a
+    /// minimum ID below which keys are reserved for another purpose) so the table's own key
+    /// sequence stays monotonic and collision-free afterward.
+    pub fn ensure_next_key_at_least(&mut self, floor: i64) {
+        if floor > self.max_key {
+            self.max_key = floor;
+        }
+    }
+
     pub fn get_name(&self) -> &str {
         &self.name
     }
@@ -180,41 +190,13 @@ impl Table {
     }
 
     pub fn get_record(&self, key: &Field) -> io::Result<Option<DBRecord>> {
-        if self.root_buffer_id < 0 {
-            return Ok(self.records.get(key).cloned());
-        }
-
-        if self.schema.use_long_key_nodes() {
-            let mut node = self.node_mgr.get_long_key_node(self.root_buffer_id)?;
-            let k = key.get_long_value();
-
-            loop {
-                match node {
-                    LongKeyNode::Interior(n) => {
-                        let id_index = n.get_id_index(k);
-                        let child_id = n.get_child_id(id_index as i32);
-                        node = self.node_mgr.get_long_key_node(child_id)?;
-                    }
-                    LongKeyNode::FixedRec(n) => {
-                        let index = n.get_key_index(k);
-                        if index >= 0 {
-                            return Ok(Some(n.get_record(index as i32, self.schema.clone())));
-                        } else {
-                            return Ok(None);
-                        }
-                    }
-                    LongKeyNode::VarRec(n) => {
-                        let index = n.get_key_index(k);
-                        if index >= 0 {
-                            return Ok(Some(n.get_record(index as i32, self.schema.clone())));
-                        } else {
-                            return Ok(None);
-                        }
-                    }
-                }
-            }
-        }
-
+        // `self.records` (the in-memory fallback map) is the authoritative store: `put_record`
+        // always keeps it in sync with the on-disk B-tree nodes, `get_record_iterator` already
+        // reads exclusively from it, but `delete_record` (below) only ever removes from it, not
+        // from the B-tree nodes (whose deletion support does not exist yet). Reading through the
+        // B-tree here as well as previously done would therefore let a deleted record's stale
+        // node-level copy resurrect it. Always reading the fallback keeps `get_record` consistent
+        // with `get_record_iterator`/`delete_record` and avoids that resurrection.
         Ok(self.records.get(key).cloned())
     }
 
