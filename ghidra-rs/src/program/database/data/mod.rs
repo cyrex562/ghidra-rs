@@ -27,6 +27,9 @@ pub mod parent_child_adapter;
 pub mod parent_child_adapter_no_table;
 pub mod pointer_db;
 pub mod pointer_db_adapter;
+pub mod pointer_db_adapter_v0;
+pub mod pointer_db_adapter_v1;
+pub mod pointer_db_adapter_v2;
 pub mod setting_db;
 pub mod settings_cache;
 pub mod settings_db_adapter;
@@ -94,6 +97,9 @@ pub use pointer_db::PointerDb;
 pub use pointer_db_adapter::{
     PointerDBAdapter, POINTER_TABLE_NAME, PTR_CATEGORY_COL, PTR_DT_ID_COL, PTR_LENGTH_COL,
 };
+pub use pointer_db_adapter_v0::PointerDBAdapterV0;
+pub use pointer_db_adapter_v1::PointerDBAdapterV1;
+pub use pointer_db_adapter_v2::PointerDBAdapterV2;
 pub use setting_db::{SettingDB, SettingValue};
 pub use settings_cache::SettingsCache;
 pub use settings_db_adapter::{

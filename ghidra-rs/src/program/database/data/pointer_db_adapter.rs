@@ -9,8 +9,9 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field, RecordTranslator};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, RecordTranslator, Schema};
 use crate::program::util::DBRecordAdapter;
 
 /// Name of the database table used to store pointer data types.
@@ -24,6 +25,28 @@ pub const PTR_CATEGORY_COL: usize = 1;
 
 /// Column index of the pointer's length in bytes, as defined by `PointerDBAdapterV2`.
 pub const PTR_LENGTH_COL: usize = 2;
+
+/// Schema version implemented by the current (`PointerDBAdapterV2`) table layout.
+pub const CURRENT_VERSION: i32 = 2;
+
+/// Build the current pointer table schema, as defined by `PointerDBAdapter.SCHEMA` (whose
+/// version matches `PointerDBAdapterV2.VERSION`). Exposed as a function (rather than a `Schema`
+/// constant) since `Schema` construction is not `const`; used both by the live `V2` adapter and
+/// by `V0`/`V1` to translate old-format records into the current record layout.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Pointer ID".to_string(),
+        vec![FieldType::Long, FieldType::Long, FieldType::Byte],
+        vec![
+            "Data Type ID".to_string(),
+            "Category ID".to_string(),
+            "Length".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Adapter to access the Pointer database table for Pointer data types.
 ///
