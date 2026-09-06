@@ -9,13 +9,48 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, Schema};
 use crate::program::util::DBRecordAdapter;
 use crate::util::UniversalID;
 
 /// Name of the database table used to store typedef data types.
 pub const TYPEDEF_TABLE_NAME: &str = "Typedefs";
+
+/// Schema version implemented by the current (`TypedefDBAdapterV2`) table layout.
+pub const CURRENT_VERSION: i32 = 2;
+
+/// Build the current typedef table schema, as defined by `TypedefDBAdapterV2.V2_SCHEMA`. Exposed
+/// as a function (rather than a `Schema` constant) since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Typedef ID".to_string(),
+        vec![
+            FieldType::Long,
+            FieldType::Short,
+            FieldType::String,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+        ],
+        vec![
+            "Data Type ID".to_string(),
+            "Flags".to_string(),
+            "Name".to_string(),
+            "Category ID".to_string(),
+            "Source Archive ID".to_string(),
+            "Universal Data Type ID".to_string(),
+            "Source Sync Time".to_string(),
+            "Last Change Time".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Column index of the typedef's referenced data type ID, as defined by `TypedefDBAdapterV2`.
 pub const TYPEDEF_DT_ID_COL: usize = 0;

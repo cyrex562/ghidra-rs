@@ -46,6 +46,9 @@ pub mod source_archive_adapter;
 pub mod source_archive_adapter_no_table;
 pub mod structure_db;
 pub mod typedef_db_adapter;
+pub mod typedef_db_adapter_v0;
+pub mod typedef_db_adapter_v1;
+pub mod typedef_db_adapter_v2;
 
 pub use array_db::ArrayDb;
 pub use array_db_adapter::ArrayDBAdapter;
