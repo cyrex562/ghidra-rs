@@ -26,6 +26,7 @@ pub mod function_definition_db_adapter;
 pub mod function_definition_db_adapter_no_table;
 pub mod function_parameter_adapter;
 pub mod function_parameter_adapter_no_table;
+pub mod function_parameter_adapter_v0;
 pub mod function_parameter_adapter_v1;
 pub mod lazy_loading_caching_map;
 pub mod merge;
