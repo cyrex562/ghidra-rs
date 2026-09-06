@@ -3,7 +3,7 @@ use super::field::{Field, FieldType};
 use super::schema::Schema;
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DBRecord {
     schema: Arc<Schema>,
     key: Field,

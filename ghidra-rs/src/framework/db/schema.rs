@@ -1,6 +1,7 @@
 use super::field::FieldType;
 use std::collections::HashSet;
 
+#[derive(Debug)]
 pub struct Schema {
     version: i32,
     key_type: FieldType,
