@@ -14,6 +14,16 @@
 //!     [`DeterministicDependencyGraph`](crate::util::graph::DeterministicDependencyGraph)`<CompositeNode>`
 //!     built in Part 1 of this same session so that a composite's member composites are ordered
 //!     before it.
+//!   - [`DataTypeWriter::write_built_in`] (Java `writeBuiltIn`), a thin call to the already-real
+//!     [`BuiltInDataType::get_c_type_declaration`] -- no new C-declaration formatting was written
+//!     for it, per this crate's existing precedent.
+//!   - [`DataTypeWriter::write_enum`] (Java `writeEnum`), including the `#define` shortcut for
+//!     single-value `define_`-prefixed enums.
+//!   - The small recursive traversal helpers `getBaseDataType`/`getArrayBaseType`/
+//!     `getPointerBaseDataType`/`getPointerDepth`/`getArrayDimensions`/`getDataTypePrefix`, ported
+//!     as private associated functions. These are exercised only from `#[cfg(test)]` so far (hence
+//!     each carries an `#[allow(dead_code)]`) -- their real callers, `getTypeDeclaration` and
+//!     `getFunctionPointerString`, are listed as not yet ported below.
 //!
 //! ## Not yet ported (left for a follow-up session)
 //!   - The public `write(...)` entry points (`write(TaskMonitor)`, `write(Category, TaskMonitor)`,
@@ -26,17 +36,17 @@
 //!     `deferredCompositeInternalTypes` and popping `compositeDependencyGraph`).
 //!   - `writeCompositePreDeclaration`/`writeCompositeBody`/`writeComponent` (struct/union body
 //!     emission).
-//!   - `getTypeDeclaration`/`getDataTypePrefix`/`getDynamicComponentString` (per-field C
-//!     declaration text, including array/pointer name mangling and bit-field suffixes).
-//!   - `writeEnum`, `writeTypeDef` (including the `isIntegral`-suppression and
-//!     auto-typedef/auto-pointer-typedef detection it guards), `writeDynamicBuiltIn`, `writeBuiltIn`
-//!     (this one should be a thin call to the already-real
-//!     [`BuiltInDataType::get_c_type_declaration`](super::built_in_data_type::BuiltInDataType::get_c_type_declaration),
-//!     per this crate's existing precedent -- no new C-declaration formatting should be written for
-//!     it), `writeBuiltInDeclarations`.
-//!   - `getFunctionPointerString`/`getParameterListString` (function-pointer/parameter-list text).
-//!   - `getArrayDimensions`/`getBaseDataType`/`getArrayBaseType`/`getPointerBaseDataType`/
-//!     `getPointerDepth`/`getBaseArrayTypedefType` (small recursive helpers feeding the above).
+//!   - `getTypeDeclaration`/`getDynamicComponentString` (per-field C declaration text, including
+//!     array/pointer name mangling and bit-field suffixes -- built on the already-ported
+//!     `getDataTypePrefix` above).
+//!   - `writeTypeDef` (including the `isIntegral`-suppression and auto-typedef/
+//!     auto-pointer-typedef detection it guards), `writeDynamicBuiltIn` (needs the top-level
+//!     `write` dispatch to recurse into the replacement base type), `writeBuiltInDeclarations`.
+//!   - `getFunctionPointerString`/`getParameterListString` (function-pointer/parameter-list text,
+//!     built on the already-ported `getArrayBaseType`/`getPointerBaseDataType`/`getPointerDepth`/
+//!     `getArrayDimensions` above; blocked on the top-level `write` dispatch for their
+//!     conditional recursive `write(returnType/paramType, monitor)` calls).
+//!   - `getBaseArrayTypedefType` (small recursive helper feeding `writeTypeDef`).
 //!
 //! ## Fidelity notes for what *is* ported so far
 //!   - Java's `CompositeNode` merely wraps a `Composite` object reference (trivially "cloned" as a
@@ -80,12 +90,16 @@ use std::io::{self, Write};
 use std::sync::Arc;
 
 use crate::program::model::data::annotation_handler::AnnotationHandler;
+use crate::program::model::data::array::Array;
 use crate::program::model::data::bit_field_packing::BitFieldPacking;
+use crate::program::model::data::built_in_data_type::BuiltInDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::default_annotation_handler::DefaultAnnotationHandler;
+use crate::program::model::data::enum_::Enum;
+use crate::program::model::data::pointer::Pointer;
 use crate::util::exception::CancelledException;
 use crate::util::graph::{AbstractDependencyGraph, DeterministicDependencyGraph};
 use crate::util::task::TaskMonitor;
@@ -422,22 +436,197 @@ impl<W: Write> DataTypeWriter<W> {
         self.composite_dependency_graph.pop().expect("no cycle expected among by-value composite embeddings")
     }
 
-    /// Port of `writeBuiltIn`'s core (the not-yet-ported caller still needs to be wired up): calls
-    /// the already-real [`BuiltInDataType::get_c_type_declaration`] rather than re-deriving any
-    /// C-declaration formatting, per this crate's established precedent (see the module doc
-    /// comment).
-    #[allow(dead_code)]
-    fn write_built_in(
+    /// Port of `writeBuiltIn` (the not-yet-ported dispatch that calls this still needs to be
+    /// wired up): calls the already-real [`BuiltInDataType::get_c_type_declaration`] rather than
+    /// re-deriving any C-declaration formatting, per this crate's established precedent (see the
+    /// module doc comment).
+    pub fn write_built_in(
         &mut self,
-        dt: &dyn crate::program::model::data::built_in_data_type::BuiltInDataType,
+        dt: &dyn BuiltInDataType,
     ) -> io::Result<()> {
         if let Some(declaration) = dt.get_c_type_declaration(Some(self.data_organization.as_ref())) {
             self.writer.write_all(declaration.as_bytes())?;
-            self.writer.write_all(b"\n")?;
+            self.writer.write_all(EOL.as_bytes())?;
         }
         Ok(())
     }
+
+    /// Port of the private `writeEnum(Enum enumm, TaskMonitor monitor)` helper. `monitor` is
+    /// accepted (matching the Java signature) but unused: the Java method never calls
+    /// `monitor.checkCancelled()` in its body either, and it declares no `CancelledException` in
+    /// its `throws` clause.
+    pub fn write_enum(
+        &mut self,
+        enumm: &dyn Enum,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<()> {
+        let enum_name = enumm.get_display_name();
+        if enum_name.starts_with("define_") && enum_name.len() > 7 && enumm.get_count() == 1 {
+            let val = enumm.get_values()[0];
+            write!(self.writer, "#define {} {val}", &enum_name["define_".len()..])?;
+            write!(self.writer, "{EOL}{EOL}")?;
+            return Ok(());
+        }
+
+        write!(self.writer, "typedef enum {enum_name} {{")?;
+        let description = enumm.get_description();
+        if !description.is_empty() {
+            let comment = self.comment(&description);
+            write!(self.writer, " {comment}")?;
+        }
+        write!(self.writer, "{EOL}")?;
+
+        let names = enumm.get_names();
+        let last = names.len().saturating_sub(1);
+        for (j, name) in names.iter().enumerate() {
+            write!(self.writer, "    ")?;
+            write!(self.writer, "{}", self.annotator.get_enum_prefix(enumm, name))?;
+            write!(self.writer, "{name}")?;
+            write!(self.writer, "=")?;
+            let value = enumm.get_value_for_name(name).unwrap_or(0);
+            write!(self.writer, "{value}")?;
+
+            let comment = enumm.get_comment(name);
+            if !comment.trim().is_empty() {
+                let comment = self.comment(&comment);
+                write!(self.writer, " {comment}")?;
+            }
+
+            write!(self.writer, "{}", self.annotator.get_enum_suffix(enumm, name))?;
+
+            if j < last {
+                write!(self.writer, ",")?;
+            }
+            write!(self.writer, "{EOL}")?;
+        }
+        write!(self.writer, "}} {enum_name};")?;
+        write!(self.writer, "{EOL}{EOL}")?;
+        Ok(())
+    }
+
+    /// Port of the private `getBaseDataType(DataType dt)` helper: strips `Array`/`Pointer`/
+    /// `BitFieldDataType` layers to find the underlying data type.
+    ///
+    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today (via
+    /// [`Self::get_data_type_prefix`]) -- its other real callers (`getTypeDeclaration`,
+    /// `getFunctionPointerString`) are among the "not yet ported" items listed in the module doc
+    /// comment.
+    #[allow(dead_code)]
+    fn get_base_data_type(mut dt: Box<dyn DataType>) -> Box<dyn DataType> {
+        loop {
+            if let Some(array) = dt.as_array() {
+                dt = array.get_data_type();
+                continue;
+            }
+            if let Some(pointer) = dt.as_pointer() {
+                match pointer.get_data_type() {
+                    Some(inner) => {
+                        dt = inner;
+                        continue;
+                    }
+                    None => break,
+                }
+            }
+            if let Some(bit_field) = dt.as_bit_field_data_type() {
+                dt = bit_field.get_base_data_type();
+                continue;
+            }
+            break;
+        }
+        dt
+    }
+
+    /// Port of the private `getArrayBaseType(Array arrayDt)` helper.
+    ///
+    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
+    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
+    /// comment.
+    #[allow(dead_code)]
+    fn get_array_base_type(array: &dyn Array) -> Box<dyn DataType> {
+        let mut data_type = array.get_data_type();
+        while let Some(inner_array) = data_type.as_array() {
+            data_type = inner_array.get_data_type();
+        }
+        data_type
+    }
+
+    /// Port of the private `getPointerBaseDataType(Pointer p)` helper.
+    ///
+    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
+    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
+    /// comment.
+    #[allow(dead_code)]
+    fn get_pointer_base_data_type(
+        pointer: &dyn Pointer,
+    ) -> Option<Box<dyn DataType>> {
+        let mut dt = pointer.get_data_type()?;
+        while let Some(inner_pointer) = dt.as_pointer() {
+            match inner_pointer.get_data_type() {
+                Some(inner) => dt = inner,
+                None => break,
+            }
+        }
+        Some(dt)
+    }
+
+    /// Port of the private `getPointerDepth(Pointer p)` helper.
+    ///
+    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
+    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
+    /// comment.
+    #[allow(dead_code)]
+    fn get_pointer_depth(pointer: &dyn Pointer) -> i32 {
+        let mut depth = 1;
+        let mut current = pointer.get_data_type();
+        while let Some(dt) = current {
+            match dt.as_pointer() {
+                Some(inner) => {
+                    depth += 1;
+                    current = inner.get_data_type();
+                }
+                None => break,
+            }
+        }
+        depth
+    }
+
+    /// Port of the private `static String getArrayDimensions(Array arrayDt)` helper.
+    ///
+    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
+    /// `getFunctionPointerString`, is among the "not yet ported" items listed in the module doc
+    /// comment.
+    #[allow(dead_code)]
+    fn get_array_dimensions(array: &dyn Array) -> String {
+        let mut dimensions = format!("[{}]", array.get_num_elements());
+        if let Some(inner_array) = array.get_data_type().as_array() {
+            dimensions.push_str(&Self::get_array_dimensions(inner_array));
+        }
+        dimensions
+    }
+
+    /// Port of the private `getDataTypePrefix(DataType dataType)` helper.
+    ///
+    /// #[allow(dead_code)]: only exercised from `#[cfg(test)]` today -- its real caller,
+    /// `getTypeDeclaration`, is among the "not yet ported" items listed in the module doc comment.
+    #[allow(dead_code)]
+    fn get_data_type_prefix(dt: Box<dyn DataType>) -> &'static str {
+        let base = Self::get_base_data_type(dt);
+        if base.as_structure().is_some() {
+            "struct "
+        } else if base.as_union().is_some() {
+            "union "
+        } else if base.as_enum().is_some() {
+            "enum "
+        } else {
+            ""
+        }
+    }
 }
+
+/// Port of `DataTypeWriter.EOL` (`System.getProperty("line.separator")`). Fixed to `"\n"` rather
+/// than sampled from the host platform, matching this crate's general convention (and every other
+/// text-emitting port in this crate) of emitting Unix line endings unconditionally.
+const EOL: &str = "\n";
 
 #[cfg(test)]
 mod tests {
@@ -509,5 +698,169 @@ mod tests {
         assert!(!writer.data_organization.is_big_endian());
         assert_eq!(writer.data_organization.get_char_size(), 1);
         assert_eq!(writer.data_organization.get_long_long_size(), 8);
+    }
+
+    fn written_text(writer: DataTypeWriter<Vec<u8>>) -> String {
+        String::from_utf8(writer.writer).unwrap()
+    }
+
+    #[test]
+    fn write_enum_emits_typedef_enum_block() {
+        use crate::program::model::data::enum_data_type::EnumDataType;
+
+        let mut e = EnumDataType::new("Color", 4);
+        e.add("RED", 0);
+        e.add_with_comment("GREEN", 1, "the green one");
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write_enum(&e, &DummyMonitor).unwrap();
+
+        let text = written_text(writer);
+        assert!(text.starts_with("typedef enum Color {\n"), "text was: {text}");
+        assert!(text.contains("RED=0,\n"), "text was: {text}");
+        assert!(text.contains("GREEN=1 /* the green one */\n"), "text was: {text}");
+        assert!(text.trim_end().ends_with("} Color;"), "text was: {text}");
+    }
+
+    #[test]
+    fn write_enum_emits_define_for_single_value_define_prefixed_enum() {
+        use crate::program::model::data::enum_data_type::EnumDataType;
+
+        let mut e = EnumDataType::new("define_FOO", 4);
+        e.add("FOO", 42);
+
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write_enum(&e, &DummyMonitor).unwrap();
+
+        assert_eq!(written_text(writer), "#define FOO 42\n\n");
+    }
+
+    struct MockBuiltIn(Option<String>);
+    impl DataType for MockBuiltIn {}
+    impl BuiltInDataType for MockBuiltIn {
+        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+            self.0.clone()
+        }
+        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
+    }
+
+    #[test]
+    fn write_built_in_emits_declaration_when_present() {
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write_built_in(&MockBuiltIn(Some("typedef unsigned long uintptr_t;".to_string()))).unwrap();
+        assert_eq!(written_text(writer), "typedef unsigned long uintptr_t;\n");
+    }
+
+    #[test]
+    fn write_built_in_emits_nothing_when_declaration_absent() {
+        let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
+        writer.write_built_in(&MockBuiltIn(None)).unwrap();
+        assert_eq!(written_text(writer), "");
+    }
+
+    #[test]
+    fn get_data_type_prefix_identifies_struct_union_enum() {
+        use crate::program::model::data::enum_data_type::EnumDataType;
+        use crate::program::model::data::union_data_type::UnionDataTypeImpl;
+
+        let s: Box<dyn DataType> = Box::new(StructureDataTypeImpl::new("S", 4));
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_data_type_prefix(s), "struct ");
+
+        let u: Box<dyn DataType> = Box::new(UnionDataTypeImpl::new("U"));
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_data_type_prefix(u), "union ");
+
+        let e: Box<dyn DataType> = Box::new(EnumDataType::new("E", 4));
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_data_type_prefix(e), "enum ");
+    }
+
+    #[test]
+    fn get_data_type_prefix_is_empty_for_non_composite_non_enum() {
+        struct PlainInt;
+        impl DataType for PlainInt {}
+        let dt: Box<dyn DataType> = Box::new(PlainInt);
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_data_type_prefix(dt), "");
+    }
+
+    #[test]
+    fn array_dimensions_and_base_type_helpers_handle_multi_dimensional_arrays() {
+        use crate::program::model::data::array_data_type::ArrayDataType;
+
+        // `ArrayDataType::new` rejects a length-0 element type, so the leaf here needs a real
+        // reported length (unlike a `DataType` default's `get_length() -> 0`).
+        let element: Box<dyn DataType> = Box::new(StructureDataTypeImpl::new("Elem", 4));
+        let inner = ArrayDataType::new(element, 3).unwrap();
+        let outer = ArrayDataType::new(Box::new(inner), 2).unwrap();
+
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_array_dimensions(&outer), "[2][3]");
+
+        let base = DataTypeWriter::<Vec<u8>>::get_array_base_type(&outer);
+        assert_eq!(base.get_name(), "Elem");
+        assert!(base.as_array().is_none());
+    }
+
+    /// Minimal `Pointer` mock, since this crate has no concrete, non-test `Pointer`
+    /// implementation yet (see the research this port is based on) -- mirrors the precedent
+    /// already used by `pointer_data_type.rs`'s own `#[cfg(test)]` mocks. Holds its target as an
+    /// `Arc<dyn DataType>` (cheaply `Clone`, unlike `Box<dyn DataType>`) so `get_data_type()` can
+    /// be called more than once per node, across more than one traversal in a test, exactly like
+    /// a real `Pointer`'s "peek at my target" semantics.
+    struct MockPointer {
+        target: Option<Arc<dyn DataType>>,
+    }
+    impl DataType for MockPointer {
+        fn as_pointer(&self) -> Option<&dyn Pointer> {
+            Some(self)
+        }
+    }
+    impl Pointer for MockPointer {
+        fn get_data_type(&self) -> Option<Box<dyn DataType>> {
+            self.target.clone().map(|arc| Box::new(SharedDataType(arc)) as Box<dyn DataType>)
+        }
+        fn new_pointer(&self, _data_type: Box<dyn DataType>) -> Box<dyn Pointer> {
+            unimplemented!("not needed by this test")
+        }
+        fn typedef_builder(&self) -> Box<dyn crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder> {
+            unimplemented!("not needed by this test")
+        }
+    }
+
+    /// Thin `Box<dyn DataType>` wrapper around a shared `Arc<dyn DataType>`, letting
+    /// `MockPointer::get_data_type()` hand out a fresh owned `Box` each call while still sharing
+    /// (not cloning) the underlying node -- `as_pointer` delegates through so chained-pointer
+    /// traversal (`dt.as_pointer()`) still sees the real wrapped `MockPointer`.
+    struct SharedDataType(Arc<dyn DataType>);
+    impl DataType for SharedDataType {
+        fn get_name(&self) -> String {
+            self.0.get_name()
+        }
+        fn as_pointer(&self) -> Option<&dyn Pointer> {
+            self.0.as_pointer()
+        }
+    }
+
+    struct NamedLeaf(&'static str);
+    impl DataType for NamedLeaf {
+        fn get_name(&self) -> String {
+            self.0.to_string()
+        }
+    }
+
+    #[test]
+    fn pointer_depth_and_base_type_walk_chained_pointers() {
+        let leaf: Arc<dyn DataType> = Arc::new(NamedLeaf("int"));
+        let p1: Arc<dyn DataType> = Arc::new(MockPointer { target: Some(leaf) });
+        let p2: Arc<dyn DataType> = Arc::new(MockPointer { target: Some(p1) });
+        let p3 = MockPointer { target: Some(p2) };
+
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_pointer_depth(&p3), 3);
+        let base = DataTypeWriter::<Vec<u8>>::get_pointer_base_data_type(&p3).unwrap();
+        assert_eq!(base.get_name(), "int");
+    }
+
+    #[test]
+    fn pointer_depth_is_one_for_a_single_pointer_to_null() {
+        let p = MockPointer { target: None };
+        assert_eq!(DataTypeWriter::<Vec<u8>>::get_pointer_depth(&p), 1);
+        assert!(DataTypeWriter::<Vec<u8>>::get_pointer_base_data_type(&p).is_none());
     }
 }
