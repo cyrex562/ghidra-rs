@@ -44,6 +44,7 @@ pub mod settings_cache;
 pub mod settings_db_adapter;
 pub mod source_archive_adapter;
 pub mod source_archive_adapter_no_table;
+pub mod source_archive_adapter_v0;
 pub mod structure_db;
 pub mod typedef_db_adapter;
 pub mod typedef_db_adapter_v0;

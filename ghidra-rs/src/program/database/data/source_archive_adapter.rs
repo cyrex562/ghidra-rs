@@ -9,13 +9,43 @@
 //! selected as a dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord};
+use crate::framework::db::{DBHandle, DBRecord, FieldType, Schema};
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::util::UniversalID;
 
 /// Name of the database table used to store data type archive ID entries.
 pub const SOURCE_ARCHIVE_TABLE_NAME: &str = "Data Type Archive IDs";
+
+/// Schema version implemented by the current (`SourceArchiveAdapterV0`) table layout.
+pub const CURRENT_VERSION: i32 = 0;
+
+/// Build the current data type archive ID table schema, as defined by
+/// `SourceArchiveAdapterV0.V0_SCHEMA`. Exposed as a function (rather than a `Schema` constant)
+/// since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Archive ID".to_string(),
+        vec![
+            FieldType::String,
+            FieldType::String,
+            FieldType::Byte,
+            FieldType::Long,
+            FieldType::Boolean,
+        ],
+        vec![
+            "Domain File ID".to_string(),
+            "Name".to_string(),
+            "Type".to_string(),
+            "Last Sync Time".to_string(),
+            "Dirty Flag".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Column index of the archive's domain file ID, as defined by `SourceArchiveAdapterV0`.
 pub const ARCHIVE_ID_DOMAIN_FILE_ID_COL: usize = 0;
