@@ -10,8 +10,9 @@
 
 use std::collections::HashSet;
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, Field, RecordIterator};
+use crate::framework::db::{DBRecord, Field, FieldType, RecordIterator, Schema};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -36,6 +37,35 @@ pub const SETTINGS_LONG_VALUE_COL: usize = 2;
 
 /// Column index of the setting's string value, as defined by `SettingsDBAdapterV1`.
 pub const SETTINGS_STRING_VALUE_COL: usize = 3;
+
+/// Schema version implemented by the current (`SettingsDBAdapterV1`) table layout.
+pub const CURRENT_VERSION: i32 = 1;
+
+/// Build the current settings table schema, as defined by
+/// `SettingsDBAdapterV1.V1_SETTINGS_SCHEMA` (`SettingsDBAdapter.SETTINGS_SCHEMA` is simply an
+/// alias for it). Exposed as a function (rather than a `Schema` constant) since `Schema`
+/// construction is not `const`; used both by the live `V1` adapter and by `V0` to translate
+/// old-format records into the current record layout.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "SettingsID".to_string(),
+        vec![
+            FieldType::Long,
+            FieldType::Short,
+            FieldType::Long,
+            FieldType::String,
+        ],
+        vec![
+            "AssociationID".to_string(),
+            "Settings Name Index".to_string(),
+            "Long Value".to_string(),
+            "String Value".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Adapter to access settings database tables.
 ///
