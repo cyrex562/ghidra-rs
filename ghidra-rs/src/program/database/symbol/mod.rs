@@ -1,3 +1,4 @@
+pub mod address_set_filtered_symbol_iterator;
 pub mod class_symbol;
 pub mod code_symbol;
 pub mod equate_db;
@@ -31,6 +32,7 @@ pub mod variable_storage_db_adapter_no_table;
 pub mod variable_storage_db_adapter_v2;
 pub mod variable_storage_manager;
 
+pub use address_set_filtered_symbol_iterator::AddressSetFilteredSymbolIterator;
 pub use class_symbol::ClassSymbol;
 pub use code_symbol::{CodeSymbol, CodeSymbolObject};
 pub use equate_db::{EquateDb, RenameEquateError};
