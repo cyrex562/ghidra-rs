@@ -39,6 +39,7 @@ pub mod lazy_loading_caching_map;
 pub mod merge;
 pub mod parent_child_adapter;
 pub mod parent_child_adapter_no_table;
+pub mod parent_child_adapter_v0;
 pub mod pointer_db;
 pub mod pointer_db_adapter;
 pub mod pointer_db_adapter_v0;
