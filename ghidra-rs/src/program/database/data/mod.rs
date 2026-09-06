@@ -6,6 +6,7 @@ pub mod builtin_db_adapter;
 pub mod builtin_db_adapter_v0;
 pub mod calling_convention_db_adapter;
 pub mod calling_convention_db_adapter_no_table;
+pub mod calling_convention_db_adapter_v0;
 pub mod category_db_adapter;
 pub mod category_db_adapter_v0;
 pub mod component_db_adapter;

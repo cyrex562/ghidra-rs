@@ -10,6 +10,9 @@
 use std::collections::HashSet;
 use std::io;
 
+/// Name of the database table used to store function calling conventions.
+pub const CALLING_CONVENTION_TABLE_NAME: &str = "Calling Conventions";
+
 /// Calling convention ID reserved for an unknown/unrecorded calling convention.
 pub const UNKNOWN_CALLING_CONVENTION_ID: u8 = 0;
 
