@@ -3,6 +3,7 @@ pub mod code_symbol;
 pub mod equate_db;
 pub mod equate_store;
 pub mod equate_db_adapter;
+pub mod equate_db_adapter_v0;
 pub mod equate_manager;
 pub mod equate_ref_db;
 pub mod equate_ref_db_adapter;
@@ -22,6 +23,7 @@ pub mod symbol_manager;
 pub mod type_filtered_symbol_iterator;
 pub mod variable_storage_db_adapter;
 pub mod variable_storage_db_adapter_no_table;
+pub mod variable_storage_db_adapter_v2;
 pub mod variable_storage_manager;
 
 pub use class_symbol::ClassSymbol;
@@ -29,6 +31,7 @@ pub use code_symbol::{CodeSymbol, CodeSymbolObject};
 pub use equate_db::{EquateDb, RenameEquateError};
 pub use equate_store::{EquateData, EquateDatabase, EquateError, EquateId, EquateReference, EquateStore};
 pub use equate_db_adapter::{EquateDBAdapter, GetRecordKeyError};
+pub use equate_db_adapter_v0::EquateDBAdapterV0;
 pub use equate_manager::{
     format_name_for_equate, format_name_for_equate_error, get_data_type_uuid,
     get_equate_value_from_formatted_name, validate_equate_name, CreateEquateError, EquateManager,
@@ -56,4 +59,5 @@ pub use symbol_manager::{SymbolManagerDb, SymbolManagerDB};
 pub use type_filtered_symbol_iterator::TypeFilteredSymbolIterator;
 pub use variable_storage_db_adapter::VariableStorageDBAdapter;
 pub use variable_storage_db_adapter_no_table::VariableStorageDBAdapterNoTable;
+pub use variable_storage_db_adapter_v2::VariableStorageDBAdapterV2;
 pub use variable_storage_manager::VariableStorageManager;
