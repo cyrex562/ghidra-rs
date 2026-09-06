@@ -9,8 +9,9 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, Schema};
 use crate::program::model::data::generic_calling_convention::GenericCallingConvention;
 use crate::program::model::lang::compiler_spec::CALLING_CONVENTION_UNKNOWN;
 use crate::program::util::DBRecordAdapter;
@@ -18,6 +19,45 @@ use crate::util::UniversalID;
 
 /// Name of the database table used to store function signature definition data types.
 pub const FUNCTION_DEF_TABLE_NAME: &str = "Function Definitions";
+
+/// Schema version implemented by the current (`FunctionDefinitionDBAdapterV2`) table layout.
+pub const CURRENT_VERSION: i32 = 2;
+
+/// Build the current function definitions table schema, as defined by
+/// `FunctionDefinitionDBAdapterV2.V2_FUN_DEF_SCHEMA`. Exposed as a function (rather than a
+/// `Schema` constant) since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Data Type ID".to_string(),
+        vec![
+            FieldType::String,
+            FieldType::String,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Byte,
+            FieldType::Byte,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+            FieldType::Long,
+        ],
+        vec![
+            "Name".to_string(),
+            "Comment".to_string(),
+            "Category ID".to_string(),
+            "Return Type ID".to_string(),
+            "Flags".to_string(),
+            "Call Conv ID".to_string(),
+            "Source Archive ID".to_string(),
+            "Source Data Type ID".to_string(),
+            "Source Sync Time".to_string(),
+            "Last Change Time".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Column index of the function definition's name, as defined by `FunctionDefinitionDBAdapterV2`.
 pub const FUNCTION_DEF_NAME_COL: usize = 0;
