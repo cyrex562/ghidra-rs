@@ -21,6 +21,8 @@ pub mod merge;
 pub mod parent_child_adapter;
 pub mod pointer_db;
 pub mod pointer_db_adapter;
+pub mod setting_db;
+pub mod settings_cache;
 pub mod settings_db_adapter;
 pub mod source_archive_adapter;
 pub mod structure_db;
@@ -79,7 +81,12 @@ pub use pointer_db::PointerDb;
 pub use pointer_db_adapter::{
     PointerDBAdapter, POINTER_TABLE_NAME, PTR_CATEGORY_COL, PTR_DT_ID_COL, PTR_LENGTH_COL,
 };
-pub use settings_db_adapter::{SettingsDBAdapter, SettingsDeleteError};
+pub use setting_db::{SettingDB, SettingValue};
+pub use settings_cache::SettingsCache;
+pub use settings_db_adapter::{
+    SettingsDBAdapter, SettingsDeleteError, SETTINGS_ASSOCIATION_ID_COL, SETTINGS_LONG_VALUE_COL,
+    SETTINGS_NAME_INDEX_COL, SETTINGS_STRING_VALUE_COL,
+};
 pub use source_archive_adapter::{
     SourceArchiveAdapter, ARCHIVE_ID_DIRTY_FLAG_COL, ARCHIVE_ID_DOMAIN_FILE_ID_COL,
     ARCHIVE_ID_LAST_SYNC_TIME_COL, ARCHIVE_ID_NAME_COL, ARCHIVE_ID_TYPE_COL,

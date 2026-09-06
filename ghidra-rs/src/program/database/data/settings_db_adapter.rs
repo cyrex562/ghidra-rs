@@ -25,6 +25,18 @@ pub enum SettingsDeleteError {
     Cancelled(#[from] CancelledException),
 }
 
+/// Column index of the setting's association ID, as defined by `SettingsDBAdapterV1`.
+pub const SETTINGS_ASSOCIATION_ID_COL: usize = 0;
+
+/// Column index of the setting's normalized name index, as defined by `SettingsDBAdapterV1`.
+pub const SETTINGS_NAME_INDEX_COL: usize = 1;
+
+/// Column index of the setting's long value, as defined by `SettingsDBAdapterV1`.
+pub const SETTINGS_LONG_VALUE_COL: usize = 2;
+
+/// Column index of the setting's string value, as defined by `SettingsDBAdapterV1`.
+pub const SETTINGS_STRING_VALUE_COL: usize = 3;
+
 /// Adapter to access settings database tables.
 ///
 /// Port of `ghidra.program.database.data.SettingsDBAdapter`.
