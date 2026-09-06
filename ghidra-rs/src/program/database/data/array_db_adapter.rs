@@ -9,8 +9,46 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBHandle, DBRecord, Field, RecordIterator};
+use crate::framework::db::{DBHandle, DBRecord, Field, FieldType, RecordIterator, Schema};
+
+/// Name of the database table used to store array data types.
+pub const ARRAY_TABLE_NAME: &str = "Arrays";
+
+/// Schema version implemented by the current (`ArrayDBAdapterV1`) table layout.
+pub const CURRENT_VERSION: i32 = 1;
+
+/// Build the current array table schema, as defined by `ArrayDBAdapterV1.V1_SCHEMA`. Exposed as
+/// a function (rather than a `Schema` constant) since `Schema` construction is not `const`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Array ID".to_string(),
+        vec![FieldType::Long, FieldType::Int, FieldType::Int, FieldType::Long],
+        vec![
+            "Data Type ID".to_string(),
+            "Dimension".to_string(),
+            "Length".to_string(),
+            "Cat ID".to_string(),
+        ],
+        vec![],
+    ))
+}
+
+/// Column index of the array's referenced data type ID, as defined by `ArrayDBAdapterV1`.
+pub const ARRAY_DT_ID_COL: usize = 0;
+
+/// Column index of the array's dimension (number of elements), as defined by `ArrayDBAdapterV1`.
+pub const ARRAY_DIM_COL: usize = 1;
+
+/// Column index of the array's element length (applies to sizable dynamic types only), as
+/// defined by `ArrayDBAdapterV1`.
+pub const ARRAY_ELEMENT_LENGTH_COL: usize = 2;
+
+/// Column index of the array's category ID, as defined by `ArrayDBAdapterV1`.
+pub const ARRAY_CAT_COL: usize = 3;
 
 /// Adapter to access the Array database table for array data types.
 ///

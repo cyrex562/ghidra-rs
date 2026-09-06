@@ -1,5 +1,7 @@
 pub mod array_db;
 pub mod array_db_adapter;
+pub mod array_db_adapter_v0;
+pub mod array_db_adapter_v1;
 pub mod builtin_db_adapter;
 pub mod builtin_db_adapter_v0;
 pub mod calling_convention_db_adapter;
