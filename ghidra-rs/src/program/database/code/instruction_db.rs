@@ -9,6 +9,24 @@
 //! [`CodeUnitDb`] trait, and the calls Java makes on its package-private `codeMgr` field go
 //! through the [`CodeUnitOwner`] seam.
 //!
+//!
+//! # Known gaps
+//!
+//! This is a real implementation, not a stub, but a few methods are blocked on crate
+//! infrastructure that does not exist yet. Each is marked with a `TODO(port):` comment at its
+//! site; they are collected here so the incompleteness is visible without reading 3000 lines:
+//!
+//! - `get_fall_from`: needs `Listing::get_instruction_containing` plus a `SymbolTable::has_symbol`
+//!   that is not ported, and the ported `Program` exposes its listing and symbol table only
+//!   through `&mut self` accessors an `Arc<dyn Program>` cannot reach. Returns `None`.
+//! - `do_set_flow_override`'s reference-retyping loop: `RefTypeFactory` is ported as the ref-type
+//!   tables only, without `get_default_memory_ref_type`, which is the whole loop body. The flag
+//!   bits and the `set_flags` callback *are* applied.
+//! - `program.setChanged(...)` (3 sites): `Program` has no `set_changed` and `ProgramEvent` is
+//!   not ported.
+//! - `PropertySet::set_object_property`: no object-property setter exists on `ObjectPropertyMap`.
+//! - `InstructionContext::get_parser_context_at` for a *foreign* address: needs a downcast to
+//!   `InstructionDB` plus Java's `proto.getClass()` comparison. The same-address case works.
 //! # Interior mutability, and why construction returns an `Arc`
 //!
 //! Every Java field that mutates after construction (`flags`, `flowOverride`, `lengthOverride`,

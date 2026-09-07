@@ -7,6 +7,21 @@
 //! underlying `CodeUnitDB`/`DataDB` classes -- the key should only be used for managing an object
 //! cache.
 //!
+//!
+//! # Known gaps
+//!
+//! A real implementation, not a stub, but some methods are blocked on crate infrastructure that
+//! does not exist yet. Each is marked `TODO(port):` at its site; collected here for visibility:
+//!
+//! - The `Settings` setters (`set_long`/`set_string`/`set_value`/`clear_setting`/
+//!   `clear_all_settings`) are inherited from [`DataDB`](super::data_db)'s own gap: they route
+//!   through `program.getDataTypeManager()`, and the ported `Program` trait has no such accessor.
+//!   They are no-ops; the getters fall back to the data type's default settings.
+//!   `get_default_settings` is fully ported.
+//! - `DynamicDataType` component instantiation: `DataType` exposes `as_dynamic()` for the
+//!   `Dynamic` interface but offers no downcast to `DynamicDataType`, where
+//!   `getComponent(int, MemBuffer)` and `getNumComponents(MemBuffer)` actually live. This is the
+//!   same blocker already documented on `abstract_db_trace_data_component.rs`.
 //! # `extends DataDB`, without inheritance
 //!
 //! Java's `class DataComponent extends DataDB`. Mirroring what
