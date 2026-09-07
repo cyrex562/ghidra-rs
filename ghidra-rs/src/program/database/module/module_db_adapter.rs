@@ -11,8 +11,9 @@
 //! itself selected as a dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, RecordIterator};
+use crate::framework::db::{DBRecord, FieldType, RecordIterator, Schema};
 
 /// DB table name prefix for the program tree module table. Stands in for
 /// `ModuleDBAdapter.MODULE_TABLE_NAME`.
@@ -32,6 +33,25 @@ pub const MODULE_CHILD_COUNT_COL: usize = 2;
 /// Builds the per-tree module table name. Stands in for `ModuleDBAdapter.getTableName(long)`.
 pub fn get_table_name(tree_id: i64) -> String {
     format!("{MODULE_TABLE_NAME}{tree_id}")
+}
+
+/// Current (version 1) schema for a program tree's Module table. Stands in for
+/// `ModuleDBAdapterV1.V1_MODULE_SCHEMA`. Shared with [`ModuleDBAdapterV0`](
+/// crate::program::database::module::ModuleDBAdapterV0)'s `RecordTranslator` output, which
+/// upgrades version 0 records into this shape.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        1,
+        FieldType::Long,
+        "Key".to_string(),
+        vec![FieldType::String, FieldType::String, FieldType::Int],
+        vec![
+            "Name".to_string(),
+            "Comments".to_string(),
+            "ChildCount".to_string(),
+        ],
+        vec![],
+    ))
 }
 
 /// Adapter for accessing records in a program tree's Module table.
