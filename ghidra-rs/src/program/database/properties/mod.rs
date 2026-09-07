@@ -3,6 +3,7 @@ pub mod db_property_map_manager;
 pub mod generic_saveable;
 pub mod int_property_map_db;
 pub mod long_property_map_db;
+pub mod object_property_map_db;
 pub mod properties_db_adapter;
 pub mod properties_db_adapter_v0;
 pub mod property_map_db;
@@ -15,6 +16,7 @@ pub use db_property_map_manager::{DBPropertyMapManager, ProgramReadyError};
 pub use generic_saveable::GenericSaveable;
 pub use int_property_map_db::IntPropertyMapDB;
 pub use long_property_map_db::LongPropertyMapDB;
+pub use object_property_map_db::ObjectPropertyMapDB;
 pub use properties_db_adapter::PropertiesDBAdapter;
 pub use properties_db_adapter_v0::{
     properties_schema, PropertiesDBAdapterV0, INT_PROPERTY_TYPE, LONG_PROPERTY_TYPE,
