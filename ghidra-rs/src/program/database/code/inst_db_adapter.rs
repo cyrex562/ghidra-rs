@@ -8,8 +8,9 @@
 //! owning the concrete adapters. This trait was itself selected as a dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, RecordIterator};
+use crate::framework::db::{DBRecord, FieldType, RecordIterator, Schema};
 use crate::program::model::address::{Address, AddressSetView};
 use crate::program::seam_stubs::AddressKeyIteratorLike;
 use crate::util::exception::CancelledException;
@@ -23,6 +24,23 @@ pub const INSTRUCTION_TABLE_NAME: &str = "Instructions";
 pub const PROTO_ID_COL: usize = 0;
 /// Flags column index. Stands in for `InstDBAdapter.FLAGS_COL`.
 pub const FLAGS_COL: usize = 1;
+
+/// Schema version implemented by [`InstDBAdapterV1`](crate::program::database::code::inst_db_adapter_v1::InstDBAdapterV1),
+/// the current adapter version.
+pub const CURRENT_VERSION: i32 = 1;
+
+/// The current `Schema` for the instruction table, keyed by address (database-key encoding).
+/// Stands in for `InstDBAdapter.INSTRUCTION_SCHEMA`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Address".to_string(),
+        vec![FieldType::Int, FieldType::Byte],
+        vec!["Proto ID".to_string(), "Flags".to_string()],
+        vec![],
+    ))
+}
 
 /// Error returned by [`InstDBAdapter::move_address_range`], mirroring the Java method's `throws
 /// CancelledException, IOException`.
