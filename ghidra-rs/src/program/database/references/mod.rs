@@ -16,8 +16,9 @@ pub mod shifted_reference_db;
 pub mod stack_reference_db;
 pub mod to_adapter;
 pub mod to_adapter_v0;
+pub mod to_adapter_v1;
 
-pub use big_ref_list_v0::BigRefListV0;
+pub use big_ref_list_v0::{BigRefListV0, BigRefListV0Impl};
 pub use empty_mem_reference_iterator::EmptyMemReferenceIterator;
 pub use entry_point_reference_db::EntryPointReferenceDb;
 pub use external_reference_db::ExternalReferenceDb;
@@ -35,3 +36,4 @@ pub use shifted_reference_db::ShiftedReferenceDb;
 pub use stack_reference_db::StackReferenceDb;
 pub use to_adapter::ToAdapter;
 pub use to_adapter_v0::ToAdapterV0;
+pub use to_adapter_v1::ToAdapterV1;
