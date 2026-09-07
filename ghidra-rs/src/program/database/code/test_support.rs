@@ -30,7 +30,12 @@ use crate::program::model::address::{
     Address, AddressFactory, AddressRange, AddressRangeIterator, AddressSetView, AddressSpace,
     BoxedAddressIterator, KeyRange,
 };
+use crate::docking::settings::settings::Settings;
+use crate::program::model::data::array::Array;
+use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_component::DataTypeComponent;
+use crate::program::model::data::structure::Structure;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::lang::ProcessorContextView;
@@ -39,7 +44,7 @@ use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::listing::program::Program;
 use crate::program::model::listing::program_context::ProgramContext;
 use crate::program::model::listing::CommentType;
-use crate::program::model::mem::{Memory, MemoryAccessException, MemoryBlock};
+use crate::program::model::mem::{MemBuffer, Memory, MemoryAccessException, MemoryBlock};
 use crate::program::model::symbol::{
     AddExternalReferenceError, ExternalLocation, MemReferenceImpl, Namespace, Reference,
     ReferenceIterator, ReferenceManager, RefType, SourceType, Symbol, SymbolTable,
@@ -1202,6 +1207,16 @@ pub(crate) struct TestCodeUnitOwner {
     /// Backs `codeMgr.getDefinedAddressAfter(address)`; `None` (the default) means "nothing is
     /// defined after this address", which is what an instruction at the end of a block sees.
     defined_address_after: Mutex<Option<Address>>,
+    /// Backs `codeMgr.isUndefined(address, addr)`, keyed by address index; `false` by default,
+    /// i.e. "this address is not undefined data".
+    undefined: Mutex<HashMap<i64, bool>>,
+    /// Backs `codeMgr.getDataType(addr)` *and* `codeMgr.getDataType(record)` (the latter keyed on
+    /// the record's key, which is the address index), so a test can make a data code unit's type
+    /// appear, change or vanish from underneath it.
+    data_types: Mutex<HashMap<i64, Arc<dyn DataType>>>,
+    /// Backs `codeMgr.getLength(address)`, keyed by address offset; `1` by default, matching what
+    /// `DataDB.computeLength()` falls back to for an unknown address.
+    lengths: Mutex<HashMap<i64, i32>>,
 }
 
 impl TestCodeUnitOwner {
@@ -1227,6 +1242,9 @@ impl TestCodeUnitOwner {
             prototypes: Mutex::new(HashMap::new()),
             instructions: Mutex::new(BTreeMap::new()),
             defined_address_after: Mutex::new(None),
+            undefined: Mutex::new(HashMap::new()),
+            data_types: Mutex::new(HashMap::new()),
+            lengths: Mutex::new(HashMap::new()),
         }
     }
 
@@ -1313,6 +1331,21 @@ impl TestCodeUnitOwner {
     /// Sets what `codeMgr.getDefinedAddressAfter(..)` reports.
     pub(crate) fn set_defined_address_after(&self, address: Option<Address>) {
         *self.defined_address_after.lock().unwrap() = address;
+    }
+
+    /// Sets what `codeMgr.isUndefined(address, addr)` reports for an address index.
+    pub(crate) fn set_undefined(&self, addr: i64, undefined: bool) {
+        self.undefined.lock().unwrap().insert(addr, undefined);
+    }
+
+    /// Records the data type `codeMgr.getDataType(addr)` should report at an address index.
+    pub(crate) fn set_data_type_at(&self, addr: i64, data_type: Arc<dyn DataType>) {
+        self.data_types.lock().unwrap().insert(addr, data_type);
+    }
+
+    /// Sets what `codeMgr.getLength(address)` reports, keyed by address offset.
+    pub(crate) fn set_length_at(&self, offset: i64, length: i32) {
+        self.lengths.lock().unwrap().insert(offset, length);
     }
 }
 
@@ -1402,20 +1435,34 @@ impl CodeUnitOwner for TestCodeUnitOwner {
         self.db_errors.lock().unwrap().push(error.to_string());
     }
 
-    fn is_undefined(&self, _address: &Address, _addr: i64) -> bool {
-        unimplemented!("{UNEXERCISED}")
+    fn is_undefined(&self, _address: &Address, addr: i64) -> bool {
+        self.undefined
+            .lock()
+            .unwrap()
+            .get(&addr)
+            .copied()
+            .unwrap_or(false)
     }
 
-    fn get_data_type_for_record(&self, _record: &DBRecord) -> Option<Box<dyn DataType>> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_data_type_for_record(&self, record: &DBRecord) -> Option<Box<dyn DataType>> {
+        self.get_data_type_at(record.get_key().get_long_value())
     }
 
-    fn get_data_type_at(&self, _addr: i64) -> Option<Box<dyn DataType>> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_data_type_at(&self, addr: i64) -> Option<Box<dyn DataType>> {
+        self.data_types
+            .lock()
+            .unwrap()
+            .get(&addr)
+            .map(crate::program::seam_stubs::share_data_type)
     }
 
-    fn get_length_at(&self, _address: &Address) -> i32 {
-        unimplemented!("{UNEXERCISED}")
+    fn get_length_at(&self, address: &Address) -> i32 {
+        self.lengths
+            .lock()
+            .unwrap()
+            .get(&address.offset())
+            .copied()
+            .unwrap_or(1)
     }
 
     fn get_defined_address_after(&self, _address: &Address) -> Option<Address> {
@@ -1466,5 +1513,333 @@ impl CodeUnitOwner for TestCodeUnitOwner {
             .range(..address.offset())
             .next_back()
             .map(|(_, instruction)| instruction.clone())
+    }
+}
+
+// ===========================================================================================
+// Data types
+// ===========================================================================================
+
+/// One field of a [`TestDataType::structure`], or the element type of a
+/// [`TestDataType::array`].
+#[derive(Clone)]
+pub(crate) struct TestField {
+    name: String,
+    data_type: Arc<dyn DataType>,
+    offset: i32,
+    length: i32,
+    comment: Option<String>,
+}
+
+/// What a [`TestDataType`] models. **Not a port of a Java class** -- it is the data-type stand-in
+/// `DataDB`/`DataComponent` need, in the same spirit as [`TestCodeUnitOwner`]: `ProgramDB`'s real
+/// `ProgramDataTypeManager` (and with it `StructureDB`, `ArrayDB`, `TypedefDB`) is not ported, so
+/// this supplies just enough of the [`DataType`]/[`Array`]/[`Composite`]/[`Structure`] surface for
+/// the data code units to be exercised against real layouts.
+#[derive(Clone)]
+enum TestDataTypeKind {
+    /// A plain fixed-length type.
+    Fixed,
+    /// A type whose `getLength()` is `-1`, which is what makes `DataDB.computeLength()` fall
+    /// through to `codeMgr.getLength(address)`.
+    DynamicLength,
+    /// A typedef, so `DataDB.getBaseDataType(DataType)` has something to unwrap.
+    TypeDef(Arc<dyn DataType>),
+    /// A fixed-element array.
+    Array {
+        element: Arc<dyn DataType>,
+        element_length: i32,
+        num_elements: i32,
+    },
+    /// A structure with explicitly placed fields.
+    Structure(Vec<TestField>),
+}
+
+/// A configurable [`DataType`] for the `DataDB`/`DataComponent` tests. See [`TestDataTypeKind`].
+#[derive(Clone)]
+pub(crate) struct TestDataType {
+    name: String,
+    kind: TestDataTypeKind,
+    length: i32,
+}
+
+impl TestDataType {
+    /// A plain fixed-length type, e.g. `dword` of 4 bytes.
+    pub(crate) fn fixed(name: &str, length: i32) -> Self {
+        TestDataType {
+            name: name.to_string(),
+            kind: TestDataTypeKind::Fixed,
+            length,
+        }
+    }
+
+    /// A type that reports `getLength() == -1`, forcing `DataDB` to ask its owner for the length.
+    pub(crate) fn dynamic_length(name: &str) -> Self {
+        TestDataType {
+            name: name.to_string(),
+            kind: TestDataTypeKind::DynamicLength,
+            length: -1,
+        }
+    }
+
+    /// A typedef of `inner`.
+    pub(crate) fn typedef_of(inner: TestDataType) -> Self {
+        let length = inner.length;
+        TestDataType {
+            name: format!("{}_t", inner.name),
+            kind: TestDataTypeKind::TypeDef(Arc::new(inner)),
+            length,
+        }
+    }
+
+    /// An array of `num_elements` elements, each a fixed type named `element_name`.
+    pub(crate) fn array(element_name: &str, element_length: i32, num_elements: i32) -> Self {
+        TestDataType {
+            name: format!("{element_name}[{num_elements}]"),
+            kind: TestDataTypeKind::Array {
+                element: Arc::new(TestDataType::fixed(element_name, element_length)),
+                element_length,
+                num_elements,
+            },
+            length: element_length * num_elements,
+        }
+    }
+
+    /// A structure whose fields are `(name, length, offset)`, each a fixed type.
+    pub(crate) fn structure(name: &str, fields: Vec<(&str, i32, i32)>) -> Self {
+        let fields: Vec<(&str, Arc<dyn DataType>, i32)> = fields
+            .into_iter()
+            .map(|(field_name, length, offset)| {
+                (
+                    field_name,
+                    Arc::new(TestDataType::fixed(field_name, length)) as Arc<dyn DataType>,
+                    offset,
+                )
+            })
+            .collect();
+        TestDataType::structure_of(name, fields)
+    }
+
+    /// A structure whose fields are `(name, data type, offset)`.
+    pub(crate) fn structure_of(name: &str, fields: Vec<(&str, Arc<dyn DataType>, i32)>) -> Self {
+        let fields: Vec<TestField> = fields
+            .into_iter()
+            .map(|(field_name, data_type, offset)| TestField {
+                name: field_name.to_string(),
+                length: data_type.get_length(),
+                data_type,
+                offset,
+                comment: None,
+            })
+            .collect();
+        let length = fields
+            .iter()
+            .map(|field| field.offset + field.length.max(1))
+            .max()
+            .unwrap_or(0);
+        TestDataType {
+            name: name.to_string(),
+            kind: TestDataTypeKind::Structure(fields),
+            length,
+        }
+    }
+
+    /// A structure whose fields are `(name, length, offset, comment)`, so the
+    /// `DataComponent.getComment` fallback to `DataTypeComponent.getComment()` can be exercised.
+    pub(crate) fn structure_with_comments(
+        name: &str,
+        fields: Vec<(&str, i32, i32, Option<&str>)>,
+    ) -> Self {
+        let fields: Vec<TestField> = fields
+            .into_iter()
+            .map(|(field_name, length, offset, comment)| TestField {
+                name: field_name.to_string(),
+                data_type: Arc::new(TestDataType::fixed(field_name, length)),
+                offset,
+                length,
+                comment: comment.map(str::to_owned),
+            })
+            .collect();
+        let length = fields
+            .iter()
+            .map(|field| field.offset + field.length.max(1))
+            .max()
+            .unwrap_or(0);
+        TestDataType {
+            name: name.to_string(),
+            kind: TestDataTypeKind::Structure(fields),
+            length,
+        }
+    }
+
+    fn fields(&self) -> &[TestField] {
+        match &self.kind {
+            TestDataTypeKind::Structure(fields) => fields,
+            _ => &[],
+        }
+    }
+}
+
+impl DataType for TestDataType {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_length(&self) -> i32 {
+        self.length
+    }
+
+    fn get_mnemonic(&self, _settings: &dyn Settings) -> String {
+        self.name.clone()
+    }
+
+    fn get_representation(
+        &self,
+        buf: &dyn MemBuffer,
+        _settings: &dyn Settings,
+        length: i32,
+    ) -> String {
+        (0..length.max(0))
+            .map(|i| match buf.get_byte(i) {
+                Ok(byte) => format!("{byte:02x}"),
+                Err(_) => "??".to_string(),
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    fn is_typedef(&self) -> bool {
+        matches!(self.kind, TestDataTypeKind::TypeDef(_))
+    }
+
+    fn typedef_base_data_type(&self) -> Option<Box<dyn DataType>> {
+        match &self.kind {
+            TestDataTypeKind::TypeDef(inner) => Some(crate::program::seam_stubs::share_data_type(inner)),
+            _ => None,
+        }
+    }
+
+    fn is_array(&self) -> bool {
+        matches!(self.kind, TestDataTypeKind::Array { .. })
+    }
+
+    fn as_array(&self) -> Option<&dyn Array> {
+        self.is_array().then_some(self as &dyn Array)
+    }
+
+    fn is_structure(&self) -> bool {
+        matches!(self.kind, TestDataTypeKind::Structure(_))
+    }
+
+    fn as_structure(&self) -> Option<&dyn Structure> {
+        self.is_structure().then_some(self as &dyn Structure)
+    }
+
+    fn as_composite(&self) -> Option<&dyn Composite> {
+        self.is_structure().then_some(self as &dyn Composite)
+    }
+}
+
+impl Array for TestDataType {
+    fn get_num_elements(&self) -> i32 {
+        match &self.kind {
+            TestDataTypeKind::Array { num_elements, .. } => *num_elements,
+            _ => 0,
+        }
+    }
+
+    fn get_element_length(&self) -> i32 {
+        match &self.kind {
+            TestDataTypeKind::Array { element_length, .. } => *element_length,
+            _ => 0,
+        }
+    }
+
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        match &self.kind {
+            TestDataTypeKind::Array { element, .. } => {
+                crate::program::seam_stubs::share_data_type(element)
+            }
+            _ => Box::new(TestDataType::fixed("byte", 1)),
+        }
+    }
+}
+
+impl Composite for TestDataType {
+    fn get_num_components(&self) -> i32 {
+        self.fields().len() as i32
+    }
+
+    fn get_num_defined_components(&self) -> i32 {
+        self.get_num_components()
+    }
+
+    fn get_component(&self, ordinal: i32) -> Result<Box<dyn DataTypeComponent>, String> {
+        let field = usize::try_from(ordinal)
+            .ok()
+            .and_then(|index| self.fields().get(index))
+            .ok_or_else(|| format!("IndexOutOfBoundsException: ordinal {ordinal}"))?;
+        Ok(Box::new(TestDataTypeComponent {
+            ordinal,
+            field: field.clone(),
+        }))
+    }
+
+    fn get_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+        (0..self.get_num_components())
+            .filter_map(|ordinal| Composite::get_component(self, ordinal).ok())
+            .collect()
+    }
+}
+
+impl Structure for TestDataType {
+    fn get_component_containing(&self, offset: i32) -> Option<Box<dyn DataTypeComponent>> {
+        let ordinal = self.fields().iter().position(|field| {
+            field.length > 0 && offset >= field.offset && offset < field.offset + field.length
+        })?;
+        Composite::get_component(self, ordinal as i32).ok()
+    }
+
+    fn get_components_containing(&self, offset: i32) -> Vec<Box<dyn DataTypeComponent>> {
+        self.fields()
+            .iter()
+            .enumerate()
+            .filter(|(_, field)| {
+                offset >= field.offset && offset < field.offset + field.length.max(1)
+            })
+            .filter_map(|(ordinal, _)| Composite::get_component(self, ordinal as i32).ok())
+            .collect()
+    }
+}
+
+/// A [`DataTypeComponent`] over one [`TestField`].
+struct TestDataTypeComponent {
+    ordinal: i32,
+    field: TestField,
+}
+
+impl DataTypeComponent for TestDataTypeComponent {
+    fn get_ordinal(&self) -> i32 {
+        self.ordinal
+    }
+
+    fn get_offset(&self) -> i32 {
+        self.field.offset
+    }
+
+    fn get_length(&self) -> i32 {
+        self.field.length
+    }
+
+    fn get_field_name(&self) -> Option<String> {
+        Some(self.field.name.clone())
+    }
+
+    fn get_comment(&self) -> Option<String> {
+        self.field.comment.clone()
+    }
+
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        crate::program::seam_stubs::share_data_type(&self.field.data_type)
     }
 }
