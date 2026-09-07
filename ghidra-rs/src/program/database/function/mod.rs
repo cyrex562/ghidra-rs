@@ -6,6 +6,7 @@ pub mod function_adapter_v3;
 pub mod function_db;
 pub mod function_manager_db;
 pub mod function_stack_frame;
+pub mod function_variables;
 pub mod function_tag_adapter;
 pub mod function_tag_adapter_v0;
 pub mod function_tag_db;
@@ -35,6 +36,11 @@ pub use function_adapter_v3::FunctionAdapterV3;
 pub use function_db::FunctionDb;
 pub use function_manager_db::{FunctionManagerDb, SignatureUpgradeError};
 pub use function_stack_frame::FunctionStackFrame;
+pub use function_variables::{
+    check_for_parameter_name_conflict, find_explicit_return_storage_ptr_parameter,
+    find_explicit_this_parameter, is_bad_variable, remove_explicit_return_storage_ptr_parameter,
+    remove_explicit_this_parameter, FunctionVariables,
+};
 pub use function_tag_adapter::{FunctionTagAdapter, COMMENT_COL, NAME_COL};
 pub use function_tag_adapter_v0::FunctionTagAdapterV0;
 pub use function_tag_db::FunctionTagDb;
