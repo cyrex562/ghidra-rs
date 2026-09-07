@@ -83,10 +83,20 @@ pub trait CodeUnitOwner {
     fn get_program(&self) -> Arc<dyn Program>;
 
     /// Stands in for the constructor's `program.getReferenceManager()`.
-    fn get_reference_manager(&self) -> Arc<dyn ReferenceManager>;
+    ///
+    /// Behind a [`Mutex`] because `ReferenceManager::set_primary`/`delete` need `&mut self`, and
+    /// `CodeUnit::set_primary_memory_reference`/`remove_*_reference` must be able to reach them
+    /// from an owner method that only has `&self`.
+    fn get_reference_manager(&self) -> Arc<Mutex<dyn ReferenceManager>>;
 
     /// Stands in for the constructor's `program.getProgramContext()`.
-    fn get_program_context(&self) -> Arc<dyn ProgramContext>;
+    ///
+    /// Behind a [`Mutex`] for the same reason as [`get_reference_manager`]: the
+    /// [`ProcessorContext`](crate::program::model::lang::processor_context::ProcessorContext)
+    /// setters this backs (`set_value`/`set_register_value`/`clear_register`) need `&mut self`.
+    ///
+    /// [`get_reference_manager`]: CodeUnitOwner::get_reference_manager
+    fn get_program_context(&self) -> Arc<Mutex<dyn ProgramContext>>;
 
     /// Stands in for `program.getMemory()`, used for every byte read and for
     /// `getAddressString(showBlockName, ..)`'s block lookup.

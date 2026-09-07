@@ -87,6 +87,12 @@ impl Reference for ExternalReferenceDb {
         self
     }
 
+    fn to_external_reference(
+        &self,
+    ) -> Option<std::sync::Arc<dyn crate::program::model::symbol::ExternalReference>> {
+        Some(std::sync::Arc::new(self.clone()))
+    }
+
     fn from_address(&self) -> Address {
         self.core.from_address()
     }

@@ -94,6 +94,24 @@ pub trait Reference: Send + Sync + Any {
     fn as_external_reference(&self) -> Option<&dyn crate::program::model::symbol::ExternalReference> {
         None
     }
+
+    /// Returns this reference as an owned, shared
+    /// [`ExternalReference`](crate::program::model::symbol::ExternalReference) handle when it is
+    /// one.
+    ///
+    /// This is the `Arc`-returning companion to [`as_external_reference`]: Rust cannot widen a
+    /// `&dyn Reference` borrow into an `Arc<dyn ExternalReference>`, but
+    /// [`CodeUnit::get_external_reference`](crate::program::model::listing::code_unit::CodeUnit::get_external_reference)
+    /// -- which mirrors Java's `(ExternalReference) element` cast, where a reference *is* its own
+    /// handle -- needs an owned one. Implementors that are external references return a clone of
+    /// themselves; the default returns `None`.
+    ///
+    /// [`as_external_reference`]: Reference::as_external_reference
+    fn to_external_reference(
+        &self,
+    ) -> Option<std::sync::Arc<dyn crate::program::model::symbol::ExternalReference>> {
+        None
+    }
 }
 
 /// Marker trait for dynamically determined references that may not be
