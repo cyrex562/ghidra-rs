@@ -96,8 +96,10 @@ fn to_refs_schema_v0() -> Arc<Schema> {
     ))
 }
 
-/// See the module docs for why this exists.
-struct SendSyncAddressMap(Box<dyn AddressMap>);
+/// See the module docs for why this exists. `pub(crate)`: `ToAdapterSharedTable` (another
+/// read-only legacy adapter that derives its own `addr_map` the same way, via
+/// `AddressMap::get_old_address_map`) reuses this rather than duplicating it.
+pub(crate) struct SendSyncAddressMap(pub(crate) Box<dyn AddressMap>);
 
 // SAFETY: every real `AddressMap` implementor in this port is plain data or
 // `Arc<RwLock<..>>`-backed, with no `Rc`/`RefCell`/thread-local state, so a boxed `AddressMap`

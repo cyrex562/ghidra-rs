@@ -15,6 +15,7 @@ pub mod reference_db_manager;
 pub mod shifted_reference_db;
 pub mod stack_reference_db;
 pub mod to_adapter;
+pub mod to_adapter_shared_table;
 pub mod to_adapter_v0;
 pub mod to_adapter_v1;
 
@@ -35,5 +36,6 @@ pub use reference_db_manager::{MoveReferencesToError, ReferenceDbManager};
 pub use shifted_reference_db::ShiftedReferenceDb;
 pub use stack_reference_db::StackReferenceDb;
 pub use to_adapter::ToAdapter;
+pub use to_adapter_shared_table::ToAdapterSharedTable;
 pub use to_adapter_v0::ToAdapterV0;
 pub use to_adapter_v1::ToAdapterV1;
