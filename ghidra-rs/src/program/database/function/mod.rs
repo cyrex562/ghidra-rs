@@ -4,8 +4,11 @@ pub mod function_manager_db;
 pub mod function_tag_adapter;
 pub mod function_tag_manager_db;
 pub mod function_tag_mapping_adapter;
+pub mod local_variable_db;
 pub mod overlapping_function_exception;
+pub mod parameter_db;
 pub mod thunk_function_adapter;
+pub mod variable_db;
 
 pub use function_adapter::{
     get_signature_source_flag_bits, FunctionAdapter, TranslatedRecordIterator,
@@ -19,5 +22,8 @@ pub use function_manager_db::{FunctionManagerDb, SignatureUpgradeError};
 pub use function_tag_adapter::{FunctionTagAdapter, COMMENT_COL, NAME_COL};
 pub use function_tag_manager_db::FunctionTagManagerDb;
 pub use function_tag_mapping_adapter::{FunctionTagMappingAdapter, FUNCTION_ID_COL, TAG_ID_COL};
+pub use local_variable_db::LocalVariableDb;
 pub use overlapping_function_exception::OverlappingFunctionException;
+pub use parameter_db::ParameterDb;
 pub use thunk_function_adapter::{ThunkFunctionAdapter, LINKED_FUNCTION_ID_COL};
+pub use variable_db::VariableDb;

@@ -2526,14 +2526,66 @@ pub trait FunctionTagManagerProgram {
 }
 
 /// Placeholder for `ghidra.program.database.symbol.VariableSymbolDB`, referenced by
-/// [`FunctionDb`](crate::program::database::function::FunctionDb) before the real class is
+/// [`FunctionDb`](crate::program::database::function::FunctionDb) and
+/// [`VariableDb`](crate::program::database::function::VariableDb) before the real class is
 /// ported.
 ///
-/// `VariableSymbolDB extends SymbolDB`, and `FunctionDB` only ever passes instances of it opaquely
-/// through to (the not-yet-ported) `FunctionVariables`, never inspecting anything beyond its base
-/// `Symbol` identity itself. So this placeholder is a bare marker over the already-ported
-/// [`Symbol`] trait, with no extra members.
-pub trait VariableSymbolDb: Symbol {}
+/// `VariableSymbolDB extends SymbolDB`. `FunctionDB` only ever passes instances of it opaquely
+/// through to (the not-yet-ported) `FunctionVariables`, so the base [`Symbol`] identity is enough
+/// for that caller. `VariableDb`, however, needs the small slice of `VariableSymbolDB`'s own real
+/// API that `VariableDB.java` calls directly (`getDataType`/`getVariableStorage`/
+/// `setStorageAndDataType`/`getFirstUseOffset`/`getOrdinal`/`setOrdinal`/`getSymbolComment`/
+/// `setSymbolComment`, plus a rename hook standing in for the inherited `SymbolDB.setName`), so
+/// those are added here too rather than growing a second placeholder trait.
+///
+/// The mutating members (`set_storage_and_data_type`/`set_ordinal`/`set_symbol_comment`/
+/// `rename`) take `&self` rather than `&mut self`, mirroring
+/// [`FunctionTagManagerProgram`]'s documented rationale: a real `VariableSymbolDB` mutates its
+/// backing `DBRecord` through interior locking, not exclusive Rust ownership, and [`VariableDb`]
+/// only ever holds this type behind a shared `Arc`.
+pub trait VariableSymbolDb: Symbol {
+    /// Stands in for `VariableSymbolDB.getDataType()` (inherited from `SymbolDB`/`MemorySymbol`'s
+    /// backing record).
+    fn variable_data_type(&self) -> Box<dyn DataType>;
+
+    /// Stands in for `VariableSymbolDB.getVariableStorage()`.
+    fn variable_storage(&self) -> Box<dyn VariableStorage>;
+
+    /// Stands in for `VariableSymbolDB.setStorageAndDataType(VariableStorage, DataType)`.
+    fn set_variable_storage_and_data_type(
+        &self,
+        storage: Box<dyn VariableStorage>,
+        data_type: Box<dyn DataType>,
+    );
+
+    /// Stands in for `VariableSymbolDB.getFirstUseOffset()`.
+    fn variable_first_use_offset(&self) -> i32;
+
+    /// Stands in for `VariableSymbolDB.setFirstUseOffset(int)`.
+    fn set_variable_first_use_offset(&self, first_use_offset: i32);
+
+    /// Stands in for `VariableSymbolDB.getOrdinal()`.
+    fn variable_ordinal(&self) -> i32;
+
+    /// Stands in for `VariableSymbolDB.setOrdinal(int)`.
+    fn set_variable_ordinal(&self, ordinal: i32);
+
+    /// Stands in for `VariableSymbolDB.getSymbolComment()`.
+    fn variable_symbol_comment(&self) -> Option<String>;
+
+    /// Stands in for `VariableSymbolDB.setSymbolComment(String)`.
+    fn set_variable_symbol_comment(&self, comment: Option<String>);
+
+    /// Stands in for the inherited `SymbolDB.setName(String, SourceType)`, exposed under a
+    /// dedicated name (rather than reusing [`Symbol::set_name`]) since that method takes `&mut
+    /// self`, which cannot be called through the shared `Arc<dyn VariableSymbolDb>` this trait is
+    /// always held behind.
+    fn rename(
+        &self,
+        name: &str,
+        source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::program::model::listing::variable::SetVariableNameError>;
+}
 
 /// Placeholder for `ghidra.app.merge.DomainObjectMergeManager`, referenced by
 /// [`GhidraProgramMultiUserMergeManagerFactory`](crate::program::database::ghidra_program_multi_user_merge_manager_factory::GhidraProgramMultiUserMergeManagerFactory)
