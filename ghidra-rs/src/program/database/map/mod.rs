@@ -1,5 +1,8 @@
+pub mod address_index_key_iterator;
 pub mod address_index_primary_key_iterator;
 pub mod address_key_address_iterator;
+pub mod address_key_iterator;
+pub mod address_key_record_iterator;
 pub mod address_map;
 pub mod address_map_db;
 pub mod address_map_db_adapter;
@@ -12,8 +15,11 @@ mod table_snapshot;
 #[cfg(test)]
 mod test_support;
 
+pub use address_index_key_iterator::AddressIndexKeyIterator;
 pub use address_index_primary_key_iterator::AddressIndexPrimaryKeyIterator;
 pub use address_key_address_iterator::AddressKeyAddressIterator;
+pub use address_key_iterator::AddressKeyIterator;
+pub use address_key_record_iterator::AddressKeyRecordIterator;
 pub use address_map::{AddressMap, INVALID_ADDRESS_KEY};
 pub use address_map_db::AddressMapDB;
 pub use address_map_db_adapter::{AddressMapDBAdapter, AddressMapEntry, CURRENT_VERSION, TABLE_NAME};

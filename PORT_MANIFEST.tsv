@@ -13541,11 +13541,11 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/ThunkFunctionAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/ThunkFunctionAdapterV0.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/VariableDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressIndexKeyIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressIndexKeyIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressIndexPrimaryKeyIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressKeyAddressIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressKeyIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressKeyRecordIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressKeyIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressKeyRecordIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressMap.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressMapDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressMapDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database map
