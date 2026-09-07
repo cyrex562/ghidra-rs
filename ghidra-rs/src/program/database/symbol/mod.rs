@@ -25,6 +25,7 @@ pub mod old_variable_storage_db_adapter_v0v1;
 pub mod old_variable_storage_manager_db;
 pub mod overlapping_namespace_exception;
 pub mod symbol_database_adapter;
+pub mod symbol_database_adapter_v1;
 pub mod symbol_database_adapter_v5;
 pub mod symbol_db;
 pub mod symbol_manager;
@@ -70,6 +71,7 @@ pub use symbol_database_adapter::{
     SymbolDatabaseAdapter, SymbolDeleteAddressRangeError, MAX_SOURCE_VALUE, SYMBOL_PINNED_FLAG,
     SYMBOL_SOURCE_HI_BIT, SYMBOL_SOURCE_LO_BITS, SYMBOL_SOURCE_MASK,
 };
+pub use symbol_database_adapter_v1::SymbolDatabaseAdapterV1;
 pub use symbol_database_adapter_v5::SymbolDatabaseAdapterV5;
 pub use symbol_db::SymbolDB;
 pub use symbol_manager::{SymbolManagerDb, SymbolManagerDB};
