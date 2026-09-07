@@ -8,8 +8,9 @@
 //! adapters. This trait was itself selected as a dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, RecordIterator};
+use crate::framework::db::{DBRecord, FieldType, RecordIterator, Schema};
 use crate::program::model::address::{Address, AddressSetView};
 use crate::program::seam_stubs::AddressKeyIteratorLike;
 use crate::util::exception::CancelledException;
@@ -20,6 +21,19 @@ pub const DATA_TABLE_NAME: &str = "Data";
 
 /// Data type ID column index. Stands in for `DataDBAdapter.DATA_TYPE_ID_COL`.
 pub const DATA_TYPE_ID_COL: usize = 0;
+
+/// The `Schema` shared by every `DataDBAdapter` implementation, keyed by address (database-key
+/// encoding). Stands in for `DataDBAdapter.DATA_SCHEMA`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        0,
+        FieldType::Long,
+        "Address".to_string(),
+        vec![FieldType::Long],
+        vec!["Data Type ID".to_string()],
+        vec![],
+    ))
+}
 
 /// Error returned by [`DataDBAdapter::move_address_range`], mirroring the Java method's `throws
 /// CancelledException, IOException`.
