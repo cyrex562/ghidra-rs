@@ -179,7 +179,7 @@ impl RecordAdapter for UnsupportedRecordAdapter {
         _key: i64,
         _num_refs: i32,
         _ref_level: u8,
-        _ref_data: &[u8],
+        _ref_data: Option<&[u8]>,
     ) -> io::Result<DBRecord> {
         Err(unsupported())
     }
@@ -356,7 +356,7 @@ impl RecordAdapter for ToAdapterV0 {
         _key: i64,
         _num_refs: i32,
         _ref_level: u8,
-        _ref_data: &[u8],
+        _ref_data: Option<&[u8]>,
     ) -> io::Result<DBRecord> {
         Err(unsupported())
     }
@@ -715,7 +715,7 @@ mod tests {
             Ok(_) => panic!("expected an Unsupported error"),
         }
         assert_eq!(
-            RecordAdapter::create_record(&mut adapter, 1, 0, 0, &[]).unwrap_err().kind(),
+            RecordAdapter::create_record(&mut adapter, 1, 0, 0, Some(&[])).unwrap_err().kind(),
             io::ErrorKind::Unsupported
         );
         let rec = DBRecord::new(to_refs_schema(), Field::Long(Some(1)));

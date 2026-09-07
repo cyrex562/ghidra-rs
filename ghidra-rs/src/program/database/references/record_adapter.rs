@@ -8,7 +8,13 @@ use crate::framework::db::DBRecord;
 
 /// Adapter interface for storing and retrieving reference records.
 pub trait RecordAdapter {
-    /// Create a new record with the given key and reference data.
+    /// Create a new record with the given key and reference data. `ref_data` mirrors Java's
+    /// nullable `byte[] refData` parameter: `None` is not "empty data" but a distinct sentinel --
+    /// [`BigRefListV0Impl`](crate::program::database::references::big_ref_list_v0::BigRefListV0Impl)
+    /// passes `None` for its pointer record's `Ref Data` column so
+    /// `ToAdapterV1::get_ref_list` (not yet ported) can tell "this address's references live in a
+    /// side `BigRefListV0` table" apart from `RefListV0Impl`'s `Some(&[])` "this address has an
+    /// empty but still inline list".
     ///
     /// # Errors
     ///
@@ -18,7 +24,7 @@ pub trait RecordAdapter {
         key: i64,
         num_refs: i32,
         ref_level: u8,
-        ref_data: &[u8],
+        ref_data: Option<&[u8]>,
     ) -> io::Result<DBRecord>;
 
     /// Get the record for the given key.
@@ -81,7 +87,7 @@ mod tests {
             key: i64,
             num_refs: i32,
             _ref_level: u8,
-            _ref_data: &[u8],
+            _ref_data: Option<&[u8]>,
         ) -> io::Result<DBRecord> {
             let mut record = DBRecord::new(self.schema.clone(), Field::Long(Some(key)));
             record.set_int(0, num_refs);
@@ -112,7 +118,7 @@ mod tests {
     fn create_get_put_remove_round_trip() {
         let mut adapter = MockRecordAdapter::new();
 
-        let record = adapter.create_record(1, 3, 0, &[]).unwrap();
+        let record = adapter.create_record(1, 3, 0, Some(&[])).unwrap();
         assert_eq!(record.get_int(0).unwrap(), 3);
 
         let fetched = adapter.get_record(1).unwrap();
@@ -131,7 +137,7 @@ mod tests {
     fn object_safety_via_trait_object() {
         let adapter: Box<dyn RecordAdapter> = Box::new(MockRecordAdapter::new());
         let mut adapter = adapter;
-        adapter.create_record(5, 1, 0, &[]).unwrap();
+        adapter.create_record(5, 1, 0, Some(&[])).unwrap();
         assert!(adapter.get_record(5).is_ok());
     }
 }

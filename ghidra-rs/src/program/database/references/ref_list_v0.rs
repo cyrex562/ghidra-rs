@@ -122,7 +122,10 @@ pub(crate) fn ref_level_for(rt: RefType) -> i8 {
 /// checks [`Reference::as_offset_reference`] first, then falls back to downcasting to
 /// [`ShiftedReferenceDb`] (the only [`ShiftedReference`](crate::program::model::symbol::ShiftedReference)
 /// implementor in this port) for the shifted case.
-fn reference_offset_shift(reference: &dyn Reference) -> (bool, bool, i64) {
+///
+/// `pub(crate)` rather than private: `BigRefListV0Impl`'s own `addRefs` overloads need the exact
+/// same `instanceof MemReferenceDB` stand-in logic, so it's shared rather than duplicated.
+pub(crate) fn reference_offset_shift(reference: &dyn Reference) -> (bool, bool, i64) {
     if let Some(offset_ref) = reference.as_offset_reference() {
         return (true, false, offset_ref.offset());
     }
@@ -137,17 +140,20 @@ fn reference_offset_shift(reference: &dyn Reference) -> (bool, bool, i64) {
 /// A no-op [`ExternalLocation`] used by [`RefListV0Impl`]'s default `external_resolver`. Every
 /// method falls back to [`ExternalLocation`]'s own default implementation, so this is a pure
 /// marker with no behavior -- see the module docs for why a resolver closure exists at all.
+///
+/// `pub(crate)`: [`BigRefListV0Impl`](crate::program::database::references::big_ref_list_v0::BigRefListV0Impl)
+/// reuses the exact same default-resolver pattern for the same reason.
 #[derive(Debug, Default, Clone, Copy)]
-struct DefaultExternalLocation;
+pub(crate) struct DefaultExternalLocation;
 
 impl ExternalLocation for DefaultExternalLocation {}
 
-fn default_external_resolver() -> Arc<dyn Fn(&Address) -> Box<dyn ExternalLocation> + Send + Sync>
-{
+pub(crate) fn default_external_resolver(
+) -> Arc<dyn Fn(&Address) -> Box<dyn ExternalLocation> + Send + Sync> {
     Arc::new(|_addr: &Address| Box::new(DefaultExternalLocation) as Box<dyn ExternalLocation>)
 }
 
-fn default_is_external_block_resolver() -> Arc<dyn Fn(&Address) -> bool + Send + Sync> {
+pub(crate) fn default_is_external_block_resolver() -> Arc<dyn Fn(&Address) -> bool + Send + Sync> {
     Arc::new(|_addr: &Address| false)
 }
 
@@ -156,10 +162,11 @@ fn default_is_external_block_resolver() -> Arc<dyn Fn(&Address) -> bool + Send +
 // trait and the [`encode_flags`]/[`decode_source`] free functions), so the two bits this decoder
 // needs to test directly (primary/offset/has-symbol-id/shift) are redeclared here rather than
 // adding trait-object plumbing solely to read four bits back out of a byte already in hand.
-const FLAG_PRIMARY: u8 = 0x02;
-const FLAG_OFFSET: u8 = 0x04;
-const FLAG_HAS_SYMBOL_ID: u8 = 0x08;
-const FLAG_SHIFT: u8 = 0x10;
+// `pub(crate)`: `BigRefListV0Impl` decodes the exact same flag byte layout and reuses these.
+pub(crate) const FLAG_PRIMARY: u8 = 0x02;
+pub(crate) const FLAG_OFFSET: u8 = 0x04;
+pub(crate) const FLAG_HAS_SYMBOL_ID: u8 = 0x08;
+pub(crate) const FLAG_SHIFT: u8 = 0x10;
 
 /// The concrete, byte-packed [`RefList`]/[`RefListV0`] implementation. See the module docs for
 /// the factory methods this ports and the decoupling simplifications it makes relative to Java.
@@ -476,8 +483,12 @@ impl RefListV0Impl {
             let mut guard = adapter
                 .lock()
                 .expect("RefListV0Impl's adapter mutex should never be poisoned");
-            let record =
-                guard.create_record(self.state.get_key(), self.num_refs, ref_level_byte, &self.ref_data)?;
+            let record = guard.create_record(
+                self.state.get_key(),
+                self.num_refs,
+                ref_level_byte,
+                Some(&self.ref_data),
+            )?;
             guard.put_record(&record)?;
         }
         Ok(())
@@ -1357,13 +1368,14 @@ mod ref_list_v0_impl_tests {
             key: i64,
             num_refs: i32,
             ref_level: u8,
-            ref_data: &[u8],
+            ref_data: Option<&[u8]>,
         ) -> io::Result<DBRecord> {
-            self.create_calls.push((key, num_refs, ref_level, ref_data.to_vec()));
+            let ref_data = ref_data.map(|d| d.to_vec());
+            self.create_calls.push((key, num_refs, ref_level, ref_data.clone().unwrap_or_default()));
             let mut record = DBRecord::new(self.schema.clone(), Field::Long(Some(key)));
             record.set_int(0, num_refs);
             record.set_byte(1, ref_level as i8);
-            record.set_field(2, Field::Binary(Some(ref_data.to_vec())));
+            record.set_field(2, Field::Binary(ref_data));
             self.records.insert(key, record.clone());
             Ok(record)
         }

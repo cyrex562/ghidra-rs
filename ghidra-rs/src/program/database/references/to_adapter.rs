@@ -285,7 +285,7 @@ mod tests {
             key: i64,
             num_refs: i32,
             _ref_level: u8,
-            _ref_data: &[u8],
+            _ref_data: Option<&[u8]>,
         ) -> io::Result<DBRecord> {
             let mut record = DBRecord::new(self.schema.clone(), Field::Long(Some(key)));
             record.set_int(0, num_refs);
