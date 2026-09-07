@@ -8,8 +8,39 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, RecordIterator};
+use crate::framework::db::{DBRecord, FieldType, RecordIterator, Schema};
+
+/// DB table name for the prototype table. Stands in for
+/// `PrototypeManager.PROTO_TABLE_NAME`.
+pub const PROTO_TABLE_NAME: &str = "Prototypes";
+
+/// Column index for a prototype's raw bytes. Stands in for `PrototypeManager.BYTES_COL`.
+pub const BYTES_COL: usize = 0;
+/// Column index for a prototype's address (database-key encoding). Stands in for
+/// `PrototypeManager.ADDR_COL`.
+pub const ADDR_COL: usize = 1;
+/// Column index for whether a prototype is in a delay slot. Stands in for
+/// `PrototypeManager.DELAY_COL`.
+pub const DELAY_COL: usize = 2;
+
+/// The current (version 1) `Schema` for the prototype table. Stands in for
+/// `PrototypeManager.PROTO_SCHEMA`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        1,
+        FieldType::Int,
+        "Keys".to_string(),
+        vec![FieldType::Binary, FieldType::Long, FieldType::Boolean],
+        vec![
+            "Bytes".to_string(),
+            "Address".to_string(),
+            "InDelaySlot".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Database adapter interface for instruction prototypes.
 ///

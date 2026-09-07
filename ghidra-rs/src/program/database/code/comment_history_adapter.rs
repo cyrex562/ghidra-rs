@@ -12,9 +12,39 @@
 //! itself selected as a dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, RecordIterator};
+use crate::framework::db::{DBRecord, FieldType, RecordIterator, Schema};
 use crate::program::model::address::Address;
+
+/// The `Schema` shared by every `CommentHistoryAdapter` implementation. Stands in for
+/// `CommentHistoryAdapter.COMMENT_HISTORY_SCHEMA`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        0,
+        FieldType::Long,
+        "Key".to_string(),
+        vec![
+            FieldType::Long,
+            FieldType::Byte,
+            FieldType::Int,
+            FieldType::Int,
+            FieldType::String,
+            FieldType::String,
+            FieldType::Long,
+        ],
+        vec![
+            "Address".to_string(),
+            "Comment Type".to_string(),
+            "Pos1".to_string(),
+            "Pos2".to_string(),
+            "String Data".to_string(),
+            "User".to_string(),
+            "Date".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// DB table name for the comment history table. Stands in for
 /// `CommentHistoryAdapter.COMMENT_HISTORY_TABLE_NAME`.

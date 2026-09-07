@@ -38,6 +38,17 @@ impl Table {
         self.max_key
     }
 
+    /// Returns the key that the next call to [`get_next_key`](Self::get_next_key) would produce,
+    /// without allocating it. Mirrors Java's `db.Table.getKey()`, which is a pure peek (unlike
+    /// this Rust type's own `get_next_key`, which allocates): some callers -- e.g.
+    /// `ProtoDBAdapter.getKey()` -- hand out the next key to a caller that may or may not go on
+    /// to actually create a record with it (the record's own key is chosen by that caller, not
+    /// derived from a `put_record` call), so peeking without consuming is required for
+    /// observable parity with Java.
+    pub fn peek_next_key(&self) -> i64 {
+        self.max_key + 1
+    }
+
     /// Ensure the next value returned by [`get_next_key`](Self::get_next_key) is at least
     /// `floor + 1`. Used by callers that reserve a floor for externally-chosen keys (e.g. a
     /// minimum ID below which keys are reserved for another purpose) so the table's own key
