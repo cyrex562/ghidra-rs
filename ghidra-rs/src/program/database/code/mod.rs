@@ -1,5 +1,6 @@
 pub mod code_manager;
 pub mod code_unit_db;
+pub mod code_unit_owner;
 pub mod code_unit_key_iterator;
 pub mod comment_history_adapter;
 pub mod comment_history_adapter_no_table;
