@@ -9,8 +9,9 @@
 //! dependency-cycle cut-point.
 
 use std::io;
+use std::sync::Arc;
 
-use crate::framework::db::{DBRecord, RecordIterator};
+use crate::framework::db::{DBRecord, FieldType, RecordIterator, Schema};
 use crate::program::model::address::{Address, AddressSetView};
 use crate::program::seam_stubs::AddressKeyIteratorLike;
 use crate::util::exception::CancelledException;
@@ -19,6 +20,36 @@ use crate::util::task::TaskMonitor;
 /// DB table name for the comments table. Stands in for
 /// `CommentsDBAdapter.COMMENTS_TABLE_NAME`.
 pub const COMMENTS_TABLE_NAME: &str = "Comments";
+
+/// Schema version implemented by [`CommentsDBAdapterV1`](crate::program::database::code::comments_db_adapter_v1::CommentsDBAdapterV1),
+/// the current adapter version.
+pub const CURRENT_VERSION: i32 = 1;
+
+/// The current `Schema` for the comments table, keyed by address (database-key encoding), with
+/// one string column per [`CommentType`](crate::program::model::listing::CommentType). Stands in
+/// for `CommentsDBAdapterV1`'s (commented-out, but still authoritative) `V1_SCHEMA`.
+pub fn schema() -> Arc<Schema> {
+    Arc::new(Schema::new(
+        CURRENT_VERSION,
+        FieldType::Long,
+        "Address".to_string(),
+        vec![
+            FieldType::String,
+            FieldType::String,
+            FieldType::String,
+            FieldType::String,
+            FieldType::String,
+        ],
+        vec![
+            "EOL".to_string(),
+            "Pre".to_string(),
+            "Post".to_string(),
+            "Plate".to_string(),
+            "Repeatable".to_string(),
+        ],
+        vec![],
+    ))
+}
 
 /// Comment column index for EOL comments. Stands in for `CommentsDBAdapter.EOL_COMMENT_COL`
 /// (`CommentType.EOL.ordinal()`).
