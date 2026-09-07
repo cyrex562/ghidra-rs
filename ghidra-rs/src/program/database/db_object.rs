@@ -142,7 +142,15 @@ impl DbObjectState {
 /// revived on a refresh as long as they haven't been deleted.
 ///
 /// Port of `ghidra.program.database.DbObject`.
-pub trait DbObject: Send + Sync {
+///
+/// # Why this trait is not `Send + Sync`
+///
+/// See the note on [`MemBuffer`](crate::program::model::mem::MemBuffer): a concrete database code
+/// unit must implement both, and the `Rc`-based `RegisterRef` in the model layer makes the bound
+/// unsatisfiable. The one place that depended on inheriting it --
+/// [`DBAnnotatedObject`](crate::util::database::db_annotated_object::DBAnnotatedObject), whose
+/// `DBCachedObjectStore` views are shared across threads -- now declares `Send + Sync` itself.
+pub trait DbObject {
     /// Accessor for this object's bookkeeping state (key, cache, deleted/valid tracking).
     /// Implementors hold a [`DbObjectState`] field and return a reference to it.
     fn state(&self) -> &DbObjectState;

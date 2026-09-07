@@ -41,8 +41,8 @@ use crate::program::model::listing::program_context::ProgramContext;
 use crate::program::model::listing::CommentType;
 use crate::program::model::mem::{Memory, MemoryAccessException, MemoryBlock};
 use crate::program::model::symbol::{
-    AddExternalReferenceError, ExternalLocation, Namespace, Reference, ReferenceIterator,
-    ReferenceManager, RefType, SourceType, Symbol, SymbolTable,
+    AddExternalReferenceError, ExternalLocation, MemReferenceImpl, Namespace, Reference,
+    ReferenceIterator, ReferenceManager, RefType, SourceType, Symbol, SymbolTable,
 };
 use crate::program::model::listing::Variable;
 use crate::program::model::util::property_map_manager::PropertyMapManager;
@@ -695,10 +695,23 @@ impl SymbolTable for TestSymbolTable {
     }
 }
 
-/// A reference manager that records the mutating calls made through it and answers every query
-/// with "no references". Enough for the `validateOpIndex` precondition tests; the reference
-/// plumbing itself is `ReferenceManager`'s own concern and is tested there.
-pub(crate) struct TestReferenceManager;
+/// A minimal in-memory reference manager: memory references added through it are stored in a
+/// `Vec` and answered back by the "from address" queries, and deleting one removes it.
+///
+/// Everything a `CodeUnitDB`/`InstructionDB` actually drives is real here -- `InstructionDB`'s
+/// fall-through override is *defined* in terms of adding, finding and deleting a
+/// `RefType::FALL_THROUGH` reference from the instruction's address, so a manager that always
+/// answered "no references" could not exercise it at all. The remaining query methods (variables,
+/// destination iterators, counts) stay `unimplemented!`, as they have no code-unit caller.
+///
+/// One deliberate omission: Java's `ReferenceDBManager.addMemoryReference` calls back into
+/// `InstructionDB.fallThroughChanged(ref)` when it adds or removes a `FALL_THROUGH` reference.
+/// Nothing here knows about instructions, so that callback is not fired; a test that needs it
+/// invokes `InstructionDB::fall_through_changed` itself, standing in for the manager.
+#[derive(Default)]
+pub(crate) struct TestReferenceManager {
+    references: Vec<Arc<dyn Reference>>,
+}
 
 impl ReferenceManager for TestReferenceManager {
     fn add_reference(&mut self, _reference: Arc<dyn Reference>) -> Arc<dyn Reference> {
@@ -729,13 +742,17 @@ impl ReferenceManager for TestReferenceManager {
 
     fn add_memory_reference(
         &mut self,
-        _from_addr: Address,
-        _to_addr: Address,
-        _ref_type: RefType,
-        _source: SourceType,
-        _op_index: i32,
+        from_addr: Address,
+        to_addr: Address,
+        ref_type: RefType,
+        source: SourceType,
+        op_index: i32,
     ) -> Arc<dyn Reference> {
-        unimplemented!("{UNEXERCISED}")
+        let reference: Arc<dyn Reference> = Arc::new(MemReferenceImpl::new(
+            from_addr, to_addr, ref_type, source, op_index, true,
+        ));
+        self.references.push(reference.clone());
+        reference
     }
 
     fn add_offset_mem_reference(
@@ -821,15 +838,19 @@ impl ReferenceManager for TestReferenceManager {
     }
 
     fn set_primary(&mut self, _reference: Arc<dyn Reference>, _is_primary: bool) {
-        unimplemented!("{UNEXERCISED}")
+        // Every reference this manager creates is already primary.
     }
 
     fn has_flow_references_from(&self, _addr: Address) -> bool {
         unimplemented!("{UNEXERCISED}")
     }
 
-    fn get_flow_references_from(&self, _addr: Address) -> Vec<Arc<dyn Reference>> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_flow_references_from(&self, addr: Address) -> Vec<Arc<dyn Reference>> {
+        self.references
+            .iter()
+            .filter(|r| r.from_address() == addr && r.reference_type().is_flow())
+            .cloned()
+            .collect()
     }
 
     fn get_external_references(&self) -> Box<dyn ReferenceIterator> {
@@ -846,23 +867,38 @@ impl ReferenceManager for TestReferenceManager {
 
     fn get_reference(
         &self,
-        _from_addr: Address,
-        _to_addr: Address,
-        _op_index: i32,
+        from_addr: Address,
+        to_addr: Address,
+        op_index: i32,
     ) -> Option<Arc<dyn Reference>> {
-        None
+        self.references
+            .iter()
+            .find(|r| {
+                r.from_address() == from_addr
+                    && r.to_address() == to_addr
+                    && r.operand_index() == op_index
+            })
+            .cloned()
     }
 
-    fn get_references_from(&self, _addr: Address) -> Vec<Arc<dyn Reference>> {
-        Vec::new()
+    fn get_references_from(&self, addr: Address) -> Vec<Arc<dyn Reference>> {
+        self.references
+            .iter()
+            .filter(|r| r.from_address() == addr)
+            .cloned()
+            .collect()
     }
 
     fn get_references_from_operand(
         &self,
-        _from_addr: Address,
-        _op_index: i32,
+        from_addr: Address,
+        op_index: i32,
     ) -> Vec<Arc<dyn Reference>> {
-        Vec::new()
+        self.references
+            .iter()
+            .filter(|r| r.from_address() == from_addr && r.operand_index() == op_index)
+            .cloned()
+            .collect()
     }
 
     fn has_references_from_operand(&self, _from_addr: Address, _op_index: i32) -> bool {
@@ -875,10 +911,13 @@ impl ReferenceManager for TestReferenceManager {
 
     fn get_primary_reference_from(
         &self,
-        _addr: Address,
-        _op_index: i32,
+        addr: Address,
+        op_index: i32,
     ) -> Option<Arc<dyn Reference>> {
-        None
+        self.references
+            .iter()
+            .find(|r| r.from_address() == addr && r.operand_index() == op_index && r.is_primary())
+            .cloned()
     }
 
     fn get_reference_source_iterator(
@@ -949,8 +988,12 @@ impl ReferenceManager for TestReferenceManager {
         unimplemented!("{UNEXERCISED}")
     }
 
-    fn delete(&mut self, _reference: Arc<dyn Reference>) {
-        unimplemented!("{UNEXERCISED}")
+    fn delete(&mut self, reference: Arc<dyn Reference>) {
+        self.references.retain(|r| {
+            r.from_address() != reference.from_address()
+                || r.to_address() != reference.to_address()
+                || r.operand_index() != reference.operand_index()
+        });
     }
 
     fn get_reference_level(&self, _to_addr: Address) -> i8 {
@@ -1149,6 +1192,16 @@ pub(crate) struct TestCodeUnitOwner {
     flag_calls: Mutex<Vec<(i64, u8)>>,
     comment_notifications: Mutex<Vec<CommentNotification>>,
     db_errors: Mutex<Vec<String>>,
+    /// Backs `codeMgr.getInstructionRecord(addr)`, keyed by address index.
+    instruction_records: Mutex<HashMap<i64, DBRecord>>,
+    /// Backs `codeMgr.getInstructionPrototype(protoID)`, keyed by prototype id.
+    prototypes: Mutex<HashMap<i32, Arc<dyn InstructionPrototype>>>,
+    /// Backs `codeMgr.getInstructionAt/After/Before(address)`, keyed by address offset so the
+    /// ordered "after"/"before" queries are answerable.
+    instructions: Mutex<BTreeMap<i64, Arc<dyn Instruction>>>,
+    /// Backs `codeMgr.getDefinedAddressAfter(address)`; `None` (the default) means "nothing is
+    /// defined after this address", which is what an instruction at the end of a block sees.
+    defined_address_after: Mutex<Option<Address>>,
 }
 
 impl TestCodeUnitOwner {
@@ -1161,7 +1214,7 @@ impl TestCodeUnitOwner {
             lock: Arc::new(ReentrantLock::new("test-code-unit")),
             program: Arc::new(TestProgram),
             memory,
-            reference_manager: Arc::new(Mutex::new(TestReferenceManager)),
+            reference_manager: Arc::new(Mutex::new(TestReferenceManager::default())),
             program_context: Arc::new(Mutex::new(TestProgramContext)),
             symbol_table: Arc::new(TestSymbolTable),
             address_map: Arc::new(TestAddressMap { space }),
@@ -1170,6 +1223,10 @@ impl TestCodeUnitOwner {
             flag_calls: Mutex::new(Vec::new()),
             comment_notifications: Mutex::new(Vec::new()),
             db_errors: Mutex::new(Vec::new()),
+            instruction_records: Mutex::new(HashMap::new()),
+            prototypes: Mutex::new(HashMap::new()),
+            instructions: Mutex::new(BTreeMap::new()),
+            defined_address_after: Mutex::new(None),
         }
     }
 
@@ -1232,6 +1289,30 @@ impl TestCodeUnitOwner {
     /// Reads a comment record straight out of the store, bypassing the code unit.
     pub(crate) fn comment_record_directly(&self, addr: i64) -> Option<DBRecord> {
         self.comments.lock().unwrap().get(&addr).cloned()
+    }
+
+    /// Stores the instruction-table record `codeMgr.getInstructionRecord(addr)` should return.
+    pub(crate) fn put_instruction_record(&self, addr: i64, record: DBRecord) {
+        self.instruction_records.lock().unwrap().insert(addr, record);
+    }
+
+    /// Registers a prototype under the id an instruction record refers to it by.
+    pub(crate) fn put_instruction_prototype(
+        &self,
+        proto_id: i32,
+        prototype: Arc<dyn InstructionPrototype>,
+    ) {
+        self.prototypes.lock().unwrap().insert(proto_id, prototype);
+    }
+
+    /// Registers an instruction at `offset`, for the `getInstructionAt/After/Before` queries.
+    pub(crate) fn put_instruction(&self, offset: i64, instruction: Arc<dyn Instruction>) {
+        self.instructions.lock().unwrap().insert(offset, instruction);
+    }
+
+    /// Sets what `codeMgr.getDefinedAddressAfter(..)` reports.
+    pub(crate) fn set_defined_address_after(&self, address: Option<Address>) {
+        *self.defined_address_after.lock().unwrap() = address;
     }
 }
 
@@ -1338,19 +1419,19 @@ impl CodeUnitOwner for TestCodeUnitOwner {
     }
 
     fn get_defined_address_after(&self, _address: &Address) -> Option<Address> {
-        unimplemented!("{UNEXERCISED}")
+        self.defined_address_after.lock().unwrap().clone()
     }
 
     fn set_flags(&self, addr: i64, flags: u8) {
         self.flag_calls.lock().unwrap().push((addr, flags));
     }
 
-    fn get_instruction_record(&self, _addr: i64) -> Option<DBRecord> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_instruction_record(&self, addr: i64) -> Option<DBRecord> {
+        self.instruction_records.lock().unwrap().get(&addr).cloned()
     }
 
-    fn get_instruction_prototype(&self, _proto_id: i32) -> Option<Arc<dyn InstructionPrototype>> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_instruction_prototype(&self, proto_id: i32) -> Option<Arc<dyn InstructionPrototype>> {
+        self.prototypes.lock().unwrap().get(&proto_id).cloned()
     }
 
     fn get_original_prototype_context(
@@ -1361,15 +1442,29 @@ impl CodeUnitOwner for TestCodeUnitOwner {
         unimplemented!("{UNEXERCISED}")
     }
 
-    fn get_instruction_at(&self, _address: &Address) -> Option<Arc<dyn Instruction>> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_instruction_at(&self, address: &Address) -> Option<Arc<dyn Instruction>> {
+        self.instructions
+            .lock()
+            .unwrap()
+            .get(&address.offset())
+            .cloned()
     }
 
-    fn get_instruction_after(&self, _address: &Address) -> Option<Arc<dyn Instruction>> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_instruction_after(&self, address: &Address) -> Option<Arc<dyn Instruction>> {
+        self.instructions
+            .lock()
+            .unwrap()
+            .range((address.offset() + 1)..)
+            .next()
+            .map(|(_, instruction)| instruction.clone())
     }
 
-    fn get_instruction_before(&self, _address: &Address) -> Option<Arc<dyn Instruction>> {
-        unimplemented!("{UNEXERCISED}")
+    fn get_instruction_before(&self, address: &Address) -> Option<Arc<dyn Instruction>> {
+        self.instructions
+            .lock()
+            .unwrap()
+            .range(..address.offset())
+            .next_back()
+            .map(|(_, instruction)| instruction.clone())
     }
 }

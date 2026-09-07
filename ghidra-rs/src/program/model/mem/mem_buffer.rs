@@ -31,7 +31,20 @@ use crate::program::model::mem::{Memory, MemoryAccessException};
 /// disassembly and data typing.
 ///
 /// Port of `ghidra.program.model.mem.MemBuffer`.
-pub trait MemBuffer: Send + Sync {
+///
+/// # Why this trait is not `Send + Sync`
+///
+/// It carried `Send + Sync` supertraits until the first concrete DB-backed code unit
+/// ([`InstructionDB`](crate::program::database::code::instruction_db::InstructionDB)) was ported,
+/// at which point they became unsatisfiable. A code unit must implement `MemBuffer` (through
+/// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit)) while holding an
+/// `Arc<dyn CodeUnitOwner>` and an `Arc<dyn InstructionPrototype>`, which in turn reach
+/// `ProgramContext`/`ProcessorContextView`/`Language` -- and those cannot be `Send + Sync`,
+/// because `RegisterRef` is `Rc<RefCell<Register>>` and their implementors store one. The model
+/// layer is `Rc`-based and therefore single-threaded throughout; requiring `Send + Sync` here was
+/// an accident of the port that nothing in the crate relied on (removing it compiles with zero
+/// changes elsewhere).
+pub trait MemBuffer {
     /// The address of this buffer's byte at offset 0.
     ///
     /// Stands in for `MemBuffer.getAddress()`.

@@ -35,7 +35,13 @@ use crate::trace::seam_stubs::ObjectKey;
 use crate::util::seam_stubs::{DBCachedObjectStoreCore, DBFieldCodec};
 
 /// An object backed by a `DBRecord`, mirroring `ghidra.util.database.DBAnnotatedObject`.
-pub trait DBAnnotatedObject: DbObject {
+///
+/// `Send + Sync` is declared here rather than inherited from
+/// [`DbObject`](crate::program::database::db_object::DbObject): the object-store views in
+/// [`DBCachedObjectStoreMap`](crate::util::database::db_cached_object_store_map) and
+/// [`DBCachedObjectStoreEntrySet`](crate::util::database::db_cached_object_store_entry_set)
+/// require it, while `DbObject` itself can no longer carry it (see the note there).
+pub trait DBAnnotatedObject: DbObject + Send + Sync {
     /// The store containing this object, mirroring the `store` field.
     ///
     /// Only the operations independent of the store's managed object type are exposed here (see
