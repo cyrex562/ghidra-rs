@@ -237,6 +237,44 @@ impl Table {
             iter: Box::new(self.records.range(start_key..).map(|(_, v)| v)),
         }))
     }
+
+    /// Returns true if a record exists for the given key.
+    ///
+    /// Port of `db.Table.hasRecord(Field)`.
+    pub fn has_record(&self, key: &Field) -> bool {
+        self.records.contains_key(key)
+    }
+
+    /// Deletes every record in the table. Port of `db.Table.deleteAll()`.
+    pub fn clear_all(&mut self) -> io::Result<()> {
+        self.records.clear();
+        self.record_count = 0;
+        self.max_key = -1;
+        self.root_buffer_id = -1;
+        Ok(())
+    }
+
+    /// Deletes all records whose (long-typed) primary key falls within `[min_key, max_key]`,
+    /// inclusive. Returns `true` if any record was deleted.
+    ///
+    /// Port of `db.Table.deleteRecords(long, long)`. Java's implementation walks a live B-tree
+    /// cursor; this port instead collects the matching keys from the authoritative `records` map
+    /// (see the doc comment on [`get_record`](Self::get_record) for why that map -- not the
+    /// B-tree nodes -- is authoritative) and removes each one, which is observably equivalent.
+    pub fn delete_records(&mut self, min_key: i64, max_key: i64) -> io::Result<bool> {
+        let keys: Vec<Field> = self
+            .records
+            .range(Field::Long(Some(min_key))..=Field::Long(Some(max_key)))
+            .map(|(k, _)| k.clone())
+            .collect();
+        let mut deleted = false;
+        for key in keys {
+            if self.delete_record(&key)? {
+                deleted = true;
+            }
+        }
+        Ok(deleted)
+    }
 }
 
 pub struct BTreeRecordIterator<'a> {

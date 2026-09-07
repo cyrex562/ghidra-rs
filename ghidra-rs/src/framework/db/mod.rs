@@ -80,9 +80,42 @@ pub use table::Table;
 pub use var_key_interior_node::VarKeyInteriorNode;
 pub use var_key_node::VarKeyNode;
 
+/// Iterate over data records within a table.
+///
+/// Port of `db.RecordIterator`. Java's interface also declares `hasPrevious()`, `previous()` and
+/// `delete()`; this trait originally modeled only the forward-iteration half (`next`/`has_next`),
+/// which is all most implementors in this port need. `has_previous`/`previous`/`delete` were
+/// added later, as default methods, specifically so existing implementors (which only provide
+/// `next`/`has_next`) keep compiling unchanged: the defaults report "nothing available"/"not
+/// deleted" rather than requiring every call site to opt in. Implementors that back a genuinely
+/// bidirectional, mutable source (e.g. `AddressKeyRecordIterator` in
+/// `program::database::map::address_key_record_iterator`) should override all three to match
+/// Java's real contract.
 pub trait RecordIterator {
     fn next(&mut self) -> std::io::Result<Option<DBRecord>>;
     fn has_next(&self) -> bool;
+
+    /// Return true if a Record is available in the reverse direction.
+    ///
+    /// Defaults to `false`: see the trait-level doc comment.
+    fn has_previous(&self) -> std::io::Result<bool> {
+        Ok(false)
+    }
+
+    /// Return the previous Record or `None` if one is not available.
+    ///
+    /// Defaults to `Ok(None)`: see the trait-level doc comment.
+    fn previous(&mut self) -> std::io::Result<Option<DBRecord>> {
+        Ok(None)
+    }
+
+    /// Delete the last Record read via [`next`](Self::next) or [`previous`](Self::previous).
+    /// Returns true if the record was successfully deleted.
+    ///
+    /// Defaults to `Ok(false)`: see the trait-level doc comment.
+    fn delete(&mut self) -> std::io::Result<bool> {
+        Ok(false)
+    }
 }
 
 /// Bidirectional iterator over `i64` key values within a database table.
