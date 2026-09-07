@@ -377,9 +377,10 @@ use crate::program::model::listing::CommentType;
         op_type: i32,
         op_address: Option<Address>,
         // Stored as the Address rather than a Vec<OperandValue>: OperandValue::Register holds a
-        // RegisterRef (Rc<RefCell<Register>>), which is not Send + Sync, and the canonical
-        // MemBuffer is -- sleigh shares Arc<dyn MemBuffer> across threads. The tests only ever
-        // build an Address operand, so this is the same behaviour with a thread-safe field.
+        // RegisterRef (Rc<RefCell<Register>>), which is not Send + Sync. The tests only ever build
+        // an Address operand, so this is the same behaviour with a thread-safe field. (MemBuffer
+        // itself no longer requires Send + Sync -- see the note on the trait -- but keeping this
+        // field thread-safe costs nothing and keeps the mock usable if that ever changes back.)
         op_representation: Option<Address>,
         fall_through_offset: i32,
         expected_start: Address,
