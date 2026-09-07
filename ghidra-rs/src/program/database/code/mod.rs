@@ -22,6 +22,8 @@ pub mod proto_db_adapter_v1;
 pub mod prototype_manager;
 pub mod string_diff;
 pub mod string_diff_utils;
+#[cfg(test)]
+mod test_support;
 
 pub use code_manager::{CodeManager, ReDisassembleAllInstructionsError};
 pub use code_unit_db::CodeUnitDb;
