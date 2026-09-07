@@ -304,7 +304,7 @@ mod tests {
         ) -> io::Result<Option<Address>> {
             unreachable!()
         }
-        fn get_table(&self) -> &crate::framework::db::Table {
+        fn get_table(&self) -> std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>> {
             unreachable!()
         }
     }

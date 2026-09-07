@@ -21,15 +21,34 @@ impl DBRecord {
         let mut fields = Vec::with_capacity(schema.get_field_count());
         for i in 0..schema.get_field_count() {
             let field_type = schema.get_field_type(i);
-            let field = match field_type {
-                FieldType::Byte => Field::Byte(Some(0)),
-                FieldType::Short => Field::Short(Some(0)),
-                FieldType::Int => Field::Int(Some(0)),
-                FieldType::Long => Field::Long(Some(0)),
-                FieldType::String => Field::String(None),
-                FieldType::Binary => Field::Binary(None),
-                FieldType::Boolean => Field::Boolean(Some(false)),
-                FieldType::Fixed(len) => Field::Fixed(Some(vec![0; len as usize])),
+            // Sparse columns "don't apply to all records" (Ghidra's `Schema` javadoc) and default
+            // to null/unset until explicitly written, regardless of their underlying field type --
+            // that's the whole point of marking a column sparse (it costs no space when unused).
+            // Non-sparse fixed-width columns instead default to a zero-ish value, matching every
+            // already-ported adapter's expectation that e.g. a freshly-constructed non-sparse
+            // `Long`/`Int` column reads back as `0` rather than null.
+            let field = if schema.is_sparse_column(i) {
+                match field_type {
+                    FieldType::Byte => Field::Byte(None),
+                    FieldType::Short => Field::Short(None),
+                    FieldType::Int => Field::Int(None),
+                    FieldType::Long => Field::Long(None),
+                    FieldType::String => Field::String(None),
+                    FieldType::Binary => Field::Binary(None),
+                    FieldType::Boolean => Field::Boolean(None),
+                    FieldType::Fixed(_) => Field::Fixed(None),
+                }
+            } else {
+                match field_type {
+                    FieldType::Byte => Field::Byte(Some(0)),
+                    FieldType::Short => Field::Short(Some(0)),
+                    FieldType::Int => Field::Int(Some(0)),
+                    FieldType::Long => Field::Long(Some(0)),
+                    FieldType::String => Field::String(None),
+                    FieldType::Binary => Field::Binary(None),
+                    FieldType::Boolean => Field::Boolean(Some(false)),
+                    FieldType::Fixed(len) => Field::Fixed(Some(vec![0; len as usize])),
+                }
             };
             fields.push(field);
         }

@@ -15,15 +15,21 @@
 //! Also ported: the protected static helpers [`get_source_type_flags_bits`] and
 //! [`decode_source_type_from_flags`], which encode/decode a [`SourceType`]'s storage ID into the
 //! split flag bits used by the V4+ on-disk symbol record layout -- real bit-packing logic rather
-//! than a concrete table layout descriptor. Left out for the same reason as
-//! `VARIABLE_STORAGE_TABLE_NAME` was left out of `VariableStorageDBAdapter`: the
-//! `getNameAndNamespaceFilterIterator`/`getNameNamespaceAddressFilterIterator`/
-//! `getPrimaryFilterRecordIterator`/`computeLocatorHash` static helpers, since they operate on
-//! `db.Query`/`db.RecordIterator` machinery specific to a concrete adapter's column layout and
-//! are unused by any already-ported caller; left for whichever concrete adapter is ported first.
+//! than a concrete table layout descriptor; and [`compute_locator_hash`], the name/namespace/
+//! address hashing scheme used by the V5 adapter's `SYMBOL_HASH_COL` index (added once
+//! `SymbolDatabaseAdapterV5` -- the first concrete adapter -- needed it).
+//!
+//! Still left out, for the same reason as `VARIABLE_STORAGE_TABLE_NAME` was left out of
+//! `VariableStorageDBAdapter`: the `getNameAndNamespaceFilterIterator`/
+//! `getNameNamespaceAddressFilterIterator`/`getPrimaryFilterRecordIterator` static helpers, since
+//! they operate on `db.Query`/`db.RecordIterator` machinery specific to a concrete adapter's
+//! column layout; concrete adapters reimplement the equivalent filtering inline via linear scans
+//! instead (matching the "no secondary-index support" convention used throughout this port's
+//! DB-adapter family).
 
 use std::collections::BTreeSet;
 use std::io;
+use std::sync::{Arc, RwLock};
 
 use crate::framework::db::{DBRecord, Field, RecordIterator, Table};
 use crate::program::model::address::{Address, AddressSetView, AddressSpace};
@@ -80,6 +86,42 @@ pub fn decode_source_type_from_flags(flags: u8) -> Result<SourceType, String> {
     let lo_bits = (flags & SYMBOL_SOURCE_LO_BITS) >> SYMBOL_SOURCE_LO_BITS_SHIFT;
     let hi_bit = (flags & SYMBOL_SOURCE_HI_BIT) >> (SYMBOL_SOURCE_HI_BIT_SHIFT - 2);
     SourceType::get_source_type((hi_bit | lo_bits) as i32)
+}
+
+/// Java's `String.hashCode()`: `s[0]*31^(n-1) + ... + s[n-1]`, computed over UTF-16 code units
+/// with 32-bit wrapping arithmetic (matching Java `int` overflow semantics).
+fn java_string_hash(s: &str) -> i32 {
+    let mut hash: i32 = 0;
+    for unit in s.encode_utf16() {
+        hash = hash.wrapping_mul(31).wrapping_add(unit as i32);
+    }
+    hash
+}
+
+/// Java's `Long.hashCode(long)`: `(int) (value ^ (value >>> 32))`, i.e. an *unsigned* right shift.
+fn java_long_hash(value: i64) -> i32 {
+    ((value as u64) ^ ((value as u64) >> 32)) as i32
+}
+
+/// Computes a hash value for a symbol that facilitates fast lookups of symbols given a name,
+/// namespace, and address. The hash is formed so that it can also be used for fast lookups of all
+/// symbols that have the same name and namespace regardless of address. Returns `None` if `name`
+/// is empty (default functions have no name, so there is no point in storing a hash for those).
+///
+/// Stands in for `SymbolDatabaseAdapter.computeLocatorHash(String, long, long)`, which returns a
+/// `LongField` (or `null`); this returns the equivalent `Option<i64>` instead.
+///
+/// The upper 32 bits of the result hold `Objects.hash(name, namespaceID)` (Java's two-argument
+/// `Arrays.hashCode` accumulator seeded with `1`, folding in `name.hashCode()` and
+/// `Long.hashCode(namespaceID)`); the lower 32 bits hold `addressKey`'s low 32 bits.
+pub fn compute_locator_hash(name: &str, namespace_id: i64, address_key: i64) -> Option<i64> {
+    if name.is_empty() {
+        return None;
+    }
+    let mut hash: i32 = 1;
+    hash = hash.wrapping_mul(31).wrapping_add(java_string_hash(name));
+    hash = hash.wrapping_mul(31).wrapping_add(java_long_hash(namespace_id));
+    Some(((hash as i64) << 32) | (address_key & 0xFFFF_FFFF))
 }
 
 /// Error returned by [`SymbolDatabaseAdapter::delete_address_range`], mirroring the Java method's
@@ -366,8 +408,12 @@ pub trait SymbolDatabaseAdapter {
 
     /// Returns the underlying symbol table (for upgrade use only).
     ///
-    /// Stands in for `SymbolDatabaseAdapter.getTable()`.
-    fn get_table(&self) -> &Table;
+    /// Stands in for `SymbolDatabaseAdapter.getTable()`. Deviation from Java: returns a cloned,
+    /// lock-guarded handle rather than a bare reference, since every concrete adapter (like every
+    /// other DB-adapter family in this port) stores its table as `Arc<RwLock<Table>>` -- shared,
+    /// interior-mutable state obtained from a `DBHandle` -- rather than owning a plain `Table`
+    /// value that a `&self`-bound borrow could point at directly.
+    fn get_table(&self) -> Arc<RwLock<Table>>;
 }
 
 #[cfg(test)]
@@ -420,7 +466,7 @@ mod tests {
         schema: Arc<Schema>,
         records: BTreeMap<i64, DBRecord>,
         next_key: i64,
-        table: Table,
+        table: Arc<RwLock<Table>>,
         pinned: BTreeSet<i64>,
     }
 
@@ -434,7 +480,11 @@ mod tests {
                 schema: schema.clone(),
                 records: BTreeMap::new(),
                 next_key: 0,
-                table: Table::new("Symbols".to_string(), schema, buffer_mgr),
+                table: Arc::new(RwLock::new(Table::new(
+                    "Symbols".to_string(),
+                    schema,
+                    buffer_mgr,
+                ))),
                 pinned: BTreeSet::new(),
             }
         }
@@ -743,8 +793,8 @@ mod tests {
             Ok(max.map(|off| Arc::new(space.clone()).address(off)))
         }
 
-        fn get_table(&self) -> &Table {
-            &self.table
+        fn get_table(&self) -> Arc<RwLock<Table>> {
+            self.table.clone()
         }
     }
 
@@ -768,6 +818,40 @@ mod tests {
             let flags = get_source_type_flags_bits(source).unwrap();
             assert_eq!(decode_source_type_from_flags(flags).unwrap(), source);
         }
+    }
+
+    #[test]
+    fn locator_hash_is_none_for_empty_name() {
+        assert_eq!(compute_locator_hash("", 0, 0x1000), None);
+    }
+
+    #[test]
+    fn locator_hash_lower_bits_carry_address_key() {
+        let h1 = compute_locator_hash("foo", 5, 0x1234).unwrap();
+        let h2 = compute_locator_hash("foo", 5, 0x5678).unwrap();
+        // Same name/namespace => identical upper 32 bits (the name/namespace hash);
+        // differing address keys => differing lower 32 bits.
+        assert_eq!(h1 >> 32, h2 >> 32);
+        assert_ne!(h1 & 0xFFFF_FFFF, h2 & 0xFFFF_FFFF);
+        assert_eq!(h1 & 0xFFFF_FFFF, 0x1234);
+        assert_eq!(h2 & 0xFFFF_FFFF, 0x5678);
+    }
+
+    #[test]
+    fn locator_hash_differs_by_name_or_namespace() {
+        let base = compute_locator_hash("foo", 5, 0x1000).unwrap();
+        let diff_name = compute_locator_hash("bar", 5, 0x1000).unwrap();
+        let diff_ns = compute_locator_hash("foo", 6, 0x1000).unwrap();
+        assert_ne!(base >> 32, diff_name >> 32);
+        assert_ne!(base >> 32, diff_ns >> 32);
+    }
+
+    #[test]
+    fn locator_hash_is_deterministic() {
+        assert_eq!(
+            compute_locator_hash("main", 42, 0xdead_beef),
+            compute_locator_hash("main", 42, 0xdead_beef)
+        );
     }
 
     #[test]

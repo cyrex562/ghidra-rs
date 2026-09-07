@@ -25,6 +25,7 @@ pub mod old_variable_storage_db_adapter_v0v1;
 pub mod old_variable_storage_manager_db;
 pub mod overlapping_namespace_exception;
 pub mod symbol_database_adapter;
+pub mod symbol_database_adapter_v5;
 pub mod symbol_db;
 pub mod symbol_manager;
 pub mod type_filtered_symbol_iterator;
@@ -65,10 +66,11 @@ pub use old_variable_storage_db_adapter_v0v1::OldVariableStorageDBAdapterV0V1;
 pub use old_variable_storage_manager_db::OldVariableStorageManagerDB;
 pub use overlapping_namespace_exception::OverlappingNamespaceException;
 pub use symbol_database_adapter::{
-    decode_source_type_from_flags, get_source_type_flags_bits, SymbolDatabaseAdapter,
-    SymbolDeleteAddressRangeError, MAX_SOURCE_VALUE, SYMBOL_PINNED_FLAG, SYMBOL_SOURCE_HI_BIT,
-    SYMBOL_SOURCE_LO_BITS, SYMBOL_SOURCE_MASK,
+    compute_locator_hash, decode_source_type_from_flags, get_source_type_flags_bits,
+    SymbolDatabaseAdapter, SymbolDeleteAddressRangeError, MAX_SOURCE_VALUE, SYMBOL_PINNED_FLAG,
+    SYMBOL_SOURCE_HI_BIT, SYMBOL_SOURCE_LO_BITS, SYMBOL_SOURCE_MASK,
 };
+pub use symbol_database_adapter_v5::SymbolDatabaseAdapterV5;
 pub use symbol_db::SymbolDB;
 pub use symbol_manager::{SymbolManagerDb, SymbolManagerDB};
 pub use type_filtered_symbol_iterator::TypeFilteredSymbolIterator;
