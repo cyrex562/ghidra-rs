@@ -65,9 +65,29 @@ impl From<io::Error> for SubMemoryBlockError {
     }
 }
 
+/// Blanket-implemented downcasting hook backing [`SubMemoryBlock::as_any`]. Enables concrete
+/// implementors of [`join`](SubMemoryBlock::join) to replicate Java's `instanceof` checks against
+/// sibling concrete types (e.g. `BufferSubMemoryBlock.join` only merges with another
+/// `BufferSubMemoryBlock`) via [`Any::downcast_ref`](std::any::Any::downcast_ref), which a bare
+/// trait object cannot otherwise express. Implemented for every `'static` type, so it imposes no
+/// extra obligation on implementors of `SubMemoryBlock` beyond what `Send + Sync` already
+/// requires, and existing/mock implementors keep compiling unchanged.
+pub trait AsAny: std::any::Any {
+    /// Returns `self` as `&dyn Any` for downcasting. Mirrors the standard `impl<T: Any> AsAny for
+    /// T` pattern used to add `Any`-style downcasting to an otherwise unrelated object-safe
+    /// trait.
+    fn as_any(&self) -> &dyn std::any::Any;
+}
+
+impl<T: std::any::Any> AsAny for T {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
 /// Interface for the various types of memory block sections. They are used by a `MemoryBlockDB`
 /// to do the actual storing and fetching of the bytes that make up a `MemoryBlock`.
-pub trait SubMemoryBlock: Send + Sync {
+pub trait SubMemoryBlock: AsAny + Send + Sync {
     /// Returns whether this block has been initialized (has byte values).
     fn is_initialized(&self) -> bool;
 

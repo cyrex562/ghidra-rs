@@ -15,7 +15,12 @@
 use std::io;
 
 /// Facilitates synchronized access to a chained buffer, mirroring `db.DBBuffer`.
-pub trait DBBuffer {
+///
+/// Bound by `Send + Sync` so that `Box<dyn DBBuffer>`-holding structs (e.g.
+/// `BufferSubMemoryBlock`) can themselves satisfy `Send + Sync` without extra ceremony at each
+/// call site. All current implementors (the various in-memory test mocks) are trivially
+/// `Send + Sync` already, so this adds no real obligation.
+pub trait DBBuffer: Send + Sync {
     /// Split this buffer into two separate buffers. This buffer remains valid but its new size
     /// is equal to `offset`. The newly created buffer (holding everything from `offset` onward)
     /// is returned. Mirrors `DBBuffer.split(int)`.

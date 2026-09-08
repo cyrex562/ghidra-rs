@@ -1,15 +1,28 @@
 pub mod address_source_info;
+pub mod bit_mapped_sub_memory_block;
+pub mod buffer_sub_memory_block;
+pub mod byte_mapped_sub_memory_block;
+pub mod byte_mapping_scheme;
 pub mod file_bytes;
 pub mod file_bytes_adapter;
+pub mod file_bytes_sub_memory_block;
 pub mod memory_block_db;
 pub mod memory_map_db;
 pub mod memory_map_db_adapter;
+pub mod sub_block_header;
 pub mod sub_memory_block;
+pub mod uninitialized_sub_memory_block;
 
 pub use address_source_info::AddressSourceInfo;
+pub use bit_mapped_sub_memory_block::BitMappedSubMemoryBlock;
+pub use buffer_sub_memory_block::BufferSubMemoryBlock;
+pub use byte_mapped_sub_memory_block::ByteMappedSubMemoryBlock;
+pub use byte_mapping_scheme::{ByteMappingScheme, ByteMappingSchemeError};
 pub use file_bytes::{FileBytes, FileBytesError};
 pub use file_bytes_adapter::{FileBytesAdapter, FileBytesAdapterError};
+pub use file_bytes_sub_memory_block::FileBytesSubMemoryBlock;
 pub use memory_block_db::MemoryBlockDB;
 pub use memory_map_db::MemoryMapDB;
 pub use memory_map_db_adapter::{MemoryMapDBAdapter, MemoryMapDBAdapterError};
 pub use sub_memory_block::{SubMemoryBlock, SubMemoryBlockError};
+pub use uninitialized_sub_memory_block::UninitializedSubMemoryBlock;
