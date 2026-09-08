@@ -22,6 +22,7 @@ pub mod composite_db_adapter_v5v6;
 pub mod data_type_component_db;
 pub mod data_type_db;
 pub mod data_type_manager_db;
+pub mod data_type_settings_db;
 pub mod data_type_utilities;
 pub mod enum_db;
 pub mod enum_db_adapter;
