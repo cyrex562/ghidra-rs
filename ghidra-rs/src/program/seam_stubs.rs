@@ -45,7 +45,7 @@ use crate::util::exception::CancelledException;
 use std::any::Any;
 use std::fmt;
 use std::io;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
 
@@ -2523,6 +2523,42 @@ pub trait FunctionTagManagerProgram {
 
     /// Stands in for `ProgramDB.getFunctionManager().functionTagsChanged()`.
     fn function_tags_changed(&self);
+}
+
+/// Placeholder for the subset of `ghidra.program.database.ProgramDB`'s API that
+/// [`BookmarkDBManager`](crate::program::database::bookmark::BookmarkDBManager) needs from its
+/// owning program, before the real `ProgramDB` port exposes these members: reporting an I/O
+/// error, handing back the program itself and its property map manager (both needed only to
+/// construct an [`OldBookmarkManager`](crate::program::database::bookmark::OldBookmarkManager) on
+/// demand), and firing `ChangeManager` notifications for bookmark/bookmark-type add/change/remove
+/// events. Mirrors [`FunctionTagManagerProgram`]'s identical role for `FunctionTagManagerDB`. All
+/// methods take `&self`, for the same reason `FunctionTagManagerProgram` documents.
+pub trait BookmarkManagerProgram: Send + Sync {
+    /// Stands in for `ProgramDB.dbError(IOException)`.
+    fn db_error(&self, err: &io::Error);
+
+    /// Stands in for `BookmarkDBManager.program` itself, used only to construct an
+    /// `OldBookmarkManager` (which needs a `Program` for `OldBookmark::set_context`).
+    fn program(&self) -> Arc<dyn Program>;
+
+    /// Stands in for `ProgramDB.getUsrPropertyManager()`, used only to construct an
+    /// `OldBookmarkManager`.
+    fn property_map_manager(&self) -> Arc<Mutex<dyn crate::program::model::util::PropertyMapManager + Send>>;
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_ADDED, ...)`.
+    fn bookmark_added(&self, addr: &Address, bookmark_id: i64);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_CHANGED, ...)`.
+    fn bookmark_changed(&self, addr: &Address, bookmark_id: i64);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_REMOVED, ...)`.
+    fn bookmark_removed(&self, addr: &Address, bookmark_id: i64);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_TYPE_ADDED, ...)`.
+    fn bookmark_type_added(&self, type_id: i32, type_name: &str);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_TYPE_REMOVED, ...)`.
+    fn bookmark_type_removed(&self, type_id: i32, type_name: &str);
 }
 
 /// Placeholder for `ghidra.program.database.symbol.VariableSymbolDB`, referenced by

@@ -2,24 +2,43 @@
 //!
 //! The Java type is a package-private abstract class whose `getAdapter` static factory (plus the
 //! private `findReadOnlyAdapter`/`upgrade` helpers) selects between four schema versions
-//! (`V0`/`V1`/`V2`/`V3`). Only `BookmarkDBAdapterV3` (the live, current schema) is ported so far
-//! -- `V0`/`V1`/`V2` are historical migration-only adapters for programs saved by releases old
-//! enough that this port's `TODO` backlog has not reached them yet (each would need its own
-//! per-type-table-vs-single-table layout ported faithfully; left honestly `TODO` in
-//! `PORT_MANIFEST.tsv` rather than stubbed). Consequently `get_adapter`/`upgrade`'s Java bodies,
-//! which route between all four, are not ported here either: a real multi-version factory
-//! function would need every version present to be meaningful, and stubbing it now would just be
-//! dead code until `V0`-`V2` land. What *is* ported: the abstract instance API (as the
-//! object-safe [`BookmarkDbAdapter`] trait, with the same "Bookmarks are read-only" default
-//! errors Java's base class throws for the mutating methods) and the three package-private
-//! static helpers every version (and `BookmarkDBManager`, not yet ported) shares: [`get_type_id`],
-//! [`mangle_type_category`], [`demangle_type_category`].
+//! (`V0`/`V1`/`V2`/`V3`). What's ported: the abstract instance API (as the object-safe
+//! [`BookmarkDbAdapter`] trait, with the same "Bookmarks are read-only" default errors Java's base
+//! class throws for the mutating methods); the three package-private static helpers every version
+//! (and [`BookmarkDBManager`](crate::program::database::bookmark::BookmarkDBManager)) shares --
+//! [`get_type_id`], [`mangle_type_category`], [`demangle_type_category`]; and, now that all four
+//! concrete versions exist, the real version-selection/upgrade logic itself: [`get_adapter`] (with
+//! `findReadOnlyAdapter`/`upgrade` inlined as private helpers, mirroring how
+//! [`bookmark_type_db_adapter::get_adapter`](crate::program::database::bookmark::bookmark_type_db_adapter::get_adapter)
+//! already handles the identical situation for the sibling type-adapter family) and the
+//! [`BookmarkAdapterKind`] enum it returns.
+//!
+//! **Why an enum, not `Box<dyn BookmarkDbAdapter>`.** `BookmarkDbAdapter` itself declares no
+//! `Send`/`Sync` bound (not every hypothetical implementor needs one), but
+//! [`BookmarkDBManager`](crate::program::database::bookmark::BookmarkDBManager) does need whatever
+//! it stores to be `Send` so the manager itself can satisfy
+//! [`BookmarkManagerDb`](crate::program::database::bookmark::BookmarkManagerDb)'s `Send + Sync`
+//! supertrait bound. A `Box<dyn BookmarkDbAdapter + Send>` would work too, but every one of the
+//! four concrete adapters is already `Send` on its own (see each one's own module for why --
+//! `V1`/`V2` in particular rely on
+//! [`SendSyncAddressMap`](crate::program::database::references::to_adapter_v0::SendSyncAddressMap)
+//! for exactly this), so a closed `enum` avoids the trait-object bound question entirely: it is
+//! `Send`/`Sync` automatically whenever all four variants are.
 
 use std::io;
+use std::sync::Arc;
 
+use crate::framework::data::OpenMode;
 use crate::framework::db::{DBHandle, DBRecord, FieldType, Schema};
-use crate::program::database::bookmark::bookmark_db_adapter_v3;
+use crate::program::database::bookmark::bookmark_db_adapter_v0::BookmarkDbAdapterV0;
+use crate::program::database::bookmark::bookmark_db_adapter_v1::BookmarkDbAdapterV1;
+use crate::program::database::bookmark::bookmark_db_adapter_v2::BookmarkDbAdapterV2;
+use crate::program::database::bookmark::bookmark_db_adapter_v3::{self, BookmarkDbAdapterV3};
+use crate::program::database::map::AddressMap;
+use crate::program::database::references::to_adapter_v0::SendSyncAddressMap;
 use crate::program::model::address::AddressSet;
+use crate::util::exception::VersionException;
+use crate::util::task::TaskMonitor;
 
 /// Name of the database table used to store bookmarks, as defined by
 /// `BookmarkDBAdapter.BOOKMARK_TABLE_NAME`.
@@ -214,6 +233,319 @@ pub trait BookmarkDbAdapter {
     fn has_table(&self, _type_id: i32) -> bool {
         false
     }
+}
+
+/// Whichever concrete bookmark table schema is actually in play. See the module docs for why this
+/// is an enum rather than a trait object.
+pub enum BookmarkAdapterKind {
+    V0(BookmarkDbAdapterV0),
+    V1(BookmarkDbAdapterV1),
+    V2(BookmarkDbAdapterV2),
+    V3(BookmarkDbAdapterV3),
+}
+
+impl BookmarkDbAdapter for BookmarkAdapterKind {
+    fn create_bookmark(
+        &mut self,
+        type_id: i32,
+        category: Option<&str>,
+        index: i64,
+        comment: Option<&str>,
+    ) -> io::Result<Option<DBRecord>> {
+        match self {
+            Self::V0(a) => a.create_bookmark(type_id, category, index, comment),
+            Self::V1(a) => a.create_bookmark(type_id, category, index, comment),
+            Self::V2(a) => a.create_bookmark(type_id, category, index, comment),
+            Self::V3(a) => a.create_bookmark(type_id, category, index, comment),
+        }
+    }
+
+    fn update_record(&mut self, rec: &DBRecord) -> io::Result<()> {
+        match self {
+            Self::V0(a) => a.update_record(rec),
+            Self::V1(a) => a.update_record(rec),
+            Self::V2(a) => a.update_record(rec),
+            Self::V3(a) => a.update_record(rec),
+        }
+    }
+
+    fn delete_record(&mut self, id: i64) -> io::Result<()> {
+        match self {
+            Self::V0(a) => a.delete_record(id),
+            Self::V1(a) => a.delete_record(id),
+            Self::V2(a) => a.delete_record(id),
+            Self::V3(a) => a.delete_record(id),
+        }
+    }
+
+    fn get_record(&self, id: i64) -> io::Result<Option<DBRecord>> {
+        match self {
+            Self::V0(a) => a.get_record(id),
+            Self::V1(a) => a.get_record(id),
+            Self::V2(a) => a.get_record(id),
+            Self::V3(a) => a.get_record(id),
+        }
+    }
+
+    fn get_records_by_type_at_address(&self, type_id: i32, address: i64) -> io::Result<Vec<DBRecord>> {
+        match self {
+            Self::V0(a) => a.get_records_by_type_at_address(type_id, address),
+            Self::V1(a) => a.get_records_by_type_at_address(type_id, address),
+            Self::V2(a) => a.get_records_by_type_at_address(type_id, address),
+            Self::V3(a) => a.get_records_by_type_at_address(type_id, address),
+        }
+    }
+
+    fn get_records_by_type_starting_at_address(
+        &self,
+        type_id: i32,
+        start_address: i64,
+        forward: bool,
+    ) -> io::Result<Vec<DBRecord>> {
+        match self {
+            Self::V0(a) => a.get_records_by_type_starting_at_address(type_id, start_address, forward),
+            Self::V1(a) => a.get_records_by_type_starting_at_address(type_id, start_address, forward),
+            Self::V2(a) => a.get_records_by_type_starting_at_address(type_id, start_address, forward),
+            Self::V3(a) => a.get_records_by_type_starting_at_address(type_id, start_address, forward),
+        }
+    }
+
+    fn get_records_by_type_for_address_range(
+        &self,
+        type_id: i32,
+        start_addr: i64,
+        end_addr: i64,
+    ) -> io::Result<Vec<DBRecord>> {
+        match self {
+            Self::V0(a) => a.get_records_by_type_for_address_range(type_id, start_addr, end_addr),
+            Self::V1(a) => a.get_records_by_type_for_address_range(type_id, start_addr, end_addr),
+            Self::V2(a) => a.get_records_by_type_for_address_range(type_id, start_addr, end_addr),
+            Self::V3(a) => a.get_records_by_type_for_address_range(type_id, start_addr, end_addr),
+        }
+    }
+
+    fn get_records_by_type_and_category(&self, type_id: i32, category: Option<&str>) -> io::Result<Vec<DBRecord>> {
+        match self {
+            Self::V0(a) => a.get_records_by_type_and_category(type_id, category),
+            Self::V1(a) => a.get_records_by_type_and_category(type_id, category),
+            Self::V2(a) => a.get_records_by_type_and_category(type_id, category),
+            Self::V3(a) => a.get_records_by_type_and_category(type_id, category),
+        }
+    }
+
+    fn get_records_by_type(&self, type_id: i32) -> io::Result<Vec<DBRecord>> {
+        match self {
+            Self::V0(a) => a.get_records_by_type(type_id),
+            Self::V1(a) => a.get_records_by_type(type_id),
+            Self::V2(a) => a.get_records_by_type(type_id),
+            Self::V3(a) => a.get_records_by_type(type_id),
+        }
+    }
+
+    fn get_categories(&self, type_id: i32) -> io::Result<Vec<String>> {
+        match self {
+            Self::V0(a) => a.get_categories(type_id),
+            Self::V1(a) => a.get_categories(type_id),
+            Self::V2(a) => a.get_categories(type_id),
+            Self::V3(a) => a.get_categories(type_id),
+        }
+    }
+
+    fn get_bookmark_addresses(&self, type_id: i32) -> io::Result<AddressSet> {
+        match self {
+            Self::V0(a) => a.get_bookmark_addresses(type_id),
+            Self::V1(a) => a.get_bookmark_addresses(type_id),
+            Self::V2(a) => a.get_bookmark_addresses(type_id),
+            Self::V3(a) => a.get_bookmark_addresses(type_id),
+        }
+    }
+
+    fn get_bookmark_count_for_type(&self, type_id: i32) -> i32 {
+        match self {
+            Self::V0(a) => a.get_bookmark_count_for_type(type_id),
+            Self::V1(a) => a.get_bookmark_count_for_type(type_id),
+            Self::V2(a) => a.get_bookmark_count_for_type(type_id),
+            Self::V3(a) => a.get_bookmark_count_for_type(type_id),
+        }
+    }
+
+    fn get_bookmark_count(&self) -> i32 {
+        match self {
+            Self::V0(a) => a.get_bookmark_count(),
+            Self::V1(a) => a.get_bookmark_count(),
+            Self::V2(a) => a.get_bookmark_count(),
+            Self::V3(a) => a.get_bookmark_count(),
+        }
+    }
+
+    fn add_type(&mut self, handle: &mut DBHandle, type_id: i32) -> io::Result<()> {
+        match self {
+            Self::V0(a) => a.add_type(handle, type_id),
+            Self::V1(a) => a.add_type(handle, type_id),
+            Self::V2(a) => a.add_type(handle, type_id),
+            Self::V3(a) => a.add_type(handle, type_id),
+        }
+    }
+
+    fn delete_type(&mut self, handle: &mut DBHandle, type_id: i32) -> io::Result<()> {
+        match self {
+            Self::V0(a) => a.delete_type(handle, type_id),
+            Self::V1(a) => a.delete_type(handle, type_id),
+            Self::V2(a) => a.delete_type(handle, type_id),
+            Self::V3(a) => a.delete_type(handle, type_id),
+        }
+    }
+
+    fn has_table(&self, type_id: i32) -> bool {
+        match self {
+            Self::V0(a) => a.has_table(type_id),
+            Self::V1(a) => a.has_table(type_id),
+            Self::V2(a) => a.has_table(type_id),
+            Self::V3(a) => a.has_table(type_id),
+        }
+    }
+}
+
+/// Selects (and upgrades, if needed) the appropriate bookmark table schema for the given database
+/// handle and open mode.
+///
+/// Port of `BookmarkDBAdapter.getAdapter(DBHandle, OpenMode, int[], AddressMap, TaskMonitor)`.
+///
+/// # Errors
+/// Returns a [`VersionException`] if the stored schema version is incompatible with `open_mode`.
+pub fn get_adapter(
+    handle: &mut DBHandle,
+    open_mode: OpenMode,
+    type_ids: &[i32],
+    addr_map: Arc<dyn AddressMap + Send + Sync>,
+    monitor: &dyn TaskMonitor,
+) -> Result<BookmarkAdapterKind, VersionException> {
+    if open_mode == OpenMode::Create {
+        return Ok(BookmarkAdapterKind::V3(BookmarkDbAdapterV3::new(
+            handle, true, type_ids, addr_map,
+        )?));
+    }
+
+    match BookmarkDbAdapterV3::new(handle, false, type_ids, addr_map.clone()) {
+        Ok(adapter) => {
+            if addr_map.is_upgraded() {
+                return Err(VersionException::with_upgradeable(true));
+            }
+            Ok(BookmarkAdapterKind::V3(adapter))
+        }
+        Err(e) => {
+            if !e.is_upgradable() || open_mode == OpenMode::Update {
+                return Err(e);
+            }
+            let old_adapter = find_read_only_adapter(handle, addr_map.as_ref(), type_ids)?;
+            if open_mode == OpenMode::Upgrade {
+                return upgrade(handle, old_adapter, type_ids, addr_map, monitor);
+            }
+            Ok(old_adapter)
+        }
+    }
+}
+
+/// Probes each historical schema version, newest first, returning the first one that opens
+/// successfully (or [`BookmarkAdapterKind::V0`] if none do). Port of the private
+/// `BookmarkDBAdapter.findReadOnlyAdapter(DBHandle, AddressMap, int[])`.
+fn find_read_only_adapter(
+    handle: &mut DBHandle,
+    addr_map: &dyn AddressMap,
+    type_ids: &[i32],
+) -> Result<BookmarkAdapterKind, VersionException> {
+    let old_map: Arc<dyn AddressMap + Send + Sync> = Arc::new(SendSyncAddressMap(addr_map.get_old_address_map()));
+    if let Ok(v3) = BookmarkDbAdapterV3::new(handle, false, type_ids, old_map) {
+        return Ok(BookmarkAdapterKind::V3(v3));
+    }
+    if let Ok(v2) = BookmarkDbAdapterV2::new(handle, addr_map) {
+        return Ok(BookmarkAdapterKind::V2(v2));
+    }
+    if let Ok(v1) = BookmarkDbAdapterV1::new(handle, addr_map) {
+        return Ok(BookmarkAdapterKind::V1(v1));
+    }
+    Ok(BookmarkAdapterKind::V0(BookmarkDbAdapterV0::new()))
+}
+
+/// Upgrades an older bookmark schema to the current ([`BookmarkDbAdapterV3`]) one in place. Port
+/// of the private `BookmarkDBAdapter.upgrade(DBHandle, BookmarkDBAdapter, int[], AddressMap,
+/// TaskMonitor)`.
+///
+/// **Faithfully-mirrored quirk.** Because [`BookmarkDbAdapterV1::get_records_by_type`] (which
+/// `V2` also uses) ignores its `type_id` argument and always returns *every* record in the shared
+/// legacy table (see that module's docs), the `for type_id in type_ids { ... get_records_by_type
+/// (type_id) ... }` loop below re-processes the *entire* legacy table once per known type -- for a
+/// `V1`/`V2` source database with more than one bookmark type, this means every bookmark is
+/// converted (and thus duplicated) once per type. This is a real latent bug in the original Java
+/// (the same method, calling the same buggy `getRecordsByType`), mirrored rather than fixed, per
+/// this port's established policy of preserving originally-observed behavior.
+///
+/// # Errors
+/// Returns a [`VersionException`] if building the replacement `V3` tables fails.
+fn upgrade(
+    handle: &mut DBHandle,
+    old_adapter: BookmarkAdapterKind,
+    type_ids: &[i32],
+    addr_map: Arc<dyn AddressMap + Send + Sync>,
+    monitor: &dyn TaskMonitor,
+) -> Result<BookmarkAdapterKind, VersionException> {
+    if matches!(old_adapter, BookmarkAdapterKind::V0(_)) {
+        // Actual upgrade from Version 0 is delayed until BookmarkDBManager wires an
+        // OldBookmarkManager in -- mirrors Java's own comment on this branch.
+        return Ok(BookmarkAdapterKind::V3(BookmarkDbAdapterV3::new(
+            handle, true, type_ids, addr_map,
+        )?));
+    }
+
+    if !matches!(old_adapter, BookmarkAdapterKind::V1(_)) {
+        handle.delete_table(BOOKMARK_TABLE_NAME);
+    }
+
+    monitor.set_message("Upgrading Bookmarks...");
+    monitor.initialize(2 * old_adapter.get_bookmark_count() as i64);
+    let mut cnt: i64 = 0;
+
+    let old_addr_map: Arc<dyn AddressMap + Send + Sync> = Arc::new(SendSyncAddressMap(addr_map.get_old_address_map()));
+
+    let map_io_err = |e: io::Error| VersionException::with_message(e.to_string());
+
+    let mut tmp_handle = DBHandle::new().map_err(map_io_err)?;
+    let mut tmp_adapter = BookmarkDbAdapterV3::new(&mut tmp_handle, true, type_ids, addr_map.clone())?;
+
+    for &type_id2 in type_ids {
+        let records = old_adapter.get_records_by_type(type_id2).map_err(map_io_err)?;
+        for rec in records {
+            let type_id = get_type_id(&rec);
+            tmp_adapter.add_type(&mut tmp_handle, type_id).map_err(map_io_err)?;
+            let addr = old_addr_map.decode_address(rec.get_field(ADDRESS_COL).get_long_value());
+            tmp_adapter
+                .create_bookmark(
+                    type_id,
+                    rec.get_string(CATEGORY_COL),
+                    addr_map.get_key(&addr, true),
+                    rec.get_string(COMMENT_COL),
+                )
+                .map_err(map_io_err)?;
+            cnt += 1;
+            monitor.set_progress(cnt);
+        }
+    }
+
+    handle.delete_table(BOOKMARK_TABLE_NAME);
+    for &type_id in type_ids {
+        handle.delete_table(&format!("{BOOKMARK_TABLE_NAME}{type_id}"));
+    }
+
+    let mut new_adapter = BookmarkDbAdapterV3::new(handle, true, type_ids, addr_map)?;
+    for &type_id in type_ids {
+        let records = tmp_adapter.get_records_by_type(type_id).map_err(map_io_err)?;
+        for rec in records {
+            new_adapter.update_record(&rec).map_err(map_io_err)?;
+            cnt += 1;
+            monitor.set_progress(cnt);
+        }
+    }
+    Ok(BookmarkAdapterKind::V3(new_adapter))
 }
 
 #[cfg(test)]
