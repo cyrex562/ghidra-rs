@@ -8,19 +8,20 @@
 //! docs for the interior-mutability/locking/downcasting design shared by both types -- it is not
 //! repeated here.
 //!
-//! # `get_address_set` and `unsafe`
+//! # `get_address_set` returns an owned handle
 //!
-//! [`ProgramModule::get_address_set`] returns `&dyn AddressSetView`, tied to `&self`'s lifetime,
-//! mirroring Java's `AddressSetView getAddressSet()`. In Java this is trivial: the method builds
-//! a brand new `AddressSet` on every call and returns it as an object reference: garbage
-//! collection means nobody worries about how long it lives. Rust has no such luxury -- a `&self`
-//! method cannot return a reference to a value it just computed locally. This port resolves that
-//! with a `RefCell<AddressSet>` cache field, recomputed on every call, exposed through a raw
-//! pointer read (see that method's doc comment for the safety argument). Everything else that
-//! only needs the *value* (not a `&dyn AddressSetView`) -- [`get_min_address`]/[`get_max_address`]
-//! on both [`Group`] and [`ProgramModule`] -- sidesteps the issue entirely by calling the private
-//! [`ModuleDbImpl::compute_address_set`] helper directly and reading `Option<Address>` out of the
-//! owned result, needing no `unsafe` at all.
+//! Java's `AddressSetView getAddressSet()` builds a brand new `AddressSet` on every call and
+//! returns it as an object reference; garbage collection means nobody worries about how long it
+//! lives. A `&self` Rust method cannot return a reference to a value it just computed locally, so
+//! [`ProgramModule::get_address_set`] returns `Box<dyn AddressSetView>` instead of a borrow --
+//! the sound equivalent of "hand back a fresh, independently-owned value every call". This module
+//! is the reason that trait method owns its return at all: every other pre-existing implementor
+//! was a test mock that already held a persistent field it could borrow from `&self`, but
+//! [`ModuleDbImpl`] must recompute the set fresh each call (it is the union of descendant
+//! fragments, which can change between calls). [`get_min_address`]/[`get_max_address`] on both
+//! [`Group`] and [`ProgramModule`] only need the resulting *value*, so they sidestep boxing
+//! entirely by calling the private [`ModuleDbImpl::compute_address_set`] helper directly and
+//! reading `Option<Address>` out of the owned result.
 //!
 //! [`get_min_address`]: crate::program::model::listing::group::Group::get_min_address
 //! [`get_max_address`]: crate::program::model::listing::group::Group::get_max_address
@@ -62,9 +63,6 @@ pub struct ModuleDbImpl {
     /// Cached child count, mirroring the Java field of the same name (kept so callers don't have
     /// to hit the database just to size the children array).
     child_count: Cell<i32>,
-    /// Backing storage for [`ProgramModule::get_address_set`]'s `&dyn AddressSetView` return
-    /// value. See the module docs.
-    address_set_cache: RefCell<AddressSet>,
 }
 
 impl ModuleDbImpl {
@@ -79,7 +77,6 @@ impl ModuleDbImpl {
             record: RefCell::new(record),
             module_mgr,
             child_count: Cell::new(child_count),
-            address_set_cache: RefCell::new(AddressSet::new()),
         }
     }
 
@@ -283,15 +280,16 @@ impl ModuleDbImpl {
 
     /// Computes the union of every descendant fragment's addresses. Stands in for
     /// `ModuleDB.getAddressSet()`'s body; factored out so [`get_min_address`]/[`get_max_address`]
-    /// (which only need the resulting *value*, not a `&dyn AddressSetView`) can call it directly
-    /// without going through the `unsafe` cache in [`ProgramModule::get_address_set`].
+    /// (which only need the resulting *value*, not a boxed [`AddressSetView`]) can call it
+    /// directly and read the `Option<Address>` out of the owned result.
     fn compute_address_set(&self) -> AddressSet {
         let mut set = AddressSet::new();
         for child in ProgramModule::get_children(self) {
             if let Some(frag) = child.as_program_fragment() {
                 set.add_set(frag);
             } else if let Some(m) = child.as_program_module() {
-                set.add_set(m.get_address_set());
+                let child_set = m.get_address_set();
+                set.add_set(&*child_set);
             }
         }
         set
@@ -1093,17 +1091,8 @@ impl ProgramModule for ModuleDbImpl {
         None
     }
 
-    fn get_address_set(&self) -> &dyn AddressSetView {
-        let set = self.compute_address_set();
-        *self.address_set_cache.borrow_mut() = set;
-        // SAFETY: see the module-level doc comment "`get_address_set` and `unsafe`". In short:
-        // this type is single-threaded (`Rc`/`RefCell` throughout), the value was just written
-        // immediately above with no other outstanding borrow of `address_set_cache`, and nothing
-        // else in this type ever borrows that field, so reading it back out through a raw pointer
-        // cannot alias a live `&mut`. The returned reference stays valid until the *next* call to
-        // this method overwrites the cache, mirroring Java's `getAddressSet()` -- which likewise
-        // makes no promise that a previously-returned view reflects later mutations.
-        unsafe { &*self.address_set_cache.as_ptr() }
+    fn get_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(self.compute_address_set())
     }
 
     fn get_version_tag(&self) -> Box<dyn Any> {

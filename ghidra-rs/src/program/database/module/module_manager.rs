@@ -849,7 +849,7 @@ mod tests {
         fn get_last_address(&self) -> Option<Address> {
             unimplemented!()
         }
-        fn get_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
+        fn get_address_set(&self) -> Box<dyn crate::program::model::address::AddressSetView> {
             unimplemented!()
         }
         fn get_version_tag(&self) -> Box<dyn Any> {

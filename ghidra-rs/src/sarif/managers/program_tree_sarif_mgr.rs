@@ -805,9 +805,8 @@ mod tests {
         fn get_last_address(&self) -> Option<Address> {
             None
         }
-        fn get_address_set(&self) -> &dyn AddressSetView {
-            static EMPTY: std::sync::OnceLock<AddressSet> = std::sync::OnceLock::new();
-            EMPTY.get_or_init(AddressSet::new)
+        fn get_address_set(&self) -> Box<dyn AddressSetView> {
+            Box::new(AddressSet::new())
         }
         fn get_version_tag(&self) -> Box<dyn std::any::Any> {
             Box::new(0i32)

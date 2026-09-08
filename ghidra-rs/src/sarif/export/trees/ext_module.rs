@@ -522,9 +522,8 @@ mod tests {
             None
         }
 
-        fn get_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
-            static EMPTY: std::sync::OnceLock<AddressSet> = std::sync::OnceLock::new();
-            EMPTY.get_or_init(AddressSet::new)
+        fn get_address_set(&self) -> Box<dyn crate::program::model::address::AddressSetView> {
+            Box::new(AddressSet::new())
         }
 
         fn get_version_tag(&self) -> Box<dyn Any> {
