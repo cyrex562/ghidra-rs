@@ -13468,7 +13468,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/EnumValueDBAdapterNoTable.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/EnumValueDBAdapterV0.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/EnumValueDBAdapterV1.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/EnumValues.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/EnumValues.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/FunctionDefinitionDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/FunctionDefinitionDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/FunctionDefinitionDBAdapterNoTable.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 

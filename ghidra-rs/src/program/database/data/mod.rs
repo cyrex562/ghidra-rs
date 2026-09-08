@@ -36,6 +36,7 @@ pub mod enum_value_db_adapter;
 pub mod enum_value_db_adapter_no_table;
 pub mod enum_value_db_adapter_v0;
 pub mod enum_value_db_adapter_v1;
+pub mod enum_values;
 pub mod function_definition_db;
 pub mod function_definition_db_adapter;
 pub mod function_definition_db_adapter_no_table;
@@ -123,6 +124,7 @@ pub use enum_value_db_adapter::{
 pub use enum_value_db_adapter_no_table::EnumValueDBAdapterNoTable;
 pub use enum_value_db_adapter_v0::EnumValueDBAdapterV0;
 pub use enum_value_db_adapter_v1::EnumValueDBAdapterV1;
+pub use enum_values::EnumValues;
 pub use function_definition_db::FunctionDefinitionDb;
 pub use function_definition_db_adapter::{
     get_generic_calling_convention_name, FunctionDefinitionDBAdapter, FUNCTION_DEF_CALLCONV_COL,
