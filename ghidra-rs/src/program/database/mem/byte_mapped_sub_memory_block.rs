@@ -73,6 +73,20 @@ impl ByteMappedSubMemoryBlock {
         mapped_address: Address,
     ) -> Result<Self, ByteMappingSchemeError> {
         let mem_map = adapter.read().unwrap().get_memory_map();
+        Self::from_parts(adapter, record, mem_map, mapped_address)
+    }
+
+    /// Constructs a `ByteMappedSubMemoryBlock` from an already-resolved `mem_map`, skipping the
+    /// `adapter.get_memory_map()` lookup [`new`](Self::new) performs. See
+    /// [`BitMappedSubMemoryBlock::from_parts`](crate::program::database::mem::bit_mapped_sub_memory_block::BitMappedSubMemoryBlock::from_parts)
+    /// for why this exists: it lets an adapter construct this sub block from within a method that
+    /// already has the adapter's own lock borrowed, without re-locking it and deadlocking.
+    pub(crate) fn from_parts(
+        adapter: Arc<RwLock<dyn MemoryMapDBAdapter>>,
+        record: DBRecord,
+        mem_map: Arc<RwLock<dyn Memory>>,
+        mapped_address: Address,
+    ) -> Result<Self, ByteMappingSchemeError> {
         let encoded_mapping_scheme = record.get_int(SUB_INT_DATA1_COL).unwrap_or(0);
         let byte_mapping_scheme = ByteMappingScheme::from_encoded(encoded_mapping_scheme)?;
         Ok(Self {

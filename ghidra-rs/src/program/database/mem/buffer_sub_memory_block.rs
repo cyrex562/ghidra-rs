@@ -51,7 +51,14 @@ impl BufferSubMemoryBlock {
     /// [`split`](SubMemoryBlock::split) to wrap the tail buffer `DBBuffer::split` already
     /// produced, instead of asking the adapter to re-resolve the same buffer id by its (now
     /// newly-assigned) id -- an equivalent, but more direct, route to the same state.
-    fn from_parts(adapter: Arc<RwLock<dyn MemoryMapDBAdapter>>, record: DBRecord, buf: Box<dyn DBBuffer>) -> Self {
+    ///
+    /// Also used by adapter implementations (e.g. `MemoryMapDBAdapterV3`) constructing a freshly
+    /// created buffer sub block from within a method that already has the adapter's own lock
+    /// borrowed: calling [`new`](Self::new) there would re-lock the same
+    /// `Arc<RwLock<dyn MemoryMapDBAdapter>>` the caller is already holding (to resolve the buffer
+    /// via `adapter.get_buffer`) and deadlock, whereas this constructor takes an already-resolved
+    /// buffer and never locks `adapter` itself.
+    pub(crate) fn from_parts(adapter: Arc<RwLock<dyn MemoryMapDBAdapter>>, record: DBRecord, buf: Box<dyn DBBuffer>) -> Self {
         Self {
             header: SubBlockHeader::new(adapter, record),
             buf,

@@ -5,11 +5,32 @@
 //! four versioned adapters (`MemoryMapDBAdapterV0`..`V3`) selected at open time based on the
 //! on-disk schema version. It holds mutual references with `MemoryMapDB` and `MemoryBlockDB`
 //! (the adapter creates/updates blocks; blocks and the memory map call back into the adapter for
-//! persistence), which is exactly the coupling this port needs to cut. The versioned static
-//! factory methods (`getAdapter`, `findReadOnlyAdapter`, `upgrade`) construct concrete
-//! `MemoryMapDBAdapterV0..V3` instances and the V3-schema column/type constants belong to those
-//! (not yet ported) subclasses, so only the instance-level abstract methods -- the adapter's
-//! actual public contract -- are mapped onto this trait.
+//! persistence), which is exactly the coupling this port needs to cut. All four versioned adapters
+//! are now ported (`memory_map_db_adapter_v0`..`v3`), and with them, the real version-selection
+//! logic itself: [`get_adapter`] (with `findReadOnlyAdapter`/`upgrade` inlined as private helpers,
+//! mirroring the identical situation already handled for
+//! [`bookmark_db_adapter::get_adapter`](crate::program::database::bookmark::bookmark_db_adapter::get_adapter)).
+//!
+//! **`MemoryMapDB` does not call this factory.** Unlike `BookmarkDBManager` (which already called
+//! a `get_adapter`-shaped stub before its own versioned adapters existed),
+//! [`MemoryMapDB`](crate::program::database::mem::memory_map_db::MemoryMapDB) has its own
+//! self-contained `new`/`create_block` that builds the "Memory Blocks"/"Sub Memory Blocks" tables
+//! directly and never references `MemoryMapDBAdapter` at all -- there was no analogous
+//! already-stubbed gap to complete here. Rewiring `MemoryMapDB` to route block creation through
+//! this factory (so opening an existing, older-schema database would actually work) is a larger
+//! structural change than this trait's six concrete adapters alone; [`get_adapter`] is provided
+//! and tested standalone so that future work can wire it in without redesigning it first.
+//!
+//! **`upgrade`'s fidelity limit.** Java's `upgrade` reads `block.getType()`/`isMapped()`/
+//! `getComment()`/`getSourceName()`/`getFlags()` off each old block to recreate it faithfully on
+//! the new adapter. This crate's [`MemoryBlock`] trait exposes none of those (see that trait's own
+//! module docs for its intentionally minimal surface), so [`upgrade`] can only distinguish
+//! "initialized" (migrated as a real buffer block, bytes copied verbatim) from "not initialized"
+//! (migrated as a plain uninitialized block of the same size) -- bit/byte-mapped blocks are
+//! downgraded to uninitialized blocks of the same size/name during upgrade, and comments/source
+//! names/flags are not preserved. This is a real, precise gap (not a stub): everything else about
+//! the migrated block (name, start address, size, and -- for initialized blocks -- exact byte
+//! content) is faithfully carried over.
 //!
 //! Memory blocks and sub blocks are exposed through the existing `MemoryBlock`/`SubMemoryBlock`
 //! trait objects rather than the concrete `MemoryBlockDB` struct, and the owning memory map is
@@ -22,11 +43,19 @@ use std::fmt;
 use std::io;
 use std::sync::{Arc, RwLock};
 
+use crate::framework::data::OpenMode;
 use crate::framework::db::{DBBuffer, DBHandle, DBRecord};
+use crate::program::database::map::AddressMapDB;
+use crate::program::database::mem::file_bytes::FileBytes;
+use crate::program::database::mem::memory_map_db_adapter_v0::MemoryMapDBAdapterV0;
+use crate::program::database::mem::memory_map_db_adapter_v1;
+use crate::program::database::mem::memory_map_db_adapter_v2::MemoryMapDBAdapterV2;
+use crate::program::database::mem::memory_map_db_adapter_v3::MemoryMapDBAdapterV3;
 use crate::program::database::mem::sub_memory_block::SubMemoryBlock;
 use crate::program::model::address::{Address, AddressOverflowException};
 use crate::program::model::mem::{Memory, MemoryBlock, MemoryBlockType};
-use crate::program::database::mem::file_bytes::FileBytes;
+use crate::util::exception::VersionException;
+use crate::util::task::TaskMonitor;
 
 /// Error type aggregating the checked exceptions thrown by Java's `MemoryMapDBAdapter` block
 /// creation methods (`IOException`, `AddressOverflowException`).
@@ -186,6 +215,125 @@ pub trait MemoryMapDBAdapter: Send + Sync {
         offset: i64,
         flags: i32,
     ) -> Result<Arc<RwLock<dyn MemoryBlock>>, MemoryMapDBAdapterError>;
+}
+
+/// Default `max_sub_block_size` passed to [`MemoryMapDBAdapterV3::open`]. Mirrors
+/// `MemoryMapDBAdapter.getAdapter`'s hardcoded `Memory.GBYTE` argument (`1L << 30`), which has not
+/// been ported onto this crate's [`Memory`] trait as an associated constant -- see
+/// `buffer_sub_memory_block.rs`'s identical local `GBYTE` constant for the same reason.
+pub const DEFAULT_MAX_SUB_BLOCK_SIZE: i64 = 1 << 30;
+
+/// Selects (and upgrades, if needed) the appropriate memory-block table schema for the given
+/// database handle and open mode. Port of `MemoryMapDBAdapter.getAdapter(DBHandle, OpenMode,
+/// MemoryMapDB, TaskMonitor)`.
+///
+/// # Errors
+/// Returns a [`VersionException`] if the stored schema version is incompatible with `open_mode`.
+pub fn get_adapter(
+    handle: Arc<RwLock<DBHandle>>,
+    mem_map: Arc<RwLock<dyn Memory>>,
+    addr_map: Arc<RwLock<AddressMapDB>>,
+    open_mode: OpenMode,
+    monitor: &dyn TaskMonitor,
+) -> Result<Arc<RwLock<dyn MemoryMapDBAdapter>>, VersionException> {
+    if open_mode == OpenMode::Create {
+        let v3 = MemoryMapDBAdapterV3::open(handle, mem_map, addr_map, DEFAULT_MAX_SUB_BLOCK_SIZE, true)?;
+        return Ok(v3 as Arc<RwLock<dyn MemoryMapDBAdapter>>);
+    }
+
+    match MemoryMapDBAdapterV3::open(handle.clone(), mem_map.clone(), addr_map.clone(), DEFAULT_MAX_SUB_BLOCK_SIZE, false) {
+        Ok(v3) => Ok(v3 as Arc<RwLock<dyn MemoryMapDBAdapter>>),
+        Err(e) => {
+            if !e.is_upgradable() || open_mode == OpenMode::Update {
+                return Err(e);
+            }
+            let old_adapter = find_read_only_adapter(handle.clone(), mem_map.clone(), addr_map.clone())?;
+            if open_mode == OpenMode::Upgrade {
+                return upgrade(handle, old_adapter, mem_map, addr_map, monitor);
+            }
+            Ok(old_adapter)
+        }
+    }
+}
+
+/// Probes each historical schema version, newest first, returning the first one that opens
+/// successfully. Port of the package-private `MemoryMapDBAdapter.findReadOnlyAdapter(DBHandle,
+/// MemoryMapDB)`.
+fn find_read_only_adapter(
+    handle: Arc<RwLock<DBHandle>>,
+    mem_map: Arc<RwLock<dyn Memory>>,
+    addr_map: Arc<RwLock<AddressMapDB>>,
+) -> Result<Arc<RwLock<dyn MemoryMapDBAdapter>>, VersionException> {
+    if let Ok(v2) = MemoryMapDBAdapterV2::open(handle.clone(), mem_map.clone(), addr_map.clone()) {
+        return Ok(v2 as Arc<RwLock<dyn MemoryMapDBAdapter>>);
+    }
+    if let Ok(v1) = memory_map_db_adapter_v1::open(handle.clone(), mem_map.clone(), addr_map.clone()) {
+        return Ok(v1 as Arc<RwLock<dyn MemoryMapDBAdapter>>);
+    }
+    let v0 = MemoryMapDBAdapterV0::open(handle, mem_map, addr_map, 0)?;
+    Ok(v0 as Arc<RwLock<dyn MemoryMapDBAdapter>>)
+}
+
+/// Upgrades an older memory-block schema to the current ([`MemoryMapDBAdapterV3`]) one in place.
+/// Port of the package-private `MemoryMapDBAdapter.upgrade(DBHandle, MemoryMapDBAdapter,
+/// MemoryMapDB, TaskMonitor)`. See this module's docs for the real, precisely-scoped fidelity
+/// limit versus Java's original (block type/comment/source name/flags are not preserved; only
+/// name, start address, size, and -- for initialized blocks -- exact byte content are).
+///
+/// # Errors
+/// Returns a [`VersionException`] if building the replacement `V3` tables fails.
+fn upgrade(
+    handle: Arc<RwLock<DBHandle>>,
+    old_adapter: Arc<RwLock<dyn MemoryMapDBAdapter>>,
+    mem_map: Arc<RwLock<dyn Memory>>,
+    addr_map: Arc<RwLock<AddressMapDB>>,
+    monitor: &dyn TaskMonitor,
+) -> Result<Arc<RwLock<dyn MemoryMapDBAdapter>>, VersionException> {
+    monitor.set_message("Upgrading Memory Blocks...");
+    let old_blocks = old_adapter.read().unwrap().get_memory_blocks();
+    monitor.initialize(old_blocks.len() as i64 * 2);
+
+    // Mirrors Java's `oldAdapter.deleteTable(handle)` before creating V3's tables: the old
+    // schema's table(s) must be removed first, or V3's `create_table` calls below fail with
+    // "already exists" (V0/V1's "Memory Block" table shares no name with V3's, but V2's "Memory
+    // Blocks" table does).
+    {
+        let mut h = handle.write().unwrap();
+        // V3 itself has no old table to delete when it's the `old_adapter` (unreachable here:
+        // `get_adapter` only calls `upgrade` after a V3 open already failed), so this is always
+        // V0/V1/V2's real, working `delete_table`.
+        let _ = old_adapter.write().unwrap().delete_table(&mut h);
+    }
+
+    let new_adapter = MemoryMapDBAdapterV3::open(handle, mem_map, addr_map, DEFAULT_MAX_SUB_BLOCK_SIZE, true)?;
+
+    for (i, block) in old_blocks.iter().enumerate() {
+        let b = block.read().unwrap();
+        let name = b.get_name().to_string();
+        let start = b.get_start();
+        let size = b.get_size() as i64;
+        let initialized = b.is_initialized();
+        if initialized {
+            let mut bytes = vec![0u8; size as usize];
+            b.get_bytes(&start, &mut bytes);
+            drop(b);
+            let mut reader: &[u8] = &bytes;
+            new_adapter
+                .write()
+                .unwrap()
+                .create_initialized_block_from_stream(&name, start, Some(&mut reader), size, 0)
+                .map_err(|e| VersionException::with_message(e.to_string()))?;
+        } else {
+            drop(b);
+            new_adapter
+                .write()
+                .unwrap()
+                .create_block(MemoryBlockType::Default, &name, start, size, None, false, 0, 0)
+                .map_err(|e| VersionException::with_message(e.to_string()))?;
+        }
+        monitor.set_progress(i as i64 + 1);
+    }
+    Ok(new_adapter as Arc<RwLock<dyn MemoryMapDBAdapter>>)
 }
 
 #[cfg(test)]
@@ -663,5 +811,127 @@ mod tests {
         let mut adapter: Box<dyn MemoryMapDBAdapter> = Box::new(MockAdapter::new());
         adapter.refresh_memory().unwrap();
         assert!(adapter.get_memory_blocks().is_empty());
+    }
+
+    mod factory {
+        use super::*;
+        use crate::program::database::map::AddressMapDB;
+        use crate::program::model::address::{AddressFactory, AddressSpaceType, DefaultAddressFactory};
+        use crate::program::model::mem::MemoryAccessException;
+        use crate::util::task::DummyMonitor;
+
+        struct StubMemory;
+        impl Memory for StubMemory {
+            fn is_big_endian(&self) -> bool {
+                false
+            }
+            fn get_byte(&self, _addr: &Address) -> Result<u8, MemoryAccessException> {
+                Ok(0)
+            }
+            fn get_bytes(&self, _addr: &Address, dest: &mut [u8]) -> usize {
+                dest.len()
+            }
+            fn set_bytes(&mut self, _addr: &Address, _source: &[u8]) -> Result<(), MemoryAccessException> {
+                Ok(())
+            }
+        }
+
+        fn setup() -> (Arc<RwLock<DBHandle>>, Arc<RwLock<AddressMapDB>>, Arc<RwLock<dyn Memory>>) {
+            let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+            let space = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
+            let factory = DefaultAddressFactory::new(vec![space]);
+            let addr_map = Arc::new(RwLock::new(AddressMapDB::new(handle.clone(), Arc::new(factory)).unwrap()));
+            let mem_map: Arc<RwLock<dyn Memory>> = Arc::new(RwLock::new(StubMemory));
+            (handle, addr_map, mem_map)
+        }
+
+        #[test]
+        fn create_mode_builds_a_fresh_v3_adapter() {
+            let (handle, addr_map, mem_map) = setup();
+            let monitor = DummyMonitor;
+            let adapter = get_adapter(handle, mem_map, addr_map, OpenMode::Create, &monitor).unwrap();
+            assert!(adapter.read().unwrap().get_memory_blocks().is_empty());
+        }
+
+        #[test]
+        fn immutable_mode_on_existing_v3_database_reopens_it() {
+            let (handle, addr_map, mem_map) = setup();
+            let monitor = DummyMonitor;
+            {
+                let created = get_adapter(handle.clone(), mem_map.clone(), addr_map.clone(), OpenMode::Create, &monitor).unwrap();
+                created
+                    .write()
+                    .unwrap()
+                    .create_block(MemoryBlockType::Default, "x", test_addr(0x1000), 4, None, false, 0, 0)
+                    .unwrap();
+            }
+            let reopened = get_adapter(handle, mem_map, addr_map, OpenMode::Immutable, &monitor).unwrap();
+            // Mirrors Java: `getAdapter` itself never populates `memoryBlocks` on reopen -- it's
+            // `MemoryMapDB`'s own constructor that calls `adapter.refreshMemory()` right after
+            // `getAdapter()` returns (see this module's docs on why `MemoryMapDB` doesn't route
+            // through this factory yet, so nothing else calls it here).
+            reopened.write().unwrap().refresh_memory().unwrap();
+            assert_eq!(reopened.read().unwrap().get_memory_blocks().len(), 1);
+        }
+
+        #[test]
+        fn upgrade_mode_migrates_an_old_v2_database_preserving_bytes() {
+            let (handle, addr_map, mem_map) = setup();
+            let monitor = DummyMonitor;
+
+            // Build a real, standalone V2 database (not created via this factory, since V2 is a
+            // read-only historical schema) with one initialized block.
+            {
+                use crate::program::database::mem::memory_map_db_adapter_v2::MemoryMapDBAdapterV2;
+                let buf_id = {
+                    let mut buf = handle.write().unwrap().create_buffer(3).unwrap();
+                    buf.put_all(0, &[11, 22, 33]).unwrap();
+                    buf.get_id()
+                };
+                let table = handle
+                    .write()
+                    .unwrap()
+                    .create_table(
+                        "Memory Blocks".to_string(),
+                        crate::program::database::mem::memory_map_db_adapter_v2::v2_schema(),
+                    )
+                    .unwrap();
+                let key = table.write().unwrap().get_next_key();
+                let mut rec = DBRecord::new(table.read().unwrap().get_schema(), crate::framework::db::Field::Long(Some(key)));
+                rec.set_string(0, Some("legacy".to_string()));
+                rec.set_string(1, Some("c".to_string()));
+                rec.set_string(2, Some("s".to_string()));
+                rec.set_byte(3, 7);
+                let start_addr = test_addr(0x5000);
+                let start_key = addr_map.read().unwrap().get_key(&start_addr, true);
+                rec.set_long(4, start_key);
+                rec.set_field(5, crate::framework::db::Field::Short(Some(0))); // INITIALIZED
+                rec.set_long(6, 0);
+                rec.set_long(7, 3);
+                rec.set_int(8, buf_id);
+                rec.set_int(9, 0);
+                table.write().unwrap().put_record(rec).unwrap();
+                let _ = MemoryMapDBAdapterV2::open(handle.clone(), mem_map.clone(), addr_map.clone()).unwrap();
+            }
+
+            let upgraded = get_adapter(handle, mem_map, addr_map, OpenMode::Upgrade, &monitor).unwrap();
+            let blocks = upgraded.read().unwrap().get_memory_blocks();
+            assert_eq!(blocks.len(), 1);
+            let b = blocks[0].read().unwrap();
+            assert_eq!(b.get_name(), "legacy");
+            let mut out = [0u8; 3];
+            let start = test_addr(0x5000);
+            assert_eq!(b.get_bytes(&start, &mut out), 3);
+            assert_eq!(out, [11, 22, 33]);
+        }
+
+        #[test]
+        fn update_mode_on_incompatible_schema_reports_version_exception() {
+            let (handle, addr_map, mem_map) = setup();
+            let monitor = DummyMonitor;
+            // No table at all -- V3 open fails upgradeable(false), and Update mode must not try
+            // to fall back to an older reader.
+            assert!(get_adapter(handle, mem_map, addr_map, OpenMode::Update, &monitor).is_err());
+        }
     }
 }

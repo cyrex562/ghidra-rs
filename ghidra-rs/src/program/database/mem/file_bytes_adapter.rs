@@ -7,13 +7,17 @@
 //! on-disk schema version. It holds a `protected MemoryMapDB memMap` field alongside `FileBytes`
 //! creation/lookup methods -- exactly the coupling (`MemoryMapDB` -> `FileBytesAdapter` ->
 //! `FileBytes`/`MemoryMapDB`) this port needs to cut. That `memMap` field is never read or written
-//! anywhere in this base class's own methods (only by not-yet-ported subclasses), so no trait
-//! method models it. The static factory methods (`getAdapter`, `findReadOnlyAdapter`, `upgrade`)
-//! construct concrete `FileBytesAdapterV0`/`FileBytesAdapterNoTable` instances, and the V0-schema
-//! column constants (`FILENAME_COL`, `OFFSET_COL`, etc.) belong to that not-yet-ported subclass, so
-//! only the instance-level abstract methods -- the adapter's actual public contract -- are mapped
-//! onto this trait. The test-only `getMaxBufferSize`/`setMaxBufferSize` statics are likewise
-//! omitted as out of scope for the trait's contract.
+//! anywhere in this base class's own methods (only by its subclasses, which likewise never read
+//! it), so no trait method models it. Both `FileBytesAdapterV0` and `FileBytesAdapterNoTable` are
+//! now ported, and with them the real version-selection logic itself: [`get_adapter`] (with
+//! `findReadOnlyAdapter`/`upgrade` inlined as private helpers, mirroring
+//! [`memory_map_db_adapter::get_adapter`](crate::program::database::mem::memory_map_db_adapter::get_adapter)'s
+//! identical shape for the sibling `MemoryMapDBAdapter` family -- Java's own `upgrade` here is
+//! trivial, just constructing a fresh `FileBytesAdapterV0`, since there is no older `FileBytes`
+//! data to migrate: `FileBytesAdapterNoTable` represents "database predates the File Bytes table
+//! entirely"). The test-only `getMaxBufferSize`/`setMaxBufferSize` statics are likewise omitted as
+//! out of scope for the trait's contract (`FileBytesAdapterV0::new` takes `max_buf_size` as an
+//! explicit constructor parameter instead -- see that module's docs).
 //!
 //! `FileBytes` is exposed through the [`FileBytes`](crate::program::database::mem::file_bytes::FileBytes)
 //! trait object rather than a concrete struct, so that neither `MemoryMapDB` nor `FileBytes` need
@@ -22,11 +26,14 @@
 use std::error::Error;
 use std::fmt;
 use std::io;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use crate::framework::db::DBBuffer;
+use crate::framework::data::OpenMode;
+use crate::framework::db::{DBBuffer, DBHandle};
 use crate::program::database::mem::file_bytes::FileBytes;
-use crate::util::exception::IOCancelledException;
+use crate::program::database::mem::file_bytes_adapter_no_table::FileBytesAdapterNoTable;
+use crate::program::database::mem::file_bytes_adapter_v0::{FileBytesAdapterV0, DEFAULT_MAX_BUFFER_SIZE};
+use crate::util::exception::{IOCancelledException, VersionException};
 use crate::util::task::TaskMonitor;
 
 /// Error type aggregating the exceptions thrown by Java's `FileBytesAdapter.createFileBytes`
@@ -108,6 +115,45 @@ pub trait FileBytesAdapter: Send + Sync {
     /// Deletes the given `FileBytes`, returning `true` if it was found and deleted. Mirrors
     /// `FileBytesAdapter.deleteFileBytes(FileBytes)`.
     fn delete_file_bytes(&mut self, file_bytes: &Arc<dyn FileBytes>) -> io::Result<bool>;
+}
+
+/// Selects (and upgrades, if needed) the appropriate "File Bytes" table schema for the given
+/// database handle and open mode. Port of `FileBytesAdapter.getAdapter(DBHandle, OpenMode,
+/// TaskMonitor)`.
+///
+/// # Errors
+/// Returns a [`VersionException`] if the stored schema version is incompatible with `open_mode`.
+pub fn get_adapter(
+    handle: Arc<RwLock<DBHandle>>,
+    open_mode: OpenMode,
+    _monitor: &dyn TaskMonitor,
+) -> Result<Arc<RwLock<dyn FileBytesAdapter>>, VersionException> {
+    if open_mode == OpenMode::Create {
+        let v0 = FileBytesAdapterV0::new(handle, true, DEFAULT_MAX_BUFFER_SIZE)?;
+        return Ok(Arc::new(RwLock::new(v0)) as Arc<RwLock<dyn FileBytesAdapter>>);
+    }
+
+    match FileBytesAdapterV0::new(handle.clone(), false, DEFAULT_MAX_BUFFER_SIZE) {
+        Ok(v0) => Ok(Arc::new(RwLock::new(v0)) as Arc<RwLock<dyn FileBytesAdapter>>),
+        Err(e) => {
+            if !e.is_upgradable() || open_mode == OpenMode::Update {
+                return Err(e);
+            }
+            let adapter: Arc<RwLock<dyn FileBytesAdapter>> = Arc::new(RwLock::new(FileBytesAdapterNoTable::new()));
+            if open_mode == OpenMode::Upgrade {
+                return upgrade(handle);
+            }
+            Ok(adapter)
+        }
+    }
+}
+
+/// Builds a fresh `FileBytesAdapterV0`; there is no older `FileBytes` data to migrate (a database
+/// predating the "File Bytes" table simply has none). Port of the private
+/// `FileBytesAdapter.upgrade(DBHandle, FileBytesAdapter, TaskMonitor)`.
+fn upgrade(handle: Arc<RwLock<DBHandle>>) -> Result<Arc<RwLock<dyn FileBytesAdapter>>, VersionException> {
+    let v0 = FileBytesAdapterV0::new(handle, true, DEFAULT_MAX_BUFFER_SIZE)?;
+    Ok(Arc::new(RwLock::new(v0)) as Arc<RwLock<dyn FileBytesAdapter>>)
 }
 
 #[cfg(test)]
@@ -493,5 +539,62 @@ mod tests {
         let mut adapter: Box<dyn FileBytesAdapter> = Box::new(MockAdapter::new());
         adapter.refresh().unwrap();
         assert!(adapter.get_all_file_bytes().is_empty());
+    }
+
+    mod factory {
+        use super::*;
+        use crate::framework::db::DBHandle;
+
+        #[test]
+        fn create_mode_builds_a_fresh_v0_adapter() {
+            let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+            let monitor = NeverCancelledMonitor;
+            let adapter = get_adapter(handle, OpenMode::Create, &monitor).unwrap();
+            assert!(adapter.read().unwrap().get_all_file_bytes().is_empty());
+        }
+
+        #[test]
+        fn immutable_mode_reopens_an_existing_v0_database() {
+            let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+            let monitor = NeverCancelledMonitor;
+            {
+                let created = get_adapter(handle.clone(), OpenMode::Create, &monitor).unwrap();
+                let mut reader: &[u8] = &[1, 2, 3];
+                created.write().unwrap().create_file_bytes("a.bin", 0, 3, &mut reader, &monitor).unwrap();
+            }
+            let reopened = get_adapter(handle, OpenMode::Immutable, &monitor).unwrap();
+            let all = reopened.read().unwrap().get_all_file_bytes();
+            assert_eq!(all.len(), 1);
+            assert_eq!(all[0].get_original_byte(0).unwrap(), 1);
+        }
+
+        #[test]
+        fn upgrade_mode_on_a_pre_file_bytes_database_creates_an_empty_v0_table() {
+            // A database with no "File Bytes" table at all (predating that table's introduction)
+            // upgrades to a fresh, empty V0 table -- there is nothing to migrate.
+            let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+            let monitor = NeverCancelledMonitor;
+            let adapter = get_adapter(handle, OpenMode::Upgrade, &monitor).unwrap();
+            assert!(adapter.read().unwrap().get_all_file_bytes().is_empty());
+        }
+
+        #[test]
+        fn update_mode_on_a_pre_file_bytes_database_reports_version_exception() {
+            let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+            let monitor = NeverCancelledMonitor;
+            assert!(get_adapter(handle, OpenMode::Update, &monitor).is_err());
+        }
+
+        #[test]
+        fn immutable_mode_on_a_pre_file_bytes_database_returns_the_no_table_stand_in() {
+            let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+            let monitor = NeverCancelledMonitor;
+            let adapter = get_adapter(handle, OpenMode::Immutable, &monitor).unwrap();
+            assert!(adapter.read().unwrap().get_all_file_bytes().is_empty());
+            // FileBytesAdapterNoTable's create_file_bytes is unsupported -- confirms this really
+            // is the read-only stand-in, not a V0 adapter.
+            let mut reader: &[u8] = &[1];
+            assert!(adapter.write().unwrap().create_file_bytes("x", 0, 1, &mut reader, &monitor).is_err());
+        }
     }
 }

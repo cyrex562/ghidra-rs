@@ -11,18 +11,20 @@
 //!
 //! Java reads/writes `subBlockOffset`/`subBlockLength`/the parent id via record column index
 //! constants (`SUB_START_OFFSET_COL`, `SUB_LENGTH_COL`, `SUB_PARENT_ID_COL`, ...) declared on the
-//! not-yet-ported versioned `MemoryMapDBAdapterV0..V3` subclasses of
-//! [`MemoryMapDBAdapter`](crate::program::database::mem::memory_map_db_adapter::MemoryMapDBAdapter)
-//! (see that trait's module docs for why they aren't ported yet). Those constants are
-//! consequently not available here, so this module instead uses the column layout already
-//! established by this crate's own "Sub Memory Blocks" table schema in
-//! [`MemoryMapDB::new`](crate::program::database::mem::memory_map_db::MemoryMapDB::new) --
-//! `[Parent ID: Long, Type: Byte, Length: Long, Starting Offset: Long, Source ID: Int, Source
-//! Address/Offset: Long]` -- as the concrete column indices for these fields, matching Java's
-//! `SUB_PARENT_ID_COL`/`SUB_LENGTH_COL`/`SUB_START_OFFSET_COL` (columns 0/2/3) and the
-//! implementation-specific `SUB_INT_DATA1_COL`/`SUB_LONG_DATA2_COL` payload columns (4/5) each
-//! concrete sub-block type uses for its own extra state (buffer id, file bytes id/offset, mapped
-//! address key, encoded byte mapping scheme).
+//! versioned `MemoryMapDBAdapterV0..V3` subclasses of
+//! [`MemoryMapDBAdapter`](crate::program::database::mem::memory_map_db_adapter::MemoryMapDBAdapter).
+//! Those constants live on `MemoryMapDBAdapterV3` specifically (Java's abstract base class and
+//! `V0`/`V1`/`V2` all alias `V3`'s `SUB_*_COL`/`SUB_TYPE_*` values rather than declaring their
+//! own), so this module's column layout is simply
+//! [`memory_map_db_adapter_v3`](crate::program::database::mem::memory_map_db_adapter_v3)'s
+//! `V3_SUB_*_COL` constants, copied here rather than imported to avoid this module depending on
+//! that one: `[Parent ID: Long, Type: Byte, Length: Long, Starting Offset: Long, Source ID: Int,
+//! Source Address/Offset: Long]`. This also matches the "Sub Memory Blocks" table schema
+//! [`MemoryMapDB::new`](crate::program::database::mem::memory_map_db::MemoryMapDB::new) builds
+//! independently (that struct still does not route block/sub-block creation through
+//! `MemoryMapDBAdapter` -- see `memory_map_db_adapter.rs`'s module docs for why rewiring it is out
+//! of scope), so both this module's and `MemoryMapDB::new`'s "Sub Memory Blocks" tables share one
+//! column layout even though neither depends on the other for it.
 
 use std::io;
 use std::sync::{Arc, RwLock};

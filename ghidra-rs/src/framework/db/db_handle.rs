@@ -1,4 +1,7 @@
 use super::buffer_mgr::BufferMgr;
+use super::chained_buffer::ChainedBuffer;
+use super::db_buffer::DBBuffer;
+use super::db_buffer_impl::DBBufferImpl;
 use super::db_parms::DBParms;
 use super::master_table::MasterTable;
 use super::schema::Schema;
@@ -54,5 +57,19 @@ impl DBHandle {
 
     pub fn delete_table(&mut self, name: &str) -> bool {
         self.master_table.delete_table(name)
+    }
+
+    /// Creates a new [`DBBuffer`] of the given length (zero-initialized), backed by a real
+    /// [`ChainedBuffer`] over this handle's [`BufferMgr`]. Mirrors `DBHandle.createBuffer(int)`.
+    pub fn create_buffer(&mut self, length: usize) -> io::Result<Box<dyn DBBuffer>> {
+        let chained = ChainedBuffer::new(length, false, None, 0, self.buffer_mgr.clone())?;
+        Ok(Box::new(DBBufferImpl::new(chained)))
+    }
+
+    /// Returns the [`DBBuffer`] previously created with the given first-buffer id. Mirrors
+    /// `DBHandle.getBuffer(int)`.
+    pub fn get_buffer(&self, buffer_id: i32) -> io::Result<Box<dyn DBBuffer>> {
+        let chained = ChainedBuffer::from_existing(self.buffer_mgr.clone(), buffer_id, None, 0)?;
+        Ok(Box::new(DBBufferImpl::new(chained)))
     }
 }

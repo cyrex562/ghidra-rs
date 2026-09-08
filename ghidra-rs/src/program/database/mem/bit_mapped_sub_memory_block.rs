@@ -52,6 +52,21 @@ impl BitMappedSubMemoryBlock {
     /// for why `mapped_address` is supplied directly rather than decoded from `record` here.
     pub fn new(adapter: Arc<RwLock<dyn MemoryMapDBAdapter>>, record: DBRecord, mapped_address: Address) -> Self {
         let mem_map = adapter.read().unwrap().get_memory_map();
+        Self::from_parts(adapter, record, mem_map, mapped_address)
+    }
+
+    /// Constructs a `BitMappedSubMemoryBlock` from an already-resolved `mem_map`, skipping the
+    /// `adapter.get_memory_map()` lookup [`new`](Self::new) performs. Used by adapter
+    /// implementations (e.g. `MemoryMapDBAdapterV3`) that already hold their own `mem_map` field
+    /// and need to construct this sub block from within a method that already has `self` (and
+    /// thus the adapter's lock) borrowed -- calling [`new`](Self::new) there would re-lock the
+    /// same `Arc<RwLock<dyn MemoryMapDBAdapter>>` the caller is already holding and deadlock.
+    pub(crate) fn from_parts(
+        adapter: Arc<RwLock<dyn MemoryMapDBAdapter>>,
+        record: DBRecord,
+        mem_map: Arc<RwLock<dyn Memory>>,
+        mapped_address: Address,
+    ) -> Self {
         Self {
             header: SubBlockHeader::new(adapter, record),
             mem_map,

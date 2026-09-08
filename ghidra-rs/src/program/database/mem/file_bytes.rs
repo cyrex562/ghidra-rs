@@ -78,6 +78,17 @@ pub trait FileBytes: Send + Sync {
     /// database. Mirrors `FileBytes.getSize()`.
     fn get_size(&self) -> i64;
 
+    /// Returns the database record key identifying this `FileBytes` to its owning adapter.
+    /// Mirrors the package-private `getId()`. Defaults to `0` so existing implementors (which
+    /// predate this method) keep compiling unchanged; a concrete, DB-backed implementor (e.g.
+    /// [`FileBytesDB`](crate::program::database::mem::file_bytes_db::FileBytesDB)) overrides it
+    /// with its real record key, needed by
+    /// [`MemoryMapDBAdapter::create_file_bytes_block`](crate::program::database::mem::memory_map_db_adapter::MemoryMapDBAdapter::create_file_bytes_block)
+    /// to persist which `FileBytes` a `FileBytesSubMemoryBlock` uses.
+    fn get_id(&self) -> i64 {
+        0
+    }
+
     /// Returns the (possibly modified) byte at the given offset for this file bytes object.
     /// Mirrors `FileBytes.getModifiedByte(long)`.
     fn get_modified_byte(&self, offset: i64) -> Result<u8, FileBytesError>;
