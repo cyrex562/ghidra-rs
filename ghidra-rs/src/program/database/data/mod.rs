@@ -63,6 +63,7 @@ pub mod source_archive_adapter_no_table;
 pub mod source_archive_adapter_v0;
 pub mod source_archive_upgrade_map;
 pub mod structure_db;
+pub mod typedef_db;
 pub mod typedef_db_adapter;
 pub mod typedef_db_adapter_v0;
 pub mod typedef_db_adapter_v1;
@@ -151,6 +152,7 @@ pub use source_archive_adapter::{
 };
 pub use source_archive_adapter_no_table::SourceArchiveAdapterNoTable;
 pub use structure_db::StructureDb;
+pub use typedef_db::TypedefDb;
 pub use typedef_db_adapter::{
     TypedefDBAdapter, TYPEDEF_CAT_COL, TYPEDEF_DT_ID_COL, TYPEDEF_FLAGS_COL,
     TYPEDEF_FLAG_AUTONAME, TYPEDEF_LAST_CHANGE_TIME_COL, TYPEDEF_NAME_COL,
