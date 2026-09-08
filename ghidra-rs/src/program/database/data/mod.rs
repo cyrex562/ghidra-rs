@@ -19,6 +19,7 @@ pub mod composite_db_adapter_v0;
 pub mod composite_db_adapter_v1;
 pub mod composite_db_adapter_v2v4;
 pub mod composite_db_adapter_v5v6;
+pub mod data_type_component_db;
 pub mod data_type_db;
 pub mod data_type_manager_db;
 pub mod data_type_utilities;
@@ -64,6 +65,7 @@ pub mod source_archive_adapter_v0;
 pub mod source_archive_upgrade_map;
 pub mod structure_db;
 pub mod typedef_db;
+pub mod union_db;
 pub mod typedef_db_adapter;
 pub mod typedef_db_adapter_v0;
 pub mod typedef_db_adapter_v1;
@@ -88,6 +90,7 @@ pub use component_db_adapter::{
 };
 pub use component_db_adapter_v0::ComponentDBAdapterV0;
 pub use composite_db::CompositeDb;
+pub use data_type_component_db::DataTypeComponentDB;
 pub use data_type_db::{prepend_comment, DataTypeDb, DoSetNameRecordError, SetNameError};
 pub use data_type_manager_db::{DataTypeManagerDb, GetCallingConventionIdError};
 pub use data_type_utilities::DataTypeUtilities;
@@ -153,6 +156,7 @@ pub use source_archive_adapter::{
 pub use source_archive_adapter_no_table::SourceArchiveAdapterNoTable;
 pub use structure_db::StructureDb;
 pub use typedef_db::TypedefDb;
+pub use union_db::UnionDb;
 pub use typedef_db_adapter::{
     TypedefDBAdapter, TYPEDEF_CAT_COL, TYPEDEF_DT_ID_COL, TYPEDEF_FLAGS_COL,
     TYPEDEF_FLAG_AUTONAME, TYPEDEF_LAST_CHANGE_TIME_COL, TYPEDEF_NAME_COL,

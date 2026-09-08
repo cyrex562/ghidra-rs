@@ -13451,7 +13451,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/CompositeDBAdapterV5V6.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeArchiveTransformer.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeArchiveTransformerPanel.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeComponentDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeComponentDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeIDConverter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeManagerDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
@@ -13508,7 +13508,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/TypedefDBAdapterV0.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/TypedefDBAdapterV1.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/TypedefDBAdapterV2.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/UnionDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/UnionDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/merge/DataTypeMergeException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data merge 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/merge/DataTypeMerger.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data merge 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/merge/EnumMerger.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data merge 
