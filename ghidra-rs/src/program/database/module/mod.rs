@@ -1,20 +1,26 @@
+pub mod fragment_db;
 pub mod fragment_db_adapter;
 pub mod fragment_db_adapter_v0;
+pub mod module_db;
 pub mod module_db_adapter;
 pub mod module_db_adapter_v0;
 pub mod module_db_adapter_v1;
 pub mod module_manager;
+#[cfg(test)]
+pub(crate) mod module_manager_test_support;
 pub mod parent_child_db_adapter;
 pub mod parent_child_db_adapter_v0;
 pub mod program_tree_db_adapter;
 pub mod program_tree_db_adapter_v0;
 pub mod tree_manager;
 
+pub use fragment_db::{FragmentDB, FragmentDbImpl};
 pub use fragment_db_adapter::{
     get_table_name, FragmentDBAdapter, FRAGMENT_COMMENTS_COL, FRAGMENT_NAME_COL,
     FRAGMENT_TABLE_NAME,
 };
 pub use fragment_db_adapter_v0::FragmentDBAdapterV0;
+pub use module_db::{ModuleDB, ModuleDbImpl};
 pub use module_db_adapter::{
     get_table_name as get_module_table_name, ModuleDBAdapter, MODULE_CHILD_COUNT_COL,
     MODULE_COMMENTS_COL, MODULE_NAME_COL, MODULE_TABLE_NAME,

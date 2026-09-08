@@ -15,11 +15,15 @@
 //! only models the package-private instance API the class exposes to the rest of its package, as
 //! an object-safe trait. This trait was itself selected as a dependency-cycle cut-point.
 //!
-//! [`ModuleDB`](crate::program::seam_stubs::ModuleDB) and
-//! [`FragmentDB`](crate::program::seam_stubs::FragmentDB) (the concrete, DB-backed
-//! `ProgramModule`/`ProgramFragment` implementations this manager caches) have not been ported
-//! yet, so methods that reference them use minimal placeholder traits from
-//! [`crate::program::seam_stubs`].
+//! [`ModuleDB`](crate::program::database::module::ModuleDB) and
+//! [`FragmentDB`](crate::program::database::module::FragmentDB) name the concrete, DB-backed
+//! `ProgramModule`/`ProgramFragment` implementations this manager caches --
+//! [`ModuleDbImpl`](crate::program::database::module::ModuleDbImpl) and
+//! [`FragmentDbImpl`](crate::program::database::module::FragmentDbImpl) respectively. `ModuleDB`
+//! and `FragmentDB` remain their own (now real, no longer placeholder) marker traits rather than
+//! naming the concrete structs directly here, preserving the dependency-cycle cut this trait was
+//! chosen for: this file need not name `ModuleDbImpl`/`FragmentDbImpl` (or import anything from
+//! them) at all.
 
 use std::any::Any;
 use std::io;
@@ -34,7 +38,7 @@ use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::model::listing::code_unit_iterator::CodeUnitIterator;
 use crate::program::model::listing::group::Group;
 use crate::program::model::listing::{ProgramFragment, ProgramModule};
-use crate::program::seam_stubs::{FragmentDB, ModuleDB};
+use crate::program::database::module::{FragmentDB, ModuleDB};
 use crate::util::exception::{CancelledException, NotFoundException};
 use crate::util::lock::ReentrantLock;
 use crate::util::task::TaskMonitor;
@@ -76,18 +80,30 @@ pub trait ModuleManager {
 
     /// Gets the adapter used to access this tree's Module table.
     ///
-    /// Stands in for `ModuleManager.getModuleAdapter()`.
-    fn get_module_adapter(&self) -> &dyn ModuleDBAdapter;
+    /// Stands in for `ModuleManager.getModuleAdapter()`. Takes `&mut self` (rather than `&self`)
+    /// so it can hand back a `&mut dyn ModuleDBAdapter`: unlike most of this trait's callbacks,
+    /// the adapter traits themselves declare their create/update/remove methods as `&mut self`
+    /// (see [`ModuleDBAdapter`]), so a caller needing to mutate a record -- as
+    /// [`ModuleDbImpl`](crate::program::database::module::ModuleDbImpl) and
+    /// [`FragmentDbImpl`](crate::program::database::module::FragmentDbImpl) both do -- needs
+    /// exclusive access to reach them.
+    fn get_module_adapter(&mut self) -> &mut dyn ModuleDBAdapter;
 
     /// Gets the adapter used to access this tree's Fragment table.
     ///
-    /// Stands in for `ModuleManager.getFragmentAdapter()`.
-    fn get_fragment_adapter(&self) -> &dyn FragmentDBAdapter;
+    /// Stands in for `ModuleManager.getFragmentAdapter()`. See [`get_module_adapter`] for why
+    /// this takes `&mut self`.
+    ///
+    /// [`get_module_adapter`]: ModuleManager::get_module_adapter
+    fn get_fragment_adapter(&mut self) -> &mut dyn FragmentDBAdapter;
 
     /// Gets the adapter used to access this tree's parent/child relationship table.
     ///
-    /// Stands in for `ModuleManager.getParentChildAdapter()`.
-    fn get_parent_child_adapter(&self) -> &dyn ParentChildDBAdapter;
+    /// Stands in for `ModuleManager.getParentChildAdapter()`. See [`get_module_adapter`] for why
+    /// this takes `&mut self`.
+    ///
+    /// [`get_module_adapter`]: ModuleManager::get_module_adapter
+    fn get_parent_child_adapter(&mut self) -> &mut dyn ParentChildDBAdapter;
 
     /// Gets the lock used to synchronize access to this tree.
     ///
@@ -499,16 +515,16 @@ mod tests {
             self.tree_id
         }
 
-        fn get_module_adapter(&self) -> &dyn ModuleDBAdapter {
-            &self.module_adapter
+        fn get_module_adapter(&mut self) -> &mut dyn ModuleDBAdapter {
+            &mut self.module_adapter
         }
 
-        fn get_fragment_adapter(&self) -> &dyn FragmentDBAdapter {
-            &self.fragment_adapter
+        fn get_fragment_adapter(&mut self) -> &mut dyn FragmentDBAdapter {
+            &mut self.fragment_adapter
         }
 
-        fn get_parent_child_adapter(&self) -> &dyn ParentChildDBAdapter {
-            &self.parent_child_adapter
+        fn get_parent_child_adapter(&mut self) -> &mut dyn ParentChildDBAdapter {
+            &mut self.parent_child_adapter
         }
 
         fn get_lock(&self) -> &ReentrantLock {

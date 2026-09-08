@@ -2481,19 +2481,6 @@ pub trait PrototypeManagerProgram {
     fn db_error(&self, err: &io::Error);
 }
 
-/// Placeholder for `ghidra.program.database.module.ModuleDB`, referenced by
-/// [`ModuleManager`](crate::program::database::module::module_manager::ModuleManager) before
-/// the real class is ported. `ModuleManager` only ever passes this type through opaquely (e.g.
-/// as the parent module argument to its event-notification methods) or hands it back from its
-/// module DB cache, so no members beyond the `ProgramModule` API it implements are needed yet
-/// (per the Java class hierarchy, `ModuleDB implements ProgramModule`).
-pub trait ModuleDB: crate::program::model::listing::ProgramModule {}
-
-/// Placeholder for `ghidra.program.database.module.FragmentDB`, mirroring [`ModuleDB`] for
-/// `ghidra.program.database.module.FragmentDB implements ProgramFragment`, before the real class
-/// is ported.
-pub trait FragmentDB: crate::program::model::listing::ProgramFragment {}
-
 /// Placeholder for the subset of `ghidra.program.database.ProgramDB`'s API that
 /// [`FunctionTagManagerDb`](crate::program::database::function::FunctionTagManagerDb) needs from
 /// its owning program, before the real `ProgramDB` port (currently a bare struct implementing
