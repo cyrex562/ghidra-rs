@@ -383,6 +383,17 @@ impl fmt::Display for ByteMappingScheme {
     }
 }
 
+/// Bridges this now-ported, concrete `ByteMappingScheme` to
+/// [`seam_stubs::ByteMappingScheme`](crate::program::seam_stubs::ByteMappingScheme), the empty
+/// marker trait [`MemoryBlockSourceInfo::get_byte_mapping_scheme`](crate::program::model::mem::MemoryBlockSourceInfo::get_byte_mapping_scheme)
+/// returns as `Arc<dyn ...>`. That trait was written as a placeholder "before the real class is
+/// ported" (see its doc comment); this type is that real class, so this impl lets
+/// [`MemoryBlockSourceInfoDB`](crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB)
+/// hand out real `ByteMappingScheme` values through that trait object return type without
+/// requiring `MemoryBlockSourceInfo` itself to change. The marker trait declares no methods, so
+/// this impl adds no obligations beyond what `ByteMappingScheme` already satisfies.
+impl crate::program::seam_stubs::ByteMappingScheme for ByteMappingScheme {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

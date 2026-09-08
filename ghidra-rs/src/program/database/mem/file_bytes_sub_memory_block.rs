@@ -17,9 +17,9 @@
 //! e.g. from `MemoryMapDBAdapter::create_file_bytes_block`, which is handed an `Arc<dyn
 //! FileBytes>` up front) rather than re-resolving it through a lookup this crate has no route to.
 //!
-//! `get_source_info` cannot yet be implemented for the same reason documented in
-//! `uninitialized_sub_memory_block`: it requires `MemoryBlockSourceInfoDB`, which has not been
-//! ported yet.
+//! `get_source_info` delegates to
+//! [`MemoryBlockSourceInfoDB::new`](crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new),
+//! mirroring Java's `SubMemoryBlock.getSourceInfo` constructing a `MemoryBlockSourceInfoDB`.
 
 use std::io;
 use std::sync::{Arc, RwLock};
@@ -171,8 +171,10 @@ impl SubMemoryBlock for FileBytesSubMemoryBlock {
         Ok(true)
     }
 
-    fn get_source_info(&self, _block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
-        unimplemented!("source info construction requires MemoryBlockSourceInfoDB, not yet ported")
+    fn get_source_info(&self, block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
+        Arc::new(crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new(
+            block, self,
+        ))
     }
 
     fn split(&mut self, mem_block_offset: i64) -> Result<Box<dyn SubMemoryBlock>, SubMemoryBlockError> {

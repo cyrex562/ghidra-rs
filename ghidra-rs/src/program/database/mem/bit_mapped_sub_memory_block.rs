@@ -23,9 +23,9 @@
 //! passes the un-adjusted `offsetInMemBlock` (not `offsetInMemBlock - subBlockOffset`) into
 //! `getBitOverlayByte`, unlike `getByte`, which subtracts `subBlockOffset` first.
 //!
-//! `get_source_info` cannot yet be implemented for the same reason documented in
-//! `uninitialized_sub_memory_block`: it requires `MemoryBlockSourceInfoDB`, which has not been
-//! ported yet.
+//! `get_source_info` delegates to
+//! [`MemoryBlockSourceInfoDB::new`](crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new),
+//! mirroring Java's `SubMemoryBlock.getSourceInfo` constructing a `MemoryBlockSourceInfoDB`.
 
 use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -210,8 +210,10 @@ impl SubMemoryBlock for BitMappedSubMemoryBlock {
         MemoryBlockType::BitMapped
     }
 
-    fn get_source_info(&self, _block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
-        unimplemented!("source info construction requires MemoryBlockSourceInfoDB, not yet ported")
+    fn get_source_info(&self, block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
+        Arc::new(crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new(
+            block, self,
+        ))
     }
 
     fn split(&mut self, _mem_block_offset: i64) -> Result<Box<dyn SubMemoryBlock>, SubMemoryBlockError> {

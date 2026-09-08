@@ -8,10 +8,9 @@
 //! `subBlockOffset`/`subBlockLength` fields and their concrete methods) instead of subclassing an
 //! abstract base. See that module's docs for the record column-index convention used here.
 //!
-//! `get_source_info` cannot yet be implemented: Java's `SubMemoryBlock.getSourceInfo` constructs a
-//! `MemoryBlockSourceInfoDB`, which has not been ported yet (the existing `MockSubMemoryBlock` in
-//! `sub_memory_block.rs`'s own tests documents the same gap). Calling it here panics with a
-//! precise message rather than silently returning bogus data.
+//! `get_source_info` delegates to
+//! [`MemoryBlockSourceInfoDB::new`](crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new),
+//! mirroring Java's `SubMemoryBlock.getSourceInfo` constructing a `MemoryBlockSourceInfoDB`.
 
 use std::io;
 use std::sync::{Arc, RwLock};
@@ -109,8 +108,10 @@ impl SubMemoryBlock for UninitializedSubMemoryBlock {
         Ok(true)
     }
 
-    fn get_source_info(&self, _block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
-        unimplemented!("source info construction requires MemoryBlockSourceInfoDB, not yet ported")
+    fn get_source_info(&self, block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
+        Arc::new(crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new(
+            block, self,
+        ))
     }
 
     fn split(&mut self, mem_block_offset: i64) -> Result<Box<dyn SubMemoryBlock>, SubMemoryBlockError> {

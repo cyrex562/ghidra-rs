@@ -8,9 +8,9 @@
 //! own `buf: Box<dyn DBBuffer>`, instead of subclassing an abstract base. See that module's docs
 //! for the record column-index convention used here.
 //!
-//! `get_source_info` cannot yet be implemented for the same reason documented in
-//! `uninitialized_sub_memory_block`: it requires `MemoryBlockSourceInfoDB`, which has not been
-//! ported yet.
+//! `get_source_info` delegates to
+//! [`MemoryBlockSourceInfoDB::new`](crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new),
+//! mirroring Java's `SubMemoryBlock.getSourceInfo` constructing a `MemoryBlockSourceInfoDB`.
 
 use std::io;
 use std::sync::{Arc, RwLock};
@@ -163,8 +163,10 @@ impl SubMemoryBlock for BufferSubMemoryBlock {
         Ok(true)
     }
 
-    fn get_source_info(&self, _block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
-        unimplemented!("source info construction requires MemoryBlockSourceInfoDB, not yet ported")
+    fn get_source_info(&self, block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
+        Arc::new(crate::program::database::mem::memory_block_source_info_db::MemoryBlockSourceInfoDB::new(
+            block, self,
+        ))
     }
 
     fn split(&mut self, mem_block_offset: i64) -> Result<Box<dyn SubMemoryBlock>, SubMemoryBlockError> {

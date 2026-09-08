@@ -313,9 +313,11 @@ mod tests {
         }
 
         fn get_source_info(&self, block: Arc<dyn MemoryBlock>) -> Arc<dyn MemoryBlockSourceInfo> {
-            // Not exercised by these smoke tests; MemoryBlockSourceInfoDB is not yet ported.
+            // Not exercised by these smoke tests; this mock doesn't bother constructing a real
+            // MemoryBlockSourceInfoDB (see memory_block_source_info_db.rs for the real port and
+            // its own tests, and the five concrete SubMemoryBlock implementors for real callers).
             let _ = block;
-            unimplemented!("source info construction requires MemoryBlockSourceInfoDB")
+            unimplemented!("source info construction not exercised by this mock")
         }
 
         fn split(&mut self, mem_block_offset: i64) -> Result<Box<dyn SubMemoryBlock>, SubMemoryBlockError> {
