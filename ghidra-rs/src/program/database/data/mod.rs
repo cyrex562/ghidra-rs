@@ -7,8 +7,10 @@ pub mod builtin_db_adapter_v0;
 pub mod calling_convention_db_adapter;
 pub mod calling_convention_db_adapter_no_table;
 pub mod calling_convention_db_adapter_v0;
+pub mod category_db;
 pub mod category_db_adapter;
 pub mod category_db_adapter_v0;
+pub mod category_owner;
 pub mod component_db_adapter;
 pub mod component_db_adapter_v0;
 pub mod composite_db;
@@ -75,8 +77,10 @@ pub use calling_convention_db_adapter::{
     UNKNOWN_CALLING_CONVENTION_ID,
 };
 pub use calling_convention_db_adapter_no_table::CallingConventionDBAdapterNoTable;
+pub use category_db::{CategoryDb, ROOT_CATEGORY_ID};
 pub use category_db_adapter::{CategoryDBAdapter, CATEGORY_NAME_COL, CATEGORY_PARENT_COL};
 pub use category_db_adapter_v0::CategoryDBAdapterV0;
+pub use category_owner::CategoryOwner;
 pub use component_db_adapter::{
     ComponentDBAdapter, COMPONENT_COMMENT_COL, COMPONENT_DT_ID_COL, COMPONENT_FIELD_NAME_COL,
     COMPONENT_OFFSET_COL, COMPONENT_ORDINAL_COL, COMPONENT_PARENT_ID_COL, COMPONENT_SIZE_COL,
