@@ -1057,6 +1057,18 @@ pub const ATTRIB_VOIDLOCK: AttributeId = AttributeId::new("voidlock", 129);
 pub const ATTRIB_MATCHSIZE: AttributeId = AttributeId::new("matchsize", 155);
 pub const ATTRIB_AFTER_BYTES: AttributeId = AttributeId::new("afterbytes", 156);
 pub const ATTRIB_AFTER_STORAGE: AttributeId = AttributeId::new("afterstorage", 157);
+// Ids 80/81/111/150/152/154/158 match `AttributeId.java`'s `ATTRIB_A`/`ATTRIB_B`/
+// `ATTRIB_REVERSEJUSTIFY`/`ATTRIB_STACKSPILL`/`ATTRIB_BACKFILL`/`ATTRIB_REVERSESIGNIF`/
+// `ATTRIB_FILL_ALTERNATE` directly; none collides with any `AttributeId` already declared in this
+// file (the numbering scheme above only renumbers on an actual same-type collision). Needed by
+// `MultiSlotAssign`/`MultiSlotDualAssign`'s `<join>`/`<join_dual_class>` encode/decode.
+pub const ATTRIB_A: AttributeId = AttributeId::new("a", 80);
+pub const ATTRIB_B: AttributeId = AttributeId::new("b", 81);
+pub const ATTRIB_REVERSEJUSTIFY: AttributeId = AttributeId::new("reversejustify", 111);
+pub const ATTRIB_STACKSPILL: AttributeId = AttributeId::new("stackspill", 150);
+pub const ATTRIB_BACKFILL: AttributeId = AttributeId::new("backfill", 152);
+pub const ATTRIB_REVERSESIGNIF: AttributeId = AttributeId::new("reversesignif", 154);
+pub const ATTRIB_FILL_ALTERNATE: AttributeId = AttributeId::new("fillalternate", 158);
 
 #[cfg(test)]
 mod tests {

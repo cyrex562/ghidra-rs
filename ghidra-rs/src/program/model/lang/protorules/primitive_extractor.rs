@@ -1,9 +1,17 @@
 //! Port of `ghidra.program.model.lang.protorules.PrimitiveExtractor`.
 //!
-//! Not one of the seven `protorules` classes assigned for this port, but a genuine dependency of
-//! [`HomogeneousAggregate::filter`](super::homogeneous_aggregate::HomogeneousAggregate) (its Java
+//! Not one of the classes originally assigned for this port, but a genuine dependency of
+//! [`HomogeneousAggregate::filter`](super::homogeneous_aggregate::HomogeneousAggregate),
+//! [`MultiMemberAssign`](super::multi_member_assign::MultiMemberAssign), and
+//! [`MultiSlotDualAssign`](super::multi_slot_dual_assign::MultiSlotDualAssign) (each Java
 //! counterpart constructs a `PrimitiveExtractor` directly). Ported here, scoped `pub(crate)` to
-//! this package, so that filter's logic is real rather than a stub.
+//! this package, so that each of those callers' logic is real rather than a stub. The union
+//! common-refinement logic (`handleUnion`/`checkOverlap`/`commonRefinement`) is fully ported too
+//! (see [`handle_union`](PrimitiveExtractor::handle_union), [`check_overlap`],
+//! [`common_refinement`]): while it was initially dead code reachable only when a caller
+//! constructs with `union_illegal = false` -- true of none of this port's first two callers --
+//! `MultiSlotDualAssign` genuinely does construct that way (`new PrimitiveExtractor(dt, false, 0,
+//! 1024)` in Java), so it is real, exercised logic, not speculative.
 //!
 //! # Ownership vs. Java reference aliasing
 //!
@@ -45,24 +53,58 @@ pub(crate) struct PrimitiveExtractor {
 }
 
 impl PrimitiveExtractor {
-    /// Port of the public constructor.
-    ///
-    /// `dt` is a borrow because this is the sole entry point reachable from
-    /// [`HomogeneousAggregate::filter`](super::homogeneous_aggregate::HomogeneousAggregate),
-    /// which only ever calls this with `dt` already known (via `get_metatype`) to be
-    /// `TYPE_ARRAY` or `TYPE_STRUCT` -- so the top level never needs to *own* `dt` (only inspect
-    /// it and recurse into independently-owned array-element/struct-component data-types); see
-    /// [`extract_top`](Self::extract_top).
-    pub(crate) fn new(dt: &dyn DataType, union_illegal: bool, offset: i32, max: i32) -> Self {
-        let mut extractor = PrimitiveExtractor {
+    fn empty(union_illegal: bool) -> Self {
+        PrimitiveExtractor {
             primitives: Vec::new(),
             valid: true,
             aligned: true,
             unknown_elements: false,
             extra_space: false,
             union_invalid: union_illegal,
-        };
+        }
+    }
+
+    /// Port of the public constructor, for a borrowed top-level data-type.
+    ///
+    /// `dt` is a borrow because every current caller --
+    /// [`HomogeneousAggregate::filter`](super::homogeneous_aggregate::HomogeneousAggregate) and
+    /// [`MultiMemberAssign`](super::multi_member_assign::MultiMemberAssign) -- only ever calls
+    /// this with `dt` already known (via `get_metatype`) to be `TYPE_ARRAY`, `TYPE_STRUCT`, or
+    /// (as of [`MultiSlotDualAssign`](super::multi_slot_dual_assign::MultiSlotDualAssign),
+    /// which passes `union_illegal = false`) `TYPE_UNION` -- so the top level never needs to
+    /// *own* `dt` itself (only inspect it and recurse into independently-owned
+    /// array-element/struct-component/union-member data-types via
+    /// [`extract_owned`](Self::extract_owned)); see [`extract_top`](Self::extract_top). A bare
+    /// top-level primitive is out of scope for all of these real callers (each is only ever
+    /// invoked on an aggregate data-type) and is rejected defensively; see
+    /// [`new_from_owned`](Self::new_from_owned) for the owned entry point used when a leaf
+    /// primitive genuinely can appear at the top (union members).
+    pub(crate) fn new(dt: &dyn DataType, union_illegal: bool, offset: i32, max: i32) -> Self {
+        let mut extractor = Self::empty(union_illegal);
         if !extractor.extract_top(dt, max, offset) {
+            extractor.valid = false;
+        }
+        extractor
+    }
+
+    /// Port of the public constructor, for an owned top-level data-type.
+    ///
+    /// Unlike [`new`](Self::new), this dispatches through the full [`extract_owned`] logic (the
+    /// direct port of Java's private `extract`), which also handles a top-level primitive
+    /// leaf directly (moving `dt` into a [`Primitive`]) since ownership is available here. Used
+    /// by [`handle_union`](Self::handle_union) to build a sub-extraction for each union member,
+    /// mirroring Java's `handleUnion` constructing `new PrimitiveExtractor(curField.getDataType(),
+    /// false, ...)` on each field's data-type (frequently itself a bare primitive, e.g. a union
+    /// of `int`/`float`) -- something [`new`](Self::new)'s borrowed, array/struct/union-only
+    /// dispatch cannot support.
+    pub(crate) fn new_from_owned(
+        dt: Box<dyn DataType>,
+        union_illegal: bool,
+        offset: i32,
+        max: i32,
+    ) -> Self {
+        let mut extractor = Self::empty(union_illegal);
+        if !extractor.extract_owned(dt, max, offset) {
             extractor.valid = false;
         }
         extractor
@@ -136,6 +178,10 @@ impl PrimitiveExtractor {
         match get_metatype(dt) {
             TYPE_ARRAY => self.extract_array(dt, max, offset),
             TYPE_STRUCT => self.extract_struct(dt, max, offset),
+            TYPE_UNION => match dt.as_union() {
+                Some(u) => self.handle_union(u, max, offset),
+                None => false,
+            },
             _ => false,
         }
     }
@@ -241,28 +287,166 @@ impl PrimitiveExtractor {
 
     /// Port of `handleUnion`.
     ///
-    /// Java's `handleUnion` first checks `if (unionInvalid) return false;` before doing any
-    /// work; the remainder (constructing a `unionIllegal=false` sub-`PrimitiveExtractor` per
-    /// union member, then computing a `commonRefinement` of their primitive lists via
-    /// `checkOverlap`/`commonRefinement`, preferring integer primitives over floating-point ones
-    /// at an overlapping offset) is **not** ported. This port's only caller,
-    /// [`HomogeneousAggregate`](super::homogeneous_aggregate::HomogeneousAggregate), always
-    /// constructs its `PrimitiveExtractor` with `union_illegal = true`
-    /// (`unionInvalid` stays `true` for every extraction it triggers, transitively, since that
-    /// flag is fixed at construction and never flipped), so the unported branch is genuinely
-    /// unreachable from this crate's real call path -- not merely deferred.
+    /// Form a primitive list for each field of the union, using [`new_from_owned`](Self::new_from_owned)
+    /// (mirroring Java's `new PrimitiveExtractor(curField.getDataType(), false, offset +
+    /// curField.getOffset(), max)`, `unionIllegal` hardcoded `false` for the member sub-extraction
+    /// regardless of `self.union_invalid` -- reachable at all only because the `if
+    /// (unionInvalid) return false;` guard below already filtered out the case where unions are
+    /// disallowed). Then, if possible, computes a [`common_refinement`] of all the member
+    /// primitive lists and appends it to `self.primitives`.
     ///
-    /// # TODO(port)
-    /// If a future caller ever constructs a `PrimitiveExtractor` with `union_illegal = false`,
-    /// this will conservatively fail extraction (return `false`, matching a data-type this
-    /// extractor cannot classify) instead of performing Java's per-member common refinement.
+    /// Was previously unported (dead code, since this port's only two prior callers --
+    /// [`HomogeneousAggregate`](super::homogeneous_aggregate::HomogeneousAggregate) and
+    /// [`MultiMemberAssign`](super::multi_member_assign::MultiMemberAssign) -- always construct
+    /// with `union_illegal = true`, so `self.union_invalid` was always `true` and this method
+    /// always returned `false` at the guard). Now genuinely reachable:
+    /// [`MultiSlotDualAssign`](super::multi_slot_dual_assign::MultiSlotDualAssign) constructs its
+    /// top-level extraction with `union_illegal = false` (`new PrimitiveExtractor(dt, false, 0,
+    /// 1024)` in Java), so a union-typed (or union-containing) parameter routed through that
+    /// action now exercises this method for real.
     fn handle_union(&mut self, dt: &dyn Union, max: i32, offset: i32) -> bool {
-        let _ = (dt, max, offset);
         if self.union_invalid {
             return false;
         }
-        false
+        let num = dt.get_num_components();
+        if num == 0 {
+            return false;
+        }
+        let Ok(first_comp) = dt.get_component(0) else {
+            return false;
+        };
+        let first_offset = offset + first_comp.get_offset();
+        let mut common =
+            PrimitiveExtractor::new_from_owned(first_comp.get_data_type(), false, first_offset, max);
+        if !common.is_valid() {
+            return false;
+        }
+        for i in 1..num {
+            let Ok(comp) = dt.get_component(i) else {
+                return false;
+            };
+            let comp_offset = offset + comp.get_offset();
+            let next =
+                PrimitiveExtractor::new_from_owned(comp.get_data_type(), false, comp_offset, max);
+            if !next.is_valid() {
+                return false;
+            }
+            match common_refinement(std::mem::take(&mut common.primitives), next.primitives) {
+                Some(refined) => common.primitives = refined,
+                None => return false,
+            }
+        }
+        if self.primitives.len() + common.primitives.len() > max as usize {
+            return false;
+        }
+        self.primitives.append(&mut common.primitives);
+        true
     }
+}
+
+/// Check that a big [`Primitive`] properly overlaps smaller Primitives.
+///
+/// If the big Primitive does not properly overlap the smaller Primitives starting at `*point`,
+/// returns `false` (an invalid overlap). Otherwise, if the big Primitive is floating-point, adds
+/// the overlapped primitives (moved out of `small`) to `res`; if not floating-point, adds the big
+/// Primitive to `res` instead (integer primitives are *preferred* over floating-point primitives
+/// this way). `*point` is advanced in place to the index of the next unconsumed `small` entry.
+///
+/// Port of the private `checkOverlap`. Java's version returns an `int` (the next index, or `-1`
+/// for an invalid overlap) and operates on object references that remain valid in both the source
+/// list and `res` simultaneously; this port instead takes `small` as `&mut [Option<Primitive>]`
+/// so a consumed entry's `Primitive` (not `Clone`, since [`DataType`] has no generic clone) can be
+/// [`Option::take`]n out and moved into `res`.
+fn check_overlap(
+    res: &mut Vec<Primitive>,
+    small: &mut [Option<Primitive>],
+    point: &mut usize,
+    big: Primitive,
+) -> bool {
+    let end_off = big.offset + big.dt.get_aligned_length();
+    // If big data-type is a float, let smaller primitives override it, otherwise keep big.
+    let use_small = get_metatype(big.dt.as_ref()) == TYPE_FLOAT;
+    while *point < small.len() {
+        let Some(cur) = small[*point].as_ref() else {
+            break;
+        };
+        if cur.offset >= end_off {
+            break;
+        }
+        if cur.offset + cur.dt.get_aligned_length() > end_off {
+            return false; // Improper overlap of the end of big
+        }
+        if use_small {
+            res.push(small[*point].take().unwrap());
+        }
+        *point += 1;
+    }
+    if !use_small {
+        // If big data-type was preferred, use it in the refinement.
+        res.push(big);
+    }
+    true
+}
+
+/// Overwrite `first` with the common refinement of `first` and `second`.
+///
+/// Given two sets of overlapping Primitives (each already sorted by offset, as every
+/// [`extract`](PrimitiveExtractor::extract_owned)ed primitive list is), finds a *common
+/// refinement* of the lists. Returns `None` if there is any partial overlap of two Primitives.
+/// If the same primitive data-type occurs at the same offset, it is included in the refinement;
+/// otherwise an integer data-type is preferred over a floating-point one, or a bigger primitive is
+/// preferred over smaller overlapping primitives (see [`check_overlap`]).
+///
+/// Port of the private `commonRefinement`. Takes and returns owned `Vec<Primitive>` (rather than
+/// mutating `first` in place, as Java does via `ArrayList.clear`/`addAll`) since -- unlike Java's
+/// shared object references -- moving a [`Primitive`] out of one list and into the merged result
+/// requires actually transplanting ownership.
+fn common_refinement(first: Vec<Primitive>, second: Vec<Primitive>) -> Option<Vec<Primitive>> {
+    let mut first: Vec<Option<Primitive>> = first.into_iter().map(Some).collect();
+    let mut second: Vec<Option<Primitive>> = second.into_iter().map(Some).collect();
+    let mut first_point = 0usize;
+    let mut second_point = 0usize;
+    let mut common = Vec::new();
+    while first_point < first.len() && second_point < second.len() {
+        let first_offset = first[first_point].as_ref().unwrap().offset;
+        let first_len = first[first_point].as_ref().unwrap().dt.get_aligned_length();
+        let second_offset = second[second_point].as_ref().unwrap().offset;
+        let second_len = second[second_point].as_ref().unwrap().dt.get_aligned_length();
+
+        if first_offset < second_offset && first_offset + first_len <= second_offset {
+            common.push(first[first_point].take().unwrap());
+            first_point += 1;
+            continue;
+        }
+        if second_offset < first_offset && second_offset + second_len <= first_offset {
+            common.push(second[second_point].take().unwrap());
+            second_point += 1;
+            continue;
+        }
+        if first_len >= second_len {
+            let big = first[first_point].take().unwrap();
+            if !check_overlap(&mut common, &mut second, &mut second_point, big) {
+                return None;
+            }
+            first_point += 1;
+        } else {
+            let big = second[second_point].take().unwrap();
+            if !check_overlap(&mut common, &mut first, &mut first_point, big) {
+                return None;
+            }
+            second_point += 1;
+        }
+    }
+    // Add any tail primitives from either list.
+    while first_point < first.len() {
+        common.push(first[first_point].take().unwrap());
+        first_point += 1;
+    }
+    while second_point < second.len() {
+        common.push(second[second_point].take().unwrap());
+        second_point += 1;
+    }
+    Some(common)
 }
 
 #[cfg(test)]
@@ -413,12 +597,285 @@ mod tests {
     }
 
     #[test]
-    fn a_top_level_primitive_type_is_rejected() {
-        // extract_top only dispatches TYPE_ARRAY/TYPE_STRUCT; anything else -- including a bare
-        // primitive, which HomogeneousAggregate::filter never passes in practice since it
-        // pre-checks the metatype -- fails extraction defensively.
+    fn a_top_level_primitive_type_is_rejected_via_new() {
+        // extract_top's borrowed dispatch only handles TYPE_ARRAY/TYPE_STRUCT/TYPE_UNION;
+        // anything else -- including a bare primitive, which HomogeneousAggregate::filter never
+        // passes in practice since it pre-checks the metatype -- fails extraction defensively
+        // (ownership would be required to store it as a Primitive; see new_from_owned below for
+        // the owned entry point that lifts this restriction).
         let p = MockPrimitive { length: 4, floating_point: false };
         let ex = PrimitiveExtractor::new(&p, true, 0, 8);
+        assert!(!ex.is_valid());
+    }
+
+    #[test]
+    fn new_from_owned_extracts_a_bare_top_level_primitive() {
+        let p: Box<dyn DataType> = Box::new(MockPrimitive { length: 4, floating_point: false });
+        let ex = PrimitiveExtractor::new_from_owned(p, true, 0, 8);
+        assert!(ex.is_valid());
+        assert_eq!(ex.size(), 1);
+        assert_eq!(ex.get(0).offset, 0);
+    }
+
+    // --- Union common-refinement (`handleUnion`/`checkOverlap`/`commonRefinement`) ---
+
+    #[derive(Clone)]
+    enum MockUnionField {
+        Prim { length: i32, floating_point: bool },
+        Arr { num_elements: i32, elem_len: i32 },
+    }
+    impl MockUnionField {
+        fn to_data_type(&self) -> Box<dyn DataType> {
+            match *self {
+                MockUnionField::Prim { length, floating_point } => {
+                    Box::new(MockPrimitive { length, floating_point })
+                }
+                MockUnionField::Arr { num_elements, elem_len } => {
+                    Box::new(MockArray { num_elements, elem_len })
+                }
+            }
+        }
+    }
+
+    #[derive(Clone)]
+    struct MockUnionComponent {
+        offset: i32,
+        field: MockUnionField,
+    }
+    impl DataTypeComponent for MockUnionComponent {
+        fn get_data_type(&self) -> Box<dyn DataType> {
+            self.field.to_data_type()
+        }
+        fn get_offset(&self) -> i32 {
+            self.offset
+        }
+    }
+
+    struct MockUnion {
+        components: Vec<MockUnionComponent>,
+    }
+    impl DataType for MockUnion {
+        fn is_union(&self) -> bool {
+            true
+        }
+        fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+            Some(self)
+        }
+    }
+    impl Composite for MockUnion {
+        fn get_num_components(&self) -> i32 {
+            self.components.len() as i32
+        }
+        fn get_component(&self, ordinal: i32) -> Result<Box<dyn DataTypeComponent>, String> {
+            self.components
+                .get(ordinal as usize)
+                .cloned()
+                .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+                .ok_or_else(|| "ordinal out of bounds".to_string())
+        }
+        fn is_packing_enabled(&self) -> bool {
+            false
+        }
+    }
+    impl crate::program::model::data::union::Union for MockUnion {
+        fn clone_union(
+            &self,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
+        ) -> Box<dyn crate::program::model::data::union::Union> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn insert_bit_field(
+            &mut self,
+            _ordinal: i32,
+            _base_data_type: Box<dyn DataType>,
+            _bit_size: i32,
+            _component_name: Option<String>,
+            _comment: Option<String>,
+        ) -> Result<Box<dyn DataTypeComponent>, String> {
+            unimplemented!("not exercised by these tests")
+        }
+    }
+
+    #[test]
+    fn union_is_rejected_outright_when_unions_are_disallowed() {
+        let u = MockUnion {
+            components: vec![MockUnionComponent {
+                offset: 0,
+                field: MockUnionField::Prim { length: 4, floating_point: false },
+            }],
+        };
+        let ex = PrimitiveExtractor::new(&u, true, 0, 8);
+        assert!(!ex.is_valid());
+    }
+
+    #[test]
+    fn union_common_refinement_prefers_integer_over_overlapping_float() {
+        // Two fields at the same offset/size, one int one float -- the docstring on the ported
+        // `checkOverlap` says integer primitives are *preferred* over floating-point ones.
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 4, floating_point: false },
+                },
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 4, floating_point: true },
+                },
+            ],
+        };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
+        assert!(ex.is_valid());
+        assert_eq!(ex.size(), 1);
+        assert!(!ex.get(0).dt.is_floating_point());
+    }
+
+    #[test]
+    fn union_common_refinement_prefers_integer_regardless_of_field_order() {
+        // Same as above but with the float field declared first, proving the preference isn't
+        // just an artifact of which member happens to be "first"/"second".
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 4, floating_point: true },
+                },
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 4, floating_point: false },
+                },
+            ],
+        };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
+        assert!(ex.is_valid());
+        assert_eq!(ex.size(), 1);
+        assert!(!ex.get(0).dt.is_floating_point());
+    }
+
+    #[test]
+    fn union_common_refinement_keeps_disjoint_fields_from_both_members() {
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 4, floating_point: false },
+                },
+                MockUnionComponent {
+                    offset: 4,
+                    field: MockUnionField::Prim { length: 4, floating_point: false },
+                },
+            ],
+        };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
+        assert!(ex.is_valid());
+        assert_eq!(ex.size(), 2);
+        assert_eq!(ex.get(0).offset, 0);
+        assert_eq!(ex.get(1).offset, 4);
+    }
+
+    #[test]
+    fn union_int_big_primitive_absorbs_exactly_covering_smaller_primitives() {
+        // field0: one int8 at offset 0 (the "big" primitive, preferred since it's an integer).
+        // field1: two int4s exactly covering the same 8 bytes.
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 8, floating_point: false },
+                },
+                MockUnionComponent { offset: 0, field: MockUnionField::Arr { num_elements: 2, elem_len: 4 } },
+            ],
+        };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
+        assert!(ex.is_valid());
+        assert_eq!(ex.size(), 1);
+        assert_eq!(ex.get(0).dt.get_length(), 8);
+    }
+
+    #[test]
+    fn union_float_big_primitive_yields_to_exactly_covering_smaller_ints() {
+        // Mirror image of the above: the big primitive is a float this time, so the smaller ints
+        // that cover it are kept in the refinement instead.
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 8, floating_point: true },
+                },
+                MockUnionComponent { offset: 0, field: MockUnionField::Arr { num_elements: 2, elem_len: 4 } },
+            ],
+        };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
+        assert!(ex.is_valid());
+        assert_eq!(ex.size(), 2);
+        assert!(!ex.get(0).dt.is_floating_point());
+        assert!(!ex.get(1).dt.is_floating_point());
+    }
+
+    #[test]
+    fn union_partial_overlap_between_members_is_invalid() {
+        // field0: one int8 at offset 0. field1: two int6s at offsets 0 and 6 -- the second one
+        // spills past field0's 8-byte end boundary (6 + 6 = 12 > 8), an improper overlap.
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 8, floating_point: false },
+                },
+                MockUnionComponent { offset: 0, field: MockUnionField::Arr { num_elements: 2, elem_len: 6 } },
+            ],
+        };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
+        assert!(!ex.is_valid());
+    }
+
+    #[test]
+    fn union_common_refinement_across_three_members_stays_the_single_big_integer() {
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 8, floating_point: false },
+                },
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 8, floating_point: false },
+                },
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 8, floating_point: false },
+                },
+            ],
+        };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
+        assert!(ex.is_valid());
+        assert_eq!(ex.size(), 1);
+        assert_eq!(ex.get(0).dt.get_length(), 8);
+    }
+
+    #[test]
+    fn union_common_refinement_fails_when_result_exceeds_max_primitives() {
+        let u = MockUnion {
+            components: vec![
+                MockUnionComponent {
+                    offset: 0,
+                    field: MockUnionField::Prim { length: 4, floating_point: false },
+                },
+                MockUnionComponent {
+                    offset: 4,
+                    field: MockUnionField::Prim { length: 4, floating_point: false },
+                },
+            ],
+        };
+        // Refinement produces 2 disjoint primitives, exceeding a max of 1.
+        let ex = PrimitiveExtractor::new(&u, false, 0, 1);
+        assert!(!ex.is_valid());
+    }
+
+    #[test]
+    fn union_with_no_components_is_invalid() {
+        let u = MockUnion { components: Vec::new() };
+        let ex = PrimitiveExtractor::new(&u, false, 0, 8);
         assert!(!ex.is_valid());
     }
 }

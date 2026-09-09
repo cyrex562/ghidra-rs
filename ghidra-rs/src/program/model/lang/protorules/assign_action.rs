@@ -6,6 +6,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::pcode::{Encoder, Varnode};
 use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
+use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 
@@ -35,9 +36,10 @@ pub const HIDDENRET_SPECIALREG_VOID: i32 = 5;
 /// `restoreSideeffectXml`, and `restorePreconditionXml` that inspect the root element of an XML
 /// stream and dispatch to one of `GotoStack`, `MultiSlotAssign`, `ConsumeAs`,
 /// `ConvertToPointer`, `HiddenReturnAssign`, `MultiMemberAssign`, `MultiSlotDualAssign`,
-/// `ConsumeExtra`, `ExtraStack`, or `ConsumeRemaining`. None of those sibling actions are ported
-/// yet, so those dispatch factories are not ported here; they belong alongside those concrete
-/// actions once they exist.
+/// `ConsumeExtra`, `ExtraStack`, or `ConsumeRemaining`. Now that every one of those sibling
+/// actions is ported, these are ported too as free functions below --
+/// [`restore_action_xml`], [`restore_sideeffect_xml`], [`restore_precondition_xml`] -- needed by
+/// [`ModelRule::restore_xml`](super::model_rule::ModelRule::restore_xml).
 pub trait AssignAction {
     /// Make a copy of this action, to be owned by `new_resource`.
     ///
@@ -142,6 +144,152 @@ pub fn justify_pieces(
     }
     let sz = vn.get_size() - offset;
     pieces[pos] = Varnode::new(addr, sz);
+}
+
+/// Read the next action element from the stream and return the new configured, boxed action. If
+/// the next element is not a recognized action, returns an error.
+///
+/// Port of the static `AssignAction.restoreActionXml`. A free function, not a trait method,
+/// since [`restore_xml`](AssignAction::restore_xml) is generic (hence not part of the trait's
+/// object-safe surface) -- each branch below therefore calls `restore_xml` on the concrete,
+/// `Sized` action type *before* erasing it to `Box<dyn AssignAction>`, the same pattern as
+/// [`DatatypeFilter::restore_filter_xml`](super::datatype_filter::restore_filter_xml).
+///
+/// # Errors
+/// Returns an error if the resource list is missing configuration the chosen action needs, if
+/// there are problems decoding the stream, or if the next element's name isn't a recognized
+/// action.
+pub fn restore_action_xml<P: XmlPullParser>(
+    parser: &mut P,
+    res: Arc<dyn ParamListStandardLike>,
+) -> Result<Box<dyn AssignAction>, XmlParseException> {
+    use crate::program::model::lang::protorules::consume_as::ConsumeAs;
+    use crate::program::model::lang::protorules::convert_to_pointer::ConvertToPointer;
+    use crate::program::model::lang::protorules::goto_stack::GotoStack;
+    use crate::program::model::lang::protorules::hidden_return_assign::HiddenReturnAssign;
+    use crate::program::model::lang::protorules::multi_member_assign::MultiMemberAssign;
+    use crate::program::model::lang::protorules::multi_slot_assign::MultiSlotAssign;
+    use crate::program::model::lang::protorules::multi_slot_dual_assign::MultiSlotDualAssign;
+    use crate::program::model::lang::storage_class::StorageClass;
+    use crate::program::model::pcode::{
+        ELEM_CONSUME, ELEM_CONVERT_TO_PTR, ELEM_GOTO_STACK, ELEM_HIDDEN_RETURN, ELEM_JOIN,
+        ELEM_JOIN_DUAL_CLASS, ELEM_JOIN_PER_PRIMITIVE,
+    };
+
+    let elem = parser.peek();
+    let nm = elem.get_name().to_string();
+    if nm == ELEM_GOTO_STACK.name {
+        // GotoStack::new is eager (unlike Java's deferred `new GotoStack(res, 0)`), but
+        // behaviorally equivalent here: GotoStack's stack-entry lookup depends on nothing an XML
+        // attribute could override (goto_stack has no attributes at all), and restore_xml
+        // re-runs the identical lookup unconditionally regardless.
+        let mut action = GotoStack::new(res).map_err(|e| XmlParseException::new(e.0))?;
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_JOIN.name {
+        let mut action = MultiSlotAssign::for_decode(res);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_CONSUME.name {
+        let mut action = ConsumeAs::new(StorageClass::General, res);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_CONVERT_TO_PTR.name {
+        let mut action = ConvertToPointer::new(res);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_HIDDEN_RETURN.name {
+        let mut action = HiddenReturnAssign::new(res, HIDDENRET_SPECIALREG);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_JOIN_PER_PRIMITIVE.name {
+        let most_sig = res.is_big_endian();
+        let mut action = MultiMemberAssign::new(StorageClass::General, false, most_sig, res);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_JOIN_DUAL_CLASS.name {
+        let mut action = MultiSlotDualAssign::for_decode(res);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    Err(XmlParseException::new(format!("Unknown model rule action: {nm}")))
+}
+
+/// Read the next sideeffect element from the stream and return the new configured, boxed action.
+/// If the next element is not a recognized sideeffect, returns an error.
+///
+/// Port of the static `AssignAction.restoreSideeffectXml`. See [`restore_action_xml`] for why
+/// this is a free function.
+///
+/// # Errors
+/// Returns an error if the resource list is missing configuration the chosen action needs, if
+/// there are problems decoding the stream, or if the next element's name isn't a recognized
+/// sideeffect.
+pub fn restore_sideeffect_xml<P: XmlPullParser>(
+    parser: &mut P,
+    res: Arc<dyn ParamListStandardLike>,
+) -> Result<Box<dyn AssignAction>, XmlParseException> {
+    use crate::program::model::lang::protorules::consume_extra::ConsumeExtra;
+    use crate::program::model::lang::protorules::consume_remaining::ConsumeRemaining;
+    use crate::program::model::lang::protorules::extra_stack::ExtraStack;
+    use crate::program::model::lang::storage_class::StorageClass;
+    use crate::program::model::pcode::{ELEM_CONSUME_EXTRA, ELEM_CONSUME_REMAINING, ELEM_EXTRA_STACK};
+
+    let elem = parser.peek();
+    let nm = elem.get_name().to_string();
+    if nm == ELEM_CONSUME_EXTRA.name {
+        let mut action = ConsumeExtra::for_decode(res);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_EXTRA_STACK.name {
+        // ExtraStack::new is eager, but safe here: its stack-entry lookup is independent of
+        // `afterStorage`/`afterBytes` (the only fields an XML attribute can override), matching
+        // GotoStack's reasoning above.
+        let mut action = ExtraStack::new(StorageClass::General, -1, res)
+            .map_err(|e| XmlParseException::new(e.0))?;
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    if nm == ELEM_CONSUME_REMAINING.name {
+        let mut action = ConsumeRemaining::for_decode(res);
+        action.restore_xml(parser)?;
+        return Ok(Box::new(action));
+    }
+    Err(XmlParseException::new(format!("Unknown model rule sideeffect: {nm}")))
+}
+
+/// Read the next precondition element from the stream, if it exists, and return the new
+/// configured, boxed action. If the next element is not a precondition, returns `Ok(None)`
+/// without consuming it.
+///
+/// Port of the static `AssignAction.restorePreconditionXml`. See [`restore_action_xml`] for why
+/// this is a free function.
+///
+/// # Errors
+/// Returns an error if the resource list is missing configuration `ConsumeExtra` needs, or if
+/// there are problems decoding the stream.
+pub fn restore_precondition_xml<P: XmlPullParser>(
+    parser: &mut P,
+    res: Arc<dyn ParamListStandardLike>,
+) -> Result<Option<Box<dyn AssignAction>>, XmlParseException> {
+    use crate::program::model::lang::protorules::consume_extra::ConsumeExtra;
+    use crate::program::model::pcode::ELEM_CONSUME_EXTRA;
+
+    let elem = parser.peek();
+    let nm = elem.get_name().to_string();
+    if nm != ELEM_CONSUME_EXTRA.name {
+        return Ok(None);
+    }
+    let mut action = ConsumeExtra::for_decode(res);
+    action.restore_xml(parser)?;
+    Ok(Some(Box::new(action)))
 }
 
 #[cfg(test)]
@@ -375,5 +523,103 @@ mod tests {
         };
         let mut encoder = NoopEncoder;
         assert!(action.encode(&mut encoder).is_ok());
+    }
+
+    #[test]
+    fn restore_action_xml_dispatches_goto_stack_and_join() {
+        use crate::program::model::lang::protorules::param_test_support::{
+            ram_space, stack_space, TestEntry, TestResource,
+        };
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+        use crate::program::model::lang::protorules::goto_stack::GotoStack;
+        use crate::program::model::lang::protorules::multi_slot_assign::MultiSlotAssign;
+        use crate::program::model::lang::storage_class::StorageClass;
+
+        let resource: Arc<dyn ParamListStandardLike> = Arc::new(TestResource {
+            entries: vec![
+                Arc::new(TestEntry {
+                    ty: StorageClass::General,
+                    group: 0,
+                    align: 0,
+                    space: ram_space(),
+                    ..TestEntry::default()
+                }),
+                Arc::new(TestEntry {
+                    space: stack_space(),
+                    group: 1,
+                    align: 4,
+                    numslots: 8,
+                    ..TestEntry::default()
+                }),
+            ],
+            num_group: 2,
+            spacebase: None,
+        });
+
+        let mut goto_parser = QueueParser::new(vec![
+            MockElement::start("goto_stack", 0, &[]),
+            MockElement::end("goto_stack", 0),
+        ]);
+        let goto_action = restore_action_xml(&mut goto_parser, resource.clone()).unwrap();
+        assert!(goto_action.as_any().downcast_ref::<GotoStack>().is_some());
+
+        let mut join_parser = QueueParser::new(vec![
+            MockElement::start("join", 0, &[]),
+            MockElement::end("join", 0),
+        ]);
+        let join_action = restore_action_xml(&mut join_parser, resource).unwrap();
+        assert!(join_action.as_any().downcast_ref::<MultiSlotAssign>().is_some());
+    }
+
+    #[test]
+    fn restore_action_xml_errors_on_unknown_action_name() {
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+
+        let resource: Arc<dyn ParamListStandardLike> =
+            Arc::new(MockParamListStandard { big_endian: false });
+        let mut parser = QueueParser::new(vec![
+            MockElement::start("not_a_real_action", 0, &[]),
+            MockElement::end("not_a_real_action", 0),
+        ]);
+        assert!(restore_action_xml(&mut parser, resource).is_err());
+    }
+
+    #[test]
+    fn restore_sideeffect_xml_dispatches_consume_extra() {
+        use crate::program::model::lang::protorules::param_test_support::{ram_space, TestEntry, TestResource};
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+        use crate::program::model::lang::protorules::consume_extra::ConsumeExtra;
+        use crate::program::model::lang::storage_class::StorageClass;
+
+        let resource: Arc<dyn ParamListStandardLike> = Arc::new(TestResource {
+            entries: vec![Arc::new(TestEntry {
+                ty: StorageClass::General,
+                group: 0,
+                align: 0,
+                space: ram_space(),
+                ..TestEntry::default()
+            })],
+            num_group: 1,
+            spacebase: None,
+        });
+        let mut parser = QueueParser::new(vec![
+            MockElement::start("consume_extra", 0, &[("storage", "general"), ("matchsize", "true")]),
+            MockElement::end("consume_extra", 0),
+        ]);
+        let action = restore_sideeffect_xml(&mut parser, resource).unwrap();
+        assert!(action.as_any().downcast_ref::<ConsumeExtra>().is_some());
+    }
+
+    #[test]
+    fn restore_precondition_xml_returns_none_for_a_non_precondition_element() {
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+
+        let resource: Arc<dyn ParamListStandardLike> =
+            Arc::new(MockParamListStandard { big_endian: false });
+        let mut parser = QueueParser::new(vec![
+            MockElement::start("goto_stack", 0, &[]),
+            MockElement::end("goto_stack", 0),
+        ]);
+        assert!(restore_precondition_xml(&mut parser, resource).unwrap().is_none());
     }
 }

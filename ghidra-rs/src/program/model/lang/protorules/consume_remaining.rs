@@ -62,6 +62,15 @@ impl ConsumeRemaining {
         let tiles = initialize_entries(&res, store)?;
         Ok(ConsumeRemaining { resource: res, resource_type: store, tiles })
     }
+
+    /// Port of the "protected" constructor; see
+    /// [`ConsumeExtra::for_decode`](super::consume_extra::ConsumeExtra::for_decode)'s doc for the
+    /// full rationale. `resource_type` here is just a placeholder default -- `restore_xml`
+    /// unconditionally overwrites it from the stream's `storage` attribute and re-derives `tiles`
+    /// via `initialize_entries` at the end, exactly as Java's `restoreXml` does.
+    pub fn for_decode(res: Arc<dyn ParamListStandardLike>) -> Self {
+        ConsumeRemaining { resource: res, resource_type: StorageClass::General, tiles: Vec::new() }
+    }
 }
 
 impl AssignAction for ConsumeRemaining {
@@ -281,5 +290,27 @@ mod tests {
         ]);
         let mut action = ConsumeRemaining::new(StorageClass::General, two_general_registers()).unwrap();
         assert!(action.restore_xml(&mut parser).is_err());
+    }
+
+    #[test]
+    fn for_decode_then_restore_xml_picks_up_a_non_default_storage_class() {
+        let float_only_resource = Arc::new(TestResource {
+            entries: vec![Arc::new(TestEntry {
+                ty: StorageClass::Float,
+                align: 0,
+                space: ram_space(),
+                ..TestEntry::default()
+            })],
+            num_group: 1,
+            spacebase: None,
+        });
+        let mut parser = QueueParser::new(vec![
+            MockElement::start("consume_remaining", 0, &[("storage", "float")]),
+            MockElement::end("consume_remaining", 0),
+        ]);
+        let mut action = ConsumeRemaining::for_decode(float_only_resource);
+        action.restore_xml(&mut parser).unwrap();
+        assert_eq!(action.resource_type, StorageClass::Float);
+        assert_eq!(action.tiles.len(), 1);
     }
 }

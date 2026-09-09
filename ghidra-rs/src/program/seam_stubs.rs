@@ -1746,6 +1746,55 @@ pub trait ParamListStandardLike {
         }
         buffer
     }
+
+    /// True if resources in this list are from a big endian address space
+    /// (`ParamListStandard.isBigEndian`), needed by
+    /// [`MultiSlotAssign`](crate::program::model::lang::protorules::MultiSlotAssign) and
+    /// [`MultiSlotDualAssign`](crate::program::model::lang::protorules::MultiSlotDualAssign) to
+    /// pick their default `consumeMostSig`/`justifyRight` configuration, mirroring
+    /// `entry[0].isBigEndian()`. Defaults to `false` (matching
+    /// [`get_entry`](Self::get_entry)'s default of no entries), rather than panicking the way the
+    /// Java array-index would on an empty list.
+    fn is_big_endian(&self) -> bool {
+        self.get_entry(0).is_some_and(|e| e.is_big_endian())
+    }
+
+    /// Find the last (in list order) non-exclusion `ParamEntry` whose space is a stack space
+    /// (`ParamListStandard.extractStack`), needed by
+    /// [`MultiSlotAssign`](crate::program::model::lang::protorules::MultiSlotAssign) and
+    /// [`MultiSlotDualAssign`](crate::program::model::lang::protorules::MultiSlotDualAssign).
+    ///
+    /// # Quirk (faithfully reproduced)
+    /// Unlike [`GotoStack`](crate::program::model::lang::protorules::GotoStack)/
+    /// [`ExtraStack`](crate::program::model::lang::protorules::ExtraStack)'s own private
+    /// `initializeEntry`, which scans the entry list forward and returns the *first* match,
+    /// `ParamListStandard.extractStack` scans **backward** (`for (i = entry.length - 1; i >= 0;
+    /// --i)`) and returns the *last* match. Two different real Java methods genuinely disagree on
+    /// search direction for "the" stack entry; this is not a typo to silently fix.
+    fn extract_stack(&self) -> Option<Arc<dyn ParamEntry>> {
+        for i in (0..self.get_num_param_entry()).rev() {
+            if let Some(entry) = self.get_entry(i) {
+                if !entry.is_exclusion()
+                    && entry.get_space().space_type()
+                        == crate::program::model::address::AddressSpaceType::Stack
+                {
+                    return Some(entry);
+                }
+            }
+        }
+        None
+    }
+
+    /// Stands in for Java's `instanceof ParamListStandardOut` runtime type test, used by
+    /// [`MultiSlotAssign`](crate::program::model::lang::protorules::MultiSlotAssign)'s
+    /// decode-oriented constructor to default `consumeFromStack` to `false` for an output
+    /// (return-value) resource list. Rust has no `instanceof`; a resource list that actually
+    /// implements [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
+    /// is expected to override this to `true`. Defaults to `false`, matching every resource list
+    /// in this crate today (no concrete, non-test type implements `ParamListStandardOut`).
+    fn is_standard_out(&self) -> bool {
+        false
+    }
 }
 
 /// Placeholder for `ghidra.program.model.lang.protorules.ModelRule`, referenced by
@@ -1775,7 +1824,23 @@ pub trait ModelRuleLike {
         Ok(())
     }
 
-    /// Stands in for `ModelRule.isEquivalent(ModelRule)`.
+    /// Returns this rule as [`std::any::Any`], so a real
+    /// [`ModelRule`](crate::program::model::lang::protorules::model_rule::ModelRule)'s
+    /// [`is_equivalent`](Self::is_equivalent) implementation can downcast `other` to compare two
+    /// concrete rules structurally -- the same `as_any`/`downcast_ref` pattern used by
+    /// [`DatatypeFilter`](crate::program::model::lang::protorules::datatype_filter::DatatypeFilter)/
+    /// [`QualifierFilter`](crate::program::model::lang::protorules::qualifier_filter::QualifierFilter)/
+    /// [`AssignAction`](crate::program::model::lang::protorules::assign_action::AssignAction).
+    /// Defaults to a value that downcasts to nothing meaningful for a bare placeholder
+    /// implementor, matching this trait's other defaults (a placeholder rule compares
+    /// not-equivalent to everything).
+    fn as_any(&self) -> &dyn std::any::Any {
+        &()
+    }
+
+    /// Stands in for `ModelRule.isEquivalent(ModelRule)`. Defaults to `false`, matching a
+    /// placeholder rule that is never equivalent to anything (including another instance of
+    /// itself), since a placeholder carries no real configuration to compare.
     fn is_equivalent(&self, other: &dyn ModelRuleLike) -> bool {
         let _ = other;
         false

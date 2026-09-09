@@ -1,5 +1,11 @@
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::lang::protorules::homogeneous_aggregate::HomogeneousAggregate;
+use crate::program::model::lang::protorules::meta_type_filter::MetaTypeFilter;
+use crate::program::model::lang::protorules::size_restricted_filter::SizeRestrictedFilter;
+use crate::program::model::pcode::ids::ATTRIB_NAME;
+use crate::program::model::pcode::pcode_data_type_manager::{get_metatype_from_string, TYPE_FLOAT};
 use crate::program::model::pcode::Encoder;
+use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 
@@ -9,13 +15,6 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 /// [`filter`](DatatypeFilter::filter) method.
 ///
 /// Port of `ghidra.program.model.lang.protorules.DatatypeFilter`.
-///
-/// The Java interface also declares a static `restoreFilterXml` factory that inspects the
-/// root element of an XML stream and dispatches to one of `SizeRestrictedFilter`,
-/// `HomogeneousAggregate`, or `MetaTypeFilter` (falling back to `PcodeDataTypeManager` to
-/// resolve a decompiler metatype name). None of those sibling filters, nor
-/// `PcodeDataTypeManager`, are ported yet, so that dispatch factory is not ported here; it
-/// belongs alongside those concrete filters once they exist.
 pub trait DatatypeFilter {
     /// Make a copy of this filter, boxed as a trait object.
     ///
@@ -54,6 +53,49 @@ pub trait DatatypeFilter {
     fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
     where
         Self: Sized;
+}
+
+/// Instantiate a filter from the given stream.
+///
+/// Port of the static `DatatypeFilter.restoreFilterXml`. A free function, not a trait method,
+/// since [`DatatypeFilter::restore_xml`] is generic (hence not part of the trait's object-safe
+/// surface) -- each branch below therefore calls `restore_xml` on the concrete, `Sized` filter
+/// type *before* erasing it to `Box<dyn DatatypeFilter>`, rather than (as Java can) dispatching
+/// virtually through the already-erased interface reference.
+///
+/// # Errors
+/// Returns an error for problems reading the stream, or if the root element's `name` attribute
+/// does not match a known filter and does not resolve to a decompiler metatype name either.
+pub fn restore_filter_xml<P: XmlPullParser>(
+    parser: &mut P,
+) -> Result<Box<dyn DatatypeFilter>, XmlParseException> {
+    let elem = parser.peek();
+    let nm = elem.get_attribute(ATTRIB_NAME.name).unwrap_or_default();
+    if nm == SizeRestrictedFilter::NAME {
+        let mut filter = SizeRestrictedFilter::new();
+        filter.restore_xml(parser)?;
+        return Ok(Box::new(filter));
+    }
+    if nm == HomogeneousAggregate::NAME_FLOAT {
+        let mut filter = HomogeneousAggregate::with_bounds(
+            HomogeneousAggregate::NAME_FLOAT,
+            TYPE_FLOAT,
+            HomogeneousAggregate::DEFAULT_MAX_PRIMITIVES,
+            0,
+            0,
+        );
+        filter.restore_xml(parser)?;
+        return Ok(Box::new(filter));
+    }
+    // If no other name matches, assume this is a decompiler metatype.
+    // `get_metatype_from_string` returns `app::util::xml::xml_error_handler::XmlParseException`
+    // -- an unrelated same-named type from a different port, not this module's own
+    // `util::xml::xml_parse_exception::XmlParseException` -- so its error is converted by
+    // message rather than propagated via `?`.
+    let meta = get_metatype_from_string(&nm).map_err(|e| XmlParseException::new(e.message().to_string()))?;
+    let mut filter = MetaTypeFilter::new(meta);
+    filter.restore_xml(parser)?;
+    Ok(Box::new(filter))
 }
 
 #[cfg(test)]
@@ -224,5 +266,51 @@ mod tests {
         let filter = SizeMockFilter { min_size: 3, max_size: 5 };
         let mut encoder = NoopEncoder;
         assert!(filter.encode(&mut encoder).is_ok());
+    }
+
+    #[test]
+    fn restore_filter_xml_dispatches_size_restricted_and_metatype_and_homogeneous_float() {
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+
+        let mut any_parser = QueueParser::new(vec![
+            MockElement::start("datatype", 0, &[("name", "any")]),
+            MockElement::end("datatype", 0),
+        ]);
+        let any_filter = restore_filter_xml(&mut any_parser).unwrap();
+        assert!(any_filter
+            .as_any()
+            .downcast_ref::<crate::program::model::lang::protorules::size_restricted_filter::SizeRestrictedFilter>()
+            .is_some());
+
+        let mut float_parser = QueueParser::new(vec![
+            MockElement::start("datatype", 0, &[("name", "homogeneous-float-aggregate")]),
+            MockElement::end("datatype", 0),
+        ]);
+        let float_filter = restore_filter_xml(&mut float_parser).unwrap();
+        assert!(float_filter
+            .as_any()
+            .downcast_ref::<crate::program::model::lang::protorules::homogeneous_aggregate::HomogeneousAggregate>()
+            .is_some());
+
+        let mut meta_parser = QueueParser::new(vec![
+            MockElement::start("datatype", 0, &[("name", "int")]),
+            MockElement::end("datatype", 0),
+        ]);
+        let meta_filter = restore_filter_xml(&mut meta_parser).unwrap();
+        assert!(meta_filter
+            .as_any()
+            .downcast_ref::<crate::program::model::lang::protorules::meta_type_filter::MetaTypeFilter>()
+            .is_some());
+    }
+
+    #[test]
+    fn restore_filter_xml_errors_on_an_unrecognized_metatype_name() {
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+
+        let mut parser = QueueParser::new(vec![
+            MockElement::start("datatype", 0, &[("name", "not-a-real-metatype")]),
+            MockElement::end("datatype", 0),
+        ]);
+        assert!(restore_filter_xml(&mut parser).is_err());
     }
 }

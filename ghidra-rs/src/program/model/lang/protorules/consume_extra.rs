@@ -66,6 +66,30 @@ impl ConsumeExtra {
         let tiles = initialize_entries(&res, store)?;
         Ok(ConsumeExtra { resource: res, resource_type: store, match_size: matched, tiles })
     }
+
+    /// Port of the "protected" constructor, used to build a default-configured instance before
+    /// [`AssignAction::restore_xml`] overrides its attributes (mirroring
+    /// `AssignAction.restoreSideeffectXml`'s/`restorePreconditionXml`'s `new ConsumeExtra(res)`,
+    /// not itself ported into this crate yet -- see [`AssignAction`]'s module doc). Added
+    /// alongside [`ModelRule`](super::model_rule::ModelRule)'s port, since a correct
+    /// `AssignAction::restore_sideeffect_xml`/`restore_precondition_xml` dispatch factory needs
+    /// a way to construct a `ConsumeExtra` *before* its `resource_type` is known from the XML
+    /// stream -- [`new`](Self::new) eagerly validates against whatever `store` it's given, which
+    /// would incorrectly fail decode for a resource lacking `General`-class tiles even when the
+    /// actually-encoded (non-`General`) `resource_type` would have worked fine.
+    ///
+    /// Unlike [`new`](Self::new), this does **not** call `initializeEntries`; Java (and this
+    /// port's `restore_xml`, which re-derives `tiles` from `self.resource_type` at the end) defer
+    /// that until the resource-list lookup can use whatever `resource_type` the XML attributes
+    /// end up specifying.
+    pub fn for_decode(res: Arc<dyn ParamListStandardLike>) -> Self {
+        ConsumeExtra {
+            resource: res,
+            resource_type: StorageClass::General,
+            match_size: true,
+            tiles: Vec::new(),
+        }
+    }
 }
 
 impl AssignAction for ConsumeExtra {
@@ -328,5 +352,29 @@ mod tests {
         action.restore_xml(&mut parser).unwrap();
         assert!(!action.match_size);
         assert_eq!(action.resource_type, StorageClass::General);
+    }
+
+    #[test]
+    fn for_decode_then_restore_xml_picks_up_a_non_default_storage_class() {
+        // for_decode must NOT eagerly validate against the General default -- only against
+        // whatever resource_type restore_xml ends up parsing from the stream.
+        let float_only_resource = Arc::new(TestResource {
+            entries: vec![Arc::new(TestEntry {
+                ty: StorageClass::Float,
+                align: 0,
+                space: ram_space(),
+                ..TestEntry::default()
+            })],
+            num_group: 1,
+            spacebase: None,
+        });
+        let mut parser = QueueParser::new(vec![
+            MockElement::start("consume_extra", 0, &[("storage", "float")]),
+            MockElement::end("consume_extra", 0),
+        ]);
+        let mut action = ConsumeExtra::for_decode(float_only_resource);
+        action.restore_xml(&mut parser).unwrap();
+        assert_eq!(action.resource_type, StorageClass::Float);
+        assert_eq!(action.tiles.len(), 1);
     }
 }

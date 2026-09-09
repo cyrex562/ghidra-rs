@@ -1,5 +1,10 @@
+use crate::program::model::lang::protorules::datatype_match_filter::DatatypeMatchFilter;
+use crate::program::model::lang::protorules::position_match_filter::PositionMatchFilter;
+use crate::program::model::lang::protorules::varargs_filter::VarargsFilter;
+use crate::program::model::pcode::ids::{ELEM_DATATYPE_AT, ELEM_POSITION, ELEM_VARARGS};
 use crate::program::model::pcode::Encoder;
 use crate::program::seam_stubs::PrototypePieces;
+use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 
@@ -10,11 +15,6 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 /// [`filter`](QualifierFilter::filter).
 ///
 /// Port of `ghidra.program.model.lang.protorules.QualifierFilter`.
-///
-/// The Java interface also declares a static `restoreFilterXml` factory that inspects the root
-/// element of an XML stream and dispatches to one of `VarargsFilter`, `PositionMatchFilter`, or
-/// `DatatypeMatchFilter`. None of those sibling filters are ported yet, so that dispatch factory
-/// is not ported here; it belongs alongside those concrete filters once they exist.
 pub trait QualifierFilter {
     /// Make a copy of this qualifier, boxed as a trait object.
     ///
@@ -56,6 +56,39 @@ pub trait QualifierFilter {
     fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
     where
         Self: Sized;
+}
+
+/// Instantiate a qualifier from the stream. If the next element is not a qualifier, returns
+/// `Ok(None)`.
+///
+/// Port of the static `QualifierFilter.restoreFilterXml`. A free function, not a trait method,
+/// for the same reason as [`datatype_filter::restore_filter_xml`](super::datatype_filter::restore_filter_xml):
+/// each branch calls `restore_xml` on the concrete, `Sized` filter type before erasing it to
+/// `Box<dyn QualifierFilter>`.
+///
+/// # Errors
+/// Returns an error for problems decoding the stream.
+pub fn restore_filter_xml<P: XmlPullParser>(
+    parser: &mut P,
+) -> Result<Option<Box<dyn QualifierFilter>>, XmlParseException> {
+    let elem = parser.peek();
+    let nm = elem.get_name().to_string();
+    if nm == ELEM_VARARGS.name {
+        let mut filter = VarargsFilter::new();
+        filter.restore_xml(parser)?;
+        return Ok(Some(Box::new(filter)));
+    }
+    if nm == ELEM_POSITION.name {
+        let mut filter = PositionMatchFilter::new(-1);
+        filter.restore_xml(parser)?;
+        return Ok(Some(Box::new(filter)));
+    }
+    if nm == ELEM_DATATYPE_AT.name {
+        let mut filter = DatatypeMatchFilter::new();
+        filter.restore_xml(parser)?;
+        return Ok(Some(Box::new(filter)));
+    }
+    Ok(None)
 }
 
 #[cfg(test)]
@@ -214,5 +247,52 @@ mod tests {
         let filter = PositionMockFilter { min_pos: 0, max_pos: 3 };
         let mut encoder = NoopEncoder;
         assert!(filter.encode(&mut encoder).is_ok());
+    }
+
+    #[test]
+    fn restore_filter_xml_dispatches_varargs_position_and_datatype_at() {
+        use crate::program::model::lang::protorules::varargs_filter::VarargsFilter;
+        use crate::program::model::lang::protorules::position_match_filter::PositionMatchFilter;
+        use crate::program::model::lang::protorules::datatype_match_filter::DatatypeMatchFilter;
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+
+        let mut varargs_parser = QueueParser::new(vec![
+            MockElement::start("varargs", 0, &[]),
+            MockElement::end("varargs", 0),
+        ]);
+        let varargs = restore_filter_xml(&mut varargs_parser).unwrap().unwrap();
+        assert!(varargs.as_any().downcast_ref::<VarargsFilter>().is_some());
+
+        let mut position_parser = QueueParser::new(vec![
+            MockElement::start("position", 0, &[("index", "2")]),
+            MockElement::end("position", 0),
+        ]);
+        let position = restore_filter_xml(&mut position_parser).unwrap().unwrap();
+        assert!(position.as_any().downcast_ref::<PositionMatchFilter>().is_some());
+
+        // DatatypeMatchFilter::restore_xml requires a nested <datatype> sub-element (its own
+        // filter dispatch isn't ported -- see that file's own TODO(port) note -- so it's just
+        // discarded), matching that file's own restore_xml test fixture.
+        let mut datatype_at_parser = QueueParser::new(vec![
+            MockElement::start("datatype_at", 0, &[]),
+            MockElement::start("datatype", 1, &[("name", "any")]),
+            MockElement::end("datatype", 1),
+            MockElement::end("datatype_at", 0),
+        ]);
+        let datatype_at = restore_filter_xml(&mut datatype_at_parser).unwrap().unwrap();
+        assert!(datatype_at.as_any().downcast_ref::<DatatypeMatchFilter>().is_some());
+    }
+
+    #[test]
+    fn restore_filter_xml_returns_none_for_an_unrecognized_element_without_consuming_it() {
+        use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
+
+        let mut parser = QueueParser::new(vec![
+            MockElement::start("goto_stack", 0, &[]),
+            MockElement::end("goto_stack", 0),
+        ]);
+        assert!(restore_filter_xml(&mut parser).unwrap().is_none());
+        // Still there for the caller to handle, since restore_filter_xml only peeked.
+        assert!(parser.peek().is_start_with("goto_stack"));
     }
 }
