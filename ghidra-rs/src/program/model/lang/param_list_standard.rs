@@ -694,6 +694,7 @@ mod tests {
         let proto = PrototypePieces {
             outtype: None,
             intypes: vec![a, b],
+            ..Default::default()
         };
         let mut res = Vec::new();
 
@@ -718,6 +719,7 @@ mod tests {
         let proto = PrototypePieces {
             outtype: None,
             intypes: vec![big.clone(), big.clone(), big],
+            ..Default::default()
         };
         let mut res = Vec::new();
 

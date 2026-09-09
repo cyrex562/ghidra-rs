@@ -1469,18 +1469,35 @@ impl ExternalLanguageCompilerSpecQuery {
 /// Placeholder for `ghidra.program.model.lang.PrototypePieces`, referenced by
 /// [`ParamList`](crate::program::model::lang::param_list::ParamList),
 /// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut),
-/// and
-/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
-/// before the real class is ported. Only the `outtype` (return data-type) and `intypes` (input
-/// data-types) fields are modeled, since those are the only members those interfaces read; the
-/// `model`/`firstVarArgSlot` fields are omitted until something needs them. `Debug` is
+/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard),
+/// and the `protorules` qualifier filters (`VarargsFilter`, `DatatypeMatchFilter`)
+/// before the real class is ported. The `outtype` (return data-type), `intypes` (input
+/// data-types), and `first_var_arg_slot` fields are modeled, since those are the only members
+/// those interfaces read; the `model` field is omitted until something needs it. `Debug` is
 /// intentionally not derived since `DataType` has no `Debug` supertrait yet.
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct PrototypePieces {
     /// Return data-type of the prototype (`PrototypePieces.outtype`).
     pub outtype: Option<Arc<dyn DataType>>,
     /// Input data-types of the prototype, in parameter order (`PrototypePieces.intypes`).
     pub intypes: Vec<Arc<dyn DataType>>,
+    /// First position of a variable argument, or -1 if not vararg
+    /// (`PrototypePieces.firstVarArgSlot`).
+    pub first_var_arg_slot: i32,
+}
+
+impl Default for PrototypePieces {
+    /// Mirrors both Java constructors, which always set `firstVarArgSlot = -1` (there is no
+    /// Java default-constructor to derive a blanket `#[derive(Default)]` from; `i32::default()`
+    /// would wrongly produce `0`, which `VarargsFilter` would treat as "vararg starting at
+    /// parameter 0" instead of "not vararg").
+    fn default() -> Self {
+        PrototypePieces {
+            outtype: None,
+            intypes: Vec::new(),
+            first_var_arg_slot: -1,
+        }
+    }
 }
 
 /// Placeholder for `ghidra.program.model.lang.ParameterPieces`, referenced by

@@ -1043,6 +1043,11 @@ pub const ATTRIB_LOGICALSIZE: AttributeId = AttributeId::new("logicalsize", 172)
 // own `ATTRIB_UNIQBASE` at 37, so it is renumbered per the same scheme. Carries a
 // `ClangToken` syntax-highlight color.
 pub const ATTRIB_COLOR: AttributeId = AttributeId::new("color", 173);
+// Ids 151/153 match `AttributeId.java`'s `ATTRIB_SIZES`/`ATTRIB_MAX_PRIMITIVES` directly; neither
+// collides with any `AttributeId` already declared in this file (the numbering scheme above only
+// renumbers on an actual same-type collision).
+pub const ATTRIB_SIZES: AttributeId = AttributeId::new("sizes", 151);
+pub const ATTRIB_MAX_PRIMITIVES: AttributeId = AttributeId::new("maxprimitives", 153);
 
 #[cfg(test)]
 mod tests {
