@@ -9,15 +9,49 @@
 //! adapters. This follows the same convention already used for
 //! [`OldFunctionDBAdapter`](crate::program::database::oldfunction::OldFunctionDBAdapter).
 //!
-//! Also left out: the `STACK_VARS_SCHEMA` constant and the `STACK_VAR_*_COL` column-index
-//! constants, since -- unlike `OldFunctionDBAdapter`'s column constants -- these are only ever
-//! referenced from within the `OldStackVariableDBAdapter*` hierarchy itself (delegated to
-//! `OldStackVariableDBAdapterV1.V1_STACK_VARS_SCHEMA`/`V1_STACK_VAR_*_COL`), not by any other
-//! not-yet-ported caller, so there is no genuine public API surface to preserve here.
+//! Also left out: the `STACK_VARS_SCHEMA` constant, since it describes a concrete table layout
+//! (delegated to `OldStackVariableDBAdapterV1.V1_STACK_VARS_SCHEMA`) used only by the
+//! `OldStackVariableDBAdapter*` hierarchy itself.
+//!
+//! **Update:** the `STACK_VAR_*_COL` column-index constants, originally left out for the same
+//! reason as `STACK_VARS_SCHEMA` (no caller outside the adapter hierarchy), are now kept as pub
+//! constants: `ghidra.program.database.oldfunction.OldStackFrameDB` (a real caller outside the
+//! `OldStackVariableDBAdapter*` hierarchy, now ported as
+//! [`OldStackFrameDB`](crate::program::database::oldfunction::OldStackFrameDB)) reads
+//! `OldStackVariableDBAdapter.STACK_VAR_OFFSET_COL`/`STACK_VAR_DATA_TYPE_ID_COL`/
+//! `STACK_VAR_NAME_COL`/`STACK_VAR_COMMENT_COL` directly to interpret a stack variable record's
+//! columns -- the same reasoning that kept `OldFunctionDBAdapter`'s `RETURN_DATA_TYPE_ID_COL` and
+//! friends from the start. [`STACK_VAR_FUNCTION_KEY_COL`] is kept too: besides being read by
+//! `OldStackFrameDB.loadStackVariables()`, it is also (mis)used by
+//! `OldRegisterVariableDBAdapterV0.getRegisterVariableKeys` in place of that class's own
+//! `REG_VAR_FUNCTION_KEY_COL` -- a real Java quirk preserved as-is by
+//! [`OldRegisterVariableDBAdapterV0`](crate::program::database::oldfunction::OldRegisterVariableDBAdapterV0),
+//! which happens to work only because both constants equal `0`. [`STACK_VAR_DT_LENGTH_COL`] is
+//! kept too even though nothing outside the adapter hierarchy reads it (unlike the others), simply
+//! to keep the column list contiguous and self-documenting alongside its siblings.
 
 use std::io;
 
 use crate::framework::db::{DBHandle, DBRecord, Field};
+
+/// Column index for a stack variable record's owning function key (indexed in Java). Stands in
+/// for `OldStackVariableDBAdapter.STACK_VAR_FUNCTION_KEY_COL`.
+pub const STACK_VAR_FUNCTION_KEY_COL: usize = 0;
+/// Column index for a stack variable record's stack offset. Stands in for
+/// `OldStackVariableDBAdapter.STACK_VAR_OFFSET_COL`.
+pub const STACK_VAR_OFFSET_COL: usize = 1;
+/// Column index for a stack variable record's data type ID. Stands in for
+/// `OldStackVariableDBAdapter.STACK_VAR_DATA_TYPE_ID_COL`.
+pub const STACK_VAR_DATA_TYPE_ID_COL: usize = 2;
+/// Column index for a stack variable record's name. Stands in for
+/// `OldStackVariableDBAdapter.STACK_VAR_NAME_COL`.
+pub const STACK_VAR_NAME_COL: usize = 3;
+/// Column index for a stack variable record's comment. Stands in for
+/// `OldStackVariableDBAdapter.STACK_VAR_COMMENT_COL`.
+pub const STACK_VAR_COMMENT_COL: usize = 4;
+/// Column index for a stack variable record's data type length. Stands in for
+/// `OldStackVariableDBAdapter.STACK_VAR_DT_LENGTH_COL`.
+pub const STACK_VAR_DT_LENGTH_COL: usize = 5;
 
 /// Database adapter for stack variables.
 ///
@@ -74,8 +108,6 @@ mod tests {
             vec![],
         ))
     }
-
-    const STACK_VAR_FUNCTION_KEY_COL: usize = 0;
 
     /// A minimal in-memory `OldStackVariableDBAdapter`, exercising object-safety and the
     /// record get/keys-by-function-key/delete contract described by the Java class.
