@@ -14,7 +14,18 @@ mod tests {
 
     struct DummyInstructionError;
 
-    impl InstructionError for DummyInstructionError {}
+    impl InstructionError for DummyInstructionError {
+        fn get_instruction_address(&self) -> crate::program::model::address::Address {
+            let space = crate::program::model::address::AddressSpace::new(
+                "ram",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Ram,
+                1,
+            );
+            crate::program::model::address::Address::new(space, 0)
+        }
+    }
 
     struct RecordingHandler {
         calls: AtomicU32,
