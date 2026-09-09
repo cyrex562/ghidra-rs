@@ -1467,156 +1467,21 @@ impl ExternalLanguageCompilerSpecQuery {
     }
 }
 
-/// Placeholder for `ghidra.program.model.lang.PrototypePieces`, referenced by
-/// [`ParamList`](crate::program::model::lang::param_list::ParamList),
-/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut),
-/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard),
-/// and the `protorules` qualifier filters (`VarargsFilter`, `DatatypeMatchFilter`)
-/// before the real class is ported. The `outtype` (return data-type), `intypes` (input
-/// data-types), and `first_var_arg_slot` fields are modeled, since those are the only members
-/// those interfaces read; the `model` field is omitted until something needs it. `Debug` is
-/// intentionally not derived since `DataType` has no `Debug` supertrait yet.
-#[derive(Clone)]
-pub struct PrototypePieces {
-    /// Return data-type of the prototype (`PrototypePieces.outtype`).
-    pub outtype: Option<Arc<dyn DataType>>,
-    /// Input data-types of the prototype, in parameter order (`PrototypePieces.intypes`).
-    pub intypes: Vec<Arc<dyn DataType>>,
-    /// First position of a variable argument, or -1 if not vararg
-    /// (`PrototypePieces.firstVarArgSlot`).
-    pub first_var_arg_slot: i32,
-}
+/// Real port of `ghidra.program.model.lang.PrototypePieces`; lives in its own module,
+/// [`prototype_pieces`](crate::program::model::lang::prototype_pieces), re-exported here so
+/// existing `use crate::program::seam_stubs::PrototypePieces` call sites (the `protorules`
+/// cluster, `ParamList`/`ParamListStandard`/`ParamListStandardOut`) keep compiling unchanged,
+/// following this crate's precedent for graduating a seam-stub type in place (see e.g.
+/// `DataTypePath`/`Mask`/`StackFrame` below).
+pub use crate::program::model::lang::prototype_pieces::PrototypePieces;
 
-impl Default for PrototypePieces {
-    /// Mirrors both Java constructors, which always set `firstVarArgSlot = -1` (there is no
-    /// Java default-constructor to derive a blanket `#[derive(Default)]` from; `i32::default()`
-    /// would wrongly produce `0`, which `VarargsFilter` would treat as "vararg starting at
-    /// parameter 0" instead of "not vararg").
-    fn default() -> Self {
-        PrototypePieces {
-            outtype: None,
-            intypes: Vec::new(),
-            first_var_arg_slot: -1,
-        }
-    }
-}
-
-/// Placeholder for `ghidra.program.model.lang.ParameterPieces`, referenced by
-/// [`ParamList`](crate::program::model::lang::param_list::ParamList),
-/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut),
-/// and
-/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
-/// before the real class is ported. Only the `type`/`isIndirect`/`hiddenReturnPtr`/`address`
-/// fields are modeled, since those are the only members those interfaces read or write;
-/// `isThisPointer` is omitted until something needs it. `Debug` is intentionally not derived
-/// since `DataType` has no `Debug` supertrait yet.
-///
-/// Grown (with a default of `None`, so pre-existing `ParameterPieces::default()`/struct-update
-/// call sites keep compiling) to also cover `joinPieces`, which
-/// [`ParamEntry::get_addr_by_slot_justified`](crate::program::model::lang::param_entry::ParamEntry::get_addr_by_slot_justified)
-/// needs to report a "join" space allocation's component pieces.
-#[derive(Default, Clone)]
-pub struct ParameterPieces {
-    /// The data-type of the parameter (`ParameterPieces.type`; renamed since `type` is a Rust
-    /// keyword).
-    pub data_type: Option<Arc<dyn DataType>>,
-    /// True if parameter is an indirect pointer to the actual parameter
-    /// (`ParameterPieces.isIndirect`).
-    pub is_indirect: bool,
-    /// True if this is an input pointer to return storage (`ParameterPieces.hiddenReturnPtr`).
-    pub hidden_return_ptr: bool,
-    /// The starting address of the parameter's storage, or `None` if not yet assigned
-    /// (`ParameterPieces.address`).
-    pub address: Option<Address>,
-    /// If non-`None`, multiple pieces stitched together for a single logical value
-    /// (`ParameterPieces.joinPieces`).
-    pub join_pieces: Option<Vec<Varnode>>,
-}
-
-impl ParameterPieces {
-    /// Assuming the given list of Varnodes go from most significant to least significant, merge
-    /// any contiguous elements in the list. Merges in a register space are only allowed if the
-    /// bigger Varnode exists as a formal register.
-    ///
-    /// Port of the static `ghidra.program.model.lang.ParameterPieces.mergeSequence`. Needed by
-    /// [`assign_address_from_pieces`](Self::assign_address_from_pieces), which
-    /// [`MultiMemberAssign`](crate::program::model::lang::protorules::MultiMemberAssign) calls to
-    /// stitch together the per-primitive-member pieces it collects into one storage location.
-    pub fn merge_sequence(seq: Vec<Varnode>, language: &dyn Language) -> Vec<Varnode> {
-        let big_endian = language.is_big_endian();
-        let mut i = 1usize;
-        while i < seq.len() {
-            if seq[i - 1].is_contiguous(&seq[i], big_endian) {
-                break;
-            }
-            i += 1;
-        }
-        if i >= seq.len() {
-            return seq;
-        }
-        let mut buffer: Vec<Varnode> = vec![seq[0].clone()];
-        let mut last_is_informal = false;
-        let mut i = 1usize;
-        while i < seq.len() {
-            let hi = buffer.last().expect("buffer seeded with seq[0]").clone();
-            let lo = &seq[i];
-            if hi.is_contiguous(lo, big_endian) {
-                let off = if big_endian { hi.get_offset() } else { lo.get_offset() };
-                let sz = hi.get_size() + lo.get_size();
-                let new_vn = Varnode::new(Address::new(hi.get_address().space().clone(), off), sz);
-                buffer.pop();
-                // Test if the new Varnode is a formal register
-                if !new_vn.get_address().is_stack_address() {
-                    last_is_informal = language
-                        .get_register_at(new_vn.get_address(), new_vn.get_size())
-                        .is_none();
-                }
-                buffer.push(new_vn);
-            } else {
-                if last_is_informal {
-                    break;
-                }
-                buffer.push(lo.clone());
-            }
-            i += 1;
-        }
-        if last_is_informal {
-            // If the merge contains an informal register, throw it out and keep the original
-            // sequence
-            return seq;
-        }
-        buffer
-    }
-
-    /// Generate a parameter address given the list of Varnodes making up the parameter.
-    ///
-    /// `pieces` is the given list of Varnodes; `most_to_least` is true if the list is ordered
-    /// most significant to least; `one_piece_join` is true if the address should be considered a
-    /// join of one piece; `language` is the Language associated with the calling convention.
-    ///
-    /// Port of `ghidra.program.model.lang.ParameterPieces.assignAddressFromPieces`.
-    pub fn assign_address_from_pieces(
-        &mut self,
-        mut pieces: Vec<Varnode>,
-        most_to_least: bool,
-        one_piece_join: bool,
-        language: &dyn Language,
-    ) {
-        if !most_to_least && pieces.len() > 1 {
-            pieces.reverse();
-        }
-        let pieces = Self::merge_sequence(pieces, language);
-        if pieces.len() == 1 && !one_piece_join {
-            self.address = Some(pieces[0].get_address().clone());
-            return;
-        }
-        self.join_pieces = Some(pieces);
-        // Java sets `address = Address.NO_ADDRESS` here ("Placeholder for join space address");
-        // this port's `address` is already `Option<Address>` with `None` meaning "not yet
-        // assigned" (see the field doc above), so `None` is the direct equivalent.
-        self.address = None;
-    }
-}
+/// Real port of `ghidra.program.model.lang.ParameterPieces`; lives in its own module,
+/// [`parameter_pieces`](crate::program::model::lang::parameter_pieces), re-exported here so
+/// existing `use crate::program::seam_stubs::ParameterPieces` call sites (the `protorules`
+/// cluster, `ParamEntry`, `ParamList`/`ParamListStandard`/`ParamListStandardOut`) keep
+/// compiling unchanged, following this crate's precedent for graduating a seam-stub type in
+/// place (see e.g. `DataTypePath`/`Mask`/`StackFrame` below).
+pub use crate::program::model::lang::parameter_pieces::ParameterPieces;
 
 /// Placeholder for `ghidra.program.model.lang.ParamListStandard`, referenced by
 /// [`AssignAction`](crate::program::model::lang::protorules::assign_action::AssignAction) and
