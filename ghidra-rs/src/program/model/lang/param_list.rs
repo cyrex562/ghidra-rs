@@ -100,6 +100,19 @@ pub trait ParamList {
 
     /// Determine if this `ParamList` is equivalent to another instance.
     fn is_equivalent(&self, other: &dyn ParamList) -> bool;
+
+    /// Returns this instance as [`std::any::Any`], so an [`is_equivalent`](Self::is_equivalent)
+    /// implementation can downcast `other` to a concrete type and compare structurally -- mirrors
+    /// Java's `getClass() != obj.getClass()` check (there being no `instanceof`/reflection
+    /// equivalent for a Rust trait object), and the same `as_any`/`downcast_ref` pattern already
+    /// used by [`ModelRuleLike`](crate::program::seam_stubs::ModelRuleLike)/
+    /// [`DatatypeFilter`](crate::program::model::lang::protorules::datatype_filter::DatatypeFilter)
+    /// elsewhere in this crate. Defaulted (so existing implementors keep compiling) to a value
+    /// that downcasts to nothing meaningful, matching those other traits' "not equivalent to
+    /// anything by default" convention.
+    fn as_any(&self) -> &dyn std::any::Any {
+        &()
+    }
 }
 
 #[cfg(test)]

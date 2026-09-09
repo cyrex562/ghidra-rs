@@ -51,22 +51,32 @@ pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
 /// `encode` is provided (`encode_std`) since it only depends on the already-ported `Encoder`,
 /// the real [`ParamEntry`] port, and the [`ModelRuleLike`] placeholder. `restoreXml` is NOT
 /// provided: it constructs new `ParamEntry`/`ModelRule` instances from an XML stream (including
-/// `SizeRestrictedFilter`/`ConvertToPointer` for the `pointermax` attribute), which needs those
-/// classes' real constructors, not just accessors on an opaque placeholder trait object. It
-/// remains an abstract, required method inherited from [`ParamList`], to be implemented once
-/// `ModelRule` (and the `AddressXML` join-parsing it also needs) are ported. Likewise
-/// `getPotentialRegisterStorage` is not provided:
-/// the real method constructs `VariableStorage` instances, and the
-/// [`VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage) placeholder is an empty
-/// marker trait with no constructor.
+/// `SizeRestrictedFilter`/`ConvertToPointer` for the `pointermax` attribute), which needs a real
+/// `ParamEntry` constructor (`ParamEntry.restoreXml`, still trait-only -- see
+/// [`param_entry`](crate::program::model::lang::param_entry)'s module doc) plus the private
+/// `parsePentry`/`parseGroup` helpers, neither of which exist in this port yet. It remains an
+/// abstract, required method inherited from [`ParamList`]. Likewise `getPotentialRegisterStorage`
+/// is only partially provided (see
+/// [`ParamListStandardImpl::get_potential_register_storage`](crate::program::model::lang::param_list_standard_impl::ParamListStandardImpl)):
+/// the real method constructs `VariableStorage` instances via
+/// [`VariableStorageImpl`](crate::program::model::listing::variable_storage::VariableStorageImpl),
+/// which needs an `Arc<dyn ProgramArchitecture>`; there is no way to build one from a bare `&dyn
+/// Program` in this crate (`Program::get_language` hands out `Arc<dyn Language>`, but
+/// `ProgramArchitecture::get_language` requires an owned `Box<dyn Language>`, and `Language` has
+/// no `clone_box`/owned-conversion method to bridge the two).
+///
+/// The one concrete implementor in this crate is
+/// [`ParamListStandardImpl`](crate::program::model::lang::param_list_standard_impl::ParamListStandardImpl),
+/// which also implements [`ParamListStandardLike`] so it can drive the `protorules`
+/// `AssignAction`/`ModelRule` cluster directly.
 ///
 /// Port of `ghidra.program.model.lang.ParamListStandard`.
 pub trait ParamListStandard: ParamList {
     /// The resource list, in order (`ParamListStandard.entry`).
-    fn entries(&self) -> &[Box<dyn ParamEntry>];
+    fn entries(&self) -> &[Arc<dyn ParamEntry>];
 
     /// Rules to apply when assigning addresses (`ParamListStandard.modelRules`).
-    fn model_rules(&self) -> &[Box<dyn ModelRuleLike>];
+    fn model_rules(&self) -> &[Arc<dyn ModelRuleLike>];
 
     /// Number of "groups" in this parameter convention (`ParamListStandard.numgroup`).
     fn num_group(&self) -> i32;
@@ -513,15 +523,15 @@ mod tests {
     }
 
     struct MockParamListStandard {
-        entries: Vec<Box<dyn ParamEntry>>,
-        model_rules: Vec<Box<dyn ModelRuleLike>>,
+        entries: Vec<Arc<dyn ParamEntry>>,
+        model_rules: Vec<Arc<dyn ModelRuleLike>>,
     }
 
     impl ParamListStandard for MockParamListStandard {
-        fn entries(&self) -> &[Box<dyn ParamEntry>] {
+        fn entries(&self) -> &[Arc<dyn ParamEntry>] {
             &self.entries
         }
-        fn model_rules(&self) -> &[Box<dyn ModelRuleLike>] {
+        fn model_rules(&self) -> &[Arc<dyn ModelRuleLike>] {
             &self.model_rules
         }
         fn num_group(&self) -> i32 {
@@ -605,7 +615,7 @@ mod tests {
         let reg = register_space();
         MockParamListStandard {
             entries: vec![
-                Box::new(MockEntry {
+                Arc::new(MockEntry {
                     space: reg.clone(),
                     group: 0,
                     min_size: 1,
@@ -616,7 +626,7 @@ mod tests {
                     grouped: false,
                     capacity: 1,
                 }),
-                Box::new(MockEntry {
+                Arc::new(MockEntry {
                     space: reg.clone(),
                     group: 1,
                     min_size: 1,
@@ -745,7 +755,7 @@ mod tests {
         let stack = stack_space();
         let list = MockParamListStandard {
             entries: vec![
-                Box::new(MockEntry {
+                Arc::new(MockEntry {
                     space: reg.clone(),
                     group: 0,
                     min_size: 1,
@@ -756,7 +766,7 @@ mod tests {
                     grouped: false,
                     capacity: 1,
                 }),
-                Box::new(MockEntry {
+                Arc::new(MockEntry {
                     space: stack.clone(),
                     group: 1,
                     min_size: 1,
@@ -784,7 +794,7 @@ mod tests {
     fn get_stack_parameter_alignment_and_offset() {
         let stack = stack_space();
         let list = MockParamListStandard {
-            entries: vec![Box::new(MockEntry {
+            entries: vec![Arc::new(MockEntry {
                 space: stack.clone(),
                 group: 0,
                 min_size: 1,

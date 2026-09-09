@@ -38,6 +38,7 @@ pub mod param_entry;
 pub mod param_list;
 pub mod param_list_register_out;
 pub mod param_list_standard;
+pub mod param_list_standard_impl;
 pub mod param_list_standard_out;
 pub mod parameter_pieces;
 pub mod parser_context;
@@ -104,6 +105,7 @@ pub use param_entry::{justified_contain_address, order_within_group, ParamEntry}
 pub use param_list::{ParamList, WithSlotRec};
 pub use param_list_register_out::ParamListRegisterOut;
 pub use param_list_standard::ParamListStandard;
+pub use param_list_standard_impl::ParamListStandardImpl;
 pub use param_list_standard_out::ParamListStandardOut;
 pub use parameter_pieces::ParameterPieces;
 pub use parser_context::ParserContext;
