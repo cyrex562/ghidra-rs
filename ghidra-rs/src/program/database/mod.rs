@@ -24,6 +24,7 @@ pub mod program_db;
 pub mod program_modifier_listener;
 pub mod properties;
 pub mod references;
+pub mod register;
 pub mod reloc;
 pub mod sourcemap;
 pub mod symbol;

@@ -1,5 +1,5 @@
 use crate::program::model::address::{Address, AddressRange, AddressRangeIterator};
-use crate::program::model::lang::register::Register;
+use crate::program::model::lang::register::RegisterRef;
 use crate::program::util::LanguageTranslator;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -51,12 +51,18 @@ pub trait RangeMapAdapter {
 
     /// Update table name and values to reflect a new base register.
     ///
+    /// Takes [`RegisterRef`] (not a bare `&Register`) because every [`LanguageTranslator`] lookup
+    /// this needs (`get_new_register`, `is_value_translation_required`, ...) is keyed by
+    /// `RegisterRef`; there were no real implementors of this trait yet when it was first ported,
+    /// so this parameter type was corrected to match rather than forcing callers to synthesize a
+    /// throwaway `RegisterRef` at every call site.
+    ///
     /// # Errors
     /// Returns [`CancelledException`] if the user cancelled the operation via `monitor`.
     fn set_language(
         &mut self,
         translator: &dyn LanguageTranslator,
-        map_reg: &Register,
+        map_reg: &RegisterRef,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException>;
 
@@ -175,7 +181,7 @@ mod tests {
         fn set_language(
             &mut self,
             _translator: &dyn LanguageTranslator,
-            _map_reg: &Register,
+            _map_reg: &RegisterRef,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
             monitor.check_cancelled()
