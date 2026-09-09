@@ -22,6 +22,7 @@ use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
+use crate::program::model::lang::param_entry::ParamEntry;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::program::model::listing::{Function, FunctionTag, Program};
@@ -1532,6 +1533,91 @@ pub struct ParameterPieces {
     pub join_pieces: Option<Vec<Varnode>>,
 }
 
+impl ParameterPieces {
+    /// Assuming the given list of Varnodes go from most significant to least significant, merge
+    /// any contiguous elements in the list. Merges in a register space are only allowed if the
+    /// bigger Varnode exists as a formal register.
+    ///
+    /// Port of the static `ghidra.program.model.lang.ParameterPieces.mergeSequence`. Needed by
+    /// [`assign_address_from_pieces`](Self::assign_address_from_pieces), which
+    /// [`MultiMemberAssign`](crate::program::model::lang::protorules::MultiMemberAssign) calls to
+    /// stitch together the per-primitive-member pieces it collects into one storage location.
+    pub fn merge_sequence(seq: Vec<Varnode>, language: &dyn Language) -> Vec<Varnode> {
+        let big_endian = language.is_big_endian();
+        let mut i = 1usize;
+        while i < seq.len() {
+            if seq[i - 1].is_contiguous(&seq[i], big_endian) {
+                break;
+            }
+            i += 1;
+        }
+        if i >= seq.len() {
+            return seq;
+        }
+        let mut buffer: Vec<Varnode> = vec![seq[0].clone()];
+        let mut last_is_informal = false;
+        let mut i = 1usize;
+        while i < seq.len() {
+            let hi = buffer.last().expect("buffer seeded with seq[0]").clone();
+            let lo = &seq[i];
+            if hi.is_contiguous(lo, big_endian) {
+                let off = if big_endian { hi.get_offset() } else { lo.get_offset() };
+                let sz = hi.get_size() + lo.get_size();
+                let new_vn = Varnode::new(Address::new(hi.get_address().space().clone(), off), sz);
+                buffer.pop();
+                // Test if the new Varnode is a formal register
+                if !new_vn.get_address().is_stack_address() {
+                    last_is_informal = language
+                        .get_register_at(new_vn.get_address(), new_vn.get_size())
+                        .is_none();
+                }
+                buffer.push(new_vn);
+            } else {
+                if last_is_informal {
+                    break;
+                }
+                buffer.push(lo.clone());
+            }
+            i += 1;
+        }
+        if last_is_informal {
+            // If the merge contains an informal register, throw it out and keep the original
+            // sequence
+            return seq;
+        }
+        buffer
+    }
+
+    /// Generate a parameter address given the list of Varnodes making up the parameter.
+    ///
+    /// `pieces` is the given list of Varnodes; `most_to_least` is true if the list is ordered
+    /// most significant to least; `one_piece_join` is true if the address should be considered a
+    /// join of one piece; `language` is the Language associated with the calling convention.
+    ///
+    /// Port of `ghidra.program.model.lang.ParameterPieces.assignAddressFromPieces`.
+    pub fn assign_address_from_pieces(
+        &mut self,
+        mut pieces: Vec<Varnode>,
+        most_to_least: bool,
+        one_piece_join: bool,
+        language: &dyn Language,
+    ) {
+        if !most_to_least && pieces.len() > 1 {
+            pieces.reverse();
+        }
+        let pieces = Self::merge_sequence(pieces, language);
+        if pieces.len() == 1 && !one_piece_join {
+            self.address = Some(pieces[0].get_address().clone());
+            return;
+        }
+        self.join_pieces = Some(pieces);
+        // Java sets `address = Address.NO_ADDRESS` here ("Placeholder for join space address");
+        // this port's `address` is already `Option<Address>` with `None` meaning "not yet
+        // assigned" (see the field doc above), so `None` is the direct equivalent.
+        self.address = None;
+    }
+}
+
 /// Placeholder for `ghidra.program.model.lang.ParamListStandard`, referenced by
 /// [`AssignAction`](crate::program::model::lang::protorules::assign_action::AssignAction) and
 /// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
@@ -1563,6 +1649,102 @@ pub trait ParamListStandardLike {
     ) -> i32 {
         let _ = (dt, proto, pos, dt_manager, status, res);
         crate::program::model::lang::protorules::assign_action::FAIL
+    }
+
+    /// Number of [`ParamEntry`] objects in this resource list
+    /// (`ParamListStandard.getNumParamEntry`). Grown onto this trait (alongside
+    /// [`get_entry`](Self::get_entry), [`get_language`](Self::get_language), and the two provided
+    /// methods below) so that the real `AssignAction` implementors in the `protorules` package
+    /// (`ConsumeAs`, `GotoStack`, `MultiMemberAssign`, `ConsumeRemaining`, `ConsumeExtra`,
+    /// `ExtraStack`) have something to drive their own entry lookups and fallback-assignment
+    /// logic from, instead of being stubbed out. Defaults to `0` (no entries), matching a
+    /// placeholder resource list.
+    fn get_num_param_entry(&self) -> i32 {
+        0
+    }
+
+    /// The [`ParamEntry`] at the given index within this resource list
+    /// (`ParamListStandard.getEntry`). Defaults to `None` for every index, matching
+    /// [`get_num_param_entry`](Self::get_num_param_entry)'s default of `0` entries.
+    fn get_entry(&self, index: i32) -> Option<Arc<dyn ParamEntry>> {
+        let _ = index;
+        None
+    }
+
+    /// The language associated with this calling convention (`ParamListStandard.getLanguage`),
+    /// needed by [`MultiMemberAssign`](crate::program::model::lang::protorules::MultiMemberAssign)
+    /// to detect formal-register merges when stitching together a multi-piece "join" storage
+    /// location. Defaults to `None`, since a placeholder resource list has no associated
+    /// language.
+    fn get_language(&self) -> Option<Arc<dyn Language>> {
+        None
+    }
+
+    /// Assign storage for a given resource class using the fallback assignment algorithm
+    /// (`ParamListStandard.assignAddressFallback`). Provided in terms of
+    /// [`get_num_param_entry`](Self::get_num_param_entry)/[`get_entry`](Self::get_entry), the same
+    /// way [`ParamListStandardOut::assign_map_out`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut::assign_map_out)
+    /// is provided in terms of [`assign_address`](Self::assign_address)/`num_group`.
+    fn assign_address_fallback(
+        &self,
+        resource_type: crate::program::model::lang::storage_class::StorageClass,
+        tp: &Arc<dyn DataType>,
+        match_exact: bool,
+        status: &mut [i32],
+        param: &mut ParameterPieces,
+    ) -> i32 {
+        use crate::program::model::lang::storage_class::StorageClass;
+        for i in 0..self.get_num_param_entry() {
+            let Some(element) = self.get_entry(i) else {
+                continue;
+            };
+            let grp = element.get_group() as usize;
+            if status[grp] < 0 {
+                continue;
+            }
+            if resource_type != element.get_type()
+                && (match_exact || element.get_type() != StorageClass::General)
+            {
+                continue;
+            }
+            status[grp] =
+                element.get_addr_by_slot(status[grp], tp.get_aligned_length(), tp.get_alignment(), param);
+            if param.address.is_none() {
+                continue; // tp does not fit in this entry
+            }
+            if element.is_exclusion() {
+                for group in element.get_all_groups() {
+                    // For an exclusion entry, some number of groups are taken up
+                    status[group as usize] = -1;
+                }
+            }
+            param.data_type = Some(tp.clone());
+            return crate::program::model::lang::protorules::assign_action::SUCCESS;
+        }
+        param.address = None;
+        crate::program::model::lang::protorules::assign_action::FAIL
+    }
+
+    /// Extract all [`ParamEntry`] that have the given storage class and are single, "exclusion"
+    /// registers (`ParamListStandard.extractTiles`). Provided in terms of
+    /// [`get_num_param_entry`](Self::get_num_param_entry)/[`get_entry`](Self::get_entry), like
+    /// [`assign_address_fallback`](Self::assign_address_fallback) above.
+    fn extract_tiles(
+        &self,
+        res_type: crate::program::model::lang::storage_class::StorageClass,
+    ) -> Vec<Arc<dyn ParamEntry>> {
+        let mut buffer = Vec::new();
+        for i in 0..self.get_num_param_entry() {
+            let Some(entry) = self.get_entry(i) else {
+                continue;
+            };
+            if !entry.is_exclusion() || entry.get_all_groups().len() != 1 || entry.get_type() != res_type
+            {
+                continue;
+            }
+            buffer.push(entry);
+        }
+        buffer
     }
 }
 

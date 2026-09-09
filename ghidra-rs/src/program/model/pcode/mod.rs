@@ -321,6 +321,26 @@ impl Varnode {
         self.address.space().space_type() == AddressSpaceType::Ram
     }
 
+    /// True if `self` immediately follows `lo` (endian aware): `self` holds the more significant
+    /// bytes when `big_endian` is true, otherwise `self` holds the less significant bytes.
+    ///
+    /// Port of `ghidra.program.model.pcode.Varnode.isContiguous`. Needed by
+    /// [`ParameterPieces::merge_sequence`](crate::program::seam_stubs::ParameterPieces::merge_sequence)
+    /// to detect adjacent pieces that can be coalesced into a single storage location.
+    pub fn is_contiguous(&self, lo: &Varnode, big_endian: bool) -> bool {
+        let space = self.address.space();
+        if space.as_ref() != lo.address.space().as_ref() {
+            return false;
+        }
+        if big_endian {
+            let nextoff = space.truncate_offset(self.get_offset() + self.size as i64);
+            nextoff == lo.get_offset()
+        } else {
+            let nextoff = space.truncate_offset(lo.get_offset() + lo.size as i64);
+            nextoff == self.get_offset()
+        }
+    }
+
     pub fn contains(&self, addr: &Address) -> bool {
         if self.get_space_id() != addr.space().space_id() {
             return false;

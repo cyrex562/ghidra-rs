@@ -99,6 +99,24 @@ impl PrimitiveExtractor {
         &self.primitives[i]
     }
 
+    /// Consume `self`, returning the owned data-type of every extracted primitive (offsets
+    /// discarded) as `Arc`-shareable values.
+    ///
+    /// Not part of the Java `PrimitiveExtractor` API; added so
+    /// [`MultiMemberAssign`](crate::program::model::lang::protorules::multi_member_assign::MultiMemberAssign)
+    /// -- the other real caller of this extractor besides
+    /// [`HomogeneousAggregate`](super::homogeneous_aggregate::HomogeneousAggregate) -- can hand
+    /// each primitive's data-type on to
+    /// [`ParamListStandardLike::assign_address_fallback`](crate::program::seam_stubs::ParamListStandardLike::assign_address_fallback),
+    /// which is `Arc`-based (see that method's doc for why). `Primitive.dt` stays a plain
+    /// `Box<dyn DataType>` internally -- unaffected by, and not used by,
+    /// [`HomogeneousAggregate`](super::homogeneous_aggregate::HomogeneousAggregate), which only
+    /// ever borrows primitives via [`get`](Self::get) -- this method just converts each one to
+    /// an `Arc` at the boundary via the standard `Box<dyn T> -> Arc<dyn T>` conversion.
+    pub(crate) fn into_arc_types(self) -> Vec<std::sync::Arc<dyn DataType>> {
+        self.primitives.into_iter().map(|p| std::sync::Arc::from(p.dt)).collect()
+    }
+
     /// Top-level dispatch, operating on a borrow. Only reached once, from
     /// [`new`](Self::new); every recursive call goes through
     /// [`extract_owned`](Self::extract_owned) instead (see the module doc for why).

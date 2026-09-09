@@ -74,9 +74,25 @@ pub trait AssignAction {
     /// Returns a response code: [`SUCCESS`] if the Address was successfully assigned, [`FAIL`]
     /// if the Address could not be assigned, or [`HIDDENRET_PTRPARAM`] (among other
     /// `HIDDENRET_*` codes) if an additional hidden return parameter is required.
+    ///
+    /// Takes `dt` as `&Arc<dyn DataType>` rather than `&dyn DataType` (unlike, e.g.,
+    /// [`DatatypeFilter::filter`](super::datatype_filter::DatatypeFilter::filter), which only
+    /// *inspects* a data-type): several real implementors (`ConsumeAs`, `ConvertToPointer`,
+    /// `MultiMemberAssign`) need to either store `dt` into
+    /// [`ParameterPieces::data_type`](crate::program::seam_stubs::ParameterPieces::data_type)
+    /// (an `Option<Arc<dyn DataType>>`) or hand it on to
+    /// [`ParamListStandardLike::assign_address`](crate::program::seam_stubs::ParamListStandardLike::assign_address)/
+    /// `assign_address_fallback` (which are already `Arc`-based, matching how
+    /// [`PrototypePieces::intypes`](crate::program::seam_stubs::PrototypePieces::intypes) stores
+    /// its data-types). `DataType` has no generic `clone()` to mint an owned/`Arc`'d copy from a
+    /// bare `&dyn DataType`, so a borrowed signature here would make those real call sites
+    /// impossible to implement without an unsound workaround. Changed from `&dyn DataType` when
+    /// this package's `AssignAction` implementors were ported (2026-09-09); at that point this
+    /// trait had exactly one implementor in the whole crate (the test-only `GotoStackMockAction`
+    /// below), so the change carried no blast radius beyond this file.
     fn assign_address(
         &self,
-        dt: &dyn DataType,
+        dt: &Arc<dyn DataType>,
         proto: &PrototypePieces,
         pos: i32,
         dt_manager: &dyn DataTypeManager,
@@ -201,7 +217,7 @@ mod tests {
 
         fn assign_address(
             &self,
-            dt: &dyn DataType,
+            dt: &Arc<dyn DataType>,
             _proto: &PrototypePieces,
             pos: i32,
             _dt_manager: &dyn DataTypeManager,
@@ -316,7 +332,7 @@ mod tests {
             stack_offset: 8,
         });
 
-        let dt = MockDataType;
+        let dt: Arc<dyn DataType> = Arc::new(MockDataType);
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();

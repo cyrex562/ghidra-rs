@@ -1048,6 +1048,15 @@ pub const ATTRIB_COLOR: AttributeId = AttributeId::new("color", 173);
 // renumbers on an actual same-type collision).
 pub const ATTRIB_SIZES: AttributeId = AttributeId::new("sizes", 151);
 pub const ATTRIB_MAX_PRIMITIVES: AttributeId = AttributeId::new("maxprimitives", 153);
+// Ids 127/129/155/156/157 match `AttributeId.java`'s `ATTRIB_STRATEGY`/`ATTRIB_VOIDLOCK`/
+// `ATTRIB_MATCHSIZE`/`ATTRIB_AFTER_BYTES`/`ATTRIB_AFTER_STORAGE` directly; none collides with any
+// AttributeId already declared in this file (the numbering scheme above only renumbers on an
+// actual same-type collision).
+pub const ATTRIB_STRATEGY: AttributeId = AttributeId::new("strategy", 127);
+pub const ATTRIB_VOIDLOCK: AttributeId = AttributeId::new("voidlock", 129);
+pub const ATTRIB_MATCHSIZE: AttributeId = AttributeId::new("matchsize", 155);
+pub const ATTRIB_AFTER_BYTES: AttributeId = AttributeId::new("afterbytes", 156);
+pub const ATTRIB_AFTER_STORAGE: AttributeId = AttributeId::new("afterstorage", 157);
 
 #[cfg(test)]
 mod tests {
