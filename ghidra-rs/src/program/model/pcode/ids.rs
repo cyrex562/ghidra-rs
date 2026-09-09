@@ -1069,6 +1069,19 @@ pub const ATTRIB_STACKSPILL: AttributeId = AttributeId::new("stackspill", 150);
 pub const ATTRIB_BACKFILL: AttributeId = AttributeId::new("backfill", 152);
 pub const ATTRIB_REVERSESIGNIF: AttributeId = AttributeId::new("reversesignif", 154);
 pub const ATTRIB_FILL_ALTERNATE: AttributeId = AttributeId::new("fillalternate", 158);
+// Real ids 70/71/72/73/74/85/88 match `AttributeId.java`'s `ATTRIB_DYNAMIC`/
+// `ATTRIB_INCIDENTALCOPY`/`ATTRIB_INJECT`/`ATTRIB_PARAMSHIFT`/`ATTRIB_TARGETOP`/
+// `ATTRIB_FARPOINTER`/`ATTRIB_USEROP` directly; none collides with any `AttributeId` already
+// declared in this file (the numbering scheme above only renumbers on an actual same-type
+// collision). Needed by `InjectPayloadSleigh`/`InjectPayloadCallother`/`InjectPayloadSegment`'s
+// `<pcode>`/`<callotherfixup>`/`<segmentop>` encode/decode.
+pub const ATTRIB_DYNAMIC: AttributeId = AttributeId::new("dynamic", 70);
+pub const ATTRIB_INCIDENTALCOPY: AttributeId = AttributeId::new("incidentalcopy", 71);
+pub const ATTRIB_INJECT: AttributeId = AttributeId::new("inject", 72);
+pub const ATTRIB_PARAMSHIFT: AttributeId = AttributeId::new("paramshift", 73);
+pub const ATTRIB_TARGETOP: AttributeId = AttributeId::new("targetop", 74);
+pub const ATTRIB_FARPOINTER: AttributeId = AttributeId::new("farpointer", 85);
+pub const ATTRIB_USEROP: AttributeId = AttributeId::new("userop", 88);
 
 #[cfg(test)]
 mod tests {

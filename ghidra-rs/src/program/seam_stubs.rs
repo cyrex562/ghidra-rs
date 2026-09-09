@@ -1344,17 +1344,16 @@ pub trait PcodeInjectLibrary {
         None
     }
 
-    /// Stands in for `PcodeInjectLibrary.buildInjectContext()`.
-    fn build_inject_context(&self) -> Box<dyn InjectContext> {
+    /// Stands in for `PcodeInjectLibrary.buildInjectContext()`. Used to return a boxed placeholder
+    /// trait object; now that
+    /// [`InjectContext`](crate::program::model::lang::inject_context::InjectContext) is a real,
+    /// concrete value type, this returns it by value instead. The default body still panics only
+    /// because `PcodeInjectLibrary` itself remains a stub with no real state to build a context
+    /// from.
+    fn build_inject_context(&self) -> crate::program::model::lang::inject_context::InjectContext {
         unimplemented!("PcodeInjectLibrary::build_inject_context not yet ported")
     }
 }
-
-/// Placeholder for `ghidra.program.model.lang.InjectContext`, referenced by
-/// [`InjectPayload`](crate::program::model::lang::inject_payload::InjectPayload)
-/// before the real class is ported. `InjectPayload` only ever passes this type through, so no
-/// members are needed yet.
-pub trait InjectContext {}
 
 /// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecPair`, referenced by
 /// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)'s

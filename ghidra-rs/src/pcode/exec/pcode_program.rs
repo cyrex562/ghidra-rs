@@ -127,7 +127,7 @@ impl PcodeProgram {
                 "no such inject payload: {name}"
             )))
         })?;
-        let pcode = payload.get_pcode(program, ctx.as_ref())?;
+        let pcode = payload.get_pcode(program, &ctx)?;
         let language = program.get_language().expect("program has no language");
         Ok(Self::new(language, pcode, HashMap::new()))
     }

@@ -216,7 +216,7 @@ mod tests {
     use crate::program::model::pcode::PcodeOp;
     use crate::program::model::scalar::Scalar;
     use crate::program::model::symbol::SourceType;
-    use crate::program::seam_stubs::{InjectContext, InstructionContext};
+    use crate::program::seam_stubs::InstructionContext;
 use crate::program::model::mem::MemBuffer;
 
     fn addr(space: &Arc<AddressSpace>, offset: i64) -> Address {

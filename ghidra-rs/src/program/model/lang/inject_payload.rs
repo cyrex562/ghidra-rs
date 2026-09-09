@@ -1,10 +1,10 @@
 use crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit;
+use crate::program::model::lang::inject_context::InjectContext;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::program::Program;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::{Encoder, PcodeOp};
-use crate::program::seam_stubs::InjectContext;
 use crate::util::exception::NotFoundException;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
@@ -76,6 +76,14 @@ pub enum InjectPayloadError {
     UnknownInstruction(UnknownInstructionException),
     /// An expected aspect of the injection is not present in the context.
     NotFound(NotFoundException),
+    /// The requested operation depends on lower-level sleigh-parser infrastructure
+    /// (`ParserWalker`/`PcodeEmit`/`SleighParserContext`) that is not yet ported far enough to
+    /// support it for real. Not part of Java's `InjectPayload.inject`/`getPcode` `throws` clause
+    /// -- this crate-only variant lets an otherwise-real [`InjectPayload`] implementation report
+    /// the gap through its normal `Result` return instead of panicking. See
+    /// [`InjectPayloadSleighImpl`](crate::program::model::lang::inject_payload_sleigh::InjectPayloadSleighImpl)'s
+    /// `inject`/`get_pcode` doc comments for the exact blocker.
+    NotYetPorted(String),
 }
 
 impl From<MemoryAccessException> for InjectPayloadError {
@@ -109,6 +117,7 @@ impl fmt::Display for InjectPayloadError {
             InjectPayloadError::Io(err) => write!(f, "{}", err),
             InjectPayloadError::UnknownInstruction(err) => write!(f, "{}", err),
             InjectPayloadError::NotFound(err) => write!(f, "{}", err),
+            InjectPayloadError::NotYetPorted(msg) => write!(f, "not yet ported: {}", msg),
         }
     }
 }
@@ -151,7 +160,7 @@ pub trait InjectPayload {
     /// if an expected aspect of the injection is not present in context.
     fn inject(
         &self,
-        context: &dyn InjectContext,
+        context: &InjectContext,
         emit: &mut dyn PcodeEmit,
     ) -> Result<(), InjectPayloadError>;
 
@@ -163,7 +172,7 @@ pub trait InjectPayload {
     fn get_pcode(
         &self,
         program: &dyn Program,
-        context: &dyn InjectContext,
+        context: &InjectContext,
     ) -> Result<Vec<PcodeOp>, InjectPayloadError>;
 
     /// Returns true if the injected p-code falls through.
@@ -203,9 +212,6 @@ pub trait InjectPayload {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    struct MockInjectContext;
-    impl InjectContext for MockInjectContext {}
 
     struct MockPcodeEmit;
     impl PcodeEmit for MockPcodeEmit {
@@ -371,7 +377,7 @@ mod tests {
 
         fn inject(
             &self,
-            _context: &dyn InjectContext,
+            _context: &InjectContext,
             _emit: &mut dyn PcodeEmit,
         ) -> Result<(), InjectPayloadError> {
             Ok(())
@@ -380,7 +386,7 @@ mod tests {
         fn get_pcode(
             &self,
             _program: &dyn Program,
-            _context: &dyn InjectContext,
+            _context: &InjectContext,
         ) -> Result<Vec<PcodeOp>, InjectPayloadError> {
             Ok(Vec::new())
         }
@@ -445,7 +451,7 @@ mod tests {
         assert!(!payload.is_error_placeholder());
         assert_eq!(payload.get_input().len(), 1);
         assert_eq!(payload.get_output().len(), 1);
-        assert!(payload.inject(&MockInjectContext, &mut MockPcodeEmit).is_ok());
+        assert!(payload.inject(&InjectContext::new(), &mut MockPcodeEmit).is_ok());
         assert!(payload.encode(&mut MockEncoder).is_ok());
     }
 

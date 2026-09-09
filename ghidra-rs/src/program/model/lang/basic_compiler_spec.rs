@@ -190,7 +190,7 @@ mod tests {
         }
         fn inject(
             &self,
-            _context: &dyn crate::program::seam_stubs::InjectContext,
+            _context: &crate::program::model::lang::inject_context::InjectContext,
             _emit: &mut dyn crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit,
         ) -> Result<(), InjectPayloadError> {
             unimplemented!("not exercised by this smoke test")
@@ -198,7 +198,7 @@ mod tests {
         fn get_pcode(
             &self,
             _program: &dyn crate::program::model::listing::Program,
-            _context: &dyn crate::program::seam_stubs::InjectContext,
+            _context: &crate::program::model::lang::inject_context::InjectContext,
         ) -> Result<Vec<crate::program::model::pcode::PcodeOp>, InjectPayloadError> {
             unimplemented!("not exercised by this smoke test")
         }

@@ -106,7 +106,7 @@ mod tests {
         }
         fn inject(
             &self,
-            _context: &dyn crate::program::seam_stubs::InjectContext,
+            _context: &crate::program::model::lang::inject_context::InjectContext,
             _emit: &mut dyn crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit,
         ) -> Result<(), InjectPayloadError> {
             Ok(())
@@ -114,7 +114,7 @@ mod tests {
         fn get_pcode(
             &self,
             _program: &dyn Program,
-            _context: &dyn crate::program::seam_stubs::InjectContext,
+            _context: &crate::program::model::lang::inject_context::InjectContext,
         ) -> Result<Vec<PcodeOp>, InjectPayloadError> {
             Ok(Vec::new())
         }
