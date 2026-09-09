@@ -12,8 +12,12 @@ pub mod address_range_object_map;
 pub mod database_range_map_adapter;
 pub mod in_memory_range_map_adapter;
 pub mod index_to_address_range_iterator_adapter;
+pub mod old_program_context_db;
+pub mod program_register_context_db;
 
 pub use address_range_object_map::AddressRangeObjectMap;
 pub use database_range_map_adapter::DatabaseRangeMapAdapter;
 pub use in_memory_range_map_adapter::InMemoryRangeMapAdapter;
 pub use index_to_address_range_iterator_adapter::IndexToAddressRangeIteratorAdapter;
+pub use old_program_context_db::OldProgramContextDB;
+pub use program_register_context_db::ProgramRegisterContextDB;

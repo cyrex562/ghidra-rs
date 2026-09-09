@@ -1,3 +1,5 @@
+pub mod abstract_program_context;
+pub mod abstract_stored_program_context;
 pub mod address_correlation;
 pub mod address_correlator;
 pub mod address_field_location;
@@ -40,6 +42,7 @@ pub mod program_location;
 pub mod program_merge;
 pub mod program_merge_filter;
 pub mod range_map_adapter;
+pub mod register_value_store;
 pub mod simple_diff_utility;
 pub mod string;
 pub mod string_property_map;

@@ -49,6 +49,7 @@ pub mod prototype_model;
 pub mod register;
 pub mod register_translator;
 pub mod register_tree;
+pub mod register_value;
 pub mod sleigh;
 pub mod space_names;
 pub mod storage_class;
