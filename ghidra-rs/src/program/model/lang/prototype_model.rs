@@ -273,6 +273,23 @@ pub trait PrototypeModel {
         let _ = other;
         false
     }
+
+    /// Returns this instance as [`std::any::Any`], so an [`is_equivalent`](Self::is_equivalent)
+    /// implementation can downcast `other` to a concrete type and compare structurally -- mirrors
+    /// Java's `getClass() != obj.getClass()` check (there being no `instanceof`/reflection
+    /// equivalent for a Rust trait object). Mirrors the identical `as_any` addition already made
+    /// to [`ParamList`](crate::program::model::lang::param_list::ParamList) for the same reason.
+    /// Defaulted (so existing implementors keep compiling) to a value that downcasts to nothing
+    /// meaningful, matching [`ParamList::as_any`](crate::program::model::lang::param_list::ParamList::as_any)'s
+    /// "not equivalent to anything by default" convention. Added when porting
+    /// [`PrototypeModelMerged`](crate::program::model::lang::prototype_model_merged::PrototypeModelMerged),
+    /// the first concrete `PrototypeModel` in this crate whose `is_equivalent` genuinely needs a
+    /// same-concrete-type check (see that module for why
+    /// [`PrototypeModelError`](crate::program::model::lang::prototype_model_error::PrototypeModelError)
+    /// left `is_equivalent` un-overridden instead).
+    fn as_any(&self) -> &dyn std::any::Any {
+        &()
+    }
 }
 
 #[cfg(test)]
