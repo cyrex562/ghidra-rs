@@ -118,6 +118,9 @@ impl InjectPayloadSleigh for InjectPayloadCallotherError {
     fn set_template(&mut self, template: ConstructTpl) {
         self.inner.set_template(template)
     }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 #[cfg(test)]

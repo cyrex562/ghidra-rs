@@ -267,6 +267,9 @@ impl InjectPayloadSleigh for InjectPayloadSegment {
     fn set_template(&mut self, template: crate::program::model::lang::sleigh::template::ConstructTpl) {
         self.base.set_template(template)
     }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 #[cfg(test)]

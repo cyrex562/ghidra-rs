@@ -231,6 +231,9 @@ mod tests {
             None
         }
         fn set_template(&mut self, _template: crate::program::model::lang::sleigh::template::ConstructTpl) {}
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
     }
 
     /// A minimal [`BasicCompilerSpec`] mock that actually implements the model-xref/dedup,

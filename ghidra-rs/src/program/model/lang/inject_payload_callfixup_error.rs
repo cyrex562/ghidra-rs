@@ -125,6 +125,9 @@ impl InjectPayloadSleigh for InjectPayloadCallfixupError {
     fn set_template(&mut self, template: ConstructTpl) {
         self.inner.set_template(template)
     }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl InjectPayloadCallfixup for InjectPayloadCallfixupError {

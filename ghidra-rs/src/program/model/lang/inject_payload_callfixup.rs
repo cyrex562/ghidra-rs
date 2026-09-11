@@ -225,6 +225,9 @@ impl InjectPayloadSleigh for InjectPayloadCallfixupImpl {
     fn set_template(&mut self, template: ConstructTpl) {
         self.base.set_template(template)
     }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl InjectPayloadCallfixup for InjectPayloadCallfixupImpl {
@@ -336,6 +339,10 @@ mod tests {
 
         fn set_template(&mut self, template: ConstructTpl) {
             self.is_fallthru = compute_fall_thru(&template.vec);
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
     }
 

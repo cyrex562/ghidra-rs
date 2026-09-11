@@ -54,6 +54,33 @@ impl SleighLanguage {
         self._endian == Endian::Big
     }
 
+    /// Returns the first free offset within the unique address space, as recorded in the `.sla`
+    /// file's `<sleigh uniqbase="...">` attribute.
+    ///
+    /// Port of `SleighLanguage.getUniqueBase()`.
+    pub fn get_unique_base(&self) -> u64 {
+        self._unique_base
+    }
+
+    /// Returns the number of user-defined (`CALLOTHER`) ops known to this language.
+    ///
+    /// Port of `SleighLanguage.getNumberOfUserDefinedOpNames()`, which delegates to
+    /// `SymbolTable.getNumberOfUserDefinedOpNames()`.
+    pub fn get_number_of_user_defined_op_names(&self) -> i32 {
+        self._symbol_table.user_ops.len() as i32
+    }
+
+    /// Returns the name of the `index`th user-defined op, or `None` if `index` is out of range.
+    ///
+    /// Port of `SleighLanguage.getUserDefinedOpName(int)`, which delegates to
+    /// `SymbolTable.getUserDefinedOpName(int)`.
+    pub fn get_user_defined_op_name(&self, index: i32) -> Option<String> {
+        let id = *self._symbol_table.user_ops.get(index as usize)?;
+        self._symbol_table
+            .find_symbol(id)
+            .map(|sym| sym.header().name.clone())
+    }
+
     pub fn decode(decoder: &dyn Decoder, id: String) -> Result<Self, DecoderError> {
         let el = decoder.open_element_with_id(ELEM_SLEIGH)?;
 

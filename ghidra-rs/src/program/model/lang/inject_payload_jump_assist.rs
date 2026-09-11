@@ -146,6 +146,9 @@ impl InjectPayloadSleigh for InjectPayloadJumpAssist {
     fn set_template(&mut self, template: ConstructTpl) {
         self.base.set_template(template)
     }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 #[cfg(test)]

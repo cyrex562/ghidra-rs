@@ -72,6 +72,18 @@ pub trait InjectPayloadSleigh: InjectPayload {
     ///
     /// Port of the protected `InjectPayloadSleigh.setTemplate(ConstructTpl)`.
     fn set_template(&mut self, template: ConstructTpl);
+
+    /// Returns `self` as `&dyn Any`, so callers holding a `dyn InjectPayloadSleigh` trait object
+    /// can `downcast_ref` back to a specific concrete implementor.
+    ///
+    /// Not part of the Java API -- `PcodeInjectLibrary.encodeCompilerSpec()` needs an
+    /// `instanceof InjectPayloadSegment` check on payloads it only otherwise holds as
+    /// `InjectPayloadSleigh`/`InjectPayload`, which Java gets for free from its class hierarchy.
+    /// This crate's [`PcodeInjectLibrary`](crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary)
+    /// stores every payload behind this trait object (since every constructible payload type in
+    /// this crate implements it), so it needs an explicit downcast to recover that same
+    /// information.
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 /// Determines whether p-code ending in `op_vec`'s final operation falls through, i.e. does not
@@ -706,6 +718,10 @@ impl InjectPayloadSleigh for InjectPayloadSleighImpl {
     fn set_template(&mut self, template: ConstructTpl) {
         InjectPayloadSleighImpl::set_template(self, template)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 #[cfg(test)]
@@ -812,6 +828,10 @@ mod tests {
         fn set_template(&mut self, template: ConstructTpl) {
             self.is_fallthru = compute_fall_thru(&template.vec);
             self.template = Some(template);
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
     }
 
