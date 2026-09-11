@@ -18,9 +18,11 @@
 //! the `encodeAttributes`/`encode` overloads) don't operate on an instance, so they stay as free
 //! functions in this module, one per Java overload (Rust has no overloading).
 //!
-//! `Varnode.decodePieces`/`Varnode.encodePiece` (needed by the join-address wire format) are not
-//! yet part of the ported [`Varnode`](crate::program::model::pcode::Varnode) type, so their
-//! logic is inlined here as private helpers rather than growing `Varnode`'s own API.
+//! `Varnode.decodePieces`/`Varnode.encodePiece` (needed by the join-address wire format) are now
+//! ported directly onto [`Varnode`](crate::program::model::pcode::Varnode) itself
+//! ([`Varnode::decode_pieces`](crate::program::model::pcode::Varnode::decode_pieces),
+//! [`Varnode::encode_piece`](crate::program::model::pcode::Varnode::encode_piece)); this module
+//! calls through to them rather than duplicating the logic.
 
 use std::io;
 use std::sync::Arc;
@@ -425,9 +427,9 @@ pub fn decode_storage_from_attributes(
         Ok(Box::new(VarnodeListStorage(vec![varnode])))
     } else {
         decoder.rewind_attributes();
-        let (pieces, _logical_size) = decode_varnode_pieces(decoder)?;
+        let join = Varnode::decode_pieces(decoder)?;
         pcode_factory
-            .get_join_storage(pieces)
+            .get_join_storage(join.pieces)
             .map_err(|e| DecoderException::with_cause("failed to build join storage", e))
     }
 }
@@ -478,66 +480,6 @@ pub fn decode(decoder: &dyn Decoder) -> Result<Address, DecoderException> {
         None => Ok(SpecialAddress::no_address()),
         Some(spc) => Ok(spc.address(offset)),
     }
-}
-
-/// Decode the "pieceN"/"logicalsize" attributes of the current element into a list of physical
-/// varnode pieces plus the overall logical size. Port of the relevant part of
-/// `Varnode.decodePieces(Decoder)` (the `ATTRIB_UNKNOWN`/`getIndexedAttributeId` fallback used
-/// only by decoders that can't resolve an attribute name up front is not modeled, since this
-/// crate's [`Decoder`] implementations always resolve attribute ids directly).
-fn decode_varnode_pieces(decoder: &dyn Decoder) -> Result<(Vec<Varnode>, i32), DecoderException> {
-    let mut pieces = Vec::new();
-    let mut size_accum: i32 = 0;
-    let mut logical_size: i32 = 0;
-    loop {
-        let attrib_id = decoder.get_next_attribute_id().map_err(decode_err)?;
-        if attrib_id == 0 {
-            break;
-        }
-        if attrib_id == ATTRIB_LOGICALSIZE.id {
-            logical_size = decoder.read_unsigned_integer().map_err(decode_err)? as i32;
-            continue;
-        }
-        if attrib_id >= ATTRIB_PIECE.id {
-            let index = (attrib_id - ATTRIB_PIECE.id) as usize;
-            if index > MAX_PIECES {
-                continue;
-            }
-            if index != pieces.len() {
-                return Err(DecoderException::new("\"piece\" attributes must be in order"));
-            }
-            let piece_str = decoder.read_string().map_err(decode_err)?;
-            let addr_factory = decoder.get_address_factory();
-            let vn = decode_varnode_piece(&piece_str, addr_factory.as_ref())?;
-            size_accum += vn.get_size();
-            pieces.push(vn);
-        }
-    }
-    let total = if logical_size != 0 { logical_size } else { size_accum };
-    Ok((pieces, total))
-}
-
-/// Decode a single `"space:0xoffset:size"` join-address piece. Port of the relevant part of
-/// `Varnode.decodePiece(String, AddressFactory)` (the register-name form is a `// TODO` in the
-/// Java source itself -- `addrFactory` can't resolve register names -- so it is not modeled).
-fn decode_varnode_piece(piece_str: &str, addr_factory: &dyn AddressFactory) -> Result<Varnode, DecoderException> {
-    let tokens: Vec<&str> = piece_str.split(':').collect();
-    if tokens.len() != 3 {
-        return Err(DecoderException::new(&format!("Invalid \"join\" address piece: {piece_str}")));
-    }
-    let space = addr_factory.get_address_space_by_name(tokens[0]).ok_or_else(|| {
-        DecoderException::new(&format!("Invalid space for \"join\" address piece: {piece_str}"))
-    })?;
-    let hex = tokens[1].strip_prefix("0x").ok_or_else(|| {
-        DecoderException::new(&format!("Invalid offset for \"join\" address piece: {piece_str}"))
-    })?;
-    let offset = u64::from_str_radix(hex, 16).map_err(|_| {
-        DecoderException::new(&format!("Invalid offset for \"join\" address piece: {piece_str}"))
-    })?;
-    let size: i32 = tokens[2].parse().map_err(|_| {
-        DecoderException::new(&format!("Invalid size for \"join\" address piece: {piece_str}"))
-    })?;
-    Ok(Varnode::new(space.address(offset as i64), size))
 }
 
 /// Encode "space" and "offset" attributes for the current element, describing the given Address
@@ -641,19 +583,12 @@ pub fn encode_varnodes(encoder: &mut dyn Encoder, varnodes: Option<&[Varnode]>, 
     encoder.open_element(ELEM_ADDR)?;
     encoder.write_space(ATTRIB_SPACE, variable_space().as_ref())?;
     for (i, vn) in varnodes.iter().enumerate() {
-        encoder.write_string_indexed(ATTRIB_PIECE, i as i32, &encode_varnode_piece(vn))?;
+        encoder.write_string_indexed(ATTRIB_PIECE, i as i32, &vn.encode_piece())?;
     }
     if logical_size != 0 {
         encoder.write_unsigned_integer(ATTRIB_LOGICALSIZE, logical_size as u64)?;
     }
     encoder.close_element(ELEM_ADDR)
-}
-
-/// Encode a single Varnode as a `"space:0xoffset:size"` join-address piece string. Port of
-/// `Varnode.encodePiece()`.
-fn encode_varnode_piece(vn: &Varnode) -> String {
-    let addr = vn.get_address();
-    format!("{}:0x{:x}:{}", addr.space().name(), addr.unsigned_offset(), vn.get_size())
 }
 
 /// Stands in for `AddressSpace.VARIABLE_SPACE`: the address space used to contain all variables

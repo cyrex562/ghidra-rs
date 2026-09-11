@@ -1121,6 +1121,16 @@ pub const ATTRIB_OPCODE: AttributeId = AttributeId::new("opcode", 78);
 pub const ATTRIB_UNIQ: AttributeId = AttributeId::new("uniq", 183);
 pub const ATTRIB_ADDRTIED: AttributeId = AttributeId::new("addrtied", 184);
 pub const ATTRIB_FIELD: AttributeId = AttributeId::new("field", 185);
+// Real Ghidra ids are 31/32/33/34 (`AttributeId.java`'s `ATTRIB_GRP`/`ATTRIB_INPUT`/
+// `ATTRIB_PERSISTS`/`ATTRIB_UNAFF`), all of which collide with `AttributeId`s already declared in
+// this file (31=`ATTRIB_SIGNBIT`, 32=`ATTRIB_ENDBYTE`, 33=`ATTRIB_STARTBYTE`,
+// 34=`ATTRIB_VERSION`), so all four are renumbered together to continue the local counter above
+// instead, per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`. Needed by
+// `Varnode::decode`'s second attribute pass.
+pub const ATTRIB_GRP: AttributeId = AttributeId::new("grp", 186);
+pub const ATTRIB_INPUT: AttributeId = AttributeId::new("input", 187);
+pub const ATTRIB_PERSISTS: AttributeId = AttributeId::new("persists", 188);
+pub const ATTRIB_UNAFF: AttributeId = AttributeId::new("unaff", 189);
 
 #[cfg(test)]
 mod tests {
