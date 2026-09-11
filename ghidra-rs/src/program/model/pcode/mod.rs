@@ -112,7 +112,7 @@ pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition}
 pub use list_linked::{LinkedIter, ListLinked};
 pub use mapped_data_entry::MappedDataEntry;
 pub use mapped_entry::MappedEntry;
-pub use packed::PackedDecode;
+pub use packed::{PackedDecode, PackedEncode};
 pub use packed_bytes::PackedBytes;
 pub use partial_union::PartialUnion;
 pub use patch_encoder::PatchEncoder;
