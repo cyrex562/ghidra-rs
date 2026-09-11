@@ -23,12 +23,14 @@
 //! [`get_pc_address`](HighSymbol::get_pc_address), [`get_storage`](HighSymbol::get_storage), and
 //! [`get_mutability`](HighSymbol::get_mutability) all delegate, in Java, to the private
 //! `entryList[0]` (a `SymbolEntry`). Rather than requiring every implementor to also expose that
-//! raw entry (`SymbolEntry`/`MappedEntry`/`MappedDataEntry`/`DynamicEntry` are not modeled as a
-//! trait hierarchy anywhere else in this crate either), each of these is kept as an independent
-//! trait method defaulting to the value a `HighSymbol` with no attached mapping would produce;
-//! `get_first_whole_map` itself is kept for API completeness but defaults to `None` since nothing
-//! yet needs the raw entry handle (see the new [`SymbolEntry`
-//! placeholder](crate::program::seam_stubs::SymbolEntry) in `seam_stubs.rs`).
+//! raw entry, each of these (other than `get_first_whole_map`) is kept as an independent trait
+//! method defaulting to the value a `HighSymbol` with no attached mapping would produce.
+//! `get_first_whole_map` itself is kept for API completeness but defaults to `None` since no
+//! implementor in this crate yet attaches a real mapping list; its return type is the real, now
+//! fully-ported [`SymbolEntry`](crate::program::model::pcode::symbol_entry::SymbolEntry) trait
+//! (`MappedEntry`/`MappedDataEntry`/promoted from the tiny opaque marker trait that used to live
+//! at `seam_stubs::SymbolEntry` -- this swap only changes the type this method's `None` is typed
+//! against; no implementor overrides it, so the change is behavior-preserving).
 //!
 //! [`get_program`](HighSymbol::get_program) is required with no default (mirroring
 //! `CodeSymbol::get_program`): the real method reads `dtmanage.getProgram()`, and `dtmanage`
@@ -67,7 +69,8 @@ use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::high_function::HighFunction;
 use crate::program::model::pcode::high_variable::HighVariable;
 use crate::program::model::symbol::{Namespace, Symbol};
-use crate::program::seam_stubs::{PlaceholderDataType, PlaceholderVariableStorage, SymbolEntry};
+use crate::program::model::pcode::symbol_entry::SymbolEntry;
+use crate::program::seam_stubs::{PlaceholderDataType, PlaceholderVariableStorage};
 use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// Put keys in the dynamic symbol portion of the key space. Port of `HighSymbol.ID_BASE`.

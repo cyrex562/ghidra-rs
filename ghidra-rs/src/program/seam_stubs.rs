@@ -75,12 +75,15 @@ pub struct PlaceholderVariableStorage;
 
 impl VariableStorage for PlaceholderVariableStorage {}
 
-/// Placeholder for `ghidra.program.model.pcode.SymbolEntry`, referenced by
+/// Formerly the placeholder for `ghidra.program.model.pcode.SymbolEntry`, referenced by
 /// [`HighSymbol::get_first_whole_map`](crate::program::model::pcode::high_symbol::HighSymbol::get_first_whole_map)
-/// before the real `SymbolEntry`/`MappedEntry`/`MappedDataEntry`/`DynamicEntry` class hierarchy is
-/// ported. `HighSymbol::get_first_whole_map` only ever needs this as an opaque type slot (its
-/// default body always returns `None`; no current implementor constructs a real entry), so no
-/// members are exposed yet.
+/// before that class was ported. `SymbolEntry` has since been ported for real (see
+/// [`symbol_entry::SymbolEntry`](crate::program::model::pcode::symbol_entry::SymbolEntry), with
+/// concrete implementors [`MappedEntry`](crate::program::model::pcode::mapped_entry::MappedEntry)/
+/// [`MappedDataEntry`](crate::program::model::pcode::mapped_data_entry::MappedDataEntry)), and
+/// `get_first_whole_map` now returns that real trait instead of this marker. This placeholder is
+/// kept only because nothing else in this file references it and removing an unrelated public
+/// item was judged out of scope for that change; new code should use the real trait.
 pub trait SymbolEntry: Send + Sync {}
 
 /// Minimal [`VariableStorage`] backing [`DynamicEntry::get_storage`] and

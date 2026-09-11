@@ -28,6 +28,8 @@ pub mod high_variable;
 pub mod ids;
 pub mod linked_byte_buffer;
 pub mod list_linked;
+pub mod mapped_data_entry;
+pub mod mapped_entry;
 pub mod packed;
 pub mod packed_bytes;
 pub mod partial_union;
@@ -38,6 +40,7 @@ pub mod pcode_exception;
 pub mod pcode_factory;
 pub mod pcode_override;
 pub mod string_ingest;
+pub mod symbol_entry;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
@@ -81,6 +84,8 @@ pub use high_variable::{HighVariable, HighVariableKind};
 pub use ids::*;
 pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition};
 pub use list_linked::{LinkedIter, ListLinked};
+pub use mapped_data_entry::MappedDataEntry;
+pub use mapped_entry::MappedEntry;
 pub use packed::PackedDecode;
 pub use packed_bytes::PackedBytes;
 pub use partial_union::PartialUnion;
@@ -94,6 +99,7 @@ pub use pcode_exception::PcodeException;
 pub use pcode_factory::PcodeFactory;
 pub use pcode_override::PcodeOverride;
 pub use string_ingest::StringIngest;
+pub use symbol_entry::SymbolEntry;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpCode {
