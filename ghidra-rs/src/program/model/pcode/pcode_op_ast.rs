@@ -34,11 +34,19 @@
 //! mutators are not modeled by it either. Faithfully reproducing that constructor shape -- and
 //! nothing more -- this file stores its own `seqnum`/`opcode`/`inputs`/`output` fields directly,
 //! with `inputs: Vec<Option<Varnode>>` sized to `numinputs` and initially all `None`,
-//! matching Java's real starting state. // TODO(port): `PcodeOp.java`'s own accessors/mutators for
-//! these fields (`getOpcode`, `getInput`, `setInput`, `setOutput`, `setOpcode`, `getSeqnum`, and
-//! everything else in that 752-line base class) are out of scope for this file, which only ports
-//! `PcodeOpAST.java`'s own 114 lines; only trivial read-only accessors for the constructor-recorded
-//! state are exposed below, for testability.
+//! matching Java's real starting state.
+//!
+//! `PcodeOp.java`'s own base-class accessors/mutators (`getOpcode`, `getInput`, `setInput`,
+//! `setOutput`, `getSeqnum`, and everything else in that 760-line base class) remain out of scope
+//! for *this* file beyond what testability and real callers need: [`PcodeOpAST::get_opcode`],
+//! [`get_seqnum`](PcodeOpAST::get_seqnum), [`num_inputs`](PcodeOpAST::num_inputs),
+//! [`get_input`](PcodeOpAST::get_input), and [`get_output`](PcodeOpAST::get_output) are read-only
+//! accessors for the constructor-recorded state, exposed for testability. The one exception is
+//! [`set_opcode`](PcodeOpAST::set_opcode) (the inherited `PcodeOp.setOpcode(int)`), added
+//! specifically because it is what
+//! [`PcodeOpBank::change_opcode`](crate::program::model::pcode::pcode_op_bank::PcodeOpBank::change_opcode)
+//! needs (`changeOpcode` in Java is just `((PcodeOpAST) op).setOpcode(newopc)`); the `opcode`
+//! field is a `Cell<OpCode>` rather than a plain field so this can be exposed through `&self`.
 
 use crate::program::model::address::Address;
 use crate::program::model::pcode::list_linked::LinkedIter;
@@ -55,8 +63,12 @@ use std::sync::Arc;
 pub struct PcodeOpAST {
     /// Port of the inherited `SequenceNumber seqnum` field, recorded by the constructor.
     pub seqnum: SequenceNumber,
-    /// Port of the inherited `int opcode` field, recorded by the constructor.
-    opcode: OpCode,
+    /// Port of the inherited `int opcode` field, recorded by the constructor. A `Cell` (rather
+    /// than a plain field) so [`set_opcode`](Self::set_opcode) -- the inherited
+    /// `PcodeOp.setOpcode(int)` mutator -- can be exposed through `&self`, matching every other
+    /// mutator on this struct (all of which take `&self` plus interior mutability, since
+    /// `PcodeOpBank` only ever holds `Arc<PcodeOpAST>`, never `&mut`).
+    opcode: Cell<OpCode>,
     /// Port of the inherited `Varnode[] input` field: `numinputs` slots, each `None` ("null" in
     /// Java) until `PcodeOp.setInput` (out of scope; see module docs) fills it in.
     inputs: RefCell<Vec<Option<Varnode>>>,
@@ -82,7 +94,7 @@ impl PcodeOpAST {
     pub fn new(seqnum: SequenceNumber, op: OpCode, numinputs: usize) -> Self {
         Self {
             seqnum,
-            opcode: op,
+            opcode: Cell::new(op),
             inputs: RefCell::new(vec![None; numinputs]),
             output: RefCell::new(None),
             b_dead: Cell::new(true),
@@ -104,7 +116,16 @@ impl PcodeOpAST {
 
     /// Port of the inherited `PcodeOp.getOpcode()`.
     pub fn get_opcode(&self) -> OpCode {
-        self.opcode
+        self.opcode.get()
+    }
+
+    /// Set the pcode operation code. Port of the inherited `PcodeOp.setOpcode(int)`. Previously
+    /// out of scope for this file (see the module docs' history), but now provided since it is
+    /// small, self-contained, and is exactly what unblocks
+    /// [`PcodeOpBank::change_opcode`](crate::program::model::pcode::pcode_op_bank::PcodeOpBank::change_opcode)
+    /// (which in real Java is just `((PcodeOpAST) op).setOpcode(newopc)`).
+    pub fn set_opcode(&self, o: OpCode) {
+        self.opcode.set(o);
     }
 
     /// Port of the inherited `PcodeOp.getNumInputs()` (the constructor-recorded input-slot
@@ -200,6 +221,17 @@ mod tests {
         assert!(op.get_input(1).is_none());
         assert!(op.get_output().is_none());
         assert!(op.get_insert_iter().is_none());
+    }
+
+    #[test]
+    fn set_opcode_mutates_through_shared_reference() {
+        let ram = ram_space();
+        let pc = Address::new(ram, 0x1500);
+        let op = PcodeOpAST::new(SequenceNumber::new(pc, 0), OpCode::Copy, 0);
+
+        assert_eq!(op.get_opcode(), OpCode::Copy);
+        op.set_opcode(OpCode::IntAdd);
+        assert_eq!(op.get_opcode(), OpCode::IntAdd);
     }
 
     #[test]

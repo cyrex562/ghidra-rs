@@ -43,16 +43,14 @@
 //! [`destroy_removes_op_even_though_marked_alive`](tests::destroy_removes_op_even_though_marked_alive)),
 //! rather than "fixing" the guard to actually check the alive/dead list membership.
 //!
-//! ## Scope boundary: `changeOpcode` is not implemented
+//! ## `changeOpcode`
 //!
 //! Java's `changeOpcode(PcodeOp op, int newopc)` calls `((PcodeOpAST) op).setOpcode(newopc)` --
-//! the inherited `PcodeOp.setOpcode(int)` mutator. This crate's [`PcodeOpAST`] port deliberately
-//! exposes only read-only accessors for its `opcode` field (see that file's own module docs: its
-//! scope is limited to `PcodeOpAST.java`'s own 114 lines, with the inherited `PcodeOp` mutators
-//! -- `setOpcode`/`setInput`/`setOutput` -- explicitly called out as out of scope pending a
-//! separate `PcodeOp.java` mutator port). Adding a mutator to `PcodeOpAST` is outside this file's
-//! own scope (touching `pcode_op_ast.rs`), so `change_opcode` is not implemented; see the
-//! `TODO(port)` below.
+//! the inherited `PcodeOp.setOpcode(int)` mutator. [`PcodeOpAST`] now exposes a real
+//! `set_opcode(&self, OpCode)` (its `opcode` field became a `Cell<OpCode>` for exactly this),
+//! added once `PcodeOp.java`'s own port grew real `set_opcode`/`set_input`/`set_output` mutators
+//! and this bank's `change_opcode` became the concrete, well-tested follow-on that unblocked. See
+//! [`change_opcode`](PcodeOpBank::change_opcode) below.
 
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
@@ -143,9 +141,10 @@ impl PcodeOpBank {
         }
     }
 
-    // TODO(port): `PcodeOpBank.changeOpcode(PcodeOp, int)` is not implemented -- it requires a
-    // `PcodeOpAST.setOpcode`/`PcodeOp.setOpcode` mutator that this crate's `PcodeOpAST` port does
-    // not expose. See the module docs above for the exact blocker.
+    /// Change the opcode of `op`. Port of `PcodeOpBank.changeOpcode(PcodeOp, int)`.
+    pub fn change_opcode(&self, op: &Arc<PcodeOpAST>, newopc: OpCode) {
+        op.set_opcode(newopc);
+    }
 
     /// Move `op` from the dead list to the alive list.
     ///
@@ -311,6 +310,23 @@ mod tests {
 
         let next = bank.create(OpCode::Copy, 0, pc);
         assert_eq!(next.get_seqnum().uniq, 5, "nextUnique must not have been lowered");
+    }
+
+    #[test]
+    fn change_opcode_mutates_the_op_in_place() {
+        let bank = PcodeOpBank::new();
+        let pc = Address::new(ram_space(), 0x4500);
+        let op = bank.create(OpCode::Copy, 2, pc);
+
+        assert_eq!(op.get_opcode(), OpCode::Copy);
+        bank.change_opcode(&op, OpCode::IntAdd);
+        assert_eq!(op.get_opcode(), OpCode::IntAdd);
+
+        // The op's identity/position in the bank (tree + dead list) is untouched -- Java's
+        // changeOpcode only ever sets the field, nothing bank-side.
+        assert_eq!(bank.size(), 1);
+        assert_eq!(bank.all_dead().len(), 1);
+        assert!(Arc::ptr_eq(&bank.find_op(op.get_seqnum()).unwrap(), &op));
     }
 
     #[test]

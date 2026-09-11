@@ -434,7 +434,102 @@ impl OpCode {
             _ => false,
         }
     }
+
+    /// Resolve an opcode ordinal (as decoded off the wire, e.g. [`PcodeOp::decode`]'s
+    /// `ATTRIB_CODE` attribute) back to an [`OpCode`] variant.
+    ///
+    /// Not a direct port of any single Java method: Java's `PcodeOp.opcode` field is a raw,
+    /// unvalidated `int` that can hold *any* value -- including the unused slot 45 (see
+    /// [`from_mnemonic`](Self::from_mnemonic)'s docs) or values outside `0..PCODE_MAX` -- with no
+    /// equivalent lookup ever performed anywhere in `PcodeOp.java`. This crate's
+    /// [`PcodeOp::opcode`](PcodeOp) field is instead typed as this validated `OpCode` enum, so
+    /// [`PcodeOp::decode`] needs a real ordinal -> `OpCode` conversion, which this method
+    /// provides. Returns `None` for any ordinal with no corresponding variant (including the
+    /// unused slot 45) rather than silently mapping it to some default variant.
+    pub fn from_ordinal(op: i32) -> Option<OpCode> {
+        Some(match op {
+            0 => Self::Unimplemented,
+            1 => Self::Copy,
+            2 => Self::Load,
+            3 => Self::Store,
+            4 => Self::Branch,
+            5 => Self::CBranch,
+            6 => Self::BranchInd,
+            7 => Self::Call,
+            8 => Self::CallInd,
+            9 => Self::CallOther,
+            10 => Self::Return,
+            11 => Self::IntEqual,
+            12 => Self::IntNotEqual,
+            13 => Self::IntSless,
+            14 => Self::IntSlessEqual,
+            15 => Self::IntLess,
+            16 => Self::IntLessEqual,
+            17 => Self::IntZext,
+            18 => Self::IntSext,
+            19 => Self::IntAdd,
+            20 => Self::IntSub,
+            21 => Self::IntCarry,
+            22 => Self::IntScarry,
+            23 => Self::IntSborrow,
+            24 => Self::Int2Comp,
+            25 => Self::IntNegate,
+            26 => Self::IntXor,
+            27 => Self::IntAnd,
+            28 => Self::IntOr,
+            29 => Self::IntLeft,
+            30 => Self::IntRight,
+            31 => Self::IntSright,
+            32 => Self::IntMult,
+            33 => Self::IntDiv,
+            34 => Self::IntSdiv,
+            35 => Self::IntRem,
+            36 => Self::IntSrem,
+            37 => Self::BoolNegate,
+            38 => Self::BoolXor,
+            39 => Self::BoolAnd,
+            40 => Self::BoolOr,
+            41 => Self::FloatEqual,
+            42 => Self::FloatNotEqual,
+            43 => Self::FloatLess,
+            44 => Self::FloatLessEqual,
+            // 45 is the unused slot; see `from_mnemonic`'s docs.
+            46 => Self::FloatNan,
+            47 => Self::FloatAdd,
+            48 => Self::FloatDiv,
+            49 => Self::FloatMult,
+            50 => Self::FloatSub,
+            51 => Self::FloatNeg,
+            52 => Self::FloatAbs,
+            53 => Self::FloatSqrt,
+            54 => Self::FloatInt2Float,
+            55 => Self::FloatFloat2Float,
+            56 => Self::FloatTrunc,
+            57 => Self::FloatCeil,
+            58 => Self::FloatFloor,
+            59 => Self::FloatRound,
+            60 => Self::MultiEqual,
+            61 => Self::Indirect,
+            62 => Self::Piece,
+            63 => Self::Subpiece,
+            64 => Self::Cast,
+            65 => Self::PtrAdd,
+            66 => Self::PtrSub,
+            67 => Self::SegmentOp,
+            68 => Self::CpoolRef,
+            69 => Self::New,
+            70 => Self::Insert,
+            71 => Self::Zpull,
+            72 => Self::Popcount,
+            73 => Self::Lzcount,
+            74 => Self::Spull,
+            _ => return None,
+        })
+    }
 }
+
+/// Port of `PcodeOp.PCODE_MAX`: one past the highest valid opcode ordinal.
+pub const PCODE_MAX: i32 = 75;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VarnodeData {
@@ -975,6 +1070,32 @@ impl std::hash::Hash for Varnode {
     }
 }
 
+/// A generic machine operation -- the microcode for a specific processor's instruction set. Has
+/// an operation code, some number of input parameter varnodes, and a possible output varnode.
+///
+/// Port of `ghidra.program.model.pcode.PcodeOp`. This crate's `PcodeOp` is a simple, immutable-
+/// by-convention value struct: `inputs: Vec<Varnode>` holds fully-populated Varnodes (no `null`
+/// slots), matching how every real constructor/call site in this crate actually builds one (a
+/// complete op in a single call to [`new`](Self::new) or one of its sibling constructors below).
+/// Java's real class additionally supports building a `PcodeOp` *incrementally* -- a constructor
+/// that pre-allocates `numinputs` `null` `Varnode` slots, later filled in one at a time via
+/// `setInput`/`setOutput`/`setOpcode` -- which this `Vec<Varnode>` shape cannot represent (there
+/// is no "null Varnode" sentinel). That incremental-building use case is already covered by the
+/// separate, real [`PcodeOpAST`](crate::program::model::pcode::PcodeOpAST) type (see its module
+/// docs for the same reasoning), so it is intentionally not duplicated here; see
+/// [`set_input`](Self::set_input)'s docs for exactly how far this struct's own mutators can go
+/// within the fully-populated-`Vec` shape.
+///
+/// # Deviation: `PartialEq`/`Eq`/`Hash` are structural, not Java's identity-based `equals`
+///
+/// Java's `PcodeOp` never overrides `equals(Object)` (so it uses default reference-identity
+/// equality) but *does* override `hashCode()` as `opcode + seqnum.hashCode()` (deliberately
+/// ignoring `inputs`/`output`) -- a valid, if unusual, combination since the
+/// equals/hashCode contract only requires *equal* objects to hash equal, and no two distinct
+/// objects are ever "equal" under identity comparison regardless of what hashCode returns. This
+/// struct instead derives full structural `PartialEq`/`Eq`/`Hash` (comparing/hashing every
+/// field), matching this crate's established convention for owned value types elsewhere (e.g.
+/// [`Varnode`]) since Rust values have no cheap notion of Java's object identity to fall back on.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PcodeOp {
     pub opcode: OpCode,
@@ -984,6 +1105,7 @@ pub struct PcodeOp {
 }
 
 impl PcodeOp {
+    /// Port of `PcodeOp(SequenceNumber sq, int op, Varnode[] in, Varnode out)`.
     pub fn new(
         opcode: OpCode,
         seqnum: SequenceNumber,
@@ -997,12 +1119,302 @@ impl PcodeOp {
             output,
         }
     }
+
+    /// Port of `PcodeOp(Address a, int sequencenumber, int op, Varnode[] in, Varnode out)`.
+    pub fn with_address(
+        a: Address,
+        sequencenumber: i32,
+        op: OpCode,
+        inputs: Vec<Varnode>,
+        output: Option<Varnode>,
+    ) -> Self {
+        Self::new(op, SequenceNumber::new(a, sequencenumber), inputs, output)
+    }
+
+    /// Port of `PcodeOp(Address a, int sequencenumber, int op, Varnode[] in)` (no output).
+    pub fn with_address_no_output(a: Address, sequencenumber: i32, op: OpCode, inputs: Vec<Varnode>) -> Self {
+        Self::with_address(a, sequencenumber, op, inputs, None)
+    }
+
+    /// Port of `PcodeOp(Address a, int sequencenumber, int op)` (no inputs, no output).
+    pub fn with_address_no_inputs(a: Address, sequencenumber: i32, op: OpCode) -> Self {
+        Self::with_address(a, sequencenumber, op, Vec::new(), None)
+    }
+
+    /// Port of `PcodeOp.getOpcode()`.
+    pub fn get_opcode(&self) -> OpCode {
+        self.opcode
+    }
+
+    /// Port of `PcodeOp.getNumInputs()`.
+    pub fn get_num_inputs(&self) -> usize {
+        self.inputs.len()
+    }
+
+    /// Port of `PcodeOp.getInputs()`.
+    pub fn get_inputs(&self) -> &[Varnode] {
+        &self.inputs
+    }
+
+    /// Port of `PcodeOp.getInput(int)`. Returns `None` for an out-of-range index (Java returns
+    /// `null` for `i >= input.length || i < 0`; `i` is unsigned here so only the upper bound
+    /// applies).
+    pub fn get_input(&self, i: usize) -> Option<&Varnode> {
+        self.inputs.get(i)
+    }
+
+    /// Port of `PcodeOp.getOutput()`.
+    pub fn get_output(&self) -> Option<&Varnode> {
+        self.output.as_ref()
+    }
+
+    /// Assuming `vn` is an input to this op, return its input slot number. Port of
+    /// `PcodeOp.getSlot(Varnode)`.
+    ///
+    /// # Quirk: returns `get_num_inputs()`, not `None`, when `vn` is not an input
+    /// Real Java's loop (`for (i = 0; i < n; ++i) { if (input[i] == vn) break; }`) leaves `i ==
+    /// n` (one past the last valid slot) when no match is found, and returns that `i` verbatim --
+    /// not a sentinel like `-1`. Faithfully reproduced here: this returns `self.inputs.len()`
+    /// rather than `Option<usize>`/`None` for "not found".
+    ///
+    /// # Deviation: value equality, not Java's reference identity
+    /// Java compares with `==` (object identity: the exact same `Varnode` instance). This crate's
+    /// `Varnode` is an owned value type with no identity separate from its `(address, size)`
+    /// value, so this compares by [`PartialEq`] (value equality) instead -- the closest available
+    /// analog. This means two *distinct* real Ghidra `Varnode` objects that happen to share an
+    /// address and size, which Java's `==` would tell apart, are indistinguishable here.
+    pub fn get_slot(&self, vn: &Varnode) -> usize {
+        self.inputs.iter().position(|input| input == vn).unwrap_or(self.inputs.len())
+    }
+
+    /// Port of `PcodeOp.getMnemonic()`.
+    pub fn get_mnemonic(&self) -> &'static str {
+        self.opcode.mnemonic()
+    }
+
+    /// Check if the pcode has been determined to be a dead operation. Port of `PcodeOp.isDead()`.
+    /// Always `false` -- Java's base class always returns `false`; only the AST-linked subtype
+    /// ([`PcodeOpAST`](crate::program::model::pcode::PcodeOpAST), which tracks real liveness)
+    /// overrides it.
+    pub fn is_dead(&self) -> bool {
+        false
+    }
+
+    /// Port of `PcodeOp.isAssignment()`: true if the pcode assigns a value to an output varnode.
+    pub fn is_assignment(&self) -> bool {
+        self.output.is_some()
+    }
+
+    /// Return true if the PcodeOp is commutative: it has exactly two inputs that can be switched
+    /// without affecting the output. Port of `PcodeOp.isCommutative()`.
+    pub fn is_commutative(&self) -> bool {
+        self.opcode.is_commutative()
+    }
+
+    /// Port of `PcodeOp.getSeqnum()`.
+    pub fn get_seqnum(&self) -> &SequenceNumber {
+        &self.seqnum
+    }
+
+    /// Port of `PcodeOp.getBasicIter()`. Always `None` -- Java's own comment on the base class
+    /// notes this is "Not used by minimal PcodeOp"; only
+    /// [`PcodeOpAST`](crate::program::model::pcode::PcodeOpAST) tracks a real cursor position
+    /// within a basic block's op list.
+    pub fn get_basic_iter(&self) -> Option<LinkedIter> {
+        None
+    }
+
+    /// Port of `PcodeOp.getInsertIter()`. Always `None` -- see
+    /// [`get_basic_iter`](Self::get_basic_iter). Java's return type is the untyped
+    /// `Iterator<Object>`; modeled here as `Option<LinkedIter>` for the same reason
+    /// [`PcodeOpAST::get_insert_iter`](crate::program::model::pcode::PcodeOpAST) is, since nothing
+    /// in this crate needs a more general "any iterator" type.
+    pub fn get_insert_iter(&self) -> Option<LinkedIter> {
+        None
+    }
+
+    /// Get the pcode basic block this pcode belongs to. Port of `PcodeOp.getParent()`. Always
+    /// `None` -- see [`get_basic_iter`](Self::get_basic_iter).
+    pub fn get_parent(&self) -> Option<Arc<dyn PcodeBlockBasic>> {
+        None
+    }
+
+    /// Set the pcode operation code. Port of `PcodeOp.setOpcode(int)`.
+    pub fn set_opcode(&mut self, o: OpCode) {
+        self.opcode = o;
+    }
+
+    /// Set/replace an input varnode at the given slot, growing the input list by exactly one slot
+    /// if `slot` is one past the current end (a plain append). Port of
+    /// `PcodeOp.setInput(Varnode, int)`.
+    ///
+    /// # Panics
+    /// Real Java's version handles an arbitrary `slot >= input.length` by growing the array to
+    /// `slot + 1` elements and filling every *intervening* new slot (i.e. those before `slot`
+    /// itself) with `null`. This struct's `inputs: Vec<Varnode>` has no `null`/empty-slot
+    /// representation (see this struct's docs), so that general "skip-ahead" grow cannot be
+    /// faithfully reproduced. The representable subset -- replacing an existing slot, or
+    /// appending exactly one new slot at the end (`slot == get_num_inputs()`, which needs no
+    /// intervening nulls) -- is fully implemented. `slot > get_num_inputs()` panics.
+    ///
+    /// // TODO(port): a genuine `slot > get_num_inputs()` grow (matching Java's null-padding
+    /// // behavior) is not implemented; it would need `inputs` to become `Vec<Option<Varnode>>`,
+    /// // which would ripple into every other reader of this field across the crate (see this
+    /// // struct's docs on why that shape was not changed here).
+    pub fn set_input(&mut self, vn: Varnode, slot: usize) {
+        if slot < self.inputs.len() {
+            self.inputs[slot] = vn;
+        } else if slot == self.inputs.len() {
+            self.inputs.push(vn);
+        } else {
+            panic!(
+                "PcodeOp::set_input: slot {slot} is more than one past the current {} inputs \
+                 (a null-padded grow, which this crate's Vec<Varnode>-based inputs cannot \
+                 represent; see the method docs)",
+                self.inputs.len()
+            );
+        }
+    }
+
+    /// Remove a varnode at the given slot from the list of input varnodes. Port of
+    /// `PcodeOp.removeInput(int)`.
+    ///
+    /// Java special-cases a single remaining input by setting the whole `input` array to `null`
+    /// rather than an empty array; this struct has no `null` inputs list, so it clears `inputs`
+    /// to an empty `Vec` instead -- externally identical, since [`get_num_inputs`](Self::get_num_inputs)
+    /// reports `0` either way (Java's own `getNumInputs()` treats `null` and a zero-length array
+    /// the same).
+    ///
+    /// # Panics
+    /// Panics if `slot` is out of bounds, via the underlying [`Vec::remove`].
+    pub fn remove_input(&mut self, slot: usize) {
+        if self.inputs.len() == 1 {
+            self.inputs.clear();
+            return;
+        }
+        self.inputs.remove(slot);
+    }
+
+    /// Insert an input varnode at the given index of input varnodes, shifting later inputs one
+    /// slot to the right. Port of `PcodeOp.insertInput(Varnode, int)`.
+    ///
+    /// # Panics
+    /// Panics if `slot > get_num_inputs()`, via the underlying [`Vec::insert`].
+    pub fn insert_input(&mut self, vn: Varnode, slot: usize) {
+        self.inputs.insert(slot, vn);
+    }
+
+    /// Set a unique number for pcode ops that are attached to the same address. Port of
+    /// `PcodeOp.setTime(int)`.
+    pub fn set_time(&mut self, t: i32) {
+        self.seqnum.set_time(t);
+    }
+
+    /// Set relative position information of PcodeOps within a basic block; may change as the
+    /// basic block is edited. Port of `PcodeOp.setOrder(int)`.
+    pub fn set_order(&mut self, ord: i32) {
+        self.seqnum.set_order(ord);
+    }
+
+    /// Set the output varnode for the pcode operation. Port of `PcodeOp.setOutput(Varnode)`
+    /// (Java's `null` is `None` here).
+    pub fn set_output(&mut self, vn: Option<Varnode>) {
+        self.output = vn;
+    }
+
+    /// Encode just the opcode and input/output Varnode data for this PcodeOp to a stream as an
+    /// `<op>` element. Port of `PcodeOp.encodeRaw(Encoder, AddressFactory)`.
+    ///
+    /// # Errors
+    /// Returns an error for problems writing to the underlying stream.
+    pub fn encode_raw(&self, encoder: &mut dyn Encoder, addr_factory: &dyn AddressFactory) -> io::Result<()> {
+        encoder.open_element(ELEM_OP)?;
+        encoder.write_opcode_ordinal(ATTRIB_CODE, self.opcode as i32)?;
+        encoder.write_signed_integer(ATTRIB_SIZE, self.inputs.len() as i64)?;
+        if let Some(out) = &self.output {
+            out.encode_raw(encoder)?;
+        } else {
+            encoder.open_element(ELEM_VOID)?;
+            encoder.close_element(ELEM_VOID)?;
+        }
+        if matches!(self.opcode, OpCode::Load | OpCode::Store) {
+            // Faithful to Java: indexes `input[0]` unconditionally for a LOAD/STORE op, which
+            // panics (Java: ArrayIndexOutOfBoundsException) for a malformed op with no inputs,
+            // rather than silently guarding against it.
+            let space_id = self.inputs[0].get_offset() as i32;
+            encoder.open_element(ELEM_SPACEID)?;
+            let space = addr_factory.get_address_space_by_id(space_id).unwrap_or_else(|| {
+                panic!(
+                    "PcodeOp::encode_raw: LOAD/STORE op's input[0] offset {space_id} does not \
+                     resolve to a registered address space (Java's equivalent would \
+                     NullPointerException inside Encoder.writeSpace)"
+                )
+            });
+            encoder.write_space(ATTRIB_NAME, space.as_ref())?;
+            encoder.close_element(ELEM_SPACEID)?;
+        } else if !self.inputs.is_empty() {
+            self.inputs[0].encode_raw(encoder)?;
+        }
+        for input in self.inputs.iter().skip(1) {
+            input.encode_raw(encoder)?;
+        }
+        encoder.close_element(ELEM_OP)
+    }
+
+    /// Decode p-code from a stream. Port of the static `PcodeOp.decode(Decoder, PcodeFactory)`.
+    ///
+    /// # Errors
+    /// Returns an error if encodings are invalid, including an opcode ordinal with no
+    /// corresponding [`OpCode`] variant (see [`OpCode::from_ordinal`]'s docs for why that is a
+    /// deliberate, documented divergence from Java, which has no such validation).
+    pub fn decode(decoder: &dyn Decoder, pfact: &dyn PcodeFactory) -> Result<PcodeOp, DecoderException> {
+        let el = decoder.open_element_with_id(ELEM_OP).map_err(decode_err)?;
+        let opc_raw = decoder.read_signed_integer_with_id(ATTRIB_CODE).map_err(decode_err)? as i32;
+        let opc = OpCode::from_ordinal(opc_raw)
+            .ok_or_else(|| DecoderException::new(&format!("Invalid PcodeOp opcode: {opc_raw}")))?;
+        let seqnum = SequenceNumber::decode(decoder)?;
+        let output = Varnode::decode(decoder, pfact)?;
+        let mut inputlist = Vec::new();
+        loop {
+            let subel = decoder.peek_element().map_err(decode_err)?;
+            if subel == 0 {
+                break;
+            }
+            match Varnode::decode(decoder, pfact)? {
+                Some(vn) => inputlist.push(vn),
+                // Real Java's `ArrayList<Varnode>` would happily record a `null` entry here (an
+                // empty `<void/>` input element); this struct's `Vec<Varnode>` cannot represent
+                // that. This crate's own `encode_raw` never emits `<void/>` for an input (only
+                // ever for a `null` output), so well-formed data from this crate never hits this
+                // branch; a decode error is safer than silently dropping the entry (which would
+                // shift every later input's slot index).
+                None => {
+                    return Err(DecoderException::new(
+                        "PcodeOp::decode: encountered a void (null) input Varnode, which cannot \
+                         be represented in this port's Vec<Varnode>-based inputs",
+                    ));
+                }
+            }
+        }
+        let res = pfact.new_op(seqnum, opc, inputlist, output);
+        decoder.close_element(el).map_err(decode_err)?;
+        Ok(res)
+    }
 }
 
 impl fmt::Display for PcodeOp {
+    /// Port of `PcodeOp.toString()`.
+    ///
+    /// # Bug fix: no `" = "` separator
+    /// This previously wrote `"{output} = "` before the mnemonic, but real Java's `toString()`
+    /// is `output.toString() + " " + getMnemonic() + " " + ...inputs` -- there is no `=` anywhere
+    /// in it. That was a pre-existing divergence from the real class (not a genuine Java quirk to
+    /// preserve), fixed here to match; see
+    /// [`display_matches_java_tostring_with_output`](tests::display_matches_java_tostring_with_output)
+    /// for the corrected format.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(out) = &self.output {
-            write!(f, "{} = ", out)?;
+            write!(f, "{} ", out)?;
         } else {
             write!(f, " ---  ")?;
         }
@@ -1066,6 +1478,238 @@ mod tests {
 
         let s = format!("{}", op);
         assert!(s.contains("INT_ADD"));
+    }
+
+    // --- New PcodeOp surface: constructors ---
+
+    #[test]
+    fn with_address_constructors_delegate_like_java() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let pc = Address::new(ram.clone(), 0x200);
+        let in1 = Varnode::new(Address::new(ram.clone(), 0x10), 4);
+        let out = Varnode::new(Address::new(ram.clone(), 0x20), 4);
+
+        let full = PcodeOp::with_address(pc.clone(), 2, OpCode::Copy, vec![in1.clone()], Some(out.clone()));
+        assert_eq!(full.seqnum, SequenceNumber::new(pc.clone(), 2));
+        assert_eq!(full.inputs, vec![in1.clone()]);
+        assert_eq!(full.output, Some(out));
+
+        let no_output = PcodeOp::with_address_no_output(pc.clone(), 3, OpCode::Copy, vec![in1.clone()]);
+        assert_eq!(no_output.seqnum, SequenceNumber::new(pc.clone(), 3));
+        assert_eq!(no_output.inputs, vec![in1]);
+        assert!(no_output.output.is_none());
+
+        let no_inputs = PcodeOp::with_address_no_inputs(pc.clone(), 4, OpCode::Return);
+        assert_eq!(no_inputs.seqnum, SequenceNumber::new(pc, 4));
+        assert!(no_inputs.inputs.is_empty());
+        assert!(no_inputs.output.is_none());
+    }
+
+    // --- New PcodeOp surface: accessors ---
+
+    #[test]
+    fn accessors_expose_opcode_inputs_output_and_seqnum() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let pc = Address::new(ram.clone(), 0x300);
+        let seq = SequenceNumber::new(pc, 0);
+        let out = Varnode::new(Address::new(ram.clone(), 0x1000), 4);
+        let in1 = Varnode::new(Address::new(ram.clone(), 0x2000), 4);
+        let op = PcodeOp::new(OpCode::IntAdd, seq.clone(), vec![in1.clone()], Some(out.clone()));
+
+        assert_eq!(op.get_opcode(), OpCode::IntAdd);
+        assert_eq!(op.get_num_inputs(), 1);
+        assert_eq!(op.get_inputs(), &[in1.clone()]);
+        assert_eq!(op.get_input(0), Some(&in1));
+        assert_eq!(op.get_input(1), None, "out-of-range index returns None (Java: null)");
+        assert_eq!(op.get_output(), Some(&out));
+        assert_eq!(op.get_mnemonic(), "INT_ADD");
+        assert!(!op.is_dead());
+        assert!(op.is_assignment());
+        assert!(op.is_commutative());
+        assert_eq!(op.get_seqnum(), &seq);
+        assert!(op.get_basic_iter().is_none());
+        assert!(op.get_insert_iter().is_none());
+        assert!(op.get_parent().is_none());
+    }
+
+    #[test]
+    fn is_assignment_is_false_without_an_output() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram, 0x100), 0);
+        let op = PcodeOp::new(OpCode::Return, seq, vec![], None);
+        assert!(!op.is_assignment());
+    }
+
+    #[test]
+    fn is_commutative_reflects_the_opcode() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram, 0x100), 0);
+        let commutative = PcodeOp::new(OpCode::IntAdd, seq.clone(), vec![], None);
+        let not_commutative = PcodeOp::new(OpCode::IntSub, seq, vec![], None);
+        assert!(commutative.is_commutative());
+        assert!(!not_commutative.is_commutative());
+    }
+
+    #[test]
+    fn get_slot_finds_a_matching_input_by_value() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let in0 = Varnode::new(Address::new(ram.clone(), 0x10), 4);
+        let in1 = Varnode::new(Address::new(ram.clone(), 0x20), 4);
+        let op = PcodeOp::new(OpCode::IntAdd, seq, vec![in0.clone(), in1.clone()], None);
+
+        assert_eq!(op.get_slot(&in0), 0);
+        assert_eq!(op.get_slot(&in1), 1);
+    }
+
+    /// Real Java's `getSlot` returns `input.length` (a valid-looking but out-of-bounds index),
+    /// not a `-1`/`null` sentinel, when `vn` is not one of this op's inputs. See
+    /// [`PcodeOp::get_slot`]'s docs.
+    #[test]
+    fn get_slot_returns_num_inputs_when_not_found() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let in0 = Varnode::new(Address::new(ram.clone(), 0x10), 4);
+        let not_an_input = Varnode::new(Address::new(ram, 0x99), 4);
+        let op = PcodeOp::new(OpCode::IntAdd, seq, vec![in0], None);
+
+        assert_eq!(op.get_slot(&not_an_input), op.get_num_inputs());
+        assert_eq!(op.get_slot(&not_an_input), 1);
+    }
+
+    // --- New PcodeOp surface: mutators ---
+
+    #[test]
+    fn set_opcode_mutates_in_place() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram, 0x100), 0);
+        let mut op = PcodeOp::new(OpCode::Copy, seq, vec![], None);
+        op.set_opcode(OpCode::IntAdd);
+        assert_eq!(op.opcode, OpCode::IntAdd);
+    }
+
+    #[test]
+    fn set_input_replaces_an_existing_slot() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let original = Varnode::new(Address::new(ram.clone(), 0x10), 4);
+        let replacement = Varnode::new(Address::new(ram, 0x20), 4);
+        let mut op = PcodeOp::new(OpCode::Copy, seq, vec![original], None);
+
+        op.set_input(replacement.clone(), 0);
+        assert_eq!(op.inputs, vec![replacement]);
+    }
+
+    #[test]
+    fn set_input_appends_when_slot_is_exactly_one_past_the_end() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let in0 = Varnode::new(Address::new(ram.clone(), 0x10), 4);
+        let appended = Varnode::new(Address::new(ram, 0x20), 4);
+        let mut op = PcodeOp::new(OpCode::Copy, seq, vec![in0.clone()], None);
+
+        op.set_input(appended.clone(), 1);
+        assert_eq!(op.inputs, vec![in0, appended]);
+    }
+
+    #[test]
+    #[should_panic(expected = "more than one past")]
+    fn set_input_panics_on_a_null_padded_gap_it_cannot_represent() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let vn = Varnode::new(Address::new(ram, 0x10), 4);
+        let mut op = PcodeOp::new(OpCode::Copy, seq, vec![], None);
+
+        op.set_input(vn, 2);
+    }
+
+    #[test]
+    fn remove_input_clears_the_vec_when_it_was_the_only_input() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let vn = Varnode::new(Address::new(ram, 0x10), 4);
+        let mut op = PcodeOp::new(OpCode::Copy, seq, vec![vn], None);
+
+        op.remove_input(0);
+        assert!(op.inputs.is_empty());
+        assert_eq!(op.get_num_inputs(), 0);
+    }
+
+    #[test]
+    fn remove_input_shifts_later_inputs_down() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let in0 = Varnode::new(Address::new(ram.clone(), 0x10), 4);
+        let in1 = Varnode::new(Address::new(ram.clone(), 0x20), 4);
+        let in2 = Varnode::new(Address::new(ram, 0x30), 4);
+        let mut op = PcodeOp::new(OpCode::IntAdd, seq, vec![in0, in1.clone(), in2.clone()], None);
+
+        op.remove_input(0);
+        assert_eq!(op.inputs, vec![in1, in2]);
+    }
+
+    #[test]
+    fn insert_input_shifts_later_inputs_up() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let in0 = Varnode::new(Address::new(ram.clone(), 0x10), 4);
+        let in1 = Varnode::new(Address::new(ram.clone(), 0x20), 4);
+        let inserted = Varnode::new(Address::new(ram, 0x99), 4);
+        let mut op = PcodeOp::new(OpCode::IntAdd, seq, vec![in0.clone(), in1.clone()], None);
+
+        op.insert_input(inserted.clone(), 1);
+        assert_eq!(op.inputs, vec![in0, inserted, in1]);
+    }
+
+    #[test]
+    fn set_time_and_set_order_mutate_the_seqnum() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram, 0x100), 0);
+        let mut op = PcodeOp::new(OpCode::Copy, seq, vec![], None);
+
+        op.set_time(7);
+        op.set_order(9);
+
+        assert_eq!(op.seqnum.get_time(), 7);
+        assert_eq!(op.seqnum.get_order(), 9);
+    }
+
+    #[test]
+    fn set_output_replaces_or_clears_the_output() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let out = Varnode::new(Address::new(ram, 0x10), 4);
+        let mut op = PcodeOp::new(OpCode::Copy, seq, vec![], None);
+
+        op.set_output(Some(out.clone()));
+        assert_eq!(op.output, Some(out));
+
+        op.set_output(None);
+        assert!(op.output.is_none());
+    }
+
+    // --- PcodeOp Display (toString) ---
+
+    #[test]
+    fn display_matches_java_tostring_with_output() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let out = Varnode::new(Address::new(ram.clone(), 0x1000), 4);
+        let in1 = Varnode::new(Address::new(ram, 0x2000), 4);
+        let op = PcodeOp::new(OpCode::Copy, seq, vec![in1.clone()], Some(out.clone()));
+
+        // Java: `output.toString() + " " + getMnemonic() + " " + input0.toString()` -- no "="
+        // anywhere (see the Display impl's doc comment for the bug this fixes).
+        assert_eq!(format!("{}", op), format!("{} COPY {}", out, in1));
+    }
+
+    #[test]
+    fn display_matches_java_tostring_without_output() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let seq = SequenceNumber::new(Address::new(ram, 0x100), 0);
+        let op = PcodeOp::new(OpCode::Return, seq, vec![], None);
+
+        assert_eq!(format!("{}", op), " ---  RETURN ");
     }
 
     #[test]
@@ -1922,7 +2566,8 @@ mod tests {
         ) -> io::Result<()> {
             Ok(())
         }
-        fn write_opcode_ordinal(&mut self, _attrib_id: AttributeId, _opcode: i32) -> io::Result<()> {
+        fn write_opcode_ordinal(&mut self, attrib_id: AttributeId, opcode: i32) -> io::Result<()> {
+            self.events.push(format!("attr:{}={}", attrib_id.name, opcode));
             Ok(())
         }
     }
@@ -1943,5 +2588,258 @@ mod tests {
                 "close:addr".to_string(),
             ]
         );
+    }
+
+    // --- PcodeOp::encode_raw ---
+
+    #[test]
+    fn pcode_op_encode_raw_writes_opcode_size_and_void_for_output_and_input_free_op() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let seq = SequenceNumber::new(Address::new(ram, 0x100), 0);
+        let op = PcodeOp::new(OpCode::Return, seq, vec![], None);
+
+        let mut encoder = RecordingEncoder::default();
+        op.encode_raw(&mut encoder, addr_factory.as_ref()).unwrap();
+
+        assert_eq!(
+            encoder.events,
+            vec![
+                "open:op".to_string(),
+                format!("attr:code={}", OpCode::Return as i32),
+                "attr:size=0".to_string(),
+                "open:void".to_string(),
+                "close:void".to_string(),
+                "close:op".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn pcode_op_encode_raw_encodes_output_then_all_inputs_for_non_load_store_op() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let out = Varnode::new(Address::new(ram.clone(), 0x1000), 4);
+        let in1 = Varnode::new(Address::new(ram.clone(), 0x2000), 4);
+        let in2 = Varnode::new(Address::new(ram.clone(), 0x3000), 4);
+        let op = PcodeOp::new(OpCode::IntAdd, seq, vec![in1, in2], Some(out));
+
+        let mut encoder = RecordingEncoder::default();
+        op.encode_raw(&mut encoder, addr_factory.as_ref()).unwrap();
+
+        assert_eq!(
+            encoder.events,
+            vec![
+                "open:op".to_string(),
+                format!("attr:code={}", OpCode::IntAdd as i32),
+                "attr:size=2".to_string(),
+                // output
+                "open:addr".to_string(),
+                "attr:space=RAM".to_string(),
+                "attr:offset=4096".to_string(),
+                "attr:size=4".to_string(),
+                "close:addr".to_string(),
+                // input0 (not LOAD/STORE, so encoded plainly, not as a spaceid element)
+                "open:addr".to_string(),
+                "attr:space=RAM".to_string(),
+                "attr:offset=8192".to_string(),
+                "attr:size=4".to_string(),
+                "close:addr".to_string(),
+                // input1
+                "open:addr".to_string(),
+                "attr:space=RAM".to_string(),
+                "attr:offset=12288".to_string(),
+                "attr:size=4".to_string(),
+                "close:addr".to_string(),
+                "close:op".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn pcode_op_encode_raw_load_op_writes_spaceid_for_input0_and_still_encodes_later_inputs() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let const_space = AddressSpace::new("const", 32, 1, AddressSpaceType::Constant, 2);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone(), const_space.clone()]));
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        // LOAD/STORE's input0 conventionally carries the target space's id as a constant-space
+        // offset -- this is what real Ghidra's own pcode generator produces.
+        let space_ptr = Varnode::new(Address::new(const_space, ram.space_id() as i64), 4);
+        let addr_input = Varnode::new(Address::new(ram.clone(), 0x50), 4);
+        let op = PcodeOp::new(OpCode::Load, seq, vec![space_ptr, addr_input], None);
+
+        let mut encoder = RecordingEncoder::default();
+        op.encode_raw(&mut encoder, addr_factory.as_ref()).unwrap();
+
+        assert_eq!(
+            encoder.events,
+            vec![
+                "open:op".to_string(),
+                format!("attr:code={}", OpCode::Load as i32),
+                "attr:size=2".to_string(),
+                "open:void".to_string(),
+                "close:void".to_string(),
+                // input0 is replaced by a <spaceid> element naming the target space, not encoded
+                // as its own <addr> element.
+                "open:spaceid".to_string(),
+                "attr:name=RAM".to_string(),
+                "close:spaceid".to_string(),
+                // input1 is still encoded normally.
+                "open:addr".to_string(),
+                "attr:space=RAM".to_string(),
+                "attr:offset=80".to_string(),
+                "attr:size=4".to_string(),
+                "close:addr".to_string(),
+                "close:op".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn pcode_op_encode_raw_load_op_with_no_inputs_panics_like_java_array_index_exception() {
+        // Real Java's `PcodeOp.encodeRaw` indexes `input[0]` unconditionally for a LOAD/STORE op
+        // with no bounds check, throwing ArrayIndexOutOfBoundsException for a malformed op with
+        // zero inputs; this port's direct `self.inputs[0]` index reproduces that crash-on-
+        // malformed-data behavior instead of silently guarding against it.
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let seq = SequenceNumber::new(Address::new(ram, 0x100), 0);
+        let op = PcodeOp::new(OpCode::Load, seq, vec![], None);
+        let mut encoder = RecordingEncoder::default();
+        let _ = op.encode_raw(&mut encoder, addr_factory.as_ref());
+    }
+
+    // --- PcodeOp::decode ---
+    //
+    // Note: `encode_raw` and `decode` are *not* a matched pair in real Java -- `encodeRaw` never
+    // writes a `SequenceNumber` (it is the lean "raw p-code" wire format used to send an
+    // instruction's p-code to the decompiler process), while `decode` unconditionally expects one
+    // right after the opcode attribute (it reads the fuller syntax-tree format the decompiler
+    // sends back, written by a different, not-yet-ported encoder -- almost certainly
+    // `PcodeSyntaxTree`'s own encode routine). `pcode_op_encode_raw_output_is_not_decode_compatible`
+    // below proves this concretely; the other `decode` tests build the wire format `decode` itself
+    // actually expects, by hand, via direct `Encoder` calls.
+
+    #[test]
+    fn pcode_op_encode_raw_output_is_not_decode_compatible() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        let op = PcodeOp::new(
+            OpCode::Copy,
+            seq,
+            vec![Varnode::new(Address::new(ram, 0x10), 4)],
+            None,
+        );
+
+        let mut encoder = PackedEncode::new(Vec::<u8>::new());
+        op.encode_raw(&mut encoder, addr_factory.as_ref()).unwrap();
+        let bytes = encoder.into_inner();
+
+        let decoder = PackedDecode::new(addr_factory.clone(), bytes);
+        let factory = TestPcodeFactory::new(addr_factory);
+        assert!(
+            PcodeOp::decode(&decoder, &factory).is_err(),
+            "decode() should fail to find a SequenceNumber in encode_raw's own output"
+        );
+    }
+
+    #[test]
+    fn pcode_op_decode_reads_opcode_seqnum_void_output_and_zero_inputs() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let mut encoder = PackedEncode::new(Vec::<u8>::new());
+        encoder.open_element(ELEM_OP).unwrap();
+        encoder.write_opcode_ordinal(ATTRIB_CODE, OpCode::Return as i32).unwrap();
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x200), 1);
+        seq.encode(&mut encoder).unwrap();
+        encoder.open_element(ELEM_VOID).unwrap();
+        encoder.close_element(ELEM_VOID).unwrap();
+        encoder.close_element(ELEM_OP).unwrap();
+        let bytes = encoder.into_inner();
+
+        let decoder = PackedDecode::new(addr_factory.clone(), bytes);
+        let factory = TestPcodeFactory::new(addr_factory);
+        let op = PcodeOp::decode(&decoder, &factory).unwrap();
+
+        assert_eq!(op.opcode, OpCode::Return);
+        assert_eq!(op.seqnum, seq);
+        assert!(op.inputs.is_empty());
+        assert!(op.output.is_none());
+    }
+
+    #[test]
+    fn pcode_op_decode_reads_output_and_ordered_inputs() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 3);
+        let out = Varnode::new(Address::new(ram.clone(), 0x1000), 4);
+        let in1 = Varnode::new(Address::new(ram.clone(), 0x2000), 4);
+        let in2 = Varnode::new(Address::new(ram.clone(), 0x3000), 4);
+
+        let mut encoder = PackedEncode::new(Vec::<u8>::new());
+        encoder.open_element(ELEM_OP).unwrap();
+        encoder.write_opcode_ordinal(ATTRIB_CODE, OpCode::IntAdd as i32).unwrap();
+        seq.encode(&mut encoder).unwrap();
+        out.encode_raw(&mut encoder).unwrap();
+        in1.encode_raw(&mut encoder).unwrap();
+        in2.encode_raw(&mut encoder).unwrap();
+        encoder.close_element(ELEM_OP).unwrap();
+        let bytes = encoder.into_inner();
+
+        let decoder = PackedDecode::new(addr_factory.clone(), bytes);
+        let factory = TestPcodeFactory::new(addr_factory);
+        let op = PcodeOp::decode(&decoder, &factory).unwrap();
+
+        assert_eq!(op.opcode, OpCode::IntAdd);
+        assert_eq!(op.seqnum, seq);
+        assert_eq!(op.inputs, vec![in1, in2]);
+        assert_eq!(op.output, Some(out));
+    }
+
+    #[test]
+    fn pcode_op_decode_errors_on_unknown_opcode_ordinal() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let mut encoder = PackedEncode::new(Vec::<u8>::new());
+        encoder.open_element(ELEM_OP).unwrap();
+        encoder.write_opcode_ordinal(ATTRIB_CODE, 9999).unwrap();
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        seq.encode(&mut encoder).unwrap();
+        encoder.open_element(ELEM_VOID).unwrap();
+        encoder.close_element(ELEM_VOID).unwrap();
+        encoder.close_element(ELEM_OP).unwrap();
+        let bytes = encoder.into_inner();
+
+        let decoder = PackedDecode::new(addr_factory.clone(), bytes);
+        let factory = TestPcodeFactory::new(addr_factory);
+        let err = PcodeOp::decode(&decoder, &factory).unwrap_err();
+        assert!(err.to_string().contains("Invalid PcodeOp opcode"));
+    }
+
+    #[test]
+    fn pcode_op_decode_errors_on_void_input_which_cannot_be_represented() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let addr_factory = Arc::new(DefaultAddressFactory::new(vec![ram.clone()]));
+        let mut encoder = PackedEncode::new(Vec::<u8>::new());
+        encoder.open_element(ELEM_OP).unwrap();
+        encoder.write_opcode_ordinal(ATTRIB_CODE, OpCode::Copy as i32).unwrap();
+        let seq = SequenceNumber::new(Address::new(ram.clone(), 0x100), 0);
+        seq.encode(&mut encoder).unwrap();
+        // void output
+        encoder.open_element(ELEM_VOID).unwrap();
+        encoder.close_element(ELEM_VOID).unwrap();
+        // a bogus void "input"
+        encoder.open_element(ELEM_VOID).unwrap();
+        encoder.close_element(ELEM_VOID).unwrap();
+        encoder.close_element(ELEM_OP).unwrap();
+        let bytes = encoder.into_inner();
+
+        let decoder = PackedDecode::new(addr_factory.clone(), bytes);
+        let factory = TestPcodeFactory::new(addr_factory);
+        let err = PcodeOp::decode(&decoder, &factory).unwrap_err();
+        assert!(err.to_string().contains("void"));
     }
 }
