@@ -1112,6 +1112,15 @@ pub const ATTRIB_REV: AttributeId = AttributeId::new("rev", 79);
 pub const ATTRIB_ALTINDEX: AttributeId = AttributeId::new("altindex", 75);
 pub const ATTRIB_DEPTH: AttributeId = AttributeId::new("depth", 76);
 pub const ATTRIB_OPCODE: AttributeId = AttributeId::new("opcode", 78);
+// Real Ghidra ids are 29/30/62 (`AttributeId.java`'s `ATTRIB_UNIQ`/`ATTRIB_ADDRTIED`/
+// `ATTRIB_FIELD`), all of which collide with `AttributeId`s already declared in this file
+// (29=`ATTRIB_SHIFT`, 30=`ATTRIB_ENDBIT`, 62=`ATTRIB_MINSIZE`), so all three are renumbered
+// together to continue the local counter above instead, per the same non-wire-compatible
+// numbering scheme as `ELEM_BHEAD`. Needed by `SequenceNumber`'s encode/decode and
+// `EquateSymbol`/`UnionFacetSymbol`'s encode.
+pub const ATTRIB_UNIQ: AttributeId = AttributeId::new("uniq", 183);
+pub const ATTRIB_ADDRTIED: AttributeId = AttributeId::new("addrtied", 184);
+pub const ATTRIB_FIELD: AttributeId = AttributeId::new("field", 185);
 
 #[cfg(test)]
 mod tests {

@@ -15,11 +15,13 @@ pub mod block_switch;
 pub mod block_while_do;
 pub mod byte_ingest;
 pub mod cached_encoder;
+pub mod data_type_symbol;
 pub mod decoder;
 pub mod decoder_exception;
 pub mod dynamic_entry;
 pub mod dynamic_hash;
 pub mod encoder;
+pub mod equate_symbol;
 pub mod function_prototype;
 pub mod global_symbol_map;
 pub mod high_code_symbol;
@@ -56,8 +58,10 @@ pub mod pcode_exception;
 pub mod pcode_factory;
 pub mod pcode_op_ast;
 pub mod pcode_override;
+pub mod sequence_number;
 pub mod string_ingest;
 pub mod symbol_entry;
+pub mod union_facet_symbol;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
@@ -85,11 +89,13 @@ pub use block_switch::BlockSwitch;
 pub use block_while_do::BlockWhileDo;
 pub use byte_ingest::ByteIngest;
 pub use cached_encoder::CachedEncoder;
+pub use data_type_symbol::DataTypeSymbol;
 pub use decoder::{Decoder, DecoderError};
 pub use decoder_exception::DecoderException;
 pub use dynamic_entry::{DefaultDynamicEntry, DynamicEntry};
 pub use dynamic_hash::DynamicHash;
 pub use encoder::Encoder;
+pub use equate_symbol::EquateSymbol;
 pub use function_prototype::FunctionPrototype;
 pub use global_symbol_map::GlobalSymbolMap;
 pub use high_code_symbol::HighCodeSymbol;
@@ -138,8 +144,10 @@ pub use pcode_exception::PcodeException;
 pub use pcode_factory::PcodeFactory;
 pub use pcode_op_ast::PcodeOpAST;
 pub use pcode_override::PcodeOverride;
+pub use sequence_number::SequenceNumber;
 pub use string_ingest::StringIngest;
 pub use symbol_entry::SymbolEntry;
+pub use union_facet_symbol::UnionFacetSymbol;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpCode {
@@ -417,19 +425,6 @@ impl OpCode {
             | Self::IntScarry => true,
             _ => false,
         }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct SequenceNumber {
-    pub pc: Address,
-    pub uniq: i32,
-    pub order: i32,
-}
-
-impl SequenceNumber {
-    pub fn new(pc: Address, uniq: i32) -> Self {
-        Self { pc, uniq, order: 0 }
     }
 }
 
