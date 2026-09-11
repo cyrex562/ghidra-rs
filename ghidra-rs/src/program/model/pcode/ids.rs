@@ -1082,6 +1082,23 @@ pub const ATTRIB_PARAMSHIFT: AttributeId = AttributeId::new("paramshift", 73);
 pub const ATTRIB_TARGETOP: AttributeId = AttributeId::new("targetop", 74);
 pub const ATTRIB_FARPOINTER: AttributeId = AttributeId::new("farpointer", 85);
 pub const ATTRIB_USEROP: AttributeId = AttributeId::new("userop", 88);
+// Real Ghidra ids are 8/15/17/21/23/61/63/65/67 (`AttributeId.java`'s `ATTRIB_HIDDENRETPARM`/
+// `ATTRIB_NAMELOCK`/`ATTRIB_READONLY`/`ATTRIB_THISPTR`/`ATTRIB_TYPELOCK`/`ATTRIB_CAT`/
+// `ATTRIB_MERGE`/`ATTRIB_VOLATILE`/`ATTRIB_REPREF`), but several collide with `AttributeId`s
+// already declared in this file (8=`ATTRIB_MASK`, 15=`ATTRIB_SIZE`, 17=`ATTRIB_CT`,
+// 21=`ATTRIB_CONTEXT`, 23=`ATTRIB_SUBSYM`, 61=`ATTRIB_SYMREF`, 63=`ATTRIB_MAXSIZE`,
+// 65=`ATTRIB_EXTENSION`), so all nine are renumbered together to continue the local counter above
+// instead, per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`. Needed by
+// `HighSymbol`/`HighLabelSymbol`'s `encodeHeader`.
+pub const ATTRIB_HIDDENRETPARM: AttributeId = AttributeId::new("hiddenretparm", 174);
+pub const ATTRIB_NAMELOCK: AttributeId = AttributeId::new("namelock", 175);
+pub const ATTRIB_READONLY: AttributeId = AttributeId::new("readonly", 176);
+pub const ATTRIB_THISPTR: AttributeId = AttributeId::new("thisptr", 177);
+pub const ATTRIB_TYPELOCK: AttributeId = AttributeId::new("typelock", 178);
+pub const ATTRIB_CAT: AttributeId = AttributeId::new("cat", 179);
+pub const ATTRIB_MERGE: AttributeId = AttributeId::new("merge", 180);
+pub const ATTRIB_VOLATILE: AttributeId = AttributeId::new("volatile", 181);
+pub const ATTRIB_REPREF: AttributeId = AttributeId::new("repref", 182);
 
 #[cfg(test)]
 mod tests {

@@ -75,6 +75,14 @@ pub struct PlaceholderVariableStorage;
 
 impl VariableStorage for PlaceholderVariableStorage {}
 
+/// Placeholder for `ghidra.program.model.pcode.SymbolEntry`, referenced by
+/// [`HighSymbol::get_first_whole_map`](crate::program::model::pcode::high_symbol::HighSymbol::get_first_whole_map)
+/// before the real `SymbolEntry`/`MappedEntry`/`MappedDataEntry`/`DynamicEntry` class hierarchy is
+/// ported. `HighSymbol::get_first_whole_map` only ever needs this as an opaque type slot (its
+/// default body always returns `None`; no current implementor constructs a real entry), so no
+/// members are exposed yet.
+pub trait SymbolEntry: Send + Sync {}
+
 /// Minimal [`VariableStorage`] backing [`DynamicEntry::get_storage`] and
 /// [`HighFunctionDBUtil::write_union_facet`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_union_facet):
 /// reports itself as hash-addressed storage keyed by `hash`, mirroring how real hash-space
