@@ -44,8 +44,11 @@ pub mod mapped_data_entry;
 pub mod mapped_entry;
 pub mod packed;
 pub mod packed_bytes;
+pub mod packed_decode_overlay;
+pub mod packed_encode_overlay;
 pub mod partial_union;
 pub mod patch_encoder;
+pub mod patch_packed_encode;
 pub mod pcode_block;
 pub mod pcode_block_basic;
 pub mod pcode_data_type_manager;
@@ -114,8 +117,11 @@ pub use mapped_data_entry::MappedDataEntry;
 pub use mapped_entry::MappedEntry;
 pub use packed::{PackedDecode, PackedEncode};
 pub use packed_bytes::PackedBytes;
+pub use packed_decode_overlay::PackedDecodeOverlay;
+pub use packed_encode_overlay::PackedEncodeOverlay;
 pub use partial_union::PartialUnion;
 pub use patch_encoder::PatchEncoder;
+pub use patch_packed_encode::PatchPackedEncode;
 pub use pcode_block::{
     decode_edges, decode_next_in_edge, get_front_leaf, pcode_block_name_to_type,
     pcode_block_type_to_name, BlockEdge, PcodeBlock, PCODE_BLOCK_BASIC, PCODE_BLOCK_CONDITION,

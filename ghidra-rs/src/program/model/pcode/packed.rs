@@ -162,6 +162,22 @@ impl PackedDecode {
         Ok(())
     }
 
+    /// The length of the basic-address-space index table built by [`build_spaces`](Self::build_spaces).
+    /// Exposed `pub(crate)` for composing wrapper types (e.g. `PackedDecodeOverlay`, which in Java
+    /// reaches into the inherited protected `spaces` field directly via `spaces.length`) that need
+    /// to bounds-check an index the same way `PackedDecodeOverlay.setOverlay` does.
+    pub(crate) fn spaces_len(&self) -> usize {
+        self.spaces.read().unwrap().len()
+    }
+
+    /// Overwrites the entry at `idx` in the basic-address-space index table, mirroring Java's
+    /// `spaces[idx] = value` write access via the inherited protected field. This is how
+    /// `PackedDecodeOverlay` redirects a TYPECODE_ADDRESSSPACE index that used to resolve to the
+    /// underlying space so that it resolves to the overlay space instead (and back again).
+    pub(crate) fn set_space_at(&self, idx: usize, spc: Option<Arc<AddressSpace>>) {
+        self.spaces.write().unwrap()[idx] = spc;
+    }
+
     fn find_matching_attribute(&self, attrib_id: AttributeId) -> Result<(), DecoderError> {
         self.cur_pos
             .store(self.start_pos.load(Ordering::SeqCst), Ordering::SeqCst);
@@ -622,13 +638,25 @@ impl<W: io::Write> PackedEncode<W> {
         &mut self.out_stream
     }
 
+    /// Immutable counterpart to [`output_stream`](Self::output_stream). Needed by composing
+    /// wrapper types (e.g. `PatchPackedEncode`, which has no implementation-inheritance route to
+    /// `outStream`/`editStream` the way Java's `PatchPackedEncode extends PackedEncode` does) that
+    /// must inspect the underlying buffer (e.g. to re-read already-written bytes while locating a
+    /// position to patch) without needing a mutable borrow.
+    pub(crate) fn output_stream_ref(&self) -> &W {
+        &self.out_stream
+    }
+
     /// Consumes the encoder, returning the underlying stream/buffer.
     pub fn into_inner(self) -> W {
         self.out_stream
     }
 
-    /// Port of `PackedEncode.writeHeader`.
-    fn write_header(&mut self, header: u8, id: i32) -> io::Result<()> {
+    /// Port of `PackedEncode.writeHeader`. `pub(crate)` (rather than private, as in Java where
+    /// subclasses like `PatchPackedEncode`/`PackedEncodeOverlay` call it via inherited access)
+    /// so composing wrapper types in sibling modules can reach it; the method body itself is
+    /// untouched.
+    pub(crate) fn write_header(&mut self, header: u8, id: i32) -> io::Result<()> {
         if id > 0x1f {
             let extended_header = header | HEADEREXTEND_MASK | ((id >> RAWDATA_BITSPERBYTE) as u8);
             let extend_byte = ((id & RAWDATA_MASK as i32) as u8) | RAWDATA_MARKER;
@@ -647,7 +675,10 @@ impl<W: io::Write> PackedEncode<W> {
     /// 10-byte / 70-bit encoding using an *unsigned* right shift - which is exactly what's needed
     /// to losslessly round-trip any 64-bit unsigned quantity, so that's reproduced here by
     /// checking `val as i64 == i64::MIN..0` rather than trying to special-case "large u64".
-    fn write_integer(&mut self, mut type_byte: u8, val: u64) -> io::Result<()> {
+    ///
+    /// `pub(crate)` for the same reason as [`write_header`](Self::write_header) - see its doc
+    /// comment.
+    pub(crate) fn write_integer(&mut self, mut type_byte: u8, val: u64) -> io::Result<()> {
         let len_code: u8;
         let mut sa: i32;
         if val == 0 {
