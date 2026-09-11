@@ -1099,6 +1099,11 @@ pub const ATTRIB_CAT: AttributeId = AttributeId::new("cat", 179);
 pub const ATTRIB_MERGE: AttributeId = AttributeId::new("merge", 180);
 pub const ATTRIB_VOLATILE: AttributeId = AttributeId::new("volatile", 181);
 pub const ATTRIB_REPREF: AttributeId = AttributeId::new("repref", 182);
+// Ids 77/79 match `AttributeId.java`'s `ATTRIB_END`/`ATTRIB_REV` directly; neither collides with
+// any `AttributeId` already declared in this file (the numbering scheme above only renumbers on
+// an actual same-type collision). Needed by `PcodeBlock.BlockEdge`'s encode/decode.
+pub const ATTRIB_END: AttributeId = AttributeId::new("end", 77);
+pub const ATTRIB_REV: AttributeId = AttributeId::new("rev", 79);
 
 #[cfg(test)]
 mod tests {

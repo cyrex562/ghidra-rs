@@ -34,10 +34,12 @@ pub mod packed;
 pub mod packed_bytes;
 pub mod partial_union;
 pub mod patch_encoder;
+pub mod pcode_block;
 pub mod pcode_block_basic;
 pub mod pcode_data_type_manager;
 pub mod pcode_exception;
 pub mod pcode_factory;
+pub mod pcode_op_ast;
 pub mod pcode_override;
 pub mod string_ingest;
 pub mod symbol_entry;
@@ -90,6 +92,13 @@ pub use packed::PackedDecode;
 pub use packed_bytes::PackedBytes;
 pub use partial_union::PartialUnion;
 pub use patch_encoder::PatchEncoder;
+pub use pcode_block::{
+    decode_edges, decode_next_in_edge, get_front_leaf, pcode_block_name_to_type,
+    pcode_block_type_to_name, BlockEdge, PcodeBlock, PCODE_BLOCK_BASIC, PCODE_BLOCK_CONDITION,
+    PCODE_BLOCK_COPY, PCODE_BLOCK_DOWHILE, PCODE_BLOCK_GOTO, PCODE_BLOCK_GRAPH, PCODE_BLOCK_IFELSE,
+    PCODE_BLOCK_IFGOTO, PCODE_BLOCK_INFLOOP, PCODE_BLOCK_LIST, PCODE_BLOCK_MULTIGOTO,
+    PCODE_BLOCK_PLAIN, PCODE_BLOCK_PROPERIF, PCODE_BLOCK_SWITCH, PCODE_BLOCK_WHILEDO,
+};
 pub use pcode_block_basic::PcodeBlockBasic;
 pub use pcode_data_type_manager::{
     find_pointer_relative_inner, get_metatype, get_metatype_from_string, get_metatype_string,
@@ -97,6 +106,7 @@ pub use pcode_data_type_manager::{
 };
 pub use pcode_exception::PcodeException;
 pub use pcode_factory::PcodeFactory;
+pub use pcode_op_ast::PcodeOpAST;
 pub use pcode_override::PcodeOverride;
 pub use string_ingest::StringIngest;
 pub use symbol_entry::SymbolEntry;

@@ -1928,192 +1928,20 @@ pub trait UnsignedLongDataType {}
 /// (from `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait UnsignedLongLongDataType {}
 
-/// Port of `ghidra.program.model.pcode.PcodeBlock`'s `PLAIN`..`INFLOOP` type-tag constants and
-/// its `typeToName` static helper, referenced by
-/// [`BlockGraph`](crate::program::model::pcode::block_graph::BlockGraph)'s `encodeBody` override
-/// before the rest of `PcodeBlock` is ported. The full table is reproduced (rather than just
-/// `GRAPH`) since `typeToName` must handle whatever type tag a contained block reports.
-pub const PCODE_BLOCK_PLAIN: i32 = 0;
-pub const PCODE_BLOCK_BASIC: i32 = 1;
-pub const PCODE_BLOCK_GRAPH: i32 = 2;
-pub const PCODE_BLOCK_COPY: i32 = 3;
-pub const PCODE_BLOCK_GOTO: i32 = 4;
-pub const PCODE_BLOCK_MULTIGOTO: i32 = 5;
-pub const PCODE_BLOCK_LIST: i32 = 6;
-pub const PCODE_BLOCK_CONDITION: i32 = 7;
-pub const PCODE_BLOCK_PROPERIF: i32 = 8;
-pub const PCODE_BLOCK_IFELSE: i32 = 9;
-pub const PCODE_BLOCK_IFGOTO: i32 = 10;
-pub const PCODE_BLOCK_WHILEDO: i32 = 11;
-pub const PCODE_BLOCK_DOWHILE: i32 = 12;
-pub const PCODE_BLOCK_SWITCH: i32 = 13;
-pub const PCODE_BLOCK_INFLOOP: i32 = 14;
-
-/// Stands in for `PcodeBlock.typeToName(int)`. Returns `None` for an unrecognized type tag,
-/// mirroring the Java method's `return null` fallthrough.
-pub fn pcode_block_type_to_name(block_type: i32) -> Option<&'static str> {
-    match block_type {
-        PCODE_BLOCK_PLAIN => Some("plain"),
-        PCODE_BLOCK_BASIC => Some("basic"),
-        PCODE_BLOCK_GRAPH => Some("graph"),
-        // "this a trick for the decompiler c-side"
-        PCODE_BLOCK_COPY => Some("plain"),
-        PCODE_BLOCK_GOTO => Some("goto"),
-        PCODE_BLOCK_MULTIGOTO => Some("multigoto"),
-        PCODE_BLOCK_LIST => Some("list"),
-        PCODE_BLOCK_CONDITION => Some("condition"),
-        PCODE_BLOCK_PROPERIF => Some("properif"),
-        PCODE_BLOCK_IFELSE => Some("ifelse"),
-        PCODE_BLOCK_IFGOTO => Some("ifgoto"),
-        PCODE_BLOCK_WHILEDO => Some("whiledo"),
-        PCODE_BLOCK_DOWHILE => Some("dowhile"),
-        PCODE_BLOCK_SWITCH => Some("switch"),
-        PCODE_BLOCK_INFLOOP => Some("infloop"),
-        _ => None,
-    }
-}
-
-/// Placeholder for `ghidra.program.model.pcode.PcodeBlock`, referenced by
-/// [`BlockGraph`](crate::program::model::pcode::block_graph::BlockGraph) (which extends it, and
-/// stores/inspects sibling and child blocks of this type) before the real class is ported.
-///
-/// Exposes only the members `BlockGraph`'s own logic touches: the inherited `index` field
-/// accessors, the inherited `blocktype` field getter, the protected `addInEdge`, and the
-/// protected `encodeBody`/`decodeBody` overrides `BlockGraph` composes with its own (both
-/// default to a no-op, matching `PcodeBlock`'s own "no body by default" implementation), plus
-/// the public `encode`/`decode` wrappers used to (de)serialize each block in `BlockGraph`'s
-/// list. `addInEdge`, `encode`, and `decode` are left as required methods since their real
-/// bodies depend on `PcodeBlock`'s `BlockEdge` in/out-edge bookkeeping, which is out of scope
-/// for this placeholder.
-///
-/// Setters use `&self` (implying interior mutability in the real implementation), matching this
-/// crate's existing convention for shared, graph-like nodes (e.g.
-/// `Decoder::set_address_factory` in `crate::program::model::pcode::decoder`) and allowing
-/// blocks to be shared (via `Arc`) between a container's list and its edges.
-///
-/// The write-only `parent` back-pointer assignment (`bl.parent = this` in
-/// `BlockGraph.addBlock`) is not modeled: `BlockGraph.java` never reads it back within its own
-/// source, and faithfully representing a self-referential parent pointer needs the real port's
-/// chosen ownership model (e.g. `Weak`/arena index), not this placeholder.
-pub trait PcodeBlock {
-    /// Stands in for the inherited `index` field getter (`PcodeBlock.getIndex()`).
-    fn get_index(&self) -> i32;
-
-    /// Stands in for the inherited `index` field setter (`PcodeBlock.setIndex(int)`).
-    fn set_index(&self, index: i32);
-
-    /// Stands in for the inherited `blocktype` field getter (`PcodeBlock.getType()`).
-    fn get_block_type(&self) -> i32;
-
-    /// Stands in for the protected `PcodeBlock.addInEdge(PcodeBlock, int)`.
-    fn add_in_edge(&self, begin: Arc<dyn PcodeBlock>, label: i32);
-
-    /// Stands in for the protected `PcodeBlock.encodeBody(Encoder)`. Defaults to a no-op,
-    /// matching `PcodeBlock`'s own default ("no body by default").
-    fn encode_body(&self, _encoder: &mut dyn Encoder) -> std::io::Result<()> {
-        Ok(())
-    }
-
-    /// Stands in for the protected `PcodeBlock.decodeBody(Decoder, BlockMap)`. Defaults to a
-    /// no-op, matching `PcodeBlock`'s own default ("no body to restore by default").
-    fn decode_body(
-        &self,
-        _decoder: &dyn Decoder,
-        _resolver: &dyn BlockMap,
-    ) -> Result<(), DecoderException> {
-        Ok(())
-    }
-
-    /// Stands in for the public `PcodeBlock.encode(Encoder)`, used by `BlockGraph.encodeBody` to
-    /// encode each child block in its list.
-    fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()>;
-
-    /// Stands in for the public `PcodeBlock.decode(Decoder, BlockMap)`, used by
-    /// `BlockGraph.decodeBody` to decode each newly-created child block.
-    fn decode(&self, decoder: &dyn Decoder, resolver: &dyn BlockMap)
-        -> Result<(), DecoderException>;
-
-    /// Returns this block viewed as a
-    /// [`BlockGraph`](crate::program::model::pcode::block_graph::BlockGraph) when it is one.
-    /// Mirrors the `instanceof BlockGraph` checks in `BlockGraph.addBlock` and
-    /// `BlockGraph.transferObjectRef`. Defaults to `None`; `BlockGraph` implementations
-    /// override it to return `Some(self)`.
-    fn as_block_graph(&self) -> Option<&dyn crate::program::model::pcode::block_graph::BlockGraph> {
-        None
-    }
-
-    /// Returns this block viewed as a [`BlockCopy`] when it is one. Mirrors the `instanceof
-    /// BlockCopy` check in `BlockGraph.transferObjectRef`. Defaults to `None`.
-    fn as_block_copy(&self) -> Option<&dyn BlockCopy> {
-        None
-    }
-
-    /// Stands in for the inherited `parent` field getter (`PcodeBlock.getParent()`), used by
-    /// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
-    /// to walk up from a goto's root block by the recorded depth. Defaults to `None`, matching an
-    /// unparented (e.g. top-level) block.
-    fn get_parent(&self) -> Option<Arc<dyn PcodeBlock>> {
-        None
-    }
-
-    /// Returns this block viewed as a [`BlockGoto`] when it is one. Mirrors the `instanceof
-    /// BlockGoto` check in `BlockMap.resolveGotoReferences`. Defaults to `None`.
-    fn as_block_goto(&self) -> Option<&dyn BlockGoto> {
-        None
-    }
-
-    /// Returns this block viewed as a [`BlockIfGoto`] when it is one. Mirrors the `instanceof
-    /// BlockIfGoto` check in `BlockMap.resolveGotoReferences`. Defaults to `None`.
-    fn as_block_if_goto(&self) -> Option<&dyn BlockIfGoto> {
-        None
-    }
-
-    /// Returns this block viewed as a [`BlockMultiGoto`] when it is one. Mirrors the `instanceof
-    /// BlockMultiGoto` check in `BlockMap.resolveGotoReferences`. Defaults to `None`.
-    fn as_block_multi_goto(&self) -> Option<&dyn BlockMultiGoto> {
-        None
-    }
-}
-
-/// Stands in for `PcodeBlock.nameToType(String)`, used by
-/// [`BlockMap::create_block`](crate::program::model::pcode::block_map::BlockMap::create_block) to
-/// resolve an XML element name back to a block type tag. Returns `-1` for an unrecognized name,
-/// mirroring the Java method's fallthrough (including its "basic" gap: `nameToType` never
-/// recognizes the name `typeToName` produces for [`PCODE_BLOCK_BASIC`]).
-pub fn pcode_block_name_to_type(name: &str) -> i32 {
-    match name.chars().next() {
-        Some('c') => PCODE_BLOCK_COPY,
-        Some('d') => PCODE_BLOCK_DOWHILE,
-        Some('g') => {
-            if name == "goto" {
-                PCODE_BLOCK_GOTO
-            } else {
-                PCODE_BLOCK_GRAPH
-            }
-        }
-        Some('i') => {
-            if name == "ifelse" {
-                PCODE_BLOCK_IFELSE
-            } else if name == "infloop" {
-                PCODE_BLOCK_INFLOOP
-            } else {
-                PCODE_BLOCK_IFGOTO
-            }
-        }
-        Some('l') => PCODE_BLOCK_LIST,
-        Some('m') => PCODE_BLOCK_MULTIGOTO,
-        Some('p') => {
-            if name == "properif" {
-                PCODE_BLOCK_PROPERIF
-            } else {
-                PCODE_BLOCK_PLAIN
-            }
-        }
-        Some('s') => PCODE_BLOCK_SWITCH,
-        Some('w') => PCODE_BLOCK_WHILEDO,
-        _ => -1,
-    }
-}
+/// Real port of `ghidra.program.model.pcode.PcodeBlock`; lives in its own module,
+/// [`pcode_block`](crate::program::model::pcode::pcode_block), re-exported here (along with the
+/// `PCODE_BLOCK_*` type-tag constants and the `typeToName`/`nameToType` helpers that used to live
+/// alongside the placeholder) so existing `use crate::program::seam_stubs::{PcodeBlock, ...}`
+/// call sites (`BlockGraph`, `BlockMap`, `PcodeBlockBasic`, and their test mocks) keep compiling
+/// unchanged, following this crate's precedent for graduating a seam-stub type in place (see e.g.
+/// `DataTypePath`/`Mask`/`StackFrame`/`PrototypePieces` above).
+pub use crate::program::model::pcode::pcode_block::{
+    pcode_block_name_to_type, pcode_block_type_to_name, BlockEdge, PcodeBlock, PCODE_BLOCK_BASIC,
+    PCODE_BLOCK_CONDITION, PCODE_BLOCK_COPY, PCODE_BLOCK_DOWHILE, PCODE_BLOCK_GOTO,
+    PCODE_BLOCK_GRAPH, PCODE_BLOCK_IFELSE, PCODE_BLOCK_IFGOTO, PCODE_BLOCK_INFLOOP,
+    PCODE_BLOCK_LIST, PCODE_BLOCK_MULTIGOTO, PCODE_BLOCK_PLAIN, PCODE_BLOCK_PROPERIF,
+    PCODE_BLOCK_SWITCH, PCODE_BLOCK_WHILEDO,
+};
 
 /// Placeholder for `ghidra.program.model.pcode.BlockCopy`, referenced by
 /// [`BlockGraph::transfer_object_ref`](crate::program::model::pcode::block_graph::BlockGraph::transfer_object_ref)
