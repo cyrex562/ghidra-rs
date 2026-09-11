@@ -48,6 +48,7 @@ pub mod packed;
 pub mod packed_bytes;
 pub mod packed_decode_overlay;
 pub mod packed_encode_overlay;
+pub mod param_measure;
 pub mod partial_union;
 pub mod patch_encoder;
 pub mod patch_packed_encode;
@@ -57,11 +58,13 @@ pub mod pcode_data_type_manager;
 pub mod pcode_exception;
 pub mod pcode_factory;
 pub mod pcode_op_ast;
+pub mod pcode_op_bank;
 pub mod pcode_override;
 pub mod sequence_number;
 pub mod string_ingest;
 pub mod symbol_entry;
 pub mod union_facet_symbol;
+pub mod varnode_translator;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
@@ -125,6 +128,7 @@ pub use packed::{PackedDecode, PackedEncode};
 pub use packed_bytes::PackedBytes;
 pub use packed_decode_overlay::PackedDecodeOverlay;
 pub use packed_encode_overlay::PackedEncodeOverlay;
+pub use param_measure::ParamMeasure;
 pub use partial_union::PartialUnion;
 pub use patch_encoder::PatchEncoder;
 pub use patch_packed_encode::PatchPackedEncode;
@@ -143,11 +147,13 @@ pub use pcode_data_type_manager::{
 pub use pcode_exception::PcodeException;
 pub use pcode_factory::PcodeFactory;
 pub use pcode_op_ast::PcodeOpAST;
+pub use pcode_op_bank::PcodeOpBank;
 pub use pcode_override::PcodeOverride;
 pub use sequence_number::SequenceNumber;
 pub use string_ingest::StringIngest;
 pub use symbol_entry::SymbolEntry;
 pub use union_facet_symbol::UnionFacetSymbol;
+pub use varnode_translator::VarnodeTranslator;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpCode {
