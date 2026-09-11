@@ -64,7 +64,10 @@ pub mod sequence_number;
 pub mod string_ingest;
 pub mod symbol_entry;
 pub mod union_facet_symbol;
+pub mod varnode_ast;
+pub mod varnode_bank;
 pub mod varnode_translator;
+pub mod xml_encode;
 
 use crate::program::model::address::{Address, AddressFactory, AddressSetView, AddressSpace, AddressSpaceType};
 use crate::program::model::lang::language::Language;
@@ -155,7 +158,10 @@ pub use sequence_number::SequenceNumber;
 pub use string_ingest::StringIngest;
 pub use symbol_entry::SymbolEntry;
 pub use union_facet_symbol::UnionFacetSymbol;
+pub use varnode_ast::VarnodeAST;
+pub use varnode_bank::VarnodeBank;
 pub use varnode_translator::VarnodeTranslator;
+pub use xml_encode::XmlEncode;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpCode {

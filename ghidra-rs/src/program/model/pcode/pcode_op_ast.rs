@@ -41,17 +41,42 @@
 //! for *this* file beyond what testability and real callers need: [`PcodeOpAST::get_opcode`],
 //! [`get_seqnum`](PcodeOpAST::get_seqnum), [`num_inputs`](PcodeOpAST::num_inputs),
 //! [`get_input`](PcodeOpAST::get_input), and [`get_output`](PcodeOpAST::get_output) are read-only
-//! accessors for the constructor-recorded state, exposed for testability. The one exception is
+//! accessors for the constructor-recorded state, exposed for testability. The exceptions are
 //! [`set_opcode`](PcodeOpAST::set_opcode) (the inherited `PcodeOp.setOpcode(int)`), added
 //! specifically because it is what
 //! [`PcodeOpBank::change_opcode`](crate::program::model::pcode::pcode_op_bank::PcodeOpBank::change_opcode)
 //! needs (`changeOpcode` in Java is just `((PcodeOpAST) op).setOpcode(newopc)`); the `opcode`
-//! field is a `Cell<OpCode>` rather than a plain field so this can be exposed through `&self`.
+//! field is a `Cell<OpCode>` rather than a plain field so this can be exposed through `&self`. And
+//! [`set_input`](PcodeOpAST::set_input)/[`set_output`](PcodeOpAST::set_output) (the inherited
+//! `PcodeOp.setInput(Varnode, int)`/`PcodeOp.setOutput(Varnode)`), added when
+//! [`VarnodeAST`](crate::program::model::pcode::varnode_ast::VarnodeAST)'s port needed them for
+//! `VarnodeAST.descendReplace` (`op.setInput(null, i)` / `op.setInput(this, i)`) -- see that
+//! type's module docs for why.
+//!
+//! ## Deviation grown alongside `VarnodeAST`: `inputs`/`output` hold `Arc<VarnodeAST>`, not `Varnode`
+//!
+//! When this file was first ported, `inputs`/`output` were typed `RefCell<Vec<Option<Varnode>>>`/
+//! `RefCell<Option<Varnode>>` -- the crate's plain "free" [`Varnode`] value type -- since nothing
+//! yet exercised them beyond checking they start `None`. Once
+//! [`VarnodeAST`](crate::program::model::pcode::varnode_ast::VarnodeAST) was ported, it became
+//! clear that was too weak a type: real Ghidra's `PcodeOp.input`/`output` fields are declared
+//! `Varnode` but, inside an actual decompiler `PcodeSyntaxTree`, always *hold* `VarnodeAST`
+//! instances, and code like `VarnodeAST.descendReplace` relies on that -- e.g. comparing
+//! `op.getOutput() == this` by reference identity, which only makes sense if `getOutput()` can
+//! return the exact same tree-node object `this` might be. A plain `Varnode` (an owned
+//! address+size value with no identity of its own) cannot support that. So `inputs`/`output` were
+//! changed to `RefCell<Vec<Option<Arc<VarnodeAST>>>>`/`RefCell<Option<Arc<VarnodeAST>>>`, matching
+//! [`PcodeOpBank`](crate::program::model::pcode::pcode_op_bank::PcodeOpBank)'s own established
+//! "concrete `Arc<...>` instead of the Java base type + runtime downcast" deviation (see that
+//! module's docs). No other code in the crate consumed the old `Varnode`-typed accessors (checked
+//! via `grep` before making the change), so this is not a breaking change to any real call site --
+//! only this file's own tests, which merely asserted `.is_none()` either way.
 
 use crate::program::model::address::Address;
 use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
-use crate::program::model::pcode::{OpCode, SequenceNumber, Varnode};
+use crate::program::model::pcode::varnode_ast::VarnodeAST;
+use crate::program::model::pcode::{OpCode, SequenceNumber};
 use crate::program::seam_stubs::PcodeOpAst;
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
@@ -70,11 +95,13 @@ pub struct PcodeOpAST {
     /// `PcodeOpBank` only ever holds `Arc<PcodeOpAST>`, never `&mut`).
     opcode: Cell<OpCode>,
     /// Port of the inherited `Varnode[] input` field: `numinputs` slots, each `None` ("null" in
-    /// Java) until `PcodeOp.setInput` (out of scope; see module docs) fills it in.
-    inputs: RefCell<Vec<Option<Varnode>>>,
-    /// Port of the inherited `Varnode output` field, `null`/`None` until `PcodeOp.setOutput` (out
-    /// of scope; see module docs) sets it.
-    output: RefCell<Option<Varnode>>,
+    /// Java) until [`set_input`](Self::set_input) fills it in. See the module docs for why this
+    /// holds `Arc<VarnodeAST>` rather than the crate's plain `Varnode` value type.
+    inputs: RefCell<Vec<Option<Arc<VarnodeAST>>>>,
+    /// Port of the inherited `Varnode output` field, `null`/`None` until
+    /// [`set_output`](Self::set_output) sets it. See the module docs for the `Arc<VarnodeAST>`
+    /// typing.
+    output: RefCell<Option<Arc<VarnodeAST>>>,
 
     /// Is this operation currently in the syntax tree. Starts `true` ("dead until actually in
     /// the syntax tree"), matching the Java constructor comment.
@@ -135,13 +162,32 @@ impl PcodeOpAST {
     }
 
     /// Port of the inherited `PcodeOp.getInput(int)`.
-    pub fn get_input(&self, i: usize) -> Option<Varnode> {
+    pub fn get_input(&self, i: usize) -> Option<Arc<VarnodeAST>> {
         self.inputs.borrow()[i].clone()
     }
 
+    /// Set/replace an input varnode at the given slot. Port of the inherited
+    /// `PcodeOp.setInput(Varnode, int)`. Grows the `inputs` vector to `slot + 1` (filling any new
+    /// intermediate slots with `None`) if `slot` is out of range, matching Java's array-growth
+    /// behavior -- though every real call site in this crate (`VarnodeAST::descend_replace`) only
+    /// ever targets an already-valid slot.
+    pub fn set_input(&self, vn: Option<Arc<VarnodeAST>>, slot: usize) {
+        let mut inputs = self.inputs.borrow_mut();
+        if slot >= inputs.len() {
+            inputs.resize(slot + 1, None);
+        }
+        inputs[slot] = vn;
+    }
+
     /// Port of the inherited `PcodeOp.getOutput()`.
-    pub fn get_output(&self) -> Option<Varnode> {
+    pub fn get_output(&self) -> Option<Arc<VarnodeAST>> {
         self.output.borrow().clone()
+    }
+
+    /// Set the output varnode for this operation. Port of the inherited
+    /// `PcodeOp.setOutput(Varnode)`.
+    pub fn set_output(&self, vn: Option<Arc<VarnodeAST>>) {
+        *self.output.borrow_mut() = vn;
     }
 
     /// Port of `PcodeOpAST.isDead()`.
