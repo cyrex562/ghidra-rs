@@ -1293,6 +1293,12 @@ pub trait Processor {
 /// [`Language`](crate::program::model::lang::language::Language)
 /// before the real class is ported. `Language` only ever returns this type opaquely, so no
 /// members are needed yet.
+///
+/// A real, concrete port now exists at
+/// [`crate::program::model::lang::address_label_info::AddressLabelInfo`] (a distinct type from
+/// this marker trait, kept independent since rewiring `Language::get_default_symbols`'s return
+/// type would ripple through every `Language` implementor/mock in the crate -- out of scope for
+/// that port).
 pub trait AddressLabelInfo {}
 
 /// Placeholder for `ghidra.program.model.lang.PcodeInjectLibrary`, referenced by
@@ -1340,6 +1346,12 @@ pub trait PcodeInjectLibrary {
 /// [`QueryResult`](crate::app::seam_stubs::QueryResult) -- which hashes/compares only by this
 /// pair, mirroring `QueryResult.hashCode`/`equals` -- can be stored in a `HashSet`, matching
 /// Java's `Set<QueryResult>`.
+///
+/// A real, full-fidelity port now exists at
+/// [`crate::program::model::lang::language_compiler_spec_pair::LanguageCompilerSpecPair`] (with
+/// `getLanguage`/`getCompilerSpec`/`getLanguageDescription`/`getCompilerSpecDescription`,
+/// `compareTo`, and the two-`String` constructor); it is kept as an independent type since
+/// rewiring this placeholder's ~18 existing call sites is out of scope for that port.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LanguageCompilerSpecPair {
     language_id: LanguageID,
@@ -1370,6 +1382,13 @@ impl LanguageCompilerSpecPair {
 /// [`LanguageProvider`](crate::program::model::lang::language_provider::LanguageProvider)
 /// before the real exception class is ported. Carries only the formatted message; the real
 /// port should retain the `LanguageID`/`Throwable` cause fields from the Java constructors.
+///
+/// A real, full-fidelity port (all seven Java constructor overloads, plus the `LanguageID`/
+/// `Throwable` cause chain this placeholder's doc comment called out as missing) now exists at
+/// [`crate::program::model::lang::language_not_found_exception::LanguageNotFoundException`],
+/// with a `From<LanguageNotFoundException>` impl for bridging a value of *this* placeholder type
+/// into it. It is kept as an independent type since rewiring this placeholder's ~20 existing
+/// call sites is out of scope for that port.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LanguageNotFoundException(pub String);
 
