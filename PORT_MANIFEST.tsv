@@ -14141,8 +14141,8 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/la
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypePieces.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ReadOnlyProcessorContext.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Register.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterBuilder.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterBuilder.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterTranslator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterTree.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterValue.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
