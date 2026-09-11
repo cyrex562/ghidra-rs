@@ -1131,6 +1131,10 @@ pub const ATTRIB_GRP: AttributeId = AttributeId::new("grp", 186);
 pub const ATTRIB_INPUT: AttributeId = AttributeId::new("input", 187);
 pub const ATTRIB_PERSISTS: AttributeId = AttributeId::new("persists", 188);
 pub const ATTRIB_UNAFF: AttributeId = AttributeId::new("unaff", 189);
+// Real Ghidra id is 132 (`AttributeId.java`'s `ATTRIB_NUM`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`. Needed by
+// `JumpTable.LoadTable::decode`.
+pub const ATTRIB_NUM: AttributeId = AttributeId::new("num", 190);
 
 #[cfg(test)]
 mod tests {
