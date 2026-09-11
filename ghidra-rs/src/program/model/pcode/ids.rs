@@ -1104,6 +1104,14 @@ pub const ATTRIB_REPREF: AttributeId = AttributeId::new("repref", 182);
 // an actual same-type collision). Needed by `PcodeBlock.BlockEdge`'s encode/decode.
 pub const ATTRIB_END: AttributeId = AttributeId::new("end", 77);
 pub const ATTRIB_REV: AttributeId = AttributeId::new("rev", 79);
+// Ids 75/76/78 match `AttributeId.java`'s `ATTRIB_ALTINDEX`/`ATTRIB_DEPTH`/`ATTRIB_OPCODE`
+// directly; none collides with any `AttributeId` already declared in this file (the numbering
+// scheme above only renumbers on an actual same-type collision). Needed by `BlockCopy`'s
+// `encodeHeader`/`decodeHeader` and `BlockGoto`/`BlockIfGoto`/`BlockMultiGoto`'s `<target>`
+// encode/decode and `BlockCondition`'s `encodeHeader`/`decodeHeader`.
+pub const ATTRIB_ALTINDEX: AttributeId = AttributeId::new("altindex", 75);
+pub const ATTRIB_DEPTH: AttributeId = AttributeId::new("depth", 76);
+pub const ATTRIB_OPCODE: AttributeId = AttributeId::new("opcode", 78);
 
 #[cfg(test)]
 mod tests {

@@ -1943,50 +1943,28 @@ pub use crate::program::model::pcode::pcode_block::{
     PCODE_BLOCK_SWITCH, PCODE_BLOCK_WHILEDO,
 };
 
-/// Placeholder for `ghidra.program.model.pcode.BlockCopy`, referenced by
-/// [`BlockGraph::transfer_object_ref`](crate::program::model::pcode::block_graph::BlockGraph::transfer_object_ref)
-/// before the real class is ported. Exposes only the members that method needs: the alternate
-/// index used to correlate a copy block with the original graph's copy block, the opaque
-/// underlying-block reference and start address, and the setter used to transfer both from one
-/// copy block to another.
-pub trait BlockCopy {
-    /// Stands in for `BlockCopy.getAltIndex()`.
-    fn get_alt_index(&self) -> i32;
+/// Real port of `ghidra.program.model.pcode.BlockCopy`; lives in its own module,
+/// [`block_copy`](crate::program::model::pcode::block_copy), re-exported here so existing `use
+/// crate::program::seam_stubs::BlockCopy` call sites (`BlockGraph` and its test mocks) keep
+/// compiling unchanged, following this crate's precedent for graduating a seam-stub type in place
+/// (see `PcodeBlock` above).
+pub use crate::program::model::pcode::block_copy::BlockCopy;
 
-    /// Stands in for `BlockCopy.getRef()`. Modeled as an opaque `Any` handle, mirroring the
-    /// Java field's `Object` type.
-    fn get_ref(&self) -> Option<Arc<dyn Any + Send + Sync>>;
+/// Real port of `ghidra.program.model.pcode.BlockGoto`; lives in its own module,
+/// [`block_goto`](crate::program::model::pcode::block_goto), re-exported here so existing `use
+/// crate::program::seam_stubs::BlockGoto` call sites (`BlockMap` and its test mocks) keep
+/// compiling, modulo the `set_goto_target` signature change documented on the real trait.
+pub use crate::program::model::pcode::block_goto::BlockGoto;
 
-    /// Stands in for `BlockCopy.getStart()` (the `PcodeBlock.getStart()` override).
-    fn get_start(&self) -> Address;
+/// Real port of `ghidra.program.model.pcode.BlockIfGoto`; lives in its own module,
+/// [`block_if_goto`](crate::program::model::pcode::block_if_goto), re-exported here for the same
+/// reason as [`BlockGoto`] above.
+pub use crate::program::model::pcode::block_if_goto::BlockIfGoto;
 
-    /// Stands in for the protected `BlockCopy.set(Object, Address)`.
-    fn set(&self, r: Option<Arc<dyn Any + Send + Sync>>, addr: Address);
-}
-
-/// Placeholder for `ghidra.program.model.pcode.BlockGoto`, referenced by
-/// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
-/// before the real class is ported. Exposes only the setter that method needs.
-pub trait BlockGoto {
-    /// Stands in for `BlockGoto.setGotoTarget(PcodeBlock)`.
-    fn set_goto_target(&self, target: Arc<dyn PcodeBlock>);
-}
-
-/// Placeholder for `ghidra.program.model.pcode.BlockIfGoto`, referenced by
-/// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
-/// before the real class is ported. Exposes only the setter that method needs.
-pub trait BlockIfGoto {
-    /// Stands in for `BlockIfGoto.setGotoTarget(PcodeBlock)`.
-    fn set_goto_target(&self, target: Arc<dyn PcodeBlock>);
-}
-
-/// Placeholder for `ghidra.program.model.pcode.BlockMultiGoto`, referenced by
-/// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
-/// before the real class is ported. Exposes only the mutator that method needs.
-pub trait BlockMultiGoto {
-    /// Stands in for `BlockMultiGoto.addGotoTarget(PcodeBlock)`.
-    fn add_goto_target(&self, target: Arc<dyn PcodeBlock>);
-}
+/// Real port of `ghidra.program.model.pcode.BlockMultiGoto`; lives in its own module,
+/// [`block_multi_goto`](crate::program::model::pcode::block_multi_goto), re-exported here for the
+/// same reason as [`BlockGoto`] above.
+pub use crate::program::model::pcode::block_multi_goto::BlockMultiGoto;
 
 /// Placeholder for `ghidra.program.model.pcode.HighSymbol`, referenced by
 /// [`GlobalSymbolMap`](crate::program::model::pcode::global_symbol_map::GlobalSymbolMap) and

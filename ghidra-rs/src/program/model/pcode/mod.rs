@@ -1,6 +1,18 @@
 pub mod address_xml;
+pub mod block_condition;
+pub mod block_copy;
+pub mod block_do_while;
+pub mod block_goto;
 pub mod block_graph;
+pub mod block_if_else;
+pub mod block_if_goto;
+pub mod block_inf_loop;
+pub mod block_list;
 pub mod block_map;
+pub mod block_multi_goto;
+pub mod block_proper_if;
+pub mod block_switch;
+pub mod block_while_do;
 pub mod byte_ingest;
 pub mod cached_encoder;
 pub mod decoder;
@@ -54,8 +66,20 @@ pub use address_xml::{
     encode_varnodes, restore_range_xml, restore_xml, restore_xml_with_language, AddressXml,
     DefaultAddressXml, MAX_PIECES,
 };
+pub use block_condition::BlockCondition;
+pub use block_copy::BlockCopy;
+pub use block_do_while::BlockDoWhile;
+pub use block_goto::{block_goto_decode_body, BlockGoto};
 pub use block_graph::BlockGraph;
+pub use block_if_else::BlockIfElse;
+pub use block_if_goto::{block_if_goto_decode_body, BlockIfGoto};
+pub use block_inf_loop::BlockInfLoop;
+pub use block_list::BlockList;
 pub use block_map::BlockMap;
+pub use block_multi_goto::{block_multi_goto_decode_body, BlockMultiGoto};
+pub use block_proper_if::BlockProperIf;
+pub use block_switch::BlockSwitch;
+pub use block_while_do::BlockWhileDo;
 pub use byte_ingest::ByteIngest;
 pub use cached_encoder::CachedEncoder;
 pub use decoder::{Decoder, DecoderError};
@@ -267,6 +291,104 @@ impl OpCode {
             Self::Lzcount => "LZCOUNT",
             Self::Spull => "SPULL",
         }
+    }
+
+    /// Resolve a mnemonic string back to an opcode.
+    ///
+    /// Port of `ghidra.program.model.pcode.PcodeOp.getOpcode(String)`, which builds a
+    /// `mnemonic -> opcode` lookup table by calling `getMnemonic(i)` for every `i` in
+    /// `0..PCODE_MAX` (`PCODE_MAX = 75`) plus four extra template-directive aliases
+    /// (`BUILD`/`DELAY_SLOT`/`LABEL`/`CROSSBUILD`), then looks `s` up in it, throwing
+    /// `UnknownInstructionException` on a miss. Modeled here as `Option<OpCode>` (`None` standing
+    /// in for that exception) since callers (e.g. `BlockCondition.decodeHeader`) already handle
+    /// the "unknown mnemonic" case by catching the exception and substituting a fallback opcode.
+    ///
+    /// Real Java gap **not** reproduced here: `PcodeOp`'s opcode space includes an unused slot at
+    /// index 45 (between `FLOAT_LESSEQUAL` = 44 and `FLOAT_NAN` = 46) whose `getMnemonic(45)`
+    /// falls through to `"INVALID_OP"`; since that slot is included in the `0..PCODE_MAX` table-
+    /// building loop, Java's `opcodeTable` actually contains a real `"INVALID_OP" -> 45` entry.
+    /// This enum has no variant for that unused slot at all, so `from_mnemonic("INVALID_OP")`
+    /// returns `None` here instead of matching that entry. No real opcode ever legitimately
+    /// mnemonic-round-trips through `"INVALID_OP"`, so this has no practical effect on any current
+    /// caller, but it is a genuine, deliberate divergence worth flagging.
+    pub fn from_mnemonic(s: &str) -> Option<OpCode> {
+        Some(match s {
+            "UNIMPLEMENTED" => Self::Unimplemented,
+            "COPY" => Self::Copy,
+            "LOAD" => Self::Load,
+            "STORE" => Self::Store,
+            "BRANCH" => Self::Branch,
+            "CBRANCH" => Self::CBranch,
+            "BRANCHIND" => Self::BranchInd,
+            "CALL" => Self::Call,
+            "CALLIND" => Self::CallInd,
+            "CALLOTHER" => Self::CallOther,
+            "RETURN" => Self::Return,
+            "INT_EQUAL" => Self::IntEqual,
+            "INT_NOTEQUAL" => Self::IntNotEqual,
+            "INT_SLESS" => Self::IntSless,
+            "INT_SLESSEQUAL" => Self::IntSlessEqual,
+            "INT_LESS" => Self::IntLess,
+            "INT_LESSEQUAL" => Self::IntLessEqual,
+            "INT_ZEXT" => Self::IntZext,
+            "INT_SEXT" => Self::IntSext,
+            "INT_ADD" => Self::IntAdd,
+            "INT_SUB" => Self::IntSub,
+            "INT_CARRY" => Self::IntCarry,
+            "INT_SCARRY" => Self::IntScarry,
+            "INT_SBORROW" => Self::IntSborrow,
+            "INT_2COMP" => Self::Int2Comp,
+            "INT_NEGATE" => Self::IntNegate,
+            "INT_XOR" => Self::IntXor,
+            "INT_AND" => Self::IntAnd,
+            "INT_OR" => Self::IntOr,
+            "INT_LEFT" => Self::IntLeft,
+            "INT_RIGHT" => Self::IntRight,
+            "INT_SRIGHT" => Self::IntSright,
+            "INT_MULT" => Self::IntMult,
+            "INT_DIV" => Self::IntDiv,
+            "INT_SDIV" => Self::IntSdiv,
+            "INT_REM" => Self::IntRem,
+            "INT_SREM" => Self::IntSrem,
+            "BOOL_NEGATE" => Self::BoolNegate,
+            "BOOL_XOR" => Self::BoolXor,
+            "BOOL_AND" => Self::BoolAnd,
+            "BOOL_OR" => Self::BoolOr,
+            "FLOAT_EQUAL" => Self::FloatEqual,
+            "FLOAT_NOTEQUAL" => Self::FloatNotEqual,
+            "FLOAT_LESS" => Self::FloatLess,
+            "FLOAT_LESSEQUAL" => Self::FloatLessEqual,
+            "FLOAT_NAN" => Self::FloatNan,
+            "FLOAT_ADD" => Self::FloatAdd,
+            "FLOAT_DIV" => Self::FloatDiv,
+            "FLOAT_MULT" => Self::FloatMult,
+            "FLOAT_SUB" => Self::FloatSub,
+            "FLOAT_NEG" => Self::FloatNeg,
+            "FLOAT_ABS" => Self::FloatAbs,
+            "FLOAT_SQRT" => Self::FloatSqrt,
+            "INT2FLOAT" => Self::FloatInt2Float,
+            "FLOAT2FLOAT" => Self::FloatFloat2Float,
+            "TRUNC" => Self::FloatTrunc,
+            "CEIL" => Self::FloatCeil,
+            "FLOOR" => Self::FloatFloor,
+            "ROUND" => Self::FloatRound,
+            "MULTIEQUAL" | "BUILD" => Self::MultiEqual,
+            "INDIRECT" | "DELAY_SLOT" => Self::Indirect,
+            "PIECE" => Self::Piece,
+            "SUBPIECE" => Self::Subpiece,
+            "CAST" => Self::Cast,
+            "PTRADD" | "LABEL" => Self::PtrAdd,
+            "PTRSUB" | "CROSSBUILD" => Self::PtrSub,
+            "SEGMENTOP" => Self::SegmentOp,
+            "CPOOLREF" => Self::CpoolRef,
+            "NEW" => Self::New,
+            "INSERT" => Self::Insert,
+            "ZPULL" => Self::Zpull,
+            "POPCOUNT" => Self::Popcount,
+            "LZCOUNT" => Self::Lzcount,
+            "SPULL" => Self::Spull,
+            _ => return None,
+        })
     }
 
     pub fn is_commutative(&self) -> bool {

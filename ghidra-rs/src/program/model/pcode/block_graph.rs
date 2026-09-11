@@ -249,7 +249,7 @@ mod tests {
 
     struct MockCopyBlock {
         index: Cell<i32>,
-        alt_index: i32,
+        alt_index: Cell<i32>,
         ref_val: RefCell<Option<Arc<dyn Any + Send + Sync>>>,
         start: RefCell<Address>,
     }
@@ -263,7 +263,7 @@ mod tests {
         ) -> Arc<MockCopyBlock> {
             Arc::new(MockCopyBlock {
                 index: Cell::new(index),
-                alt_index,
+                alt_index: Cell::new(alt_index),
                 ref_val: RefCell::new(ref_val),
                 start: RefCell::new(start),
             })
@@ -298,7 +298,10 @@ mod tests {
 
     impl BlockCopy for MockCopyBlock {
         fn get_alt_index(&self) -> i32 {
-            self.alt_index
+            self.alt_index.get()
+        }
+        fn set_alt_index(&self, altindex: i32) {
+            self.alt_index.set(altindex);
         }
         fn get_ref(&self) -> Option<Arc<dyn Any + Send + Sync>> {
             self.ref_val.borrow().clone()

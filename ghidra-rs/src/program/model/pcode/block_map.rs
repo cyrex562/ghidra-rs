@@ -125,9 +125,9 @@ pub trait BlockMap {
                 continue;
             };
             if let Some(g) = gotoblock.as_block_goto() {
-                g.set_goto_target(bl);
+                g.set_goto_target(Some(bl));
             } else if let Some(g) = gotoblock.as_block_if_goto() {
-                g.set_goto_target(bl);
+                g.set_goto_target(Some(bl));
             } else if let Some(g) = gotoblock.as_block_multi_goto() {
                 g.add_goto_target(bl);
             }
@@ -209,14 +209,20 @@ mod tests {
 
     struct MockGotoLeaf {
         index: Cell<i32>,
+        max_index: Cell<i32>,
+        blocks: RefCell<Vec<Arc<dyn PcodeBlock>>>,
         target: RefCell<Option<Arc<dyn PcodeBlock>>>,
+        goto_type: Cell<i32>,
     }
 
     impl MockGotoLeaf {
         fn new(index: i32) -> Arc<MockGotoLeaf> {
             Arc::new(MockGotoLeaf {
                 index: Cell::new(index),
+                max_index: Cell::new(-1),
+                blocks: RefCell::new(Vec::new()),
                 target: RefCell::new(None),
+                goto_type: Cell::new(1),
             })
         }
     }
@@ -242,14 +248,50 @@ mod tests {
         ) -> Result<(), crate::program::model::pcode::decoder_exception::DecoderException> {
             Ok(())
         }
+        fn as_block_graph(&self) -> Option<&dyn crate::program::model::pcode::block_graph::BlockGraph> {
+            Some(self)
+        }
         fn as_block_goto(&self) -> Option<&dyn BlockGoto> {
             Some(self)
         }
     }
 
+    impl crate::program::model::pcode::block_graph::BlockGraph for MockGotoLeaf {
+        fn get_size(&self) -> usize {
+            self.blocks.borrow().len()
+        }
+        fn get_block(&self, i: usize) -> Arc<dyn PcodeBlock> {
+            self.blocks.borrow()[i].clone()
+        }
+        fn push_block(&self, bl: Arc<dyn PcodeBlock>) {
+            self.blocks.borrow_mut().push(bl);
+        }
+        fn get_max_index(&self) -> i32 {
+            self.max_index.get()
+        }
+        fn set_max_index(&self, max_index: i32) {
+            self.max_index.set(max_index);
+        }
+        fn decode_graph(
+            &self,
+            _decoder: &dyn crate::program::model::pcode::decoder::Decoder,
+        ) -> Result<(), crate::program::model::pcode::decoder_exception::DecoderException> {
+            Ok(())
+        }
+    }
+
     impl BlockGoto for MockGotoLeaf {
-        fn set_goto_target(&self, target: Arc<dyn PcodeBlock>) {
-            *self.target.borrow_mut() = Some(target);
+        fn get_goto_target(&self) -> Option<Arc<dyn PcodeBlock>> {
+            self.target.borrow().clone()
+        }
+        fn set_goto_target(&self, target: Option<Arc<dyn PcodeBlock>>) {
+            *self.target.borrow_mut() = target;
+        }
+        fn get_goto_type(&self) -> i32 {
+            self.goto_type.get()
+        }
+        fn set_goto_type(&self, goto_type: i32) {
+            self.goto_type.set(goto_type);
         }
     }
 
