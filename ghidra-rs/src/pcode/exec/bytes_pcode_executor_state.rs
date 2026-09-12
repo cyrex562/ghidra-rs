@@ -227,6 +227,7 @@ impl<P> PcodeExecutorState<Vec<u8>> for BytesPcodeExecutorState<P> where P: Pcod
 mod tests {
     use super::*;
     use crate::pcode::exec::concretion_error::ConcretionError;
+    use crate::pcode::utils::bytes_to_long;
     use crate::program::model::address::AddressSpaceType;
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::register::RegisterRef;
@@ -328,7 +329,11 @@ mod tests {
             _quantize: bool,
             val: &Vec<u8>,
         ) {
-            let key = i64::from_le_bytes(offset.clone().try_into().unwrap());
+            // The abstract offset's length is `space.pointer_size()` bytes (4 for the 32-bit test
+            // `ram_space()`), not necessarily 8 -- `bytes_to_long` (little-endian, matching
+            // `BytesArithmetic`'s own endian) handles any length, unlike a fixed-width
+            // `i64::from_le_bytes` conversion.
+            let key = bytes_to_long(offset, offset.len(), false);
             self.cells.borrow_mut().insert(key, val.clone());
         }
         fn set_var_internal_abstract(
@@ -348,7 +353,11 @@ mod tests {
             _quantize: bool,
             _reason: Reason,
         ) -> Vec<u8> {
-            let key = i64::from_le_bytes(offset.clone().try_into().unwrap());
+            // The abstract offset's length is `space.pointer_size()` bytes (4 for the 32-bit test
+            // `ram_space()`), not necessarily 8 -- `bytes_to_long` (little-endian, matching
+            // `BytesArithmetic`'s own endian) handles any length, unlike a fixed-width
+            // `i64::from_le_bytes` conversion.
+            let key = bytes_to_long(offset, offset.len(), false);
             self.cells.borrow().get(&key).cloned().unwrap_or_default()
         }
         fn get_var_internal_abstract(
@@ -457,7 +466,8 @@ mod tests {
         use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
         use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
         use crate::program::model::lang::instruction_prototype::InstructionPrototype;
-        use crate::program::model::lang::language::{LanguageDescription, ParseError};
+        use crate::program::model::lang::language::ParseError;
+        use crate::program::model::lang::language_description::LanguageDescription;
         use crate::program::model::lang::language_id::LanguageID;
         use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
         use crate::program::model::lang::processor_context::ProcessorContext;
