@@ -3,8 +3,13 @@ pub mod address_range_comparators;
 pub mod application_utilities;
 pub mod address_range_iterators;
 pub mod difference_address_set_view;
+pub mod distinct_iterator;
 pub mod intersection_address_set_view;
+pub mod location;
+pub mod symmetric_difference_address_set_view;
+pub mod test_universal_id_generator;
 pub mod union_address_set_view;
+pub mod word_location;
 pub mod conv;
 pub mod date_utils;
 pub mod disposable;
@@ -104,8 +109,13 @@ pub mod stack_frame_impl;
 
 pub use address_range_comparators::AddressRangeComparators;
 pub use difference_address_set_view::DifferenceAddressSetView;
+pub use distinct_iterator::DistinctIterator;
 pub use intersection_address_set_view::IntersectionAddressSetView;
+pub use location::Location;
+pub use symmetric_difference_address_set_view::SymmetricDifferenceAddressSetView;
+pub use test_universal_id_generator::TestUniversalIdGenerator;
 pub use union_address_set_view::UnionAddressSetView;
+pub use word_location::WordLocation;
 pub use application_utilities::{
     ApplicationUtilities, PROPERTY_CACHE_DIR, PROPERTY_SETTINGS_DIR, PROPERTY_TEMP_DIR,
 };

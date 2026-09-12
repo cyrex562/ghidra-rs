@@ -50,7 +50,13 @@ impl DifferenceAddressSetView {
     /// Port of the Java `static AddressRange truncate(AddressRange rng, Address address,
     /// AddressSetView v)` helper: clips `rng` (a range of `a` known to contain `address`) so it
     /// excludes any portion covered by `v`'s (`b`'s) immediately preceding/following ranges.
-    fn truncate(rng: &AddressRange, address: &Address, v: &dyn AddressSetView) -> AddressRange {
+    ///
+    /// `pub(crate)` (rather than private) because Java declares this `protected static`, making
+    /// it visible to other classes in the same package -- `SymmetricDifferenceAddressSetView`
+    /// (`symmetric_difference_address_set_view.rs`) reuses it the same way Java's
+    /// `SymmetricDifferenceAddressSetView.getRangeContaining` calls
+    /// `DifferenceAddressSetView.truncate` directly.
+    pub(crate) fn truncate(rng: &AddressRange, address: &Address, v: &dyn AddressSetView) -> AddressRange {
         let prev = v.address_ranges_from(address, false).next();
         let next = v.address_ranges_from(address, true).next();
 
