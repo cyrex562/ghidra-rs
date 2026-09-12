@@ -4,6 +4,7 @@ pub mod prelink;
 pub mod relocation;
 pub mod threadcommand;
 pub mod cpu_sub_types;
+pub mod cpu_types;
 pub mod mach_constants;
 pub mod mach_exception;
 pub mod mach_header_file_types;

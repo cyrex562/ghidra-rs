@@ -945,7 +945,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/l
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/map/TraceAddressSnapRangePropertyMap.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model map
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/map/TraceAddressSnapRangePropertyMapOperations.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model map
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/map/TraceAddressSnapRangePropertyMapSpace.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model map
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/RegisterValueConverter.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/RegisterValueConverter.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/RegisterValueException.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemory.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemoryFlag.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
@@ -3988,7 +3988,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/st
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureVerifier.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/lx/LinearExecutable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format lx
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuSubTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
@@ -5049,7 +5049,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searc
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searcher/CodeUnitFilter.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch searcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searcher/MemoryMatch.java	DONE	orig_src Ghidra Features Base src main java ghidra features base memsearch searcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searcher/MemorySearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch searcher 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFix.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFix.java	DONE	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixStatus.java	DONE	orig_src Ghidra Features Base src main java ghidra features base quickfix
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixStatusRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
@@ -5169,7 +5169,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CallGraphType.java	TODO
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CodeFlowGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/DataFlowGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/ProgramGraphDisplayOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/ProgramGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/ProgramGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugin/importer/AddToProgramDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra plugin importer 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugin/importer/ImporterDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra plugin importer 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugin/importer/ImporterLanguageDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra plugin importer 

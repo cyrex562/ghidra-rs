@@ -1,3 +1,4 @@
+pub mod register_value_converter;
 pub mod register_value_exception;
 pub mod trace_memory;
 pub mod trace_memory_flag;
