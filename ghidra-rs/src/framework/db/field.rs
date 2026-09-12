@@ -179,6 +179,49 @@ impl Field {
         }
     }
 
+    /// Returns this field's value narrowed/widened to `i8`. Mirrors the pattern of
+    /// [`Self::get_int_value`]/[`Self::get_long_value`] (which widen `Byte`/`Boolean` into
+    /// `Int`/`Long`): `Byte` and `Boolean` are the only variants an `i8`-typed column can
+    /// meaningfully hold.
+    pub fn get_byte_value(&self) -> i8 {
+        match self {
+            Field::Byte(v) => v.unwrap_or(0),
+            Field::Boolean(v) => {
+                if v.unwrap_or(false) {
+                    1
+                } else {
+                    0
+                }
+            }
+            _ => panic!("Not a byte-compatible field"),
+        }
+    }
+
+    /// Returns this field's value widened to `i16`. Mirrors [`Self::get_int_value`]'s widening of
+    /// `Byte`/`Boolean` into a wider integer type.
+    pub fn get_short_value(&self) -> i16 {
+        match self {
+            Field::Byte(v) => v.unwrap_or(0) as i16,
+            Field::Short(v) => v.unwrap_or(0),
+            Field::Boolean(v) => {
+                if v.unwrap_or(false) {
+                    1
+                } else {
+                    0
+                }
+            }
+            _ => panic!("Not a short-compatible field"),
+        }
+    }
+
+    /// Returns this field's `bool` value. Mirrors `BooleanField.getBooleanValue()`.
+    pub fn get_boolean_value(&self) -> bool {
+        match self {
+            Field::Boolean(v) => v.unwrap_or(false),
+            _ => panic!("Not a boolean field"),
+        }
+    }
+
     pub fn get_binary_data(&self) -> Option<&[u8]> {
         match self {
             Field::Binary(v) => v.as_deref(),

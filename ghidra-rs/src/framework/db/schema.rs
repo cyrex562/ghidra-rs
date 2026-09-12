@@ -12,7 +12,7 @@ const FIELD_EXTENSION_INDICATOR: u8 = 0xFF; // -1 as a byte
 /// `Schema.SPARSE_FIELD_LIST_EXTENSION`.
 const SPARSE_FIELD_LIST_EXTENSION: u8 = 1;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Schema {
     version: i32,
     key_type: FieldType,

@@ -25,10 +25,11 @@ impl DBHandle {
             -1,
         )?;
 
+        let buffer_mgr = Arc::new(RwLock::new(buffer_mgr));
         Ok(Self {
-            buffer_mgr: Arc::new(RwLock::new(buffer_mgr)),
+            master_table: MasterTable::new(buffer_mgr.clone()),
+            buffer_mgr,
             db_parms,
-            master_table: MasterTable::new(),
         })
     }
 

@@ -79,6 +79,7 @@ fn build_table_record_schema() -> Schema {
 /// [`Self::get_record`], [`Self::get_schema`], and [`Self::get_record_count`] instead return
 /// `Option`/a defaulted value, mirroring the specific Java methods that are written to tolerate
 /// (or, for `getRecordCount()`, explicitly null-check for) a `null` record.
+#[derive(Clone)]
 pub struct TableRecord {
     record: Option<DBRecord>,
     table_schema: Option<Schema>,
