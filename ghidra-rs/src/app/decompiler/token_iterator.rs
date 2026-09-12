@@ -122,12 +122,15 @@ impl<'a> TokenIterator<'a> {
     ///
     /// # Panics
     /// If called with an empty stack (i.e. the iterator was constructed over a single token with
-    /// no parent, and has already yielded that one token) this indexes `index_stack` at `usize`
-    /// `0 - 1` and panics. This mirrors Java's `indexStack[depth]` with `depth == -1`, which
-    /// throws `ArrayIndexOutOfBoundsException` in the identical scenario -- a real quirk of the
-    /// Java source (a "single orphan token" iterator is not usable past its first element), not
-    /// something this port silently smooths over. See
-    /// `next_panics_after_exhausting_a_single_parentless_token` below.
+    /// no parent) this indexes `index_stack` at `usize 0 - 1` and panics -- on the very first
+    /// call, since `next()` unconditionally calls this before returning. This mirrors Java's
+    /// `indexStack[depth]` with `depth == -1`, which throws `ArrayIndexOutOfBoundsException` in
+    /// the identical scenario, at the identical point: Java's `next()` also computes `res =
+    /// currentToken` before calling `advanceToken()`, so the exception propagates out of the very
+    /// first `next()` call before `res` is ever returned -- a "single orphan token" iterator
+    /// cannot yield even its own one token via `next()`/`hasNext()`-style iteration. A real quirk
+    /// of the Java source, not something this port silently smooths over. See
+    /// `next_panics_on_the_first_call_for_a_single_parentless_token` below.
     fn advance_token(&mut self) {
         if self.current_token.is_none() {
             return;
@@ -474,16 +477,21 @@ mod tests {
     }
 
     /// See [`TokenIterator::advance_token`]'s doc comment: a `TokenIterator` built over a token
-    /// with no `Parent()` chain has an empty stack, and asking it to advance past that single
-    /// token panics -- exactly mirroring Java's `ArrayIndexOutOfBoundsException` for
-    /// `indexStack[-1]` in the same scenario. This is a genuine Java quirk, faithfully
-    /// reproduced rather than guarded against.
+    /// with no `Parent()` chain has an empty stack, and `next()` unconditionally calls
+    /// `advance_token()` before returning -- so the very *first* call panics, before the caller
+    /// ever sees the one token the iterator was built over. This exactly mirrors Java's
+    /// `ArrayIndexOutOfBoundsException` for `indexStack[-1]`, which occurs at the identical point
+    /// (Java's `next()` also computes `res = currentToken` before calling `advanceToken()`, so
+    /// the exception propagates out of that same first call before `res` is returned). A genuine
+    /// Java quirk, faithfully reproduced rather than guarded against -- verified directly here
+    /// with `catch_unwind` rather than relying on `#[should_panic]` alone, since that attribute
+    /// would silently accept a panic on *any* line and previously masked this exact point being
+    /// wrong in an earlier draft of this test.
     #[test]
-    #[should_panic]
-    fn next_panics_after_exhausting_a_single_parentless_token() {
+    fn next_panics_on_the_first_call_for_a_single_parentless_token() {
         let token = ClangTokenBase::with_text(None, "solo");
         let mut it = TokenIterator::from_token(&token, true);
-        assert_eq!(it.next().map(|n| n.to_string()), Some("solo".to_string()));
-        it.next(); // panics: no parent chain to backtrack into.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| it.next()));
+        assert!(result.is_err(), "expected the first next() call to panic, but it returned a value");
     }
 }
