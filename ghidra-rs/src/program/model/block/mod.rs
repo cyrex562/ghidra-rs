@@ -12,6 +12,7 @@ pub mod simple_block_model;
 pub mod single_ent_sub_iterator;
 pub mod subroutine_block_model;
 pub mod subroutine_dest_reference_iterator;
+pub mod subroutine_source_reference_iterator;
 
 pub use code_block::CodeBlock;
 pub use code_block_iterator::{CodeBlockIter, CodeBlockIterator};
@@ -27,3 +28,4 @@ pub use simple_block_model::SimpleBlockModel;
 pub use single_ent_sub_iterator::SingleEntSubIterator;
 pub use subroutine_block_model::SubroutineBlockModel;
 pub use subroutine_dest_reference_iterator::{get_num_destinations, SubroutineDestReferenceIterator};
+pub use subroutine_source_reference_iterator::{get_num_sources, SubroutineSourceReferenceIterator};
