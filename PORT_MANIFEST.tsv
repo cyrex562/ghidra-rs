@@ -9828,7 +9828,7 @@ orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/tree/Wi
 orig_src/Ghidra/Features/WildcardAssembler/src/test/java/ghidra/asm/wild/WildSleighAssemblerTest.java	TODO	orig_src Ghidra Features WildcardAssembler src test java ghidra asm wild 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BTreeNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryCodedField.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryDataBuffer.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryDataBuffer.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BooleanField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Buffer.java	DONE	orig_src Ghidra Framework DB src main java db
@@ -9841,21 +9841,21 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/DBChangeSet.java	DONE	orig_src Ghi
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBFieldIterator.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBFileListener.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBHandle.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/DBInitializer.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/DBInitializer.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBListener.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBLongIterator.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBParms.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBRecord.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBRollbackException.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Database.java	DONE	orig_src Ghidra Framework DB src main java db
-orig_src/Ghidra/Framework/DB/src/main/java/db/DatabaseUtils.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/DatabaseUtils.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Field.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FieldIndexTable.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FieldKeyInteriorNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FieldKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FieldKeyRecordNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedField.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/FixedField10.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/FixedField10.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyFixedRecNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyInteriorNode.java	TODO	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db
@@ -9874,7 +9874,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/LongKeyInteriorNode.java	DONE	orig
 orig_src/Ghidra/Framework/DB/src/main/java/db/LongKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/LongKeyRecordNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/MasterTable.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/NoTransactionException.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/NoTransactionException.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/NodeMgr.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/ObjectStorageAdapterDB.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/PrimitiveField.java	DONE	orig_src Ghidra Framework DB src main java db
@@ -9886,9 +9886,9 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/ShortField.java	DONE	orig_src Ghid
 orig_src/Ghidra/Framework/DB/src/main/java/db/SparseRecord.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/StringField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Table.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/TableRecord.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/TableStatistics.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/TerminatedTransactionException.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/TableRecord.java	DONE	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/TableStatistics.java	DONE	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/TerminatedTransactionException.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TestSpeed.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Transaction.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TranslatedRecordIterator.java	TODO	orig_src Ghidra Framework DB src main java db 

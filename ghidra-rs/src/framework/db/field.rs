@@ -1,5 +1,6 @@
 use super::buffer::Buffer;
 use std::cmp::Ordering;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FieldType {
@@ -33,10 +34,71 @@ impl FieldType {
         }
     }
 
+    /// Decode a `FieldType` from a `Field.getFieldType()`-style type-tag byte. Mirrors the
+    /// relevant cases of the static `db.Field.getField(byte)` factory (which this port models at
+    /// the `FieldType` level rather than constructing a representative `Field` instance, since
+    /// this port's [`super::schema::Schema`] already stores column types as `FieldType` rather
+    /// than boxed `Field` instances).
+    ///
+    /// Returns [`UnsupportedFieldException`] for any byte not produced by [`Self::to_byte`].
+    /// Note that [`Self::to_byte`] collapses every non-10-byte `Fixed` length to the single value
+    /// `15` (there being no other concrete fixed-length field type in the real `db` package
+    /// besides `FixedField10`); decoding `15` back necessarily loses the original length and
+    /// produces `Fixed(0)` as a placeholder, mirroring that same pre-existing lossiness rather
+    /// than trying to invert it.
+    pub fn from_byte(b: u8) -> Result<FieldType, UnsupportedFieldException> {
+        match b {
+            0 => Ok(FieldType::Byte),
+            1 => Ok(FieldType::Short),
+            2 => Ok(FieldType::Int),
+            3 => Ok(FieldType::Long),
+            4 => Ok(FieldType::String),
+            5 => Ok(FieldType::Binary),
+            6 => Ok(FieldType::Boolean),
+            7 => Ok(FieldType::Fixed(10)),
+            15 => Ok(FieldType::Fixed(0)),
+            other => Err(UnsupportedFieldException::for_field_type(other)),
+        }
+    }
+
     pub fn is_variable_length(self) -> bool {
         matches!(self, FieldType::String | FieldType::Binary)
     }
 }
+
+/// Thrown when an unsupported/unrecognized field type is encountered while decoding.
+///
+/// Port of the nested `db.Field.UnsupportedFieldException` (which `extends IOException` in
+/// Java). Used by [`FieldType::from_byte`] and by [`super::schema::Schema`]'s encoded-form
+/// constructor, mirroring the real `Schema(int, byte, byte[], String)` package-private
+/// constructor and `Field.getField(byte)` factory, both of which declare
+/// `throws UnsupportedFieldException`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnsupportedFieldException {
+    message: String,
+}
+
+impl UnsupportedFieldException {
+    /// Construct with a specific message. Mirrors
+    /// `UnsupportedFieldException(String msg)`.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self { message: msg.into() }
+    }
+
+    /// Construct for an unrecognized field-type tag byte. Mirrors
+    /// `UnsupportedFieldException(byte fieldType)`.
+    pub fn for_field_type(field_type: u8) -> Self {
+        Self { message: format!("Unsupported field type: {}", field_type) }
+    }
+}
+
+impl fmt::Display for UnsupportedFieldException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for UnsupportedFieldException {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Field {
@@ -242,5 +304,49 @@ impl Ord for Field {
             (Field::Fixed(a), Field::Fixed(b)) => a.cmp(b),
             _ => self.get_type().to_byte().cmp(&other.get_type().to_byte()),
         }
+    }
+}
+
+#[cfg(test)]
+mod field_type_tests {
+    use super::*;
+
+    #[test]
+    fn test_from_byte_round_trips_to_byte_for_simple_types() {
+        for ty in [
+            FieldType::Byte,
+            FieldType::Short,
+            FieldType::Int,
+            FieldType::Long,
+            FieldType::String,
+            FieldType::Binary,
+            FieldType::Boolean,
+            FieldType::Fixed(10),
+        ] {
+            assert_eq!(FieldType::from_byte(ty.to_byte()).unwrap(), ty);
+        }
+    }
+
+    #[test]
+    fn test_from_byte_rejects_unknown_tag() {
+        let err = FieldType::from_byte(42).unwrap_err();
+        assert_eq!(err.to_string(), "Unsupported field type: 42");
+    }
+
+    #[test]
+    fn test_from_byte_generic_fixed_is_lossy_placeholder() {
+        // `to_byte()` collapses every non-10 Fixed length to 15 (there being no other concrete
+        // fixed-length Field type in the real db package); decoding necessarily loses the
+        // original length rather than recovering e.g. Fixed(4).
+        assert_eq!(FieldType::from_byte(15).unwrap(), FieldType::Fixed(0));
+        assert_eq!(FieldType::Fixed(4).to_byte(), 15);
+    }
+
+    #[test]
+    fn test_unsupported_field_exception_display() {
+        let e = UnsupportedFieldException::with_message("custom");
+        assert_eq!(e.to_string(), "custom");
+        let e2 = UnsupportedFieldException::for_field_type(9);
+        assert_eq!(e2.to_string(), "Unsupported field type: 9");
     }
 }
