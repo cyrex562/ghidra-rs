@@ -1,10 +1,6 @@
 use std::io;
 
-use super::field::Field;
 use super::long_key_record_node::LongKeyRecordNode;
-use super::record::DBRecord;
-use super::schema::Schema;
-use crate::framework::db::nodes::BTreeNode;
 
 /// Header size preceding the key/offset entries within a leaf buffer: `NodeType(1) +
 /// KeyCount(4) + PrevLeafId(4) + NextLeafId(4)`.
@@ -193,6 +189,10 @@ pub trait VarRecNode: LongKeyRecordNode {
 mod tests {
     use super::*;
     use crate::framework::db::buffer::{Buffer, DataBuffer};
+    use crate::framework::db::field::Field;
+    use crate::framework::db::nodes::BTreeNode;
+    use crate::framework::db::record::DBRecord;
+    use crate::framework::db::schema::Schema;
     use crate::framework::db::table::Table;
     use crate::framework::db::{DBHandle, FieldType};
     use crate::framework::seam_stubs::{LongKeyInteriorNode, LongKeyNode};
