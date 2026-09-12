@@ -19,6 +19,7 @@ pub mod load_results;
 pub mod load_spec;
 pub mod loaded;
 pub mod loader;
+pub mod loader_map;
 pub mod loader_opinion_exception;
 pub mod loader_tier;
 pub mod opinion_exception;

@@ -11,10 +11,12 @@
 //! reference implementation used by the trait's default methods and free constructors.
 //!
 //! `ghidra.app.util.SymbolPathParser`, which the Java constructor delegates to for parsing a
-//! delimited path string, is not yet ported as its own class (still `TODO` in
-//! `PORT_MANIFEST.tsv`). It is a stateless static algorithm rather than a polymorphic core type,
-//! so rather than fabricate a placeholder trait for it, its `parse`/`naiveParse` logic is
-//! reproduced directly as private free functions below.
+//! delimited path string, is now ported in its own right at
+//! [`crate::app::util::symbol_path_parser::SymbolPathParser`]. [`parse_symbol_path`] below
+//! delegates to it (with `ignoreLeaderParens = true`, matching `SymbolPath(String)`'s use of the
+//! one-argument `SymbolPathParser.parse(String)` overload) instead of duplicating its
+//! `parse`/`skipParsing`/`naiveParse` algorithm, which is how this module reproduced that logic
+//! before `SymbolPathParser` had its own port.
 
 use std::cmp::Ordering;
 use std::sync::Arc;
@@ -270,85 +272,20 @@ fn symbol_path_from_symbol(symbol: &dyn Symbol, exclude_library: bool) -> Symbol
 }
 
 /// Port of `SymbolPathParser.parse(String, boolean)` with `ignoreLeaderParens = true` (the
-/// default used by `SymbolPath(String)`).
+/// default used by `SymbolPath(String)`), delegating to
+/// [`SymbolPathParser::parse`](crate::app::util::symbol_path_parser::SymbolPathParser::parse).
 ///
-/// `ghidra.app.util.SymbolPathParser.parse(String)` itself is still `TODO` in
-/// `PORT_MANIFEST.tsv` (it's a stateless static algorithm, not a polymorphic core type, so no
-/// placeholder trait is warranted); this is exposed `pub` so other callers of the equivalent
-/// static method (e.g. `mdemangler.MDMangUtils.consolidateSymbolPath`, ported as
-/// [`crate::demangler::md_mang_utils`]) can reuse this logic instead of duplicating it.
+/// This is exposed `pub` so other callers of the equivalent static method (e.g.
+/// `mdemangler.MDMangUtils.consolidateSymbolPath`, ported as
+/// [`crate::demangler::md_mang_utils`]) can reuse this logic instead of duplicating it. The blank
+/// check is done here first (returning a `Result` rather than the panic
+/// [`SymbolPathParser::parse`] itself uses for the same Java `IllegalArgumentException`) since
+/// this function's callers expect a `Result`, matching this module's pre-existing signature.
 pub fn parse_symbol_path(name: &str) -> Result<Vec<String>, SymbolPathError> {
     if name.trim().is_empty() {
         return Err(SymbolPathError::BlankPathname);
     }
-    if skip_parsing(name) {
-        return Ok(vec![name.to_string()]);
-    }
-    Ok(naive_parse(name))
-}
-
-/// Port of the private `SymbolPathParser.skipParsing`.
-fn skip_parsing(name: &str) -> bool {
-    // Working around a type seen in "Rust." - a name starting with '(' is left unparsed.
-    if name.starts_with('(') {
-        return true;
-    }
-    !name.contains(DELIMITER)
-}
-
-/// Port of the private `SymbolPathParser.naiveParse`: naive parsing that assumes evenly matched
-/// angle brackets (templates) and parentheses, breaking only on namespace delimiters found
-/// outside of both.
-fn naive_parse(name: &str) -> Vec<String> {
-    let chars: Vec<char> = name.chars().collect();
-
-    // Only break on namespace delimiters found at templateLevel == 0 && parenthesesLevel == 0.
-    let mut list = Vec::new();
-    let mut template_level = 0i32;
-    let mut paren_level = 0i32;
-    let mut start_index = 0usize;
-    let mut i = 0usize;
-    while i < chars.len() {
-        if chars[i] == ':' && i != chars.len() - 1 && chars[i + 1] == ':' {
-            if template_level == 0 && paren_level == 0 {
-                let end_index = i;
-                if end_index > start_index {
-                    list.push(chars[start_index..end_index].iter().collect());
-                    start_index = i + 2;
-                    i += 1;
-                }
-            }
-        } else if chars[i] == '<' {
-            template_level += 1;
-        } else if chars[i] == '>' {
-            template_level -= 1;
-        } else if chars[i] == '(' {
-            paren_level += 1;
-        } else if chars[i] == ')' {
-            paren_level -= 1;
-        }
-        i += 1;
-    }
-
-    if template_level != 0 || paren_level != 0 {
-        // Revert to no checking template/parentheses level.
-        start_index = 0;
-        list = Vec::new();
-        i = 0;
-        while i < chars.len() {
-            if chars[i] == ':' && i != chars.len() - 1 && chars[i + 1] == ':' {
-                let end_index = i;
-                if end_index > start_index {
-                    list.push(chars[start_index..end_index].iter().collect());
-                    start_index = i + 2;
-                    i += 1;
-                }
-            }
-            i += 1;
-        }
-    }
-    list.push(chars[start_index..].iter().collect());
-    list
+    Ok(crate::app::util::symbol_path_parser::SymbolPathParser::parse(name))
 }
 
 #[cfg(test)]

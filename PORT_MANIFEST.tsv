@@ -4717,7 +4717,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadSpec.jav
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loaded.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadedOpen.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderMap.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderMap.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderOpinionException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderTier.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
@@ -13187,7 +13187,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoF
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoInstruction.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/RepeatInstructionByteTracker.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/SymbolPath.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/SymbolPathParser.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/SymbolPathParser.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractAppender.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractPcodeFormatter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/Appender.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode
@@ -14621,7 +14621,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/app/plugin/assembler/sleigh/x64AssemblyTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra app plugin assembler sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/app/plugin/assembler/sleigh/x86AssemblyTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra app plugin assembler sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/app/plugin/processors/sleigh/SleighLanguageVolatilityTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra app plugin processors sleigh 
-orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/app/util/SymbolPathParserTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra app util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/app/util/SymbolPathParserTest.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra app util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/app/util/SymbolPathTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra app util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/pcode/floatformat/BigFloatTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra pcode floatformat 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/pcode/floatformat/FloatFormatTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra pcode floatformat 
