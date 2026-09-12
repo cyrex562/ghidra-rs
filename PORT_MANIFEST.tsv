@@ -5164,7 +5164,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/datatree/JavaF
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/datatree/LinuxFileUrlHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main datatree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/datatree/VersionControlDataTypeArchiveUndoCheckoutAction.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main datatree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/plugintool/NavigatableComponentProviderAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra framework plugintool 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/BlockFlowGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/BlockFlowGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CallGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CodeFlowGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/DataFlowGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
@@ -12595,7 +12595,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/C
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/ChangedFilesDialog.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CheckInTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CheckoutDialog.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CheckoutInfo.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CheckoutInfo.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CheckoutsPanel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CheckoutsTableModel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/ClearCutAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
@@ -14065,7 +14065,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/WideChar32DataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/WideCharDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/WordDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/gclass/ClassID.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model gclass 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/gclass/ClassID.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model gclass 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/gclass/ClassUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model gclass 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/AddressLabelInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicCompilerSpec.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang

@@ -1,4 +1,5 @@
 pub mod archive_provider;
+pub(crate) mod checkout_info;
 pub mod cuttable;
 pub mod data_tree_flavor_handler;
 

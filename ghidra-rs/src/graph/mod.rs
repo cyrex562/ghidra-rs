@@ -1,4 +1,5 @@
 pub mod algo;
+pub mod block_flow_graph_type;
 pub mod call_graph_type;
 pub mod code_flow_graph_type;
 pub mod data;
@@ -31,6 +32,7 @@ mod graph_mvc_test;
 mod graph_path_test;
 
 pub use algo::{FindPathsAlgorithm, GraphAlgorithmStatusListener, SorterException, Status};
+pub use block_flow_graph_type::BlockFlowGraphType;
 pub use call_graph_type::CallGraphType;
 pub use code_flow_graph_type::CodeFlowGraphType;
 pub use data_flow_graph_type::DataFlowGraphType;
