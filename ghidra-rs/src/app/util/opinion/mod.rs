@@ -16,6 +16,7 @@ pub mod library_exported_symbol;
 pub mod library_lookup_table;
 pub mod load_exception;
 pub mod load_results;
+pub mod load_spec;
 pub mod loaded;
 pub mod loader;
 pub mod loader_opinion_exception;
