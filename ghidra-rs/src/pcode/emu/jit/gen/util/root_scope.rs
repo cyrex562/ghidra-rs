@@ -6,12 +6,16 @@
 //! closed once code generation for the method is finished. Temporary scopes nested inside it are
 //! opened with [`RootScope::sub`].
 
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+use crate::pcode::emu::jit::gen::util::child_scope::ChildScope;
 use crate::pcode::emu::jit::gen::util::lbl::{Lbl, LblEm};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::sub_scope::SubScope;
 use crate::pcode::emu::jit::gen::util::types::BNonVoid;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Next};
-use crate::pcode::seam_stubs::{ChildScope, Scope};
+use crate::pcode::seam_stubs::Scope;
 
 /// A local variable declaration recorded by [`RootScope::decl`], kept around only so
 /// [`RootScope::close`] can later hand it to the emitter.
@@ -32,9 +36,9 @@ struct DeclaredVar {
 /// start and finish (not statically enforced, as in Java).
 ///
 /// In Java this class is extended by `ChildScope` to implement [`RootScope::sub`]. Rust has no
-/// class inheritance, so `ChildScope` will instead wrap a `RootScope` by composition once it is
-/// ported; until then, [`SubScope`] is served by the minimal placeholder in
-/// [`crate::pcode::seam_stubs::ChildScope`].
+/// class inheritance, so [`ChildScope`] instead wraps a `RootScope` by composition; see its module
+/// docs for how it reproduces the parent/child back-reference `ChildScope`'s constructor and
+/// `close` rely on.
 pub struct RootScope<N> {
     em: Emitter<N>,
     start: Lbl<N>,
@@ -42,10 +46,12 @@ pub struct RootScope<N> {
     /// Whether a child scope opened by [`RootScope::sub`] is currently active.
     ///
     /// Java tracks this with a `childScope` field of type `Scope`, set directly by `ChildScope`'s
-    /// constructor (package-private field access) and cleared by its `close`. `ChildScope` is not
-    /// ported yet (see the cycle note on the struct docs), so nothing currently clears this flag
-    /// once [`RootScope::sub`] sets it; that bookkeeping belongs to `ChildScope` once it exists.
-    child_active: bool,
+    /// constructor (package-private field access) and cleared by its overridden `close`. Since
+    /// nothing here ever reads a *reference* to the child through this field (only whether one is
+    /// currently open), a shared `Arc<AtomicBool>` reproduces the same observable behavior:
+    /// [`RootScope::sub`] clones it into the [`ChildScope`] it creates, which sets it `true` on
+    /// construction and clears it back to `false` on close.
+    child_active: Arc<AtomicBool>,
     closed: bool,
     vars: Vec<DeclaredVar>,
 }
@@ -58,20 +64,29 @@ impl<N: Next> RootScope<N> {
     /// start label immediately, as Java's constructor does via `Lbl.place(this.em)`.
     pub(crate) fn new(em: Emitter<N>, next_local: i32) -> Self {
         let LblEm { lbl: start, em } = Lbl::place(em);
-        Self { em, start, next_local, child_active: false, closed: false, vars: Vec::new() }
+        Self {
+            em,
+            start,
+            next_local,
+            child_active: Arc::new(AtomicBool::new(false)),
+            closed: false,
+            vars: Vec::new(),
+        }
     }
 
     /// Open a child scope of this scope, usually for temporary declarations.
     ///
-    /// Port of `RootScope.sub`. Java returns `new ChildScope<>(em, this)`; since `ChildScope` is
-    /// not ported yet, this returns the placeholder [`crate::pcode::seam_stubs::ChildScope`],
-    /// which owns an independent `RootScope` continuing this scope's local-variable numbering.
+    /// Port of `RootScope.sub`. Java returns `new ChildScope<>(em, this)`; this builds the
+    /// equivalent child [`RootScope`] (continuing this scope's local-variable numbering, per
+    /// Java's `super(em, parentScope.nextLocal)`) and hands it, along with a clone of this scope's
+    /// active-child marker, to [`ChildScope::new`] -- which is where the marker actually gets set,
+    /// matching where Java's constructor sets `parentScope.childScope = this`.
     pub fn sub(&mut self) -> Box<dyn SubScope>
     where
         N: Send + Sync + Clone + 'static,
     {
-        self.child_active = true;
-        Box::new(ChildScope::new(RootScope::new(self.em.clone(), self.next_local)))
+        let inner = RootScope::new(self.em.clone(), self.next_local);
+        Box::new(ChildScope::new(inner, Arc::clone(&self.child_active)))
     }
 
     /// Declare a local variable in this scope.
@@ -80,7 +95,7 @@ impl<N: Next> RootScope<N> {
     /// by the type's slot count. Panics if a child scope is currently active, mirroring Java's
     /// `IllegalStateException("There is a child scope active.")`.
     pub fn decl<T: BNonVoid>(&mut self, type_: T, name: impl Into<String>) -> Local<T> {
-        if self.child_active {
+        if self.child_active.load(Ordering::SeqCst) {
             panic!("There is a child scope active.");
         }
         let index = self.next(&type_);

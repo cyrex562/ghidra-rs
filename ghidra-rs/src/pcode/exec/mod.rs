@@ -9,6 +9,7 @@ pub mod bytes_pcode_executor_state_space;
 pub mod concretion_error;
 pub mod decode_pcode_execution_exception;
 pub mod debugger_pcode_utils;
+pub mod default_pcode_executor_state;
 pub mod default_pcode_userop_library;
 pub mod independent_paired_pcode_executor_state;
 pub mod injection_error_pcode_execution_exception;
@@ -60,6 +61,7 @@ pub use debugger_pcode_utils::{
     DebuggerPcodeUtils, PrettyBytes, WatchValue, WatchValuePcodeArithmetic,
     WatchValuePcodeExecutorState, WatchValuePcodeExecutorStatePiece,
 };
+pub use default_pcode_executor_state::DefaultPcodeExecutorState;
 pub use default_pcode_userop_library::DefaultPcodeUseropLibrary;
 pub use independent_paired_pcode_executor_state::IndependentPairedPcodeExecutorState;
 pub use injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException;
