@@ -1,6 +1,7 @@
 pub mod abstract_program_context;
 pub mod abstract_stored_program_context;
 pub mod address_correlation;
+pub mod address_correlation_range;
 pub mod address_correlator;
 pub mod address_field_location;
 pub mod address_iterator_converter;
@@ -49,8 +50,10 @@ pub mod string_property_map;
 pub mod symbolic_propogator;
 pub mod user_data_change_record;
 pub mod void_property_map;
+pub mod xref_field_location;
 
 pub use address_correlation::AddressCorrelation;
+pub use address_correlation_range::AddressCorrelationRange;
 pub use address_correlator::AddressCorrelator;
 pub use address_field_location::AddressFieldLocation;
 pub use address_iterator_converter::{
@@ -102,3 +105,4 @@ pub use string_property_map::StringPropertyMap;
 pub use symbolic_propogator::{SymbolicPropogator, SymbolicValue};
 pub use user_data_change_record::UserDataChangeRecord;
 pub use void_property_map::VoidPropertyMap;
+pub use xref_field_location::XRefFieldLocation;

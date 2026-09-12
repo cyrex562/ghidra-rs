@@ -47,6 +47,7 @@ pub mod language_version_exception;
 pub mod mask;
 pub mod mask_impl;
 pub mod nested_delay_slot_exception;
+pub mod old_language_mapping_service;
 pub mod operand_type;
 pub mod parallel_instruction_language_helper;
 pub mod param_entry;
@@ -140,6 +141,9 @@ pub use language_version_exception::{DefaultLanguageVersionException, LanguageVe
 pub use mask::Mask;
 pub use mask_impl::MaskImpl;
 pub use nested_delay_slot_exception::NestedDelaySlotException;
+pub use old_language_mapping_service::{
+    lookup_magic_string, process_xml_language_string, validate_pair, OldLanguageMappingService,
+};
 pub use operand_type::OperandType;
 pub use parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
 pub use param_entry::{justified_contain_address, order_within_group, ParamEntry};
