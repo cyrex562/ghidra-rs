@@ -4579,9 +4579,9 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledF
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionIndirect.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionPointer.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionReference.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledLabel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledLabel.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledLambda.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledList.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledList.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledNamespaceNode.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledObject.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledParameter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
@@ -11216,7 +11216,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AccessPcodeE
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AddressesReadPcodeArithmetic.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AnnotatedPcodeUseropLibrary.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeArithmetic.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStatePiece.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStateSpace.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ComposedPcodeUseropLibrary.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
