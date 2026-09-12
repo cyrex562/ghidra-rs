@@ -5165,9 +5165,9 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/datatree/Linux
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/datatree/VersionControlDataTypeArchiveUndoCheckoutAction.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main datatree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/plugintool/NavigatableComponentProviderAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra framework plugintool 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/BlockFlowGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CallGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CodeFlowGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/DataFlowGraphType.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CallGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/CodeFlowGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/DataFlowGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/ProgramGraphDisplayOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/graph/ProgramGraphType.java	DONE	orig_src Ghidra Features Base src main java ghidra graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugin/importer/AddToProgramDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra plugin importer 

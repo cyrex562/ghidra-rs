@@ -1,5 +1,8 @@
 pub mod algo;
+pub mod call_graph_type;
+pub mod code_flow_graph_type;
 pub mod data;
+pub mod data_flow_graph_type;
 pub mod deg_shared_config;
 pub mod event;
 pub mod fcg_direction;
@@ -28,6 +31,9 @@ mod graph_mvc_test;
 mod graph_path_test;
 
 pub use algo::{FindPathsAlgorithm, GraphAlgorithmStatusListener, SorterException, Status};
+pub use call_graph_type::CallGraphType;
+pub use code_flow_graph_type::CodeFlowGraphType;
+pub use data_flow_graph_type::DataFlowGraphType;
 pub use deg_shared_config::DegSharedConfig;
 pub use event::VisualGraphChangeListener;
 pub use fcg_direction::FcgDirection;
