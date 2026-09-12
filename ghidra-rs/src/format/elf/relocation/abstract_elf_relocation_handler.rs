@@ -21,11 +21,12 @@
 //!   ElfRelocationContext` throughout instead of threading a second generic parameter.
 //! * `Class<T> relocationEnumClass` plus reflection over `getEnumConstants()` has no Rust
 //!   equivalent; [`AbstractElfRelocationHandlerBase::new`] takes the enum's values directly.
-//! * `ElfSymbolNameUtils.replaceInvalidChars` and the `ElfRelocationHandler` static markup
-//!   helpers (`getDefaultRelocationTypeDetail`, `markupErrorOrWarning`) are unported dependencies
-//!   this class inherits/calls; see the `elf_relocation_handler` and `elf_symbol_name_utils`
-//!   seam stubs. `markupErrorOrWarning`'s bookmark half is a no-op until `BookmarkManager` lands
-//!   (only the import-log message is realized).
+//! * `ElfSymbolNameUtils.replaceInvalidChars` is now the real port at
+//!   [`elf_symbol_name_utils::replace_invalid_chars`](crate::format::elf::elf_symbol_name_utils::replace_invalid_chars).
+//!   The `ElfRelocationHandler` static markup helpers (`getDefaultRelocationTypeDetail`,
+//!   `markupErrorOrWarning`) remain unported dependencies this class inherits/calls; see the
+//!   `elf_relocation_handler` seam stub. `markupErrorOrWarning`'s bookmark half is a no-op until
+//!   `BookmarkManager` lands (only the import-log message is realized).
 //! * `getSymbol(symbolIndex)` is documented "will never be null" in Java; the port asserts that
 //!   invariant with `expect` rather than threading an unreachable `Option` through the signature.
 //! * [`AbstractElfRelocationHandlerBase::handle_unresolved_symbol`] avoids a latent Java NPE: if
@@ -37,10 +38,11 @@
 use std::collections::HashMap;
 
 use crate::format::elf::elf_symbol::ElfSymbol;
+use crate::format::elf::elf_symbol_name_utils;
 use crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext;
 use crate::format::elf::relocation::elf_relocation_type::ElfRelocationType;
 use crate::format::memory_loadable::MemoryLoadable;
-use crate::format::seam_stubs::{elf_relocation_handler, elf_symbol_name_utils, ElfRelocation, MessageLog};
+use crate::format::seam_stubs::{elf_relocation_handler, ElfRelocation, MessageLog};
 use crate::program::model::address::Address;
 use crate::program::model::listing::bookmark_type;
 use crate::program::model::listing::program::Program;
