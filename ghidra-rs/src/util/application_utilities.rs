@@ -159,7 +159,10 @@ pub trait ApplicationUtilities {
             OperatingSystem::Windows => {
                 env_var_path("LOCALAPPDATA", true)?.map(|dir| dir.join(&app_name))
             }
-            OperatingSystem::Linux | OperatingSystem::FreeBSD | OperatingSystem::MacOSX => {
+            OperatingSystem::Linux
+            | OperatingSystem::FreeBSD
+            | OperatingSystem::OpenBsd
+            | OperatingSystem::MacOSX => {
                 Some(PathBuf::from(format!("/var/tmp/{user_dir_name}")))
             }
             OperatingSystem::Unsupported => None,
@@ -210,7 +213,7 @@ pub trait ApplicationUtilities {
             OperatingSystem::Windows => {
                 env_var_path("APPDATA", true)?.map(|dir| dir.join(&versioned_subdir))
             }
-            OperatingSystem::Linux | OperatingSystem::FreeBSD => {
+            OperatingSystem::Linux | OperatingSystem::FreeBSD | OperatingSystem::OpenBsd => {
                 Some(user_home_dir.join(format!(".config/{versioned_subdir}")))
             }
             OperatingSystem::MacOSX => {
