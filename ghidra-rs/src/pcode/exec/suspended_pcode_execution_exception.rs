@@ -28,6 +28,14 @@ impl SuspendedPcodeExecutionException {
         Self { inner: PcodeExecutionException::with_frame(Self::MESSAGE, frame) }
     }
 
+    /// Construct the exception with no frame and no cause.
+    ///
+    /// Port of `SuspendedPcodeExecutionException(PcodeFrame frame, Throwable cause)` for the case
+    /// where the caller has no frame in hand (Java permits a `null` frame here).
+    pub fn new_without_frame() -> Self {
+        Self { inner: PcodeExecutionException::with_message(Self::MESSAGE) }
+    }
+
     /// Construct the exception with the given frame and cause.
     ///
     /// Port of `SuspendedPcodeExecutionException(PcodeFrame frame, Throwable cause)`.
@@ -89,6 +97,15 @@ mod tests {
     fn carries_the_given_frame() {
         let e = SuspendedPcodeExecutionException::new(frame());
         assert!(e.frame().is_some());
+    }
+
+    #[test]
+    fn new_without_frame_matches_javas_null_frame_call_site() {
+        // Java: JitPcodeThread's fall-through path throws `new
+        // SuspendedPcodeExecutionException(null, null)` -- no frame is available there.
+        let e = SuspendedPcodeExecutionException::new_without_frame();
+        assert_eq!(e.message(), "Execution suspended by user");
+        assert!(e.frame().is_none());
     }
 
     #[test]

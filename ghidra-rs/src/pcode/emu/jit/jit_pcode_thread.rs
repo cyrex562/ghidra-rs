@@ -469,7 +469,7 @@ impl JitPcodeThread {
         _trailing_ops: i32,
     ) -> Result<(), SuspendedPcodeExecutionException> {
         if self.is_suspended() || self.is_machine_suspended() {
-            return Err(SuspendedPcodeExecutionException::new(None));
+            return Err(SuspendedPcodeExecutionException::new_without_frame());
         }
         Ok(())
     }

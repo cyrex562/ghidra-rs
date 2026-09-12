@@ -41,7 +41,6 @@ use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::{
     ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
 };
-use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::{
@@ -238,69 +237,10 @@ pub trait Emulate: Send + Sync {
     fn get_language(&self) -> Box<dyn Language>;
 }
 
-/// Placeholder for `ghidra.pcode.exec.ComposedPcodeUseropLibrary`, referenced by
-/// [`PcodeUseropLibrary::compose_with_override`](crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary::compose_with_override)
-/// before the real class is ported. Unlike most stubs here this is a struct, not a trait: `compose`
-/// must *construct* the composed library, which a trait cannot express. Its members mirror the Java
-/// class exactly -- it stores only the merged map (Java's sole field), and `compose_userops` keeps
-/// Java's "name collisions are an error unless `override` is set" rule -- so the real port should
-/// be a drop-in replacement.
-pub struct ComposedPcodeUseropLibrary<T: 'static> {
-    userops: UseropMap<T>,
-}
-
-impl<T: 'static> ComposedPcodeUseropLibrary<T> {
-    /// Placeholder for `new ComposedPcodeUseropLibrary(Collection, boolean)`.
-    pub fn new(libraries: &[&dyn PcodeUseropLibrary<T>], override_: bool) -> Self {
-        Self { userops: Self::compose_userops(libraries, override_) }
-    }
-
-    /// Construct the composed library over an already-merged map, as produced by
-    /// [`compose_userops`](Self::compose_userops) or
-    /// [`compose_userop_maps`](Self::compose_userop_maps).
-    pub fn from_userops(userops: UseropMap<T>) -> Self {
-        Self { userops }
-    }
-
-    /// Placeholder for the static `composeUserops(Collection, boolean)`: obtain a map representing
-    /// the composition of userops from all the given libraries.
-    ///
-    /// Name collisions are not allowed. If any two libraries export the same symbol, even if the
-    /// definitions happen to do the same thing, it is an error -- unless `override_` is set,
-    /// allowing libraries to the right to override userops from libraries to the left.
-    pub fn compose_userops(libraries: &[&dyn PcodeUseropLibrary<T>], override_: bool) -> UseropMap<T> {
-        Self::compose_userop_maps(libraries.iter().map(|lib| lib.get_userops()), override_)
-    }
-
-    /// As [`compose_userops`](Self::compose_userops), but over the libraries' userop maps
-    /// directly, for callers that hold the maps rather than the libraries.
-    pub fn compose_userop_maps<'a>(
-        maps: impl IntoIterator<Item = &'a UseropMap<T>>,
-        override_: bool,
-    ) -> UseropMap<T> {
-        let mut userops: UseropMap<T> = HashMap::new();
-        for map in maps {
-            for def in map.values() {
-                let existing = userops.insert(def.get_name().to_string(), Arc::clone(def));
-                if existing.is_some() && !override_ {
-                    panic!(
-                        "Cannot compose libraries with conflicting definitions on {}",
-                        def.get_name()
-                    );
-                }
-            }
-        }
-        userops
-    }
-}
-
-impl<T: 'static> ErasedPcodeUseropLibrary for ComposedPcodeUseropLibrary<T> {}
-
-impl<T: 'static> PcodeUseropLibrary<T> for ComposedPcodeUseropLibrary<T> {
-    fn get_userops(&self) -> &UseropMap<T> {
-        &self.userops
-    }
-}
+/// `ghidra.pcode.exec.ComposedPcodeUseropLibrary` has graduated to a real port at
+/// [`crate::pcode::exec::composed_pcode_userop_library::ComposedPcodeUseropLibrary`]; re-exported
+/// here so any old references to this seam-stub path keep resolving.
+pub use crate::pcode::exec::composed_pcode_userop_library::ComposedPcodeUseropLibrary;
 
 /// Placeholder for `ghidra.pcode.exec.FixedSleighPcodeUseropDefinition`, referenced by
 /// [`Builder::build`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder::build)
@@ -510,37 +450,10 @@ impl<V> SparseAddressRangeMap<V> {
     }
 }
 
-/// Placeholder for `ghidra.pcode.exec.InterruptPcodeExecutionException`, referenced by
-/// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
-/// before the real class is ported. Java's class extends `PcodeExecutionException` with a fixed
-/// message; here it wraps one, since Rust has no exception inheritance.
-#[derive(Debug)]
-pub struct InterruptPcodeExecutionException {
-    inner: PcodeExecutionException,
-}
-
-impl InterruptPcodeExecutionException {
-    /// Placeholder for `new InterruptPcodeExecutionException(PcodeFrame, Throwable)`. Every
-    /// current call site passes `(null, null)`, so only the frame is accepted here.
-    pub fn new(frame: Option<PcodeFrame>) -> Self {
-        const MESSAGE: &str = "Execution hit breakpoint";
-        let inner = match frame {
-            Some(frame) => PcodeExecutionException::with_frame(MESSAGE, frame),
-            None => PcodeExecutionException::with_message(MESSAGE),
-        };
-        Self { inner }
-    }
-
-    /// The wrapped execution exception, Java's `super`.
-    pub fn as_execution_exception(&self) -> &PcodeExecutionException {
-        &self.inner
-    }
-
-    /// Placeholder for the inherited `getMessage()`.
-    pub fn message(&self) -> &str {
-        self.inner.message()
-    }
-}
+/// `ghidra.pcode.exec.InterruptPcodeExecutionException` has graduated to a real port at
+/// [`crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException`];
+/// re-exported here so any old references to this seam-stub path keep resolving.
+pub use crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException;
 
 /// Placeholder for `ghidra.pcode.exec.SleighProgramCompiler`, referenced by
 /// [`AbstractPcodeMachineBase::compile_sleigh`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase::compile_sleigh)
@@ -561,70 +474,15 @@ impl SleighProgramCompiler {
     }
 }
 
-/// Placeholder for `ghidra.pcode.exec.SuspendedPcodeExecutionException`, thrown by
-/// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread)'s executor
-/// when a p-code op is stepped while the thread or its machine is suspended. As with
-/// [`InterruptPcodeExecutionException`], Java's class extends `PcodeExecutionException` with a
-/// fixed message; here it wraps one.
-#[derive(Debug)]
-pub struct SuspendedPcodeExecutionException {
-    inner: PcodeExecutionException,
-}
+/// `ghidra.pcode.exec.SuspendedPcodeExecutionException` has graduated to a real port at
+/// [`crate::pcode::exec::suspended_pcode_execution_exception::SuspendedPcodeExecutionException`];
+/// re-exported here so any old references to this seam-stub path keep resolving.
+pub use crate::pcode::exec::suspended_pcode_execution_exception::SuspendedPcodeExecutionException;
 
-impl SuspendedPcodeExecutionException {
-    /// Placeholder for `new SuspendedPcodeExecutionException(PcodeFrame, Throwable)`. Every current
-    /// call site passes a `null` cause, so only the frame is accepted here.
-    pub fn new(frame: Option<PcodeFrame>) -> Self {
-        const MESSAGE: &str = "Execution suspended by user";
-        let inner = match frame {
-            Some(frame) => PcodeExecutionException::with_frame(MESSAGE, frame),
-            None => PcodeExecutionException::with_message(MESSAGE),
-        };
-        Self { inner }
-    }
-
-    /// The wrapped execution exception, Java's `super`.
-    pub fn as_execution_exception(&self) -> &PcodeExecutionException {
-        &self.inner
-    }
-
-    /// Placeholder for the inherited `getMessage()`.
-    pub fn message(&self) -> &str {
-        self.inner.message()
-    }
-}
-
-/// Placeholder for `ghidra.pcode.exec.InjectionErrorPcodeExecutionException`, thrown by
-/// [`PcodeEmulationLibrary`](crate::pcode::emu::default_pcode_thread::PcodeEmulationLibrary)'s
-/// `emu_injection_err` userop, which a service invokes in place of an inject whose Sleigh source
-/// failed to compile. See [`SuspendedPcodeExecutionException`] on the wrapping.
-#[derive(Debug)]
-pub struct InjectionErrorPcodeExecutionException {
-    inner: PcodeExecutionException,
-}
-
-impl InjectionErrorPcodeExecutionException {
-    /// Placeholder for `new InjectionErrorPcodeExecutionException(PcodeFrame, Throwable)`. The one
-    /// call site passes `(null, null)`, so only the frame is accepted here.
-    pub fn new(frame: Option<PcodeFrame>) -> Self {
-        const MESSAGE: &str = "Error compiling injected Sleigh source";
-        let inner = match frame {
-            Some(frame) => PcodeExecutionException::with_frame(MESSAGE, frame),
-            None => PcodeExecutionException::with_message(MESSAGE),
-        };
-        Self { inner }
-    }
-
-    /// The wrapped execution exception, Java's `super`.
-    pub fn as_execution_exception(&self) -> &PcodeExecutionException {
-        &self.inner
-    }
-
-    /// Placeholder for the inherited `getMessage()`.
-    pub fn message(&self) -> &str {
-        self.inner.message()
-    }
-}
+/// `ghidra.pcode.exec.InjectionErrorPcodeExecutionException` has graduated to a real port at
+/// [`crate::pcode::exec::injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException`];
+/// re-exported here so any old references to this seam-stub path keep resolving.
+pub use crate::pcode::exec::injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException;
 
 /// Placeholder for `ghidra.program.util.ProgramContextImpl`, the default-context store
 /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) builds from

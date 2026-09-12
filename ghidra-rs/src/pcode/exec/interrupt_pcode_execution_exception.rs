@@ -28,6 +28,14 @@ impl InterruptPcodeExecutionException {
         Self { inner: PcodeExecutionException::with_frame(Self::MESSAGE, frame) }
     }
 
+    /// Construct the exception with no frame and no cause.
+    ///
+    /// Port of `InterruptPcodeExecutionException(PcodeFrame frame, Throwable cause)` for the case
+    /// where the caller has no frame in hand (Java permits a `null` frame here).
+    pub fn new_without_frame() -> Self {
+        Self { inner: PcodeExecutionException::with_message(Self::MESSAGE) }
+    }
+
     /// Construct the exception with the given frame and cause.
     ///
     /// Port of `InterruptPcodeExecutionException(PcodeFrame frame, Throwable cause)`.
@@ -89,6 +97,15 @@ mod tests {
     fn carries_the_given_frame() {
         let e = InterruptPcodeExecutionException::new(frame());
         assert!(e.frame().is_some());
+    }
+
+    #[test]
+    fn new_without_frame_matches_javas_null_frame_call_sites() {
+        // Java: `throw new InterruptPcodeExecutionException(null, null)` at AbstractPcodeMachine's
+        // checkLoad/checkStore/swi call sites -- no frame is available there.
+        let e = InterruptPcodeExecutionException::new_without_frame();
+        assert_eq!(e.message(), "Execution hit breakpoint");
+        assert!(e.frame().is_none());
     }
 
     #[test]

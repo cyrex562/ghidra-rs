@@ -364,7 +364,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
             return Ok(());
         };
         if self.access_breakpoints.has_entry(&address, |kind| traps(*kind)) {
-            return Err(InterruptPcodeExecutionException::new(None));
+            return Err(InterruptPcodeExecutionException::new_without_frame());
         }
         Ok(())
     }
@@ -372,7 +372,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     /// Return a software interrupt if those interrupts are active. Port of `swi()`.
     pub fn swi(&self) -> Result<(), InterruptPcodeExecutionException> {
         if self.get_software_interrupt_mode() == SwiMode::Active {
-            return Err(InterruptPcodeExecutionException::new(None));
+            return Err(InterruptPcodeExecutionException::new_without_frame());
         }
         Ok(())
     }

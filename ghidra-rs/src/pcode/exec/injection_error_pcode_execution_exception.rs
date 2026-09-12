@@ -29,6 +29,14 @@ impl InjectionErrorPcodeExecutionException {
         Self { inner: PcodeExecutionException::with_frame(Self::MESSAGE, frame) }
     }
 
+    /// Construct the exception with no frame and no cause.
+    ///
+    /// Port of `InjectionErrorPcodeExecutionException(PcodeFrame frame, Throwable cause)` for
+    /// `new InjectionErrorPcodeExecutionException(null, null)`, the only call Java ever makes.
+    pub fn new_without_frame() -> Self {
+        Self { inner: PcodeExecutionException::with_message(Self::MESSAGE) }
+    }
+
     /// Construct the exception with the given frame and cause.
     ///
     /// Port of `InjectionErrorPcodeExecutionException(PcodeFrame frame, Throwable cause)`.
@@ -90,6 +98,14 @@ mod tests {
     fn carries_the_given_frame() {
         let e = InjectionErrorPcodeExecutionException::new(frame());
         assert!(e.frame().is_some());
+    }
+
+    #[test]
+    fn new_without_frame_matches_javas_only_call_site() {
+        // Java's one call site is `new InjectionErrorPcodeExecutionException(null, null)`.
+        let e = InjectionErrorPcodeExecutionException::new_without_frame();
+        assert_eq!(e.message(), "Error compiling injected Sleigh source");
+        assert!(e.frame().is_none());
     }
 
     #[test]

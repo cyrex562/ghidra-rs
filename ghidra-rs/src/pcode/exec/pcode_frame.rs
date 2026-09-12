@@ -32,6 +32,7 @@ use crate::util::msg::Msg;
 /// the program by falling-through, i.e., stepping past the final op, or by branching externally,
 /// i.e., to a different machine instruction. The emulator must then update its program counter
 /// accordingly and proceed to the next instruction.
+#[derive(Clone)]
 pub struct PcodeFrame {
     language: Arc<dyn Language>,
     /// Java takes a shared *immutable* `List<PcodeOp>` here and hands it straight back from

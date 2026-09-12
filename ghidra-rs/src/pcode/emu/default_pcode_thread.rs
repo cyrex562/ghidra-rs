@@ -68,9 +68,11 @@ use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_userop_library::{
     ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
 };
+use crate::pcode::exec::injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException;
+use crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException;
+use crate::pcode::exec::suspended_pcode_execution_exception::SuspendedPcodeExecutionException;
 use crate::pcode::seam_stubs::{
-    InjectionErrorPcodeExecutionException, InterruptPcodeExecutionException, ProgramContextImpl,
-    RegisterValue, SleighProgramCompiler, SuspendedPcodeExecutionException,
+    ProgramContextImpl, RegisterValue, SleighProgramCompiler,
 };
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::lang::language::Language;
@@ -186,7 +188,7 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
                 UseropInputs::Fixed(vec![]),
                 UseropValueKind::Void,
                 Box::new(|_ctx, _args| {
-                    panic!("{}", InjectionErrorPcodeExecutionException::new(None).message())
+                    panic!("{}", InjectionErrorPcodeExecutionException::new_without_frame().message())
                 }),
             ),
         ]
@@ -685,7 +687,9 @@ where
     pub fn step_op(&mut self, op: &PcodeOp, frame: &mut PcodeFrame) {
         let machine = Arc::clone(&self.machine);
         if self.executor.is_suspended() || machine.is_suspended() {
-            panic!("{}", SuspendedPcodeExecutionException::new(None).message());
+            // Java: `throw new SuspendedPcodeExecutionException(frame, null)` -- captures the
+            // real frame, not a null one.
+            panic!("{}", SuspendedPcodeExecutionException::new(frame.clone()).message());
         }
         let cb = Arc::clone(machine.base().callbacks());
         cb.before_step_op(self, op, frame);
