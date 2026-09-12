@@ -1,8 +1,10 @@
 pub mod context_cache;
+pub mod fixed_handle;
 pub mod op_tpl_walker;
 pub mod pcode_emit;
 pub mod pcode_emit_objects;
 pub mod pcode_emit_packed;
+pub mod sleigh_compiler_spec_description;
 pub mod sleigh_debug_logger;
 pub mod sleigh_exception;
 pub mod sleigh_file_exception;
@@ -12,4 +14,5 @@ pub mod sleigh_language_description;
 pub mod sleigh_language_file;
 pub mod sleigh_language_provider;
 pub mod sleigh_parser_context;
+pub mod unique_layout;
 pub mod varnode_data;
