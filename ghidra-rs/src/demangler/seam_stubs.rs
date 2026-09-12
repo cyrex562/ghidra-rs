@@ -1194,111 +1194,12 @@ impl SwiftTypeMetadata {
     }
 }
 
-/// Placeholder for `ghidra.app.util.demangler.DemangledLabel`, needed by
-/// [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
-///
-/// Java extends `DemangledObject`; Rust has no struct inheritance, so this composes the
-/// already-ported [`crate::demangler::demangled_object::DemangledObjectBase`] instead, the same
-/// treatment [`DemangledUnknown`] below gives itself. The constructor and both overrides
-/// (`applyTo`, `getSignature`) are modeled in full, since the Java class itself is tiny.
-pub struct DemangledLabel {
-    base: crate::demangler::demangled_object::DemangledObjectBase,
-}
-
-impl DemangledLabel {
-    /// Mirrors `DemangledLabel(String mangled, String originalDemangled, String name)`.
-    pub fn new(
-        mangled: impl Into<String>,
-        original_demangled: impl Into<String>,
-        name: &str,
-    ) -> Self {
-        let mut base = crate::demangler::demangled_object::DemangledObjectBase::new(
-            mangled,
-            Some(original_demangled.into()),
-        );
-        base.set_name(Some(name));
-        Self { base }
-    }
-}
-
-impl crate::demangler::demangled::Demangled for DemangledLabel {
-    fn get_mangled_string(&self) -> String {
-        self.base.get_mangled_string().to_string()
-    }
-
-    fn get_original_demangled(&self) -> String {
-        self.base.original_demangled.clone().unwrap_or_default()
-    }
-
-    fn get_name(&self) -> String {
-        self.base.get_name().unwrap_or_default().to_string()
-    }
-
-    fn set_name(&mut self, name: &str) {
-        self.base.set_name(Some(name));
-    }
-
-    fn get_demangled_name(&self) -> String {
-        self.base.get_demangled_name().unwrap_or_default().to_string()
-    }
-
-    fn get_namespace(&self) -> Option<&dyn crate::demangler::demangled::Demangled> {
-        self.base.get_namespace()
-    }
-
-    fn get_namespace_mut(&mut self) -> Option<&mut (dyn crate::demangler::demangled::Demangled + 'static)> {
-        self.base.namespace.as_deref_mut()
-    }
-
-    fn set_namespace(&mut self, namespace: Option<Box<dyn crate::demangler::demangled::Demangled>>) {
-        self.base.set_namespace(namespace);
-    }
-
-    fn get_namespace_string(&self) -> String {
-        self.base.namespace_string_with(&self.get_name())
-    }
-
-    fn get_namespace_name(&self) -> String {
-        self.get_name()
-    }
-
-    /// Mirrors `getSignature()`, which delegates to `getSignature(false)`; that override ignores
-    /// `format` and returns the name (see the `DemangledObject::get_signature_formatted`
-    /// override below), so this is inlined directly rather than reaching across traits.
-    fn get_signature(&self) -> String {
-        self.base.get_name().unwrap_or_default().to_string()
-    }
-}
-
-impl crate::demangler::demangled_object::DemangledObject for DemangledLabel {
-    fn base(&self) -> &crate::demangler::demangled_object::DemangledObjectBase {
-        &self.base
-    }
-
-    fn base_mut(&mut self) -> &mut crate::demangler::demangled_object::DemangledObjectBase {
-        &mut self.base
-    }
-
-    /// Mirrors `getSignature(boolean)`, which ignores `format` and returns the name.
-    fn get_signature_formatted(&self, _format: bool) -> String {
-        self.base.get_name().unwrap_or_default().to_string()
-    }
-
-    /// Mirrors `applyTo(Program, Address, DemanglerOptions, TaskMonitor)`.
-    fn apply_to(
-        &self,
-        program: &mut dyn crate::program::model::listing::Program,
-        address: &crate::program::model::address::Address,
-        _options: &crate::demangler::demangler_options::DemanglerOptions,
-        _monitor: &dyn crate::util::task::TaskMonitor,
-    ) -> Result<bool, crate::demangler::demangle_exception::DemangledException> {
-        let symbol = self
-            .base
-            .apply_demangled_name(None, address, true, false, program)
-            .map_err(crate::demangler::demangle_exception::DemangledException::from_cause)?;
-        Ok(symbol.is_some())
-    }
-}
+/// `ghidra.app.util.demangler.DemangledLabel`, needed by
+/// [`crate::demangler::swift::swift_demangler::SwiftDemangler`], is now fully ported at
+/// [`crate::demangler::demangled_label::DemangledLabel`]; re-exported here under its old seam
+/// name so call sites (e.g. `swift_demangler`'s `use seam_stubs::{..., DemangledLabel, ...}`)
+/// keep compiling unchanged.
+pub use crate::demangler::demangled_label::DemangledLabel;
 
 /// Placeholder for `ghidra.app.util.demangler.DemangledUnknown`, needed by
 /// [`crate::demangler::swift::nodes::swift_node::SwiftNodeBase::unknown`].
