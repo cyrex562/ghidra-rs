@@ -16,8 +16,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 use crate::decompiler::slghsymbol::user_op_symbol::UserOpSymbol;
+use crate::pcode::exec::composed_pcode_userop_library::ComposedPcodeUseropLibrary;
 use crate::pcode::exec::pcode_executor::PcodeExecutor;
-use crate::pcode::seam_stubs::ComposedPcodeUseropLibrary;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::{PcodeOp, Varnode};
 use crate::sleigh::grammar::location::Location;
