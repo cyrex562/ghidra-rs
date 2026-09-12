@@ -228,7 +228,7 @@ impl SymbolDatabaseAdapterV1 {
             rec.set_long(SYMBOL_DATATYPE_COL, data_type_id);
         }
 
-        let symbol_type = SymbolType::from_id(symbol_type_id as i32);
+        let symbol_type = SymbolType::get_symbol_type(symbol_type_id as i32);
         let data2 = record.get_int(V1_SYMBOL_DATA2_COL).unwrap_or(0);
         // The data1 field was used in two ways for label symbols: it stored a 1 for primary and 0
         // for non-primary. If the type was a parameter or variable, it stored the ordinal or

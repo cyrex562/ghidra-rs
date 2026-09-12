@@ -1,5 +1,5 @@
 use crate::program::model::address::{Address, BoxedAddressIterator, EmptyAddressIterator};
-use crate::program::model::listing::{Function, GhidraClass, Variable};
+use crate::program::model::listing::{Function, GhidraClass, Program, Variable};
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use std::io;
 use std::sync::Arc;
@@ -15,6 +15,7 @@ pub mod external_location_iterator;
 pub mod external_manager;
 pub mod external_path;
 pub mod external_reference;
+pub mod flow_type;
 pub mod illegal_char_cpp_transformer;
 pub mod label_history;
 pub mod mem_reference_impl;
@@ -54,6 +55,7 @@ pub use external_manager::{
 };
 pub use external_path::{ExternalPath, ExternalPathError, EXTERNAL_PATH_DELIMITER};
 pub use external_reference::ExternalReference;
+pub use flow_type::FlowType;
 pub use illegal_char_cpp_transformer::IllegalCharCppTransformer;
 pub use label_history::{LabelHistory, LabelHistoryAction};
 pub use mem_reference_impl::MemReferenceImpl;
@@ -97,6 +99,17 @@ pub trait Symbol: Send + Sync {
     /// should override once external-symbol support is ported.
     fn is_external(&self) -> bool {
         false
+    }
+
+    /// The program that owns this symbol, if known. Stands in for `Symbol.getProgram()`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected; concrete implementations
+    /// should override once program back-references are wired up. Added for
+    /// [`SymbolType`](crate::program::model::symbol::SymbolType)'s port of
+    /// `SymbolType.isValidParent`/`isValidParent` overrides, which compare program identity
+    /// between the target program and a candidate parent namespace's owning program.
+    fn get_program(&self) -> Option<Arc<dyn Program>> {
+        None
     }
 
     /// The namespace this symbol represents, when its [`SymbolType`] is `Namespace`, `Class`,

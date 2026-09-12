@@ -717,9 +717,9 @@ pub trait SymbolUtilities {
             return Some(if function.is_thunk() { "Thunk Function".to_string() } else { "Function".to_string() });
         }
         if symbol.is_external() {
-            return Some(format!("External {}", sym_type.display_name()));
+            return Some(format!("External {}", sym_type.name()));
         }
-        Some(sym_type.display_name().to_string())
+        Some(sym_type.name().to_string())
     }
 
     /// Returns the global symbol with the given name if and only if it is the only global symbol

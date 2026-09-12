@@ -129,7 +129,7 @@ impl SymbolManagerDB {
         let flags = rec.get_byte(Self::SYMBOL_FLAGS_COL).unwrap() as u8;
         let primary_key = rec.get_long(Self::SYMBOL_PRIMARY_COL).unwrap_or(0);
 
-        let symbol_type = SymbolType::from_id(type_id).unwrap_or(SymbolType::Label);
+        let symbol_type = SymbolType::get_symbol_type(type_id).unwrap_or(SymbolType::Label);
         let source = Self::get_source_type_from_flags(flags);
         let is_primary = primary_key != 0;
 

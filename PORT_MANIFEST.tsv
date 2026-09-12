@@ -9890,7 +9890,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/TableRecord.java	TODO	orig_src Ghi
 orig_src/Ghidra/Framework/DB/src/main/java/db/TableStatistics.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TerminatedTransactionException.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TestSpeed.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/Transaction.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/Transaction.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TranslatedRecordIterator.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyInteriorNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db
@@ -11210,24 +11210,24 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/callother
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/callother/OpBehaviorOtherNOP.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate callother 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractBytesPcodeExecutorStatePiece.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractLongOffsetPcodeExecutorStatePiece.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractPcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractSleighPcodeUseropDefinition.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AccessPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AccessPcodeExecutionException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AddressesReadPcodeArithmetic.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AnnotatedPcodeUseropLibrary.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeArithmetic.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStatePiece.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStateSpace.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ComposedPcodeUseropLibrary.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ComposedPcodeUseropLibrary.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ConcretionError.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/DecodePcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/DecodePcodeExecutionException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/DefaultPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/DefaultPcodeUseropLibrary.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/FixedSleighPcodeUseropDefinition.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/IndependentPairedPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/InjectionErrorPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/InterruptPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/IndependentPairedPcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/InjectionErrorPcodeExecutionException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/InterruptPcodeExecutionException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/LocationPcodeArithmetic.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/LocationPcodeExecutorStatePiece.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/OverloadedSleighPcodeUseropDefinition.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
@@ -11239,17 +11239,17 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecuti
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutor.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutorStatePiece.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExpression.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExpression.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeFrame.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeProgram.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeStateCallbacks.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeUseropLibrary.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeUseropLibraryFactory.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighLinkException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighLinkException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighPcodeUseropDefinition.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighProgramCompiler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighUtils.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SuspendedPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SuspendedPcodeExecutionException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ValueLocation.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/loadimage/LoadImage.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode loadimage
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/loadimage/LoadImageFunc.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode loadimage
@@ -14371,11 +14371,11 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sy
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalPath.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalReference.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/FlowType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/FlowType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/IdentityNameTransformer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/IllegalCharCppTransformer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/LabelHistory.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/MemReferenceImpl.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/MemReferenceImpl.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/NameTransformer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Namespace.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/OffsetReference.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
@@ -14394,9 +14394,9 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sy
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIteratorAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTable.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTableListener.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolUtilities.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ThunkReference.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ThunkReference.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/AcyclicCallGraphBuilder.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/AddressSetPropertyMap.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/CodeUnitInsertionException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
@@ -14565,16 +14565,16 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AbstractAdd
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressIteratorAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeComparators.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeIterators.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/DifferenceAddressSetView.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/DifferenceAddressSetView.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/GhidraBigEndianDataConverter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/GhidraDataConverter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/GhidraLittleEndianDataConverter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/IntersectionAddressSetView.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/IntersectionAddressSetView.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/ManualEntry.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/SymmetricDifferenceAddressSetView.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/TwoWayBreakdownAddressRangeIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressRangeIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressSetView.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressSetView.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/XmlProgramUtilities.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfoManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 

@@ -38,6 +38,7 @@ pub mod recovery_db_test;
 pub mod schema;
 pub mod table;
 pub mod test_speed;
+pub mod transaction;
 pub mod util;
 pub mod var_key_interior_node;
 pub mod var_key_node;
@@ -79,6 +80,7 @@ pub use record_translator::RecordTranslator;
 pub use recovery_db_test::RecoveryDbTest;
 pub use schema::Schema;
 pub use table::Table;
+pub use transaction::{EndTransaction, Transaction};
 pub use var_key_interior_node::VarKeyInteriorNode;
 pub use var_key_node::VarKeyNode;
 

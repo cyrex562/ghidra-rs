@@ -504,7 +504,7 @@ mod tests {
             record.set_string(0, Some(name.to_string()));
             record.set_long(1, address.offset());
             record.set_long(2, namespace_id);
-            record.set_int(3, symbol_type.get_id());
+            record.set_int(3, symbol_type.get_id().into());
             let flags = get_source_type_flags_bits(source).unwrap();
             record.set_byte(4, flags as i8);
             let _ = is_primary;

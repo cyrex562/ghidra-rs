@@ -792,8 +792,8 @@ fn compare_matches(a: &ExternalReferenceCount, b: &ExternalReferenceCount) -> st
     b.rank
         .cmp(&a.rank)
         .then_with(|| {
-            let a_id = a.symbol_type().map(|t| t.get_id()).unwrap_or(i32::MIN);
-            let b_id = b.symbol_type().map(|t| t.get_id()).unwrap_or(i32::MIN);
+            let a_id = a.symbol_type().map(|t| t.get_id()).unwrap_or(i8::MIN);
+            let b_id = b.symbol_type().map(|t| t.get_id()).unwrap_or(i8::MIN);
             b_id.cmp(&a_id)
         })
         .then_with(|| {

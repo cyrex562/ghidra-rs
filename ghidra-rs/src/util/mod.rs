@@ -2,6 +2,9 @@ pub mod abstract_address_set_view;
 pub mod address_range_comparators;
 pub mod application_utilities;
 pub mod address_range_iterators;
+pub mod difference_address_set_view;
+pub mod intersection_address_set_view;
+pub mod union_address_set_view;
 pub mod conv;
 pub mod date_utils;
 pub mod disposable;
@@ -100,6 +103,9 @@ pub mod undefined_function;
 pub mod stack_frame_impl;
 
 pub use address_range_comparators::AddressRangeComparators;
+pub use difference_address_set_view::DifferenceAddressSetView;
+pub use intersection_address_set_view::IntersectionAddressSetView;
+pub use union_address_set_view::UnionAddressSetView;
 pub use application_utilities::{
     ApplicationUtilities, PROPERTY_CACHE_DIR, PROPERTY_SETTINGS_DIR, PROPERTY_TEMP_DIR,
 };
