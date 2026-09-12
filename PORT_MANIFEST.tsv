@@ -1188,12 +1188,12 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/StreamUtils.java	D
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/TimedMsg.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedLongKeyIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedRecordIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/BackwardLongKeyIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/BackwardLongKeyIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/BackwardRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBAnnotatedObject.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBAnnotatedObjectFactory.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBBufferInputStream.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBBufferOutputStream.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBBufferOutputStream.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedDomainObjectAdapter.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectIndex.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStore.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
@@ -1217,10 +1217,10 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedL
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DomainObjectLockHold.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/FieldSpan.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ForwardLongKeyIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ForwardLongKeyIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ForwardRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/KeySpan.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ObjectKey.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ObjectKey.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/SchemaBuilder.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/SynchronizedSpliterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/annot/DBAnnotatedColumn.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database annot 
