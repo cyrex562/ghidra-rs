@@ -1,3 +1,4 @@
+pub mod abstract_location_plugin_event;
 pub mod close_program_plugin_event;
 pub mod external_reference_plugin_event;
 pub mod first_time_analyzed_plugin_event;
@@ -9,6 +10,7 @@ pub mod program_post_activated_plugin_event;
 pub mod program_visibility_change_plugin_event;
 pub mod view_changed_plugin_event;
 
+pub use abstract_location_plugin_event::AbstractLocationPluginEvent;
 pub use close_program_plugin_event::CloseProgramPluginEvent;
 pub use external_reference_plugin_event::ExternalReferencePluginEvent;
 pub use first_time_analyzed_plugin_event::FirstTimeAnalyzedPluginEvent;

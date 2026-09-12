@@ -6,5 +6,6 @@ pub mod trace_memory_operations;
 pub mod trace_memory_region;
 pub mod trace_memory_space;
 pub mod trace_memory_state;
+pub mod trace_overlapped_region_exception;
 pub mod trace_register;
 pub mod trace_register_container;

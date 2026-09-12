@@ -1,6 +1,7 @@
 pub mod application;
 pub mod application_identifier;
 pub mod application_properties;
+pub mod architecture;
 pub mod client;
 pub mod cmd;
 pub mod data;
