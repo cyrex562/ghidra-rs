@@ -57,7 +57,15 @@ use crate::app::seam_stubs::AssemblyConstructorSemantic;
 ///
 /// `getResolver`, `getPath`, `getShift`, `getLength`, and `hashCode` are ported as default methods,
 /// since each is a pure function of the hooks above.
-pub trait AbstractAssemblyState {
+///
+/// Java's every `Object` has a `toString()`, and every real subclass here (`AssemblyConstructState`
+/// et al.) overrides it -- notably, [`AssemblyGeneratedPrototype`](
+/// crate::app::plugin::assembler::sleigh::sem::AssemblyGeneratedPrototype)'s own `toString()`
+/// renders its `state: AbstractAssemblyState` field by calling `state.toString()` directly. This
+/// trait therefore requires [`std::fmt::Display`] as a supertrait (mirroring the same precedent
+/// already set by [`AssemblyResolution`](super::AssemblyResolution)), so that guarantee holds here
+/// too, even though no concrete subclass is ported yet.
+pub trait AbstractAssemblyState: std::fmt::Display {
     /// The resolver driving this node's resolution.
     ///
     /// Mirrors the constructor-assigned `resolver` field.
@@ -390,6 +398,12 @@ mod tests {
         hash_cache: Cell<Option<i32>>,
         hash_value: i32,
         compute_hash_calls: Cell<u32>,
+    }
+
+    impl std::fmt::Display for MockState {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "MockState(shift:{},length:{})", self.shift, self.length)
+        }
     }
 
     impl AbstractAssemblyState for MockState {
