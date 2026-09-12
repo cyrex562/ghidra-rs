@@ -5226,7 +5226,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/model/listing/CodeUni
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/model/listing/CodeUnitFormatOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra program model listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressIteratorConverter.java	DONE	orig_src Ghidra Features Base src main java ghidra program util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressRangeIteratorConverter.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslationException.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslationException.java	DONE	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslator.java	DONE	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/CombinedAddressRangeIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ContextEvaluator.java	DONE	orig_src Ghidra Features Base src main java ghidra program util
@@ -5239,7 +5239,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/FunctionMerge.ja
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/FunctionUtility.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/GhidraProgramUtilities.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/GroupView.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/InteriorSelection.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/InteriorSelection.java	DONE	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ListingDiff.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MarkerLocation.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MemoryBlockDiff.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
@@ -9827,7 +9827,7 @@ orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/tree/Wi
 orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/tree/WildAssemblyParseToken.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild tree 
 orig_src/Ghidra/Features/WildcardAssembler/src/test/java/ghidra/asm/wild/WildSleighAssemblerTest.java	TODO	orig_src Ghidra Features WildcardAssembler src test java ghidra asm wild 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BTreeNode.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryCodedField.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryCodedField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryDataBuffer.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BinaryField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/BooleanField.java	DONE	orig_src Ghidra Framework DB src main java db 
@@ -9861,14 +9861,14 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyInteriorNode.java	DONE	ori
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyRecordNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyVarRecNode.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/FixedRecNode.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/FixedRecNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/IllegalFieldAccessException.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/IndexField.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/IndexTable.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/IntField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/InteriorNode.java	DONE	orig_src Ghidra Framework DB src main java db
-orig_src/Ghidra/Framework/DB/src/main/java/db/KeyToRecordIterator.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/LegacyIndexField.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/KeyToRecordIterator.java	DONE	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/LegacyIndexField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/LongField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/LongKeyInteriorNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/LongKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db 
@@ -9883,7 +9883,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/RecordNode.java	DONE	orig_src Ghid
 orig_src/Ghidra/Framework/DB/src/main/java/db/RecordTranslator.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Schema.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/ShortField.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/SparseRecord.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/SparseRecord.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/StringField.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Table.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TableRecord.java	DONE	orig_src Ghidra Framework DB src main java db 
@@ -9895,7 +9895,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/TranslatedRecordIterator.java	TODO
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyInteriorNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyRecordNode.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/VarRecNode.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/VarRecNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BlockStream.java	DONE	orig_src Ghidra Framework DB src main java db buffers
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BlockStreamHandle.java	DONE	orig_src Ghidra Framework DB src main java db buffers
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BufferFile.java	DONE	orig_src Ghidra Framework DB src main java db buffers 
@@ -12709,7 +12709,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFil
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolder.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderChangeListener.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderFilter.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderListenerAdapter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderListenerAdapter.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObject.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangeRecord.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangedEvent.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
@@ -12720,7 +12720,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObj
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectEventIdGenerator.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectException.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectListener.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectListenerBuilder.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectListenerBuilder.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectLockedException.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/EventQueueID.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/EventType.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
@@ -14487,7 +14487,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Mem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/MnemonicFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/MoreLabelFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OffsetFieldLocation.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OffsetFieldType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OffsetFieldType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OldLanguage.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OldLanguageFactory.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OperandFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
@@ -14510,7 +14510,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Reg
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RepeatableCommentFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SimpleDiffUtility.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SimpleLanguageTranslator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SourceMapFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SourceMapFieldLocation.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SpaceFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SpacerFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/StackDepthFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
