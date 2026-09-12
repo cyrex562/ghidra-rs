@@ -267,6 +267,14 @@ impl ClangNode for ClangTokenBase {
         list.push(self);
     }
 
+    /// A `ClangToken` is always the leaf case in
+    /// [`TokenIterator`](crate::app::decompiler::TokenIterator)'s tree walk (mirrors Java's
+    /// `instanceof ClangToken` check). See [`ClangNode::is_clang_token`] for why this override
+    /// exists at all.
+    fn is_clang_token(&self) -> bool {
+        true
+    }
+
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }

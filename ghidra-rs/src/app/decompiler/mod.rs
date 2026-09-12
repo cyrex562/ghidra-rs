@@ -1,3 +1,5 @@
+pub mod clang_func_proto;
+pub mod clang_function;
 pub mod clang_line;
 pub mod clang_node;
 pub mod clang_token;
@@ -12,7 +14,10 @@ pub mod decompiler_margin_service;
 pub mod parallel;
 pub mod pretty_printer;
 pub mod signature;
+pub mod token_iterator;
 
+pub use clang_func_proto::ClangFuncProto;
+pub use clang_function::ClangFunction;
 pub use clang_line::ClangLine;
 pub use clang_node::ClangNode;
 pub use clang_token::{ClangToken, ClangTokenBase, ClangTokenKind};
@@ -24,3 +29,4 @@ pub use decompiler_highlighter::DecompilerHighlighter;
 pub use decompiler_location::DecompilerLocation;
 pub use decompiler_margin_service::DecompilerMarginService;
 pub use pretty_printer::PrettyPrinter;
+pub use token_iterator::TokenIterator;

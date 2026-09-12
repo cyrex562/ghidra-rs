@@ -82,6 +82,27 @@ pub trait ClangNode: Send + Sync + std::fmt::Display {
     ///   from this node (and recursively its children) into the list.
     fn flatten<'a>(&'a self, list: &mut Vec<&'a dyn ClangNode>);
 
+    /// `true` if this node is a leaf `ClangToken` rather than a `ClangTokenGroup`-shaped group
+    /// (`ClangTokenGroup` itself, or one of the types that `extends` it in Java --
+    /// `ClangFunction`, `ClangFuncProto`, ...).
+    ///
+    /// Has no direct Java counterpart. [`TokenIterator`](crate::app::decompiler::TokenIterator)'s
+    /// `normalize()`/`pushGroup()` distinguish the two with `instanceof ClangTokenGroup` /
+    /// `instanceof ClangToken`, which relies on Java's real class hierarchy (every group-shaped
+    /// class actually extends `ClangTokenGroup`). This crate's composition-over-inheritance
+    /// convention means `ClangFunction`/`ClangFuncProto` are separate Rust structs that merely
+    /// *contain* a `ClangTokenGroup` rather than being one, so a `downcast_ref::<ClangTokenGroup>()`
+    /// check would wrongly treat them as leaves. This method lets each implementor state which
+    /// side of the distinction it is on directly.
+    ///
+    /// Defaults to `false` (group-shaped: [`TokenIterator`](crate::app::decompiler::TokenIterator)
+    /// should descend into its children), since every group-shaped type in this crate
+    /// (`ClangTokenGroup`, `ClangFunction`, `ClangFuncProto`) relies on the default. The one leaf
+    /// type, `ClangTokenBase`, overrides it to `true`.
+    fn is_clang_token(&self) -> bool {
+        false
+    }
+
     /// Expose this node as [`std::any::Any`] so callers can recover its concrete type.
     ///
     /// Has no Java counterpart -- Java's `instanceof`/cast checks (e.g. `(ClangTokenGroup)

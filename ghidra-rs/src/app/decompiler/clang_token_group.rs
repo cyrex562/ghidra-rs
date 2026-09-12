@@ -3,20 +3,27 @@
 //! A sequence of tokens that form a meaningful group in source code. This group may break up
 //! into subgroups and may be part of a larger group.
 //!
-//! [`ClangFunction`] is a minimal placeholder (see
-//! [`crate::app::seam_stubs`]) since the real class is not ported yet -- this file
-//! sits on a dependency cycle with it. [`decode`](ClangTokenGroup::decode) additionally
-//! collapses `ClangFuncProto`/`ClangReturnType`/`ClangStatement`/`ClangVariableDecl` (all of
-//! which `extends ClangTokenGroup` in Java, adding only extra attribute-derived fields such as a
-//! return data type or a bound `HighSymbol`) into plain nested `ClangTokenGroup` children, since
-//! those subclasses are not ported either: the shared tree/token-group structure they inherit
-//! from `ClangTokenGroup` is preserved faithfully, but their own extra accessors are not
-//! available until each is ported in its own right.
+//! [`get_clang_function`](ClangTokenGroup::get_clang_function) returns
+//! [`crate::app::seam_stubs::ClangFunction`], a minimal placeholder marker trait, rather than the
+//! real [`crate::app::decompiler::ClangFunction`] struct: that method's signature predates the
+//! real class's port and returns an *owned* `Box<dyn ...>`, which can't be produced from `&self`
+//! without cloning the whole (non-`Clone`) subtree -- see
+//! [`ClangFunction`](crate::app::decompiler::clang_function)'s module docs for the full
+//! reasoning. [`decode`](ClangTokenGroup::decode) constructs a real
+//! [`ClangFuncProto`](crate::app::decompiler::ClangFuncProto) for `ELEM_FUNCPROTO` children (now
+//! that class is ported) but still collapses `ClangReturnType`/`ClangStatement`/
+//! `ClangVariableDecl` (all of which `extends ClangTokenGroup` in Java, adding only extra
+//! attribute-derived fields such as a return data type or a bound `HighSymbol`) into plain nested
+//! `ClangTokenGroup` children, since those subclasses are not ported either: the shared
+//! tree/token-group structure they inherit from `ClangTokenGroup` is preserved faithfully, but
+//! their own extra accessors are not available until each is ported in its own right.
 
 use std::sync::Arc;
 
+use crate::app::decompiler::clang_func_proto::ClangFuncProto;
 use crate::app::decompiler::clang_node::ClangNode;
 use crate::app::decompiler::clang_token::ClangTokenBase;
+use crate::app::decompiler::token_iterator::TokenIterator;
 use crate::app::seam_stubs::ClangFunction;
 use crate::program::model::address::Address;
 use crate::program::model::pcode::{
@@ -140,10 +147,13 @@ impl ClangTokenGroup {
             if elem == 0 {
                 break;
             }
-            if elem == ELEM_RETURN_TYPE.id
+            if elem == ELEM_FUNCPROTO.id {
+                let mut child = ClangFuncProto::new(None);
+                child.decode(decoder, pfactory)?;
+                self.add_token_group(Box::new(child));
+            } else if elem == ELEM_RETURN_TYPE.id
                 || elem == ELEM_VARDECL.id
                 || elem == ELEM_STATEMENT.id
-                || elem == ELEM_FUNCPROTO.id
                 || elem == ELEM_BLOCK.id
             {
                 let mut child = ClangTokenGroup::new(None);
@@ -172,21 +182,9 @@ impl ClangTokenGroup {
 
     /// Create an iterator across all leaf tokens in this group, in display order
     /// (`forward=true`) or in reverse of display order (`forward=false`). Port of
-    /// `ClangTokenGroup.tokenIterator(boolean)`.
-    ///
-    /// The real `TokenIterator` walks the `Parent()`/`Child()` tree lazily with an explicit
-    /// ancestor stack. Since [`Self::flatten`] already performs the identical depth-first,
-    /// leaf-order enumeration eagerly -- and reversing a full forward enumeration is exactly a
-    /// backward enumeration for a tree -- this reuses it instead of porting `TokenIterator`'s
-    /// stack machinery. Typed as `ClangNode` rather than `ClangToken` since children are stored
-    /// as `ClangNode`s (a group's child may itself be a group, not a token).
-    pub fn token_iterator(&self, forward: bool) -> std::vec::IntoIter<&dyn ClangNode> {
-        let mut list = Vec::new();
-        self.flatten(&mut list);
-        if !forward {
-            list.reverse();
-        }
-        list.into_iter()
+    /// `ClangTokenGroup.tokenIterator(boolean)` (`new TokenIterator(this, forward)`).
+    pub fn token_iterator(&self, forward: bool) -> TokenIterator<'_> {
+        TokenIterator::from_group(self, forward)
     }
 }
 
@@ -348,6 +346,13 @@ mod tests {
                     c.flatten(list);
                 }
             }
+        }
+
+        /// A childless `MockNode` stands in for a leaf token in
+        /// [`token_iterator_backward_is_exact_reverse_of_forward`]; one with children stands in
+        /// for a nested group. Matches the same distinction [`Self::flatten`] already draws.
+        fn is_clang_token(&self) -> bool {
+            self.children.is_empty()
         }
 
         fn as_any(&self) -> &dyn std::any::Any {
