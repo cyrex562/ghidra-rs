@@ -216,14 +216,34 @@ pub trait PreferencesLike {
 /// yet.
 pub trait LinkHandler {}
 
-/// Placeholder for `ghidra.framework.store.Version`, referenced by
-/// [`DomainFile`](crate::framework::model::DomainFile) before the real class is ported.
-/// `DomainFile` only ever returns a list of these, so no members are needed yet.
+/// Placeholder for `ghidra.framework.store.Version`, referenced (as `Box<dyn Version>`) by
+/// [`DomainFile`](crate::framework::model::DomainFile). `ghidra.framework.store.Version` has
+/// since graduated to a real, concrete-struct port at
+/// [`ItemVersion`](crate::framework::store::version::ItemVersion) (renamed to avoid colliding
+/// with this crate's other `Version`-named types), but `DomainFile` was left on this trait
+/// placeholder rather than rewired, for the same "`Box<dyn _>` caller vs. concrete-struct port"
+/// reason documented on [`ItemCheckoutStatus`] above. `DomainFile` only ever returns a list of
+/// these, so no members are needed on the placeholder itself.
 pub trait Version {}
 
-/// Placeholder for `ghidra.framework.store.ItemCheckoutStatus`, referenced by
-/// [`DomainFile`](crate::framework::model::DomainFile) before the real class is ported.
-/// `DomainFile` only ever returns this type, so no members are needed yet.
+/// Placeholder for `ghidra.framework.store.ItemCheckoutStatus`, referenced (as `Box<dyn
+/// ItemCheckoutStatus>`) by [`DomainFile`](crate::framework::model::DomainFile),
+/// [`FolderItem`](crate::framework::store::FolderItem), and their many implementors before the
+/// real class was ported.
+///
+/// `ghidra.framework.store.ItemCheckoutStatus` has since graduated to a real, concrete-struct
+/// port at [`crate::framework::store::item_checkout_status::ItemCheckoutStatus`]. That port is
+/// *not* substituted in here: the real class has always been a plain data record (never
+/// implemented/extended by anything else in Java), so the faithful Rust shape is a concrete
+/// `struct`, not a trait -- but every current caller of this seam already committed to the
+/// `Box<dyn ItemCheckoutStatus>` object-safe shape while only this empty marker trait existed.
+/// Swapping the trait for the struct in place would require `Box<dyn ItemCheckoutStatus>` at each
+/// of those call sites to become a plain `ItemCheckoutStatus` (or `Box<ItemCheckoutStatus>`)
+/// instead, which is a collateral rewire across many files/modules outside a single class's
+/// porting scope. This mirrors the same-shaped gap already left for
+/// `ghidra.framework.store.Version` (below): its real port graduated to
+/// [`ItemVersion`](crate::framework::store::version::ItemVersion) while every existing caller
+/// (again, `DomainFile`) stayed on this trait placeholder.
 pub trait ItemCheckoutStatus {}
 
 /// Placeholder for `ghidra.framework.data.LinkedGhidraFolder`, referenced by
