@@ -1,10 +1,12 @@
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::format::ne::entry_table::EntryTable;
 use crate::format::ne::imported_name_table::ImportedNameTable;
+use crate::format::ne::information_block::InformationBlock;
 use crate::format::ne::module_reference_table::ModuleReferenceTable;
 use crate::format::ne::non_resident_name_table::NonResidentNameTable;
 use crate::format::ne::resident_name_table::ResidentNameTable;
 use crate::format::ne::resource_table::ResourceTable;
-use crate::format::seam_stubs::{EntryTable, InformationBlock, SegmentTable};
+use crate::format::seam_stubs::SegmentTable;
 use crate::program::model::address::segmented_address::SegmentedAddress;
 use std::io;
 

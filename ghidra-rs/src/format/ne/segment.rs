@@ -1,5 +1,5 @@
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::SegmentRelocation;
+use crate::format::ne::segment_relocation::SegmentRelocation;
 use std::io;
 
 /// data segment type.

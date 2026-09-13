@@ -1,5 +1,5 @@
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::EntryPoint;
+use crate::format::ne::entry_point::EntryPoint;
 use std::io;
 
 /// Marker denoting an unused entry table bundle.
