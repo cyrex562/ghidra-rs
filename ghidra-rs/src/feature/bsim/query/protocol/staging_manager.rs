@@ -126,7 +126,7 @@ mod tests {
     /// A single-stage manager that claims the entire query's functions at once: `initialize`
     /// consumes every function, `next_stage` always reports there is nothing left. Exercises the
     /// trait's `Result`/`bool` contract with a real (non-null) implementation, complementing the
-    /// `NullStaging`/`FunctionStaging` placeholders that already live in `feature::seam_stubs`.
+    /// [`NullStaging`](super::NullStaging)/[`FunctionStaging`](super::FunctionStaging) ports.
     struct OneShotStaging {
         total_size: i32,
         queries_made: i32,
