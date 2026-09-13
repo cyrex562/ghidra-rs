@@ -66,6 +66,7 @@ pub mod translated_record_iterator;
 pub mod util;
 pub mod var_key_interior_node;
 pub mod var_key_node;
+pub mod var_key_record_node;
 pub mod var_rec_node;
 
 pub use binary_coded_field::BinaryCodedField;
@@ -131,6 +132,7 @@ pub use transaction::{EndTransaction, Transaction};
 pub use translated_record_iterator::TranslatedRecordIterator;
 pub use var_key_interior_node::VarKeyInteriorNode;
 pub use var_key_node::VarKeyNode;
+pub use var_key_record_node::VarKeyRecordNode;
 pub use var_rec_node::VarRecNode;
 
 /// Iterate over data records within a table.
