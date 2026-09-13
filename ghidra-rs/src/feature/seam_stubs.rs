@@ -2834,66 +2834,6 @@ impl std::fmt::Debug for PreFilter {
     }
 }
 
-/// Placeholder for the unported Java type `SignatureRecord`, referenced by
-/// [`crate::feature::bsim::query::description::FunctionDescription`].
-///
-/// The real record wraps an `LSHVector`; the placeholder carries only the duplicate count that
-/// `FunctionDescription::save_xml` writes as the `sigdup` attribute, and the vector id that
-/// `DescriptionManager::attach_signature` copies onto the function. Replace with the real port
-/// when `SignatureRecord.java` is ported.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct SignatureRecord {
-    count: i32,
-    vectorid: i64,
-}
-
-impl SignatureRecord {
-    pub fn new(count: i32) -> Self {
-        Self { count, vectorid: 0 }
-    }
-
-    /// Java: `SignatureRecord.getCount()`, the number of functions sharing this signature.
-    pub fn get_count(&self) -> i32 {
-        self.count
-    }
-
-    /// Java: package-private `setCount(int)`.
-    pub(crate) fn set_count(&mut self, c: i32) {
-        self.count = c;
-    }
-
-    /// Java: `SignatureRecord.getVectorId()`.
-    pub fn get_vector_id(&self) -> i64 {
-        self.vectorid
-    }
-
-    /// Java: package-private `setVectorId(long)`.
-    pub(crate) fn set_vector_id(&mut self, i: i64) {
-        self.vectorid = i;
-    }
-
-    /// Java: `SignatureRecord.saveXml(Writer)`, which delegates to the vector's `saveXml`.
-    /// The placeholder holds no vector, so it writes nothing.
-    pub fn save_xml<W: std::io::Write>(&self, _fwrite: &mut W) -> std::io::Result<()> {
-        Ok(())
-    }
-
-    /// Java: `SignatureRecord.restoreXml(...)`, which builds a record through the manager and
-    /// attaches it to `fdesc`. The manager's factory discards the `<lshcosine>` subtree, since
-    /// the placeholder record holds no vector, so the surrounding parse stays well formed.
-    pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
-        parser: &mut P,
-        vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
-        man: &mut crate::feature::bsim::query::description::DescriptionManager,
-        fdesc: &mut crate::feature::bsim::query::description::FunctionDescription,
-        count: i32,
-    ) -> Result<(), crate::feature::bsim::query::LshException> {
-        let srec = man.new_signature_from_xml(parser, vector_factory, count);
-        man.attach_signature(fdesc, Arc::new(srec));
-        Ok(())
-    }
-}
-
 /// Placeholder for the unported Java type `CallgraphEntry`, referenced by
 /// [`crate::feature::bsim::query::description::FunctionDescription`].
 ///
@@ -3158,49 +3098,6 @@ pub trait ResponseVectorId: Send + Sync {
     fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> std::io::Result<()>;
 }
 
-/// Placeholder for the unported Java type `VectorResult`, referenced by
-/// [`ExecutableComparison`](crate::feature::bsim::query::client::ExecutableComparison).
-///
-/// A vector recovered from the database, together with how many functions instantiate it. The
-/// Java field is an `LSHVector`; the ported trait is not object safe, so the placeholder holds
-/// the one concrete vector the placeholder factory builds. Replace with the real port when
-/// `VectorResult.java` is ported.
-#[derive(Debug, Clone, Default)]
-pub struct VectorResult {
-    /// Id of the vector.
-    pub vectorid: i64,
-    /// Similarity score.
-    pub sim: f64,
-    /// Significance score.
-    pub signif: f64,
-    /// Number of functions instantiating this vector.
-    pub hitcount: i32,
-    /// The vector itself.
-    pub vec: crate::generic::seam_stubs::WeightedLSHCosineVector,
-}
-
-impl VectorResult {
-    /// Java: `VectorResult(long vid, int cnt, double sm, double sg, LSHVector v)`.
-    pub fn new(
-        vectorid: i64,
-        hitcount: i32,
-        sim: f64,
-        signif: f64,
-        vec: crate::generic::seam_stubs::WeightedLSHCosineVector,
-    ) -> Self {
-        Self { vectorid, sim, signif, hitcount, vec }
-    }
-}
-
-impl PartialEq for VectorResult {
-    /// Java: `equals` compares the vector id alone.
-    fn eq(&self, other: &Self) -> bool {
-        self.vectorid == other.vectorid
-    }
-}
-
-impl Eq for VectorResult {}
-
 /// Placeholder for the unported Java types `ExecutableScorer` and its subclass
 /// `ExecutableScorerSingle`, referenced by
 /// [`ExecutableComparison`](crate::feature::bsim::query::client::ExecutableComparison), which
@@ -3356,7 +3253,9 @@ impl ExecutableScorer {
         &mut self,
         _vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
         _vec2_functions: &[crate::feature::bsim::query::description::DescriptionManager],
-        _vectors: &[VectorResult],
+        _vectors: &[crate::feature::bsim::query::description::VectorResult<
+            crate::generic::seam_stubs::WeightedLSHCosineVector,
+        >],
         hitcount: i32,
         pair_threshold: i32,
     ) -> bool {

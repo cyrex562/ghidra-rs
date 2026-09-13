@@ -5,11 +5,11 @@ use std::sync::Arc;
 
 use crate::feature::bsim::query::LshException;
 use crate::feature::bsim::query::description::{
-    CategoryRecord, FunctionDescription, RowKey,
+    CategoryRecord, FunctionDescription, RowKey, SignatureRecord,
 };
-use crate::feature::seam_stubs::{ExecutableRecord, SignatureRecord};
+use crate::feature::seam_stubs::ExecutableRecord;
 use crate::generic::lsh::vector::lsh_vector::LSHVector;
-use crate::generic::seam_stubs::LSHVectorFactory;
+use crate::generic::seam_stubs::{LSHVectorFactory, WeightedLSHCosineVector};
 use crate::util::xml::spec_xml_utils;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
@@ -122,7 +122,7 @@ impl DescriptionManager {
     ///
     /// Java: the `setSignatureId(SignatureRecord, long)` overload; Rust has no overloading, so
     /// the two carry different names.
-    pub fn set_signature_record_id(&self, sigrec: &mut SignatureRecord, id: i64) {
+    pub fn set_signature_record_id<V: LSHVector>(&self, sigrec: &mut SignatureRecord<V>, id: i64) {
         sigrec.set_vector_id(id);
     }
 
@@ -313,9 +313,10 @@ impl DescriptionManager {
         res.set_flags(fdesc.get_flags());
         if transsig {
             if let Some(srec) = fdesc.get_signature_record() {
-                // As in Java, the cloned record starts with vector id 0, which attach_signature
-                // then copies over the id set just above.
-                let sigclone = self.new_signature_of_count(srec.get_count());
+                // Java: `newSignature(srec.getLSHVector(), srec.getCount())`. As in Java, the
+                // cloned record starts with vector id 0, which attach_signature then copies over
+                // the id set just above.
+                let sigclone = self.new_signature(srec.get_lsh_vector(), srec.get_count());
                 self.attach_signature(&mut res, Arc::new(sigclone));
             }
         }
@@ -335,16 +336,10 @@ impl DescriptionManager {
     /// Generate a signature record for a specific feature vector. `count` is the number of
     /// functions sharing the vector.
     ///
-    /// The placeholder [`SignatureRecord`] retains only the count, so the vector is inspected
-    /// but not stored.
-    pub fn new_signature<V: LSHVector + ?Sized>(&self, vec: &V, count: i32) -> SignatureRecord {
-        let _ = vec;
-        self.new_signature_of_count(count)
-    }
-
-    /// The part of [`new_signature`](Self::new_signature) that does not depend on the vector.
-    fn new_signature_of_count(&self, count: i32) -> SignatureRecord {
-        let mut srec = SignatureRecord::new(0);
+    /// Java: `newSignature(LSHVector vec, int count)`. Java's `SignatureRecord` aliases the
+    /// caller's vector; Rust's owns it instead, so this clones `vec` in.
+    pub fn new_signature<V: LSHVector + Clone>(&self, vec: &V, count: i32) -> SignatureRecord<V> {
+        let mut srec = SignatureRecord::new(vec.clone());
         srec.set_count(count);
         srec
     }
@@ -352,22 +347,30 @@ impl DescriptionManager {
     /// Parse a signature record from an XML stream, building the underlying feature vector with
     /// `vector_factory`.
     ///
-    /// Java: the `newSignature(XmlPullParser, LSHVectorFactory, int)` overload. The
-    /// [`LSHVectorFactory`] placeholder cannot build a vector yet, so the vector element is
-    /// consumed and discarded, leaving the surrounding parse well formed.
+    /// Java: the `newSignature(XmlPullParser, LSHVectorFactory, int)` overload, which calls
+    /// `vectorFactory.restoreVectorFromXml(parser)`. The concrete [`LSHVectorFactory`]
+    /// placeholder wired through [`DescriptionManager`] cannot reconstruct a vector's contents
+    /// from XML yet (`WeightedLSHCosineVector.java`'s own `saveXml`/`restoreXml` are themselves
+    /// unported), so the `<lshcosine>` element is consumed and discarded and an empty vector
+    /// stands in, leaving the surrounding parse well formed.
     pub(crate) fn new_signature_from_xml<P: XmlPullParser>(
         &self,
         parser: &mut P,
         vector_factory: &LSHVectorFactory,
         count: i32,
-    ) -> SignatureRecord {
-        let _ = vector_factory;
+    ) -> SignatureRecord<WeightedLSHCosineVector> {
         parser.discard_sub_tree();
-        self.new_signature_of_count(count)
+        let mut srec = SignatureRecord::new(vector_factory.build_zero_vector());
+        srec.set_count(count);
+        srec
     }
 
     /// Associate a signature with a specific function.
-    pub fn attach_signature(&self, fd: &mut FunctionDescription, srec: Arc<SignatureRecord>) {
+    pub fn attach_signature(
+        &self,
+        fd: &mut FunctionDescription,
+        srec: Arc<SignatureRecord<WeightedLSHCosineVector>>,
+    ) {
         let vector_id = srec.get_vector_id();
         fd.set_signature_record(srec);
         self.set_signature_id(fd, vector_id);
@@ -1040,7 +1043,7 @@ mod tests {
     fn test_attach_signature_copies_vector_id() {
         let (mut man, exe) = manager_with_exe(MD5_A);
         let mut func = man.new_function_description("main", 0x1000, exe);
-        let mut srec = man.new_signature_of_count(4);
+        let mut srec = man.new_signature(&WeightedLSHCosineVector::default(), 4);
         man.set_signature_record_id(&mut srec, 77);
         man.attach_signature(&mut func, Arc::new(srec));
         assert_eq!(func.get_signature_record().unwrap().get_count(), 4);
@@ -1096,7 +1099,7 @@ mod tests {
         let mut func = src.new_function_description("main", 0x1000, Arc::clone(&exe));
         src.set_function_description_flags(&mut func, 6);
         src.set_signature_id(&mut func, 55);
-        let srec = src.new_signature_of_count(3);
+        let srec = src.new_signature(&WeightedLSHCosineVector::default(), 3);
         func.set_signature_record(Arc::new(srec));
         src.insert_function(func.clone());
 

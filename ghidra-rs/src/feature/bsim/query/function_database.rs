@@ -15,10 +15,10 @@ use std::io;
 use std::sync::Arc;
 
 use crate::feature::bsim::query::b_sim_server_info::BSimServerInfo;
-use crate::feature::bsim::query::description::{DatabaseInformation, DescriptionManager};
+use crate::feature::bsim::query::description::{DatabaseInformation, DescriptionManager, VectorResult};
 use crate::feature::bsim::query::lsh_exception::LshException;
 use crate::feature::bsim::query::protocol::{BSimQuery, QueryResponseRecord};
-use crate::feature::seam_stubs::{Configuration, ExecutableRecord, VectorResult};
+use crate::feature::seam_stubs::{Configuration, ExecutableRecord};
 use crate::framework::application::Application;
 use crate::generic::seam_stubs::{LSHVectorFactory, WeightedLSHCosineVector};
 
@@ -242,7 +242,7 @@ pub trait FunctionDatabase: Send + Sync {
 
     /// Java: `QueryVectorId` with the given ids; yields `ResponseVectorId.vectorResults`, one
     /// entry per requested id.
-    fn query_vector_id(&self, _ids: &[i64]) -> Option<Vec<VectorResult>> {
+    fn query_vector_id(&self, _ids: &[i64]) -> Option<Vec<VectorResult<WeightedLSHCosineVector>>> {
         None
     }
 
@@ -252,7 +252,7 @@ pub trait FunctionDatabase: Send + Sync {
         &self,
         _vec: &WeightedLSHCosineVector,
         _thresh: f64,
-    ) -> Option<Vec<Vec<VectorResult>>> {
+    ) -> Option<Vec<Vec<VectorResult<WeightedLSHCosineVector>>>> {
         None
     }
 

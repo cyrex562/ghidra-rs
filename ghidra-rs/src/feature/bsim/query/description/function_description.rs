@@ -6,9 +6,9 @@ use std::io::{self, Write};
 use std::sync::Arc;
 
 use crate::feature::bsim::query::LshException;
-use crate::feature::bsim::query::description::{DescriptionManager, RowKey};
-use crate::feature::seam_stubs::{CallgraphEntry, ExecutableRecord, SignatureRecord};
-use crate::generic::seam_stubs::LSHVectorFactory;
+use crate::feature::bsim::query::description::{DescriptionManager, RowKey, SignatureRecord};
+use crate::feature::seam_stubs::{CallgraphEntry, ExecutableRecord};
+use crate::generic::seam_stubs::{LSHVectorFactory, WeightedLSHCosineVector};
 use crate::util::xml::spec_xml_utils;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
@@ -35,7 +35,7 @@ pub struct FunctionDescription {
     function_name: String,
     /// Address offset of this function within its executable, or `-1` for a library function.
     address: i64,
-    sigrec: Option<Arc<SignatureRecord>>,
+    sigrec: Option<Arc<SignatureRecord<WeightedLSHCosineVector>>>,
     /// Java models "no callgraph" as a null list; an empty vector is equivalent here.
     callrec: Vec<CallgraphEntry>,
     /// Table id of this description, if it has been stored.
@@ -95,7 +95,7 @@ impl FunctionDescription {
         self.callrec.push(CallgraphEntry::new(fd, lhash));
     }
 
-    pub fn set_signature_record(&mut self, srec: Arc<SignatureRecord>) {
+    pub fn set_signature_record(&mut self, srec: Arc<SignatureRecord<WeightedLSHCosineVector>>) {
         self.sigrec = Some(srec);
     }
 
@@ -109,7 +109,7 @@ impl FunctionDescription {
         &self.exerec
     }
 
-    pub fn get_signature_record(&self) -> Option<&Arc<SignatureRecord>> {
+    pub fn get_signature_record(&self) -> Option<&Arc<SignatureRecord<WeightedLSHCosineVector>>> {
         self.sigrec.as_ref()
     }
 
@@ -237,7 +237,13 @@ impl FunctionDescription {
         let mut fdesc = man.new_function_description(&fname, address, erec);
         if parser.peek().is_start() {
             if parser.peek().get_name() == "lshcosine" {
-                SignatureRecord::restore_xml(parser, vector_factory, man, &mut fdesc, count)?;
+                SignatureRecord::<WeightedLSHCosineVector>::restore_xml(
+                    parser,
+                    vector_factory,
+                    man,
+                    &mut fdesc,
+                    count,
+                )?;
             }
             while parser.peek().is_start() {
                 if parser.peek().get_name() == "flags" {
@@ -401,7 +407,9 @@ mod tests {
         fd.set_id(&RowKeySQL::new(77));
         fd.set_vector_id(1234);
         fd.set_flags(6);
-        fd.set_signature_record(Arc::new(SignatureRecord::new(3)));
+        let mut srec = SignatureRecord::new(WeightedLSHCosineVector::default());
+        srec.set_count(3);
+        fd.set_signature_record(Arc::new(srec));
         assert_eq!(fd.get_id(), Some(77));
         assert_eq!(fd.get_vector_id(), 1234);
         assert_eq!(fd.get_flags(), 6);
@@ -544,9 +552,13 @@ mod tests {
     #[test]
     fn test_save_xml_writes_sigdup_only_when_count_positive() {
         let mut fd = func(&exe("aaa"), "main", 0x1000);
-        fd.set_signature_record(Arc::new(SignatureRecord::new(0)));
+        let mut zero_srec = SignatureRecord::new(WeightedLSHCosineVector::default());
+        zero_srec.set_count(0);
+        fd.set_signature_record(Arc::new(zero_srec));
         assert_eq!(xml(&fd), "<fdesc name=\"main\" addr=\"0x1000\">\n</fdesc>\n");
-        fd.set_signature_record(Arc::new(SignatureRecord::new(18)));
+        let mut nonzero_srec = SignatureRecord::new(WeightedLSHCosineVector::default());
+        nonzero_srec.set_count(18);
+        fd.set_signature_record(Arc::new(nonzero_srec));
         assert_eq!(
             xml(&fd),
             "<fdesc name=\"main\" addr=\"0x1000\" sigdup=\"0x12\">\n</fdesc>\n"

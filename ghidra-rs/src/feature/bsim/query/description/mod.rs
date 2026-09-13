@@ -3,9 +3,13 @@ pub mod database_information;
 pub mod description_manager;
 pub mod function_description;
 pub mod row_key;
+pub mod signature_record;
+pub mod vector_result;
 
 pub use category_record::CategoryRecord;
 pub use database_information::DatabaseInformation;
 pub use description_manager::DescriptionManager;
 pub use function_description::FunctionDescription;
 pub use row_key::RowKey;
+pub use signature_record::SignatureRecord;
+pub use vector_result::VectorResult;

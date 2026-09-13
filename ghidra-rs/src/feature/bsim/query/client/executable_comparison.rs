@@ -5,11 +5,11 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::feature::bsim::query::client::ScoreCaching;
-use crate::feature::bsim::query::description::{DatabaseInformation, DescriptionManager};
+use crate::feature::bsim::query::description::{DatabaseInformation, DescriptionManager, VectorResult};
 use crate::feature::bsim::query::LshException;
 use crate::feature::bsim::query::function_database::FunctionDatabase;
-use crate::feature::seam_stubs::{ExecutableRecord, ExecutableScorer, VectorResult};
-use crate::generic::seam_stubs::LSHVectorFactory;
+use crate::feature::seam_stubs::{ExecutableRecord, ExecutableScorer};
+use crate::generic::seam_stubs::{LSHVectorFactory, WeightedLSHCosineVector};
 use crate::util::exception::CancelledException;
 use crate::util::task::{DummyMonitor, TaskMonitor};
 
@@ -269,7 +269,7 @@ impl ExecutableComparison {
             return Err(LshException::new("No thresholds have been established").into());
         }
         while !self.base_ids.is_empty() {
-            let mut vectors: Vec<VectorResult> = Vec::new();
+            let mut vectors: Vec<VectorResult<WeightedLSHCosineVector>> = Vec::new();
             let hitcount = self.build_cluster(&mut vectors, sim_threshold, sig_threshold)?;
             if hitcount == 0 {
                 // Zero is possible, if all vectors in the cluster are below the sig threshold.
@@ -338,7 +338,10 @@ impl ExecutableComparison {
             let mut score = 0.0;
             for (id, count) in &histogram {
                 let vec_result = self.build_seed_vector(*id)?;
-                let significance = self.vector_factory.get_self_significance(&vec_result.vec);
+                // Every `VectorResult` returned by a database query carries a vector; only the
+                // no-arg `VectorResult::empty()` (not used on this path) leaves `vec` unset.
+                let vec = vec_result.vec.as_ref().expect("queried vector result has no vector");
+                let significance = self.vector_factory.get_self_significance(vec);
                 if significance < sig_threshold {
                     continue;
                 }
@@ -425,7 +428,7 @@ impl ExecutableComparison {
     /// # Errors
     ///
     /// Returns `LshException` if the vector does not exist.
-    fn build_seed_vector(&self, id: i64) -> Result<VectorResult, LshException> {
+    fn build_seed_vector(&self, id: i64) -> Result<VectorResult<WeightedLSHCosineVector>, LshException> {
         let mut results = self
             .database
             .query_vector_id(&[id])
@@ -447,9 +450,9 @@ impl ExecutableComparison {
     /// Returns `LshException` if something goes wrong during a query.
     fn query_vector_for_cluster(
         &mut self,
-        work_list: &mut BTreeMap<i64, Option<VectorResult>>,
+        work_list: &mut BTreeMap<i64, Option<VectorResult<WeightedLSHCosineVector>>>,
         threshold: f64,
-    ) -> Result<VectorResult, LshException> {
+    ) -> Result<VectorResult<WeightedLSHCosineVector>, LshException> {
         let (id, entry) = work_list
             .pop_first()
             .ok_or_else(|| LshException::new("Could not perform query on vector"))?;
@@ -461,9 +464,13 @@ impl ExecutableComparison {
             // If the VectorResult isn't present, this must be a seed for the cluster.
             None => self.build_seed_vector(id)?,
         };
+        let current_vec = current_vector
+            .vec
+            .as_ref()
+            .expect("queried vector result has no vector");
         let response = self
             .database
-            .query_nearest_vector(&current_vector.vec, threshold)
+            .query_nearest_vector(current_vec, threshold)
             .filter(|response| response.len() == 1)
             .ok_or_else(|| LshException::new("Could not perform query on vector"))?;
         for vec_result in response.into_iter().next().unwrap_or_default() {
@@ -487,11 +494,11 @@ impl ExecutableComparison {
     /// Returns `LshException` if something goes wrong during database queries.
     fn build_cluster(
         &mut self,
-        cluster: &mut Vec<VectorResult>,
+        cluster: &mut Vec<VectorResult<WeightedLSHCosineVector>>,
         sim_threshold: f64,
         sig_threshold: f64,
     ) -> Result<i32, LshException> {
-        let mut work_list: BTreeMap<i64, Option<VectorResult>> = BTreeMap::new();
+        let mut work_list: BTreeMap<i64, Option<VectorResult<WeightedLSHCosineVector>>> = BTreeMap::new();
         let Some(first_key) = self.base_ids.pop_first() else {
             return Ok(0);
         };
@@ -500,7 +507,8 @@ impl ExecutableComparison {
         while !work_list.is_empty() {
             // Retrieve the vector, and add the vectors close to it.
             let vector_info = self.query_vector_for_cluster(&mut work_list, sim_threshold)?;
-            if sig_threshold < self.vector_factory.get_self_significance(&vector_info.vec) {
+            let info_vec = vector_info.vec.as_ref().expect("queried vector result has no vector");
+            if sig_threshold < self.vector_factory.get_self_significance(info_vec) {
                 // If the self-significance exceeds the threshold, add it to the cluster.
                 hit_count += vector_info.hitcount;
                 cluster.push(vector_info);
@@ -517,7 +525,7 @@ impl ExecutableComparison {
     /// Returns `LshException` if anything goes wrong with queries.
     fn vector_to_functions(
         &self,
-        cluster: &[VectorResult],
+        cluster: &[VectorResult<WeightedLSHCosineVector>],
     ) -> Result<Vec<DescriptionManager>, LshException> {
         let mut result = Vec::with_capacity(cluster.len());
         for vector in cluster {
@@ -615,7 +623,7 @@ mod tests {
             self.vectors.iter().find(|v| v.id == id)
         }
 
-        fn vector_result(fixture: &VectorFixture) -> VectorResult {
+        fn vector_result(fixture: &VectorFixture) -> VectorResult<WeightedLSHCosineVector> {
             VectorResult::new(
                 fixture.id,
                 fixture.exes.len() as i32,
@@ -688,7 +696,7 @@ mod tests {
             Some(records)
         }
 
-        fn query_vector_id(&self, ids: &[i64]) -> Option<Vec<VectorResult>> {
+        fn query_vector_id(&self, ids: &[i64]) -> Option<Vec<VectorResult<WeightedLSHCosineVector>>> {
             ids.iter().map(|id| self.vector(*id).map(Self::vector_result)).collect()
         }
 
@@ -696,10 +704,10 @@ mod tests {
             &self,
             vec: &WeightedLSHCosineVector,
             _thresh: f64,
-        ) -> Option<Vec<Vec<VectorResult>>> {
+        ) -> Option<Vec<Vec<VectorResult<WeightedLSHCosineVector>>>> {
             // Every vector with the same number of features is "near" the queried one.
             use crate::generic::lsh::vector::lsh_vector::LSHVector;
-            let near: Vec<VectorResult> = self
+            let near: Vec<VectorResult<WeightedLSHCosineVector>> = self
                 .vectors
                 .iter()
                 .filter(|fixture| fixture.features.len() as i32 == vec.num_entries())
