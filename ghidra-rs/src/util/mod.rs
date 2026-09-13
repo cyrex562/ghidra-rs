@@ -22,7 +22,9 @@ pub mod big_endian_data_converter;
 pub mod ghidra_big_endian_data_converter;
 pub mod little_endian_data_converter;
 pub mod ghidra_little_endian_data_converter;
+pub mod async_debouncer;
 pub mod async_fence;
+pub mod async_lazy_map;
 pub mod async_lazy_value;
 pub mod async_pairing_queue;
 pub mod async_timer;
@@ -122,7 +124,9 @@ pub use application_utilities::{
     ApplicationUtilities, PROPERTY_CACHE_DIR, PROPERTY_SETTINGS_DIR, PROPERTY_TEMP_DIR,
 };
 pub use address_range_iterators::{AddressRangeIteratorFactory, DefaultAddressRangeIteratorFactory, WrappingAddressRangeIterator};
+pub use async_debouncer::{AsyncDebouncer, Bypass as AsyncDebouncerBypass, DebounceListener, SettledFuture};
 pub use async_fence::AsyncFence;
+pub use async_lazy_map::{AsyncLazyMap, KeyedCompleter, KeyedFuture};
 pub use count_latch::CountLatch;
 pub use data_converter::{swap_bytes, DataConverter};
 pub use ghidra_data_converter::GhidraDataConverter;
