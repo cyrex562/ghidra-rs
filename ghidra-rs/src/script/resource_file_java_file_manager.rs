@@ -10,7 +10,8 @@
 //! is not modeled.
 
 use crate::generic::jar::resource_file::ResourceFile;
-use crate::script::seam_stubs::{FileKind, ResourceFileJavaFileObject};
+use crate::script::resource_file_java_file_object::ResourceFileJavaFileObject;
+use crate::script::seam_stubs::FileKind;
 use crate::util::exception::AssertException;
 use std::fs;
 
