@@ -116,7 +116,7 @@ descoped	struct	34	133	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/md
 descoped	trait	19	184	app	Ghidra/Features/PDB/src/main/java/ghidra/app/plugin/core/analysis/PdbAnalyzer.java
 descoped	trait	7	182	app	Ghidra/Features/PDB/src/main/java/ghidra/app/plugin/core/analysis/PdbAnalyzerCommon.java
 descoped	struct	107	403	app	Ghidra/Features/PDB/src/main/java/ghidra/app/plugin/core/analysis/PdbUniversalAnalyzer.java
-descoped	trait	27	265	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb/ApplyDataTypes.java
+descoped	trait	25	265	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb/ApplyDataTypes.java
 descoped	struct	2	86	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb/ApplyEnums.java
 descoped	struct	41	189	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb/ApplyFunctions.java
 descoped	struct	4	107	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb/ApplyLineNumbers.java
@@ -815,8 +815,8 @@ lines=1067	struct	73	1067	app	Ghidra/Features/Base/src/main/java/ghidra/app/util
 lines=935	trait	38	935	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemService.java
 lines=3306	struct	44	3306	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramDiff.java
 lines=2159	struct	48	2159	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/VarnodeContext.java
-lines=1013	trait	58	1013	util	Ghidra/Features/Base/src/main/java/ghidra/util/state/ContextState.java
-lines=2418	struct	38	2418	util	Ghidra/Features/Base/src/main/java/ghidra/util/state/ResultsState.java
+lines=1013	trait	56	1013	util	Ghidra/Features/Base/src/main/java/ghidra/util/state/ContextState.java
+lines=2418	struct	36	2418	util	Ghidra/Features/Base/src/main/java/ghidra/util/state/ResultsState.java
 lines=1037	trait	64	1037	app	Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FunctionStartAnalyzer.java
 lines=911	trait	40	911	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/Pinning.java
 lines=1122	trait	69	1122	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompInterface.java
@@ -834,9 +834,9 @@ lines=2230	trait	44	2230	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/p
 lines=1304	trait	0	1304	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Methods.java
 lines=940	struct	10	940	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighUtils.java
 lines=1027	trait	48	1027	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/Application.java
-lines=1245	struct	1	1245	generic	Ghidra/Framework/Generic/src/main/java/ghidra/generic/util/datastruct/TreeValueSortedMap.java
+lines=1245	struct	0	1245	generic	Ghidra/Framework/Generic/src/main/java/ghidra/generic/util/datastruct/TreeValueSortedMap.java
 lines=1050	struct	0	1050	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/NumericUtilities.java
-lines=1004	struct	79	1004	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/VisualGraphPathHighlighter.java
+lines=1004	struct	77	1004	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/VisualGraphPathHighlighter.java
 lines=1140	struct	1	1140	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/MaskedLong.java
 lines=1070	struct	3	1070	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AssemblyPatternBlock.java
 lines=1283	struct	1	1283	pcode	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/floatformat/FloatFormat.java
@@ -993,7 +993,7 @@ rem=113	struct	113	504	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/c
 rem=137	trait	137	1204	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompileCallback.java
 rem=224	struct	224	187	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/util/FillOutStructureCmd.java
 rem=115	struct	115	700	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/util/FillOutStructureHelper.java
-rem=123	struct	123	298	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/analysis/DecompilerCallConventionAnalyzer.java
+rem=122	struct	122	298	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/analysis/DecompilerCallConventionAnalyzer.java
 rem=189	struct	189	504	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/analysis/DecompilerSwitchAnalyzer.java
 rem=118	struct	118	198	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/actions/AbstractDecompilerAction.java
 rem=141	struct	141	131	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/actions/EditFieldAction.java
@@ -1001,7 +1001,7 @@ rem=121	struct	121	343	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/p
 rem=127	struct	127	87	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/actions/ListingStructureVariableAction.java
 rem=157	struct	157	397	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/actions/OverridePrototypeAction.java
 rem=105	struct	105	196	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/actions/SpecifyCPrototypeAction.java
-rem=181	struct	181	631	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/util/exporter/CppExporter.java
+rem=180	struct	180	631	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/util/exporter/CppExporter.java
 rem=102	trait	102	197	app	Ghidra/Features/DecompilerDependent/src/main/java/ghidra/app/extension/datatype/finder/DecompilerReference.java
 rem=103	struct	103	229	app	Ghidra/Features/DecompilerDependent/src/main/java/ghidra/app/extension/datatype/finder/DecompilerVariable.java
 rem=123	struct	123	383	app	Ghidra/Features/DecompilerDependent/src/main/java/ghidra/app/plugin/core/string/variadic/FormatStringAnalyzer.java
