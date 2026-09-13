@@ -689,18 +689,25 @@ fn starts_with_two_forward_slashes(s: &str) -> bool {
 /// subset of `java.net.URI` accessors this class needs (`getAuthority`, `getPath`, `getQuery`,
 /// `getFragment`). Percent-decoding is intentionally NOT performed here; callers decode
 /// components as needed (see [`percent_decode`]).
-struct UriParts<'a> {
-    authority: Option<&'a str>,
-    path: &'a str,
-    query: Option<&'a str>,
-    fragment: Option<&'a str>,
+///
+/// `pub(crate)` (rather than private) so that
+/// [`DefaultLocalGhidraProtocolConnector`](crate::framework::protocol::ghidra::default_local_ghidra_protocol_connector::DefaultLocalGhidraProtocolConnector)
+/// can reuse this same URI decomposition for its own (separately-specified, but structurally
+/// identical) construction-time URL parsing, rather than hand-duplicating it -- a purely additive
+/// visibility widening with no behavior change to this module's own API.
+pub(crate) struct UriParts<'a> {
+    pub(crate) authority: Option<&'a str>,
+    pub(crate) path: &'a str,
+    pub(crate) query: Option<&'a str>,
+    #[allow(dead_code)]
+    pub(crate) fragment: Option<&'a str>,
 }
 
 /// Parses a hierarchical (non-opaque) Ghidra URL, i.e. one whose scheme-specific part begins with
 /// `/` -- covering both the local project form (1 or 4 leading slashes) and the server/repository
 /// authority form (2 leading slashes). Returns `None` for a non-Ghidra or opaque (protocol
 /// extension, e.g. `ghidra:http://...`) URL.
-fn parse_hierarchical(url: &str) -> Option<UriParts<'_>> {
+pub(crate) fn parse_hierarchical(url: &str) -> Option<UriParts<'_>> {
     let rest = url.strip_prefix(PROTOCOL_URL_START)?;
     if !rest.starts_with('/') {
         return None;

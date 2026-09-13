@@ -1,5 +1,6 @@
 pub mod build_error;
 pub mod bundle_host_listener;
+pub mod bundle_map;
 pub mod bundle_status_change_request_listener;
 pub mod ghidra_bundle;
 pub mod ghidra_bundle_activator;
@@ -9,6 +10,7 @@ pub mod osgi_utils;
 
 pub use build_error::BuildError;
 pub use bundle_host_listener::BundleHostListener;
+pub use bundle_map::BundleMap;
 pub use bundle_status_change_request_listener::BundleStatusChangeRequestListener;
 pub use ghidra_bundle::{GhidraBundle, GhidraBundleBase, GhidraBundleType};
 pub use ghidra_bundle_activator::GhidraBundleActivator;

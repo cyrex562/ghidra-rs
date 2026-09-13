@@ -102,10 +102,15 @@ pub trait AssemblyParseTreeNode {
     /// Get the symbol for which this node is substituted.
     ///
     /// For a branch, this is the LHS of the corresponding production. For a token, this is the
-    /// terminal whose tokenizer matched it.
+    /// terminal whose tokenizer matched it. For a hidden node (see
+    /// [`AssemblyParseHiddenNode`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseHiddenNode)),
+    /// there is no associated symbol.
     ///
-    /// Mirrors the abstract `AssemblyParseTreeNode.getSym()`.
-    fn get_sym(&self) -> Arc<dyn AssemblySymbol>;
+    /// Mirrors the abstract `AssemblyParseTreeNode.getSym()`. Returns `Option` rather than a bare
+    /// `Arc<dyn AssemblySymbol>` because the Java method is declared to return a plain (nullable)
+    /// `AssemblySymbol`, and `AssemblyParseHiddenNode.getSym()` really does return `null` --
+    /// reproduced here as `None` rather than fabricated as some placeholder symbol.
+    fn get_sym(&self) -> Option<Arc<dyn AssemblySymbol>>;
 
     /// For debugging: format the tree with the given indent.
     ///
@@ -224,8 +229,8 @@ mod tests {
         fn base(&self) -> &AssemblyParseTreeNodeBase {
             &self.base
         }
-        fn get_sym(&self) -> Arc<dyn AssemblySymbol> {
-            self.sym.clone()
+        fn get_sym(&self) -> Option<Arc<dyn AssemblySymbol>> {
+            Some(self.sym.clone())
         }
         fn print_indented(&self, indent: &str) -> String {
             format!("{indent}'{}'\n", self.text)
@@ -339,7 +344,7 @@ mod tests {
     #[test]
     fn get_sym_returns_the_matched_symbol() {
         let node = leaf(Arc::new(MockGrammar), "imm", "42");
-        assert_eq!(node.get_sym().get_name(), "imm");
+        assert_eq!(node.get_sym().unwrap().get_name(), "imm");
     }
 
     #[test]
