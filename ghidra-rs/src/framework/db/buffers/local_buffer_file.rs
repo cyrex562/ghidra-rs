@@ -147,6 +147,19 @@ impl LocalBufferFile {
         self.file_id
     }
 
+    /// Returns the physical file path associated with this buffer file. Mirrors the public
+    /// `LocalBufferFile.getFile()`, which `RecoveryFile.getFile()` (and the fallback timestamp
+    /// path in `RecoveryFile.parseFile()`, which calls `getFile().lastModified()`) relies on.
+    pub fn get_file(&self) -> &std::path::Path {
+        &self.path
+    }
+
+    /// Removes all user parameters. Mirrors the public `LocalBufferFile.clearParameters()`, used
+    /// by `RecoveryFile.clearParameters()`.
+    pub fn clear_parameters(&mut self) {
+        self.parameters.clear();
+    }
+
     fn read_block_prefix(&self, index: i32) -> io::Result<(u8, i32)> {
         let mut file = &self.file;
         let offset = (index as u64 + 1) * self.block_size as u64;
