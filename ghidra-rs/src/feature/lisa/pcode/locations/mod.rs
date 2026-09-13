@@ -1,6 +1,8 @@
 pub mod inst_location;
+pub mod pcode_location;
 
 pub use inst_location::InstLocation;
+pub use pcode_location::PcodeLocation;
 
 use std::any::Any;
 use std::cmp::Ordering;

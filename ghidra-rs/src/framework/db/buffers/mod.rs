@@ -20,6 +20,7 @@ pub mod recovery_file_test;
 pub mod remote_buffer_file_handle;
 pub mod remote_managed_buffer_file_handle;
 pub mod version_file;
+pub mod version_file_handler;
 pub use block_stream::BlockStream;
 pub use block_stream_handle::BlockStreamHandle;
 pub use buffer_file_adapter::BufferFileAdapter;
@@ -41,6 +42,7 @@ pub use recovery_file_test::RecoveryFileTest;
 pub use remote_buffer_file_handle::RemoteBufferFileHandle;
 pub use remote_managed_buffer_file_handle::RemoteManagedBufferFileHandle;
 pub use version_file::VersionFile;
+pub use version_file_handler::{OldBufferResult, VersionFileHandler};
 
 use std::io;
 
