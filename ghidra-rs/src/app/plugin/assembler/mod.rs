@@ -1,5 +1,6 @@
 pub mod assembler;
 pub mod assembler_builder;
+pub mod assemblers;
 pub mod assembly_error;
 pub mod assembly_exception;
 pub mod assembly_selection_error;
@@ -15,7 +16,7 @@ pub use assembler_builder::AssemblerBuilder;
 pub use assembly_error::AssemblyError;
 pub use assembly_exception::AssemblyException;
 pub use assembly_selection_error::AssemblySelectionError;
-pub use assembly_selector::{AssemblySelector, Selection};
+pub use assembly_selector::{AssemblySelector, DefaultAssemblySelector, Selection};
 pub use assembly_semantic_exception::AssemblySemanticException;
 pub use assembly_syntax_exception::AssemblySyntaxException;
 pub use generic_assembler::{AssembleError, AssembleLineError, GenericAssembler};

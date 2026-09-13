@@ -8,6 +8,7 @@ pub mod assembly_resolution_results;
 pub mod assembly_resolved_backfill;
 pub mod assembly_resolved_patterns;
 pub mod assembly_resolved_error;
+pub mod default_assembly_resolution_factory;
 pub mod default_assembly_resolved_backfill;
 pub mod default_assembly_resolved_error;
 
@@ -21,5 +22,6 @@ pub use assembly_resolution_results::{Applicator, AssemblyResolutionResults};
 pub use assembly_resolved_backfill::AssemblyResolvedBackfill;
 pub use assembly_resolved_patterns::AssemblyResolvedPatterns;
 pub use assembly_resolved_error::AssemblyResolvedError;
+pub use default_assembly_resolution_factory::DefaultAssemblyResolutionFactory;
 pub use default_assembly_resolved_backfill::DefaultAssemblyResolvedBackfill;
 pub use default_assembly_resolved_error::DefaultAssemblyResolvedError;

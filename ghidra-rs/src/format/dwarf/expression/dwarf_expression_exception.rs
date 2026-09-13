@@ -312,4 +312,23 @@ mod tests {
         assert!(e.get_instruction().is_none());
         assert!(e.get_varnode().is_none());
     }
+
+    /// Exercises [`DWARFExpressionException::value`], which stands in for
+    /// `DWARFExpressionValueException(Varnode)`: message, `Value` discriminant, and
+    /// `getVarnode()` accessor all mirror the Java subclass exactly.
+    #[test]
+    fn value_mirrors_dwarf_expression_value_exception() {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        use crate::program::model::pcode::Varnode;
+
+        let ram = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
+        let vn = Varnode::new(ram.address(0x4000), 4);
+
+        let e = DWARFExpressionException::value(vn.clone());
+
+        assert_eq!(*e.kind(), DWARFExpressionExceptionKind::Value(vn.clone()));
+        assert_eq!(e.get_varnode(), Some(&vn));
+        assert!(e.get_instruction().is_none());
+        assert_eq!(e.to_string(), format!("Unable to access value of {vn}"));
+    }
 }

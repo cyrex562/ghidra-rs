@@ -149,6 +149,29 @@ pub trait AssemblySelector {
     }
 }
 
+/// The default [`AssemblySelector`]: every method takes the trait's own default behavior,
+/// overriding nothing.
+///
+/// Mirrors `new AssemblySelector()` -- Java's `AssemblySelector` is a concrete, directly
+/// instantiable class (not abstract), and every caller shown in the Java source that wants "just
+/// the default filtering/selection behavior" (e.g. `Assemblers.getAssembler(Program)`/
+/// `getAssembler(Language)`, which construct one to pass to the two-argument overloads) constructs
+/// it bare like this, exactly as
+/// [`assemblers::get_assembler`](crate::app::plugin::assembler::assemblers::get_assembler) and
+/// [`assemblers::get_assembler_for_language`](crate::app::plugin::assembler::assemblers::get_assembler_for_language)
+/// do here.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct DefaultAssemblySelector;
+
+impl DefaultAssemblySelector {
+    /// Construct a new default selector.
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl AssemblySelector for DefaultAssemblySelector {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1470,24 +1470,13 @@ pub trait AssemblyNonTerminal: std::fmt::Display {
     fn get_name(&self) -> String;
 }
 
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyProduction`, referenced by
-/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) (which
-/// only ever passes/returns this type opaquely) and by
-/// [`AssemblyParseBranch`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch)
-/// (which additionally calls `getRHS()`/`getLHS()` -- inherited from the now-ported
-/// [`AbstractAssemblyProduction`](crate::app::plugin::assembler::sleigh::grammars::AbstractAssemblyProduction)
-/// supertrait, mirroring `AssemblyProduction extends AbstractAssemblyProduction<AssemblyNonTerminal>`
-/// -- and its own `isConstructor()`) before the real class is ported. `is_constructor` is modeled
-/// as a default method always returning `true`, mirroring the Java class's hardcoded
-/// `isConstructor() { return true; }` override.
-pub trait AssemblyProduction:
-    crate::app::plugin::assembler::sleigh::grammars::AbstractAssemblyProduction
-{
-    /// Mirrors `AssemblyProduction.isConstructor()`, which unconditionally returns `true`.
-    fn is_constructor(&self) -> bool {
-        true
-    }
-}
+/// `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyProduction` is now ported -- see
+/// [`crate::app::plugin::assembler::sleigh::grammars::assembly_production`]. This re-export keeps
+/// the handful of call sites that were written against the seam-stub location (e.g.
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar),
+/// [`AssemblyParseBranch`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch))
+/// working.
+pub use crate::app::plugin::assembler::sleigh::grammars::assembly_production::AssemblyProduction;
 
 /// Placeholder for `ghidra.app.plugin.processors.sleigh.Constructor`, referenced by
 /// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) (which

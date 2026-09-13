@@ -3791,7 +3791,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/exp
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionOperandType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionTerminalDerefException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionUnsupportedOpException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionValueException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionValueException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/BuildIdDebugFileProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DWARFExternalDebugFilesPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugFileProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
@@ -9390,7 +9390,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/AssociationDatabaseManager.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/DeletedMatch.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/MarkupItemStorageDB.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/TableColumn.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/TableColumn.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/TableDescriptor.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAddressCorrelationAdapterV0.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAddressCorrelatorAdapter.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db
@@ -9410,14 +9410,14 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTagDBAdapterV0.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTSessionContentHandler.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTSessionDB.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemFactory.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemImpl.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemManagerImpl.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemStorage.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemStorageImpl.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MatchSetImpl.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/ProgramCorrelatorInfoFake.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/ProgramCorrelatorInfoImpl.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/ProgramCorrelatorInfoImpl.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/VTChangeManager.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/VTEvent.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/VTProgramCorrelatorInfo.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api impl 
@@ -12945,7 +12945,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/SoftwareModeling
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/merge/DataTypeManagerOwner.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app merge 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/Assembler.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblerBuilder.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/Assemblers.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/Assemblers.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblyBuffer.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblyError.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblyException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
@@ -13000,7 +13000,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyExtendedProduction.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh grammars 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyGrammar.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh grammars 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyGrammarException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh grammars 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyProduction.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh grammars 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyProduction.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh grammars 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblySentential.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh grammars 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyFirstFollow.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh parse 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseAcceptResult.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh parse 
@@ -13036,7 +13036,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AssemblyResolvedPatterns.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AssemblyStringStateGenerator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AssemblyTreeResolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/DefaultAssemblyResolutionFactory.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/DefaultAssemblyResolutionFactory.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/DefaultAssemblyResolvedBackfill.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/DefaultAssemblyResolvedError.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/DefaultAssemblyResolvedPatterns.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh sem 
@@ -13055,7 +13055,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseHiddenNode.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh tree 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseNumericToken.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh tree
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseToken.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh tree 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseTreeNode.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh tree 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseTreeNode.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh tree 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/util/AsmUtil.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/util/TableEntry.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/util/TableEntryKey.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh util

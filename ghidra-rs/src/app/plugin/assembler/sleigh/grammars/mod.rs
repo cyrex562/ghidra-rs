@@ -3,6 +3,7 @@ pub mod abstract_assembly_production;
 pub mod assembly_extended_grammar;
 pub mod assembly_grammar;
 pub mod assembly_grammar_exception;
+pub mod assembly_production;
 pub mod assembly_sentential;
 
 pub use abstract_assembly_grammar::AbstractAssemblyGrammar;
@@ -10,4 +11,5 @@ pub use abstract_assembly_production::AbstractAssemblyProduction;
 pub use assembly_extended_grammar::AssemblyExtendedGrammar;
 pub use assembly_grammar::AssemblyGrammar;
 pub use assembly_grammar_exception::AssemblyGrammarException;
+pub use assembly_production::AssemblyProduction;
 pub use assembly_sentential::AssemblySentential;

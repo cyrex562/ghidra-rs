@@ -230,64 +230,10 @@ impl crate::program::database::db_object::DbObject for VTMatchDB {
     }
 }
 
-/// Placeholder for the unported Java type `ghidra.feature.vt.api.impl.ProgramCorrelatorInfoImpl`,
-/// the [`VtProgramCorrelatorInfo`](crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo)
-/// that [`VTMatchSetDB::get_program_correlator_info`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB::get_program_correlator_info)
-/// hands back.
-///
-/// `ProgramCorrelatorInfoImpl` is a concrete Java class, so this stub is a struct implementing the
-/// already-ported trait. Deviation: Java holds a `VTMatchSetDB` back-reference and pulls each of
-/// its five values lazily on first access, caching it. Holding that back-reference here would be a
-/// reference cycle (the match set owns the info object), so this stub takes the same five values up
-/// front instead. The two are equivalent: every one of them is derived from columns of the match
-/// set's record, which is `final` and never rewritten for the life of the match set. Replace with
-/// the real port when `ProgramCorrelatorInfoImpl.java` is ported.
-pub struct ProgramCorrelatorInfoImpl {
-    correlator_class_name: String,
-    name: String,
-    source_address_set: crate::program::model::address::AddressSet,
-    destination_address_set: crate::program::model::address::AddressSet,
-    options: Box<dyn crate::framework::options::Options + Send + Sync>,
-}
-
-impl ProgramCorrelatorInfoImpl {
-    /// Java: `ProgramCorrelatorInfoImpl(VTMatchSetDB)` plus the five lazy pulls it would perform.
-    /// Java's `getSourceAddressSet`/`getDestinationAddressSet` report the `IOException` through
-    /// `Msg.showError` and return `null`; the caller passes an empty set for that case instead.
-    pub fn new(
-        correlator_class_name: String,
-        name: String,
-        source_address_set: crate::program::model::address::AddressSet,
-        destination_address_set: crate::program::model::address::AddressSet,
-        options: Box<dyn crate::framework::options::Options + Send + Sync>,
-    ) -> Self {
-        Self { correlator_class_name, name, source_address_set, destination_address_set, options }
-    }
-}
-
-impl crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo
-    for ProgramCorrelatorInfoImpl
-{
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    fn get_correlator_class_name(&self) -> &str {
-        &self.correlator_class_name
-    }
-
-    fn get_options(&self) -> &dyn crate::framework::options::Options {
-        self.options.as_ref()
-    }
-
-    fn get_destination_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
-        &self.destination_address_set
-    }
-
-    fn get_source_address_set(&self) -> &dyn crate::program::model::address::AddressSetView {
-        &self.source_address_set
-    }
-}
+/// `ghidra.feature.vt.api.impl.ProgramCorrelatorInfoImpl` is now ported -- see
+/// [`crate::feature::vt::api::implementation::program_correlator_info_impl`]. This re-export keeps
+/// the handful of call sites that were written against the seam-stub location working.
+pub use crate::feature::vt::api::implementation::program_correlator_info_impl::ProgramCorrelatorInfoImpl;
 
 /// Java: `VTAssociationStatus.values()[ordinal]`, mirroring the ported enum's declaration order
 /// (the ported enum exposes no `ordinal()`, so the mapping is spelled out, matching
