@@ -3528,25 +3528,7 @@ pub trait LibrariesTable: Send + Sync {
     ) -> std::io::Result<Option<crate::framework::db::record::DBRecord>>;
 }
 
-/// Placeholder for the unported Java type `StringRecord`, referenced by
-/// [`crate::feature::fid::db::function_record::FunctionRecord`]. `StringRecord` is a concrete
-/// Java class (a thin wrapper around a stored string), not an interface, so this stub is a
-/// concrete struct rather than a trait -- see the "Trait objects" note on this type. Replace with
-/// the real port when `StringRecord.java` is ported.
-pub struct StringRecord {
-    value: String,
-}
-
-impl StringRecord {
-    pub fn new(value: String) -> Self {
-        Self { value }
-    }
-
-    /// Java: `StringRecord.getValue()`.
-    pub fn get_value(&self) -> String {
-        self.value.clone()
-    }
-}
+pub use crate::feature::fid::db::string_record::StringRecord;
 
 /// Placeholder for the unported Java type `StringsTable`, referenced by
 /// [`crate::feature::fid::db::fid_db::FidDB`] and
@@ -3984,10 +3966,131 @@ impl std::fmt::Display for InstructionSequence {
 // changes.
 // ---------------------------------------------------------------------------
 
+/// Placeholder for `com.microsoft.z3.enumerations.Z3_decl_kind`, restricted to the variants the
+/// real port of `ghidra.pcode.emu.symz3.lib.Z3InfixPrinter` (see
+/// [`crate::pcode::emu::symz3::lib::z3_infix_printer`]) matches on directly. Anything else
+/// round-trips through `Other(String)`, carrying the Java enum constant's own `toString()` (the
+/// printer's `default -> op.toString()` arm).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Z3DeclKind {
+    Eq,
+    Bmul,
+    Badd,
+    Bsub,
+    Sleq,
+    Not,
+    And,
+    Or,
+    Concat,
+    Uleq,
+    Band,
+    Bor,
+    Uninterpreted,
+    Extract,
+    Ite,
+    /// Any `Z3_decl_kind` variant `Z3InfixPrinter` does not special-case, carrying that variant's
+    /// own `toString()` (e.g. `"Z3_OP_BXOR"`).
+    Other(String),
+}
+
+impl std::fmt::Display for Z3DeclKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Z3DeclKind::Eq => "Z3_OP_EQ",
+            Z3DeclKind::Bmul => "Z3_OP_BMUL",
+            Z3DeclKind::Badd => "Z3_OP_BADD",
+            Z3DeclKind::Bsub => "Z3_OP_BSUB",
+            Z3DeclKind::Sleq => "Z3_OP_SLEQ",
+            Z3DeclKind::Not => "Z3_OP_NOT",
+            Z3DeclKind::And => "Z3_OP_AND",
+            Z3DeclKind::Or => "Z3_OP_OR",
+            Z3DeclKind::Concat => "Z3_OP_CONCAT",
+            Z3DeclKind::Uleq => "Z3_OP_ULEQ",
+            Z3DeclKind::Band => "Z3_OP_BAND",
+            Z3DeclKind::Bor => "Z3_OP_BOR",
+            Z3DeclKind::Uninterpreted => "Z3_OP_UNINTERPRETED",
+            Z3DeclKind::Extract => "Z3_OP_EXTRACT",
+            Z3DeclKind::Ite => "Z3_OP_ITE",
+            Z3DeclKind::Other(s) => return write!(f, "{}", s),
+        };
+        write!(f, "{}", s)
+    }
+}
+
 /// Placeholder for `com.microsoft.z3.Expr`: anything that renders as SMT-LIB2 text.
+///
+/// The methods below `to_smt_string` were added for the real port of `Z3InfixPrinter` (see
+/// [`crate::pcode::emu::symz3::lib::z3_infix_printer`]), which walks a whole `Expr` tree
+/// (`getFuncDecl()`, `getArgs()`, `isNumeral()`, `isBV()`, `update(Expr[])`), not just a leaf
+/// bit-vector/boolean value the way [`SymValueZ3`](crate::feature::symz3::model::SymValueZ3)
+/// does. Every addition defaults to the "not applicable" answer (no children, an unrecognized
+/// declaration, not a numeral, not a bit-vector) so the existing minimal `Expr` implementors in
+/// `SymValueZ3`'s tests -- which only ever hand the printer a leaf -- need no changes.
 pub trait Expr: Send + Sync {
     /// Java: `Expr.toString()`, the SMT-LIB2 rendering of this expression.
     fn to_smt_string(&self) -> String;
+
+    /// Java: `Expr.getNumArgs()`.
+    fn num_args(&self) -> usize {
+        0
+    }
+
+    /// Java: `Expr.getArgs()`.
+    fn args(&self) -> Vec<Box<dyn Expr>> {
+        Vec::new()
+    }
+
+    /// Java: `Expr.getFuncDecl().getDeclKind()`.
+    fn decl_kind(&self) -> Z3DeclKind {
+        Z3DeclKind::Other(String::new())
+    }
+
+    /// Java: `Expr.getFuncDecl().getName().toString()`.
+    fn decl_name(&self) -> String {
+        String::new()
+    }
+
+    /// Java: `Expr.getFuncDecl().getParameters()`, restricted to the integer parameters
+    /// `Z3InfixPrinter` reads out of `EXTRACT`'s declaration.
+    fn decl_int_params(&self) -> Vec<i32> {
+        Vec::new()
+    }
+
+    /// Java: `Expr.isNumeral()`.
+    fn is_numeral(&self) -> bool {
+        false
+    }
+
+    /// Java: `Expr.isBV()`, i.e. this expression's sort is a bit-vector sort.
+    fn is_bv(&self) -> bool {
+        false
+    }
+
+    /// Java: `(BitVecExpr) e`, the implicit downcast `Z3InfixPrinter` performs once [`Self::is_bv`]
+    /// (or [`Self::is_numeral`]) says it is safe to. `None` for anything that isn't backed by a
+    /// bit-vector.
+    fn as_bit_vec(&self) -> Option<&dyn BitVecExpr> {
+        None
+    }
+
+    /// Java: `Expr.update(Expr[] args)`, rebuilding this expression with new arguments but the
+    /// same operator/declaration. `Z3InfixPrinter` only calls this on an expression whose
+    /// [`Self::decl_kind`] is one of the commutative operators, to swap a leading numeral operand
+    /// out of first position; the default implementors of `Expr` never report a commutative
+    /// `decl_kind`, so they never reach this method; a real backend that does must override it.
+    fn with_args(&self, args: Vec<Box<dyn Expr>>) -> Box<dyn Expr> {
+        let _ = args;
+        unimplemented!("Expr::with_args has no default implementation")
+    }
+
+    /// Java has no equivalent (the real `Expr.update` rebuilds using Z3's own object model); this
+    /// lets a test/mock `Expr` implementor recover its concrete type from an opaque `&dyn Expr`,
+    /// which [`Self::with_args`]'s own default plumbing (and any concrete override of it) needs to
+    /// downcast the `Box<dyn Expr>` arguments it's handed back into that implementor's own type.
+    /// Every implementor supplies the same one-line body (`self`); it cannot be a default method
+    /// because the `&Self -> &dyn Any` coercion requires a statically known `Sized` type, which a
+    /// trait default body (usable through `dyn Expr`) does not have.
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 /// Placeholder for `com.microsoft.z3.BitVecExpr` (and the `BitVecNum` accessors `SymValueZ3`
@@ -4008,6 +4111,24 @@ pub trait BitVecExpr: Expr {
 
     /// Java: `BitVecNum.getLong()`, or `None` if this is not a numeral or does not fit.
     fn to_long(&self) -> Option<i64>;
+
+    /// Java: `BitVecNum.getInt()`, the numeral truncated to a 32-bit int. Defaults to a
+    /// truncation of [`Self::to_long`]; only used by `Z3InfixPrinter` to test for a zero-valued
+    /// numeral, so any consistent truncation is fine as a default.
+    fn to_int(&self) -> Option<i32> {
+        self.to_long().map(|v| v as i32)
+    }
+
+    /// Java: `BitVecNum.toBinaryString()`, the *unsigned* bit pattern with leading zeros
+    /// stripped (Z3 quirk `Z3InfixPrinter::isNegativeConstant` relies on to detect the sign bit).
+    /// Defaults to formatting [`Self::to_big_integer`] (always non-negative: it is the raw bit
+    /// pattern, not the two's-complement value) as binary digits.
+    fn to_binary_string(&self) -> String {
+        match self.to_big_integer() {
+            Some(v) if v >= 0 => format!("{:b}", v),
+            _ => String::new(),
+        }
+    }
 }
 
 /// Placeholder for `com.microsoft.z3.BoolExpr`.

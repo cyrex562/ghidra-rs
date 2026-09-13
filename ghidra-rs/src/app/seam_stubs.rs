@@ -6505,74 +6505,7 @@ impl SymStateSpace {
 // [`StackUnwinder`](crate::app::plugin::core::debug::stack::stack_unwinder::StackUnwinder).
 // ---------------------------------------------------------------------------
 
-/// Placeholder for `ghidra.app.plugin.core.debug.stack.StackUnwindWarningSet`.
-///
-/// Java's version is a concrete `AbstractSet<StackUnwindWarning>` that also curates its contents
-/// (dropping warnings that another warning `moots`) and summarizes them for display. Only the
-/// collection operations `StackUnwinder` performs are modeled here. It is a `Vec`, not a set:
-/// [`StackUnwindWarning`](crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning)
-/// is neither `Eq` nor `Hash`, so duplicates cannot be recognized yet.
-#[derive(Clone, Default)]
-pub struct StackUnwindWarningSet {
-    warnings: Vec<
-        Arc<dyn crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning>,
-    >,
-}
-
-impl StackUnwindWarningSet {
-    /// An empty set. Stands in for `StackUnwindWarningSet.of()`.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// `StackUnwindWarningSet.add(StackUnwindWarning)`.
-    pub fn add(
-        &mut self,
-        warning: Arc<
-            dyn crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning,
-        >,
-    ) {
-        self.warnings.push(warning);
-    }
-
-    /// `StackUnwindWarningSet.addAll(Collection)`.
-    pub fn add_all(&mut self, other: &StackUnwindWarningSet) {
-        self.warnings.extend(other.warnings.iter().cloned());
-    }
-
-    /// `StackUnwindWarningSet.size()`.
-    pub fn size(&self) -> usize {
-        self.warnings.len()
-    }
-
-    /// `StackUnwindWarningSet.isEmpty()`.
-    pub fn is_empty(&self) -> bool {
-        self.warnings.is_empty()
-    }
-
-    /// `StackUnwindWarningSet.clear()`.
-    pub fn clear(&mut self) {
-        self.warnings.clear();
-    }
-
-    /// The warnings, in insertion order.
-    pub fn warnings(
-        &self,
-    ) -> &[Arc<
-        dyn crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning,
-    >] {
-        &self.warnings
-    }
-
-    /// `StackUnwindWarningSet.summarize()`: the lines a caller joins for display.
-    ///
-    /// Java folds warnings that share a `moots` relationship into one line first; with no set
-    /// semantics here (see the type docs), this is simply each warning's message in insertion
-    /// order.
-    pub fn summarize(&self) -> Vec<String> {
-        self.warnings.iter().map(|w| w.get_message()).collect()
-    }
-}
+pub use crate::app::plugin::core::debug::stack::stack_unwind_warning_set::StackUnwindWarningSet;
 
 /// Placeholder for `ghidra.app.plugin.core.debug.stack.SavedRegisterMap`.
 ///

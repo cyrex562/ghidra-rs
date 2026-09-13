@@ -81,6 +81,17 @@ impl QuickFixState {
     pub fn status_message_override(&self) -> Option<&str> {
         self.status_message.as_deref()
     }
+
+    /// Sets the status and optional override message directly, bypassing [`QuickFix::refresh`]'s
+    /// sticky-`ERROR` bookkeeping. Exposed so a second-layer "abstract subclass" state holder
+    /// (e.g. `RenameQuickFixState`, ported at
+    /// [`crate::feature::base::replace::rename_quick_fix`]) can call Java's `QuickFix.setStatus(
+    /// QuickFixStatus, String)` from its own constructor, before a concrete [`QuickFix`] trait
+    /// object exists to call it through.
+    pub fn set_status_and_message(&mut self, status: QuickFixStatus, message: Option<String>) {
+        self.status = status;
+        self.status_message = message;
+    }
 }
 
 /// Port of the abstract `ghidra.features.base.quickfix.QuickFix`.
@@ -170,9 +181,7 @@ pub trait QuickFix {
 
     /// `QuickFix.setStatus(QuickFixStatus, String)`.
     fn set_status_with_message(&mut self, status: QuickFixStatus, message: Option<String>) {
-        let state = self.state_mut();
-        state.status = status;
-        state.status_message = message;
+        self.state_mut().set_status_and_message(status, message);
     }
 
     /// `QuickFix.getCustomToolTipData()`.

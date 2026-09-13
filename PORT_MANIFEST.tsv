@@ -606,7 +606,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/ListingUnwoundFrame.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SavedRegisterMap.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarning.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarningSet.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarningSet.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwinder.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/Sym.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SymPcodeArithmetic.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
@@ -1294,7 +1294,7 @@ orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/gui/field/TaintFi
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/gui/field/package-info.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint gui field
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/TaintMark.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/TaintSet.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model
-orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/TaintVec.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model 
+orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/TaintVec.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/package-info.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/package-info.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint
 orig_src/Ghidra/Debug/TaintAnalysis/src/test/java/ghidra/pcode/emu/taint/full/TaintDebuggerPcodeEmulatorTest.java	TODO	orig_src Ghidra Debug TaintAnalysis src test java ghidra pcode emu taint full 
@@ -1396,7 +1396,7 @@ orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/UnaryEx
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/UnitContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarDefContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarargsExprContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
-orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarnodeContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
+orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarnodeContext.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/expressions/PcodeBinaryExpression.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode expressions 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/expressions/PcodeCallExpression.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode expressions 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/expressions/PcodeTernaryExpression.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode expressions 
@@ -1497,7 +1497,7 @@ orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3ThreadPcodeExecutorState.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/SymZ3EmuUnixFileSystem.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/SymZ3LinuxAmd64SyscallLibrary.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3InfixPrinter.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3InfixPrinter.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3MemoryWitness.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3MemorySpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PcodeEmulator.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
@@ -3582,7 +3582,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/TerminalService.
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/VSCodeIntegrationService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewManagerService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AbstractColumnDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AbstractColumnDisplay.java	DONE	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AbstractComparableColumnDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AddressableRowObject.java	DONE	orig_src Ghidra Features Base src main java ghidra app tablechooser
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AddressableRowObjectToAddressTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
@@ -5055,7 +5055,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickF
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixTableProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/TableDataLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/RenameQuickFix.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/RenameQuickFix.java	DONE	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplacePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
@@ -7608,7 +7608,7 @@ orig_src/Ghidra/Features/FunctionID/ghidra_scripts/RepackFid.java	TODO	orig_src 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/analyzer/FidAnalyzer.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid analyzer 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/cmd/ApplyFidEntriesCommand.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid cmd 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidDB.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
-orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidDBUtils.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
+orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidDBUtils.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidFile.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidFileManager.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidQueryCloseListener.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db
@@ -7619,7 +7619,7 @@ orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/Librarie
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/LibraryRecord.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/RelationType.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/RelationsTable.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db
-orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/StringRecord.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
+orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/StringRecord.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/StringsTable.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/debug/FidDebugUtils.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid debug 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/debug/FidFunctionDebugPanel.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid debug 
@@ -7727,7 +7727,7 @@ orig_src/Ghidra/Features/GnuDemangler/src/test/java/ghidra/app/util/demangler/gn
 orig_src/Ghidra/Features/GnuDemangler/src/test/java/ghidra/app/util/demangler/gnu/GnuDemanglerTest.java	TODO	orig_src Ghidra Features GnuDemangler src test java ghidra app util demangler gnu 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgDirection.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgEdge.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
-orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgLevel.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
+orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgLevel.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertex.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertexExpansionListener.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertexShapeProvider.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 

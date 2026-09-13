@@ -8,13 +8,16 @@
 //!
 //! Serialization uses `Display`/`FromStr` rather than Java's object serialization.
 //!
-//! Recommended reading order (bottom-up): [`TaintMark`], [`TaintSet`].
+//! Recommended reading order (bottom-up): [`TaintMark`], [`TaintSet`], [`TaintVec`].
 
 pub mod taint_mark;
 pub use taint_mark::TaintMark;
 
 pub mod taint_set;
 pub use taint_set::TaintSet;
+
+pub mod taint_vec;
+pub use taint_vec::{ShiftMode, TaintVec};
 
 #[cfg(test)]
 mod tests {

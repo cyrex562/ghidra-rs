@@ -1112,7 +1112,7 @@ mod tests {
 
     impl StringsTable for FakeStringsTable {
         fn lookup_string(&self, id: i64) -> Option<StringRecord> {
-            self.strings.lock().unwrap().get(&id).cloned().map(StringRecord::new)
+            self.strings.lock().unwrap().get(&id).cloned().map(|v| StringRecord::new(id, v))
         }
     }
 

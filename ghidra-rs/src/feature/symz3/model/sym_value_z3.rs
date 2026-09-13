@@ -172,7 +172,7 @@ impl SymValueZ3 {
     /// Arbitrary-precision integers are modelled as `i128` throughout this crate.
     pub fn to_big_integer<C: Z3Context + ?Sized>(&self, ctx: &C) -> Option<i128> {
         let b = self.get_bit_vec_expr(ctx)?;
-        if !b.is_numeral() {
+        if !BitVecExpr::is_numeral(&*b) {
             return None;
         }
         b.to_big_integer()
@@ -181,7 +181,7 @@ impl SymValueZ3 {
     /// Java: `toLong()`, the `long` value, or `None` if this is not a long.
     pub fn to_long<C: Z3Context + ?Sized>(&self, ctx: &C) -> Option<i64> {
         let b = self.get_bit_vec_expr(ctx)?;
-        if !b.is_numeral() {
+        if !BitVecExpr::is_numeral(&*b) {
             return None;
         }
         match b.to_long() {
@@ -441,8 +441,7 @@ impl SymValueZ3 {
         let that_bv = that
             .get_bit_vec_expr(ctx)
             .ok_or_else(|| ConcretionError::new("No bit-vector expression", Purpose::ByDef))?;
-        let shift = that_bv
-            .is_numeral()
+        let shift = BitVecExpr::is_numeral(&*that_bv)
             .then(|| that_bv.to_long())
             .flatten()
             .ok_or_else(|| ConcretionError::new("Not a numeral", Purpose::ByDef))?;
@@ -525,6 +524,9 @@ mod tests {
         fn to_smt_string(&self) -> String {
             self.smt.clone()
         }
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
     }
 
     impl BitVecExpr for Bv {
@@ -555,6 +557,9 @@ mod tests {
     impl Expr for Bl {
         fn to_smt_string(&self) -> String {
             self.smt.clone()
+        }
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
     }
 

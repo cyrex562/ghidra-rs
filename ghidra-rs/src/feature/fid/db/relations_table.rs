@@ -1,3 +1,7 @@
+use crate::feature::fid::db::fid_db_utils::{
+    generate_inferior_full_hash_smash, generate_inferior_full_hash_smash_quad,
+    generate_superior_full_hash_smash, generate_superior_full_hash_smash_quad,
+};
 use crate::feature::fid::db::function_record::FunctionRecord;
 use crate::feature::fid::hash::fid_hash_quad::FidHashQuad;
 use crate::framework::db::db_handle::DBHandle;
@@ -5,58 +9,15 @@ use crate::framework::db::field::{Field, FieldType};
 use crate::framework::db::record::DBRecord;
 use crate::framework::db::schema::Schema;
 use crate::framework::db::table::Table;
-use crate::generic::hash::FNV1a64MessageDigest;
 
 use super::relation_type::RelationType;
 
 use std::io;
 use std::sync::{Arc, RwLock};
 
-/// Generates the hash smash for a superior id / inferior full hash pair.
-///
-/// Java: `FidDBUtils.generateSuperiorFullHashSmash(FunctionRecord, FunctionRecord)`.
-/// `FidDBUtils` is not itself ported (it is a stateless static utility), so its two-line bodies
-/// are mirrored here directly rather than through a stub trait.
-fn generate_superior_full_hash_smash(
-    superior_function: &FunctionRecord,
-    inferior_function: &FunctionRecord,
-) -> i64 {
-    let hash_value =
-        superior_function.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME);
-    hash_value ^ inferior_function.full_hash()
-}
-
-/// Java: `FidDBUtils.generateInferiorFullHashSmash(FunctionRecord, FunctionRecord)`.
-fn generate_inferior_full_hash_smash(
-    superior_function: &FunctionRecord,
-    inferior_function: &FunctionRecord,
-) -> i64 {
-    let hash_value =
-        inferior_function.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME);
-    hash_value ^ superior_function.full_hash()
-}
-
-/// Java: `FidDBUtils.generateSuperiorFullHashSmash(FunctionRecord, FidHashQuad)`, the overload
-/// used when only a hash quad (not a resolved `FunctionRecord`) is known for the inferior side.
-fn generate_superior_full_hash_smash_quad(
-    superior_function: &FunctionRecord,
-    inferior_function: &dyn FidHashQuad,
-) -> i64 {
-    let hash_value =
-        superior_function.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME);
-    hash_value ^ inferior_function.full_hash()
-}
-
-/// Java: `FidDBUtils.generateInferiorFullHashSmash(FidHashQuad, FunctionRecord)`, the overload
-/// used when only a hash quad is known for the superior side.
-fn generate_inferior_full_hash_smash_quad(
-    superior_function: &dyn FidHashQuad,
-    inferior_function: &FunctionRecord,
-) -> i64 {
-    let hash_value =
-        inferior_function.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME);
-    hash_value ^ superior_function.full_hash()
-}
+// The hash-smash helpers (`generate*FullHashSmash`) are ported at
+// [`crate::feature::fid::db::fid_db_utils`] (Java: `ghidra.feature.fid.db.FidDBUtils`) and
+// imported above; they used to be duplicated privately in this module before that port existed.
 
 /// Tracks caller/callee (superior/inferior) relationships between functions in the FID database.
 ///
@@ -192,6 +153,7 @@ mod tests {
     use super::*;
     use crate::feature::fid::db::fid_db::test_support::minimal_fid_db;
     use crate::feature::seam_stubs::{StringRecord, StringsTable};
+    use crate::generic::hash::FNV1a64MessageDigest;
 
     /// This module's tests only exercise the hash-smash arithmetic and key/full-hash accessors,
     /// so name resolution is never needed.

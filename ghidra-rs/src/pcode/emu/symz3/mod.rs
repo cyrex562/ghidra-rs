@@ -1,4 +1,5 @@
 pub mod internal_sym_z3_records_preconditions;
+pub mod lib;
 pub mod state;
 pub mod sym_z3_records_preconditions;
 pub mod trace;

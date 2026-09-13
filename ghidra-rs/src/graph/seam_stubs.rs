@@ -195,46 +195,7 @@ pub trait FcgVertex: Send + Sync {
     fn dispose(&self);
 }
 
-/// Placeholder for the unported Java type `FcgLevel`, referenced by `FunctionCallGraph`.
-/// `FcgLevel` is a concrete, dependency-free value class (row + direction) in Java, not an
-/// interface, so this stub is a plain struct rather than the `dyn`-shaped placeholders above.
-/// Only the constructor and accessors `FunctionCallGraph` needs are included (`parent`/`child`/
-/// `compareTo`/etc. are unused here); replace with the real port when available.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FcgLevel {
-    row: i32,
-    direction: super::fcg_direction::FcgDirection,
-}
-
-impl FcgLevel {
-    /// Mirrors `FcgLevel(int distance, FcgDirection direction)`.
-    pub fn new(distance: i32, direction: super::fcg_direction::FcgDirection) -> Self {
-        let row = Self::to_row(distance, direction);
-        assert_ne!(row, 0, "The FcgLevel uses a 1-based row system");
-        assert!(
-            !(row == 1 && direction != super::fcg_direction::FcgDirection::InAndOut),
-            "Row 1 must be FcgDirection.IN_AND_OUT"
-        );
-        Self { row, direction }
-    }
-
-    fn to_row(distance: i32, direction: super::fcg_direction::FcgDirection) -> i32 {
-        let one_based = distance + 1;
-        if direction == super::fcg_direction::FcgDirection::Out {
-            -one_based
-        } else {
-            one_based
-        }
-    }
-
-    pub fn get_row(&self) -> i32 {
-        self.row
-    }
-
-    pub fn get_direction(&self) -> super::fcg_direction::FcgDirection {
-        self.direction
-    }
-}
+pub use crate::graph::fcg_level::FcgLevel;
 
 /// Placeholder for the unported Java type `FcgEdge`, referenced by `FunctionCallGraph`.
 /// `FcgEdge` is a concrete, final class in Java (extends `AbstractVisualEdge<FcgVertex>`), not

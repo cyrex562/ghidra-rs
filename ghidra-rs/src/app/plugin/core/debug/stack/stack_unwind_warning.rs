@@ -36,11 +36,27 @@ pub trait StackUnwindWarning: Send + Sync {
     /// Enables `instanceof`-style checks (e.g. in [`Self::moots`] overrides) on a
     /// `&dyn StackUnwindWarning`.
     fn as_any(&self) -> &dyn Any;
+
+    /// Returns a grouped summary for this warning's concrete type if it participates in
+    /// combining multiple instances of itself (Java: `w instanceof Combinable`), or `None` if it
+    /// stands alone. `all` is every warning currently in the enclosing
+    /// [`StackUnwindWarningSet`](super::stack_unwind_warning_set::StackUnwindWarningSet);
+    /// overriding implementations filter it down to instances of their own concrete type (via
+    /// [`Self::as_any`]) and delegate to their [`Combinable::summarize`]. Used by
+    /// `StackUnwindWarningSet::summarize` in place of Java's `instanceof Combinable` check, which
+    /// relies on reflection this crate's trait objects don't have.
+    fn combine_group(&self, all: &[&dyn StackUnwindWarning]) -> Option<String> {
+        let _ = all;
+        None
+    }
 }
 
 /// A warning that can be combined with other instances of itself.
 pub trait Combinable<T: StackUnwindWarning> {
-    fn summarize(&self, all: &[T]) -> String;
+    /// Java: `Combinable.summarize(Collection<? extends StackUnwindWarning> all)`. `all` borrows
+    /// the group's members (Java collections are always reference semantics) rather than owning
+    /// them, since some warnings (e.g. [`UnknownPurgeStackUnwindWarning`]) hold non-`Clone` fields.
+    fn summarize(&self, all: &[&T]) -> String;
 }
 
 /// The unwind analyzer could not find an exit path from the frame's program counter.
@@ -113,10 +129,20 @@ impl StackUnwindWarning for UnknownPurgeStackUnwindWarning {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn combine_group(&self, all: &[&dyn StackUnwindWarning]) -> Option<String> {
+        let matching: Vec<&UnknownPurgeStackUnwindWarning> =
+            all.iter().filter_map(|w| w.as_any().downcast_ref()).collect();
+        if matching.len() == 1 {
+            Some(self.get_message())
+        } else {
+            Some(Combinable::summarize(self, &matching))
+        }
+    }
 }
 
 impl Combinable<UnknownPurgeStackUnwindWarning> for UnknownPurgeStackUnwindWarning {
-    fn summarize(&self, all: &[UnknownPurgeStackUnwindWarning]) -> String {
+    fn summarize(&self, all: &[&UnknownPurgeStackUnwindWarning]) -> String {
         let mut names: Vec<String> =
             all.iter().map(|w| Function::get_name(w.function.as_ref())).collect();
         names.sort();
@@ -150,10 +176,20 @@ impl StackUnwindWarning for UnspecifiedConventionStackUnwindWarning {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn combine_group(&self, all: &[&dyn StackUnwindWarning]) -> Option<String> {
+        let matching: Vec<&UnspecifiedConventionStackUnwindWarning> =
+            all.iter().filter_map(|w| w.as_any().downcast_ref()).collect();
+        if matching.len() == 1 {
+            Some(self.get_message())
+        } else {
+            Some(Combinable::summarize(self, &matching))
+        }
+    }
 }
 
 impl Combinable<UnspecifiedConventionStackUnwindWarning> for UnspecifiedConventionStackUnwindWarning {
-    fn summarize(&self, all: &[UnspecifiedConventionStackUnwindWarning]) -> String {
+    fn summarize(&self, all: &[&UnspecifiedConventionStackUnwindWarning]) -> String {
         let mut names: Vec<String> =
             all.iter().map(|w| Function::get_name(w.function.as_ref())).collect();
         names.sort();
