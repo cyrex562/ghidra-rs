@@ -3574,7 +3574,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ProgramManager.j
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ProgramTreeService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/QueryData.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringTranslationService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorQuery.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorQuery.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidityScore.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/Terminal.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
@@ -4915,9 +4915,9 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/multilisting/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/options/ListingDisplayOptionsEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer options 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/options/OptionsGui.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer options 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/options/ScreenElement.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer options 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/AddressProxy.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/AddressProxy.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/ClosedVariableProxy.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/CodeUnitProxy.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/CodeUnitProxy.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/DataProxy.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/EmptyProxy.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/proxy/FunctionProxy.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer proxy 
@@ -11518,7 +11518,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionEx
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionGrouper.java	DONE	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionOperator.java	DONE	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionValue.java	DONE	orig_src Ghidra Framework Generic src main java generic expressions 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/LongExpressionValue.java	TODO	orig_src Ghidra Framework Generic src main java generic expressions 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/LongExpressionValue.java	DONE	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/AbstractMessageDigest.java	DONE	orig_src Ghidra Framework Generic src main java generic hash
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/FNV1a32MessageDigest.java	DONE	orig_src Ghidra Framework Generic src main java generic hash
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/FNV1a32MessageDigestFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic hash 
@@ -11570,14 +11570,14 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/Pair.java	TODO	orig_
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/Quad.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackNode.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackTree.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseListIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseListIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseMapIteratorSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseSetIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseVectorIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SelfComparator.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SetIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SetSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/UnmodifiableListIteratorSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/UnmodifiableListIteratorSTL.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/VectorIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/VectorSTL.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGTest.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
@@ -11628,7 +11628,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/action/EndOfLineAct
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/action/SelectBeginningOfLineAction.java	TODO	orig_src Ghidra Framework Generic src main java generic util action 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/action/SelectEndOfLineAction.java	TODO	orig_src Ghidra Framework Generic src main java generic util action 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/action/SystemKeyBindings.java	TODO	orig_src Ghidra Framework Generic src main java generic util action 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/app/util/importer/MessageLog.java	TODO	orig_src Ghidra Framework Generic src main java ghidra app util importer 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/app/util/importer/MessageLog.java	DONE	orig_src Ghidra Framework Generic src main java ghidra app util importer 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncDebouncer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncFence.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncLazyMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
@@ -11783,7 +11783,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectRan
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectValueRange.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Prime.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PriorityQueue.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PropertySetIndexRangeIterator.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PropertySetIndexRangeIterator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/QueueStub.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RangeMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackEntry.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
@@ -13163,7 +13163,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/proce
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SpecificSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/StartSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SubtableSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/Symbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/Symbol.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SymbolScope.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SymbolTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/TripleSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh symbol 
@@ -14573,7 +14573,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/Intersectio
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/ManualEntry.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/SymmetricDifferenceAddressSetView.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/TwoWayBreakdownAddressRangeIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressRangeIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressRangeIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressSetView.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/XmlProgramUtilities.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
