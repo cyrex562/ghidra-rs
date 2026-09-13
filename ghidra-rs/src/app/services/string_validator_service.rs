@@ -2,8 +2,8 @@
 //!
 //! Port of `ghidra.app.services.StringValidatorService`.
 
-use crate::app::seam_stubs::{Class, PluginTool, StringValidatorQuery};
-use crate::app::services::StringValidityScore;
+use crate::app::seam_stubs::{Class, PluginTool};
+use crate::app::services::{StringValidatorQuery, StringValidityScore};
 
 /// A service that judges the validity of a string.
 ///
@@ -13,7 +13,7 @@ pub trait StringValidatorService: Send + Sync {
     fn get_validator_service_name(&self) -> String;
 
     /// Judges a string (specified in the query instance).
-    fn get_string_validity_score(&self, query: &dyn StringValidatorQuery) -> StringValidityScore;
+    fn get_string_validity_score(&self, query: &StringValidatorQuery) -> StringValidityScore;
 }
 
 /// A dummy string validator that marks all strings as invalid.
@@ -26,8 +26,8 @@ impl StringValidatorService for DummyStringValidator {
         "Dummy".to_string()
     }
 
-    fn get_string_validity_score(&self, query: &dyn StringValidatorQuery) -> StringValidityScore {
-        StringValidityScore::make_dummy_for(query.string_value())
+    fn get_string_validity_score(&self, query: &StringValidatorQuery) -> StringValidityScore {
+        StringValidityScore::make_dummy_for(&query.string_value)
     }
 }
 
@@ -82,16 +82,6 @@ impl Class for StringValidatorServiceClassToken {}
 mod tests {
     use super::*;
 
-    struct MockQuery {
-        string: String,
-    }
-
-    impl StringValidatorQuery for MockQuery {
-        fn string_value(&self) -> &str {
-            &self.string
-        }
-    }
-
     struct MockStringValidatorService {
         name: String,
     }
@@ -101,8 +91,8 @@ mod tests {
             self.name.clone()
         }
 
-        fn get_string_validity_score(&self, query: &dyn StringValidatorQuery) -> StringValidityScore {
-            StringValidityScore::new(query.string_value(), query.string_value(), 42.0, 50.0)
+        fn get_string_validity_score(&self, query: &StringValidatorQuery) -> StringValidityScore {
+            StringValidityScore::new(&query.string_value, &query.string_value, 42.0, 50.0)
         }
     }
 
@@ -115,9 +105,7 @@ mod tests {
     #[test]
     fn dummy_validator_creates_dummy_score() {
         let validator = DummyStringValidator;
-        let query = MockQuery {
-            string: "test".to_string(),
-        };
+        let query = StringValidatorQuery::new("test");
         let score = validator.get_string_validity_score(&query);
         assert_eq!(score.original_string(), "test");
         assert_eq!(score.transformed_string(), "test");
@@ -142,9 +130,7 @@ mod tests {
         let validator = MockStringValidatorService {
             name: "MockValidator".to_string(),
         };
-        let query = MockQuery {
-            string: "hello".to_string(),
-        };
+        let query = StringValidatorQuery::new("hello");
         let score = validator.get_string_validity_score(&query);
         assert_eq!(score.original_string(), "hello");
         assert_eq!(score.score(), 42.0);
@@ -165,9 +151,7 @@ mod tests {
     #[test]
     fn empty_string_query() {
         let validator = DummyStringValidator;
-        let query = MockQuery {
-            string: "".to_string(),
-        };
+        let query = StringValidatorQuery::new("");
         let score = validator.get_string_validity_score(&query);
         assert_eq!(score.original_string(), "");
         assert_eq!(score.transformed_string(), "");
@@ -176,9 +160,7 @@ mod tests {
     #[test]
     fn special_characters_in_query() {
         let validator = DummyStringValidator;
-        let query = MockQuery {
-            string: "@#$%^&*()".to_string(),
-        };
+        let query = StringValidatorQuery::new("@#$%^&*()");
         let score = validator.get_string_validity_score(&query);
         assert_eq!(score.original_string(), "@#$%^&*()");
     }

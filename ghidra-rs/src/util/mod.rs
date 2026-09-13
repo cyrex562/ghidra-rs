@@ -8,6 +8,7 @@ pub mod intersection_address_set_view;
 pub mod location;
 pub mod symmetric_difference_address_set_view;
 pub mod test_universal_id_generator;
+pub mod union_address_range_iterator;
 pub mod union_address_set_view;
 pub mod word_location;
 pub mod conv;

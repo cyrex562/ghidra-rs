@@ -1973,15 +1973,6 @@ pub trait FieldMouseHandler: Send + Sync {
     fn get_supported_program_locations(&self) -> Vec<Box<dyn Class>>;
 }
 
-/// Placeholder for `ghidra.app.services.StringValidatorQuery`, referenced by
-/// [`StringValidatorService`](crate::app::services::StringValidatorService) before the real class
-/// is ported. Java's version is a record with a `stringValue()` accessor. Only that method is
-/// modeled; any other members are left for that class's own future port.
-pub trait StringValidatorQuery {
-    /// Returns the string value to validate.
-    fn string_value(&self) -> &str;
-}
-
 /// Placeholder for `docking.widgets.fieldpanel.Layout`, referenced by
 /// [`ListingModel`](crate::app::util::viewer::listingpanel::listing_model::ListingModel) before
 /// the real class is ported. `ListingModel` only ever returns this type opaquely from

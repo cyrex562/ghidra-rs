@@ -8,6 +8,20 @@ use crate::program::model::pcode::ids::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// Common header fields shared by every symbol in the sleigh symbol table.
+///
+/// Port of the abstract base class `ghidra.app.plugin.processors.sleigh.symbol.Symbol`. Java's
+/// `Symbol` is `abstract`, carrying the `name`/`id`/`scopeid` fields and the concrete
+/// `decodeHeader(Decoder)` method, and leaving `decode(Decoder, SleighLanguage)` abstract for
+/// each of its seven direct subclasses (`UseropSymbol`, `VarnodeSymbol`, `ValueSymbol`,
+/// `SubtableSymbol`, `OperandSymbol`, `TripleSymbol`, and others) to implement.
+///
+/// Rather than a trait-based hierarchy, this crate's sleigh symbol family already used
+/// composition + enum dispatch before this class was ported: each concrete symbol struct
+/// (e.g. [`UseropSymbol`], [`VarnodeSymbol`]) embeds a `header: SymbolHeader` field instead of
+/// inheriting from a `Symbol` base, and the abstract `decode` method is realized as the
+/// [`SleighSymbol::decode`] dispatch over the [`SleighSymbol`] enum instead of dynamic dispatch.
+/// `SymbolHeader::decode` is the direct port of `Symbol.decodeHeader(Decoder)`.
 #[derive(Clone, Debug)]
 pub struct SymbolHeader {
     pub name: String,
@@ -16,6 +30,9 @@ pub struct SymbolHeader {
 }
 
 impl SymbolHeader {
+    /// Decodes the header shared by every symbol kind: name, unique id, and containing scope id.
+    ///
+    /// Mirrors `Symbol.decodeHeader(Decoder)`.
     pub fn decode(decoder: &dyn Decoder) -> Result<(Self, i32), DecoderError> {
         let el = decoder.open_element()?;
         let name = decoder.read_string_with_id(ATTRIB_NAME)?;
@@ -23,6 +40,27 @@ impl SymbolHeader {
         let scope_id = decoder.read_unsigned_integer_with_id(ATTRIB_SCOPE)? as i32;
         decoder.close_element(el)?;
         Ok((Self { name, id, scope_id }, el))
+    }
+
+    /// Returns the symbol's name.
+    ///
+    /// Mirrors `Symbol.getName()`.
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the symbol's unique id (unique across all symbols).
+    ///
+    /// Mirrors `Symbol.getId()`.
+    pub fn get_id(&self) -> i32 {
+        self.id
+    }
+
+    /// Returns the id of the scope this symbol is in.
+    ///
+    /// Mirrors `Symbol.getScopeId()`.
+    pub fn get_scope_id(&self) -> i32 {
+        self.scope_id
     }
 }
 
@@ -340,5 +378,45 @@ impl SymbolTable {
 
         decoder.close_element(el)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod symbol_header_tests {
+    use super::SymbolHeader;
+
+    fn header(name: &str, id: i32, scope_id: i32) -> SymbolHeader {
+        SymbolHeader {
+            name: name.to_string(),
+            id,
+            scope_id,
+        }
+    }
+
+    #[test]
+    fn get_name_returns_the_symbols_name() {
+        let h = header("myUserop", 3, 0);
+        assert_eq!(h.get_name(), "myUserop");
+    }
+
+    #[test]
+    fn get_id_returns_the_unique_id() {
+        let h = header("sym", 42, 0);
+        assert_eq!(h.get_id(), 42);
+    }
+
+    #[test]
+    fn get_scope_id_returns_the_containing_scope() {
+        let h = header("sym", 1, 7);
+        assert_eq!(h.get_scope_id(), 7);
+    }
+
+    #[test]
+    fn clone_produces_an_independent_equal_header() {
+        let h = header("sym", 1, 2);
+        let cloned = h.clone();
+        assert_eq!(cloned.get_name(), h.get_name());
+        assert_eq!(cloned.get_id(), h.get_id());
+        assert_eq!(cloned.get_scope_id(), h.get_scope_id());
     }
 }
