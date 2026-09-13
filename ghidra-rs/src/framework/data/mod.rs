@@ -1,4 +1,5 @@
 pub mod checkin_handler;
+pub mod db_domain_object_support;
 pub mod default_checkin_handler;
 pub mod default_project_data;
 pub mod domain_object_adapter_db;
@@ -11,6 +12,9 @@ pub mod opened_domain_file;
 pub mod project_lock;
 
 pub use checkin_handler::CheckinHandler;
+pub use db_domain_object_support::{
+    CreateManagerError, DBDomainObjectInitError, DBDomainObjectSupport, ManagerSupplyError,
+};
 pub use default_checkin_handler::DefaultCheckinHandler;
 pub use default_project_data::{
     is_locked, read_project_properties, user_data_filename, DefaultProjectData,
