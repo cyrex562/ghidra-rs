@@ -12520,7 +12520,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/MetadataMa
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/NullFolderDomainObject.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/OpenMode.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/OptionsDB.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ProjectLock.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ProjectLock.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/RootGhidraFolder.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/RootGhidraFolderData.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/SynchronizedTransaction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 

@@ -8,6 +8,7 @@ pub mod ghidra_folder_data;
 pub mod ghidra_tool_state;
 pub mod open_mode;
 pub mod opened_domain_file;
+pub mod project_lock;
 
 pub use checkin_handler::CheckinHandler;
 pub use default_checkin_handler::DefaultCheckinHandler;
@@ -21,3 +22,4 @@ pub use ghidra_folder_data::{get_relative_path, GhidraFolderData};
 pub use ghidra_tool_state::GhidraToolState;
 pub use open_mode::OpenMode;
 pub use opened_domain_file::{OpenedDomainFile, OpenedDomainFileError};
+pub use project_lock::ProjectLock;

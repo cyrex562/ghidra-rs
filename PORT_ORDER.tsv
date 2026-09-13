@@ -1047,7 +1047,7 @@ TODO	struct	18	19	12	framework	Ghidra/Framework/Project/src/main/java/ghidra/fra
 TODO	struct	18	20	50	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectTransactionManager.java
 TODO	struct	18	26	50	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/GhidraFolder.java
 TODO	struct	18	18	18	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/MetadataManager.java
-TODO	struct	18	18	0	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ProjectLock.java
+DONE	struct	18	18	0	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ProjectLock.java
 TODO	struct	18	18	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/RootGhidraFolder.java
 TODO	struct	18	20	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/RootGhidraFolderData.java
 TODO	struct	18	18	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/SynchronizedTransaction.java
