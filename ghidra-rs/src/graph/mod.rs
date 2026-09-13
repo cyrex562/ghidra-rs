@@ -21,6 +21,7 @@ pub mod graph_algorithms;
 pub mod graph_path;
 pub mod graph_path_set;
 pub mod job;
+pub mod jung;
 pub mod program_graph_type;
 pub mod seam_stubs;
 pub mod viewer;
@@ -53,6 +54,7 @@ pub use graph_algorithms::{GraphAlgorithms, TimeoutMonitorError};
 pub use graph_path::GraphPath;
 pub use graph_path_set::GraphPathSet;
 pub use job::{AbstractAnimator, Animator, AnimatorBehavior, TimingTarget};
+pub use jung::jung_directed_graph::JungDirectedGraph;
 pub use program_graph_type::ProgramGraphType;
 pub use viewer::{GridPoint, GraphSatelliteListener, LayoutProviderExtensionPoint, PathHighlightListener, PathHighlightMode, VisualGraphContextMarker};
 pub use visualization::{

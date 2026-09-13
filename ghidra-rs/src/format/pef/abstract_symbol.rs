@@ -14,7 +14,12 @@ pub trait AbstractSymbol: fmt::Debug {
     fn name(&self) -> &str;
 
     /// Returns the symbol's class.
-    fn symbol_class(&self) -> SymbolClass;
+    ///
+    /// `None` when the raw class code doesn't match any of [`SymbolClass`]'s known variants,
+    /// mirroring `SymbolClass.get(int)` (Java's `getSymbolClass()` is typed to return
+    /// `SymbolClass`, which is nullable in Java but has no such built-in "no value" state in
+    /// Rust, hence `Option`).
+    fn symbol_class(&self) -> Option<SymbolClass>;
 }
 
 impl fmt::Display for dyn AbstractSymbol {
@@ -46,8 +51,8 @@ mod tests {
             &self.name
         }
 
-        fn symbol_class(&self) -> SymbolClass {
-            self.class
+        fn symbol_class(&self) -> Option<SymbolClass> {
+            Some(self.class)
         }
     }
 

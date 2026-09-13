@@ -1,4 +1,7 @@
 pub mod abstract_symbol;
+pub mod exported_symbol_hash_slot;
+pub mod exported_symbol_key;
+pub mod imported_symbol;
 pub mod loader_info_header;
 pub mod loader_relocation_header;
 pub mod packed_data_opcodes;

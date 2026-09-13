@@ -20,21 +20,23 @@
 //! };
 //! ```
 //!
-//! `ImportedLibrary`, `ImportedSymbol`, `ExportedSymbolHashSlot`, `ExportedSymbolKey` and
-//! `ExportedSymbol` are not ported yet, so they are held as minimal
+//! `ImportedLibrary` and `ExportedSymbol` are not ported yet, so they are held as minimal
 //! [`seam_stubs`](crate::format::seam_stubs) placeholders: each parses exactly the bytes its real
 //! Java constructor reads sequentially (so the container's byte layout stays intact for whatever
 //! follows), skipping the absolute-offset name lookup into the loader string table since none of
-//! `LoaderInfoHeader`'s own members read it back.
+//! `LoaderInfoHeader`'s own members read it back. `ImportedSymbol`, `ExportedSymbolHashSlot` and
+//! `ExportedSymbolKey` are now fully ported (see their own modules in this package).
 
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
+use crate::format::pef::exported_symbol_hash_slot::ExportedSymbolHashSlot;
+use crate::format::pef::exported_symbol_key::ExportedSymbolKey;
+use crate::format::pef::imported_symbol::ImportedSymbol;
 use crate::format::pef::loader_relocation_header::LoaderRelocationHeader;
 use crate::format::seam_stubs::{
-    ExportedSymbol, ExportedSymbolHashSlot, ExportedSymbolKey, ImportedLibrary, ImportedSymbol,
-    SectionHeader, StructConverterUtilDataType,
+    ExportedSymbol, ImportedLibrary, SectionHeader, StructConverterUtilDataType,
 };
 use crate::program::model::data::data_type::DataType;
 

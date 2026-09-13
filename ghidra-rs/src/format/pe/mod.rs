@@ -7,6 +7,7 @@ pub mod rich;
 pub mod cli;
 pub mod debug;
 pub mod constants;
+pub mod dvrt;
 pub mod dll_characteristics;
 pub mod export_info;
 pub mod import_info;

@@ -83,6 +83,7 @@ pub mod privately_queued_listener;
 pub mod property_set_index_range_iterator;
 pub mod queue_stub;
 pub mod range;
+pub mod range_map;
 pub mod stack;
 pub mod value_range;
 pub mod weak_data_structure_factory;
@@ -161,6 +162,7 @@ pub use privately_queued_listener::{DefaultListenerErrorHandler, PrivatelyQueued
 pub use property_set_index_range_iterator::PropertySetIndexRangeIterator;
 pub use queue_stub::QueueStub;
 pub use range::Range;
+pub use range_map::RangeMap;
 pub use red_black_entry::{NodeColor, NodeRef, RedBlackEntry};
 pub use red_black_key_set::RedBlackKeySet;
 pub use red_black_long_key_set::RedBlackLongKeySet;

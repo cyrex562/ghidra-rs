@@ -4421,7 +4421,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_UDT32.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_UDT32_NEW.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/UnknownSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/AbstractImageDynamicRelocationHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe dvrt 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/AbstractImageDynamicRelocationHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe dvrt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/DvrtType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe dvrt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/ImageArm64X.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe dvrt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/ImageArm64XDynamicRelocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe dvrt 
@@ -4462,11 +4462,11 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/R
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/AbstractSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ContainerHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ExportedSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ExportedSymbolHashSlot.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ExportedSymbolKey.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ExportedSymbolHashSlot.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ExportedSymbolKey.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ImportStateCache.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ImportedLibrary.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ImportedSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ImportedSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/LoaderInfoHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/LoaderRelocationHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/PackedDataOpcodes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
@@ -4513,7 +4513,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/som/SomSu
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/som/SomSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format som 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/som/SomSysClock.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format som 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/som/SomUnknownAuxHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format som 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ubi/FatArch.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ubi 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ubi/FatArch.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ubi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ubi/FatHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ubi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ubi/UbiException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ubi
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format unixaout 
@@ -11785,7 +11785,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Prime.jav
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PriorityQueue.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PropertySetIndexRangeIterator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/QueueStub.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RangeMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RangeMap.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackEntry.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackKeySet.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackLongKeySet.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
@@ -11895,7 +11895,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlUtilities.jav
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlWriter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/NonThreadedXmlPullParserImpl.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/ThreadedXmlPullParserImpl.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlMessageLog.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlMessageLog.java	DONE	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlParseException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlPullParserFactory.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlTracer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra xml 
@@ -12045,7 +12045,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/RelayoutAndCenter
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/RelayoutAndEnsureVisible.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph job 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/RelayoutFunctionGraphJob.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph job 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/TwinkleVertexAnimator.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph job 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/jung/JungDirectedGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph jung 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/jung/JungDirectedGraph.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph jung 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/jung/JungToGDirectedGraphAdapter.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph jung 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphComponent.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphPerspectiveInfo.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
