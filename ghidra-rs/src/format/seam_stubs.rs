@@ -16,7 +16,6 @@ use crate::format::dwarf::dwarf_abbreviation::DWARFAbbreviation;
 use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
 use crate::format::dwarf::external::object_type::ObjectType;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
-use crate::format::dwarf::dwarf_location::DWARFLocation;
 use crate::format::dwarf::dwarf_range::DWARFRange;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::golang::go_ver::GoVer;
