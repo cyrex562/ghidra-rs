@@ -17,7 +17,6 @@ use crate::program::model::address::{Address, AddressRange, AddressRangeIterator
 use crate::program::model::block::CodeBlock;
 use crate::program::model::listing::Program;
 use crate::program::util::program_location::ProgramLocation;
-use crate::util::bytesearch::ByteSequence;
 use std::sync::Arc;
 
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
@@ -1019,6 +1018,13 @@ pub trait Pattern: Send + Sync {
 pub trait XmlPullParser: Send + Sync {
     fn start(&self, name: &str);
     fn end(&self);
+
+    /// Discards the next subtree without processing it.
+    ///
+    /// Java: `discardSubTree()`, used by [`DummyMatchAction`](crate::util::bytesearch::DummyMatchAction)
+    /// and other actions with no XML-configurable state. Defaulted to a no-op so existing
+    /// placeholder implementors are unaffected; override to observe/verify the call.
+    fn discard_sub_tree(&self) {}
 }
 
 /// Placeholder for `java.io.File`, referenced by `Pattern`.
@@ -1085,10 +1091,11 @@ impl NumericUtilities {
 /// referenced by [`crate::util::bytesearch::program_memory_searcher::ProgramMemorySearcher`].
 /// `ProgramByteSource` is a concrete Java class (not an interface), so this stub is a struct
 /// implementing the already-ported [`AddressableByteSource`] trait. Only the members
-/// `ProgramMemorySearcher`'s constructor and the [`AddressableByteSequence`] it feeds actually
-/// exercise (`get_bytes`) are backed by real behavior; `get_searchable_regions` is trimmed to an
-/// empty list since no caller here enumerates regions. Replace with the real port when
-/// `ProgramByteSource.java` is ported.
+/// `ProgramMemorySearcher`'s constructor and the
+/// [`AddressableByteSequence`](crate::util::bytesearch::AddressableByteSequence) it feeds
+/// actually exercise (`get_bytes`) are backed by real behavior; `get_searchable_regions` is
+/// trimmed to an empty list since no caller here enumerates regions. Replace with the real port
+/// when `ProgramByteSource.java` is ported.
 pub struct ProgramByteSource {
     program: Arc<dyn Program>,
 }
@@ -1134,85 +1141,6 @@ impl AddressableByteSource for ProgramByteSource {
             .get_image_base()
             .expect("rebase_from_canonical requires a program with an image base");
         target_base.add(offset).expect("rebased address overflow")
-    }
-}
-
-/// Placeholder for the unported Java type `ghidra.util.bytesearch.AddressableByteSequence`,
-/// referenced by [`crate::util::bytesearch::program_memory_searcher::ProgramMemorySearcher`].
-/// `AddressableByteSequence` is a concrete Java class (not an interface), so this stub is a
-/// struct implementing the already-ported [`ByteSequence`] trait, backed by real behavior (it is
-/// exercised directly by `ProgramMemorySearcher`'s own smoke test). Replace with the real port
-/// when `AddressableByteSequence.java` is ported.
-pub struct AddressableByteSequence {
-    byte_source: Arc<dyn AddressableByteSource>,
-    bytes: Vec<u8>,
-    capacity: usize,
-    start_address: Option<Address>,
-    length: usize,
-}
-
-impl AddressableByteSequence {
-    /// Java: `AddressableByteSequence(AddressableByteSource, int)`.
-    pub fn new(byte_source: Arc<dyn AddressableByteSource>, capacity: usize) -> Self {
-        Self {
-            byte_source,
-            bytes: vec![0u8; capacity],
-            capacity,
-            start_address: None,
-            length: 0,
-        }
-    }
-
-    /// Java: `clear()`.
-    pub fn clear(&mut self) {
-        self.start_address = None;
-        self.length = 0;
-    }
-
-    /// Java: `setRange(AddressRange)`.
-    pub fn set_range(&mut self, range: &AddressRange) {
-        self.set_range_at(range.min_address().clone(), range.length() as usize);
-    }
-
-    /// Java: `setRange(Address, int)`.
-    pub fn set_range_at(&mut self, start: Address, length: usize) {
-        assert!(length <= self.capacity, "Length exceeds capacity");
-        self.byte_source.get_bytes(&start, &mut self.bytes[..length], length);
-        self.start_address = Some(start);
-        self.length = length;
-    }
-
-    /// Java: `getAddress(int)`.
-    pub fn get_address(&self, index: usize) -> Address {
-        assert!(index < self.length, "index out of bounds");
-        if index == 0 {
-            return self.start_address.clone().expect("range must be set");
-        }
-        self.start_address
-            .as_ref()
-            .expect("range must be set")
-            .add(index as i64)
-            .expect("address overflow")
-    }
-}
-
-impl ByteSequence for AddressableByteSequence {
-    fn len(&self) -> usize {
-        self.length
-    }
-
-    fn get_byte(&self, index: usize) -> u8 {
-        assert!(index < self.length, "index out of bounds");
-        self.bytes[index]
-    }
-
-    fn get_bytes(&self, index: usize, size: usize) -> Vec<u8> {
-        assert!(index + size <= self.length, "index out of bounds");
-        self.bytes[index..index + size].to_vec()
-    }
-
-    fn has_available_bytes(&self, index: usize, length: usize) -> bool {
-        index.checked_add(length).map_or(false, |end| end <= self.length)
     }
 }
 

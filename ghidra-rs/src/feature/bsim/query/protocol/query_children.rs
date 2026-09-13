@@ -5,8 +5,8 @@
 //! each child of the specified functions.
 
 use crate::feature::bsim::query::lsh_exception::LshException;
-use crate::feature::bsim::query::protocol::QueryResponseRecord;
-use crate::feature::seam_stubs::{FunctionEntry, LSHVectorFactory, ResponseChildren};
+use crate::feature::bsim::query::protocol::{FunctionEntry, QueryResponseRecord};
+use crate::feature::seam_stubs::{LSHVectorFactory, ResponseChildren};
 use crate::util::seam_stubs::XmlPullParser;
 use crate::util::xml::spec_xml_utils;
 use std::io::Write;
@@ -30,7 +30,7 @@ pub struct QueryChildren {
     pub name_compiler: Option<String>,
 
     /// The list of function keys to query children for.
-    pub function_keys: Vec<Box<dyn FunctionEntry>>,
+    pub function_keys: Vec<FunctionEntry>,
 
     /// The response object (same as `response` in the parent BSimQuery).
     pub childrenresponse: Option<Box<dyn ResponseChildren>>,
@@ -161,16 +161,6 @@ impl QueryResponseRecord for QueryChildren {
 mod tests {
     use super::*;
 
-    struct MockFunctionEntry {
-        name: String,
-    }
-
-    impl FunctionEntry for MockFunctionEntry {
-        fn save_xml(&self, fwrite: &mut dyn Write) -> std::io::Result<()> {
-            write!(fwrite, "  <fkey>{}</fkey>\n", self.name)
-        }
-    }
-
     #[test]
     fn test_query_children_new() {
         let query = QueryChildren::new();
@@ -270,12 +260,8 @@ mod tests {
     fn test_query_children_save_xml_with_function_keys() {
         let mut query = QueryChildren::new();
         query.md5sum = Some("cafef00d".to_string());
-        query.function_keys.push(Box::new(MockFunctionEntry {
-            name: "foo".to_string(),
-        }));
-        query.function_keys.push(Box::new(MockFunctionEntry {
-            name: "bar".to_string(),
-        }));
+        query.function_keys.push(FunctionEntry { func_name: "foo".to_string(), address: 0x10 });
+        query.function_keys.push(FunctionEntry { func_name: "bar".to_string(), address: 0x20 });
 
         let mut buffer = Vec::new();
         query.save_xml(&mut buffer).unwrap();
@@ -283,7 +269,7 @@ mod tests {
 
         assert_eq!(
             xml_str,
-            "<querychildren>\n  <md5>cafef00d</md5>\n  <fkey>foo</fkey>\n  <fkey>bar</fkey>\n</querychildren>\n"
+            "<querychildren>\n  <md5>cafef00d</md5>\n<fentry name=\"foo\" addr=\"0x10\"/>\n<fentry name=\"bar\" addr=\"0x20\"/>\n</querychildren>\n"
         );
     }
 

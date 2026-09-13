@@ -10,10 +10,11 @@ use crate::program::model::address::{
 use crate::program::model::listing::Program;
 use crate::program::model::mem::MemoryBlock;
 use crate::util::bytesearch::{
-    AddressMatch, BulkPatternSearcher, ByteSequence, BytePattern, ExtendedByteSequence, Match,
+    AddressMatch, AddressableByteSequence, BulkPatternSearcher, ByteSequence, BytePattern,
+    ExtendedByteSequence, Match,
 };
 use crate::util::exception::CancelledException;
-use crate::util::seam_stubs::{AddressableByteSequence, ProgramByteSource};
+use crate::util::seam_stubs::ProgramByteSource;
 use crate::util::task::TaskMonitor;
 
 const BUF_SIZE: usize = 4096;

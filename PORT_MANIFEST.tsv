@@ -1745,7 +1745,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ExeSpecifier.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ExecutableResultWithDeDuping.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/FilterAtom.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/FunctionEntry.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/FunctionEntry.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/FunctionStaging.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InsertOptionalValues.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InsertRequest.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol
@@ -1797,7 +1797,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityNote.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityVectorResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/StagingManager.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/StagingManager.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/screen/java/help/screenshot/BSimSearchPluginScreenShots.java	TODO	orig_src Ghidra Features BSim src screen java help screenshot 
 orig_src/Ghidra/Features/BSim/src/test.slow/java/ghidra/features/bsim/gui/AbstractBSimPluginTest.java	TODO	orig_src Ghidra Features BSim src test.slow java ghidra features bsim gui 
 orig_src/Ghidra/Features/BSim/src/test.slow/java/ghidra/features/bsim/gui/BSimSearchPluginTest.java	TODO	orig_src Ghidra Features BSim src test.slow java ghidra features bsim gui 
@@ -5311,13 +5311,13 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/MultiByteCharMatch
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/Sequence.java	TODO	orig_src Ghidra Features Base src main java ghidra util ascii 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bean/field/AnnotatedTextFieldElement.java	TODO	orig_src Ghidra Features Base src main java ghidra util bean field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AddressMatch.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AddressableByteSequence.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AddressableByteSequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AlignRule.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/BulkPatternSearcher.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/BytePattern.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/ByteSequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/DittedBitSequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/DummyMatchAction.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/DummyMatchAction.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/ExtendedByteSequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/GenericByteSequencePattern.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/GenericMatchAction.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
@@ -11548,7 +11548,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHCosineVect
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHCosineVectorAccum.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHVector.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHVectorFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/VectorCompare.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/VectorCompare.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/WeightFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/WeightedLSHCosineVectorFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/random/SecureRandomFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic random

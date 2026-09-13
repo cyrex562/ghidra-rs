@@ -8,6 +8,7 @@ use thiserror::Error;
 
 use crate::generic::lsh::vector::hash_entry::HashEntry;
 use crate::generic::lsh::vector::lsh_vector::LSHVector;
+use crate::generic::lsh::vector::vector_compare::VectorCompare;
 use crate::generic::ulong_span;
 
 /// Placeholder for `generic.expressions.ExpressionValue`, needed by
@@ -238,18 +239,6 @@ mod semisparse_byte_array_tests {
     }
 }
 
-/// Placeholder for `generic.lsh.vector.VectorCompare`, referenced by [`crate::generic::lsh::vector::lsh_vector::LSHVector`].
-///
-/// The real Java interface declares two methods: `fillOut()` and `toString()`.
-/// This placeholder is only the shape hint; replace with the real port when available.
-pub trait VectorCompare: Send + Sync {
-    /// Placeholder for `VectorCompare.fillOut()`.
-    fn fill_out(&self);
-
-    /// Placeholder for `VectorCompare.toString()`.
-    fn to_string(&self) -> String;
-}
-
 /// Placeholder for `generic.lsh.vector.LSHVectorFactory`, referenced by
 /// [`crate::feature::bsim::query::description::FunctionDescription::restore_xml`], which only
 /// passes it through to the signature record's restore path, and by
@@ -355,11 +344,11 @@ impl LSHVector for WeightedLSHCosineVector {
         self.hashes.iter().map(|e| e.get_coeff() * e.get_coeff()).sum::<f64>().sqrt()
     }
 
-    fn compare<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &dyn VectorCompare) -> f64 {
+    fn compare<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &mut VectorCompare) -> f64 {
         0.0
     }
 
-    fn compare_counts<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &dyn VectorCompare) {}
+    fn compare_counts<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &mut VectorCompare) {}
 
     fn compare_detail<T: LSHVector + ?Sized>(&self, _op2: &T, _buf: &mut String) -> f64 {
         0.0

@@ -1,5 +1,6 @@
 pub mod adjust_vector_index;
 pub mod bsim_query;
+pub mod function_entry;
 pub mod insert_request;
 pub mod password_change;
 pub mod prewarm_request;
@@ -14,9 +15,11 @@ pub mod query_update;
 pub mod query_vector_id;
 pub mod response_exe;
 pub mod response_optional_exist;
+pub mod staging_manager;
 
 pub use adjust_vector_index::AdjustVectorIndex;
 pub use bsim_query::{BSimQuery, BSimQueryBase};
+pub use function_entry::FunctionEntry;
 pub use insert_request::InsertRequest;
 pub use password_change::PasswordChange;
 pub use prewarm_request::PrewarmRequest;
@@ -31,3 +34,4 @@ pub use query_update::QueryUpdate;
 pub use query_vector_id::QueryVectorId;
 pub use response_exe::ResponseExe;
 pub use response_optional_exist::ResponseOptionalExist;
+pub use staging_manager::StagingManager;

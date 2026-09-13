@@ -38,10 +38,10 @@ use crate::feature::bsim::query::function_database::{
 };
 use crate::feature::bsim::query::gen_signatures::GenSignatures;
 use crate::feature::bsim::query::protocol::{
-    BSimQuery, QueryNearest, QueryNearestVector, QueryResponseRecord,
+    BSimQuery, QueryNearest, QueryNearestVector, QueryResponseRecord, StagingManager,
 };
 use crate::feature::seam_stubs::{
-    FunctionStaging, NullStaging, SFOverviewInfo, SFQueryInfo, SFQueryResult, StagingManager,
+    FunctionStaging, NullStaging, SFOverviewInfo, SFQueryInfo, SFQueryResult,
 };
 use crate::generic::seam_stubs::LSHVectorFactory;
 use crate::program::database::symbol::FunctionSymbol;

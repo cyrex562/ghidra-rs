@@ -2,8 +2,8 @@ use std::io::{self, Write};
 
 use crate::generic::lsh::vector::hash_entry::HashEntry;
 use crate::generic::lsh::vector::idf_lookup::IdfLookup;
+use crate::generic::lsh::vector::vector_compare::VectorCompare;
 use crate::generic::lsh::vector::weight_factory::WeightFactory;
-use crate::generic::seam_stubs::VectorCompare;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 
 /// A Locality Sensitive Hashing vector for fast similarity comparison.
@@ -28,14 +28,15 @@ pub trait LSHVector {
     /// Returns the Euclidean length (magnitude) of this vector.
     fn get_length(&self) -> f64;
 
-    /// Compares this vector with another using the provided comparison data.
+    /// Compares this vector with another, filling in `data` with the comparison details
+    /// (dot product, counts, etc. -- see [`VectorCompare`]) as a side effect.
     ///
-    /// Returns a similarity measure (semantics depend on the implementation and
-    /// the `VectorCompare` data provided).
+    /// Returns a similarity measure (semantics depend on the implementation and the
+    /// `VectorCompare` data produced).
     fn compare<T: LSHVector + ?Sized>(
         &self,
         op2: &T,
-        data: &dyn VectorCompare,
+        data: &mut VectorCompare,
     ) -> f64;
 
     /// Fills in the comparison data with count information by comparing this
@@ -43,7 +44,7 @@ pub trait LSHVector {
     fn compare_counts<T: LSHVector + ?Sized>(
         &self,
         op2: &T,
-        data: &dyn VectorCompare,
+        data: &mut VectorCompare,
     );
 
     /// Compares this vector with another, appending detailed information to
@@ -146,16 +147,19 @@ mod tests {
         fn compare<T: LSHVector + ?Sized>(
             &self,
             _op2: &T,
-            _data: &dyn VectorCompare,
+            data: &mut VectorCompare,
         ) -> f64 {
+            data.acount = self.entries.len() as i32;
             0.5
         }
 
         fn compare_counts<T: LSHVector + ?Sized>(
             &self,
             _op2: &T,
-            _data: &dyn VectorCompare,
-        ) {}
+            data: &mut VectorCompare,
+        ) {
+            data.acount = self.entries.len() as i32;
+        }
 
         fn compare_detail<T: LSHVector + ?Sized>(
             &self,
@@ -209,15 +213,6 @@ mod tests {
         }
     }
 
-    struct MockVectorCompare;
-
-    impl VectorCompare for MockVectorCompare {
-        fn fill_out(&self) {}
-        fn to_string(&self) -> String {
-            "mock_compare".to_string()
-        }
-    }
-
     #[test]
     fn test_lsh_vector_trait_basic() {
         let entry1 = HashEntry::with_weight(42, 3, 1.5);
@@ -257,5 +252,32 @@ mod tests {
         let hash = vec.calc_unique_hash();
 
         assert_eq!(hash, 42 + 99);
+    }
+
+    #[test]
+    fn compare_mutates_the_shared_vector_compare_out_param() {
+        // Java's `compare(LSHVector op2, VectorCompare data)` takes a `VectorCompare` object by
+        // reference and mutates its fields as a side effect (there is no return-by-value); the
+        // Rust trait mirrors that with `&mut VectorCompare`.
+        let a = MockLSHVector::new(vec![HashEntry::with_weight(1, 1, 1.0); 3], 1.0);
+        let b = MockLSHVector::new(vec![], 0.0);
+        let mut data = VectorCompare::new();
+        assert_eq!(data.acount, 0);
+
+        let score = a.compare(&b, &mut data);
+
+        assert_eq!(score, 0.5);
+        assert_eq!(data.acount, 3);
+    }
+
+    #[test]
+    fn compare_counts_mutates_the_shared_vector_compare_out_param() {
+        let a = MockLSHVector::new(vec![HashEntry::with_weight(1, 1, 1.0); 5], 1.0);
+        let b = MockLSHVector::new(vec![], 0.0);
+        let mut data = VectorCompare::new();
+
+        a.compare_counts(&b, &mut data);
+
+        assert_eq!(data.acount, 5);
     }
 }

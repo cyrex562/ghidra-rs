@@ -1,3 +1,4 @@
+pub mod addressable_byte_sequence;
 pub mod byte_pattern;
 pub mod byte_sequence;
 pub mod ditted_bit_sequence;
@@ -6,11 +7,13 @@ pub mod input_stream_buffer_byte_sequence;
 pub mod r#match;
 pub mod address_match;
 pub mod bulk_pattern_searcher;
+pub mod dummy_match_action;
 pub mod match_action;
 pub mod post_rule;
 pub mod pattern_factory;
 pub mod program_memory_searcher;
 
+pub use addressable_byte_sequence::AddressableByteSequence;
 pub use byte_pattern::BytePattern;
 pub use byte_sequence::ByteSequence;
 pub use ditted_bit_sequence::DittedBitSequence;
@@ -19,6 +22,7 @@ pub use input_stream_buffer_byte_sequence::InputStreamBufferByteSequence;
 pub use r#match::Match;
 pub use address_match::AddressMatch;
 pub use bulk_pattern_searcher::BulkPatternSearcher;
+pub use dummy_match_action::DummyMatchAction;
 pub use match_action::MatchAction;
 pub use post_rule::PostRule;
 pub use pattern_factory::PatternFactory;

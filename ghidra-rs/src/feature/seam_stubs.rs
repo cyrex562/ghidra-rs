@@ -4315,40 +4315,9 @@ pub trait Z3InfixPrinter: Send + Sync {
 // file comes up.
 // ---------------------------------------------------------------------------
 
-/// Placeholder for the unported Java type `StagingManager`, referenced by
-/// `SimilarFunctionQueryService`.
-///
-/// Java's `StagingManager` is an abstract class holding `globalQuery`, `totalsize` and
-/// `queriesmade`; the two counter accessors are concrete and the rest is abstract. Here the whole
-/// surface is a trait, because that concrete state cannot be shared through a Rust supertype.
-///
-/// Java's `getQuery()` hands back the query the manager is currently staging. `NullStaging`
-/// returns the *global* query it was handed by `initialize`; a Rust manager cannot hold that
-/// borrow, so [`get_query`](StagingManager::get_query) returns [`None`] to mean "the global query
-/// itself" and callers substitute the query they passed to `initialize`.
-pub trait StagingManager: Send + Sync {
-    /// Java: `getTotalSize()`, the total number of separate queries being staged.
-    fn get_total_size(&self) -> i32;
-
-    /// Java: `getQueriesMade()`, the number of queries sent so far.
-    fn get_queries_made(&self) -> i32;
-
-    /// Java: `getQuery()`. [`None`] means "the global query passed to
-    /// [`initialize`](StagingManager::initialize)".
-    fn get_query(
-        &mut self,
-    ) -> Option<&mut (dyn crate::feature::bsim::query::protocol::BSimQuery + 'static)>;
-
-    /// Java: `initialize(BSimQuery)`, establishing the first query stage. Returns `true` if an
-    /// initial stage was constructed.
-    fn initialize(
-        &mut self,
-        query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
-    ) -> Result<bool, crate::feature::bsim::query::LshException>;
-
-    /// Java: `nextStage()`, establishing the next query stage. Returns `true` if one was built.
-    fn next_stage(&mut self) -> Result<bool, crate::feature::bsim::query::LshException>;
-}
+// `StagingManager` itself is ported: see
+// [`crate::feature::bsim::query::protocol::StagingManager`].
+use crate::feature::bsim::query::protocol::StagingManager;
 
 /// Placeholder for the unported Java type `NullStaging`, referenced by
 /// `SimilarFunctionQueryService::createStagingManager`.
