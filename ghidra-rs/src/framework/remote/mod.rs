@@ -1,5 +1,6 @@
 pub mod anonymous_callback;
 pub mod ghidra_object_input_filter;
+pub mod ghidra_serial_filter_factory;
 pub mod ghidra_principal;
 pub mod ghidra_server_handle;
 pub mod remote_repository_handle;
@@ -20,6 +21,7 @@ pub use ghidra_object_input_filter::{
     ParsedSerialFilter, MAXARRAY_DEFAULT, MAXBYTES_DEFAULT, MAXDEPTH_DEFAULT, MAXREFS_DEFAULT,
     README_PATH,
 };
+pub use ghidra_serial_filter_factory::{GhidraSerialFilterFactory, ObjectInputFilter};
 pub use ghidra_principal::GhidraPrincipal;
 pub use ghidra_server_handle::{
     GhidraServerHandle, GhidraServerHandleError, ALT_BIND_NAME, ALT_GHIDRA_BIND_VERSION,

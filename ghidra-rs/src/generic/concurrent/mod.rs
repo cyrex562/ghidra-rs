@@ -2,6 +2,7 @@ pub mod concurrent_q;
 pub mod listener_set;
 pub mod named_daemon_thread_factory;
 pub mod progress_tracker;
+pub mod q_runnable_adapter;
 pub mod reentry_guard;
 pub mod thread_pool;
 
@@ -9,6 +10,7 @@ pub use concurrent_q::ConcurrentQ;
 pub use listener_set::ConcurrentListenerSet;
 pub use named_daemon_thread_factory::NamedDaemonThreadFactory;
 pub use progress_tracker::ProgressTracker;
+pub use q_runnable_adapter::QRunnableAdapter;
 pub use reentry_guard::{Guarded, ReentryGuard};
 pub use thread_pool::GThreadPool;
 

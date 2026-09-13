@@ -4,8 +4,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use thiserror::Error;
-
 use crate::generic::lsh::vector::hash_entry::HashEntry;
 use crate::generic::lsh::vector::lsh_vector::LSHVector;
 use crate::generic::lsh::vector::vector_compare::VectorCompare;
@@ -24,21 +22,6 @@ pub trait ExpressionValueLike {
     /// `instanceof LongExpressionValue` check in `ExpressionEvaluator.parseAsLong`, or `None` if
     /// this value is not a long-valued result.
     fn as_long(&self) -> Option<i64>;
-}
-
-/// Placeholder for `generic.expressions.ExpressionException`, needed by
-/// [`crate::generic::expressions::expression_evaluator::ExpressionEvaluator`].
-///
-/// The Java original is a trivial single-field checked exception, so this placeholder already
-/// carries its full behavior.
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
-#[error("{0}")]
-pub struct ExpressionException(pub String);
-
-impl ExpressionException {
-    pub fn new(message: impl Into<String>) -> Self {
-        Self(message.into())
-    }
 }
 
 /// Placeholder for `ghidra.generic.util.datastruct.SemisparseByteArray`, needed by

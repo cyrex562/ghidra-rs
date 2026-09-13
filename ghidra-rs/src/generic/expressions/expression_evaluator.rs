@@ -1,4 +1,5 @@
-use crate::generic::seam_stubs::{ExpressionException, ExpressionValueLike};
+use crate::generic::expressions::expression_exception::ExpressionException;
+use crate::generic::seam_stubs::ExpressionValueLike;
 
 /// Numeric-expression evaluator.
 ///
