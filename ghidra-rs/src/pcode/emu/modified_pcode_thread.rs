@@ -352,6 +352,21 @@ where
     S: PcodeExecutorState<T> + 'static,
     L: PcodeExecutorState<T> + 'static,
 {
+    fn erased_step_instruction(&mut self) {
+        <Self as PcodeThread<T>>::step_instruction(self);
+    }
+
+    fn erased_skip_instruction(&mut self) {
+        <Self as PcodeThread<T>>::skip_instruction(self);
+    }
+
+    fn erased_step_pcode_op(&mut self) {
+        <Self as PcodeThread<T>>::step_pcode_op(self);
+    }
+
+    fn erased_skip_pcode_op(&mut self) {
+        <Self as PcodeThread<T>>::skip_pcode_op(self);
+    }
 }
 
 #[allow(deprecated)]
@@ -1175,6 +1190,20 @@ mod tests {
 
         assert_eq!(0x1000, f.thread.get_counter().offset());
         assert_eq!(vec![0x1000], *f.modifier.initial_calls.lock().unwrap());
+    }
+
+    /// The type-erased `ErasedPcodeThread::erased_skip_instruction` (added for
+    /// [`crate::trace::model::time::schedule::step_kind::StepKind`]) must forward through
+    /// `ModifiedPcodeThread`'s wrapped `DefaultPcodeThread` exactly as `PcodeThread::skip_instruction`
+    /// does directly: advance the counter by the decoded instruction length.
+    #[test]
+    fn erased_skip_instruction_forwards_through_the_wrapped_thread() {
+        let mut f = fixture(0x400000);
+        let erased: &mut dyn ErasedPcodeThread = &mut f.thread;
+        erased.erased_skip_instruction();
+
+        // FixedLengthDecoder reports 4-byte instructions.
+        assert_eq!(0x400004, f.thread.get_counter().offset());
     }
 
     /// `ModifiedPcodeThread::new` wires a [`ModifierPostExecuteHook`] into the wrapped thread's

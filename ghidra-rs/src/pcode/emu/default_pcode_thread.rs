@@ -787,6 +787,21 @@ where
     S: PcodeExecutorState<T> + 'static,
     L: PcodeExecutorState<T> + 'static,
 {
+    fn erased_step_instruction(&mut self) {
+        <Self as PcodeThread<T>>::step_instruction(self);
+    }
+
+    fn erased_skip_instruction(&mut self) {
+        <Self as PcodeThread<T>>::skip_instruction(self);
+    }
+
+    fn erased_step_pcode_op(&mut self) {
+        <Self as PcodeThread<T>>::step_pcode_op(self);
+    }
+
+    fn erased_skip_pcode_op(&mut self) {
+        <Self as PcodeThread<T>>::skip_pcode_op(self);
+    }
 }
 
 impl<T: 'static, S, L> PcodeThread<T> for DefaultPcodeThread<T, S, L>
@@ -1679,6 +1694,20 @@ mod tests {
         assert_eq!(0x400004, f.thread.get_counter().offset());
         // It advanced via overrideCounter, so the state agrees.
         f.thread.re_initialize();
+        assert_eq!(0x400004, f.thread.get_counter().offset());
+    }
+
+    /// The type-erased `ErasedPcodeThread::erased_skip_instruction` (added for
+    /// [`crate::trace::model::time::schedule::step_kind::StepKind`]) must behave identically to
+    /// calling `PcodeThread::skip_instruction` directly -- it exists purely to route through a
+    /// `&mut dyn ErasedPcodeThread`, not to do anything different.
+    #[test]
+    fn erased_skip_instruction_matches_calling_skip_instruction_directly() {
+        let mut f = fixture(0x400000);
+        let erased: &mut dyn ErasedPcodeThread = &mut f.thread;
+        erased.erased_skip_instruction();
+
+        assert_eq!(vec![0x400000], *f.decoded.lock().unwrap());
         assert_eq!(0x400004, f.thread.get_counter().offset());
     }
 

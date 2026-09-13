@@ -13,8 +13,8 @@
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::generic::seam_stubs::SemisparseByteArray;
 use crate::generic::ulong_span;
+use crate::generic::util::datastruct::SemisparseByteArray;
 use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::program::model::address::{AddressRange, AddressSet, AddressSetView, AddressSpace};
@@ -78,7 +78,7 @@ impl BytesPcodeExecutorStateSpace {
         length: i32,
         cb: &C,
     ) {
-        self.bytes.put_data(offset as u64, val, src_offset, length);
+        self.bytes.put_data_at(offset as u64, val, src_offset, length);
         cb.data_written(piece, &self.space.address(offset), length, &val.to_vec());
     }
 

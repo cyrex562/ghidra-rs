@@ -40,7 +40,46 @@ use crate::program::model::listing::Instruction;
 /// implementation could satisfy such a bound. Java's threads are not safe to share across host
 /// threads either -- `run()` is documented as "donating the current Java thread" to one emulated
 /// thread.
-pub trait ErasedPcodeThread {}
+pub trait ErasedPcodeThread {
+    /// Type-erased [`PcodeThread::step_instruction`].
+    ///
+    /// These four `erased_*` methods exist for [`StepKind`](crate::trace::model::time::schedule::step_kind::StepKind)
+    /// (port of `ghidra.trace.model.time.schedule.StepKind`), whose `tick`/`skip` methods take a
+    /// `PcodeThread<?>` in Java -- a wildcard the type-erased `ErasedPcodeThread` stands in for
+    /// here (see the module docs above). Unlike the *other* T-parameterized methods on
+    /// [`PcodeThread`], `stepInstruction`/`skipInstruction`/`stepPcodeOp`/`skipPcodeOp` don't
+    /// mention `T` in their signature at all, so they can be re-declared directly on this
+    /// object-safe marker without losing anything: a blanket default here, overridden by whichever
+    /// concrete thread types actually have somewhere to route the call.
+    ///
+    /// The default panics, matching this crate's convention for call paths that reach a thread
+    /// type with no real stepping behavior to give (e.g. [`BytesPcodeThread`]'s current
+    /// marker-only state, or any test mock that never needs to be stepped). Types that do carry
+    /// real state -- [`DefaultPcodeThread`], [`ModifiedPcodeThread`] -- override these to forward
+    /// to their own [`PcodeThread::step_instruction`] etc.
+    ///
+    /// [`BytesPcodeThread`]: crate::pcode::emu::bytes_pcode_thread::BytesPcodeThread
+    /// [`DefaultPcodeThread`]: crate::pcode::emu::default_pcode_thread::DefaultPcodeThread
+    /// [`ModifiedPcodeThread`]: crate::pcode::emu::modified_pcode_thread::ModifiedPcodeThread
+    fn erased_step_instruction(&mut self) {
+        unimplemented!("this ErasedPcodeThread does not support type-erased stepping")
+    }
+
+    /// Type-erased [`PcodeThread::skip_instruction`]. See [`Self::erased_step_instruction`].
+    fn erased_skip_instruction(&mut self) {
+        unimplemented!("this ErasedPcodeThread does not support type-erased stepping")
+    }
+
+    /// Type-erased [`PcodeThread::step_pcode_op`]. See [`Self::erased_step_instruction`].
+    fn erased_step_pcode_op(&mut self) {
+        unimplemented!("this ErasedPcodeThread does not support type-erased stepping")
+    }
+
+    /// Type-erased [`PcodeThread::skip_pcode_op`]. See [`Self::erased_step_instruction`].
+    fn erased_skip_pcode_op(&mut self) {
+        unimplemented!("this ErasedPcodeThread does not support type-erased stepping")
+    }
+}
 
 /// An emulated thread of execution.
 ///

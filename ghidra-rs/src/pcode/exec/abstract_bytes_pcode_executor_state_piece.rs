@@ -207,7 +207,7 @@ where
 /// warning (uninitialized offsets simply read as zero, as they always do at the storage level).
 pub(crate) struct StateMemBuffer {
     pub(crate) address: Address,
-    pub(crate) source: Option<crate::generic::seam_stubs::SemisparseByteArray>,
+    pub(crate) source: Option<crate::generic::util::datastruct::SemisparseByteArray>,
     pub(crate) big_endian: bool,
 }
 

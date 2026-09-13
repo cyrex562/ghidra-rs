@@ -2,6 +2,7 @@ use super::constructor::Constructor;
 use super::decision::DecisionNode;
 use super::expression::PatternExpression;
 use super::SleighLanguage;
+use crate::app::plugin::processors::sleigh::sleigh_exception::SleighException;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::pcode::decoder::{Decoder, DecoderError};
 use crate::program::model::pcode::ids::*;
@@ -64,12 +65,30 @@ impl SymbolHeader {
     }
 }
 
+/// A user-defined pcode operation (`PcodeOp`).
+///
+/// Port of `ghidra.app.plugin.processors.sleigh.symbol.UseropSymbol`. This is implemented as a
+/// name and a unique id which is passed as the first parameter to a `PcodeOp` with the opcode
+/// `CALLOTHER`. Java's `UseropSymbol extends Symbol`; here the base fields live in the
+/// [`SymbolHeader`] `header` field per this module's composition convention.
+///
+/// Java's `decode` has a commented-out `decoder.openElement(ELEM_USEROP)` -- the element is
+/// actually opened by the caller ([`SymbolTable::decode`]'s dispatch loop) before `decode` is
+/// invoked, so this only reads the `index` attribute and closes the element.
 pub struct UseropSymbol {
     pub header: SymbolHeader,
     pub index: i32,
 }
 
 impl UseropSymbol {
+    /// Returns the unique id for this userop.
+    ///
+    /// Mirrors `UseropSymbol.getIndex()`.
+    pub fn get_index(&self) -> i32 {
+        self.index
+    }
+
+    /// Mirrors `UseropSymbol.decode(Decoder, SleighLanguage)`.
     pub fn decode(&mut self, decoder: &dyn Decoder) -> Result<(), DecoderError> {
         self.index = decoder.read_signed_integer_with_id(ATTRIB_INDEX)? as i32;
         decoder.close_element(ELEM_USEROP.id)?;
@@ -236,10 +255,69 @@ impl SleighSymbol {
     }
 }
 
+/// A single scope of symbol names for sleigh.
+///
+/// Port of `ghidra.app.plugin.processors.sleigh.symbol.SymbolScope`. Java's `SymbolScope` holds a
+/// `parent` reference to the next-most-global `SymbolScope`, a `tree: HashMap<String, Symbol>`
+/// mapping name to `Symbol`, and a unique scope `id`.
+///
+/// This crate's sleigh symbol family already stores symbols by id in a shared [`SymbolTable`]
+/// rather than as owned/reference-counted objects (see [`SleighSymbol`]), so this struct follows
+/// that same convention: `parent_id` and `symbols` hold ids instead of `SymbolScope`/`Symbol`
+/// references. [`Self::get_parent`], [`Self::add_symbol`], [`Self::find_symbol`], and
+/// [`Self::get_id`] reproduce the exact Java API and behavior -- including the fact that
+/// `addSymbol` mutates the map *before* throwing on a duplicate name (Java's `HashMap.put`
+/// replaces the old entry and returns it, then `SymbolScope.addSymbol` throws only after the
+/// replacement already happened; nothing rolls the map back). See
+/// `duplicate_add_symbol_replaces_entry_then_errors` below.
 pub struct SymbolScope {
     pub id: i32,
     pub parent_id: Option<i32>,
     pub symbols: HashMap<String, i32>,
+}
+
+impl SymbolScope {
+    /// Mirrors `SymbolScope(SymbolScope p, int i)`.
+    pub fn new(parent_id: Option<i32>, id: i32) -> Self {
+        Self {
+            id,
+            parent_id,
+            symbols: HashMap::new(),
+        }
+    }
+
+    /// Returns the next-most-global scope's id, or `None` for the global scope.
+    ///
+    /// Mirrors `SymbolScope.getParent()`.
+    pub fn get_parent(&self) -> Option<i32> {
+        self.parent_id
+    }
+
+    /// Adds `name` -> `id` to this scope.
+    ///
+    /// Mirrors `SymbolScope.addSymbol(Symbol a)`: throws (here, returns `Err`) a
+    /// `SleighException` if a symbol with that name already exists in this scope. As in Java,
+    /// the new entry replaces the old one in the map regardless of whether the duplicate error
+    /// is raised.
+    pub fn add_symbol(&mut self, name: String, id: i32) -> Result<(), SleighException> {
+        let previous = self.symbols.insert(name, id);
+        if previous.is_some() {
+            return Err(SleighException::with_message("Duplicate symbol"));
+        }
+        Ok(())
+    }
+
+    /// Looks up `nm` in this scope only (does not walk to the parent scope).
+    ///
+    /// Mirrors `SymbolScope.findSymbol(String nm)`.
+    pub fn find_symbol(&self, nm: &str) -> Option<i32> {
+        self.symbols.get(nm).copied()
+    }
+
+    /// Mirrors `SymbolScope.getId()`.
+    pub fn get_id(&self) -> i32 {
+        self.id
+    }
 }
 
 pub struct SymbolTable {
@@ -296,11 +374,7 @@ impl SymbolTable {
             let parent = decoder.read_unsigned_integer_with_id(ATTRIB_PARENT)? as i32;
 
             let parent_id = if parent == id { None } else { Some(parent) };
-            self.scopes.push(SymbolScope {
-                id,
-                parent_id,
-                symbols: HashMap::new(),
-            });
+            self.scopes.push(SymbolScope::new(parent_id, id));
             decoder.close_element(subel)?;
         }
 
@@ -352,7 +426,12 @@ impl SymbolTable {
                 self.symbols[id] = Some(sym);
             }
             if scope_id < self.scopes.len() {
-                self.scopes[scope_id].symbols.insert(header.name, header.id);
+                // Mirrors `table[sym.getScopeId()].addSymbol(sym);` in
+                // `SymbolTable.decodeSymbolHeader` -- throws (here, `DecoderError`) on a
+                // duplicate name within the same scope.
+                self.scopes[scope_id]
+                    .add_symbol(header.name, header.id)
+                    .map_err(|e| DecoderError::Generic(e.message().to_string()))?;
             }
         }
 
@@ -418,5 +497,135 @@ mod symbol_header_tests {
         assert_eq!(cloned.get_name(), h.get_name());
         assert_eq!(cloned.get_id(), h.get_id());
         assert_eq!(cloned.get_scope_id(), h.get_scope_id());
+    }
+}
+
+#[cfg(test)]
+mod userop_symbol_tests {
+    use super::*;
+    use crate::program::model::address::DefaultAddressFactory;
+    use crate::program::model::pcode::encoder::Encoder;
+    use crate::program::model::pcode::{PackedDecode, PackedEncode};
+
+    fn header(name: &str, id: i32, scope_id: i32) -> SymbolHeader {
+        SymbolHeader {
+            name: name.to_string(),
+            id,
+            scope_id,
+        }
+    }
+
+    #[test]
+    fn get_index_returns_the_stored_index() {
+        let sym = UseropSymbol {
+            header: header("break", 5, 0),
+            index: 3,
+        };
+        assert_eq!(sym.get_index(), 3);
+    }
+
+    #[test]
+    fn decode_reads_the_index_attribute_and_closes_the_already_open_element() {
+        // Mirrors the real caller: `SymbolTable::decode`'s dispatch loop opens the `ELEM_USEROP`
+        // element and reads `ATTRIB_ID` before calling `UseropSymbol::decode` -- Java's own
+        // `decoder.openElement(ELEM_USEROP)` call inside `UseropSymbol.decode` is commented out
+        // for exactly this reason (the element is already open by the time `decode` runs).
+        // Wrapped in an outer element, matching real usage: `UseropSymbol::decode` is only ever
+        // invoked from inside `SymbolTable::decode`'s `ELEM_SYMBOL_TABLE` element, never at the
+        // top of a standalone byte stream.
+        let mut encoder = PackedEncode::new(Vec::<u8>::new());
+        encoder.open_element(ELEM_SYMBOL_TABLE).unwrap();
+        encoder.open_element(ELEM_USEROP).unwrap();
+        encoder.write_unsigned_integer(ATTRIB_ID, 7).unwrap();
+        encoder.write_signed_integer(ATTRIB_INDEX, 42).unwrap();
+        encoder.close_element(ELEM_USEROP).unwrap();
+        encoder.close_element(ELEM_SYMBOL_TABLE).unwrap();
+
+        let factory = Arc::new(DefaultAddressFactory::new(vec![]));
+        let decoder = PackedDecode::new(factory, encoder.into_inner());
+
+        let outer = decoder.open_element().unwrap();
+        assert_eq!(outer, ELEM_SYMBOL_TABLE.id);
+
+        let el = decoder.open_element().unwrap();
+        assert_eq!(el, ELEM_USEROP.id);
+        assert_eq!(decoder.read_unsigned_integer_with_id(ATTRIB_ID).unwrap(), 7);
+
+        let mut sym = UseropSymbol {
+            header: header("myop", 7, 0),
+            index: 0,
+        };
+        sym.decode(&decoder).unwrap();
+        assert_eq!(sym.get_index(), 42);
+
+        // `decode` closed the `ELEM_USEROP` element itself; nothing left but the outer close.
+        assert_eq!(decoder.peek_element().unwrap(), 0);
+        decoder.close_element(outer).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod symbol_scope_tests {
+    use super::*;
+
+    #[test]
+    fn new_scope_has_no_symbols_and_the_given_id_and_parent() {
+        let scope = SymbolScope::new(Some(0), 1);
+        assert_eq!(scope.get_id(), 1);
+        assert_eq!(scope.get_parent(), Some(0));
+        assert_eq!(scope.find_symbol("anything"), None);
+    }
+
+    #[test]
+    fn global_scope_has_no_parent() {
+        let scope = SymbolScope::new(None, 0);
+        assert_eq!(scope.get_parent(), None);
+    }
+
+    #[test]
+    fn add_symbol_then_find_symbol_round_trips() {
+        let mut scope = SymbolScope::new(None, 0);
+        scope.add_symbol("r0".to_string(), 5).unwrap();
+        assert_eq!(scope.find_symbol("r0"), Some(5));
+    }
+
+    #[test]
+    fn find_symbol_only_looks_in_this_scope_not_the_parent() {
+        // Java's `SymbolScope.findSymbol` only consults its own `tree`; walking up to the parent
+        // is the caller's job (`SymbolTable.findSymbolInternal`), not `SymbolScope`'s.
+        let mut parent = SymbolScope::new(None, 0);
+        parent.add_symbol("global_sym".to_string(), 1).unwrap();
+        let child = SymbolScope::new(Some(0), 1);
+        assert_eq!(child.find_symbol("global_sym"), None);
+    }
+
+    #[test]
+    fn add_symbol_rejects_a_duplicate_name_in_the_same_scope() {
+        let mut scope = SymbolScope::new(None, 0);
+        scope.add_symbol("dup".to_string(), 1).unwrap();
+        let err = scope.add_symbol("dup".to_string(), 2).unwrap_err();
+        assert_eq!(err.message(), "Duplicate symbol");
+    }
+
+    #[test]
+    fn duplicate_add_symbol_replaces_entry_then_errors() {
+        // Faithful reproduction of a real Java quirk: `SymbolScope.addSymbol` does
+        // `tree.put(a.getName(), a)` *then* throws if the previous value was non-null. Java's
+        // `HashMap.put` has already installed the new value by the time the exception is raised,
+        // so the old symbol is gone even though the caller sees an error. `HashMap::insert` in
+        // Rust has the identical replace-then-return-old-value semantics, so this falls out
+        // naturally rather than needing special-cased rollback logic.
+        let mut scope = SymbolScope::new(None, 0);
+        scope.add_symbol("dup".to_string(), 1).unwrap();
+        let err = scope.add_symbol("dup".to_string(), 2).unwrap_err();
+        assert_eq!(err.message(), "Duplicate symbol");
+        // The second (colliding) id is what's actually stored, not the first.
+        assert_eq!(scope.find_symbol("dup"), Some(2));
+    }
+
+    #[test]
+    fn get_id_returns_the_scopes_unique_id() {
+        let scope = SymbolScope::new(None, 42);
+        assert_eq!(scope.get_id(), 42);
     }
 }
