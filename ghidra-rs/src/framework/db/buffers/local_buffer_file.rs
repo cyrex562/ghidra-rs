@@ -140,6 +140,13 @@ impl LocalBufferFile {
         Ok(())
     }
 
+    /// Returns the unique file ID associated with this buffer file. Mirrors the package-private
+    /// `LocalBufferFile.getFileId()`, which `VersionFile`'s write constructor relies on to record
+    /// the original/target buffer files it was built from.
+    pub fn get_file_id(&self) -> u64 {
+        self.file_id
+    }
+
     fn read_block_prefix(&self, index: i32) -> io::Result<(u8, i32)> {
         let mut file = &self.file;
         let offset = (index as u64 + 1) * self.block_size as u64;

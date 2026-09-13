@@ -99,6 +99,14 @@ impl DataBuffer {
     pub fn get_data_mut(&mut self) -> &mut [u8] {
         &mut self.data
     }
+
+    /// Set the ID associated with this buffer. Mirrors `DataBuffer.setId(int)` (`protected` in
+    /// Java). Used by callers (e.g. `VersionFile`) that recycle a single `DataBuffer` instance
+    /// while walking a chain of buffer-file blocks, re-tagging it with each block's index before
+    /// writing it out.
+    pub fn set_id(&mut self, id: i32) {
+        self.id = id;
+    }
 }
 
 impl Buffer for DataBuffer {
@@ -291,6 +299,14 @@ mod tests {
     fn test_put_byte_returns_minus_one_at_boundary() {
         let mut buf = make_buf(4);
         assert_eq!(buf.put_byte(4, 0xFF), -1);
+    }
+
+    #[test]
+    fn test_set_id_overwrites_id() {
+        let mut buf = DataBuffer::new(1, 4);
+        assert_eq!(buf.get_id(), 1);
+        buf.set_id(99);
+        assert_eq!(buf.get_id(), 99);
     }
 
     #[test]
