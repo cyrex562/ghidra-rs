@@ -82,6 +82,27 @@ impl LSHVectorFactoryBase {
         self.settings
     }
 
+    /// Direct access to the loaded weight table.
+    ///
+    /// Java's `weightFactory` field is `protected`, so a subclass (e.g.
+    /// `WeightedLSHCosineVectorFactory`) reads it directly rather than through a getter. This
+    /// exposes the same access point on the composed base. See [`Self::get_significance_scale`]
+    /// for the unloaded-factory panic/NPE parity note this shares.
+    pub fn weight_factory(&self) -> &WeightFactory {
+        self.weight_factory.as_ref().unwrap()
+    }
+
+    /// Direct access to the loaded IDF lookup table.
+    ///
+    /// See [`Self::weight_factory`]: mirrors reading Java's `protected IDFLookup idfLookup`
+    /// field directly. Unlike `weight_factory`, an *unloaded* factory's `idfLookup` is still
+    /// `Some` (populated with a fresh, empty `IdfLookup`) as soon as [`Self::set`] is called, and
+    /// remains `None` (panicking here) only before that -- matching Java's field, which is
+    /// `null` only before the first `set`/`readWeights` call.
+    pub fn idf_lookup(&self) -> &IdfLookup {
+        self.idf_lookup.as_ref().unwrap()
+    }
+
     /// Calculates a vector's significance as compared to itself, normalized for this factory's
     /// specific weight settings.
     ///

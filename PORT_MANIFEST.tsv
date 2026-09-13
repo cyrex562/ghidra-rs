@@ -583,7 +583,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/servic
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/MapRegionsBackgroundCommand.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service modules 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/MapSectionsBackgroundCommand.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service modules 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/MappingEntry.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service modules 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/ModuleRegionMatcher.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service modules 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/ModuleRegionMatcher.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service modules 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/PeekOpenedDomainObject.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service modules 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/ProgramModuleIndexer.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service modules 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/platform/DebuggerPlatformServicePlugin.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service platform 
@@ -8014,7 +8014,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/test/java/mdemangler/MDVS2013TestCon
 orig_src/Ghidra/Features/MicrosoftDmang/src/test/java/mdemangler/MDVS2015TestConfiguration.java	TODO	orig_src Ghidra Features MicrosoftDmang src test java mdemangler 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/plugin/core/analysis/ObjcMessageAnalyzer.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/plugin/core/analysis/ObjcTypeMetadataAnalyzer.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app plugin core analysis 
-orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/AbstractObjcTypeMetadata.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
+orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/AbstractObjcTypeMetadata.java	DONE	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethod.java	DONE	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethodList.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethodType.java	DONE	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
@@ -11545,12 +11545,12 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/Partition.java	DONE	
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/HashEntry.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/IDFLookup.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHCosineVector.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHCosineVectorAccum.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHCosineVectorAccum.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHVector.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHVectorFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/VectorCompare.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/WeightFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/WeightedLSHCosineVectorFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/WeightedLSHCosineVectorFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/random/SecureRandomFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic random
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/Algorithms.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMapSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
@@ -11634,7 +11634,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncFence.java	DON
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncLazyMap.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncLazyValue.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncPairingQueue.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncReference.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncReference.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncTimer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncUtils.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/DisposedException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async 
@@ -14963,7 +14963,7 @@ orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/JavaCom
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/JavaInvocationType.java	DONE	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/LdcMethods.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/PcodeInjectLibraryJava.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
-orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/PcodeOpEmitter.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
+orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/PcodeOpEmitter.java	DONE	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/ReferenceMethods.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/analyzers/AbstractJavaAnalyzer.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass analyzers 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/analyzers/JavaAnalyzer.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass analyzers 
