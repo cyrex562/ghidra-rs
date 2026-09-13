@@ -19,6 +19,21 @@ pub trait QCallback<I, R>: Send + Sync {
     fn process(&self, item: I, monitor: &dyn TaskMonitor) -> Result<R, anyhow::Error>;
 }
 
+/// Holds the result of processing an item in a [`ConcurrentQ`].
+///
+/// Port of `generic.concurrent.QResult<I, R>`.
+///
+/// Java's constructor unwraps a `Future<R>` inline (`future.get()`, catching whatever
+/// `Exception` that throws) and stores exactly one of a result or an error; `error instanceof
+/// CancellationException` is how Java distinguishes a cancelled item from a genuinely failed
+/// one. This crate's [`ConcurrentQ`] already resolves a task's outcome into a plain
+/// `Result<R, anyhow::Error>` (see [`concurrent_q::FutureTaskMonitor`](concurrent_q) and its
+/// callers) before a `QResult` is ever constructed, so rather than re-deriving cancellation from
+/// the error's dynamic type, the three outcomes are constructed explicitly via
+/// [`Self::new`]/[`Self::error`]/[`Self::cancelled`] and `is_cancelled` is tracked as its own
+/// field. The three constructors keep the fields in the same mutually-exclusive states Java's
+/// constructor would leave them in for each case, so every accessor below still matches Java's
+/// observable behavior.
 pub struct QResult<I, R> {
     pub item: I,
     pub result: Option<R>,
@@ -54,8 +69,103 @@ impl<I, R> QResult<I, R> {
         }
     }
 
+    /// Returns true if the item encountered an error while processing (and was not merely
+    /// cancelled).
+    ///
+    /// Port of `QResult.hasError()`.
     pub fn has_error(&self) -> bool {
         self.error.is_some()
+    }
+
+    /// Returns the item that was processed.
+    ///
+    /// Port of `QResult.getItem()`.
+    pub fn get_item(&self) -> &I {
+        &self.item
+    }
+
+    /// The result from processing the item, propagating any processing error the way Java's
+    /// declared-`throws Exception` method does.
+    ///
+    /// `Ok(None)` covers both "the item was cancelled" and "processing completed with no
+    /// result" (Java can likewise return a `null` result without throwing); `Ok(Some(_))` is a
+    /// successful result; `Err(_)` is a genuine (non-cancellation) processing error, mirroring
+    /// Java re-throwing the stored `Exception`.
+    ///
+    /// Port of `QResult.getResult()`.
+    pub fn get_result(&self) -> Result<Option<&R>, Arc<anyhow::Error>> {
+        if self.has_error() {
+            // `has_error()` is only true when `error` is `Some`.
+            return Err(self.error.clone().unwrap());
+        }
+        Ok(self.result.as_ref())
+    }
+
+    /// Returns any error encountered while processing the item, or `None` if it completed
+    /// successfully or was merely cancelled.
+    ///
+    /// Port of `QResult.getError()`.
+    pub fn get_error(&self) -> Option<&Arc<anyhow::Error>> {
+        if self.has_error() {
+            self.error.as_ref()
+        } else {
+            None
+        }
+    }
+
+    /// Returns true if the item's processing was cancelled.
+    ///
+    /// Port of `QResult.isCancelled()`.
+    pub fn is_cancelled(&self) -> bool {
+        self.is_cancelled
+    }
+}
+
+#[cfg(test)]
+mod q_result_tests {
+    use super::*;
+
+    #[test]
+    fn new_result_reports_success() {
+        let r = QResult::new("item", 42);
+        assert_eq!(*r.get_item(), "item");
+        assert!(!r.has_error());
+        assert!(!r.is_cancelled());
+        assert_eq!(r.get_result().unwrap(), Some(&42));
+        assert!(r.get_error().is_none());
+    }
+
+    #[test]
+    fn error_result_reports_has_error_and_propagates_it_from_get_result() {
+        let r: QResult<&str, i32> = QResult::error("item", anyhow::anyhow!("boom"));
+        assert!(r.has_error());
+        assert!(!r.is_cancelled());
+        assert!(r.result.is_none());
+
+        // Java: `getResult()` re-throws the stored exception rather than returning a value.
+        let err = r.get_result().unwrap_err();
+        assert_eq!(err.to_string(), "boom");
+
+        assert_eq!(r.get_error().unwrap().to_string(), "boom");
+    }
+
+    #[test]
+    fn cancelled_result_has_no_error_and_no_result() {
+        // Java: `hasError()` is `error != null && !(error instanceof CancellationException)`,
+        // so a cancelled item -- whose stored exception *is* the CancellationException --
+        // reports `hasError() == false`. `getResult()` therefore does not throw for a
+        // cancelled item; it just returns `null` (here, `Ok(None)`).
+        let r: QResult<&str, i32> = QResult::cancelled("item");
+        assert!(!r.has_error());
+        assert!(r.is_cancelled());
+        assert_eq!(r.get_result().unwrap(), None);
+        assert!(r.get_error().is_none());
+    }
+
+    #[test]
+    fn get_item_returns_the_exact_item() {
+        let r = QResult::new(vec![1, 2, 3], "ok");
+        assert_eq!(r.get_item(), &vec![1, 2, 3]);
     }
 }
 

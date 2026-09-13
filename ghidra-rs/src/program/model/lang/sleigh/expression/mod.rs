@@ -1,3 +1,4 @@
+use crate::app::plugin::processors::sleigh::sleigh_exception::SleighException;
 use crate::program::model::lang::sleigh::walker::ParserWalker;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::mem::MemoryAccessException;
@@ -46,6 +47,85 @@ impl PatternExpression {
             | Self::Div(l, r) => Some((l, r)),
             _ => None,
         }
+    }
+
+    /// The smallest value this expression can take on.
+    ///
+    /// Port of `ghidra.app.plugin.processors.sleigh.expression.PatternValue.minValue()`.
+    /// `PatternValue` is the abstract subclass of `PatternExpression` that `TokenField`,
+    /// `ContextField`, `ConstantValue`, `OperandValue`, `StartInstructionValue`,
+    /// `EndInstructionValue`, and `Next2InstructionValue` extend (i.e. every leaf value, but
+    /// none of the `BinaryExpression`/`UnaryExpression` operator subclasses) -- see those
+    /// classes' `extends` clauses under
+    /// `orig_src/.../ghidra/app/plugin/processors/sleigh/expression/`. Since this crate
+    /// flattens the whole `PatternExpression` hierarchy into one enum (see the type's own
+    /// docs/callers) rather than modeling `PatternValue` as a distinct type, that leaf-only
+    /// restriction is enforced here at runtime instead of compile time: calling `min_value`/
+    /// `max_value` on one of the operator variants returns `Err`, mirroring how Java simply
+    /// does not expose `minValue`/`maxValue` through a `PatternExpression`-typed reference to a
+    /// `BinaryExpression`/`UnaryExpression` (the methods aren't declared there at all).
+    ///
+    /// Per `PatternValue`'s own class comment, "None of the functionality is needed for the
+    /// disassembly interface (only for the compiler interface), but we preserve the structure" --
+    /// this crate has no SLEIGH compiler built on top of this package, so `min_value`/
+    /// `max_value` exist here purely for structural fidelity with the Java source.
+    pub fn min_value(&self) -> Result<i64, SleighException> {
+        match self {
+            Self::Constant(val) => Ok(*val),
+            Self::TokenField(_) | Self::ContextField(_) => Ok(0),
+            Self::StartInstruction | Self::EndInstruction | Self::Next2Instruction => Ok(0),
+            // Java: `OperandValue.minValue()` unconditionally throws
+            // `new SleighException("Operand used in pattern expression")`, regardless of the
+            // operand's index or constructor -- faithfully reproduced rather than computing a
+            // bound from the underlying symbol.
+            Self::Operand(_) => Err(SleighException::with_message(
+                "Operand used in pattern expression",
+            )),
+            _ => Err(SleighException::with_message(
+                "not a PatternValue: minValue/maxValue is only declared on PatternExpression's \
+                 leaf (non-operator) variants",
+            )),
+        }
+    }
+
+    /// The largest value this expression can take on.
+    ///
+    /// Port of `ghidra.app.plugin.processors.sleigh.expression.PatternValue.maxValue()`. See
+    /// [`Self::min_value`] for the shared design notes on why this is a fallible method on the
+    /// flattened enum rather than a method on a distinct `PatternValue` type.
+    pub fn max_value(&self) -> Result<i64, SleighException> {
+        match self {
+            Self::Constant(val) => Ok(*val),
+            Self::TokenField(f) => Ok(Self::field_max_value(f.bitstart, f.bitend)),
+            Self::ContextField(f) => Ok(Self::field_max_value(f.bitstart, f.bitend)),
+            Self::StartInstruction | Self::EndInstruction | Self::Next2Instruction => Ok(0),
+            Self::Operand(_) => Err(SleighException::with_message(
+                "Operand used in pattern expression",
+            )),
+            _ => Err(SleighException::with_message(
+                "not a PatternValue: minValue/maxValue is only declared on PatternExpression's \
+                 leaf (non-operator) variants",
+            )),
+        }
+    }
+
+    /// Shared bit-width-to-max-value computation used by both `TokenField.maxValue()` and
+    /// `ContextField.maxValue()` in Java, which are textually identical:
+    /// ```java
+    /// long res = -1;
+    /// res <<= (bitend - bitstart);
+    /// res <<= 1;
+    /// return ~res;
+    /// ```
+    /// Deliberately performed as two separate shifts (rather than one shift by
+    /// `bitend - bitstart + 1`), exactly as Java does, so a full 64-bit field
+    /// (`bitend - bitstart == 63`) shifts by 63 then 1 -- each individual shift amount stays
+    /// in-range -- rather than attempting a single out-of-range shift by 64.
+    fn field_max_value(bitstart: i32, bitend: i32) -> i64 {
+        let mut res: i64 = -1;
+        res <<= bitend - bitstart;
+        res <<= 1;
+        !res
     }
 
     pub fn get_value(&self, walker: &ParserWalker) -> Result<i64, MemoryAccessException> {
@@ -341,5 +421,126 @@ impl OperandValue {
             index,
             constructor_id,
         })
+    }
+}
+
+#[cfg(test)]
+mod pattern_value_tests {
+    use super::*;
+
+    // Port of `ghidra.app.plugin.processors.sleigh.expression.PatternValue`'s contract
+    // (`minValue()`/`maxValue()`), exercised here via `PatternExpression::min_value`/
+    // `max_value` since this crate flattens the hierarchy into one enum.
+
+    #[test]
+    fn constant_min_and_max_are_the_stored_value() {
+        // Java: `ConstantValue.minValue()`/`maxValue()` both just return `val`.
+        let expr = PatternExpression::Constant(42);
+        assert_eq!(expr.min_value().unwrap(), 42);
+        assert_eq!(expr.max_value().unwrap(), 42);
+
+        let negative = PatternExpression::Constant(-7);
+        assert_eq!(negative.min_value().unwrap(), -7);
+        assert_eq!(negative.max_value().unwrap(), -7);
+    }
+
+    #[test]
+    fn token_field_min_is_zero_max_is_bit_mask() {
+        // Java: `TokenField.minValue()` == 0; `maxValue()` == mask covering
+        // (bitend - bitstart + 1) bits.
+        let field = TokenField {
+            bigendian: true,
+            signbit: false,
+            bitstart: 0,
+            bitend: 7,
+            bytestart: 0,
+            byteend: 0,
+            shift: 0,
+        };
+        let expr = PatternExpression::TokenField(field);
+        assert_eq!(expr.min_value().unwrap(), 0);
+        assert_eq!(expr.max_value().unwrap(), 0xff);
+    }
+
+    #[test]
+    fn context_field_min_is_zero_max_is_bit_mask() {
+        let field = ContextField {
+            signbit: false,
+            bitstart: 4,
+            bitend: 11,
+            bytestart: 0,
+            byteend: 1,
+            shift: 0,
+        };
+        let expr = PatternExpression::ContextField(field);
+        assert_eq!(expr.min_value().unwrap(), 0);
+        // 8-bit-wide field (bits 4..=11) -> mask 0xff.
+        assert_eq!(expr.max_value().unwrap(), 0xff);
+    }
+
+    #[test]
+    fn full_64_bit_token_field_max_value_is_negative_one() {
+        // A field spanning the full 64 bits: `bitend - bitstart == 63`. Java computes this via
+        // two shifts of 63 then 1 (rather than one shift of 64), each individually in-range;
+        // starting from all-ones and shifting out every bit leaves 0, and `~0 == -1`. Ported
+        // faithfully as two separate shifts in `field_max_value` for the same reason.
+        let field = TokenField {
+            bigendian: true,
+            signbit: false,
+            bitstart: 0,
+            bitend: 63,
+            bytestart: 0,
+            byteend: 7,
+            shift: 0,
+        };
+        let expr = PatternExpression::TokenField(field);
+        assert_eq!(expr.max_value().unwrap(), -1);
+    }
+
+    #[test]
+    fn start_end_next2_instruction_min_and_max_are_zero() {
+        // Java: `StartInstructionValue`/`EndInstructionValue`/`Next2InstructionValue` all
+        // return 0 for both minValue() and maxValue().
+        for expr in [
+            PatternExpression::StartInstruction,
+            PatternExpression::EndInstruction,
+            PatternExpression::Next2Instruction,
+        ] {
+            assert_eq!(expr.min_value().unwrap(), 0);
+            assert_eq!(expr.max_value().unwrap(), 0);
+        }
+    }
+
+    #[test]
+    fn operand_value_min_and_max_both_error() {
+        // Java: `OperandValue.minValue()`/`maxValue()` unconditionally throw
+        // `new SleighException("Operand used in pattern expression")`. Faithfully reproduced as
+        // an `Err` rather than silently returning a placeholder bound.
+        let expr = PatternExpression::Operand(OperandValue {
+            index: 0,
+            constructor_id: 0,
+        });
+        let min_err = expr.min_value().unwrap_err();
+        let max_err = expr.max_value().unwrap_err();
+        assert_eq!(min_err.message(), "Operand used in pattern expression");
+        assert_eq!(max_err.message(), "Operand used in pattern expression");
+    }
+
+    #[test]
+    fn operator_variants_are_not_pattern_values() {
+        // Java: `PlusExpression` (a `BinaryExpression`) and `NotExpression` (a
+        // `UnaryExpression`) never extend `PatternValue`, so `minValue`/`maxValue` are not
+        // callable on a reference statically typed as one of those classes. The flattened enum
+        // can't express that at compile time, so it's enforced here at runtime instead.
+        let plus = PatternExpression::Plus(
+            Box::new(PatternExpression::Constant(1)),
+            Box::new(PatternExpression::Constant(2)),
+        );
+        assert!(plus.min_value().is_err());
+        assert!(plus.max_value().is_err());
+
+        let not = PatternExpression::Not(Box::new(PatternExpression::Constant(1)));
+        assert!(not.min_value().is_err());
+        assert!(not.max_value().is_err());
     }
 }
