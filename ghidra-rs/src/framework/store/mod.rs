@@ -6,6 +6,7 @@ pub mod db;
 pub mod exclusive_checkout_exception;
 pub mod file_id_factory;
 pub mod file_system;
+pub mod file_system_event_manager;
 pub mod file_system_initializer;
 pub mod file_system_listener;
 pub mod file_system_synchronizer;
@@ -28,6 +29,7 @@ pub use file_id_factory::FileIDFactory;
 pub use file_system::{
     normalize_path, FileSystem, FileSystemCreateError, FileSystemError, SEPARATOR, SEPARATOR_CHAR,
 };
+pub use file_system_event_manager::{FileSystemEventManager, ListenerHandle};
 pub use file_system_initializer::FileSystemInitializer;
 pub use file_system_listener::FileSystemListener;
 pub use file_system_synchronizer::FileSystemSynchronizer;
