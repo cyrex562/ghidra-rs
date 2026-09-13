@@ -2066,7 +2066,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/AbstractCreateSt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateArrayCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd data 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateArrayInStructureCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd data 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateDataBackgroundCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd data 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateDataCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd data 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateDataCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd data 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateDataInStructureBackgroundCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd data 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateDataInStructureCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd data 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateStringCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd data 
