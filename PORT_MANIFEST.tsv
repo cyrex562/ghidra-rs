@@ -1062,7 +1062,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/En
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/InstructionAdapterFromPrototype.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/MemoryAdapter.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/MethodProtector.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/OverlappingObjectIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/OverlappingObjectIterator.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeManager.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeRecord.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceEvent.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
@@ -3314,7 +3314,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/ViewS
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/DisconnectedSymbolTreeProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/EditExternalLocationDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/EditExternalLocationPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolCategory.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolCategory.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolGTree.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolGTreeDragNDropHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolTreeActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
@@ -11400,7 +11400,7 @@ orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/Remot
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RemoteRepositoryServerHandle.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryChangeEvent.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryHandle.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote
-orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryItem.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
+orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryItem.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryServerHandle.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SSHSignatureCallback.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SignatureCallback.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote
@@ -11728,10 +11728,10 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/AbstractW
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Accumulator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/AccumulatorSizeException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Array.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/BitTree.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/BooleanArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ByteArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ByteArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/BitTree.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/BooleanArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ByteArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ByteArrayArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CallbackAccumulator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CaseInsensitiveDuplicateStringComparator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CopyOnReadWeakSet.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
@@ -11740,16 +11740,16 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Counter.j
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/DataStructureErrorHandlerFactory.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/DataTable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/DoubleArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/DoubleArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/DoubleArrayArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/FixedSizeHashMap.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/FixedSizeStack.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/FloatArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/FloatArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/FloatArrayArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/FullKeySet.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IndexRange.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IndexRangeIterator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArrayArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArrayList.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntIndexManager.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntIntHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
@@ -11763,8 +11763,8 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListAccum
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerErrorHandler.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerErrorHandlerFactory.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongArrayArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongArrayList.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongComparator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongDoubleHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
@@ -11774,10 +11774,10 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongLongH
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongObjectHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ManagedDataTable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/NoSuchIndexException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectCache.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectIntHashtable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectKeyIndexer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectKeyIndexer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectLongHashtable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectRangeMap.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectValueRange.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
@@ -11792,8 +11792,8 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackL
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackTree.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulatorWrapper.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArrayArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortKeyIndexer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortKeySet.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortListIndexer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
@@ -11804,7 +11804,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SizeRestr
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SoftCacheMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SortedRangeList.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Stack.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringArray.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringIntHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringKeyIndexer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
@@ -14401,7 +14401,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/ut
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/AddressSetPropertyMap.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/CodeUnitInsertionException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/CompositeDataTypeElementInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DataTypeInfo.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DataTypeInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DefaultIntPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DefaultPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DeletedException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 

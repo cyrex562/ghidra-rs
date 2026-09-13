@@ -6,6 +6,7 @@ pub mod remote_repository_handle;
 pub mod remote_repository_server_handle;
 pub mod repository_change_event;
 pub mod repository_handle;
+pub mod repository_item;
 pub mod repository_server_handle;
 pub mod rmi_server_port_factory;
 pub mod security;
@@ -29,6 +30,7 @@ pub use remote_repository_handle::RemoteRepositoryHandle;
 pub use remote_repository_server_handle::RemoteRepositoryServerHandle;
 pub use repository_change_event::{EventType, RepositoryChangeEvent};
 pub use repository_handle::{client_check_period, RepositoryHandle, RepositoryNameError};
+pub use repository_item::{RepositoryItem, DATABASE, FILE, SERIAL_VERSION_UID, TEXT_DATA_FILE};
 pub use repository_server_handle::RepositoryServerHandle;
 pub use rmi_server_port_factory::RmiServerPortFactory;
 pub use security::{
