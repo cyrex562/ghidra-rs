@@ -3,8 +3,8 @@
 //! A query that requests a BSim database either drop or build its main vector index.
 
 use crate::feature::bsim::query::lsh_exception::LshException;
-use crate::feature::bsim::query::protocol::QueryResponseRecord;
-use crate::feature::seam_stubs::{ResponseAdjustIndex, LSHVectorFactory};
+use crate::feature::bsim::query::protocol::{QueryResponseRecord, ResponseAdjustIndex};
+use crate::feature::seam_stubs::LSHVectorFactory;
 use crate::util::seam_stubs::XmlPullParser;
 use crate::util::xml::spec_xml_utils;
 use std::io::Write;
@@ -17,7 +17,7 @@ pub struct AdjustVectorIndex {
     pub do_rebuild: bool,
 
     /// The response object (same as `response` in the parent BSimQuery).
-    pub adjust_response: Option<Box<dyn ResponseAdjustIndex>>,
+    pub adjust_response: Option<Box<ResponseAdjustIndex>>,
 
     base: crate::feature::bsim::query::protocol::QueryResponseRecordBase,
 }
@@ -39,9 +39,7 @@ impl AdjustVectorIndex {
     /// Java: `buildResponseTemplate()`.
     pub fn build_response_template(&mut self) {
         if self.adjust_response.is_none() {
-            // In the real implementation, ResponseAdjustIndex would be a concrete type
-            // For now, this is a stub that would create a ResponseAdjustIndex instance
-            // self.adjust_response = Some(Box::new(ResponseAdjustIndex::new()));
+            self.adjust_response = Some(Box::new(ResponseAdjustIndex::new()));
         }
     }
 
@@ -155,5 +153,18 @@ mod tests {
 
         let xml_str = String::from_utf8(buffer).unwrap();
         assert!(xml_str.contains("rebuild=\"false\""));
+    }
+
+    #[test]
+    fn test_adjust_vector_index_build_response_template_constructs_response() {
+        let mut query = AdjustVectorIndex::new();
+        assert!(query.adjust_response.is_none());
+        query.build_response_template();
+        assert!(query.adjust_response.is_some());
+
+        query.adjust_response.as_mut().unwrap().success = true;
+        // Calling again must not clobber an existing response.
+        query.build_response_template();
+        assert!(query.adjust_response.as_ref().unwrap().success);
     }
 }

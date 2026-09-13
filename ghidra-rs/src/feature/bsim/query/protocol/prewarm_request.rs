@@ -4,8 +4,8 @@
 //! return faster from a server that has just been restarted.
 
 use crate::feature::bsim::query::lsh_exception::LshException;
-use crate::feature::bsim::query::protocol::QueryResponseRecord;
-use crate::feature::seam_stubs::{LSHVectorFactory, ResponsePrewarm};
+use crate::feature::bsim::query::protocol::{QueryResponseRecord, ResponsePrewarm};
+use crate::feature::seam_stubs::LSHVectorFactory;
 use crate::util::seam_stubs::XmlPullParser;
 use std::io::Write;
 
@@ -23,7 +23,7 @@ pub struct PrewarmRequest {
     pub vector_table_config: i32,
 
     /// The response object (same as `response` in the parent BSimQuery).
-    pub prewarmresponse: Option<Box<dyn ResponsePrewarm>>,
+    pub prewarmresponse: Option<Box<ResponsePrewarm>>,
 
     base: crate::feature::bsim::query::protocol::QueryResponseRecordBase,
 }
@@ -52,9 +52,7 @@ impl PrewarmRequest {
     /// Java: `buildResponseTemplate()`.
     pub fn build_response_template(&mut self) {
         if self.prewarmresponse.is_none() {
-            // In the real implementation, ResponsePrewarm would be a concrete type
-            // For now, this is a stub that would create a ResponsePrewarm instance
-            // self.prewarmresponse = Some(Box::new(ResponsePrewarm::new()));
+            self.prewarmresponse = Some(Box::new(ResponsePrewarm::new()));
         }
     }
 
@@ -150,8 +148,11 @@ mod tests {
         let mut req = PrewarmRequest::new();
         assert!(req.prewarmresponse.is_none());
         req.build_response_template();
-        // Still none since ResponsePrewarm is not implemented yet.
-        assert!(req.prewarmresponse.is_none());
+        assert!(req.prewarmresponse.is_some());
+        req.prewarmresponse.as_mut().unwrap().block_count = 5;
+        // Calling again must not clobber an existing response.
+        req.build_response_template();
+        assert_eq!(req.prewarmresponse.as_ref().unwrap().block_count, 5);
     }
 
     #[test]

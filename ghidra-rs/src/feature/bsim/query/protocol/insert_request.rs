@@ -7,7 +7,8 @@ use std::io::{self, Write};
 
 use crate::feature::bsim::query::description::DescriptionManager;
 use crate::feature::bsim::query::lsh_exception::LshException;
-use crate::feature::seam_stubs::{LSHVectorFactory, ResponseInsert};
+use crate::feature::bsim::query::protocol::ResponseInsert;
+use crate::feature::seam_stubs::LSHVectorFactory;
 use crate::util::seam_stubs::XmlPullParser;
 
 /// Request that specific executables and functions be inserted into a BSim database.
@@ -24,7 +25,7 @@ pub struct InsertRequest {
     pub path_override: Option<String>,
 
     /// The response object (same as `response` in the parent BSimQuery).
-    pub insertresponse: Option<Box<dyn ResponseInsert>>,
+    pub insertresponse: Option<Box<ResponseInsert>>,
 
     name: &'static str,
 }
@@ -55,8 +56,7 @@ impl InsertRequest {
     /// Java: `buildResponseTemplate()`.
     pub fn build_response_template(&mut self) {
         if self.insertresponse.is_none() {
-            // In the real implementation, ResponseInsert would be a concrete type:
-            // self.insertresponse = Some(Box::new(ResponseInsert::new()));
+            self.insertresponse = Some(Box::new(ResponseInsert::new()));
         }
     }
 
@@ -210,7 +210,10 @@ mod tests {
         let mut req = InsertRequest::new();
         assert!(req.insertresponse.is_none());
         req.build_response_template();
-        // Still none since ResponseInsert is not implemented yet.
-        assert!(req.insertresponse.is_none());
+        assert!(req.insertresponse.is_some());
+        req.insertresponse.as_mut().unwrap().numexe = 3;
+        // Calling again must not clobber an existing response.
+        req.build_response_template();
+        assert_eq!(req.insertresponse.as_ref().unwrap().numexe, 3);
     }
 }

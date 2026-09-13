@@ -6,8 +6,8 @@
 //! data in transit to the server.
 
 use crate::feature::bsim::query::lsh_exception::LshException;
-use crate::feature::bsim::query::protocol::QueryResponseRecord;
-use crate::feature::seam_stubs::{ResponsePassword, LSHVectorFactory};
+use crate::feature::bsim::query::protocol::{QueryResponseRecord, ResponsePassword};
+use crate::feature::seam_stubs::LSHVectorFactory;
 use crate::util::seam_stubs::XmlPullParser;
 use std::io::Write;
 
@@ -16,7 +16,7 @@ use std::io::Write;
 /// Java: `PasswordChange extends BSimQuery<ResponsePassword>`.
 pub struct PasswordChange {
     /// The response object (same as `response` in the parent BSimQuery).
-    pub password_response: Option<Box<dyn ResponsePassword>>,
+    pub password_response: Option<Box<ResponsePassword>>,
 
     /// Identifier for user whose password should be changed.
     pub username: Option<String>,
@@ -55,9 +55,7 @@ impl PasswordChange {
     /// Java: `buildResponseTemplate()`.
     pub fn build_response_template(&mut self) {
         if self.password_response.is_none() {
-            // In the real implementation, ResponsePassword would be a concrete type
-            // For now, this is a stub that would create a ResponsePassword instance
-            // self.password_response = Some(Box::new(ResponsePassword::new()));
+            self.password_response = Some(Box::new(ResponsePassword::new()));
         }
     }
 
@@ -218,8 +216,11 @@ mod tests {
 
         query.build_response_template();
 
-        // Still none since ResponsePassword is not implemented yet
-        assert!(query.password_response.is_none());
+        assert!(query.password_response.is_some());
+        query.password_response.as_mut().unwrap().change_successful = true;
+        // Calling again must not clobber an existing response.
+        query.build_response_template();
+        assert!(query.password_response.as_ref().unwrap().change_successful);
     }
 
     #[test]
