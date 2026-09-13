@@ -31,11 +31,12 @@ use crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::format::dwarf::debug_info_entry::DebugInfoEntry;
 use crate::format::dwarf::dwarf_exception::DWARFException;
+use crate::format::dwarf::dwarf_location::DWARFLocation;
 use crate::format::dwarf::dwarf_location_list::DWARFLocationList;
 use crate::format::dwarf::dwarf_range::DWARFRange;
 use crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator;
 use crate::format::seam_stubs::{
-    DIEContainer, DWARFBlobAttribute, DWARFBooleanAttribute, DWARFCompilationUnit, DWARFLocation,
+    DIEContainer, DWARFBlobAttribute, DWARFBooleanAttribute, DWARFCompilationUnit,
     DWARFNumericAttribute, DWARFProgram, DWARFRangeList, DWARFStringAttribute, DWARFTag,
 };
 use crate::util::msg::Msg;

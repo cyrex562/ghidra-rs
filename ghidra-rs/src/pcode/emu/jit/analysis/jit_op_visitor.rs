@@ -2,10 +2,10 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.analysis.JitOpVisitor`.
 
-use crate::pcode::emu::jit::op::{JitBinOp, JitPhiOp, JitUnOp};
+use crate::pcode::emu::jit::op::{JitBinOp, JitNopOp, JitPhiOp, JitUnOp};
 use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::var::{JitDirectMemoryVar, JitVal, JitVar};
-use crate::pcode::seam_stubs::{JitBranchIndOp, JitBranchOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherMissingOp, JitCallOtherOp, JitCatenateOp, JitConstVal, JitFailVal, JitIndirectMemoryVar, JitInputVar, JitLoadOp, JitMissingVar, JitNopOp, JitStoreOp, JitSynthSubPieceOp, JitUnimplementedOp, };
+use crate::pcode::seam_stubs::{JitBranchIndOp, JitBranchOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherMissingOp, JitCallOtherOp, JitCatenateOp, JitConstVal, JitFailVal, JitIndirectMemoryVar, JitInputVar, JitLoadOp, JitMissingVar, JitStoreOp, JitSynthSubPieceOp, JitUnimplementedOp, };
 use crate::pcode::emu::jit::op::JitOp;
 
 /// A visitor for traversing the use-def graph.
@@ -239,8 +239,16 @@ mod tests {
     // hard-coded case.
     #[test]
     fn visit_op_dispatches_nop_op() {
+        use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber};
+
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+        let addr = Address::new(space, 0);
+        let seqnum = SequenceNumber::new(addr, 0);
+        let op = PcodeOp::new(OpCode::Unimplemented, seqnum, vec![], None);
+        let nop = JitNopOp::new(op);
+
         let mut visitor = RecordingVisitor::default();
-        visitor.visit_op(&JitNopOp as &dyn JitOp);
+        visitor.visit_op(&nop as &dyn JitOp);
 
         assert_eq!(visitor.nop_ops.lock().unwrap().len(), 1);
     }

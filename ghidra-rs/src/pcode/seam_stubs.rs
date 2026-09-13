@@ -1816,29 +1816,6 @@ impl JitOp for JitUnimplementedOp {
     }
 }
 
-/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitNopOp`, referenced by
-/// [`JitOpVisitor::visit_nop_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_nop_op).
-/// No fields: nothing in this crate yet inspects a nop op's contents. Replace with the real port
-/// when `JitNopOp.java` is ported.
-pub struct JitNopOp;
-
-impl JitOp for JitNopOp {
-    fn type_for(&self, _position: i32) -> JitTypeBehavior {
-        unimplemented!("JitNopOp not yet ported")
-    }
-
-    fn link(&self) {}
-
-    fn unlink(&self) {}
-
-    fn accept(
-        &self,
-        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
-    ) {
-        visitor.visit_nop_op(self);
-    }
-}
-
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.var.JitConstVal`, referenced by
 /// [`JitOpVisitor::visit_const_val`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_const_val)
 /// and [`JitVal::constant`](crate::pcode::emu::jit::var::jit_val::constant).

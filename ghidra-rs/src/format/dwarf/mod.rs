@@ -21,6 +21,7 @@ pub mod dwarf_import_options;
 pub mod dwarf_inline;
 pub mod dwarf_indirect_table_header;
 pub mod dwarf_length_value;
+pub mod dwarf_location;
 pub mod dwarf_location_list;
 pub mod dwarf_location_list_header;
 pub mod dwarf_location_list_entry;

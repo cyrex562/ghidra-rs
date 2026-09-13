@@ -4,10 +4,11 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
+use crate::format::dwarf::dwarf_location::DWARFLocation;
 use crate::format::dwarf::dwarf_location_list_entry::DWARFLocationListEntry;
 use crate::format::dwarf::dwarf_range::DWARFRange;
 use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
-use crate::format::seam_stubs::{DWARFCompilationUnit, DWARFLocation};
+use crate::format::seam_stubs::DWARFCompilationUnit;
 
 /// A collection of [`DWARFLocation`] elements, each of which represents the location of an item
 /// that is only valid for a certain range of program-counter locations.

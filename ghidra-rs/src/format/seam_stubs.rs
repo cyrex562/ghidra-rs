@@ -16,6 +16,7 @@ use crate::format::dwarf::dwarf_abbreviation::DWARFAbbreviation;
 use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
 use crate::format::dwarf::external::object_type::ObjectType;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
+use crate::format::dwarf::dwarf_location::DWARFLocation;
 use crate::format::dwarf::dwarf_range::DWARFRange;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::golang::go_ver::GoVer;
@@ -4004,65 +4005,6 @@ pub trait DIEContainer: Send + Sync {
             std::io::ErrorKind::Unsupported,
             "DIEContainer.getRangeList is not yet implemented (DIEContainer has not been ported)",
         ))
-    }
-}
-
-/// Placeholder for the unported Java type `DWARFLocation`, referenced by
-/// [`DWARFLocationList`](crate::format::dwarf::dwarf_location_list::DWARFLocationList).
-/// `DWARFLocation` is a concrete Java class (not an interface), so this is modeled as a plain
-/// struct rather than a trait object, per the ported type's convention. Only the constructors and
-/// accessors `DWARFLocationList` needs are included; `getOffset`/`getResolvedValue`/
-/// `setResolvedValue` are not modeled since nothing in-scope calls them yet.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DWARFLocation {
-    /// `None` mirrors a `null` `addressRange`, which Java treats as "valid for any pc"
-    /// (`isWildcard()`).
-    address_range: Option<DWARFRange>,
-    expr: Vec<u8>,
-}
-
-impl DWARFLocation {
-    /// Mirrors `DWARFLocation(DWARFRange, byte[])`.
-    pub fn new(address_range: DWARFRange, expr: Vec<u8>) -> Self {
-        DWARFLocation { address_range: Some(address_range), expr }
-    }
-
-    /// Mirrors `DWARFLocation(long, long, byte[])`.
-    pub fn from_bounds(start: u64, end: u64, expr: Vec<u8>) -> Self {
-        DWARFLocation::new(DWARFRange::new(start, end), expr)
-    }
-
-    /// Mirrors `DWARFLocation(null, expr)`, used for wildcard ranges (valid for any pc).
-    pub fn wildcard(expr: Vec<u8>) -> Self {
-        DWARFLocation { address_range: None, expr }
-    }
-
-    /// Mirrors `DWARFLocation.getRange()`.
-    pub fn get_range(&self) -> Option<DWARFRange> {
-        self.address_range
-    }
-
-    /// Mirrors `DWARFLocation.getExpr()`.
-    pub fn get_expr(&self) -> &[u8] {
-        &self.expr
-    }
-
-    /// Mirrors `DWARFLocation.isWildcard()`.
-    pub fn is_wildcard(&self) -> bool {
-        self.address_range.is_none()
-    }
-
-    /// Mirrors `DWARFLocation.contains(long)`.
-    pub fn contains(&self, addr: u64) -> bool {
-        self.address_range.map_or(true, |range| range.contains(addr))
-    }
-}
-
-impl std::fmt::Display for DWARFLocation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let range_str =
-            self.address_range.map(|r| r.to_string()).unwrap_or_else(|| "null".to_string());
-        write!(f, "DWARFLocation: range: {}, expr: {:?}", range_str, self.expr)
     }
 }
 
