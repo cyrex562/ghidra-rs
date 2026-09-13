@@ -48,8 +48,8 @@ mod tests {
             &self,
             _name: &str,
             _context: &dyn std::any::Any,
-        ) -> Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider> {
-            Box::new(MockProvider)
+        ) -> Option<Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider>> {
+            Some(Box::new(MockProvider))
         }
     }
 

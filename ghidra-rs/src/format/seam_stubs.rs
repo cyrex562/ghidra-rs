@@ -363,7 +363,9 @@ pub trait Throwable: Send + Sync {}
 pub trait Class: Send + Sync {}
 
 /// Placeholder for `ghidra.app.util.bin.format.ne.Resource`, referenced by
-/// [`ResourceType`] before the real class is ported. `Resource` is a concrete Java class (with
+/// [`ResourceType`](crate::format::ne::resource_type::ResourceType) and
+/// [`ResourceStringTable`](crate::format::ne::resource_string_table::ResourceStringTable) before
+/// the real class is ported. `Resource` is a concrete Java class (with
 /// subclasses elsewhere in the tree, but none of them change how many bytes the constructor
 /// consumes), so it is modeled here as a concrete struct rather than a trait object. The Java
 /// constructor takes a
@@ -462,131 +464,6 @@ impl Resource {
     pub fn get_file_length_shifted(&self) -> i32 {
         let shift = (self.alignment_shift_count as u16) as u32;
         ((self.file_length as u16) as i32).wrapping_shl(shift)
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.ne.ResourceType`, referenced by
-/// [`ResourceTable`](crate::format::ne::resource_table::ResourceTable) before the real class is
-/// ported. `ResourceType` is a concrete Java class (not an interface), so it is modeled here as a
-/// concrete struct rather than a trait object, consistent with [`SegmentRelocation`] and
-/// [`EntryPoint`] above. The Java constructor takes a back-reference to the owning
-/// `ResourceTable` solely to forward it into each `Resource` it constructs; this stub takes the
-/// alignment shift count directly instead (see [`Resource`] above), avoiding an ownership cycle
-/// with `ResourceTable`.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ResourceType {
-    type_id: i16,
-    count: i16,
-    reserved: i32,
-    resources: Vec<Resource>,
-}
-
-impl ResourceType {
-    //0x00 is not defined...?
-    /// Constant indicating cursor resource type.
-    pub const RT_CURSOR: i16 = 0x01;
-    /// Constant indicating bitmap resource type.
-    pub const RT_BITMAP: i16 = 0x02;
-    /// Constant indicating icon resource type.
-    pub const RT_ICON: i16 = 0x03;
-    /// Constant indicating menu resource type.
-    pub const RT_MENU: i16 = 0x04;
-    /// Constant indicating dialog resource type.
-    pub const RT_DIALOG: i16 = 0x05;
-    /// Constant indicating string resource type.
-    pub const RT_STRING: i16 = 0x06;
-    /// Constant indicating font directory resource type.
-    pub const RT_FONTDIR: i16 = 0x07;
-    /// Constant indicating font resource type.
-    pub const RT_FONT: i16 = 0x08;
-    /// Constant indicating an accelerator resource type.
-    pub const RT_ACCELERATOR: i16 = 0x09;
-    /// Constant indicating RC data resource type.
-    pub const RT_RCDATA: i16 = 0x0a;
-    /// Constant indicating message table resource type.
-    pub const RT_MESSAGETABLE: i16 = 0x0b;
-    /// Constant indicating cursor group resource type.
-    pub const RT_GROUP_CURSOR: i16 = 0x0c;
-    //0x0d is not defined...?
-    /// Constant indicating icon group resource type.
-    pub const RT_GROUP_ICON: i16 = 0x0e;
-    //0x0f is not defined...?
-    /// Constant indicating version resource type.
-    pub const RT_VERSION: i16 = 0x10;
-
-    pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
-        alignment_shift_count: i16,
-    ) -> std::io::Result<Self> {
-        let type_id = reader.read_next_short()?;
-        if type_id == 0 {
-            // not a valid resource type...
-            return Ok(ResourceType {
-                type_id,
-                count: 0,
-                reserved: 0,
-                resources: Vec::new(),
-            });
-        }
-
-        let count = reader.read_next_short()?;
-        let reserved = reader.read_next_int()?;
-
-        let count_int = (count as u16) as usize;
-        let mut resources = Vec::with_capacity(count_int);
-        for _ in 0..count_int {
-            resources.push(Resource::new(reader, alignment_shift_count)?);
-        }
-
-        Ok(ResourceType {
-            type_id,
-            count,
-            reserved,
-            resources,
-        })
-    }
-
-    pub fn get_type_id(&self) -> i16 {
-        self.type_id
-    }
-
-    pub fn get_count(&self) -> i16 {
-        self.count
-    }
-
-    pub fn get_reserved(&self) -> i32 {
-        self.reserved
-    }
-
-    pub fn get_resources(&self) -> &[Resource] {
-        &self.resources
-    }
-}
-
-impl std::fmt::Display for ResourceType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if (self.type_id & 0x8000u16 as i16) == 0 {
-            return write!(f, "UnknownResourceType_{}", self.type_id);
-        }
-        let idx = self.type_id & 0x7fff;
-        let name = match idx {
-            Self::RT_CURSOR => "Cursor",
-            Self::RT_BITMAP => "Bitmap",
-            Self::RT_ICON => "Icon",
-            Self::RT_MENU => "Menu",
-            Self::RT_DIALOG => "Dialog Box",
-            Self::RT_STRING => "String Table",
-            Self::RT_FONTDIR => "Font Directory",
-            Self::RT_FONT => "Font",
-            Self::RT_ACCELERATOR => "Accelerator Table",
-            Self::RT_RCDATA => "Resource Data",
-            Self::RT_MESSAGETABLE => "Message Table",
-            Self::RT_GROUP_CURSOR => "Cursor Directory",
-            Self::RT_GROUP_ICON => "Icon Directory",
-            Self::RT_VERSION => "Version Information",
-            _ => return write!(f, "Unknown_{}", idx),
-        };
-        f.write_str(name)
     }
 }
 
@@ -2479,105 +2356,6 @@ impl ImportedLibrary {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pef.ImportedSymbol`, referenced by
-/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
-/// class is ported. Parses the packed 4-byte symbol-class/name-offset word; the symbol name
-/// (read via an absolute offset into the loader string table) is left for the real port.
-pub struct ImportedSymbol {
-    symbol_class: i32,
-    symbol_name_offset: i32,
-}
-
-impl ImportedSymbol {
-    /// Port of `ImportedSymbol(BinaryReader, LoaderInfoHeader)`, minus the name lookup.
-    pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
-        _loader: &crate::format::pef::loader_info_header::LoaderInfoHeader,
-    ) -> std::io::Result<Self> {
-        let value = reader.read_next_int()?;
-        Ok(ImportedSymbol {
-            symbol_class: ((value as u32) >> 24) as i32,
-            symbol_name_offset: value & 0x00ff_ffff,
-        })
-    }
-
-    /// `ImportedSymbol.getSymbolClass()`'s underlying raw class byte (before masking to the low
-    /// nibble that `SymbolClass.get` expects).
-    pub fn symbol_class(&self) -> i32 {
-        self.symbol_class
-    }
-    /// `ImportedSymbol.getSymbolNameOffset()`.
-    pub fn symbol_name_offset(&self) -> i32 {
-        self.symbol_name_offset
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.pef.ExportedSymbolHashSlot`, referenced by
-/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
-/// class is ported.
-pub struct ExportedSymbolHashSlot {
-    symbol_count: i32,
-    index_of_first_export_key: i32,
-}
-
-impl ExportedSymbolHashSlot {
-    /// Port of `ExportedSymbolHashSlot(BinaryReader)`.
-    pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
-    ) -> std::io::Result<Self> {
-        let count_and_start = reader.read_next_int()?;
-        Ok(ExportedSymbolHashSlot {
-            symbol_count: count_and_start >> 18,
-            index_of_first_export_key: count_and_start & 0x12,
-        })
-    }
-
-    /// `ExportedSymbolHashSlot.getSymbolCount()`.
-    pub fn symbol_count(&self) -> i32 {
-        self.symbol_count
-    }
-    /// `ExportedSymbolHashSlot.getIndexOfFirstExportKey()`.
-    pub fn index_of_first_export_key(&self) -> i32 {
-        self.index_of_first_export_key
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.pef.ExportedSymbolKey`, referenced by
-/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
-/// class is ported.
-pub struct ExportedSymbolKey {
-    full_hash_word: i32,
-    name_length: i16,
-    hash_value: i16,
-}
-
-impl ExportedSymbolKey {
-    /// Port of `ExportedSymbolKey(BinaryReader)`.
-    pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
-    ) -> std::io::Result<Self> {
-        let value = reader.read_next_int()?;
-        Ok(ExportedSymbolKey {
-            full_hash_word: value,
-            name_length: (value >> 16) as i16,
-            hash_value: (value & 0xffff) as i16,
-        })
-    }
-
-    /// `ExportedSymbolKey.getFullHashWord()`.
-    pub fn full_hash_word(&self) -> i32 {
-        self.full_hash_word
-    }
-    /// `ExportedSymbolKey.getNameLength()`.
-    pub fn name_length(&self) -> i16 {
-        self.name_length
-    }
-    /// `ExportedSymbolKey.getHashValue()`.
-    pub fn hash_value(&self) -> i16 {
-        self.hash_value
-    }
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.pef.ExportedSymbol`, referenced by
 /// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
 /// class is ported. Parses the fixed 10-byte header fields; the symbol name (read via an
@@ -2595,7 +2373,7 @@ impl ExportedSymbol {
     pub fn new(
         reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
         _loader: &crate::format::pef::loader_info_header::LoaderInfoHeader,
-        _key: &ExportedSymbolKey,
+        _key: &crate::format::pef::exported_symbol_key::ExportedSymbolKey,
     ) -> std::io::Result<Self> {
         Ok(ExportedSymbol {
             class_and_name: reader.read_next_int()?,
@@ -4132,146 +3910,15 @@ impl FSUtilities {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.dwarf.macro.DWARFMacroOpcode`, referenced by
-/// `DWARFMacroInfoEntry`. `DWARFMacroOpcode` is a Java enum (not an interface), so it is modeled
-/// here as a concrete Rust enum carrying the real `DW_MACRO_*` raw opcode and description values,
-/// rather than a trait object.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DWARFMacroOpcode {
-    /// Not an official DWARF opcode; represents the entry with opcode 0 that terminates a macro
-    /// unit.
-    MacroUnitTerminator,
-    DwMacroDefine,
-    DwMacroUndef,
-    DwMacroStartFile,
-    DwMacroEndFile,
-    DwMacroDefineStrp,
-    DwMacroUndefStrp,
-    DwMacroImport,
-    DwMacroDefineSup,
-    DwMacroUndefSup,
-    DwMacroImportSup,
-    DwMacroDefineStrx,
-    DwMacroUndefStrx,
-}
-
-impl DWARFMacroOpcode {
-    /// All variants, in Java enum declaration order; used by [`Self::of`].
-    const VALUES: [DWARFMacroOpcode; 13] = [
-        DWARFMacroOpcode::MacroUnitTerminator,
-        DWARFMacroOpcode::DwMacroDefine,
-        DWARFMacroOpcode::DwMacroUndef,
-        DWARFMacroOpcode::DwMacroStartFile,
-        DWARFMacroOpcode::DwMacroEndFile,
-        DWARFMacroOpcode::DwMacroDefineStrp,
-        DWARFMacroOpcode::DwMacroUndefStrp,
-        DWARFMacroOpcode::DwMacroImport,
-        DWARFMacroOpcode::DwMacroDefineSup,
-        DWARFMacroOpcode::DwMacroUndefSup,
-        DWARFMacroOpcode::DwMacroImportSup,
-        DWARFMacroOpcode::DwMacroDefineStrx,
-        DWARFMacroOpcode::DwMacroUndefStrx,
-    ];
-
-    /// Mirrors `DWARFMacroOpcode.getRawOpcode()`.
-    pub fn get_raw_opcode(&self) -> i32 {
-        match self {
-            Self::MacroUnitTerminator => 0,
-            Self::DwMacroDefine => 0x1,
-            Self::DwMacroUndef => 0x2,
-            Self::DwMacroStartFile => 0x3,
-            Self::DwMacroEndFile => 0x4,
-            Self::DwMacroDefineStrp => 0x5,
-            Self::DwMacroUndefStrp => 0x6,
-            Self::DwMacroImport => 0x7,
-            Self::DwMacroDefineSup => 0x8,
-            Self::DwMacroUndefSup => 0x9,
-            Self::DwMacroImportSup => 0xa,
-            Self::DwMacroDefineStrx => 0xb,
-            Self::DwMacroUndefStrx => 0xc,
-        }
-    }
-
-    /// Mirrors `DWARFMacroOpcode.getDescription()`.
-    pub fn get_description(&self) -> String {
-        match self {
-            Self::MacroUnitTerminator => "unknown",
-            Self::DwMacroDefine
-            | Self::DwMacroDefineStrp
-            | Self::DwMacroDefineSup
-            | Self::DwMacroDefineStrx => "#define",
-            Self::DwMacroUndef
-            | Self::DwMacroUndefStrp
-            | Self::DwMacroUndefSup
-            | Self::DwMacroUndefStrx => "#undef",
-            Self::DwMacroStartFile => "startfile",
-            Self::DwMacroEndFile => "endfile",
-            Self::DwMacroImport | Self::DwMacroImportSup => "#include",
-        }
-        .to_string()
-    }
-
-    /// Mirrors `DWARFMacroOpcode.getOperandForms()`: the form each of this opcode's operands is
-    /// encoded with, from the Java constructor's varargs `operandForms`.
-    pub fn get_operand_forms(&self) -> &'static [DWARFForm] {
-        use DWARFForm::*;
-        match self {
-            Self::MacroUnitTerminator | Self::DwMacroEndFile => &[],
-            Self::DwMacroDefine | Self::DwMacroUndef => &[DwFormUdata, DwFormString],
-            Self::DwMacroStartFile => &[DwFormUdata, DwFormUdata],
-            Self::DwMacroDefineStrp | Self::DwMacroUndefStrp => &[DwFormUdata, DwFormStrp],
-            Self::DwMacroImport | Self::DwMacroImportSup => &[DwFormSecOffset],
-            Self::DwMacroDefineSup | Self::DwMacroUndefSup => &[DwFormUdata, DwFormStrpSup],
-            Self::DwMacroDefineStrx | Self::DwMacroUndefStrx => &[DwFormUdata, DwFormStrx],
-        }
-    }
-
-    /// Mirrors `DWARFMacroOpcode.of(int)`: a linear search over the enum's values, returning
-    /// `None` (Java `null`) if no variant matches.
-    pub fn of(opcode_val: i32) -> Option<Self> {
-        Self::VALUES.into_iter().find(|opcode| opcode.get_raw_opcode() == opcode_val)
-    }
-
-    /// Mirrors `DWARFMacroOpcode.defaultOpcodeOperandMap`, used by `DWARFMacroHeader::read_v5` as
-    /// the starting opcode table before an optional per-unit table (if present) overrides it.
-    pub fn default_opcode_operand_map() -> std::collections::HashMap<i32, Vec<DWARFForm>> {
-        Self::VALUES
-            .iter()
-            .map(|opcode| (opcode.get_raw_opcode(), opcode.get_operand_forms().to_vec()))
-            .collect()
-    }
-}
-
-/// Placeholder for the nested `DWARFMacroOpcode.Def` (a `DWARFAttributeDef<DWARFMacroOpcode>`),
-/// referenced by `DWARFMacroInfoEntry`. Mirrors the three fields the Java constructor forwards to
-/// `DWARFAttributeDef`'s constructor (`attributeId`, `rawAttributeId`, `attributeForm`); the
-/// fourth (`implicitValue`) is always `-1` ("N/A") for a macro opcode def, so it's omitted here.
-pub struct DWARFMacroOpcodeDef {
-    pub opcode: DWARFMacroOpcode,
-    pub raw_opcode: i32,
-    pub form: DWARFForm,
-}
-
-impl DWARFMacroOpcodeDef {
-    pub fn new(opcode: DWARFMacroOpcode, raw_opcode: i32, form: DWARFForm) -> Self {
-        DWARFMacroOpcodeDef { opcode, raw_opcode, form }
-    }
-}
-
-impl DWARFAttributeDef for DWARFMacroOpcodeDef {
-    fn get_attribute_form(&self) -> DWARFForm {
-        self.form
-    }
-}
-
-/// Minimal placeholders for the five unported Java macro-entry subclasses that
+/// Minimal placeholders for four of the five unported Java macro-entry subclasses that
 /// `DWARFMacroInfoEntry::to_specialized_form` dispatches to (`DWARFMacroDefine`, `DWARFMacroUndef`,
-/// `DWARFMacroStartFile`, `DWARFMacroEndFile`, `DWARFMacroImport`). Each extends
-/// `DWARFMacroInfoEntry` in Java and is expected to have a copy-constructor that wraps a generic
-/// `DWARFMacroInfoEntry`; these stubs offer exactly that shape (and nothing else) so dispatch
-/// compiles, using the inherited (non-overridden) `to_string`. Replace each with its real port,
-/// which will add the subclass-specific getters and (for `DWARFMacroDefine`/`DWARFMacroStartFile`)
-/// override `to_string`.
+/// `DWARFMacroStartFile`, `DWARFMacroImport`; the fifth, `DWARFMacroEndFile`, is the real port at
+/// [`crate::format::dwarf::r#macro::entry::dwarf_macro_end_file::DWARFMacroEndFile`]). Each
+/// extends `DWARFMacroInfoEntry` in Java and is expected to have a copy-constructor that wraps a
+/// generic `DWARFMacroInfoEntry`; these stubs offer exactly that shape (and nothing else) so
+/// dispatch compiles, using the inherited (non-overridden) `to_string`. Replace each with its
+/// real port, which will add the subclass-specific getters and (for
+/// `DWARFMacroDefine`/`DWARFMacroStartFile`) override `to_string`.
 macro_rules! macro_info_entry_placeholder {
     ($name:ident) => {
         pub struct $name {
@@ -4302,7 +3949,6 @@ macro_rules! macro_info_entry_placeholder {
 macro_info_entry_placeholder!(DWARFMacroDefine);
 macro_info_entry_placeholder!(DWARFMacroUndef);
 macro_info_entry_placeholder!(DWARFMacroStartFile);
-macro_info_entry_placeholder!(DWARFMacroEndFile);
 macro_info_entry_placeholder!(DWARFMacroImport);
 
 /// Placeholder for the unported Java type `DWARFFunction`, referenced by `DWARFFunctionFixup`.
@@ -4473,249 +4119,20 @@ impl DWARFUtil {
     }
 }
 
-/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.expression.DWARFExpressionOpCode`,
-/// referenced by
-/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
-/// The Java type is an enum whose constants carry both a raw opcode value and the operand types an
-/// instruction of that opcode takes; this stub keeps the opcode values (the evaluator dispatches on
-/// them, and on `lit`/`reg`/`breg` opcode *ranges*) and leaves the operand-type table to the real
-/// port. Variants are spelled exactly as the Java constants so that `{:?}` renders what Java's
-/// `toString()` does.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[allow(non_camel_case_types)]
-#[repr(u8)]
-pub enum DWARFExpressionOpCode {
-    /// Special value, not a real DWARF opcode.
-    DW_OP_unknown_opcode = 0,
-    DW_OP_addr = 0x3,
-    DW_OP_deref = 0x6,
-    DW_OP_const1u = 0x8,
-    DW_OP_const1s = 0x9,
-    DW_OP_const2u = 0xa,
-    DW_OP_const2s = 0xb,
-    DW_OP_const4u = 0xc,
-    DW_OP_const4s = 0xd,
-    DW_OP_const8u = 0xe,
-    DW_OP_const8s = 0xf,
-    DW_OP_constu = 0x10,
-    DW_OP_consts = 0x11,
-    DW_OP_dup = 0x12,
-    DW_OP_drop = 0x13,
-    DW_OP_over = 0x14,
-    DW_OP_pick = 0x15,
-    DW_OP_swap = 0x16,
-    DW_OP_rot = 0x17,
-    DW_OP_xderef = 0x18,
-    DW_OP_abs = 0x19,
-    DW_OP_and = 0x1a,
-    DW_OP_div = 0x1b,
-    DW_OP_minus = 0x1c,
-    DW_OP_mod = 0x1d,
-    DW_OP_mul = 0x1e,
-    DW_OP_neg = 0x1f,
-    DW_OP_not = 0x20,
-    DW_OP_or = 0x21,
-    DW_OP_plus = 0x22,
-    DW_OP_plus_uconst = 0x23,
-    DW_OP_shl = 0x24,
-    DW_OP_shr = 0x25,
-    DW_OP_shra = 0x26,
-    DW_OP_xor = 0x27,
-    DW_OP_bra = 0x28,
-    DW_OP_eq = 0x29,
-    DW_OP_ge = 0x2a,
-    DW_OP_gt = 0x2b,
-    DW_OP_le = 0x2c,
-    DW_OP_lt = 0x2d,
-    DW_OP_ne = 0x2e,
-    DW_OP_skip = 0x2f,
-    DW_OP_lit0 = 0x30,
-    DW_OP_lit1 = 0x31,
-    DW_OP_lit2 = 0x32,
-    DW_OP_lit3 = 0x33,
-    DW_OP_lit4 = 0x34,
-    DW_OP_lit5 = 0x35,
-    DW_OP_lit6 = 0x36,
-    DW_OP_lit7 = 0x37,
-    DW_OP_lit8 = 0x38,
-    DW_OP_lit9 = 0x39,
-    DW_OP_lit10 = 0x3a,
-    DW_OP_lit11 = 0x3b,
-    DW_OP_lit12 = 0x3c,
-    DW_OP_lit13 = 0x3d,
-    DW_OP_lit14 = 0x3e,
-    DW_OP_lit15 = 0x3f,
-    DW_OP_lit16 = 0x40,
-    DW_OP_lit17 = 0x41,
-    DW_OP_lit18 = 0x42,
-    DW_OP_lit19 = 0x43,
-    DW_OP_lit20 = 0x44,
-    DW_OP_lit21 = 0x45,
-    DW_OP_lit22 = 0x46,
-    DW_OP_lit23 = 0x47,
-    DW_OP_lit24 = 0x48,
-    DW_OP_lit25 = 0x49,
-    DW_OP_lit26 = 0x4a,
-    DW_OP_lit27 = 0x4b,
-    DW_OP_lit28 = 0x4c,
-    DW_OP_lit29 = 0x4d,
-    DW_OP_lit30 = 0x4e,
-    DW_OP_lit31 = 0x4f,
-    DW_OP_reg0 = 0x50,
-    DW_OP_reg1 = 0x51,
-    DW_OP_reg2 = 0x52,
-    DW_OP_reg3 = 0x53,
-    DW_OP_reg4 = 0x54,
-    DW_OP_reg5 = 0x55,
-    DW_OP_reg6 = 0x56,
-    DW_OP_reg7 = 0x57,
-    DW_OP_reg8 = 0x58,
-    DW_OP_reg9 = 0x59,
-    DW_OP_reg10 = 0x5a,
-    DW_OP_reg11 = 0x5b,
-    DW_OP_reg12 = 0x5c,
-    DW_OP_reg13 = 0x5d,
-    DW_OP_reg14 = 0x5e,
-    DW_OP_reg15 = 0x5f,
-    DW_OP_reg16 = 0x60,
-    DW_OP_reg17 = 0x61,
-    DW_OP_reg18 = 0x62,
-    DW_OP_reg19 = 0x63,
-    DW_OP_reg20 = 0x64,
-    DW_OP_reg21 = 0x65,
-    DW_OP_reg22 = 0x66,
-    DW_OP_reg23 = 0x67,
-    DW_OP_reg24 = 0x68,
-    DW_OP_reg25 = 0x69,
-    DW_OP_reg26 = 0x6a,
-    DW_OP_reg27 = 0x6b,
-    DW_OP_reg28 = 0x6c,
-    DW_OP_reg29 = 0x6d,
-    DW_OP_reg30 = 0x6e,
-    DW_OP_reg31 = 0x6f,
-    DW_OP_breg0 = 0x70,
-    DW_OP_breg1 = 0x71,
-    DW_OP_breg2 = 0x72,
-    DW_OP_breg3 = 0x73,
-    DW_OP_breg4 = 0x74,
-    DW_OP_breg5 = 0x75,
-    DW_OP_breg6 = 0x76,
-    DW_OP_breg7 = 0x77,
-    DW_OP_breg8 = 0x78,
-    DW_OP_breg9 = 0x79,
-    DW_OP_breg10 = 0x7a,
-    DW_OP_breg11 = 0x7b,
-    DW_OP_breg12 = 0x7c,
-    DW_OP_breg13 = 0x7d,
-    DW_OP_breg14 = 0x7e,
-    DW_OP_breg15 = 0x7f,
-    DW_OP_breg16 = 0x80,
-    DW_OP_breg17 = 0x81,
-    DW_OP_breg18 = 0x82,
-    DW_OP_breg19 = 0x83,
-    DW_OP_breg20 = 0x84,
-    DW_OP_breg21 = 0x85,
-    DW_OP_breg22 = 0x86,
-    DW_OP_breg23 = 0x87,
-    DW_OP_breg24 = 0x88,
-    DW_OP_breg25 = 0x89,
-    DW_OP_breg26 = 0x8a,
-    DW_OP_breg27 = 0x8b,
-    DW_OP_breg28 = 0x8c,
-    DW_OP_breg29 = 0x8d,
-    DW_OP_breg30 = 0x8e,
-    DW_OP_breg31 = 0x8f,
-    DW_OP_regx = 0x90,
-    DW_OP_fbreg = 0x91,
-    DW_OP_bregx = 0x92,
-    DW_OP_piece = 0x93,
-    DW_OP_deref_size = 0x94,
-    DW_OP_xderef_size = 0x95,
-    DW_OP_nop = 0x96,
-    DW_OP_push_object_address = 0x97,
-    DW_OP_call2 = 0x98,
-    DW_OP_call4 = 0x99,
-    DW_OP_call_ref = 0x9a,
-    DW_OP_form_tls_address = 0x9b,
-    DW_OP_call_frame_cfa = 0x9c,
-    DW_OP_bit_piece = 0x9d,
-    DW_OP_implicit_value = 0x9e,
-    DW_OP_stack_value = 0x9f,
-    DW_OP_implicit_pointer = 0xa0,
-    DW_OP_addrx = 0xa1,
-    DW_OP_constx = 0xa2,
-    DW_OP_entry_value = 0xa3,
-    DW_OP_const_type = 0xa4,
-    DW_OP_regval_type = 0xa5,
-    DW_OP_deref_type = 0xa6,
-    DW_OP_xderef_type = 0xa7,
-    DW_OP_convert = 0xa8,
-    DW_OP_reinterpret = 0xa9,
-}
-
-impl DWARFExpressionOpCode {
-    /// Mirrors `DWARFExpressionOpCode.getOpCodeValue()`.
-    pub fn get_op_code_value(self) -> u8 {
-        self as u8
-    }
-
-    /// Mirrors `DWARFExpressionOpCode.isInRange(op, lo, hi)`: true if `op`'s raw value is within
-    /// the inclusive `lo..hi` range.
-    pub fn is_in_range(op: Self, lo: Self, hi: Self) -> bool {
-        lo as u8 <= op as u8 && op as u8 <= hi as u8
-    }
-
-    /// Mirrors `DWARFExpressionOpCode.getRelativeOpCodeOffset(baseOp)`: e.g. `DW_OP_reg12` relative
-    /// to `DW_OP_reg0` is 12.
-    pub fn get_relative_op_code_offset(self, base_op: Self) -> i32 {
-        self as i32 - base_op as i32
-    }
-
-    /// Mirrors `DWARFExpressionOpCode.toString(DWARFRegisterMappings)`, which appends the mapped
-    /// Ghidra register name to the `reg`/`breg` opcodes.
-    pub fn to_string_with_reg_mapping(
-        self,
-        reg_mapping: Option<&crate::format::dwarf::dwarf_register_mappings::DWARFRegisterMappings>,
-    ) -> String {
-        use DWARFExpressionOpCode::*;
-        let reg_idx = if Self::is_in_range(self, DW_OP_reg0, DW_OP_reg31) {
-            self.get_relative_op_code_offset(DW_OP_reg0)
-        } else if Self::is_in_range(self, DW_OP_breg0, DW_OP_breg31) {
-            self.get_relative_op_code_offset(DW_OP_breg0)
-        } else {
-            -1
-        };
-        let reg = if reg_idx >= 0 {
-            reg_mapping.and_then(|rm| rm.ghidra_reg(reg_idx))
-        } else {
-            None
-        };
-        match reg {
-            Some(reg) => format!("{self}({})", reg.borrow().name()),
-            None => self.to_string(),
-        }
-    }
-}
-
-impl std::fmt::Display for DWARFExpressionOpCode {
-    /// The variant names are spelled exactly as Java's enum constants, so `{:?}` is Java's
-    /// `toString()`.
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
-    }
-}
 
 /// Placeholder for the unported
 /// `ghidra.app.util.bin.format.dwarf.expression.DWARFExpressionInstruction`, referenced by
 /// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
 /// `DWARFExpressionInstruction` is a concrete Java class, so it is modeled as a struct; only the
 /// opcode, operand values and expression-relative offset the evaluator reads are kept. The blob
-/// operand, the operand-type table, the `read` parser and the readelf-style operand formatting are
-/// left to the real port.
+/// operand, the `read` parser and the readelf-style operand formatting are left to the real port.
+/// [`DWARFExpressionOpCode`](crate::format::dwarf::expression::dwarf_expression_opcode::DWARFExpressionOpCode)
+/// itself (referenced by the `opcode` field below) is the real port, including its operand-type
+/// table.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DWARFExpressionInstruction {
     /// Mirrors the `protected final` field the evaluator reads directly as `instr.opcode`.
-    pub opcode: DWARFExpressionOpCode,
+    pub opcode: crate::format::dwarf::expression::dwarf_expression_opcode::DWARFExpressionOpCode,
     offset: i32,
     operands: Vec<i64>,
 }
@@ -4723,7 +4140,11 @@ pub struct DWARFExpressionInstruction {
 impl DWARFExpressionInstruction {
     /// Mirrors `DWARFExpressionInstruction(op, operandTypes, operands, blob, offset)`, minus the
     /// operand types and blob this stub does not model.
-    pub fn new(opcode: DWARFExpressionOpCode, operands: Vec<i64>, offset: i32) -> Self {
+    pub fn new(
+        opcode: crate::format::dwarf::expression::dwarf_expression_opcode::DWARFExpressionOpCode,
+        operands: Vec<i64>,
+        offset: i32,
+    ) -> Self {
         DWARFExpressionInstruction { opcode, offset, operands }
     }
 
@@ -4765,152 +4186,20 @@ impl std::fmt::Display for DWARFExpressionInstruction {
     }
 }
 
-/// Which of the `DWARFExpressionException` subclasses an error is, along with the extra state that
-/// subclass carries.
-///
-/// Java models these as four classes (`DWARFExpressionException`, its subclass
-/// `DWARFExpressionUnsupportedOpException`, *its* subclass
-/// `DWARFExpressionTerminalDerefException`, and `DWARFExpressionValueException`); Rust has no
-/// exception hierarchy, so they collapse into one error type discriminated by this enum.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DWARFExpressionExceptionKind {
-    /// Plain `DWARFExpressionException`.
-    Generic,
-    /// `DWARFExpressionUnsupportedOpException`: the evaluator does not implement this instruction.
-    UnsupportedOp(DWARFExpressionInstruction),
-    /// `DWARFExpressionTerminalDerefException` (a subclass of the unsupported-op exception): the
-    /// expression ended with a `DW_OP_deref` of the given location, which some callers can still
-    /// make use of.
-    TerminalDeref(DWARFExpressionInstruction, crate::program::model::pcode::Varnode),
-    /// `DWARFExpressionValueException`: the value of the given varnode could not be fetched.
-    Value(crate::program::model::pcode::Varnode),
-}
-
-/// Placeholder for the unported
-/// `ghidra.app.util.bin.format.dwarf.expression.DWARFExpressionException` and its three subclasses,
-/// referenced by
-/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
-/// Carries the expression and the position within it that caused the problem back up the call
-/// chain, exactly as the Java exception does.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DWARFExpressionException {
-    message: String,
-    kind: DWARFExpressionExceptionKind,
-    expr: Option<DWARFExpression>,
-    instr_index: i32,
-}
-
-impl DWARFExpressionException {
-    /// Mirrors `DWARFExpressionException(String)`.
-    pub fn new(message: impl Into<String>) -> Self {
-        DWARFExpressionException {
-            message: message.into(),
-            kind: DWARFExpressionExceptionKind::Generic,
-            expr: None,
-            instr_index: -1,
-        }
-    }
-
-    /// Mirrors `DWARFExpressionUnsupportedOpException(DWARFExpressionInstruction)`.
-    pub fn unsupported_op(instr: DWARFExpressionInstruction) -> Self {
-        DWARFExpressionException {
-            message: format!("Unsupported instruction {instr}"),
-            kind: DWARFExpressionExceptionKind::UnsupportedOp(instr),
-            expr: None,
-            instr_index: -1,
-        }
-    }
-
-    /// Mirrors `DWARFExpressionTerminalDerefException(DWARFExpressionInstruction, Varnode)`, whose
-    /// superclass constructor builds the same "Unsupported instruction" message.
-    pub fn terminal_deref(
-        instr: DWARFExpressionInstruction,
-        varnode: crate::program::model::pcode::Varnode,
-    ) -> Self {
-        DWARFExpressionException {
-            message: format!("Unsupported instruction {instr}"),
-            kind: DWARFExpressionExceptionKind::TerminalDeref(instr, varnode),
-            expr: None,
-            instr_index: -1,
-        }
-    }
-
-    /// Mirrors `DWARFExpressionValueException(Varnode)`.
-    pub fn value(vn: crate::program::model::pcode::Varnode) -> Self {
-        DWARFExpressionException {
-            message: format!("Unable to access value of {vn}"),
-            kind: DWARFExpressionExceptionKind::Value(vn),
-            expr: None,
-            instr_index: -1,
-        }
-    }
-
-    /// Which Java exception class this stands in for.
-    pub fn kind(&self) -> &DWARFExpressionExceptionKind {
-        &self.kind
-    }
-
-    /// Mirrors `DWARFExpressionException.getExpression()`.
-    pub fn get_expression(&self) -> Option<&DWARFExpression> {
-        self.expr.as_ref()
-    }
-
-    /// Mirrors `DWARFExpressionException.setExpression(DWARFExpression)`.
-    pub fn set_expression(&mut self, expr: DWARFExpression) {
-        self.expr = Some(expr);
-    }
-
-    /// Mirrors `DWARFExpressionException.getInstructionIndex()`.
-    pub fn get_instruction_index(&self) -> i32 {
-        self.instr_index
-    }
-
-    /// Mirrors `DWARFExpressionException.setInstructionIndex(int)`.
-    pub fn set_instruction_index(&mut self, instr_index: i32) {
-        self.instr_index = instr_index;
-    }
-
-    /// The `DWARFExpressionUnsupportedOpException`/`DWARFExpressionTerminalDerefException`
-    /// `getInstruction()` accessor.
-    pub fn get_instruction(&self) -> Option<&DWARFExpressionInstruction> {
-        match &self.kind {
-            DWARFExpressionExceptionKind::UnsupportedOp(instr)
-            | DWARFExpressionExceptionKind::TerminalDeref(instr, _) => Some(instr),
-            _ => None,
-        }
-    }
-
-    /// The `DWARFExpressionTerminalDerefException`/`DWARFExpressionValueException` `getVarnode()`
-    /// accessor.
-    pub fn get_varnode(&self) -> Option<&crate::program::model::pcode::Varnode> {
-        match &self.kind {
-            DWARFExpressionExceptionKind::TerminalDeref(_, vn)
-            | DWARFExpressionExceptionKind::Value(vn) => Some(vn),
-            _ => None,
-        }
-    }
-}
-
-impl std::fmt::Display for DWARFExpressionException {
-    /// Mirrors `DWARFExpressionException.getMessage()`, which appends the expression (if known).
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.message)?;
-        if let Some(expr) = &self.expr {
-            write!(f, "\n{}", expr.to_string_formatted(self.instr_index, false, false, None))?;
-        }
-        Ok(())
-    }
-}
-
-impl std::error::Error for DWARFExpressionException {}
-
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.external.DebugInfoProviderRegistry`,
 /// referenced by `DebugInfoProviderCreatorContext` before the real class is ported.
 pub trait DebugInfoProviderRegistry: Send + Sync {
     fn get_instance(&self) -> Box<dyn DebugInfoProviderRegistry>;
     fn register(&self, test_func: &dyn std::any::Any, create_func: &dyn std::any::Any);
     fn new_context(&self, program: &dyn crate::program::model::listing::Program) -> Box<dyn std::any::Any>;
-    fn create(&self, name: &str, context: &dyn std::any::Any) -> Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider>;
+    /// Mirrors `DebugInfoProviderRegistry.create(String, DebugInfoProviderCreatorContext)`, which
+    /// returns `null` when `name` does not match any registered provider factory (or that
+    /// factory itself returns `null`). Changed to return `Option` (rather than the
+    /// previously-unconditional `Box`) for
+    /// [`DisabledDebugInfoProvider::create`](crate::format::dwarf::external::disabled_debug_info_provider::DisabledDebugInfoProvider::create),
+    /// which forwards this `None` on unchanged, exactly as
+    /// `DisabledDebugInfoProvider.create(String, DebugInfoProviderCreatorContext)` does.
+    fn create(&self, name: &str, context: &dyn std::any::Any) -> Option<Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider>>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.FieldContext`,

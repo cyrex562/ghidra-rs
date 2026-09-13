@@ -30,5 +30,6 @@ pub mod dwarf_range_list_entry;
 pub mod dwarf_register_mappings;
 pub mod dwarf_source_info;
 pub mod dwarf_source_language;
+pub mod dwarf_string_offset_table_header;
 pub mod dwarf_unit_header;
 pub mod dwarf_unit_type;

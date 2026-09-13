@@ -5,10 +5,9 @@
 //! [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator)
 //! to execute a `DWARFExpression`.
 
-use crate::format::seam_stubs::{
-    DWARFCompilationUnit, DWARFExpressionException, DWARFExpressionInstruction,
-    DWARFExpressionOpCode,
-};
+use crate::format::dwarf::expression::dwarf_expression_exception::DWARFExpressionException;
+use crate::format::dwarf::expression::dwarf_expression_opcode::DWARFExpressionOpCode;
+use crate::format::seam_stubs::{DWARFCompilationUnit, DWARFExpressionInstruction};
 
 /// An immutable list of [`DWARFExpressionInstruction`] operations.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]

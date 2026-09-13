@@ -5,9 +5,10 @@ use std::sync::Arc;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::format::dwarf::dwarf_register_mappings::DWARFRegisterMappings;
 use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
+use crate::format::dwarf::expression::dwarf_expression_exception::DWARFExpressionException;
+use crate::format::dwarf::expression::dwarf_expression_opcode::DWARFExpressionOpCode;
 use crate::format::seam_stubs::{
-    DWARFCompilationUnit, DWARFExpressionException, DWARFExpressionInstruction,
-    DWARFExpressionOpCode, DWARFProgram, DWARFUtil,
+    DWARFCompilationUnit, DWARFExpressionInstruction, DWARFProgram, DWARFUtil,
 };
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::language::Language;
@@ -882,7 +883,7 @@ impl fmt::Display for DWARFExpressionEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::DWARFExpressionExceptionKind;
+    use crate::format::dwarf::expression::dwarf_expression_exception::DWARFExpressionExceptionKind;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
     struct MockCompUnit {

@@ -17,12 +17,14 @@
 //!
 //! # Departures from the Java class
 //!
-//! * `DWARFMacroOpcode.Def` and the five macro-entry subclasses
-//!   [`to_specialized_form`](DWARFMacroInfoEntryBase::to_specialized_form) dispatches to aren't
-//!   ported yet; the five subclasses are stubbed in [`crate::format::seam_stubs`], each as a
-//!   minimal wrapper offering only the copy-constructor shape `toSpecializedForm` needs.
-//!   `DWARFMacroOpcode` is modeled as a real (non-stub) enum with the genuine `DW_MACRO_*` raw
-//!   opcode/description table, in [`crate::format::seam_stubs`]. `DWARFMacroHeader` is the real
+//! * Of the five macro-entry subclasses
+//!   [`to_specialized_form`](DWARFMacroInfoEntryBase::to_specialized_form) dispatches to,
+//!   [`DWARFMacroEndFile`](crate::format::dwarf::r#macro::entry::dwarf_macro_end_file::DWARFMacroEndFile)
+//!   is the real port; the other four (`DWARFMacroDefine`, `DWARFMacroUndef`,
+//!   `DWARFMacroStartFile`, `DWARFMacroImport`) remain stubbed in [`crate::format::seam_stubs`],
+//!   each as a minimal wrapper offering only the copy-constructor shape `toSpecializedForm`
+//!   needs. `DWARFMacroOpcode` and its nested `Def` class are the real port at
+//!   [`crate::format::dwarf::r#macro::dwarf_macro_opcode`]. `DWARFMacroHeader` is the real
 //!   port at [`crate::format::dwarf::r#macro::dwarf_macro_header::DWARFMacroHeader`]; it and
 //!   `DWARFMacroInfoEntry` reference each other (a header reads/owns its entries; each entry keeps
 //!   a back-reference to its header), which is a genuine forward cycle from `DWARFMacroHeader`'s
@@ -45,7 +47,9 @@ use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue;
 use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
 use crate::format::dwarf::r#macro::dwarf_macro_header::DWARFMacroHeader;
-use crate::format::seam_stubs::{self, DWARFMacroOpcode, DWARFMacroOpcodeDef};
+use crate::format::dwarf::r#macro::entry::dwarf_macro_end_file::DWARFMacroEndFile;
+use crate::format::dwarf::r#macro::dwarf_macro_opcode::{DWARFMacroOpcode, DWARFMacroOpcodeDef};
+use crate::format::seam_stubs;
 
 /// The shared state of a DWARF macro info entry, plus every method Java does not override in any
 /// of its subclasses.
@@ -159,7 +163,7 @@ impl DWARFMacroInfoEntryBase {
                 Some(Box::new(seam_stubs::DWARFMacroUndef::new(generic_entry)))
             }
             DwMacroStartFile => Some(Box::new(seam_stubs::DWARFMacroStartFile::new(generic_entry))),
-            DwMacroEndFile => Some(Box::new(seam_stubs::DWARFMacroEndFile::new(generic_entry))),
+            DwMacroEndFile => Some(Box::new(DWARFMacroEndFile::new(generic_entry))),
             DwMacroImport | DwMacroImportSup => Some(Box::new(seam_stubs::DWARFMacroImport::new(generic_entry))),
         }
     }

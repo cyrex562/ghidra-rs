@@ -1,5 +1,5 @@
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::ResourceType;
+use crate::format::ne::resource_type::ResourceType;
 use std::io;
 
 use super::resource_name::ResourceName;
@@ -195,8 +195,13 @@ mod tests {
     fn reads_one_resource_type_and_name() {
         let data = vec![
             0x04, 0x00, // alignment shift count = 4
-            // ResourceType: typeID=0x8006 (RT_STRING|0x8000), count=1, reserved=0
-            0x06, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+            // ResourceType: typeID=0x8002 (RT_BITMAP|0x8000), count=1, reserved=0
+            //
+            // Note: deliberately not RT_STRING here (unlike RT_BITMAP, RT_STRING entries parse
+            // as a `ResourceStringTable` that reads additional string bytes from an absolute,
+            // alignment-shifted file offset -- see `resource_type::tests` for that dedicated
+            // scenario). This test only exercises the plain-`Resource` path.
+            0x02, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
             // Resource: fileOffset, fileLength, flagword, resourceID, handle, usage
             0x10, 0x00, 0x20, 0x00, 0x40, 0x00, 0x01, 0x80, 0x00, 0x00, 0x00, 0x00,
             // sentinel ResourceType (typeID=0)
@@ -214,12 +219,12 @@ mod tests {
 
         let types = table.get_resource_types();
         assert_eq!(types.len(), 1);
-        assert_eq!(types[0].get_type_id(), 0x8006u16 as i16);
+        assert_eq!(types[0].get_type_id(), 0x8002u16 as i16);
         assert_eq!(types[0].get_count(), 1);
         let resources = types[0].get_resources();
         assert_eq!(resources.len(), 1);
-        assert_eq!(resources[0].get_file_offset(), 0x0010);
-        assert_eq!(resources[0].get_file_offset_shifted(), 0x0010 << 4);
+        assert_eq!(resources[0].resource().get_file_offset(), 0x0010);
+        assert_eq!(resources[0].resource().get_file_offset_shifted(), 0x0010 << 4);
 
         let names = table.get_resource_names();
         assert_eq!(names.len(), 1);

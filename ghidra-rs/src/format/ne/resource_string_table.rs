@@ -15,10 +15,11 @@ use std::io;
 /// The Java constructor takes a back-reference to the owning `ResourceTable` (`rt`), which
 /// `Resource`'s own constructor forwards on to resolve the alignment shift count for
 /// `getFileOffsetShifted`/`getFileLengthShifted`. That value is already known by the time any
-/// `Resource` is constructed, so -- consistent with [`Resource`]'s and
-/// [`ResourceType`](crate::format::seam_stubs::ResourceType)'s established seam-stub convention
-/// -- this port takes the alignment shift count directly instead, avoiding an ownership cycle
-/// with `ResourceTable`.
+/// `Resource` is constructed, so -- consistent with [`Resource`]'s (still a seam stub) and
+/// [`ResourceType`](crate::format::ne::resource_type::ResourceType)'s established convention --
+/// this port takes the alignment shift count directly instead, avoiding an ownership cycle with
+/// `ResourceTable`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceStringTable {
     base: Resource,
     strings: Vec<LengthStringSet>,

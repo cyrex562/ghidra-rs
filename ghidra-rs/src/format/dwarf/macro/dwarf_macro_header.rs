@@ -22,7 +22,8 @@ use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::line::dwarf_line::DWARFLine;
 use crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntry;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
-use crate::format::seam_stubs::{DWARFCompilationUnit, DWARFMacroOpcode};
+use crate::format::dwarf::r#macro::dwarf_macro_opcode::DWARFMacroOpcode;
+use crate::format::seam_stubs::DWARFCompilationUnit;
 
 const OFFSET_SIZE_FLAG_MASK: i32 = 0x1;
 const DEBUG_LINE_OFFSET_FLAG_MASK: i32 = 0x2;

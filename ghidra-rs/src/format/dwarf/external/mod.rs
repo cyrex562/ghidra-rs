@@ -4,4 +4,5 @@ pub mod debug_info_provider;
 pub mod debug_info_provider_creator_context;
 pub mod debug_info_provider_status;
 pub mod debug_stream_provider;
+pub mod disabled_debug_info_provider;
 pub mod object_type;
