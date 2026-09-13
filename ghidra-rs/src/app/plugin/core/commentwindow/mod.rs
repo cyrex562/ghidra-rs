@@ -1,3 +1,5 @@
 pub mod comment_row_object;
+pub mod comment_row_object_to_address_table_row_mapper;
 
 pub use comment_row_object::CommentRowObject;
+pub use comment_row_object_to_address_table_row_mapper::CommentRowObjectToAddressTableRowMapper;
