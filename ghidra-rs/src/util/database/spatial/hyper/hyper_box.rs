@@ -171,6 +171,18 @@ mod tests {
         fn encloses(&self, outer: &MockBox, inner: &MockBox) -> bool {
             outer.lo <= inner.lo && outer.hi >= inner.hi
         }
+        fn compare_lower(&self, a: &MockBox, b: &MockBox) -> std::cmp::Ordering {
+            a.lo.partial_cmp(&b.lo).unwrap()
+        }
+        fn compare_upper(&self, a: &MockBox, b: &MockBox) -> std::cmp::Ordering {
+            a.hi.partial_cmp(&b.hi).unwrap()
+        }
+        fn compare_lower_to_upper(&self, a: &MockBox, b: &MockBox) -> std::cmp::Ordering {
+            a.lo.partial_cmp(&b.hi).unwrap()
+        }
+        fn compare_upper_to_lower(&self, a: &MockBox, b: &MockBox) -> std::cmp::Ordering {
+            a.hi.partial_cmp(&b.lo).unwrap()
+        }
     }
 
     struct Line1D {

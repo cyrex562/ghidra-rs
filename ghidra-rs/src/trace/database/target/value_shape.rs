@@ -156,6 +156,18 @@ mod tests {
         fn encloses(&self, outer: &MockValueBox, inner: &MockValueBox) -> bool {
             outer.lo.snap <= inner.lo.snap && outer.hi.snap >= inner.hi.snap
         }
+        fn compare_lower(&self, a: &MockValueBox, b: &MockValueBox) -> std::cmp::Ordering {
+            a.lo.snap.cmp(&b.lo.snap)
+        }
+        fn compare_upper(&self, a: &MockValueBox, b: &MockValueBox) -> std::cmp::Ordering {
+            a.hi.snap.cmp(&b.hi.snap)
+        }
+        fn compare_lower_to_upper(&self, a: &MockValueBox, b: &MockValueBox) -> std::cmp::Ordering {
+            a.lo.snap.cmp(&b.hi.snap)
+        }
+        fn compare_upper_to_lower(&self, a: &MockValueBox, b: &MockValueBox) -> std::cmp::Ordering {
+            a.hi.snap.cmp(&b.lo.snap)
+        }
     }
 
     struct MockValueSpace {

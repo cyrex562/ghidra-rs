@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use crate::app::seam_stubs::{DataTypeLocationDescriptor, GenericDataTypeProgramLocation, ReferenceUtils};
+use crate::app::plugin::core::navigation::locationreferences::generic_data_type_program_location::GenericDataTypeProgramLocation;
+use crate::app::seam_stubs::{DataTypeLocationDescriptor, ReferenceUtils};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::Program;
 use crate::program::util::program_location::ProgramLocation;
@@ -25,7 +26,7 @@ use crate::program::util::program_location::ProgramLocation;
 /// handed) a `GenericDataTypeProgramLocation` before calling this constructor, that runtime check
 /// is encoded here as the static type of the `location` parameter instead -- it cannot fail.
 pub struct GenericDataTypeLocationDescriptorBase {
-    location: Arc<dyn GenericDataTypeProgramLocation>,
+    location: Arc<GenericDataTypeProgramLocation>,
     program: Arc<dyn Program>,
     /// The data type passed in at construction time (Java: `originalDataType`).
     original_data_type: Box<dyn DataType>,
@@ -37,7 +38,7 @@ pub struct GenericDataTypeLocationDescriptorBase {
 
 impl GenericDataTypeLocationDescriptorBase {
     pub fn new(
-        location: Arc<dyn GenericDataTypeProgramLocation>,
+        location: Arc<GenericDataTypeProgramLocation>,
         program: Arc<dyn Program>,
         data_type: Box<dyn DataType>,
     ) -> Self {
@@ -95,7 +96,7 @@ impl GenericDataTypeLocationDescriptorBase {
         &self.program
     }
 
-    pub fn location(&self) -> &Arc<dyn GenericDataTypeProgramLocation> {
+    pub fn location(&self) -> &Arc<GenericDataTypeProgramLocation> {
         &self.location
     }
 }
@@ -173,6 +174,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
+        fn get_min_address(&self) -> Option<Address> {
+            Some(test_address())
+        }
     }
 
     fn test_address() -> Address {
@@ -180,32 +184,12 @@ mod tests {
         Address::new(space, 0)
     }
 
-    struct MockLocation {
-        program: Arc<dyn Program>,
-        type_name: String,
-    }
-
-    impl ProgramLocation for MockLocation {
-        fn get_program(&self) -> Arc<dyn Program> {
-            self.program.clone()
-        }
-        fn get_address(&self) -> Address {
-            test_address()
-        }
-        fn get_byte_address(&self) -> Address {
-            test_address()
-        }
-    }
-
-    impl GenericDataTypeProgramLocation for MockLocation {
-        fn get_data_type(&self) -> Box<dyn DataType> {
-            Box::new(MockDataType::new(&self.type_name))
-        }
-    }
-
     fn descriptor_for(type_name: &str) -> GenericDataTypeLocationDescriptorBase {
         let program: Arc<dyn Program> = Arc::new(MockProgram);
-        let location = Arc::new(MockLocation { program: program.clone(), type_name: type_name.to_string() });
+        let location = Arc::new(GenericDataTypeProgramLocation::new(
+            program.clone(),
+            Arc::new(MockDataType::new(type_name)),
+        ));
         GenericDataTypeLocationDescriptorBase::new(location, program, Box::new(MockDataType::new(type_name)))
     }
 

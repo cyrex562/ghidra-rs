@@ -2527,18 +2527,6 @@ pub trait DataTypeLocationDescriptor {
     fn get_type_name(&self) -> String;
 }
 
-/// Placeholder for
-/// `ghidra.app.plugin.core.navigation.locationreferences.GenericDataTypeProgramLocation`,
-/// referenced by
-/// [`GenericDataTypeLocationDescriptorBase`](crate::app::plugin::core::navigation::locationreferences::generic_data_type_location_descriptor::GenericDataTypeLocationDescriptorBase)
-/// before the real class is ported. Java's `GenericDataTypeProgramLocation extends
-/// ProgramLocation`, so this stub carries that supertrait too. No `Send + Sync` bound: a real
-/// implementor holds the `DataType` field directly (Java: `private final DataType dataType`), and
-/// `DataType` itself is not `Send + Sync`.
-pub trait GenericDataTypeProgramLocation: ProgramLocation {
-    fn get_data_type(&self) -> Box<dyn DataType>;
-}
-
 /// Placeholder for `ghidra.app.plugin.core.navigation.locationreferences.ReferenceUtils`, a
 /// `final` static-method-only utility class. Only `getBaseDataType(DataType)` is ported here --
 /// the one member

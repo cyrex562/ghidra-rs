@@ -119,6 +119,18 @@ mod tests {
         fn encloses(&self, outer: &MockImmutableValueBox, inner: &MockImmutableValueBox) -> bool {
             outer.lo.snap <= inner.lo.snap && outer.hi.snap >= inner.hi.snap
         }
+        fn compare_lower(&self, a: &MockImmutableValueBox, b: &MockImmutableValueBox) -> std::cmp::Ordering {
+            a.lo.snap.cmp(&b.lo.snap)
+        }
+        fn compare_upper(&self, a: &MockImmutableValueBox, b: &MockImmutableValueBox) -> std::cmp::Ordering {
+            a.hi.snap.cmp(&b.hi.snap)
+        }
+        fn compare_lower_to_upper(&self, a: &MockImmutableValueBox, b: &MockImmutableValueBox) -> std::cmp::Ordering {
+            a.lo.snap.cmp(&b.hi.snap)
+        }
+        fn compare_upper_to_lower(&self, a: &MockImmutableValueBox, b: &MockImmutableValueBox) -> std::cmp::Ordering {
+            a.hi.snap.cmp(&b.lo.snap)
+        }
     }
 
     struct MockValueSpace {

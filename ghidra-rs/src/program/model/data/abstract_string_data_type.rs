@@ -221,7 +221,13 @@ impl StringDataInstance for StringDataInstanceView<'_> {
 /// Port of `ghidra.program.model.data.AbstractStringDataType`. See the module-level documentation
 /// for the conventions used to resolve name clashes with [`DataType`]/[`Dynamic`]/
 /// [`DataTypeWithCharset`] and for what was intentionally simplified or left unported.
-pub trait AbstractStringDataType: DataType + Dynamic + DataTypeWithCharset {
+///
+/// The `std::any::Any` supertrait was grown (blanket-implemented for every concrete `'static`
+/// implementor, so no existing implementor needed any code change) for
+/// [`Sequence`](crate::util::ascii::sequence::Sequence)'s port of `Sequence.equals`, which
+/// compares two string data types by Java `getClass() == getClass()` runtime-class identity;
+/// `TypeId::of` via this supertrait is the Rust equivalent for a `dyn AbstractStringDataType`.
+pub trait AbstractStringDataType: DataType + Dynamic + DataTypeWithCharset + std::any::Any {
     /// Stands in for the private final `mnemonic` field.
     fn mnemonic(&self) -> String;
 

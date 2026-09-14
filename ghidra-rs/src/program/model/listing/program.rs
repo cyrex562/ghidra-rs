@@ -322,6 +322,19 @@ pub trait Program: DomainObject + Send + Sync {
         None
     }
 
+    /// Get the minimum address in this program's memory, or `None` if it has no memory blocks.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`GenericDataTypeProgramLocation`](crate::app::plugin::core::navigation::locationreferences::generic_data_type_program_location::GenericDataTypeProgramLocation)'s
+    /// port of `Program.getMinAddress()`, used to anchor a dummy, listing-independent location at
+    /// some real address in the program. Java can return `null` (a program with no memory); a
+    /// caller that needs a definite address (as `GenericDataTypeProgramLocation`'s constructor
+    /// does) must handle `None` itself, since this port's `ProgramLocation::get_address` is
+    /// non-nullable.
+    fn get_min_address(&self) -> Option<Address> {
+        None
+    }
+
     /// Get the address map used to encode/decode this program's addresses into the compact
     /// integer keys ("address IDs") that on-disk records store.
     ///

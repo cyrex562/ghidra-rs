@@ -1,3 +1,4 @@
+pub mod abstract_hyper_box_query;
 pub mod dimension;
 pub mod euclidean_hyper_space;
 pub mod hyper_box;
@@ -7,6 +8,9 @@ pub mod long_dimension;
 pub mod string_dimension;
 pub mod u_long_dimension;
 
+pub use abstract_hyper_box_query::{
+    enclosed, enclosing, equal_to, intersecting, HyperBoxQueryBase,
+};
 pub use dimension::Dimension;
 pub use euclidean_hyper_space::EuclideanHyperSpace;
 pub use hyper_box::HyperBox;

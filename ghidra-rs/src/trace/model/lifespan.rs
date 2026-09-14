@@ -243,6 +243,45 @@ impl Lifespan {
         result
     }
 
+    /// Whether this span shares any snapshot key with `other`.
+    ///
+    /// Java's `default boolean intersects(S s)`, delegating to `Domain.intersects`, whose `Impl`
+    /// override special-cases either operand being empty (`s1.isEmpty() || s2.isEmpty()`) before
+    /// touching `lmin`/`lmax` -- unlike [`Lifespan::encloses`], which does not. See `encloses` for
+    /// why that asymmetry matters.
+    pub fn intersects(&self, other: Lifespan) -> bool {
+        if self.is_empty() || other.is_empty() {
+            return false;
+        }
+        self.lmax() >= other.lmin() && other.lmax() >= self.lmin()
+    }
+
+    /// The intersection of this span and `other`, or [`Lifespan::EMPTY`] if they do not
+    /// intersect.
+    ///
+    /// Java's `default S intersect(S s)`, delegating to `Domain.intersect`.
+    pub fn intersect(&self, other: Lifespan) -> Lifespan {
+        if !self.intersects(other) {
+            return Lifespan::EMPTY;
+        }
+        Lifespan::span(self.lmin().max(other.lmin()), self.lmax().min(other.lmax()))
+    }
+
+    /// Whether this span fully contains every snapshot key in `other`.
+    ///
+    /// Java's `default boolean encloses(S s)`, delegating to `Domain.encloses`'s `Impl` override:
+    /// `s1.lmin() <= s2.lmin() && s2.lmax() <= s1.lmax()`.
+    ///
+    /// # Panics
+    /// Faithfully reproduces a real asymmetry in the Java source: unlike `intersects` (which
+    /// checks `isEmpty()` on both operands before calling `lmin`/`lmax`), `Domain.encloses` has no
+    /// such guard and calls `lmin()`/`lmax()` on both spans unconditionally. So this panics if
+    /// either `self` or `other` is [`Lifespan::EMPTY`], exactly as the Java method throws
+    /// `NoSuchElementException` from `Empty.lmin()`/`Empty.lmax()` in the same situation.
+    pub fn encloses(&self, other: Lifespan) -> bool {
+        self.lmin() <= other.lmin() && other.lmax() <= self.lmax()
+    }
+
     /// Iterates the snapshot keys contained in this span.
     ///
     /// Java's `Iterable<Long>`. An empty span yields an empty (rather than absent) iterator, so
@@ -454,5 +493,51 @@ mod tests {
     fn subtract_handles_the_empty_span_on_either_side() {
         assert_eq!(Lifespan::EMPTY.subtract(Lifespan::span(0, 10)), Vec::<Lifespan>::new());
         assert_eq!(Lifespan::span(0, 10).subtract(Lifespan::EMPTY), vec![Lifespan::span(0, 10)]);
+    }
+
+    #[test]
+    fn intersects_detects_overlap_and_touching_endpoints() {
+        assert!(Lifespan::span(0, 10).intersects(Lifespan::span(5, 15)));
+        assert!(Lifespan::span(0, 10).intersects(Lifespan::span(10, 20))); // touching endpoint
+        assert!(!Lifespan::span(0, 10).intersects(Lifespan::span(11, 20)));
+    }
+
+    #[test]
+    fn intersects_is_false_when_either_operand_is_empty() {
+        // Unlike `encloses`, `intersects` guards against the empty span instead of panicking.
+        assert!(!Lifespan::EMPTY.intersects(Lifespan::span(0, 10)));
+        assert!(!Lifespan::span(0, 10).intersects(Lifespan::EMPTY));
+        assert!(!Lifespan::EMPTY.intersects(Lifespan::EMPTY));
+    }
+
+    #[test]
+    fn intersect_yields_the_overlapping_span() {
+        assert_eq!(Lifespan::span(0, 10).intersect(Lifespan::span(5, 15)), Lifespan::span(5, 10));
+        assert_eq!(Lifespan::span(0, 10).intersect(Lifespan::span(20, 30)), Lifespan::EMPTY);
+        assert_eq!(Lifespan::EMPTY.intersect(Lifespan::span(0, 10)), Lifespan::EMPTY);
+    }
+
+    #[test]
+    fn encloses_true_when_other_is_a_sub_span() {
+        assert!(Lifespan::span(0, 10).encloses(Lifespan::span(2, 8)));
+        assert!(Lifespan::span(0, 10).encloses(Lifespan::span(0, 10)));
+        assert!(!Lifespan::span(0, 10).encloses(Lifespan::span(2, 20)));
+    }
+
+    #[test]
+    #[should_panic(expected = "lmin() on an empty lifespan")]
+    fn encloses_panics_on_an_empty_other_unlike_intersects() {
+        // Faithful to the Java quirk: `Domain.encloses` calls `lmin()`/`lmax()` on both operands
+        // with no `isEmpty()` guard (the guard `intersects` has), so passing an empty span throws
+        // `NoSuchElementException` in Java and panics here, even though `Lifespan::span(0,
+        // 10).intersects(Lifespan::EMPTY)` above returns `false` without panicking for the same
+        // kind of input.
+        Lifespan::span(0, 10).encloses(Lifespan::EMPTY);
+    }
+
+    #[test]
+    #[should_panic(expected = "lmin() on an empty lifespan")]
+    fn encloses_panics_when_self_is_empty() {
+        Lifespan::EMPTY.encloses(Lifespan::span(0, 10));
     }
 }

@@ -836,6 +836,29 @@ pub trait Dimension<P: HyperPoint, B: HyperBox<P>>: Send + Sync {
 
     /// Whether `outer` encloses `inner` along this dimension, mirroring `encloses(B, B)`.
     fn encloses(&self, outer: &B, inner: &B) -> bool;
+
+    /// Compares this dimension's lower bound of `a` against its lower bound of `b`, mirroring
+    /// `compare(lower(a), lower(b))`.
+    ///
+    /// Grown for
+    /// [`AbstractHyperBoxQuery`](crate::util::database::spatial::hyper::abstract_hyper_box_query),
+    /// which needs to compare arbitrary combinations of two boxes' lower/upper bounds along a
+    /// single (type-erased) dimension pulled from `EuclideanHyperSpace::dimensions()`; see that
+    /// module's docs for why these four comparator methods, rather than exposing `T` itself, are
+    /// what get added here.
+    fn compare_lower(&self, a: &B, b: &B) -> std::cmp::Ordering;
+
+    /// Compares this dimension's upper bound of `a` against its upper bound of `b`, mirroring
+    /// `compare(upper(a), upper(b))`.
+    fn compare_upper(&self, a: &B, b: &B) -> std::cmp::Ordering;
+
+    /// Compares this dimension's lower bound of `a` against its upper bound of `b`, mirroring
+    /// `compare(lower(a), upper(b))`.
+    fn compare_lower_to_upper(&self, a: &B, b: &B) -> std::cmp::Ordering;
+
+    /// Compares this dimension's upper bound of `a` against its lower bound of `b`, mirroring
+    /// `compare(upper(a), lower(b))`.
+    fn compare_upper_to_lower(&self, a: &B, b: &B) -> std::cmp::Ordering;
 }
 
 /// Placeholder for `docking.widgets.table.TableRowMapper`, needed by

@@ -1,5 +1,6 @@
 pub mod context;
 pub mod data;
+pub mod db_trace_change_set;
 pub mod db_trace_direct_change_listener;
 pub mod db_trace_manager;
 pub mod guest;
@@ -14,6 +15,7 @@ pub mod symbol;
 pub mod target;
 pub mod time;
 
+pub use db_trace_change_set::DBTraceChangeSet;
 pub use db_trace_direct_change_listener::DbTraceDirectChangeListener;
 pub use db_trace_manager::DBTraceManager;
 pub use listing::AbstractSingleDBTraceCodeUnitsView;
