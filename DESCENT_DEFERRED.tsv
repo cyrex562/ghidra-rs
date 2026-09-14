@@ -783,8 +783,8 @@ descoped	struct	22	53	format	Ghidra/Features/PDB/src/main/java/pdb/symbolserver/
 descoped	struct	3	96	format	Ghidra/Features/PDB/src/main/java/pdb/symbolserver/ui/SymbolServerRow.java
 descoped	struct	4	98	format	Ghidra/Features/PDB/src/main/java/pdb/symbolserver/ui/WellKnownSymbolServerLocation.java
 lines=2345	trait	73	2345	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/flatapi/FlatDebuggerAPI.java
-lines=2310	trait	61	2310	debug	Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiCommands.java
-lines=1646	struct	14	1646	debug	Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiMethods.java
+lines=2310	trait	60	2310	debug	Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiCommands.java
+lines=1646	struct	13	1646	debug	Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiMethods.java
 lines=1140	trait	91	1140	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/memory/DBTraceMemorySpace.java
 lines=1112	trait	0	1112	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/TraceObjectSchema.java
 lines=985	trait	4	985	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/TraceSchedule.java
@@ -848,7 +848,7 @@ lines=991	struct	45	991	program	Ghidra/Framework/SoftwareModeling/src/main/java/
 lines=961	struct	35	961	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/FollowFlow.java
 lines=1698	struct	1	1698	program	Ghidra/Processors/AARCH64/src/main/java/ghidra/program/emulation/AARCH64EmulateInstructionStateModifier.java
 lines=1015	struct	22	1015	format	Ghidra/Processors/MIPS/src/main/java/ghidra/app/util/bin/format/elf/relocation/MIPS_ElfRelocationHandler.java
-lines=1160	struct	67	1160	app	Ghidra/Processors/PIC/src/main/java/ghidra/app/plugin/core/analysis/Pic17c7xxAnalyzer.java
+lines=1160	struct	66	1160	app	Ghidra/Processors/PIC/src/main/java/ghidra/app/plugin/core/analysis/Pic17c7xxAnalyzer.java
 rem=110	trait	110	1387	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/TraceRmiHandler.java
 rem=203	trait	203	1427	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/breakpoint/DebuggerLogicalBreakpointServicePlugin.java
 rem=143	trait	143	1383	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/tracemgr/DebuggerTraceManagerServicePlugin.java
@@ -1031,7 +1031,7 @@ rem=220	struct	220	480	feature	Ghidra/Features/VersionTracking/src/main/java/ghi
 rem=134	struct	134	564	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/FunctionNameMarkupType.java
 rem=126	struct	126	333	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/FunctionSignatureMarkupType.java
 rem=146	struct	146	1389	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/stringable/FunctionSignatureStringable.java
-rem=105	struct	105	482	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/DefaultEmulator.java
+rem=104	struct	104	482	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/DefaultEmulator.java
 rem=112	struct	112	816	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/Emulate.java
 rem=172	struct	172	736	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/ProgramUserDataDB.java
 rem=112	struct	112	414	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ProgramBasedDataTypeManagerDB.java
