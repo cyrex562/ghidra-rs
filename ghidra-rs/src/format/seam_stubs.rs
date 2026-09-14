@@ -514,21 +514,17 @@ impl SegmentTable {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pe.rich.RichProduct`, referenced by
-/// [`CompId::product_description`](crate::format::pe::rich::comp_id::CompId::product_description)
-/// before the real class is ported.
-pub trait RichProduct: Send + Sync {
-    fn get_product_version(&self) -> String;
-    fn get_product_type(&self) -> MsProductType;
-    fn to_string(&self) -> String;
-}
+// `RichProduct` is ported; this was a placeholder standing in for it, referenced by
+// `CompId::product_description`/`RichHeaderUtils`. Re-exported here so anything still importing
+// it from this module converges on the one real type instead of two same-named ones.
+pub use crate::format::pe::rich::RichProduct;
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.rich.RichHeaderUtils`, referenced by
 /// [`CompId::product_description`](crate::format::pe::rich::comp_id::CompId::product_description)
 /// before the real class is ported. `RichHeaderUtils` is a concrete Java class (not an
 /// interface), so it is modeled here as a trait that returns the product information.
 pub trait RichHeaderUtils: Send + Sync {
-    fn get_product(&self, id: i32) -> Option<Box<dyn RichProduct>>;
+    fn get_product(&self, id: i32) -> Option<RichProduct>;
 }
 
 // `RichHeaderRecord` is ported; this was a placeholder standing in for it, referenced by

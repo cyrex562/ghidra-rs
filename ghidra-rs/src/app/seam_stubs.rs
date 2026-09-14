@@ -1570,15 +1570,10 @@ pub trait AssemblyNumericSymbols {
     ) -> Vec<String>;
 }
 
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyExtendedProduction`,
-/// referenced by
-/// [`AssemblyExtendedGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyExtendedGrammar)
-/// before the real class is ported. Distinct from (not a subtype of) the
-/// [`AssemblyProduction`] placeholder above: in Java both `AssemblyExtendedProduction` and
-/// `AssemblyProduction` are sibling concrete subclasses of `AbstractAssemblyProduction`,
-/// parameterized over different non-terminal types, rather than one extending the other.
-/// `AssemblyExtendedGrammar` only ever returns this type opaquely, so no members are needed yet.
-pub trait AssemblyExtendedProduction {}
+// `AssemblyExtendedProduction` is ported; this was a placeholder standing in for it, referenced
+// by `AssemblyExtendedGrammar`. Re-exported here so anything still importing it from this module
+// converges on the one real type instead of two same-named ones.
+pub use crate::app::plugin::assembler::sleigh::grammars::AssemblyExtendedProduction;
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.tree.AssemblyParseTreeNode`, referenced by
 /// [`AssemblyParseBranch`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch)

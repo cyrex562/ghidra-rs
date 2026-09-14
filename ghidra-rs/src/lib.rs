@@ -14,6 +14,7 @@ pub mod graph;
 pub mod net;
 pub mod pty;
 pub mod pcode;
+pub mod plugin;
 pub mod program;
 pub mod script;
 pub mod service;

@@ -15,6 +15,7 @@ pub mod keyed_object_factory;
 pub mod path;
 pub mod vertex;
 pub mod vertex_set;
+pub mod weighted_digraph;
 
 pub use abstract_dependency_graph::{AbstractDependencyGraph, CycleDetectedError};
 pub use dependency_graph::DependencyGraph;
@@ -47,3 +48,5 @@ pub use path::Path;
 pub use vertex::Vertex;
 #[allow(deprecated)]
 pub use vertex_set::{VertexSet, VertexSetIterator};
+#[allow(deprecated)]
+pub use weighted_digraph::WeightedDigraph;

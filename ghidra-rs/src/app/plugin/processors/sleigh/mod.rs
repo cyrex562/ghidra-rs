@@ -1,6 +1,7 @@
 pub mod context_cache;
 pub mod fixed_handle;
 pub mod op_tpl_walker;
+pub mod pattern;
 pub mod pcode_emit;
 pub mod pcode_emit_objects;
 pub mod pcode_emit_packed;

@@ -37,7 +37,7 @@ impl CompId {
 
         let prod_version = prod
             .as_ref()
-            .map(|p| p.get_product_version())
+            .map(|p| p.get_product_version().to_string())
             .unwrap_or_else(|| format!("Unknown Product ({})", format!("{:x}", self.product_id)));
 
         let prod_type = prod
@@ -66,7 +66,7 @@ mod tests {
     struct MockRichHeaderUtils;
 
     impl RichHeaderUtils for MockRichHeaderUtils {
-        fn get_product(&self, _id: i32) -> Option<Box<dyn RichProduct>> {
+        fn get_product(&self, _id: i32) -> Option<RichProduct> {
             None
         }
     }

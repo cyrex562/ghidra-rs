@@ -65,7 +65,7 @@ mod tests {
     struct MockRichHeaderUtils;
 
     impl RichHeaderUtils for MockRichHeaderUtils {
-        fn get_product(&self, _id: i32) -> Option<Box<dyn RichProduct>> {
+        fn get_product(&self, _id: i32) -> Option<RichProduct> {
             None
         }
     }
