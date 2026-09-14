@@ -19,8 +19,17 @@ pub trait SubMemoryVarGen<V: JitVarnodeVar>: MemoryVarGen<V> {
     fn max_byte_size(&self) -> i32;
 
     /// Port of `SubMemoryVarGen.getVarnode`.
+    ///
+    /// Java's body is `Varnode parent = MemoryVarGen.super.getVarnode(gen, v);` -- an interface
+    /// super-call that statically targets `MemoryVarGen`'s own default method body, bypassing
+    /// any override on the concrete implementing class. Rust has no equivalent: calling
+    /// `MemoryVarGen::get_varnode(self, ...)` here would dispatch through whatever concrete
+    /// `impl MemoryVarGen` `self`'s type provides, which for every real implementor of this
+    /// trait overrides `get_varnode` to forward right back here -- infinite recursion. Since
+    /// `MemoryVarGen::get_varnode`'s own default body is exactly `v.varnode()` (ignoring `gen`),
+    /// that base behavior is inlined directly instead.
     fn get_varnode(&self, gen: &dyn JitCodeGenerator, v: &V) -> Varnode {
-        let parent = MemoryVarGen::get_varnode(self, gen, v);
+        let parent = v.varnode();
         JitDataFlowArithmetic::sub_piece_vn(
             gen.get_analysis_context().get_endian(),
             &parent,

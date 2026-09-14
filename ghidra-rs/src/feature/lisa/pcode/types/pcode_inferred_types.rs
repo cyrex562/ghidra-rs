@@ -90,7 +90,7 @@ pub trait PcodeTypeContext: Sized {
     /// `it.unive.lisa.type.Type`.
     type Type: Clone + PartialEq + Eq + Hash + std::fmt::Debug;
     /// `it.unive.lisa.type.TypeSystem`.
-    type TypeSystem;
+    type TypeSystem: Clone;
     /// `it.unive.lisa.program.cfg.ProgramPoint`.
     type ProgramPoint;
     /// `it.unive.lisa.analysis.SemanticOracle`. Never inspected by this class's own logic --

@@ -9,6 +9,7 @@ pub mod compositeeditor;
 pub mod console;
 pub mod data_preview;
 pub mod datamgr;
+pub mod datawindow;
 pub mod debug;
 pub mod decompile;
 pub mod decompiler;
