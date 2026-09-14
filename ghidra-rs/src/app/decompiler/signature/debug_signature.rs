@@ -74,7 +74,7 @@ pub fn decode_signatures(
         } else if subel == ELEM_BLOCKSIG.id {
             Box::new(crate::app::seam_stubs::BlockSignature::new())
         } else if subel == ELEM_COPYSIG.id {
-            Box::new(crate::app::seam_stubs::CopySignature::new())
+            Box::new(super::copy_signature::CopySignature::new())
         } else {
             return Err(DecoderException::new("Unknown debug signature element"));
         };
@@ -148,7 +148,10 @@ mod tests {
             unimplemented!()
         }
         fn read_signed_integer_with_id(&self, _attrib_id: AttributeId) -> Result<i64, DecoderError> {
-            unimplemented!()
+            // Real CopySignature::decode() (graduated from a no-op seam stub) reads
+            // ATTRIB_INDEX via this method; this loop's own test only cares about dispatch
+            // order/count, not the decoded value, so any fixed value is fine.
+            Ok(0)
         }
         fn read_unsigned_integer(&self) -> Result<u64, DecoderError> {
             unimplemented!()
@@ -157,7 +160,9 @@ mod tests {
             &self,
             _attrib_id: AttributeId,
         ) -> Result<u64, DecoderError> {
-            unimplemented!()
+            // Real CopySignature::decode() reads ATTRIB_HASH via this method; see the note on
+            // read_signed_integer_with_id above.
+            Ok(0)
         }
         fn read_string(&self) -> Result<String, DecoderError> {
             unimplemented!()

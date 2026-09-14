@@ -1,5 +1,6 @@
 pub mod abstract_address_set_view;
 pub mod address_range_comparators;
+pub mod application_settings;
 pub mod application_utilities;
 pub mod address_range_iterators;
 pub mod difference_address_set_view;
@@ -122,6 +123,10 @@ pub use symmetric_difference_address_set_view::SymmetricDifferenceAddressSetView
 pub use test_universal_id_generator::TestUniversalIdGenerator;
 pub use union_address_set_view::UnionAddressSetView;
 pub use word_location::WordLocation;
+pub use application_settings::{
+    get_user_application_settings_directory, ApplicationSettings, DefaultApplicationSettings,
+    APPLICATION_SETTINGS_DIR_NAME,
+};
 pub use application_utilities::{
     ApplicationUtilities, PROPERTY_CACHE_DIR, PROPERTY_SETTINGS_DIR, PROPERTY_TEMP_DIR,
 };

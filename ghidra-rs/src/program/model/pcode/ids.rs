@@ -974,6 +974,7 @@ pub const ATTRIB_SYMBOLSIZE: AttributeId = AttributeId::new("symbolsize", 46);
 pub const ATTRIB_VARNODE: AttributeId = AttributeId::new("varnode", 47);
 pub const ATTRIB_LOW: AttributeId = AttributeId::new("low", 48);
 pub const ATTRIB_HIGH: AttributeId = AttributeId::new("high", 49);
+pub const ATTRIB_HASH: AttributeId = AttributeId::new("hash", 146);
 pub const ATTRIB_FLOW: AttributeId = AttributeId::new("flow", 50);
 pub const ATTRIB_CONTAIN: AttributeId = AttributeId::new("contain", 51);
 pub const ATTRIB_I: AttributeId = AttributeId::new("i", 52);

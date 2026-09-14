@@ -193,7 +193,11 @@ pub trait QuickFix {
     ///
     /// The Java `ServiceProvider` parameter is dropped: no implementor in this crate needs it yet,
     /// and [`crate::framework::plugintool::ServiceProvider`] would otherwise need to be threaded
-    /// through every call site just for this always-`false`-by-default hook.
+    /// through every call site just for this always-`false`-by-default hook. A concrete quick fix
+    /// whose own override *does* need a service lookup (e.g.
+    /// [`CompositeFieldQuickFixState::navigate_special`](crate::feature::base::replace::items::composite_field_quick_fix::CompositeFieldQuickFixState::navigate_special))
+    /// keeps that logic as a plain inherent method taking the already-resolved service directly,
+    /// then wires its `bool` result into its own [`QuickFix::navigate_special`] override.
     fn navigate_special(&mut self, _from_selection_change: bool) -> bool {
         false
     }

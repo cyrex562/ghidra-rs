@@ -1537,6 +1537,20 @@ pub trait AssemblyConstructorSemantic: std::fmt::Display {}
 pub trait AssemblySymbol: std::fmt::Display {
     /// A stable identity for this symbol, used for equality and hashing.
     fn terminal_tag(&self) -> &str;
+
+    /// Attempt to view this symbol as a non-terminal.
+    ///
+    /// Grown for
+    /// [`AssemblyParseStateItem::get_closure`](crate::app::plugin::assembler::sleigh::parse::AssemblyParseStateItem::get_closure),
+    /// which needs Java's `next instanceof AssemblyNonTerminal` check (`AssemblyNonTerminal
+    /// extends AssemblySymbol`) -- a reflective type test with no equivalent on a bare Rust trait
+    /// object, since these two placeholder traits carry no structural relationship to each other.
+    /// Implementers that *are* a non-terminal should override this to return `Some(self)` (as an
+    /// [`AssemblyNonTerminal`]); every other implementor keeps the default `None`, mirroring
+    /// `instanceof` returning `false`.
+    fn as_non_terminal(&self) -> StdOption<&dyn AssemblyNonTerminal> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyNumericSymbols`, referenced
@@ -2159,39 +2173,6 @@ impl Default for BlockSignature {
 }
 
 impl crate::app::decompiler::signature::DebugSignature for BlockSignature {
-    fn decode(
-        &mut self,
-        _decoder: &dyn crate::program::model::pcode::decoder::Decoder,
-    ) -> Result<(), crate::program::model::pcode::decoder_exception::DecoderException> {
-        Ok(())
-    }
-
-    fn print_raw(&self, _language: &dyn crate::program::model::lang::language::Language, buf: &mut String) {
-        buf.push_str(&format!("{:x}", self.base.hash));
-    }
-}
-
-/// Placeholder for `ghidra.app.decompiler.signature.CopySignature`, referenced by
-/// [`decode_signatures`](crate::app::decompiler::signature::decode_signatures) before the real
-/// class is ported. See [`BlockSignature`]'s doc comment for the shape of this placeholder; the
-/// real port will fill in `CopySignature`'s `index` field and its stream format.
-pub struct CopySignature {
-    base: crate::app::decompiler::signature::DebugSignatureBase,
-}
-
-impl CopySignature {
-    pub fn new() -> Self {
-        Self { base: crate::app::decompiler::signature::DebugSignatureBase::new() }
-    }
-}
-
-impl Default for CopySignature {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl crate::app::decompiler::signature::DebugSignature for CopySignature {
     fn decode(
         &mut self,
         _decoder: &dyn crate::program::model::pcode::decoder::Decoder,

@@ -4101,25 +4101,12 @@ pub fn nop_pcode_op(at: &AddrCtx, seq: i32) -> PcodeOp {
     PcodeOp::new(OpCode::Unimplemented, SequenceNumber::new(at.address.clone(), seq), Vec::new(), None)
 }
 
-/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.decode.DecodedStride`, referenced
-/// by
-/// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride),
-/// which builds and returns it. Java declares `instructions` as `List<Instruction>`, but the only
-/// instructions `DecoderForOneStride` actually has on hand are the `PseudoInstruction`s it decodes
-/// (`PseudoInstruction` doesn't yet implement the ported `Instruction` trait), so this stub uses
-/// that instead. Replace with the real port (and the `Instruction` list) when `DecodedStride.java`
-/// lands and `PseudoInstruction` is a real port.
-pub struct DecodedStride {
-    /// The address-context pair that seeded this stride. Port of `DecodedStride.start()`.
-    pub start: AddrCtx,
-    /// The instructions in decode order. Port of `DecodedStride.instructions()`. `Arc`, not `Box`,
-    /// because Java hands the very same instruction object to both this list and the
-    /// [`DecoderExecutor`](crate::pcode::emu::jit::decode::decoder_executor::DecoderExecutor) that
-    /// decoded it.
-    pub instructions: Vec<Arc<dyn PseudoInstruction>>,
-    /// The p-code ops in decode/emit order. Port of `DecodedStride.ops()`.
-    pub ops: Vec<PcodeOp>,
-}
+/// `ghidra.pcode.emu.jit.decode.DecodedStride` is now ported -- see
+/// [`crate::pcode::emu::jit::decode::decoded_stride`]. This re-export keeps the call sites that
+/// were written against the seam-stub location (e.g.
+/// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride))
+/// working.
+pub use crate::pcode::emu::jit::decode::decoded_stride::DecodedStride;
 
 /// Placeholder for the unported Java type `ghidra.pcode.emu.sys.EmuInvalidSystemCallException`,
 /// referenced by
