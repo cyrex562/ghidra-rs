@@ -1,7 +1,17 @@
+pub mod condition_context;
 pub mod pcode_context;
+pub mod symbol_varnode_context;
+pub mod ternary_expr_context;
+pub mod unary_expr_context;
 pub mod var_def_context;
+pub mod varargs_expr_context;
 pub mod varnode_context;
 
+pub use condition_context::ConditionContext;
 pub use pcode_context::PcodeContext;
+pub use symbol_varnode_context::SymbolVarnodeContext;
+pub use ternary_expr_context::TernaryExprContext;
+pub use unary_expr_context::UnaryExprContext;
 pub use var_def_context::VarDefContext;
+pub use varargs_expr_context::VarargsExprContext;
 pub use varnode_context::VarnodeContext;
