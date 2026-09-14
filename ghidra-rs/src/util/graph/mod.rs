@@ -13,6 +13,7 @@ pub mod key_indexable_set;
 pub mod keyed_object;
 pub mod path;
 pub mod vertex;
+pub mod vertex_set;
 
 pub use abstract_dependency_graph::{AbstractDependencyGraph, CycleDetectedError};
 pub use dependency_graph::DependencyGraph;
@@ -41,3 +42,5 @@ pub use keyed_object::KeyedObject;
 pub use path::Path;
 #[allow(deprecated)]
 pub use vertex::Vertex;
+#[allow(deprecated)]
+pub use vertex_set::{VertexSet, VertexSetIterator};

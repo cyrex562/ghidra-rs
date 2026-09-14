@@ -523,7 +523,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/wa
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/watch/DefaultWatchRow.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui watch 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/watch/SavedSettings.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui watch 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/AbstractDebuggerPlatformMapper.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/AbstractDebuggerPlatformOffer.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/AbstractDebuggerPlatformOffer.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/AbstractDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOffer.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
@@ -1718,10 +1718,10 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/Da
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/DefaultSFQueryServiceFactory.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/FunctionSymbolIterator.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/QueryDatabaseException.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query facade
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFOverviewInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFOverviewInfo.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryServiceFactory.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryServiceFactory.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFResultsUpdateListener.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SimilarFunctionQueryService.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimH2FileDBConnectionManager.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query file 
@@ -2856,7 +2856,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/edit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/StorageAddressEditorDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/StorageAddressModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/StorageTableCellEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/VarnodeInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/VarnodeInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/VarnodeLocationCellEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/VarnodeLocationTableCellRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/VarnodeSizeCellEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
@@ -3222,7 +3222,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/da
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/databasesearcher/FunctionFieldSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext databasesearcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/databasesearcher/InstructionMnemonicOperandFieldSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext databasesearcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/databasesearcher/LabelFieldSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext databasesearcher 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/databasesearcher/ProgramDatabaseFieldSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext databasesearcher 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/databasesearcher/ProgramDatabaseFieldSearcher.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext databasesearcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/databasesearcher/ProgramDatabaseSearchTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext databasesearcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/databasesearcher/ProgramDatabaseSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext databasesearcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/iterators/CommentSearchAddressIterator.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext iterators
@@ -7645,7 +7645,7 @@ orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/Fid
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatch.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatchImpl.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatchScore.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid service
-orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidPopulateResult.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
+orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidPopulateResult.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidPopulateResultReporter.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidProgramSeeker.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidSearchResult.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
@@ -9033,7 +9033,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfTypedefPoin
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfTypedefUser.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/SarifDataType.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/SarifDataTypeWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/dd/ExtComment.java	TODO	orig_src Ghidra Features Sarif src main java sarif export dd 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/dd/ExtComment.java	DONE	orig_src Ghidra Features Sarif src main java sarif export dd 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/dd/ExtCommentSet.java	TODO	orig_src Ghidra Features Sarif src main java sarif export dd 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/dd/ExtData.java	TODO	orig_src Ghidra Features Sarif src main java sarif export dd 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/dd/SarifDataWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export dd 
@@ -9167,7 +9167,7 @@ orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/ty
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/GenericRequirementFlags.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/GenericRequirementKind.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/GenericRequirementLayoutKind.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
-orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/InvertibleProtocolKind.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
+orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/InvertibleProtocolKind.java	DONE	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/InvertibleProtocolSet.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/MetadataInitializationKind.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/MetadataSourceRecord.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
@@ -11850,9 +11850,9 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/KeyedObjectFac
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Path.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/SimpleWeightedDigraph.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Vertex.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/VertexSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/VertexSet.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/WeightedDigraph.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/Attribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/Attribute.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/AttributeManager.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph attributes
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/DoubleAttribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/IntegerAttribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
@@ -12965,7 +12965,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/AndExpressionSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/ConstantValueSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/ContextFieldSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/DefaultSolverHint.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/DefaultSolverHint.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/DivExpressionSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/EndInstructionValueSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/LeftShiftExpressionSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
@@ -13075,7 +13075,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/langu
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/BinaryExpression.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Constant.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstantTemplate.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstructorInfo.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstructorInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstructorPcodeTemplate.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ExpressionTerm.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ExpressionValue.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
@@ -14352,7 +14352,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/re
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationUtil.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/scalar/Scalar.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model scalar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/scalar/ScalarOverflowException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model scalar
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/DummySourceFileManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model sourcemap 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/DummySourceFileManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model sourcemap 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceFileManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model sourcemap
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntry.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model sourcemap 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntryIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model sourcemap
