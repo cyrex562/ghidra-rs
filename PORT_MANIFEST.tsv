@@ -879,12 +879,12 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/databas
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/iface/DBTraceObjectFocusScope.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target iface 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/iface/DBTraceObjectMethod.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target iface 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/iface/DBTraceObjectTogglable.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target iface 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/AllPathsVisitor.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/AncestorsRelativeVisitor.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/AncestorsRootVisitor.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/CanonicalSuccessorsRelativeVisitor.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/OrderedSuccessorsVisitor.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/SuccessorsRelativeVisitor.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/AllPathsVisitor.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/AncestorsRelativeVisitor.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/AncestorsRootVisitor.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/CanonicalSuccessorsRelativeVisitor.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/OrderedSuccessorsVisitor.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/SuccessorsRelativeVisitor.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/visitors/TreeTraversal.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target visitors 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/thread/DBTraceObjectProcess.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database thread 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/thread/DBTraceThread.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database thread 
@@ -5306,7 +5306,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/AsciiCharSetRecogn
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/ByteStreamCharMatcher.java	DONE	orig_src Ghidra Features Base src main java ghidra util ascii
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/CharSetRecognizer.java	DONE	orig_src Ghidra Features Base src main java ghidra util ascii 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/CharWidth.java	DONE	orig_src Ghidra Features Base src main java ghidra util ascii
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/MinLengthCharSequenceMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra util ascii 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/MinLengthCharSequenceMatcher.java	DONE	orig_src Ghidra Features Base src main java ghidra util ascii 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/MultiByteCharMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra util ascii 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/Sequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util ascii 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bean/field/AnnotatedTextFieldElement.java	TODO	orig_src Ghidra Features Base src main java ghidra util bean field 
@@ -11585,7 +11585,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGenericTest
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/ConcurrentTestExceptionHandler.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/ConcurrentTestExceptionStatement.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/TestExceptionTracker.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/TestReportingException.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/TestReportingException.java	DONE	orig_src Ghidra Framework Generic src main java generic test 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/TestThread.java	DONE	orig_src Ghidra Framework Generic src main java generic test 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/TestUtils.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/category/NightlyCategory.java	DONE	orig_src Ghidra Framework Generic src main java generic test category 
