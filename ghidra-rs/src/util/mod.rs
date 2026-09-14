@@ -64,6 +64,7 @@ pub mod naming_utilities;
 pub mod property_file;
 pub mod system_utilities;
 pub mod task;
+pub mod worker;
 pub mod timer;
 pub mod timed_msg;
 pub mod test_buffer;

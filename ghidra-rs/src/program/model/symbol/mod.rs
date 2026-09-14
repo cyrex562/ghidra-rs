@@ -499,4 +499,25 @@ pub trait SymbolTable: Send + Sync {
     fn get_class_namespaces(&self) -> Vec<Arc<dyn GhidraClass>> {
         Vec::new()
     }
+
+    /// Remove a symbol, with special handling for function symbols (which get renamed to a
+    /// fallback name -- absorbing whatever non-primary label happens to exist at the function's
+    /// entry point, or else the default `FUN_...` name -- rather than deleted outright, since a
+    /// function must always have a primary symbol). Stands in for
+    /// `SymbolTable.removeSymbolSpecial(Symbol)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`remove_all_labels`](crate::feature::vt::api::util::label_markup_utils::remove_all_labels),
+    /// which removes every non-function label symbol at an address. The real method's
+    /// function-renaming branch needs write access to the owning `FunctionManagerDB`/reference
+    /// manager that this trait does not model, so it is left to implementors; the caller this
+    /// method was grown for already filters out function symbols before calling it (mirroring
+    /// the Java caller, which checks `symbol instanceof FunctionSymbol` first), so that branch is
+    /// never exercised through this port's only current use.
+    ///
+    /// Defaults to `false` (removal refused) so existing implementors are unaffected.
+    fn remove_symbol_special(&mut self, symbol: &dyn Symbol) -> bool {
+        let _ = symbol;
+        false
+    }
 }

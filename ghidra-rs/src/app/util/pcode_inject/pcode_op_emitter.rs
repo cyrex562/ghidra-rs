@@ -47,7 +47,7 @@ pub struct RegisterInfo {
 /// The slice of `ghidra.app.plugin.processors.sleigh.SleighLanguage` that [`PcodeOpEmitter`]
 /// needs. See the module docs for why this is a locally-defined trait rather than the crate's
 /// existing (differently-scoped) `SleighLanguage` struct.
-pub trait PcodeOpEmitterLanguage {
+pub trait PcodeOpEmitterLanguage: Send + Sync {
     /// Mirrors `language.getAddressFactory().getConstantSpace()`.
     fn get_constant_space(&self) -> Arc<AddressSpace>;
 

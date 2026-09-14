@@ -106,20 +106,7 @@ pub struct ClassFileAnalysisState {
 impl ClassFileAnalysisState {
     /// Mirrors `ClassFileAnalysisState(Program)`.
     pub fn new(program: Arc<dyn Program>) -> io::Result<Self> {
-        let factory = program
-            .get_address_factory()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Not a valid class file"))?;
-        let space = factory
-            .get_address_space_by_name("constantPool")
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Not a valid class file"))?;
-        let memory = program
-            .get_memory()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Not a valid class file"))?;
-
-        let provider = MemoryByteProvider::new(memory, &space);
-        let mut reader = ProviderBinaryReader::new(Rc::new(RefCell::new(provider)), false);
-        let class_file = ClassFileJava::new(&mut reader)?;
-
+        let class_file = parse_class_file(program.as_ref())?;
         Ok(ClassFileAnalysisState { program, class_file, method_map: Mutex::new(None) })
     }
 
@@ -187,6 +174,37 @@ impl ClassFileAnalysisState {
             ClassFileAnalysisState::new(program.clone())
         })
     }
+}
+
+/// Parses the [`ClassFileJava`] out of `program`'s `constantPool` address space and memory,
+/// without the per-program caching layer [`ClassFileAnalysisState::new`]/
+/// [`ClassFileAnalysisState::get_state`] wrap around it. Extracted from `new`'s body (which now
+/// just calls this) so callers that only have a `&dyn Program` -- rather than the owned
+/// `Arc<dyn Program>` the cache key in
+/// [`TransientProgramProperties::get_property`](crate::format::seam_stubs::TransientProgramProperties::get_property)
+/// requires -- can still recover the constant pool. This matters for
+/// [`InjectMultiANewArray::get_pcode`](crate::app::util::pcode_inject::inject_multi_a_new_array::InjectMultiANewArray::get_pcode),
+/// which implements `InjectPayload::get_pcode(&dyn Program, ...)` and so never owns an `Arc`, the
+/// same way Java's `InjectPayloadJava.getConstantPool(Program)` calls `ClassFileAnalysisState.getState(program)`
+/// with only a plain `Program` reference (Java has no ownership distinction to work around here).
+///
+/// Since a `.class` file's bytes -- and therefore its parsed constant pool -- do not change once
+/// loaded (see this type's own doc comment), skipping the cache only means re-parsing on every
+/// call rather than reusing a memoized result; the returned value is identical either way.
+pub fn parse_class_file(program: &dyn Program) -> io::Result<ClassFileJava> {
+    let factory = program
+        .get_address_factory()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Not a valid class file"))?;
+    let space = factory
+        .get_address_space_by_name("constantPool")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Not a valid class file"))?;
+    let memory = program
+        .get_memory()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Not a valid class file"))?;
+
+    let provider = MemoryByteProvider::new(memory, &space);
+    let mut reader = ProviderBinaryReader::new(Rc::new(RefCell::new(provider)), false);
+    ClassFileJava::new(&mut reader)
 }
 
 #[cfg(test)]
