@@ -1,4 +1,5 @@
 pub mod concurrent_q;
+pub mod io;
 pub mod listener_set;
 pub mod named_daemon_thread_factory;
 pub mod progress_tracker;
@@ -7,6 +8,7 @@ pub mod reentry_guard;
 pub mod thread_pool;
 
 pub use concurrent_q::ConcurrentQ;
+pub use io::IOResult;
 pub use listener_set::ConcurrentListenerSet;
 pub use named_daemon_thread_factory::NamedDaemonThreadFactory;
 pub use progress_tracker::ProgressTracker;

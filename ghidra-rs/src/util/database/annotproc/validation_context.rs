@@ -33,10 +33,13 @@
 
 use std::collections::{HashMap, HashSet};
 
+use super::abstract_db_annotation_validator::ElementKind;
+use super::Modifier;
+
 /// Surrogate for `javax.lang.model.element.TypeElement`: a named, declared type together with
 /// enough structure for [`ValidationContext::find_supertype`]/[`ValidationContext::get_arguments`]
 /// to walk its supertype chain and type parameters, without needing a live compiler.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct TypeElement {
     /// The element's canonical/binary name, e.g. `"java.util.List"`. Mirrors what
     /// `Elements.getTypeElement(String)` looks up by, and what two `TypeElement`s are compared
@@ -46,6 +49,26 @@ pub struct TypeElement {
     /// Names of this element's own type parameters, in declaration order (`E` for `List<E>`,
     /// etc.). Mirrors `TypeElement.getTypeParameters()`.
     pub type_parameters: Vec<String>,
+}
+
+// A real `javax.lang.model.element.TypeElement` is canonicalized per compilation unit: it
+// represents the class itself (like `List.class`), identified solely by its canonical name --
+// two `TypeElement` instances for the same class are always `==` in Java regardless of how each
+// was independently constructed. `type_parameters` is descriptive metadata about what the class
+// declares, not part of its identity, so equality (and the Hash impl kept consistent with it)
+// compares `name` only.
+impl PartialEq for TypeElement {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl Eq for TypeElement {}
+
+impl std::hash::Hash for TypeElement {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
 }
 
 impl TypeElement {
@@ -111,12 +134,43 @@ impl JavaType {
     }
 }
 
-/// Surrogate for `javax.lang.model.element.VariableElement` as used here: only its declared type
-/// matters to `ValidationContext`.
+/// Surrogate for `javax.lang.model.element.VariableElement` as used here.
+///
+/// `ValidationContext`'s own methods only ever need [`declared_type`](Self::declared_type). The
+/// other two fields exist for the (unported-until-now) `DBAnnotatedColumnValidator`/
+/// `DBAnnotatedFieldValidator`, which additionally call `field.getModifiers()` and
+/// `(TypeElement) field.getEnclosingElement()` -- both live-compiler-supplied facts about the
+/// annotated field/column's declaration site, so, per this module's own established convention
+/// (see the module docs), they are supplied directly here by whatever constructs the
+/// `VariableElement` rather than derived from a live `javax.lang.model` query.
 #[derive(Debug, Clone)]
 pub struct VariableElement {
     /// Java: `field.asType()`.
     pub declared_type: JavaType,
+
+    /// Java: `field.getEnclosingElement()`, cast to `TypeElement`.
+    pub enclosing_type: TypeElement,
+
+    /// The [`ElementKind`] of [`Self::enclosing_type`] -- Java: `((TypeElement)
+    /// field.getEnclosingElement()).getKind()`. See [`ElementKind`]'s own docs for why this
+    /// two-variant stand-in, rather than a `TypeElement`-carried field, is used.
+    pub enclosing_kind: ElementKind,
+
+    /// Java: `field.getModifiers()`.
+    pub modifiers: HashSet<Modifier>,
+}
+
+impl VariableElement {
+    /// Constructs a `VariableElement` with no modifiers (Java: an empty `Set<Modifier>`).
+    pub fn new(declared_type: JavaType, enclosing_type: TypeElement, enclosing_kind: ElementKind) -> Self {
+        VariableElement { declared_type, enclosing_type, enclosing_kind, modifiers: HashSet::new() }
+    }
+
+    /// Builder-style: attaches the given modifiers.
+    pub fn with_modifiers(mut self, modifiers: impl IntoIterator<Item = Modifier>) -> Self {
+        self.modifiers = modifiers.into_iter().collect();
+        self
+    }
 }
 
 /// Cut-down surrogate for `javax.lang.model.util.Types`, exposing exactly the operations
@@ -146,6 +200,11 @@ pub trait TypeOracle {
 
     /// Java: `Types.directSupertypes(TypeMirror)`.
     fn direct_supertypes(&self, t: &JavaType) -> Vec<JavaType>;
+
+    /// Java: `element.getModifiers().contains(Modifier.ABSTRACT)` for `elem`'s declaration.
+    /// Added for `DBAnnotatedFieldValidator`'s `checkCodecTypes`, which checks whether a codec's
+    /// field-type argument names a non-abstract class.
+    fn is_abstract(&self, elem: &TypeElement) -> bool;
 }
 
 /// Surrogate for `javax.annotation.processing.Messager`. Stored by [`ValidationContext`]
@@ -247,8 +306,9 @@ impl ValidationContext {
             list_elem: TypeElement::with_type_parameters("java.util.List", vec!["E".to_string()]),
             db_annotated_object_elem: TypeElement::new("ghidra.util.database.DBAnnotatedObject"),
             db_object_column_elem: TypeElement::new("ghidra.util.database.DBObjectColumn"),
-            db_field_codec_elem: TypeElement::new(
+            db_field_codec_elem: TypeElement::with_type_parameters(
                 "ghidra.util.database.DBCachedObjectStoreFactory.DBFieldCodec",
+                vec!["VT".to_string(), "OT".to_string(), "FT".to_string()],
             ),
             default_codec_elem: TypeElement::new(
                 "ghidra.util.database.annot.DBAnnotatedField.DefaultCodec",
@@ -465,6 +525,13 @@ impl ValidationContext {
     pub fn format(&self, t: &JavaType) -> String {
         format_type(t)
     }
+
+    /// Check if the given type element is declared abstract.
+    ///
+    /// Java: `elem.getModifiers().contains(Modifier.ABSTRACT)`, via [`TypeOracle::is_abstract`].
+    pub fn is_abstract(&self, elem: &TypeElement) -> bool {
+        self.types.is_abstract(elem)
+    }
 }
 
 #[cfg(test)]
@@ -595,10 +662,21 @@ mod tests {
                 None => Vec::new(),
             }
         }
+
+        fn is_abstract(&self, _elem: &TypeElement) -> bool {
+            // Not exercised by this file's own tests; see DBAnnotatedFieldValidator's own tests.
+            false
+        }
     }
 
     fn ctx() -> ValidationContext {
         ValidationContext::new(Box::new(MockTypeOracle::new()), Box::new(NoopMessager))
+    }
+
+    /// Builds a [`VariableElement`] with an arbitrary (test-irrelevant) enclosing type/kind, for
+    /// tests that only care about `declared_type`.
+    fn variable_element(declared_type: JavaType) -> VariableElement {
+        VariableElement::new(declared_type, TypeElement::new("com.example.Test"), ElementKind::Class)
     }
 
     // ---- is_subclass ----
@@ -626,7 +704,7 @@ mod tests {
     #[test]
     fn has_type_matches_via_unboxing_the_target() {
         let c = ctx();
-        let field = VariableElement { declared_type: JavaType::Primitive("int") };
+        let field = variable_element(JavaType::Primitive("int"));
         let boxed_integer = JavaType::declared(TypeElement::new("java.lang.Integer"));
         assert!(c.has_type(&field, &boxed_integer));
     }
@@ -635,14 +713,14 @@ mod tests {
     fn has_type_matches_enum_self_referential_bound() {
         let c = ctx();
         let my_enum_type = JavaType::declared(TypeElement::new("com.example.MyEnum"));
-        let field = VariableElement { declared_type: my_enum_type.clone() };
+        let field = variable_element(my_enum_type.clone());
         assert!(c.has_type(&field, &my_enum_type));
     }
 
     #[test]
     fn has_type_falls_back_to_assignability() {
         let c = ctx();
-        let field = VariableElement { declared_type: JavaType::declared(TypeElement::new("com.example.Sub")) };
+        let field = variable_element(JavaType::declared(TypeElement::new("com.example.Sub")));
         let base = JavaType::declared(TypeElement::new("com.example.Base"));
         assert!(c.has_type(&field, &base));
     }
@@ -650,7 +728,7 @@ mod tests {
     #[test]
     fn has_type_false_for_unrelated_types() {
         let c = ctx();
-        let field = VariableElement { declared_type: JavaType::declared(TypeElement::new("com.example.Base")) };
+        let field = variable_element(JavaType::declared(TypeElement::new("com.example.Base")));
         let my_enum = JavaType::declared(TypeElement::new("com.example.MyEnum"));
         assert!(!c.has_type(&field, &my_enum));
     }

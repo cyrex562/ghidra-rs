@@ -12,20 +12,84 @@
 //! `getByteProvider`, `getListing`, and the `isAndroidXmlFile` probe) rather than also
 //! reimplementing `GFileSystemBase`'s inherited plumbing.
 //!
-//! `AndroidXmlConvertor` (the binary-XML-to-text converter) is not yet ported; see
-//! [`crate::file::seam_stubs::AndroidXmlConvertor`] for its minimal stand-in. The lone file this
-//! filesystem exposes is represented with the already-ported
+//! `AndroidXmlConvertor` (the binary-XML-to-text converter) is fully ported at
+//! [`crate::file::formats::android::xml::android_xml_convertor`], but the third-party
+//! `AXmlResourceParser` it walks is not part of Ghidra's own source tree (see that module's doc
+//! comment), so this filesystem still cannot actually convert a real payload -- it wires
+//! `AndroidXmlConvertor::convert` up against [`UnimplementedAXmlResourceParser`], a local stand-in
+//! that always fails, preserving this crate's prior behavior here. The lone file this filesystem
+//! exposes is represented with the already-ported
 //! [`GFileImpl`](crate::filesystem::gfilesystem::g_file_impl::GFileImpl), parameterized over a
 //! small local FS/FSRL pair ([`XmlFsMarker`]/[`XmlFsrl`]) since no concrete `FSRL` type exists
 //! in the crate yet either.
 
 use std::io;
 
-use crate::file::seam_stubs::{AndroidXmlConvertor, ByteArrayProvider};
+use crate::file::formats::android::xml::android_xml_convertor::{
+    AndroidXmlConvertor, ANDROID_BINARY_XML_MAGIC,
+};
+use crate::file::seam_stubs::{AXmlParseError, AXmlResourceParser, AndroidXmlEvent, ByteArrayProvider};
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, FsrlLike, GFileImpl, HasFsrlRoot};
 use crate::util::task::TaskMonitor;
+
+/// Placeholder [`AXmlResourceParser`] used until a real binary-XML parser is ported (see that
+/// trait's own doc comment: neither `AXmlResourceParser` nor `TypedValue` are part of Ghidra's
+/// own source tree, so there is no Java source to port them from). Every method fails/panics,
+/// matching this crate's prior behavior here (`AndroidXmlConvertor::convert` itself was
+/// `unimplemented!()` before it was ported against this seam) -- this filesystem cannot yet
+/// actually render a binary XML payload, only detect one is malformed/absent via I/O errors.
+struct UnimplementedAXmlResourceParser;
+
+impl AXmlResourceParser for UnimplementedAXmlResourceParser {
+    fn open(&mut self, _input: &[u8]) -> Result<(), AXmlParseError> {
+        Err(AXmlParseError("no AXmlResourceParser implementation is available yet".to_string()))
+    }
+    fn next(&mut self) -> Result<AndroidXmlEvent, AXmlParseError> {
+        Err(AXmlParseError("no AXmlResourceParser implementation is available yet".to_string()))
+    }
+    fn get_prefix(&self) -> Option<String> {
+        None
+    }
+    fn get_name(&self) -> String {
+        String::new()
+    }
+    fn get_depth(&self) -> i32 {
+        0
+    }
+    fn get_namespace_count(&self, _depth: i32) -> i32 {
+        0
+    }
+    fn get_namespace_prefix(&self, _index: i32) -> String {
+        String::new()
+    }
+    fn get_namespace_uri(&self, _index: i32) -> String {
+        String::new()
+    }
+    fn get_attribute_count(&self) -> i32 {
+        0
+    }
+    fn get_attribute_prefix(&self, _index: i32) -> Option<String> {
+        None
+    }
+    fn get_attribute_name(&self, _index: i32) -> String {
+        String::new()
+    }
+    fn get_attribute_value(&self, _index: i32) -> String {
+        String::new()
+    }
+    fn get_attribute_value_type(&self, _index: i32) -> i32 {
+        0
+    }
+    fn get_attribute_value_data(&self, _index: i32) -> i32 {
+        0
+    }
+    fn get_text(&self) -> String {
+        String::new()
+    }
+    fn close(&mut self) {}
+}
 
 /// Minimal stand-in FSRL used to parameterize [`GFileImpl`] for this filesystem's single file,
 /// until a concrete `FSRL` type is ported.
@@ -95,7 +159,7 @@ impl AndroidXmlFileSystem {
         provider: &mut dyn ByteProvider,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<bool> {
-        let magic = AndroidXmlConvertor::ANDROID_BINARY_XML_MAGIC;
+        let magic = ANDROID_BINARY_XML_MAGIC;
         let actual_bytes = provider.read_bytes(0, magic.len())?;
         if actual_bytes != magic {
             return Ok(false);
@@ -104,7 +168,8 @@ impl AndroidXmlFileSystem {
         let len = provider.length()?;
         let bytes = provider.read_bytes(0, len as usize)?;
         let mut out = String::new();
-        Ok(AndroidXmlConvertor::convert(&bytes, &mut out, monitor).is_ok())
+        let mut parser = UnimplementedAXmlResourceParser;
+        Ok(AndroidXmlConvertor::convert(&bytes, &mut out, &mut parser, monitor).is_ok())
     }
 
     /// Mirrors the `AndroidXmlFileSystem(String, ByteProvider)` constructor.
@@ -143,14 +208,16 @@ impl AndroidXmlFileSystem {
 
     /// Mirrors `AndroidXmlFileSystem.open`: converts the binary XML payload to text, falling
     /// back to a fixed error payload if conversion fails (matching Java's `catch (IOException)`
-    /// -- see [`AndroidXmlConvertor::convert`](crate::file::seam_stubs::AndroidXmlConvertor::convert)
+    /// -- see
+    /// [`AndroidXmlConvertor::convert`](crate::file::formats::android::xml::android_xml_convertor::AndroidXmlConvertor::convert)
     /// doc for why `CancelledException` is folded into the same fallback here).
     pub fn open(&mut self, monitor: &dyn TaskMonitor) -> io::Result<()> {
         let len = self.provider.length()?;
         let bytes = self.provider.read_bytes(0, len as usize)?;
 
         let mut out = String::new();
-        self.payload_bytes = Some(match AndroidXmlConvertor::convert(&bytes, &mut out, monitor) {
+        let mut parser = UnimplementedAXmlResourceParser;
+        self.payload_bytes = Some(match AndroidXmlConvertor::convert(&bytes, &mut out, &mut parser, monitor) {
             Ok(()) => out.into_bytes(),
             Err(_) => b"failed to convert".to_vec(),
         });

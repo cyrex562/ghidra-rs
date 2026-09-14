@@ -201,6 +201,81 @@ pub trait Symbol: Send + Sync {
         let _ = (name, source);
         Err(SetSymbolNameError::InvalidInput(InvalidInputException::new()))
     }
+
+    /// Returns true if this symbol has been pinned, preventing it from moving with reassembly of
+    /// the program's memory map. Stands in for `Symbol.isPinned()`.
+    ///
+    /// Defaults to `false` so existing implementors are unaffected; concrete implementations
+    /// (e.g. [`MemorySymbol`](crate::program::database::symbol::MemorySymbol), whose own
+    /// `is_pinned` default this does *not* override -- see that trait's docs -- since it is a
+    /// separate, non-overlapping trait) should provide the real, persisted answer. Added for
+    /// [`ExtSymbol`](crate::sarif::export::symbols::ExtSymbol)'s port of
+    /// `sarif.export.symbols.ExtSymbol`, which calls `Symbol.isPinned()` on a plain `Symbol`.
+    fn is_pinned(&self) -> bool {
+        false
+    }
+
+    /// Returns true if this symbol resides directly in the global namespace (i.e. has no parent
+    /// namespace other than global). Stands in for `Symbol.isGlobal()`.
+    ///
+    /// Defaults to computing from [`Symbol::get_parent_namespace`], mirroring the real
+    /// `SymbolDB.isGlobal()`'s `getParentNamespace().getID() == Namespace.GLOBAL_NAMESPACE_ID`
+    /// check: `true` when there is no parent namespace recorded (the conservative, "not yet
+    /// wired up" default every other member of this trait uses) or when the parent namespace
+    /// itself reports [`Namespace::is_global`]. Added for
+    /// [`ExtSymbol`](crate::sarif::export::symbols::ExtSymbol)'s port of
+    /// `sarif.export.symbols.ExtSymbol`, which calls `Symbol.isGlobal()` on a plain `Symbol`.
+    fn is_global(&self) -> bool {
+        self.get_parent_namespace().map(|ns| ns.is_global()).unwrap_or(true)
+    }
+
+    /// Returns true if this symbol has been deleted. Stands in for `Symbol.isDeleted()`.
+    ///
+    /// Defaults to `false` so existing implementors are unaffected; concrete implementations
+    /// backed by a database record should override this to report the record's live/deleted
+    /// state. Added for
+    /// [`SymbolRowObjectToAddressTableRowMapper`](crate::app::plugin::core::symtable::symbol_row_object_to_address_table_row_mapper::SymbolRowObjectToAddressTableRowMapper)
+    /// and its `ProgramLocation` sibling, whose Java `map` methods both guard on `!s.isDeleted()`
+    /// before trusting a looked-up symbol.
+    fn is_deleted(&self) -> bool {
+        false
+    }
+
+    /// Returns the location for this symbol. Stands in for `Symbol.getProgramLocation()`.
+    ///
+    /// Real symbol-type-specific overrides (`FunctionSymbol`, `CodeSymbol`, `VariableSymbol`,
+    /// ...) each return a location tailored to that symbol's own field type; none of those
+    /// subclasses are ported yet, so this default instead builds a generic program+address
+    /// location -- the same minimal shape this crate's other simple-location builders use (e.g.
+    /// [`generate_program_location`](crate::feature::base::memsearch::bytesource::addressable_byte_source::generate_program_location))
+    /// -- falling back to `None` when [`Symbol::get_program`] is unknown. A concrete symbol type
+    /// wanting the real field-specific location should override this directly. Added for
+    /// [`SymbolRowObjectToProgramLocationTableRowMapper`](crate::app::plugin::core::symtable::symbol_row_object_to_program_location_table_row_mapper::SymbolRowObjectToProgramLocationTableRowMapper).
+    fn get_program_location(&self) -> Option<Box<dyn crate::program::util::program_location::ProgramLocation>> {
+        let program = self.get_program()?;
+        Some(Box::new(SimpleSymbolProgramLocation { program, address: self.get_address() }))
+    }
+}
+
+/// Minimal generic [`ProgramLocation`](crate::program::util::program_location::ProgramLocation)
+/// used by [`Symbol::get_program_location`]'s default. Defined locally (rather than reusing
+/// [`generate_program_location`](crate::feature::base::memsearch::bytesource::addressable_byte_source::generate_program_location))
+/// so that `program::model::symbol` does not take on a runtime dependency toward `feature::*`.
+struct SimpleSymbolProgramLocation {
+    program: Arc<dyn Program>,
+    address: Address,
+}
+
+impl crate::program::util::program_location::ProgramLocation for SimpleSymbolProgramLocation {
+    fn get_program(&self) -> Arc<dyn Program> {
+        Arc::clone(&self.program)
+    }
+    fn get_address(&self) -> Address {
+        self.address.clone()
+    }
+    fn get_byte_address(&self) -> Address {
+        self.address.clone()
+    }
 }
 
 /// Error produced by [`Symbol::set_name`], mirroring the two checked exceptions

@@ -437,10 +437,11 @@ mod tests {
         // Symbol supertrait methods remain reachable through the trait object.
         assert_eq!(Symbol::get_id(&sym), 7);
 
-        // `set_pinned`/`is_pinned` are real abstract methods on this trait (not on `Symbol`).
-        assert!(!sym.is_pinned());
+        // `set_pinned`/`is_pinned` are real abstract methods on this trait (not on `Symbol`,
+        // though `Symbol` now has its own defaulted `is_pinned` too -- disambiguate explicitly).
+        assert!(!TraceSymbol::is_pinned(&sym));
         sym.set_pinned(true);
-        assert!(sym.is_pinned());
+        assert!(TraceSymbol::is_pinned(&sym));
 
         // `get_references()` defaults to delegating to `get_references_with_monitor` with a
         // dummy monitor.

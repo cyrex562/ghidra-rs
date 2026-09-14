@@ -24,6 +24,7 @@
 //! (however it obtains a `ServiceProvider`) and passes the result in, then wires this method's
 //! `bool` result into its own [`QuickFix::navigate_special`] implementation.
 
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -40,7 +41,16 @@ pub struct CompositeFieldQuickFixState {
     pub base: QuickFixState,
     /// The composite being changed.
     pub composite: Arc<dyn Composite>,
-    ordinal: i32,
+    /// The tracked ordinal of the field within [`Self::composite`].
+    ///
+    /// `Cell`-wrapped (rather than a plain `i32`, mutated through `&mut self`) so that
+    /// [`Self::find_component`] -- which updates this when the field has moved to a different
+    /// ordinal -- can be called from [`QuickFix::do_get_current`](crate::feature::base::quickfix::QuickFix::do_get_current)
+    /// and `QuickFix::execute`'s read-only counterparts, both of which only ever have `&self`
+    /// access to a concrete quick fix (mirroring how Java's `this.ordinal = i;` inside the
+    /// nominally side-effect-only `findComponent` is unremarkable under Java's lack of
+    /// const-correctness, but needs an explicit interior-mutability cell in Rust).
+    ordinal: Cell<i32>,
 }
 
 impl CompositeFieldQuickFixState {
@@ -64,7 +74,7 @@ impl CompositeFieldQuickFixState {
         CompositeFieldQuickFixState {
             base: QuickFixState::new(program, original, new_name),
             composite,
-            ordinal,
+            ordinal: Cell::new(ordinal),
         }
     }
 
@@ -82,7 +92,7 @@ impl CompositeFieldQuickFixState {
     /// moved.
     ///
     /// Port of the protected `findComponent(String)`.
-    pub fn find_component(&mut self, name: &str) -> Option<Box<dyn DataTypeComponent>> {
+    pub fn find_component(&self, name: &str) -> Option<Box<dyn DataTypeComponent>> {
         if let Some(component) = self.component_by_ordinal() {
             if component.get_field_name().as_deref() == Some(name) {
                 return Some(component);
@@ -93,7 +103,7 @@ impl CompositeFieldQuickFixState {
         let components = self.composite.get_defined_components();
         for (i, component) in components.into_iter().enumerate() {
             if component.get_field_name().as_deref() == Some(name) {
-                self.ordinal = i as i32;
+                self.ordinal.set(i as i32);
                 return Some(component);
             }
         }
@@ -108,10 +118,11 @@ impl CompositeFieldQuickFixState {
         if self.composite.is_deleted() {
             return None;
         }
-        if self.ordinal >= self.composite.get_num_components() {
+        let ordinal = self.ordinal.get();
+        if ordinal >= self.composite.get_num_components() {
             return None;
         }
-        self.composite.get_component(self.ordinal).ok()
+        self.composite.get_component(ordinal).ok()
     }
 
     /// Port of `CompositeFieldQuickFix.getCustomToolTipData()`: `Map.of("DataType",

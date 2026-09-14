@@ -126,6 +126,9 @@ mod tests {
         fn direct_supertypes(&self, _t: &JavaType) -> Vec<JavaType> {
             Vec::new()
         }
+        fn is_abstract(&self, _elem: &TypeElement) -> bool {
+            false
+        }
     }
 
     struct CapturingMessager {

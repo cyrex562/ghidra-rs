@@ -323,25 +323,119 @@ impl EncodedArrayItem {
     }
 }
 
-/// Placeholder for the unported Java type `AndroidXmlConvertor`, referenced by
-/// `AndroidXmlFileSystem`.
-/// Concrete stub: Java class, not interface. Only the members THIS type needs are included:
-/// the binary-XML magic signature and the `convert` entry point that turns the binary XML
-/// payload into text. Replace with the real port when available.
-pub struct AndroidXmlConvertor;
+/// Placeholder standing in for the third-party `android.content.res.AXmlResourceParser`
+/// (itself implementing `org.xmlpull.v1.XmlPullParser`), which
+/// [`AndroidXmlConvertor::convert`](crate::file::formats::android::xml::android_xml_convertor::AndroidXmlConvertor::convert)
+/// walks to render a binary Android XML document as text. Unlike every other placeholder in
+/// this file, neither class is a Ghidra type awaiting its own port -- both come from a bundled
+/// third-party AXMLPrinter-derived library that is not part of Ghidra's own source tree (no
+/// `AXmlResourceParser.java`/`TypedValue.java` exists anywhere under `orig_src`), so there is
+/// nothing to port. Like the Z3 SDK seam in `feature/seam_stubs.rs`, this defines the minimal
+/// surface `AndroidXmlConvertor::convert` actually calls, as a trait a real binary-XML parser
+/// (or, for now, only this crate's own tests) can implement.
+pub trait AXmlResourceParser {
+    /// Opens `input` for parsing. Mirrors `AXmlResourceParser.open(InputStream)`; takes the
+    /// whole payload directly since every caller in this crate already has the bytes in memory.
+    fn open(&mut self, input: &[u8]) -> Result<(), AXmlParseError>;
 
-impl AndroidXmlConvertor {
-    /// Mirrors `AndroidXmlConvertor.ANDROID_BINARY_XML_MAGIC`.
-    pub const ANDROID_BINARY_XML_MAGIC: [u8; 4] = [0x03, 0x00, 0x08, 0x00];
+    /// Advances to, and returns, the next parse event. Mirrors `XmlPullParser.next()`.
+    fn next(&mut self) -> Result<AndroidXmlEvent, AXmlParseError>;
 
-    /// Converts the binary Android XML bytes in `input` to text, appending the result to `out`.
-    ///
-    /// Java distinguishes `IOException` (which callers may recover from) from
-    /// `CancelledException` (monitor cancellation); this stub collapses both into a single
-    /// `io::Result` until the real converter is ported.
-    pub fn convert(_input: &[u8], _out: &mut String, _monitor: &dyn TaskMonitor) -> io::Result<()> {
-        unimplemented!("AndroidXmlConvertor.convert not yet ported")
-    }
+    /// The current element's namespace prefix, if any. Mirrors `XmlPullParser.getPrefix()`.
+    fn get_prefix(&self) -> Option<String>;
+
+    /// The current element's (or, during attribute iteration, the current attribute's) local
+    /// name. Mirrors `XmlPullParser.getName()`.
+    fn get_name(&self) -> String;
+
+    /// The nesting depth of the current parse event. Mirrors `XmlPullParser.getDepth()`.
+    fn get_depth(&self) -> i32;
+
+    /// The number of namespace declarations in scope at `depth`. Mirrors
+    /// `XmlPullParser.getNamespaceCount(int)`.
+    fn get_namespace_count(&self, depth: i32) -> i32;
+
+    /// The prefix of the `index`-th in-scope namespace declaration. Mirrors
+    /// `XmlPullParser.getNamespacePrefix(int)`.
+    fn get_namespace_prefix(&self, index: i32) -> String;
+
+    /// The URI of the `index`-th in-scope namespace declaration. Mirrors
+    /// `XmlPullParser.getNamespaceUri(int)`.
+    fn get_namespace_uri(&self, index: i32) -> String;
+
+    /// The number of attributes on the current start tag. Mirrors
+    /// `XmlPullParser.getAttributeCount()`.
+    fn get_attribute_count(&self) -> i32;
+
+    /// The `index`-th attribute's namespace prefix, if any. Mirrors
+    /// `XmlPullParser.getAttributePrefix(int)`.
+    fn get_attribute_prefix(&self, index: i32) -> Option<String>;
+
+    /// The `index`-th attribute's local name. Mirrors `XmlPullParser.getAttributeName(int)`.
+    fn get_attribute_name(&self, index: i32) -> String;
+
+    /// The `index`-th attribute's already-formatted string value; only meaningful (and only
+    /// ever called) when [`get_attribute_value_type`](Self::get_attribute_value_type) reports
+    /// [`android_typed_value::TYPE_STRING`]. Mirrors `AXmlResourceParser.getAttributeValue(int)`.
+    fn get_attribute_value(&self, index: i32) -> String;
+
+    /// The `index`-th attribute's raw `TypedValue` type code (one of the `TYPE_*` constants in
+    /// [`android_typed_value`]). Mirrors `AXmlResourceParser.getAttributeValueType(int)`.
+    fn get_attribute_value_type(&self, index: i32) -> i32;
+
+    /// The `index`-th attribute's raw `TypedValue` data word. Mirrors
+    /// `AXmlResourceParser.getAttributeValueData(int)`.
+    fn get_attribute_value_data(&self, index: i32) -> i32;
+
+    /// The current event's text content; only meaningful for [`AndroidXmlEvent::Text`]. Mirrors
+    /// `XmlPullParser.getText()`.
+    fn get_text(&self) -> String;
+
+    /// Releases any resources held by the parser. Mirrors `AXmlResourceParser.close()`.
+    fn close(&mut self);
+}
+
+/// A parse event produced by [`AXmlResourceParser::next`], standing in for the subset of
+/// `org.xmlpull.v1.XmlPullParser`'s integer event-type constants
+/// [`AndroidXmlConvertor::convert`](crate::file::formats::android::xml::android_xml_convertor::AndroidXmlConvertor::convert)
+/// switches on. [`AndroidXmlEvent::Other`] stands in for every event type Java's `switch` has no
+/// case for (e.g. `COMMENT`, `PROCESSING_INSTRUCTION`), which that `switch` silently ignores.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AndroidXmlEvent {
+    StartDocument,
+    EndDocument,
+    StartTag,
+    EndTag,
+    Text,
+    Other,
+}
+
+/// Error produced by [`AXmlResourceParser`] methods, standing in for the
+/// `XmlPullParserException`/`ArrayIndexOutOfBoundsException` pair
+/// `AndroidXmlConvertor.convert`'s Java source catches identically (both wrapped into a single
+/// `IOException("Failed to read AXML file", e)`).
+#[derive(thiserror::Error, Debug, Clone, PartialEq, Eq)]
+#[error("{0}")]
+pub struct AXmlParseError(pub String);
+
+/// `TypedValue.TYPE_*`/`COMPLEX_UNIT_MASK` constants from the same third-party `android.util`
+/// package as [`AXmlResourceParser`] -- see that trait's own doc comment for why these are
+/// hand-carried constants rather than a port. Values match the standard Android SDK
+/// `android.util.TypedValue` definitions.
+pub mod android_typed_value {
+    pub const TYPE_REFERENCE: i32 = 0x01;
+    pub const TYPE_ATTRIBUTE: i32 = 0x02;
+    pub const TYPE_STRING: i32 = 0x03;
+    pub const TYPE_FLOAT: i32 = 0x04;
+    pub const TYPE_DIMENSION: i32 = 0x05;
+    pub const TYPE_FRACTION: i32 = 0x06;
+    pub const TYPE_FIRST_INT: i32 = 0x10;
+    pub const TYPE_INT_HEX: i32 = 0x11;
+    pub const TYPE_INT_BOOLEAN: i32 = 0x12;
+    pub const TYPE_FIRST_COLOR_INT: i32 = 0x1c;
+    pub const TYPE_LAST_COLOR_INT: i32 = 0x1f;
+    pub const TYPE_LAST_INT: i32 = 0xff;
+    pub const COMPLEX_UNIT_MASK: i32 = 0xf;
 }
 
 /// Placeholder for the unported Java type `ByteArrayProvider`, referenced by
@@ -1275,41 +1369,6 @@ impl FileSetEntryCommand {
     /// Mirrors `getFileSetEntryId().getString()`.
     pub fn get_file_set_entry_id(&self) -> &str {
         &self.file_set_entry_id
-    }
-}
-
-/// Placeholder for `ghidra.file.formats.ios.fileset.MachoFileSetEntry`, referenced by
-/// `MachoFileSetFileSystem`.
-///
-/// Concrete stub: Java record, not interface. Mirrors all three record components (the full
-/// public surface of a record); modeled here rather than in its own file only because
-/// `MachoFileSetEntry.java` has not had its own port turn yet.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct MachoFileSetEntry {
-    id: String,
-    offset: i64,
-    is_branch_segment: bool,
-}
-
-impl MachoFileSetEntry {
-    /// Mirrors the record constructor `MachoFileSetEntry(String, long, boolean)`.
-    pub fn new(id: impl Into<String>, offset: i64, is_branch_segment: bool) -> Self {
-        MachoFileSetEntry { id: id.into(), offset, is_branch_segment }
-    }
-
-    /// Mirrors the record accessor `id()`.
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-
-    /// Mirrors the record accessor `offset()`.
-    pub fn offset(&self) -> i64 {
-        self.offset
-    }
-
-    /// Mirrors the record accessor `isBranchSegment()`.
-    pub fn is_branch_segment(&self) -> bool {
-        self.is_branch_segment
     }
 }
 

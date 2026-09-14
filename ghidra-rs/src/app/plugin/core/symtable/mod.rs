@@ -1,7 +1,11 @@
 pub mod deleted_symbol_row_object;
 pub mod symbol_filter;
 pub mod symbol_row_object;
+pub mod symbol_row_object_to_address_table_row_mapper;
+pub mod symbol_row_object_to_program_location_table_row_mapper;
 
 pub use deleted_symbol_row_object::DeletedSymbolRowObject;
 pub use symbol_filter::SymbolFilter;
 pub use symbol_row_object::SymbolRowObject;
+pub use symbol_row_object_to_address_table_row_mapper::SymbolRowObjectToAddressTableRowMapper;
+pub use symbol_row_object_to_program_location_table_row_mapper::SymbolRowObjectToProgramLocationTableRowMapper;

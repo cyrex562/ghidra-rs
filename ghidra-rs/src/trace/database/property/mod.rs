@@ -1,3 +1,5 @@
 pub mod db_trace_address_property_manager;
+pub mod db_trace_address_property_manager_api_view;
 
 pub use db_trace_address_property_manager::DBTraceAddressPropertyManager;
+pub use db_trace_address_property_manager_api_view::{DBTraceAddressPropertyManagerApiView, API_PREFIX};

@@ -369,6 +369,45 @@ mod tests {
             fn get_resource(&self, _path: &str) -> Box<dyn crate::generic::jar::resource::Resource> {
                 unimplemented!("not exercised by this smoke test")
             }
+            fn list_files(&self) -> Option<Vec<ResourceFile>> {
+                None
+            }
+            fn list_files_filtered(
+                &self,
+                _filter: &dyn crate::generic::jar::resource_file_filter::ResourceFileFilter,
+            ) -> Option<Vec<ResourceFile>> {
+                None
+            }
+            fn parent(&self) -> Option<Box<dyn crate::generic::jar::resource::Resource>> {
+                None
+            }
+            fn to_url(&self) -> io::Result<String> {
+                Ok(self.absolute_path())
+            }
+            fn to_uri(&self) -> String {
+                self.absolute_path()
+            }
+            fn delete(&self) -> bool {
+                false
+            }
+            fn canonical_path(&self) -> io::Result<String> {
+                Ok(self.absolute_path())
+            }
+            fn canonical_resource(&self) -> Box<dyn crate::generic::jar::resource::Resource> {
+                Box::new(AlwaysEmbedded)
+            }
+            fn can_write(&self) -> bool {
+                false
+            }
+            fn mkdir(&self) -> bool {
+                false
+            }
+            fn file_system_root(&self) -> std::path::PathBuf {
+                std::path::PathBuf::new()
+            }
+            fn resource_as_file(&self, _resource_file: &ResourceFile) -> std::path::PathBuf {
+                std::path::PathBuf::new()
+            }
         }
 
         let dir = tempdir().unwrap();

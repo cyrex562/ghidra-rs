@@ -676,6 +676,42 @@ pub trait DataType: Send + Sync {
         None
     }
 
+    /// Mutable counterpart to [`as_composite`](Self::as_composite), used by
+    /// [`UpdateDataTypeDescriptionQuickFix`](crate::feature::base::replace::items::update_data_type_description_quick_fix::UpdateDataTypeDescriptionQuickFix)'s
+    /// port of `execute()`, which needs `Composite.setDescription` (mutable) rather than just a
+    /// read-only downcast. Implementors of
+    /// [`Composite`](crate::program::model::data::composite::Composite) are expected to override
+    /// this (alongside `as_composite`) to return `Some(self)`.
+    fn as_composite_mut(&mut self) -> Option<&mut dyn crate::program::model::data::composite::Composite> {
+        None
+    }
+
+    /// Mutable counterpart to [`as_enum`](Self::as_enum), used by the same
+    /// `UpdateDataTypeDescriptionQuickFix::execute()` port as
+    /// [`as_composite_mut`](Self::as_composite_mut), which needs `Enum.setDescription`
+    /// (mutable). Implementors of [`Enum`](crate::program::model::data::enum_::Enum) are
+    /// expected to override this (alongside `as_enum`) to return `Some(self)`.
+    fn as_enum_mut(&mut self) -> Option<&mut dyn crate::program::model::data::enum_::Enum> {
+        None
+    }
+
+    /// Stands in for `dt instanceof AbstractIntegerDataType ? (AbstractIntegerDataType) dt :
+    /// null`, used by
+    /// [`Declaration::set_data_type`](crate::app::util::cparser::c::declaration::Declaration::set_data_type)'s
+    /// port of `Declaration.setDataType(DataType)`, which needs
+    /// [`AbstractIntegerDataType::get_opposite_signedness_data_type`] -- not just the
+    /// [`is_integer_type`](Self::is_integer_type)/[`is_signed_integer_type`](Self::is_signed_integer_type)
+    /// booleans already on this trait for a different, narrower purpose (see those methods' own
+    /// docs). See [`as_pointer`](Self::as_pointer) for why this is by-reference rather than
+    /// by-value. Implementors of
+    /// [`AbstractIntegerDataType`](crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType)
+    /// are expected to override this to return `Some(self)`.
+    fn as_abstract_integer(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType> {
+        None
+    }
+
     /// Stands in for `dt instanceof Union ? (Union) dt : null`, used by
     /// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
     /// to recover a union operand for merging. See [`as_pointer`](Self::as_pointer) for why this

@@ -370,7 +370,9 @@ mod tests {
     #[test]
     fn trait_object_usage_is_object_safe() {
         let boxed: Box<dyn AbstractDBTraceSymbol> = Box::new(make_label());
-        assert!(!boxed.is_global());
+        // Disambiguates against the `Symbol::is_global` default (both traits are in scope for
+        // this `dyn AbstractDBTraceSymbol`, which has `Symbol` as a supertrait).
+        assert!(!AbstractDBTraceSymbol::is_global(boxed.as_ref()));
         assert_eq!(boxed.get_path(), vec!["foo".to_string()]);
         assert_eq!(boxed.get_reference_count(), 0);
         assert!(!boxed.has_references());
