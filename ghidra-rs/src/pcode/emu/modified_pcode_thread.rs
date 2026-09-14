@@ -344,6 +344,20 @@ where
     pub fn modifier(&self) -> Option<&Arc<dyn PcodeStateModifier>> {
         self.modifier.as_ref()
     }
+
+    /// Replace this thread's userop library outright.
+    ///
+    /// Forwards to [`DefaultPcodeThread::replace_library`]. Added so that a further wrapper
+    /// (e.g. [`AuxPcodeThread`](crate::pcode::emu::auxiliary::aux_pcode_thread::AuxPcodeThread),
+    /// which composes onto *this* type's already-composed library, the same way this type
+    /// composes onto [`DefaultPcodeThread`]'s) can layer its own userops on top of this type's
+    /// without reaching into a private field. Mirrors the "no trait-level seam for
+    /// `createUseropLibrary()`" divergence documented at the top of this module: `self.inner`'s
+    /// library was already fixed at construction time, so a caller that wants to add to it must
+    /// read it back out, compose, and write the result here.
+    pub fn replace_library(&mut self, library: Box<dyn PcodeUseropLibrary<T>>) {
+        self.inner.replace_library(library);
+    }
 }
 
 #[allow(deprecated)]

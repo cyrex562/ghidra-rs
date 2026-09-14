@@ -4158,6 +4158,12 @@ pub trait Z3Context: Send + Sync {
     /// Java: `ctx.mkBV(value, size_bits)`.
     fn mk_bv(&self, value: i64, size_bits: u32) -> Box<dyn BitVecExpr>;
 
+    /// Java: `ctx.mkBVConst(name, size_bits)`, a fresh, free (symbolic) bit-vector constant named
+    /// `name`. Added for the real port of `ghidra.pcode.emu.symz3.SymZ3RegisterMap` (see
+    /// [`crate::pcode::emu::symz3::sym_z3_register_map`]), which materializes an as-yet-unread
+    /// register as a same-named symbolic bit-vector the first time it is read.
+    fn mk_bv_const(&self, name: &str, size_bits: u32) -> Box<dyn BitVecExpr>;
+
     /// Java: `ctx.mkTrue()`.
     fn mk_true(&self) -> Box<dyn BoolExpr>;
 

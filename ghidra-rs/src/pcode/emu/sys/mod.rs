@@ -1,5 +1,6 @@
 pub mod annotated_emu_syscall_userop_library;
 pub mod emu_file_contents;
+pub mod emu_invalid_system_call_exception;
 pub mod emu_syscall_library;
 pub mod emu_system_exception;
 
@@ -8,6 +9,7 @@ pub use annotated_emu_syscall_userop_library::{
     EmuSyscallBinding,
 };
 pub use emu_file_contents::EmuFileContents;
+pub use emu_invalid_system_call_exception::EmuInvalidSystemCallException;
 pub use emu_system_exception::EmuSystemException;
 pub use emu_syscall_library::{
     load_syscall_convention_map, load_syscall_function_map, load_syscall_number_map,

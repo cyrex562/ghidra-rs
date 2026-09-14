@@ -618,6 +618,9 @@ mod tests {
         fn mk_bv(&self, value: i64, size_bits: u32) -> Box<dyn BitVecExpr> {
             Box::new(Bv { smt: format!("#x{:x}:{}", value, size_bits), size: size_bits, num: Some(value) })
         }
+        fn mk_bv_const(&self, name: &str, size_bits: u32) -> Box<dyn BitVecExpr> {
+            Box::new(Bv { smt: name.to_string(), size: size_bits, num: None })
+        }
         fn mk_true(&self) -> Box<dyn BoolExpr> {
             self.bl("true".to_string())
         }

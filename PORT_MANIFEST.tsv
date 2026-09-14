@@ -687,7 +687,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/docking/widgets/mode
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/framework/data/DomainObjectEventQueues.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra framework data 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/AddressesReadTracePcodeExecutorStatePiece.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra pcode exec trace 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/TraceEmulationIntegration.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra pcode exec trace 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/TraceMemoryStatePcodeArithmetic.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra pcode exec trace 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/TraceMemoryStatePcodeArithmetic.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra pcode exec trace 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/TraceMemoryStatePcodeExecutorStatePiece.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra pcode exec trace 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/TraceSleighUtils.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra pcode exec trace 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/UnknownStatePcodeExecutionException.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra pcode exec trace 
@@ -1388,13 +1388,13 @@ orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/HighSta
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/HighUnitContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/InstructionContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/MemLocContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
-orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/PcodeContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
+orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/PcodeContext.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/StatementContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/SymbolVarnodeContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/TernaryExprContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/UnaryExprContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/UnitContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
-orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarDefContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
+orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarDefContext.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarargsExprContext.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/VarnodeContext.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode contexts 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/expressions/PcodeBinaryExpression.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode expressions 
@@ -1404,7 +1404,7 @@ orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/expressions/Pcod
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/expressions/PcodeVarargsExpression.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode expressions 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/locations/InstLocation.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode locations 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/locations/PcodeLocation.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode locations 
-orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeBinaryOperator.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
+orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeBinaryOperator.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeNop.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeTernaryOperator.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeUnaryOperator.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
@@ -1490,22 +1490,22 @@ orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeExecutorStatePiece.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeThread.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeThreadExecutor.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeUseropLibrary.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeUseropLibrary.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RecordsExecution.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RecordsPreconditions.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RegisterMap.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RegisterMap.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3ThreadPcodeExecutorState.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/SymZ3EmuUnixFileSystem.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/SymZ3LinuxAmd64SyscallLibrary.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3InfixPrinter.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3MemoryWitness.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3MemoryWitness.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3MemorySpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PcodeEmulator.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PcodeExecutorState.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PieceHandler.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3Preconditions.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3RegisterSpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3Space.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3Space.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3UniqueSpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3WriteDownHelper.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/package-info.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
@@ -9280,7 +9280,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/Anno
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/BytesEmuFileContents.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuFileContents.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuIOException.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuInvalidSystemCallException.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuInvalidSystemCallException.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuProcessExitedException.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuSyscallLibrary.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuSystemException.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
@@ -10897,7 +10897,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/SparseAddress
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/ThreadPcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxEmulatorPartsFactory.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu auxiliary 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxPcodeEmulator.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu auxiliary
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxPcodeThread.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu auxiliary 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxPcodeThread.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu auxiliary 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitBytesPcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitBytesPcodeExecutorStatePiece.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitCompiler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
@@ -13079,7 +13079,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/proce
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstructorPcodeTemplate.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ExpressionTerm.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ExpressionValue.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Handle.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Handle.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/HandleTemplate.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Label.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/LanguageFixupUtil.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors generic 

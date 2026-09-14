@@ -13,6 +13,10 @@
 //! stand-alone emulator. When you get to the state pieces, you may want to pause and read
 //! `SymZ3Space` first.
 
+pub mod sym_z3_space;
+
+pub use sym_z3_space::SymZ3Space;
+
 #[cfg(test)]
 mod tests {
     #[test]

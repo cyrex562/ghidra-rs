@@ -618,6 +618,9 @@ mod tests {
         fn mk_bv(&self, _value: i64, _size_bits: u32) -> Box<dyn BitVecExpr> {
             unimplemented!()
         }
+        fn mk_bv_const(&self, _name: &str, _size_bits: u32) -> Box<dyn BitVecExpr> {
+            unimplemented!()
+        }
         fn mk_true(&self) -> Box<dyn BoolExpr> {
             unimplemented!()
         }

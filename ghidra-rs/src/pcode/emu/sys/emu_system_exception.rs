@@ -33,6 +33,20 @@ impl EmuSystemException {
         Self { inner: PcodeExecutionException::with_frame(message, frame) }
     }
 
+    /// Construct the exception with a message and a cause, but no frame.
+    ///
+    /// Port of `EmuSystemException(String message, PcodeFrame frame, Throwable cause)` called
+    /// with a `null` frame -- the combination
+    /// [`EmuInvalidSystemCallException`](crate::pcode::emu::sys::emu_invalid_system_call_exception::EmuInvalidSystemCallException)'s
+    /// `(String, Throwable)` constructor needs (`super(message, null, cause)`), but that no Java
+    /// caller of `EmuSystemException` itself needed until now.
+    pub fn with_cause(
+        message: impl Into<String>,
+        cause: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        Self { inner: PcodeExecutionException::with_cause(message, cause) }
+    }
+
     /// Construct the exception with a message, a frame, and a cause.
     ///
     /// Port of `EmuSystemException(String message, PcodeFrame frame, Throwable cause)`.
@@ -103,6 +117,16 @@ mod tests {
         assert!(e.frame().is_some());
         let dyn_err: &dyn std::error::Error = &e;
         assert!(dyn_err.source().is_none());
+    }
+
+    #[test]
+    fn message_and_cause_constructor_has_no_frame() {
+        let cause = std::io::Error::new(std::io::ErrorKind::Other, "underlying I/O failure");
+        let e = EmuSystemException::with_cause("bad syscall", cause);
+        assert_eq!(e.message(), "bad syscall");
+        assert!(e.frame().is_none());
+        let dyn_err: &dyn std::error::Error = &e;
+        assert_eq!(dyn_err.source().unwrap().to_string(), "underlying I/O failure");
     }
 
     #[test]

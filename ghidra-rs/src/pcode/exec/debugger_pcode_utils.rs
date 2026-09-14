@@ -40,10 +40,8 @@ use crate::pcode::exec::pcode_executor_state_piece::{
     ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
 };
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
-use crate::pcode::seam_stubs::{
-    AddressesReadPcodeArithmetic, BytesPcodeArithmetic, TraceMemoryStatePcodeArithmetic,
-    ValueLocation,
-};
+use crate::pcode::exec::trace::TraceMemoryStatePcodeArithmetic;
+use crate::pcode::seam_stubs::{AddressesReadPcodeArithmetic, BytesPcodeArithmetic, ValueLocation};
 use crate::pcode::utils::bytes_to_big_integer;
 use crate::program::model::address::{Address, AddressSet, AddressSpace};
 use crate::program::model::lang::endian::Endian;
