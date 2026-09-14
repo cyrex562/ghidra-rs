@@ -7,6 +7,7 @@ pub mod decompile_function_task;
 pub mod description;
 pub mod elastic;
 pub mod facade;
+pub mod file;
 pub mod function_database;
 pub mod gen_signatures;
 pub mod lsh_exception;

@@ -531,46 +531,10 @@ pub trait RichHeaderUtils: Send + Sync {
     fn get_product(&self, id: i32) -> Option<Box<dyn RichProduct>>;
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pe.rich.RichHeaderRecord`, referenced by
-/// [`RichTable`](crate::format::pe::rich_table::RichTable) before the real class is ported.
-/// `RichHeaderRecord` is a concrete Java class (not an interface), so it is modeled here as a
-/// concrete struct wrapping the already-ported
-/// [`CompId`](crate::format::pe::rich::comp_id::CompId), consistent with the other concrete-class
-/// stubs above.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RichHeaderRecord {
-    record_index: i32,
-    comp_id: crate::format::pe::rich::comp_id::CompId,
-    count: i32,
-}
-
-impl RichHeaderRecord {
-    pub fn new(record_index: i32, compid: i32, count: i32) -> Self {
-        RichHeaderRecord {
-            record_index,
-            comp_id: crate::format::pe::rich::comp_id::CompId::new(compid),
-            count,
-        }
-    }
-
-    pub fn get_index(&self) -> i32 {
-        self.record_index
-    }
-
-    pub fn get_comp_id(&self) -> crate::format::pe::rich::comp_id::CompId {
-        self.comp_id
-    }
-
-    pub fn get_object_count(&self) -> i32 {
-        self.count
-    }
-}
-
-impl std::fmt::Display for RichHeaderRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:x} Count: {}", self.comp_id.value(), self.count)
-    }
-}
+// `RichHeaderRecord` is ported; this was a placeholder standing in for it, referenced by
+// `RichTable`/`RichHeader`. Re-exported here so anything still importing it from this module
+// converges on the one real type instead of two same-named ones.
+pub use crate::format::pe::rich::RichHeaderRecord;
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.rich.PERichTableDataType`, referenced by
 /// [`RichTable::to_data_type`](crate::format::pe::rich_table::RichTable::to_data_type) before the

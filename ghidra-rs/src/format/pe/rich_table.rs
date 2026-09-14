@@ -1,6 +1,7 @@
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::format::pe::rich::RichHeaderRecord;
 use crate::format::pe::rich_header::RichHeader;
-use crate::format::seam_stubs::{PERichTableDataType, RichHeaderRecord};
+use crate::format::seam_stubs::PERichTableDataType;
 use crate::program::model::mem::mem_buffer::MemBuffer;
 
 const MAX_TABLE_SEARCH_COUNT: i32 = 100;

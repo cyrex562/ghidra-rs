@@ -11,6 +11,7 @@ pub mod edge_set;
 pub mod graph_iterator;
 pub mod key_indexable_set;
 pub mod keyed_object;
+pub mod keyed_object_factory;
 pub mod path;
 pub mod vertex;
 pub mod vertex_set;
@@ -38,6 +39,8 @@ pub use graph_iterator::{ConcurrentModificationError, GraphIterator};
 pub use key_indexable_set::KeyIndexableSet;
 #[allow(deprecated)]
 pub use keyed_object::KeyedObject;
+#[allow(deprecated)]
+pub use keyed_object_factory::KeyedObjectFactory;
 #[allow(deprecated)]
 pub use path::Path;
 #[allow(deprecated)]

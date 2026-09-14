@@ -1,4 +1,5 @@
 pub mod database_info;
+pub mod function_symbol_iterator;
 pub mod query_database_exception;
 pub mod sf_overview_info;
 pub mod sf_query_service_factory;
@@ -6,6 +7,7 @@ pub mod sf_results_update_listener;
 pub mod similar_function_query_service;
 
 pub use database_info::DatabaseInfo;
+pub use function_symbol_iterator::FunctionSymbolIterator;
 pub use query_database_exception::QueryDatabaseException;
 pub use sf_overview_info::{SFOverviewInfo, DEFAULT_QUERIES_PER_STAGE};
 pub use sf_query_service_factory::SFQueryServiceFactory;
