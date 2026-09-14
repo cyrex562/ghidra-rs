@@ -31,6 +31,16 @@ impl DBAnnotatedColumnValidator {
         DBAnnotatedColumnValidator { base: AbstractDBAnnotationValidator::new(ctx), column }
     }
 
+    /// The column element this validator was constructed with.
+    ///
+    /// Java has no counterpart accessor (the `column` field is directly reachable within the
+    /// class); exposed here so sibling validators outside this module -- e.g.
+    /// [`DBAnnotatedObjectValidator`](super::DBAnnotatedObjectValidator)'s `checkAccess` -- can
+    /// reach it despite Rust's per-module (not per-class) privacy.
+    pub fn column(&self) -> &VariableElement {
+        &self.column
+    }
+
     /// Validate the annotated column field.
     ///
     /// Performs the following checks to ensure it meets the requirements for database columns:

@@ -16,6 +16,7 @@ pub mod pty;
 pub mod pcode;
 pub mod plugin;
 pub mod program;
+pub mod pyghidra;
 pub mod script;
 pub mod service;
 pub mod trace;

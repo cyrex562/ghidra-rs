@@ -124,6 +124,16 @@ impl DBAnnotatedFieldValidator {
         map.insert(array, TypeElement::new(codec_class_name));
     }
 
+    /// The field element this validator was constructed with.
+    ///
+    /// Java has no counterpart accessor (the `field` field is directly reachable within the
+    /// class); exposed here so sibling validators outside this module -- e.g.
+    /// [`DBAnnotatedObjectValidator`](super::DBAnnotatedObjectValidator)'s `checkAccess` -- can
+    /// reach it despite Rust's per-module (not per-class) privacy.
+    pub fn field(&self) -> &VariableElement {
+        &self.field
+    }
+
     /// Validate the annotated field to ensure it meets the requirements for database fields.
     ///
     /// Performs the following checks:

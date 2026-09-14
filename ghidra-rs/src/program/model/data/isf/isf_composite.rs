@@ -65,6 +65,28 @@ impl IsfComposite {
         writer: &mut dyn IsfCompositeWriter,
         monitor: &dyn TaskMonitor,
     ) -> Self {
+        Self::new_with_component_factory(composite, writer, monitor, |component, object_type| {
+            Box::new(Self::get_component(component, object_type))
+        })
+    }
+
+    /// Creates a new `IsfComposite`, using `make_component` in place of the overridable
+    /// `protected IsfComponent getComponent(DataTypeComponent, IsfObject)` to build each field's
+    /// component object.
+    ///
+    /// [`IsfComposite::new`] is this with `make_component` fixed to [`IsfComposite::get_component`]
+    /// (Java's own, non-overridden body). A subclass overriding `getComponent` -- e.g.
+    /// `sarif.export.data.ExtIsfComposite`, which returns an `ExtIsfComponent` instead -- calls
+    /// this directly with its own factory instead, since Rust has no virtual dispatch to override
+    /// through. `make_component` returns `Box<dyn IsfObject>` rather than the narrower
+    /// `IsfComponent` Java's return type declares, so both the base and an overriding factory's
+    /// wider return type fit through the same signature.
+    pub fn new_with_component_factory(
+        composite: &dyn Composite,
+        writer: &mut dyn IsfCompositeWriter,
+        monitor: &dyn TaskMonitor,
+        make_component: impl Fn(&dyn DataTypeComponent, Box<dyn IsfObject>) -> Box<dyn IsfObject>,
+    ) -> Self {
         let size = if composite.is_zero_length() { 0 } else { composite.get_length() };
         let kind = if composite.is_structure() { "struct" } else { "union" }.to_string();
 
@@ -76,7 +98,7 @@ impl IsfComposite {
             }
 
             let object_type = writer.get_object_type_declaration(component.as_ref());
-            let cobj = Self::get_component(component.as_ref(), object_type);
+            let cobj = make_component(component.as_ref(), object_type);
             let mut key = component.get_field_name();
             if key.is_none() {
                 let mut generated =
@@ -86,7 +108,7 @@ impl IsfComposite {
                 }
                 key = Some(generated);
             }
-            fields.insert(key.expect("just populated above if it was None"), writer.get_tree(&cobj));
+            fields.insert(key.expect("just populated above if it was None"), writer.get_tree(cobj.as_ref()));
         }
 
         IsfComposite {

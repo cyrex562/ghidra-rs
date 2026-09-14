@@ -49,6 +49,19 @@ impl PatternExpression {
         }
     }
 
+    /// Returns the operand if this is one of the unary-operator variants (i.e. this crate's
+    /// flattened counterpart to a `UnaryExpression` subclass instance), `None` otherwise. Mirrors
+    /// `UnaryExpression.getUnary()`, used generically by
+    /// [`UnaryExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::UnaryExpressionMatcher)
+    /// the same way [`PatternExpression::binary_operands`] is used by
+    /// [`BinaryExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::BinaryExpressionMatcher).
+    pub fn unary_operand(&self) -> Option<&PatternExpression> {
+        match self {
+            Self::Minus(u) | Self::Not(u) => Some(u),
+            _ => None,
+        }
+    }
+
     /// The smallest value this expression can take on.
     ///
     /// Port of `ghidra.app.plugin.processors.sleigh.expression.PatternValue.minValue()`.
