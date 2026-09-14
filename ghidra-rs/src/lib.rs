@@ -11,6 +11,7 @@ pub mod filesystem;
 pub mod framework;
 pub mod generic;
 pub mod graph;
+pub mod log;
 pub mod net;
 pub mod pty;
 pub mod pcode;

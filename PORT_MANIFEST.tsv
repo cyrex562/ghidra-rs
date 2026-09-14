@@ -9081,15 +9081,15 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/trees/ExtModule.java	D
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/trees/SarifTreeWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export trees 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/SarifResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/SarifRunHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifAddressResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifCodeFlowResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifAddressResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers result 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifCodeFlowResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers result 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifGraphResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifKindResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifLevelResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifKindResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers result 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifLevelResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers result 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifProgramResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifPropertyResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifRuleIdResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifToolResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifPropertyResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers result 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifRuleIdResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers result 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifToolResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers result 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/sample/SarifReturnTypeResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result sample 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/run/SarifGraphRunHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers run 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/io/SarifGsonIO.java	DONE	orig_src Ghidra Features Sarif src main java sarif io
@@ -9299,7 +9299,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/Emu
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileSystem.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixUser.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/IOStreamEmuUnixFileHandle.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/x86/X86PcodeStateInitializer.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu x86 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/x86/X86PcodeStateInitializer.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu x86 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AbstractStmt.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/ArithBinExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AssignStmt.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct
@@ -11900,7 +11900,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlParseException.jav
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlPullParserFactory.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlTracer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlTreeNode.java	DONE	orig_src Ghidra Framework Generic src main java ghidra xml 
-orig_src/Ghidra/Framework/Generic/src/main/java/log/Log4jDevelopmentPatternConverter.java	TODO	orig_src Ghidra Framework Generic src main java log 
+orig_src/Ghidra/Framework/Generic/src/main/java/log/Log4jDevelopmentPatternConverter.java	DONE	orig_src Ghidra Framework Generic src main java log 
 orig_src/Ghidra/Framework/Generic/src/main/java/log/LogListener.java	DONE	orig_src Ghidra Framework Generic src main java log 
 orig_src/Ghidra/Framework/Generic/src/main/java/log/LogPanelAppender.java	DONE	orig_src Ghidra Framework Generic src main java log
 orig_src/Ghidra/Framework/Generic/src/main/java/util/CollectionUtils.java	DONE	orig_src Ghidra Framework Generic src main java util

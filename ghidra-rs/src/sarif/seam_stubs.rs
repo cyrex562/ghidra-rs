@@ -8,7 +8,10 @@ use std::sync::{Arc, Mutex};
 
 use crate::docking::settings::settings::Settings;
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
-use crate::program::model::address::{Address, AddressFactory, AddressRange, AddressSet, AddressSetView};
+use crate::program::model::address::{
+    Address, AddressFactory, AddressRange, AddressSet, AddressSetView, AddressSpace,
+    AddressSpaceType,
+};
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instruction, Program, ProgramModule};
@@ -1666,6 +1669,7 @@ pub struct SarifController {
     pub result_handlers: Vec<Arc<dyn crate::sarif::handlers::SarifResultHandler>>,
     pub run_handlers: Vec<Arc<dyn SarifRunHandler>>,
     pub program_sarif_mgr: ProgramSarifMgr,
+    listing_actions: Arc<Mutex<Vec<RecordedListingAction>>>,
 }
 
 impl SarifController {
@@ -1680,6 +1684,7 @@ impl SarifController {
             result_handlers,
             run_handlers,
             program_sarif_mgr,
+            listing_actions: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -1697,6 +1702,83 @@ impl SarifController {
     pub fn get_program_sarif_mgr(&self) -> &ProgramSarifMgr {
         &self.program_sarif_mgr
     }
+
+    /// `SarifController.getListingAddresses(Run, Result)`.
+    pub fn get_listing_addresses(&self, run: &serde_json::Value, result: &serde_json::Value) -> Vec<Address> {
+        let mut addrs = Vec::new();
+        if let Some(locations) = result.get("locations").and_then(serde_json::Value::as_array) {
+            for location in locations {
+                if let Some(addr) = self.location_to_address(run, location) {
+                    addrs.push(addr);
+                }
+            }
+        }
+        addrs
+    }
+
+    /// `SarifController.locationToAddress(Run, Location)`, delegating to a simplified port of
+    /// `SarifUtils.locationToAddress(Location, Program, boolean)`. The real method resolves
+    /// non-default address spaces (including on-demand overlay-space creation) through a
+    /// `Program`'s `AddressFactory`; no `Program` is wired into this seam yet (see this struct's
+    /// own doc comment), so every resolvable address lands in a fixed default 64-bit `ram` space
+    /// regardless of the location's `fullyQualifiedName` -- Java would instead look up (or
+    /// create) that named space. The two `fullyQualifiedName`-independent branches Java has --
+    /// no physical location at all, and the literal sentinel `"NO ADDRESS"` -- are still
+    /// reproduced faithfully.
+    pub fn location_to_address(&self, _run: &serde_json::Value, location: &serde_json::Value) -> Option<Address> {
+        let address = location.get("physicalLocation")?.get("address")?;
+        let abs = address.get("absoluteAddress").and_then(serde_json::Value::as_i64)?;
+        if abs < 0 {
+            return None;
+        }
+        if address.get("fullyQualifiedName").and_then(serde_json::Value::as_str) == Some("NO ADDRESS") {
+            return None;
+        }
+        Some(Address::new(default_ram_address_space(), abs))
+    }
+
+    /// `SarifController.handleListingAction(Run, Result, String, Object)`. Iterates the result's
+    /// listing addresses exactly as Java does; the per-address `"comment"`/`"highlight"`/
+    /// `"bookmark"` effects Java applies through `Program`/`ColoringService`/`BookmarkManager`
+    /// (none of which are wired into this seam) are recorded instead of applied, so callers --
+    /// in practice
+    /// [`SarifPropertyResultHandler`](crate::sarif::handlers::result::SarifPropertyResultHandler)
+    /// -- can be tested against real, observable behavior. See [`RecordedListingAction`].
+    pub fn handle_listing_action(
+        &self,
+        run: &serde_json::Value,
+        result: &serde_json::Value,
+        key: &str,
+        value: &serde_json::Value,
+    ) {
+        for address in self.get_listing_addresses(run, result) {
+            self.listing_actions.lock().unwrap().push(RecordedListingAction {
+                address,
+                key: key.to_string(),
+                value: value.clone(),
+            });
+        }
+    }
+
+    /// Test/inspection accessor for the actions [`Self::handle_listing_action`] has recorded.
+    pub fn listing_actions(&self) -> Vec<RecordedListingAction> {
+        self.listing_actions.lock().unwrap().clone()
+    }
+}
+
+/// A single simulated "listing action" recorded by [`SarifController::handle_listing_action`].
+/// See that method's doc comment for why this exists instead of an actual `Program` effect.
+#[derive(Clone, Debug, PartialEq)]
+pub struct RecordedListingAction {
+    pub address: Address,
+    pub key: String,
+    pub value: serde_json::Value,
+}
+
+/// The fixed default address space [`SarifController::location_to_address`] resolves every
+/// address into, pending real `AddressFactory`/overlay wiring.
+fn default_ram_address_space() -> Arc<AddressSpace> {
+    AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0)
 }
 
 /// Placeholder for `ghidra.app.util.MemoryBlockUtils`, referenced by

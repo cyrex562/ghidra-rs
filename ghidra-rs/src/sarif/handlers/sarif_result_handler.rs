@@ -69,6 +69,37 @@ impl SarifResultHandlerBase {
     pub fn is_enabled_flag(&self) -> bool {
         *self.is_enabled.lock().unwrap()
     }
+
+    /// `SarifResultHandler.controller`, exposed so implementors in sibling modules (e.g.
+    /// `sarif::handlers::result`) can read the field the way a Java subclass reads the inherited
+    /// protected field directly.
+    pub fn controller(&self) -> Option<SarifController> {
+        self.controller.lock().unwrap().clone()
+    }
+
+    /// Sets `SarifResultHandler.controller` directly, matching a subclass's own `this.controller
+    /// = ...` assignment -- see
+    /// [`SarifPropertyResultHandler::handle`](crate::sarif::handlers::result::SarifPropertyResultHandler)
+    /// for the one real caller, which (faithfully to Java) sets only this field and none of
+    /// `df`/`run`/`result` when it overrides `handle`.
+    pub fn set_controller(&self, controller: SarifController) {
+        *self.controller.lock().unwrap() = Some(controller);
+    }
+
+    /// `SarifResultHandler.run`, exposed for the same reason as [`Self::controller`].
+    pub fn run(&self) -> Option<Value> {
+        self.run.lock().unwrap().clone()
+    }
+
+    /// `SarifResultHandler.result`, exposed for the same reason as [`Self::controller`].
+    pub fn result(&self) -> Option<Value> {
+        self.result.lock().unwrap().clone()
+    }
+
+    /// `SarifResultHandler.df`, exposed for the same reason as [`Self::controller`].
+    pub fn df(&self) -> Option<SarifDataFrame> {
+        self.df.lock().unwrap().clone()
+    }
 }
 
 /// The abstract part of `sarif.handlers.SarifResultHandler`: the two methods every concrete

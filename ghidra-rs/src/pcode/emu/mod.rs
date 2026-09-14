@@ -15,6 +15,7 @@ pub mod sys;
 pub mod taint;
 pub mod thread_pcode_executor_state;
 pub mod unix;
+pub mod x86;
 
 pub use abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase};
 pub use auxiliary::{AuxEmulatorPartsFactory, AuxPcodeEmulator};

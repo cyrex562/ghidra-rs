@@ -1,6 +1,7 @@
 //! Port of `sarif.model.SarifDataFrame`.
 
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use serde_json::Value;
 
@@ -30,6 +31,17 @@ pub struct SarifDataFrame {
     compiler: Option<String>,
     tool_id: Option<String>,
     version: Option<String>,
+    /// Columns dynamically discovered while parsing SARIF result `"viewer/table/..."`
+    /// properties. Port of `SarifPropertyResultHandler.handle`'s `dframe.getColumns().add(...)`
+    /// side effect on `SarifDataFrame.getColumns()`'s live list -- kept as a separate
+    /// interior-mutable list (rather than folding into `columns`) so [`Self::get_columns`] keeps
+    /// returning `&[SarifColumnKey]` for the rest of this crate's existing callers. `Arc<Mutex<_>>`
+    /// (rather than plain `Mutex`) both lets `#[derive(Clone)]` keep working and, since the clone
+    /// shares the same `Arc`, mirrors Java's `this.df = dframe` field assignment aliasing the
+    /// same object -- a mutation through a cloned `SarifDataFrame` (as
+    /// [`SarifResultHandlerBase`](crate::sarif::handlers::SarifResultHandlerBase) holds one) is
+    /// visible through the original too.
+    dynamic_columns: Arc<Mutex<Vec<SarifColumnKey>>>,
 }
 
 impl SarifDataFrame {
@@ -54,6 +66,7 @@ impl SarifDataFrame {
             compiler: None,
             tool_id: None,
             version: None,
+            dynamic_columns: Arc::new(Mutex::new(Vec::new())),
         };
 
         let empty_runs = Vec::new();
@@ -232,6 +245,27 @@ impl SarifDataFrame {
     /// `SarifDataFrame.getVersion()`.
     pub fn get_version(&self) -> Option<&str> {
         self.version.as_deref()
+    }
+
+    /// The columns [`Self::add_dynamic_column_if_absent`] has added so far. See
+    /// [`Self::dynamic_columns`]'s field doc for why these live apart from [`Self::get_columns`].
+    pub fn dynamic_columns(&self) -> Vec<SarifColumnKey> {
+        self.dynamic_columns.lock().unwrap().clone()
+    }
+
+    /// Adds `name` as a new column (hidden per `is_hidden`) if it isn't already present among
+    /// either the fixed [`Self::columns`] list or previously-added dynamic columns. Port of
+    /// `SarifPropertyResultHandler.handle`'s `if (!columnNames.contains(...)) { columns.add(new
+    /// SarifColumnKey(...)); }`.
+    pub fn add_dynamic_column_if_absent(&self, name: &str, is_hidden: bool) {
+        if self.columns.iter().any(|c| c.name() == name) {
+            return;
+        }
+        let mut dynamic = self.dynamic_columns.lock().unwrap();
+        if dynamic.iter().any(|c| c.name() == name) {
+            return;
+        }
+        dynamic.push(SarifColumnKey::new(name, is_hidden));
     }
 }
 
