@@ -19,7 +19,7 @@ pub use abstract_ext_writer::{AbstractExtWriter, new_ext_writer_state};
 pub use bkmk::ExtBookmark;
 pub use code::ExtCodeBlock;
 pub use data::ExtIsfDynamicComponent;
-pub use dd::ExtComment;
+pub use dd::{ExtComment, ExtCommentSet};
 pub use ep::ExtEntryPoint;
 pub use equates::ExtEquate;
 pub use ext_logical_location::ExtLogicalLocation;
