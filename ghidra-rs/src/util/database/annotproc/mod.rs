@@ -1,6 +1,11 @@
 pub mod access_spec;
+pub mod validation_context;
 
 pub use access_spec::AccessSpec;
+pub use validation_context::{
+    format_type, JavaType, Messager, NoopMessager, TypeElement, TypeOracle, ValidationContext,
+    VariableElement,
+};
 
 /// Mirrors `javax.lang.model.element.Modifier` for access-specifier determination.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

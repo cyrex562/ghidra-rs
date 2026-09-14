@@ -4,6 +4,7 @@ pub mod code_block_model;
 pub mod code_block_reference;
 pub mod code_block_reference_impl;
 pub mod code_block_reference_iterator;
+pub mod graph;
 pub mod isolated_entry_sub_model;
 pub mod mult_ent_sub_model;
 pub mod overlap_code_sub_model;

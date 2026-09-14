@@ -33,7 +33,7 @@ orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/ann
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/DBAnnotatedFieldValidator.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/DBAnnotatedObjectProcessor.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/DBAnnotatedObjectValidator.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
-orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/ValidationContext.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
+orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/ValidationContext.java	DONE	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerAutoMappingService.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerConsoleService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerControlService.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra app services
@@ -147,7 +147,7 @@ orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/I
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfWinPE.java	DONE	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiCause.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiConsoleOutputListener.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager
-orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiEventHandler.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager 
+orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiEventHandler.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiEventsListener.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiEventsListenerAdapter.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiManager.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager 
@@ -1277,7 +1277,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/util/datastruct/Observa
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/utilities/util/deeper/ProxyUtilitiesTest.java	DONE	orig_src Ghidra Debug ProposedUtils src test java utilities util deeper
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintEmulatorFactory.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPartsFactory.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
-orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPcodeArithmetic.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
+orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPcodeArithmetic.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPcodeEmulator.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPcodeThreadExecutor.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPcodeUseropLibrary.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
@@ -11253,7 +11253,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SuspendedPco
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ValueLocation.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/loadimage/LoadImage.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode loadimage
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/loadimage/LoadImageFunc.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode loadimage
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/AbstractMemoryState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/AbstractMemoryState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/DefaultMemoryState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/MemoryBank.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/MemoryFaultHandler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate
@@ -12986,7 +12986,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/SubExpressionSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/TokenFieldSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/XorExpressionSolver.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/AbstractExpressionMatcher.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr match 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/AbstractExpressionMatcher.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr match 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/AnyMatcher.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr match 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/BinaryExpressionMatcher.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr match 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/ConstantValueMatcher.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh expr match 
@@ -13793,7 +13793,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/bl
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/SubroutineDestReferenceIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model block 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/SubroutineSourceReferenceIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model block 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/graph/CodeBlockEdge.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model block graph 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/graph/CodeBlockVertex.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model block graph 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/graph/CodeBlockVertex.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model block graph 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/AllBytesHashCalculator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/Block.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/DisambiguateByBytes.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 

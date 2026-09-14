@@ -7,6 +7,9 @@
 //! the lower components. That top piece is `TaintPartsFactory`, which is used by
 //! `TaintPcodeEmulator` to realise the emulator.
 
+pub mod taint_pcode_arithmetic;
+pub use taint_pcode_arithmetic::TaintPcodeArithmetic;
+
 #[cfg(test)]
 mod tests {
     #[test]

@@ -2,6 +2,7 @@ pub mod breakpoint;
 pub mod r#impl;
 pub mod jdi_cause;
 pub mod jdi_console_output_listener;
+pub mod jdi_event_handler;
 pub mod jdi_events_listener;
 pub mod jdi_events_listener_adapter;
 pub mod jdi_reason;
