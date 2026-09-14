@@ -12,12 +12,11 @@ use crate::demangler::demangled_object::DemangledObject;
 use crate::demangler::demangler::Demangler;
 use crate::demangler::demangler_options::DemanglerOptions;
 use crate::demangler::mangled_context::MangledContext;
-use crate::demangler::seam_stubs::{
-    self, DemangledLabel, DemangledUnknown, MessageLog, SwiftNativeDemangler, SwiftTypeMetadata,
-};
+use crate::demangler::seam_stubs::{self, DemangledLabel, DemangledUnknown, MessageLog, SwiftTypeMetadata};
 use crate::demangler::swift::nodes::swift_node::{self, SwiftNode};
 use crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree;
 use crate::demangler::swift::swift_demangler_options::SwiftDemanglerOptions;
+use crate::demangler::swift::swift_native_demangler::SwiftNativeDemangler;
 use crate::program::model::listing::Program;
 use crate::util::classfinder::extension_point::ExtensionPoint;
 use crate::util::task::DummyMonitor;

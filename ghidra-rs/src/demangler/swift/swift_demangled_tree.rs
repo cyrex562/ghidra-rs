@@ -8,9 +8,10 @@ use std::sync::OnceLock;
 use regex::Regex;
 
 use crate::demangler::demangle_exception::DemangledException;
-use crate::demangler::seam_stubs::{SwiftNativeDemangledOutput, SwiftNativeDemangler, SwiftUnsupportedNode};
+use crate::demangler::seam_stubs::SwiftUnsupportedNode;
 use crate::demangler::swift::nodes::swift_node::{self, NodeProperties, SwiftNode};
 use crate::demangler::swift::swift_demangled_node_kind::SwiftDemangledNodeKind;
+use crate::demangler::swift::swift_native_demangler::{SwiftNativeDemangledOutput, SwiftNativeDemangler};
 
 /// A Swift demangled symbol, structured as a tree of [`SwiftNode`]s.
 ///
@@ -253,10 +254,13 @@ mod tests {
 
     #[test]
     fn new_propagates_native_demangler_io_errors() {
-        let native_demangler = SwiftNativeDemangler;
+        // No real `swift`/`swift-demangle` binary exists at this path, so `demangle()` fails
+        // deterministically regardless of whether this environment happens to have a real Swift
+        // toolchain installed elsewhere.
+        let native_demangler = SwiftNativeDemangler::for_testing("definitely-not-a-real-binary-xyz", false);
         match SwiftDemangledTree::new(&native_demangler, "$s4main3fooV", true) {
             Err(error) => assert!(!error.is_invalid_mangled_name()),
-            Ok(_) => panic!("native demangler is not yet ported"),
+            Ok(_) => panic!("expected the native demangler invocation to fail"),
         }
     }
 }

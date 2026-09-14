@@ -7,6 +7,7 @@ pub mod fid_populate_result_reporter;
 pub mod fid_search_result;
 pub mod fid_service;
 pub mod hash_family;
+pub mod hash_match;
 pub mod location;
 
 pub use fid_hasher_factory::FidHasherFactory;
@@ -18,4 +19,5 @@ pub use fid_populate_result::{Count, Disposition, FidPopulateResult};
 pub use fid_populate_result_reporter::FidPopulateResultReporter;
 pub use fid_search_result::FidSearchResult;
 pub use hash_family::HashFamily;
+pub use hash_match::HashMatch;
 pub use location::Location;

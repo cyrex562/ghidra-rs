@@ -1309,49 +1309,6 @@ impl crate::demangler::demangled::Demangled for DemangledUnknown {
     }
 }
 
-/// Placeholder for `ghidra.app.util.demangler.swift.SwiftNativeDemangler`, needed by
-/// [`crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree`].
-///
-/// Java is a concrete class (it launches the native `swift`/`swift-demangle` binary via
-/// `ProcessBuilder`), not an interface, so this is a plain struct rather than a trait. Only
-/// `demangle`, the one method `SwiftDemangledTree`'s constructor calls, is modeled, and it reports
-/// the underlying native-process invocation as not yet available -- the same treatment
-/// [`MdMangGhidra::demangle`] gives its own unported grammar dispatch; the real port also carries
-/// the constructor's demangler-binary discovery loop and the private
-/// `demangle(String, List<String>)` process-launch helper.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct SwiftNativeDemangler;
-
-impl SwiftNativeDemangler {
-    /// Mirrors `SwiftNativeDemangler(File)`. The `swift_dir` argument is accepted for signature
-    /// fidelity but not stored: the real constructor uses it to search for the native
-    /// `swift`/`swift-demangle` binary, which isn't ported (see this struct's docs), so there is
-    /// nothing here that would read it back.
-    pub fn new(_swift_dir: Option<std::path::PathBuf>) -> std::io::Result<Self> {
-        Ok(Self)
-    }
-
-    /// Mirrors `demangle(String)`.
-    pub fn demangle(&self, _mangled: &str) -> std::io::Result<SwiftNativeDemangledOutput> {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "SwiftNativeDemangler: native Swift demangler invocation not yet ported",
-        ))
-    }
-}
-
-/// Placeholder for `ghidra.app.util.demangler.swift.SwiftNativeDemangler.SwiftNativeDemangledOutput`,
-/// needed by [`crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree`].
-///
-/// Java record; immutable value carrier, hence public fields rather than accessor methods.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct SwiftNativeDemangledOutput {
-    /// The demangled string, or `None` if demangling finished gracefully but returned nothing.
-    pub demangled: Option<String>,
-    /// The lines of the demangled expanded tree.
-    pub tree: Vec<String>,
-}
-
 /// Placeholder for `ghidra.app.util.demangler.swift.nodes.SwiftUnsupportedNode`, needed by
 /// [`crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree`].
 ///

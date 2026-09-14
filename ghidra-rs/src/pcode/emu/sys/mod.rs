@@ -1,4 +1,5 @@
 pub mod annotated_emu_syscall_userop_library;
+pub mod bytes_emu_file_contents;
 pub mod emu_file_contents;
 pub mod emu_invalid_system_call_exception;
 pub mod emu_io_exception;
@@ -10,6 +11,7 @@ pub use annotated_emu_syscall_userop_library::{
     bind_syscalls, AnnotatedEmuSyscallUseropLibrary, AnnotatedEmuSyscallUseropLibraryBase,
     EmuSyscallBinding,
 };
+pub use bytes_emu_file_contents::BytesEmuFileContents;
 pub use emu_file_contents::EmuFileContents;
 pub use emu_invalid_system_call_exception::EmuInvalidSystemCallException;
 pub use emu_io_exception::EmuIOException;

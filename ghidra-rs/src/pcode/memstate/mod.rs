@@ -1,10 +1,12 @@
 pub mod abstract_memory_state;
+pub mod default_memory_state;
 pub mod memory_bank;
 pub mod memory_fault_handler;
 pub mod memory_page;
 pub mod memory_state;
 
 pub use abstract_memory_state::AbstractMemoryState;
+pub use default_memory_state::DefaultMemoryState;
 pub use memory_bank::{construct_value, deconstruct_value, MemoryBankImpl, MemoryBankState};
 pub use memory_fault_handler::MemoryFaultHandler;
 pub use memory_state::MemoryState;

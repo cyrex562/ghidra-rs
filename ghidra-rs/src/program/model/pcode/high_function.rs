@@ -61,7 +61,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::program::model::address::Address;
+use crate::program::model::address::{Address, AddressFactory};
 use crate::program::model::lang::{CompilerSpec, Language};
 use crate::program::model::listing::Function;
 use crate::program::model::pcode::decoder::Decoder;
@@ -177,6 +177,21 @@ pub trait HighFunction: Send + Sync {
     fn get_pc_address(&self, representative: &Varnode) -> Option<Address> {
         let _ = representative;
         None
+    }
+
+    /// The address factory this `HighFunction`'s p-code operates over. Port of
+    /// `PcodeSyntaxTree.getAddressFactory()` (`HighFunction extends PcodeSyntaxTree implements
+    /// PcodeFactory`, and that unported base class simply returns the `AddressFactory` field it
+    /// was constructed with -- see the module docs for why `PcodeSyntaxTree` has no separate Rust
+    /// port here).
+    ///
+    /// Defaults to deriving it through [`get_function`](HighFunction::get_function)'s program,
+    /// which is exactly the value real Java call sites construct a `HighFunction` with (e.g.
+    /// `HighFunction`'s own constructor: `super(function.getProgram().getAddressFactory(),
+    /// dtManager)`), rather than requiring every implementor to additionally store the field
+    /// `PcodeSyntaxTree` itself keeps.
+    fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {
+        self.get_function().get_program().get_address_factory()
     }
 
     /// If a `HighVariable` consists of more than one (forced) merge group, split out the group
