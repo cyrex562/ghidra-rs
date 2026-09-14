@@ -143,6 +143,24 @@ pub trait Program: DomainObject + Send + Sync {
         None
     }
 
+    /// Get the symbol table for this program, for read-only access through a shared handle.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`AddressToSymbolTableRowMapper`](crate::util::table::mapper::address_to_symbol_table_row_mapper::AddressToSymbolTableRowMapper)
+    /// and
+    /// [`ProgramLocationToSymbolTableRowMapper`](crate::util::table::mapper::program_location_to_symbol_table_row_mapper::ProgramLocationToSymbolTableRowMapper)'s
+    /// ports of `SymbolTable symbolTable = program.getSymbolTable();`, both of which only have a
+    /// `&dyn Program` available (`TableRowMapper::map`'s `data` parameter). Java has only
+    /// `getSymbolTable()`, because a Java `SymbolTable` reference is mutable through; this port's
+    /// [`get_symbol_table`](Self::get_symbol_table) hands out a `&mut dyn SymbolTable`, which is
+    /// not reachable from `&self` -- the same split
+    /// [`get_bookmark_manager`](Self::get_bookmark_manager)/
+    /// [`get_bookmark_manager_mut`](Self::get_bookmark_manager_mut) already makes for
+    /// `BookmarkManager`.
+    fn get_symbol_table_ref(&self) -> Option<Arc<dyn SymbolTable>> {
+        None
+    }
+
     /// Get the external manager for this program.
     fn get_external_manager(&mut self) -> Option<&mut dyn ExternalManager> {
         None

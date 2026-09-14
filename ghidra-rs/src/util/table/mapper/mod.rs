@@ -1,5 +1,17 @@
 //! Port of `ghidra.util.table.mapper`.
 
+pub mod address_to_program_location_table_row_mapper;
+pub mod address_to_symbol_table_row_mapper;
+pub mod program_location_to_address_table_row_mapper;
+pub mod program_location_to_symbol_table_row_mapper;
+pub mod reference_to_reference_address_pair_table_row_mapper;
 pub mod symbol_to_address_table_row_mapper;
+pub mod symbol_to_program_location_table_row_mapper;
 
+pub use address_to_program_location_table_row_mapper::AddressToProgramLocationTableRowMapper;
+pub use address_to_symbol_table_row_mapper::AddressToSymbolTableRowMapper;
+pub use program_location_to_address_table_row_mapper::ProgramLocationToAddressTableRowMapper;
+pub use program_location_to_symbol_table_row_mapper::ProgramLocationToSymbolTableRowMapper;
+pub use reference_to_reference_address_pair_table_row_mapper::ReferenceToReferenceAddressPairTableRowMapper;
 pub use symbol_to_address_table_row_mapper::SymbolToAddressTableRowMapper;
+pub use symbol_to_program_location_table_row_mapper::SymbolToProgramLocationTableRowMapper;

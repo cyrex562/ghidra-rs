@@ -23,6 +23,7 @@ use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
 use crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen;
+use crate::pcode::emu::jit::gen::var::sub_direct_memory_var_gen::SubDirectMemoryVarGen;
 use crate::pcode::emu::jit::var::JitDirectMemoryVar;
 use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, Opnd, Scope};
 
@@ -30,6 +31,26 @@ use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, Opnd, Scope};
 ///
 /// Port of `ghidra.pcode.emu.jit.gen.var.DirectMemoryVarGen`. See the [module docs](self).
 pub trait DirectMemoryVarGen: MemoryVarGen<JitDirectMemoryVar> {
+    /// Returns the generator for a subpiece of this direct memory variable, from `byte_offset` for
+    /// up to `max_byte_size` bytes.
+    ///
+    /// Port of the abstract `ValGen<V>.subpiece(int byteOffset, int maxByteSize)`, inherited
+    /// (unoverridden by `MemoryVarGen`/`DirectMemoryVarGen` themselves) all the way down to
+    /// [`WholeDirectMemoryVarGen`](crate::pcode::emu::jit::gen::var::WholeDirectMemoryVarGen),
+    /// this crate's first real implementor. [`VarGen`](crate::pcode::emu::jit::gen::var::var_gen::VarGen)'s
+    /// own module docs note `ValGen.subpiece` was deliberately left off that trait ("no ported
+    /// implementor calls or overrides it, and its return type is `ValGen` itself") -- `ValGen<V>`
+    /// is generic and, per `VarGen`'s own several generic-per-call methods, not `dyn`-safe, so a
+    /// faithful `Box<dyn ValGen<V>>` return is not viable yet. Since every real Java override of
+    /// `subpiece` for a `DirectMemoryVarGen` implementor returns exactly a `new
+    /// SubDirectMemoryVarGen(byteOffset, maxByteSize)` (there is no other `ValGen<JitDirectMemoryVar>`
+    /// implementor in this crate), this default is restated here with the concrete
+    /// [`SubDirectMemoryVarGen`] return type instead -- narrower than Java's interface-typed
+    /// return, but exact for every implementor that exists.
+    fn subpiece(&self, byte_offset: i32, max_byte_size: i32) -> SubDirectMemoryVarGen {
+        SubDirectMemoryVarGen::new(byte_offset, max_byte_size)
+    }
+
     /// Port of `DirectMemoryVarGen.genWriteFromStack`.
     fn gen_write_from_stack<JT, N1>(
         &self,
@@ -250,6 +271,13 @@ mod tests {
 
     impl MemoryVarGen<JitDirectMemoryVar> for TestDirectMemoryVarGen {}
     impl DirectMemoryVarGen for TestDirectMemoryVarGen {}
+
+    #[test]
+    fn subpiece_default_builds_a_sub_direct_memory_var_gen_with_the_given_bounds() {
+        let gen_impl = TestDirectMemoryVarGen;
+        let sub = DirectMemoryVarGen::subpiece(&gen_impl, 2, 4);
+        assert_eq!(sub, SubDirectMemoryVarGen::new(2, 4));
+    }
 
     fn make_local_this() -> Local<TRef> {
         Local::of(TRef::of_class("some/pkg/CompiledPassage"), "this", 0)

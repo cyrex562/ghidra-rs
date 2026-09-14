@@ -9,6 +9,7 @@ pub mod sub_local_var_gen;
 pub mod sub_memory_var_gen;
 pub mod val_gen;
 pub mod var_gen;
+pub mod whole_direct_memory_var_gen;
 
 pub use direct_memory_var_gen::DirectMemoryVarGen;
 pub use input_var_gen::InputVarGen;
@@ -21,3 +22,4 @@ pub use sub_local_var_gen::SubLocalVarGen;
 pub use sub_memory_var_gen::SubMemoryVarGen;
 pub use val_gen::ValGen;
 pub use var_gen::VarGen;
+pub use whole_direct_memory_var_gen::WholeDirectMemoryVarGen;
