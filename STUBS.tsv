@@ -55,7 +55,6 @@ ts	stub_class	referenced_by
 2026-07-07T04:00:00Z	Processor	Language
 2026-07-07T04:00:00Z	AddressLabelInfo	Language
 2026-07-07T05:00:00Z	TraceBookmarkManager	Trace
-2026-07-07T05:00:00Z	TraceBasedDataTypeManager	Trace
 2026-07-07T05:00:00Z	TraceRegisterContextManager	Trace
 2026-07-08T00:00:00Z	Task	TrackedTaskListener
 2026-07-08T00:00:00Z	DomainObjectChangedEvent	DomainObjectListener
@@ -410,7 +409,6 @@ ts	stub_class	referenced_by
 2026-08-08T03:59:16.976766+00:00	AbstractBaseDBTraceDefinedUnitsView	DBTraceDefinedUnitsView
 2026-08-08T04:44:35.792999+00:00	DBTraceSettingsEntry	DBTraceDataSettingsOperations
 2026-08-08T04:49:08.204185+00:00	DBTraceCodeUnitAdapter	DBTraceDataAdapter
-2026-08-08T04:49:08.205010+00:00	DataAdapterFromDataType	DBTraceDataAdapter
 2026-08-08T05:48:42.684975+00:00	DBTraceDefinedDataAdapter	DBTraceData
 2026-08-08T06:00:00.000000+00:00	AbstractBaseDBTraceCodeUnitsView	AbstractBaseDBTraceCodeUnitsMemoryView
 2026-08-08T06:00:00.000000+00:00	DBTraceCodeManager	AbstractBaseDBTraceCodeUnitsMemoryView
@@ -711,7 +709,6 @@ ts	stub_class	referenced_by
 2026-08-13T09:57:08.000000+00:00	ElfHeader	ElfLoaderOptionsFactory
 2026-08-13T09:57:08.000000+00:00	Option	ElfLoaderOptionsFactory
 2026-08-13T21:20:41.494437+00:00	NTHeader	DebugCOFFSymbolTable
-2026-08-13T21:20:41.495078+00:00	DebugCOFFSymbol	DebugCOFFSymbolTable
 2026-08-13T21:20:41.495359+00:00	DebugDirectory	DebugCOFFSymbolsHeader
 2026-08-13T21:20:41.495640+00:00	DebugCOFFSymbolAux	DebugCOFFSymbol
 2026-08-13T21:20:41.495921+00:00	DebugCOFFLineNumber	DebugCOFFSymbolsHeader

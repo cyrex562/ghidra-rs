@@ -55,7 +55,8 @@ use crate::trace::model::trace::{Trace, TraceProgramViewListener};
 use crate::trace::model::trace_location::TraceLocation;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{ObjectKey, TraceBasedDataTypeManager, TraceBookmarkManager, TraceRegisterContextManager};
+use crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager;
+use crate::trace::seam_stubs::{ObjectKey, TraceBookmarkManager, TraceRegisterContextManager};
 use crate::util::lock_hold::{Lock, LockHold};
 
 impl DomainObject for Arc<dyn Trace + Send + Sync> {
@@ -390,7 +391,117 @@ mod tests {
 
     struct MockTraceBasedDataTypeManager;
     impl DataTypeManager for MockTraceBasedDataTypeManager {}
-    impl TraceBasedDataTypeManager for MockTraceBasedDataTypeManager {}
+    impl crate::program::model::data::file_based_data_type_manager::FileBasedDataTypeManager
+        for MockTraceBasedDataTypeManager
+    {
+        fn get_path(&self) -> String {
+            "/mock".to_string()
+        }
+    }
+    impl crate::program::model::data::domain_file_based_data_type_manager::DomainFileBasedDataTypeManager
+        for MockTraceBasedDataTypeManager
+    {
+        fn get_domain_file(&self) -> Box<dyn crate::framework::model::DomainFile> {
+            unimplemented!("not exercised by these tests")
+        }
+    }
+    impl crate::program::model::data::program_based_data_type_manager::ProgramBasedDataTypeManager
+        for MockTraceBasedDataTypeManager
+    {
+        fn get_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_change_allowed(
+            &self,
+            _data: &dyn crate::program::model::listing::data::Data,
+            _settings_definition: &dyn crate::docking::settings::settings_definition::SettingsDefinition,
+        ) -> bool {
+            true
+        }
+        fn set_long_settings_value(
+            &mut self,
+            _data: &dyn crate::program::model::listing::data::Data,
+            _name: &str,
+            _value: i64,
+        ) -> bool {
+            false
+        }
+        fn set_string_settings_value(
+            &mut self,
+            _data: &dyn crate::program::model::listing::data::Data,
+            _name: &str,
+            _value: &str,
+        ) -> bool {
+            false
+        }
+        fn set_settings(
+            &mut self,
+            _data: &dyn crate::program::model::listing::data::Data,
+            _name: &str,
+            _value: Box<dyn std::any::Any>,
+        ) -> bool {
+            false
+        }
+        fn get_long_settings_value(
+            &self,
+            _data: &dyn crate::program::model::listing::data::Data,
+            _name: &str,
+        ) -> Option<i64> {
+            None
+        }
+        fn get_string_settings_value(
+            &self,
+            _data: &dyn crate::program::model::listing::data::Data,
+            _name: &str,
+        ) -> Option<String> {
+            None
+        }
+        fn get_settings(
+            &self,
+            _data: &dyn crate::program::model::listing::data::Data,
+            _name: &str,
+        ) -> Option<Box<dyn std::any::Any>> {
+            None
+        }
+        fn clear_setting(&mut self, _data: &dyn crate::program::model::listing::data::Data, _name: &str) -> bool {
+            false
+        }
+        fn clear_all_settings(&mut self, _data: &dyn crate::program::model::listing::data::Data) {}
+        fn get_instance_settings_names(
+            &self,
+            _data: &dyn crate::program::model::listing::data::Data,
+        ) -> Vec<String> {
+            Vec::new()
+        }
+        fn is_empty_setting(&self, _data: &dyn crate::program::model::listing::data::Data) -> bool {
+            true
+        }
+        fn move_address_range(
+            &mut self,
+            _from_addr: &crate::program::model::address::Address,
+            _to_addr: &crate::program::model::address::Address,
+            _length: i64,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+        fn delete_address_range(
+            &mut self,
+            _start_addr: &crate::program::model::address::Address,
+            _end_addr: &crate::program::model::address::Address,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+    }
+    impl TraceBasedDataTypeManager for MockTraceBasedDataTypeManager {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_platform(&self) -> Box<dyn crate::trace::model::guest::trace_platform::TracePlatform> {
+            unimplemented!("not exercised by these tests")
+        }
+    }
 
     struct MockLock;
     impl Lock for MockLock {

@@ -66,9 +66,10 @@ mod tests {
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
     use crate::trace::database::listing::abstract_db_trace_data_component::AbstractDBTraceDataComponent;
     use crate::trace::model::guest::trace_platform::TracePlatform;
-    use crate::trace::seam_stubs::{DBTraceCodeUnitAdapter, DataAdapterFromDataType};
+    use crate::trace::seam_stubs::DBTraceCodeUnitAdapter;
     use crate::trace::model::thread::TraceThread;
     use crate::trace::util::trace_change_record::TraceChangeRecord;
+    use crate::trace::util::data_adapter_from_data_type::DataAdapterFromDataType;
     use crate::trace::util::data_adapter_minimal::DataAdapterMinimal;
     use crate::trace::util::trace_change_manager::TraceChangeManager;
     use std::any::Any;
@@ -145,7 +146,7 @@ mod tests {
         fn get_code_manager(&self) -> Box<dyn crate::trace::model::listing::TraceCodeManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_base_data_type_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceBasedDataTypeManager> {
+        fn get_base_data_type_manager(&self) -> Box<dyn crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_equate_manager(&self) -> Box<dyn crate::trace::model::symbol::trace_equate_manager::TraceEquateManager> {

@@ -1,8 +1,9 @@
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::format::pe::debug::debug_coff_symbol::DebugCOFFSymbol;
 use crate::format::pe::debug::debug_coff_symbols_header::DebugCOFFSymbolsHeader;
-use crate::format::seam_stubs::{DebugCOFFSymbol, DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL, NT_HEADER_MAX_SANE_COUNT};
+use crate::format::seam_stubs::{DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL, NT_HEADER_MAX_SANE_COUNT};
 
 /// Represents a COFF Symbol Table.
 ///
@@ -20,7 +21,7 @@ pub struct DebugCOFFSymbolTable {
     /// Number of symbols in the table.
     symbol_count: i32,
     /// The COFF symbols defined in this table.
-    symbols: Vec<Box<dyn DebugCOFFSymbol>>,
+    symbols: Vec<DebugCOFFSymbol>,
 }
 
 impl DebugCOFFSymbolTable {
@@ -37,7 +38,7 @@ impl DebugCOFFSymbolTable {
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
     pub fn new(
-        _reader: &dyn BinaryReader,
+        reader: &dyn BinaryReader,
         coff_header: &DebugCOFFSymbolsHeader,
         offset: i32,
     ) -> io::Result<Self> {
@@ -46,22 +47,20 @@ impl DebugCOFFSymbolTable {
 
         // TODO: should symbol table info in NT Header agree with info in COFF Header?
 
-        let symbols: Vec<Box<dyn DebugCOFFSymbol>> = if symbol_count < NT_HEADER_MAX_SANE_COUNT {
-            // Since DebugCOFFSymbol is not yet ported, we return an empty vector for now.
-            // When DebugCOFFSymbol is ported, this will be:
-            // (0..symbol_count)
-            //     .map(|i| {
-            //         Box::new(DebugCOFFSymbol::new(
-            //             reader,
-            //             (ptr_to_symbol_table + (i * DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL as i32)) as u64,
-            //             self,
-            //         )?) as Box<dyn DebugCOFFSymbol>
-            //     })
-            //     .collect::<io::Result<Vec<_>>>()?
-            Vec::new()
-        } else {
-            Vec::new()
-        };
+        // NOTE: this mirrors the Java loop's fixed 18-byte stride per iteration, which does NOT
+        // skip over a symbol's own trailing auxiliary-symbol slots -- an auxiliary slot is
+        // therefore misread as if it were its own `DebugCOFFSymbol`, exactly as the original
+        // Java does (`DebugCOFFSymbolTable.java`'s constructor has no aux-aware skip either).
+        let string_table_index =
+            (ptr_to_symbol_table + (symbol_count * DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL as i32)) as u64;
+        let mut symbols = Vec::new();
+        if symbol_count < NT_HEADER_MAX_SANE_COUNT {
+            for i in 0..symbol_count {
+                let index =
+                    (ptr_to_symbol_table + (i * DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL as i32)) as u64;
+                symbols.push(DebugCOFFSymbol::new(reader, index, string_table_index)?);
+            }
+        }
 
         Ok(DebugCOFFSymbolTable {
             ptr_to_symbol_table,
@@ -73,12 +72,12 @@ impl DebugCOFFSymbolTable {
     /// Returns the index into the string table, calculated from the symbol table size.
     ///
     /// The string table starts after all symbols.
-    fn get_string_table_index(&self) -> i32 {
-        self.ptr_to_symbol_table + (self.symbol_count * DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL as i32)
+    pub(crate) fn get_string_table_index(&self) -> u64 {
+        (self.ptr_to_symbol_table + (self.symbol_count * DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL as i32)) as u64
     }
 
     /// Returns the COFF symbols defined in this COFF symbol table.
-    pub fn get_symbols(&self) -> &[Box<dyn DebugCOFFSymbol>] {
+    pub fn get_symbols(&self) -> &[DebugCOFFSymbol] {
         &self.symbols
     }
 }
@@ -263,7 +262,7 @@ mod tests {
 
         let table = DebugCOFFSymbolTable::new(&reader, &header, 0).expect("failed to create table");
         let string_table_index = table.get_string_table_index();
-        assert_eq!(string_table_index, 100 + (5 * DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL as i32));
+        assert_eq!(string_table_index, (100 + (5 * DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL as i32)) as u64);
     }
 
     #[test]

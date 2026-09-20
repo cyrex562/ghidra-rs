@@ -498,7 +498,7 @@ mod tests {
 
     impl crate::trace::model::listing::trace_data::TraceData for MockRootUnit {}
     impl crate::trace::util::data_adapter_minimal::DataAdapterMinimal for MockRootUnit {}
-    impl crate::trace::seam_stubs::DataAdapterFromDataType for MockRootUnit {}
+    impl crate::trace::util::data_adapter_from_data_type::DataAdapterFromDataType for MockRootUnit {}
 
     impl crate::trace::seam_stubs::DBTraceCodeUnitAdapter for MockRootUnit {
         fn trace_change_manager(&mut self) -> &mut dyn crate::trace::util::trace_change_manager::TraceChangeManager {

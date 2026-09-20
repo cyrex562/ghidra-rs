@@ -6761,7 +6761,7 @@ impl FrameStructureBuilder {
         &self,
         _path: &crate::program::model::data::category_path::CategoryPath,
         _name: &str,
-        _dtm: &mut dyn crate::trace::seam_stubs::TraceBasedDataTypeManager,
+        _dtm: &mut dyn crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager,
     ) -> Box<dyn crate::program::model::data::structure::Structure> {
         unimplemented!(
             "FrameStructureBuilder needs the decompiler's frame analysis, which is not ported"

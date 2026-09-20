@@ -111,12 +111,6 @@ pub trait TraceBookmarkManager {
     }
 }
 
-/// Placeholder for `ghidra.trace.model.data.TraceBasedDataTypeManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Mirrors the
-/// Java interface's `extends ProgramBasedDataTypeManager` (itself a `DataTypeManager`) so that
-/// the placeholder stays substitutable for [`DataTypeManager`].
-pub trait TraceBasedDataTypeManager: DataTypeManager {}
-
 /// Placeholder for `ghidra.trace.model.context.TraceRegisterContextManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceRegisterContextManager {}
@@ -1282,11 +1276,6 @@ pub trait DBTraceCodeUnitAdapter: Send + Sync {
     /// `getTrace()` override.
     fn trace_change_manager(&mut self) -> &mut dyn TraceChangeManager;
 }
-
-/// Placeholder for `ghidra.trace.util.DataAdapterFromDataType`, referenced (as a supertrait) by
-/// [`DBTraceDataAdapter`](crate::trace::database::listing::db_trace_data_adapter::DBTraceDataAdapter)
-/// before the real port is available. No members are parsed from the Java source yet.
-pub trait DataAdapterFromDataType: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapSpace`,
 /// referenced by

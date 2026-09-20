@@ -43,7 +43,7 @@ use crate::program::model::lang::{CompilerSpec, Language, Register};
 use crate::program::model::mem::MemBuffer;
 use crate::program::seam_stubs::InstructionSet;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::TraceBasedDataTypeManager;
+use crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager;
 
 /// A platform within a trace.
 ///

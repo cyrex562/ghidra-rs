@@ -1,5 +1,6 @@
 pub mod byte_array_utils;
 pub mod copy_on_write;
+pub mod data_adapter_from_data_type;
 pub mod data_adapter_from_settings;
 pub mod data_adapter_minimal;
 pub mod empty_function_iterator;

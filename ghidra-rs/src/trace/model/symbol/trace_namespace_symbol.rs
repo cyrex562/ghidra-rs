@@ -110,7 +110,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_base_data_type_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceBasedDataTypeManager> {
+        fn get_base_data_type_manager(&self) -> Box<dyn crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager> {
             unimplemented!("not exercised by this smoke test")
         }
 

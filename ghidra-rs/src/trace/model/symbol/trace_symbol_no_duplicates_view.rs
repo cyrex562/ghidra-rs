@@ -67,8 +67,9 @@ mod tests {
     use crate::trace::model::property::TraceAddressPropertyManager;
     use crate::trace::model::memory::trace_memory_manager::TraceMemoryManager;
     use crate::trace::model::thread::TraceThread;
+    use crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager;
     use crate::trace::seam_stubs::{
-        TraceBasedDataTypeManager, TraceBookmarkManager,
+        TraceBookmarkManager,
         TraceRegisterContextManager,
     };
     use crate::util::lock_hold::Lock;

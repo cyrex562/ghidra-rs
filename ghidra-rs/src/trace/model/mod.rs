@@ -2,6 +2,7 @@ pub mod address_snap;
 pub mod bookmark;
 pub mod breakpoint;
 pub mod context;
+pub mod data;
 pub mod default_address_snap;
 pub mod default_trace_location;
 pub mod default_trace_span;

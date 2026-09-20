@@ -1345,25 +1345,6 @@ pub trait DebugCOFFSymbolAux: Send + Sync {
 /// The size of the `IMAGE_SYMBOL` structure, in bytes.
 pub const DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL: usize = 18;
 
-/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbol`, referenced by
-/// [`DebugCOFFSymbolTable`](crate::format::pe::debug::debug_coff_symbol_table::DebugCOFFSymbolTable)
-/// before the real class is ported. Models the methods and constants needed by `DebugCOFFSymbolTable`.
-pub trait DebugCOFFSymbol: Send + Sync {
-    fn get_auxiliary_symbols(&self) -> Vec<Box<dyn DebugCOFFSymbolAux>>;
-    fn get_name(&self) -> String;
-    fn get_value(&self) -> i32;
-    fn get_value_as_string(&self) -> String;
-    fn get_section_number(&self) -> i32;
-    fn get_section_number_as_string(&self) -> String;
-    fn get_type(&self) -> i32;
-    fn get_type_as_string(&self) -> String;
-    fn get_storage_class(&self) -> i32;
-    fn get_storage_class_as_string(&self) -> String;
-    fn get_number_of_aux_symbols(&self) -> i32;
-    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
-    fn to_string(&self) -> String;
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFLineNumber`, referenced by
 /// [`DebugCOFFSymbolsHeader`] before the real class is ported.
 pub trait DebugCOFFLineNumber: Send + Sync {
@@ -1375,13 +1356,6 @@ pub trait DebugCOFFLineNumber: Send + Sync {
 /// before the real class is ported. Models only the method needed by `DebugCOFFSymbolsHeader`.
 pub trait DebugDirectory: Send + Sync {
     fn get_pointer_to_raw_data(&self) -> i32;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbolTable`, referenced by
-/// [`DebugCOFFSymbolsHeader`] before the real class is ported.
-pub trait DebugCOFFSymbolTable: Send + Sync {
-    fn get_symbols(&self) -> Vec<Box<dyn DebugCOFFSymbol>>;
-    fn get_string_table_index(&self) -> i32;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.coff.AoutHeader`, referenced by

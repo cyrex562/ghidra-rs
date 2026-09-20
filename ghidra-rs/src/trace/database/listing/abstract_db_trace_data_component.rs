@@ -445,8 +445,9 @@ mod tests {
     };
     use crate::program::model::util::PropertySet;
     use crate::program::seam_stubs::{RefType as StubRefType, Reference as StubReference};
-    use crate::trace::seam_stubs::{DBTraceCodeUnitAdapter, DataAdapterFromDataType};
+    use crate::trace::seam_stubs::DBTraceCodeUnitAdapter;
     use crate::trace::util::trace_change_record::TraceChangeRecord;
+    use crate::trace::util::data_adapter_from_data_type::DataAdapterFromDataType;
     use crate::trace::util::data_adapter_minimal::DataAdapterMinimal;
     use crate::trace::util::trace_change_manager::TraceChangeManager;
     use std::any::{Any, TypeId};
@@ -530,7 +531,7 @@ mod tests {
         fn get_code_manager(&self) -> Box<dyn crate::trace::model::listing::TraceCodeManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_base_data_type_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceBasedDataTypeManager> {
+        fn get_base_data_type_manager(&self) -> Box<dyn crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_equate_manager(&self) -> Box<dyn crate::trace::model::symbol::trace_equate_manager::TraceEquateManager> {

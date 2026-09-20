@@ -1128,7 +1128,7 @@ mod tests {
         }
         fn get_data_type_manager(
             &self,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceBasedDataTypeManager> {
+        ) -> Box<dyn crate::trace::model::data::trace_based_data_type_manager::TraceBasedDataTypeManager> {
             unimplemented!("not exercised by these tests")
         }
         fn get_host_address_set(&self) -> Box<dyn AddressSetView> {
