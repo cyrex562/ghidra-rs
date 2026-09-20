@@ -10,6 +10,8 @@ pub mod method_protector;
 pub mod overlapping_object_iterator;
 pub mod trace_change_manager;
 pub mod trace_change_record;
+pub mod trace_event;
+pub mod trace_events;
 pub mod trace_space_mixin;
 pub mod typed_event_dispatcher;
 pub mod wrapping_code_unit_iterator;

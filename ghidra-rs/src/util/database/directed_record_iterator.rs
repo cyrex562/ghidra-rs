@@ -5,9 +5,10 @@
 //! `getIterator(Table, KeySpan, Direction)` and `getIndexIterator(Table, int, FieldSpan,
 //! Direction)` -- plus private `applyBegFilter`/`applyEndFilter`/`applyFilters` helpers used only
 //! by those factories, and an `EMPTY` constant built from an anonymous `AbstractDirectedRecordIterator`.
-//! `Table.iterator(min, max, start)`/`Table.indexIterator(...)` and the
-//! `Abstract`/`Forward`/`BackwardRecordIterator` classes those factories and `EMPTY` depend on are
-//! not yet ported, so the factories are represented as a construction contract,
+//! `Table.iterator(min, max, start)`/`Table.indexIterator(...)` and `ForwardRecordIterator` those
+//! factories and `EMPTY` depend on are not yet ported (`BackwardRecordIterator` now is -- see
+//! [`backward_record_iterator`](crate::util::database::backward_record_iterator)), so the
+//! factories are represented as a construction contract,
 //! [`DirectedRecordIteratorFactory`](crate::util::seam_stubs::DirectedRecordIteratorFactory),
 //! rather than transliterated here; this trait carries only the inherited iteration contract, same
 //! as the Java interface itself.

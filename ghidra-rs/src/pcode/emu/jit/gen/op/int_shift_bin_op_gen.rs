@@ -52,7 +52,7 @@
 //!   on the pair) is not modeled here. It returns Java's `OpResult` (constructed as
 //!   `LiveOpResult`) and takes a `JitBlock`, neither of which is ported in this crate, and it is
 //!   called only by the (also unported) JIT driver -- no implementor's own logic calls it. This
-//!   follows the same precedent as [`OpGen`](crate::pcode::seam_stubs::OpGen)'s omitted `genRun`,
+//!   follows the same precedent as [`OpGen`](crate::pcode::emu::jit::gen::op::op_gen::OpGen)'s omitted `genRun`,
 //!   which
 //!   [`IntPredBinOpGen`](super::int_pred_bin_op_gen::IntPredBinOpGen) and
 //!   [`IntOpBinOpGen`](super::int_op_bin_op_gen::IntOpBinOpGen) already rely on.
@@ -326,7 +326,8 @@ mod tests {
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitOutVar;
     use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-    use crate::pcode::seam_stubs::{MethodVisitor, OpGen};
+    use crate::pcode::seam_stubs::{MethodVisitor};
+    use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use std::sync::Arc;
 

@@ -279,7 +279,8 @@ mod tests {
     use crate::pcode::emu::jit::op::{JitDefOp, JitIntBinOp, JitIntTestOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
     use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-    use crate::pcode::seam_stubs::{MethodVisitor, OpGen};
+    use crate::pcode::seam_stubs::{MethodVisitor};
+    use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
     use std::sync::Arc;
 
     struct TestIntTestOp;

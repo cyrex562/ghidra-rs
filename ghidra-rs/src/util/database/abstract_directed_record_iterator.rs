@@ -3,17 +3,21 @@
 //!
 //! The Java class wraps a `db.RecordIterator` in a `protected final` field and implements only
 //! `delete()` by delegating to it, leaving `hasNext`/`next` to concrete subclasses
-//! (`ForwardRecordIterator`/`BackwardRecordIterator`, not yet ported) which impose the iteration
-//! direction. Rust has no class inheritance, so this is expressed as a standalone trait:
-//! implementors provide [`it`](Self::it), an accessor for the wrapped iterator, and get
-//! [`delete`](Self::delete) for free -- the same shape used for
+//! (`ForwardRecordIterator`, not yet ported, and
+//! [`BackwardRecordIterator`](crate::util::database::backward_record_iterator::BackwardRecordIterator),
+//! which is) that impose the iteration direction. Rust has no class inheritance, so this is
+//! expressed as a standalone trait: implementors provide [`it`](Self::it), an accessor for the
+//! wrapped iterator, and get [`delete`](Self::delete) for free -- the same shape used for
 //! [`AbstractDirectedLongKeyIterator`](crate::util::database::AbstractDirectedLongKeyIterator).
 //!
-//! The ported [`RecordIterator`](crate::framework::db::RecordIterator) trait only carries the
-//! `next`/`has_next` members ported so far; `delete` (the only member this class needs) hasn't
-//! been added to it yet. Until it is, the wrapped iterator is accessed through
+//! The wrapped iterator is accessed through
 //! [`RecordIteratorDelete`](crate::util::seam_stubs::RecordIteratorDelete), a minimal placeholder
-//! standing in for that one missing member.
+//! written before the ported [`RecordIterator`](crate::framework::db::RecordIterator) trait
+//! declared `delete()` itself. `RecordIterator` has since grown that method (as a default
+//! returning `Ok(false)`), so
+//! [`backward_record_iterator`](crate::util::database::backward_record_iterator) now bridges every
+//! `RecordIterator` into `RecordIteratorDelete` with a blanket `impl`, rather than redefining this
+//! trait's contract.
 
 use crate::util::seam_stubs::RecordIteratorDelete;
 

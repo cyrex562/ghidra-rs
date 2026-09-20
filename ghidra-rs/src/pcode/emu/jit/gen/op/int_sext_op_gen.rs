@@ -17,7 +17,7 @@
 use crate::pcode::emu::jit::gen::op::int_ext_un_op_gen::IntExtUnOpGen;
 use crate::pcode::emu::jit::gen::op::un_op_gen::UnOpGen;
 use crate::pcode::emu::jit::op::JitIntSExtOp;
-use crate::pcode::seam_stubs::OpGen;
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 
 /// The generator for a [`JitIntSExtOp`] (`int_sext`).
 ///

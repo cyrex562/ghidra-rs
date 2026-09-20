@@ -2,7 +2,8 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.gen.op.UnOpGen`.
 
-use crate::pcode::seam_stubs::{Ext, OpGen};
+use crate::pcode::seam_stubs::{Ext};
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::op::jit_un_op::JitUnOp;
 

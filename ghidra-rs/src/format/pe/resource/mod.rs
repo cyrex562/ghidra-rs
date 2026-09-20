@@ -1,3 +1,6 @@
+pub mod resource_directory;
+pub use resource_directory::ResourceDirectory;
+
 pub mod resource_info;
 pub use resource_info::ResourceInfo;
 

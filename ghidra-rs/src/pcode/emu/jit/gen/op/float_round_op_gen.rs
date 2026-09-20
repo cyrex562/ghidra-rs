@@ -29,7 +29,7 @@ use crate::pcode::emu::jit::gen::op::un_op_gen::UnOpGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::types::{TDouble, TFloat};
 use crate::pcode::emu::jit::op::JitFloatRoundOp;
-use crate::pcode::seam_stubs::OpGen;
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 
 /// The generator for a [`JitFloatRoundOp`] (`float_round`).
 ///

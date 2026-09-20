@@ -15,15 +15,15 @@
 //! none of which exist in this crate yet: they come from `ghidra.pcode.emu.jit.JitPassage`'s
 //! nested types (`JitPassage.java` itself is not yet ported) and from
 //! `ghidra.pcode.emu.jit.gen.op.BranchOpGen`/`ghidra.pcode.emu.jit.gen.var.VarGen`, both also not
-//! yet ported. Following the precedent set by [`OpGen`](crate::pcode::seam_stubs::OpGen) itself --
+//! yet ported. Following the precedent set by [`OpGen`](crate::pcode::emu::jit::gen::op::op_gen::OpGen) itself --
 //! whose Rust port already omits `genRun` because no current implementor's *own* logic calls it,
 //! only the (also unported) JIT driver would -- this port keeps only the one piece of real,
 //! checkable content: the singleton enum shape and its `OpGen<JitCBranchOp>` implementation.
 //! `genRun`'s bytecode-emission dispatch is left unmodeled until `JitPassage`, `BranchOpGen`, and
 //! `VarGen` land.
 
-use crate::pcode::seam_stubs::{JitCBranchOp, OpGen};
-
+use crate::pcode::seam_stubs::{JitCBranchOp};
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 /// The generator for a [`JitCBranchOp`] (`cbranch`).
 ///
 /// Port of `ghidra.pcode.emu.jit.gen.op.CBranchOpGen`.

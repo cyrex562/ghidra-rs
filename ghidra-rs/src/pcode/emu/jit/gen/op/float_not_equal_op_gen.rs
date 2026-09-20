@@ -20,7 +20,7 @@ use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::lbl::{Lbl, LblEm};
 use crate::pcode::emu::jit::gen::util::types::{TDouble, TFloat, TInt};
 use crate::pcode::emu::jit::op::JitFloatNotEqualOp;
-use crate::pcode::seam_stubs::OpGen;
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 
 /// The generator for a [`JitFloatNotEqualOp`] (`float_notequal`).
 ///

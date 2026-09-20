@@ -25,8 +25,8 @@ use crate::pcode::emu::jit::gen::util::emitter::Bot;
 use crate::pcode::emu::jit::gen::util::emitter::Emitter;
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::TRef;
-use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, OpGen, Scope};
-
+use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, Scope};
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 /// A choice of static method parameter to take as operator output.
 ///
 /// Port of `BinOpGen.TakeOut`.

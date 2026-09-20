@@ -5522,3 +5522,119 @@ pub trait Objc2ClassRW: Send + Sync {
     fn hash_code(&self) -> i32;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
+
+/// Placeholder for the unported Java type `ResourceDirectoryEntry`, referenced by
+/// [`ResourceDirectory`](crate::format::pe::resource::resource_directory::ResourceDirectory).
+///
+/// `ResourceDirectoryEntry` and `ResourceDirectory` are mutually recursive in Java: an entry whose
+/// `dataIsDirectory` bit is set constructs a nested `ResourceDirectory`, which in turn constructs
+/// more `ResourceDirectoryEntry`s -- this is the cycle `ResourceDirectory` sits on (its shape
+/// directive names it a cut point). This stub cuts the cycle here: it faithfully parses the fixed
+/// 8-byte `IMAGE_RESOURCE_DIRECTORY_ENTRY` header (Java's `nameOffset`/`nameIsString`/`name`/
+/// `id`/`offsetToData`/`offsetToDirectory`/`dataIsDirectory` fields) and reproduces the same
+/// pointer-validity checks Java's constructor makes (hence the same `is_valid()` result), but it
+/// does NOT recursively construct the nested `ResourceDirectory`/`ResourceDataEntry`/
+/// `ResourceDirectoryStringU` -- those need this same type plus two more unported ones, so
+/// `getSubDirectory`/`getData`/`getDirectoryString` are omitted entirely rather than modeled with
+/// `None`-only stand-ins. Replace with the real port (and the recursive construction) once
+/// `ResourceDataEntry`/`ResourceDirectoryStringU` land.
+#[derive(Debug, Clone)]
+pub struct ResourceDirectoryEntry {
+    name_offset: i32,
+    name_is_string: bool,
+    name: i32,
+    id: i32,
+    offset_to_data: i32,
+    offset_to_directory: i32,
+    data_is_directory: bool,
+    valid: bool,
+}
+
+impl ResourceDirectoryEntry {
+    /// Port of `ResourceDirectoryEntry(BinaryReader, int, int, boolean, boolean, NTHeader)`,
+    /// minus the recursive `subDirectory`/`data`/`dirString` construction (see struct doc).
+    pub fn new(
+        reader: &dyn BinaryReader,
+        index: u64,
+        resource_base: u64,
+        _is_name_entry: bool,
+        _is_first_level: bool,
+        nt_header: &dyn NTHeader,
+    ) -> std::io::Result<Self> {
+        let irde1 = reader.read_int(index)?;
+        let irde2 = reader.read_int(index + 4)?;
+
+        let name_offset = irde1 & 0x7FFF_FFFF;
+        // Java: `(irde1 & 0x80000000) != 0`, i.e. the top bit is set -- equivalent to `irde1 < 0`
+        // for a two's-complement i32.
+        let name_is_string = irde1 < 0;
+        if name_offset < 0 {
+            Msg::error("ResourceDirectoryEntry", &format!("Invalid nameOffset {name_offset}"));
+            return Ok(ResourceDirectoryEntry {
+                name_offset,
+                name_is_string,
+                name: irde1,
+                id: irde1 & 0xFFFF,
+                offset_to_data: irde2,
+                offset_to_directory: irde2 & 0x7FFF_FFFF,
+                data_is_directory: irde2 < 0,
+                valid: false,
+            });
+        }
+        let name = irde1;
+        let id = irde1 & 0xFFFF;
+        let offset_to_data = irde2;
+        let offset_to_directory = irde2 & 0x7FFF_FFFF;
+        let data_is_directory = irde2 < 0;
+        let len = reader.length()? as i64;
+
+        let mut valid = true;
+        if name_is_string {
+            let nameptr = name_offset as i64 + resource_base as i64;
+            if !(nt_header.check_rva(nameptr) || (0 < nameptr && nameptr < len)) {
+                Msg::error(
+                    "ResourceDirectoryEntry",
+                    &format!("Invalid nameOffset {name_offset:x}"),
+                );
+                valid = false;
+            }
+        }
+        if valid {
+            if data_is_directory {
+                let dirptr = offset_to_directory as i64 + resource_base as i64;
+                if !(nt_header.check_rva(dirptr) || (0 < dirptr && dirptr < len)) {
+                    Msg::error(
+                        "ResourceDirectoryEntry",
+                        &format!("Invalid offsetToDirectory {offset_to_directory:x}"),
+                    );
+                    valid = false;
+                }
+            } else {
+                let dataptr = offset_to_data as i64 + resource_base as i64;
+                if !(nt_header.check_rva(dataptr) || (0 < dataptr && dataptr < len)) {
+                    Msg::error(
+                        "ResourceDirectoryEntry",
+                        &format!("Invalid offsetToData {offset_to_data:x}"),
+                    );
+                    valid = false;
+                }
+            }
+        }
+
+        Ok(ResourceDirectoryEntry {
+            name_offset,
+            name_is_string,
+            name,
+            id,
+            offset_to_data,
+            offset_to_directory,
+            data_is_directory,
+            valid,
+        })
+    }
+
+    /// Port of `ResourceDirectoryEntry.isValid()`.
+    pub fn is_valid(&self) -> bool {
+        self.valid
+    }
+}

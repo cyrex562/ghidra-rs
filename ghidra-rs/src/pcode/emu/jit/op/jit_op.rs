@@ -15,7 +15,7 @@ use super::{JitBoolNegateOp, JitDefOp};
 ///
 /// Port of the `ghidra.pcode.emu.jit.op.JitOp` interface: the base of the use-def graph node
 /// hierarchy built during JIT data-flow analysis (see
-/// [`OpGen`](crate::pcode::seam_stubs::OpGen) for the accompanying table of p-code ops, use-def
+/// [`OpGen`](crate::pcode::emu::jit::gen::op::op_gen::OpGen) for the accompanying table of p-code ops, use-def
 /// nodes, and code generators).
 ///
 /// # Differences from Java

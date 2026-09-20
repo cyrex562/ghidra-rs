@@ -17,7 +17,7 @@ use crate::pcode::emu::jit::gen::op::float_op_bin_op_gen::FloatOpBinOpGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::types::{TDouble, TFloat};
 use crate::pcode::emu::jit::op::JitFloatSubOp;
-use crate::pcode::seam_stubs::OpGen;
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 
 /// The generator for a [`JitFloatSubOp`] (`float_sub`).
 ///

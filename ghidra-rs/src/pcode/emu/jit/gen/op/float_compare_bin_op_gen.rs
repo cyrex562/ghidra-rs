@@ -27,7 +27,7 @@
 //!   `OpResult` (constructed as `LiveOpResult`) and takes a `Methods.RetReq`, neither of which is
 //!   ported in this crate, and it is called only by the (also unported) JIT driver -- no
 //!   implementor's own logic calls it. This follows the same precedent as
-//!   [`OpGen`](crate::pcode::seam_stubs::OpGen)'s omitted `genRun`, which
+//!   [`OpGen`](crate::pcode::emu::jit::gen::op::op_gen::OpGen)'s omitted `genRun`, which
 //!   [`FloatOpBinOpGen`](super::float_op_bin_op_gen::FloatOpBinOpGen) already relies on.
 
 use crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen;
@@ -116,7 +116,8 @@ mod tests {
     use crate::pcode::emu::jit::op::{JitBinOp, JitDefOp, JitFloatBinOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
     use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-    use crate::pcode::seam_stubs::{Ext, MethodVisitor, OpGen};
+    use crate::pcode::seam_stubs::{Ext, MethodVisitor};
+    use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
     use std::sync::Arc;
 
     struct TestFloatTestOp;

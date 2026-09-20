@@ -140,7 +140,7 @@ mod tests {
     /// the type it was asked to operate on back to the caller so the test can assert what
     /// actually reached the trait method, rather than asserting something trivially true.
     struct NegGen;
-    impl crate::pcode::seam_stubs::OpGen<TestUnOp> for NegGen {}
+    impl crate::pcode::emu::jit::gen::op::op_gen::OpGen<TestUnOp> for NegGen {}
     impl UnOpGen<TestUnOp> for NegGen {
         fn is_signed(&self) -> bool {
             true

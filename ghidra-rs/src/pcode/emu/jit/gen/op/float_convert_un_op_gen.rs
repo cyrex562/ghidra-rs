@@ -92,7 +92,8 @@ mod tests {
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::{JitVal, JitOutVar};
     use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-    use crate::pcode::seam_stubs::{Ext, MethodVisitor, OpGen};
+    use crate::pcode::seam_stubs::{Ext, MethodVisitor};
+    use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
     use std::sync::Arc;
 
     struct MockVal;

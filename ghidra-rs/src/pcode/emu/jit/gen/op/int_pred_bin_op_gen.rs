@@ -30,7 +30,7 @@
 //!   (constructed as `LiveOpResult`) and takes a `Methods.RetReq`, neither of which is ported in
 //!   this crate, and it is called only by the (also unported) JIT driver -- no implementor's own
 //!   logic calls it. This follows the same precedent as
-//!   [`OpGen`](crate::pcode::seam_stubs::OpGen)'s omitted `genRun`, which
+//!   [`OpGen`](crate::pcode::emu::jit::gen::op::op_gen::OpGen)'s omitted `genRun`, which
 //!   [`IntOpBinOpGen`](super::int_op_bin_op_gen::IntOpBinOpGen) and
 //!   [`FloatCompareBinOpGen`](super::float_compare_bin_op_gen::FloatCompareBinOpGen) already rely
 //!   on.
@@ -278,7 +278,7 @@ mod tests {
     /// A stand-in for a concrete generator such as Java's `IntEqualOpGen`: signed, and delegates
     /// straight to the `delegate*Flagbit` default methods, as a real comparison generator would.
     struct EqualGen;
-    impl crate::pcode::seam_stubs::OpGen<TestBinOp> for EqualGen {}
+    impl crate::pcode::emu::jit::gen::op::op_gen::OpGen<TestBinOp> for EqualGen {}
     impl BinOpGen<TestBinOp> for EqualGen {
         fn is_signed(&self) -> bool {
             true

@@ -381,7 +381,6 @@ ts	stub_class	referenced_by
 2026-08-07T04:00:00+00:00	BackwardLongKeyIterator	DirectedLongKeyIterator
 2026-08-07T04:00:00+00:00	ForwardLongKeyIterator	DirectedLongKeyIterator
 2026-08-07T04:00:00+00:00	DirectedLongKeyIteratorFactory	DirectedLongKeyIterator
-2026-08-06T00:00:00+00:00	BackwardRecordIterator	DirectedRecordIterator
 2026-08-06T00:00:00+00:00	ForwardRecordIterator	DirectedRecordIterator
 2026-08-06T00:00:00+00:00	DirectedRecordIteratorFactory	DirectedRecordIterator
 2026-08-07T00:00:00+00:00	RecordIteratorDelete	AbstractDirectedRecordIterator
@@ -471,7 +470,6 @@ ts	stub_class	referenced_by
 2026-08-10T04:31:06.962065+00:00	InjectionErrorPcodeExecutionException	DefaultPcodeThread
 2026-08-10T04:31:06.962065+00:00	ProgramContextImpl	DefaultPcodeThread
 2026-08-10T04:31:06.962065+00:00	RegisterValue	DefaultPcodeThread
-2026-08-10T06:32:27.436344+00:00	TraceEvent	TypedEventDispatcher
 2026-08-10T07:42:31.608240+00:00	LogicalBreakpoint	LogicalBreakpointsChangeListener
 2026-08-10T08:12:00.000000+00:00	LogicalBreakpoint	DebuggerLogicalBreakpointService
 2026-08-10T08:12:00.000000+00:00	LogicalBreakpointState	DebuggerLogicalBreakpointService
@@ -599,7 +597,6 @@ ts	stub_class	referenced_by
 2026-08-12T05:00:00.300000+00:00	StubMpOpnd	MemoryVarGen
 2026-08-12T05:00:00.400000+00:00	JitCodeGenerator	MemoryVarGen
 2026-08-12T05:00:00.500000+00:00	MpIntAccessGen	MemoryVarGen
-2026-08-12T05:20:00.000000+00:00	OpGen	BinOpGen
 2026-08-12T05:30:00.000000+00:00	JitAllocationModel	LocalVarGen
 2026-08-12T05:40:00.000000+00:00	JitInputVar	InputVarGen
 2026-08-12T05:50:00.000000+00:00	JitLocalOutVar	LocalOutVarGen
@@ -1293,3 +1290,4 @@ ts	stub_class	referenced_by
 2026-08-19T09:54:55.498612+00:00	FunctionStartRFParamsDialog	RandomForestFunctionFinderPlugin
 2026-08-19T09:54:55.498729+00:00	ProgramAssociatedComponentProviderAdapter	RandomForestFunctionFinderPlugin
 2026-08-19T10:00:00.000000+00:00	MiscellaneousPluginPackage	RandomForestFunctionFinderPlugin
+2026-09-20T16:16:50.612778+00:00	ResourceDirectoryEntry	ResourceDirectory

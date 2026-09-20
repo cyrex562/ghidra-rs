@@ -39,6 +39,7 @@ pub mod int_sext_op_gen;
 pub mod int_shift_bin_op_gen;
 pub mod int_xor_op_gen;
 pub mod int_z_ext_op_gen;
+pub mod op_gen;
 pub mod un_op_gen;
 
 pub use bin_op_gen::{BinOpGen, TakeOut};
@@ -82,4 +83,5 @@ pub use int_sext_op_gen::IntSExtOpGen;
 pub use int_shift_bin_op_gen::IntShiftBinOpGen;
 pub use int_xor_op_gen::IntXorOpGen;
 pub use int_z_ext_op_gen::IntZExtOpGen;
+pub use op_gen::OpGen;
 pub use un_op_gen::UnOpGen;

@@ -10,7 +10,7 @@
 //!   returns Java's `OpResult` (constructed as `LiveOpResult`) and takes a `Methods.RetReq`,
 //!   neither of which is ported in this crate, and it is called only by the (also unported) JIT
 //!   driver -- no implementor's own logic calls it. This follows the same precedent as
-//!   [`OpGen`](crate::pcode::seam_stubs::OpGen)'s omitted `genRun`, which
+//!   [`OpGen`](crate::pcode::emu::jit::gen::op::op_gen::OpGen)'s omitted `genRun`, which
 //!   [`IntOpUnOpGen`](super::int_op_un_op_gen::IntOpUnOpGen) and
 //!   [`IntOpBinOpGen`](super::int_op_bin_op_gen::IntOpBinOpGen) already rely on. With `genRun`
 //!   unmodeled, Java's interface -- which declares no other members -- ports as a marker trait:
@@ -36,7 +36,8 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-    use crate::pcode::seam_stubs::{Ext, OpGen};
+    use crate::pcode::seam_stubs::{Ext};
+    use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
     use std::sync::Arc;
 
     struct TestUnOp;

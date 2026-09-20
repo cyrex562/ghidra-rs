@@ -202,7 +202,7 @@ mod tests {
     /// abstract `is_signed` and `IntOpBinOpGen`'s abstract `gen_run_mp_int` to the
     /// `int_bitwise_bin_op_gen_*`-named overrides, per the [module docs](super).
     struct AndGen;
-    impl crate::pcode::seam_stubs::OpGen<TestBinOp> for AndGen {}
+    impl crate::pcode::emu::jit::gen::op::op_gen::OpGen<TestBinOp> for AndGen {}
     impl BinOpGen<TestBinOp> for AndGen {
         fn is_signed(&self) -> bool {
             self.int_bitwise_bin_op_gen_is_signed()

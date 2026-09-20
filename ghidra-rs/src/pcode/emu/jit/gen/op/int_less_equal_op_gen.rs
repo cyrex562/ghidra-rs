@@ -23,8 +23,8 @@ use crate::pcode::emu::jit::gen::util::lbl::Lbl;
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TLong, TRef};
 use crate::pcode::emu::jit::op::JitIntLessEqualOp;
-use crate::pcode::seam_stubs::{JitCodeGenerator, OpGen, Scope};
-
+use crate::pcode::seam_stubs::{JitCodeGenerator, Scope};
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 /// The generator for a [`JitIntLessEqualOp`] (`int_lessequal`).
 ///
 /// Port of `ghidra.pcode.emu.jit.gen.op.IntLessEqualOpGen`.

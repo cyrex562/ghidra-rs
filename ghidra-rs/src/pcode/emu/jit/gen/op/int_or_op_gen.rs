@@ -21,8 +21,8 @@ use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TLong, TRef};
 use crate::pcode::emu::jit::op::JitIntOrOp;
-use crate::pcode::seam_stubs::{JitCodeGenerator, OpGen, Scope};
-
+use crate::pcode::seam_stubs::{JitCodeGenerator, Scope};
+use crate::pcode::emu::jit::gen::op::op_gen::OpGen;
 /// The generator for a [`JitIntOrOp`] (`int_or`).
 ///
 /// Port of `ghidra.pcode.emu.jit.gen.op.IntOrOpGen`.

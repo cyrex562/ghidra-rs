@@ -1065,8 +1065,8 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/Me
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/OverlappingObjectIterator.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeManager.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeRecord.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceEvent.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceEvents.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceEvent.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceEvents.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceRegisterUtils.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceSpaceMixin.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceViewportSpanIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
@@ -1189,7 +1189,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/TimedMsg.java	DONE
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedLongKeyIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedRecordIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/BackwardLongKeyIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/BackwardRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/BackwardRecordIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBAnnotatedObject.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBAnnotatedObjectFactory.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBBufferInputStream.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
@@ -1214,7 +1214,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchro
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DebuggerFactoryAdapter.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedLongKeyIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedRecordIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DomainObjectLockHold.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/FieldSpan.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ForwardLongKeyIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
@@ -4439,7 +4439,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/I
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/ImageSwitchtableBranchDynamicRelocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe dvrt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/dvrt/ImageUnsupportedRelocationHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe dvrt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDataEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectoryEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectoryString.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectoryStringU.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
@@ -11039,7 +11039,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/In
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/LoadOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/LzCountOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/NopOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/OpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/OpGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/PhiOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/PopCountOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/StoreOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 

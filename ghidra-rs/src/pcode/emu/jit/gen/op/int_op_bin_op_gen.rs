@@ -20,7 +20,7 @@
 //!   (constructed as `LiveOpResult`) and takes a `Methods.RetReq`, neither of which is ported in
 //!   this crate, and it is called only by the (also unported) JIT driver -- no implementor's own
 //!   logic calls it. This follows the same precedent as
-//!   [`OpGen`](crate::pcode::seam_stubs::OpGen)'s omitted `genRun`, which
+//!   [`OpGen`](crate::pcode::emu::jit::gen::op::op_gen::OpGen)'s omitted `genRun`, which
 //!   [`BinOpGen`](super::bin_op_gen::BinOpGen) already relies on.
 
 use crate::pcode::emu::jit::analysis::jit_type::{IntJitType, LongJitType, MpIntJitType};
@@ -157,7 +157,7 @@ mod tests {
     /// type it was asked to operate on back to the caller so the test can assert what actually
     /// reached the trait method, rather than asserting something trivially true.
     struct AddGen;
-    impl crate::pcode::seam_stubs::OpGen<TestBinOp> for AddGen {}
+    impl crate::pcode::emu::jit::gen::op::op_gen::OpGen<TestBinOp> for AddGen {}
     impl BinOpGen<TestBinOp> for AddGen {
         fn is_signed(&self) -> bool {
             true

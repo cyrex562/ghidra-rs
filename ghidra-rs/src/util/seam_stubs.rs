@@ -419,16 +419,6 @@ pub trait RecordIteratorDelete: Send + Sync {
     fn delete(&mut self) -> std::io::Result<bool>;
 }
 
-/// Placeholder for `ghidra.util.database.BackwardRecordIterator`, needed by
-/// [`crate::util::database::directed_record_iterator`].
-///
-/// Wraps a `db.RecordIterator`, running it backward: `hasNext`/`next` delegate to the wrapped
-/// iterator's `hasPrevious`/`previous`.
-pub trait BackwardRecordIterator: Send + Sync {
-    fn has_next(&self) -> std::io::Result<bool>;
-    fn next(&self) -> std::io::Result<crate::framework::db::record::DBRecord>;
-}
-
 /// Placeholder for `ghidra.util.database.ForwardRecordIterator`, needed by
 /// [`crate::util::database::directed_record_iterator`].
 ///
@@ -475,11 +465,12 @@ pub trait DBFieldCodec: Send + Sync {
 ///
 /// `getIterator` computes `min`/`max` from a `KeySpan` and calls `Table.iterator(min, max,
 /// start)` (not yet part of the ported [`Table`](crate::framework::db::table::Table) API) to
-/// obtain a `RecordIterator`, then wraps it in [`ForwardRecordIterator`] or
-/// [`BackwardRecordIterator`] depending on `direction`. `getIndexIterator` does the same via
+/// obtain a `RecordIterator`, then wraps it in [`ForwardRecordIterator`] or the real
+/// [`BackwardRecordIterator`](crate::util::database::backward_record_iterator::BackwardRecordIterator)
+/// depending on `direction`. `getIndexIterator` does the same via
 /// `Table.indexIterator(columnIndex, lower, upper, forward)` over a `FieldSpan`, then applies the
 /// `applyBegFilter`/`applyEndFilter` exclusive-bound filters. Until `Table`'s ranged/indexed
-/// iteration and those wrapper classes exist, this declares the construction contracts only.
+/// iteration and `ForwardRecordIterator` exist, this declares the construction contracts only.
 pub trait DirectedRecordIteratorFactory {
     /// Builds a directed record iterator over `table`, restricted to `key_span`, running in
     /// `direction`.

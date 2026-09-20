@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 use crate::framework::model::{DomainObjectChangeRecord, DomainObjectEvent, EventType, RecordConsumer};
 use crate::program::model::address::AddressSpace;
-use crate::trace::seam_stubs::TraceEvent;
 use crate::trace::util::trace_change_record::TraceChangeRecord;
+use crate::trace::util::trace_event::TraceEvent;
 
 /// A handler for a single [`TraceChangeRecord`], registered against one [`TraceEvent`]. Port of
 /// the nested functional interface `TypedEventDispatcher.EventRecordHandler<T, U>`. Java's `T`/`U`
@@ -244,11 +244,13 @@ mod tests {
 
     struct MockTraceEvent(i32);
 
-    impl TraceEvent for MockTraceEvent {
+    impl EventType for MockTraceEvent {
         fn get_id(&self) -> i32 {
             self.0
         }
     }
+
+    impl TraceEvent for MockTraceEvent {}
 
     #[test]
     fn listen_for_full_downcasts_all_four_fields() {
