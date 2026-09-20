@@ -228,3 +228,5 @@ pub use dbg_msg_tracer::{DbgMsgTracer, CallRec};
 pub use language_utilities::LanguageUtilities;
 pub use undefined_function::{check_entry_is_memory_address, find_entry_block, UndefinedFunction};
 pub use stack_frame_impl::{compute_stack_frame_impl_fields, StackFrameImpl};
+pub mod two_way_breakdown_address_range_iterator;
+pub use two_way_breakdown_address_range_iterator::{TwoWayBreakdownAddressRangeIterator, Which};
