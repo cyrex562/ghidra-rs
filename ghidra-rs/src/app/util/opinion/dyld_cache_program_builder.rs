@@ -438,7 +438,8 @@ impl<'a> DyldCacheProgramBuilder<'a> {
                 self.options.add_slide_pointer_relocations,
                 self.log,
                 self.monitor,
-            )?;
+            )
+            .map_err(to_io)?;
         }
         Ok(())
     }

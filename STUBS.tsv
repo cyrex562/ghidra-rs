@@ -712,7 +712,6 @@ ts	stub_class	referenced_by
 2026-08-13T21:20:41.495359+00:00	DebugDirectory	DebugCOFFSymbolsHeader
 2026-08-13T21:20:41.495640+00:00	DebugCOFFSymbolAux	DebugCOFFSymbol
 2026-08-13T21:20:41.495921+00:00	DebugCOFFLineNumber	DebugCOFFSymbolsHeader
-2026-08-14T01:44:15.272197+00:00	CoffFileHeader	CoffRelocationHandler
 2026-08-14T01:44:15.272363+00:00	CoffRelocation	CoffRelocationHandler
 2026-08-14T02:12:32.79433469+00:00	QueryOpinionServiceHandler	QueryOpinionService
 2026-08-14T02:12:32.79433469+00:00	QueryResult	QueryOpinionService
@@ -1197,7 +1196,6 @@ ts	stub_class	referenced_by
 2026-08-19T01:00:37Z	DyldCacheImageRecord	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	DyldCacheMappingInfo	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	DyldCacheLocalSymbolsInfo	DyldCacheProgramBuilder
-2026-08-19T01:00:37Z	DyldCacheSlideInfoCommon	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	LibObjcDylib	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	MachoProgramBuilder	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	MachHeader	DyldCacheProgramBuilder
@@ -1288,3 +1286,5 @@ ts	stub_class	referenced_by
 2026-08-19T09:54:55.498729+00:00	ProgramAssociatedComponentProviderAdapter	RandomForestFunctionFinderPlugin
 2026-08-19T10:00:00.000000+00:00	MiscellaneousPluginPackage	RandomForestFunctionFinderPlugin
 2026-09-20T16:16:50.612778+00:00	ResourceDirectoryEntry	ResourceDirectory
+2026-09-20T18:37:32.597119Z	RebaseTable	DyldInfoCommand
+2026-09-20T18:37:32.597119Z	BindingTable	DyldInfoCommand

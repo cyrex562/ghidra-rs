@@ -1,148 +1,164 @@
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::{AoutHeader, CoffFileHeader};
+use crate::format::seam_stubs::AoutHeader;
 
 use super::coff_machine_type::IMAGE_FILE_MACHINE_R3000;
 
 /// Creates an appropriate AoutHeader implementation based on the COFF file header's machine type.
 ///
-/// Returns `None` if the optional header size is 0, indicating no optional header is present.
+/// Returns `None` if `optional_header_size` is 0, indicating no optional header is present.
 /// For R3000 (MIPS) machines, this would create an AoutHeaderMIPS instance; otherwise, creates a
 /// regular AoutHeader instance.
+///
+/// Port of `AoutHeaderFactory.createAoutHeader(BinaryReader, CoffFileHeader)`. Takes the two
+/// `CoffFileHeader` accessors the Java method actually reads (`getOptionalHeaderSize()`,
+/// `getMagic()`) directly rather than a `&CoffFileHeader`:
+/// [`CoffFileHeader`](crate::format::coff::coff_file_header::CoffFileHeader) owns the very
+/// `reader` passed in here, so a reference to the whole header would alias the mutable reader
+/// borrow when [`CoffFileHeader::parse`](crate::format::coff::coff_file_header::CoffFileHeader::parse)
+/// calls this factory.
 ///
 /// Note: Since AoutHeaderMIPS and AoutHeader are not yet fully ported, this function returns
 /// trait objects. When these types are ported, this may be refactored to return concrete types.
 pub fn create_aout_header(
     reader: &mut dyn BinaryReader,
-    header: &dyn CoffFileHeader,
+    optional_header_size: i16,
+    magic: i16,
 ) -> io::Result<Option<Box<dyn AoutHeader>>> {
-    if header.get_optional_header_size() == 0 {
+    if optional_header_size == 0 {
         return Ok(None);
     }
 
-    let magic = header.get_magic() as u16;
-    let aout_header = if magic == IMAGE_FILE_MACHINE_R3000 {
+    let machine = magic as u16;
+    if machine == IMAGE_FILE_MACHINE_R3000 {
         // Would create AoutHeaderMIPS(reader) in the real implementation
-        // For now, returning a trait object placeholder
-        return Err(io::Error::new(
+        let _ = reader;
+        Err(io::Error::new(
             io::ErrorKind::Other,
             "AoutHeaderMIPS not yet ported",
-        ));
+        ))
     } else {
         // Would create AoutHeader(reader) in the real implementation
-        return Err(io::Error::new(
+        Err(io::Error::new(
             io::ErrorKind::Other,
             "AoutHeader not yet ported",
-        ));
-    };
-
-    Ok(Some(aout_header))
+        ))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::RefCell;
+    use std::rc::Rc;
 
-    struct MockCoffFileHeader {
-        magic: i16,
-        optional_header_size: i16,
+    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+
+    struct VecProvider(Vec<u8>);
+
+    impl ByteProvider for VecProvider {
+        fn length(&mut self) -> io::Result<u64> {
+            Ok(self.0.len() as u64)
+        }
+        fn is_valid_index(&mut self, index: u64) -> bool {
+            index < self.0.len() as u64
+        }
+        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
+            self.0
+                .get(index as usize)
+                .copied()
+                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
+        }
+        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
+            let start = index as usize;
+            let end = start + length;
+            self.0
+                .get(start..end)
+                .map(|s| s.to_vec())
+                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
+        }
+        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
+            Err(io::Error::from(io::ErrorKind::Unsupported))
+        }
+        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
+            Err(io::Error::from(io::ErrorKind::Unsupported))
+        }
     }
 
-    impl CoffFileHeader for MockCoffFileHeader {
-        fn get_magic(&self) -> i16 {
-            self.magic
+    struct MockReader {
+        provider: Rc<RefCell<dyn ByteProvider>>,
+        little_endian: bool,
+        current_index: u64,
+    }
+
+    impl MockReader {
+        fn new() -> Self {
+            MockReader {
+                provider: Rc::new(RefCell::new(VecProvider(Vec::new()))),
+                little_endian: true,
+                current_index: 0,
+            }
         }
-        fn get_section_count(&self) -> i16 {
-            0
+    }
+
+    impl BinaryReader for MockReader {
+        fn length(&self) -> io::Result<u64> {
+            self.provider.borrow_mut().length()
         }
-        fn get_timestamp(&self) -> i32 {
-            0
+        fn is_valid_index(&self, index: u64) -> bool {
+            self.provider.borrow_mut().is_valid_index(index)
         }
-        fn get_symbol_table_pointer(&self) -> i32 {
-            0
+        fn get_pointer_index(&self) -> u64 {
+            self.current_index
         }
-        fn get_symbol_table_entries(&self) -> i32 {
-            0
+        fn set_pointer_index(&mut self, index: u64) -> u64 {
+            let old = self.current_index;
+            self.current_index = index;
+            old
         }
-        fn get_optional_header_size(&self) -> i16 {
-            self.optional_header_size
+        fn is_little_endian(&self) -> bool {
+            self.little_endian
         }
-        fn get_flags(&self) -> i16 {
-            0
+        fn set_little_endian(&mut self, is_little_endian: bool) {
+            self.little_endian = is_little_endian;
         }
-        fn get_target_id(&self) -> io::Result<i16> {
-            Ok(0)
+        fn read_byte(&self, index: u64) -> io::Result<u8> {
+            self.provider.borrow_mut().read_byte(index)
         }
-        fn get_image_base(&self, _is_windows_platform: bool) -> i64 {
-            0
+        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
+            self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_machine_name(&self) -> String {
-            String::new()
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+            Rc::clone(&self.provider)
         }
-        fn get_machine(&self) -> i16 {
-            0
-        }
-        fn parse_section_headers(&self) -> io::Result<()> {
-            Ok(())
-        }
-        fn parse(&self, _monitor: &dyn crate::util::task::TaskMonitor) -> io::Result<()> {
-            Ok(())
-        }
-        fn get_sections(&self) -> Vec<Box<dyn crate::format::seam_stubs::CoffSectionHeader>> {
-            vec![]
-        }
-        fn get_symbols(&self) -> Vec<Box<dyn crate::format::seam_stubs::CoffSymbol>> {
-            vec![]
-        }
-        fn get_symbol_at_index(&self, _index: i64) -> Box<dyn crate::format::seam_stubs::CoffSymbol> {
-            unimplemented!()
-        }
-        fn sizeof(&self) -> i32 {
-            0
-        }
-        fn get_optional_header(&self) -> Box<dyn AoutHeader> {
-            unimplemented!()
-        }
-        fn is_valid(&self) -> io::Result<bool> {
-            Ok(true)
-        }
-        fn to_data_type(&self) -> io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
-            Err(io::Error::new(io::ErrorKind::Other, "unimplemented"))
+        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+            Box::new(MockReader {
+                provider: Rc::clone(&self.provider),
+                little_endian: self.little_endian,
+                current_index: new_index,
+            })
         }
     }
 
     #[test]
-    fn test_returns_none_when_optional_header_size_is_zero() {
-        let header = MockCoffFileHeader {
-            magic: 0x0000,
-            optional_header_size: 0,
-        };
-
-        // Verify the header returns 0 for optional_header_size,
-        // which causes the factory to return None without reading
-        assert_eq!(header.get_optional_header_size(), 0);
+    fn returns_none_when_optional_header_size_is_zero() {
+        let mut reader = MockReader::new();
+        let result = create_aout_header(&mut reader, 0, 0x0000).expect("should not error");
+        assert!(result.is_none());
     }
 
     #[test]
-    fn test_magic_value_matching_r3000() {
-        let header = MockCoffFileHeader {
-            magic: IMAGE_FILE_MACHINE_R3000 as i16,
-            optional_header_size: 28,
-        };
-
-        let magic_as_u16 = header.get_magic() as u16;
-        assert_eq!(magic_as_u16, IMAGE_FILE_MACHINE_R3000);
+    fn errors_for_r3000_magic_with_nonzero_optional_header() {
+        let mut reader = MockReader::new();
+        let result = create_aout_header(&mut reader, 28, IMAGE_FILE_MACHINE_R3000 as i16);
+        assert!(result.is_err());
     }
 
     #[test]
-    fn test_magic_value_matching_i386() {
-        let header = MockCoffFileHeader {
-            magic: 0x014c, // IMAGE_FILE_MACHINE_I386
-            optional_header_size: 28,
-        };
-
-        let magic_as_u16 = header.get_magic() as u16;
-        assert_ne!(magic_as_u16, IMAGE_FILE_MACHINE_R3000);
+    fn errors_for_other_magic_with_nonzero_optional_header() {
+        let mut reader = MockReader::new();
+        let result = create_aout_header(&mut reader, 28, 0x014c /* IMAGE_FILE_MACHINE_I386 */);
+        assert!(result.is_err());
     }
 }

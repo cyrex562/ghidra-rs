@@ -1,5 +1,6 @@
+use crate::format::coff::coff_file_header::CoffFileHeader;
 use crate::format::coff::relocation::coff_relocation_context::CoffRelocationContext;
-use crate::format::seam_stubs::{CoffFileHeader, CoffRelocation};
+use crate::format::seam_stubs::CoffRelocation;
 use crate::program::model::address::Address;
 use crate::program::model::reloc::relocation_result::RelocationResult;
 use crate::util::classfinder::extension_point::ExtensionPoint;
@@ -15,7 +16,7 @@ pub trait CoffRelocationHandler: ExtensionPoint {
     ///
     /// # Returns
     /// `true` if this relocation handler can do the relocation; otherwise, `false`.
-    fn can_relocate(&self, file_header: &dyn CoffFileHeader) -> bool;
+    fn can_relocate(&self, file_header: &CoffFileHeader) -> bool;
 
     /// Performs a relocation at the specified address.
     ///
@@ -42,34 +43,52 @@ pub trait CoffRelocationHandler: ExtensionPoint {
 mod tests {
     use super::*;
 
-    struct MockCoffFileHeader;
-    impl CoffFileHeader for MockCoffFileHeader {
-        fn get_magic(&self) -> i16 { 0x014c }
-        fn get_section_count(&self) -> i16 { 0 }
-        fn get_timestamp(&self) -> i32 { 0 }
-        fn get_symbol_table_pointer(&self) -> i32 { 0 }
-        fn get_symbol_table_entries(&self) -> i32 { 0 }
-        fn get_optional_header_size(&self) -> i16 { 0 }
-        fn get_flags(&self) -> i16 { 0 }
-        fn get_target_id(&self) -> std::io::Result<i16> { Ok(0) }
-        fn get_image_base(&self, _: bool) -> i64 { 0 }
-        fn get_machine_name(&self) -> String { String::new() }
-        fn get_machine(&self) -> i16 { 0x014c }
-        fn parse_section_headers(&self) -> std::io::Result<()> { Ok(()) }
-        fn parse(&self, _: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()> { Ok(()) }
-        fn get_sections(&self) -> Vec<Box<dyn crate::format::seam_stubs::CoffSectionHeader>> { vec![] }
-        fn get_symbols(&self) -> Vec<Box<dyn crate::format::seam_stubs::CoffSymbol>> { vec![] }
-        fn get_symbol_at_index(&self, _: i64) -> Box<dyn crate::format::seam_stubs::CoffSymbol> {
-            unimplemented!()
+    struct VecProvider(Vec<u8>);
+
+    impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for VecProvider {
+        fn length(&mut self) -> std::io::Result<u64> {
+            Ok(self.0.len() as u64)
         }
-        fn sizeof(&self) -> i32 { 0 }
-        fn get_optional_header(&self) -> Box<dyn crate::format::seam_stubs::AoutHeader> {
-            unimplemented!()
+        fn is_valid_index(&mut self, index: u64) -> bool {
+            index < self.0.len() as u64
         }
-        fn is_valid(&self) -> std::io::Result<bool> { Ok(true) }
-        fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
-            Err(std::io::Error::new(std::io::ErrorKind::Other, "unimplemented"))
+        fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
+            self.0
+                .get(index as usize)
+                .copied()
+                .ok_or(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
         }
+        fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
+            let start = index as usize;
+            let end = start + length;
+            self.0
+                .get(start..end)
+                .map(|s| s.to_vec())
+                .ok_or(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
+        }
+        fn write_byte(&mut self, _index: u64, _value: u8) -> std::io::Result<()> {
+            Err(std::io::Error::from(std::io::ErrorKind::Unsupported))
+        }
+        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> std::io::Result<()> {
+            Err(std::io::Error::from(std::io::ErrorKind::Unsupported))
+        }
+    }
+
+    /// Builds a minimal valid (0 sections, 0 symbols, no optional header) little-endian COFF
+    /// file header for tests that only need a `CoffFileHeader` to exist.
+    fn mock_coff_file_header() -> CoffFileHeader {
+        let mut data = Vec::new();
+        data.extend_from_slice(&0x014ci16.to_le_bytes()); // f_magic: IMAGE_FILE_MACHINE_I386
+        data.extend_from_slice(&0i16.to_le_bytes()); // f_nscns
+        data.extend_from_slice(&0i32.to_le_bytes()); // f_timdat
+        data.extend_from_slice(&0i32.to_le_bytes()); // f_symptr
+        data.extend_from_slice(&0i32.to_le_bytes()); // f_nsyms
+        data.extend_from_slice(&0i16.to_le_bytes()); // f_opthdr
+        data.extend_from_slice(&0i16.to_le_bytes()); // f_flags
+        // isValid()'s MIN_BYTE_LENGTH is 22 (see CoffFileHeader's own tests for details).
+        data.resize(22, 0);
+        let provider = std::rc::Rc::new(std::cell::RefCell::new(VecProvider(data)));
+        CoffFileHeader::new(provider).expect("mock header should parse")
     }
 
     struct MockRelocationHandler;
@@ -77,7 +96,7 @@ mod tests {
     impl ExtensionPoint for MockRelocationHandler {}
 
     impl CoffRelocationHandler for MockRelocationHandler {
-        fn can_relocate(&self, _file_header: &dyn CoffFileHeader) -> bool {
+        fn can_relocate(&self, _file_header: &CoffFileHeader) -> bool {
             true
         }
 
@@ -94,7 +113,7 @@ mod tests {
     #[test]
     fn can_implement_coff_relocation_handler() {
         let handler = MockRelocationHandler;
-        let file_header = MockCoffFileHeader;
+        let file_header = mock_coff_file_header();
         assert!(handler.can_relocate(&file_header));
     }
 

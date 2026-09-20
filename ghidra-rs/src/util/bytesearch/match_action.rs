@@ -1,7 +1,7 @@
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
 use crate::util::bytesearch::Match;
-use crate::util::seam_stubs::Pattern;
+use crate::util::bytesearch::pattern::Pattern;
 use crate::util::seam_stubs::XmlPullParser;
 
 /// Interface for a match action to be taken for the Program at Address for a ditted bit sequence pattern.
@@ -15,7 +15,7 @@ pub trait MatchAction: Send + Sync {
     /// * `program` - program in which the match occurred
     /// * `addr` - where the match occurred
     /// * `match_` - information about the match that occurred
-    fn apply(&self, program: &dyn Program, addr: &Address, match_: &Match<Box<dyn Pattern>>);
+    fn apply(&self, program: &dyn Program, addr: &Address, match_: &Match<Pattern>);
 
     /// Action can be constructed from XML.
     ///
@@ -45,7 +45,7 @@ mod tests {
     }
 
     impl MatchAction for TestMatchAction {
-        fn apply(&self, _program: &dyn Program, _addr: &Address, _match_: &Match<Box<dyn Pattern>>) {
+        fn apply(&self, _program: &dyn Program, _addr: &Address, _match_: &Match<Pattern>) {
             *self.apply_called.lock().unwrap() += 1;
         }
 

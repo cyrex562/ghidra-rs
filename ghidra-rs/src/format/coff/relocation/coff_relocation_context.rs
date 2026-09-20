@@ -2,8 +2,9 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::format::coff::coff_file_header::CoffFileHeader;
 use crate::format::relocation_exception::RelocationError;
-use crate::format::seam_stubs::{CoffFileHeader, CoffRelocation, CoffSectionHeader};
+use crate::format::seam_stubs::{CoffRelocation, CoffSectionHeader};
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
 use crate::program::model::symbol::Symbol;
@@ -13,15 +14,14 @@ use crate::program::model::symbol::Symbol;
 /// during processing of relocations.
 pub struct CoffRelocationContext {
     program: Arc<dyn Program>,
-    header: Box<dyn CoffFileHeader>,
+    header: CoffFileHeader,
     /// Symbol lookup, keyed by COFF symbol-table index.
     ///
     /// Java keys this map by `CoffSymbol` object identity: `header.getSymbolAtIndex(index)`
     /// returns the same reference on every call, so looking the returned object back up in
-    /// `Map<CoffSymbol, Symbol>` finds the entry originally inserted for that symbol. The
-    /// unported `CoffFileHeader`/`CoffSymbol` seam stubs hand back a fresh `Box` per call and
-    /// have no identity to key on, so this port keys directly by the index that produces that
-    /// identity in Java -- an equivalent lookup once `symbols_map` is built consistently.
+    /// `Map<CoffSymbol, Symbol>` finds the entry originally inserted for that symbol. This port
+    /// instead keys directly by the index that produces that identity in Java -- an equivalent
+    /// lookup once `symbols_map` is built consistently.
     symbols_map: HashMap<i64, Arc<dyn Symbol>>,
     section: Option<Box<dyn CoffSectionHeader>>,
     context_map: HashMap<String, Box<dyn Any + Send + Sync>>,
@@ -36,7 +36,7 @@ impl CoffRelocationContext {
     /// * `symbols_map` - symbol lookup, keyed by COFF symbol-table index
     pub fn new(
         program: Arc<dyn Program>,
-        header: Box<dyn CoffFileHeader>,
+        header: CoffFileHeader,
         symbols_map: HashMap<i64, Arc<dyn Symbol>>,
     ) -> Self {
         Self {
@@ -77,7 +77,7 @@ impl CoffRelocationContext {
         // Exercise the header's index resolution for parity with Java (a real implementation
         // may lazily parse the symbol table here); see the `symbols_map` field doc for why the
         // returned value itself cannot be used as the map key through this seam.
-        let _ = self.header.get_symbol_at_index(index);
+        let _ = self.header.symbol_at_index(index);
         self.symbols_map
             .get(&index)
             .cloned()
@@ -140,72 +140,53 @@ mod tests {
         }
     }
 
-    struct MockCoffFileHeader;
-    impl CoffFileHeader for MockCoffFileHeader {
-        fn get_magic(&self) -> i16 {
-            0x014c
+    struct VecProvider(Vec<u8>);
+
+    impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for VecProvider {
+        fn length(&mut self) -> std::io::Result<u64> {
+            Ok(self.0.len() as u64)
         }
-        fn get_section_count(&self) -> i16 {
-            0
+        fn is_valid_index(&mut self, index: u64) -> bool {
+            index < self.0.len() as u64
         }
-        fn get_timestamp(&self) -> i32 {
-            0
+        fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
+            self.0
+                .get(index as usize)
+                .copied()
+                .ok_or(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
         }
-        fn get_symbol_table_pointer(&self) -> i32 {
-            0
+        fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
+            let start = index as usize;
+            let end = start + length;
+            self.0
+                .get(start..end)
+                .map(|s| s.to_vec())
+                .ok_or(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
         }
-        fn get_symbol_table_entries(&self) -> i32 {
-            0
+        fn write_byte(&mut self, _index: u64, _value: u8) -> std::io::Result<()> {
+            Err(std::io::Error::from(std::io::ErrorKind::Unsupported))
         }
-        fn get_optional_header_size(&self) -> i16 {
-            0
+        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> std::io::Result<()> {
+            Err(std::io::Error::from(std::io::ErrorKind::Unsupported))
         }
-        fn get_flags(&self) -> i16 {
-            0
-        }
-        fn get_target_id(&self) -> std::io::Result<i16> {
-            Ok(0)
-        }
-        fn get_image_base(&self, _: bool) -> i64 {
-            0
-        }
-        fn get_machine_name(&self) -> String {
-            String::new()
-        }
-        fn get_machine(&self) -> i16 {
-            0x014c
-        }
-        fn parse_section_headers(&self) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn parse(&self, _: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn get_sections(&self) -> Vec<Box<dyn CoffSectionHeader>> {
-            vec![]
-        }
-        fn get_symbols(&self) -> Vec<Box<dyn crate::format::seam_stubs::CoffSymbol>> {
-            vec![]
-        }
-        fn get_symbol_at_index(&self, _: i64) -> Box<dyn crate::format::seam_stubs::CoffSymbol> {
-            struct StubSymbol;
-            impl crate::format::seam_stubs::CoffSymbol for StubSymbol {}
-            Box::new(StubSymbol)
-        }
-        fn sizeof(&self) -> i32 {
-            0
-        }
-        fn get_optional_header(&self) -> Box<dyn crate::format::seam_stubs::AoutHeader> {
-            unimplemented!()
-        }
-        fn is_valid(&self) -> std::io::Result<bool> {
-            Ok(true)
-        }
-        fn to_data_type(
-            &self,
-        ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
-            Err(std::io::Error::new(std::io::ErrorKind::Other, "unimplemented"))
-        }
+    }
+
+    /// Builds a minimal valid (0 sections, 0 symbols, no optional header) little-endian COFF
+    /// file header for tests that only need a `CoffFileHeader` to exist, not to have any
+    /// particular symbols.
+    fn mock_coff_file_header() -> CoffFileHeader {
+        let mut data = Vec::new();
+        data.extend_from_slice(&0x014ci16.to_le_bytes()); // f_magic: IMAGE_FILE_MACHINE_I386
+        data.extend_from_slice(&0i16.to_le_bytes()); // f_nscns
+        data.extend_from_slice(&0i32.to_le_bytes()); // f_timdat
+        data.extend_from_slice(&0i32.to_le_bytes()); // f_symptr
+        data.extend_from_slice(&0i32.to_le_bytes()); // f_nsyms
+        data.extend_from_slice(&0i16.to_le_bytes()); // f_opthdr
+        data.extend_from_slice(&0i16.to_le_bytes()); // f_flags
+        // isValid()'s MIN_BYTE_LENGTH is 22 (see CoffFileHeader's own tests for details).
+        data.resize(22, 0);
+        let provider = std::rc::Rc::new(std::cell::RefCell::new(VecProvider(data)));
+        CoffFileHeader::new(provider).expect("mock header should parse")
     }
 
     struct MockRelocation {
@@ -271,7 +252,7 @@ mod tests {
         symbols_map.insert(index, Arc::new(MockSymbol { address }));
         CoffRelocationContext::new(
             Arc::new(MockProgram),
-            Box::new(MockCoffFileHeader),
+            mock_coff_file_header(),
             symbols_map,
         )
     }

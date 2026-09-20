@@ -1,3 +1,4 @@
+pub mod android_elf_relocation_data;
 pub mod elf_compressed_section_header;
 pub mod elf_constants;
 pub mod elf_dynamic;

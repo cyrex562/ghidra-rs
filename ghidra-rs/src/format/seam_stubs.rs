@@ -1382,38 +1382,9 @@ pub trait AoutHeaderMIPS: AoutHeader + Send + Sync {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.coff.CoffSectionHeader`, referenced by
-/// [`CoffFileHeader`] before the real class is ported.
+/// [`CoffFileHeader`](crate::format::coff::coff_file_header::CoffFileHeader) before the real
+/// class is ported.
 pub trait CoffSectionHeader: Send + Sync {
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.coff.CoffSymbol`, referenced by
-/// [`CoffFileHeader`] before the real class is ported.
-pub trait CoffSymbol: Send + Sync {
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.coff.CoffFileHeader`, referenced by
-/// [`AoutHeaderFactory`](crate::format::coff::aout_header_factory) before the real class is ported.
-pub trait CoffFileHeader: Send + Sync {
-    fn get_magic(&self) -> i16;
-    fn get_section_count(&self) -> i16;
-    fn get_timestamp(&self) -> i32;
-    fn get_symbol_table_pointer(&self) -> i32;
-    fn get_symbol_table_entries(&self) -> i32;
-    fn get_optional_header_size(&self) -> i16;
-    fn get_flags(&self) -> i16;
-    fn get_target_id(&self) -> std::io::Result<i16>;
-    fn get_image_base(&self, is_windows_platform: bool) -> i64;
-    fn get_machine_name(&self) -> String;
-    fn get_machine(&self) -> i16;
-    fn parse_section_headers(&self) -> std::io::Result<()>;
-    fn parse(&self, monitor: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()>;
-    fn get_sections(&self) -> Vec<Box<dyn CoffSectionHeader>>;
-    fn get_symbols(&self) -> Vec<Box<dyn CoffSymbol>>;
-    fn get_symbol_at_index(&self, index: i64) -> Box<dyn CoffSymbol>;
-    fn sizeof(&self) -> i32;
-    fn get_optional_header(&self) -> Box<dyn AoutHeader>;
-    fn is_valid(&self) -> std::io::Result<bool>;
-    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.coff.CoffRelocation`, referenced by
@@ -1476,6 +1447,16 @@ pub trait MachHeader: Send + Sync {
     /// `MachHeader.getAllSegments()`.
     fn get_all_segments(&self) -> Vec<Box<dyn SegmentCommand>>;
 
+    /// `MachHeader.getStartIndex()`: the file offset where this Mach-O header begins, used to
+    /// turn load-command-relative offsets (e.g. `DyldInfoCommand`'s `rebase_off`) into absolute
+    /// file offsets.
+    ///
+    /// Defaults to `0` so existing implementors (e.g. `LoadCommand`'s `MockMachHeader`) are
+    /// unaffected.
+    fn get_start_index(&self) -> u64 {
+        0
+    }
+
     /// `MachHeader.getAllSections()`, needed by
     /// [`MachoRelocation::find_target_section`](crate::format::macho::relocation::macho_relocation::MachoRelocation::find_target_section).
     ///
@@ -1529,6 +1510,99 @@ pub fn mach_header_from_provider(
 ) -> Result<Box<dyn MachHeader>, crate::format::macho::mach_exception::MachException> {
     let _ = (provider, offset);
     unimplemented!("format::seam_stubs::mach_header_from_provider placeholder not overridden")
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.dyld.RebaseTable`, referenced by
+/// [`DyldInfoCommand`](crate::format::macho::commands::dyld_info_command::DyldInfoCommand) before
+/// the real class is ported.
+///
+/// Java's version is a concrete
+/// [`OpcodeTable`](crate::format::macho::commands::dyld::opcode_table::OpcodeTable) subclass that
+/// runs a REBASE-opcode state machine (`AbstractClassicProcessor`) over the rebase-info bytes to
+/// populate its offset lists. That state machine is not ported, so this placeholder reads (and
+/// discards) nothing and always reports empty offset lists via a real, embedded
+/// [`OpcodeTableData`](crate::format::macho::commands::dyld::opcode_table::OpcodeTableData) --
+/// callers that iterate its offsets (e.g. `DyldInfoCommand`'s markup) faithfully do nothing,
+/// rather than fabricating opcode data.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct RebaseTable {
+    data: crate::format::macho::commands::dyld::opcode_table::OpcodeTableData,
+}
+
+impl RebaseTable {
+    /// Port of the no-arg `RebaseTable()` constructor (used when `rebaseOff`/`rebaseSize` are 0).
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Port of `RebaseTable(BinaryReader, MachHeader, long)`. See the struct's own docs: the
+    /// REBASE-opcode state machine is not ported, so this does not actually read `reader`.
+    pub fn parse(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        header: &dyn MachHeader,
+        table_size: i64,
+    ) -> std::io::Result<Self> {
+        let _ = (reader, header, table_size);
+        Ok(Self::default())
+    }
+}
+
+impl crate::format::macho::commands::dyld::opcode_table::OpcodeTable for RebaseTable {
+    fn opcode_offsets(&self) -> &[u64] {
+        self.data.opcode_offsets()
+    }
+    fn uleb_offsets(&self) -> &[u64] {
+        self.data.uleb_offsets()
+    }
+    fn sleb_offsets(&self) -> &[u64] {
+        self.data.sleb_offsets()
+    }
+    fn string_offsets(&self) -> &[u64] {
+        self.data.string_offsets()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.dyld.BindingTable`, referenced by
+/// [`DyldInfoCommand`](crate::format::macho::commands::dyld_info_command::DyldInfoCommand) before
+/// the real class is ported. See [`RebaseTable`]'s own docs: same situation, but for the
+/// BIND/LAZY_BIND-opcode state machines (`ClassicBindProcessor`/`ClassicLazyBindProcessor`).
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct BindingTable {
+    data: crate::format::macho::commands::dyld::opcode_table::OpcodeTableData,
+}
+
+impl BindingTable {
+    /// Port of the no-arg `BindingTable()` constructor.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Port of `BindingTable(BinaryReader, MachHeader, long, boolean)`. See [`RebaseTable::parse`]:
+    /// the opcode state machine is not ported, so this does not actually read `reader`.
+    pub fn parse(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        header: &dyn MachHeader,
+        table_size: i64,
+        is_lazy: bool,
+    ) -> std::io::Result<Self> {
+        let _ = (reader, header, table_size, is_lazy);
+        Ok(Self::default())
+    }
+}
+
+impl crate::format::macho::commands::dyld::opcode_table::OpcodeTable for BindingTable {
+    fn opcode_offsets(&self) -> &[u64] {
+        self.data.opcode_offsets()
+    }
+    fn uleb_offsets(&self) -> &[u64] {
+        self.data.uleb_offsets()
+    }
+    fn sleb_offsets(&self) -> &[u64] {
+        self.data.sleb_offsets()
+    }
+    fn string_offsets(&self) -> &[u64] {
+        self.data.string_offsets()
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.RelocationInfo`, referenced by

@@ -3680,7 +3680,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/Aout
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/BigEndianUnitSizeByteSwapperInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeaderFlag.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeaderTargetID.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffLineNumber.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
@@ -3693,7 +3693,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/Coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSectionHeaderFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSectionHeaderFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSectionHeaderReserved.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolAux.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolAuxArray.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolAuxBeginningOfBlock.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
@@ -3848,7 +3848,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sec
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/DWARFSectionProviderFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf sectionprovider 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/ExternalDebugFileSectionProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf sectionprovider 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/NullSectionProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf sectionprovider 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationData.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationData.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format elf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationGroup.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationOffset.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationTableDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
@@ -4007,7 +4007,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DataInCodeEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldChainedFixupsCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldExportsTrieCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommandConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibrary.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
@@ -4093,7 +4093,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyl
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo3.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo4.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo5.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfoCommon.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfoCommon.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedPtr.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldFixup.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld
@@ -5325,7 +5325,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/InputStreamBu
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/Match.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/MatchAction.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/MemoryBytePatternSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/Pattern.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/Pattern.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PatternFactory.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PatternPairSet.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PostRule.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 

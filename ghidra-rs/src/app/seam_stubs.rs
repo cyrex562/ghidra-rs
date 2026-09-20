@@ -2837,7 +2837,11 @@ impl DyldArchitecture {
 /// [`is_subcache`](Self::is_subcache) are NOT derived from any of the (unparsed) later fields
 /// the real `getBaseAddress()`/`isSubcache()` compute them from, and default to `0`/`false` until
 /// the full port lands.
-#[derive(Debug, Clone, Default)]
+// `slide_infos` now holds `Box<dyn DyldCacheSlideInfoCommon>` (a real trait, not a `Clone`/`Debug`
+// placeholder struct), so this can no longer derive `Debug`/`Clone`; nothing in the crate relies
+// on either for `DyldCacheHeader` as a whole (only individual `Clone` fields like
+// `mapping_infos` are cloned).
+#[derive(Default)]
 pub struct DyldCacheHeader {
     /// Port of `DyldCacheHeader.getArchitecture()`.
     pub architecture: StdOption<DyldArchitecture>,
@@ -2855,7 +2859,7 @@ pub struct DyldCacheHeader {
     /// Port of `DyldCacheHeader.getLocalSymbolsInfo()`; `None` stands in for Java's `null`.
     pub local_symbols_info: StdOption<DyldCacheLocalSymbolsInfo>,
     /// Port of `DyldCacheHeader.getSlideInfos()`.
-    pub slide_infos: Vec<DyldCacheSlideInfoCommon>,
+    pub slide_infos: Vec<Box<dyn crate::format::macho::dyld::dyld_cache_slide_info_common::DyldCacheSlideInfoCommon>>,
     /// Port of `DyldCacheHeader.getBranchPoolAddresses()`.
     pub branch_pool_addresses: Vec<i64>,
     /// The `accelerateInfoAddr` field, which doubles as `dyldInCacheEntry` in newer caches. Java
@@ -3001,42 +3005,13 @@ impl DyldCacheLocalSymbolsInfo {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheSlideInfoCommon`, referenced by
-/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
-/// which logs each slide-info version and asks it to rewrite the slid pointers. Java's version is
-/// an abstract base with five concrete subclasses (`DyldCacheSlideInfo1`..`5`) that differ only in
-/// how they walk their page tables; since `DyldCacheProgramBuilder` never distinguishes them, one
-/// concrete placeholder carrying the version stands in for the whole family.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct DyldCacheSlideInfoCommon {
-    version: i32,
-}
-
-impl DyldCacheSlideInfoCommon {
-    pub fn new(version: i32) -> Self {
-        DyldCacheSlideInfoCommon { version }
-    }
-
-    /// `DyldCacheSlideInfoCommon.getVersion()`.
-    pub fn get_version(&self) -> i32 {
-        self.version
-    }
-
-    /// `DyldCacheSlideInfoCommon.fixupSlidePointers(Program, boolean, boolean, MessageLog,
-    /// TaskMonitor)`. Not yet implemented: the real body walks this cache's page tables and
-    /// rewrites every slid pointer in program memory.
-    pub fn fixup_slide_pointers(
-        &self,
-        program: &mut dyn crate::program::model::listing::Program,
-        markup: bool,
-        add_relocations: bool,
-        log: &dyn MessageLog,
-        monitor: &dyn crate::util::task::TaskMonitor,
-    ) -> std::io::Result<()> {
-        let _ = (program, markup, add_relocations, log, monitor);
-        unimplemented!("DyldCacheSlideInfoCommon::fixup_slide_pointers placeholder not overridden")
-    }
-}
+// `ghidra.app.util.bin.format.macho.dyld.DyldCacheSlideInfoCommon` is now the real port at
+// `crate::format::macho::dyld::dyld_cache_slide_info_common::DyldCacheSlideInfoCommon` (a trait,
+// per its shape rule for an abstract Java class with instance fields -- the placeholder that
+// used to live here was a single concrete struct carrying only `version`, standing in for the
+// whole `DyldCacheSlideInfo{1..5}` family). `DyldCacheHeader.slide_infos` and
+// `DyldCacheProgramBuilder::fixup_slide_pointers` were updated in this same change to use
+// `Box<dyn DyldCacheSlideInfoCommon>` instead.
 
 /// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils`, referenced by
 /// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is

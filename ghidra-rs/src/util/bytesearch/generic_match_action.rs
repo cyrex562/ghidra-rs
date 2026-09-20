@@ -2,8 +2,8 @@ use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
 use crate::util::bytesearch::dummy_match_action::DummyMatchAction;
 use crate::util::bytesearch::match_action::MatchAction;
+use crate::util::bytesearch::pattern::Pattern;
 use crate::util::bytesearch::Match;
-use crate::util::seam_stubs::Pattern;
 use crate::util::seam_stubs::XmlPullParser;
 
 /// Template for a generic match action attached to a match sequence. Used to store an
@@ -46,7 +46,7 @@ impl<T> GenericMatchAction<T> {
 impl<T: Send + Sync> MatchAction for GenericMatchAction<T> {
     /// Inherited unchanged from `DummyMatchAction.apply` -- Java's `GenericMatchAction` does not
     /// override it, so applying this action is still a no-op.
-    fn apply(&self, program: &dyn Program, addr: &Address, match_: &Match<Box<dyn Pattern>>) {
+    fn apply(&self, program: &dyn Program, addr: &Address, match_: &Match<Pattern>) {
         self.inner.apply(program, addr, match_);
     }
 
@@ -65,7 +65,6 @@ mod tests {
     use crate::program::model::address::{
         AddressFactory, AddressSpace, AddressSpaceType, DefaultAddressFactory,
     };
-    use crate::util::bytesearch::{PatternFactory, PostRule};
     use std::sync::{Arc, Mutex};
 
     struct MockProgram {
@@ -97,82 +96,9 @@ mod tests {
         Address::new(ram, 0x1000)
     }
 
-    struct MockPattern;
-
-    impl Pattern for MockPattern {
-        fn get_post_rules(&self) -> Vec<Box<dyn PostRule>> {
-            Vec::new()
-        }
-
-        fn get_match_actions(&self) -> Vec<Box<dyn MatchAction>> {
-            Vec::new()
-        }
-
-        fn set_match_actions(&self, _actions: &[Box<dyn MatchAction>]) {}
-
-        fn get_mark_offset(&self) -> i32 {
-            0
-        }
-
-        fn restore_xml_attributes(
-            &self,
-            _postrulelist: Vec<Box<dyn PostRule>>,
-            _actionlist: Vec<Box<dyn MatchAction>>,
-            _parser: &dyn XmlPullParser,
-            _pfactory: &dyn PatternFactory,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn restore_xml(
-            &self,
-            _parser: &dyn XmlPullParser,
-            _pfactory: &dyn PatternFactory,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn read_patterns(
-            &self,
-            _file: &dyn crate::util::seam_stubs::ResourceFile,
-            _patlist: Vec<Box<dyn Pattern>>,
-            _pfactory: &dyn PatternFactory,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn error(&self, _exception: &dyn crate::util::seam_stubs::SAXParseException) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn fatal_error(&self, _exception: &dyn crate::util::seam_stubs::SAXParseException) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn warning(&self, _exception: &dyn crate::util::seam_stubs::SAXParseException) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn read_post_patterns(
-            &self,
-            _file: &dyn crate::util::seam_stubs::FileMarker,
-            _pattern_list: Vec<Box<dyn Pattern>>,
-            _pfactory: &dyn PatternFactory,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn check_post_rules(&self, _offset: i64) -> bool {
-            true
-        }
-
-        fn get_pre_sequence_length(&self) -> i32 {
-            0
-        }
-    }
-
-    fn some_match() -> Match<Box<dyn Pattern>> {
-        Match::new(Box::new(MockPattern) as Box<dyn Pattern>, 0, 1)
+    /// Builds a minimal `Match<Pattern>`, just enough to exercise `apply`.
+    fn some_match() -> Match<Pattern> {
+        Match::new(Pattern::new(), 0, 1)
     }
 
     #[derive(Default)]
