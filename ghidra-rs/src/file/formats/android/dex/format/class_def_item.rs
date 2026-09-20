@@ -4,8 +4,9 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::access_flags::AccessFlags;
+use crate::file::formats::android::dex::format::dex_header::DexHeader;
 use crate::file::seam_stubs::{
-    AnnotationsDirectoryItem, ClassDataItem, DexHeader, DexUtil, EncodedArrayItem, TypeList,
+    AnnotationsDirectoryItem, ClassDataItem, DexUtil, EncodedArrayItem, TypeList,
 };
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -754,7 +755,7 @@ mod tests {
     fn new_reads_fields_with_no_offsets() {
         let bytes = header_bytes(7, 0x1, 0, 0, 0, 0, 0, 0);
         let mut reader = MockBinaryReader::new(bytes);
-        let header = DexHeader;
+        let header = DexHeader::minimal_for_tests();
 
         let item = ClassDefItem::new(&mut reader, &header).unwrap();
 
@@ -779,7 +780,7 @@ mod tests {
         let mut bytes = header_bytes(1, 0, 2, 32, 5, 32, 32, 32);
         bytes.push(0); // pad so offset 32 (just past the fixed header) is a valid index
         let mut reader = MockBinaryReader::new(bytes);
-        let header = DexHeader;
+        let header = DexHeader::minimal_for_tests();
 
         let item = ClassDefItem::new(&mut reader, &header).unwrap();
 
@@ -798,7 +799,7 @@ mod tests {
         // interfacesOffset points past the end of the buffer, so no TypeList is created.
         let bytes = header_bytes(0, 0, 0, 1000, 0, 0, 0, 0);
         let mut reader = MockBinaryReader::new(bytes);
-        let header = DexHeader;
+        let header = DexHeader::minimal_for_tests();
 
         let item = ClassDefItem::new(&mut reader, &header).unwrap();
 

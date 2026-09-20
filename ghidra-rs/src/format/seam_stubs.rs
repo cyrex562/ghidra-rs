@@ -24,6 +24,8 @@ use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
 use crate::format::pe::rich::ms_product_type::MsProductType;
 use crate::format::unixaout::unix_aout_symbol::UnixAoutSymbol;
 use crate::program::model::address::Address;
+use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::listing::Program as ListingProgram;
 use crate::program::model::mem::MemoryBlock;
 
@@ -5684,5 +5686,53 @@ impl ResourceDirectoryEntry {
     /// Port of `ResourceDirectoryEntry.isValid()`.
     pub fn is_valid(&self) -> bool {
         self.valid
+    }
+}
+
+/// Placeholder for the unported Java type
+/// `ghidra.app.util.bin.format.elf.AndroidElfRelocationOffset`, referenced directly (constructed,
+/// then read back) by
+/// [`AndroidElfRelocationGroup`](crate::format::elf::android_elf_relocation_group::AndroidElfRelocationGroup).
+///
+/// Only the members that class needs: constructing it to stash a base/relocation offset pair as
+/// a `DataTypeComponent`'s data type, and reading the relocation offset back out. The real Java
+/// class additionally derives dynamic LEB128 decoding behavior from `AbstractLeb128DataType`
+/// (address computation via `Program`/`Memory`/`AddressSpace`, a full `getValue`/
+/// `getRepresentation`); `AndroidElfRelocationGroup`'s own algorithm never calls those -- it only
+/// needs this type's identity as a [`DataType`] and its stashed relocation offset -- so none of
+/// that is reproduced here.
+pub struct AndroidElfRelocationOffset {
+    /// Port of the private `baseOffset` field.
+    pub base_offset: i64,
+    /// Port of the private `relocationOffset` field.
+    pub relocation_offset: i64,
+}
+
+impl AndroidElfRelocationOffset {
+    /// Port of `AndroidElfRelocationOffset(DataTypeManager, long, long)`. `_dtm` is accepted
+    /// (matching the Java constructor's parameter list) but not retained, mirroring
+    /// [`AndroidElfRelocationData`](crate::format::elf::android_elf_relocation_data::AndroidElfRelocationData)'s
+    /// precedent for the same constructor shape.
+    pub fn new(_dtm: Option<&dyn DataTypeManager>, base_offset: i64, relocation_offset: i64) -> Self {
+        AndroidElfRelocationOffset { base_offset, relocation_offset }
+    }
+
+    /// Port of the package-private `getRelocationOffset()`.
+    pub fn get_relocation_offset(&self) -> i64 {
+        self.relocation_offset
+    }
+}
+
+impl DataType for AndroidElfRelocationOffset {
+    fn get_name(&self) -> String {
+        "sleb128_offset".to_string()
+    }
+
+    fn get_length(&self) -> i32 {
+        -1
+    }
+
+    fn get_description(&self) -> String {
+        "Android Packed Relocation Offset for ELF".to_string()
     }
 }

@@ -13,6 +13,7 @@ use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5Diges
 use crate::program::model::data::data_type::DataType;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
+use crate::file::formats::android::dex::format::dex_header::DexHeader;
 use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnum;
 use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
@@ -104,49 +105,6 @@ impl ArtHeader {
     }
 }
 
-/// Placeholder for the unported Java type `DexHeader`, referenced by `FieldAnnotationsItem` and `OatBundle`.
-/// Concrete stub: Java class, not interface. Only methods THIS type needs are included.
-/// Replace with the real port when available.
-pub struct DexHeader;
-
-impl DexHeader {
-    pub fn parse(&self, _reader: &dyn BinaryReader) -> std::io::Result<()> {
-        unimplemented!("DexHeader.parse not yet ported")
-    }
-
-    pub fn is_data_offset_relative(&self) -> bool {
-        unimplemented!("DexHeader.is_data_offset_relative not yet ported")
-    }
-
-    pub fn to_data_type(&self) -> std::io::Result<Box<dyn DataType>> {
-        unimplemented!("DexHeader.to_data_type not yet ported")
-    }
-
-    pub fn get_magic(&self) -> Vec<i8> { vec![] }
-    pub fn get_version(&self) -> Vec<i8> { vec![] }
-    pub fn get_checksum(&self) -> i32 { 0 }
-    pub fn get_signature(&self) -> Vec<i8> { vec![] }
-    pub fn get_file_size(&self) -> i32 { 0 }
-    pub fn get_header_size(&self) -> i32 { 0 }
-    pub fn get_endian_tag(&self) -> i32 { 0 }
-    pub fn get_string_ids_offset(&self) -> i32 { 0 }
-    pub fn get_string_ids_size(&self) -> i32 { 0 }
-    pub fn get_class_defs_ids_offset(&self) -> i32 { 0 }
-    pub fn get_class_defs_ids_size(&self) -> i32 { 0 }
-    pub fn get_data_offset(&self) -> i32 { 0 }
-    pub fn get_data_size(&self) -> i32 { 0 }
-    pub fn get_field_ids_offset(&self) -> i32 { 0 }
-    pub fn get_field_ids_size(&self) -> i32 { 0 }
-    pub fn get_method_ids_offset(&self) -> i32 { 0 }
-    pub fn get_method_ids_size(&self) -> i32 { 0 }
-    pub fn get_type_ids_offset(&self) -> i32 { 0 }
-    pub fn get_type_ids_size(&self) -> i32 { 0 }
-    pub fn get_proto_ids_offset(&self) -> i32 { 0 }
-    pub fn get_proto_ids_size(&self) -> i32 { 0 }
-    pub fn get_link_offset(&self) -> i32 { 0 }
-    pub fn get_link_size(&self) -> i32 { 0 }
-    pub fn get_map_offset(&self) -> i32 { 0 }
-}
 
 /// Placeholder for the unported Java type `OatHeader`, referenced by `OatBundle`.
 /// Concrete stub: Java class, not interface. Only methods THIS type needs are included.

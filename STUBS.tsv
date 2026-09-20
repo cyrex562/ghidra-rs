@@ -782,7 +782,6 @@ ts	stub_class	referenced_by
 2026-08-14T06:56:09.636694+00:00	MessageLog	UnixAoutProgramLoader
 2026-08-14T07:12:26.772138+00:00	StructConverterUtil	FieldAnnotationsItem
 2026-08-14T07:12:26.772279+00:00	AnnotationSetItem	FieldAnnotationsItem
-2026-08-14T07:12:26.772871+00:00	DexHeader	FieldAnnotationsItem
 2026-08-14T07:12:26.773318+00:00	DexUtil	FieldAnnotationsItem
 2026-08-14T00:00:00.000000+00:00	TypeItem	ClassDefItem
 2026-08-14T00:00:00.000000+00:00	TypeList	ClassDefItem
@@ -790,7 +789,6 @@ ts	stub_class	referenced_by
 2026-08-14T00:00:00.000000+00:00	ClassDataItem	ClassDefItem
 2026-08-14T00:00:00.000000+00:00	EncodedArrayItem	ClassDefItem
 2026-08-14T00:00:00.000000+00:00	DexUtil	ClassDefItem
-2026-08-14T00:00:00.000000+00:00	DexHeader	ClassDefItem
 2026-08-14T07:29:22.125774+00:00	AndroidXmlConvertor	AndroidXmlFileSystem
 2026-08-14T07:29:22.389252+00:00	ByteArrayProvider	AndroidXmlFileSystem
 2026-08-14T07:39:12.400000+00:00	FileAttributes	SevenZipFileSystem
@@ -1288,3 +1286,6 @@ ts	stub_class	referenced_by
 2026-09-20T16:16:50.612778+00:00	ResourceDirectoryEntry	ResourceDirectory
 2026-09-20T18:37:32.597119Z	RebaseTable	DyldInfoCommand
 2026-09-20T18:37:32.597119Z	BindingTable	DyldInfoCommand
+2026-09-20T19:11:53.411716277Z	AndroidElfRelocationOffset	AndroidElfRelocationGroup
+2026-09-20T19:40:38.525588166Z	EncodedArray	EncodedValue
+2026-09-20T19:40:38.528941783Z	EncodedAnnotation	EncodedValue

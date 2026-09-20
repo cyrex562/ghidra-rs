@@ -2,7 +2,8 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::file::seam_stubs::{DexHeader, DexUtil, TypeList};
+use crate::file::formats::android::dex::format::dex_header::DexHeader;
+use crate::file::seam_stubs::{DexUtil, TypeList};
 
 /// Represents a method prototype (shorty, return type, parameter types) in DEX format.
 ///
@@ -579,7 +580,7 @@ mod tests {
             0x00, 0x00, 0x00, 0x00, // parameters_offset = 0
         ];
         let mut reader = MockBinaryReader::new(bytes);
-        let header = crate::file::seam_stubs::DexHeader;
+        let header = DexHeader::minimal_for_tests();
 
         let item = PrototypesIDItem::new(&mut reader, &header).unwrap();
 
@@ -598,7 +599,7 @@ mod tests {
             0xff, // byte at the parameters offset, so it is a valid index
         ];
         let mut reader = MockBinaryReader::new(bytes);
-        let header = crate::file::seam_stubs::DexHeader;
+        let header = DexHeader::minimal_for_tests();
 
         let item = PrototypesIDItem::new(&mut reader, &header).unwrap();
 

@@ -1,6 +1,7 @@
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::file::seam_stubs::{AnnotationSetItem, DexHeader, DexUtil};
+use crate::file::formats::android::dex::format::dex_header::DexHeader;
+use crate::file::seam_stubs::{AnnotationSetItem, DexUtil};
 use std::io;
 
 /// Represents a field annotation in DEX format.
@@ -568,7 +569,7 @@ mod tests {
             0x00, 0x00, 0x00, 0x00, // annotations_offset = 0
         ];
         let mut reader = MockBinaryReader::new(bytes);
-        let header = crate::file::seam_stubs::DexHeader;
+        let header = DexHeader::minimal_for_tests();
 
         let item = FieldAnnotationsItem::new(&mut reader, &header).unwrap();
 
@@ -584,7 +585,7 @@ mod tests {
             0x20, 0x00, 0x00, 0x00, // annotations_offset = 32
         ];
         let mut reader = MockBinaryReader::new(bytes);
-        let header = crate::file::seam_stubs::DexHeader;
+        let header = DexHeader::minimal_for_tests();
 
         let item = FieldAnnotationsItem::new(&mut reader, &header).unwrap();
 

@@ -2,7 +2,8 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::file::seam_stubs::{DexHeader, StringDataItem};
+use crate::file::formats::android::dex::format::dex_header::DexHeader;
+use crate::file::seam_stubs::StringDataItem;
 
 /// Represents a string ID item in DEX format.
 ///
@@ -453,7 +454,7 @@ mod tests {
     #[test]
     fn test_string_id_item_basic() {
         let mut reader = MockBinaryReader::new(vec![0x10, 0x00, 0x00, 0x00]);
-        let dex_header = crate::file::seam_stubs::DexHeader;
+        let dex_header = DexHeader::minimal_for_tests();
 
         let result = StringIDItem::new(&mut reader, &dex_header);
         assert!(result.is_ok());
@@ -468,7 +469,7 @@ mod tests {
             0x20, 0x00, 0x00, 0x00,
             0x30, 0x00, 0x00, 0x00,
         ]);
-        let dex_header = crate::file::seam_stubs::DexHeader;
+        let dex_header = DexHeader::minimal_for_tests();
 
         let item1 = StringIDItem::new(&mut reader, &dex_header);
         assert!(item1.is_ok());
