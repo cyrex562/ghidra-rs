@@ -49,3 +49,4 @@ ts	reason	path
 2026-08-17T03:56	shape-undecided (R8b-marker)	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java
 2026-08-17T22:02	shape-undecided (R8b-marker)	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/UniversalDataFormatModel.java
 2026-08-18T02:32	timeout	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/disassemble/DebuggerDisassemblerPlugin.java
+2026-09-20T15:59	missing-prerequisite (39 unported jit op/var types: JitCatenateOp, JitMissingVar, JitConstVal, JitDataFlowModel, etc.; existing seam_stubs.rs exact-match placeholder already serves current dependents)	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowState.java

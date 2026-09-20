@@ -6,6 +6,7 @@ pub mod address_correlator;
 pub mod address_field_location;
 pub mod address_iterator_converter;
 pub mod address_translation_exception;
+pub mod address_translator;
 pub mod assigned_variable_location;
 pub mod change_manager;
 pub mod change_manager_adapter;
