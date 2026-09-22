@@ -26,9 +26,9 @@ use crate::framework::remote::RepositoryServerHandle;
 /// `getRepositoryNames`, `getAllUsers`, `getUserManager`, `anonymousAccessAllowed`). That direct
 /// concrete-type coupling forms the cycle `RepositoryManager` <-> `RepositoryServerHandleImpl`;
 /// `RepositoryServerHandleImpl` was selected as the cut-point, so `RepositoryManager` is
-/// represented here by the
-/// [`RepositoryManagerLike`](crate::server::seam_stubs::RepositoryManagerLike) placeholder until
-/// it is ported.
+/// represented here by the real
+/// [`RepositoryManager`](crate::server::repository_manager::RepositoryManager) trait (formerly a
+/// `RepositoryManagerLike` placeholder in `seam_stubs.rs`, now promoted).
 ///
 /// Every method the RMI interface declares (`createRepository`, `getRepository`,
 /// `deleteRepository`, `getRepositoryNames`, `getUser`, `getAllUsers`, `canSetPassword`,
@@ -61,7 +61,8 @@ mod tests {
     use crate::framework::seam_stubs::{ItemCheckoutStatus, RepositoryItem};
 use crate::framework::store::CheckoutType;
     use crate::framework::store::ItemVersion;
-    use crate::server::seam_stubs::{RepositoryLike, RepositoryManagerLike, UserManagerLike};
+    use crate::server::repository_manager::RepositoryManager;
+    use crate::server::seam_stubs::{RepositoryLike, UserManagerLike};
     use std::io;
     use std::sync::{Arc, Mutex};
 
@@ -249,6 +250,10 @@ use crate::framework::store::CheckoutType;
         fn get_name(&self) -> String {
             self.name.clone()
         }
+
+        fn set_user_permission(&self, _username: &str, _permission: i32) {}
+
+        fn remove_user(&self, _username: &str) {}
     }
 
     struct MockUserManager {
@@ -275,6 +280,42 @@ use crate::framework::store::CheckoutType;
             }
             Ok(username == "alice" && !salted_sha256_password_hash.is_empty())
         }
+
+        fn add_user(
+            &self,
+            _username: &str,
+            _salted_password_hash: Option<&[u8]>,
+        ) -> Result<(), crate::server::seam_stubs::AddUserError> {
+            Ok(())
+        }
+
+        fn add_user_with_dn(
+            &self,
+            _username: &str,
+            _x500_user_dn: &str,
+        ) -> Result<(), crate::server::seam_stubs::AddUserError> {
+            Ok(())
+        }
+
+        fn remove_user(&self, _username: &str) -> io::Result<bool> {
+            Ok(true)
+        }
+
+        fn reset_password(
+            &self,
+            _username: &str,
+            _salted_password_hash: Option<&[u8]>,
+        ) -> io::Result<bool> {
+            Ok(true)
+        }
+
+        fn is_valid_user(&self, username: &str) -> bool {
+            username == "alice"
+        }
+
+        fn set_distinguished_name(&self, _username: &str, _x500_user_dn: &str) -> io::Result<bool> {
+            Ok(true)
+        }
     }
 
     /// Mock repository manager backed by an in-memory repository name set, standing in for
@@ -286,9 +327,17 @@ use crate::framework::store::CheckoutType;
         local_passwords_enabled: bool,
     }
 
-    impl RepositoryManagerLike for MockRepositoryManager {
+    impl RepositoryManager for MockRepositoryManager {
         fn anonymous_access_allowed(&self) -> bool {
             self.anonymous_access
+        }
+
+        fn dispose(&self) {
+            self.repositories.lock().unwrap().clear();
+        }
+
+        fn get_root_dir(&self) -> std::path::PathBuf {
+            std::path::PathBuf::from("/mock/repos")
         }
 
         fn create_repository(
@@ -317,6 +366,15 @@ use crate::framework::store::CheckoutType;
             }
         }
 
+        fn get_repository_privileged(&self, name: &str) -> Option<Box<dyn RepositoryLike>> {
+            if self.repositories.lock().unwrap().iter().any(|r| r == name) {
+                Some(Box::new(MockRepository { name: name.to_string() }))
+            }
+            else {
+                None
+            }
+        }
+
         fn delete_repository(&self, _current_user: &str, name: &str) -> io::Result<()> {
             let mut repos = self.repositories.lock().unwrap();
             let before = repos.len();
@@ -339,6 +397,18 @@ use crate::framework::store::CheckoutType;
             Box::new(MockUserManager {
                 local_passwords_enabled: self.local_passwords_enabled,
             })
+        }
+
+        fn add_handle(&self, _handle: Arc<dyn RepositoryServerHandleImpl>) {}
+
+        fn drop_handle(&self, _handle: Arc<dyn RepositoryServerHandleImpl>) {}
+
+        fn process_command_queue(&self) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn user_removed(&self, _username: &str) -> io::Result<()> {
+            Ok(())
         }
     }
 

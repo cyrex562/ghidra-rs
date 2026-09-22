@@ -93,6 +93,10 @@ use crate::framework::store::CheckoutType;
         fn get_name(&self) -> String {
             self.name.clone()
         }
+
+        fn set_user_permission(&self, _username: &str, _permission: i32) {}
+
+        fn remove_user(&self, _username: &str) {}
     }
 
     /// Minimal `RepositoryHandleImpl` impl proving object-safety and exercising the
@@ -325,6 +329,12 @@ use crate::framework::store::CheckoutType;
                 }
                 fn get_name(&self) -> String {
                     self.0.get_name()
+                }
+                fn set_user_permission(&self, username: &str, permission: i32) {
+                    self.0.set_user_permission(username, permission);
+                }
+                fn remove_user(&self, username: &str) {
+                    self.0.remove_user(username);
                 }
             }
             Box::new(ArcRepository(self.repository.clone()))

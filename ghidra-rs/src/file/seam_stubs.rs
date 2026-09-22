@@ -106,35 +106,6 @@ impl ArtHeader {
 }
 
 
-/// Placeholder for the unported Java type `OatHeader`, referenced by `OatBundle`.
-/// Concrete stub: Java class, not interface. Only methods THIS type needs are included.
-/// Replace with the real port when available.
-pub struct OatHeader;
-
-impl OatHeader {
-    pub fn parse(&self, _reader: &dyn BinaryReader, _bundle: &dyn std::any::Any) -> std::io::Result<()> {
-        unimplemented!("OatHeader.parse not yet ported")
-    }
-
-    pub fn get_magic(&self) -> String {
-        unimplemented!("OatHeader.get_magic not yet ported")
-    }
-
-    pub fn get_version(&self) -> String {
-        unimplemented!("OatHeader.get_version not yet ported")
-    }
-
-    pub fn get_oat_dex_files_offset(&self, _reader: &dyn BinaryReader) -> i32 { 0 }
-    pub fn get_dex_file_count(&self) -> i32 { 0 }
-    pub fn get_key_value_store_size(&self) -> i32 { 0 }
-    pub fn get_executable_offset(&self) -> i32 { 0 }
-    pub fn get_checksum(&self) -> i32 { 0 }
-
-    pub fn to_data_type(&self) -> std::io::Result<Box<dyn DataType>> {
-        unimplemented!("OatHeader.to_data_type not yet ported")
-    }
-}
-
 /// Placeholder for the unported Java type `VdexHeader`, referenced by `OatBundle`.
 /// Concrete stub: Java class, not interface. Only methods THIS type needs are included.
 /// Replace with the real port when available.

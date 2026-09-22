@@ -182,7 +182,6 @@ ts	stub_class	referenced_by
 2026-07-21T04:37:31Z	RemoteBlockStreamHandleLike	BlockStreamServer
 2026-07-21T06:00:00Z	RepositoryFolderLike	RepositoryFile
 2026-07-21T04:57:17Z	RepositoryLike	RepositoryHandleImpl
-2026-07-21T05:04:41Z	RepositoryManagerLike	RepositoryServerHandleImpl
 2026-07-21T00:00:00Z	TransientProjectManagerLike	TransientProjectData
 2026-07-21T06:30:00Z	GhidraFileDataLike	GhidraFolderData
 2026-07-22T02:50:37Z	GhidraURLWrappedContentLike	GhidraURLConnection
@@ -1082,7 +1081,6 @@ ts	stub_class	referenced_by
 2026-08-17T03:50:00.000000+00:00	ArchiveNode	ArchiveRootNodeListener
 2026-08-17T07:56:39.647040+00:00	AbstractSQLFunctionDatabase	IDSQLResolution
 2026-08-17T04:10:00.000000+00:00	ArtHeader	OatBundle
-2026-08-17T04:10:00.000000+00:00	OatHeader	OatBundle
 2026-08-17T04:10:00.000000+00:00	VdexHeader	OatBundle
 2026-08-17T08:11:09.678548+00:00	OatClassStatusEnum_Invalid	OatClass
 2026-08-17T08:11:09.678696+00:00	OatClassStatusEnum_K	OatClass
@@ -1295,3 +1293,6 @@ ts	stub_class	referenced_by
 2026-09-22T00:20:00.000000+00:00	CliAbstractStream	CliStreamHeader
 2026-09-22T00:30:00.000000+00:00	CliBlob	CliSigAssembly
 2026-09-22T00:40:00.000000+00:00	get_string (CliStreamStrings extension)	CliTableAssembly
+2026-09-22T00:00:00.000000+00:00	OatDexFile	OatHeader
+2026-09-22T00:00:00.000000+00:00	OatDexFileFactory	OatHeader
+2026-09-22T05:54:56.794288+00:00	HashUtilities	UserManager

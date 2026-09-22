@@ -43,10 +43,15 @@ use crate::server::seam_stubs::{RepositoryLike, UserManagerLike};
 /// starts the command-queue watcher thread) and the private `initialize`/`validateUser`/
 /// `isAnonymousUser` helpers are construction-time and per-implementation plumbing, not part of
 /// the observable interface, so they are intentionally left out -- consistent with how sibling
-/// ports in this module omit constructor setup logic. The package-private
-/// `getRepository(String)` (privileged, no-user-check overload) and `getRepositoryNames()`
-/// (no-arg) exist in Java only to implement `userRemoved`, so they are folded into this trait's
-/// `user_removed` rather than exposed as separate methods. The static admin-console utilities
+/// ports in this module omit constructor setup logic. The package-private `getRepositoryNames()`
+/// (no-arg) exists in Java only to implement `userRemoved`, so it is folded into this trait's
+/// `user_removed` rather than exposed as a separate method. The package-private
+/// `getRepository(String)` (privileged, no-user-check overload) is exposed here as
+/// [`get_repository_privileged`](Self::get_repository_privileged) since, beyond `userRemoved`, it
+/// is also the accessor
+/// [`CommandProcessor`](crate::server::command_processor)'s svrAdmin command handling
+/// (`GRANT_USER_COMMAND`/`REVOKE_USER_COMMAND`) needs -- those commands run with server-local
+/// trust and have no external "current user" to validate against. The static admin-console utilities
 /// (`getRMIClient`, `listRepositories`, `markAllRepositoriesForIndexMigration`, `log`,
 /// `getElapsedTimeSince`) do not operate on a `RepositoryManager` instance and depend on several
 /// types that are not yet ported (`Repository.getFormattedUserPermissions`,
@@ -75,6 +80,12 @@ pub trait RepositoryManager: Send + Sync {
         current_user: &str,
         name: &str,
     ) -> io::Result<Option<Box<dyn RepositoryLike>>>;
+
+    /// Get the repository with the given name for privileged, server-local use with no
+    /// user-access check.
+    ///
+    /// Mirrors the package-private `RepositoryManager.getRepository(String)` overload.
+    fn get_repository_privileged(&self, name: &str) -> Option<Box<dyn RepositoryLike>>;
 
     /// Delete the named repository on behalf of `current_user`.
     fn delete_repository(&self, current_user: &str, name: &str) -> io::Result<()>;
@@ -118,6 +129,10 @@ mod tests {
         fn get_name(&self) -> String {
             self.name.clone()
         }
+
+        fn set_user_permission(&self, _username: &str, _permission: i32) {}
+
+        fn remove_user(&self, _username: &str) {}
     }
 
     struct MockUserManager;
@@ -137,6 +152,42 @@ mod tests {
             _salted_sha256_password_hash: &[u8],
             _is_temporary: bool,
         ) -> io::Result<bool> {
+            Ok(true)
+        }
+
+        fn add_user(
+            &self,
+            _username: &str,
+            _salted_password_hash: Option<&[u8]>,
+        ) -> Result<(), crate::server::seam_stubs::AddUserError> {
+            Ok(())
+        }
+
+        fn add_user_with_dn(
+            &self,
+            _username: &str,
+            _x500_user_dn: &str,
+        ) -> Result<(), crate::server::seam_stubs::AddUserError> {
+            Ok(())
+        }
+
+        fn remove_user(&self, _username: &str) -> io::Result<bool> {
+            Ok(true)
+        }
+
+        fn reset_password(
+            &self,
+            _username: &str,
+            _salted_password_hash: Option<&[u8]>,
+        ) -> io::Result<bool> {
+            Ok(true)
+        }
+
+        fn is_valid_user(&self, _username: &str) -> bool {
+            true
+        }
+
+        fn set_distinguished_name(&self, _username: &str, _x500_user_dn: &str) -> io::Result<bool> {
             Ok(true)
         }
     }
@@ -188,6 +239,15 @@ mod tests {
                 .iter()
                 .find(|(n, _)| n == name)
                 .map(|_| Box::new(MockRepository { name: name.to_string() }) as Box<dyn RepositoryLike>))
+        }
+
+        fn get_repository_privileged(&self, name: &str) -> Option<Box<dyn RepositoryLike>> {
+            self.repositories
+                .lock()
+                .unwrap()
+                .iter()
+                .find(|(n, _)| n == name)
+                .map(|_| Box::new(MockRepository { name: name.to_string() }) as Box<dyn RepositoryLike>)
         }
 
         fn delete_repository(&self, _current_user: &str, name: &str) -> io::Result<()> {

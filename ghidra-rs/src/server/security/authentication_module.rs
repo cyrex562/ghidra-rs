@@ -166,6 +166,46 @@ mod tests {
         ) -> std::io::Result<bool> {
             Ok(false)
         }
+
+        fn add_user(
+            &self,
+            _username: &str,
+            _salted_password_hash: Option<&[u8]>,
+        ) -> Result<(), crate::server::seam_stubs::AddUserError> {
+            Ok(())
+        }
+
+        fn add_user_with_dn(
+            &self,
+            _username: &str,
+            _x500_user_dn: &str,
+        ) -> Result<(), crate::server::seam_stubs::AddUserError> {
+            Ok(())
+        }
+
+        fn remove_user(&self, _username: &str) -> std::io::Result<bool> {
+            Ok(false)
+        }
+
+        fn reset_password(
+            &self,
+            _username: &str,
+            _salted_password_hash: Option<&[u8]>,
+        ) -> std::io::Result<bool> {
+            Ok(false)
+        }
+
+        fn is_valid_user(&self, _username: &str) -> bool {
+            false
+        }
+
+        fn set_distinguished_name(
+            &self,
+            _username: &str,
+            _x500_user_dn: &str,
+        ) -> std::io::Result<bool> {
+            Ok(false)
+        }
     }
 
     /// Authenticates against a fixed username/password pair pulled out of the callback slice by
