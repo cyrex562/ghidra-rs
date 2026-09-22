@@ -1,0 +1,5 @@
+pub mod exact_match_instructions_program_correlator_factory;
+pub mod seam_stubs;
+
+pub use exact_match_instructions_program_correlator_factory::ExactMatchInstructionsProgramCorrelatorFactory;
+pub use seam_stubs::{ExactInstructionsFunctionHasher, FunctionMatchProgramCorrelator};

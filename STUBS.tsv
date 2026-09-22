@@ -1300,3 +1300,5 @@ ts	stub_class	referenced_by
 2026-09-22T06:43:26.619034382+00:00	DecompileData	DecompilerCallbackHandler
 2026-09-22T06:43:26.624001160+00:00	AnnotatedTextFieldElement	DecompilerCallbackHandler
 2026-09-22T07:50:19.349460415Z	CompositeEditorTableAction	EditorActionListener
+2026-09-22T08:14:25.887717663Z	ExactInstructionsFunctionHasher	ExactMatchInstructionsProgramCorrelatorFactory
+2026-09-22T08:14:25.887717663Z	FunctionMatchProgramCorrelator	ExactMatchInstructionsProgramCorrelatorFactory

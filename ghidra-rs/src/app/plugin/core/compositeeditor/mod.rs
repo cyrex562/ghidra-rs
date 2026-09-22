@@ -1,4 +1,5 @@
 pub mod component_cell_editor_listener;
+pub mod component_context;
 pub mod composite_change_listener;
 pub mod composite_editor_lock_listener;
 pub mod composite_editor_model_adapter;
@@ -14,6 +15,7 @@ pub mod editor_provider;
 pub mod original_composite_listener;
 
 pub use component_cell_editor_listener::ComponentCellEditorListener;
+pub use component_context::ComponentContext;
 pub use composite_change_listener::CompositeChangeListener;
 pub use composite_editor_lock_listener::CompositeEditorLockListener;
 pub use composite_editor_model_adapter::CompositeEditorModelAdapter;

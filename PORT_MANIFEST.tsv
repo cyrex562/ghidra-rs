@@ -55,7 +55,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoRea
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoReadMemorySpecFactory.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/GoToInput.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/InstanceUtils.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTracker.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTracker.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpecFactory.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpoint.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api breakpoint 
@@ -537,7 +537,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/platfo
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/platform/gdb/GdbDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug platform gdb 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/platform/jdi/JdiDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug platform jdi 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/platform/lldb/LldbDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug platform lldb 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/breakpoint/BreakpointActionItem.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service breakpoint 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/breakpoint/BreakpointActionItem.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service breakpoint 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/breakpoint/BreakpointActionSet.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service breakpoint 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/breakpoint/DebuggerLogicalBreakpointServicePlugin.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service breakpoint 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/breakpoint/DeleteEmuBreakpointActionItem.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service breakpoint 
@@ -2505,7 +2505,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeedit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompEditorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentCellEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentCellEditorListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentContext.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentProgramActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentStandAloneActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeChangeListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
@@ -4983,7 +4983,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/lis
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingDisplayToggleAction.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/AbstractFunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/AnyToAnyFunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/FunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/FunctionComparisonModel.java	DONE	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/FunctionComparisonModelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/MatchedFunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/panel/AddressSetComparisonData.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare panel 
@@ -9370,7 +9370,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/cor
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/DuplicateSymbolNameProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/ExactDataMatchProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/ExactMatchBytesProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/ExactMatchInstructionsProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/ExactMatchInstructionsProgramCorrelatorFactory.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/ExactMatchMnemonicsProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/FunctionMatchProgramCorrelator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/FunctionReferenceProgramCorrelator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 

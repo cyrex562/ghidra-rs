@@ -1,3 +1,4 @@
+pub mod correlator;
 pub mod db;
 pub mod implementation;
 pub mod main;
