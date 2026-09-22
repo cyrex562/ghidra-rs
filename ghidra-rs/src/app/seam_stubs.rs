@@ -5556,10 +5556,14 @@ pub trait LSDATable: Send + Sync {
 
 /// Placeholder for `ghidra.app.cmd.data.CreateArrayCmd`, referenced by
 /// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
-/// port of `createAugmentationData`, which always constructs it with a `ByteDataType` element.
-/// The crate has no concrete `ByteDataType` singleton yet (see
-/// [`ByteDataType`](crate::program::model::data::byte_data_type::ByteDataType)'s module docs),
-/// so the `dt` constructor argument is dropped; like [`DecompileDebugDataTypeManager`],
+/// port of `createAugmentationData` and by
+/// [`control_flow_guard`](crate::format::pe::control_flow_guard)'s port of
+/// `markupCfgFunctionTable`, both of which always construct it with a `DataType` element this
+/// crate cannot yet keep hold of concretely (`ByteDataType` has no concrete singleton -- see
+/// [`ByteDataType`](crate::program::model::data::byte_data_type::ByteDataType)'s module docs;
+/// `control_flow_guard`'s caller does build a concrete `StructureDataTypeImpl`, but there is
+/// nothing useful to do with it here since `apply_to` cannot mutate a `Listing` yet either).
+/// So the `dt` constructor argument is dropped; like [`DecompileDebugDataTypeManager`],
 /// `apply_to` no-ops and reports success until the real command class is ported.
 pub struct CreateArrayCmd;
 
@@ -6759,6 +6763,24 @@ impl BookmarkNavigator {
         _program: &dyn crate::trace::model::program::TraceVariableSnapProgramView,
     ) {
         unimplemented!("BookmarkNavigator is not ported")
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.AbstractProgramLoader`, referenced by
+/// [`ControlFlowGuard`](crate::format::pe::control_flow_guard) before the real (large) loader
+/// base class is ported. Only `markAsFunction(Program, Loader, Address)` is modeled, and only as
+/// a no-op: the real implementation creates (and, if needed, first disassembles at) a `Function`
+/// at `address`, which needs `Listing`/`FunctionManager` mutation machinery this crate does not
+/// have wired up for a bare `&mut dyn Program` yet. The `Loader` parameter (always passed as
+/// `null` by every current caller) is omitted entirely rather than modeled as `Option<()>`.
+pub struct AbstractProgramLoader;
+
+impl AbstractProgramLoader {
+    /// Port of `AbstractProgramLoader.markAsFunction(Program, Loader, Address)`, minus the
+    /// actual function creation.
+    pub fn mark_as_function(_program: &mut dyn Program, _address: &Address) {
+        // No-op until AbstractProgramLoader (and the Listing/FunctionManager mutation it needs)
+        // is ported.
     }
 }
 

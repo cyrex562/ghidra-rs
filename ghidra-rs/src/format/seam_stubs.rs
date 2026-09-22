@@ -216,6 +216,16 @@ pub trait NTHeader: Send + Sync {
     fn should_parse_cli_headers(&self) -> bool {
         true
     }
+
+    /// Mirrors the `vaToPointer(long)` overload (distinct from [`va_to_pointer`](Self::va_to_pointer),
+    /// which mirrors `vaToPointer(int)`); used by
+    /// [`LoadConfigDirectory::new`](crate::format::pe::load_config_directory::LoadConfigDirectory::new)
+    /// to locate the CHPE metadata table, where the pointer is a Java `long`. Default body mirrors
+    /// `vaToPointer(long)`'s real implementation (`rvaToPointer(va - getImageBase())`) so existing
+    /// `NTHeader` stub implementors don't need updating.
+    fn va_to_pointer_long(&self, va: i64) -> i64 {
+        self.rva_to_pointer_long(va - self.get_optional_header().get_image_base())
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.FileHeader`, referenced by
@@ -226,6 +236,16 @@ pub trait FileHeader: Send + Sync {
     fn get_machine(&self) -> i16;
     fn is_x86(&self) -> bool;
     fn is_arm(&self) -> bool;
+
+    /// `FileHeader.getSectionHeader(int)`, needed by
+    /// [`LoadConfigDirectory::new`](crate::format::pe::load_config_directory::LoadConfigDirectory::new)
+    /// to locate the Dynamic Value Relocation Table's containing section. Java returns `null` for
+    /// an out-of-range index; modeled here as `None`. Defaults to `None` so existing `FileHeader`
+    /// stub implementors don't need updating.
+    fn get_section_header(&self, index: i32) -> Option<Box<dyn crate::format::pe::seam_stubs::SectionHeader>> {
+        let _ = index;
+        None
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.OptionalHeader`, referenced by
@@ -239,6 +259,15 @@ pub trait FileHeader: Send + Sync {
 pub trait OptionalHeader: Send + Sync {
     fn get_size_of_image(&self) -> i64;
     fn get_image_base(&self) -> i64;
+
+    /// `OptionalHeader.is64bit()`, needed by
+    /// [`LoadConfigDirectory::new`](crate::format::pe::load_config_directory::LoadConfigDirectory::new)
+    /// to pick pointer-sized vs. 4-byte field widths. Defaults to `false` (the conservative,
+    /// far-more-common 32-bit case) so existing `OptionalHeader` stub implementors don't need
+    /// updating; a real 64-bit image needs an implementor that overrides this.
+    fn is64bit(&self) -> bool {
+        false
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.ImageCor20Header`, referenced by
@@ -4757,7 +4786,12 @@ pub trait CliStreamUserStrings: Send + Sync {}
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.cli.streams.CliStreamStrings`, referenced by
 /// [`CliStreamMetadata`] before the real class is ported.
-pub trait CliStreamStrings: Send + Sync {}
+pub trait CliStreamStrings: Send + Sync {
+    /// `CliStreamStrings.getString(int)`, needed by
+    /// [`CliTableAssembly`](crate::format::pe::cli::tables::cli_table_assembly::CliTableAssembly)'s
+    /// port of `CliAssemblyRow.getRepresentation()`.
+    fn get_string(&self, index: i32) -> String;
+}
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.cli.streams.CliStreamBlob`, referenced by
 /// [`CliStreamMetadata`] before the real class is ported.
@@ -5459,27 +5493,6 @@ impl SeparateDebugHeader {
     /// `SeparateDebugHeader.getParser()`.
     pub fn get_parser(&self) -> Option<&DebugDirectoryParser> {
         self.parser.as_ref()
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.pe.LoadConfigDirectory`, referenced by
-/// [`ExceptionDataDirectory`](crate::format::pe::exception_data_directory::ExceptionDataDirectory)
-/// before the real class is ported. `LoadConfigDirectory` is a concrete Java class (not an
-/// interface), so it is modeled here as a concrete struct. Only exposes
-/// `getChpeMetadataPointer()`, the sole accessor `ExceptionDataDirectory.parse()` needs to detect
-/// a CHPE (hybrid ARM64EC/x86) image.
-pub struct LoadConfigDirectory {
-    chpe_metadata_pointer: i64,
-}
-
-impl LoadConfigDirectory {
-    pub fn new(chpe_metadata_pointer: i64) -> Self {
-        LoadConfigDirectory { chpe_metadata_pointer }
-    }
-
-    /// Port of `LoadConfigDirectory.getChpeMetadataPointer()`.
-    pub fn get_chpe_metadata_pointer(&self) -> i64 {
-        self.chpe_metadata_pointer
     }
 }
 

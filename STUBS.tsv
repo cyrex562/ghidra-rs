@@ -1011,8 +1011,11 @@ ts	stub_class	referenced_by
 2026-08-17T01:27:23.202642+00:00	RandomAccessByteProvider	DbgLoader
 2026-08-17T01:27:23.202642+00:00	SeparateDebugHeader	DbgLoader
 2026-08-17T01:27:23.202642+00:00	AbstractPeDebugLoader	DbgLoader
-2026-08-16T21:30:00.000000+00:00	LoadConfigDirectory	ExceptionDataDirectory
 2026-08-16T21:30:00.000000+00:00	ImageRuntimeFunctionEntries_X86	ExceptionDataDirectory
+2026-09-22T00:00:00.000000+00:00	SectionHeader (pe)	LoadConfigDirectory
+2026-09-22T00:00:00.000000+00:00	ImageDynamicRelocationTable	LoadConfigDirectory
+2026-09-22T00:00:00.000000+00:00	ImageChpeMetadataX86	LoadConfigDirectory
+2026-09-22T00:00:00.000000+00:00	ImageArm64ecMetadata	LoadConfigDirectory
 2026-08-16T21:30:00.000000+00:00	ImageRuntimeFunctionEntries_ARM	ExceptionDataDirectory
 2026-08-16T21:30:00.000000+00:00	FileHeader	ExceptionDataDirectory
 2026-08-17T05:00:00.000000+00:00	AbstractDemangledFunctionDefinitionDataType	DemangledFunctionPointer
@@ -1290,3 +1293,7 @@ ts	stub_class	referenced_by
 2026-09-20T19:40:38.525588166Z	EncodedArray	EncodedValue
 2026-09-20T19:40:38.528941783Z	EncodedAnnotation	EncodedValue
 2026-09-22T02:56:45.615857384+00:00	LongNamesMember	CoffArchiveMemberHeader
+2026-09-22T00:10:00.000000+00:00	AbstractProgramLoader	ControlFlowGuard
+2026-09-22T00:20:00.000000+00:00	CliAbstractStream	CliStreamHeader
+2026-09-22T00:30:00.000000+00:00	CliBlob	CliSigAssembly
+2026-09-22T00:40:00.000000+00:00	get_string (CliStreamStrings extension)	CliTableAssembly

@@ -23,3 +23,6 @@ pub mod rich_table;
 pub mod section_flags;
 pub mod image_runtime_function_entries;
 pub mod pex64_unwind_info;
+pub mod load_config_directory;
+pub mod seam_stubs;
+pub mod control_flow_guard;

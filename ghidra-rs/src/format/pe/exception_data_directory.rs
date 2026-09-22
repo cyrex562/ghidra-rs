@@ -7,10 +7,10 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntries;
+use crate::format::pe::load_config_directory::LoadConfigDirectory;
 use crate::format::pe::pe_markupable::PeMarkupable;
 use crate::format::seam_stubs::{
-    ImageRuntimeFunctionEntriesArm, ImageRuntimeFunctionEntriesX86, LoadConfigDirectory,
-    MessageLog, NTHeader, PeUtils,
+    ImageRuntimeFunctionEntriesArm, ImageRuntimeFunctionEntriesX86, MessageLog, NTHeader, PeUtils,
 };
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
@@ -495,7 +495,7 @@ mod tests {
         let bytes = directory_bytes(8, 0x18);
         let mut reader = FixtureReader::new(bytes);
         let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_AMD64 as i16 };
-        let lc_dir = LoadConfigDirectory::new(0x2000);
+        let lc_dir = LoadConfigDirectory { chpe_metadata_pointer: 0x2000, ..Default::default() };
 
         let directory =
             ExceptionDataDirectory::new(&nt_header, &mut reader, Some(lc_dir)).unwrap();
