@@ -75,10 +75,23 @@ impl GoBaseType {
     ) -> String {
         let fallback_name = context.get_mapping_info().structure_name();
         let fallback_start = context.get_structure_start();
+        self.name_at(program_context, fallback_start, &fallback_name)
+    }
+
+    /// Returns the name of this type, given the raw structure-start offset and a fallback name
+    /// directly rather than a `&dyn StructureContext<GoBaseType>`.
+    ///
+    /// `GoType` subclasses (e.g. `GoArrayType`, `GoSliceType`) embed a `GoBaseType` value but
+    /// hold a `StructureContext<Self>`, not a `StructureContext<GoBaseType>` -- Rust's trait
+    /// objects don't let one substitute for the other the way Java's shared `context` field
+    /// (declared once, on the `GoType` base class, as `StructureContext<GoType>`) does. This is
+    /// the same computation as [`get_name`](Self::get_name), taking the two primitives that
+    /// method actually pulls out of its context argument.
+    pub fn name_at(&self, program_context: &dyn GoRttiMapper, structure_start: i64, fallback_name: &str) -> String {
         let s = program_context.get_safe_name(
-            &|| self.get_go_name(program_context, context),
-            &fallback_name,
-            fallback_start,
+            &|| program_context.resolve_name_off(structure_start, self.str_off),
+            fallback_name,
+            structure_start,
             "",
         );
         if GoTypeFlag::ExtraStar.is_set(self.tflag, program_context.get_go_ver()) && s.starts_with('*') {
@@ -153,6 +166,14 @@ mod tests {
         fn discover_go_types(&self, _discovered_types: &mut std::collections::HashSet<i64>) -> std::io::Result<bool> {
             unimplemented!()
         }
+
+        fn get_base_type(&self) -> GoBaseType {
+            unimplemented!()
+        }
+
+        fn get_package_path_string(&self) -> String {
+            unimplemented!()
+        }
     }
 
     struct MockGoTypeManager {
@@ -177,6 +198,44 @@ mod tests {
             &self,
             _type_name: &str,
         ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+            unimplemented!()
+        }
+
+        fn get_data_type_for_type(
+            &self,
+            _typ: &dyn GoType,
+        ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+            unimplemented!()
+        }
+
+        fn get_cached_data_type(
+            &self,
+            _typ: &dyn GoType,
+        ) -> std::io::Result<Option<Box<dyn crate::program::model::data::data_type::DataType>>> {
+            unimplemented!()
+        }
+
+        fn get_dtm(&self) -> Box<dyn crate::program::model::data::data_type_manager::DataTypeManager> {
+            unimplemented!()
+        }
+
+        fn get_generic_slice_dt(&self) -> Box<dyn crate::program::model::data::structure::Structure> {
+            unimplemented!()
+        }
+
+        fn cache_recovered_data_type(
+            &self,
+            _typ: &dyn GoType,
+            _dt: Box<dyn crate::program::model::data::data_type::DataType>,
+        ) {
+            unimplemented!()
+        }
+
+        fn get_cp(&self, _typ: &dyn GoType) -> crate::program::model::data::category_path::CategoryPath {
+            unimplemented!()
+        }
+
+        fn get_type_name(&self, _typ: &dyn GoType) -> std::io::Result<String> {
             unimplemented!()
         }
     }

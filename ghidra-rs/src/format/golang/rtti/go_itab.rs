@@ -279,6 +279,14 @@ mod tests {
         fn into_interface_type(self: Box<Self>) -> Option<Box<dyn GoInterfaceType>> {
             if self.is_iface { Some(Box::new(*self)) } else { None }
         }
+
+        fn get_base_type(&self) -> crate::format::golang::rtti::types::go_base_type::GoBaseType {
+            unimplemented!()
+        }
+
+        fn get_package_path_string(&self) -> String {
+            unimplemented!()
+        }
     }
 
     struct MockGoSlice {
@@ -403,6 +411,34 @@ mod tests {
         }
 
         fn get_data_type(&self, _type_name: &str) -> std::io::Result<Box<dyn DataType>> {
+            unimplemented!()
+        }
+
+        fn get_data_type_for_type(&self, _typ: &dyn GoType) -> std::io::Result<Box<dyn DataType>> {
+            unimplemented!()
+        }
+
+        fn get_cached_data_type(&self, _typ: &dyn GoType) -> std::io::Result<Option<Box<dyn DataType>>> {
+            unimplemented!()
+        }
+
+        fn get_dtm(&self) -> Box<dyn crate::program::model::data::data_type_manager::DataTypeManager> {
+            unimplemented!()
+        }
+
+        fn get_generic_slice_dt(&self) -> Box<dyn crate::program::model::data::structure::Structure> {
+            unimplemented!()
+        }
+
+        fn cache_recovered_data_type(&self, _typ: &dyn GoType, _dt: Box<dyn DataType>) {
+            unimplemented!()
+        }
+
+        fn get_cp(&self, _typ: &dyn GoType) -> crate::program::model::data::category_path::CategoryPath {
+            unimplemented!()
+        }
+
+        fn get_type_name(&self, _typ: &dyn GoType) -> std::io::Result<String> {
             unimplemented!()
         }
     }

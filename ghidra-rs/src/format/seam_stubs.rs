@@ -4646,6 +4646,14 @@ pub trait GoType: Send + Sync {
     fn into_interface_type(self: Box<Self>) -> Option<Box<dyn GoInterfaceType>> {
         None
     }
+    /// Mirrors the protected `GoType.getBaseType()` accessor for the shared `typ` field, needed
+    /// by sibling `GoType` subclasses (e.g. `GoArrayType.isValidSize`) that inspect another
+    /// type's base type across the same package-private access Java allows.
+    fn get_base_type(&self) -> crate::format::golang::rtti::types::go_base_type::GoBaseType;
+    /// Mirrors `GoType.getPackagePathString()`, needed by sibling `GoType` subclasses (e.g.
+    /// `GoArrayType`/`GoSliceType`) that fall back to an element type's package path. Returns
+    /// `""` where Java would return `null`/`""` (no in-repo caller distinguishes the two).
+    fn get_package_path_string(&self) -> String;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoTypeManager`, referenced by
@@ -4660,6 +4668,36 @@ pub trait GoTypeManager: Send + Sync {
         &self,
         type_name: &str,
     ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+    /// Mirrors the `GoTypeManager.getDataType(GoType)` overload, referenced by
+    /// [`GoArrayType`](crate::format::golang::rtti::types::go_array_type::GoArrayType) and
+    /// [`GoSliceType`](crate::format::golang::rtti::types::go_slice_type::GoSliceType).
+    fn get_data_type_for_type(
+        &self,
+        typ: &dyn GoType,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+    /// Mirrors the cache-only `GoTypeManager.getDataType(GoType, Class, true)` overload, used by
+    /// `GoArrayType.recoverDataType()` to check whether its own data type has already been
+    /// recovered (guards against infinite recursion for self-referential types). Returns `None`
+    /// when nothing has been cached yet, matching the Java overload's null return.
+    fn get_cached_data_type(
+        &self,
+        typ: &dyn GoType,
+    ) -> std::io::Result<Option<Box<dyn crate::program::model::data::data_type::DataType>>>;
+    /// Mirrors `GoTypeManager.getDTM()`.
+    fn get_dtm(&self) -> Box<dyn DataTypeManager>;
+    /// Mirrors `GoTypeManager.getGenericSliceDT()`, referenced by
+    /// [`GoSliceType`](crate::format::golang::rtti::types::go_slice_type::GoSliceType).
+    fn get_generic_slice_dt(&self) -> Box<dyn crate::program::model::data::structure::Structure>;
+    /// Mirrors `GoTypeManager.cacheRecoveredDataType(GoType, DataType)`.
+    fn cache_recovered_data_type(
+        &self,
+        typ: &dyn GoType,
+        dt: Box<dyn crate::program::model::data::data_type::DataType>,
+    );
+    /// Mirrors `GoTypeManager.getCP(GoType)`.
+    fn get_cp(&self, typ: &dyn GoType) -> crate::program::model::data::category_path::CategoryPath;
+    /// Mirrors `GoTypeManager.getTypeName(GoType)`.
+    fn get_type_name(&self, typ: &dyn GoType) -> std::io::Result<String>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoSymbolName`, referenced by
@@ -5783,4 +5821,16 @@ impl DataType for AndroidElfRelocationOffset {
     fn get_description(&self) -> String {
         "Android Packed Relocation Offset for ELF".to_string()
     }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.archive.LongNamesMember`, referenced by
+/// [`CoffArchiveMemberHeader`](crate::format::coff::archive::coff_archive_member_header::CoffArchiveMemberHeader)
+/// before the real class is ported.
+pub trait LongNamesMember: Send + Sync {
+    /// Mirrors `LongNamesMember.getStringAtOffset(ByteProvider, long)`.
+    fn get_string_at_offset(
+        &self,
+        provider: std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+        offset: i64,
+    ) -> std::io::Result<String>;
 }
