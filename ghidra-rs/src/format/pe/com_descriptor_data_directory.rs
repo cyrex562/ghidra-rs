@@ -5,8 +5,10 @@
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::struct_converter::StructConverter;
+use crate::format::pe::image_cor20_header::ImageCor20Header;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{ImageCor20Header, MessageLog, NTHeader, PeUtils};
+use crate::format::seam_stubs::{MessageLog, NTHeader, PeUtils};
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
 use crate::util::msg::Msg;
@@ -19,7 +21,9 @@ const NAME: &str = "IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR";
 /// The abstract Java base class `DataDirectory` is not ported yet, so the
 /// `virtualAddress`/`size`/`hasParsed` state and behavior it provided (`processDataDirectory`,
 /// `getPointer`, ...) is folded directly into this concrete leaf type instead of being modeled as
-/// a separate seam; this is the only `DataDirectory` subclass ported so far.
+/// a separate seam, matching the same convention now also used by
+/// [`DefaultDataDirectory`](crate::format::pe::default_data_directory::DefaultDataDirectory) and
+/// [`CliMetadataDirectory`](crate::format::pe::cli::cli_metadata_directory::CliMetadataDirectory).
 pub struct COMDescriptorDataDirectory {
     virtual_address: i32,
     size: i32,
@@ -110,7 +114,7 @@ impl COMDescriptorDataDirectory {
 
         let mut parsed = false;
         if nt_header.should_parse_cli_headers() {
-            parsed = header.parse()?;
+            parsed = header.parse(nt_header, reader)?;
         }
         self.header = Some(header);
         Ok(parsed)
@@ -325,7 +329,7 @@ mod tests {
         fn is_rva_resoltion_section_aligned(&self) -> bool {
             true
         }
-        fn get_file_header(&self) -> Box<dyn crate::format::seam_stubs::FileHeader> {
+        fn get_file_header(&self) -> &crate::format::pe::file_header::FileHeader {
             unimplemented!()
         }
         fn get_optional_header(&self) -> Box<dyn crate::format::seam_stubs::OptionalHeader> {
@@ -364,11 +368,27 @@ mod tests {
         bytes
     }
 
+    /// Builds the fixed 72-byte `IMAGE_COR20_HEADER` layout that
+    /// `ImageCor20Header::new` always reads in full: cb(4) + major(2) + minor(2) + MetaData
+    /// directory(8) + Flags(4) + EntryPointToken(4) + six more directories(8 each). Every nested
+    /// directory (including MetaData) is given a zero virtual address so none of them try to
+    /// follow an RVA into data this fixture doesn't provide -- see
+    /// `ImageCor20Header`'s own test module for the identical fixture shape.
     fn cor20_header_bytes(cb: i32, major: i16, minor: i16) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&cb.to_le_bytes());
         bytes.extend_from_slice(&major.to_le_bytes());
         bytes.extend_from_slice(&minor.to_le_bytes());
+        bytes.extend_from_slice(&0i32.to_le_bytes()); // MetaData.VirtualAddress
+        bytes.extend_from_slice(&0i32.to_le_bytes()); // MetaData.Size
+        bytes.extend_from_slice(&0i32.to_le_bytes()); // Flags
+        bytes.extend_from_slice(&0i32.to_le_bytes()); // EntryPointToken
+        for _ in 0..6 {
+            // Resources, StrongNameSignature, CodeManagerTable, VTableFixups,
+            // ExportAddressTableJumps, ManagedNativeHeader -- each an 8-byte data directory.
+            bytes.extend_from_slice(&0i32.to_le_bytes()); // VirtualAddress
+            bytes.extend_from_slice(&0i32.to_le_bytes()); // Size
+        }
         bytes
     }
 
@@ -415,8 +435,12 @@ mod tests {
 
         assert_eq!(directory.get_virtual_address(), 8);
         assert_eq!(directory.get_size(), 0x48);
-        assert!(directory.has_parsed_correctly());
-        let header = directory.get_header().expect("header should be parsed");
+        // `ImageCor20Header::parse` (now a faithful port, not a placeholder) ANDs in
+        // `metadata.parse()`'s result, which is `false` here because the fixture's MetaData
+        // directory has a zero virtual address (`CliMetadataDirectory::get_pointer()` returns
+        // -1 for that), matching real Java `DataDirectory` semantics.
+        assert!(!directory.has_parsed_correctly());
+        let header = directory.get_header().expect("header should still be constructed");
         assert_eq!(header.cb, 0x48);
         assert_eq!(header.major_runtime_version, 2);
         assert_eq!(header.minor_runtime_version, 5);

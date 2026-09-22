@@ -1,3 +1,4 @@
+pub mod abstract_demangled_function_definition_data_type;
 pub mod character_iterator;
 pub mod datatype;
 pub mod demangle_exception;

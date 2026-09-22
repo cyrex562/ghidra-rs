@@ -1,5 +1,8 @@
 pub mod chpe;
 pub mod com_descriptor_data_directory;
+pub mod default_data_directory;
+pub mod image_cor20_header;
+pub mod file_header;
 pub mod debug_data_directory;
 pub mod exception_data_directory;
 pub mod resource;

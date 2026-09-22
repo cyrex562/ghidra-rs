@@ -198,7 +198,11 @@ pub const NT_HEADER_MAX_SANE_COUNT: i32 = 0x10000;
 pub trait NTHeader: Send + Sync {
     fn get_name(&self) -> String;
     fn is_rva_resoltion_section_aligned(&self) -> bool;
-    fn get_file_header(&self) -> Box<dyn FileHeader>;
+    /// `NTHeader.getFileHeader()`. `FileHeader` was promoted to a real, concrete struct (see
+    /// `crate::format::pe::file_header::FileHeader`), so this returns a borrow instead of `Box<dyn
+    /// FileHeader>` -- implementors are expected to own a `FileHeader` value and return a
+    /// reference to it.
+    fn get_file_header(&self) -> &crate::format::pe::file_header::FileHeader;
     fn get_optional_header(&self) -> Box<dyn OptionalHeader>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
     fn rva_to_pointer(&self, rva: i32) -> i32;
@@ -228,25 +232,11 @@ pub trait NTHeader: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pe.FileHeader`, referenced by
-/// [`NTHeader`] before the real class is ported. Extended with the accessors
-/// [`ExceptionDataDirectory`](crate::format::pe::exception_data_directory::ExceptionDataDirectory)
-/// needs to pick a runtime-function-table parser for the image's architecture.
-pub trait FileHeader: Send + Sync {
-    fn get_machine(&self) -> i16;
-    fn is_x86(&self) -> bool;
-    fn is_arm(&self) -> bool;
-
-    /// `FileHeader.getSectionHeader(int)`, needed by
-    /// [`LoadConfigDirectory::new`](crate::format::pe::load_config_directory::LoadConfigDirectory::new)
-    /// to locate the Dynamic Value Relocation Table's containing section. Java returns `null` for
-    /// an out-of-range index; modeled here as `None`. Defaults to `None` so existing `FileHeader`
-    /// stub implementors don't need updating.
-    fn get_section_header(&self, index: i32) -> Option<Box<dyn crate::format::pe::seam_stubs::SectionHeader>> {
-        let _ = index;
-        None
-    }
-}
+// `FileHeader` was promoted to a real port at `crate::format::pe::file_header::FileHeader` --
+// see that module for the faithful port (constructor, `get_machine`/`is_x86`/`is_arm`,
+// `get_section_header` (still `None`-returning pending a real `SectionHeader` port),
+// `process_symbols` using the real `DebugCOFFSymbol`, and `StructConverter::to_data_type`).
+// This placeholder is intentionally removed rather than kept as a dead duplicate.
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.OptionalHeader`, referenced by
 /// [`NTHeader`] before the real class is ported. Extended with the two accessors
@@ -270,64 +260,11 @@ pub trait OptionalHeader: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pe.ImageCor20Header`, referenced by
-/// [`COMDescriptorDataDirectory`](crate::format::pe::com_descriptor_data_directory::COMDescriptorDataDirectory)
-/// before the real class is ported. `ImageCor20Header` is a concrete Java class (not an
-/// interface), so it is modeled here as a concrete struct rather than a trait object. Only reads
-/// the leading fixed-size fields (`cb`, `MajorRuntimeVersion`, `MinorRuntimeVersion`); the nested
-/// `CliMetadataDirectory` / `DefaultDataDirectory` sub-structures are not modeled yet, so
-/// `parse`, `to_data_type`, and `markup` are minimal placeholders rather than faithful ports.
-pub struct ImageCor20Header {
-    pub cb: i32,
-    pub major_runtime_version: i16,
-    pub minor_runtime_version: i16,
-}
-
-impl ImageCor20Header {
-    /// Port of `ImageCor20Header(BinaryReader, long, NTHeader)`.
-    pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
-        index: u64,
-        _nt_header: &dyn NTHeader,
-    ) -> std::io::Result<Self> {
-        let orig_index = reader.get_pointer_index();
-        reader.set_pointer_index(index);
-        let cb = reader.read_next_int()?;
-        let major_runtime_version = reader.read_next_short()?;
-        let minor_runtime_version = reader.read_next_short()?;
-        reader.set_pointer_index(orig_index);
-        Ok(ImageCor20Header { cb, major_runtime_version, minor_runtime_version })
-    }
-
-    /// Placeholder for `ImageCor20Header.parse()`; always reports success until the nested
-    /// directories are ported.
-    pub fn parse(&mut self) -> std::io::Result<bool> {
-        Ok(true)
-    }
-
-    /// Placeholder for `ImageCor20Header.toDataType()`.
-    pub fn to_data_type(
-        &self,
-    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "ImageCor20Header::to_data_type is not yet ported",
-        ))
-    }
-
-    /// Placeholder for `ImageCor20Header.markup(...)`; a no-op until the nested directories and
-    /// symbol-table markup are ported.
-    pub fn markup(
-        &self,
-        _program: &dyn crate::program::model::listing::program::Program,
-        _is_binary: bool,
-        _monitor: &dyn crate::util::task::TaskMonitor,
-        _log: &dyn MessageLog,
-        _nt_header: &dyn NTHeader,
-    ) -> std::io::Result<()> {
-        Ok(())
-    }
-}
+// `ImageCor20Header` was promoted to a real port at
+// `crate::format::pe::image_cor20_header::ImageCor20Header` -- see that module for the faithful
+// port (constructor, `parse`, `markup`, `StructConverter::to_data_type`, and the nested
+// `ImageCor20Flags` data type). This placeholder is intentionally removed rather than kept as a
+// dead duplicate.
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.PeUtils`, referenced by
 /// [`COMDescriptorDataDirectory`](crate::format::pe::com_descriptor_data_directory::COMDescriptorDataDirectory)
@@ -4831,10 +4768,10 @@ pub trait CliStreamMetadata: Send + Sync {
 /// modeled here as a concrete struct rather than a trait object (a separate, minimal `dyn
 /// DebugDirectory` trait already exists above for [`DebugCOFFSymbolsHeader`]'s narrower needs --
 /// this type is unrelated to that one and does not implement it, since nothing here needs that
-/// interop). `to_data_type` always errors, matching the placeholder convention set by
-/// [`ImageCor20Header::to_data_type`] above, since real `StructureDataType` construction needs the
-/// not-yet-implementable [`StructureDataType`](crate::program::model::data::structure_data_type)
-/// trait.
+/// interop). `to_data_type` always errors, matching the same not-yet-buildable convention used by
+/// [`ImageCor20Header::to_data_type`](crate::format::pe::image_cor20_header::ImageCor20Header::to_data_type),
+/// since real `StructureDataType` construction needs the not-yet-implementable
+/// [`StructureDataType`](crate::program::model::data::structure_data_type) trait.
 #[derive(Debug, Clone)]
 pub struct DebugDirectoryEntry {
     characteristics: i32,

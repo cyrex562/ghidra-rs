@@ -935,7 +935,6 @@ ts	stub_class	referenced_by
 2026-08-16T03:01:58.735200+00:00	CliStreamBlob	CliRepresentable
 2026-08-16T03:01:58.735300+00:00	CliAbstractTable	CliRepresentable
 2026-08-16T03:01:58.735400+00:00	CliStreamMetadata	CliRepresentable
-2026-08-15T23:08:00+00:00	ImageCor20Header	COMDescriptorDataDirectory
 2026-08-15T23:08:00+00:00	PeUtils	COMDescriptorDataDirectory
 2026-08-15T23:30:00+00:00	DebugDirectory	DebugDataDirectory
 2026-08-15T23:30:00+00:00	DebugMisc	DebugDataDirectory
@@ -1017,7 +1016,6 @@ ts	stub_class	referenced_by
 2026-09-22T00:00:00.000000+00:00	ImageChpeMetadataX86	LoadConfigDirectory
 2026-09-22T00:00:00.000000+00:00	ImageArm64ecMetadata	LoadConfigDirectory
 2026-08-16T21:30:00.000000+00:00	ImageRuntimeFunctionEntries_ARM	ExceptionDataDirectory
-2026-08-16T21:30:00.000000+00:00	FileHeader	ExceptionDataDirectory
 2026-08-17T05:00:00.000000+00:00	AbstractDemangledFunctionDefinitionDataType	DemangledFunctionPointer
 2026-08-17T02:34:28.691576+00:00	DecompilerHoverService	DecompilePlugin
 2026-08-17T02:34:28.691576+00:00	CorePluginPackage	DecompilePlugin

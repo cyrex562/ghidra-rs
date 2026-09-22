@@ -4240,16 +4240,16 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/Consta
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ControlFlowGuard.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DebugDataDirectory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DefaultDataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DefaultDataDirectory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DelayImportDataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DelayImportDescriptor.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DllCharacteristics.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ExceptionDataDirectory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ExportDataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ExportInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/FileHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/FileHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/GlobalPointerDataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageCor20Header.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageCor20Header.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries_ARM.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries_X86.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
@@ -4291,7 +4291,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/I
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ImageArm64ecRedirectionEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ImageChpeMetadataX86.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ImageChpeRangeEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliMetadataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliMetadataDirectory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliMetadataRoot.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliRepresentable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliStreamHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
@@ -4569,7 +4569,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/R
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/ThreadEnvironmentBlock.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/VersionedGuidInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/WEVTResourceDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/AbstractDemangledFunctionDefinitionDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/AbstractDemangledFunctionDefinitionDataType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/CharacterIterator.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangled.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledAddressTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 

@@ -696,37 +696,51 @@ pub trait MdMangObjectParserLike {}
 /// itself defines (see the much larger suggested stub for it in the dependency-context notes).
 pub trait DemangledDataTypeLike: crate::demangler::demangled::Demangled {}
 
-/// Placeholder for `ghidra.app.util.demangler.AbstractDemangledFunctionDefinitionDataType`,
-/// referenced by `DemangledFunctionPointer`.
+/// `ghidra.app.util.demangler.AbstractDemangledFunctionDefinitionDataType`'s ABSTRACT surface
+/// only (the one method with no body in Java, `getTypeString()`).
 ///
-/// Java is an abstract base class with concrete subclasses like `DemangledFunctionPointer`.
-/// This stub declares the public surface that `DemangledFunctionPointer` inherits and extends.
+/// Promoted from a bloated placeholder (this trait used to declare every concrete member too) to
+/// a real port at
+/// [`AbstractDemangledFunctionDefinitionDataTypeBase`](crate::demangler::abstract_demangled_function_definition_data_type::AbstractDemangledFunctionDefinitionDataTypeBase) --
+/// see that module for the shared state and concrete behavior (`toSignature`, the accessors,
+/// ...). Per `scripts/shape_rules.py`'s directive for this abstract-class-with-state Java type,
+/// the shared fields/methods live on that base struct; this trait declares only the one abstract
+/// method each concrete subclass (`DemangledFunctionPointer`, and eventually
+/// `DemangledFunctionReference`/`DemangledFunctionIndirect`) must supply.
 pub trait AbstractDemangledFunctionDefinitionDataType: DemangledDataTypeLike {
-    fn get_signature(&self) -> String;
-    fn set_return_type(&self, return_type: &dyn DemangledDataType);
-    fn get_return_type(&self) -> Option<&dyn DemangledDataType>;
-    fn set_calling_convention(&self, calling_convention: &str);
-    fn get_calling_convention(&self) -> Option<&str>;
-    fn set_modifier(&self, modifier: &str);
-    fn is_const_pointer(&self) -> bool;
-    fn set_const_pointer(&self);
-    fn is_trailing_pointer64(&self) -> bool;
-    fn set_trailing_pointer64(&self);
-    fn is_trailing_unaligned(&self) -> bool;
-    fn set_trailing_unaligned(&self);
-    fn is_trailing_restrict(&self) -> bool;
-    fn set_trailing_restrict(&self);
-    fn add_parameter(&self, parameter: &dyn DemangledDataType);
-    fn get_parameters(&self) -> Vec<&dyn DemangledDataType>;
+    /// Returns the string for this type of reference (e.g. `*` or `&`).
+    ///
+    /// Mirrors the abstract `getTypeString()`.
+    fn get_type_string(&self) -> String;
+
+    /// Mirrors the concrete `toSignature(String)`, which every subclass inherits unmodified.
+    /// Declared here (dyn-dispatchable) so [`DemangledDataType::as_function_definition_like`]
+    /// can call it uniformly; each implementor's body just forwards to its embedded
+    /// [`AbstractDemangledFunctionDefinitionDataTypeBase::to_signature`].
     fn to_signature(&self, name: Option<&str>) -> String;
-    fn get_pointer_levels(&self) -> i32;
-    fn increment_pointer_levels(&self);
 }
 
 /// Placeholder for `ghidra.app.util.demangler.DemangledDataType`, used by
 /// `AbstractDemangledFunctionDefinitionDataType`.
+///
+/// `DemangledDataType` (766 lines in Java) is not ported -- it models the full C++ pointer/
+/// array/class/enum/struct/template type-composition algorithm, which no in-repo caller needs
+/// yet. Only the sliver of its surface `AbstractDemangledFunctionDefinitionDataTypeBase::
+/// to_signature` genuinely needs is declared here: `get_signature` (already present), and
+/// `as_function_definition_like`, which stands in for Java's
+/// `instanceof DemangledFunctionPointer/DemangledFunctionReference/DemangledFunctionIndirect`
+/// triple-check (those three types are the only `DemangledDataType`s whose signature is composed
+/// specially by `toSignature`). Defaults to `None` so any future minimal `DemangledDataType`
+/// implementor that is NOT one of those three function-like types needs no changes.
 pub trait DemangledDataType: Send + Sync {
     fn get_signature(&self) -> String;
+
+    /// Returns `Some(self)` if this is one of the three function-pointer/reference/indirect
+    /// types whose `toSignature` is used directly (rather than just `getSignature()`) when it
+    /// appears as a return type. See this trait's docs.
+    fn as_function_definition_like(&self) -> Option<&dyn AbstractDemangledFunctionDefinitionDataType> {
+        None
+    }
 }
 
 /// Placeholder for `mdemangler.MDOutputOptions`, needed by [`MdMangGhidra`].

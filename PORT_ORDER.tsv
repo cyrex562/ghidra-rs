@@ -53,12 +53,12 @@ DONE	trait	6	8	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/
 DONE	trait	8	3	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/blobs/CliSigAssembly.java
 DONE	trait	7	2	77	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/CliTableAssembly.java
 DONE	trait	5	3	80	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliMetadataRoot.java
-TODO	trait	3	26	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageCor20Header.java
-TODO	trait	1	30	80	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/FileHeader.java
-TODO	trait	0	84	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/NTHeader.java
-TODO	trait	2	20	85	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/ApplyFunctionSignatureCmd.java
-TODO	trait	0	60	75	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/AbstractDemangledFunctionDefinitionDataType.java
-TODO	trait	0	44	75	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTSessionDB.java
+DONE	trait	3	26	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageCor20Header.java
+DONE	trait	1	30	80	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/FileHeader.java
+PARK	trait	0	84	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/NTHeader.java
+PARK	trait	2	20	85	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/ApplyFunctionSignatureCmd.java
+DONE	trait	0	60	75	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/AbstractDemangledFunctionDefinitionDataType.java
+PARK	trait	0	44	75	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTSessionDB.java
 TODO	trait	0	25	73	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/OatHeader.java
 TODO	trait	0	15	73	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeViewerDataTypeManager.java
 TODO	trait	2	4	5	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/CommandProcessor.java
@@ -814,7 +814,7 @@ TODO	struct	4	25	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	3	25	77	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DelayImportDataDirectory.java
 TODO	struct	3	26	82	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ExportDataDirectory.java
 TODO	struct	3	25	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/GlobalPointerDataDirectory.java
-TODO	struct	4	25	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DefaultDataDirectory.java
+DONE	struct	4	25	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DefaultDataDirectory.java
 TODO	struct	6	21	98	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/data/CreateArrayCmd.java
 TODO	struct	7	29	96	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/SectionHeader.java
 TODO	struct	11	51	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionUtils.java

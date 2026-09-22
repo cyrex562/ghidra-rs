@@ -240,7 +240,8 @@ mod tests {
     use std::sync::Mutex;
 
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-    use crate::format::seam_stubs::{FileHeader, OptionalHeader};
+    use crate::format::pe::file_header::FileHeader;
+    use crate::format::seam_stubs::OptionalHeader;
     use crate::util::task::DummyMonitor;
 
     struct VecProvider(Vec<u8>);
@@ -468,20 +469,58 @@ mod tests {
         }
     }
 
-    struct FixtureFileHeader;
-    impl FileHeader for FixtureFileHeader {
-        fn get_machine(&self) -> i16 {
-            0x014c
+    /// Builds a real [`FileHeader`] for test fixtures (machine = `IMAGE_FILE_MACHINE_I386`,
+    /// everything else zeroed), parsed via a throwaway `NTHeader` that skips symbol table
+    /// parsing.
+    fn build_file_header() -> FileHeader {
+        struct DummyNtForConstruction;
+        impl NTHeader for DummyNtForConstruction {
+            fn get_name(&self) -> String {
+                unimplemented!()
+            }
+            fn is_rva_resoltion_section_aligned(&self) -> bool {
+                true
+            }
+            fn get_file_header(&self) -> &FileHeader {
+                unimplemented!()
+            }
+            fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
+                unimplemented!()
+            }
+            fn to_data_type(&self) -> io::Result<Box<dyn DataType>> {
+                unimplemented!()
+            }
+            fn rva_to_pointer(&self, _rva: i32) -> i32 {
+                unimplemented!()
+            }
+            fn rva_to_pointer_long(&self, _rva: i64) -> i64 {
+                unimplemented!()
+            }
+            fn check_pointer(&self, _ptr: i64) -> bool {
+                unimplemented!()
+            }
+            fn check_rva(&self, _rva: i64) -> bool {
+                unimplemented!()
+            }
+            fn va_to_pointer(&self, _va: i32) -> i32 {
+                unimplemented!()
+            }
         }
-        fn is_x86(&self) -> bool {
-            true
-        }
-        fn is_arm(&self) -> bool {
-            false
-        }
+
+        let mut bytes = 0x014ci16.to_le_bytes().to_vec();
+        bytes.extend_from_slice(&[0u8; 18]);
+        let mut reader = FixtureReader::new(bytes);
+        FileHeader::new(&mut reader, 0, &DummyNtForConstruction).unwrap()
     }
 
-    struct FixtureNtHeader;
+    struct FixtureNtHeader {
+        file_header: FileHeader,
+    }
+    impl FixtureNtHeader {
+        fn new() -> Self {
+            FixtureNtHeader { file_header: build_file_header() }
+        }
+    }
     impl NTHeader for FixtureNtHeader {
         fn get_name(&self) -> String {
             "NT".to_string()
@@ -489,8 +528,8 @@ mod tests {
         fn is_rva_resoltion_section_aligned(&self) -> bool {
             true
         }
-        fn get_file_header(&self) -> Box<dyn FileHeader> {
-            Box::new(FixtureFileHeader)
+        fn get_file_header(&self) -> &FileHeader {
+            &self.file_header
         }
         fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
             Box::new(FixtureOptionalHeader)
@@ -540,7 +579,7 @@ mod tests {
         let program = NoImageBaseProgram;
         let monitor = DummyMonitor;
         let log = RecordingMessageLog::new();
-        let nt_header = FixtureNtHeader;
+        let nt_header = FixtureNtHeader::new();
 
         root.markup(&program, true, &monitor, &log, &nt_header).unwrap();
 

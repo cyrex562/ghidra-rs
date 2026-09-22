@@ -6,8 +6,9 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
+use crate::format::pe::file_header::FileHeader;
 use crate::format::pe::seam_stubs::{ImageArm64ecMetadata, ImageChpeMetadataX86, ImageDynamicRelocationTable};
-use crate::format::seam_stubs::{FileHeader, NTHeader, OptionalHeader};
+use crate::format::seam_stubs::{NTHeader, OptionalHeader};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::enum_::Enum;
 use crate::program::model::data::enum_data_type::EnumDataType;
@@ -215,7 +216,7 @@ impl LoadConfigDirectory {
         // Parse the Dynamic Value Relocation Table (DVRT).
         if lc.dynamic_value_reloc_table_offset != 0 && lc.dynamic_value_reloc_table_section != 0 {
             let section = file_header_section(
-                nt.get_file_header().as_ref(),
+                nt.get_file_header(),
                 lc.dynamic_value_reloc_table_section as i32 - 1,
             );
             match section {
@@ -359,7 +360,7 @@ fn read_pointer(reader: &mut dyn BinaryReader, is64bit: bool) -> io::Result<i64>
 /// Small helper wrapping `FileHeader::get_section_header`'s `Option` return so call sites read
 /// like the Java null check.
 fn file_header_section(
-    file_header: &dyn FileHeader,
+    file_header: &FileHeader,
     index: i32,
 ) -> Option<Box<dyn crate::format::pe::seam_stubs::SectionHeader>> {
     file_header.get_section_header(index)
@@ -578,21 +579,59 @@ mod tests {
         }
     }
 
-    struct FixtureFileHeader;
-    impl FileHeader for FixtureFileHeader {
-        fn get_machine(&self) -> i16 {
-            0x8664u16 as i16
+    /// Builds a real [`FileHeader`] for test fixtures: a 20-byte `IMAGE_FILE_HEADER` with the
+    /// given machine and everything else zeroed, parsed via a throwaway `NTHeader` that skips
+    /// symbol table parsing (`is_rva_resoltion_section_aligned() == true`).
+    fn build_file_header(machine: i16) -> FileHeader {
+        struct DummyNtForConstruction;
+        impl NTHeader for DummyNtForConstruction {
+            fn get_name(&self) -> String {
+                unimplemented!()
+            }
+            fn is_rva_resoltion_section_aligned(&self) -> bool {
+                true
+            }
+            fn get_file_header(&self) -> &FileHeader {
+                unimplemented!()
+            }
+            fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
+                unimplemented!()
+            }
+            fn to_data_type(&self) -> io::Result<Box<dyn DataType>> {
+                unimplemented!()
+            }
+            fn rva_to_pointer(&self, _rva: i32) -> i32 {
+                unimplemented!()
+            }
+            fn rva_to_pointer_long(&self, _rva: i64) -> i64 {
+                unimplemented!()
+            }
+            fn check_pointer(&self, _ptr: i64) -> bool {
+                unimplemented!()
+            }
+            fn check_rva(&self, _rva: i64) -> bool {
+                unimplemented!()
+            }
+            fn va_to_pointer(&self, _va: i32) -> i32 {
+                unimplemented!()
+            }
         }
-        fn is_x86(&self) -> bool {
-            true
-        }
-        fn is_arm(&self) -> bool {
-            false
-        }
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&machine.to_le_bytes());
+        bytes.extend_from_slice(&[0u8; 18]); // NumberOfSections..Characteristics, all zero
+        let mut reader = reader_for(bytes);
+        FileHeader::new(&mut reader, 0, &DummyNtForConstruction).unwrap()
     }
 
     struct FixtureNtHeader {
         is64: bool,
+        file_header: FileHeader,
+    }
+    impl FixtureNtHeader {
+        fn new(is64: bool) -> Self {
+            FixtureNtHeader { is64, file_header: build_file_header(0x8664u16 as i16) }
+        }
     }
     impl NTHeader for FixtureNtHeader {
         fn get_name(&self) -> String {
@@ -601,8 +640,8 @@ mod tests {
         fn is_rva_resoltion_section_aligned(&self) -> bool {
             true
         }
-        fn get_file_header(&self) -> Box<dyn FileHeader> {
-            Box::new(FixtureFileHeader)
+        fn get_file_header(&self) -> &FileHeader {
+            &self.file_header
         }
         fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
             Box::new(FixtureOptionalHeader { is64: self.is64 })
@@ -665,7 +704,7 @@ mod tests {
         let bytes = base32_bytes(size);
         assert_eq!(bytes.len() as u32, size);
         let mut reader = reader_for(bytes);
-        let nt = FixtureNtHeader { is64: false };
+        let nt = FixtureNtHeader::new(false);
 
         let lc = LoadConfigDirectory::new(&mut reader, 0, &nt).unwrap();
 
@@ -696,7 +735,7 @@ mod tests {
         bytes.extend_from_slice(&0x0000_0300u32.to_le_bytes()); // GuardFlags
 
         let mut reader = reader_for(bytes);
-        let nt = FixtureNtHeader { is64: false };
+        let nt = FixtureNtHeader::new(false);
 
         let lc = LoadConfigDirectory::new(&mut reader, 0, &nt).unwrap();
 

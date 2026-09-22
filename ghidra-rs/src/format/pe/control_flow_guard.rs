@@ -336,7 +336,8 @@ mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
 
-    use crate::format::seam_stubs::FileHeader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::format::pe::file_header::FileHeader;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::listing::Listing;
     use crate::program::model::listing::program::Program as ProgramTrait;
@@ -396,21 +397,107 @@ mod tests {
         }
     }
 
-    struct FixtureFileHeader;
-    impl FileHeader for FixtureFileHeader {
-        fn get_machine(&self) -> i16 {
-            0x014c
+    /// Minimal `BinaryReader` used only to construct a fixture [`FileHeader`] below -- this
+    /// module's own tests otherwise never need to read bytes through a `BinaryReader`.
+    struct MinimalReader {
+        bytes: Vec<u8>,
+        current_index: u64,
+    }
+    impl BinaryReader for MinimalReader {
+        fn length(&self) -> std::io::Result<u64> {
+            Ok(self.bytes.len() as u64)
         }
-        fn is_x86(&self) -> bool {
+        fn is_valid_index(&self, index: u64) -> bool {
+            index < self.bytes.len() as u64
+        }
+        fn get_pointer_index(&self) -> u64 {
+            self.current_index
+        }
+        fn set_pointer_index(&mut self, index: u64) -> u64 {
+            let old = self.current_index;
+            self.current_index = index;
+            old
+        }
+        fn is_little_endian(&self) -> bool {
             true
         }
-        fn is_arm(&self) -> bool {
-            false
+        fn set_little_endian(&mut self, _is_little_endian: bool) {}
+        fn read_byte(&self, index: u64) -> std::io::Result<u8> {
+            self.bytes
+                .get(index as usize)
+                .copied()
+                .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof"))
         }
+        fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
+            let start = index as usize;
+            let end = start + n_elements;
+            if end > self.bytes.len() {
+                return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof"));
+            }
+            Ok(self.bytes[start..end].to_vec())
+        }
+        fn get_byte_provider(
+            &self,
+        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+            unimplemented!("not needed by these fixtures")
+        }
+        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+            Box::new(MinimalReader { bytes: self.bytes.clone(), current_index: new_index })
+        }
+    }
+
+    /// Builds a real [`FileHeader`] for test fixtures (machine = `IMAGE_FILE_MACHINE_I386`,
+    /// everything else zeroed), parsed via a throwaway `NTHeader` that skips symbol table
+    /// parsing.
+    fn build_file_header() -> FileHeader {
+        struct DummyNtForConstruction;
+        impl NTHeader for DummyNtForConstruction {
+            fn get_name(&self) -> String {
+                unimplemented!()
+            }
+            fn is_rva_resoltion_section_aligned(&self) -> bool {
+                true
+            }
+            fn get_file_header(&self) -> &FileHeader {
+                unimplemented!()
+            }
+            fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
+                unimplemented!()
+            }
+            fn to_data_type(&self) -> std::io::Result<Box<dyn DataType>> {
+                unimplemented!()
+            }
+            fn rva_to_pointer(&self, _rva: i32) -> i32 {
+                unimplemented!()
+            }
+            fn rva_to_pointer_long(&self, _rva: i64) -> i64 {
+                unimplemented!()
+            }
+            fn check_pointer(&self, _ptr: i64) -> bool {
+                unimplemented!()
+            }
+            fn check_rva(&self, _rva: i64) -> bool {
+                unimplemented!()
+            }
+            fn va_to_pointer(&self, _va: i32) -> i32 {
+                unimplemented!()
+            }
+        }
+
+        let mut bytes = 0x014ci16.to_le_bytes().to_vec();
+        bytes.extend_from_slice(&[0u8; 18]);
+        let mut reader = MinimalReader { bytes, current_index: 0 };
+        FileHeader::new(&mut reader, 0, &DummyNtForConstruction).unwrap()
     }
 
     struct FixtureNtHeader {
         is64: bool,
+        file_header: FileHeader,
+    }
+    impl FixtureNtHeader {
+        fn new(is64: bool) -> Self {
+            FixtureNtHeader { is64, file_header: build_file_header() }
+        }
     }
     impl NTHeader for FixtureNtHeader {
         fn get_name(&self) -> String {
@@ -419,8 +506,8 @@ mod tests {
         fn is_rva_resoltion_section_aligned(&self) -> bool {
             true
         }
-        fn get_file_header(&self) -> Box<dyn FileHeader> {
-            Box::new(FixtureFileHeader)
+        fn get_file_header(&self) -> &FileHeader {
+            &self.file_header
         }
         fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
             Box::new(FixtureOptionalHeader { is64: self.is64 })
@@ -569,7 +656,7 @@ mod tests {
             symbol_table: RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) },
         };
         let log = RecordingMessageLog::new();
-        let nt = FixtureNtHeader { is64: false };
+        let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("label", "desc", 0, &mut program, &nt, &log);
 
@@ -594,7 +681,7 @@ mod tests {
             symbol_table: RecordingSymbolTable { created_labels: created_labels.clone() },
         };
         let log = RecordingMessageLog::new();
-        let nt = FixtureNtHeader { is64: false };
+        let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("_guard_check_icall", "ControlFlowGuard check", 0x2000, &mut program, &nt, &log);
 
@@ -620,7 +707,7 @@ mod tests {
             symbol_table: RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) },
         };
         let log = RecordingMessageLog::new();
-        let nt = FixtureNtHeader { is64: false };
+        let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("label", "ControlFlowGuard check", 0x2000, &mut program, &nt, &log);
 

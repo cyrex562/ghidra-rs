@@ -265,7 +265,7 @@ mod tests {
     use std::rc::Rc;
 
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-    use crate::format::seam_stubs::FileHeader;
+    use crate::format::pe::file_header::FileHeader;
     use crate::format::seam_stubs::OptionalHeader;
     use crate::format::pe::machine_constants::{
         IMAGE_FILE_MACHINE_AMD64, IMAGE_FILE_MACHINE_ARM64, IMAGE_FILE_MACHINE_I386,
@@ -357,23 +357,47 @@ mod tests {
         }
     }
 
-    struct FixtureFileHeader {
-        machine: i16,
-    }
+    /// Builds a real [`FileHeader`] for test fixtures with the given machine (everything else
+    /// zeroed), parsed via a throwaway `NTHeader` that skips symbol table parsing.
+    fn build_file_header(machine: i16) -> FileHeader {
+        struct DummyNtForConstruction;
+        impl NTHeader for DummyNtForConstruction {
+            fn get_name(&self) -> String {
+                unimplemented!()
+            }
+            fn is_rva_resoltion_section_aligned(&self) -> bool {
+                true
+            }
+            fn get_file_header(&self) -> &FileHeader {
+                unimplemented!()
+            }
+            fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
+                unimplemented!()
+            }
+            fn to_data_type(&self) -> io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+                unimplemented!()
+            }
+            fn rva_to_pointer(&self, _rva: i32) -> i32 {
+                unimplemented!()
+            }
+            fn rva_to_pointer_long(&self, _rva: i64) -> i64 {
+                unimplemented!()
+            }
+            fn check_pointer(&self, _ptr: i64) -> bool {
+                unimplemented!()
+            }
+            fn check_rva(&self, _rva: i64) -> bool {
+                unimplemented!()
+            }
+            fn va_to_pointer(&self, _va: i32) -> i32 {
+                unimplemented!()
+            }
+        }
 
-    impl FileHeader for FixtureFileHeader {
-        fn get_machine(&self) -> i16 {
-            self.machine
-        }
-        fn is_x86(&self) -> bool {
-            matches!(
-                self.machine as u16,
-                IMAGE_FILE_MACHINE_I386 | IMAGE_FILE_MACHINE_AMD64
-            )
-        }
-        fn is_arm(&self) -> bool {
-            matches!(self.machine as u16, IMAGE_FILE_MACHINE_ARM64)
-        }
+        let mut bytes = machine.to_le_bytes().to_vec();
+        bytes.extend_from_slice(&[0u8; 18]);
+        let mut reader = FixtureReader::new(bytes);
+        FileHeader::new(&mut reader, 0, &DummyNtForConstruction).unwrap()
     }
 
     struct FixtureOptionalHeader;
@@ -389,7 +413,13 @@ mod tests {
 
     struct FixtureNtHeader {
         rva_ok: bool,
-        machine: i16,
+        file_header: FileHeader,
+    }
+
+    impl FixtureNtHeader {
+        fn new(rva_ok: bool, machine: i16) -> Self {
+            FixtureNtHeader { rva_ok, file_header: build_file_header(machine) }
+        }
     }
 
     impl NTHeader for FixtureNtHeader {
@@ -399,8 +429,8 @@ mod tests {
         fn is_rva_resoltion_section_aligned(&self) -> bool {
             true
         }
-        fn get_file_header(&self) -> Box<dyn FileHeader> {
-            Box::new(FixtureFileHeader { machine: self.machine })
+        fn get_file_header(&self) -> &FileHeader {
+            &self.file_header
         }
         fn get_optional_header(&self) -> Box<dyn OptionalHeader> {
             Box::new(FixtureOptionalHeader)
@@ -436,7 +466,7 @@ mod tests {
     #[test]
     fn directory_name_matches_java_constant() {
         let mut reader = FixtureReader::new(vec![0u8; 8]);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_I386 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
         assert_eq!(directory.get_directory_name(), "IMAGE_DIRECTORY_ENTRY_EXCEPTION");
     }
@@ -445,7 +475,7 @@ mod tests {
     fn zero_virtual_address_skips_parsing() {
         let bytes = directory_bytes(0, 0);
         let mut reader = FixtureReader::new(bytes);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_I386 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
@@ -458,7 +488,7 @@ mod tests {
     fn invalid_rva_skips_parsing() {
         let bytes = directory_bytes(8, 0x18);
         let mut reader = FixtureReader::new(bytes);
-        let nt_header = FixtureNtHeader { rva_ok: false, machine: IMAGE_FILE_MACHINE_I386 as i16 };
+        let nt_header = FixtureNtHeader::new(false, IMAGE_FILE_MACHINE_I386 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
@@ -470,7 +500,7 @@ mod tests {
     fn x86_machine_picks_x86_function_entries() {
         let bytes = directory_bytes(8, 0x18);
         let mut reader = FixtureReader::new(bytes);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_AMD64 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_AMD64 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
@@ -482,7 +512,7 @@ mod tests {
     fn arm_machine_picks_arm_function_entries() {
         let bytes = directory_bytes(8, 0x18);
         let mut reader = FixtureReader::new(bytes);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_ARM64 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_ARM64 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
@@ -494,7 +524,7 @@ mod tests {
     fn chpe_load_config_forces_arm_function_entries_even_for_x86_machine() {
         let bytes = directory_bytes(8, 0x18);
         let mut reader = FixtureReader::new(bytes);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_AMD64 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_AMD64 as i16);
         let lc_dir = LoadConfigDirectory { chpe_metadata_pointer: 0x2000, ..Default::default() };
 
         let directory =
@@ -513,7 +543,7 @@ mod tests {
         let mut reader = FixtureReader::new(bytes);
         // Neither x86 nor ARM: the `MIPS16` machine constant, which Java's `isX86`/`isArm`
         // switches both fall through on.
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: 0x0266 };
+        let nt_header = FixtureNtHeader::new(true, 0x0266);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
@@ -525,7 +555,7 @@ mod tests {
     fn get_pointer_matches_nt_header_rva_to_pointer() {
         let bytes = directory_bytes(8, 0x18);
         let mut reader = FixtureReader::new(bytes);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_I386 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
         assert_eq!(directory.get_pointer(&nt_header), 8);
@@ -534,7 +564,7 @@ mod tests {
     #[test]
     fn get_pointer_is_negative_one_when_virtual_address_is_zero() {
         let mut reader = FixtureReader::new(vec![0u8; 8]);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_I386 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
         assert_eq!(directory.get_pointer(&nt_header), -1);
@@ -544,7 +574,7 @@ mod tests {
     fn display_matches_java_to_string_format() {
         let bytes = directory_bytes(8, 0x18);
         let mut reader = FixtureReader::new(bytes);
-        let nt_header = FixtureNtHeader { rva_ok: true, machine: IMAGE_FILE_MACHINE_I386 as i16 };
+        let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
         assert_eq!(directory.to_string(), "VirtualAddress: 0x8 Size: 24 bytes");

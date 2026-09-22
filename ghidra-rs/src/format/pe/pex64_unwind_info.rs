@@ -324,7 +324,7 @@ mod tests {
         fn is_rva_resoltion_section_aligned(&self) -> bool {
             true
         }
-        fn get_file_header(&self) -> Box<dyn crate::format::seam_stubs::FileHeader> {
+        fn get_file_header(&self) -> &crate::format::pe::file_header::FileHeader {
             unimplemented!()
         }
         fn get_optional_header(&self) -> Box<dyn crate::format::seam_stubs::OptionalHeader> {
@@ -440,7 +440,7 @@ mod tests {
             fn is_rva_resoltion_section_aligned(&self) -> bool {
                 true
             }
-            fn get_file_header(&self) -> Box<dyn crate::format::seam_stubs::FileHeader> {
+            fn get_file_header(&self) -> &crate::format::pe::file_header::FileHeader {
                 unimplemented!()
             }
             fn get_optional_header(&self) -> Box<dyn crate::format::seam_stubs::OptionalHeader> {
