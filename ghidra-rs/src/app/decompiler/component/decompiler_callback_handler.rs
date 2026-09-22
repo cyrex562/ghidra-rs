@@ -6,12 +6,12 @@
 //!
 //! # Seams
 //!
-//! * **`ProgramSelection`.** Two unrelated placeholders for this Java class already exist
-//!   crate-wide: [`crate::util::seam_stubs::ProgramSelection`] (an empty marker) and
-//!   [`crate::app::seam_stubs::ProgramSelection`] (carries `is_empty()`, used by four other
-//!   `ghidra.app.*`-package files, e.g. `DisassemblerPlugin`). Since this interface lives in
-//!   `ghidra.app.decompiler.component`, it reuses the `app` one for consistency with its
-//!   package-mates rather than the `util` one.
+//! * **`ProgramSelection`.** Two unrelated placeholders for this Java class used to exist
+//!   crate-wide: an empty marker at `crate::util::seam_stubs::ProgramSelection` and
+//!   [`crate::app::seam_stubs::ProgramSelection`] (carries `is_empty()`, used by several other
+//!   `ghidra.app.*`-package files, e.g. `DisassemblerPlugin`). The `util` copy has since been
+//!   retired in favor of this one, which this interface reuses for consistency with its
+//!   package-mates.
 //! * **`DecompileData`/`AnnotatedTextFieldElement`.** Both unported, both concrete classes (not
 //!   interfaces -- see each placeholder's own doc comment in `crate::app::seam_stubs`), and
 //!   neither has any of its methods called by this interface (they are pure pass-through

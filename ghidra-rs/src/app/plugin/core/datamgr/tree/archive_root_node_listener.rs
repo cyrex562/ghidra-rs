@@ -38,7 +38,7 @@ mod tests {
         fn is_editable(&self) -> bool {
             false
         }
-        fn get_archive(&self) -> Box<dyn crate::app::seam_stubs::Archive> {
+        fn get_archive(&self) -> Box<dyn crate::framework::seam_stubs::Archive> {
             unimplemented!()
         }
         fn structure_changed(&self) {}
@@ -76,72 +76,72 @@ mod tests {
         }
         fn category_added(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _path: &dyn crate::app::seam_stubs::CategoryPath,
         ) {
         }
         fn category_moved(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _old_path: &dyn crate::app::seam_stubs::CategoryPath,
             _new_path: &dyn crate::app::seam_stubs::CategoryPath,
         ) {
         }
         fn category_removed(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _path: &dyn crate::app::seam_stubs::CategoryPath,
         ) {
         }
         fn category_renamed(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _old_path: &dyn crate::app::seam_stubs::CategoryPath,
             _new_path: &dyn crate::app::seam_stubs::CategoryPath,
         ) {
         }
         fn data_type_added(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _path: &dyn crate::app::seam_stubs::DataTypePath,
         ) {
         }
         fn favorites_changed(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _path: &dyn crate::app::seam_stubs::DataTypePath,
             _is_favorite: bool,
         ) {
         }
         fn data_type_changed(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _path: &dyn crate::app::seam_stubs::DataTypePath,
         ) {
         }
         fn data_type_moved(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _old_path: &dyn crate::app::seam_stubs::DataTypePath,
             _new_path: &dyn crate::app::seam_stubs::DataTypePath,
         ) {
         }
         fn data_type_removed(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _path: &dyn crate::app::seam_stubs::DataTypePath,
         ) {
         }
         fn data_type_renamed(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _old_path: &dyn crate::app::seam_stubs::DataTypePath,
             _new_path: &dyn crate::app::seam_stubs::DataTypePath,
         ) {
         }
         fn data_type_replaced(
             &self,
-            _dtm: &dyn crate::app::seam_stubs::DataTypeManager,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _old_path: &dyn crate::app::seam_stubs::DataTypePath,
             _new_path: &dyn crate::app::seam_stubs::DataTypePath,
             _new_data_type: &dyn crate::program::model::data::data_type::DataType,
@@ -149,18 +149,18 @@ mod tests {
         }
         fn source_archive_added(
             &self,
-            _manager: &dyn crate::app::seam_stubs::DataTypeManager,
+            _manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _source_archive: &dyn crate::app::seam_stubs::SourceArchive,
         ) {
         }
         fn source_archive_changed(
             &self,
-            _manager: &dyn crate::app::seam_stubs::DataTypeManager,
+            _manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
             _source_archive: &dyn crate::app::seam_stubs::SourceArchive,
         ) {
         }
-        fn program_architecture_changed(&self, _manager: &dyn crate::app::seam_stubs::DataTypeManager) {}
-        fn restored(&self, _manager: &dyn crate::app::seam_stubs::DataTypeManager) {}
+        fn program_architecture_changed(&self, _manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager) {}
+        fn restored(&self, _manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager) {}
     }
 
     struct TestListener {

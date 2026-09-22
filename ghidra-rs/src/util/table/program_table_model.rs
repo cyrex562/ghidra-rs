@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::program::model::listing::program::Program;
 use crate::program::util::program_location::ProgramLocation;
-use crate::util::seam_stubs::ProgramSelection;
+use crate::app::seam_stubs::ProgramSelection;
 
 /// An interface for translating table rows and columns into program locations and selections.
 ///

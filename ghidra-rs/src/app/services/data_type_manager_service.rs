@@ -118,7 +118,7 @@ pub trait DataTypeManagerService: DataTypeQueryService + DataTypeArchiveService 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::seam_stubs::Archive;
+    use crate::framework::seam_stubs::Archive;
     use crate::framework::model::DomainFile;
     use crate::generic::jar::ResourceFile;
     use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -134,7 +134,29 @@ mod tests {
     impl DataTypeManager for MockDataTypeManager {}
 
     struct MockArchive;
-    impl Archive for MockArchive {}
+    impl Archive for MockArchive {
+        fn get_name(&self) -> String {
+            "MockArchive".to_string()
+        }
+
+        fn close(&self) {}
+
+        fn is_modifiable(&self) -> bool {
+            false
+        }
+
+        fn is_savable(&self) -> bool {
+            false
+        }
+
+        fn is_changed(&self) -> bool {
+            false
+        }
+
+        fn save(&self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     struct MockComposite;
     impl DataType for MockComposite {}

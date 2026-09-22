@@ -264,7 +264,7 @@ mod tests {
 
         fn take(
             &self,
-            _tool: &dyn crate::app::seam_stubs::PluginTool,
+            _tool: &dyn crate::framework::seam_stubs::PluginTool,
             _trace: &dyn crate::trace::model::trace::Trace,
         ) -> Box<dyn crate::debug::api::platform::DebuggerPlatformMapper> {
             unimplemented!("not exercised by this smoke test")

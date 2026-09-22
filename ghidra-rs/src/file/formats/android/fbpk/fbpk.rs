@@ -1,7 +1,7 @@
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::file::seam_stubs::FBPK_Partition;
 use crate::program::model::address::Address;
-use crate::format::seam_stubs::Program;
+use crate::program::model::listing::program::Program;
 use crate::util::task::TaskMonitor;
 
 /// Base interface to represent an FBPK (Facebook Package).

@@ -152,8 +152,8 @@ pub fn query_opinions(
 mod tests {
     use super::*;
     use crate::program::model::lang::compiler_spec::CompilerSpec;
-    use crate::app::seam_stubs::PluginTool;
     use crate::debug::api::platform::DebuggerPlatformMapper;
+    use crate::framework::seam_stubs::PluginTool;
 
     struct FakeOffer {
         description: String,

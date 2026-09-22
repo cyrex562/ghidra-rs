@@ -12,11 +12,11 @@
 //! * **`LocationTrackingSpec`.** Not yet ported. Reuses (and grows) the existing
 //!   [`crate::debug::seam_stubs::LocationTrackingSpec`] placeholder with a `get_config_name`
 //!   method, needed to key [`all_suggested`]'s result map -- see that trait's doc comment.
-//! * **`PluginTool`.** Two unrelated placeholders for this Java class exist crate-wide
-//!   ([`crate::framework::seam_stubs::PluginTool`], with many real callers, and
-//!   [`crate::app::seam_stubs::PluginTool`], with far fewer); this file reuses the `framework`
-//!   one, matching the sibling [`AutoReadMemorySpecFactory`](super::AutoReadMemorySpecFactory)
-//!   convention.
+//! * **`PluginTool`.** Two unrelated placeholders for this Java class used to exist crate-wide;
+//!   this file already used the dominant convention, [`crate::framework::seam_stubs::PluginTool`],
+//!   matching the sibling [`AutoReadMemorySpecFactory`](super::AutoReadMemorySpecFactory), and the
+//!   other (smaller) `crate::app::seam_stubs::PluginTool` copy has since been retired in favor of
+//!   it.
 //! * **`ClassSearcher`-backed static methods.** Java's `static fromConfigName(String)` and
 //!   `static allSuggested(PluginTool)` iterate every registered factory via
 //!   `ClassSearcher.getInstances(LocationTrackingSpecFactory.class)`. This crate has no

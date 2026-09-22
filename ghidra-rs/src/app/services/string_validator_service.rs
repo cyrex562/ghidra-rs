@@ -2,8 +2,8 @@
 //!
 //! Port of `ghidra.app.services.StringValidatorService`.
 
-use crate::app::seam_stubs::{Class, PluginTool};
 use crate::app::services::{StringValidatorQuery, StringValidityScore};
+use crate::framework::seam_stubs::PluginTool;
 
 /// A service that judges the validity of a string.
 ///
@@ -44,12 +44,10 @@ pub fn dummy_string_validator() -> Box<dyn StringValidatorService> {
 pub fn get_current_string_validator_services(
     tool: &dyn PluginTool,
 ) -> Vec<Box<dyn StringValidatorService>> {
-    // Get all services of type StringValidatorService from the tool.
-    // Since PluginTool.get_services() returns Vec<Box<dyn Any>>, we need a way to tell it
-    // which service type we want. The Java version uses StringValidatorService.class as a
-    // type token. We'll create a marker type for this purpose.
-    let class_token = StringValidatorServiceClassToken;
-    let any_services = tool.get_services(&class_token);
+    // Get all services of type StringValidatorService from the tool, using this crate's
+    // string-type-name convention for service lookup (see e.g. `PluginTool::get_service`'s own
+    // callers) rather than Java's `StringValidatorService.class` type token.
+    let any_services = tool.get_services("StringValidatorService");
 
     // In a real port with proper runtime type information, we would downcast here.
     // For now, this is a placeholder that assumes the tool implementation handles this.
@@ -71,12 +69,6 @@ pub fn get_current_string_validator_services(
 
     results
 }
-
-/// Marker type used as a class token for service lookups.
-/// This will be replaced once PluginTool is properly ported.
-pub struct StringValidatorServiceClassToken;
-
-impl Class for StringValidatorServiceClassToken {}
 
 #[cfg(test)]
 mod tests {

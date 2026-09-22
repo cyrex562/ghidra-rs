@@ -1783,11 +1783,6 @@ pub trait FlatProgramAPI: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.program.model.listing.Program`, referenced by
-/// `CodeSignatureBlobParser`'s stub types before the real class is ported.
-pub trait Program: Send + Sync {
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureBlobIndex`,
 /// referenced by `CodeSignatureSuperBlob` before the real class is ported.
 pub trait CodeSignatureBlobIndex: Send + Sync {
@@ -1798,14 +1793,14 @@ pub trait CodeSignatureBlobIndex: Send + Sync {
 pub trait CodeSignatureGenericBlob: Send + Sync {
     fn get_magic(&self) -> i32;
     fn get_length(&self) -> i64;
-    fn markup(&self, program: &dyn Program, address: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, address: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureCodeDirectory`,
 /// referenced by `CodeSignatureBlobParser` before the real class is ported.
 pub trait CodeSignatureCodeDirectory: Send + Sync {
-    fn markup(&self, program: &dyn Program, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
@@ -1815,7 +1810,7 @@ pub trait CodeSignatureSuperBlob: Send + Sync {
     fn get_count(&self) -> i32;
     fn get_index_entries(&self) -> Vec<Box<dyn CodeSignatureBlobIndex>>;
     fn get_index_blobs(&self) -> Vec<Box<dyn CodeSignatureGenericBlob>>;
-    fn markup(&self, program: &dyn Program, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
@@ -4076,7 +4071,7 @@ pub trait DWARFVariable: Send + Sync {}
 
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.external.ExternalDebugInfo`, referenced by `DebugStreamProvider`.
 pub trait ExternalDebugInfo: Send + Sync {
-    fn from_program(&self, program: &dyn Program) -> Box<dyn ExternalDebugInfo>;
+    fn from_program(&self, program: &dyn ListingProgram) -> Box<dyn ExternalDebugInfo>;
     fn for_build_id(&self, build_id: &str) -> Box<dyn ExternalDebugInfo>;
     fn for_debug_link(&self, debug_link_filename: &str, crc: i32) -> Box<dyn ExternalDebugInfo>;
     fn has_debug_link(&self) -> bool;
@@ -4106,7 +4101,7 @@ pub trait DWARFSectionProviderFactory: Send + Sync {
     /// A new `DWARFSectionProvider` for the given program
     fn create_section_provider_for(
         &self,
-        program: &dyn Program,
+        program: &dyn ListingProgram,
         monitor: &dyn crate::util::task::TaskMonitor,
     ) -> Box<dyn crate::format::dwarf::sectionprovider::dwarf_section_provider::DWARFSectionProvider>;
 }
@@ -4758,7 +4753,7 @@ pub trait CliStreamMetadata: Send + Sync {
     fn get_guid_index_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
     fn get_blob_index_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
     fn get_table_index_data_type(&self, table: &crate::format::pe::cli::tables::cli_type_table::CliTypeTable) -> Box<dyn crate::program::model::data::data_type::DataType>;
-    fn markup(&self, program: &dyn Program, is_binary: bool, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog, nt_header: &dyn NTHeader) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, is_binary: bool, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog, nt_header: &dyn NTHeader) -> std::io::Result<()>;
     fn to_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
 }
 

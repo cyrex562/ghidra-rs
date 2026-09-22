@@ -90,7 +90,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn markup(&self, _program: &dyn crate::format::seam_stubs::Program, _is_binary: bool, _monitor: &dyn crate::util::task::TaskMonitor, _log: &dyn crate::format::seam_stubs::MessageLog, _nt_header: &dyn crate::format::seam_stubs::NTHeader) -> std::io::Result<()> {
+        fn markup(&self, _program: &dyn crate::program::model::listing::program::Program, _is_binary: bool, _monitor: &dyn crate::util::task::TaskMonitor, _log: &dyn crate::format::seam_stubs::MessageLog, _nt_header: &dyn crate::format::seam_stubs::NTHeader) -> std::io::Result<()> {
             Ok(())
         }
 

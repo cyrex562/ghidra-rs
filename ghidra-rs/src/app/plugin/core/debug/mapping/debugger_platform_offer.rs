@@ -2,8 +2,8 @@
 //!
 //! Port of `ghidra.app.plugin.core.debug.mapping.DebuggerPlatformOffer`.
 
-use crate::app::seam_stubs::PluginTool;
 use crate::debug::api::platform::DebuggerPlatformMapper;
+use crate::framework::seam_stubs::PluginTool;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::language::Language;

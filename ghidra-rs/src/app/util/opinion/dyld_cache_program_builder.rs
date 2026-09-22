@@ -273,7 +273,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
                     let comment = format!(
                         "{} - {}",
                         name,
-                        crate::app::seam_stubs::NumericUtilities::convert_bytes_to_string(
+                        crate::util::seam_stubs::NumericUtilities::convert_bytes_to_string(
                             &dyld_cache_header.uuid,
                             ""
                         )
@@ -922,7 +922,7 @@ mod tests {
         let comment = format!(
             "{} - {}",
             "dyld_shared_cache_arm64e",
-            crate::app::seam_stubs::NumericUtilities::convert_bytes_to_string(&uuid, "")
+            crate::util::seam_stubs::NumericUtilities::convert_bytes_to_string(&uuid, "")
         );
         assert_eq!(comment, "dyld_shared_cache_arm64e - 0a1bff00");
     }

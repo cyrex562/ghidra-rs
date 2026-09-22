@@ -1214,6 +1214,14 @@ impl DataType for EnumDataType {
 /// Placeholder for `ghidra.program.model.data.TypedefDataType`'s
 /// `TypedefDataType(CategoryPath, String, DataType, DataTypeManager)` constructor. See
 /// [`StructureDataType`].
+///
+/// Not a candidate for consolidating onto the real
+/// [`crate::program::model::data::typedef_data_type::TypedefDataType`], for the same reason as
+/// [`ArrayDataType`]: both real callers in
+/// [`DataTypesSarifMgr`](crate::sarif::managers::data_types_sarif_mgr::DataTypesSarifMgr) only
+/// have an `Arc<dyn DataType>` base type on hand, while the real type's constructors take
+/// `Box<dyn DataType>` and return `Result<Self, String>` -- there is no safe way to unwrap an
+/// `Arc<dyn DataType>` into a `Box<dyn DataType>` in stable Rust.
 #[derive(Clone)]
 pub struct TypedefDataType {
     category_path: CategoryPath,
@@ -1328,6 +1336,15 @@ impl DataType for PointerDataType {
 
 /// Placeholder for `ghidra.program.model.data.ArrayDataType`'s
 /// `ArrayDataType(DataType, int, int, DataTypeManager)` constructor. See [`StructureDataType`].
+///
+/// Not a candidate for consolidating onto the real
+/// [`crate::program::model::data::array_data_type::ArrayDataType`]: this placeholder's sole
+/// caller ([`DataTypesSarifMgr::find_data_type_in`](crate::sarif::managers::data_types_sarif_mgr::DataTypesSarifMgr::find_data_type_in))
+/// only has an `Arc<dyn DataType>` element type on hand, but the real type's constructors take
+/// `Box<dyn DataType>` -- and there is no safe way to unwrap an `Arc<dyn DataType>` into a
+/// `Box<dyn DataType>` in stable Rust. Falling back to `clone_data_type`/`copy_data_type` is not
+/// an option either: per the real type's own module docs, that default silently substitutes an
+/// `EmptyDataType` placeholder for most element types today, which would corrupt the array.
 #[derive(Clone)]
 pub struct ArrayDataType {
     settings: SharedSettings,

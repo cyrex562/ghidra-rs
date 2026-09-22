@@ -12,8 +12,9 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use crate::app::seam_stubs::{Addr, AddrRange as WireAddrRange, NumericUtilities, ObjDesc, ObjSpec, Value};
+use crate::app::seam_stubs::{Addr, AddrRange as WireAddrRange, ObjDesc, ObjSpec, Value};
 use crate::program::model::address::{Address, AddressRange, AddressSpace, AddressSpaceType};
+use crate::util::seam_stubs::NumericUtilities;
 
 /// Decodes wire-level Trace RMI values into program model types.
 ///

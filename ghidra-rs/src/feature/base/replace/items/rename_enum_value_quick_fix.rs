@@ -194,7 +194,8 @@ impl QuickFix for RenameEnumValueQuickFix {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::seam_stubs::{Archive, TreePath};
+    use crate::app::seam_stubs::TreePath;
+    use crate::framework::seam_stubs::Archive;
     use crate::app::services::{
         DataTypeArchiveService, DataTypeQueryService, OpenArchiveError, OpenProjectArchiveError,
     };
@@ -408,7 +409,29 @@ mod tests {
     impl DataTypeManager for MockDataTypeManager {}
 
     struct MockArchive;
-    impl Archive for MockArchive {}
+    impl Archive for MockArchive {
+        fn get_name(&self) -> String {
+            "MockArchive".to_string()
+        }
+
+        fn close(&self) {}
+
+        fn is_modifiable(&self) -> bool {
+            false
+        }
+
+        fn is_savable(&self) -> bool {
+            false
+        }
+
+        fn is_changed(&self) -> bool {
+            false
+        }
+
+        fn save(&self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     struct MockDtmService {
         selected: RefCell<Vec<Option<String>>>,

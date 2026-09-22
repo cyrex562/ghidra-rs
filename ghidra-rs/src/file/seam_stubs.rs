@@ -29,7 +29,7 @@ use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldCh
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::format::macho::mach_exception::MachException;
-use crate::format::seam_stubs::Program;
+use crate::program::model::listing::program::Program;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 

@@ -239,12 +239,6 @@ pub trait FormatManager {}
 /// before the real class is ported.
 pub trait FieldFormatModel: Send + Sync {}
 
-/// Placeholder for `ghidra.app.plugin.core.datamgr.archive.Archive`, referenced by
-/// [`DataTypeArchiveService`](crate::app::services::DataTypeArchiveService) before the real
-/// class is ported. `DataTypeArchiveService` only ever returns this type, so no members are
-/// needed yet.
-pub trait Archive {}
-
 /// Placeholder for `ghidra.app.nav.Navigatable`, referenced by
 /// [`MemorySearchService`](crate::app::services::MemorySearchService) (which only ever passes
 /// this type through as a parameter), by
@@ -2020,16 +2014,6 @@ pub trait Highlight: Send + Sync {
 /// Placeholder for `java.awt.Color`, referenced by [`Highlight`] before the real class is
 /// ported. `Highlight` only ever returns this type opaquely, so minimal interface is needed.
 pub trait Color: Send + Sync {}
-
-/// Placeholder for `ghidra.framework.plugintool.PluginTool`, referenced by
-/// [`StringValidatorService`](crate::app::services::StringValidatorService) before the real class
-/// is ported. `StringValidatorService` only uses `get_services()` to look up all registered
-/// services, so only that method is modeled; the full tool interface is left for its own future
-/// port.
-pub trait PluginTool: Send + Sync {
-    /// Returns all services of the given type that are currently registered with this tool.
-    fn get_services(&self, service_type: &dyn Class) -> Vec<Box<dyn std::any::Any>>;
-}
 
 /// Placeholder for `docking.widgets.fieldpanel.field.Field`, referenced by
 /// [`ListingField`](crate::app::util::viewer::field::listing_field::ListingField) before the real
@@ -4071,10 +4055,10 @@ pub trait FGVertex: Send + Sync {
     fn contains_program_location(&self, location: &dyn crate::program::util::program_location::ProgramLocation) -> bool;
     fn contains_address(&self, address: &crate::program::model::address::Address) -> bool;
     fn set_program_location(&self, location: &dyn crate::program::util::program_location::ProgramLocation);
-    fn set_program_selection(&self, selection: &dyn crate::util::seam_stubs::ProgramSelection);
-    fn get_program_selection(&self) -> Box<dyn crate::util::seam_stubs::ProgramSelection>;
+    fn set_program_selection(&self, selection: &dyn ProgramSelection);
+    fn get_program_selection(&self) -> Box<dyn ProgramSelection>;
     fn get_text_selection(&self) -> String;
-    fn set_program_highlight(&self, highlight: &dyn crate::util::seam_stubs::ProgramSelection);
+    fn set_program_highlight(&self, highlight: &dyn ProgramSelection);
     fn get_program_location(&self) -> Box<dyn crate::program::util::program_location::ProgramLocation>;
     fn get_cursor_bounds(&self) -> Box<dyn std::any::Any>;
     fn edit_label(&self, component: &dyn std::any::Any);
@@ -4286,10 +4270,6 @@ pub trait CategoryNode: Send + Sync {}
 /// [`ArchiveNode`] before the real class is ported.
 pub trait GTreeNode: Send + Sync {}
 
-/// Placeholder for `ghidra.program.model.data.DataTypeManager`, referenced by
-/// [`ArchiveNode`] before the real class is ported.
-pub trait DataTypeManager: Send + Sync {}
-
 /// Placeholder for `ghidra.program.model.data.CategoryPath`, referenced by
 /// [`ArchiveNode`] before the real class is ported.
 pub trait CategoryPath: Send + Sync {}
@@ -4325,7 +4305,7 @@ pub trait ArchiveNode: Send + Sync {
     fn is_editable(&self) -> bool;
 
     /// Returns the archive associated with this node.
-    fn get_archive(&self) -> Box<dyn Archive>;
+    fn get_archive(&self) -> Box<dyn crate::framework::seam_stubs::Archive>;
 
     /// Called when the structure of this node has changed.
     fn structure_changed(&self);
@@ -4358,51 +4338,51 @@ pub trait ArchiveNode: Send + Sync {
     fn find_category_node(&self, local_category: &dyn Category) -> Box<dyn CategoryNode>;
 
     /// Called when a category is added.
-    fn category_added(&self, dtm: &dyn DataTypeManager, path: &dyn CategoryPath);
+    fn category_added(&self, dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager, path: &dyn CategoryPath);
 
     /// Called when a category is moved.
     fn category_moved(
         &self,
-        dtm: &dyn DataTypeManager,
+        dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
         old_path: &dyn CategoryPath,
         new_path: &dyn CategoryPath,
     );
 
     /// Called when a category is removed.
-    fn category_removed(&self, dtm: &dyn DataTypeManager, path: &dyn CategoryPath);
+    fn category_removed(&self, dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager, path: &dyn CategoryPath);
 
     /// Called when a category is renamed.
     fn category_renamed(
         &self,
-        dtm: &dyn DataTypeManager,
+        dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
         old_path: &dyn CategoryPath,
         new_path: &dyn CategoryPath,
     );
 
     /// Called when a data type is added.
-    fn data_type_added(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+    fn data_type_added(&self, dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager, path: &dyn DataTypePath);
 
     /// Called when favorites change.
-    fn favorites_changed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath, is_favorite: bool);
+    fn favorites_changed(&self, dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager, path: &dyn DataTypePath, is_favorite: bool);
 
     /// Called when a data type is changed.
-    fn data_type_changed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+    fn data_type_changed(&self, dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager, path: &dyn DataTypePath);
 
     /// Called when a data type is moved.
     fn data_type_moved(
         &self,
-        dtm: &dyn DataTypeManager,
+        dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
         old_path: &dyn DataTypePath,
         new_path: &dyn DataTypePath,
     );
 
     /// Called when a data type is removed.
-    fn data_type_removed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+    fn data_type_removed(&self, dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager, path: &dyn DataTypePath);
 
     /// Called when a data type is renamed.
     fn data_type_renamed(
         &self,
-        dtm: &dyn DataTypeManager,
+        dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
         old_path: &dyn DataTypePath,
         new_path: &dyn DataTypePath,
     );
@@ -4410,23 +4390,23 @@ pub trait ArchiveNode: Send + Sync {
     /// Called when a data type is replaced.
     fn data_type_replaced(
         &self,
-        dtm: &dyn DataTypeManager,
+        dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
         old_path: &dyn DataTypePath,
         new_path: &dyn DataTypePath,
         new_data_type: &dyn DataType,
     );
 
     /// Called when a source archive is added.
-    fn source_archive_added(&self, manager: &dyn DataTypeManager, source_archive: &dyn SourceArchive);
+    fn source_archive_added(&self, manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager, source_archive: &dyn SourceArchive);
 
     /// Called when a source archive is changed.
-    fn source_archive_changed(&self, manager: &dyn DataTypeManager, source_archive: &dyn SourceArchive);
+    fn source_archive_changed(&self, manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager, source_archive: &dyn SourceArchive);
 
     /// Called when the program architecture is changed.
-    fn program_architecture_changed(&self, manager: &dyn DataTypeManager);
+    fn program_architecture_changed(&self, manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager);
 
     /// Called when the manager is restored.
-    fn restored(&self, manager: &dyn DataTypeManager);
+    fn restored(&self, manager: &dyn crate::program::model::data::data_type_manager::DataTypeManager);
 }
 
 /// Placeholder for `ghidra.app.plugin.core.decompiler.taint.TaintPlugin`, referenced by
@@ -4967,25 +4947,8 @@ pub enum Value {
     ChildDesc(ObjDesc),
 }
 
-/// Placeholder for `ghidra.util.NumericUtilities`, referenced by
-/// [`ValueDecoder`](crate::app::plugin::core::debug::service::tracermi::ValueDecoder) before the
-/// real class is ported. Java's version is a concrete utility class of static methods (not an
-/// interface), so this is a zero-sized struct with associated functions rather than a `dyn`
-/// trait. Only `convertBytesToString(byte[], String)`, the one overload `ValueDecoder` calls, is
-/// modeled.
-pub struct NumericUtilities;
-
-impl NumericUtilities {
-    /// Port of `NumericUtilities.convertBytesToString(byte[] bytes, String delimiter)`: each byte
-    /// rendered as two lowercase hex digits, joined by `delimiter`.
-    pub fn convert_bytes_to_string(bytes: &[u8], delimiter: &str) -> String {
-        bytes
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect::<Vec<_>>()
-            .join(delimiter)
-    }
-}
+// `NumericUtilities` was previously a local placeholder here; the real port now lives at
+// `crate::util::seam_stubs::NumericUtilities`. `ValueDecoder` uses that one directly.
 
 /// Placeholder for the unported Java type `ghidra.app.plugin.core.debug.service.modules.
 /// InfoPerTrace`, referenced by

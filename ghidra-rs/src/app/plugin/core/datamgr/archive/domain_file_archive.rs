@@ -1,6 +1,6 @@
-use crate::app::seam_stubs::Archive;
 use crate::framework::model::domain_file::DomainFile;
 use crate::framework::model::domain_object::DomainObject;
+use crate::framework::seam_stubs::Archive;
 
 /// Port of `ghidra.app.plugin.core.datamgr.archive.DomainFileArchive`.
 ///
@@ -30,7 +30,29 @@ mod tests {
     /// Minimal mock implementation of `DomainFileArchive` for testing.
     struct MockDomainFileArchive;
 
-    impl Archive for MockDomainFileArchive {}
+    impl Archive for MockDomainFileArchive {
+        fn get_name(&self) -> String {
+            "MockDomainFileArchive".to_string()
+        }
+
+        fn close(&self) {}
+
+        fn is_modifiable(&self) -> bool {
+            false
+        }
+
+        fn is_savable(&self) -> bool {
+            false
+        }
+
+        fn is_changed(&self) -> bool {
+            false
+        }
+
+        fn save(&self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     impl DomainFileArchive for MockDomainFileArchive {
         fn get_domain_file(&self) -> Box<dyn DomainFile> {

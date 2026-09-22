@@ -180,7 +180,8 @@ impl QuickFix for RenameCategoryQuickFix {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::seam_stubs::{Archive, TreePath};
+    use crate::app::seam_stubs::TreePath;
+    use crate::framework::seam_stubs::Archive;
     use crate::app::services::{
         DataTypeArchiveService, DataTypeQueryService, OpenArchiveError, OpenProjectArchiveError,
     };
@@ -397,7 +398,29 @@ mod tests {
     impl DataType for MockDataType {}
 
     struct MockArchive;
-    impl Archive for MockArchive {}
+    impl Archive for MockArchive {
+        fn get_name(&self) -> String {
+            "MockArchive".to_string()
+        }
+
+        fn close(&self) {}
+
+        fn is_modifiable(&self) -> bool {
+            false
+        }
+
+        fn is_savable(&self) -> bool {
+            false
+        }
+
+        fn is_changed(&self) -> bool {
+            false
+        }
+
+        fn save(&self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     /// A `DataTypeManagerService` double recording every `set_category_selected` call (by the
     /// category's reported path name) so tests can assert on `navigate_special`'s effect.

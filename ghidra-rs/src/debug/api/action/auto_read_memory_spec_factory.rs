@@ -13,10 +13,10 @@
 //!   [`crate::app::seam_stubs::AutoReadMemorySpec`] placeholder (grown here with
 //!   `get_config_name`/`get_menu_name`) rather than creating a second one -- see that trait's doc
 //!   comment.
-//! * **`PluginTool`.** Two unrelated placeholders for this Java class exist crate-wide
-//!   ([`crate::framework::seam_stubs::PluginTool`], with 17 real callers, and
-//!   [`crate::app::seam_stubs::PluginTool`], with 2); this file reuses the `framework` one, the
-//!   dominant convention.
+//! * **`PluginTool`.** Two unrelated placeholders for this Java class used to exist crate-wide;
+//!   this file already used the dominant convention, [`crate::framework::seam_stubs::PluginTool`],
+//!   and the other (smaller) `crate::app::seam_stubs::PluginTool` copy has since been retired in
+//!   favor of it.
 //! * **`ClassSearcher`-backed static methods.** Java's `static fromConfigName(String)` and
 //!   `static allSuggested(PluginTool)` iterate every registered factory via
 //!   `ClassSearcher.getInstances(AutoReadMemorySpecFactory.class)`. This crate has no

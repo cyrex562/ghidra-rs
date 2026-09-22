@@ -124,7 +124,7 @@ mod tests {
     struct MockExternalDebugInfo;
 
     impl ExternalDebugInfo for MockExternalDebugInfo {
-        fn from_program(&self, _program: &dyn crate::format::seam_stubs::Program) -> Box<dyn ExternalDebugInfo> {
+        fn from_program(&self, _program: &dyn crate::program::model::listing::program::Program) -> Box<dyn ExternalDebugInfo> {
             Box::new(MockExternalDebugInfo)
         }
 

@@ -1,4 +1,4 @@
-use crate::app::seam_stubs::Archive;
+use crate::framework::seam_stubs::Archive;
 
 /// Port of `ghidra.app.plugin.core.datamgr.archive.ArchiveManagerListener`.
 ///
@@ -9,13 +9,12 @@ use crate::app::seam_stubs::Archive;
 /// # Seams
 ///
 /// `Archive` is the Java class this interface's methods take. Two unrelated placeholders for it
-/// already exist crate-wide: [`crate::framework::seam_stubs::Archive`] (used by
-/// `ArchiveProvider`) and [`crate::app::seam_stubs::Archive`] (used by the sibling files already
-/// ported in this same Java package, e.g.
-/// [`DomainFileArchive`](super::domain_file_archive::DomainFileArchive)). This listener lives in
-/// exactly that package (`ghidra.app.plugin.core.datamgr.archive`), so it reuses the local
-/// `app::seam_stubs::Archive` placeholder rather than the `framework` one, matching every other
-/// file already ported in this directory.
+/// used to exist crate-wide ([`crate::framework::seam_stubs::Archive`], used by
+/// `ArchiveProvider`, and a separate empty `crate::app::seam_stubs::Archive` used by the sibling
+/// files in this same Java package, e.g.
+/// [`DomainFileArchive`](super::domain_file_archive::DomainFileArchive)); the `app` copy has since
+/// been retired, so this listener (and its siblings in this directory) now use the `framework`
+/// placeholder as the single canonical one.
 pub trait ArchiveManagerListener {
     /// Called when a new archive is opened.
     ///
@@ -52,7 +51,29 @@ mod tests {
     }
 
     struct MockArchive;
-    impl Archive for MockArchive {}
+    impl Archive for MockArchive {
+        fn get_name(&self) -> String {
+            "MockArchive".to_string()
+        }
+
+        fn close(&self) {}
+
+        fn is_modifiable(&self) -> bool {
+            false
+        }
+
+        fn is_savable(&self) -> bool {
+            false
+        }
+
+        fn is_changed(&self) -> bool {
+            false
+        }
+
+        fn save(&self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     impl ArchiveManagerListener for RecordingListener {
         fn archive_opened(&self, _archive: &dyn Archive) {

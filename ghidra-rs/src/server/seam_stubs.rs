@@ -277,6 +277,5 @@ impl HashUtilities {
 
 // `ghidra.util.NumericUtilities` (needed by `UserManager` for `parseHexLong`) already has a
 // placeholder at `crate::util::seam_stubs::NumericUtilities` -- reused directly rather than
-// duplicating a second `NumericUtilities` here (a third copy already exists too, at
-// `crate::app::seam_stubs::NumericUtilities`; see that struct's docs and this crate's
-// duplicate-type-name debt notes).
+// duplicating a second `NumericUtilities` here. A duplicate previously existed at
+// `crate::app::seam_stubs::NumericUtilities`; it has been retired in favor of this canonical one.

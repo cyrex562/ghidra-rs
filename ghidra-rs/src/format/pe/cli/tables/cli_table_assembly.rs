@@ -435,11 +435,11 @@ mod tests {
         }
         fn markup(
             &self,
-            // `CliStreamMetadata::markup` is declared against `crate::format::seam_stubs::Program`
-            // (a zero-method placeholder distinct from the real
+            // `CliStreamMetadata::markup` used to be declared against a zero-method
+            // `crate::format::seam_stubs::Program` placeholder distinct from the real
             // `crate::program::model::listing::program::Program` this module otherwise uses for
-            // `PeMarkupable`) -- see `crate::format::seam_stubs::Program`'s doc comment.
-            _program: &dyn crate::format::seam_stubs::Program,
+            // `PeMarkupable`; that duplicate has since been retired in favor of the real trait.
+            _program: &dyn crate::program::model::listing::program::Program,
             _is_binary: bool,
             _monitor: &dyn TaskMonitor,
             _log: &dyn MessageLog,
