@@ -57,7 +57,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/GoToInp
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/InstanceUtils.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTracker.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpecFactory.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpecFactory.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpoint.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api breakpoint 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpointsChangeListener.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api breakpoint
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/control/ControlMode.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api control 
@@ -526,7 +526,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mappin
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/AbstractDebuggerPlatformOffer.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/AbstractDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOffer.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOpinion.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DefaultDebuggerPlatformMapper.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/HostDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug mapping 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/platform/OverrideDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug platform 
@@ -2982,7 +2982,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/Expand
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/ImageBaseDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/MemoryMapManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/MemoryMapModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/MemoryMapPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/MemoryMapPlugin.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/MemoryMapProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/MoveBlockDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/MoveBlockModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
@@ -6559,7 +6559,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/location
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/location/FunctionNameDecompilerLocation.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler location 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/location/VariableDecompilerLocation.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler location 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/ChunkingParallelDecompiler.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompileConfigurer.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompileConfigurer.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompilerCallback.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompilerMapFunction.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompilerReducer.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
@@ -8922,19 +8922,19 @@ orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/Inte
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraConsole.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraInterpreter.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/ResetAction.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/AbstractJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/BooleanJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/ByteJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/CharacterJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/DoubleJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/FloatJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/IntegerJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/JavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/AbstractJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/BooleanJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/ByteJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/CharacterJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/DoubleJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/FloatJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/IntegerJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/JavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/JavaPropertyFactory.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/LongJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/ObjectJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/LongJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/ObjectJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/PropertyUtils.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/ShortJavaProperty.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/ShortJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
 orig_src/Ghidra/Features/PyGhidra/src/main/py/tests/data/bad_plugin/BadPluginClass.java	TODO	orig_src Ghidra Features PyGhidra src main py tests data bad_plugin 
 orig_src/Ghidra/Features/PyGhidra/src/main/py/tests/data/good_plugin/DummyTestRecognizer.java	TODO	orig_src Ghidra Features PyGhidra src main py tests data good_plugin 
 orig_src/Ghidra/Features/PyGhidra/src/test.slow/java/ghidra/pyghidra/PyGhidraPluginTest.java	TODO	orig_src Ghidra Features PyGhidra src test.slow java ghidra pyghidra 

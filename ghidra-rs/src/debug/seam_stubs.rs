@@ -8,10 +8,15 @@ use crate::program::model::listing::Program;
 use crate::trace::model::trace::Trace;
 
 /// Placeholder for `ghidra.debug.api.action.LocationTrackingSpec`, referenced by
-/// [`DebuggerListing`](crate::debug::api::listing::DebuggerListing) before the real class is
-/// ported. `DebuggerListing` only ever passes this type through as a parameter (`setTrackingSpec`),
-/// so no members are needed yet.
-pub trait LocationTrackingSpec {}
+/// [`DebuggerListing`](crate::debug::api::listing::DebuggerListing) and
+/// [`LocationTrackingSpecFactory`](crate::debug::api::action::LocationTrackingSpecFactory) before
+/// the real class is ported. `DebuggerListing` only ever passes this type through as a parameter
+/// (`setTrackingSpec`); `LocationTrackingSpecFactory::all_suggested` additionally needs
+/// `getConfigName()` to key its result map, mirroring Java's `TreeMap`.
+pub trait LocationTrackingSpec {
+    /// Port of `LocationTrackingSpec.getConfigName()`.
+    fn get_config_name(&self) -> String;
+}
 
 /// Placeholder for `ghidra.debug.api.modules.MappedAddressRange`, referenced by
 /// [`DebuggerAddressTranslator`](crate::debug::api::modules::DebuggerAddressTranslator) and

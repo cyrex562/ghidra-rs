@@ -27,6 +27,7 @@ pub mod instruction_search;
 pub mod interpreter;
 pub mod label;
 pub mod marker;
+pub mod memory;
 pub mod navigation;
 pub mod osgi;
 pub mod overview;

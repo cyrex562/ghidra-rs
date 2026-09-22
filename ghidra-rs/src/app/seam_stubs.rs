@@ -6830,3 +6830,22 @@ pub struct DecompileData;
 /// before the real class is ported. That method only passes the value through, so no members are
 /// needed yet.
 pub struct AnnotatedTextFieldElement;
+
+/// Placeholder for `ghidra.trace.model.target.iface.TraceEnvironment`, a mostly-marker interface
+/// (`extends TraceObjectInterface`) providing string-valued attributes describing a target's
+/// platform, referenced by
+/// [`DebuggerPlatformOpinion`](crate::app::plugin::core::debug::mapping::DebuggerPlatformOpinion)'s
+/// `getEnvironment`/`get*FromEnv` helpers before the real class is ported. Only the
+/// `@TraceObjectInfo` schema name and the four attribute-key constants are needed; the interface
+/// itself carries no methods beyond what `TraceObjectInterface` (also unported) would add, so
+/// they are exposed here as plain constants rather than a trait.
+pub const TRACE_ENVIRONMENT_SCHEMA_NAME: &str = "Environment";
+
+/// Mirrors `TraceEnvironment.KEY_ARCH`.
+pub const TRACE_ENVIRONMENT_KEY_ARCH: &str = "_arch";
+/// Mirrors `TraceEnvironment.KEY_DEBUGGER`.
+pub const TRACE_ENVIRONMENT_KEY_DEBUGGER: &str = "_debugger";
+/// Mirrors `TraceEnvironment.KEY_ENDIAN`.
+pub const TRACE_ENVIRONMENT_KEY_ENDIAN: &str = "_endian";
+/// Mirrors `TraceEnvironment.KEY_OS`.
+pub const TRACE_ENVIRONMENT_KEY_OS: &str = "_os";

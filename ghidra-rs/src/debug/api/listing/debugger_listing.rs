@@ -48,7 +48,11 @@ mod tests {
     use super::*;
 
     struct MockLocationTrackingSpec;
-    impl LocationTrackingSpec for MockLocationTrackingSpec {}
+    impl LocationTrackingSpec for MockLocationTrackingSpec {
+        fn get_config_name(&self) -> String {
+            "mock".to_string()
+        }
+    }
 
     #[derive(Default)]
     struct MockDebuggerListing {
