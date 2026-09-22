@@ -52,7 +52,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/ValStr.java	DO
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/ActionSource.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoMapSpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoReadMemorySpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoReadMemorySpecFactory.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoReadMemorySpecFactory.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/GoToInput.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/InstanceUtils.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTracker.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
@@ -1439,7 +1439,7 @@ orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/
 orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/ModelTrainingUtils.java	TODO	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding 
 orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/ProgramAssociatedComponentProviderAdapter.java	TODO	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding 
 orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/RandomForestFunctionFinderPlugin.java	DONE	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding
-orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/RandomForestRowObject.java	TODO	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding 
+orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/RandomForestRowObject.java	DONE	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding 
 orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/RandomForestTableModel.java	TODO	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding 
 orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/RandomForestTrainingTask.java	TODO	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding 
 orig_src/Ghidra/Extensions/MachineLearning/src/main/java/ghidra/machinelearning/functionfinding/RandomSubsetUtils.java	TODO	orig_src Ghidra Extensions MachineLearning src main java ghidra machinelearning functionfinding 
@@ -2677,7 +2677,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/actio
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/actions/associate/UpdateSingleDataTypeAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr actions associate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/Archive.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/ArchiveFileChooser.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr archive 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/ArchiveManagerListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr archive 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/ArchiveManagerListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/ArchiveUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/BuiltInArchive.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/DataTypeIndexer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr archive 
@@ -5057,11 +5057,11 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickF
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/TableDataLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/RenameQuickFix.java	DONE	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceHandler.java	DONE	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplacePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceQuckFixTableLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceQuery.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceQuery.java	DONE	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchType.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/handler/DataTypesSearchAndReplaceHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace handler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/handler/DatatypeCategorySearchAndReplaceHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace handler 
@@ -6522,7 +6522,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/componen
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompileResultsListener.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompileRunnable.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/Decompiler.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompilerCallbackHandler.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompilerCallbackHandler.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompilerCallbackHandlerAdapter.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompilerController.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompilerFindDialog.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 

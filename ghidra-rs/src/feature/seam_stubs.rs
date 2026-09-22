@@ -4441,3 +4441,39 @@ impl crate::framework::seam_stubs::PluginPackageLike for MiscellaneousPluginPack
         Self::NAME.to_string()
     }
 }
+
+/// Placeholder for the unported Java type `ghidra.features.base.replace.SearchType` (a concrete
+/// class implementing `Comparable<SearchType>`, not an interface -- do not write `dyn
+/// SearchType`), referenced by
+/// [`SearchAndReplaceHandler`](crate::feature::base::replace::search_and_replace_handler::SearchAndReplaceHandler).
+/// `SearchAndReplaceHandler` only stores/returns instances of this type and calls no method on
+/// it, so only the two data fields it is constructed from in Java (`name`, `description`) are
+/// modeled; the real `SearchType` also holds a back-reference to the owning
+/// `SearchAndReplaceHandler`, omitted here to avoid re-introducing the very cycle
+/// `SearchAndReplaceHandler` was ported (as a trait) to cut.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SearchType {
+    name: String,
+    description: String,
+}
+
+impl SearchType {
+    /// `SearchType(SearchAndReplaceHandler, String, String)`, minus the handler back-reference
+    /// (see the struct doc for why).
+    pub fn new(name: impl Into<String>, description: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: description.into(),
+        }
+    }
+
+    /// Java: `getName()`.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Java: `getDescription()`.
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+}

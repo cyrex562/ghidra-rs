@@ -1296,3 +1296,6 @@ ts	stub_class	referenced_by
 2026-09-22T00:00:00.000000+00:00	OatDexFile	OatHeader
 2026-09-22T00:00:00.000000+00:00	OatDexFileFactory	OatHeader
 2026-09-22T05:54:56.794288+00:00	HashUtilities	UserManager
+2026-09-22T06:27:03.818442042+00:00	SearchType	SearchAndReplaceHandler
+2026-09-22T06:43:26.619034382+00:00	DecompileData	DecompilerCallbackHandler
+2026-09-22T06:43:26.624001160+00:00	AnnotatedTextFieldElement	DecompilerCallbackHandler

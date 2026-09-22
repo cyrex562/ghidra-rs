@@ -1725,9 +1725,26 @@ pub trait SleighAssembler: crate::app::plugin::assembler::Assembler {}
 
 /// Placeholder for `ghidra.debug.api.action.AutoReadMemorySpec`, referenced by
 /// [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real class
-/// is ported. `DebuggerListingService` only ever returns this type opaquely, so no members are
-/// needed yet.
-pub trait AutoReadMemorySpec {}
+/// is ported.
+///
+/// Grown for
+/// [`AutoReadMemorySpecFactory`](crate::debug::api::action::auto_read_memory_spec_factory::AutoReadMemorySpecFactory),
+/// which additionally needs `getConfigName()`/`getMenuName()` (used by that trait's
+/// `from_config_name`/`all_suggested` free functions). Both default to inert placeholders
+/// (`get_config_name` an empty string, `get_menu_name` `None`) so
+/// `DebuggerListingService`'s existing opaque-placeholder implementors are unaffected.
+pub trait AutoReadMemorySpec {
+    /// Mirrors `AutoReadMemorySpec.getConfigName()`.
+    fn get_config_name(&self) -> String {
+        String::new()
+    }
+
+    /// Mirrors `AutoReadMemorySpec.getMenuName()`. `None` mirrors Java's `null` return, meaning
+    /// "omit from menus".
+    fn get_menu_name(&self) -> StdOption<String> {
+        None
+    }
+}
 
 /// Placeholder for `docking.widgets.fieldpanel.support.BackgroundColorModel`, the parent interface
 /// for `ListingBackgroundColorModel`. Referenced by `ListingBackgroundColorModel` and its
@@ -6799,3 +6816,17 @@ pub trait VariableValueHoverService {
     ) -> StdOption<UnwindInfo>;
 }
 
+
+/// Placeholder for `ghidra.app.decompiler.component.DecompileData` (a concrete class, not an
+/// interface), referenced by
+/// [`DecompilerCallbackHandler::decompile_data_changed`](crate::app::decompiler::component::decompiler_callback_handler::DecompilerCallbackHandler::decompile_data_changed)
+/// before the real class is ported. That method only passes the value through, so no members are
+/// needed yet.
+pub struct DecompileData;
+
+/// Placeholder for `ghidra.util.bean.field.AnnotatedTextFieldElement` (a `final` concrete class
+/// extending `AbstractTextFieldElement`, not an interface), referenced by
+/// [`DecompilerCallbackHandler::annotation_clicked`](crate::app::decompiler::component::decompiler_callback_handler::DecompilerCallbackHandler::annotation_clicked)
+/// before the real class is ported. That method only passes the value through, so no members are
+/// needed yet.
+pub struct AnnotatedTextFieldElement;
