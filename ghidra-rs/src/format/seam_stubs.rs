@@ -3520,6 +3520,54 @@ impl DWARFTag {
     pub fn name(&self, raw_tag_id: i32) -> String {
         format!("DW_TAG_??? {0} (0x{0:x})", raw_tag_id)
     }
+
+    /// Mirrors `DWARFTag.isNamedType()`, referenced by `DWARFUtil`. Ported by raw id rather than
+    /// enum variant since this stub only carries the raw id (see the type doc); the ids are taken
+    /// verbatim from the real `DWARFTag` enum's declared values.
+    pub fn is_named_type(&self) -> bool {
+        matches!(
+            self.raw_tag_id,
+            0x24 // DW_TAG_base_type
+                | 0x16 // DW_TAG_typedef
+                | 0x39 // DW_TAG_namespace
+                | 0x2e // DW_TAG_subprogram
+                | 0x2 // DW_TAG_class_type
+                | 0x38 // DW_TAG_interface_type
+                | 0x13 // DW_TAG_structure_type
+                | 0x17 // DW_TAG_union_type
+                | 0x4 // DW_TAG_enumeration_type
+                | 0x15 // DW_TAG_subroutine_type
+                | 0x3b // DW_TAG_unspecified_type
+        )
+    }
+
+    /// Mirrors `DWARFTag.isStructureType()`, referenced by `DWARFUtil`. See
+    /// [`is_named_type`](Self::is_named_type) for why this compares raw ids.
+    pub fn is_structure_type(&self) -> bool {
+        matches!(
+            self.raw_tag_id,
+            0x2 // DW_TAG_class_type
+                | 0x38 // DW_TAG_interface_type
+                | 0x13 // DW_TAG_structure_type
+                | 0x17 // DW_TAG_union_type
+        )
+    }
+
+    /// Mirrors `DWARFTag.getContainerTypeName()`, referenced by `DWARFUtil`. See
+    /// [`is_named_type`](Self::is_named_type) for why this compares raw ids.
+    pub fn get_container_type_name(&self) -> &'static str {
+        match self.raw_tag_id {
+            0x13 => "struct",  // DW_TAG_structure_type
+            0x2 => "class",    // DW_TAG_class_type
+            0x4 => "enum",     // DW_TAG_enumeration_type
+            0x17 => "union",   // DW_TAG_union_type
+            0xb => "lexical_block", // DW_TAG_lexical_block
+            0x2e => "subprogram",   // DW_TAG_subprogram
+            0x15 => "subr",    // DW_TAG_subroutine_type
+            0x34 => "var",     // DW_TAG_variable
+            _ => "unknown",
+        }
+    }
 }
 
 impl std::fmt::Display for DWARFTag {

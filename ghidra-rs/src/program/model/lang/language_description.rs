@@ -65,6 +65,20 @@ pub trait LanguageDescription {
     /// `get_external_names("IDA-PRO")` returns "metapc" for most x86 languages. Returns `None`
     /// if there are no results.
     fn get_external_names(&self, external_tool: &str) -> Option<Vec<String>>;
+
+    /// Stands in for `instanceof SleighLanguageDescription sld`, used by
+    /// [`dwarf_util`](crate::format::dwarf::dwarf_util)'s port of
+    /// `DWARFUtil.getLanguageDefinitionDirectory`/`getLanguageExternalNameValue` before a real
+    /// concrete `SleighLanguageDescription` implementation exists in this crate. Default `None`,
+    /// following this trait's established downcast convention (compare
+    /// [`DataType::as_composite`](crate::program::model::data::data_type::DataType::as_composite));
+    /// a concrete Sleigh-backed implementor should override this to return `Some(self)`.
+    fn as_sleigh(
+        &self,
+    ) -> Option<&dyn crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription>
+    {
+        None
+    }
 }
 
 #[cfg(test)]

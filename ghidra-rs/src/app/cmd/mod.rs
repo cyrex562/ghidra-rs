@@ -1,3 +1,4 @@
+pub mod comments;
 pub mod data;
 pub mod equate;
 pub mod function;

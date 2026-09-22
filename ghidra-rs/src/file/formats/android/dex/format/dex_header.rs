@@ -127,10 +127,24 @@ pub struct DexHeader {
 impl DexHeader {
     /// Port of `DexHeader(BinaryReader)`.
     pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+        Self::new_with_magic_check(reader, Self::check_magic)
+    }
+
+    /// Same as [`new`](Self::new), but with a caller-supplied magic-check strategy.
+    ///
+    /// Java's constructor calls the (overridable) instance method `checkMagic()` before any
+    /// subclass fields exist, so `CDexHeader`'s override runs in place of `DexHeader`'s own
+    /// check when constructing a `CDexHeader`. Rust has no virtual dispatch into a
+    /// not-yet-constructed subclass, so this hook is the equivalent seam: `CDexHeader::new`
+    /// calls this with its own magic check instead of [`check_magic`](Self::check_magic).
+    pub fn new_with_magic_check(
+        reader: &mut dyn BinaryReader,
+        check_magic: impl FnOnce(&[u8]) -> io::Result<()>,
+    ) -> io::Result<Self> {
         let magic = reader.read_next_byte_array(DexConstants::DEX_MAGIC_BASE.len())?;
         let version = reader.read_next_byte_array(DexConstants::DEX_VERSION_LENGTH as usize)?;
 
-        Self::check_magic(&magic)?;
+        check_magic(&magic)?;
 
         let checksum = reader.read_next_int()?;
         let signature = reader.read_next_byte_array(20)?;
@@ -409,9 +423,15 @@ impl DexHeader {
     }
 }
 
-impl StructConverter for DexHeader {
-    /// Port of `DexHeader.toDataType()`.
-    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+impl DexHeader {
+    /// Builds the `header_item` structure backing [`StructConverter::to_data_type`], as a
+    /// concrete [`StructureDataType`] rather than a boxed `dyn DataType`.
+    ///
+    /// Exposed `pub(crate)` so subtypes such as
+    /// [`CDexHeader`](crate::file::formats::android::cdex::CDexHeader) can extend the same
+    /// structure -- the Rust equivalent of `CDexHeader.toDataType()` calling
+    /// `(Structure) super.toDataType()`.
+    pub(crate) fn base_structure_data_type(&self) -> StructureDataType {
         let cp = CategoryPath::parse("/dex").expect("valid category path");
         let mut structure = StructureDataType::new(cp, "header_item", 0);
 
@@ -454,7 +474,14 @@ impl StructConverter for DexHeader {
             structure.add(Arc::new(DWordPlaceholderDataType), 4, Some(field_name.to_string()), None);
         }
 
-        Ok(Box::new(structure))
+        structure
+    }
+}
+
+impl StructConverter for DexHeader {
+    /// Port of `DexHeader.toDataType()`.
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        Ok(Box::new(self.base_structure_data_type()))
     }
 }
 
