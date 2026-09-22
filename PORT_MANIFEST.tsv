@@ -2534,10 +2534,10 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeedit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditBitFieldAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditComponentAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditFieldAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorActionListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorActionListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorModelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/FavoritesAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/FindReferencesToStructureFieldAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/HexNumbersAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
@@ -2995,7 +2995,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/misc/Register
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/module/AutoRenamePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core module 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/module/ModuleSortPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core module 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/AbstractNextPreviousAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core navigation 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/FindAppliedDataTypesService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core navigation 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/FindAppliedDataTypesService.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core navigation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/FunctionUtils.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core navigation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/GoToAddressLabelPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core navigation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/NavigationHistoryPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core navigation 
@@ -4984,7 +4984,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/lis
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/AbstractFunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/AnyToAnyFunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/FunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/FunctionComparisonModelListener.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/FunctionComparisonModelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/model/MatchedFunctionComparisonModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/panel/AddressSetComparisonData.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare panel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/panel/CodeComparisonActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare panel 
@@ -6519,7 +6519,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/componen
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangTextField.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ColorProvider.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompileData.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompileResultsListener.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompileResultsListener.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompileRunnable.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/Decompiler.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/DecompilerCallbackHandler.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 

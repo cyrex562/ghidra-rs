@@ -6849,3 +6849,10 @@ pub const TRACE_ENVIRONMENT_KEY_DEBUGGER: &str = "_debugger";
 pub const TRACE_ENVIRONMENT_KEY_ENDIAN: &str = "_endian";
 /// Mirrors `TraceEnvironment.KEY_OS`.
 pub const TRACE_ENVIRONMENT_KEY_OS: &str = "_os";
+
+/// Placeholder for `ghidra.app.plugin.core.compositeeditor.CompositeEditorTableAction` (an
+/// `abstract class extends DockingAction`, not an interface), referenced by
+/// [`EditorActionListener`](crate::app::plugin::core::compositeeditor::editor_action_listener::EditorActionListener)
+/// before the real class is ported. That interface's `actionsAdded`/`actionsRemoved` only pass
+/// the value through (as a slice), so no members are needed yet.
+pub struct CompositeEditorTableAction;

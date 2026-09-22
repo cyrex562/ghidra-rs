@@ -1299,3 +1299,4 @@ ts	stub_class	referenced_by
 2026-09-22T06:27:03.818442042+00:00	SearchType	SearchAndReplaceHandler
 2026-09-22T06:43:26.619034382+00:00	DecompileData	DecompilerCallbackHandler
 2026-09-22T06:43:26.624001160+00:00	AnnotatedTextFieldElement	DecompilerCallbackHandler
+2026-09-22T07:50:19.349460415Z	CompositeEditorTableAction	EditorActionListener
