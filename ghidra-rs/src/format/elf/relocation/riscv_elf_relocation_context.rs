@@ -325,7 +325,7 @@ mod tests {
     }
 
     struct VecProvider(Vec<u8>);
-    impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for VecProvider {
+    impl crate::filesystem::ghidra::g_binary_reader::GByteStore for VecProvider {
         fn length(&mut self) -> std::io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -354,7 +354,7 @@ mod tests {
     }
 
     struct VecReader {
-        provider: std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+        provider: std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>,
         current_index: u64,
     }
 
@@ -392,7 +392,7 @@ mod tests {
         }
         fn get_byte_provider(
             &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>
+        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
         {
             std::rc::Rc::clone(&self.provider)
         }

@@ -1,4 +1,4 @@
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::address::Address;
 use crate::program::model::mem::Memory;
 use super::binary_property_list_constants::BinaryPropertyListConstants;
@@ -12,7 +12,7 @@ use std::io;
 ///
 /// Reads the magic bytes from the provider starting at offset 0 and compares them
 /// against the expected magic string for binary property lists.
-pub fn is_binary_property_list(provider: &mut dyn ByteProvider) -> io::Result<bool> {
+pub fn is_binary_property_list(provider: &mut dyn GByteStore) -> io::Result<bool> {
     let magic_len = BinaryPropertyListConstants::BINARY_PLIST_MAGIC.len();
     let bytes = provider.read_bytes(0, magic_len)?;
     let magic = String::from_utf8_lossy(&bytes);

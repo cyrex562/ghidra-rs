@@ -50,7 +50,7 @@
 //!   ported [`AnalysisWorker`] callback may only fail with `CancelledException`, so the
 //!   `LoadException` `doImportWork` raises is stashed on the worker and re-raised by `doImport`
 //!   after `scheduleWorker` returns, which is where Java surfaces it too.
-//! * `ByteProvider.getName()` is not on the ported [`ByteProvider`] trait (only `get_fsrl`/
+//! * `GByteStore.getName()` is not on the ported [`GByteStore`] trait (only `get_fsrl`/
 //!   `get_file` are). This port derives the same display name from those two instead, exactly as
 //!   [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader) does.
 
@@ -67,7 +67,7 @@ use crate::app::seam_stubs::{abstract_program_loader, auto_analysis_manager, Loa
 use crate::app::util::opinion::load_exception::LoadException;
 use crate::app::util::opinion::loader_tier::LoaderTier;
 use crate::app::util::xml::program_info::ProgramInfo;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::address::Address;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::language_service::LanguageService;
@@ -198,11 +198,11 @@ impl XmlLoader {
         XML_SRC_NAME
     }
 
-    /// `XmlLoader.findSupportedLoadSpecs(ByteProvider)`. See the module docs for why the language
+    /// `XmlLoader.findSupportedLoadSpecs(GByteStore)`. See the module docs for why the language
     /// service is passed in.
     pub fn find_supported_load_specs(
         &self,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         language_service: &dyn LanguageService,
     ) -> io::Result<Vec<LoadSpec>> {
         let result = Self::parse(provider);
@@ -300,8 +300,8 @@ impl XmlLoader {
         load_specs
     }
 
-    /// `XmlLoader.getPreferredFileName(ByteProvider)`.
-    pub fn get_preferred_file_name(&self, provider: &Rc<RefCell<dyn ByteProvider>>) -> String {
+    /// `XmlLoader.getPreferredFileName(GByteStore)`.
+    pub fn get_preferred_file_name(&self, provider: &Rc<RefCell<dyn GByteStore>>) -> String {
         let name = Self::provider_name(provider);
         if name.to_lowercase().ends_with(FILE_EXTENSION) {
             return name[..name.len() - FILE_EXTENSION.len()].to_string();
@@ -316,13 +316,13 @@ impl XmlLoader {
         captures.get(1)?.as_str().parse().ok()
     }
 
-    /// `XmlLoader.getDefaultOptions(ByteProvider, LoadSpec, DomainObject, boolean, boolean)`.
+    /// `XmlLoader.getDefaultOptions(GByteStore, LoadSpec, DomainObject, boolean, boolean)`.
     /// Java reads none of the first three parameters nor `mirrorFsLayout`, so they are dropped.
     pub fn get_default_options(&self, load_into_program: bool) -> Vec<Box<dyn LoaderOption>> {
         XmlProgramOptions::new().get_options(load_into_program)
     }
 
-    /// `XmlLoader.validateOptions(ByteProvider, LoadSpec, List<Option>, Program)`, returning
+    /// `XmlLoader.validateOptions(GByteStore, LoadSpec, List<Option>, Program)`, returning
     /// `None` where Java returns `null` (all options valid). Java reads neither the provider, the
     /// load spec, nor the program, so they are dropped.
     pub fn validate_options(&self, options: &[Box<dyn LoaderOption>]) -> Option<String> {
@@ -338,7 +338,7 @@ impl XmlLoader {
     #[allow(clippy::too_many_arguments)]
     pub fn load_program(
         &self,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         load_spec: &LoadSpec,
         language_service: &dyn LanguageService,
         create_program: impl FnOnce(Option<Address>) -> Box<dyn Program>,
@@ -374,7 +374,7 @@ impl XmlLoader {
     pub fn load_program_into(
         &self,
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         options: &[Box<dyn LoaderOption>],
         log: &MessageLog,
         monitor: &dyn TaskMonitor,
@@ -477,8 +477,8 @@ impl XmlLoader {
         Ok(scheduled)
     }
 
-    /// `XmlLoader.parse(ByteProvider)`.
-    fn parse(provider: &Rc<RefCell<dyn ByteProvider>>) -> ParseResult {
+    /// `XmlLoader.parse(GByteStore)`.
+    fn parse(provider: &Rc<RefCell<dyn GByteStore>>) -> ParseResult {
         let last_xml_mgr = ProgramXmlMgr::from_provider(provider);
         match last_xml_mgr.get_program_info() {
             Ok(Some(last_info)) => {
@@ -501,9 +501,9 @@ impl XmlLoader {
         }
     }
 
-    /// Stands in for `provider.getName()`, which is not on the ported [`ByteProvider`] trait. See
+    /// Stands in for `provider.getName()`, which is not on the ported [`GByteStore`] trait. See
     /// the module docs.
-    fn provider_name(provider: &Rc<RefCell<dyn ByteProvider>>) -> String {
+    fn provider_name(provider: &Rc<RefCell<dyn GByteStore>>) -> String {
         let borrowed = provider.borrow();
         if let Some(name) = borrowed.get_fsrl().and_then(|f| f.name()) {
             return name;
@@ -529,13 +529,13 @@ mod tests {
     use crate::program::seam_stubs::{LanguageCompilerSpecQuery, Processor};
     use std::path::PathBuf;
 
-    /// A `ByteProvider` that knows nothing but its backing file, which is all
+    /// A `GByteStore` that knows nothing but its backing file, which is all
     /// [`XmlLoader::provider_name`] and [`XmlLoader::load_program_into`] read.
     struct FileOnlyProvider {
         file: Option<PathBuf>,
     }
 
-    impl ByteProvider for FileOnlyProvider {
+    impl GByteStore for FileOnlyProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(0)
         }
@@ -565,7 +565,7 @@ mod tests {
         }
     }
 
-    fn provider_named(name: &str) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider_named(name: &str) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(FileOnlyProvider { file: Some(PathBuf::from(name)) }))
     }
 

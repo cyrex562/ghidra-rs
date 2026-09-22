@@ -68,7 +68,7 @@ use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::app::util::bin::mem_buffer_byte_provider::MemBufferByteProvider;
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::elf::android_elf_relocation_data::AndroidElfRelocationData;
 use crate::format::seam_stubs::AndroidElfRelocationOffset as AndroidElfRelocationOffsetStub;
 use crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType;
@@ -92,7 +92,7 @@ use crate::util::UniversalID;
 /// `new BinaryReader(provider, false)`. Kept private/local: this crate has no canonical
 /// `MemBuffer`-backed production `BinaryReader` yet (see
 /// [`ElfInfoItem`](crate::format::elf::info::elf_info_item)'s own `ProviderBinaryReader` for the
-/// identical, `ByteProvider`-backed precedent this mirrors).
+/// identical, `GByteStore`-backed precedent this mirrors).
 struct MemBufferBinaryReader<'a> {
     provider: Rc<RefCell<MemBufferByteProvider<'a>>>,
     is_little_endian: bool,
@@ -148,10 +148,10 @@ impl<'a> BinaryReader for MemBufferBinaryReader<'a> {
         Ok(out)
     }
 
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         // Not exercised by anything this type needs; `MemBufferByteProvider` is not `'static`
         // (it borrows the `MemBuffer`), so it cannot be unsized into the trait's `'static`
-        // `Rc<RefCell<dyn ByteProvider>>` return type.
+        // `Rc<RefCell<dyn GByteStore>>` return type.
         unimplemented!("not needed for LEB128 decoding")
     }
 

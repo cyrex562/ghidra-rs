@@ -1,11 +1,11 @@
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::filesystem::seam_stubs::FileSystemServiceLike;
 use crate::util::task::TaskMonitor;
 
 use super::g_file_system_probe::GFileSystemProbe;
 
-/// A [`GFileSystemProbe`] for filesystems that need to examine a [`ByteProvider`].
+/// A [`GFileSystemProbe`] for filesystems that need to examine a [`GByteStore`].
 ///
 /// This is the Rust equivalent of
 /// `ghidra.formats.gfilesystem.factory.GFileSystemProbeByteProvider`.
@@ -20,7 +20,7 @@ pub trait GFileSystemProbeByteProvider: GFileSystemProbe {
     /// `false` if not.
     fn probe(
         &self,
-        byte_provider: &mut dyn ByteProvider,
+        byte_provider: &mut dyn GByteStore,
         fs_service: &dyn FileSystemServiceLike,
         monitor: &dyn TaskMonitor,
     ) -> Result<bool, GFileSystemError>;
@@ -38,7 +38,7 @@ mod tests {
         length: u64,
     }
 
-    impl ByteProvider for RecordingByteProvider {
+    impl GByteStore for RecordingByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.length)
         }
@@ -66,7 +66,7 @@ mod tests {
     impl GFileSystemProbeByteProvider for ElfMagicProbe {
         fn probe(
             &self,
-            byte_provider: &mut dyn ByteProvider,
+            byte_provider: &mut dyn GByteStore,
             _fs_service: &dyn FileSystemServiceLike,
             _monitor: &dyn TaskMonitor,
         ) -> Result<bool, GFileSystemError> {
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn boxed_dyn_probe_is_accepted() {
         let probe: Box<dyn GFileSystemProbeByteProvider> = Box::new(ElfMagicProbe);
-        let mut bp: Box<dyn ByteProvider> = Box::new(RecordingByteProvider { length: 1 });
+        let mut bp: Box<dyn GByteStore> = Box::new(RecordingByteProvider { length: 1 });
         let fs_service = DummyFsService;
         let monitor = crate::util::task::DummyMonitor;
 

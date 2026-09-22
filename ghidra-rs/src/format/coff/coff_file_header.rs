@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::coff::aout_header_factory::create_aout_header;
 use crate::format::coff::coff_exception::CoffException;
 use crate::format::coff::coff_machine_type;
@@ -27,21 +27,21 @@ pub enum CoffFileHeaderError {
     Coff(#[from] CoffException),
 }
 
-/// A concrete [`BinaryReader`] backed by a [`ByteProvider`].
+/// A concrete [`BinaryReader`] backed by a [`GByteStore`].
 ///
 /// The crate does not yet have a canonical production implementer of the `BinaryReader` trait
 /// (only test mocks exist so far, plus a handful of other per-module private adapters such as
 /// `ElfInfoItem`'s `ProviderBinaryReader`), so [`CoffFileHeader::new`] constructs this minimal
-/// one -- mirroring the `ByteProvider`-backed constructor of the original `BinaryReader.java`
+/// one -- mirroring the `GByteStore`-backed constructor of the original `BinaryReader.java`
 /// class -- and keeps it for the file header's lifetime.
 struct CoffBinaryReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     is_little_endian: bool,
     current_index: u64,
 }
 
 impl CoffBinaryReader {
-    fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         CoffBinaryReader { provider, is_little_endian, current_index: 0 }
     }
 }
@@ -81,7 +81,7 @@ impl BinaryReader for CoffBinaryReader {
         self.provider.borrow_mut().read_bytes(index, n_elements)
     }
 
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
 
@@ -131,8 +131,8 @@ impl CoffFileHeader {
     /// Reads a `CoffFileHeader` from `provider`, probing both little- and big-endian
     /// interpretations to find one under which the header is valid.
     ///
-    /// Port of `CoffFileHeader(ByteProvider)`.
-    pub fn new(provider: Rc<RefCell<dyn ByteProvider>>) -> Result<Self, CoffFileHeaderError> {
+    /// Port of `CoffFileHeader(GByteStore)`.
+    pub fn new(provider: Rc<RefCell<dyn GByteStore>>) -> Result<Self, CoffFileHeaderError> {
         // Probe for matches using both little and big endian.
         let mut reader: Box<dyn BinaryReader> =
             Box::new(CoffBinaryReader::new(Rc::clone(&provider), true));
@@ -415,7 +415,7 @@ mod tests {
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -463,7 +463,7 @@ mod tests {
         data
     }
 
-    fn provider(bytes: Vec<u8>) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider(bytes: Vec<u8>) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(VecProvider(bytes)))
     }
 

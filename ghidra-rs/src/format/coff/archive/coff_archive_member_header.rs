@@ -292,11 +292,11 @@ impl From<String> for ToDataTypeError {
 mod tests {
     use super::*;
     use crate::app::util::bin::binary_reader::BinaryReader as _;
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider as LegacyByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore as LegacyByteProvider;
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    /// Minimal in-memory `ByteProvider`/`BinaryReader` pair for exercising `read()`.
+    /// Minimal in-memory `GByteStore`/`BinaryReader` pair for exercising `read()`.
     struct VecByteProvider(Vec<u8>);
 
     impl LegacyByteProvider for VecByteProvider {

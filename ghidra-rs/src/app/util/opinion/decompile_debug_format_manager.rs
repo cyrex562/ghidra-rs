@@ -47,7 +47,7 @@ use crate::app::seam_stubs::{
 };
 use crate::app::util::opinion::load_exception::LoadException;
 use crate::app::util::xml::xml_error_handler::XmlParseException as SaxParseException;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::address::Address;
 use crate::program::model::listing::{CommentType, Program};
 use crate::program::model::pcode::address_xml::{self, AddressXml};
@@ -132,7 +132,7 @@ impl DecompileDebugFormatManager {
     }
 
     /// Constructs a new program Decompiler Debug XML manager using the provided
-    /// [`ByteProvider`].
+    /// [`GByteStore`].
     ///
     /// If the provider has an [`Fsrl`](crate::filesystem::gfilesystem::fsrl::Fsrl) and it is a
     /// simple local filepath, convert that to a normal local file path instead of using the
@@ -141,8 +141,8 @@ impl DecompileDebugFormatManager {
     /// filecache directory -- which would break the ability to find the `*.bytes` file
     /// associated with this `.xml` file.
     ///
-    /// Port of `DecompileDebugFormatManager(ByteProvider)`.
-    pub fn from_byte_provider(provider: &dyn ByteProvider) -> Self {
+    /// Port of `DecompileDebugFormatManager(GByteStore)`.
+    pub fn from_byte_provider(provider: &dyn GByteStore) -> Self {
         let file = match provider.get_fsrl() {
             Some(fsrl) if fsrl.nesting_depth() == 1 => fsrl.path().map(PathBuf::from),
             _ => provider.get_file(),
@@ -1279,7 +1279,7 @@ mod tests {
     /// constructor must fall back on.
     struct CachedProvider;
 
-    impl ByteProvider for CachedProvider {
+    impl GByteStore for CachedProvider {
         fn length(&mut self) -> std::io::Result<u64> {
             Ok(0)
         }

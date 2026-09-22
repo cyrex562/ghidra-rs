@@ -234,14 +234,14 @@ impl DWARFMacroHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::seam_stubs::DIEContainer;
     use std::cell::RefCell;
     use std::rc::Rc;
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -269,7 +269,7 @@ mod tests {
 
     /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
     struct TestReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         index: u64,
         little_endian: bool,
     }
@@ -307,7 +307,7 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {

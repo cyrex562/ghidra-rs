@@ -3,14 +3,14 @@ use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use crate::app::util::bin::mutable_byte_provider::MutableByteProvider;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// A [`MutableByteProvider`] backed by a random-access file.
 ///
 /// Mirrors `ghidra.app.util.bin.RandomAccessMutableByteProvider` from the
 /// original Ghidra source (itself extending the deprecated
 /// `RandomAccessByteProvider`). In Rust there is no inheritance; this struct
-/// directly implements [`ByteProvider`] and [`MutableByteProvider`] using
+/// directly implements [`GByteStore`] and [`MutableByteProvider`] using
 /// [`std::fs::File`].
 ///
 /// The file length is cached at open time, matching the Java behaviour of
@@ -46,7 +46,7 @@ impl RandomAccessMutableByteProvider {
     }
 }
 
-impl ByteProvider for RandomAccessMutableByteProvider {
+impl GByteStore for RandomAccessMutableByteProvider {
     fn length(&mut self) -> io::Result<u64> {
         Ok(self.file_length)
     }

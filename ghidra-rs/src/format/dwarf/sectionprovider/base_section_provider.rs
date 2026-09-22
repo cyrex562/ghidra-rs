@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::dwarf::sectionprovider::dwarf_section_provider::DWARFSectionProvider;
 use crate::format::seam_stubs::MemoryByteProvider;
 use crate::program::model::listing::program::Program;
@@ -64,7 +64,7 @@ impl DWARFSectionProvider for BaseSectionProvider {
         &self,
         section_name: &str,
         _monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Box<dyn ByteProvider>> {
+    ) -> std::io::Result<Box<dyn GByteStore>> {
         match self.get_section(section_name) {
             Some(block) if block.is_initialized() => {
                 // NOTE: MemoryByteProvider instances don't need to be closed(), so we don't

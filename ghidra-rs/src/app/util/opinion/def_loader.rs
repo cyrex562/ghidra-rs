@@ -17,7 +17,7 @@
 //!   overridden surface as inherent methods on a standalone struct, rather than implementing the
 //!   [`Loader`] trait (which would additionally require the inherited machinery this class never
 //!   defines).
-//! * `ByteProvider`/`DefExportLine`/`Program`/`SourceType`/`SymbolUtilities`/`InvalidInputException`
+//! * `GByteStore`/`DefExportLine`/`Program`/`SourceType`/`SymbolUtilities`/`InvalidInputException`
 //!   are used via their real ported paths. `LoadSpec`/`QueryResult`/`PeLoader` are already-grown
 //!   placeholders in [`app::seam_stubs`](crate::app::seam_stubs) (see `STUBS.tsv`); no new stub was
 //!   needed for this port.
@@ -25,8 +25,8 @@
 //!   a single `read_bytes(0, length)` decoded as UTF-8 and split into lines with [`str::lines`],
 //!   the same "read whole file, then iterate lines" substitution
 //!   [`UnixAoutProgramLoader`](crate::app::util::opinion::unix_aout_program_loader::UnixAoutProgramLoader)-style
-//!   loaders use elsewhere for streaming reads the ported [`ByteProvider`] has no equivalent for.
-//! * `ByteProvider.getName()` is not on the ported [`ByteProvider`] trait (only `get_fsrl`/
+//!   loaders use elsewhere for streaming reads the ported [`GByteStore`] has no equivalent for.
+//! * `GByteStore.getName()` is not on the ported [`GByteStore`] trait (only `get_fsrl`/
 //!   `get_file` are). This port derives the same display name from those two instead, exactly as
 //!   [`JavaLoader`]/[`XmlLoader`] do.
 //! * `QueryOpinionService.query(String, String, String)` resolves the process-wide `Application`/
@@ -59,7 +59,7 @@ use crate::app::util::importer::message_log::MessageLog;
 use crate::app::seam_stubs::{LoadSpec, PeLoader};
 use crate::app::util::opinion::def_export_line::DefExportLine;
 use crate::app::util::opinion::query_opinion_service;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::framework::application::Application;
 use crate::program::model::lang::language_service::LanguageService;
 use crate::program::model::listing::Program;
@@ -83,8 +83,8 @@ impl DefLoader {
         DefLoader
     }
 
-    /// `DefLoader.parseExports(ByteProvider)`.
-    fn parse_exports(provider: &Rc<RefCell<dyn ByteProvider>>) -> io::Result<Vec<DefExportLine>> {
+    /// `DefLoader.parseExports(GByteStore)`.
+    fn parse_exports(provider: &Rc<RefCell<dyn GByteStore>>) -> io::Result<Vec<DefExportLine>> {
         let mut list = Vec::new();
 
         let bytes = {
@@ -111,11 +111,11 @@ impl DefLoader {
         Ok(list)
     }
 
-    /// `DefLoader.findSupportedLoadSpecs(ByteProvider)`. See the module docs for why the
+    /// `DefLoader.findSupportedLoadSpecs(GByteStore)`. See the module docs for why the
     /// application/language service are passed in.
     pub fn find_supported_load_specs(
         &self,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         app: &dyn Application,
         language_service: &dyn LanguageService,
     ) -> io::Result<Vec<LoadSpec>> {
@@ -145,7 +145,7 @@ impl DefLoader {
     pub fn load(
         &self,
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         log: &MessageLog,
     ) -> io::Result<()> {
         if program.get_executable_format() != PeLoader::PE_NAME {
@@ -197,9 +197,9 @@ impl DefLoader {
         true
     }
 
-    /// Stands in for `provider.getName()`, which is not on the ported [`ByteProvider`] trait. See
+    /// Stands in for `provider.getName()`, which is not on the ported [`GByteStore`] trait. See
     /// the module docs.
-    fn provider_name(provider: &Rc<RefCell<dyn ByteProvider>>) -> String {
+    fn provider_name(provider: &Rc<RefCell<dyn GByteStore>>) -> String {
         let borrowed = provider.borrow();
         if let Some(name) = borrowed.get_fsrl().and_then(|f| f.name()) {
             return name;
@@ -230,13 +230,13 @@ mod tests {
     use crate::program::seam_stubs::LanguageNotFoundException;
     use std::sync::Arc;
 
-    fn provider(data: &[u8], name: &str) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider(data: &[u8], name: &str) -> Rc<RefCell<dyn GByteStore>> {
         struct FakeByteProvider {
             data: Vec<u8>,
             name: String,
         }
 
-        impl ByteProvider for FakeByteProvider {
+        impl GByteStore for FakeByteProvider {
             fn length(&mut self) -> io::Result<u64> {
                 Ok(self.data.len() as u64)
             }

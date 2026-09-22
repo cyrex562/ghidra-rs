@@ -16,14 +16,14 @@
 //!   -- this port models just that overridden surface as inherent methods on a standalone struct,
 //!   rather than implementing the [`Loader`](crate::app::util::opinion::loader::Loader) trait
 //!   (which would additionally require the inherited machinery this class never defines).
-//! * `ByteProvider`/`BinaryReader`/`ClassFileJava`/`MethodInfoJava`/`CodeAttribute`/
+//! * `GByteStore`/`BinaryReader`/`ClassFileJava`/`MethodInfoJava`/`CodeAttribute`/
 //!   `ConstantPoolUtf8Info`/`JavaClassUtil`/`LoadSpec`/`LanguageCompilerSpecPair` are used via
 //!   their real ported paths. `ClassFileJava`/`MethodInfoJava`/`CodeAttribute`/`JavaClassUtil` were
 //!   grown in [`format::seam_stubs`](crate::format::seam_stubs) (and `LoadSpec` in
 //!   [`app::seam_stubs`](crate::app::seam_stubs)) to carry the extra surface this loader needs;
 //!   see those modules for what is and is not modeled. The crate has no canonical production
 //!   [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader) implementer yet, so this
-//!   module defines its own minimal `ByteProvider`-backed one, mirroring the identical local
+//!   module defines its own minimal `GByteStore`-backed one, mirroring the identical local
 //!   helper in
 //!   [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state)/`elf_info_item`.
 //! * `Memory.createInitializedBlock(String, Address, InputStream, long, TaskMonitor, boolean)`
@@ -46,7 +46,7 @@
 //!   fallback [`DataType`] of length `-1`, the same `FallbackPointerDataType` pattern already
 //!   established in
 //!   [`VariableUtilities`](crate::program::model::listing::variable_utilities).
-//! * `ByteProvider.getName()` is not on the ported `ByteProvider` trait (only `get_fsrl`/
+//! * `GByteStore.getName()` is not on the ported `GByteStore` trait (only `get_fsrl`/
 //!   `get_file` are). This port derives the same display name Java would from those two instead.
 //! * Every method below that Java lets an uncaught exception propagate out of (aborting either
 //!   `doLoad` or the whole `createMethodMemoryBlocks` loop, then logged by the caller's
@@ -60,7 +60,7 @@ use std::io;
 use std::rc::Rc;
 
 use crate::app::seam_stubs::LoadSpec;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava;
 use crate::format::javaclass::java_class_constants::MAGIC;
 use crate::format::seam_stubs::{ClassFileJava, ConstantPoolUtf8Info, JavaClassUtil, MethodInfoJava};
@@ -95,16 +95,16 @@ pub enum DoLoadError {
 }
 
 /// A minimal [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader) backed by a
-/// [`ByteProvider`]. See the module docs for why this crate-wide gap is filled locally here
+/// [`GByteStore`]. See the module docs for why this crate-wide gap is filled locally here
 /// instead of reused from elsewhere.
 struct JavaClassBinaryReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     is_little_endian: bool,
     current_index: u64,
 }
 
 impl JavaClassBinaryReader {
-    fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         JavaClassBinaryReader { provider, is_little_endian, current_index: 0 }
     }
 }
@@ -144,7 +144,7 @@ impl crate::app::util::bin::binary_reader::BinaryReader for JavaClassBinaryReade
         self.provider.borrow_mut().read_bytes(index, n_elements)
     }
 
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
 
@@ -197,10 +197,10 @@ impl JavaLoader {
         JavaLoader { alignment_reg: None }
     }
 
-    /// `JavaLoader.findSupportedLoadSpecs(ByteProvider)`.
+    /// `JavaLoader.findSupportedLoadSpecs(GByteStore)`.
     pub fn find_supported_load_specs(
         &self,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
     ) -> io::Result<Vec<LoadSpec>> {
         let mut load_specs = Vec::new();
         if Self::check_class(provider)? {
@@ -213,8 +213,8 @@ impl JavaLoader {
         Ok(load_specs)
     }
 
-    /// `JavaLoader.checkClass(ByteProvider)`.
-    fn check_class(provider: &Rc<RefCell<dyn ByteProvider>>) -> io::Result<bool> {
+    /// `JavaLoader.checkClass(GByteStore)`.
+    fn check_class(provider: &Rc<RefCell<dyn GByteStore>>) -> io::Result<bool> {
         let mut reader = JavaClassBinaryReader::new(Rc::clone(provider), false);
         let magic = crate::app::util::bin::binary_reader::BinaryReader::peek_next_int(&reader)?;
         if magic != MAGIC as i32 {
@@ -236,7 +236,7 @@ impl JavaLoader {
     pub fn load(
         &mut self,
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
         match self.do_load(provider, program, monitor) {
@@ -249,10 +249,10 @@ impl JavaLoader {
         }
     }
 
-    /// `JavaLoader.doLoad(ByteProvider, Program, TaskMonitor)`.
+    /// `JavaLoader.doLoad(GByteStore, Program, TaskMonitor)`.
     fn do_load(
         &mut self,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         program: &mut dyn Program,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), DoLoadError> {
@@ -309,11 +309,11 @@ impl JavaLoader {
         }
     }
 
-    /// `JavaLoader.createMethodMemoryBlocks(Program, ByteProvider, ClassFileJava, TaskMonitor)`.
+    /// `JavaLoader.createMethodMemoryBlocks(Program, GByteStore, ClassFileJava, TaskMonitor)`.
     fn create_method_memory_blocks(
         &self,
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
         class_file: &ClassFileJava,
         monitor: &dyn TaskMonitor,
@@ -458,9 +458,9 @@ impl JavaLoader {
         space.address(offset)
     }
 
-    /// Stands in for `provider.getName()`, which is not on the ported [`ByteProvider`] trait. See
+    /// Stands in for `provider.getName()`, which is not on the ported [`GByteStore`] trait. See
     /// the module docs.
-    fn provider_name(provider: &Rc<RefCell<dyn ByteProvider>>) -> String {
+    fn provider_name(provider: &Rc<RefCell<dyn GByteStore>>) -> String {
         let borrowed = provider.borrow();
         if let Some(name) = borrowed.get_fsrl().and_then(|f| f.name()) {
             return name;
@@ -485,7 +485,7 @@ mod tests {
         data: Vec<u8>,
     }
 
-    impl ByteProvider for FakeByteProvider {
+    impl GByteStore for FakeByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -522,7 +522,7 @@ mod tests {
         }
     }
 
-    fn provider_with(data: Vec<u8>) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider_with(data: Vec<u8>) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(FakeByteProvider { data }))
     }
 

@@ -7,7 +7,7 @@ use crate::filesystem::gfilesystem::file_system_probe_conflict_resolver::FileSys
 use crate::filesystem::gfilesystem::file_system_ref::FileSystemRef;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::filesystem::gfilesystem::refd_file::RefdFile;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::seam_stubs::{
     FileCacheEntryBuilderLike, FileCacheEntryLike, FsrlLike, FsrlRootLike, GFileSystemLike,
     LocalFileSystemLike,
@@ -111,7 +111,7 @@ where
         fsrl: &Fsrl,
         fully_qualified_fsrl: bool,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn ByteProvider>, GFileSystemError>;
+    ) -> Result<Box<dyn GByteStore>, GFileSystemError>;
 
     /// Returns a byte provider containing the derived (decompressed, decrypted, etc) contents
     /// of the requested file, using `producer` to generate the bytes if not already cached.
@@ -123,7 +123,7 @@ where
         size_hint: i64,
         producer: &mut dyn DerivedStreamProducer,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn ByteProvider>, GFileSystemError>;
+    ) -> Result<Box<dyn GByteStore>, GFileSystemError>;
 
     /// Same as [`get_derived_byte_provider`](FileSystemService::get_derived_byte_provider), but
     /// the derived bytes are pushed into a sink by `pusher` instead of pulled from a stream.
@@ -135,7 +135,7 @@ where
         size_hint: i64,
         pusher: &mut dyn DerivedStreamPushProducer,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn ByteProvider>, GFileSystemError>;
+    ) -> Result<Box<dyn GByteStore>, GFileSystemError>;
 
     /// Returns a builder that will allow the caller to write bytes to a new temp file.
     fn create_temp_file(&mut self, size_hint: i64) -> io::Result<Box<dyn FileCacheEntryBuilderLike>>;
@@ -145,16 +145,16 @@ where
         &self,
         temp_file_cache_entry: &dyn FileCacheEntryLike,
         name: &str,
-    ) -> io::Result<Box<dyn ByteProvider>>;
+    ) -> io::Result<Box<dyn GByteStore>>;
 
     /// Converts a byte provider to the underlying file that contains its contents, or `None`
     /// if there is no available backing file.
-    fn get_file_if_available(&self, provider: &dyn ByteProvider) -> Option<PathBuf>;
+    fn get_file_if_available(&self, provider: &dyn GByteStore) -> Option<PathBuf>;
 
     /// Exports the bytes in a byte provider into a plaintext (non-obfuscated) temp file.
     fn create_plaintext_temp_file(
         &self,
-        provider: &mut dyn ByteProvider,
+        provider: &mut dyn GByteStore,
         filename_prefix: &str,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<PathBuf>;
@@ -169,7 +169,7 @@ where
         file: &Path,
         fsrl: &Fsrl,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn ByteProvider>, GFileSystemError>;
+    ) -> Result<Box<dyn GByteStore>, GFileSystemError>;
 
     /// Returns `true` if the specified derived file exists in the file cache.
     fn has_derived_file(
@@ -320,11 +320,11 @@ mod tests {
         }
     }
 
-    // ── Mock ByteProvider ─────────────────────────────────────────────────
+    // ── Mock GByteStore ─────────────────────────────────────────────────
 
     struct VecByteProvider(Vec<u8>);
 
-    impl ByteProvider for VecByteProvider {
+    impl GByteStore for VecByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -434,7 +434,7 @@ mod tests {
             _fsrl: &MockFsrl,
             _fully_qualified_fsrl: bool,
             _monitor: &dyn TaskMonitor,
-        ) -> Result<Box<dyn ByteProvider>, GFileSystemError> {
+        ) -> Result<Box<dyn GByteStore>, GFileSystemError> {
             Ok(Box::new(VecByteProvider(Vec::new())))
         }
 
@@ -446,7 +446,7 @@ mod tests {
             _size_hint: i64,
             producer: &mut dyn DerivedStreamProducer,
             _monitor: &dyn TaskMonitor,
-        ) -> Result<Box<dyn ByteProvider>, GFileSystemError> {
+        ) -> Result<Box<dyn GByteStore>, GFileSystemError> {
             let container_md5 = container_fsrl.md5.clone().unwrap_or_default();
             let key = (container_md5, derived_name.to_string());
             let bytes = {
@@ -470,7 +470,7 @@ mod tests {
             _size_hint: i64,
             pusher: &mut dyn DerivedStreamPushProducer,
             _monitor: &dyn TaskMonitor,
-        ) -> Result<Box<dyn ByteProvider>, GFileSystemError> {
+        ) -> Result<Box<dyn GByteStore>, GFileSystemError> {
             let mut buf = Vec::new();
             pusher.push(&mut buf)?;
             Ok(Box::new(VecByteProvider(buf)))
@@ -487,17 +487,17 @@ mod tests {
             &self,
             _temp_file_cache_entry: &dyn FileCacheEntryLike,
             _name: &str,
-        ) -> io::Result<Box<dyn ByteProvider>> {
+        ) -> io::Result<Box<dyn GByteStore>> {
             Ok(Box::new(VecByteProvider(Vec::new())))
         }
 
-        fn get_file_if_available(&self, _provider: &dyn ByteProvider) -> Option<PathBuf> {
+        fn get_file_if_available(&self, _provider: &dyn GByteStore) -> Option<PathBuf> {
             None
         }
 
         fn create_plaintext_temp_file(
             &self,
-            _provider: &mut dyn ByteProvider,
+            _provider: &mut dyn GByteStore,
             _filename_prefix: &str,
             _monitor: &dyn TaskMonitor,
         ) -> io::Result<PathBuf> {
@@ -511,7 +511,7 @@ mod tests {
             _file: &Path,
             _fsrl: &MockFsrl,
             _monitor: &dyn TaskMonitor,
-        ) -> Result<Box<dyn ByteProvider>, GFileSystemError> {
+        ) -> Result<Box<dyn GByteStore>, GFileSystemError> {
             Ok(Box::new(VecByteProvider(Vec::new())))
         }
 

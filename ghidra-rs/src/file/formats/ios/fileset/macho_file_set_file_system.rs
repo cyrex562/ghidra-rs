@@ -50,7 +50,7 @@ use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::commands::chained::dyld_chained_fixups::ChainedFixupError;
 use crate::format::macho::commands::segment_names;
 use crate::format::macho::mach_exception::MachException;
@@ -163,9 +163,9 @@ pub struct MachoFileSetFileSystem {
     fs_fsrl: MfsFsrlRoot,
     /// Mirrors `provider`. `None` once [`close`](Self::close) has run, matching Java's
     /// `provider == null` after close.
-    provider: Option<Rc<RefCell<dyn ByteProvider>>>,
+    provider: Option<Rc<RefCell<dyn GByteStore>>>,
     /// Mirrors `fixedUpProvider`.
-    fixed_up_provider: Option<Rc<RefCell<dyn ByteProvider>>>,
+    fixed_up_provider: Option<Rc<RefCell<dyn GByteStore>>>,
     /// Mirrors `header`.
     header: Option<MachHeader>,
     /// Mirrors `entrySegmentMap`.
@@ -181,8 +181,8 @@ pub struct MachoFileSetFileSystem {
 impl MachoFileSetFileSystem {
     /// Creates a new [`MachoFileSetFileSystem`].
     ///
-    /// Mirrors `MachoFileSetFileSystem(FSRLRoot, ByteProvider)`.
-    pub fn new(fs_fsrl: MfsFsrlRoot, provider: Rc<RefCell<dyn ByteProvider>>) -> Self {
+    /// Mirrors `MachoFileSetFileSystem(FSRLRoot, GByteStore)`.
+    pub fn new(fs_fsrl: MfsFsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
         let root = MfsFsrl::new("/");
         let fs_index = FileSystemIndexHelper::new(MfsHandle::new(root.clone()), root);
         MachoFileSetFileSystem {
@@ -260,7 +260,7 @@ impl MachoFileSetFileSystem {
         // `MachHeader::dyld_chained_fixups_commands`'s docs), so there is nothing to iterate.
         // When load-command parsing lands, this loop will also need a real
         // `crate::app::util::bin::binary_reader::BinaryReader` implementation over a
-        // `ByteProvider` to pass to `get_chained_fixups` -- only test-only mocks implement that
+        // `GByteStore` to pass to `get_chained_fixups` -- only test-only mocks implement that
         // trait anywhere in this crate today.
         let _ = &log;
         let _imagebase = text_segment.vm_address();
@@ -292,7 +292,7 @@ impl MachoFileSetFileSystem {
         &mut self,
         file: &MfsGFile,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Option<Box<dyn ByteProvider>>, GetByteProviderError> {
+    ) -> Result<Option<Box<dyn GByteStore>>, GetByteProviderError> {
         let Some(entry) = self.fs_index.get_metadata(file).map(Rc::clone) else {
             return Ok(None);
         };
@@ -331,11 +331,11 @@ impl MachoFileSetFileSystem {
         result
     }
 
-    /// Gets the open Mach-O file set [`ByteProvider`]. This is the original `ByteProvider` that
+    /// Gets the open Mach-O file set [`GByteStore`]. This is the original `GByteStore` that
     /// this file system opened.
     ///
     /// Mirrors `getMachoFileSetProvider()`.
-    pub fn get_macho_file_set_provider(&self) -> Option<Rc<RefCell<dyn ByteProvider>>> {
+    pub fn get_macho_file_set_provider(&self) -> Option<Rc<RefCell<dyn GByteStore>>> {
         self.provider.clone()
     }
 
@@ -354,7 +354,7 @@ impl MachoFileSetFileSystem {
     /// Mirrors `close()`.
     pub fn close(&mut self) {
         // `refManager.onClose()` -- see the `fs_index` field docs for why it is not modeled.
-        // `ByteProvider` has no explicit close in this port (see
+        // `GByteStore` has no explicit close in this port (see
         // `crate::file::formats::zip::zip_file_system_factory`'s module docs for the same
         // substitution elsewhere in this crate); releasing it is just dropping it.
         self.provider = None;
@@ -452,7 +452,7 @@ mod tests {
         bytes: Vec<u8>,
     }
 
-    impl ByteProvider for MemoryByteProvider {
+    impl GByteStore for MemoryByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -481,7 +481,7 @@ mod tests {
         }
     }
 
-    fn macho_provider() -> Rc<RefCell<dyn ByteProvider>> {
+    fn macho_provider() -> Rc<RefCell<dyn GByteStore>> {
         // MH_MAGIC_64, big-endian on-disk bytes, padded to a plausible header length.
         let mut bytes: Vec<u8> = vec![0xfe, 0xed, 0xfa, 0xcf];
         bytes.resize(64, 0);

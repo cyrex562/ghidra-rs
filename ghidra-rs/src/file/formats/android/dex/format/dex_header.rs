@@ -410,7 +410,7 @@ impl DexHeader {
                     .map(|s| s.to_vec())
                     .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
             }
-            fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+            fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
                 unimplemented!("not exercised by this fixture")
             }
             fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
@@ -526,7 +526,7 @@ mod tests {
                 .map(|s| s.to_vec())
                 .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
         }
-        fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+        fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not exercised by these tests")
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {

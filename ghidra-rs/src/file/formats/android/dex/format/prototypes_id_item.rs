@@ -143,7 +143,7 @@ mod tests {
             }
         }
 
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!()
         }
 

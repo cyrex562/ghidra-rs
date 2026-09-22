@@ -21,7 +21,7 @@ use std::io;
 use std::rc::Rc;
 
 use crate::file::seam_stubs::{ByteArrayProvider, ExtractedMacho, MachHeader, SegmentCommand};
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::mach_constants::MH_MAGIC_64;
 use crate::format::macho::mach_exception::MachException;
 use crate::util::task::TaskMonitor;
@@ -32,19 +32,19 @@ use crate::util::task::TaskMonitor;
 /// Mirrors `FOOTER_V1`.
 pub const FOOTER_V1: &[u8] = b"Ghidra Mach-O file set extraction v1";
 
-/// Gets a [`ByteProvider`] that contains a Mach-O file set entry. The Mach-O's header will be
+/// Gets a [`GByteStore`] that contains a Mach-O file set entry. The Mach-O's header will be
 /// altered to account for its segment bytes being packed down.
 ///
 /// `fsrl_path` mirrors the Java signature but is unused: [`ByteArrayProvider`] (this crate's stub
 /// for Java's `ByteArrayProvider`) doesn't carry an FSRL identity yet.
 ///
-/// Mirrors `extractFileSetEntry(ByteProvider, long, FSRL, TaskMonitor)`.
+/// Mirrors `extractFileSetEntry(GByteStore, long, FSRL, TaskMonitor)`.
 pub fn extract_file_set_entry(
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     provider_offset: i64,
     _fsrl_path: &str,
     monitor: &dyn TaskMonitor,
-) -> io::Result<Box<dyn ByteProvider>> {
+) -> io::Result<Box<dyn GByteStore>> {
     let mut header = MachHeader::new(Rc::clone(&provider), provider_offset);
     header.parse().map_err(mach_err)?;
 
@@ -53,18 +53,18 @@ pub fn extract_file_set_entry(
     Ok(Box::new(extracted_macho.get_byte_provider()))
 }
 
-/// Gets a [`ByteProvider`] that contains a single segment from a Mach-O file set.
+/// Gets a [`GByteStore`] that contains a single segment from a Mach-O file set.
 ///
 /// `fsrl_path` and `monitor` mirror the Java signature but are unused: Java's `extractSegment`
 /// never inspects `monitor` either, and [`ByteArrayProvider`] doesn't carry an FSRL identity yet.
 ///
-/// Mirrors `extractSegment(ByteProvider, SegmentCommand, FSRL, TaskMonitor)`.
+/// Mirrors `extractSegment(GByteStore, SegmentCommand, FSRL, TaskMonitor)`.
 pub fn extract_segment(
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     segment: &SegmentCommand,
     _fsrl_path: &str,
     _monitor: &dyn TaskMonitor,
-) -> io::Result<Box<dyn ByteProvider>> {
+) -> io::Result<Box<dyn GByteStore>> {
     let magic = MH_MAGIC_64;
     let all_segments_size = SegmentCommand::size(magic).map_err(mach_err)?;
 
@@ -125,7 +125,7 @@ mod tests {
         bytes: Vec<u8>,
     }
 
-    impl ByteProvider for MemoryByteProvider {
+    impl GByteStore for MemoryByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -154,7 +154,7 @@ mod tests {
         }
     }
 
-    fn provider_of(bytes: Vec<u8>) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider_of(bytes: Vec<u8>) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(MemoryByteProvider { bytes }))
     }
 

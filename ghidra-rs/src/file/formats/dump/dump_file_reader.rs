@@ -99,7 +99,7 @@ mod tests {
         data: Vec<u8>,
     }
 
-    impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for TestByteProvider {
+    impl crate::filesystem::ghidra::g_binary_reader::GByteStore for TestByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -127,7 +127,7 @@ mod tests {
     }
 
     struct TestReader {
-        provider: Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+        provider: Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>,
         index: u64,
         little_endian: bool,
     }
@@ -178,7 +178,7 @@ mod tests {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
 
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             self.provider.clone()
         }
 

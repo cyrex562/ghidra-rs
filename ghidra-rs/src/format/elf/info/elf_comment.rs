@@ -205,14 +205,14 @@ mod tests {
     use std::rc::Rc;
     use std::sync::Arc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::mem::{Memory, MemoryAccessException, MemoryBlock};
     use crate::program::model::symbol::{Symbol, SymbolTable, SymbolType};
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -242,7 +242,7 @@ mod tests {
     }
 
     struct TestReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         index: u64,
         little_endian: bool,
     }
@@ -284,7 +284,7 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
@@ -494,7 +494,7 @@ mod tests {
     // `Program`/`SymbolTable` both require `Send + Sync` (so `Program` handles can cross thread
     // boundaries elsewhere in the crate), so these test doubles share their recorded state
     // through `Arc<Mutex<_>>` rather than the `Rc<RefCell<_>>` used above for the (non-Send)
-    // `BinaryReader`/`ByteProvider` mocks.
+    // `BinaryReader`/`GByteStore` mocks.
 
     struct RecordingOptions {
         calls: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,

@@ -60,7 +60,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::elf::info::elf_info_item::{read_item_from_section, ElfInfoItem};
 use crate::framework::options::Options;
 use crate::program::model::address::Address;
@@ -226,7 +226,7 @@ fn markup_elf_note(
 /// note for the same situation with a different family of types).
 struct VecByteProvider(Vec<u8>);
 
-impl ByteProvider for VecByteProvider {
+impl GByteStore for VecByteProvider {
     fn length(&mut self) -> io::Result<u64> {
         Ok(self.0.len() as u64)
     }
@@ -299,8 +299,8 @@ impl BinaryReader for ByteArrayBinaryReader {
     fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
         self.provider.borrow_mut().read_bytes(index, n_elements)
     }
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
-        Rc::clone(&self.provider) as Rc<RefCell<dyn ByteProvider>>
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
+        Rc::clone(&self.provider) as Rc<RefCell<dyn GByteStore>>
     }
     fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
         Box::new(ByteArrayBinaryReader {

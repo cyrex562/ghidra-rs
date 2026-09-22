@@ -52,7 +52,7 @@ use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::util::exception::{CancelledException, CryptoException};
 use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
@@ -540,7 +540,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
 
     /// Opens the specified 7-Zip container and initializes this file system with its contents.
     ///
-    /// Mirrors `mount(ByteProvider, TaskMonitor)`. Java opens the container by wrapping it in a
+    /// Mirrors `mount(GByteStore, TaskMonitor)`. Java opens the container by wrapping it in a
     /// [`SZByteProviderStream`](super::sz_byte_provider_stream::SZByteProviderStream) and
     /// calling the static `SevenZip.openInArchive`; since the native opener has no Rust
     /// counterpart, the already-opened `archive` is passed in and the caller is responsible for
@@ -902,7 +902,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
         &mut self,
         file: &SzGFile,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Option<Box<dyn ByteProvider>>, GetByteProviderError> {
+    ) -> Result<Option<Box<dyn GByteStore>>, GetByteProviderError> {
         let Some(item) = self.fs_index.get_metadata(file).map(Rc::clone) else {
             return Ok(None);
         };
@@ -1644,10 +1644,10 @@ mod tests {
         }
     }
 
-    /// `Result::unwrap_err` needs the `Ok` type to be `Debug`, which `Box<dyn ByteProvider>`
+    /// `Result::unwrap_err` needs the `Ok` type to be `Debug`, which `Box<dyn GByteStore>`
     /// is not.
     fn expect_err(
-        result: Result<Option<Box<dyn ByteProvider>>, GetByteProviderError>,
+        result: Result<Option<Box<dyn GByteStore>>, GetByteProviderError>,
     ) -> GetByteProviderError {
         match result {
             Err(e) => e,

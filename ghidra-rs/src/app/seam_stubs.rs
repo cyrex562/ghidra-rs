@@ -39,7 +39,7 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 use crate::util::seam_stubs::ResourceFile;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::mem::{Memory, MemoryAccessException};
 use std::collections::BTreeMap;
@@ -451,15 +451,15 @@ pub trait GoToOverrideService: Send + Sync {}
 /// members are needed yet.
 pub trait TreePath {}
 
-/// Placeholder for `ghidra.app.util.bin.ByteProvider`, referenced by
+/// Placeholder for `ghidra.app.util.bin.GByteStore`, referenced by
 /// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
 /// `Loader`'s default `get_preferred_file_name` only ever calls `getFSRL()`/`getName()`, so no
 /// other members are needed yet.
 pub trait ByteProviderLike {
-    /// Stands in for `ByteProvider.getFSRL()`.
+    /// Stands in for `GByteStore.getFSRL()`.
     fn get_fsrl(&self) -> StdOption<Box<dyn crate::filesystem::gfilesystem::fsrl::Fsrl>>;
 
-    /// Stands in for `ByteProvider.getName()`.
+    /// Stands in for `GByteStore.getName()`.
     fn get_name(&self) -> StdOption<String>;
 }
 
@@ -881,7 +881,7 @@ pub mod elf_program_builder {
 /// (opened `"r"`, per the single-`File`-argument constructor `DbgLoader` uses); this stub models
 /// exactly that read path over a real [`std::fs::File`] -- unlike the auto-generated stub shape,
 /// it is backed by the crate's real
-/// [`ByteProvider`](crate::filesystem::ghidra::g_binary_reader::ByteProvider) trait (rather than a
+/// [`GByteStore`](crate::filesystem::ghidra::g_binary_reader::GByteStore) trait (rather than a
 /// disconnected placeholder trait), so it can actually back a `BinaryReader` once one exists over
 /// it. `getName`/`getAbsolutePath`/`getInputStream`/`toString`/`setFsrl` are not modeled: nothing
 /// in the currently-ported tree reads them.
@@ -905,7 +905,7 @@ impl RandomAccessByteProvider {
     }
 }
 
-impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for RandomAccessByteProvider {
+impl crate::filesystem::ghidra::g_binary_reader::GByteStore for RandomAccessByteProvider {
     fn length(&mut self) -> std::io::Result<u64> {
         Ok(self.file.metadata()?.len())
     }
@@ -2771,7 +2771,7 @@ impl DyldArchitecture {
 /// 1500-line) class is ported. Java's constructor parses the entire DYLD cache header (magic,
 /// mapping/image offsets, UUIDs, dozens of sub-cache and slide-info fields...); only the 16-byte
 /// magic -- resolved to a [`DyldArchitecture`] the same way `DyldArchitecture.getArchitecture
-/// (ByteProvider)` does -- is parsed here. [`base_address`](Self::base_address) and
+/// (GByteStore)` does -- is parsed here. [`base_address`](Self::base_address) and
 /// [`is_subcache`](Self::is_subcache) are NOT derived from any of the (unparsed) later fields
 /// the real `getBaseAddress()`/`isSubcache()` compute them from, and default to `0`/`false` until
 /// the full port lands.
@@ -2955,17 +2955,17 @@ impl DyldCacheLocalSymbolsInfo {
 /// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
 /// ported. Java's version is a final class of statics, so (per this crate's convention for such
 /// classes, e.g. [`option_utils`]) this is a plain module of free functions. Only
-/// `isDyldCache(ByteProvider)` -- the one overload `DyldCacheLoader` calls -- is modeled; the
+/// `isDyldCache(GByteStore)` -- the one overload `DyldCacheLoader` calls -- is modeled; the
 /// `Program`-taking overload and the `SplitDyldCache`/image-record helpers are not needed by any
 /// current caller.
 pub mod dyld_cache_utils {
     use super::DyldArchitecture;
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    /// Port of `DyldCacheUtils.isDyldCache(ByteProvider)`.
-    pub fn is_dyld_cache(provider: &Rc<RefCell<dyn ByteProvider>>) -> bool {
+    /// Port of `DyldCacheUtils.isDyldCache(GByteStore)`.
+    pub fn is_dyld_cache(provider: &Rc<RefCell<dyn GByteStore>>) -> bool {
         let bytes =
             match provider.borrow_mut().read_bytes(0, DyldArchitecture::DYLD_V1_SIGNATURE_LEN) {
                 Ok(bytes) => bytes,
@@ -2986,7 +2986,7 @@ pub mod dyld_cache_utils {
 /// `DyldCacheLoader` needs instead of growing that trait, to avoid disturbing its existing caller.
 pub mod memory_block_utils {
     use super::MessageLog;
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::program::database::mem::file_bytes::FileBytes;
     use crate::program::model::address::{Address, AddressOverflowException};
     use crate::program::model::listing::Program;
@@ -2996,13 +2996,13 @@ pub mod memory_block_utils {
     use std::rc::Rc;
     use std::sync::Arc;
 
-    /// Port of `MemoryBlockUtils.createFileBytes(Program, ByteProvider, TaskMonitor)`. Not yet
+    /// Port of `MemoryBlockUtils.createFileBytes(Program, GByteStore, TaskMonitor)`. Not yet
     /// implemented (see module docs); the real body reads every byte out of `provider` and hands
     /// them to the program's file-bytes database, which needs far more infrastructure than this
     /// placeholder models.
     pub fn create_file_bytes(
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<Arc<dyn FileBytes>> {
         let _ = (program, provider, monitor);
@@ -3105,18 +3105,18 @@ impl DyldCacheImageRecord {
 #[derive(Default)]
 pub struct SplitDyldCache {
     headers: Vec<DyldCacheHeader>,
-    providers: Vec<std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>>,
+    providers: Vec<std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>>,
     names: Vec<String>,
     image_records: Vec<DyldCacheImageRecord>,
     base_address: i64,
 }
 
 impl SplitDyldCache {
-    /// Port of `SplitDyldCache(ByteProvider, boolean, MessageLog, TaskMonitor)`. Not yet
+    /// Port of `SplitDyldCache(GByteStore, boolean, MessageLog, TaskMonitor)`. Not yet
     /// implemented: the real constructor globs the directory beside `provider`'s file for
     /// sub-caches, opens each one, and parses its header and image list.
     pub fn new(
-        provider: &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+        provider: &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>,
         should_process_local_symbols: bool,
         log: &MessageLog,
         monitor: &dyn crate::util::task::TaskMonitor,
@@ -3129,7 +3129,7 @@ impl SplitDyldCache {
     /// no file to discover sub-caches from. Has no Java counterpart.
     pub fn from_parts(
         headers: Vec<DyldCacheHeader>,
-        providers: Vec<std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>>,
+        providers: Vec<std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>>,
         names: Vec<String>,
         image_records: Vec<DyldCacheImageRecord>,
         base_address: i64,
@@ -3158,7 +3158,7 @@ impl SplitDyldCache {
     pub fn get_provider(
         &self,
         i: usize,
-    ) -> &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+    ) -> &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
         &self.providers[i]
     }
 
@@ -3490,13 +3490,13 @@ impl Default for XmlProgramOptions {
 
 /// Placeholder for `ghidra.app.util.xml.ProgramXmlMgr`, referenced by
 /// [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) before the real class is
-/// ported. Java's version owns the XML `ByteProvider`/`File` and drives the two dozen `*XmlMgr`
+/// ported. Java's version owns the XML `GByteStore`/`File` and drives the two dozen `*XmlMgr`
 /// readers/writers over it; only the two constructors and the two reads `XmlLoader` performs are
 /// modeled.
 ///
-/// The real port will hold the `ByteProvider` it was constructed from. This placeholder keeps
+/// The real port will hold the `GByteStore` it was constructed from. This placeholder keeps
 /// only the underlying file path, so that it stays `Send + Sync`: `XmlLoader` shares one across
-/// the `AnalysisWorker` it schedules, and this crate's `ByteProvider` handles are
+/// the `AnalysisWorker` it schedules, and this crate's `GByteStore` handles are
 /// `Rc<RefCell<..>>`, which are not.
 pub struct ProgramXmlMgr {
     /// The XML file this manager reads, when known.
@@ -3504,10 +3504,10 @@ pub struct ProgramXmlMgr {
 }
 
 impl ProgramXmlMgr {
-    /// Port of `ProgramXmlMgr(ByteProvider)`.
+    /// Port of `ProgramXmlMgr(GByteStore)`.
     pub fn from_provider(
         provider: &std::rc::Rc<
-            std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>,
+            std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>,
         >,
     ) -> Self {
         ProgramXmlMgr { file: provider.borrow().get_file() }
@@ -5536,7 +5536,7 @@ impl SetCommentCmd {
     }
 }
 
-/// [`ByteProvider`] over a program's [`Memory`], addressing bytes by the offset within a fixed
+/// [`GByteStore`] over a program's [`Memory`], addressing bytes by the offset within a fixed
 /// [`AddressSpace`]. Backs [`MemoryBinaryReader`], which in turn backs
 /// [`GccAnalysisUtils::read_sleb128_info`].
 struct MemoryByteProvider {
@@ -5544,7 +5544,7 @@ struct MemoryByteProvider {
     space: Arc<AddressSpace>,
 }
 
-impl ByteProvider for MemoryByteProvider {
+impl GByteStore for MemoryByteProvider {
     fn length(&mut self) -> io::Result<u64> {
         Ok(u64::MAX)
     }
@@ -5624,7 +5624,7 @@ impl BinaryReader for MemoryBinaryReader {
         (0..n_elements as u64).map(|i| self.read_byte(index + i)).collect()
     }
 
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(MemoryByteProvider {
             memory: self.memory.clone(),
             space: self.space.clone(),

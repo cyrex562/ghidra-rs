@@ -8,7 +8,7 @@ use std::io;
 use std::rc::Rc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::seam_stubs::MemoryByteProvider;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
@@ -30,20 +30,20 @@ pub struct ItemWithAddress<T> {
     pub address: Address,
 }
 
-/// A concrete [`BinaryReader`] backed by a [`ByteProvider`].
+/// A concrete [`BinaryReader`] backed by a [`GByteStore`].
 ///
 /// The crate does not yet have a canonical production implementer of the [`BinaryReader`] trait
 /// (only test mocks exist so far), so [`read_item_from_block`] constructs this minimal one --
-/// mirroring the `ByteProvider`-backed constructor of the original `BinaryReader.java` class --
+/// mirroring the `GByteStore`-backed constructor of the original `BinaryReader.java` class --
 /// to actually read an item out of a memory section.
 struct ProviderBinaryReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     is_little_endian: bool,
     current_index: u64,
 }
 
 impl ProviderBinaryReader {
-    fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         ProviderBinaryReader { provider, is_little_endian, current_index: 0 }
     }
 }
@@ -83,7 +83,7 @@ impl BinaryReader for ProviderBinaryReader {
         self.provider.borrow_mut().read_bytes(index, n_elements)
     }
 
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
 

@@ -16,7 +16,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::dex_header::DexHeader;
 use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnum;
 use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
@@ -370,7 +370,7 @@ pub mod android_typed_value {
 /// Placeholder for the unported Java type `ByteArrayProvider`, referenced by
 /// `AndroidXmlFileSystem::get_byte_provider`.
 /// Concrete stub: Java class, not interface. Wraps an in-memory byte array as a
-/// [`ByteProvider`]; only the members THIS type needs are included.
+/// [`GByteStore`]; only the members THIS type needs are included.
 pub struct ByteArrayProvider {
     bytes: Vec<u8>,
 }
@@ -381,7 +381,7 @@ impl ByteArrayProvider {
     }
 }
 
-impl ByteProvider for ByteArrayProvider {
+impl GByteStore for ByteArrayProvider {
     fn length(&mut self) -> io::Result<u64> {
         Ok(self.bytes.len() as u64)
     }
@@ -579,12 +579,12 @@ impl FileCacheEntry {
         self.bytes.len() as i64
     }
 
-    /// Exposes the entry's contents as a [`ByteProvider`]. Mirrors `asByteProvider(FSRL)`.
+    /// Exposes the entry's contents as a [`GByteStore`]. Mirrors `asByteProvider(FSRL)`.
     ///
     /// The Java method tags the returned provider with the caller's `FSRL`; [`ByteArrayProvider`]
     /// carries no FSRL (its `get_fsrl` returns `None`), so that tagging is dropped here until
     /// the real `FileCache` lands.
-    pub fn as_byte_provider(&self) -> io::Result<Box<dyn ByteProvider>> {
+    pub fn as_byte_provider(&self) -> io::Result<Box<dyn GByteStore>> {
         Ok(Box::new(ByteArrayProvider::new(self.bytes.clone())))
     }
 }
@@ -800,7 +800,7 @@ impl ZipFileSystem {
     /// which this stub does not construct.
     pub fn mount(
         &mut self,
-        _byte_provider: Box<dyn ByteProvider>,
+        _byte_provider: Box<dyn GByteStore>,
         _monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Unsupported, "ZipFileSystem.mount not yet ported"))
@@ -1147,26 +1147,26 @@ fn put_i64_endian(bytes: &mut [u8], offset: usize, value: i64, big_endian: bool)
 /// Placeholder for `ghidra.app.util.bin.format.macho.MachHeader`, referenced by
 /// `DyldCacheFileSystem::mount` via `SplitDyldCache::macho`.
 ///
-/// Concrete stub: Java class, not interface. `MachHeader(ByteProvider, long, boolean)`
+/// Concrete stub: Java class, not interface. `MachHeader(GByteStore, long, boolean)`
 /// constructs the header at a byte offset without parsing it (this class's caller invokes
 /// `parseSegments()` directly, never `parse()`); parsing the Mach-O load commands to recover
 /// the real segment table is not yet ported, so `parse_segments` always reports an empty list
 /// until it is. Replace with the real port when available.
 pub struct MachHeader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     offset: i64,
     little_endian: bool,
 }
 
 impl MachHeader {
-    /// Mirrors `MachHeader(ByteProvider, long, boolean)`, restricted to the `isRelative = false`
+    /// Mirrors `MachHeader(GByteStore, long, boolean)`, restricted to the `isRelative = false`
     /// case (the only one `SplitDyldCache.getMacho` uses).
-    pub fn new(provider: Rc<RefCell<dyn ByteProvider>>, offset: i64) -> Self {
+    pub fn new(provider: Rc<RefCell<dyn GByteStore>>, offset: i64) -> Self {
         MachHeader { provider, offset, little_endian: true }
     }
 
-    /// Mirrors `MachHeader(ByteProvider)`, i.e. `MachHeader(provider, 0)`.
-    pub fn from_provider(provider: Rc<RefCell<dyn ByteProvider>>) -> Self {
+    /// Mirrors `MachHeader(GByteStore)`, i.e. `MachHeader(provider, 0)`.
+    pub fn from_provider(provider: Rc<RefCell<dyn GByteStore>>) -> Self {
         MachHeader::new(provider, 0)
     }
 
@@ -1317,16 +1317,16 @@ impl FileSetEntryCommand {
 /// [`pack`](Self::pack) arguments instead of storing them. Replace with the real port when
 /// available.
 pub struct ExtractedMacho {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     header: MachHeader,
     footer: Vec<u8>,
     packed: Vec<u8>,
 }
 
 impl ExtractedMacho {
-    /// Mirrors `ExtractedMacho(ByteProvider, long, MachHeader, byte[], TaskMonitor)` (see type
+    /// Mirrors `ExtractedMacho(GByteStore, long, MachHeader, byte[], TaskMonitor)` (see type
     /// docs for why `providerOffset`/`monitor` aren't constructor params here).
-    pub fn new(provider: Rc<RefCell<dyn ByteProvider>>, header: MachHeader, footer: &[u8]) -> Self {
+    pub fn new(provider: Rc<RefCell<dyn GByteStore>>, header: MachHeader, footer: &[u8]) -> Self {
         ExtractedMacho { provider, header, footer: footer.to_vec(), packed: Vec::new() }
     }
 
@@ -1454,19 +1454,19 @@ pub enum SplitDyldCacheError {
 /// `DyldCacheFileSystem` drives is modeled: the real class additionally locates and validates
 /// sibling ".1", ".2", ".symbols" subcache files alongside the base file via
 /// `FileSystemService`/`GFileSystem` filesystem probing, neither of which this narrow,
-/// `ByteProvider`-only constructor has access to, so this stub always reports a single-file,
+/// `GByteStore`-only constructor has access to, so this stub always reports a single-file,
 /// non-split cache. Replace with the real port when available.
 pub struct SplitDyldCache {
-    providers: Vec<Rc<RefCell<dyn ByteProvider>>>,
+    providers: Vec<Rc<RefCell<dyn GByteStore>>>,
     headers: Vec<DyldCacheHeader>,
     names: Vec<String>,
 }
 
 impl SplitDyldCache {
-    /// Mirrors the base-provider-only `SplitDyldCache(ByteProvider, boolean, MessageLog,
+    /// Mirrors the base-provider-only `SplitDyldCache(GByteStore, boolean, MessageLog,
     /// TaskMonitor)` constructor; see the type docs for how this narrows it.
     pub fn new(
-        base_provider: Rc<RefCell<dyn ByteProvider>>,
+        base_provider: Rc<RefCell<dyn GByteStore>>,
         _should_process_local_symbols: bool,
         monitor: &dyn TaskMonitor,
     ) -> Result<Self, SplitDyldCacheError> {
@@ -1586,7 +1586,7 @@ impl DyldCacheExtractor {
         _split_dyld_cache: &SplitDyldCache,
         _slide_fixup_map: &SlideFixupMap,
         _monitor: &dyn TaskMonitor,
-    ) -> io::Result<Box<dyn ByteProvider>> {
+    ) -> io::Result<Box<dyn GByteStore>> {
         Err(io::Error::new(io::ErrorKind::Unsupported, "DyldCacheExtractor.extract_dylib not yet ported"))
     }
 
@@ -1599,7 +1599,7 @@ impl DyldCacheExtractor {
         _split_dyld_cache: &SplitDyldCache,
         _slide_fixup_map: &SlideFixupMap,
         _monitor: &dyn TaskMonitor,
-    ) -> io::Result<Box<dyn ByteProvider>> {
+    ) -> io::Result<Box<dyn GByteStore>> {
         Err(io::Error::new(io::ErrorKind::Unsupported, "DyldCacheExtractor.extract_mapping not yet ported"))
     }
 }

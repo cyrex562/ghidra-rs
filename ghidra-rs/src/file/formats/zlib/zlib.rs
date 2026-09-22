@@ -4,7 +4,7 @@ use flate2::read::{DeflateDecoder, ZlibDecoder};
 use flate2::write::{DeflateEncoder, ZlibEncoder};
 use flate2::Compression;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::util::msg::Msg;
 
 /// ZLIB compression/decompression helper.
@@ -114,7 +114,7 @@ impl Zlib {
 
     /// Returns true if the first two bytes read from `provider` match one of the known ZLIB
     /// compression header magic values.
-    pub fn is_zlib(provider: &mut dyn ByteProvider) -> bool {
+    pub fn is_zlib(provider: &mut dyn GByteStore) -> bool {
         match provider.read_bytes(0, 2) {
             Ok(bytes) => {
                 bytes == Self::ZLIB_COMPRESSION_NO_LOW
@@ -141,7 +141,7 @@ mod tests {
         }
     }
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }

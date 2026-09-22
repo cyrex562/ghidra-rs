@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::format::pdb2::pdbreader::msf::msf::MsfError;
 use crate::format::seam_stubs::{AbstractPdb, PdbReaderOptions};
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::util::task::TaskMonitor;
 
 /// `VC2` MSF version identifier (0x013048ea).
@@ -30,9 +30,9 @@ pub const VC140_ID: i32 = 20140508;
 /// (not yet deserialized).
 ///
 /// Mirrors `ghidra.app.util.bin.format.pdb2.pdbreader.PdbParser`. Java's three overloaded static
-/// `parse` methods (by filename, by `File`, by `ByteProvider`) become the three methods below.
+/// `parse` methods (by filename, by `File`, by `GByteStore`) become the three methods below.
 /// Java's `parse(String, ...)` delegated to `parse(File, ...)`, which itself opened a
-/// `FileByteProvider` via `FileSystemService` and delegated to `parse(ByteProvider, ...)`; that
+/// `FileByteProvider` via `FileSystemService` and delegated to `parse(GByteStore, ...)`; that
 /// wiring is an implementation detail left to implementors, not part of this seam.
 ///
 /// Takes `&self` (rather than being free functions/associated functions, as in Java's all-static
@@ -70,7 +70,7 @@ pub trait PdbParser {
     /// Returns [`MsfError`] on I/O issues, parsing issues, or user cancellation.
     fn parse_byte_provider(
         &self,
-        byte_provider: Box<dyn ByteProvider>,
+        byte_provider: Box<dyn GByteStore>,
         pdb_options: &PdbReaderOptions,
         monitor: &dyn TaskMonitor,
     ) -> Result<Box<dyn AbstractPdb>, MsfError>;
@@ -100,7 +100,7 @@ mod tests {
     }
 
     /// Mock implementation proving [`PdbParser`] is object-safe and can dispatch on the version
-    /// identifier the way `PdbParser.parse(ByteProvider, ...)` does in Java.
+    /// identifier the way `PdbParser.parse(GByteStore, ...)` does in Java.
     struct MockPdbParser;
 
     impl PdbParser for MockPdbParser {
@@ -131,7 +131,7 @@ mod tests {
 
         fn parse_byte_provider(
             &self,
-            _byte_provider: Box<dyn ByteProvider>,
+            _byte_provider: Box<dyn GByteStore>,
             _pdb_options: &PdbReaderOptions,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn AbstractPdb>, MsfError> {

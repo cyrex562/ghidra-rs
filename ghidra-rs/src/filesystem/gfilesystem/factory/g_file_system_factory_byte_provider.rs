@@ -1,11 +1,11 @@
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::filesystem::seam_stubs::{FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
 use crate::util::task::TaskMonitor;
 
 use super::g_file_system_factory::GFileSystemFactory;
 
-/// A [`GFileSystemFactory`] for filesystem implementations that use a [`ByteProvider`].
+/// A [`GFileSystemFactory`] for filesystem implementations that use a [`GByteStore`].
 ///
 /// This is the Rust equivalent of
 /// `ghidra.formats.gfilesystem.factory.GFileSystemFactoryByteProvider`.
@@ -25,7 +25,7 @@ pub trait GFileSystemFactoryByteProvider<FSTYPE: GFileSystemLike>:
     fn create(
         &self,
         target_fsrl: &dyn FsrlRootLike,
-        byte_provider: Box<dyn ByteProvider>,
+        byte_provider: Box<dyn GByteStore>,
         fs_service: &dyn FileSystemServiceLike,
         monitor: &dyn TaskMonitor,
     ) -> Result<Box<dyn GFileSystemLike>, GFileSystemError>;
@@ -47,7 +47,7 @@ mod tests {
 
     struct RecordingByteProvider;
 
-    impl ByteProvider for RecordingByteProvider {
+    impl GByteStore for RecordingByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(0)
         }
@@ -76,7 +76,7 @@ mod tests {
         fn create(
             &self,
             _target_fsrl: &dyn FsrlRootLike,
-            mut byte_provider: Box<dyn ByteProvider>,
+            mut byte_provider: Box<dyn GByteStore>,
             _fs_service: &dyn FileSystemServiceLike,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn GFileSystemLike>, GFileSystemError> {
@@ -90,7 +90,7 @@ mod tests {
     #[test]
     fn create_reads_byte_provider_and_returns_filesystem() {
         let factory = MockFactory;
-        let bp: Box<dyn ByteProvider> = Box::new(RecordingByteProvider);
+        let bp: Box<dyn GByteStore> = Box::new(RecordingByteProvider);
         let monitor = crate::util::task::DummyMonitor;
         let result = factory.create(&DummyFsrlRoot, bp, &DummyFsService, &monitor);
         assert!(result.is_ok());
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn boxed_dyn_factory_is_accepted() {
         let factory: Box<dyn GFileSystemFactoryByteProvider<DummyFileSystem>> = Box::new(MockFactory);
-        let bp: Box<dyn ByteProvider> = Box::new(RecordingByteProvider);
+        let bp: Box<dyn GByteStore> = Box::new(RecordingByteProvider);
         let monitor = crate::util::task::DummyMonitor;
         let fs = factory.create(&DummyFsrlRoot, bp, &DummyFsService, &monitor).unwrap();
         let _: Box<dyn GFileSystemLike> = fs;

@@ -9,7 +9,7 @@ use std::rc::Rc;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::util::msg::Msg;
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
@@ -562,7 +562,7 @@ pub trait PdbInfoDotNet: Send + Sync {
 /// [`read_item_from_block`](crate::format::elf::info::elf_info_item::read_item_from_block) before
 /// the real class is ported. Only `createMemoryBlockByteProvider` and the `getName`/`getMemory`
 /// accessors that `ElfInfoItem` needs are modeled; unlike the auto-generated stub shape, this is
-/// backed by the crate's real [`ByteProvider`](crate::filesystem::ghidra::g_binary_reader::ByteProvider)
+/// backed by the crate's real [`GByteStore`](crate::filesystem::ghidra::g_binary_reader::GByteStore)
 /// trait (rather than a disconnected placeholder trait) so it can actually back a `BinaryReader`.
 pub struct MemoryByteProvider {
     memory: std::sync::Arc<dyn crate::program::model::mem::Memory>,
@@ -638,7 +638,7 @@ impl MemoryByteProvider {
     }
 }
 
-impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for MemoryByteProvider {
+impl crate::filesystem::ghidra::g_binary_reader::GByteStore for MemoryByteProvider {
     fn length(&mut self) -> std::io::Result<u64> {
         Ok(self.length)
     }
@@ -1439,7 +1439,7 @@ pub trait MachHeader: Send + Sync {
     }
 }
 
-/// Stands in for the `MachHeader(ByteProvider, long machHeaderStartIndexInProvider)` constructor,
+/// Stands in for the `MachHeader(GByteStore, long machHeaderStartIndexInProvider)` constructor,
 /// which cannot live on the [`MachHeader`] trait above (Rust traits have no constructors, and the
 /// real Java class is concrete). Referenced by
 /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
@@ -1449,7 +1449,7 @@ pub trait MachHeader: Send + Sync {
 /// constructor throws `MachException` when the bytes at `offset` are not a Mach-O header, which
 /// is exactly the case `DyldCacheProgramBuilder` swallows, hence the error type.
 pub fn mach_header_from_provider(
-    provider: &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+    provider: &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>,
     offset: i64,
 ) -> Result<Box<dyn MachHeader>, crate::format::macho::mach_exception::MachException> {
     let _ = (provider, offset);
@@ -5212,19 +5212,19 @@ impl DebugDirectoryParser {
     }
 }
 
-/// A minimal [`BinaryReader`] backed by a [`ByteProvider`], filling the same crate-wide gap (no
+/// A minimal [`BinaryReader`] backed by a [`GByteStore`], filling the same crate-wide gap (no
 /// canonical production `BinaryReader` implementation exists yet) that
 /// [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader)'s local
 /// `JavaClassBinaryReader` already fills for its own caller. [`SeparateDebugHeader`] needs its
 /// own copy to hand a real `&dyn BinaryReader` to [`DebugDirectoryParser::new`].
 struct PeByteProviderReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     is_little_endian: bool,
     current_index: u64,
 }
 
 impl PeByteProviderReader {
-    fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         PeByteProviderReader { provider, is_little_endian, current_index: 0 }
     }
 }
@@ -5264,7 +5264,7 @@ impl BinaryReader for PeByteProviderReader {
         self.provider.borrow_mut().read_bytes(index, n_elements)
     }
 
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
 
@@ -5316,8 +5316,8 @@ impl SeparateDebugHeader {
     /// `SectionHeader.IMAGE_SIZEOF_SECTION_HEADER`.
     const IMAGE_SIZEOF_SECTION_HEADER: u64 = 40;
 
-    /// Port of `SeparateDebugHeader(ByteProvider)`.
-    pub fn new(provider: &Rc<RefCell<dyn ByteProvider>>) -> std::io::Result<Self> {
+    /// Port of `SeparateDebugHeader(GByteStore)`.
+    pub fn new(provider: &Rc<RefCell<dyn GByteStore>>) -> std::io::Result<Self> {
         let mut reader = PeByteProviderReader::new(Rc::clone(provider), true);
         reader.set_pointer_index(0);
 
@@ -5748,10 +5748,10 @@ impl DataType for AndroidElfRelocationOffset {
 /// [`CoffArchiveMemberHeader`](crate::format::coff::archive::coff_archive_member_header::CoffArchiveMemberHeader)
 /// before the real class is ported.
 pub trait LongNamesMember: Send + Sync {
-    /// Mirrors `LongNamesMember.getStringAtOffset(ByteProvider, long)`.
+    /// Mirrors `LongNamesMember.getStringAtOffset(GByteStore, long)`.
     fn get_string_at_offset(
         &self,
-        provider: std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+        provider: std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>,
         offset: i64,
     ) -> std::io::Result<String>;
 }

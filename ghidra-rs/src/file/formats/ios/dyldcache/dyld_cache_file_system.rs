@@ -61,7 +61,7 @@ use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::mach_exception::MachException;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -317,7 +317,7 @@ pub struct DyldCacheFileSystem {
     fs_fsrl: DyldFsrlRoot,
     /// Mirrors `provider`. `None` once [`close`](Self::close) has run, matching Java's
     /// `provider == null` after close.
-    provider: Option<Rc<RefCell<dyn ByteProvider>>>,
+    provider: Option<Rc<RefCell<dyn GByteStore>>>,
     /// Mirrors `splitDyldCache`.
     split_dyld_cache: Option<SplitDyldCache>,
     /// Mirrors `parsedLocalSymbols`.
@@ -337,8 +337,8 @@ pub struct DyldCacheFileSystem {
 impl DyldCacheFileSystem {
     /// Creates a new [`DyldCacheFileSystem`].
     ///
-    /// Mirrors `DyldCacheFileSystem(FSRLRoot, ByteProvider)`.
-    pub fn new(fs_fsrl: DyldFsrlRoot, provider: Rc<RefCell<dyn ByteProvider>>) -> Self {
+    /// Mirrors `DyldCacheFileSystem(FSRLRoot, GByteStore)`.
+    pub fn new(fs_fsrl: DyldFsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
         let root = DyldFsrl::new("/");
         let fs_index = FileSystemIndexHelper::new(DyldFsHandle::new(root.clone()), root);
         DyldCacheFileSystem {
@@ -473,7 +473,7 @@ impl DyldCacheFileSystem {
         &mut self,
         file: &DyldGFile,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Option<Box<dyn ByteProvider>>, GetByteProviderError> {
+    ) -> Result<Option<Box<dyn GByteStore>>, GetByteProviderError> {
         let Some(entry) = self.fs_index.get_metadata(file).map(Rc::clone) else {
             return Ok(None);
         };
@@ -578,7 +578,7 @@ impl DyldCacheFileSystem {
         if let Some(mut split) = self.split_dyld_cache.take() {
             split.close();
         }
-        // `ByteProvider` has no explicit close in this port (see
+        // `GByteStore` has no explicit close in this port (see
         // `crate::file::formats::zip::zip_file_system_factory`'s module docs for the same
         // substitution elsewhere in this crate); releasing it is just dropping it.
         self.provider = None;
@@ -725,7 +725,7 @@ mod tests {
         bytes: Vec<u8>,
     }
 
-    impl ByteProvider for MemoryByteProvider {
+    impl GByteStore for MemoryByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -754,7 +754,7 @@ mod tests {
         }
     }
 
-    fn dyld_v1_provider() -> Rc<RefCell<dyn ByteProvider>> {
+    fn dyld_v1_provider() -> Rc<RefCell<dyn GByteStore>> {
         // "dyld_v1  x86_64" is one of `DyldArchitecture::ARCHITECTURES`'s real signatures
         // (from the Java source), padded to the fixed magic length the header reads.
         let mut bytes = b"dyld_v1  x86_64".to_vec();

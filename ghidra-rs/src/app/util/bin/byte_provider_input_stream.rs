@@ -1,13 +1,13 @@
 use std::io::{self, Read};
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
-fn available_impl<P: ByteProvider>(provider: &mut P, current_position: u64) -> io::Result<usize> {
+fn available_impl<P: GByteStore>(provider: &mut P, current_position: u64) -> io::Result<usize> {
     let len = provider.length()?;
     Ok(len.saturating_sub(current_position).min(i32::MAX as u64) as usize)
 }
 
-fn skip_impl<P: ByteProvider>(
+fn skip_impl<P: GByteStore>(
     provider: &mut P,
     current_position: &mut u64,
     n: i64,
@@ -22,7 +22,7 @@ fn skip_impl<P: ByteProvider>(
     Ok(skipped as i64)
 }
 
-fn read_impl<P: ByteProvider>(
+fn read_impl<P: GByteStore>(
     provider: &mut P,
     current_position: &mut u64,
     buf: &mut [u8],
@@ -38,18 +38,18 @@ fn read_impl<P: ByteProvider>(
     Ok(to_read)
 }
 
-/// An [`std::io::Read`] stream that reads from a [`ByteProvider`].
+/// An [`std::io::Read`] stream that reads from a [`GByteStore`].
 ///
-/// Does not close the underlying `ByteProvider` when dropped. See
+/// Does not close the underlying `GByteStore` when dropped. See
 /// [`ClosingByteProviderInputStream`] for a variant that owns (and drops) the
 /// provider it wraps.
-pub struct ByteProviderInputStream<'a, P: ByteProvider> {
+pub struct ByteProviderInputStream<'a, P: GByteStore> {
     provider: &'a mut P,
     current_position: u64,
     mark_position: u64,
 }
 
-impl<'a, P: ByteProvider> ByteProviderInputStream<'a, P> {
+impl<'a, P: GByteStore> ByteProviderInputStream<'a, P> {
     /// Creates a stream that reads from `provider` starting at `start_position`.
     pub fn new(provider: &'a mut P, start_position: u64) -> Self {
         ByteProviderInputStream {
@@ -88,25 +88,25 @@ impl<'a, P: ByteProvider> ByteProviderInputStream<'a, P> {
     }
 }
 
-impl<'a, P: ByteProvider> Read for ByteProviderInputStream<'a, P> {
+impl<'a, P: GByteStore> Read for ByteProviderInputStream<'a, P> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         read_impl(self.provider, &mut self.current_position, buf)
     }
 }
 
-/// An [`std::io::Read`] stream that reads from a [`ByteProvider`] it owns.
+/// An [`std::io::Read`] stream that reads from a [`GByteStore`] it owns.
 ///
 /// Unlike [`ByteProviderInputStream`], this stream drops the underlying
 /// provider when [`Self::close`] is called, mirroring `ByteProviderInputStream.
 /// ClosingInputStream` closing the provider it wraps. Once closed, reads
 /// behave as if the stream were at end-of-file.
-pub struct ClosingByteProviderInputStream<P: ByteProvider> {
+pub struct ClosingByteProviderInputStream<P: GByteStore> {
     provider: Option<P>,
     current_position: u64,
     mark_position: u64,
 }
 
-impl<P: ByteProvider> ClosingByteProviderInputStream<P> {
+impl<P: GByteStore> ClosingByteProviderInputStream<P> {
     /// Creates a stream that reads from (and owns) `provider`, starting at
     /// `start_position`.
     pub fn new(provider: P, start_position: u64) -> Self {
@@ -157,7 +157,7 @@ impl<P: ByteProvider> ClosingByteProviderInputStream<P> {
     }
 }
 
-impl<P: ByteProvider> Read for ClosingByteProviderInputStream<P> {
+impl<P: GByteStore> Read for ClosingByteProviderInputStream<P> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match &mut self.provider {
             Some(provider) => read_impl(provider, &mut self.current_position, buf),
@@ -180,7 +180,7 @@ mod tests {
         }
     }
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }

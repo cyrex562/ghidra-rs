@@ -3,7 +3,7 @@ use std::io;
 use std::rc::Rc;
 
 use crate::app::util::bin::invalid_data_exception::InvalidDataException;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// The size of a BYTE, in bytes.
 pub const SIZEOF_BYTE: u64 = 1;
@@ -54,7 +54,7 @@ pub trait BinaryReader {
     fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>>;
 
     /// Returns the underlying byte provider.
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>>;
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>>;
 
     /// Returns an independent clone of this reader, sharing the same provider, positioned at
     /// `new_index`.
@@ -536,10 +536,10 @@ mod tests {
     use super::*;
     use std::io;
 
-    /// Minimal in-memory [`ByteProvider`] used only to back the mock reader below.
+    /// Minimal in-memory [`GByteStore`] used only to back the mock reader below.
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -571,7 +571,7 @@ mod tests {
     /// A trivial mock [`BinaryReader`] impl, proving the trait is object-safe (usable behind
     /// `Box<dyn BinaryReader>`) and usable via its default methods.
     struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         little_endian: bool,
         current_index: u64,
     }
@@ -613,7 +613,7 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {

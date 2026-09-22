@@ -13,7 +13,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::seam_stubs::{
     ClassFileJava, JavaClassUtil, MemoryByteProvider, MethodInfoJava, TransientPropertyScope,
     TransientProgramProperties,
@@ -23,20 +23,20 @@ use crate::program::model::listing::Program;
 use crate::program::model::mem::MemoryAccessException;
 use crate::util::msg::Msg;
 
-/// A minimal [`BinaryReader`] backed by a [`ByteProvider`].
+/// A minimal [`BinaryReader`] backed by a [`GByteStore`].
 ///
 /// The crate does not yet have a canonical production implementer of the [`BinaryReader`] trait,
-/// so this mirrors the `ByteProvider`-backed constructor of the original `BinaryReader.java`
+/// so this mirrors the `GByteStore`-backed constructor of the original `BinaryReader.java`
 /// class, consistent with the identical local helper in
 /// [`elf_info_item`](crate::format::elf::info::elf_info_item).
 struct ProviderBinaryReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     is_little_endian: bool,
     current_index: u64,
 }
 
 impl ProviderBinaryReader {
-    fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         ProviderBinaryReader { provider, is_little_endian, current_index: 0 }
     }
 }
@@ -76,7 +76,7 @@ impl BinaryReader for ProviderBinaryReader {
         self.provider.borrow_mut().read_bytes(index, n_elements)
     }
 
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
 

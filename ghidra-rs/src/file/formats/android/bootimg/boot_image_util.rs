@@ -85,7 +85,7 @@ impl BootImageUtil {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::program::model::lang::sleigh::SleighLanguage;
     use std::cell::RefCell;
     use std::io;
@@ -179,7 +179,7 @@ mod tests {
             Ok(self.bytes[start..end].to_vec())
         }
 
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             panic!("not implemented for mock")
         }
 

@@ -29,7 +29,7 @@ use crate::file::formats::android::xml::android_xml_convertor::{
     AndroidXmlConvertor, ANDROID_BINARY_XML_MAGIC,
 };
 use crate::file::seam_stubs::{AXmlParseError, AXmlResourceParser, AndroidXmlEvent, ByteArrayProvider};
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, FsrlLike, GFileImpl, HasFsrlRoot};
 use crate::util::task::TaskMonitor;
@@ -143,7 +143,7 @@ impl FsGetListing<XmlFsMarker, XmlFsrl> for XmlFsMarker {
 /// `AndroidXmlConvertor`).
 pub struct AndroidXmlFileSystem {
     file_system_name: String,
-    provider: Box<dyn ByteProvider>,
+    provider: Box<dyn GByteStore>,
     /// Text rendering of the binary XML payload, produced by [`open`](Self::open). `None`
     /// until `open` has been called, matching Java's `payloadFile == null` prior to `open()`.
     payload_bytes: Option<Vec<u8>>,
@@ -156,7 +156,7 @@ impl AndroidXmlFileSystem {
     /// I/O error reading it) is a hard `false`/error, while a failure converting the body (an
     /// `IOException` or `CancelledException` in Java) is folded into `false`.
     pub fn is_android_xml_file(
-        provider: &mut dyn ByteProvider,
+        provider: &mut dyn GByteStore,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<bool> {
         let magic = ANDROID_BINARY_XML_MAGIC;
@@ -172,8 +172,8 @@ impl AndroidXmlFileSystem {
         Ok(AndroidXmlConvertor::convert(&bytes, &mut out, &mut parser, monitor).is_ok())
     }
 
-    /// Mirrors the `AndroidXmlFileSystem(String, ByteProvider)` constructor.
-    pub fn new(file_system_name: impl Into<String>, provider: Box<dyn ByteProvider>) -> Self {
+    /// Mirrors the `AndroidXmlFileSystem(String, GByteStore)` constructor.
+    pub fn new(file_system_name: impl Into<String>, provider: Box<dyn GByteStore>) -> Self {
         AndroidXmlFileSystem {
             file_system_name: file_system_name.into(),
             provider,
@@ -229,7 +229,7 @@ impl AndroidXmlFileSystem {
         &self,
         _file: &GFileImpl<XmlFsMarker, XmlFsrl>,
         _monitor: &dyn TaskMonitor,
-    ) -> io::Result<Box<dyn ByteProvider>> {
+    ) -> io::Result<Box<dyn GByteStore>> {
         let bytes = self
             .payload_bytes
             .clone()
@@ -253,7 +253,7 @@ mod tests {
 
     struct VecByteProvider(Vec<u8>);
 
-    impl ByteProvider for VecByteProvider {
+    impl GByteStore for VecByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }

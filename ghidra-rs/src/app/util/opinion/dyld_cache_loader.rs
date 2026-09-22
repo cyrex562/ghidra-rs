@@ -14,8 +14,8 @@
 //!   `getDyldCacheOptions` helper). `getTier`/`getTierPriority` are inherited unchanged from
 //!   `AbstractProgramWrapperLoader` in Java and are not overridden here either, for the same
 //!   reason.
-//! * `findSupportedLoadSpecs(ByteProvider)` and `getDefaultOptions(ByteProvider, ...)` take the
-//!   real, already-ported [`ByteProvider`] trait (`crate::filesystem::ghidra::g_binary_reader`)
+//! * `findSupportedLoadSpecs(GByteStore)` and `getDefaultOptions(GByteStore, ...)` take the
+//!   real, already-ported [`GByteStore`] trait (`crate::filesystem::ghidra::g_binary_reader`)
 //!   directly, rather than the narrower `ByteProviderLike` marker the (not-implemented-here)
 //!   `Loader` trait uses for the same Java type.
 //! * `QueryOpinionService.query`'s static `languageService`/database singletons were already
@@ -53,7 +53,7 @@ use crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuild
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
 use crate::app::util::opinion::loader::COMMAND_LINE_ARG_PREFIX;
 use crate::app::util::opinion::query_opinion_service;
-use crate::filesystem::ghidra::g_binary_reader::{ByteProvider, GBinaryReader};
+use crate::filesystem::ghidra::g_binary_reader::{GByteStore, GBinaryReader};
 use crate::framework::application::Application;
 use crate::framework::model::DomainObject;
 use crate::program::model::lang::language_service::LanguageService;
@@ -123,10 +123,10 @@ impl DyldCacheLoader {
         DYLD_CACHE_NAME.to_string()
     }
 
-    /// Port of `DyldCacheLoader.findSupportedLoadSpecs(ByteProvider)`.
+    /// Port of `DyldCacheLoader.findSupportedLoadSpecs(GByteStore)`.
     pub fn find_supported_load_specs(
         &self,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         app: &dyn Application,
         language_service: &dyn LanguageService,
     ) -> io::Result<Vec<LoadSpec>> {
@@ -171,7 +171,7 @@ impl DyldCacheLoader {
     pub fn load(
         &self,
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         options: &[Box<dyn Option>],
         log: &mut MessageLog,
         monitor: &dyn TaskMonitor,
@@ -188,13 +188,13 @@ impl DyldCacheLoader {
         )
     }
 
-    /// Port of `DyldCacheLoader.getDefaultOptions(ByteProvider, LoadSpec, DomainObject, boolean,
+    /// Port of `DyldCacheLoader.getDefaultOptions(GByteStore, LoadSpec, DomainObject, boolean,
     /// boolean)`. Java's `super.getDefaultOptions(...)` (`AbstractProgramLoader`, not ported) is
     /// not modeled; this list starts empty rather than reproducing that unported base behavior
     /// (see module docs).
     pub fn get_default_options(
         &self,
-        _provider: &Rc<RefCell<dyn ByteProvider>>,
+        _provider: &Rc<RefCell<dyn GByteStore>>,
         _load_spec: &LoadSpec,
         _domain_object: &dyn DomainObject,
         load_into_program: bool,
@@ -357,11 +357,11 @@ mod tests {
     use crate::program::seam_stubs::Processor as ProcessorTrait;
     use crate::util::task::DummyMonitor;
 
-    /// In-memory [`ByteProvider`], mirroring the same helper other reader tests in this crate
+    /// In-memory [`GByteStore`], mirroring the same helper other reader tests in this crate
     /// define locally (e.g. `g_binary_reader`'s own `VecProvider`).
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -401,7 +401,7 @@ mod tests {
         }
     }
 
-    fn provider(bytes: &[u8]) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider(bytes: &[u8]) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(VecProvider(bytes.to_vec())))
     }
 

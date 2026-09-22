@@ -1,12 +1,12 @@
 use std::io;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::database::program_db::ProgramDB;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
 use crate::program::model::mem::Memory;
 
-/// A read-only [`ByteProvider`] that concatenates the default-space memory of
+/// A read-only [`GByteStore`] that concatenates the default-space memory of
 /// up to three programs, treating each program's memory as if it started at
 /// offset 0.
 ///
@@ -32,7 +32,7 @@ impl<'a> MultiProgramMemoryByteProvider<'a> {
     }
 }
 
-impl<'a> ByteProvider for MultiProgramMemoryByteProvider<'a> {
+impl<'a> GByteStore for MultiProgramMemoryByteProvider<'a> {
     fn length(&mut self) -> io::Result<u64> {
         let mut total = 0u64;
         for program in &self.programs {

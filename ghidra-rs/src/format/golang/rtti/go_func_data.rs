@@ -782,7 +782,7 @@ impl std::fmt::Display for RecoveredSignature {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::seam_stubs::{GoName, GoSlice, GoType, GoTypeManager, StructureMappingInfo};
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
@@ -801,7 +801,7 @@ mod tests {
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> std::io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -831,7 +831,7 @@ mod tests {
     }
 
     struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         current_index: u64,
     }
 
@@ -867,7 +867,7 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {

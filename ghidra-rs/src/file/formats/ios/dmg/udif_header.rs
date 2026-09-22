@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// Magic value `'koly'` (`0x6b6f6c79`) marking the start of a valid [`UdifHeader`].
 const SIGNATURE_MAGIC_KOLY: i32 = 0x6b6f_6c79;
@@ -130,7 +130,7 @@ impl UdifHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading `bp`'s length fails.
-    pub fn has_good_offsets(&self, bp: &mut dyn ByteProvider) -> io::Result<bool> {
+    pub fn has_good_offsets(&self, bp: &mut dyn GByteStore) -> io::Result<bool> {
         let length = bp.length()? as i64;
         Ok(0 <= self.data_fork_offset
             && self.data_fork_offset < length
@@ -151,7 +151,7 @@ mod tests {
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -186,7 +186,7 @@ mod tests {
     }
 
     struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         little_endian: bool,
         current_index: u64,
     }
@@ -236,7 +236,7 @@ mod tests {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
 
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
 

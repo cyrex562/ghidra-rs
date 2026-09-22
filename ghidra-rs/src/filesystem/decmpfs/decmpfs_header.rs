@@ -95,7 +95,7 @@ mod tests {
 
     struct TestProvider(Vec<u8>);
 
-    impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for TestProvider {
+    impl crate::filesystem::ghidra::g_binary_reader::GByteStore for TestProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }

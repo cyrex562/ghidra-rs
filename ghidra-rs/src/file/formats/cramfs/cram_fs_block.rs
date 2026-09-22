@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// Bit flag (in a block pointer) indicating the block is a direct pointer.
 pub const IS_DIRECT_POINTER: u32 = 1 << 30;
@@ -20,7 +20,7 @@ pub struct CramFsBlock {
     is_direct_pointer: bool,
     is_compressed: bool,
     block_size: i32,
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
 }
 
 impl CramFsBlock {
@@ -30,7 +30,7 @@ impl CramFsBlock {
     /// * `start` - the address for the start of this block.
     /// * `block_size` - the size of the cramfs block.
     /// * `provider` - the byte provider for the block header.
-    pub fn new(start: i32, block_size: i32, provider: Rc<RefCell<dyn ByteProvider>>) -> Self {
+    pub fn new(start: i32, block_size: i32, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
         CramFsBlock {
             block_pointer: start,
             start_address: start,
@@ -78,7 +78,7 @@ mod tests {
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -107,7 +107,7 @@ mod tests {
         }
     }
 
-    fn provider(data: Vec<u8>) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider(data: Vec<u8>) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(VecProvider(data)))
     }
 

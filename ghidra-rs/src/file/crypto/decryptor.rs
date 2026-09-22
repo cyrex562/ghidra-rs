@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::util::exception::{CancelledException, CryptoException};
 use crate::util::task::TaskMonitor;
 
@@ -59,18 +59,18 @@ impl std::error::Error for DecryptError {}
 pub trait Decryptor: Send + Sync {
     /// Determines whether this decryptor can decrypt the bytes in the provider.
     ///
-    /// Mirrors `isValid(ByteProvider)` from the Java interface.
+    /// Mirrors `isValid(GByteStore)` from the Java interface.
     ///
     /// # Arguments
     /// * `provider` - A mutable byte provider containing the bytes to validate.
     ///
     /// # Errors
     /// Returns an `io::Error` if the read operation fails.
-    fn is_valid(&self, provider: &mut dyn ByteProvider) -> io::Result<bool>;
+    fn is_valid(&self, provider: &mut dyn GByteStore) -> io::Result<bool>;
 
     /// Decrypts bytes from the provider and returns the decrypted packet.
     ///
-    /// Mirrors `decrypt(String, String, ByteProvider, TaskMonitor)` from the Java interface.
+    /// Mirrors `decrypt(String, String, GByteStore, TaskMonitor)` from the Java interface.
     ///
     /// # Arguments
     /// * `firmware_name` - The name of the firmware being decrypted.
@@ -87,7 +87,7 @@ pub trait Decryptor: Send + Sync {
         &self,
         firmware_name: &str,
         firmware_path: &str,
-        provider: &mut dyn ByteProvider,
+        provider: &mut dyn GByteStore,
         monitor: &dyn TaskMonitor,
     ) -> Result<DecryptedPacket, DecryptError>;
 }
@@ -103,7 +103,7 @@ mod tests {
         data: Vec<u8>,
     }
 
-    impl ByteProvider for MockByteProvider {
+    impl GByteStore for MockByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -156,7 +156,7 @@ mod tests {
     }
 
     impl Decryptor for MockDecryptor {
-        fn is_valid(&self, _provider: &mut dyn ByteProvider) -> io::Result<bool> {
+        fn is_valid(&self, _provider: &mut dyn GByteStore) -> io::Result<bool> {
             Ok(self.valid)
         }
 
@@ -164,7 +164,7 @@ mod tests {
             &self,
             _firmware_name: &str,
             _firmware_path: &str,
-            _provider: &mut dyn ByteProvider,
+            _provider: &mut dyn GByteStore,
             _monitor: &dyn TaskMonitor,
         ) -> Result<DecryptedPacket, DecryptError> {
             Ok(DecryptedPacket::from_file(PathBuf::from("/tmp/decrypted")))

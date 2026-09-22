@@ -45,7 +45,7 @@ mod tests {
 
     struct VecProvider(Vec<u8>);
 
-    impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for VecProvider {
+    impl crate::filesystem::ghidra::g_binary_reader::GByteStore for VecProvider {
         fn length(&mut self) -> std::io::Result<u64> {
             Ok(self.0.len() as u64)
         }

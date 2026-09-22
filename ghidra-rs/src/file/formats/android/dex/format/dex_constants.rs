@@ -1,4 +1,4 @@
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// Constants describing the Android DEX (Dalvik Executable) file format.
 ///
@@ -49,7 +49,7 @@ impl DexConstants {
     pub const K_SHA1_DIGEST_SIZE: i32 = 20;
 
     /// Returns true if the bytes at the start of `provider` match [`Self::DEX_MAGIC_BASE`].
-    pub fn is_dex_file(provider: &mut dyn ByteProvider) -> bool {
+    pub fn is_dex_file(provider: &mut dyn GByteStore) -> bool {
         match provider.read_bytes(0, Self::DEX_MAGIC_BASE.len()) {
             Ok(bytes) => match std::str::from_utf8(&bytes) {
                 Ok(s) => s == Self::DEX_MAGIC_BASE,
@@ -75,7 +75,7 @@ mod tests {
         }
     }
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }

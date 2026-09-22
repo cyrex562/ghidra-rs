@@ -10,7 +10,7 @@ use crate::filesystem::gfilesystem::fsrl::Fsrl;
 /// Implementors provide random-access reads and writes by absolute byte index.
 /// Because most concrete providers (e.g. file-backed ones) mutate internal seek
 /// position on every access, all methods take `&mut self`.
-pub trait ByteProvider {
+pub trait GByteStore {
     fn length(&mut self) -> io::Result<u64>;
     fn is_valid_index(&mut self, index: u64) -> bool;
     fn read_byte(&mut self, index: u64) -> io::Result<u8>;
@@ -23,7 +23,7 @@ pub trait ByteProvider {
     /// Grown (defaulted, so existing implementors keep compiling) for
     /// [`DecompileDebugFormatManager::from_byte_provider`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager::from_byte_provider),
     /// which prefers a simple local FSRL path over [`get_file`](Self::get_file). Stands in for
-    /// `ByteProvider.getFSRL()`.
+    /// `GByteStore.getFSRL()`.
     ///
     /// Defaults to `None`, which is exactly the `null` Java's default implementation returns.
     fn get_fsrl(&self) -> Option<&dyn Fsrl> {
@@ -33,7 +33,7 @@ pub trait ByteProvider {
     /// The local file backing this provider, if it has one.
     ///
     /// Grown (defaulted) alongside [`get_fsrl`](Self::get_fsrl) for the same caller. Stands in
-    /// for `ByteProvider.getFile()`, which likewise defaults to `null` -- and which, for a
+    /// for `GByteStore.getFile()`, which likewise defaults to `null` -- and which, for a
     /// provider obtained from the filesystem service, points into the file cache rather than at
     /// the original path.
     fn get_file(&self) -> Option<PathBuf> {
@@ -47,13 +47,13 @@ enum Endian {
     Big,
 }
 
-/// Reads and writes typed values from a [`ByteProvider`] in a chosen byte order.
+/// Reads and writes typed values from a [`GByteStore`] in a chosen byte order.
 ///
 /// The reader maintains a current index that `readNext*` methods advance
 /// automatically.  The `clone_at` method creates a second reader sharing the
 /// same provider but starting at a different position.
 pub struct GBinaryReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     endian: Endian,
     current_index: u64,
 }
@@ -65,7 +65,7 @@ impl GBinaryReader {
     pub const SIZEOF_LONG: u64 = 8;
 
     /// Creates a reader over `provider` in the specified byte order.
-    pub fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+    pub fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         GBinaryReader {
             provider,
             endian: if is_little_endian { Endian::Little } else { Endian::Big },
@@ -495,7 +495,7 @@ impl GBinaryReader {
         self.provider.borrow_mut().write_bytes(index, &bytes)
     }
 
-    pub fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    pub fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
 
@@ -550,11 +550,11 @@ impl GBinaryReader {
 mod tests {
     use super::*;
 
-    // ── test helper: in-memory ByteProvider ──────────────────────────────────
+    // ── test helper: in-memory GByteStore ──────────────────────────────────
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }

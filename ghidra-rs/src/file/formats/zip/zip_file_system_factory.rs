@@ -12,14 +12,14 @@
 //! `GFileSystemFactoryByteProvider` and `FileSystemService` were ported against each other as a
 //! deliberate cycle cut-point). The two `FileSystemService` operations the Java class actually
 //! calls here -- `getFileIfAvailable` and `createPlaintextTempFile` -- are therefore reimplemented
-//! locally in [`create_plaintext_temp_file`] directly against the already-ported [`ByteProvider`],
+//! locally in [`create_plaintext_temp_file`] directly against the already-ported [`GByteStore`],
 //! rather than routed through the unreachable marker:
-//! * `getFileIfAvailable` narrows its argument to a handful of concrete `ByteProvider`
+//! * `getFileIfAvailable` narrows its argument to a handful of concrete `GByteStore`
 //!   subclasses before returning `provider.getFile()`; none of those subclasses are ported yet,
-//!   so this port calls [`ByteProvider::get_file`] directly (itself the same accessor Java's
+//!   so this port calls [`GByteStore::get_file`] directly (itself the same accessor Java's
 //!   version bottoms out at).
 //! * `createPlaintextTempFile` delegates to `FSUtilities.copyByteProviderToFile`, a plain byte
-//!   copy loop; that loop is reproduced directly against `ByteProvider::length`/`read_bytes`.
+//!   copy loop; that loop is reproduced directly against `GByteStore::length`/`read_bytes`.
 //!
 //! `ZipFileSystem`, `ZipFileSystemBuiltin` and `SevenZipFileSystemFactory` are not yet ported;
 //! see [`crate::file::seam_stubs`] for their minimal placeholders (STUBS.tsv).
@@ -36,7 +36,7 @@ use crate::filesystem::gfilesystem::factory::g_file_system_factory_byte_provider
 use crate::filesystem::gfilesystem::factory::g_file_system_probe::GFileSystemProbe;
 use crate::filesystem::gfilesystem::factory::g_file_system_probe_bytes_only::GFileSystemProbeBytesOnly;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::seam_stubs::{FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
 use crate::util::task::TaskMonitor;
 
@@ -90,7 +90,7 @@ impl GFileSystemFactoryByteProvider<ZipFileSystem> for ZipFileSystemFactory {
     fn create(
         &self,
         target_fsrl: &dyn FsrlRootLike,
-        mut byte_provider: Box<dyn ByteProvider>,
+        mut byte_provider: Box<dyn GByteStore>,
         fs_service: &dyn FileSystemServiceLike,
         monitor: &dyn TaskMonitor,
     ) -> Result<Box<dyn GFileSystemLike>, GFileSystemError> {
@@ -120,7 +120,7 @@ impl GFileSystemFactoryByteProvider<ZipFileSystem> for ZipFileSystemFactory {
                     (f, true)
                 }
             };
-            // Mirrors `FSUtilities.uncheckedClose(byteProvider, null)`. `ByteProvider` has no
+            // Mirrors `FSUtilities.uncheckedClose(byteProvider, null)`. `GByteStore` has no
             // explicit close in this port, so releasing it is just dropping it.
             drop(byte_provider);
 
@@ -138,12 +138,12 @@ impl GFileSystemFactoryByteProvider<ZipFileSystem> for ZipFileSystemFactory {
 
 /// Copies `byte_provider`'s contents into a fresh plaintext temp file, returning its path.
 ///
-/// Mirrors `FileSystemService.createPlaintextTempFile(ByteProvider, String, TaskMonitor)` (which
+/// Mirrors `FileSystemService.createPlaintextTempFile(GByteStore, String, TaskMonitor)` (which
 /// itself delegates to `FSUtilities.copyByteProviderToFile`); see the [module docs](self) for why
 /// this is implemented directly here instead of through the unreachable `FileSystemServiceLike`
 /// marker seam.
 fn create_plaintext_temp_file(
-    byte_provider: &mut dyn ByteProvider,
+    byte_provider: &mut dyn GByteStore,
     filename_prefix: &str,
     monitor: &dyn TaskMonitor,
 ) -> io::Result<PathBuf> {
@@ -179,7 +179,7 @@ mod tests {
         bytes: Vec<u8>,
     }
 
-    impl ByteProvider for MemoryByteProvider {
+    impl GByteStore for MemoryByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -264,7 +264,7 @@ mod tests {
         // surfaces an `Err` -- but by the time it does, it must have already exercised the
         // temp-file/get-file branch selection faithfully to the Java control flow.
         let factory = ZipFileSystemFactory;
-        let provider: Box<dyn ByteProvider> =
+        let provider: Box<dyn GByteStore> =
             Box::new(MemoryByteProvider { bytes: b"PK\x03\x04".to_vec() });
         let monitor = crate::util::task::DummyMonitor;
         let result = factory.create(&DummyFsrlRoot, provider, &DummyFsService, &monitor);

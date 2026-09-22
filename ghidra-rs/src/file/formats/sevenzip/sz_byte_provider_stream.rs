@@ -1,20 +1,20 @@
 use std::io::{self, Read, Seek, SeekFrom};
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
-/// Adapter from a Ghidra [`ByteProvider`] to a standard [`Read`] + [`Seek`] stream.
+/// Adapter from a Ghidra [`GByteStore`] to a standard [`Read`] + [`Seek`] stream.
 ///
 /// Mirrors `ghidra.file.formats.sevenzip.SZByteProviderStream`, which bridges a
-/// `ByteProvider` to the SevenZipJBinding `IInStream` interface (`seek(offset,
+/// `GByteStore` to the SevenZipJBinding `IInStream` interface (`seek(offset,
 /// seekOrigin)` / `read(byte[])` / `close()`). That contract maps directly onto
 /// Rust's [`Seek`] and [`Read`] traits, so this type implements those instead of
 /// reproducing the third-party `IInStream` interface.
-pub struct SZByteProviderStream<P: ByteProvider> {
+pub struct SZByteProviderStream<P: GByteStore> {
     provider: Option<P>,
     position: u64,
 }
 
-impl<P: ByteProvider> SZByteProviderStream<P> {
+impl<P: GByteStore> SZByteProviderStream<P> {
     /// Wraps `provider`, starting at position `0`.
     pub fn new(provider: P) -> Self {
         SZByteProviderStream {
@@ -25,13 +25,13 @@ impl<P: ByteProvider> SZByteProviderStream<P> {
 
     /// Drops the underlying provider. Idempotent: closing an already-closed
     /// stream is a no-op. Mirrors the Java `close()`, which closed the wrapped
-    /// `ByteProvider`.
+    /// `GByteStore`.
     pub fn close(&mut self) {
         self.provider = None;
     }
 }
 
-impl<P: ByteProvider> Seek for SZByteProviderStream<P> {
+impl<P: GByteStore> Seek for SZByteProviderStream<P> {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         let new_pos: i64 = match pos {
             SeekFrom::Start(offset) => offset as i64,
@@ -57,7 +57,7 @@ impl<P: ByteProvider> Seek for SZByteProviderStream<P> {
     }
 }
 
-impl<P: ByteProvider> Read for SZByteProviderStream<P> {
+impl<P: GByteStore> Read for SZByteProviderStream<P> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let provider = match &mut self.provider {
             Some(provider) => provider,
@@ -91,7 +91,7 @@ mod tests {
         }
     }
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }

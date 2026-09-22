@@ -1,4 +1,4 @@
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// A class to manage loading Linear Executables (LX).
 ///
@@ -14,7 +14,7 @@ impl LinearExecutable {
     /// Creates a new LinearExecutable from the given byte provider.
     ///
     /// This returns an error as LX format parsing is not yet implemented.
-    pub fn new(_bp: &mut dyn ByteProvider) -> Result<Self, &'static str> {
+    pub fn new(_bp: &mut dyn GByteStore) -> Result<Self, &'static str> {
         Err("LinearExecutable is not yet implemented")
     }
 }
@@ -37,7 +37,7 @@ mod tests {
     #[test]
     fn constructor_returns_not_yet_implemented_error() {
         struct MockByteProvider;
-        impl ByteProvider for MockByteProvider {
+        impl GByteStore for MockByteProvider {
             fn length(&mut self) -> std::io::Result<u64> {
                 Ok(0)
             }

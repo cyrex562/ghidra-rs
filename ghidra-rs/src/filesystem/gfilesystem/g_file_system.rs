@@ -3,7 +3,7 @@ use std::io;
 
 use thiserror::Error;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemRefManagerLike, FsrlRootLike};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -103,17 +103,17 @@ where
         self.lookup(None).ok().flatten()
     }
 
-    /// A [`ByteProvider`] over the contents of `file`, or `None` if the file has no data.
+    /// A [`GByteStore`] over the contents of `file`, or `None` if the file has no data.
     fn get_byte_provider(
         &self,
         file: &dyn GFile<FS, Fsrl>,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Option<Box<dyn ByteProvider>>, GFileSystemError>;
+    ) -> Result<Option<Box<dyn GByteStore>>, GFileSystemError>;
 
     /// All bytes of `file`'s contents, or `None` if the file has no data.
     ///
     /// Java's default wraps the [`get_byte_provider`](GFileSystem::get_byte_provider) result in
-    /// a closing `InputStream`. `ByteProvider` here is index-addressed rather than a stream, so
+    /// a closing `InputStream`. `GByteStore` here is index-addressed rather than a stream, so
     /// this reads the provider's full contents eagerly instead of returning a lazy reader.
     fn get_input_stream(
         &self,
@@ -294,11 +294,11 @@ mod tests {
         }
     }
 
-    // ── Mock ByteProvider ───────────────────────────────────────────────────────
+    // ── Mock GByteStore ───────────────────────────────────────────────────────
 
     struct VecByteProvider(Vec<u8>);
 
-    impl ByteProvider for VecByteProvider {
+    impl GByteStore for VecByteProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -382,7 +382,7 @@ mod tests {
             &self,
             file: &dyn GFile<MockFsMarker, MockFsrl>,
             _monitor: &dyn TaskMonitor,
-        ) -> Result<Option<Box<dyn ByteProvider>>, GFileSystemError> {
+        ) -> Result<Option<Box<dyn GByteStore>>, GFileSystemError> {
             let node = self.nodes.iter().find(|n| n.path == file.get_path());
             match node {
                 Some(n) if !n.is_dir => Ok(Some(Box::new(VecByteProvider(n.content.clone())))),

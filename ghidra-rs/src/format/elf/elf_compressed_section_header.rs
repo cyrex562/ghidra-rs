@@ -114,7 +114,7 @@ mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
     struct MockHeader {
         is32: bool,
@@ -194,7 +194,7 @@ mod tests {
                 .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
         }
 
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             unimplemented!("not needed for this test")
         }
 

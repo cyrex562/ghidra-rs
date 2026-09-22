@@ -52,7 +52,7 @@ use std::sync::Arc;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::app::seam_stubs::{macho_program_builder, memory_block_utils, DyldCacheHeader, LibObjcDylib, SplitDyldCache};
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::commands::segment_names;
 use crate::format::seam_stubs::{mach_header_from_provider, MachHeader};
 use crate::program::database::mem::file_bytes::FileBytes;
@@ -69,8 +69,8 @@ use crate::util::task::TaskMonitor;
 pub struct DyldCacheProgramBuilder<'a> {
     /// The `Program` to build up. Inherited from `MachoProgramBuilder`.
     program: &'a mut dyn Program,
-    /// The `ByteProvider` that contains the DYLD Cache bytes. Inherited.
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    /// The `GByteStore` that contains the DYLD Cache bytes. Inherited.
+    provider: Rc<RefCell<dyn GByteStore>>,
     /// Where the DYLD Cache's bytes came from. Inherited, and (as in Java) unread by this
     /// subclass -- see the module docs.
     #[allow(dead_code)]
@@ -87,7 +87,7 @@ pub struct DyldCacheProgramBuilder<'a> {
 }
 
 impl<'a> DyldCacheProgramBuilder<'a> {
-    /// Port of the protected `DyldCacheProgramBuilder(Program, ByteProvider, FileBytes,
+    /// Port of the protected `DyldCacheProgramBuilder(Program, GByteStore, FileBytes,
     /// DyldCacheOptions, MessageLog, TaskMonitor)` constructor, together with the part of
     /// `MachoProgramBuilder`'s constructor that resolves the default address space.
     ///
@@ -96,7 +96,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
     /// in Java, `program.getAddressFactory().getDefaultAddressSpace()` would have thrown.
     fn new(
         program: &'a mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         file_bytes: &Arc<dyn FileBytes>,
         options: DyldCacheOptions,
         log: &'a MessageLog,
@@ -119,11 +119,11 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         })
     }
 
-    /// Port of `DyldCacheProgramBuilder.buildProgram(Program, ByteProvider, FileBytes,
+    /// Port of `DyldCacheProgramBuilder.buildProgram(Program, GByteStore, FileBytes,
     /// DyldCacheOptions, MessageLog, TaskMonitor)`.
     pub fn build_program(
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         file_bytes: &Arc<dyn FileBytes>,
         options: DyldCacheOptions,
         log: &MessageLog,
@@ -231,7 +231,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         &mut self,
         dyld_cache_header: &mut DyldCacheHeader,
         name: &str,
-        bp: &Rc<RefCell<dyn ByteProvider>>,
+        bp: &Rc<RefCell<dyn GByteStore>>,
     ) -> io::Result<()> {
         let mapping_infos = dyld_cache_header.mapping_infos.clone();
         self.monitor.set_message("Processing DYLD mapped memory blocks...");
@@ -349,7 +349,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
     fn markup_branch_islands(
         &mut self,
         dyld_cache_header: &DyldCacheHeader,
-        bp: &Rc<RefCell<dyn ByteProvider>>,
+        bp: &Rc<RefCell<dyn GByteStore>>,
     ) -> io::Result<()> {
         self.monitor.set_message("Marking up DYLD branch islands...");
         self.monitor.initialize(dyld_cache_header.branch_pool_addresses.len() as i64);

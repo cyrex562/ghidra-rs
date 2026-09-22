@@ -44,7 +44,7 @@ use std::rc::Rc;
 
 use crate::app::seam_stubs::{abstract_pe_debug_loader, LoadSpec, Option as LoaderOption, RandomAccessByteProvider};
 use crate::app::util::opinion::query_opinion_service;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::seam_stubs::SeparateDebugHeader;
 use crate::framework::application::Application;
 use crate::program::model::lang::language_service::LanguageService;
@@ -77,11 +77,11 @@ impl DbgLoader {
         DbgLoader
     }
 
-    /// `DbgLoader.findSupportedLoadSpecs(ByteProvider)`. See the module docs for why `app`/
+    /// `DbgLoader.findSupportedLoadSpecs(GByteStore)`. See the module docs for why `app`/
     /// `language_service` are explicit parameters.
     pub fn find_supported_load_specs(
         &self,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         app: &dyn Application,
         language_service: &dyn LanguageService,
     ) -> io::Result<Vec<LoadSpec>> {
@@ -118,7 +118,7 @@ impl DbgLoader {
     pub fn load(
         &self,
         prog: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
+        provider: &Rc<RefCell<dyn GByteStore>>,
         options: &[Box<dyn LoaderOption>],
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
@@ -165,13 +165,13 @@ mod tests {
         LanguageNotFoundException, Processor,
     };
 
-    /// A [`ByteProvider`] over an in-memory byte buffer, used to feed synthetic
+    /// A [`GByteStore`] over an in-memory byte buffer, used to feed synthetic
     /// `IMAGE_SEPARATE_DEBUG_HEADER` fixtures to [`DbgLoader::find_supported_load_specs`].
     struct BufferProvider {
         bytes: Vec<u8>,
     }
 
-    impl ByteProvider for BufferProvider {
+    impl GByteStore for BufferProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -208,7 +208,7 @@ mod tests {
         }
     }
 
-    fn provider_with(bytes: Vec<u8>) -> Rc<RefCell<dyn ByteProvider>> {
+    fn provider_with(bytes: Vec<u8>) -> Rc<RefCell<dyn GByteStore>> {
         Rc::new(RefCell::new(BufferProvider { bytes }))
     }
 

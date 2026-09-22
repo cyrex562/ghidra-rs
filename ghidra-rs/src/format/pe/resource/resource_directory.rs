@@ -262,7 +262,7 @@ mod tests {
         }
         fn get_byte_provider(
             &self,
-        ) -> std::rc::Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+        ) -> std::rc::Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not needed by ResourceDirectory tests")
         }
         fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {

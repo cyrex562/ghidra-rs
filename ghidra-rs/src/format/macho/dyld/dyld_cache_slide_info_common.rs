@@ -9,7 +9,7 @@ use crate::app::util::importer::message_log::MessageLog;
 use crate::app::seam_stubs::{DyldCacheMappingInfo};
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
@@ -87,7 +87,7 @@ impl DyldCacheSlideInfoCommonBase {
     }
 }
 
-/// A `ByteProvider` over a range of program memory starting at a base address, sufficient for
+/// A `GByteStore` over a range of program memory starting at a base address, sufficient for
 /// [`DyldCacheSlideInfoCommon::fixup_slide_pointers`] to build a `BinaryReader` the way Java's
 /// version builds one from a `MemoryByteProvider`.
 ///
@@ -108,7 +108,7 @@ impl MemoryRangeByteProvider {
     }
 }
 
-impl ByteProvider for MemoryRangeByteProvider {
+impl GByteStore for MemoryRangeByteProvider {
     fn length(&mut self) -> io::Result<u64> {
         match self.memory.get_block(&self.base) {
             Some(block) => Ok((block.get_end().subtract(&self.base) as u64) + 1),
@@ -150,9 +150,9 @@ impl ByteProvider for MemoryRangeByteProvider {
 }
 
 /// A [`BinaryReader`] over a [`MemoryRangeByteProvider`], mirroring the crate's established
-/// `ByteProvider`-backed reader adapters (see that type's own docs).
+/// `GByteStore`-backed reader adapters (see that type's own docs).
 struct MemoryRangeBinaryReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     little_endian: bool,
     current_index: u64,
 }
@@ -184,7 +184,7 @@ impl BinaryReader for MemoryRangeBinaryReader {
     fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
         self.provider.borrow_mut().read_bytes(index, n_elements)
     }
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
     fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
@@ -275,7 +275,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
             .ok_or_else(|| MemoryAccessException::new("program has no default address space"))?;
         let data_page_addr = Address::new(space, self.base().mapping_info.get_address());
 
-        let provider: Rc<RefCell<dyn ByteProvider>> = Rc::new(RefCell::new(MemoryRangeByteProvider {
+        let provider: Rc<RefCell<dyn GByteStore>> = Rc::new(RefCell::new(MemoryRangeByteProvider {
             memory: Arc::clone(&memory),
             base: data_page_addr.clone(),
         }));
@@ -391,7 +391,7 @@ mod tests {
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -421,7 +421,7 @@ mod tests {
     }
 
     struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         little_endian: bool,
         current_index: u64,
     }
@@ -463,7 +463,7 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {

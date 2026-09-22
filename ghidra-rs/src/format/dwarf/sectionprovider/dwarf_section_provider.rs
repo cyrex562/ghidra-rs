@@ -1,4 +1,4 @@
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::listing::program::Program;
 use crate::util::task::TaskMonitor;
 
@@ -7,7 +7,7 @@ use crate::util::task::TaskMonitor;
 /// A `DWARFSectionProvider` is responsible for allowing access to DWARF section data of
 /// a Ghidra program.
 ///
-/// Implementors of this trait are responsible for closing any [`ByteProvider`] that has been
+/// Implementors of this trait are responsible for closing any [`GByteStore`] that has been
 /// returned via [`get_section_as_byte_provider`](Self::get_section_as_byte_provider) when the
 /// section provider instance itself is closed.
 pub trait DWARFSectionProvider: Send + Sync {
@@ -20,20 +20,20 @@ pub trait DWARFSectionProvider: Send + Sync {
     /// true if all are present, false if not present
     fn has_section(&self, section_names: &[&str]) -> bool;
 
-    /// Returns a `ByteProvider` for the specified section.
+    /// Returns a `GByteStore` for the specified section.
     ///
     /// # Arguments
     /// * `section_name` - name of the section
     /// * `monitor` - [`TaskMonitor`] to use when performing long operations
     ///
     /// # Returns
-    /// A `ByteProvider` for the section, which will be closed by the section provider when
+    /// A `GByteStore` for the section, which will be closed by the section provider when
     /// itself is closed, or an IO error if the section cannot be read.
     fn get_section_as_byte_provider(
         &self,
         section_name: &str,
         monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Box<dyn ByteProvider>>;
+    ) -> std::io::Result<Box<dyn GByteStore>>;
 
     /// Closes the section provider and any resources it holds.
     fn close(&mut self) -> std::io::Result<()>;
@@ -55,7 +55,7 @@ mod tests {
         data: Vec<u8>,
     }
 
-    impl ByteProvider for MockByteProvider {
+    impl GByteStore for MockByteProvider {
         fn length(&mut self) -> std::io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -170,7 +170,7 @@ mod tests {
             &self,
             _section_name: &str,
             _monitor: &dyn TaskMonitor,
-        ) -> std::io::Result<Box<dyn ByteProvider>> {
+        ) -> std::io::Result<Box<dyn GByteStore>> {
             Ok(Box::new(MockByteProvider {
                 data: vec![0x11, 0x22, 0x33],
             }))

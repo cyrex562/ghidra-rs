@@ -1,21 +1,21 @@
 use std::io;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 use super::overlay_range::OverlayRange;
 
-/// A [`ByteProvider`] that overlays decompressed chunks at specific locations
+/// A [`GByteStore`] that overlays decompressed chunks at specific locations
 /// on top of an underlying provider.
 ///
 /// Mirrors `ghidra.file.formats.android.util.OverlayByteProvider`. Overlay
 /// ranges are checked most-recently-added-last, matching the Java
 /// implementation's linear scan over `overlayList`.
-pub struct OverlayByteProvider<P: ByteProvider> {
+pub struct OverlayByteProvider<P: GByteStore> {
     provider: P,
     overlay_list: Vec<OverlayRange>,
 }
 
-impl<P: ByteProvider> OverlayByteProvider<P> {
+impl<P: GByteStore> OverlayByteProvider<P> {
     /// Creates a new overlay provider wrapping `provider`.
     pub fn new(provider: P) -> Self {
         OverlayByteProvider { provider, overlay_list: Vec::new() }
@@ -27,7 +27,7 @@ impl<P: ByteProvider> OverlayByteProvider<P> {
     }
 }
 
-impl<P: ByteProvider> ByteProvider for OverlayByteProvider<P> {
+impl<P: GByteStore> GByteStore for OverlayByteProvider<P> {
     fn length(&mut self) -> io::Result<u64> {
         let mut current_max: u64 = 0;
         for range in &self.overlay_list {
@@ -98,7 +98,7 @@ mod tests {
         }
     }
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }

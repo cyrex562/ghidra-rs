@@ -1,9 +1,9 @@
 use std::io;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::lang::sleigh::walker::MemBuffer;
 
-/// A [`ByteProvider`] backed by a [`MemBuffer`].
+/// A [`GByteStore`] backed by a [`MemBuffer`].
 ///
 /// Mirrors `ghidra.app.util.bin.MemBufferByteProvider` from the original Ghidra
 /// source. The buffer's actual length is unknown, so `length()` reports
@@ -19,7 +19,7 @@ impl<'a> MemBufferByteProvider<'a> {
     }
 }
 
-impl<'a> ByteProvider for MemBufferByteProvider<'a> {
+impl<'a> GByteStore for MemBufferByteProvider<'a> {
     fn length(&mut self) -> io::Result<u64> {
         Ok(i32::MAX as u64)
     }

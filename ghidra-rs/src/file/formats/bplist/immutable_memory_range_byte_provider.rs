@@ -1,10 +1,10 @@
 use std::io;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::address::Address;
 use crate::program::model::mem::Memory;
 
-/// A read-only [`ByteProvider`] view over a fixed, inclusive `[start, end]`
+/// A read-only [`GByteStore`] view over a fixed, inclusive `[start, end]`
 /// address range of a [`Memory`].
 ///
 /// Corresponds to `ghidra.file.formats.bplist.ImmutableMemoryRangeByteProvider`.
@@ -21,7 +21,7 @@ impl<'a> ImmutableMemoryRangeByteProvider<'a> {
     }
 }
 
-impl<'a> ByteProvider for ImmutableMemoryRangeByteProvider<'a> {
+impl<'a> GByteStore for ImmutableMemoryRangeByteProvider<'a> {
     fn length(&mut self) -> io::Result<u64> {
         Ok((self.end.subtract(&self.start) + 1) as u64)
     }
