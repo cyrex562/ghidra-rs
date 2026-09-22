@@ -5087,3 +5087,120 @@ impl LVal for DerefExpr {
 
 impl LValInternal for DerefExpr {}
 
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.SymZ3PcodeThread`, a concrete
+/// class (not an interface -- per the dependency-context trait-object convention, that means
+/// this stub is a plain struct, not a `dyn`-boxed trait), referenced by
+/// `SymZ3RecordsExecution`/`InternalSymZ3RecordsExecution`/`SymZ3PairedPcodeExecutorState`/
+/// `SymZ3PcodeEmulatorTrait` before the real type exists. Only the one accessor those types need
+/// (`getName()`, inherited from `DefaultPcodeThread`) is modeled here.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SymZ3PcodeThread {
+    name: String,
+}
+
+impl SymZ3PcodeThread {
+    /// Placeholder constructor; the real port's constructor takes `(String, PcodeMachine)`.
+    pub fn named(name: impl Into<String>) -> Self {
+        Self { name: name.into() }
+    }
+
+    /// Java: `PcodeThread.getName()`.
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.SymZ3PcodeExecutorStatePiece`
+/// (a concrete class, not an interface -- per the trait-object convention that means this stub is
+/// a plain struct), referenced by `SymZ3PairedPcodeExecutorState::get_right` and, via
+/// `SymZ3PcodeEmulatorTrait::get_shared_symbolic_state`, by that trait's default methods. Models
+/// just the bookkeeping (instructions/ops/preconditions) those callers need; the real port
+/// additionally composes `AbstractSymZ3OffsetPcodeExecutorStatePiece`'s Z3 space-map storage
+/// (register/memory/unique spaces), which is out of scope for this placeholder.
+#[derive(Default, Clone)]
+pub struct SymZ3PcodeExecutorStatePiece {
+    instructions: Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecInstruction>,
+    ops: Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecOp>,
+    preconditions: crate::pcode::emu::symz3::state::sym_z3_preconditions::SymZ3Preconditions,
+}
+
+impl SymZ3PcodeExecutorStatePiece {
+    /// Java: `addInstruction(SymZ3PcodeThread, Instruction)`.
+    pub fn add_instruction(
+        &mut self,
+        thread: &SymZ3PcodeThread,
+        instruction: Arc<dyn crate::program::model::listing::instruction::Instruction>,
+    ) {
+        let index = self.instructions.len() as i32;
+        self.instructions.push(
+            crate::pcode::emu::symz3::sym_z3_records_execution::RecInstruction::new(
+                index,
+                thread.clone(),
+                instruction,
+            ),
+        );
+    }
+
+    /// Java: `getInstructions()` (returns an unmodifiable view; this returns an owned copy, per
+    /// this crate's established handling of `Collections.unmodifiableList` elsewhere).
+    pub fn get_instructions(&self) -> Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecInstruction> {
+        self.instructions.clone()
+    }
+
+    /// Java: `addOp(SymZ3PcodeThread, PcodeOp)`.
+    pub fn add_op(&mut self, thread: &SymZ3PcodeThread, op: crate::program::model::pcode::PcodeOp) {
+        let index = self.ops.len() as i32;
+        self.ops.push(crate::pcode::emu::symz3::sym_z3_records_execution::RecOp::new(
+            index,
+            thread.clone(),
+            op,
+        ));
+    }
+
+    /// Java: `getOps()`.
+    pub fn get_ops(&self) -> Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecOp> {
+        self.ops.clone()
+    }
+
+    /// Java: `addPrecondition(String)` (from `InternalSymZ3RecordsPreconditions`).
+    pub fn add_precondition(&mut self, precondition: impl Into<String>) {
+        self.preconditions.add_precondition(precondition);
+    }
+
+    /// Java: `getPreconditions()`.
+    pub fn get_preconditions(&self) -> Vec<String> {
+        self.preconditions.get_preconditions()
+    }
+
+    /// Java: `printableSummary()`. Unlike Java (which opens its own `try (Context ctx = new
+    /// Context())`), this takes `ctx`/`z3p` explicitly -- this crate's established substitution
+    /// for Z3-touching code (see `SymZ3Preconditions::printable_summary`). The real port's space
+    /// map is not modeled here (see struct docs), so only the preconditions summary is rendered.
+    pub fn printable_summary(
+        &self,
+        ctx: &dyn crate::feature::seam_stubs::Z3Context,
+        z3p: &crate::pcode::emu::symz3::lib::z3_infix_printer::Z3InfixPrinter,
+    ) -> String {
+        self.preconditions.printable_summary(ctx, z3p)
+    }
+
+    /// Java: `streamValuations(Context, Z3InfixPrinter)`. The real port's space map is not
+    /// modeled here (see struct docs), so this placeholder always yields no valuations.
+    pub fn stream_valuations(
+        &self,
+        _ctx: &dyn crate::feature::seam_stubs::Z3Context,
+        _z3p: &crate::pcode::emu::symz3::lib::z3_infix_printer::Z3InfixPrinter,
+    ) -> Vec<(String, String)> {
+        Vec::new()
+    }
+
+    /// Java: `streamPreconditions(Context, Z3InfixPrinter)`.
+    pub fn stream_preconditions(
+        &self,
+        ctx: &dyn crate::feature::seam_stubs::Z3Context,
+        z3p: &crate::pcode::emu::symz3::lib::z3_infix_printer::Z3InfixPrinter,
+    ) -> Vec<String> {
+        self.preconditions.stream_preconditions(ctx, z3p)
+    }
+}

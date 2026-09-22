@@ -1302,3 +1302,4 @@ ts	stub_class	referenced_by
 2026-09-22T07:50:19.349460415Z	CompositeEditorTableAction	EditorActionListener
 2026-09-22T08:14:25.887717663Z	ExactInstructionsFunctionHasher	ExactMatchInstructionsProgramCorrelatorFactory
 2026-09-22T08:14:25.887717663Z	FunctionMatchProgramCorrelator	ExactMatchInstructionsProgramCorrelatorFactory
+2026-09-22T08:31:24.258498709Z	SymZ3PcodeThread	SymZ3RecordsExecution
