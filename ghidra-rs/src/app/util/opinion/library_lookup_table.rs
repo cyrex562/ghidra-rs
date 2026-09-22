@@ -54,7 +54,8 @@ use std::io;
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
-use crate::app::seam_stubs::{LibrarySymbolTable, MessageLog, PeLoader};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{LibrarySymbolTable, PeLoader};
 use crate::format::seam_stubs::resource_data_directory;
 use crate::framework::application::Application;
 use crate::framework::options::Options;
@@ -410,7 +411,7 @@ pub fn get_symbol_table_with_log(
     app: &dyn Application,
     dll_name: &str,
     size: i32,
-    log: Option<&dyn MessageLog>,
+    log: Option<&MessageLog>,
 ) -> Option<Arc<LibrarySymbolTable>> {
     let cache_key = LibrarySymbolTable::cache_key_for(dll_name, size);
     if let Some(sym_tab) = cache_map().get(&cache_key).cloned() {

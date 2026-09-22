@@ -172,7 +172,7 @@ mod tests {
             unimplemented!("Mock ElfLoadHelper")
         }
 
-        fn get_log(&self) -> Arc<dyn crate::format::seam_stubs::MessageLog> {
+        fn get_log(&self) -> Arc<crate::app::util::importer::message_log::MessageLog> {
             unimplemented!("Mock ElfLoadHelper")
         }
 

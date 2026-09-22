@@ -40,9 +40,10 @@ use std::rc::Rc;
 
 use super::macho_file_set_entry::MachoFileSetEntry;
 use super::macho_file_set_extractor;
+use crate::app::util::importer::message_log::MessageLog;
 use crate::file::seam_stubs::{
     ExtractedMacho, FileAttributeValue, FileAttributes, FileSystemIndexHelper, MachHeader,
-    MessageLog, SegmentCommand,
+    SegmentCommand,
 };
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::g_file::GFile;

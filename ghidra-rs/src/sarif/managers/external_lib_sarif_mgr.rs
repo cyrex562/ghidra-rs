@@ -14,10 +14,8 @@ use crate::program::model::symbol::{
 use crate::util::exception::{CancelledException, InvalidInputException};
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifClassesNamespaceWriter, SarifExternalLibraryWriter, SarifMgr,
-    SarifProgramOptions, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifClassesNamespaceWriter, SarifExternalLibraryWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher};
 
 /// Error produced by [`ExternalLibSarifMgr::process_external_location`], combining the checked
 /// exceptions `ExternalLibSarifMgr.processExternalLocation` can raise
@@ -134,7 +132,7 @@ impl ExternalLibSarifMgr {
             return match self.process_external_lib(result) {
                 Ok(()) => true,
                 Err(e) => {
-                    self.log.append_exception(&e);
+                    self.log.append_exception(&e, &[]);
                     false
                 }
             };
@@ -143,7 +141,7 @@ impl ExternalLibSarifMgr {
             return match self.process_external_location(result) {
                 Ok(()) => true,
                 Err(e) => {
-                    self.log.append_exception(&e);
+                    self.log.append_exception(&e, &[]);
                     false
                 }
             };

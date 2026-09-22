@@ -11,9 +11,8 @@ use crate::program::model::listing::{Program, ProgramFragment, ProgramModule};
 use crate::util::exception::{CancelledException, DuplicateNameException, NotEmptyException, NotFoundException};
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifMgr, SarifProgramOptions, SarifTreeWriter, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifMgr, SarifProgramOptions, SarifTreeWriter, SarifWriterTask, TaskLauncher};
 
 /// Everything the "outer try" in [`ProgramTreeSarifMgr::process_tree`] can fail with.
 ///
@@ -215,7 +214,7 @@ impl ProgramTreeSarifMgr {
         match outcome {
             Ok(()) => {}
             Err(ProcessTreeError::Cancelled(e)) => return Err(e),
-            Err(other) => self.log.append_exception(&other),
+            Err(other) => self.log.append_exception(&other, &[]),
         }
         Ok(())
     }

@@ -50,9 +50,8 @@
 use std::collections::HashSet;
 use std::io;
 
-use crate::app::seam_stubs::{
-    elf_program_builder, ExternalSymbolResolver, LoadSpec, MessageLog, Option, QueryResult,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{elf_program_builder, ExternalSymbolResolver, LoadSpec, Option, QueryResult};
 use crate::app::util::opinion::elf_loader_options_factory;
 use crate::app::util::opinion::loaded::Loaded;
 use crate::app::util::opinion::query_opinion_service;
@@ -243,7 +242,7 @@ impl ElfLoader {
         elf: &dyn ElfHeader,
         program: &mut dyn Program,
         options: &[Box<dyn Option>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
         elf_program_builder::load_elf(elf, program, options, log, monitor)
@@ -260,7 +259,7 @@ impl ElfLoader {
         &self,
         loaded_programs: &[Box<dyn Loaded>],
         project: std::option::Option<&dyn Project>,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) {
         let project_data = project.map(|p| p.get_project_data());

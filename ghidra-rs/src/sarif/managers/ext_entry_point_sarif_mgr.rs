@@ -10,9 +10,8 @@ use crate::program::model::listing::Program;
 use crate::util::exception::{CancelledException, NoValueException};
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifEntryPointWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifEntryPointWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher};
 
 /// Reads and writes `ENTRY_POINTS` entries between a [`Program`]'s [`SymbolTable`](crate::program::model::symbol::SymbolTable)
 /// and SARIF.
@@ -70,24 +69,24 @@ impl ExtEntryPointSarifMgr {
             // location falls through to the generic `catch (Exception e)` arm (a
             // `NullPointerException`) rather than being checked explicitly.
             Ok(None) => {
-                self.log.append_exception(&NoValueException::new());
+                self.log.append_exception(&NoValueException::new(), &[]);
                 return false;
             }
             Err(e) => {
-                self.log.append_exception(&e);
+                self.log.append_exception(&e, &[]);
                 return false;
             }
         };
 
         let Some(symbol_table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) else {
-            self.log.append_exception(&NoValueException::new());
+            self.log.append_exception(&NoValueException::new(), &[]);
             return false;
         };
 
         match symbol_table.add_external_entry_point(&addr) {
             Ok(()) => true,
             Err(e) => {
-                self.log.append_exception(&e);
+                self.log.append_exception(&e, &[]);
                 false
             }
         }

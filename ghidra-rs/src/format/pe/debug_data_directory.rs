@@ -7,10 +7,8 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::ghidra_random_access_file::GhidraRandomAccessFile;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{
-    DebugCodeViewEntry, DebugDirectoryEntry, DebugDirectoryParser, DebugMiscEntry, MessageLog,
-    NTHeader, PeUtils,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{DebugCodeViewEntry, DebugDirectoryEntry, DebugDirectoryParser, DebugMiscEntry, NTHeader, PeUtils};
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::listing::program::Program;
 use crate::util::data_converter::DataConverter;
@@ -209,7 +207,7 @@ impl DebugDataDirectory {
         &self,
         _program: &dyn Program,
         is_binary: bool,
-        _log: &dyn MessageLog,
+        _log: &MessageLog,
         space: &std::sync::Arc<AddressSpace>,
         nt_header: &dyn NTHeader,
     ) {
@@ -228,7 +226,7 @@ impl DebugDataDirectory {
         &self,
         program: &dyn Program,
         is_binary: bool,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         space: &std::sync::Arc<AddressSpace>,
         nt_header: &dyn NTHeader,
     ) -> io::Result<()> {
@@ -334,7 +332,7 @@ impl PeMarkupable for DebugDataDirectory {
         program: &dyn Program,
         is_binary: bool,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         monitor.set_message(&format!("{}: debug...", Program::get_name(program)));

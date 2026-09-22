@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use crate::app::seam_stubs::MessageLog;
+use crate::app::util::importer::message_log::MessageLog;
 use crate::generic::jar::resource_file::ResourceFile;
 use crate::program::model::listing::program::Program;
 use crate::util::classfinder::extension_point::ExtensionPoint;
@@ -81,7 +81,7 @@ pub trait SourceLanguageDataArchive: ExtensionPoint + Send + Sync {
     fn get_data_archive_rules(
         &self,
         program: &dyn Program,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Vec<DataArchiveRule>;
 }

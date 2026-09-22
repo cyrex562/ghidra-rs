@@ -6,6 +6,7 @@
 use crate::app::decompiler::{
     ClangLine, ClangNode, ClangTokenBase, ClangTokenGroup, DecompiledFunction,
 };
+use crate::app::util::importer::message_log::MessageLog;
 use crate::generic::concurrent::{ConcurrentQ, GThreadPool, QCallback};
 use crate::program::model::listing::Function;
 use crate::app::plugin::core::debug::service::modules::ChangeCollector;
@@ -65,70 +66,6 @@ pub trait ToolOptions {}
 /// yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ByteViewerConfigOptions;
-
-/// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
-/// [`Analyzer`](crate::app::services::Analyzer),
-/// [`SourceLanguageSpecExtension`](crate::app::util::sourcelanguage::source_language_spec_extension::SourceLanguageSpecExtension)
-/// and
-/// [`UnixAoutProgramLoader`](crate::app::util::opinion::unix_aout_program_loader::UnixAoutProgramLoader)
-/// before the real class is ported. Most callers only pass this type through as a parameter; the
-/// two `appendMsg` overloads the a.out loader records its progress with are modeled here.
-///
-/// Both take `&self`, not `&mut self`: a log is threaded through loaders alongside the objects
-/// they mutate, so implementors buffer their messages behind interior mutability rather than
-/// forcing every holder to take a unique borrow.
-pub trait MessageLog: Send + Sync {
-    /// `MessageLog.appendMsg(String)`. Defaults to discarding the message, so implementors that
-    /// existed before this method did (and that never had a message to record) keep compiling.
-    fn append_msg(&self, message: &str) {
-        let _ = message;
-    }
-
-    /// `MessageLog.appendMsg(String originator, String message)`, which Java renders as
-    /// `originator + ": " + message`.
-    fn append_msg_from(&self, originator: &str, message: &str) {
-        self.append_msg(&format!("{originator}: {message}"));
-    }
-
-    /// `MessageLog.appendException(Throwable)`, which appends the exception's message (and, in
-    /// Java, its stack trace) to the log. Defaults to recording the error's `Display` text through
-    /// [`append_msg`](Self::append_msg), since Rust errors carry no stack trace.
-    fn append_exception(&self, error: &dyn std::error::Error) {
-        self.append_msg(&error.to_string());
-    }
-
-    /// `MessageLog.copyFrom(MessageLog)`, which appends every message of `other` onto this log.
-    /// Defaults to discarding them, matching [`append_msg`](Self::append_msg)'s default.
-    fn copy_from(&self, other: &dyn MessageLog) {
-        let _ = other;
-    }
-
-    /// `MessageLog.toString()`, the accumulated messages joined by newlines. Defaults to the
-    /// empty string, which is what Java's `toString` returns for a log that recorded nothing --
-    /// the case [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) tests for when
-    /// picking which log to report an import failure from.
-    fn to_display_string(&self) -> String {
-        String::new()
-    }
-
-    /// `MessageLog.hasMessages()`. Defaults to `false`, matching
-    /// [`to_display_string`](Self::to_display_string)'s empty default.
-    ///
-    /// Grown in for
-    /// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin), which only
-    /// raises its analysis summary when the manager's log recorded something.
-    fn has_messages(&self) -> bool {
-        false
-    }
-
-    /// `MessageLog.write(Class<?>, String)`, which flushes the accumulated messages to the
-    /// application log under `header`, attributed to `originator`. Java takes the originating
-    /// class; with no `Class` object to pass, the caller names it. Defaults to discarding the
-    /// write, as [`append_msg`](Self::append_msg) does.
-    fn write(&self, originator: &str, header: &str) {
-        let _ = (originator, header);
-    }
-}
 
 /// Placeholder for `ghidra.features.base.codecompare.model.FunctionComparisonModel`, referenced
 /// by [`FunctionComparisonService`](crate::app::services::FunctionComparisonService) before the
@@ -930,7 +867,7 @@ pub mod elf_program_builder {
         elf: &dyn ElfHeader,
         program: &mut dyn Program,
         options: &[Box<dyn Option>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), ElfException> {
         let _ = (elf, program, options, log, monitor);
@@ -2610,8 +2547,10 @@ pub mod query_opinion_service_handler {
 /// Placeholder for `ghidra.xml.XmlMessageLog`, referenced by
 /// [`DecompileDebugFormatManager`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager)
 /// before the real class (and the `ghidra.app.util.importer.MessageLog` it extends) is ported.
-/// Java's version is a concrete class, so this is a struct rather than a trait; it implements
-/// the [`MessageLog`] marker stub above to record the `extends MessageLog` relationship.
+/// Java's version is a concrete class, so this is a struct rather than a trait. It does not
+/// itself compose the real [`MessageLog`](crate::app::util::importer::message_log::MessageLog)
+/// it `extends` in Java: nothing in this crate needs `XmlMessageLog` polymorphically as a
+/// `MessageLog`, so the relationship is left as a doc note rather than a field/trait impl.
 ///
 /// Java's `XmlMessageLog` keeps the `XmlPullParser` it was handed by `setParser` so that its
 /// one-argument `appendMsg` can prefix the parser's current line number. Holding the parser
@@ -2651,8 +2590,6 @@ impl XmlMessageLog {
         &self.messages
     }
 }
-
-impl MessageLog for XmlMessageLog {}
 
 impl fmt::Display for XmlMessageLog {
     /// Mirrors `MessageLog.toString()`, one message per line.
@@ -2903,7 +2840,7 @@ impl DyldCacheHeader {
         &mut self,
         program: &dyn crate::program::model::listing::Program,
         space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn crate::util::task::TaskMonitor,
     ) -> std::io::Result<()> {
         let _ = (program, space, log, monitor);
@@ -2918,7 +2855,7 @@ impl DyldCacheHeader {
         markup_local_symbols: bool,
         space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
         monitor: &dyn crate::util::task::TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> std::io::Result<()> {
         let _ = (program, markup_local_symbols, space, monitor, log);
         Ok(())
@@ -3092,7 +3029,7 @@ pub mod memory_block_utils {
         r: bool,
         w: bool,
         x: bool,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> Result<Option<Box<dyn MemoryBlock>>, AddressOverflowException> {
         let _ = (program, is_overlay, name, start, file_bytes, offset, length);
         let _ = (comment, source, r, w, x, log);
@@ -3115,7 +3052,7 @@ pub mod memory_block_utils {
         r: bool,
         w: bool,
         x: bool,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> Option<Box<dyn MemoryBlock>> {
         let _ = (program, is_overlay, name, start, length);
         let _ = (comment, source, r, w, x, log);
@@ -3181,7 +3118,7 @@ impl SplitDyldCache {
     pub fn new(
         provider: &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
         should_process_local_symbols: bool,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn crate::util::task::TaskMonitor,
     ) -> std::io::Result<Self> {
         let _ = (provider, should_process_local_symbols, log, monitor);
@@ -3267,7 +3204,7 @@ impl LibObjcDylib {
         header: &dyn crate::format::seam_stubs::MachHeader,
         program: &dyn crate::program::model::listing::Program,
         space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn crate::util::task::TaskMonitor,
     ) -> Self {
         let _ = (header, program, space, log, monitor);
@@ -3309,7 +3246,7 @@ pub mod macho_program_builder {
         program: &mut dyn Program,
         header: &dyn MachHeader,
         header_addr: &Address,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<()> {
         let _ = (program, header, header_addr, log, monitor);
@@ -3324,7 +3261,7 @@ pub mod macho_program_builder {
         source: &str,
         process_sections: bool,
         allow_zero_addr: bool,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<()> {
         let _ = (program, header, source, process_sections, allow_zero_addr, log, monitor);
@@ -3336,7 +3273,7 @@ pub mod macho_program_builder {
     pub fn process_exports(
         program: &mut dyn Program,
         header: &dyn MachHeader,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<bool> {
         let _ = (program, header, log, monitor);
@@ -3348,7 +3285,7 @@ pub mod macho_program_builder {
         program: &mut dyn Program,
         header: &dyn MachHeader,
         process_exports: bool,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<()> {
         let _ = (program, header, process_exports, log, monitor);
@@ -3360,7 +3297,7 @@ pub mod macho_program_builder {
         program: &mut dyn Program,
         header: &dyn MachHeader,
         source: &str,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<()> {
         let _ = (program, header, source, log, monitor);
@@ -3605,7 +3542,7 @@ impl ProgramXmlMgr {
         program: &dyn Program,
         monitor: &dyn TaskMonitor,
         options: &XmlProgramOptions,
-    ) -> std::io::Result<Box<dyn MessageLog>> {
+    ) -> std::io::Result<Box<MessageLog>> {
         let _ = (program, monitor, options);
         unimplemented!("ProgramXmlMgr::read placeholder not overridden")
     }
@@ -3680,7 +3617,7 @@ pub trait AutoAnalysisManager: Send + Sync {
     }
 
     /// Mirrors `AutoAnalysisManager.getMessageLog()`, the log every analyzer writes into.
-    fn get_message_log(&self) -> Arc<dyn MessageLog>;
+    fn get_message_log(&self) -> Arc<MessageLog>;
 
     /// Mirrors `AutoAnalysisManager.getProgram()`, the program this manager analyzes.
     fn get_program(&self) -> Arc<dyn Program>;
@@ -3794,7 +3731,7 @@ pub mod abstract_program_loader {
     /// are passed directly. Not yet implemented (see the module docs).
     pub fn create_default_memory_blocks(
         program: &mut dyn Program,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) {
         let _ = (program, log, monitor);

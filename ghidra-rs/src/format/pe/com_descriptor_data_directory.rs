@@ -8,7 +8,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::format::pe::image_cor20_header::ImageCor20Header;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{MessageLog, NTHeader, PeUtils};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader, PeUtils};
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
 use crate::util::msg::Msg;
@@ -184,7 +185,7 @@ impl PeMarkupable for COMDescriptorDataDirectory {
         program: &dyn Program,
         is_binary: bool,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         monitor.set_message(&format!(

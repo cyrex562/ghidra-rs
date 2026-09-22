@@ -1,6 +1,6 @@
 use crate::program::model::listing::program::Program;
 use crate::program::model::address::Address;
-use crate::format::seam_stubs::MessageLog;
+use crate::app::util::importer::message_log::MessageLog;
 
 /// Interface for working with function table entries used for exception handling,
 /// which are found in the .pdata section. The actual implementations are
@@ -26,7 +26,7 @@ pub trait ImageRuntimeFunctionEntries: Send + Sync {
         &self,
         program: &dyn Program,
         start: Address,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> Result<(), Box<dyn std::error::Error>>;
 }
 
@@ -136,28 +136,6 @@ mod tests {
         }
     }
 
-    struct MockMessageLog;
-
-    impl MessageLog for MockMessageLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, _message: &str) {}
-        fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            false
-        }
-        fn clear(&self) {}
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            String::new()
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
-
     struct TestRuntimeEntries;
 
     impl ImageRuntimeFunctionEntries for TestRuntimeEntries {
@@ -165,7 +143,7 @@ mod tests {
             &self,
             _program: &dyn Program,
             _start: Address,
-            _log: &dyn MessageLog,
+            _log: &MessageLog,
         ) -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
@@ -175,7 +153,7 @@ mod tests {
     fn trait_is_object_safe() {
         let entries: Box<dyn ImageRuntimeFunctionEntries> = Box::new(TestRuntimeEntries);
         let program = MockProgram;
-        let log = MockMessageLog;
+        let log = MessageLog::new();
 
         // Need to create an Address - let's use the default address space
         let space = crate::program::model::address::AddressSpace::new("ram", 32, 1, crate::program::model::address::AddressSpaceType::Ram, 0);
@@ -189,7 +167,7 @@ mod tests {
     fn markup_returns_ok() {
         let entries = TestRuntimeEntries;
         let program = MockProgram;
-        let log = MockMessageLog;
+        let log = MessageLog::new();
 
         let space = crate::program::model::address::AddressSpace::new("ram", 32, 1, crate::program::model::address::AddressSpaceType::Ram, 0);
         let start = Address::new(space, 0x2000);

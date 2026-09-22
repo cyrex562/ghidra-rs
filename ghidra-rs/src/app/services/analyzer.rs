@@ -1,5 +1,5 @@
 use crate::app::plugin::core::analysis::analysis_options_updater::AnalysisOptionsUpdater;
-use crate::app::seam_stubs::MessageLog;
+use crate::app::util::importer::message_log::MessageLog;
 use crate::app::services::analysis_priority::AnalysisPriority;
 use crate::app::services::analyzer_type::AnalyzerType;
 use crate::framework::options::Options;
@@ -52,7 +52,7 @@ pub trait Analyzer {
         program: &mut dyn Program,
         set: &dyn AddressSetView,
         monitor: &dyn TaskMonitor,
-        log: &mut dyn MessageLog,
+        log: &mut MessageLog,
     ) -> Result<bool, CancelledException>;
 
     /// Called when the requested information type has been removed, for example, when a function
@@ -65,7 +65,7 @@ pub trait Analyzer {
         program: &mut dyn Program,
         set: &dyn AddressSetView,
         monitor: &dyn TaskMonitor,
-        log: &mut dyn MessageLog,
+        log: &mut MessageLog,
     ) -> Result<bool, CancelledException>;
 
     /// Analyzers should register their options with associated default value, help content and
@@ -231,10 +231,6 @@ mod tests {
         }
     }
 
-    struct MockMessageLog;
-
-    impl MessageLog for MockMessageLog {}
-
     /// Minimal mock analyzer proving the trait is object-safe and usable via `Box<dyn Analyzer>`.
     struct MockAnalyzer {
         ended: bool,
@@ -274,7 +270,7 @@ mod tests {
             _program: &mut dyn Program,
             _set: &dyn AddressSetView,
             _monitor: &dyn TaskMonitor,
-            _log: &mut dyn MessageLog,
+            _log: &mut MessageLog,
         ) -> Result<bool, CancelledException> {
             Ok(true)
         }
@@ -284,7 +280,7 @@ mod tests {
             _program: &mut dyn Program,
             _set: &dyn AddressSetView,
             _monitor: &dyn TaskMonitor,
-            _log: &mut dyn MessageLog,
+            _log: &mut MessageLog,
         ) -> Result<bool, CancelledException> {
             Ok(true)
         }
@@ -306,7 +302,7 @@ mod tests {
     fn mock_analyzer_is_usable_as_trait_object() {
         let mut program = MockProgram;
         let set = MockAddressSetView;
-        let mut log = MockMessageLog;
+        let mut log = MessageLog::new();
 
         let mut analyzer: Box<dyn Analyzer> = Box::new(MockAnalyzer { ended: false });
 

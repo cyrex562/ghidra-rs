@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::importer::message_log::MessageLog;
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
 use crate::util::msg::Msg;
@@ -299,36 +300,11 @@ impl PeUtils {
         _program: &dyn crate::program::model::listing::program::Program,
         _addr: &crate::program::model::address::Address,
         _data_type: &dyn crate::program::model::data::data_type::DataType,
-        _log: &dyn MessageLog,
+        _log: &MessageLog,
     ) -> std::io::Result<()> {
         Ok(())
     }
 }
-
-/// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
-/// [`PeMarkupable`](crate::format::pe::pe_markupable::PeMarkupable) before the real class
-/// is ported. Models only the methods needed for PE markup operations.
-pub trait MessageLog: Send + Sync {
-    fn copy_from(&self, log: &dyn MessageLog);
-    fn append_msg(&self, message: &str);
-    fn append_exception(&self, t: &dyn Throwable);
-    fn error(&self, originator: &str, message: &str);
-    fn has_messages(&self) -> bool;
-    fn clear(&self);
-    fn set_status(&self, status: &str);
-    fn clear_status(&self);
-    fn get_status(&self) -> String;
-    fn to_string(&self) -> String;
-    fn write(&self, owner: &dyn Class, message_header: &str);
-}
-
-/// Placeholder for Java `Throwable`, referenced by
-/// [`MessageLog`] before the real class is ported.
-pub trait Throwable: Send + Sync {}
-
-/// Placeholder for Java `Class`, referenced by
-/// [`MessageLog`] before the real class is ported.
-pub trait Class: Send + Sync {}
 
 /// Placeholder for `ghidra.app.util.bin.format.ne.Resource`, referenced by
 /// [`ResourceType`](crate::format::ne::resource_type::ResourceType) and
@@ -1087,7 +1063,7 @@ pub trait ElfRelocationHandler: Send + Sync {
         symbol_name: Option<&str>,
         symbol_index: i32,
         msg: &str,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     );
 
     /// `ElfRelocationHandler.markAsWarning(Program, Address, int, String, int, String, MessageLog)`.
@@ -1099,7 +1075,7 @@ pub trait ElfRelocationHandler: Send + Sync {
         symbol_name: Option<&str>,
         symbol_index: i32,
         msg: &str,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     );
 }
 
@@ -1145,7 +1121,7 @@ pub trait MipsElfRelocationHandler:
         type_id: i32,
         symbol_name: Option<&str>,
         symbol_index: i32,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     );
 }
 
@@ -1251,7 +1227,7 @@ pub mod elf_relocation_handler {
         symbol_index: i32,
         symbol_name: Option<&str>,
         bookmark_type: &str,
-        log: Option<&dyn MessageLog>,
+        log: Option<&MessageLog>,
     ) {
         let _ = (program, bookmark_type, symbol_index);
         let tail = tail_msg
@@ -1275,7 +1251,7 @@ pub mod elf_relocation_handler {
         symbol_index: i32,
         symbol_name: Option<&str>,
         msg: &str,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         markup_error_or_warning(
             program,
@@ -1793,14 +1769,14 @@ pub trait CodeSignatureBlobIndex: Send + Sync {
 pub trait CodeSignatureGenericBlob: Send + Sync {
     fn get_magic(&self) -> i32;
     fn get_length(&self) -> i64;
-    fn markup(&self, program: &dyn ListingProgram, address: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, address: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureCodeDirectory`,
 /// referenced by `CodeSignatureBlobParser` before the real class is ported.
 pub trait CodeSignatureCodeDirectory: Send + Sync {
-    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
@@ -1810,7 +1786,7 @@ pub trait CodeSignatureSuperBlob: Send + Sync {
     fn get_count(&self) -> i32;
     fn get_index_entries(&self) -> Vec<Box<dyn CodeSignatureBlobIndex>>;
     fn get_index_blobs(&self) -> Vec<Box<dyn CodeSignatureGenericBlob>>;
-    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
@@ -1867,7 +1843,7 @@ pub trait MemoryBlockUtils: Send + Sync {
         &self,
         program: &mut dyn crate::program::model::listing::Program,
         size: i64,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> std::io::Result<crate::program::model::address::Address>;
 }
 
@@ -2014,7 +1990,7 @@ impl DyldChainedFixupHeader {
         _address: &crate::program::model::address::Address,
         _header: &dyn MachHeader,
         _monitor: &dyn crate::util::task::TaskMonitor,
-        _log: &dyn MessageLog,
+        _log: &MessageLog,
     ) -> Result<(), crate::util::exception::CancelledException> {
         Ok(())
     }
@@ -2603,7 +2579,7 @@ pub mod unix_aout_tables {
     use super::{
         GBinaryReader, UnixAoutRelocationTable, UnixAoutStringTable, UnixAoutSymbolTable,
     };
-    use crate::app::seam_stubs::MessageLog;
+    use crate::app::util::importer::message_log::MessageLog;
 
     /// `new UnixAoutStringTable(BinaryReader, long fileOffset, long fileSize)`.
     pub fn new_string_table(
@@ -2622,7 +2598,7 @@ pub mod unix_aout_tables {
         file_offset: i64,
         file_size: i64,
         strtab: Option<&dyn UnixAoutStringTable>,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> std::io::Result<Box<dyn UnixAoutSymbolTable>> {
         let _ = (reader, file_offset, file_size, strtab, log);
         unimplemented!("unix_aout_tables::new_symbol_table placeholder not overridden")
@@ -4753,7 +4729,7 @@ pub trait CliStreamMetadata: Send + Sync {
     fn get_guid_index_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
     fn get_blob_index_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
     fn get_table_index_data_type(&self, table: &crate::format::pe::cli::tables::cli_type_table::CliTypeTable) -> Box<dyn crate::program::model::data::data_type::DataType>;
-    fn markup(&self, program: &dyn ListingProgram, is_binary: bool, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog, nt_header: &dyn NTHeader) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, is_binary: bool, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog, nt_header: &dyn NTHeader) -> std::io::Result<()>;
     fn to_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
 }
 
@@ -5456,7 +5432,7 @@ impl crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntr
         &self,
         _program: &dyn ListingProgram,
         _start: Address,
-        _log: &dyn MessageLog,
+        _log: &MessageLog,
     ) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
@@ -5487,7 +5463,7 @@ impl crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntr
         &self,
         _program: &dyn ListingProgram,
         _start: Address,
-        _log: &dyn MessageLog,
+        _log: &MessageLog,
     ) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
@@ -5521,7 +5497,7 @@ pub trait ObjcUtils: Send + Sync {
     fn get_class_namespace(&self, program: &dyn crate::program::model::listing::program::Program, parent_namespace: &dyn crate::program::model::symbol::Namespace, namespace_name: &str) -> std::io::Result<Box<dyn crate::program::model::symbol::Namespace>>;
     fn create_symbol(&self, program: &dyn crate::program::model::listing::program::Program, parent_namespace: &dyn crate::program::model::symbol::Namespace, symbol_name: &str, symbol_address: &crate::program::model::address::Address) -> std::io::Result<()>;
     fn create_namespace(&self, program: &dyn crate::program::model::listing::program::Program, namespace_path: &[String]) -> std::io::Result<Box<dyn crate::program::model::symbol::Namespace>>;
-    fn create_methods(&self, program: &dyn crate::program::model::listing::program::Program, state: &crate::format::objc::objc_state::ObjcState, log: &dyn MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
+    fn create_methods(&self, program: &dyn crate::program::model::listing::program::Program, state: &crate::format::objc::objc_state::ObjcState, log: &MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
     fn fixup_references(&self, section_names: Vec<String>, program: &dyn crate::program::model::listing::program::Program, monitor: &dyn crate::util::task::TaskMonitor);
     fn set_blocks_read_only(&self, memory: &dyn crate::program::model::mem::Memory, block_names: Vec<String>);
     fn get_objc_blocks(&self, section: &str, program: &dyn crate::program::model::listing::program::Program) -> Vec<Box<dyn crate::program::model::mem::MemoryBlock>>;
@@ -5535,7 +5511,7 @@ pub trait ObjcUtils: Send + Sync {
 pub trait LibObjcOptimization: Send + Sync {
     fn get_addr(&self) -> i64;
     fn get_relative_selector_base_address_offset(&self) -> i64;
-    fn markup(&self, program: &dyn crate::program::model::listing::program::Program, space: &crate::program::model::address::AddressSpace, log: &dyn MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
+    fn markup(&self, program: &dyn crate::program::model::listing::program::Program, space: &crate::program::model::address::AddressSpace, log: &MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 

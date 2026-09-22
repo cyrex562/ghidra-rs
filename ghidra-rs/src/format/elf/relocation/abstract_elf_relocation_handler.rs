@@ -42,7 +42,8 @@ use crate::format::elf::elf_symbol_name_utils;
 use crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext;
 use crate::format::elf::relocation::elf_relocation_type::ElfRelocationType;
 use crate::format::memory_loadable::MemoryLoadable;
-use crate::format::seam_stubs::{elf_relocation_handler, ElfRelocation, MessageLog};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{elf_relocation_handler, ElfRelocation};
 use crate::program::model::address::Address;
 use crate::program::model::listing::bookmark_type;
 use crate::program::model::listing::program::Program;
@@ -209,7 +210,7 @@ impl<T: ElfRelocationType + Copy> AbstractElfRelocationHandlerBase<T> {
         symbol_name: Option<&str>,
         symbol_index: i32,
         symbol_size: i64,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         self.mark_as_warning(
             program,
@@ -231,7 +232,7 @@ impl<T: ElfRelocationType + Copy> AbstractElfRelocationHandlerBase<T> {
         type_id: i32,
         symbol_name: Option<&str>,
         symbol_index: i32,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         elf_relocation_handler::markup_error_or_warning(
             program,
@@ -255,7 +256,7 @@ impl<T: ElfRelocationType + Copy> AbstractElfRelocationHandlerBase<T> {
         relocation_type: T,
         symbol_index: i32,
         symbol_name: Option<&str>,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         elf_relocation_handler::markup_error_or_warning(
             program,
@@ -280,7 +281,7 @@ impl<T: ElfRelocationType + Copy> AbstractElfRelocationHandlerBase<T> {
         symbol_name: Option<&str>,
         symbol_index: i32,
         msg: &str,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         elf_relocation_handler::markup_error_or_warning(
             program,
@@ -305,7 +306,7 @@ impl<T: ElfRelocationType + Copy> AbstractElfRelocationHandlerBase<T> {
         symbol_name: Option<&str>,
         symbol_index: i32,
         msg: &str,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         elf_relocation_handler::markup_error_or_warning(
             program,
@@ -351,7 +352,7 @@ mod tests {
 
     use crate::format::elf::elf_load_helper::ElfLoadHelper;
     use crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase;
-    use crate::format::seam_stubs::{Class, ElfHeader, ElfSectionHeader, Throwable};
+    use crate::format::seam_stubs::{ElfHeader, ElfSectionHeader};
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::reloc::RelocationStatus;
 
@@ -394,35 +395,6 @@ mod tests {
         }
     }
 
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn Class, _message_header: &str) {}
-    }
-
     struct MockElfHeader;
     impl ElfHeader for MockElfHeader {
         fn is32_bit(&self) -> bool {
@@ -437,7 +409,7 @@ mod tests {
     }
 
     struct MockLoadHelper {
-        log: Arc<RecordingLog>,
+        log: Arc<MessageLog>,
     }
 
     impl ElfLoadHelper for MockLoadHelper {
@@ -460,7 +432,7 @@ mod tests {
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             Arc::new(MockElfHeader)
         }
-        fn get_log(&self) -> Arc<dyn MessageLog> {
+        fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
         }
         fn log(&self, _msg: &str) {}
@@ -611,8 +583,8 @@ mod tests {
         Address::new(space, offset)
     }
 
-    fn context() -> (ElfRelocationContextBase, Arc<RecordingLog>) {
-        let log = Arc::new(RecordingLog::default());
+    fn context() -> (ElfRelocationContextBase, Arc<MessageLog>) {
+        let log = Arc::new(MessageLog::new());
         let load_helper = Arc::new(MockLoadHelper { log: log.clone() });
         let mut context = ElfRelocationContextBase::new(None, load_helper, Arc::new(HashMap::new()));
         context.start_relocation_table_processing(Arc::new(MockRelocationTable));
@@ -663,7 +635,7 @@ mod tests {
 
         assert_eq!(result.unwrap(), RelocationResult::UNSUPPORTED);
         assert!(handler.calls.lock().unwrap().is_empty());
-        let messages = log.messages.lock().unwrap();
+        let messages = log.messages();
         assert_eq!(messages.len(), 1);
         assert!(messages[0].contains("Undefined ELF Relocation"), "got {:?}", messages[0]);
         assert!(messages[0].contains("Type = 42 (0x2a)"), "got {:?}", messages[0]);
@@ -708,7 +680,7 @@ mod tests {
         );
 
         assert!(!unresolved);
-        assert!(log.messages.lock().unwrap().is_empty());
+        assert!(log.messages().is_empty());
     }
 
     #[test]
@@ -724,7 +696,7 @@ mod tests {
         );
 
         assert!(unresolved);
-        let messages = log.messages.lock().unwrap();
+        let messages = log.messages();
         assert_eq!(messages.len(), 2);
         assert!(messages[0].contains("Unhandled ELF Relocation"), "got {:?}", messages[0]);
         assert!(messages[0].contains("R_DUMMY_COPY (5, 0x5)"), "got {:?}", messages[0]);
@@ -737,7 +709,7 @@ mod tests {
     #[test]
     fn mark_as_error_matches_java_markup_format() {
         let base = AbstractElfRelocationHandlerBase::new(ALL_TYPES);
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
 
         base.mark_as_error(
             &MockProgram,
@@ -750,7 +722,7 @@ mod tests {
         );
 
         assert_eq!(
-            log.messages.lock().unwrap().as_slice(),
+            log.messages().as_slice(),
             ["Elf Relocation Failure: R_DUMMY_COPY (5, 0x5) at ram:0x1000 \
               (Symbol = foo) - bad offset"
                 .to_string()]
@@ -760,7 +732,7 @@ mod tests {
     #[test]
     fn mark_as_error_falls_back_to_the_no_name_placeholder() {
         let base = AbstractElfRelocationHandlerBase::new(ALL_TYPES);
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
 
         base.mark_as_error(
             &MockProgram,
@@ -772,13 +744,13 @@ mod tests {
             &log,
         );
 
-        assert!(log.messages.lock().unwrap()[0].contains("Symbol = <no name>"));
+        assert!(log.messages()[0].contains("Symbol = <no name>"));
     }
 
     #[test]
     fn mark_as_unsupported_copy_reports_the_byte_count() {
         let base = AbstractElfRelocationHandlerBase::new(ALL_TYPES);
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
 
         base.mark_as_unsupported_copy(
             &MockProgram,
@@ -790,7 +762,7 @@ mod tests {
             &log,
         );
 
-        let messages = log.messages.lock().unwrap();
+        let messages = log.messages();
         assert!(messages[0].contains("Runtime copy not supported (8-bytes)"), "got {:?}", messages[0]);
     }
 }

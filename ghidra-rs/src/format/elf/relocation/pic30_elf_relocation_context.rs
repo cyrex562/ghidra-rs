@@ -88,7 +88,8 @@ impl ElfRelocationContext for Pic30ElfRelocationContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::{ElfHeader, MessageLog, Throwable};
+    use crate::app::util::importer::message_log::MessageLog;
+    use crate::format::seam_stubs::ElfHeader;
     use crate::program::model::address::AddressSpaceType;
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::MemoryAccessException;
@@ -106,34 +107,6 @@ mod tests {
         }
     }
 
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
 
     struct MockElfHeader;
     impl ElfHeader for MockElfHeader {
@@ -149,7 +122,7 @@ mod tests {
     }
 
     struct MockLoadHelper {
-        log: Arc<RecordingLog>,
+        log: Arc<MessageLog>,
     }
 
     impl ElfLoadHelper for MockLoadHelper {
@@ -172,7 +145,7 @@ mod tests {
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             Arc::new(MockElfHeader)
         }
-        fn get_log(&self) -> Arc<dyn MessageLog> {
+        fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
         }
         fn log(&self, _msg: &str) {}
@@ -263,7 +236,7 @@ mod tests {
 
     fn create_context() -> Pic30ElfRelocationContext {
         let load_helper = Arc::new(MockLoadHelper {
-            log: Arc::new(RecordingLog::default()),
+            log: Arc::new(MessageLog::new()),
         });
         Pic30ElfRelocationContext::new(None, load_helper, Arc::new(HashMap::new()))
     }
@@ -362,7 +335,7 @@ mod tests {
                 _symbol_name: Option<&str>,
                 _symbol_index: i32,
                 _msg: &str,
-                _log: &dyn MessageLog,
+                _log: &MessageLog,
             ) {
             }
             fn mark_as_warning(
@@ -373,13 +346,13 @@ mod tests {
                 _symbol_name: Option<&str>,
                 _symbol_index: i32,
                 _msg: &str,
-                _log: &dyn MessageLog,
+                _log: &MessageLog,
             ) {
             }
         }
 
         let load_helper = Arc::new(MockLoadHelper {
-            log: Arc::new(RecordingLog::default()),
+            log: Arc::new(MessageLog::new()),
         });
         let context = Pic30ElfRelocationContext::new(
             Some(Arc::new(MockHandler)),

@@ -11,9 +11,8 @@ use crate::program::model::symbol::{Equate, EquateTable, SimpleEquate};
 use crate::util::exception::{CancelledException, UsrException};
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifEquateWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifEquateWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher};
 
 /// Reads and writes `EQUATES` entries between a [`Program`]'s [`EquateTable`] and SARIF.
 ///
@@ -89,7 +88,7 @@ impl EquatesSarifMgr {
                 }
                 // Any other failure (e.g. an invalid name): Java's general `Exception` catch arm.
                 None => {
-                    self.log.append_exception(&UsrException::new(&msg));
+                    self.log.append_exception(&UsrException::new(&msg), &[]);
                 }
             }
         }

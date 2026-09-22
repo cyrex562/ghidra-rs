@@ -14,7 +14,8 @@ use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
-use crate::app::seam_stubs::{ByteProviderLike, LoadResultsLike, LoadSpecLike, MessageLog, OptionLike};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{ByteProviderLike, LoadResultsLike, LoadSpecLike, OptionLike};
 use crate::app::util::opinion::load_exception::LoadException;
 use crate::app::util::opinion::loader_tier::LoaderTier;
 use crate::framework::model::{DomainObject, Project};
@@ -83,7 +84,7 @@ pub struct ImporterSettings<'a> {
     /// A reference to the object "consuming" the returned load results.
     pub consumer: Box<dyn Any + Send + Sync>,
     /// The message log.
-    pub log: &'a mut dyn MessageLog,
+    pub log: &'a mut MessageLog,
     /// A task monitor.
     pub monitor: &'a dyn TaskMonitor,
 }
@@ -332,9 +333,6 @@ mod tests {
         }
     }
 
-    struct MockMessageLog;
-    impl MessageLog for MockMessageLog {}
-
     struct MockLoader {
         tier: LoaderTier,
         priority: i32,
@@ -535,7 +533,7 @@ mod tests {
             name: Some("ignored".to_string()),
         };
         let load_spec = MockLoadSpec;
-        let mut log = MockMessageLog;
+        let mut log = MessageLog::new();
         let monitor = DummyMonitor;
         let settings = ImporterSettings {
             provider: &provider,
@@ -557,7 +555,7 @@ mod tests {
     fn importer_settings_with_no_path_has_empty_path_only() {
         let provider = MockProvider { name: None };
         let load_spec = MockLoadSpec;
-        let mut log = MockMessageLog;
+        let mut log = MessageLog::new();
         let monitor = DummyMonitor;
         let settings = ImporterSettings {
             provider: &provider,

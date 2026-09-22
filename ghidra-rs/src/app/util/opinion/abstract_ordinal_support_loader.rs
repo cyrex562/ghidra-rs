@@ -59,7 +59,8 @@
 
 use std::sync::Arc;
 
-use crate::app::seam_stubs::{new_boolean, option_utils, LibrarySymbolTable, MessageLog, Option};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{new_boolean, option_utils, LibrarySymbolTable, Option};
 use crate::app::util::opinion::library_lookup_table::{self, file_name_of, CreateFileError};
 use crate::app::util::opinion::loader::{COMMAND_LINE_ARG_PREFIX, OPTIONS_PROJECT_SAVE_STATE_KEY};
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
@@ -137,7 +138,7 @@ pub trait AbstractOrdinalSupportLoader {
         app: &dyn Application,
         local_fs: &dyn LocalFileSystemLike,
         options: &[Box<dyn Option>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException> {
         let existing_exports_file = library_lookup_table::get_existing_exports_file(app, lib_name, size);
@@ -194,7 +195,7 @@ pub trait AbstractOrdinalSupportLoader {
         loaded_programs: &mut [&mut dyn Program],
         app: &dyn Application,
         options: &[Box<dyn Option>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException> {
         if !should_perform_ordinal_lookup(options) {
@@ -249,7 +250,7 @@ fn get_local_file(
 fn apply_library_symbols(
     program: &mut dyn Program,
     app: &dyn Application,
-    log: &dyn MessageLog,
+    log: &MessageLog,
     monitor: &dyn TaskMonitor,
 ) -> Result<(), CancelledException> {
     monitor.set_message(&format!("Applying information...{}", Program::get_name(program)));
@@ -361,7 +362,7 @@ fn apply_library_symbols(
 fn apply_imports(
     program: &mut dyn Program,
     app: &dyn Application,
-    log: &dyn MessageLog,
+    log: &MessageLog,
     monitor: &dyn TaskMonitor,
 ) -> Result<(), CancelledException> {
     monitor.set_message(&format!("Applying imports...{}", Program::get_name(program)));
@@ -475,7 +476,7 @@ fn external_location_mut<'a>(
 ///
 /// Java takes a `DomainObject`; this takes the `Program` its only caller has, since both members
 /// it reads (`getOptions`/`getName`) are on `Program` too.
-fn is_version_match(p: &dyn Program, symtab: &LibrarySymbolTable, log: &dyn MessageLog) -> bool {
+fn is_version_match(p: &dyn Program, symtab: &LibrarySymbolTable, log: &MessageLog) -> bool {
     let version = get_rid_of_version_alias(Some(symtab.get_version()));
 
     let options = p.get_options(PROGRAM_INFO);
@@ -516,24 +517,11 @@ fn get_rid_of_version_alias(version: std::option::Option<&str>) -> std::option::
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
 
     /// The smallest thing that can be an [`AbstractOrdinalSupportLoader`]: a subclass that adds
     /// nothing, like the ones in Java that only override `getName`/`findSupportedLoadSpecs`.
     struct TestOrdinalLoader;
     impl AbstractOrdinalSupportLoader for TestOrdinalLoader {}
-
-    /// [`MessageLog`] that records what was appended, since the placeholder discards it.
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingLog {
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-    }
 
     /// An [`Option`] holding a value of the wrong type for the ordinal-lookup option.
     struct StringValuedOption(&'static str);
@@ -627,7 +615,7 @@ mod tests {
 
     #[test]
     fn post_load_program_fixups_is_skipped_when_ordinal_lookup_is_off() {
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
         let monitor = crate::util::task::DummyMonitor;
         let off: Vec<Box<dyn Option>> = vec![new_boolean(ORDINAL_LOOKUP_OPTION_NAME)
             .value(Box::new(false))
@@ -651,6 +639,6 @@ mod tests {
         TestOrdinalLoader
             .post_load_program_fixups(&mut [], &NoApplication, &off, &log, &monitor)
             .unwrap();
-        assert!(log.messages.lock().unwrap().is_empty());
+        assert!(log.messages().is_empty());
     }
 }

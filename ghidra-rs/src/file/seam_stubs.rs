@@ -1365,74 +1365,6 @@ impl ExtractedMacho {
     }
 }
 
-/// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
-/// `MachoFileSetFileSystem::mount` (via `DyldChainedFixupsCommand::get_chained_fixups`).
-///
-/// Concrete stub, per the decided convention (there is nothing to dispatch over): a real, if
-/// minimal, in-memory log rather than an `unimplemented!()` placeholder. Also implements
-/// [`crate::format::seam_stubs::MessageLog`] so it interoperates with already-ported callers
-/// (like `DyldChainedFixupsCommand::get_chained_fixups`) that still take `&dyn MessageLog`
-/// against that older trait-based seam. Replace with the real port when available.
-#[derive(Debug, Default)]
-pub struct MessageLog {
-    messages: std::sync::Mutex<Vec<String>>,
-    status: std::sync::Mutex<Option<String>>,
-}
-
-impl MessageLog {
-    /// Mirrors `new MessageLog()`.
-    pub fn new() -> Self {
-        MessageLog::default()
-    }
-}
-
-impl crate::format::seam_stubs::MessageLog for MessageLog {
-    fn copy_from(&self, _log: &dyn crate::format::seam_stubs::MessageLog) {
-        // Not implemented: the seam trait only exposes `to_string()`, not structured access to
-        // another log's messages, so there is nothing meaningful to copy through it.
-    }
-
-    fn append_msg(&self, message: &str) {
-        self.messages.lock().unwrap().push(message.to_string());
-    }
-
-    fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {
-        self.messages.lock().unwrap().push("exception".to_string());
-    }
-
-    fn error(&self, originator: &str, message: &str) {
-        self.messages.lock().unwrap().push(format!("{originator}: {message}"));
-    }
-
-    fn has_messages(&self) -> bool {
-        !self.messages.lock().unwrap().is_empty()
-    }
-
-    fn clear(&self) {
-        self.messages.lock().unwrap().clear();
-    }
-
-    fn set_status(&self, status: &str) {
-        *self.status.lock().unwrap() = Some(status.to_string());
-    }
-
-    fn clear_status(&self) {
-        *self.status.lock().unwrap() = None;
-    }
-
-    fn get_status(&self) -> String {
-        self.status.lock().unwrap().clone().unwrap_or_default()
-    }
-
-    fn to_string(&self) -> String {
-        self.messages.lock().unwrap().join("\n")
-    }
-
-    fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, message_header: &str) {
-        self.messages.lock().unwrap().push(message_header.to_string());
-    }
-}
-
 /// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils.DyldCacheImageRecord`, referenced by
 /// `DyldCacheFileSystem::mount` via `SplitDyldCache::image_records`.
 ///
@@ -2007,6 +1939,6 @@ pub trait FBPK_Partition: Send + Sync {
         program: &dyn Program,
         address: &crate::program::model::address::Address,
         monitor: &dyn TaskMonitor,
-        log: &dyn crate::format::seam_stubs::MessageLog,
+        log: &crate::app::util::importer::message_log::MessageLog,
     ) -> std::io::Result<()>;
 }

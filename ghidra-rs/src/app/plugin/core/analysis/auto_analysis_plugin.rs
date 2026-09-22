@@ -732,7 +732,7 @@ impl AutoAnalysisPlugin {
             short_message: "There were warnings/errors issued during analysis.".to_string(),
             detailed_message: format!(
                 "(These messages are also written to the application log file)\n\n{}",
-                log.to_display_string()
+                log.to_string()
             ),
             message_type: MultiLineMessageDialog::WARNING_MESSAGE,
             modal: false,
@@ -938,7 +938,7 @@ mod tests {
 
     use crate::app::services::analysis_priority::AnalysisPriority;
     use crate::app::services::analyzer_type::AnalyzerType;
-    use crate::app::seam_stubs::MessageLog;
+    use crate::app::util::importer::message_log::MessageLog;
     use crate::framework::model::{DomainFile, DomainObject};
     use crate::framework::plugintool::util::PluginDescription as _;
     use crate::program::model::address::AddressSetView;
@@ -1016,7 +1016,7 @@ mod tests {
             _program: &mut dyn Program,
             _set: &dyn AddressSetView,
             _monitor: &dyn TaskMonitor,
-            _log: &mut dyn MessageLog,
+            _log: &mut MessageLog,
         ) -> Result<bool, CancelledException> {
             Ok(true)
         }
@@ -1026,7 +1026,7 @@ mod tests {
             _program: &mut dyn Program,
             _set: &dyn AddressSetView,
             _monitor: &dyn TaskMonitor,
-            _log: &mut dyn MessageLog,
+            _log: &mut MessageLog,
         ) -> Result<bool, CancelledException> {
             Ok(true)
         }
@@ -1373,7 +1373,7 @@ mod tests {
         /// `Some(true)` = re-analyzed with a selection, `Some(false)` = with all of memory.
         reanalyzed: Mutex<Option<bool>>,
         ask_to_analyze: bool,
-        log: Arc<RecordingLog>,
+        log: Arc<MessageLog>,
     }
 
     impl MockManager {
@@ -1389,11 +1389,12 @@ mod tests {
         }
 
         fn with_messages(messages: &[&str]) -> Self {
+            let log = MessageLog::new();
+            for message in messages {
+                log.append_msg(*message);
+            }
             Self {
-                log: Arc::new(RecordingLog {
-                    messages: messages.iter().map(|m| m.to_string()).collect(),
-                    written: Mutex::default(),
-                }),
+                log: Arc::new(log),
                 ..Self::default()
             }
         }
@@ -1441,35 +1442,12 @@ mod tests {
             self.ask_to_analyze
         }
 
-        fn get_message_log(&self) -> Arc<dyn MessageLog> {
+        fn get_message_log(&self) -> Arc<MessageLog> {
             self.log.clone()
         }
 
         fn get_program(&self) -> Arc<dyn Program> {
             MockProgram::new().arc()
-        }
-    }
-
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Vec<String>,
-        written: Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingLog {
-        fn has_messages(&self) -> bool {
-            !self.messages.is_empty()
-        }
-
-        fn to_display_string(&self) -> String {
-            self.messages.join("\n")
-        }
-
-        fn write(&self, originator: &str, header: &str) {
-            self.written
-                .lock()
-                .unwrap()
-                .push(format!("{originator}: {header}"));
         }
     }
 
@@ -1871,14 +1849,12 @@ mod tests {
         assert_eq!(
             summary.detailed_message,
             "(These messages are also written to the application log file)\n\n\
-             bad flow at 1000\nunknown opcode"
+             bad flow at 1000\nunknown opcode\n"
         );
         assert_eq!(summary.message_type, 2);
         assert!(!summary.modal);
-        assert_eq!(
-            *noisy.log.written.lock().unwrap(),
-            vec![format!("{ANALYSIS_LOG_ORIGINATOR}: Analysis Log Messages")]
-        );
+        // `write` flushes to the global `Msg` logger (see `MessageLog::write`'s own tests for why
+        // that can't be captured/asserted on here); the message content above is what's testable.
     }
 
     #[test]

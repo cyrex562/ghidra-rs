@@ -11,9 +11,8 @@ use crate::program::model::listing::{Bookmark, BookmarkManager, Program};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifBookmarkWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifBookmarkWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher};
 
 /// Reads and writes `BOOKMARKS` entries between a [`Program`]'s [`BookmarkManager`] and SARIF.
 ///
@@ -73,7 +72,7 @@ impl BookmarksSarifMgr {
         let addr = match self.base.get_location(result) {
             Ok(addr) => addr,
             Err(e) => {
-                self.log.append_exception(&e);
+                self.log.append_exception(&e, &[]);
                 None
             }
         };

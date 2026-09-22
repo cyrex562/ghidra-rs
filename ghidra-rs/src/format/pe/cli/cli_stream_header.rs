@@ -20,7 +20,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::seam_stubs::CliAbstractStream;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{MessageLog, NTHeader};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::program::Program;
 use crate::util::task::TaskMonitor;
@@ -108,7 +109,7 @@ impl PeMarkupable for CliStreamHeader {
         program: &dyn Program,
         is_binary: bool,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(stream) = &self.stream {

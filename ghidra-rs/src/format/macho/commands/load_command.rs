@@ -15,7 +15,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::format::macho::commands::load_command_types::get_load_command_name;
 use crate::format::macho::commands::segment_names;
-use crate::format::seam_stubs::{FlatProgramAPI, MachHeader, MessageLog, SegmentCommand};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{FlatProgramAPI, MachHeader, SegmentCommand};
 use crate::program::model::address::Address;
 use crate::program::model::listing::comment_type::CommentType;
 use crate::program::model::listing::program::Program;
@@ -101,7 +102,7 @@ pub trait LoadCommand: StructConverter + Send + Sync {
         header: &dyn MachHeader,
         source: Option<&str>,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> Result<(), CancelledException> {
         let _ = (program, header, source, monitor, log);
         Ok(())
@@ -210,7 +211,7 @@ pub trait LoadCommand: StructConverter + Send + Sync {
         base_address: &Address,
         parent_module: &mut dyn ProgramModule,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         let _ = header;
         self.update_monitor(monitor);

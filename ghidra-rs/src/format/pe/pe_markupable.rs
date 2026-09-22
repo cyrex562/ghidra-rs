@@ -1,6 +1,7 @@
 use crate::program::model::listing::program::Program;
 use crate::util::task::TaskMonitor;
-use crate::format::seam_stubs::{NTHeader, MessageLog};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader};
 
 /// Common interface for standardizing the markup of a PE structure.
 ///
@@ -29,7 +30,7 @@ pub trait PeMarkupable: Send + Sync {
         program: &dyn Program,
         is_binary: bool,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>>;
 }
@@ -37,7 +38,7 @@ pub trait PeMarkupable: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
     use crate::framework::model::DomainObject;
 
     struct MockProgram;
@@ -177,47 +178,6 @@ mod tests {
         fn clear_cancelled(&self) {}
     }
 
-    struct MockMessageLog {
-        messages: Arc<Mutex<Vec<String>>>,
-    }
-
-    impl MockMessageLog {
-        fn new() -> Self {
-            Self {
-                messages: Arc::new(Mutex::new(Vec::new())),
-            }
-        }
-    }
-
-    impl MessageLog for MockMessageLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-        fn error(&self, _originator: &str, message: &str) {
-            self.messages.lock().unwrap().push(format!("ERROR: {}", message));
-        }
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages
-                .lock()
-                .unwrap()
-                .join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
-
     struct MockNTHeader;
 
     impl NTHeader for MockNTHeader {
@@ -264,7 +224,7 @@ mod tests {
             _program: &dyn Program,
             is_binary: bool,
             _monitor: &dyn TaskMonitor,
-            log: &dyn MessageLog,
+            log: &MessageLog,
             _nt_header: &dyn NTHeader,
         ) -> Result<(), Box<dyn std::error::Error>> {
             log.append_msg(&format!("Markup: binary={}", is_binary));
@@ -277,7 +237,7 @@ mod tests {
         let markupable: Box<dyn PeMarkupable> = Box::new(TestMarkupable);
         let program = MockProgram;
         let monitor = MockTaskMonitor;
-        let log = MockMessageLog::new();
+        let log = MessageLog::new();
         let nt_header = MockNTHeader;
 
         let result = markupable.markup(&program, true, &monitor, &log, &nt_header);
@@ -290,7 +250,7 @@ mod tests {
         let markupable = TestMarkupable;
         let program = MockProgram;
         let monitor = MockTaskMonitor;
-        let log = MockMessageLog::new();
+        let log = MessageLog::new();
         let nt_header = MockNTHeader;
 
         let result = markupable.markup(&program, true, &monitor, &log, &nt_header);
@@ -304,7 +264,7 @@ mod tests {
         let markupable = TestMarkupable;
         let program = MockProgram;
         let monitor = MockTaskMonitor;
-        let log = MockMessageLog::new();
+        let log = MessageLog::new();
         let nt_header = MockNTHeader;
 
         let result = markupable.markup(&program, false, &monitor, &log, &nt_header);

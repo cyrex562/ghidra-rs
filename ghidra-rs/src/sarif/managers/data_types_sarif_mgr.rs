@@ -18,12 +18,8 @@ use crate::util::exception::CancelledException;
 use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    ArrayDataType, BuiltInDataTypePlaceholder, CompositePacking, DtParser, EnumDataType,
-    FunctionDefinitionDataType, MessageLog, PointerDataType, SarifDataTypeWriter, SarifMgr,
-    SarifProgramOptions, SarifWriterTask, StructureDataType, TaskLauncher, TypedefDataType,
-    UnionDataType,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{ArrayDataType, BuiltInDataTypePlaceholder, CompositePacking, DtParser, EnumDataType, FunctionDefinitionDataType, PointerDataType, SarifDataTypeWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, StructureDataType, TaskLauncher, TypedefDataType, UnionDataType};
 
 /// `DataTypesSarifMgr.foreignTypedefs`: SARIF-only type names mapped onto the Ghidra built-in
 /// each one stands for. Java holds these as the `dataType` singletons of `CharDataType`,

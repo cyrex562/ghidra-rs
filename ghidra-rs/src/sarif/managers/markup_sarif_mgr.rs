@@ -19,10 +19,8 @@ use crate::util::exception::{CancelledException, InvalidInputException};
 use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifEquateRefWriter, SarifMgr, SarifProgramOptions, SarifReferenceWriter, SarifWriterTask,
-    TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifEquateRefWriter, SarifMgr, SarifProgramOptions, SarifReferenceWriter, SarifWriterTask, TaskLauncher};
 
 /// Everything one `process*Reference` call can fail with.
 ///
@@ -122,7 +120,7 @@ impl MarkupSarifMgr {
         };
 
         if let Some(Err(e)) = outcome {
-            self.log.append_exception(&e);
+            self.log.append_exception(&e, &[]);
         }
         true
     }
@@ -891,7 +889,12 @@ mod tests {
         ] {
             let mut mgr = manager();
             assert!(mgr.read(&tagged(tag), None, &DummyMonitor));
-            assert_eq!(mgr.log.messages(), vec![expected.to_string()], "tag {tag}");
+            // `append_exception` renders through `stack_trace_to_string`, which always appends a
+            // trailing newline after the message (even with an empty trace); trim it before
+            // comparing against the bare expected text.
+            let messages: Vec<String> =
+                mgr.log.messages().iter().map(|m| m.trim_end().to_string()).collect();
+            assert_eq!(messages, vec![expected.to_string()], "tag {tag}");
         }
     }
 

@@ -52,7 +52,8 @@ use std::sync::{Arc, OnceLock};
 
 use thiserror::Error;
 
-use crate::app::seam_stubs::{memory_block_utils, MessageLog};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{memory_block_utils};
 use crate::format::seam_stubs::{
     unix_aout_tables, UnixAoutHeader, UnixAoutRelocation, UnixAoutRelocationTable,
     UnixAoutStringTable, UnixAoutSymbolTable,
@@ -175,7 +176,7 @@ fn other_space() -> &'static Arc<AddressSpace> {
 pub struct UnixAoutProgramLoader<'a> {
     program: &'a mut dyn Program,
     monitor: &'a dyn TaskMonitor,
-    log: &'a dyn MessageLog,
+    log: &'a MessageLog,
     header: &'a dyn UnixAoutHeader,
 
     file_bytes: Option<Arc<dyn FileBytes>>,
@@ -203,7 +204,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
         program: &'a mut dyn Program,
         header: &'a dyn UnixAoutHeader,
         monitor: &'a dyn TaskMonitor,
-        log: &'a dyn MessageLog,
+        log: &'a MessageLog,
     ) -> Self {
         UnixAoutProgramLoader {
             program,
@@ -310,7 +311,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
                 SymbolType::NStab => {
                     if !found_stabs {
                         found_stabs = true;
-                        self.log.append_msg_from(DOT_SYMTAB, "File contains STABS.");
+                        self.log.append_msg_from(Some(DOT_SYMTAB), "File contains STABS.");
                     }
                 }
                 _ => {}
@@ -323,7 +324,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
 
         if self.extra_bss_size > 0 {
             self.log.append_msg_from(
-                DOT_BSS,
+                Some(DOT_BSS),
                 &format!("Added {} bytes for N_UNDF symbols.", self.extra_bss_size),
             );
         }
@@ -596,7 +597,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
                         match e {
                             CreateFunctionError::Overlapping(_) => {
                                 self.log.append_msg_from(
-                                    block_name,
+                                    Some(block_name),
                                     &format!(
                                         "Failed to create function {} @ {}, creating symbol instead.",
                                         name.unwrap_or_default(),
@@ -746,7 +747,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
 
             if status != RelocationStatus::Applied {
                 self.log.append_msg_from(
-                    target_block_name,
+                    Some(target_block_name),
                     &format!(
                         "Failed to apply relocation entry {idx} with type 0x{:02x} @ {}.",
                         relocation.flags, target_address
@@ -821,7 +822,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
                         // Java passes this format string to `appendMsg` unformatted, so the `%s`
                         // reaches the log literally; reproduced verbatim.
                         self.log.append_msg_from(
-                            DOT_TEXT,
+                            Some(DOT_TEXT),
                             "Failed to create entrypoint function @ %s, creating symbol instead.",
                         );
                         self.symbol_table()?.create_label(
@@ -931,25 +932,6 @@ mod tests {
     use super::*;
     use crate::framework::model::DomainObject;
     use crate::util::task::DummyMonitor;
-    use std::sync::Mutex;
-
-    /// A `MessageLog` that keeps every message, so tests can assert on what the loader reported.
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Mutex<Vec<String>>,
-    }
-
-    impl RecordingLog {
-        fn messages(&self) -> Vec<String> {
-            self.messages.lock().unwrap().clone()
-        }
-    }
-
-    impl MessageLog for RecordingLog {
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-    }
 
     struct MockProgram;
     impl DomainObject for MockProgram {}
@@ -1089,7 +1071,7 @@ mod tests {
         };
 
         let mut program = MockProgram;
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
         let header = ZeroHeader;
         let mut loader = UnixAoutProgramLoader::new(&mut program, &header, &monitor, &log);
@@ -1104,7 +1086,7 @@ mod tests {
         assert!(!loader.possible_bss_symbols.contains_key("undefined_a"));
         assert_eq!(
             log.messages(),
-            vec![".bss: Added 40 bytes for N_UNDF symbols.".to_string()]
+            vec![".bss> Added 40 bytes for N_UNDF symbols.".to_string()]
         );
     }
 
@@ -1116,7 +1098,7 @@ mod tests {
         };
 
         let mut program = MockProgram;
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
         let header = ZeroHeader;
         let mut loader = UnixAoutProgramLoader::new(&mut program, &header, &monitor, &log);
@@ -1124,7 +1106,7 @@ mod tests {
 
         loader.preprocess_symbol_table();
 
-        assert_eq!(log.messages(), vec![".symtab: File contains STABS.".to_string()]);
+        assert_eq!(log.messages(), vec![".symtab> File contains STABS.".to_string()]);
         assert_eq!(loader.extra_bss_size, 0);
         assert_eq!(loader.undefined_symbol_count, 0);
     }
@@ -1137,7 +1119,7 @@ mod tests {
         };
 
         let mut program = MockProgram;
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
         let header = ZeroHeader;
         let mut loader = UnixAoutProgramLoader::new(&mut program, &header, &monitor, &log);
@@ -1152,7 +1134,7 @@ mod tests {
     #[test]
     fn preprocess_symbol_table_without_a_symbol_table_is_a_no_op() {
         let mut program = MockProgram;
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
         let header = ZeroHeader;
         let mut loader = UnixAoutProgramLoader::new(&mut program, &header, &monitor, &log);
@@ -1169,7 +1151,7 @@ mod tests {
         // Each table is built only for a non-zero size; `ZeroHeader` reports none, so this must
         // not reach the (unimplemented) table constructors.
         let mut program = MockProgram;
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
         let header = ZeroHeader;
         let mut loader = UnixAoutProgramLoader::new(&mut program, &header, &monitor, &log);
@@ -1210,7 +1192,7 @@ mod tests {
     #[test]
     fn apply_relocations_without_a_table_is_a_no_op() {
         let mut program = MockProgram;
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
         let header = ZeroHeader;
         let mut loader = UnixAoutProgramLoader::new(&mut program, &header, &monitor, &log);

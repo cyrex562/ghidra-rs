@@ -57,7 +57,8 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_metadata_directory::CliMetadataDirectory;
 use crate::format::pe::default_data_directory::DefaultDataDirectory;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{MessageLog, NTHeader};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader};
 use crate::program::model::address::Address;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
@@ -218,7 +219,7 @@ impl PeMarkupable for ImageCor20Header {
         program: &dyn Program,
         is_binary: bool,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if !self.metadata.has_parsed_correctly() {
@@ -541,30 +542,9 @@ mod tests {
                 "test:LE:32:default".to_string()
             }
         }
-        struct StubLog;
-        impl MessageLog for StubLog {
-            fn copy_from(&self, _log: &dyn MessageLog) {}
-            fn append_msg(&self, _message: &str) {}
-            fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-            fn error(&self, _originator: &str, _message: &str) {}
-            fn has_messages(&self) -> bool {
-                false
-            }
-            fn clear(&self) {}
-            fn set_status(&self, _status: &str) {}
-            fn clear_status(&self) {}
-            fn get_status(&self) -> String {
-                String::new()
-            }
-            fn to_string(&self) -> String {
-                String::new()
-            }
-            fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-        }
-
         let program = StubProgram;
         let monitor = crate::util::task::DummyMonitor;
-        let log = StubLog;
+        let log = MessageLog::new();
         // Should return Ok without touching `program`/`monitor`/`log` at all, since
         // `metadata.has_parsed_correctly()` is false.
         assert!(header.markup(&program, true, &monitor, &log, &nt_header).is_ok());

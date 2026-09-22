@@ -167,7 +167,8 @@ impl fmt::Display for LoadSpec {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::seam_stubs::{ByteProviderLike, LoadResultsLike, LoadSpecLike, MessageLog, OptionLike};
+    use crate::app::seam_stubs::{ByteProviderLike, LoadResultsLike, LoadSpecLike, OptionLike};
+    use crate::app::util::importer::message_log::MessageLog;
     use crate::app::util::opinion::loader::{ImporterSettings, LoadError, LoadIntoError};
     use crate::app::util::opinion::loader_tier::LoaderTier;
     use crate::framework::model::DomainObject;

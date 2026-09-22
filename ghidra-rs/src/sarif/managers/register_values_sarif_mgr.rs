@@ -13,9 +13,8 @@ use crate::program::model::listing::{ContextChangeException, Program, ProgramCon
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifMgr, SarifProgramOptions, SarifRegisterValueWriter, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifMgr, SarifProgramOptions, SarifRegisterValueWriter, SarifWriterTask, TaskLauncher};
 
 /// Everything [`RegisterValuesSarifMgr::process_register_values`] can fail with -- all folded
 /// back into the same `log.appendException(e)` Java's outer `catch (Exception e)` performs,
@@ -113,7 +112,7 @@ impl RegisterValuesSarifMgr {
     /// `RegisterValuesSarifMgr.processRegisterValues`.
     fn process_register_values(&mut self, result: &HashMap<String, Value>) {
         if let Err(e) = self.process_register_values_inner(result) {
-            self.log.append_exception(&e);
+            self.log.append_exception(&e, &[]);
         }
     }
 

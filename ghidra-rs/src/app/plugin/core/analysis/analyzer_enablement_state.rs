@@ -99,7 +99,7 @@ mod tests {
             _program: &mut dyn crate::program::model::listing::Program,
             _set: &dyn crate::program::model::address::AddressSetView,
             _monitor: &dyn crate::util::task::TaskMonitor,
-            _log: &mut dyn crate::app::seam_stubs::MessageLog,
+            _log: &mut crate::app::util::importer::message_log::MessageLog,
         ) -> Result<bool, CancelledException> {
             Ok(true)
         }
@@ -109,7 +109,7 @@ mod tests {
             _program: &mut dyn crate::program::model::listing::Program,
             _set: &dyn crate::program::model::address::AddressSetView,
             _monitor: &dyn crate::util::task::TaskMonitor,
-            _log: &mut dyn crate::app::seam_stubs::MessageLog,
+            _log: &mut crate::app::util::importer::message_log::MessageLog,
         ) -> Result<bool, CancelledException> {
             Ok(true)
         }

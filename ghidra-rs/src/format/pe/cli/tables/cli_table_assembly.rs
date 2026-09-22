@@ -34,7 +34,8 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::tables::cli_type_table::CliTypeTable;
 use crate::format::pe::cli::tables::flags::cli_flags;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{CliStreamMetadata, MessageLog, NTHeader};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{CliStreamMetadata, NTHeader};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::enum_::Enum;
 use crate::program::model::listing::program::Program;
@@ -220,7 +221,7 @@ impl PeMarkupable for CliTableAssembly {
         _program: &dyn Program,
         _is_binary: bool,
         _monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         _nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         for row in &self.rows {
@@ -442,7 +443,7 @@ mod tests {
             _program: &dyn crate::program::model::listing::program::Program,
             _is_binary: bool,
             _monitor: &dyn TaskMonitor,
-            _log: &dyn MessageLog,
+            _log: &MessageLog,
             _nt_header: &dyn NTHeader,
         ) -> io::Result<()> {
             Ok(())

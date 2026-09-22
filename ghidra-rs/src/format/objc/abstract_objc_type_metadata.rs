@@ -21,9 +21,9 @@ use crate::util::task::TaskMonitor;
 /// Java: the `program`, `monitor`, `log`, and `state` fields on the abstract
 /// `AbstractObjcTypeMetadata` class, all set once by its constructor.
 ///
-/// `log` is wrapped in a [`Mutex`] (rather than stored bare) so that
-/// [`AbstractObjcTypeMetadata::log`]/[`AbstractObjcTypeMetadata::log_with_error`] can take `&self`
-/// -- matching [`ObjcTypeMetadataStructure::apply_to`](super::objc_type_metadata_structure::ObjcTypeMetadataStructure::apply_to)'s
+/// `log` is stored bare (not wrapped in a [`Mutex`]): [`MessageLog`] is `&self`-based
+/// internally, so [`AbstractObjcTypeMetadata::log`]/[`AbstractObjcTypeMetadata::log_with_error`]
+/// can take `&self` -- matching [`ObjcTypeMetadataStructure::apply_to`](super::objc_type_metadata_structure::ObjcTypeMetadataStructure::apply_to)'s
 /// own `&self` signature on the sibling trait, so a real `apply_to` implementation can log
 /// through `&self` without needing `&mut self` -- mirroring Java, where `log.appendMsg(...)`
 /// mutates the field's referent without needing `this` itself to be `mutable` in any sense Java
@@ -32,7 +32,7 @@ use crate::util::task::TaskMonitor;
 pub struct AbstractObjcTypeMetadataBase {
     program: Arc<dyn Program>,
     monitor: Box<dyn TaskMonitor>,
-    log: Mutex<MessageLog>,
+    log: MessageLog,
     state: Arc<Mutex<ObjcState>>,
 }
 
@@ -52,7 +52,7 @@ impl AbstractObjcTypeMetadataBase {
         monitor: Box<dyn TaskMonitor>,
         log: MessageLog,
     ) -> Self {
-        Self { program, monitor, log: Mutex::new(log), state }
+        Self { program, monitor, log, state }
     }
 
     /// Java: direct access to the protected `program` field.
@@ -103,7 +103,7 @@ pub trait AbstractObjcTypeMetadata {
     /// `getClass()`.
     fn log(&self, message: &str) {
         let originator = simple_type_name::<Self>();
-        self.metadata_base().log.lock().unwrap().append_msg_from(Some(originator), message);
+        self.metadata_base().log.append_msg_from(Some(originator), message);
     }
 
     /// Convenience method to perform logging (with exception).
@@ -113,7 +113,7 @@ pub trait AbstractObjcTypeMetadata {
     fn log_with_error(&self, message: &str, e: &dyn std::error::Error) {
         let originator = simple_type_name::<Self>();
         let full_message = format!("{message}: {e}");
-        self.metadata_base().log.lock().unwrap().append_msg_from(Some(originator), &full_message);
+        self.metadata_base().log.append_msg_from(Some(originator), &full_message);
     }
 
     /// Closes this type metadata processor, releasing the shared [`ObjcState`].
@@ -238,8 +238,8 @@ mod tests {
     fn log_appends_a_message_prefixed_by_the_concrete_simple_name() {
         let metadata = make_metadata();
         metadata.log("hello");
-        let log = metadata.metadata_base().log.lock().unwrap();
-        assert!(log.to_string().contains("TestMetadata> hello"));
+        let log = metadata.metadata_base().log.to_string();
+        assert!(log.contains("TestMetadata> hello"));
     }
 
     #[test]
@@ -247,8 +247,8 @@ mod tests {
         let metadata = make_metadata();
         let err = std::io::Error::new(std::io::ErrorKind::Other, "boom");
         metadata.log_with_error("failed", &err);
-        let log = metadata.metadata_base().log.lock().unwrap();
-        assert!(log.to_string().contains("TestMetadata> failed: boom"));
+        let log = metadata.metadata_base().log.to_string();
+        assert!(log.contains("TestMetadata> failed: boom"));
     }
 
     #[test]
@@ -267,10 +267,10 @@ mod tests {
         as_trait.apply_to();
         as_trait.log("via trait object");
         as_trait.close();
-        let log = metadata.metadata_base().log.lock().unwrap();
+        let log = metadata.metadata_base().log.to_string();
         // Even dispatched through `dyn AbstractObjcTypeMetadata`, `Self` inside the default
         // `log` method still resolves to the concrete `TestMetadata`, matching Java's
         // `getClass().getSimpleName()` polymorphism.
-        assert!(log.to_string().contains("TestMetadata> via trait object"));
+        assert!(log.contains("TestMetadata> via trait object"));
     }
 }

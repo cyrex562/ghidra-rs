@@ -116,7 +116,8 @@ impl ElfRelocationContext for RiscvElfRelocationContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::{ElfHeader, ElfRelocationTable, ElfSymbolTable, MessageLog};
+    use crate::app::util::importer::message_log::MessageLog;
+    use crate::format::seam_stubs::{ElfHeader, ElfRelocationTable, ElfSymbolTable};
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::MemoryAccessException;
     use std::sync::Mutex;
@@ -132,34 +133,6 @@ mod tests {
         }
     }
 
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
 
     struct MockElfHeader;
     impl ElfHeader for MockElfHeader {
@@ -175,7 +148,7 @@ mod tests {
     }
 
     struct MockLoadHelper {
-        log: Arc<RecordingLog>,
+        log: Arc<MessageLog>,
     }
 
     impl ElfLoadHelper for MockLoadHelper {
@@ -198,7 +171,7 @@ mod tests {
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             Arc::new(MockElfHeader)
         }
-        fn get_log(&self) -> Arc<dyn MessageLog> {
+        fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
         }
         fn log(&self, _msg: &str) {}
@@ -333,7 +306,7 @@ mod tests {
     }
 
     fn create_context() -> RiscvElfRelocationContext {
-        let load_helper = Arc::new(MockLoadHelper { log: Arc::new(RecordingLog::default()) });
+        let load_helper = Arc::new(MockLoadHelper { log: Arc::new(MessageLog::new()) });
         RiscvElfRelocationContext::new(None, load_helper, Arc::new(HashMap::new()))
     }
 

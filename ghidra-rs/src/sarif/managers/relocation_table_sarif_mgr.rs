@@ -12,9 +12,8 @@ use crate::program::model::reloc::{Relocation, RelocationStatus, RelocationTable
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifMgr, SarifProgramOptions, SarifRelocationWriter, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifMgr, SarifProgramOptions, SarifRelocationWriter, SarifWriterTask, TaskLauncher};
 
 /// Everything [`RelocationTableSarifMgr::process_relocation`] can fail with. Java's
 /// `RelocationTableSarifMgr.read` only catches `AddressOverflowException` (the
@@ -93,7 +92,7 @@ impl RelocationTableSarifMgr {
         match self.process_relocation(result) {
             Ok(()) => Ok(true),
             Err(RelocationReadError::AddressOverflow(e)) => {
-                self.log.append_exception(&e);
+                self.log.append_exception(&e, &[]);
                 Ok(true)
             }
             Err(other) => Err(other),

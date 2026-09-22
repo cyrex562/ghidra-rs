@@ -1170,22 +1170,6 @@ pub fn swift_category_path() -> crate::program::model::data::category_path::Cate
         .expect("\"/Demangler\" is a valid category path")
 }
 
-/// Placeholder for `ghidra.app.util.importer.MessageLog`, needed by
-/// [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
-///
-/// Decided STRUCT (see CONVENTION_QUEUE.tsv): becomes the concrete type, since there is nothing
-/// to dispatch over. Only the no-arg constructor `SwiftDemangler::initialize` needs is modeled;
-/// the real port also carries the message-accumulation surface.
-#[derive(Debug, Clone, Default)]
-pub struct MessageLog;
-
-impl MessageLog {
-    /// Mirrors `new MessageLog()`.
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.swift.SwiftTypeMetadata`, needed by
 /// [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
 ///
@@ -1202,7 +1186,7 @@ impl SwiftTypeMetadata {
     pub fn new(
         _program: &dyn crate::program::model::listing::Program,
         _monitor: &dyn crate::util::task::TaskMonitor,
-        _log: &MessageLog,
+        _log: &crate::app::util::importer::message_log::MessageLog,
     ) -> std::io::Result<Self> {
         Ok(Self)
     }

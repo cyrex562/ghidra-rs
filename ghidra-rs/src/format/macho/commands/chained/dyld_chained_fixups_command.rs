@@ -29,9 +29,8 @@ use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase}
 use crate::format::macho::commands::load_command_types::get_load_command_name;
 use crate::format::macho::dyld::dyld_chained_ptr::{DyldChainType, DYLD_CHAINED_PTR_START_NONE};
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
-use crate::format::seam_stubs::{
-    DyldChainedFixupHeader, FlatProgramAPI, LinkEditDataCommand, MachHeader, MessageLog, Throwable,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{DyldChainedFixupHeader, FlatProgramAPI, LinkEditDataCommand, MachHeader};
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
@@ -48,11 +47,19 @@ struct Du;
 impl DataUtilities for Du {}
 
 /// Opaque marker handed to [`MessageLog::append_exception`], standing in for the Java
-/// `Exception`/`Throwable` instance caught in `markupRawBinary`'s catch block. [`Throwable`] is an
-/// empty marker trait (no accessors), so no error detail is lost by using a single reusable unit
-/// type here.
+/// `Exception`/`Throwable` instance caught in `markupRawBinary`'s catch block. No error detail is
+/// lost by using a single reusable unit type here, since nothing in this crate captures the
+/// original Java exception's message.
+#[derive(Debug)]
 struct RawBinaryMarkupFailure;
-impl Throwable for RawBinaryMarkupFailure {}
+
+impl std::fmt::Display for RawBinaryMarkupFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "failed to markup raw binary")
+    }
+}
+
+impl std::error::Error for RawBinaryMarkupFailure {}
 
 /// Port of `ghidra.app.util.bin.format.macho.commands.DyldChainedFixupsCommand`.
 pub struct DyldChainedFixupsCommand {
@@ -96,7 +103,7 @@ impl DyldChainedFixupsCommand {
         reader: &dyn BinaryReader,
         imagebase: i64,
         symbol_table: Option<&dyn SymbolTable>,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<Vec<DyldFixup>, ChainedFixupError> {
         let mut result = Vec::new();
@@ -190,7 +197,7 @@ impl LoadCommand for DyldChainedFixupsCommand {
         header: &dyn MachHeader,
         source: Option<&str>,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> Result<(), CancelledException> {
         let Some(addr) =
             self.file_offset_to_address(program, header, self.link_edit.dataoff(), self.link_edit.datasize())
@@ -213,8 +220,8 @@ impl LoadCommand for DyldChainedFixupsCommand {
         })();
 
         if result.is_err() {
-            log.error(
-                "DyldChainedFixupsCommand",
+            log.append_msg_from(
+                Some("DyldChainedFixupsCommand"),
                 &format!("Failed to markup: {}", self.get_contextual_name(source, None)),
             );
         }
@@ -228,7 +235,7 @@ impl LoadCommand for DyldChainedFixupsCommand {
         base_address: &Address,
         parent_module: &mut dyn ProgramModule,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         // ---- Flattened `LoadCommand.markupRawBinary` (the grandparent step; never propagates
         // failures out of itself, only logs them). ----
@@ -297,7 +304,7 @@ impl LoadCommand for DyldChainedFixupsCommand {
 
         if result.is_err() {
             log.append_msg(&format!("Unable to create {}", self.get_command_name()));
-            log.append_exception(&RawBinaryMarkupFailure);
+            log.append_exception(&RawBinaryMarkupFailure, &[]);
         }
     }
 }
@@ -307,7 +314,7 @@ mod tests {
     use super::*;
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
     use crate::format::macho::commands::load_command_types::LC_DYLD_CHAINED_FIXUPS;
-    use crate::format::seam_stubs::{Class, DyldChainedImport, DyldChainedImports};
+    use crate::format::seam_stubs::{DyldChainedImport, DyldChainedImports};
     use crate::util::task::DummyMonitor;
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -398,28 +405,6 @@ mod tests {
         }
     }
 
-    struct TestLog;
-
-    impl MessageLog for TestLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, _message: &str) {}
-        fn append_exception(&self, _t: &dyn Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            false
-        }
-        fn clear(&self) {}
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            String::new()
-        }
-        fn write(&self, _owner: &dyn Class, _message_header: &str) {}
-    }
-
     fn command_bytes(cmd: u32, cmdsize: i32, dataoff: u32, datasize: u32) -> Vec<u8> {
         let mut v = Vec::new();
         v.extend_from_slice(&(cmd as i32).to_le_bytes());
@@ -498,7 +483,7 @@ mod tests {
         let mut image = vec![0u8; 0x2000];
         image.extend_from_slice(&0x5000i64.to_le_bytes());
         let reader = TestReader::new(image);
-        let log = TestLog;
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
 
         let fixups = cmd

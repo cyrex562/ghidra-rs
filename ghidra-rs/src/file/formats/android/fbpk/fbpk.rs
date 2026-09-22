@@ -75,7 +75,7 @@ mod tests {
             _program: &dyn Program,
             _address: &Address,
             _monitor: &dyn TaskMonitor,
-            _log: &dyn crate::format::seam_stubs::MessageLog,
+            _log: &crate::app::util::importer::message_log::MessageLog,
         ) -> std::io::Result<()> {
             Ok(())
         }

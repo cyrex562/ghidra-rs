@@ -39,9 +39,10 @@ use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter;
 use crate::format::memory_loadable::MemoryLoadable;
+use crate::app::util::importer::message_log::MessageLog;
 use crate::format::seam_stubs::{
     elf_relocation_handler, ElfHeader, ElfRelocation, ElfRelocationHandler, ElfRelocationTable,
-    ElfSymbolTable, MessageLog,
+    ElfSymbolTable,
 };
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
@@ -223,7 +224,7 @@ impl ElfRelocationContextBase {
         self.get_elf_header().get_load_adapter()
     }
 
-    pub fn get_log(&self) -> Arc<dyn MessageLog> {
+    pub fn get_log(&self) -> Arc<MessageLog> {
         self.load_helper.get_log()
     }
 
@@ -533,7 +534,7 @@ mod tests {
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
     use crate::format::elf::elf_section_header_constants::SHN_UNDEF;
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC, STT_TLS};
-    use crate::format::seam_stubs::{ElfSectionHeader, Throwable};
+    use crate::format::seam_stubs::ElfSectionHeader;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::reloc::RelocationStatus;
 
@@ -551,34 +552,6 @@ mod tests {
     }
 
     /// Records every message written to it so tests can assert on the markup text.
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
 
     struct MockElfHeader;
     impl ElfHeader for MockElfHeader {
@@ -594,7 +567,7 @@ mod tests {
     }
 
     struct MockLoadHelper {
-        log: Arc<RecordingLog>,
+        log: Arc<MessageLog>,
         /// Messages passed to `ElfLoadHelper.log(...)`, which is distinct from the import log.
         helper_log: Mutex<Vec<String>>,
         image_base_word_adjustment: i64,
@@ -604,7 +577,7 @@ mod tests {
     impl MockLoadHelper {
         fn new() -> Self {
             MockLoadHelper {
-                log: Arc::new(RecordingLog::default()),
+                log: Arc::new(MessageLog::new()),
                 helper_log: Mutex::new(Vec::new()),
                 image_base_word_adjustment: 0,
                 got_value: None,
@@ -632,7 +605,7 @@ mod tests {
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             Arc::new(MockElfHeader)
         }
-        fn get_log(&self) -> Arc<dyn MessageLog> {
+        fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
         }
         fn log(&self, msg: &str) {
@@ -828,7 +801,7 @@ mod tests {
             symbol_name: Option<&str>,
             symbol_index: i32,
             msg: &str,
-            _log: &dyn MessageLog,
+            _log: &MessageLog,
         ) {
             self.calls.lock().unwrap().push(HandlerCall::Error {
                 type_id,
@@ -845,7 +818,7 @@ mod tests {
             symbol_name: Option<&str>,
             symbol_index: i32,
             msg: &str,
-            _log: &dyn MessageLog,
+            _log: &MessageLog,
         ) {
             self.calls.lock().unwrap().push(HandlerCall::Warning {
                 type_id,
@@ -1225,7 +1198,7 @@ mod tests {
 
         context.mark_relocation_error(&address(0x2000), 9, 4, Some("memcpy"), "bad offset");
 
-        let messages = helper.log.messages.lock().unwrap();
+        let messages = helper.log.messages();
         assert_eq!(messages.len(), 1);
         assert!(messages[0].contains("bad offset"), "got {:?}", messages[0]);
         assert!(messages[0].contains("memcpy"), "got {:?}", messages[0]);

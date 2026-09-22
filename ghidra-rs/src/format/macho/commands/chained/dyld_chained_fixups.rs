@@ -10,9 +10,8 @@ use std::sync::Arc;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::macho::dyld::dyld_chained_ptr::DyldChainType;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
-use crate::format::seam_stubs::{
-    DyldChainedImports, MachoProgramBuilder, MemoryBlockUtils, MessageLog,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{DyldChainedImports, MachoProgramBuilder, MemoryBlockUtils};
 use crate::program::model::address::Address;
 use crate::program::model::listing::library;
 use crate::program::model::listing::Program;
@@ -82,7 +81,7 @@ pub fn get_chained_fixups(
     auth_value_add: i64,
     imagebase: i64,
     symbol_table: Option<&dyn SymbolTable>,
-    log: &dyn MessageLog,
+    log: &MessageLog,
     monitor: &dyn TaskMonitor,
 ) -> Result<Vec<DyldFixup>, ChainedFixupError> {
     let mut fixups = Vec::new();
@@ -183,7 +182,7 @@ pub fn fixup_chained_pointers(
     program: &mut dyn Program,
     imagebase: &Address,
     library_paths: &[String],
-    log: &dyn MessageLog,
+    log: &MessageLog,
     monitor: &dyn TaskMonitor,
     memory_block_utils: &dyn MemoryBlockUtils,
     macho_program_builder: &dyn MachoProgramBuilder,
@@ -334,7 +333,7 @@ pub fn process_pointer_chain(
     chain_start: i64,
     next_off_size: i64,
     imagebase: i64,
-    _log: &dyn MessageLog,
+    _log: &MessageLog,
     monitor: &dyn TaskMonitor,
 ) -> Result<Vec<DyldFixup>, ChainedFixupError> {
     const BIT63: i64 = 0x1i64 << 63;
@@ -483,28 +482,6 @@ mod tests {
         }
     }
 
-    struct TestLog;
-
-    impl MessageLog for TestLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, _message: &str) {}
-        fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            false
-        }
-        fn clear(&self) {}
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            String::new()
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
-
     fn le_long(v: i64) -> [u8; 8] {
         v.to_le_bytes()
     }
@@ -519,7 +496,7 @@ mod tests {
         // A single Ptr64 chain entry with target=0x1000, next=0 (end of chain).
         let chain_value: i64 = 0x1000;
         let reader = TestReader::new(le_long(chain_value).to_vec());
-        let log = TestLog;
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
 
         let fixups = get_chained_fixups(
@@ -547,7 +524,7 @@ mod tests {
     fn get_chained_fixups_relative_target_adds_imagebase() {
         let chain_value: i64 = 0x2000;
         let reader = TestReader::new(le_long(chain_value).to_vec());
-        let log = TestLog;
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
 
         let fixups = get_chained_fixups(
@@ -573,7 +550,7 @@ mod tests {
         // Ptr64 bind bit (bit 63) set.
         let chain_value: i64 = 1i64 << 63;
         let reader = TestReader::new(le_long(chain_value).to_vec());
-        let log = TestLog;
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
 
         let fixups = get_chained_fixups(
@@ -715,7 +692,7 @@ mod tests {
     fn get_chained_fixups_bound_resolves_via_symbol_table() {
         let chain_value: i64 = (1i64 << 63) | 5; // bound, ordinal 5
         let reader = TestReader::new(le_long(chain_value).to_vec());
-        let log = TestLog;
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
         let space = test_address_space();
         let symtab = StubSymbolTable { addr: Address::new(space, 0x4000) };
@@ -748,7 +725,7 @@ mod tests {
         // BIT63 set: fixedPointerValue = imagebase + (chainValue & 0xffffffff).
         let chain_value: i64 = (1i64 << 63) | 0x2000;
         let reader = TestReader::new(le_long(chain_value).to_vec());
-        let log = TestLog;
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
 
         let fixups =
@@ -764,7 +741,7 @@ mod tests {
     fn process_pointer_chain_stops_when_next_offset_is_zero() {
         let chain_value: i64 = (1i64 << 63) | 0x42;
         let reader = TestReader::new(le_long(chain_value).to_vec());
-        let log = TestLog;
+        let log = MessageLog::new();
         let monitor = DummyMonitor;
 
         let fixups = process_pointer_chain(&reader, 0, 8, 0, &log, &monitor).expect("no error");

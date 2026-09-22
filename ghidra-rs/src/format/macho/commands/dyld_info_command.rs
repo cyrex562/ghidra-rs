@@ -26,7 +26,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::export_trie::ExportTrie;
 use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase};
-use crate::format::seam_stubs::{BindingTable, FlatProgramAPI, MachHeader, MessageLog, RebaseTable};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{BindingTable, FlatProgramAPI, MachHeader, RebaseTable};
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::program::Program;
@@ -257,7 +258,7 @@ impl LoadCommand for DyldInfoCommand {
         header: &dyn MachHeader,
         source: Option<&str>,
         _monitor: &dyn TaskMonitor,
-        _log: &dyn MessageLog,
+        _log: &MessageLog,
     ) -> Result<(), CancelledException> {
         self.markup_rebase_info(program, header, source);
         self.markup_bindings(program, header, source);
@@ -274,7 +275,7 @@ impl LoadCommand for DyldInfoCommand {
         base_address: &Address,
         parent_module: &mut dyn ProgramModule,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) {
         // ---- Flattened `LoadCommand.markupRawBinary` (Java's `super.markupRawBinary(...)`); it
         // has its own internal catch that never propagates a failure out of itself. ----

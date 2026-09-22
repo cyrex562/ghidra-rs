@@ -4,7 +4,7 @@
 //! extends `ExtensionPoint`, a marker interface with no methods that exists solely to aid Ghidra's
 //! classpath scanner; it has no Rust equivalent and is omitted.
 
-use crate::app::seam_stubs::MessageLog;
+use crate::app::util::importer::message_log::MessageLog;
 use crate::app::util::sourcelanguage::source_language_id::SourceLanguageId;
 use crate::program::model::listing::Program;
 use crate::util::task::TaskMonitor;
@@ -71,7 +71,7 @@ pub trait SourceLanguageSpecExtension {
     fn get_spec_extension_rules(
         &self,
         program: &dyn Program,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Vec<SpecExtensionRule>;
 }
@@ -100,7 +100,7 @@ mod tests {
         fn get_spec_extension_rules(
             &self,
             _program: &dyn Program,
-            _log: &dyn MessageLog,
+            _log: &MessageLog,
             _monitor: &dyn TaskMonitor,
         ) -> Vec<SpecExtensionRule> {
             self.rules.clone()
@@ -120,10 +120,6 @@ mod tests {
             "x86:LE:64:default".to_string()
         }
     }
-
-    struct MockMessageLog;
-
-    impl MessageLog for MockMessageLog {}
 
     #[test]
     fn spec_extension_rule_creation() {
@@ -158,7 +154,7 @@ mod tests {
     #[test]
     fn source_language_spec_extension_is_object_safe() {
         let program = MockProgram;
-        let log = MockMessageLog;
+        let log = MessageLog::new();
         let monitor = crate::util::task::DummyMonitor;
 
         let rule = SpecExtensionRule::new(

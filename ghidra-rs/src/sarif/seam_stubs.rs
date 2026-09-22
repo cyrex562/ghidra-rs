@@ -6,6 +6,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use crate::app::util::importer::message_log::MessageLog;
 use crate::docking::settings::settings::Settings;
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
 use crate::program::model::address::{
@@ -235,37 +236,6 @@ impl Default for SarifProgramOptions {
             functions: true,
             external_libraries: true,
         }
-    }
-}
-
-/// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by `sarif` managers.
-/// Concrete stub, since there is nothing to dispatch over (Java's version is a concrete class):
-/// a real, if minimal, in-memory log rather than an `unimplemented!()` placeholder. Only the two
-/// methods `BookmarksSarifMgr` calls (`appendMsg`, `appendException`) are modeled.
-#[derive(Debug, Default)]
-pub struct MessageLog {
-    messages: Mutex<Vec<String>>,
-}
-
-impl MessageLog {
-    /// `new MessageLog()`.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// `MessageLog.appendMsg(String)`.
-    pub fn append_msg(&self, message: impl Into<String>) {
-        self.messages.lock().unwrap().push(message.into());
-    }
-
-    /// `MessageLog.appendException(Throwable)`.
-    pub fn append_exception(&self, err: &dyn std::error::Error) {
-        self.messages.lock().unwrap().push(err.to_string());
-    }
-
-    /// The messages recorded so far, in append order.
-    pub fn messages(&self) -> Vec<String> {
-        self.messages.lock().unwrap().clone()
     }
 }
 

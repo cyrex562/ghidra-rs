@@ -9,9 +9,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntries;
 use crate::format::pe::load_config_directory::LoadConfigDirectory;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{
-    ImageRuntimeFunctionEntriesArm, ImageRuntimeFunctionEntriesX86, MessageLog, NTHeader, PeUtils,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{ImageRuntimeFunctionEntriesArm, ImageRuntimeFunctionEntriesX86, NTHeader, PeUtils};
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
 use crate::util::msg::Msg;
@@ -232,7 +231,7 @@ impl PeMarkupable for ExceptionDataDirectory {
         program: &dyn Program,
         is_binary: bool,
         _monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let addr = match PeUtils::get_markup_address(program, is_binary, nt_header, self.virtual_address) {

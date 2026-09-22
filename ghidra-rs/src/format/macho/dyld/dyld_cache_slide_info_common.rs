@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use thiserror::Error;
 
-use crate::app::seam_stubs::{DyldCacheMappingInfo, MessageLog};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{DyldCacheMappingInfo};
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
@@ -245,7 +246,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
         &self,
         reader: &mut dyn BinaryReader,
         pointer_size: i32,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<Vec<DyldFixup>, DyldSlideFixupError>;
 
@@ -262,7 +263,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
         program: &mut dyn Program,
         markup: bool,
         add_relocations: bool,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), DyldFixupSlidePointersError> {
         let memory = program
@@ -357,7 +358,7 @@ pub fn parse_slide_info(
     reader: &mut dyn BinaryReader,
     slide_info_offset: i64,
     _mapping_info: &DyldCacheMappingInfo,
-    log: &dyn MessageLog,
+    log: &MessageLog,
     monitor: &dyn TaskMonitor,
 ) -> Option<Box<dyn DyldCacheSlideInfoCommon>> {
     if slide_info_offset == 0 {
@@ -508,27 +509,11 @@ mod tests {
         fn clear_cancelled(&self) {}
     }
 
-    /// Records whether any message was ever appended, mirroring the real `MessageLog`'s
-    /// `has_messages()` closely enough for these tests.
-    #[derive(Default)]
-    struct RecordingMessageLog {
-        messages: std::sync::Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingMessageLog {
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-    }
-
     #[test]
     fn parse_slide_info_zero_offset_returns_none_without_reading() {
         let mut reader = MockReader::new(Vec::new(), true);
         let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, false, false, false);
-        let log = RecordingMessageLog::default();
+        let log = MessageLog::new();
         let result = parse_slide_info(&mut reader, 0, &mapping_info, &log, &NoopMonitor);
         assert!(result.is_none());
         assert!(!log.has_messages());
@@ -542,11 +527,11 @@ mod tests {
         data.extend_from_slice(&2i32.to_le_bytes());
         let mut reader = MockReader::new(data, true);
         let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, false, false, false);
-        let log = RecordingMessageLog::default();
+        let log = MessageLog::new();
         let result = parse_slide_info(&mut reader, 0x100, &mapping_info, &log, &NoopMonitor);
         assert!(result.is_none());
         assert!(log.has_messages());
-        assert!(log.messages.lock().unwrap()[0].ends_with('2'));
+        assert!(log.messages()[0].ends_with('2'));
     }
 
     // ---- fixup_slide_pointers ----
@@ -735,7 +720,7 @@ mod tests {
             &self,
             _reader: &mut dyn BinaryReader,
             _pointer_size: i32,
-            _log: &dyn MessageLog,
+            _log: &MessageLog,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Vec<DyldFixup>, DyldSlideFixupError> {
             Ok(self.fixups.clone())
@@ -750,7 +735,7 @@ mod tests {
             base: DyldCacheSlideInfoCommonBase { version: 2, slide_info_offset: 0, mapping_info },
             fixups: vec![DyldFixup::new(0, Some(0x1122_3344_5566_7788u64 as i64), 8, None, None)],
         };
-        let log = RecordingMessageLog::default();
+        let log = MessageLog::new();
 
         info.fixup_slide_pointers(&mut program, false, false, &log, &NoopMonitor)
             .expect("fixup should succeed");
@@ -767,7 +752,7 @@ mod tests {
             base: DyldCacheSlideInfoCommonBase { version: 2, slide_info_offset: 0, mapping_info },
             fixups: vec![DyldFixup::new(0, None, 8, None, None)],
         };
-        let log = RecordingMessageLog::default();
+        let log = MessageLog::new();
 
         info.fixup_slide_pointers(&mut program, false, false, &log, &NoopMonitor)
             .expect("fixup should succeed even with an unresolved value");
@@ -784,7 +769,7 @@ mod tests {
             base: DyldCacheSlideInfoCommonBase { version: 3, slide_info_offset: 0, mapping_info },
             fixups: vec![DyldFixup::new(4, Some(0xAABB_CCDDu32 as i64), 4, None, None)],
         };
-        let log = RecordingMessageLog::default();
+        let log = MessageLog::new();
 
         info.fixup_slide_pointers(&mut program, true, true, &log, &NoopMonitor)
             .expect("fixup should succeed");

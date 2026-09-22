@@ -23,7 +23,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_stream_header::CliStreamHeader;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{MessageLog, NTHeader, NT_HEADER_MAX_SANE_COUNT};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader, NT_HEADER_MAX_SANE_COUNT};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::program::Program;
 use crate::util::msg::Msg;
@@ -109,7 +110,7 @@ impl CliMetadataRoot {
         program: &dyn Program,
         is_binary: bool,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // Java: `program.getSymbolTable().createLabel(start, NAME, SourceType.ANALYSIS)`, where
@@ -237,7 +238,6 @@ mod tests {
     use super::*;
     use std::cell::RefCell;
     use std::rc::Rc;
-    use std::sync::Mutex;
 
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
     use crate::format::pe::file_header::FileHeader;
@@ -425,40 +425,6 @@ mod tests {
         assert!(root.to_data_type().is_err());
     }
 
-    struct RecordingMessageLog {
-        messages: Mutex<Vec<String>>,
-    }
-    impl RecordingMessageLog {
-        fn new() -> Self {
-            RecordingMessageLog { messages: Mutex::new(Vec::new()) }
-        }
-    }
-    impl MessageLog for RecordingMessageLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-        fn error(&self, _originator: &str, message: &str) {
-            self.messages.lock().unwrap().push(format!("ERROR: {message}"));
-        }
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
-
     struct FixtureOptionalHeader;
     impl OptionalHeader for FixtureOptionalHeader {
         fn get_size_of_image(&self) -> i64 {
@@ -578,7 +544,7 @@ mod tests {
 
         let program = NoImageBaseProgram;
         let monitor = DummyMonitor;
-        let log = RecordingMessageLog::new();
+        let log = MessageLog::new();
         let nt_header = FixtureNtHeader::new();
 
         root.markup(&program, true, &monitor, &log, &nt_header).unwrap();
@@ -586,6 +552,6 @@ mod tests {
         // No image base -> the "cannot label" path is a Msg::warn, not a MessageLog entry, so the
         // log should be empty (every CliStreamHeader has no stream set, so their own `markup` is
         // a no-op that adds nothing either).
-        assert!(log.messages.lock().unwrap().is_empty());
+        assert!(log.messages().is_empty());
     }
 }

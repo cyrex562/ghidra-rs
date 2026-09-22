@@ -22,7 +22,8 @@
 
 use crate::app::seam_stubs::{AbstractProgramLoader, CreateArrayCmd};
 use crate::format::pe::load_config_directory::{GuardFlags, LoadConfigDirectory};
-use crate::format::seam_stubs::{MessageLog, NTHeader, OptionalHeader, PeUtils};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader, OptionalHeader, PeUtils};
 use crate::program::model::address::Address;
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::composite::Composite;
@@ -48,7 +49,7 @@ pub const GUARD_CFG_TABLE_ENTRY_NAME: &str = "GuardCfgTableEntry";
 pub fn markup(
     lcd: &LoadConfigDirectory,
     program: &mut dyn Program,
-    log: &dyn MessageLog,
+    log: &MessageLog,
     nt_header: &dyn NTHeader,
 ) {
     // ControlFlowGuard.
@@ -106,7 +107,7 @@ pub fn markup(
 /// DataType>` in this port (not a concrete, further-mutable `StructureDataTypeImpl`), so instead
 /// of downcasting, a fresh structure is built every call. Functionally equivalent (the two would
 /// be `isEquivalent`), just without the caching.
-fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &mut dyn Program, log: &dyn MessageLog) {
+fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &mut dyn Program, log: &MessageLog) {
     const IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_MASK: i32 = 0xf000_0000u32 as i32;
     const IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_SHIFT: i32 = 28;
 
@@ -164,7 +165,7 @@ fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &mut dyn Progra
 }
 
 /// Port of the private `ControlFlowGuard.createCfgFunctions(Program, Data, MessageLog)`.
-fn create_cfg_functions(program: &mut dyn Program, table_data: Option<&dyn Data>, log: &dyn MessageLog) {
+fn create_cfg_functions(program: &mut dyn Program, table_data: Option<&dyn Data>, log: &MessageLog) {
     let Some(table_data) = table_data else {
         log.append_msg("Couldn't find Control Flow Guard tables.");
         return;
@@ -207,7 +208,7 @@ fn get_function_addresses_from_table(table: &dyn Data) -> Vec<Address> {
 
 /// Port of the private `ControlFlowGuard.markupCfgAddressTakenIatEntryTable(LoadConfigDirectory,
 /// Program, MessageLog)`.
-fn markup_cfg_address_taken_iat_entry_table(lcd: &LoadConfigDirectory, program: &mut dyn Program, log: &dyn MessageLog) {
+fn markup_cfg_address_taken_iat_entry_table(lcd: &LoadConfigDirectory, program: &mut dyn Program, log: &MessageLog) {
     let table_pointer = lcd.get_guard_address_iat_table_table_pointer();
     let function_count = lcd.get_guard_address_iat_table_count();
     if table_pointer == 0 || function_count <= 0 {
@@ -250,7 +251,7 @@ fn markup_cfg_function(
     function_pointer: i64,
     program: &mut dyn Program,
     nt_header: &dyn NTHeader,
-    log: &dyn MessageLog,
+    log: &MessageLog,
 ) {
     if function_pointer == 0 {
         return;
@@ -344,43 +345,6 @@ mod tests {
     use crate::program::model::mem::{Memory, MemoryAccessException, MemoryBlock};
     use crate::program::model::symbol::source_type::SourceType as RealSourceType;
     use crate::program::model::symbol::{Symbol, SymbolTable, SymbolType};
-
-    struct RecordingMessageLog {
-        messages: Arc<Mutex<Vec<String>>>,
-    }
-    impl RecordingMessageLog {
-        fn new() -> Self {
-            RecordingMessageLog { messages: Arc::new(Mutex::new(Vec::new())) }
-        }
-        fn messages(&self) -> Vec<String> {
-            self.messages.lock().unwrap().clone()
-        }
-    }
-    impl MessageLog for RecordingMessageLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-        fn error(&self, _originator: &str, message: &str) {
-            self.messages.lock().unwrap().push(format!("ERROR: {message}"));
-        }
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
 
     struct FixtureOptionalHeader {
         is64: bool,
@@ -655,7 +619,7 @@ mod tests {
             memory: Arc::new(FixtureMemory { start: Address::new(space, 0), data: vec![] }),
             symbol_table: RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) },
         };
-        let log = RecordingMessageLog::new();
+        let log = MessageLog::new();
         let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("label", "desc", 0, &mut program, &nt, &log);
@@ -680,7 +644,7 @@ mod tests {
             memory: Arc::new(FixtureMemory { start, data }),
             symbol_table: RecordingSymbolTable { created_labels: created_labels.clone() },
         };
-        let log = RecordingMessageLog::new();
+        let log = MessageLog::new();
         let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("_guard_check_icall", "ControlFlowGuard check", 0x2000, &mut program, &nt, &log);
@@ -706,7 +670,7 @@ mod tests {
             memory: Arc::new(FixtureMemory { start, data: vec![] }),
             symbol_table: RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) },
         };
-        let log = RecordingMessageLog::new();
+        let log = MessageLog::new();
         let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("label", "ControlFlowGuard check", 0x2000, &mut program, &nt, &log);
@@ -731,7 +695,7 @@ mod tests {
             memory: Arc::new(FixtureMemory { start: Address::new(space, 0), data: vec![] }),
             symbol_table: RecordingSymbolTable { created_labels: created_labels.clone() },
         };
-        let log = RecordingMessageLog::new();
+        let log = MessageLog::new();
 
         markup_cfg_function_table(&lcd, &mut program, &log);
         markup_cfg_address_taken_iat_entry_table(&lcd, &mut program, &log);

@@ -15,9 +15,8 @@ use crate::program::model::symbol::{
 use crate::util::exception::InvalidInputException;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    MessageLog, SarifMgr, SarifProgramOptions, SarifSymbolWriter, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifMgr, SarifProgramOptions, SarifSymbolWriter, SarifWriterTask, TaskLauncher};
 
 /// Everything [`SymbolTableSarifMgr::process_symbol`] can fail with, all folded back into the same
 /// `log.appendException(e)` Java's outer `catch (Exception e)` performs, matching `processSymbol`'s
@@ -128,7 +127,7 @@ impl SymbolTableSarifMgr {
     /// `SymbolTableSarifMgr.processSymbol`.
     fn process_symbol(&mut self, result: &HashMap<String, Value>, first_pass: bool) {
         if let Err(e) = self.process_symbol_inner(result, first_pass) {
-            self.log.append_exception(&e);
+            self.log.append_exception(&e, &[]);
         }
     }
 

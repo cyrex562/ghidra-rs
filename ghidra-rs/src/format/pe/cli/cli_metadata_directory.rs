@@ -13,7 +13,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_metadata_root::CliMetadataRoot;
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{MessageLog, NTHeader, PeUtils};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader, PeUtils};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::program::Program;
 use crate::util::task::TaskMonitor;
@@ -99,7 +100,7 @@ impl PeMarkupable for CliMetadataDirectory {
         program: &dyn Program,
         is_binary: bool,
         monitor: &dyn TaskMonitor,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         nt: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let Some(metadata_root) = self.metadata_root.as_ref() else {

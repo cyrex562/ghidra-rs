@@ -11,7 +11,8 @@ use crate::program::model::listing::{CodeUnit, CommentType, Program};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{MessageLog, SarifCommentWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{SarifCommentWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher};
 
 /// Every [`CommentType`] variant, in the same order as Java's `CommentType.values()`.
 const ALL_COMMENT_TYPES: [CommentType; 5] = [
@@ -87,7 +88,7 @@ impl CommentsSarifMgr {
             Ok(Some(addr)) => addr,
             Ok(None) => return,
             Err(e) => {
-                self.log.append_exception(&e);
+                self.log.append_exception(&e, &[]);
                 return;
             }
         };

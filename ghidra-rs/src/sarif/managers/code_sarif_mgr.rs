@@ -12,9 +12,8 @@ use crate::program::seam_stubs::FlowOverride;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
-use crate::sarif::seam_stubs::{
-    Disassembler, MessageLog, SarifCodeWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{Disassembler, SarifCodeWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, TaskLauncher};
 
 /// Reads and writes `CODE` (instruction/disassembly) entries between a [`Program`]'s [`Listing`]
 /// and SARIF.
@@ -66,7 +65,7 @@ impl CodeSarifMgr {
     ) -> bool {
         let mut set = AddressSet::new();
         if let Err(e) = self.base.get_locations(result, &mut set) {
-            self.log.append_exception(&e);
+            self.log.append_exception(&e, &[]);
         }
 
         let msg = result.get("Message").and_then(Value::as_str).unwrap_or("");

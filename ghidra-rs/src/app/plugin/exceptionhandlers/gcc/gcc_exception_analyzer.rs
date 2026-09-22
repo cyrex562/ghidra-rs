@@ -47,10 +47,8 @@ use std::collections::HashSet;
 
 use crate::app::plugin::core::analysis::AutoAnalysisManagerListener;
 use crate::app::plugin::exceptionhandlers::gcc::RegionDescriptor;
-use crate::app::seam_stubs::{
-    self, disassemble_command, AutoAnalysisManager, DebugFrameSection, EhFrameHeaderSection,
-    EhFrameSection, MessageLog, SetCommentCmd,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{self, disassemble_command, AutoAnalysisManager, DebugFrameSection, EhFrameHeaderSection, EhFrameSection, SetCommentCmd};
 use crate::app::services::{AnalysisPriority, Analyzer, AnalyzerType};
 use crate::framework::options::Options;
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView};
@@ -159,7 +157,7 @@ impl GccExceptionAnalyzer {
         &self,
         program: &mut dyn Program,
         monitor: &dyn TaskMonitor,
-        log: &mut dyn MessageLog,
+        log: &mut MessageLog,
     ) -> Result<(), CancelledException> {
         let fde_table_count = Self::analyze_eh_frame_header_section(program, monitor, log);
         // If the EHFrameHeader doesn't exist, the fdeTableCount will be 0.
@@ -173,7 +171,7 @@ impl GccExceptionAnalyzer {
             Ok(regions) => regions,
             Err(e) => {
                 log.append_msg("Error analyzing GCC exception tables");
-                log.append_exception(&e);
+                log.append_exception(&e, &[]);
                 return Ok(());
             }
         };
@@ -437,14 +435,14 @@ impl GccExceptionAnalyzer {
     fn analyze_eh_frame_header_section(
         program: &dyn Program,
         monitor: &dyn TaskMonitor,
-        log: &mut dyn MessageLog,
+        log: &mut MessageLog,
     ) -> i32 {
         let ehframehdr_section = EhFrameHeaderSection::new(program);
         match ehframehdr_section.analyze(monitor) {
             Ok(fde_table_count) => fde_table_count,
             Err(e) => {
                 log.append_msg("Error analyzing GCC EH Frame Header exception table");
-                log.append_exception(&e);
+                log.append_exception(&e, &[]);
                 0
             }
         }
@@ -457,12 +455,12 @@ impl GccExceptionAnalyzer {
     fn handle_debug_frame_section(
         program: &mut dyn Program,
         monitor: &dyn TaskMonitor,
-        log: &mut dyn MessageLog,
+        log: &mut MessageLog,
     ) {
         let debug_frame_section = DebugFrameSection::new(monitor, program);
         if let Err(e) = debug_frame_section.analyze() {
             log.append_msg("Error analyzing GCC DebugFrame exception tables");
-            log.append_exception(&e);
+            log.append_exception(&e, &[]);
         }
     }
 }
@@ -532,7 +530,7 @@ impl Analyzer for GccExceptionAnalyzer {
         program: &mut dyn Program,
         _added_location_addresses: &dyn AddressSetView,
         monitor: &dyn TaskMonitor,
-        log: &mut dyn MessageLog,
+        log: &mut MessageLog,
     ) -> Result<bool, CancelledException> {
         let program_key = Program::get_name(program);
         if self.visited_programs.contains(&program_key) {
@@ -565,7 +563,7 @@ impl Analyzer for GccExceptionAnalyzer {
         _program: &mut dyn Program,
         _set: &dyn AddressSetView,
         _monitor: &dyn TaskMonitor,
-        _log: &mut dyn MessageLog,
+        _log: &mut MessageLog,
     ) -> Result<bool, CancelledException> {
         Ok(false)
     }

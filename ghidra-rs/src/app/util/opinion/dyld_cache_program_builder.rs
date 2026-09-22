@@ -49,10 +49,8 @@ use std::io;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::app::seam_stubs::{
-    macho_program_builder, memory_block_utils, DyldCacheHeader, LibObjcDylib, MessageLog,
-    SplitDyldCache,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{macho_program_builder, memory_block_utils, DyldCacheHeader, LibObjcDylib, SplitDyldCache};
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
 use crate::format::macho::commands::segment_names;
@@ -80,7 +78,7 @@ pub struct DyldCacheProgramBuilder<'a> {
     /// Options from the `DyldCacheLoader`.
     options: DyldCacheOptions,
     /// The log. Inherited.
-    log: &'a dyn MessageLog,
+    log: &'a MessageLog,
     /// A cancelable task monitor. Inherited.
     monitor: &'a dyn TaskMonitor,
     /// The program's default address space, which `MachoProgramBuilder`'s constructor reads out
@@ -101,7 +99,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         provider: &Rc<RefCell<dyn ByteProvider>>,
         file_bytes: &Arc<dyn FileBytes>,
         options: DyldCacheOptions,
-        log: &'a dyn MessageLog,
+        log: &'a MessageLog,
         monitor: &'a dyn TaskMonitor,
     ) -> io::Result<Self> {
         let space = macho_program_builder::default_address_space(program).ok_or_else(|| {
@@ -128,7 +126,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         provider: &Rc<RefCell<dyn ByteProvider>>,
         file_bytes: &Arc<dyn FileBytes>,
         options: DyldCacheOptions,
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
         let mut builder =

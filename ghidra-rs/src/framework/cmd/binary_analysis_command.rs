@@ -1,4 +1,4 @@
-use crate::app::seam_stubs::MessageLog;
+use crate::app::util::importer::message_log::MessageLog;
 use crate::framework::model::DomainObject;
 use crate::program::model::listing::program::Program;
 use crate::util::classfinder::extension_point::ExtensionPoint;
@@ -51,7 +51,7 @@ pub trait BinaryAnalysisCommand: ExtensionPoint + Send + Sync {
     ///
     /// A message log containing any messages generated during command execution. Returns `None`
     /// if no messages were generated.
-    fn get_messages(&self) -> Option<Box<dyn MessageLog>>;
+    fn get_messages(&self) -> Option<Box<MessageLog>>;
 
     /// Gets the name of this command.
     ///
@@ -293,7 +293,7 @@ mod tests {
             Ok(self.apply_result)
         }
 
-        fn get_messages(&self) -> Option<Box<dyn MessageLog>> {
+        fn get_messages(&self) -> Option<Box<MessageLog>> {
             None
         }
 

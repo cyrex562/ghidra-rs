@@ -611,7 +611,7 @@ mod tests {
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             self.header.clone()
         }
-        fn get_log(&self) -> Arc<dyn crate::format::seam_stubs::MessageLog> {
+        fn get_log(&self) -> Arc<crate::app::util::importer::message_log::MessageLog> {
             unimplemented!("not exercised by these tests")
         }
         fn log(&self, _msg: &str) {}

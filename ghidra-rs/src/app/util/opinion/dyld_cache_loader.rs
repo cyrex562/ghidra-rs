@@ -47,10 +47,8 @@ use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
 
-use crate::app::seam_stubs::{
-    dyld_cache_utils, memory_block_utils, new_boolean, option_utils, DyldArchitecture,
-    DyldCacheHeader, LoadSpec, MessageLog, Option, QueryResult,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{dyld_cache_utils, memory_block_utils, new_boolean, option_utils, DyldArchitecture, DyldCacheHeader, LoadSpec, Option, QueryResult};
 use crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder;
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
 use crate::app::util::opinion::loader::COMMAND_LINE_ARG_PREFIX;
@@ -175,7 +173,7 @@ impl DyldCacheLoader {
         program: &mut dyn Program,
         provider: &Rc<RefCell<dyn ByteProvider>>,
         options: &[Box<dyn Option>],
-        log: &mut dyn MessageLog,
+        log: &mut MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
         let dyld_cache_options = self.get_dyld_cache_options(options);
@@ -709,11 +707,8 @@ mod tests {
                 "AARCH64:LE:64:v8A".to_string()
             }
         }
-        struct MockLog;
-        impl MessageLog for MockLog {}
-
         let mut program = MockProgram;
-        let mut log = MockLog;
+        let mut log = MessageLog::new();
         let monitor = DummyMonitor;
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             loader.load(&mut program, &p, &[], &mut log, &monitor)

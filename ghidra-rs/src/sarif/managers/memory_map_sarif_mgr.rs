@@ -17,10 +17,8 @@ use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
 use crate::sarif::managers::memory_map_bytes_file::MemoryMapBytesFile;
-use crate::sarif::seam_stubs::{
-    MemoryBlockUtils, MessageLog, ProgramSarifMgr, SarifMemoryMapWriter, SarifMgr, SarifProgramOptions,
-    SarifUtils, SarifWriterTask, TaskLauncher,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::sarif::seam_stubs::{MemoryBlockUtils, ProgramSarifMgr, SarifMemoryMapWriter, SarifMgr, SarifProgramOptions, SarifUtils, SarifWriterTask, TaskLauncher};
 
 /// Everything [`MemoryMapSarifMgr::process_memory_block`] can fail with -- both propagated to
 /// [`MemoryMapSarifMgr::read`], which logs and returns `false` for either.
@@ -126,7 +124,7 @@ impl MemoryMapSarifMgr {
         match self.process_memory_block(result, &directory, monitor) {
             Ok(()) => true,
             Err(e) => {
-                self.log.append_exception(&e);
+                self.log.append_exception(&e, &[]);
                 false
             }
         }

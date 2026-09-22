@@ -55,7 +55,8 @@ use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
 
-use crate::app::seam_stubs::{LoadSpec, MessageLog, PeLoader};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{LoadSpec, PeLoader};
 use crate::app::util::opinion::def_export_line::DefExportLine;
 use crate::app::util::opinion::query_opinion_service;
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
@@ -145,7 +146,7 @@ impl DefLoader {
         &self,
         program: &mut dyn Program,
         provider: &Rc<RefCell<dyn ByteProvider>>,
-        log: &dyn MessageLog,
+        log: &MessageLog,
     ) -> io::Result<()> {
         if program.get_executable_format() != PeLoader::PE_NAME {
             return Err(io::Error::new(
@@ -154,7 +155,7 @@ impl DefLoader {
             ));
         }
 
-        let mut error_consumer = |err: String| log.append_msg_from("DefLoader", &err);
+        let mut error_consumer = |err: String| log.append_msg_from(Some("DefLoader"), &err);
 
         for def in Self::parse_exports(provider)? {
             let Some(ordinal) = def.ordinal() else {
@@ -514,11 +515,10 @@ mod tests {
                 primary_ids: Vec::new(),
             },
         };
-        struct NoopLog;
-        impl MessageLog for NoopLog {}
+        let log = MessageLog::new();
 
         let p = provider(b"EXPORTS\nfoo @1\n", "library.def");
-        let err = DefLoader.load(&mut program, &p, &NoopLog).unwrap_err();
+        let err = DefLoader.load(&mut program, &p, &log).unwrap_err();
         assert!(err.to_string().contains(PeLoader::PE_NAME));
     }
 
@@ -538,16 +538,7 @@ mod tests {
             },
         };
 
-        #[derive(Default)]
-        struct RecordingLog {
-            messages: std::sync::Mutex<Vec<String>>,
-        }
-        impl MessageLog for RecordingLog {
-            fn append_msg(&self, message: &str) {
-                self.messages.lock().unwrap().push(message.to_string());
-            }
-        }
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
 
         let p = provider(b"EXPORTS\nMyExport @1\n", "library.def");
         DefLoader.load(&mut program, &p, &log).unwrap();
@@ -560,7 +551,7 @@ mod tests {
         // `MockSymbolTable::create_label`), not the ordinal symbol's ID (7): Java's
         // `symtab.createLabel(...).setPrimary()` acts on the label it just created.
         assert_eq!(program.symbol_table.primary_ids, vec![100]);
-        assert!(log.messages.lock().unwrap().is_empty());
+        assert!(log.messages().is_empty());
     }
 
     #[test]
@@ -573,11 +564,10 @@ mod tests {
                 primary_ids: Vec::new(),
             },
         };
-        struct NoopLog;
-        impl MessageLog for NoopLog {}
+        let log = MessageLog::new();
 
         let p = provider(b"EXPORTS\nNoOrdinalExport\n", "library.def");
-        DefLoader.load(&mut program, &p, &NoopLog).unwrap();
+        DefLoader.load(&mut program, &p, &log).unwrap();
 
         assert!(program.symbol_table.created_labels.is_empty());
         assert!(program.symbol_table.primary_ids.is_empty());
@@ -597,23 +587,14 @@ mod tests {
             },
         };
 
-        #[derive(Default)]
-        struct RecordingLog {
-            messages: std::sync::Mutex<Vec<String>>,
-        }
-        impl MessageLog for RecordingLog {
-            fn append_msg(&self, message: &str) {
-                self.messages.lock().unwrap().push(message.to_string());
-            }
-        }
-        let log = RecordingLog::default();
+        let log = MessageLog::new();
 
         let p = provider(b"EXPORTS\nMyExport @1\n", "library.def");
         DefLoader.load(&mut program, &p, &log).unwrap();
 
         assert!(program.symbol_table.created_labels.is_empty());
         assert!(program.symbol_table.primary_ids.is_empty());
-        assert!(log.messages.lock().unwrap().is_empty());
+        assert!(log.messages().is_empty());
     }
 
     #[test]

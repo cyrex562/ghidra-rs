@@ -24,7 +24,8 @@ use std::sync::Arc;
 
 use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::memory_loadable::MemoryLoadable;
-use crate::format::seam_stubs::{ElfHeader, MessageLog};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::ElfHeader;
 use crate::program::model::address::range::AddressRange;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
@@ -60,7 +61,7 @@ pub trait ElfLoadHelper: Send + Sync {
     fn get_elf_header(&self) -> Arc<dyn ElfHeader>;
 
     /// `ElfLoadHelper.getLog()`.
-    fn get_log(&self) -> Arc<dyn MessageLog>;
+    fn get_log(&self) -> Arc<MessageLog>;
 
     /// `ElfLoadHelper.log(String)`.
     fn log(&self, msg: &str);
@@ -153,7 +154,6 @@ pub trait ElfLoadHelper: Send + Sync {
 mod tests {
     use super::*;
     use crate::app::seam_stubs::{new_boolean, option_utils, Option};
-    use std::sync::Mutex;
 
     struct MockProgram;
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -179,39 +179,12 @@ mod tests {
         }
     }
 
-    struct MockMessageLog {
-        messages: Mutex<Vec<String>>,
-    }
-    impl MessageLog for MockMessageLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
-
     /// Routes `get_option_*` through `option_utils`, the same `OptionUtils.getOption` port
     /// `ElfProgramBuilder.getOption` itself delegates to in Java (`OptionUtils.getOption(optionName,
     /// options, defaultValue)`).
     struct MockLoadHelper {
         options: Vec<Box<dyn Option>>,
-        log: Arc<MockMessageLog>,
+        log: Arc<MessageLog>,
     }
 
     impl ElfLoadHelper for MockLoadHelper {
@@ -234,7 +207,7 @@ mod tests {
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             Arc::new(MockElfHeader)
         }
-        fn get_log(&self) -> Arc<dyn MessageLog> {
+        fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
         }
         fn log(&self, msg: &str) {
@@ -332,12 +305,12 @@ mod tests {
     /// present. This is `ElfProgramBuilder.getOption`'s entire (delegated) behavior in Java.
     #[test]
     fn get_option_bool_falls_back_to_default_then_reads_stored_value() {
-        let helper = MockLoadHelper { options: Vec::new(), log: Arc::new(MockMessageLog { messages: Mutex::new(Vec::new()) }) };
+        let helper = MockLoadHelper { options: Vec::new(), log: Arc::new(MessageLog::new()) };
         assert_eq!(helper.get_option_bool("Perform Symbol Relocations", true), true);
 
         let mut options: Vec<Box<dyn Option>> = Vec::new();
         options.push(new_boolean("Perform Symbol Relocations").value(Box::new(false)).build());
-        let helper = MockLoadHelper { options, log: Arc::new(MockMessageLog { messages: Mutex::new(Vec::new()) }) };
+        let helper = MockLoadHelper { options, log: Arc::new(MessageLog::new()) };
         assert_eq!(helper.get_option_bool("Perform Symbol Relocations", true), false);
     }
 
@@ -345,7 +318,7 @@ mod tests {
     fn log_forwards_to_message_log() {
         let helper = MockLoadHelper {
             options: Vec::new(),
-            log: Arc::new(MockMessageLog { messages: Mutex::new(Vec::new()) }),
+            log: Arc::new(MessageLog::new()),
         };
         helper.log("hello");
         assert!(helper.get_log().has_messages());

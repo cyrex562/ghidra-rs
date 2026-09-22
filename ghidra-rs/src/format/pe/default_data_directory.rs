@@ -13,7 +13,8 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::pe_markupable::PeMarkupable;
-use crate::format::seam_stubs::{MessageLog, NTHeader};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::seam_stubs::{NTHeader};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::program::Program;
 use crate::util::msg::Msg;
@@ -113,7 +114,7 @@ impl PeMarkupable for DefaultDataDirectory {
         _program: &dyn Program,
         _is_binary: bool,
         _monitor: &dyn TaskMonitor,
-        _log: &dyn MessageLog,
+        _log: &MessageLog,
         _nt_header: &dyn NTHeader,
     ) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())

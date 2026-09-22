@@ -624,9 +624,9 @@ mod tests {
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
     use crate::format::elf::elf_section_header_constants::SHN_UNDEF;
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC};
+    use crate::app::util::importer::message_log::MessageLog;
     use crate::format::seam_stubs::{
         ElfHeader, ElfRelocationHandler, ElfRelocationTable, ElfSectionHeader, ElfSymbolTable,
-        MessageLog, Throwable,
     };
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::program::Program;
@@ -645,34 +645,6 @@ mod tests {
         }
     }
 
-    #[derive(Default)]
-    struct RecordingLog {
-        messages: Mutex<Vec<String>>,
-    }
-
-    impl MessageLog for RecordingLog {
-        fn copy_from(&self, _log: &dyn MessageLog) {}
-        fn append_msg(&self, message: &str) {
-            self.messages.lock().unwrap().push(message.to_string());
-        }
-        fn append_exception(&self, _t: &dyn Throwable) {}
-        fn error(&self, _originator: &str, _message: &str) {}
-        fn has_messages(&self) -> bool {
-            !self.messages.lock().unwrap().is_empty()
-        }
-        fn clear(&self) {
-            self.messages.lock().unwrap().clear();
-        }
-        fn set_status(&self, _status: &str) {}
-        fn clear_status(&self) {}
-        fn get_status(&self) -> String {
-            String::new()
-        }
-        fn to_string(&self) -> String {
-            self.messages.lock().unwrap().join("\n")
-        }
-        fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, _message_header: &str) {}
-    }
 
     struct MockElfHeader {
         is32_bit: bool,
@@ -691,7 +663,7 @@ mod tests {
     }
 
     struct MockLoadHelper {
-        log: Arc<RecordingLog>,
+        log: Arc<MessageLog>,
         /// Messages passed to `ElfLoadHelper.log(...)`, distinct from the import log.
         helper_log: Mutex<Vec<String>>,
         is32_bit: bool,
@@ -702,7 +674,7 @@ mod tests {
     impl MockLoadHelper {
         fn new() -> Self {
             MockLoadHelper {
-                log: Arc::new(RecordingLog::default()),
+                log: Arc::new(MessageLog::new()),
                 helper_log: Mutex::new(Vec::new()),
                 is32_bit: true,
                 linkage_block: None,
@@ -730,7 +702,7 @@ mod tests {
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             Arc::new(MockElfHeader { is32_bit: self.is32_bit })
         }
-        fn get_log(&self) -> Arc<dyn MessageLog> {
+        fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
         }
         fn log(&self, msg: &str) {
@@ -1276,7 +1248,7 @@ mod tests {
                 _symbol_name: Option<&str>,
                 _symbol_index: i32,
                 _msg: &str,
-                _log: &dyn MessageLog,
+                _log: &MessageLog,
             ) {
             }
             fn mark_as_warning(
@@ -1287,7 +1259,7 @@ mod tests {
                 _symbol_name: Option<&str>,
                 _symbol_index: i32,
                 _msg: &str,
-                _log: &dyn MessageLog,
+                _log: &MessageLog,
             ) {
             }
         }
@@ -1323,7 +1295,7 @@ mod tests {
                 _type_id: i32,
                 _symbol_name: Option<&str>,
                 _symbol_index: i32,
-                _log: &dyn MessageLog,
+                _log: &MessageLog,
             ) {
             }
         }

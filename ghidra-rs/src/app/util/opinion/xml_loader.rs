@@ -62,10 +62,8 @@ use std::sync::{Mutex, OnceLock};
 use regex::Regex;
 
 use crate::app::plugin::core::analysis::analysis_worker::AnalysisWorker;
-use crate::app::seam_stubs::{
-    abstract_program_loader, auto_analysis_manager, LoadSpec, MessageLog, Option as LoaderOption,
-    ProgramXmlMgr, XmlProgramOptions,
-};
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::seam_stubs::{abstract_program_loader, auto_analysis_manager, LoadSpec, Option as LoaderOption, ProgramXmlMgr, XmlProgramOptions};
 use crate::app::util::opinion::load_exception::LoadException;
 use crate::app::util::opinion::loader_tier::LoaderTier;
 use crate::app::util::xml::program_info::ProgramInfo;
@@ -131,7 +129,7 @@ impl ParseResult {
 struct XmlImportWorker<'a> {
     mgr: &'a ProgramXmlMgr,
     options: &'a [Box<dyn LoaderOption>],
-    log: &'a dyn MessageLog,
+    log: &'a MessageLog,
     is_add_to_program: bool,
     failure: Mutex<Option<LoadException>>,
 }
@@ -345,7 +343,7 @@ impl XmlLoader {
         language_service: &dyn LanguageService,
         create_program: impl FnOnce(Option<Address>) -> Box<dyn Program>,
         options: &[Box<dyn LoaderOption>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<Option<Box<dyn Program>>, XmlImportError> {
         let importer_language = load_spec.get_language(language_service)?;
@@ -378,7 +376,7 @@ impl XmlLoader {
         program: &mut dyn Program,
         provider: &Rc<RefCell<dyn ByteProvider>>,
         options: &[Box<dyn LoaderOption>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), XmlImportError> {
         // Java hands `settings.provider().getFile()` straight to `new ProgramXmlMgr(File)`, which
@@ -395,12 +393,12 @@ impl XmlLoader {
     fn do_import_work(
         mgr: &ProgramXmlMgr,
         options: &[Box<dyn LoaderOption>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         prog: &dyn Program,
         monitor: &dyn TaskMonitor,
         is_add_to_program: bool,
     ) -> Result<bool, LoadException> {
-        let mut mgr_log: Option<Box<dyn MessageLog>> = None;
+        let mut mgr_log: Option<Box<MessageLog>> = None;
 
         // Java wraps the whole body in one `catch (Exception e)`; both statements that can throw
         // are funneled into `failure` here.
@@ -426,12 +424,12 @@ impl XmlLoader {
 
         let mut message = "(empty)".to_string();
         if let Some(mgr_log) = mgr_log.as_deref() {
-            let mgr_message = mgr_log.to_display_string();
+            let mgr_message = mgr_log.to_string();
             if !mgr_message.is_empty() {
                 message = mgr_message;
             }
         }
-        let log_message = log.to_display_string();
+        let log_message = log.to_string();
         if !log_message.is_empty() {
             message = log_message;
         }
@@ -449,7 +447,7 @@ impl XmlLoader {
         &self,
         mgr: &ProgramXmlMgr,
         options: &[Box<dyn LoaderOption>],
-        log: &dyn MessageLog,
+        log: &MessageLog,
         prog: &mut dyn Program,
         monitor: &dyn TaskMonitor,
         is_add_to_program: bool,
