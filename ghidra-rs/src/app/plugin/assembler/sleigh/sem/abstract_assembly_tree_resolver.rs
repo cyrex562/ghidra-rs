@@ -801,6 +801,9 @@ mod tests {
         fn fill_mask(&self) -> Box<dyn AssemblyPatternBlock> {
             Box::new(self.clone())
         }
+        fn shift(&self, _amt: i32) -> Box<dyn AssemblyPatternBlock> {
+            Box::new(self.clone())
+        }
     }
 
     impl MockResolver {

@@ -1,6 +1,8 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use crate::demangler::demangled::Demangled;
+use crate::demangler::demangled_object::DemangledObject;
 use crate::demangler::naming::md_qualification::MdQualification;
 use crate::demangler::naming::md_qualified_name::MdQualifiedName;
 use crate::demangler::object::md_object_cpp::MdObjectCpp;
@@ -1350,5 +1352,368 @@ impl std::fmt::Display for SwiftUnsupportedNode {
     /// Mirrors `toString()`.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} ({})", self.base, self.original_kind)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.gnu.GnuDemanglerOptions`, needed by
+/// [`crate::demangler::gnu::gnu_demangler::GnuDemangler`].
+///
+/// Java extends the already-ported [`crate::demangler::demangler_options::DemanglerOptions`] to
+/// add GNU-demangler-specific fields; Rust has no struct inheritance, so this wraps a
+/// `DemanglerOptions` by composition instead, the same treatment `MicrosoftDemanglerOptions`
+/// gives its base. `GnuDemanglerFormat` (the AUTO/legacy/etc. external-demangler-build enum that
+/// `withDemanglerFormat`/`getDemanglerFormat` need) is not ported yet, so this only models the
+/// AUTO format -- the one the default `GnuDemanglerOptions()` constructor always produces, and
+/// the only one `GnuDemangler` itself ever constructs.
+#[derive(Debug, Clone)]
+pub struct GnuDemanglerOptions {
+    base: crate::demangler::demangler_options::DemanglerOptions,
+    is_deprecated: bool,
+    use_standard_replacements: bool,
+    timeout_seconds: i64,
+}
+
+impl GnuDemanglerOptions {
+    /// Mirrors `GNU_DEMANGLER_V2_24`.
+    pub const GNU_DEMANGLER_V2_24: &'static str = "demangler_gnu_v2_24";
+    /// Mirrors `GNU_DEMANGLER_V2_41`.
+    pub const GNU_DEMANGLER_V2_41: &'static str = "demangler_gnu_v2_41";
+    /// Mirrors `DEFAULT_TIMEOUT_SECONDS`.
+    pub const DEFAULT_TIMEOUT_SECONDS: i64 = 3;
+
+    /// Mirrors the no-arg constructor `GnuDemanglerOptions()` (format = AUTO, which is not a
+    /// deprecated-only format).
+    pub fn new() -> Self {
+        Self {
+            base: crate::demangler::demangler_options::DemanglerOptions::new(),
+            is_deprecated: false,
+            use_standard_replacements: true,
+            timeout_seconds: Self::DEFAULT_TIMEOUT_SECONDS,
+        }
+    }
+
+    /// Mirrors the `GnuDemanglerOptions(DemanglerOptions copy)` copy constructor's `else` branch:
+    /// a plain `DemanglerOptions` is never also a `GnuDemanglerOptions` in Rust (no downcasting),
+    /// so the GNU-specific fields always fall back to defaults, the same reasoning documented on
+    /// `MicrosoftDemanglerOptions::from_base`.
+    pub fn from_base(base: &crate::demangler::demangler_options::DemanglerOptions) -> Self {
+        Self { base: base.clone(), ..Self::new() }
+    }
+
+    /// Mirrors `setUseStandardReplacements(boolean)`.
+    pub fn set_use_standard_replacements(&mut self, replace: bool) {
+        self.use_standard_replacements = replace;
+    }
+
+    /// Mirrors `getDemanglerName()`.
+    pub fn demangler_name(&self) -> &'static str {
+        if self.is_deprecated {
+            Self::GNU_DEMANGLER_V2_24
+        } else {
+            Self::GNU_DEMANGLER_V2_41
+        }
+    }
+
+    /// Mirrors `getDemanglerApplicationArguments()`. Always the AUTO-format case (`""`); see the
+    /// struct docs for why non-AUTO formats aren't modeled yet.
+    pub fn demangler_application_arguments(&self) -> String {
+        String::new()
+    }
+
+    /// Mirrors `shouldUseStandardReplacements()`.
+    pub fn should_use_standard_replacements(&self) -> bool {
+        self.use_standard_replacements
+    }
+
+    /// Mirrors `getTimeoutSeconds()`.
+    pub fn timeout_seconds(&self) -> i64 {
+        self.timeout_seconds
+    }
+
+    /// Mirrors `demangleOnlyKnownPatterns()`, inherited from the base `DemanglerOptions`.
+    pub fn demangle_only_known_patterns(&self) -> bool {
+        self.base.demangle_only_known_patterns()
+    }
+}
+
+impl Default for GnuDemanglerOptions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.gnu.GnuDemanglerNativeProcess`, needed by
+/// [`crate::demangler::gnu::gnu_demangler::GnuDemangler`]. The real class spawns and manages a
+/// pooled external `c++filt`-family process per demangler build; that native-process management
+/// is not ported, so [`get_demangler_native_process`] always returns an error (mirrors the real
+/// class's `IOException` failure path, which `GnuDemangler::demangle` already has to handle for
+/// when the real executable is simply missing).
+pub trait GnuDemanglerNativeProcess: Send + Sync {
+    /// Mirrors `demangle(String, Long)`. `Ok(None)` mirrors the underlying line reader reaching
+    /// end of stream (Java's `null` return).
+    fn demangle(&self, mangled: &str, timeout_seconds: i64) -> std::io::Result<Option<String>>;
+}
+
+/// Mirrors `GnuDemanglerNativeProcess.getDemanglerNativeProcess(String, String)`.
+pub fn get_demangler_native_process(
+    _demangler_name: &str,
+    _application_options: &str,
+) -> std::io::Result<std::sync::Arc<dyn GnuDemanglerNativeProcess>> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "GNU demangler native process is not ported yet",
+    ))
+}
+
+/// Placeholder for `ghidra.app.util.demangler.gnu.GnuDemanglerParser`, needed by
+/// [`crate::demangler::gnu::gnu_demangler::GnuDemangler`]. The real class is a hand-written
+/// recursive-descent grammar over the external demangler's output; not ported yet, so
+/// [`GnuDemanglerParser::parse`] always returns `None`, mirroring the real method's documented
+/// "returns null when the string could not be parsed" case.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct GnuDemanglerParser;
+
+impl GnuDemanglerParser {
+    /// Mirrors `GnuDemanglerParser()`.
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// Mirrors `parse(String, String, boolean)`.
+    pub fn parse(
+        &self,
+        _mangled: &str,
+        _demangled: &str,
+        _replace_std_typedefs: bool,
+    ) -> Option<Box<dyn crate::demangler::demangled_object::DemangledObject>> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.DemangledFunction`, needed by
+/// [`crate::demangler::gnu::gnu_demangler::GnuDemangler`] to build its `_GLOBAL_`-prefixed
+/// function-name case. Only the constructor `GnuDemangler` calls is modeled; the real class's
+/// return-type/parameter/calling-convention signature rendering is not ported, so
+/// [`DemangledObject::get_signature_formatted`] falls back to the qualified name.
+pub struct DemangledFunction {
+    base: crate::demangler::demangled_object::DemangledObjectBase,
+}
+
+impl DemangledFunction {
+    /// Mirrors `DemangledFunction(String mangled, String originalDemangled, String name)`.
+    pub fn new(
+        mangled: impl Into<String>,
+        original_demangled: impl Into<String>,
+        name: &str,
+    ) -> Self {
+        let mut base = crate::demangler::demangled_object::DemangledObjectBase::new(
+            mangled,
+            Some(original_demangled.into()),
+        );
+        base.set_name(Some(name));
+        Self { base }
+    }
+}
+
+impl crate::demangler::demangled_object::DemangledObject for DemangledFunction {
+    fn base(&self) -> &crate::demangler::demangled_object::DemangledObjectBase {
+        &self.base
+    }
+
+    fn base_mut(&mut self) -> &mut crate::demangler::demangled_object::DemangledObjectBase {
+        &mut self.base
+    }
+
+    fn get_signature_formatted(&self, _format: bool) -> String {
+        format!("{}()", self.get_namespace_string())
+    }
+}
+
+impl crate::demangler::demangled::Demangled for DemangledFunction {
+    fn set_mangled_context(
+        &mut self,
+        mangled_context: crate::demangler::mangled_context::MangledContext,
+    ) {
+        self.base.mangled_context = Some(mangled_context);
+    }
+
+    fn get_mangled_context(&self) -> Option<crate::demangler::mangled_context::MangledContext> {
+        self.base.mangled_context.clone()
+    }
+
+    fn get_mangled_string(&self) -> String {
+        self.base.get_mangled_string().to_string()
+    }
+
+    fn get_original_demangled(&self) -> String {
+        self.base.original_demangled.clone().unwrap_or_default()
+    }
+
+    fn get_name(&self) -> String {
+        self.base.get_name().unwrap_or_default().to_string()
+    }
+
+    fn set_name(&mut self, name: &str) {
+        self.base.set_name(Some(name));
+    }
+
+    fn get_demangled_name(&self) -> String {
+        self.base.get_demangled_name().unwrap_or_default().to_string()
+    }
+
+    fn get_namespace(&self) -> Option<&dyn crate::demangler::demangled::Demangled> {
+        self.base.get_namespace()
+    }
+
+    fn get_namespace_mut(&mut self) -> Option<&mut (dyn crate::demangler::demangled::Demangled + 'static)> {
+        self.base.namespace.as_deref_mut()
+    }
+
+    fn set_namespace(
+        &mut self,
+        namespace: Option<Box<dyn crate::demangler::demangled::Demangled>>,
+    ) {
+        self.base.set_namespace(namespace);
+    }
+
+    fn get_namespace_string(&self) -> String {
+        self.base.namespace_string_with(&self.get_namespace_name())
+    }
+
+    fn get_namespace_name(&self) -> String {
+        self.get_name()
+    }
+
+    fn get_signature(&self) -> String {
+        self.get_signature_formatted(false)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.DemangledAddressTable`, needed by
+/// [`crate::demangler::gnu::gnu_demangler::GnuDemangler`] for its DWARF-reference (`DW.ref.`)
+/// case. Only the constructor and the `setSpecialPrefix`/`getLength` members are modeled;
+/// `applyTo`'s address-table-length analysis pass is not ported.
+///
+/// [`DemangledAddressTable::get_signature_formatted`] renders via the shared
+/// [`crate::demangler::demangled_object::DemangledObjectBase::namespace_string_with`] helper
+/// rather than reproducing the original's raw `namespace.getNamespaceString()` field read (which
+/// would panic here if the namespace were ever `None`, unlike the helper); `GnuDemangler` itself
+/// never calls this method, so the difference is not load-bearing for that class.
+pub struct DemangledAddressTable {
+    base: crate::demangler::demangled_object::DemangledObjectBase,
+    length: i32,
+}
+
+impl DemangledAddressTable {
+    /// Mirrors `DemangledAddressTable(String, String, String, boolean)`. `_calculate_length` is
+    /// accepted for signature fidelity but unused, since the length-calculation analysis pass
+    /// isn't ported; `length` mirrors the field's default (unknown, `-1`).
+    pub fn new(
+        mangled: impl Into<String>,
+        original_demangled: Option<String>,
+        name: Option<&str>,
+        _calculate_length: bool,
+    ) -> Self {
+        let mut base = crate::demangler::demangled_object::DemangledObjectBase::new(
+            mangled,
+            original_demangled,
+        );
+        base.set_name(name);
+        Self { base, length: -1 }
+    }
+
+    /// Mirrors `getLength()`.
+    pub fn get_length(&self) -> i32 {
+        self.length
+    }
+
+    /// Mirrors `setSpecialPrefix(String)`, inherited from `DemangledObject` in Java.
+    pub fn set_special_prefix(&mut self, prefix: impl Into<String>) {
+        self.base.special_prefix = Some(prefix.into());
+    }
+}
+
+impl crate::demangler::demangled_object::DemangledObject for DemangledAddressTable {
+    fn base(&self) -> &crate::demangler::demangled_object::DemangledObjectBase {
+        &self.base
+    }
+
+    fn base_mut(&mut self) -> &mut crate::demangler::demangled_object::DemangledObjectBase {
+        &mut self.base
+    }
+
+    fn get_signature_formatted(&self, _format: bool) -> String {
+        let mut buffer = String::new();
+        if let Some(prefix) = &self.base.special_prefix {
+            buffer.push_str(prefix);
+            buffer.push(' ');
+        }
+        let namespace_str = self.get_namespace_string();
+        buffer.push_str(&namespace_str);
+        if !namespace_str.ends_with(crate::demangler::demangled_object::NAMESPACE_SEPARATOR) {
+            buffer.push_str(crate::demangler::demangled_object::NAMESPACE_SEPARATOR);
+        }
+        buffer.push_str(&self.get_demangled_name());
+        buffer
+    }
+}
+
+impl crate::demangler::demangled::Demangled for DemangledAddressTable {
+    fn set_mangled_context(
+        &mut self,
+        mangled_context: crate::demangler::mangled_context::MangledContext,
+    ) {
+        self.base.mangled_context = Some(mangled_context);
+    }
+
+    fn get_mangled_context(&self) -> Option<crate::demangler::mangled_context::MangledContext> {
+        self.base.mangled_context.clone()
+    }
+
+    fn get_mangled_string(&self) -> String {
+        self.base.get_mangled_string().to_string()
+    }
+
+    fn get_original_demangled(&self) -> String {
+        self.base.original_demangled.clone().unwrap_or_default()
+    }
+
+    fn get_name(&self) -> String {
+        self.base.get_name().unwrap_or_default().to_string()
+    }
+
+    fn set_name(&mut self, name: &str) {
+        self.base.set_name(Some(name));
+    }
+
+    fn get_demangled_name(&self) -> String {
+        self.base.get_demangled_name().unwrap_or_default().to_string()
+    }
+
+    fn get_namespace(&self) -> Option<&dyn crate::demangler::demangled::Demangled> {
+        self.base.get_namespace()
+    }
+
+    fn get_namespace_mut(&mut self) -> Option<&mut (dyn crate::demangler::demangled::Demangled + 'static)> {
+        self.base.namespace.as_deref_mut()
+    }
+
+    fn set_namespace(
+        &mut self,
+        namespace: Option<Box<dyn crate::demangler::demangled::Demangled>>,
+    ) {
+        self.base.set_namespace(namespace);
+    }
+
+    fn get_namespace_string(&self) -> String {
+        self.base.namespace_string_with(&self.get_namespace_name())
+    }
+
+    fn get_namespace_name(&self) -> String {
+        self.get_name()
+    }
+
+    fn get_signature(&self) -> String {
+        self.get_signature_formatted(false)
     }
 }

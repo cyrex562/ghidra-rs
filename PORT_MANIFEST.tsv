@@ -6405,7 +6405,7 @@ orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/CodeDegVer
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DataDegVertex.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DataExplorationGraph.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegController.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
-orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegEdge.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
+orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegEdge.java	DONE	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegGraphView.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegLayout.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegLayoutProvider.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
@@ -7238,7 +7238,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/user
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/userdump/UserdumpFileHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump userdump 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4Analyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4BlockMapHelper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4Constants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4Constants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4DirEntry.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4DirEntry2.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4DirEntryTail.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
@@ -7714,7 +7714,7 @@ orig_src/Ghidra/Features/GnuDemangler/ghidra_scripts/DemangleElfWithOptionScript
 orig_src/Ghidra/Features/GnuDemangler/ghidra_scripts/VxWorksSymTab_Finder.java	TODO	orig_src Ghidra Features GnuDemangler ghidra_scripts 
 orig_src/Ghidra/Features/GnuDemangler/src/main/java/ghidra/app/plugin/core/analysis/GnuDemanglerAnalyzer.java	TODO	orig_src Ghidra Features GnuDemangler src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Features/GnuDemangler/src/main/java/ghidra/app/util/demangler/gnu/DemanglerParseException.java	DONE	orig_src Ghidra Features GnuDemangler src main java ghidra app util demangler gnu
-orig_src/Ghidra/Features/GnuDemangler/src/main/java/ghidra/app/util/demangler/gnu/GnuDemangler.java	TODO	orig_src Ghidra Features GnuDemangler src main java ghidra app util demangler gnu 
+orig_src/Ghidra/Features/GnuDemangler/src/main/java/ghidra/app/util/demangler/gnu/GnuDemangler.java	DONE	orig_src Ghidra Features GnuDemangler src main java ghidra app util demangler gnu 
 orig_src/Ghidra/Features/GnuDemangler/src/main/java/ghidra/app/util/demangler/gnu/GnuDemanglerFormat.java	TODO	orig_src Ghidra Features GnuDemangler src main java ghidra app util demangler gnu 
 orig_src/Ghidra/Features/GnuDemangler/src/main/java/ghidra/app/util/demangler/gnu/GnuDemanglerNativeProcess.java	TODO	orig_src Ghidra Features GnuDemangler src main java ghidra app util demangler gnu 
 orig_src/Ghidra/Features/GnuDemangler/src/main/java/ghidra/app/util/demangler/gnu/GnuDemanglerOptions.java	TODO	orig_src Ghidra Features GnuDemangler src main java ghidra app util demangler gnu 
@@ -9383,7 +9383,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/cor
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/SimilarSymbolNameProgramCorrelator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/SimilarSymbolNameProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/SymbolNameProgramCorrelator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/SymbolNameProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/SymbolNameProgramCorrelatorFactory.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/VTAbstractReferenceProgramCorrelator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/VTAbstractReferenceProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/AddressCorrelatorDB.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
@@ -9811,7 +9811,7 @@ orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/Wil
 orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyNumericStateGenerator.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 
 orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyOperandState.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 
 orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyResolutionFactory.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 
-orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyResolvedPatterns.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 
+orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyResolvedPatterns.java	DONE	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 
 orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyStringMapStateGenerator.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 
 orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyStringStateGenerator.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 
 orig_src/Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyTreeResolver.java	TODO	orig_src Ghidra Features WildcardAssembler src main java ghidra asm wild sem 

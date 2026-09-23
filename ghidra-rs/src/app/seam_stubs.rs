@@ -1231,13 +1231,18 @@ pub trait PcodeTraversal {
 /// and by [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real
 /// class is ported. `AssemblySelector` only ever reads the raw instruction bytes (to compare two
 /// candidate encodings by length, then lexicographically) and asks for a fully-masked copy of the
-/// chosen encoding, so only `getVals()` and `fillMask()` are needed.
+/// chosen encoding, so `getVals()` and `fillMask()` were the first members needed;
+/// [`WildOperandInfo`](crate::asm::wild::sem::seam_stubs::WildOperandInfo)'s `shift(int)` (which
+/// forwards to `location.shift(amt)`) added `shift`.
 pub trait AssemblyPatternBlock {
     /// Mirrors `AssemblyPatternBlock.getVals()`.
     fn get_vals(&self) -> Vec<i8>;
 
     /// Mirrors `AssemblyPatternBlock.fillMask()`.
     fn fill_mask(&self) -> Box<dyn AssemblyPatternBlock>;
+
+    /// Mirrors `AssemblyPatternBlock.shift(int)`.
+    fn shift(&self, amt: i32) -> Box<dyn AssemblyPatternBlock>;
 }
 
 /// One record from an [`AssemblyResolutionResults`] set, already discriminated the way

@@ -259,6 +259,9 @@ mod tests {
         fn fill_mask(&self) -> Box<dyn crate::app::seam_stubs::AssemblyPatternBlock> {
             Box::new(self.clone())
         }
+        fn shift(&self, _amt: i32) -> Box<dyn crate::app::seam_stubs::AssemblyPatternBlock> {
+            Box::new(self.clone())
+        }
     }
 
     #[derive(Debug)]

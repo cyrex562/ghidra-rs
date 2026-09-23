@@ -217,6 +217,9 @@ mod tests {
         fn fill_mask(&self) -> Box<dyn AssemblyPatternBlock> {
             Box::new(MockBlock { vals: vec![-1; self.vals.len()] })
         }
+        fn shift(&self, _amt: i32) -> Box<dyn AssemblyPatternBlock> {
+            Box::new(MockBlock { vals: self.vals.clone() })
+        }
     }
 
     // --- AssemblyResolvedPatterns mock ---

@@ -1307,3 +1307,11 @@ ts	stub_class	referenced_by
 2026-09-23T02:00:12.000000+00:00	SymZ3PcodeArithmetic	SymZ3PcodeExecutorStatePiece
 2026-09-23T02:42:52.000000+00:00	MaskContainer	InstructionMetadata
 2026-09-23T02:42:52.000000+00:00	OperandMetadata	InstructionMetadata
+2026-09-23T03:01:36.643595669Z	DegVertex	DegEdge
+2026-09-23T03:20:00.000000+00:00	GnuDemanglerOptions	GnuDemangler
+2026-09-23T03:20:00.000000+00:00	GnuDemanglerNativeProcess	GnuDemangler
+2026-09-23T03:20:00.000000+00:00	GnuDemanglerParser	GnuDemangler
+2026-09-23T03:20:00.000000+00:00	DemangledFunction	GnuDemangler
+2026-09-23T03:20:00.000000+00:00	DemangledAddressTable	GnuDemangler
+2026-09-23T03:30:00.000000+00:00	SymbolNameProgramCorrelator	SymbolNameProgramCorrelatorFactory
+2026-09-23T03:45:00.000000+00:00	WildOperandInfo	WildAssemblyResolvedPatterns
