@@ -1,6 +1,6 @@
 //! Port of `ghidra.pcode.emu.symz3.SymZ3RecordsExecution`.
 
-use crate::pcode::seam_stubs::SymZ3PcodeThread;
+use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread;
 use crate::program::model::address::Address;
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::pcode::PcodeOp;

@@ -6756,3 +6756,36 @@ pub const TRACE_ENVIRONMENT_KEY_OS: &str = "_os";
 /// before the real class is ported. That interface's `actionsAdded`/`actionsRemoved` only pass
 /// the value through (as a slice), so no members are needed yet.
 pub struct CompositeEditorTableAction;
+
+/// Placeholder for `ghidra.app.plugin.core.instructionsearch.model.MaskContainer` (a concrete
+/// class, not an interface), referenced by
+/// [`InstructionMetadata`](crate::app::plugin::core::instruction_search::model::instruction_metadata::InstructionMetadata)
+/// before the real class is ported. `InstructionMetadata` itself only stores and returns this
+/// value opaquely (never calls any of its methods), so only the constructor and fields Java's own
+/// constructor takes are modeled.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaskContainer {
+    pub mask: Vec<u8>,
+    pub value: Vec<u8>,
+}
+
+impl MaskContainer {
+    /// Java: `MaskContainer(byte[] mask, byte[] value)`.
+    pub fn new(mask: Vec<u8>, value: Vec<u8>) -> Self {
+        Self { mask, value }
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.instructionsearch.model.OperandMetadata` (a concrete
+/// class, not an interface), referenced by
+/// [`InstructionMetadata`](crate::app::plugin::core::instruction_search::model::instruction_metadata::InstructionMetadata)
+/// before the real class is ported. `InstructionMetadata` only stores a `List<OperandMetadata>`
+/// opaquely (never calls any of its methods), so this models Java's own fields plainly rather
+/// than as a getter/setter bean.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct OperandMetadata {
+    pub text_rep: std::option::Option<String>,
+    pub op_type: i32,
+    pub mask_container: std::option::Option<MaskContainer>,
+    pub masked: bool,
+}

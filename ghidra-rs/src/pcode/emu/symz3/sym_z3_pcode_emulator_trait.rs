@@ -43,8 +43,10 @@
 use crate::feature::seam_stubs::Z3Context;
 use crate::pcode::emu::symz3::lib::z3_infix_printer::Z3InfixPrinter;
 use crate::pcode::emu::symz3::sym_z3_paired_pcode_executor_state::SymZ3PairedPcodeExecutorState;
+use crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::SymZ3PcodeExecutorStatePiece;
 use crate::pcode::emu::symz3::sym_z3_records_execution::{RecInstruction, RecOp, SymZ3RecordsExecution};
-use crate::pcode::seam_stubs::SymZ3PcodeThread;
+use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
+use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread;
 use std::io;
 
 /// Port of `ghidra.pcode.emu.symz3.SymZ3PcodeEmulatorTrait`. See the module docs for how the
@@ -64,17 +66,17 @@ pub trait SymZ3PcodeEmulatorTrait: SymZ3RecordsExecution {
     /// `PcodeMachine.getSharedState()`.
     fn get_shared_symz3_state(&self) -> &dyn SymZ3PairedPcodeExecutorState;
 
-    /// Java: `default SymZ3PcodeExecutorStatePiece getSharedSymbolicState()`.
-    fn get_shared_symbolic_state(&self) -> &crate::pcode::seam_stubs::SymZ3PcodeExecutorStatePiece {
+    /// Java: `default SymZ3PcodeExecutorStatePiece getSharedSymbolicState()`. Fixed to
+    /// [`NoPcodeStateCallbacks`]; see [`SymZ3PairedPcodeExecutorState::get_right`]'s docs.
+    fn get_shared_symbolic_state(&self) -> &SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks> {
         self.get_shared_symz3_state().get_right()
     }
 
     /// Java: `default String printableSummary()`. Unlike Java (which never opens a `Context`
-    /// itself here -- it only forwards to pieces that do), the thread-local pieces this needs
-    /// (`SymZ3PcodeThread::getLocalSymbolicState`) are not modeled by the placeholder
-    /// [`SymZ3PcodeThread`](crate::pcode::seam_stubs::SymZ3PcodeThread) stub yet, so only the
-    /// shared state's summary is rendered; a concrete implementor with real threads should extend
-    /// this once `SymZ3PcodeThread` is fully ported.
+    /// itself here -- it only forwards to pieces that do), the thread-local preconditions
+    /// [`SymZ3PcodeThread::get_preconditions`] could add are not folded in here (this trait has no
+    /// list of the emulator's live threads to consult, only the shared state reachable via
+    /// [`Self::get_shared_symz3_state`]), so only the shared state's summary is rendered.
     fn printable_summary(&self, ctx: &dyn Z3Context, z3p: &Z3InfixPrinter) -> String {
         let mut result = self.get_shared_symbolic_state().printable_summary(ctx, z3p);
         result.push('\n');
@@ -166,7 +168,7 @@ fn format_rec_op(rec: &RecOp) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::SymZ3PcodeExecutorStatePiece;
+    use crate::pcode::emu::symz3::internal_sym_z3_records_execution::InternalSymZ3RecordsExecution;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::{OpCode, PcodeOp};
 
@@ -175,7 +177,7 @@ mod tests {
     }
 
     struct FakeState {
-        right: SymZ3PcodeExecutorStatePiece,
+        right: SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>,
     }
 
     impl SymZ3PairedPcodeExecutorState for FakeState {
@@ -185,8 +187,11 @@ mod tests {
         {
             unimplemented!("not exercised by this test")
         }
-        fn get_right(&self) -> &SymZ3PcodeExecutorStatePiece {
+        fn get_right(&self) -> &SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks> {
             &self.right
+        }
+        fn get_right_mut(&mut self) -> &mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks> {
+            &mut self.right
         }
     }
     impl crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece for FakeState {}
@@ -311,7 +316,7 @@ mod tests {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space, 0x400);
         let thread = SymZ3PcodeThread::named("[Threads][2]");
-        let mut piece = SymZ3PcodeExecutorStatePiece::default();
+        let mut piece = crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::testing::piece();
         piece.add_op(&thread, PcodeOp::with_address_no_inputs(addr, 0, OpCode::Copy));
 
         let emu = FakeEmulator { state: FakeState { right: piece } };

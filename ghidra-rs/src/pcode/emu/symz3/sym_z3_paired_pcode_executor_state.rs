@@ -1,14 +1,15 @@
 //! Port of `ghidra.pcode.emu.symz3.SymZ3PairedPcodeExecutorState`.
 
 use crate::feature::symz3::model::sym_value_z3::SymValueZ3;
+use crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::SymZ3PcodeExecutorStatePiece;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
-use crate::pcode::seam_stubs::SymZ3PcodeExecutorStatePiece;
+use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
 
 /// Port of `ghidra.pcode.emu.symz3.SymZ3PairedPcodeExecutorState`.
 ///
 /// A genuine open extension point (per `scripts/shape_rules.py`): the one in-repo implementor is
-/// the not-yet-ported `state.SymZ3PcodeExecutorState` (distinct from the also-unported
+/// the not-yet-ported `state.SymZ3PcodeExecutorState` (distinct from the now-ported
 /// `SymZ3PcodeExecutorStatePiece` referenced below -- two different Java classes despite the
 /// similar name).
 ///
@@ -21,10 +22,19 @@ pub trait SymZ3PairedPcodeExecutorState: PcodeExecutorState<(Vec<u8>, SymValueZ3
     /// `&dyn`.
     fn get_left(&self) -> &dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>;
 
-    /// Java: `SymZ3PcodeExecutorStatePiece getRight()`. `SymZ3PcodeExecutorStatePiece` is a
-    /// concrete Java class (not yet ported; forward-referenced via the minimal placeholder in
-    /// `crate::pcode::seam_stubs`), so this returns a concrete reference, not `&dyn`.
-    fn get_right(&self) -> &SymZ3PcodeExecutorStatePiece;
+    /// Java: `SymZ3PcodeExecutorStatePiece getRight()`. `SymZ3PcodeExecutorStatePiece` is generic
+    /// over its `PcodeStateCallbacks` type in this port (see that struct's module docs, since
+    /// Java's `PcodeStateCallbacks` interface has no object-safe Rust equivalent); fixed here to
+    /// [`NoPcodeStateCallbacks`], the only callback type any in-repo caller currently needs.
+    fn get_right(&self) -> &SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>;
+
+    /// Mutable counterpart to [`Self::get_right`], added for
+    /// [`SymZ3PcodeThread`](crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread)'s
+    /// `addInstruction`/`addOp`/`addPrecondition`, none of which Java's `getRight()` alone can
+    /// reach mutably in Rust (a Java reference is inherently mutable; `&SymZ3PcodeExecutorStatePiece`
+    /// is not). Not itself a Java method -- see [`ThreadPcodeExecutorState::get_shared_state_mut`](crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState::get_shared_state_mut)'s
+    /// docs for the same pattern one layer up.
+    fn get_right_mut(&mut self) -> &mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>;
 }
 
 #[cfg(test)]
@@ -106,7 +116,7 @@ mod tests {
 
     struct FakeState {
         left: FakeLeft,
-        right: SymZ3PcodeExecutorStatePiece,
+        right: SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>,
     }
 
     impl ErasedPcodeExecutorStatePiece for FakeState {}
@@ -175,16 +185,22 @@ mod tests {
         fn get_left(&self) -> &dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> {
             &self.left
         }
-        fn get_right(&self) -> &SymZ3PcodeExecutorStatePiece {
+        fn get_right(&self) -> &SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks> {
             &self.right
+        }
+        fn get_right_mut(&mut self) -> &mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks> {
+            &mut self.right
         }
     }
 
     #[test]
     fn pairs_a_concrete_left_with_a_symbolic_right() {
-        let state = FakeState { left: FakeLeft, right: SymZ3PcodeExecutorStatePiece::default() };
-        assert!(state.get_right().get_instructions().is_empty());
-        assert!(state.get_right().get_ops().is_empty());
+        use crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::testing::piece;
+        use crate::pcode::emu::symz3::sym_z3_records_execution::SymZ3RecordsExecution;
+
+        let state = FakeState { left: FakeLeft, right: piece() };
+        assert!(SymZ3RecordsExecution::get_instructions(state.get_right()).is_empty());
+        assert!(SymZ3RecordsExecution::get_ops(state.get_right()).is_empty());
         let _left: &dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> = state.get_left();
     }
 }

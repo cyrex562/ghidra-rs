@@ -5088,105 +5088,55 @@ impl LVal for DerefExpr {
 impl LValInternal for DerefExpr {}
 
 
-/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.SymZ3PcodeThread`, a concrete
-/// class (not an interface -- per the dependency-context trait-object convention, that means
-/// this stub is a plain struct, not a `dyn`-boxed trait), referenced by
-/// `SymZ3RecordsExecution`/`InternalSymZ3RecordsExecution`/`SymZ3PairedPcodeExecutorState`/
-/// `SymZ3PcodeEmulatorTrait` before the real type exists. Only the one accessor those types need
-/// (`getName()`, inherited from `DefaultPcodeThread`) is modeled here.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SymZ3PcodeThread {
-    name: String,
-}
 
-impl SymZ3PcodeThread {
-    /// Placeholder constructor; the real port's constructor takes `(String, PcodeMachine)`.
-    pub fn named(name: impl Into<String>) -> Self {
-        Self { name: name.into() }
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.state.SymZ3RegisterSpace` (a
+/// concrete class extending `SymZ3Space`, not an interface -- per the trait-object convention
+/// that means this stub is a plain struct), referenced by
+/// `SymZ3PcodeExecutorStatePiece::new_space` when a register address space is touched for the
+/// first time. The real Java class delegates almost entirely to the already-ported
+/// [`crate::pcode::emu::symz3::sym_z3_register_map::SymZ3RegisterMap`], plus fires
+/// `PcodeStateCallbacks::data_written`/`read_uninitialized` through a back-reference to the
+/// owning piece -- wiring that self-reference (piece owns the space map, space needs a reference
+/// back to the piece) is deferred to the real port (already queued later in PORT_ORDER, at
+/// `ghidra/pcode/emu/symz3/state/SymZ3RegisterSpace.java`). This placeholder only reproduces the
+/// signature `SymZ3Space` gives it; every body is a stub.
+pub struct SymZ3RegisterSpace;
+
+impl SymZ3RegisterSpace {
+    pub fn new() -> Self {
+        Self
     }
 
-    /// Java: `PcodeThread.getName()`.
-    pub fn get_name(&self) -> String {
-        self.name.clone()
-    }
-}
-
-/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.SymZ3PcodeExecutorStatePiece`
-/// (a concrete class, not an interface -- per the trait-object convention that means this stub is
-/// a plain struct), referenced by `SymZ3PairedPcodeExecutorState::get_right` and, via
-/// `SymZ3PcodeEmulatorTrait::get_shared_symbolic_state`, by that trait's default methods. Models
-/// just the bookkeeping (instructions/ops/preconditions) those callers need; the real port
-/// additionally composes `AbstractSymZ3OffsetPcodeExecutorStatePiece`'s Z3 space-map storage
-/// (register/memory/unique spaces), which is out of scope for this placeholder.
-#[derive(Default, Clone)]
-pub struct SymZ3PcodeExecutorStatePiece {
-    instructions: Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecInstruction>,
-    ops: Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecOp>,
-    preconditions: crate::pcode::emu::symz3::state::sym_z3_preconditions::SymZ3Preconditions,
-}
-
-impl SymZ3PcodeExecutorStatePiece {
-    /// Java: `addInstruction(SymZ3PcodeThread, Instruction)`.
-    pub fn add_instruction(
+    /// Java: `set(SymValueZ3, int, SymValueZ3, PcodeStateCallbacks)`. Not yet backed by a real
+    /// register map wired to this space; panics if called until the real port lands.
+    pub fn set<CB: PcodeStateCallbacks>(
         &mut self,
-        thread: &SymZ3PcodeThread,
-        instruction: Arc<dyn crate::program::model::listing::instruction::Instruction>,
+        _offset: &crate::feature::symz3::model::sym_value_z3::SymValueZ3,
+        _size: i32,
+        _val: &crate::feature::symz3::model::sym_value_z3::SymValueZ3,
+        _cb: &CB,
     ) {
-        let index = self.instructions.len() as i32;
-        self.instructions.push(
-            crate::pcode::emu::symz3::sym_z3_records_execution::RecInstruction::new(
-                index,
-                thread.clone(),
-                instruction,
-            ),
-        );
+        unimplemented!("SymZ3RegisterSpace is a placeholder; real port pending (see PORT_ORDER.tsv)")
     }
 
-    /// Java: `getInstructions()` (returns an unmodifiable view; this returns an owned copy, per
-    /// this crate's established handling of `Collections.unmodifiableList` elsewhere).
-    pub fn get_instructions(&self) -> Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecInstruction> {
-        self.instructions.clone()
-    }
-
-    /// Java: `addOp(SymZ3PcodeThread, PcodeOp)`.
-    pub fn add_op(&mut self, thread: &SymZ3PcodeThread, op: crate::program::model::pcode::PcodeOp) {
-        let index = self.ops.len() as i32;
-        self.ops.push(crate::pcode::emu::symz3::sym_z3_records_execution::RecOp::new(
-            index,
-            thread.clone(),
-            op,
-        ));
-    }
-
-    /// Java: `getOps()`.
-    pub fn get_ops(&self) -> Vec<crate::pcode::emu::symz3::sym_z3_records_execution::RecOp> {
-        self.ops.clone()
-    }
-
-    /// Java: `addPrecondition(String)` (from `InternalSymZ3RecordsPreconditions`).
-    pub fn add_precondition(&mut self, precondition: impl Into<String>) {
-        self.preconditions.add_precondition(precondition);
-    }
-
-    /// Java: `getPreconditions()`.
-    pub fn get_preconditions(&self) -> Vec<String> {
-        self.preconditions.get_preconditions()
-    }
-
-    /// Java: `printableSummary()`. Unlike Java (which opens its own `try (Context ctx = new
-    /// Context())`), this takes `ctx`/`z3p` explicitly -- this crate's established substitution
-    /// for Z3-touching code (see `SymZ3Preconditions::printable_summary`). The real port's space
-    /// map is not modeled here (see struct docs), so only the preconditions summary is rendered.
-    pub fn printable_summary(
+    /// Java: `get(SymValueZ3, int, Reason, PcodeStateCallbacks)`.
+    pub fn get<CB: PcodeStateCallbacks>(
         &self,
-        ctx: &dyn crate::feature::seam_stubs::Z3Context,
-        z3p: &crate::pcode::emu::symz3::lib::z3_infix_printer::Z3InfixPrinter,
-    ) -> String {
-        self.preconditions.printable_summary(ctx, z3p)
+        _offset: &crate::feature::symz3::model::sym_value_z3::SymValueZ3,
+        _size: i32,
+        _reason: Reason,
+        _cb: &CB,
+    ) -> crate::feature::symz3::model::sym_value_z3::SymValueZ3 {
+        unimplemented!("SymZ3RegisterSpace is a placeholder; real port pending (see PORT_ORDER.tsv)")
     }
 
-    /// Java: `streamValuations(Context, Z3InfixPrinter)`. The real port's space map is not
-    /// modeled here (see struct docs), so this placeholder always yields no valuations.
+    /// Java: `printableSummary()`.
+    pub fn printable_summary(&self) -> String {
+        String::new()
+    }
+
+    /// Java: `streamValuations(Context, Z3InfixPrinter)`.
     pub fn stream_valuations(
         &self,
         _ctx: &dyn crate::feature::seam_stubs::Z3Context,
@@ -5195,12 +5145,85 @@ impl SymZ3PcodeExecutorStatePiece {
         Vec::new()
     }
 
-    /// Java: `streamPreconditions(Context, Z3InfixPrinter)`.
-    pub fn stream_preconditions(
+    /// Java: `getNextEntry(long)`.
+    pub fn get_next_entry(&self, _offset: i64) -> Option<(i64, crate::feature::symz3::model::sym_value_z3::SymValueZ3)> {
+        None
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.state.SymZ3MemorySpace` (a
+/// concrete class extending `SymZ3Space`), referenced by
+/// `SymZ3PcodeExecutorStatePiece::new_space` when a loaded-memory address space is touched for
+/// the first time. Real Java delegates to the already-ported
+/// [`crate::pcode::emu::symz3::sym_z3_memory_map::SymZ3MemoryMap`] plus the same
+/// piece-back-reference callback wiring described on [`SymZ3RegisterSpace`]; deferred to the real
+/// port (queued later in PORT_ORDER, at
+/// `ghidra/pcode/emu/symz3/state/SymZ3MemorySpace.java`).
+pub struct SymZ3MemorySpace;
+
+impl SymZ3MemorySpace {
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// Java: `get(SymValueZ3, int, Reason, PcodeStateCallbacks)`.
+    pub fn get<CB: PcodeStateCallbacks>(
         &self,
-        ctx: &dyn crate::feature::seam_stubs::Z3Context,
-        z3p: &crate::pcode::emu::symz3::lib::z3_infix_printer::Z3InfixPrinter,
-    ) -> Vec<String> {
-        self.preconditions.stream_preconditions(ctx, z3p)
+        _offset: &crate::feature::symz3::model::sym_value_z3::SymValueZ3,
+        _size: i32,
+        _reason: Reason,
+        _cb: &CB,
+    ) -> crate::feature::symz3::model::sym_value_z3::SymValueZ3 {
+        unimplemented!("SymZ3MemorySpace is a placeholder; real port pending (see PORT_ORDER.tsv)")
+    }
+
+    /// Java: `set(SymValueZ3, int, SymValueZ3, PcodeStateCallbacks)`.
+    pub fn set<CB: PcodeStateCallbacks>(
+        &mut self,
+        _offset: &crate::feature::symz3::model::sym_value_z3::SymValueZ3,
+        _size: i32,
+        _val: &crate::feature::symz3::model::sym_value_z3::SymValueZ3,
+        _cb: &CB,
+    ) {
+        unimplemented!("SymZ3MemorySpace is a placeholder; real port pending (see PORT_ORDER.tsv)")
+    }
+
+    /// Java: `getNextEntry(long)`.
+    pub fn get_next_entry(&self, _offset: i64) -> Option<(i64, crate::feature::symz3::model::sym_value_z3::SymValueZ3)> {
+        None
+    }
+
+    /// Java: `printableSummary()`.
+    pub fn printable_summary(&self) -> String {
+        String::new()
+    }
+
+    /// Java: `streamValuations(Context, Z3InfixPrinter)`.
+    pub fn stream_valuations(
+        &self,
+        _ctx: &dyn crate::feature::seam_stubs::Z3Context,
+        _z3p: &crate::pcode::emu::symz3::lib::z3_infix_printer::Z3InfixPrinter,
+    ) -> Vec<(String, String)> {
+        Vec::new()
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.SymZ3PcodeArithmetic`,
+/// referenced by `SymZ3PcodeExecutorStatePiece`'s convenience constructor
+/// (`SymZ3PcodeExecutorStatePiece(Language, PcodeArithmetic, PcodeStateCallbacks)`, which derives
+/// its value arithmetic via `SymZ3PcodeArithmetic.forLanguage(language)`). A faithful stub would
+/// need to implement all ~25 methods of the already-ported `PcodeArithmetic<SymValueZ3>` trait
+/// (unary/binary op, concretion, etc.) with genuine Z3 semantics, which is exactly the real port's
+/// job (queued later in PORT_ORDER, at `ghidra/pcode/emu/symz3/SymZ3PcodeArithmetic.java`); only
+/// the one static factory method this caller needs is modeled here, and it panics if actually
+/// invoked, standing in until the real arithmetic exists.
+pub struct SymZ3PcodeArithmetic;
+
+impl SymZ3PcodeArithmetic {
+    /// Java: `SymZ3PcodeArithmetic.forLanguage(Language)`.
+    pub fn for_language(
+        _language: &Arc<dyn Language>,
+    ) -> Arc<dyn PcodeArithmetic<crate::feature::symz3::model::sym_value_z3::SymValueZ3>> {
+        unimplemented!("SymZ3PcodeArithmetic is a placeholder; real port pending (see PORT_ORDER.tsv)")
     }
 }

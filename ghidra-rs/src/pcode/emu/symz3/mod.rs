@@ -5,6 +5,8 @@ pub mod state;
 pub mod sym_z3_memory_map;
 pub mod sym_z3_paired_pcode_executor_state;
 pub mod sym_z3_pcode_emulator_trait;
+pub mod sym_z3_pcode_executor_state_piece;
+pub mod sym_z3_pcode_thread;
 pub mod sym_z3_pcode_userop_library;
 pub mod sym_z3_records_execution;
 pub mod sym_z3_records_preconditions;
@@ -16,6 +18,8 @@ pub use internal_sym_z3_records_preconditions::InternalSymZ3RecordsPreconditions
 pub use sym_z3_memory_map::{build_load, SymZ3MemoryMap};
 pub use sym_z3_paired_pcode_executor_state::SymZ3PairedPcodeExecutorState;
 pub use sym_z3_pcode_emulator_trait::SymZ3PcodeEmulatorTrait;
+pub use sym_z3_pcode_executor_state_piece::SymZ3PcodeExecutorStatePiece;
+pub use sym_z3_pcode_thread::SymZ3PcodeThread;
 pub use sym_z3_pcode_userop_library::SymZ3PcodeUseropLibrary;
 pub use sym_z3_records_execution::{RecInstruction, RecOp, SymZ3RecordsExecution};
 pub use sym_z3_records_preconditions::SymZ3RecordsPreconditions;

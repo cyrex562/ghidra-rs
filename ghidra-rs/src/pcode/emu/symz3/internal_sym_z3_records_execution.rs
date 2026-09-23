@@ -1,7 +1,7 @@
 //! Port of `ghidra.pcode.emu.symz3.InternalSymZ3RecordsExecution`.
 
+use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread;
 use crate::pcode::emu::symz3::sym_z3_records_execution::SymZ3RecordsExecution;
-use crate::pcode::seam_stubs::SymZ3PcodeThread;
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::pcode::PcodeOp;
 use std::sync::Arc;
@@ -9,8 +9,7 @@ use std::sync::Arc;
 /// Port of `ghidra.pcode.emu.symz3.InternalSymZ3RecordsExecution`.
 ///
 /// A genuine open extension point (per `scripts/shape_rules.py`): the one in-repo implementor is
-/// `SymZ3PcodeExecutorStatePiece` (not yet ported; a forward reference this crate's convention
-/// stubs at the call site, not here -- this trait itself has no forward-referenced members).
+/// `SymZ3PcodeExecutorStatePiece` (now ported).
 pub trait InternalSymZ3RecordsExecution: SymZ3RecordsExecution {
     fn add_instruction(&mut self, thread: &SymZ3PcodeThread, inst: Arc<dyn Instruction>);
     fn add_op(&mut self, thread: &SymZ3PcodeThread, op: PcodeOp);

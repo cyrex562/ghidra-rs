@@ -82,6 +82,24 @@ where
     pub fn get_local_state(&self) -> &L {
         &self.local_state
     }
+
+    /// Get the shared state, mutably.
+    ///
+    /// An addition beyond Java's `getSharedState()`: a caller that needs to mutate the shared
+    /// delegate through a narrower interface than the full [`PcodeExecutorStatePiece`] (e.g.
+    /// [`SymZ3PcodeThread`](crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread)'s
+    /// `addInstruction`/`addPrecondition`, which need `&mut S`/`&mut L` to reach a state-specific
+    /// mutator, not just the generic `set_var*` family) needs a mutable accessor; Java reaches the
+    /// same mutation by holding whatever mutable reference `getSharedState()` already returns
+    /// (Java references are inherently mutable), which `&S` cannot express in Rust.
+    pub fn get_shared_state_mut(&mut self) -> &mut S {
+        &mut self.shared_state
+    }
+
+    /// Get the thread-local state, mutably. See [`Self::get_shared_state_mut`]'s docs.
+    pub fn get_local_state_mut(&mut self) -> &mut L {
+        &mut self.local_state
+    }
 }
 
 impl<T: 'static, S, L> PcodeExecutorStatePiece<T, T> for ThreadPcodeExecutorState<T, S, L>
