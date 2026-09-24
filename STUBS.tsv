@@ -1313,3 +1313,4 @@ ts	stub_class	referenced_by
 2026-09-24T06:11:06.000000+00:00	VtHandler	VtParser
 2026-09-24T06:11:06.000000+00:00	KeyMode	VtParser
 2026-09-24T06:18:06+00:00	TraceRmiLauncherServicePlugin	TraceRmiLaunchOpinion
+2026-09-24T18:00:00Z	TraceRmiHandler.VERSION	RmiClient

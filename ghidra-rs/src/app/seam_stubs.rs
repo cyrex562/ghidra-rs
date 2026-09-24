@@ -374,6 +374,12 @@ pub trait DefaultTraceRmiAcceptor {}
 /// members are needed yet.
 pub trait TraceRmiHandler {}
 
+/// Forward reference for the constant `TraceRmiHandler.VERSION`, the Trace RMI protocol version
+/// the front end requires, which [`RmiClient::negotiate`](
+/// crate::app::plugin::core::debug::client::tracermi::RmiClient::negotiate) sends before the
+/// real `TraceRmiHandler` class is ported. The value is Java's, verbatim.
+pub const TRACE_RMI_HANDLER_VERSION: &str = "12.2";
+
 /// Placeholder for `ghidra.util.task.Task`, referenced by
 /// [`ProgressService`](crate::app::services::ProgressService)'s default `execute` method before
 /// the real class is ported. Models just the two members that default method calls.
