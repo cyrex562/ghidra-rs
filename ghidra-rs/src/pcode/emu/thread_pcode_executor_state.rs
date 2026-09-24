@@ -13,7 +13,7 @@
 //! [`PairedPcodeExecutorState`](crate::pcode::exec::paired_pcode_executor_state::PairedPcodeExecutorState)
 //! takes, keep forking possible while still letting any pair of concrete states be composed.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
@@ -220,6 +220,134 @@ where
     L: PcodeExecutorState<T>,
 {
 }
+
+/// A machine's shared (memory) state as its threads hold it: a handle on the one state, which
+/// each clone refers to.
+///
+/// Not a port of a Java class. Java's threads each hold a reference to the single
+/// `PcodeExecutorState` their machine created (`machine.getSharedState()`), so a write by one
+/// thread is seen by all. [`ThreadPcodeExecutorState`] takes its shared delegate by value, typed
+/// (see the module docs), so the delegate a machine hands each of its threads is one of these:
+/// every [`PcodeExecutorStatePiece`] method locks the shared state and forwards to it.
+///
+/// [`stream_pieces`](PcodeExecutorStatePiece::stream_pieces) cannot lend out pieces from behind
+/// the lock; it reports this handle itself, standing for the shared state's pieces.
+/// [`fork`](PcodeExecutorStatePiece::fork) forks the shared state into a new, independent handle,
+/// as forking the state Java's reference points to does.
+pub struct SharedPcodeExecutorState<S> {
+    state: Arc<Mutex<S>>,
+}
+
+impl<S> Clone for SharedPcodeExecutorState<S> {
+    fn clone(&self) -> Self {
+        Self { state: Arc::clone(&self.state) }
+    }
+}
+
+impl<S> SharedPcodeExecutorState<S> {
+    /// Share the given state.
+    pub fn new(state: S) -> Self {
+        Self { state: Arc::new(Mutex::new(state)) }
+    }
+
+    /// Lock the shared state for direct access.
+    pub fn lock(&self) -> MutexGuard<'_, S> {
+        self.state.lock().expect("shared state lock poisoned")
+    }
+
+    /// Whether two handles refer to the same state.
+    pub fn ptr_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.state, &other.state)
+    }
+}
+
+impl<S> ErasedPcodeExecutorStatePiece for SharedPcodeExecutorState<S> {}
+
+impl<T: 'static, S> PcodeExecutorStatePiece<T, T> for SharedPcodeExecutorState<S>
+where
+    S: PcodeExecutorState<T>,
+{
+    fn get_language(&self) -> Box<dyn Language> {
+        self.lock().get_language()
+    }
+
+    fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>> {
+        self.lock().get_address_arithmetic()
+    }
+
+    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>> {
+        self.lock().get_arithmetic()
+    }
+
+    fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
+        vec![self]
+    }
+
+    fn fork<CB: PcodeStateCallbacks>(&self, cb: &CB) -> Self
+    where
+        Self: Sized,
+    {
+        Self::new(self.lock().fork(cb))
+    }
+
+    fn set_var_abstract(&mut self, space: &Arc<AddressSpace>, offset: &T, size: i32, quantize: bool, val: &T) {
+        self.lock().set_var_abstract(space, offset, size, quantize, val);
+    }
+
+    fn set_var_internal_abstract(&mut self, space: &Arc<AddressSpace>, offset: &T, size: i32, val: &T) {
+        self.lock().set_var_internal_abstract(space, offset, size, val);
+    }
+
+    fn set_var(&mut self, space: &Arc<AddressSpace>, offset: i64, size: i32, quantize: bool, val: &T) {
+        self.lock().set_var(space, offset, size, quantize, val);
+    }
+
+    fn set_var_internal(&mut self, space: &Arc<AddressSpace>, offset: i64, size: i32, val: &T) {
+        self.lock().set_var_internal(space, offset, size, val);
+    }
+
+    fn get_var_abstract(&self, space: &Arc<AddressSpace>, offset: &T, size: i32, quantize: bool, reason: Reason) -> T {
+        self.lock().get_var_abstract(space, offset, size, quantize, reason)
+    }
+
+    fn get_var_internal_abstract(&self, space: &Arc<AddressSpace>, offset: &T, size: i32, reason: Reason) -> T {
+        self.lock().get_var_internal_abstract(space, offset, size, reason)
+    }
+
+    fn get_var(&self, space: &Arc<AddressSpace>, offset: i64, size: i32, quantize: bool, reason: Reason) -> T {
+        self.lock().get_var(space, offset, size, quantize, reason)
+    }
+
+    fn get_var_internal(&self, space: &Arc<AddressSpace>, offset: i64, size: i32, reason: Reason) -> T {
+        self.lock().get_var_internal(space, offset, size, reason)
+    }
+
+    fn get_next_entry_internal_abstract(&self, space: &Arc<AddressSpace>, offset: &T) -> Option<(T, T)> {
+        self.lock().get_next_entry_internal_abstract(space, offset)
+    }
+
+    fn get_next_entry_internal(&self, space: &Arc<AddressSpace>, offset: i64) -> Option<(i64, T)> {
+        self.lock().get_next_entry_internal(space, offset)
+    }
+
+    fn get_register_values(&self) -> Vec<(RegisterRef, T)> {
+        self.lock().get_register_values()
+    }
+
+    fn get_concrete_buffer(&self, address: &Address, purpose: Purpose) -> Box<dyn MemBuffer> {
+        self.lock().get_concrete_buffer(address, purpose)
+    }
+
+    fn quantize_offset(&self, space: &Arc<AddressSpace>, offset: i64) -> i64 {
+        self.lock().quantize_offset(space, offset)
+    }
+
+    fn clear(&mut self) {
+        self.lock().clear();
+    }
+}
+
+impl<T: 'static, S> PcodeExecutorState<T> for SharedPcodeExecutorState<S> where S: PcodeExecutorState<T> {}
 
 #[cfg(test)]
 mod tests {

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
-use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::emu::pcode_thread::PcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
@@ -113,30 +113,6 @@ pub trait PcodeMachine<T: 'static>: ErasedPcodeMachine {
     /// the returned library in an executor.
     fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<T>;
 
-    /// Create a new thread with a default name in this machine.
-    ///
-    /// The machine retains the thread as well (see [`get_all_threads`](Self::get_all_threads)),
-    /// hence the shared handle. Java's return type is `PcodeThread<T>`; the handle is
-    /// value-erased here until a concrete
-    /// [`PcodeThread`](crate::pcode::emu::pcode_thread::PcodeThread) implementation exists to
-    /// return (see [`ErasedPcodeThread`]).
-    fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread>;
-
-    /// Create a new thread with the given name in this machine.
-    ///
-    /// Java overloads `newThread`; Rust traits cannot overload on arity, so the named form gets a
-    /// distinct name.
-    fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread>;
-
-    /// Get the thread, if present, with the given name, creating it if `create_if_absent`.
-    ///
-    /// Returns `None` (Java's `null`) if absent and not created. Takes `&mut self` because the
-    /// creating case adds to the machine.
-    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>>;
-
-    /// Collect all threads present in the machine.
-    fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>>;
-
     /// Get the machine's shared (memory) state.
     ///
     /// The returned state may panic if the client requests register values of it. This state is
@@ -181,8 +157,10 @@ pub trait PcodeMachine<T: 'static>: ErasedPcodeMachine {
 
     /// Check for a p-code injection (override) at the given address.
     ///
-    /// `address` is usually the program counter. The result is most likely `None`.
-    fn get_inject(&self, address: &Address) -> Option<&PcodeProgram>;
+    /// `address` is usually the program counter. The result is most likely `None`. Java hands back
+    /// the machine's own program; this is a shared handle on it, since the machine shares its
+    /// injects with its threads.
+    fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>>;
 
     /// Remove the inject, if present, at the given address.
     fn clear_inject(&mut self, address: &Address);
@@ -221,6 +199,43 @@ pub trait PcodeMachine<T: 'static>: ErasedPcodeMachine {
     fn clear_access_breakpoints(&mut self);
 }
 
+/// The thread-management methods of Java's `PcodeMachine`.
+///
+/// These are typed by the machine's own thread type, which Java expresses through its generic
+/// `PcodeThread<T>` return type plus covariant overrides (e.g. `JitPcodeEmulator.newThread()`
+/// returning a `JitPcodeThread`). A Rust associated type says the same, but would make
+/// `dyn PcodeMachine<T>` -- which the syscall libraries and state initializers hold -- unnameable,
+/// so these methods live in this separate trait.
+///
+/// The machine owns its threads: each method lends the thread out, and a caller steps it through
+/// that borrow. See [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)'s
+/// module docs on why a thread's own reference to its machine is not a reference to this object.
+pub trait PcodeMachineThreads<T: 'static>: PcodeMachine<T> {
+    /// The concrete type of this machine's threads.
+    type Thread: PcodeThread<T>;
+
+    /// Create a new thread with a default name in this machine.
+    ///
+    /// The machine retains the thread (see [`get_all_threads`](Self::get_all_threads)) and lends
+    /// it out here.
+    fn new_thread(&mut self) -> &mut Self::Thread;
+
+    /// Create a new thread with the given name in this machine.
+    ///
+    /// Java overloads `newThread`; Rust traits cannot overload on arity, so the named form gets a
+    /// distinct name.
+    fn new_thread_named(&mut self, name: &str) -> &mut Self::Thread;
+
+    /// Get the thread, if present, with the given name, creating it if `create_if_absent`.
+    ///
+    /// Returns `None` (Java's `null`) if absent and not created. Takes `&mut self` because the
+    /// creating case adds to the machine, and because the thread is lent out for stepping.
+    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<&mut Self::Thread>;
+
+    /// Collect all threads present in the machine, in creation order.
+    fn get_all_threads(&self) -> Vec<&Self::Thread>;
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -239,7 +254,7 @@ mod tests {
         suspended: bool,
         injects: HashMap<i64, String>,
         access_breakpoints: Vec<(AddressRange, AccessKind)>,
-        placeholder_program: PcodeProgram,
+        placeholder_program: Arc<PcodeProgram>,
     }
 
     impl Default for RecordingMachine {
@@ -249,7 +264,7 @@ mod tests {
                 suspended: false,
                 injects: HashMap::new(),
                 access_breakpoints: Vec::new(),
-                placeholder_program: crate::pcode::exec::pcode_program::testing::empty_program(),
+                placeholder_program: Arc::new(crate::pcode::exec::pcode_program::testing::empty_program()),
             }
         }
     }
@@ -281,26 +296,6 @@ mod tests {
             unimplemented!("test should not call this")
         }
 
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("test should not call this")
-        }
-
-        fn new_thread_named(&mut self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("test should not call this")
-        }
-
-        fn get_thread(
-            &mut self,
-            _name: &str,
-            _create_if_absent: bool,
-        ) -> Option<Arc<dyn ErasedPcodeThread>> {
-            None
-        }
-
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            vec![]
-        }
-
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<Vec<u8>> {
             unimplemented!("test should not call this")
         }
@@ -326,10 +321,10 @@ mod tests {
             self.injects.insert(address.offset(), source.to_string());
         }
 
-        fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
+        fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
             self.injects
                 .get(&address.offset())
-                .map(|_| &self.placeholder_program)
+                .map(|_| Arc::clone(&self.placeholder_program))
         }
 
         fn clear_inject(&mut self, address: &Address) {

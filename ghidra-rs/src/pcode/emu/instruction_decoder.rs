@@ -7,7 +7,11 @@ use std::sync::Arc;
 /// A means of decoding machine instructions from the bytes contained in the machine state.
 ///
 /// Corresponds to `ghidra.pcode.emu.InstructionDecoder`.
-pub trait InstructionDecoder: Send + Sync {
+///
+/// Not bound `Send + Sync`: a decoder reads the machine state it decodes from (Java's
+/// `SleighInstructionDecoder` holds the thread's shared state), which is not shareable across host
+/// threads, and a decoder belongs to exactly one emulated thread, as in Java.
+pub trait InstructionDecoder {
     /// Get the language for this decoder.
     fn get_language(&self) -> Arc<dyn Language>;
 

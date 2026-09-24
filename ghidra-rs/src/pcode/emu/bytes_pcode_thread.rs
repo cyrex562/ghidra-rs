@@ -3,58 +3,58 @@
 //! Port of `ghidra.pcode.emu.BytesPcodeThread`.
 //!
 //! This is the default thread for [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator).
-//! It is a p-code thread that operates on concrete byte values in memory and registers.
+//! Java's class is `BytesPcodeThread extends ModifiedPcodeThread<byte[]>` with only a constructor
+//! delegating to `super(name, machine)`, so it adds no overrides: here it is
+//! [`ModifiedPcodeThread`] over byte values, with its two state delegates fixed to the ones a
+//! [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator) creates.
 
-use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use std::sync::Arc;
+
+use crate::pcode::emu::abstract_pcode_machine::PcodeMachineShared;
+use crate::pcode::emu::default_pcode_thread::DefaultPcodeThread;
+use crate::pcode::emu::instruction_decoder::InstructionDecoder;
+#[allow(deprecated)]
+use crate::pcode::emu::modified_pcode_thread::{
+    ModifiedPcodeThread, ModifiedThreadHooks, PcodeStateModifier,
+};
+use crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState;
+use crate::pcode::exec::bytes_pcode_executor_state::BytesPcodeExecutorState;
+use crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece;
+use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
+use crate::program::model::lang::language::Language;
+
+/// The concrete bytes state a [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator)
+/// creates for its shared memory and for each thread's registers: Java's
+/// `new BytesPcodeExecutorState(language, scb)`.
+pub type BytesState = BytesPcodeExecutorState<BytesPcodeExecutorStatePiece<NoPcodeStateCallbacks>>;
 
 /// A simple p-code thread that operates on concrete bytes.
 ///
-/// Port of `BytesPcodeThread extends ModifiedPcodeThread<byte[]>`. This is the default
-/// thread for [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator).
-///
-/// # Implementation note
-///
-/// In Java, `BytesPcodeThread` extends `ModifiedPcodeThread<byte[]>` with just a constructor
-/// that delegates to `super(name, machine)`. The full implementation is composed of the
-/// `ModifiedPcodeThread` functionality (which wraps `DefaultPcodeThread`), which requires
-/// instantiation with concrete executor state types and a decoder. Since the Rust port's
-/// `PcodeEmulator::create_thread` pattern only provides a name, this struct currently
-/// serves as a marker type implementing `ErasedPcodeThread`. Full `PcodeThread<Vec<u8>>`
-/// functionality would require changes to how machines create and manage threads.
-pub struct BytesPcodeThread {
-    name: String,
-}
+/// Port of `BytesPcodeThread`. Its shared delegate is the machine's shared memory, which every
+/// thread of the machine refers to; its local delegate is its own registers.
+pub type BytesPcodeThread =
+    ModifiedPcodeThread<Vec<u8>, SharedPcodeExecutorState<BytesState>, BytesState>;
 
-impl BytesPcodeThread {
+#[allow(deprecated)]
+impl DefaultPcodeThread<Vec<u8>, SharedPcodeExecutorState<BytesState>, BytesState, ModifiedThreadHooks> {
     /// Construct a new thread.
     ///
-    /// Port of `BytesPcodeThread(String, AbstractPcodeMachine<byte[]>)`. Currently only
-    /// accepts the name; the machine can be obtained later if needed for full functionality.
-    pub fn new(name: &str) -> Self {
-        Self { name: name.to_string() }
-    }
-
-    /// Port of the inherited `PcodeThread.getName()`.
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-}
-
-impl ErasedPcodeThread for BytesPcodeThread {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn bytes_pcode_thread_stores_and_retrieves_name() {
-        let thread = BytesPcodeThread::new("test_thread");
-        assert_eq!(thread.name(), "test_thread");
-    }
-
-    #[test]
-    fn bytes_pcode_thread_implements_erased_pcode_thread() {
-        let thread = BytesPcodeThread::new("thread0");
-        let _erased: &dyn ErasedPcodeThread = &thread;
+    /// Port of `BytesPcodeThread(String, AbstractPcodeMachine<byte[]>)`, which is
+    /// `super(name, machine)`: see [`ModifiedPcodeThread::new_modified`] for the parameters that
+    /// stand in for what Java's constructor chain reads off the machine.
+    ///
+    /// # Panics
+    ///
+    /// If the language has no program counter, as Java's `Objects.requireNonNull` throws.
+    pub fn new_bytes(
+        name: impl Into<String>,
+        machine: Arc<PcodeMachineShared<Vec<u8>>>,
+        exec_language: Arc<dyn Language>,
+        shared_state: SharedPcodeExecutorState<BytesState>,
+        local_state: BytesState,
+        decoder: Box<dyn InstructionDecoder>,
+        modifier: Option<Arc<dyn PcodeStateModifier>>,
+    ) -> Self {
+        Self::new_modified(name, machine, exec_language, shared_state, local_state, decoder, modifier)
     }
 }

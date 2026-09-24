@@ -478,9 +478,6 @@ mod tests {
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             create_local_state(self, thread, &self.factory)
         }
-        fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
-            create_thread(self, name, &self.factory)
-        }
     
         /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
         fn as_pcode_machine(&self) -> &dyn PcodeMachine<(Vec<u8>, i64)> {
@@ -506,18 +503,6 @@ mod tests {
         }
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<(Vec<u8>, i64)> {
             self.base.get_stub_userop_library()
-        }
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            AbstractPcodeMachineBase::new_thread(self)
-        }
-        fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
-            AbstractPcodeMachineBase::new_thread_named(self, name)
-        }
-        fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>> {
-            AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
-        }
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            self.base.get_all_threads()
         }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<(Vec<u8>, i64)> {
             self.base
@@ -546,7 +531,7 @@ mod tests {
         fn get_inject(
             &self,
             address: &crate::program::model::address::Address,
-        ) -> Option<&crate::pcode::exec::pcode_program::PcodeProgram> {
+        ) -> Option<Arc<crate::pcode::exec::pcode_program::PcodeProgram>> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &crate::program::model::address::Address) {

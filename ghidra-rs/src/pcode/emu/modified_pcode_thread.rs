@@ -48,7 +48,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
+use crate::pcode::emu::abstract_pcode_machine::PcodeMachineShared;
 use crate::pcode::emu::default_pcode_thread::{DefaultPcodeThread, ThreadCore, ThreadHooks};
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 #[allow(deprecated)]
@@ -348,7 +348,7 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn new_modified(
         name: impl Into<String>,
-        machine: Arc<dyn AbstractPcodeMachine<T>>,
+        machine: Arc<PcodeMachineShared<T>>,
         exec_language: Arc<dyn Language>,
         shared_state: S,
         local_state: L,
@@ -376,6 +376,7 @@ where
 #[allow(deprecated)]
 mod tests {
     use super::*;
+    use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
     use crate::pcode::emu::pcode_machine::PcodeMachine;
     use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
     use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
@@ -615,9 +616,6 @@ mod tests {
         ) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
             Box::new(MapState::default())
         }
-        fn create_thread(&self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
         fn as_pcode_machine(&self) -> &dyn PcodeMachine<Vec<u8>> {
             self
         }
@@ -642,22 +640,6 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<Vec<u8>> {
             self.base.get_stub_userop_library()
         }
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn new_thread_named(&mut self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_thread(
-            &mut self,
-            _name: &str,
-            _create_if_absent: bool,
-        ) -> Option<Arc<dyn ErasedPcodeThread>> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            self.base.get_all_threads()
-        }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<Vec<u8>> {
             unimplemented!("not exercised by these tests")
         }
@@ -676,7 +658,7 @@ mod tests {
         fn inject(&mut self, _address: &Address, _source: &str) {
             unimplemented!("not exercised by these tests")
         }
-        fn get_inject(&self, address: &Address) -> Option<&crate::pcode::exec::pcode_program::PcodeProgram> {
+        fn get_inject(&self, address: &Address) -> Option<Arc<crate::pcode::exec::pcode_program::PcodeProgram>> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &Address) {
@@ -1016,7 +998,7 @@ mod tests {
 
         let thread = ModifiedPcodeThread::new_modified(
             "Thread 0",
-            Arc::clone(&machine) as Arc<dyn AbstractPcodeMachine<Vec<u8>>>,
+            Arc::clone(machine.base().shared()),
             Arc::new(ExecLanguage { user_ops: vec!["my_modifier_op"] }),
             shared,
             local,
@@ -1109,7 +1091,7 @@ mod tests {
 
         let mut thread = ModifiedPcodeThread::new_modified(
             "Thread 0",
-            Arc::clone(&machine) as Arc<dyn AbstractPcodeMachine<Vec<u8>>>,
+            Arc::clone(machine.base().shared()),
             Arc::new(ExecLanguage { user_ops: vec![] }),
             shared,
             local,

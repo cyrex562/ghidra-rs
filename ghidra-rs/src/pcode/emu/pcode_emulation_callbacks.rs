@@ -79,7 +79,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// A new thread has just been created.
     ///
     /// The thread is fully constructed. This callback may access it.
-    fn thread_created(&self, _thread: &Arc<dyn ErasedPcodeThread>) {}
+    fn thread_created(&self, _thread: &dyn ErasedPcodeThread) {}
 
     /// The emulator is preparing to decode an instruction, but is checking for injected overrides
     /// first.

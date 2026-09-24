@@ -4,7 +4,7 @@
 
 use std::sync::{Arc, MutexGuard};
 
-use crate::pcode::emu::pcode_machine::PcodeMachine;
+use crate::pcode::emu::abstract_pcode_machine::PcodeMachineShared;
 use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
@@ -29,11 +29,9 @@ use crate::program::model::listing::Instruction;
 /// * Java's *generic method* parameters over an unknown `T`, e.g.
 ///   `PcodeStateInitializer.initializeThread(PcodeThread<T>)`. Making those methods generic in Rust
 ///   would cost their enclosing traits object safety, which an extension point cannot afford.
-/// * Java parameterizations that the Rust port cannot yet spell or does not need, e.g.
-///   `AuxEmulatorPartsFactory`'s `PcodeThread<Pair<byte[], U>>`, and the machine-side thread
-///   handles (`PcodeMachine::new_thread` and friends) whose concrete implementations
-///   (`BytesPcodeThread`, `DefaultPcodeThread`) are not ported yet. Those signatures can be
-///   tightened to `dyn PcodeThread<T>` once a real thread implementation exists to satisfy them.
+/// * Java parameterizations that the Rust port does not need, e.g. `AuxEmulatorPartsFactory`'s
+///   `PcodeThread<Pair<byte[], U>>`. (Machines hand out their threads typed; see
+///   [`PcodeMachineThreads`](crate::pcode::emu::pcode_machine::PcodeMachineThreads).)
 ///
 /// Unlike the placeholder it replaces, this is not bound `Send + Sync`: a thread owns its current
 /// [`PcodeFrame`], which holds an `Arc<dyn Language>` and is therefore neither, so no faithful
@@ -53,14 +51,12 @@ pub trait ErasedPcodeThread {
     /// concrete thread types actually have somewhere to route the call.
     ///
     /// The default panics, matching this crate's convention for call paths that reach a thread
-    /// type with no real stepping behavior to give (e.g. [`BytesPcodeThread`]'s current
-    /// marker-only state, or any test mock that never needs to be stepped). Types that do carry
-    /// real state -- [`DefaultPcodeThread`], [`ModifiedPcodeThread`] -- override these to forward
-    /// to their own [`PcodeThread::step_instruction`] etc.
+    /// type with no real stepping behavior to give (e.g. a thread's core standing for it in a
+    /// callback mid-step, or any test mock that never needs to be stepped). Types that do carry
+    /// real state -- [`DefaultPcodeThread`] and so every thread built on it -- override these to
+    /// forward to their own [`PcodeThread::step_instruction`] etc.
     ///
-    /// [`BytesPcodeThread`]: crate::pcode::emu::bytes_pcode_thread::BytesPcodeThread
     /// [`DefaultPcodeThread`]: crate::pcode::emu::default_pcode_thread::DefaultPcodeThread
-    /// [`ModifiedPcodeThread`]: crate::pcode::emu::modified_pcode_thread::ModifiedPcodeThread
     fn erased_step_instruction(&mut self) {
         unimplemented!("this ErasedPcodeThread does not support type-erased stepping")
     }
@@ -99,7 +95,11 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     fn get_name(&self) -> &str;
 
     /// Get the machine within which this thread executes.
-    fn get_machine(&self) -> &dyn PcodeMachine<T>;
+    ///
+    /// A thread holds the part of its machine that the machine shares with its threads, not the
+    /// machine object itself, which owns the thread; see
+    /// [`PcodeMachineShared`]'s module docs.
+    fn get_machine(&self) -> &PcodeMachineShared<T>;
 
     /// Set the thread's program counter without writing to its executor state.
     ///
@@ -280,7 +280,7 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     /// call [`finish_instruction`](Self::finish_instruction) or
     /// [`drop_instruction`](Self::drop_instruction).
     ///
-    /// See [`PcodeMachine::set_suspended`].
+    /// See [`PcodeMachine::set_suspended`](crate::pcode::emu::pcode_machine::PcodeMachine::set_suspended).
     fn set_suspended(&mut self, suspended: bool);
 
     /// Check the suspension state of the thread's executor.
@@ -292,7 +292,7 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     /// Get the thread's p-code arithmetic.
     ///
     /// Returns an owned handle rather than a borrow, matching
-    /// [`PcodeMachine::get_arithmetic`]: the arithmetic outlives any single borrow of the thread.
+    /// [`PcodeMachine::get_arithmetic`](crate::pcode::emu::pcode_machine::PcodeMachine::get_arithmetic): the arithmetic outlives any single borrow of the thread.
     fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>>;
 
     /// Get the thread's p-code executor.
@@ -310,7 +310,7 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     /// Get the thread's memory and register state.
     ///
     /// The memory part of this state is shared among all threads in the same machine. See
-    /// [`PcodeMachine::get_shared_state`].
+    /// [`PcodeMachine::get_shared_state`](crate::pcode::emu::pcode_machine::PcodeMachine::get_shared_state).
     ///
     /// Java hands back the state itself and lets callers both read and write it. A thread shares
     /// that one state with its [`PcodeExecutor`], which holds it behind a `Mutex` (see
@@ -321,7 +321,7 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
 
     /// Override the p-code at the given address with the given Sleigh source for only this thread.
     ///
-    /// This works the same as [`PcodeMachine::inject`] but on a per-thread basis. Where there is
+    /// This works the same as [`PcodeMachine::inject`](crate::pcode::emu::pcode_machine::PcodeMachine::inject) but on a per-thread basis. Where there is
     /// both a machine-level and thread-level inject, the thread inject takes precedence.
     /// Furthermore, the machine-level inject cannot be accessed by the thread-level inject.
     fn inject(&mut self, address: &Address, source: &str);
@@ -453,7 +453,7 @@ mod tests {
             &self.name
         }
 
-        fn get_machine(&self) -> &dyn PcodeMachine<Vec<u8>> {
+        fn get_machine(&self) -> &PcodeMachineShared<Vec<u8>> {
             unimplemented!("test should not call this")
         }
 

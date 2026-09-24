@@ -9,27 +9,44 @@
 //! "emulator" implies that [`PcodeArithmetic::to_concrete`] never fails for any value in its
 //! state.
 //!
-//! Java's abstract class carries both state and behavior, so this port splits it in two, following
+//! Java's abstract class carries both state and behavior, so this port splits it up, following
 //! the convention already used by
 //! [`AbstractBytesPcodeExecutorStatePiece`](crate::pcode::exec::abstract_bytes_pcode_executor_state_piece):
 //!
-//! * [`AbstractPcodeMachineBase`] holds the fields and the concrete behavior. Behavior that Java
-//!   expresses with a virtual call on `this` (e.g. `newThread` calling `createThread`) appears as
-//!   an associated function taking the machine itself, since the base alone cannot dispatch to the
-//!   subclass.
-//! * [`AbstractPcodeMachine`] declares only the operations Java leaves abstract (or overridable
-//!   after construction), plus accessors for the embedded base.
+//! * [`PcodeMachineShared`] holds the fields a machine shares with its threads -- the language,
+//!   arithmetic, libraries, callbacks, software-interrupt mode, suspension flag, injects, and access
+//!   breakpoints -- and the concrete behavior over them. A machine and each of its threads hold it
+//!   through an [`Arc`]; see "Threads" below.
+//! * [`AbstractPcodeMachineBase`] is what the machine alone owns: that shared handle plus the
+//!   lazily created shared (memory) state. It dereferences to [`PcodeMachineShared`]. Behavior that
+//!   Java expresses with a virtual call on `this` (e.g. `getSharedState` calling
+//!   `createSharedState`) appears as an associated function taking the machine itself, since the
+//!   base alone cannot dispatch to the subclass.
+//! * [`AbstractPcodeMachine`] declares the operations Java leaves abstract, plus accessors for the
+//!   embedded base; [`AbstractPcodeMachineThreads`] adds the thread factory and the thread store,
+//!   which are typed by the machine's thread.
 //!
-//! A concrete machine embeds the base, implements this trait, and implements [`PcodeMachine`] by
-//! forwarding each method to the base field method or associated function of the same name.
+//! A concrete machine embeds the base and a [`ThreadList`], implements these traits, and
+//! implements [`PcodeMachine`]/[`PcodeMachineThreads`] by forwarding each method to the base field
+//! method or associated function of the same name.
 //!
-//! Deviations from the Java source, all forced by construction order or by types this crate has
-//! not ported yet:
+//! # Threads
 //!
-//! * `assertSleigh(Language)` has no Rust analogue: `SleighLanguage` is not an implementor of
-//!   [`Language`] here, so there is nothing to downcast. The check it performs -- "Emulation
-//!   requires a sleigh language" -- is instead enforced by [`AbstractPcodeMachineBase::new`]
-//!   taking an `Arc<SleighLanguage>`, i.e. at compile time.
+//! Java's machine holds its threads and each thread holds its machine, a cycle Rust cannot express
+//! with plain ownership. Here the machine owns its threads outright, in its [`ThreadList`], and
+//! hands them out as `&mut` borrows of their concrete type; each thread holds only an
+//! `Arc<PcodeMachineShared<T>>`, the part of the machine a thread actually reads. Because that part
+//! is shared, its mutable members (mode, suspension, injects, breakpoints) are interior-mutable,
+//! which is also what lets a thread suspended from its machine observe it mid-step, as Java's
+//! `volatile` fields do.
+//!
+//! # Deviations from Java
+//!
+//! Forced by construction order or by types this crate has not ported yet:
+//!
+//! * `assertSleigh(Language)` has no Rust analogue: the check it performs -- "Emulation requires a
+//!   sleigh language" -- is instead enforced by [`AbstractPcodeMachineBase::new`] taking an
+//!   `Arc<SleighLanguage>`, i.e. at compile time.
 //! * Java's constructor calls the overridable factories `createArithmetic`,
 //!   `createUseropLibrary`, and `createThreadStubLibrary` on a half-built `this`. Rust has no
 //!   such call, so those three products are parameters of [`AbstractPcodeMachineBase::new`]; the
@@ -44,16 +61,15 @@
 //! * Java's `getSharedState()` creates the state on first call. Creating it mutates the machine,
 //!   so the lazy path is [`AbstractPcodeMachineBase::get_shared_state`], which takes `&mut`;
 //!   [`AbstractPcodeMachineBase::shared_state`] is the read-only view, empty until then.
-//! * `threadsView`, Java's unmodifiable wrapper around the thread map, has no purpose here: the
-//!   base's `threads` field is private and [`AbstractPcodeMachineBase::get_all_threads`] hands
-//!   back handles, not the collection.
 //! * `checkLoad`/`checkStore`/`swi` throw `InterruptPcodeExecutionException`; here they return it
 //!   as an `Err`.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::ops::Deref;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, RwLock};
 
-use crate::pcode::emu::pcode_machine::{AccessKind, PcodeMachine, SwiMode};
+use crate::pcode::emu::pcode_machine::{AccessKind, PcodeMachine, PcodeMachineThreads, SwiMode};
 use crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
@@ -93,93 +109,30 @@ pub fn get_pluggable_initializer(
         .cloned()
 }
 
-/// The shared state and concrete behavior of a p-code machine.
+/// The part of a p-code machine its threads share with it.
 ///
-/// `T` is the type of objects in the machine's state.
-pub struct AbstractPcodeMachineBase<T: 'static> {
+/// See the module docs. `T` is the type of objects in the machine's state.
+pub struct PcodeMachineShared<T: 'static> {
     language: Arc<SleighLanguage>,
     arithmetic: Arc<dyn PcodeArithmetic<T>>,
     library: Box<dyn PcodeUseropLibrary<T>>,
     stub_library: Box<dyn PcodeUseropLibrary<T>>,
     /// Java mutates this from `stepped()`, which a thread calls on the machine it is stepping
-    /// within. A thread reaches its machine only through a shared handle (see
-    /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread)'s module
-    /// docs), i.e. through `&`, so the mode is interior-mutable and
-    /// [`stepped`](Self::stepped) takes `&self`.
+    /// within, through this shared handle.
     swi_mode: Mutex<SwiMode>,
     /// The pluggable initializer, if any, found for this machine's language. Java gives this
     /// package-private visibility "for abstract thread access"; threads live in the same module
     /// tree here, so it is public.
     pub initializer: Option<Arc<dyn PcodeStateInitializer>>,
-    shared_state: Option<Box<dyn PcodeExecutorState<T>>>,
-    /// Java uses a `LinkedHashMap`, i.e. keyed by name but iterated in insertion order. Machines
-    /// hold a handful of threads, so a vector of pairs gives the same two behaviors without a
-    /// second collection.
-    threads: Vec<(String, Arc<dyn ErasedPcodeThread>)>,
     /// Java declares this `volatile`, for a thread suspending a machine another thread is
-    /// stepping. [`PcodeMachine::set_suspended`] takes `&mut self`, so exclusive access is already
-    /// required to write it and a plain `bool` suffices.
-    suspended: bool,
-    injects: HashMap<Address, PcodeProgram>,
-    access_breakpoints: SparseAddressRangeMap<AccessKind>,
+    /// stepping.
+    suspended: AtomicBool,
+    injects: RwLock<HashMap<Address, Arc<PcodeProgram>>>,
+    access_breakpoints: RwLock<SparseAddressRangeMap<AccessKind>>,
     cb: Arc<dyn PcodeEmulationCallbacks<T>>,
 }
 
-impl<T: 'static> AbstractPcodeMachineBase<T> {
-    /// Construct the base of a p-code machine with the given language and arithmetic.
-    ///
-    /// Port of `AbstractPcodeMachine(Language, PcodeEmulationCallbacks)`. `arithmetic`, `library`,
-    /// and `thread_stub_library` are the products of Java's `createArithmetic()`,
-    /// `createUseropLibrary()`, and `createThreadStubLibrary()`, which it calls on `this` from
-    /// within the constructor; `initializer` is the product of
-    /// [`get_pluggable_initializer`]. The stub library exposed by
-    /// [`get_stub_userop_library`](Self::get_stub_userop_library) is `thread_stub_library`
-    /// composed with `library`, exactly as in Java.
-    ///
-    /// The machine must call [`notify_emulator_created`](Self::notify_emulator_created) once it is
-    /// fully constructed; that is Java's `cb.emulatorCreated(this)`.
-    ///
-    /// The shared state is deliberately *not* created here. See
-    /// [`get_shared_state`](Self::get_shared_state).
-    pub fn new(
-        language: Arc<SleighLanguage>,
-        cb: Arc<dyn PcodeEmulationCallbacks<T>>,
-        arithmetic: Arc<dyn PcodeArithmetic<T>>,
-        library: Box<dyn PcodeUseropLibrary<T>>,
-        thread_stub_library: Box<dyn PcodeUseropLibrary<T>>,
-        initializer: Option<Arc<dyn PcodeStateInitializer>>,
-    ) -> Self {
-        let stub_library = thread_stub_library.compose(library.as_ref());
-        Self {
-            language,
-            arithmetic,
-            library,
-            stub_library,
-            swi_mode: Mutex::new(SwiMode::Active),
-            initializer,
-            shared_state: None,
-            threads: Vec::new(),
-            suspended: false,
-            injects: HashMap::new(),
-            access_breakpoints: SparseAddressRangeMap::new(),
-            cb,
-        }
-    }
-
-    /// Create the userop library shared by all threads in a machine of the given language.
-    ///
-    /// Port of the default `createUseropLibrary()`. `useroplib_ids` and `factories` stand in for
-    /// what Java reads from the language's pspec and discovers on the classpath -- see
-    /// [`create_userop_library_for_language`].
-    pub fn create_userop_library(
-        language: &SleighLanguage,
-        arithmetic: &dyn PcodeArithmetic<T>,
-        useroplib_ids: &str,
-        factories: &[&dyn PcodeUseropLibraryFactory<T>],
-    ) -> Box<dyn PcodeUseropLibrary<T>> {
-        create_userop_library_for_language(language, arithmetic, useroplib_ids, factories)
-    }
-
+impl<T: 'static> PcodeMachineShared<T> {
     /// Get the machine's language. Port of `getLanguage()`.
     pub fn get_language(&self) -> &SleighLanguage {
         &self.language
@@ -208,7 +161,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     }
 
     /// Change the efficacy of p-code breakpoints. Port of `setSoftwareInterruptMode(SwiMode)`.
-    pub fn set_software_interrupt_mode(&mut self, mode: SwiMode) {
+    pub fn set_software_interrupt_mode(&self, mode: SwiMode) {
         *self.swi_mode.lock().expect("swi mode lock poisoned") = mode;
     }
 
@@ -222,71 +175,57 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
         &self.cb
     }
 
-    /// Collect all threads present in the machine, in creation order. Port of `getAllThreads()`.
-    pub fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-        self.threads.iter().map(|(_, t)| Arc::clone(t)).collect()
-    }
-
-    /// Get the thread with the given name, if it is present. This is Java's `threads.get(name)`,
-    /// i.e. `getThread(name, false)`.
-    pub fn get_thread_by_name(&self, name: &str) -> Option<Arc<dyn ErasedPcodeThread>> {
-        self.threads
-            .iter()
-            .find(|(n, _)| n == name)
-            .map(|(_, t)| Arc::clone(t))
-    }
-
-    /// Get the machine's shared (memory) state, if it has been created.
-    ///
-    /// Java's `getSharedState()` creates the state on demand; that path is
-    /// [`get_shared_state`](Self::get_shared_state), which needs `&mut`. This is the read-only
-    /// view, which is `None` until then.
-    pub fn shared_state(&self) -> Option<&dyn PcodeExecutorState<T>> {
-        self.shared_state.as_deref()
-    }
-
     /// Set the suspension state of the machine. Port of `setSuspended(boolean)`.
-    pub fn set_suspended(&mut self, suspended: bool) {
-        self.suspended = suspended;
+    pub fn set_suspended(&self, suspended: bool) {
+        self.suspended.store(suspended, Ordering::SeqCst);
     }
 
     /// Check the suspension state of the machine. Port of `isSuspended()`.
     pub fn is_suspended(&self) -> bool {
-        self.suspended
+        self.suspended.load(Ordering::SeqCst)
     }
 
     /// Check for a p-code injection (override) at the given address. Port of `getInject(Address)`.
-    pub fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
-        self.injects.get(address)
+    ///
+    /// Java hands back the machine's own program; the handle is shared here, since the injects
+    /// live behind a lock.
+    pub fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
+        self.injects.read().expect("injects lock poisoned").get(address).cloned()
     }
 
     /// Record the given compiled p-code as the inject at the given address, replacing and
     /// forgetting any inject already there. This is Java's `injects.put(address, pcode)`, shared
     /// by `inject` and `addBreakpoint`.
-    pub fn put_inject(&mut self, address: Address, pcode: PcodeProgram) {
-        self.injects.insert(address, pcode);
+    pub fn put_inject(&self, address: Address, pcode: PcodeProgram) {
+        self.injects
+            .write()
+            .expect("injects lock poisoned")
+            .insert(address, Arc::new(pcode));
     }
 
     /// Remove the inject, if present, at the given address. Port of `clearInject(Address)`.
-    pub fn clear_inject(&mut self, address: &Address) {
-        self.injects.remove(address);
+    pub fn clear_inject(&self, address: &Address) {
+        self.injects.write().expect("injects lock poisoned").remove(address);
     }
 
     /// Remove all injects from this machine. Port of `clearAllInjects()`. This clears execution
     /// breakpoints, but not access breakpoints.
-    pub fn clear_all_injects(&mut self) {
-        self.injects.clear();
+    pub fn clear_all_injects(&self) {
+        self.injects.write().expect("injects lock poisoned").clear();
     }
 
     /// Add an access breakpoint over the given range. Port of
     /// `addAccessBreakpoint(AddressRange, AccessKind)`.
-    pub fn add_access_breakpoint(&mut self, range: &AddressRange, kind: AccessKind) {
-        self.access_breakpoints.put(range.clone(), kind);
+    pub fn add_access_breakpoint(&self, range: &AddressRange, kind: AccessKind) {
+        self.access_breakpoints
+            .write()
+            .expect("breakpoints lock poisoned")
+            .put(range.clone(), kind);
     }
 
     /// Remove all access breakpoints from this machine. Port of `clearAccessBreakpoints()`.
-    pub fn clear_access_breakpoints(&mut self) {
-        self.access_breakpoints.clear();
+    pub fn clear_access_breakpoints(&self) {
+        self.access_breakpoints.write().expect("breakpoints lock poisoned").clear();
     }
 
     /// Compile the given Sleigh code for execution by a thread of this machine, linking it against
@@ -297,26 +236,6 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
             source_name,
             source,
             self.stub_library.as_ref(),
-        )
-    }
-
-    /// The source name Java gives an inject compiled for the given address: `"machine_inject:"`
-    /// followed by the address.
-    pub fn inject_source_name(address: &Address) -> String {
-        format!("machine_inject:{address}")
-    }
-
-    /// The source name Java gives a breakpoint compiled for the given address: `"breakpoint:"`
-    /// followed by the address.
-    pub fn breakpoint_source_name(address: &Address) -> String {
-        format!("breakpoint:{address}")
-    }
-
-    /// The Sleigh source Java compiles for a conditional execution breakpoint: swi when the
-    /// condition holds, then execute the overridden instruction either way.
-    pub fn breakpoint_source(sleigh_condition: &str) -> String {
-        format!(
-            "if (!({sleigh_condition})) goto <nobreak>;\n\temu_swi();\n<nobreak>\n\temu_exec_decoded();\n"
         )
     }
 
@@ -350,7 +269,8 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
         offset: &T,
         traps: fn(AccessKind) -> bool,
     ) -> Result<(), InterruptPcodeExecutionException> {
-        if self.access_breakpoints.is_empty() {
+        let breakpoints = self.access_breakpoints.read().expect("breakpoints lock poisoned");
+        if breakpoints.is_empty() {
             return Ok(());
         }
         // Java uses Purpose.LOAD for the store check too.
@@ -363,7 +283,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
             // range can contain it. (Java lets the AddressOutOfBoundsException propagate.)
             return Ok(());
         };
-        if self.access_breakpoints.has_entry(&address, |kind| traps(*kind)) {
+        if breakpoints.has_entry(&address, |kind| traps(*kind)) {
             return Err(InterruptPcodeExecutionException::new_without_frame());
         }
         Ok(())
@@ -384,6 +304,114 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
         if *swi_mode == SwiMode::IgnoreStep {
             *swi_mode = SwiMode::Active;
         }
+    }
+}
+
+/// The part of a p-code machine the machine alone owns: its handle on what it shares with its
+/// threads, and its shared (memory) state.
+///
+/// Dereferences to [`PcodeMachineShared`]. `T` is the type of objects in the machine's state.
+pub struct AbstractPcodeMachineBase<T: 'static> {
+    shared: Arc<PcodeMachineShared<T>>,
+    shared_state: Option<Box<dyn PcodeExecutorState<T>>>,
+}
+
+impl<T: 'static> Deref for AbstractPcodeMachineBase<T> {
+    type Target = PcodeMachineShared<T>;
+
+    fn deref(&self) -> &PcodeMachineShared<T> {
+        &self.shared
+    }
+}
+
+impl<T: 'static> AbstractPcodeMachineBase<T> {
+    /// Construct the base of a p-code machine with the given language and arithmetic.
+    ///
+    /// Port of `AbstractPcodeMachine(Language, PcodeEmulationCallbacks)`. `arithmetic`, `library`,
+    /// and `thread_stub_library` are the products of Java's `createArithmetic()`,
+    /// `createUseropLibrary()`, and `createThreadStubLibrary()`, which it calls on `this` from
+    /// within the constructor; `initializer` is the product of
+    /// [`get_pluggable_initializer`]. The stub library exposed by
+    /// [`get_stub_userop_library`](PcodeMachineShared::get_stub_userop_library) is
+    /// `thread_stub_library` composed with `library`, exactly as in Java.
+    ///
+    /// The machine must call [`notify_emulator_created`](Self::notify_emulator_created) once it is
+    /// fully constructed; that is Java's `cb.emulatorCreated(this)`.
+    ///
+    /// The shared state is deliberately *not* created here. See
+    /// [`get_shared_state`](Self::get_shared_state).
+    pub fn new(
+        language: Arc<SleighLanguage>,
+        cb: Arc<dyn PcodeEmulationCallbacks<T>>,
+        arithmetic: Arc<dyn PcodeArithmetic<T>>,
+        library: Box<dyn PcodeUseropLibrary<T>>,
+        thread_stub_library: Box<dyn PcodeUseropLibrary<T>>,
+        initializer: Option<Arc<dyn PcodeStateInitializer>>,
+    ) -> Self {
+        let stub_library = thread_stub_library.compose(library.as_ref());
+        Self {
+            shared: Arc::new(PcodeMachineShared {
+                language,
+                arithmetic,
+                library,
+                stub_library,
+                swi_mode: Mutex::new(SwiMode::Active),
+                initializer,
+                suspended: AtomicBool::new(false),
+                injects: RwLock::new(HashMap::new()),
+                access_breakpoints: RwLock::new(SparseAddressRangeMap::new()),
+                cb,
+            }),
+            shared_state: None,
+        }
+    }
+
+    /// Create the userop library shared by all threads in a machine of the given language.
+    ///
+    /// Port of the default `createUseropLibrary()`. `useroplib_ids` and `factories` stand in for
+    /// what Java reads from the language's pspec and discovers on the classpath -- see
+    /// [`create_userop_library_for_language`].
+    pub fn create_userop_library(
+        language: &SleighLanguage,
+        arithmetic: &dyn PcodeArithmetic<T>,
+        useroplib_ids: &str,
+        factories: &[&dyn PcodeUseropLibraryFactory<T>],
+    ) -> Box<dyn PcodeUseropLibrary<T>> {
+        create_userop_library_for_language(language, arithmetic, useroplib_ids, factories)
+    }
+
+    /// The handle a thread of this machine holds on it.
+    pub fn shared(&self) -> &Arc<PcodeMachineShared<T>> {
+        &self.shared
+    }
+
+    /// Get the machine's shared (memory) state, if it has been created.
+    ///
+    /// Java's `getSharedState()` creates the state on demand; that path is
+    /// [`get_shared_state`](Self::get_shared_state), which needs `&mut`. This is the read-only
+    /// view, which is `None` until then.
+    pub fn shared_state(&self) -> Option<&dyn PcodeExecutorState<T>> {
+        self.shared_state.as_deref()
+    }
+
+    /// The source name Java gives an inject compiled for the given address: `"machine_inject:"`
+    /// followed by the address.
+    pub fn inject_source_name(address: &Address) -> String {
+        format!("machine_inject:{address}")
+    }
+
+    /// The source name Java gives a breakpoint compiled for the given address: `"breakpoint:"`
+    /// followed by the address.
+    pub fn breakpoint_source_name(address: &Address) -> String {
+        format!("breakpoint:{address}")
+    }
+
+    /// The Sleigh source Java compiles for a conditional execution breakpoint: swi when the
+    /// condition holds, then execute the overridden instruction either way.
+    pub fn breakpoint_source(sleigh_condition: &str) -> String {
+        format!(
+            "if (!({sleigh_condition})) goto <nobreak>;\n\temu_swi();\n<nobreak>\n\temu_exec_decoded();\n"
+        )
     }
 
     /// Notify the callbacks that the machine has been created. This is the
@@ -426,8 +454,11 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     }
 
     /// Create a new thread with a default name in this machine. Port of `newThread()`.
-    pub fn new_thread<M: AbstractPcodeMachine<T>>(machine: &mut M) -> Arc<dyn ErasedPcodeThread> {
-        let name = format!("Thread {}", machine.base().threads.len());
+    pub fn new_thread<M>(machine: &mut M) -> &mut M::Thread
+    where
+        M: AbstractPcodeMachineThreads<T>,
+    {
+        let name = format!("Thread {}", machine.threads().len());
         Self::new_thread_named(machine, &name)
     }
 
@@ -436,55 +467,116 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     /// # Panics
     ///
     /// If a thread with the given name already exists, as Java throws `IllegalStateException`.
-    pub fn new_thread_named<M: AbstractPcodeMachine<T>>(
-        machine: &mut M,
-        name: &str,
-    ) -> Arc<dyn ErasedPcodeThread> {
-        if machine.base().get_thread_by_name(name).is_some() {
+    pub fn new_thread_named<'m, M>(machine: &'m mut M, name: &str) -> &'m mut M::Thread
+    where
+        M: AbstractPcodeMachineThreads<T>,
+    {
+        if machine.threads().get(name).is_some() {
             panic!("Thread with name '{name}' already exists");
         }
         let thread = machine.create_thread(name);
-        machine
-            .base_mut()
-            .threads
-            .push((name.to_string(), Arc::clone(&thread)));
         let cb = Arc::clone(&machine.base().cb);
-        cb.thread_created(&thread);
+        let thread = machine.threads_mut().push(name, thread);
+        cb.thread_created(&*thread);
         thread
     }
 
     /// Get the thread, if present, with the given name, creating it if `create_if_absent`. Port of
     /// `getThread(String, boolean)`.
-    pub fn get_thread<M: AbstractPcodeMachine<T>>(
-        machine: &mut M,
+    pub fn get_thread<'m, M>(
+        machine: &'m mut M,
         name: &str,
         create_if_absent: bool,
-    ) -> Option<Arc<dyn ErasedPcodeThread>> {
-        match machine.base().get_thread_by_name(name) {
-            Some(thread) => Some(thread),
-            None if create_if_absent => Some(Self::new_thread_named(machine, name)),
-            None => None,
+    ) -> Option<&'m mut M::Thread>
+    where
+        M: AbstractPcodeMachineThreads<T>,
+    {
+        if machine.threads().get(name).is_some() {
+            return machine.threads_mut().get_mut(name);
         }
+        if create_if_absent {
+            return Some(Self::new_thread_named(machine, name));
+        }
+        None
     }
 
     /// Override the p-code at the given address with the given Sleigh source. Port of
     /// `inject(Address, String)`.
-    pub fn inject<M: AbstractPcodeMachine<T>>(machine: &mut M, address: &Address, source: &str) {
+    pub fn inject<M: AbstractPcodeMachine<T>>(machine: &M, address: &Address, source: &str) {
         let pcode = machine.compile_sleigh(&Self::inject_source_name(address), source);
-        machine.base_mut().put_inject(address.clone(), pcode);
+        machine.base().put_inject(address.clone(), pcode);
     }
 
     /// Add a conditional execution breakpoint at the given address. Port of
     /// `addBreakpoint(Address, String)`. Breakpoints are implemented as injects, so this replaces
     /// any inject already at the address.
     pub fn add_breakpoint<M: AbstractPcodeMachine<T>>(
-        machine: &mut M,
+        machine: &M,
         address: &Address,
         sleigh_condition: &str,
     ) {
         let source = Self::breakpoint_source(sleigh_condition);
         let pcode = machine.compile_sleigh(&Self::breakpoint_source_name(address), &source);
-        machine.base_mut().put_inject(address.clone(), pcode);
+        machine.base().put_inject(address.clone(), pcode);
+    }
+}
+
+/// A machine's threads, keyed by name and kept in creation order.
+///
+/// Port of `AbstractPcodeMachine.threads`. Java uses a `LinkedHashMap`, i.e. keyed by name but
+/// iterated in insertion order; machines hold a handful of threads, so a vector of pairs gives the
+/// same two behaviors without a second collection. The machine owns its threads here and lends
+/// them out; see the module docs.
+pub struct ThreadList<Th> {
+    threads: Vec<(String, Th)>,
+}
+
+impl<Th> Default for ThreadList<Th> {
+    fn default() -> Self {
+        Self { threads: Vec::new() }
+    }
+}
+
+impl<Th> ThreadList<Th> {
+    /// An empty list.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// The number of threads.
+    pub fn len(&self) -> usize {
+        self.threads.len()
+    }
+
+    /// Whether there are no threads.
+    pub fn is_empty(&self) -> bool {
+        self.threads.is_empty()
+    }
+
+    /// The thread with the given name, if present. Java's `threads.get(name)`.
+    pub fn get(&self, name: &str) -> Option<&Th> {
+        self.threads.iter().find(|(n, _)| n == name).map(|(_, t)| t)
+    }
+
+    /// The thread with the given name, if present, for writing.
+    pub fn get_mut(&mut self, name: &str) -> Option<&mut Th> {
+        self.threads.iter_mut().find(|(n, _)| n == name).map(|(_, t)| t)
+    }
+
+    /// Add a thread under the given name, returning it. The caller checks the name is fresh.
+    pub fn push(&mut self, name: &str, thread: Th) -> &mut Th {
+        self.threads.push((name.to_string(), thread));
+        &mut self.threads.last_mut().expect("just pushed").1
+    }
+
+    /// All threads, in creation order. Java's `threadsView.values()`.
+    pub fn all(&self) -> Vec<&Th> {
+        self.threads.iter().map(|(_, t)| t).collect()
+    }
+
+    /// All threads, in creation order, for writing.
+    pub fn all_mut(&mut self) -> impl Iterator<Item = &mut Th> {
+        self.threads.iter_mut().map(|(_, t)| t)
     }
 }
 
@@ -510,22 +602,36 @@ pub trait AbstractPcodeMachine<T: 'static>: PcodeMachine<T> {
     /// Port of the abstract `createLocalState(PcodeThread<T>)`.
     fn create_local_state(&self, thread: &dyn ErasedPcodeThread) -> Box<dyn PcodeExecutorState<T>>;
 
-    /// A factory method to create a new thread in this machine.
-    ///
-    /// Port of `createThread(String)`. Java defaults it to `new DefaultPcodeThread<>(name, this)`.
-    /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) needs a
-    /// shared handle to its machine, which `&self` cannot produce, so every machine supplies its
-    /// own.
-    fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread>;
-
     /// This machine as a plain [`PcodeMachine`].
     ///
-    /// Java gets this for free by subtyping; a
-    /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) holds
-    /// its machine as an `Arc<dyn AbstractPcodeMachine<T>>` but must answer
-    /// [`PcodeThread::get_machine`](crate::pcode::emu::pcode_thread::PcodeThread::get_machine) with
-    /// the supertrait object. Every implementor's body is `self`.
+    /// Java gets this for free by subtyping. Every implementor's body is `self`.
     fn as_pcode_machine(&self) -> &dyn PcodeMachine<T>;
+}
+
+/// The thread factory and thread store of `AbstractPcodeMachine`, which are typed by the machine's
+/// thread.
+///
+/// Split from [`AbstractPcodeMachine`] for the reason [`PcodeMachineThreads`] is split from
+/// [`PcodeMachine`]: a `dyn AbstractPcodeMachine<T>` (e.g. an `AuxPcodeEmulator`) could not name
+/// the thread type.
+pub trait AbstractPcodeMachineThreads<T: 'static>:
+    AbstractPcodeMachine<T> + PcodeMachineThreads<T>
+{
+    /// A factory method to create a new thread in this machine.
+    ///
+    /// Port of `createThread(String)`. Java defaults it to `new DefaultPcodeThread<>(name, this)`;
+    /// the thread takes its handle on the machine from
+    /// [`AbstractPcodeMachineBase::shared`].
+    ///
+    /// Takes `&mut self` because Java's thread constructor reads the machine's shared state,
+    /// creating it on the first thread ([`AbstractPcodeMachineBase::get_shared_state`]).
+    fn create_thread(&mut self, name: &str) -> Self::Thread;
+
+    /// The machine's threads.
+    fn threads(&self) -> &ThreadList<Self::Thread>;
+
+    /// The machine's threads, for writing.
+    fn threads_mut(&mut self) -> &mut ThreadList<Self::Thread>;
 }
 
 #[cfg(test)]
@@ -533,6 +639,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use super::*;
+    use crate::pcode::emu::pcode_machine::PcodeMachineThreads;
     use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
     use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_userop_library::nil;
@@ -663,6 +770,113 @@ mod tests {
 
     impl ErasedPcodeThread for NamedThread {}
 
+    impl crate::pcode::emu::pcode_thread::PcodeThread<Vec<u8>> for NamedThread {
+        type SharedState = EmptyState;
+        type LocalState = EmptyState;
+        fn get_name(&self) -> &str {
+            &self.0
+        }
+        fn get_machine(&self) -> &PcodeMachineShared<Vec<u8>> {
+            unimplemented!("test should not call this")
+        }
+        fn set_counter(&mut self, _counter: &Address) {
+            unimplemented!("test should not call this")
+        }
+        fn get_counter(&self) -> Address {
+            unimplemented!("test should not call this")
+        }
+        fn override_counter(&mut self, _counter: &Address) {
+            unimplemented!("test should not call this")
+        }
+        fn assign_context(&mut self, _context: &dyn crate::pcode::seam_stubs::RegisterValue) {
+            unimplemented!("test should not call this")
+        }
+        fn get_context(&self) -> Option<&dyn crate::pcode::seam_stubs::RegisterValue> {
+            unimplemented!("test should not call this")
+        }
+        fn override_context(&mut self, _context: &dyn crate::pcode::seam_stubs::RegisterValue) {
+            unimplemented!("test should not call this")
+        }
+        fn override_context_with_default(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn re_initialize(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn step_instruction(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn step_pcode_op(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn skip_pcode_op(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn step_patch(&mut self, _sleigh: &str) {
+            unimplemented!("test should not call this")
+        }
+        fn get_frame(&self) -> Option<&crate::pcode::exec::pcode_frame::PcodeFrame> {
+            unimplemented!("test should not call this")
+        }
+        fn get_instruction(&self) -> Option<Arc<dyn crate::program::model::listing::Instruction>> {
+            unimplemented!("test should not call this")
+        }
+        fn execute_instruction(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn finish_instruction(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn skip_instruction(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn drop_instruction(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn run(&mut self) {
+            unimplemented!("test should not call this")
+        }
+        fn set_suspended(&mut self, _suspended: bool) {
+            unimplemented!("test should not call this")
+        }
+        fn is_suspended(&self) -> bool {
+            unimplemented!("test should not call this")
+        }
+        fn get_language(&self) -> &SleighLanguage {
+            unimplemented!("test should not call this")
+        }
+        fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+            unimplemented!("test should not call this")
+        }
+        fn get_executor(&self) -> &crate::pcode::exec::pcode_executor::PcodeExecutor<Vec<u8>> {
+            unimplemented!("test should not call this")
+        }
+        fn get_userop_library(&self) -> &dyn PcodeUseropLibrary<Vec<u8>> {
+            unimplemented!("test should not call this")
+        }
+        fn get_state(
+            &self,
+        ) -> std::sync::MutexGuard<
+            '_,
+            crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState<
+                Vec<u8>,
+                EmptyState,
+                EmptyState,
+            >,
+        > {
+            unimplemented!("test should not call this")
+        }
+        fn inject(&mut self, _address: &Address, _source: &str) {
+            unimplemented!("test should not call this")
+        }
+        fn clear_inject(&mut self, _address: &Address) {
+            unimplemented!("test should not call this")
+        }
+        fn clear_all_injects(&mut self) {
+            unimplemented!("test should not call this")
+        }
+    }
+
     /// Records every callback the machine fires, in order.
     #[derive(Default)]
     struct RecordingCallbacks {
@@ -678,7 +892,7 @@ mod tests {
             self.events.lock().unwrap().push("sharedStateCreated".into());
         }
 
-        fn thread_created(&self, _thread: &Arc<dyn ErasedPcodeThread>) {
+        fn thread_created(&self, _thread: &dyn ErasedPcodeThread) {
             self.events.lock().unwrap().push("threadCreated".into());
         }
     }
@@ -764,6 +978,7 @@ mod tests {
         base: AbstractPcodeMachineBase<Vec<u8>>,
         shared_states_created: Mutex<u32>,
         compiled: Mutex<Vec<(String, String)>>,
+        threads: ThreadList<NamedThread>,
     }
 
     impl TestMachine {
@@ -779,6 +994,7 @@ mod tests {
                 ),
                 shared_states_created: Mutex::new(0),
                 compiled: Mutex::new(Vec::new()),
+                threads: ThreadList::new(),
             };
             AbstractPcodeMachineBase::notify_emulator_created(&machine);
             machine
@@ -813,15 +1029,39 @@ mod tests {
             Box::new(EmptyState)
         }
 
-        fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
-            Arc::new(NamedThread(name.to_string()))
-        }
-    
         /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
         fn as_pcode_machine(&self) -> &dyn PcodeMachine<Vec<u8>> {
             self
         }
-}
+    }
+
+    impl AbstractPcodeMachineThreads<Vec<u8>> for TestMachine {
+        fn create_thread(&mut self, name: &str) -> NamedThread {
+            NamedThread(name.to_string())
+        }
+        fn threads(&self) -> &ThreadList<NamedThread> {
+            &self.threads
+        }
+        fn threads_mut(&mut self) -> &mut ThreadList<NamedThread> {
+            &mut self.threads
+        }
+    }
+
+    impl PcodeMachineThreads<Vec<u8>> for TestMachine {
+        type Thread = NamedThread;
+        fn new_thread(&mut self) -> &mut NamedThread {
+            AbstractPcodeMachineBase::new_thread(self)
+        }
+        fn new_thread_named(&mut self, name: &str) -> &mut NamedThread {
+            AbstractPcodeMachineBase::new_thread_named(self, name)
+        }
+        fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<&mut NamedThread> {
+            AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
+        }
+        fn get_all_threads(&self) -> Vec<&NamedThread> {
+            self.threads.all()
+        }
+    }
 
     impl PcodeMachine<Vec<u8>> for TestMachine {
         fn get_language(&self) -> &SleighLanguage {
@@ -841,22 +1081,6 @@ mod tests {
         }
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<Vec<u8>> {
             self.base.get_stub_userop_library()
-        }
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            AbstractPcodeMachineBase::new_thread(self)
-        }
-        fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
-            AbstractPcodeMachineBase::new_thread_named(self, name)
-        }
-        fn get_thread(
-            &mut self,
-            name: &str,
-            create_if_absent: bool,
-        ) -> Option<Arc<dyn ErasedPcodeThread>> {
-            AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
-        }
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            self.base.get_all_threads()
         }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<Vec<u8>> {
             self.base
@@ -884,7 +1108,7 @@ mod tests {
         fn inject(&mut self, address: &Address, source: &str) {
             AbstractPcodeMachineBase::inject(self, address, source);
         }
-        fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
+        fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &Address) {
@@ -957,7 +1181,7 @@ mod tests {
         // Field initializers: swiMode = ACTIVE, suspended = false, no threads, no injects.
         assert_eq!(SwiMode::Active, machine.base.get_software_interrupt_mode());
         assert!(!machine.base.is_suspended());
-        assert!(machine.base.get_all_threads().is_empty());
+        assert!(machine.threads.is_empty());
         assert!(machine.base.shared_state().is_none());
         // "Do not initialize memoryState here" -- createSharedState has not run.
         assert_eq!(0, *machine.shared_states_created.lock().unwrap());
@@ -1088,20 +1312,21 @@ mod tests {
     fn threads_are_named_and_ordered_like_java() {
         let (mut machine, cb) = machine();
 
-        let first = machine.new_thread();
-        let second = machine.new_thread();
-        // newThread() names threads "Thread " + threads.size().
-        assert_eq!(2, machine.get_all_threads().len());
-        assert!(Arc::ptr_eq(&first, &machine.get_all_threads()[0]));
-        assert!(Arc::ptr_eq(&second, &machine.get_all_threads()[1]));
+        assert_eq!("Thread 0", machine.new_thread().0);
+        assert_eq!("Thread 1", machine.new_thread().0);
+        // newThread() names threads "Thread " + threads.size(), and they are kept in order.
+        let names = |m: &TestMachine| -> Vec<String> {
+            m.get_all_threads().iter().map(|t| t.0.clone()).collect()
+        };
+        assert_eq!(vec!["Thread 0", "Thread 1"], names(&machine));
         assert!(machine.get_thread("Thread 0", false).is_some());
         assert!(machine.get_thread("Thread 1", false).is_some());
 
-        // getThread(name, false) does not create; getThread(name, true) does.
+        // getThread(name, false) does not create; getThread(name, true) does, once.
         assert!(machine.get_thread("worker", false).is_none());
-        let worker = machine.get_thread("worker", true).expect("created on demand");
-        assert!(Arc::ptr_eq(&worker, &machine.get_thread("worker", true).unwrap()));
-        assert_eq!(3, machine.get_all_threads().len());
+        assert_eq!("worker", machine.get_thread("worker", true).expect("created on demand").0);
+        assert_eq!("worker", machine.get_thread("worker", true).unwrap().0);
+        assert_eq!(vec!["Thread 0", "Thread 1", "worker"], names(&machine));
 
         assert_eq!(
             *cb.events.lock().unwrap(),

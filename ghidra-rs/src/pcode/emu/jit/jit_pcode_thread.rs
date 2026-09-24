@@ -333,7 +333,7 @@ impl JitPcodeThread {
         if let Some(inject) = self.injects.lock().expect("injects poisoned").get(address) {
             return Some(copy_program(inject));
         }
-        self.machine.as_ref().and_then(|m| m.get_inject(address).map(copy_program))
+        self.machine.as_ref().and_then(|m| m.get_inject(address).map(|p| copy_program(&p)))
     }
 
     /// Inject p-code, compiled from the given Sleigh source, at the given address.

@@ -368,22 +368,6 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<i64> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn new_thread_named(&mut self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn get_thread(
-            &mut self,
-            _name: &str,
-            _create_if_absent: bool,
-        ) -> Option<Arc<dyn ErasedPcodeThread>> {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            unimplemented!("not exercised by this smoke test")
-        }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<i64> {
             unimplemented!("not exercised by this smoke test")
         }
@@ -402,7 +386,7 @@ mod tests {
         fn inject(&mut self, _address: &Address, _source: &str) {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_inject(&self, _address: &Address) -> Option<&PcodeProgram> {
+        fn get_inject(&self, _address: &Address) -> Option<Arc<PcodeProgram>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn clear_inject(&mut self, _address: &Address) {

@@ -50,10 +50,12 @@
 //!   `self` -- this emulator -- so they dispatch to *this* type's factories, as virtual dispatch
 //!   does in Java.
 //! * Java's `newThread()`/`newThread(String)` overrides exist only to narrow the return type from
-//!   `PcodeThread<byte[]>` to `JitPcodeThread`. Rust has no covariant return, so they are not
-//!   ported; [`PcodeMachine::new_thread`] and [`PcodeMachine::new_thread_named`] are the whole
-//!   behavior. Likewise `createUseropLibrary()`, whose Java override is a bare `super` call added
-//!   only to carry javadoc.
+//!   `PcodeThread<byte[]>` to `JitPcodeThread`. The machine's threads are typed here, so they are
+//!   ported as [`JitPcodeEmulator::new_thread`] and friends, inherent rather than
+//!   [`PcodeMachineThreads`](crate::pcode::emu::pcode_machine::PcodeMachineThreads) methods
+//!   because [`JitPcodeThread`] does not (yet) implement
+//!   [`PcodeThread`](crate::pcode::emu::pcode_thread::PcodeThread) -- see its module docs.
+//!   `createUseropLibrary()`'s Java override is a bare `super` call added only to carry javadoc.
 //! * The `lookup` field (a JVM `MethodHandles.Lookup`) and the `Lookup` parameter of
 //!   `JitCompiler.compilePassage` are dropped. They exist to define the generated classfile as a
 //!   hidden class and to reach non-public elements reflectively; this crate has no JVM, as
@@ -80,7 +82,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex};
 
-use crate::pcode::emu::abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase};
+use crate::pcode::emu::abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase, ThreadList};
 use crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder;
 use crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass;
 use crate::pcode::emu::pcode_emulation_callbacks::{
@@ -196,6 +198,8 @@ pub struct JitPcodeEmulator {
     /// code, changes to the memory map, and injects added after execution starts would all be
     /// reasons to want it.
     code_cache: Mutex<HashMap<AddrCtx, Arc<EntryFuture>>>,
+    /// This emulator's threads. Port of the inherited `threads` field.
+    threads: ThreadList<JitPcodeThread>,
 }
 
 impl JitPcodeEmulator {
@@ -235,6 +239,7 @@ impl JitPcodeEmulator {
             base,
             compiler: JitCompiler::new(config),
             code_cache: Mutex::new(HashMap::new()),
+            threads: ThreadList::new(),
         };
         // Java's `cb.emulatorCreated(this)`, which its constructor cannot run on a half-built
         // `this`.
@@ -398,6 +403,57 @@ impl JitPcodeEmulator {
     }
 }
 
+/// The thread methods Java's `AbstractPcodeMachine` implements over `createThread`, with the
+/// return type narrowed to [`JitPcodeThread`] as Java's overrides narrow it. See the module docs
+/// on why these are inherent.
+impl JitPcodeEmulator {
+    /// Port of the overridden `createThread(String)`, i.e. `new JitPcodeThread(name, this)`.
+    ///
+    /// The thread is built by [`JitPcodeThread::named`]; see its docs for what it cannot yet
+    /// derive from its machine.
+    pub fn create_thread(&self, name: &str) -> JitPcodeThread {
+        JitPcodeThread::named(name)
+    }
+
+    /// Port of `newThread()`: create a thread named `"Thread " + threads.size()`.
+    pub fn new_thread(&mut self) -> &mut JitPcodeThread {
+        let name = format!("Thread {}", self.threads.len());
+        self.new_thread_named(&name)
+    }
+
+    /// Port of `newThread(String)`.
+    ///
+    /// # Panics
+    ///
+    /// If a thread with the given name already exists, as Java throws `IllegalStateException`.
+    pub fn new_thread_named(&mut self, name: &str) -> &mut JitPcodeThread {
+        if self.threads.get(name).is_some() {
+            panic!("Thread with name '{name}' already exists");
+        }
+        let thread = self.create_thread(name);
+        let cb = Arc::clone(self.base.callbacks());
+        let thread = self.threads.push(name, thread);
+        cb.thread_created(&*thread);
+        thread
+    }
+
+    /// Port of `getThread(String, boolean)`.
+    pub fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<&mut JitPcodeThread> {
+        if self.threads.get(name).is_some() {
+            return self.threads.get_mut(name);
+        }
+        if create_if_absent {
+            return Some(self.new_thread_named(name));
+        }
+        None
+    }
+
+    /// Port of `getAllThreads()`.
+    pub fn get_all_threads(&self) -> Vec<&JitPcodeThread> {
+        self.threads.all()
+    }
+}
+
 impl ErasedPcodeMachine for JitPcodeEmulator {}
 
 impl AbstractPcodeMachine<Vec<u8>> for JitPcodeEmulator {
@@ -426,11 +482,6 @@ impl AbstractPcodeMachine<Vec<u8>> for JitPcodeEmulator {
             Arc::clone(self.base().language()),
             NONE,
         ))
-    }
-
-    /// Port of the overridden `createThread(String)`, i.e. `new JitPcodeThread(name, this)`.
-    fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
-        Arc::new(JitPcodeThread::named(name))
     }
 
     /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
@@ -464,26 +515,6 @@ impl PcodeMachine<Vec<u8>> for JitPcodeEmulator {
         self.base.get_stub_userop_library()
     }
 
-    fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-        AbstractPcodeMachineBase::new_thread(self)
-    }
-
-    fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
-        AbstractPcodeMachineBase::new_thread_named(self, name)
-    }
-
-    fn get_thread(
-        &mut self,
-        name: &str,
-        create_if_absent: bool,
-    ) -> Option<Arc<dyn ErasedPcodeThread>> {
-        AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
-    }
-
-    fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-        self.base.get_all_threads()
-    }
-
     fn get_shared_state(&self) -> &dyn PcodeExecutorState<Vec<u8>> {
         self.base
             .shared_state()
@@ -510,7 +541,7 @@ impl PcodeMachine<Vec<u8>> for JitPcodeEmulator {
         AbstractPcodeMachineBase::inject(self, address, source);
     }
 
-    fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
+    fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
         self.base.get_inject(address)
     }
 
@@ -665,6 +696,7 @@ mod tests {
             base,
             compiler: JitCompiler::new(config),
             code_cache: Mutex::new(HashMap::new()),
+            threads: ThreadList::new(),
         };
         AbstractPcodeMachineBase::notify_emulator_created(&emulator);
         emulator
@@ -811,13 +843,12 @@ mod tests {
         // Java: `createThread(name)` is `new JitPcodeThread(name, this)`, and the inherited
         // `newThread()` names threads "Thread " + threads.size().
         let mut emulator = emulator();
-        let first = PcodeMachine::new_thread(&mut emulator);
-        let named = PcodeMachine::new_thread_named(&mut emulator, "worker");
-        assert_eq!(2, emulator.get_all_threads().len());
-        assert!(Arc::ptr_eq(&first, &emulator.get_all_threads()[0]));
-        assert!(Arc::ptr_eq(&named, &emulator.get_all_threads()[1]));
-        assert!(emulator.base.get_thread_by_name("Thread 0").is_some());
-        assert!(emulator.base.get_thread_by_name("worker").is_some());
+        assert_eq!("Thread 0", emulator.new_thread().name());
+        assert_eq!("worker", emulator.new_thread_named("worker").name());
+        let names: Vec<&str> = emulator.get_all_threads().iter().map(|t| t.name()).collect();
+        assert_eq!(vec!["Thread 0", "worker"], names);
+        assert!(emulator.get_thread("Thread 0", false).is_some());
+        assert!(emulator.get_thread("worker", false).is_some());
     }
 
     #[test]

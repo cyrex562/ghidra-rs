@@ -106,11 +106,18 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
 
     /// Create a thread with the given name.
     ///
-    /// Java's default body constructs `new AuxPcodeThread<>(name, emulator)`. `AuxPcodeThread` is
-    /// not yet ported, so this default panics; implementors that need a working default must
-    /// override it until that port lands.
+    /// Java's default body constructs `new AuxPcodeThread<>(name, emulator)`. That thread's state
+    /// delegates are typed (see
+    /// [`AuxPcodeThread`](crate::pcode::emu::auxiliary::aux_pcode_thread::AuxPcodeThread)), which
+    /// this factory's type-erased [`create_shared_state`](Self::create_shared_state)/
+    /// [`create_local_state`](Self::create_local_state) products cannot supply, so there is no
+    /// generic default: this one panics, and an implementor builds its thread with
+    /// `AuxPcodeThread::new_aux` over its own concrete states.
     fn create_thread(&self, _emulator: &dyn AuxPcodeEmulator<U>, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-        unimplemented!("AuxPcodeThread not yet ported")
+        unimplemented!(
+            "AuxEmulatorPartsFactory has no generic createThread: build an AuxPcodeThread over \
+             the implementor's concrete states"
+        )
     }
 
     /// Create the shared (memory) state of a new emulator.
@@ -578,9 +585,6 @@ mod tests {
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             unimplemented!("not exercised by these tests")
         }
-        fn create_thread(&self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
     
         /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
         fn as_pcode_machine(&self) -> &dyn PcodeMachine<(Vec<u8>, i64)> {
@@ -607,18 +611,6 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<(Vec<u8>, i64)> {
             self.base.get_stub_userop_library()
         }
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            AbstractPcodeMachineBase::new_thread(self)
-        }
-        fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
-            AbstractPcodeMachineBase::new_thread_named(self, name)
-        }
-        fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>> {
-            AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
-        }
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            self.base.get_all_threads()
-        }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<(Vec<u8>, i64)> {
             self.base
                 .shared_state()
@@ -642,7 +634,7 @@ mod tests {
         fn get_inject(
             &self,
             address: &crate::program::model::address::Address,
-        ) -> Option<&PcodeProgram> {
+        ) -> Option<Arc<PcodeProgram>> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &crate::program::model::address::Address) {

@@ -33,11 +33,10 @@
 //! # Divergences from Java
 //!
 //! * **The machine back-reference.** Java's thread holds its `AbstractPcodeMachine<T>` and its
-//!   machine holds the thread, a cycle Rust cannot express with plain ownership. The thread holds
-//!   an `Arc<dyn AbstractPcodeMachine<T>>`, so a machine must be `Arc`-owned before it can create a
-//!   thread that refers back to it. Consequently the machine is reachable only through `&`, which
-//!   is why [`AbstractPcodeMachineBase::stepped`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase::stepped)
-//!   takes `&self`.
+//!   machine holds the thread, a cycle Rust cannot express with plain ownership. The machine owns
+//!   its threads, and a thread holds an `Arc<PcodeMachineShared<T>>`: the part of the machine a
+//!   thread reads, which the machine shares with all its threads. See
+//!   [`abstract_pcode_machine`](crate::pcode::emu::abstract_pcode_machine)'s module docs.
 //! * **The factory methods.** Java's constructor calls the overridable `createThreadState`,
 //!   `createInstructionDecoder`, `createExecutor`, and (lazily) `createUseropLibrary` on a
 //!   half-built `this`. Here the construction-time hooks are called from
@@ -65,9 +64,8 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
+use crate::pcode::emu::abstract_pcode_machine::PcodeMachineShared;
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
-use crate::pcode::emu::pcode_machine::PcodeMachine;
 use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
 use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
 use crate::pcode::error::lowlevel_error::LowlevelError;
@@ -111,7 +109,7 @@ use crate::program::model::pcode::PcodeOp;
 /// but panic if actually executed.
 pub struct PcodeEmulationLibrary<T: 'static> {
     base: AnnotatedPcodeUseropLibraryBase<T>,
-    machine: Option<Arc<dyn AbstractPcodeMachine<T>>>,
+    machine: Option<Arc<PcodeMachineShared<T>>>,
 }
 
 impl<T: 'static> PcodeEmulationLibrary<T> {
@@ -120,14 +118,14 @@ impl<T: 'static> PcodeEmulationLibrary<T> {
     /// Port of `PcodeEmulationLibrary(DefaultPcodeThread<T>)`, with the machine standing in for the
     /// thread -- see the struct docs. `None` is Java's `new PcodeEmulationLibrary<>(null)`, i.e.
     /// the declaration-only library a machine uses as its thread stub library.
-    pub fn new(machine: Option<Arc<dyn AbstractPcodeMachine<T>>>) -> Self {
+    pub fn new(machine: Option<Arc<PcodeMachineShared<T>>>) -> Self {
         let mut library = Self { base: AnnotatedPcodeUseropLibraryBase::new(), machine };
         library.init();
         library
     }
 
     /// The machine whose threads this library controls, if it is bound to one.
-    pub fn machine(&self) -> Option<&Arc<dyn AbstractPcodeMachine<T>>> {
+    pub fn machine(&self) -> Option<&Arc<PcodeMachineShared<T>>> {
         self.machine.as_ref()
     }
 }
@@ -190,7 +188,7 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
                     let machine = swi_machine
                         .as_ref()
                         .expect("emu_swi invoked on a library bound to no machine");
-                    if let Err(e) = machine.base().swi() {
+                    if let Err(e) = machine.swi() {
                         panic!("{}", e.message());
                     }
                     None
@@ -302,30 +300,6 @@ impl<T: 'static> Deref for PcodeThreadExecutor<T> {
     }
 }
 
-/// A p-code program overriding the instruction at some address, from whichever of the three
-/// sources [`ThreadCore::get_inject`] consults.
-///
-/// Java hands back a bare `PcodeProgram` reference, since every source holds one. Here the
-/// callbacks and the thread hold shared handles while the machine owns its injects outright, so the
-/// lookup yields one or the other; both deref to the program.
-pub enum Inject<'a> {
-    /// An inject from the emulation callbacks or from the thread itself.
-    Shared(Arc<PcodeProgram>),
-    /// An inject owned by the machine.
-    Borrowed(&'a PcodeProgram),
-}
-
-impl Deref for Inject<'_> {
-    type Target = PcodeProgram;
-
-    fn deref(&self) -> &PcodeProgram {
-        match self {
-            Self::Shared(program) => program,
-            Self::Borrowed(program) => program,
-        }
-    }
-}
-
 /// The overridable behavior of a [`DefaultPcodeThread`]: Java's `protected` factory and extension
 /// methods, which its subclasses override.
 ///
@@ -427,7 +401,7 @@ where
     L: PcodeExecutorState<T> + 'static,
 {
     name: String,
-    machine: Arc<dyn AbstractPcodeMachine<T>>,
+    machine: Arc<PcodeMachineShared<T>>,
     language: Arc<SleighLanguage>,
     /// The language the executor, decoder, and register lookups bind to. See the module docs.
     exec_language: Arc<dyn Language>,
@@ -455,8 +429,9 @@ where
         &self.name
     }
 
-    /// The machine this thread executes within. Port of the `machine` field.
-    pub fn machine(&self) -> &Arc<dyn AbstractPcodeMachine<T>> {
+    /// The machine this thread executes within, as its threads share it. Port of the `machine`
+    /// field.
+    pub fn machine(&self) -> &Arc<PcodeMachineShared<T>> {
         &self.machine
     }
 
@@ -613,7 +588,7 @@ where
     /// if applicable.
     #[deprecated(note = "Java marks the initializer mechanism for removal since 12.0")]
     pub fn do_pluggable_initialization(&self) {
-        if let Some(initializer) = self.machine.base().initializer.clone() {
+        if let Some(initializer) = self.machine.initializer.clone() {
             initializer.initialize_thread(self);
         }
     }
@@ -673,21 +648,15 @@ where
     /// Port of `getInject(Address)`: check the callbacks, then this thread's injects, then the
     /// machine's.
     ///
-    /// The machine is taken as a parameter, rather than read off `self`, so the returned borrow
-    /// outlives the `&self` one; callers clone the [`Arc`] first and then mutate the thread while
-    /// holding the inject, as Java does.
-    pub fn get_inject<'m>(
-        &self,
-        machine: &'m dyn AbstractPcodeMachine<T>,
-        address: &Address,
-    ) -> Option<Inject<'m>> {
-        if let Some(inject) = machine.base().callbacks().get_inject(self, address) {
-            return Some(Inject::Shared(inject));
+    /// Java hands back a bare `PcodeProgram` reference; every source holds a shared handle here.
+    pub fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
+        if let Some(inject) = self.machine.callbacks().get_inject(self, address) {
+            return Some(inject);
         }
         if let Some(inject) = self.injects.get(address) {
-            return Some(Inject::Shared(Arc::clone(inject)));
+            return Some(Arc::clone(inject));
         }
-        machine.get_inject(address).map(Inject::Borrowed)
+        self.machine.get_inject(address)
     }
 
     /// Record the given compiled p-code as this thread's inject at the given address, replacing any
@@ -705,7 +674,7 @@ where
         offset: &T,
         size: i32,
     ) -> Result<(), InterruptPcodeExecutionException> {
-        self.machine.base().check_load(space, offset, size)
+        self.machine.check_load(space, offset, size)
     }
 
     /// Port of `checkStore(AddressSpace, T, int)`: perform checks on a requested `STORE`, returning
@@ -716,18 +685,18 @@ where
         offset: &T,
         size: i32,
     ) -> Result<(), InterruptPcodeExecutionException> {
-        self.machine.base().check_store(space, offset, size)
+        self.machine.check_store(space, offset, size)
     }
 
     /// Port of `swi()`: return a software interrupt if those interrupts are active.
     pub fn swi(&self) -> Result<(), InterruptPcodeExecutionException> {
-        self.machine.base().swi()
+        self.machine.swi()
     }
 
     /// Port of `stepped()`: notify the machine a thread has stepped a p-code op, so that it may
     /// re-enable software interrupts, if applicable.
     pub fn stepped(&self) {
-        self.machine.base().stepped();
+        self.machine.stepped();
     }
 
     /// Decode the instruction at the given address into [`instruction`](Self::get_instruction),
@@ -802,14 +771,14 @@ where
                 SuspendedPcodeExecutionException::new(frame.clone()).message().to_string(),
             ));
         }
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.before_step_op(&*self.core, op, frame);
         Ok(())
     }
 
     fn after_step_op(&mut self, executor: &PcodeExecutor<T>, op: &PcodeOp, frame: &PcodeFrame) {
         self.core.stepped();
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.after_step_op(&*self.core, op, frame);
         self.extension.after_step_op(executor, op, frame);
     }
@@ -824,7 +793,7 @@ where
     ) -> Result<(), LowlevelError> {
         self.extension.before_load(executor, op, space, offset, size)?;
         self.core.check_load(space, offset, size).map_err(interrupt_error)?;
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.before_load(&*self.core, op, space, offset, size);
         Ok(())
     }
@@ -838,7 +807,7 @@ where
         size: i32,
         value: &T,
     ) {
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.after_load(&*self.core, op, space, offset, size, value);
         self.extension.after_load(executor, op, space, offset, size, value);
     }
@@ -854,7 +823,7 @@ where
     ) -> Result<(), LowlevelError> {
         self.extension.before_store(executor, op, space, offset, size, value)?;
         self.core.check_store(space, offset, size).map_err(interrupt_error)?;
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.before_store(&*self.core, op, space, offset, size, value);
         Ok(())
     }
@@ -868,14 +837,14 @@ where
         size: i32,
         value: &T,
     ) {
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.after_store(&*self.core, op, space, offset, size, value);
         self.extension.after_store(executor, op, space, offset, size, value);
     }
 
     fn branch_to_address(&mut self, executor: &PcodeExecutor<T>, op: &PcodeOp, target: &Address) {
         self.core.branch_to_address(target);
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.after_branch(&*self.core, op, target);
         self.extension.branch_to_address(executor, op, target);
     }
@@ -897,7 +866,7 @@ where
         op_name: &str,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<(), LowlevelError> {
-        let cb = Arc::clone(self.core.machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         if cb.handle_missing_userop(&*self.core, op, frame, op_name, library) {
             return Ok(());
         }
@@ -934,7 +903,8 @@ where
 {
     /// Construct a new thread.
     ///
-    /// Port of `DefaultPcodeThread(String, AbstractPcodeMachine<T>)`. `shared_state` and
+    /// Port of `DefaultPcodeThread(String, AbstractPcodeMachine<T>)`, with `machine` the handle a
+    /// machine's threads hold on it (see the module docs). `shared_state` and
     /// `local_state` are what Java reads from `machine.getSharedState()` and
     /// `machine.createLocalState(this)`, `decoder` is the base product of
     /// `createInstructionDecoder`, and `exec_language` is the machine's language as a
@@ -946,15 +916,15 @@ where
     /// If the language has no program counter, as Java's `Objects.requireNonNull` throws.
     pub fn new(
         name: impl Into<String>,
-        machine: Arc<dyn AbstractPcodeMachine<T>>,
+        machine: Arc<PcodeMachineShared<T>>,
         exec_language: Arc<dyn Language>,
         shared_state: S,
         local_state: L,
         decoder: Box<dyn InstructionDecoder>,
         mut hooks: H,
     ) -> Self {
-        let language = Arc::clone(machine.base().language());
-        let arithmetic = machine.base().get_arithmetic();
+        let language = Arc::clone(machine.language());
+        let arithmetic = machine.get_arithmetic();
         let state = Arc::new(Mutex::new(ThreadPcodeExecutorState::new(shared_state, local_state)));
         let decoder = hooks.create_instruction_decoder(decoder);
         let pc = exec_language
@@ -996,7 +966,7 @@ where
 
         // Java's default `createUseropLibrary()`.
         let base_library = PcodeEmulationLibrary::new(Some(Arc::clone(&core.machine)))
-            .compose(core.machine.base().get_userop_library());
+            .compose(core.machine.get_userop_library());
         let library = hooks.create_userop_library(&core, base_library);
         let executor = hooks.create_executor(&core);
 
@@ -1066,12 +1036,8 @@ where
     }
 
     /// Port of `getInject(Address)`. See [`ThreadCore::get_inject`].
-    pub fn get_inject<'m>(
-        &self,
-        machine: &'m dyn AbstractPcodeMachine<T>,
-        address: &Address,
-    ) -> Option<Inject<'m>> {
-        self.core.get_inject(machine, address)
+    pub fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
+        self.core.get_inject(address)
     }
 
     /// Record the given compiled p-code as this thread's inject. See [`ThreadCore::put_inject`].
@@ -1112,9 +1078,8 @@ where
     /// Port of `beginInstructionOrInject()`: start execution of the instruction or inject at the
     /// program counter.
     pub fn begin_instruction_or_inject(&mut self) {
-        let machine = Arc::clone(&self.core.machine);
         let counter = self.core.counter.clone();
-        match self.core.get_inject(machine.as_ref(), &counter) {
+        match self.core.get_inject(&counter) {
             Some(inject) => {
                 self.core.instruction = None;
                 self.core.frame = Some(self.executor.begin(&inject));
@@ -1131,8 +1096,7 @@ where
     /// Port of `advanceAfterFinished()`: resolve a finished instruction, advancing the program
     /// counter if necessary.
     pub fn advance_after_finished(&mut self) {
-        let machine = Arc::clone(&self.core.machine);
-        let cb = Arc::clone(machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         let counter = self.core.counter.clone();
         let Some(instruction) = self.core.instruction.clone() else {
             // The frame resulted from an inject.
@@ -1243,8 +1207,8 @@ where
         self.core.get_name()
     }
 
-    fn get_machine(&self) -> &dyn PcodeMachine<T> {
-        self.core.machine.as_pcode_machine()
+    fn get_machine(&self) -> &PcodeMachineShared<T> {
+        &self.core.machine
     }
 
     fn set_counter(&mut self, counter: &Address) {
@@ -1281,14 +1245,13 @@ where
 
     fn step_instruction(&mut self) {
         self.core.assert_completed_instruction();
-        let machine = Arc::clone(&self.core.machine);
         let counter = self.core.counter.clone();
-        let Some(inject) = self.core.get_inject(machine.as_ref(), &counter) else {
+        let Some(inject) = self.core.get_inject(&counter) else {
             self.execute_instruction();
             return;
         };
         self.core.instruction = None;
-        let cb = Arc::clone(machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         cb.before_execute_inject(&*self, &counter, &inject);
         if let Err(e) = self.execute_program(&inject) {
             self.record_and_rethrow(e);
@@ -1344,8 +1307,7 @@ where
     }
 
     fn execute_instruction(&mut self) {
-        let machine = Arc::clone(&self.core.machine);
-        let cb = Arc::clone(machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         let counter = self.core.counter.clone();
         cb.before_decode_instruction(&*self, &counter, self.core.context.as_deref());
         self.core.decode_instruction(&counter);
@@ -1374,8 +1336,7 @@ where
 
     fn skip_instruction(&mut self) {
         self.core.assert_completed_instruction();
-        let machine = Arc::clone(&self.core.machine);
-        let cb = Arc::clone(machine.base().callbacks());
+        let cb = Arc::clone(self.core.machine.callbacks());
         let counter = self.core.counter.clone();
         cb.before_decode_instruction(&*self, &counter, self.core.context.as_deref());
         self.core.decode_instruction(&counter);
@@ -1451,6 +1412,8 @@ mod tests {
     use std::sync::Mutex;
 
     use super::*;
+    use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
+    use crate::pcode::emu::pcode_machine::PcodeMachine;
     use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase;
     use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
     use crate::pcode::emu::pcode_machine::{AccessKind, ErasedPcodeMachine, SwiMode};
@@ -1715,9 +1678,6 @@ mod tests {
         ) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
             Box::new(MapState::default())
         }
-        fn create_thread(&self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
         fn as_pcode_machine(&self) -> &dyn PcodeMachine<Vec<u8>> {
             self
         }
@@ -1742,22 +1702,6 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<Vec<u8>> {
             self.base.get_stub_userop_library()
         }
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn new_thread_named(&mut self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_thread(
-            &mut self,
-            _name: &str,
-            _create_if_absent: bool,
-        ) -> Option<Arc<dyn ErasedPcodeThread>> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            self.base.get_all_threads()
-        }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<Vec<u8>> {
             unimplemented!("not exercised by these tests")
         }
@@ -1776,7 +1720,7 @@ mod tests {
         fn inject(&mut self, _address: &Address, _source: &str) {
             unimplemented!("not exercised by these tests")
         }
-        fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
+        fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &Address) {
@@ -2058,7 +2002,7 @@ mod tests {
         };
         let thread = DefaultPcodeThread::new(
             "Thread 0",
-            Arc::clone(&machine) as Arc<dyn AbstractPcodeMachine<Vec<u8>>>,
+            Arc::clone(machine.base().shared()),
             Arc::new(ExecLanguage),
             shared,
             seeded_local,
@@ -2150,44 +2094,27 @@ mod tests {
         let other = space.address(0x400010);
 
         // With nothing installed anywhere, there is no inject.
-        assert!(f.thread.get_inject(f.machine.as_ref(), &address).is_none());
+        assert!(f.thread.get_inject(&address).is_none());
 
         // A machine-level inject is found through the thread...
-        let mut machine = TestMachine {
-            base: AbstractPcodeMachineBase::new(
-                Arc::new(sleigh_language()),
-                Arc::new(RecordingCallbacks::default()),
-                Arc::new(BytesArithmetic),
-                Box::new(nil::<Vec<u8>>()),
-                Box::new(nil::<Vec<u8>>()),
-                None,
-            ),
-        };
-        machine.base_mut().put_inject(address.clone(), empty_program());
-        assert!(f.thread.get_inject(&machine, &address).is_some());
-        assert!(f.thread.get_inject(&machine, &other).is_none());
+        f.machine.base().put_inject(address.clone(), empty_program());
+        let machine_inject = f.thread.get_inject(&address).expect("the machine's inject");
+        assert!(Arc::ptr_eq(&machine_inject, &f.machine.base().get_inject(&address).unwrap()));
+        assert!(f.thread.get_inject(&other).is_none());
 
         // ... and a thread-level one at the same address wins.
-        f.thread.put_inject(address.clone(), Arc::new(empty_program()));
-        assert!(matches!(
-            f.thread.get_inject(&machine, &address),
-            Some(Inject::Shared(_))
-        ));
-        assert!(matches!(
-            f.thread.get_inject(&machine, &other),
-            None
-        ));
+        let thread_inject = Arc::new(empty_program());
+        f.thread.put_inject(address.clone(), Arc::clone(&thread_inject));
+        assert!(Arc::ptr_eq(&thread_inject, &f.thread.get_inject(&address).unwrap()));
+        assert!(f.thread.get_inject(&other).is_none());
 
         // clearInject only affects this thread; the machine's inject is still effective.
         f.thread.clear_inject(&address);
-        assert!(matches!(
-            f.thread.get_inject(&machine, &address),
-            Some(Inject::Borrowed(_))
-        ));
+        assert!(Arc::ptr_eq(&machine_inject, &f.thread.get_inject(&address).unwrap()));
 
         f.thread.put_inject(other.clone(), Arc::new(empty_program()));
         f.thread.clear_all_injects();
-        assert!(f.thread.get_inject(&machine, &other).is_none());
+        assert!(f.thread.get_inject(&other).is_none());
     }
 
     /// Suspension is carried by the executor, as Java's `PcodeThreadExecutor.suspended`.
@@ -2371,7 +2298,7 @@ mod tests {
         let decoder = ScriptedDecoder { program, last: None, branched: Arc::clone(&branched) };
         let thread = DefaultPcodeThread::new(
             "Thread 0",
-            machine as Arc<dyn AbstractPcodeMachine<Vec<u8>>>,
+            Arc::clone(machine.base().shared()),
             Arc::new(ExecLanguage),
             shared,
             local,

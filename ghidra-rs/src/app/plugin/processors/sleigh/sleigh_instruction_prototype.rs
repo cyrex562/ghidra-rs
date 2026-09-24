@@ -1852,7 +1852,7 @@ mod tests {
 /// rel: reloc        is simm8 [ reloc = inst_start + 2 + simm8; ] { export *[ram]:4 reloc; } (line 40)
 /// ```
 #[cfg(test)]
-mod decode_tests {
+pub(crate) mod decode_tests {
     use super::*;
     use crate::program::model::address::DefaultAddressFactory;
     use crate::program::model::lang::instruction_context::InstructionContextError;
@@ -2349,7 +2349,9 @@ mod decode_tests {
         e.into_inner()
     }
 
-    fn language() -> Arc<SleighLanguage> {
+    /// The language described in this module's docs, shared (as `parse` requires). Also the
+    /// fixture the emulator's tests step real instructions with.
+    pub(crate) fn language() -> Arc<SleighLanguage> {
         let decoder = PackedDecode::new(Arc::new(DefaultAddressFactory::new(vec![])), sla());
         SleighLanguage::decode(&decoder, "toy:BE:32:default".to_string())
             .unwrap()

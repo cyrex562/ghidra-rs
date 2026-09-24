@@ -28,7 +28,6 @@
 
 use std::sync::Arc;
 
-use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
 use crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory;
 use crate::pcode::emu::auxiliary::aux_pcode_emulator::AuxPcodeEmulator;
 use crate::pcode::emu::default_pcode_thread::{
@@ -171,7 +170,7 @@ where
         modifier: Option<Arc<dyn PcodeStateModifier>>,
         parts_factory: Arc<F>,
     ) -> Self {
-        let machine: Arc<dyn AbstractPcodeMachine<(Vec<u8>, U)>> = emulator.clone();
+        let machine = Arc::clone(emulator.base().shared());
         DefaultPcodeThread::new(
             name,
             machine,
@@ -188,6 +187,7 @@ where
 #[allow(deprecated)]
 mod tests {
     use super::*;
+    use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
     use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
     use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase;
     use crate::pcode::emu::pcode_emulation_callbacks::{
@@ -719,9 +719,6 @@ mod tests {
         fn create_local_state(&self, _thread: &dyn ErasedPcodeThread) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             Box::new(MapState::default())
         }
-        fn create_thread(&self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
         fn as_pcode_machine(&self) -> &dyn PcodeMachine<(Vec<u8>, i64)> {
             self
         }
@@ -746,18 +743,6 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<(Vec<u8>, i64)> {
             self.base.get_stub_userop_library()
         }
-        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn new_thread_named(&mut self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_thread(&mut self, _name: &str, _create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
-            self.base.get_all_threads()
-        }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<(Vec<u8>, i64)> {
             unimplemented!("not exercised by these tests")
         }
@@ -776,7 +761,7 @@ mod tests {
         fn inject(&mut self, address: &Address, source: &str) {
             crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase::inject(self, address, source);
         }
-        fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
+        fn get_inject(&self, address: &Address) -> Option<Arc<PcodeProgram>> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &Address) {
@@ -819,13 +804,11 @@ mod tests {
     #[test]
     fn userop_library_composes_the_base_library_with_the_factorys_local_library() {
         let emulator = test_emulator();
-        let machine = Arc::clone(&emulator) as Arc<dyn AbstractPcodeMachine<(Vec<u8>, i64)>>;
         let mut shared = MapState::default();
         let mut local = MapState::default();
         shared.set_var_register(&pc_register(), &(0x400000i64.to_le_bytes().to_vec(), 0));
         local.set_var_register(&pc_register(), &(0x400000i64.to_le_bytes().to_vec(), 0));
 
-        let _ = machine;
         let thread = AuxPcodeThread::new_aux(
             "Thread 0",
             emulator as Arc<dyn AuxPcodeEmulator<i64>>,
