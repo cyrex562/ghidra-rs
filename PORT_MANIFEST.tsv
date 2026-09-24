@@ -3243,7 +3243,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/select/qualif
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/select/reference/SelectBackRefsAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core select reference 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/select/reference/SelectForwardRefsAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core select reference 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/select/reference/SelectRefsPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core select reference 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFileRowObject.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFileRowObject.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFilesTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFilesTablePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFilesTableProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
@@ -7467,7 +7467,7 @@ orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/func
 orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGActionManager.java	TODO	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
 orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGClipboardProvider.java	TODO	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
 orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGColorProvider.java	TODO	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
-orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGLayoutFinder.java	TODO	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
+orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGLayoutFinder.java	DONE	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
 orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGLocationMemento.java	TODO	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
 orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGProvider.java	TODO	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
 orig_src/Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FunctionGraphMarginService.java	TODO	orig_src Ghidra Features FunctionGraph src main java ghidra app plugin core functiongraph 
@@ -8919,7 +8919,7 @@ orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/PythonFieldExpos
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/CancelAction.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/InterpreterGhidraScript.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/InterpreterTaskMonitor.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
-orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraConsole.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
+orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraConsole.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraInterpreter.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/ResetAction.java	TODO	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra interpreter 
 orig_src/Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/property/AbstractJavaProperty.java	DONE	orig_src Ghidra Features PyGhidra src main java ghidra pyghidra property 
@@ -12065,7 +12065,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VgSate
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VgVertexContext.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer actions 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphActionContext.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer actions 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphContextMarker.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer actions 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphSatelliteActionContext.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer actions 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphSatelliteActionContext.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer actions 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphVertexActionContext.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer actions 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/AbstractVisualEdge.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/BasicEdgeLabelRenderer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
