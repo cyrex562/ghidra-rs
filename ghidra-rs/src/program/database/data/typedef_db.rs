@@ -144,7 +144,7 @@ use crate::program::database::data::data_type_db::DataTypeDb;
 use crate::program::database::db_object::{DbObject, DbObjectState};
 use crate::program::model::data::category::Category;
 use crate::program::model::data::category_path::CategoryPath;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::{DataType, SetDataTypeNameError, CONFLICT_SUFFIX};
 use crate::program::model::data::data_type_conflict_handler::{
     ConflictResult, DataTypeConflictHandler, DefaultHandlerImpl,
@@ -201,7 +201,7 @@ impl DataTypeManager for TypedefDbOwnerHandle {
     fn get_data_type_in_category(&self, path: &CategoryPath, name: &str) -> Option<Box<dyn DataType>> {
         self.0.lock().unwrap().get_data_type_in_category(path, name)
     }
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         self.0.lock().unwrap().get_data_organization()
     }
 }
@@ -666,7 +666,7 @@ impl DataType for TypedefDb {
         Some(Box::new(TypedefDbOwnerHandle(self.owner.clone())))
     }
 
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         self.owner.lock().unwrap().get_data_organization()
     }
 

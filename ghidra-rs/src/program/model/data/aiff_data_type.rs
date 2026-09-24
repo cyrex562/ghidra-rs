@@ -217,7 +217,7 @@ mod tests {
     use crate::docking::settings::settings_definition::SettingsDefinition;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type_impl::DataTypeImpl;
     use crate::program::model::address::{Address, SpecialAddress};
     use crate::program::model::mem::MemoryAccessException;
@@ -348,7 +348,7 @@ mod tests {
     impl BuiltInDataType for MockAIFFDataType {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

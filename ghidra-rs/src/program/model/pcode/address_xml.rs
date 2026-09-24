@@ -604,7 +604,7 @@ mod tests {
     use crate::program::model::lang::compiler_spec::{EvaluationModelType, CALLING_CONVENTION_CDECL};
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
     use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::lang::decompiler_language::DecompilerLanguage;
     use crate::program::model::lang::prototype_model::PrototypeModel;
     use crate::program::model::lang::register::{Register, RegisterRef};
@@ -1335,7 +1335,7 @@ mod tests {
         fn is_global(&self, _addr: &Address) -> bool {
             true
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {

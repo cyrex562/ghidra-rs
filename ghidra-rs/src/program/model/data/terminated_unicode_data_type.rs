@@ -52,7 +52,7 @@ mod tests {
         DEFAULT_UNICODE_ABBREV_PREFIX, DEFAULT_UNICODE_LABEL, DEFAULT_UNICODE_LABEL_PREFIX,
     };
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_with_charset::DataTypeWithCharset;
     use crate::program::model::data::dynamic::Dynamic;
@@ -118,7 +118,7 @@ mod tests {
     }
 
     impl BuiltInDataType for MockTerminatedUnicodeDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             None
         }
         fn set_default_settings(&mut self, _settings: &dyn Settings) {}

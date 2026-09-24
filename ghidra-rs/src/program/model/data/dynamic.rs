@@ -38,7 +38,7 @@ pub trait Dynamic: BuiltInDataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::docking::settings::settings::Settings;
 
     struct MockMemBuffer;
@@ -71,7 +71,7 @@ mod tests {
     impl BuiltInDataType for MockDynamic {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

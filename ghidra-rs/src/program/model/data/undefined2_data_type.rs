@@ -92,7 +92,7 @@ mod tests {
     use crate::program::model::address::{Address, SpecialAddress};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 
     struct MockSettings;
     impl Settings for MockSettings {}
@@ -132,7 +132,7 @@ mod tests {
     impl BuiltInDataType for MockUndefined2 {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

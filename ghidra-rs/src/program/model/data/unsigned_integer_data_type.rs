@@ -24,7 +24,7 @@
 
 use crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType;
 use crate::program::model::data::abstract_integer_data_type::C_UNSIGNED_INT;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::integer_data_type::IntegerDataType;
@@ -84,7 +84,7 @@ pub trait UnsignedIntegerDataType: AbstractUnsignedIntegerDataType {
     /// is unused, matching the Java original (which only ever formats `getName()`/`"unsigned
     /// int"`). See the module docs for why the `BuiltIn.getCTypeDeclaration(String, String,
     /// boolean)` helper's formula is reproduced directly instead of stubbed.
-    fn unsigned_integer_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+    fn unsigned_integer_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
         let _ = data_organization;
         Some(format!("typedef {}    {};", C_UNSIGNED_INT, self.get_name()))
     }
@@ -92,103 +92,38 @@ pub trait UnsignedIntegerDataType: AbstractUnsignedIntegerDataType {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::docking::settings::settings::Settings;
     use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
     use crate::program::model::data::array_stringable::ArrayStringable;
-    use crate::program::model::data::bit_field_packing::BitFieldPacking;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
     use crate::program::model::data::string_data_instance::StringDataInstance;
     use crate::program::model::mem::MemBuffer;
 
-    struct MockBitFieldPacking;
-    impl BitFieldPacking for MockBitFieldPacking {
-        fn use_ms_convention(&self) -> bool {
-            false
-        }
-        fn is_type_alignment_enabled(&self) -> bool {
-            true
-        }
-        fn get_zero_length_boundary(&self) -> i32 {
-            0
-        }
-    }
-
-    struct MockDataOrganization {
-        integer_size: i32,
-    }
-
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            self.integer_size
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn BitFieldPacking> {
-            Box::new(MockBitFieldPacking)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            Vec::new()
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            "int".to_string()
-        }
-        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-            1
-        }
+            /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization(integer_size: i32) -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(integer_size);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        org
     }
 
     struct MockIntegerDataType;
@@ -198,7 +133,7 @@ mod tests {
         }
     }
     impl BuiltInDataType for MockIntegerDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             None
         }
         fn set_default_settings(&mut self, _settings: &dyn Settings) {}
@@ -264,13 +199,13 @@ mod tests {
         fn get_length(&self) -> i32 {
             self.unsigned_integer_length()
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization { integer_size: self.integer_size })
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization(self.integer_size))
         }
     }
 
     impl BuiltInDataType for MockUnsignedIntegerDataType {
-        fn get_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             self.unsigned_integer_c_type_declaration(data_organization)
         }
         fn set_default_settings(&mut self, _settings: &dyn Settings) {}

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressSpace};
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::decompiler_language::DecompilerLanguage;
 use crate::program::model::lang::language::Language;
@@ -135,7 +135,7 @@ pub trait CompilerSpec {
     fn is_global(&self, addr: &Address) -> bool;
 
     /// The data organization describing size and alignment of primitive data-types.
-    fn get_data_organization(&self) -> Box<dyn DataOrganization>;
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl>;
 
     /// The p-code inject library associated with this compiler spec.
     fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary>;
@@ -617,7 +617,7 @@ mod tests {
             true
         }
 
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
 

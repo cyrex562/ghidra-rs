@@ -47,7 +47,7 @@
 
 use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 
@@ -120,7 +120,7 @@ pub trait SignedWordDataType: DataType + BuiltInDataType {
     /// docs for why it cannot be redeclared here. Reproduces `BuiltIn.getCTypeDeclaration(this,
     /// true, dataOrganization, false)`: a `typedef` line naming this type's fixed display name
     /// (`sword`) after the organization's signed 2-byte C-type approximation.
-    fn signed_word_get_c_type_declaration(&self, data_organization: &dyn DataOrganization) -> Option<String> {
+    fn signed_word_get_c_type_declaration(&self, data_organization: &DataOrganizationImpl) -> Option<String> {
         Some(format!(
             "typedef {}    sword;",
             data_organization.get_integer_c_type_approximation(2, true)
@@ -131,93 +131,29 @@ pub trait SignedWordDataType: DataType + BuiltInDataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::bit_field_packing::BitFieldPacking;
 
-    struct MockBitFieldPacking;
-    impl BitFieldPacking for MockBitFieldPacking {
-        fn use_ms_convention(&self) -> bool {
-            false
-        }
-        fn is_type_alignment_enabled(&self) -> bool {
-            true
-        }
-        fn get_zero_length_boundary(&self) -> i32 {
-            0
-        }
-    }
-
-    struct MockDataOrganization;
-
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn BitFieldPacking> {
-            Box::new(MockBitFieldPacking)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            Vec::new()
-        }
-        fn get_integer_c_type_approximation(&self, size: i32, signed: bool) -> String {
-            format!("{}int{}", if signed { "" } else { "unsigned " }, size * 8)
-        }
-        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-            1
-        }
+            /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        org
     }
 
     struct MockWordDataType;
@@ -227,7 +163,7 @@ mod tests {
         }
     }
     impl BuiltInDataType for MockWordDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             None
         }
         fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
@@ -254,7 +190,7 @@ mod tests {
     impl BuiltInDataType for MockSignedWordDataType {
         fn get_c_type_declaration(
             &self,
-            data_organization: Option<&dyn DataOrganization>,
+            data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             data_organization.and_then(|org| self.signed_word_get_c_type_declaration(org))
         }
@@ -290,10 +226,10 @@ mod tests {
     #[test]
     fn c_type_declaration_uses_signed_2byte_approximation() {
         let dt = MockSignedWordDataType { dtm_tag: None };
-        let org = MockDataOrganization;
+        let org = mock_data_organization();
         assert_eq!(
             dt.signed_word_get_c_type_declaration(&org),
-            Some("typedef int16    sword;".to_string())
+            Some("typedef short    sword;".to_string())
         );
     }
 

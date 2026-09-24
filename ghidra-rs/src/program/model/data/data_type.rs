@@ -1,9 +1,10 @@
 use std::any::{Any, TypeId};
+use std::sync::Arc;
 
 use thiserror::Error;
 
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
 use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -421,10 +422,11 @@ pub trait DataType: Send + Sync {
 
     /// Returns the DataOrganization associated with this data-type.
     ///
-    /// No meaningful `DataOrganization` fallback is available yet since no concrete
-    /// implementation has been ported; overriding implementations must supply their own.
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-        unimplemented!("DataType::get_data_organization has no default implementation yet")
+    /// Defaults to `DataOrganizationImpl.getDefaultOrganization()`, which is what Java's
+    /// `AbstractDataType.getDataOrganization()` returns for a type with no data type manager; a
+    /// type bound to a manager overrides this to return the manager's organization.
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+        Arc::new(DataOrganizationImpl::get_default_organization(None))
     }
 
     /// Stands in for `instanceof Structure`.

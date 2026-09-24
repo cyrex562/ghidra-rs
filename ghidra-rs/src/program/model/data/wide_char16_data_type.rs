@@ -255,7 +255,7 @@ mod tests {
     use crate::program::model::address::{Address, SpecialAddress};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_display_options::DEFAULT as DEFAULT_DISPLAY_OPTIONS;
     use crate::program::model::data::data_type_impl::DataTypeImpl;
@@ -379,7 +379,7 @@ mod tests {
     impl BuiltInDataType for MockWideChar16 {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

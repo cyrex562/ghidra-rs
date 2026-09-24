@@ -95,6 +95,7 @@ use std::collections::HashSet;
 use std::io;
 use std::sync::{Arc, Mutex};
 
+use crate::program::model::data::bit_field_packing::BitFieldPacking;
 use crate::docking::settings::settings::Settings;
 use crate::framework::db::DBRecord;
 use crate::program::database::data::component_db_adapter::ComponentDBAdapter;
@@ -122,7 +123,7 @@ use crate::program::model::data::composite_internal::{
     compare_components_by_ordinal, CompositeInternal, DEFAULT_ALIGNMENT, DEFAULT_PACKING, MACHINE_ALIGNMENT,
     NO_PACKING,
 };
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_organization_impl::{get_aligned_offset, get_least_common_multiple};
 use crate::program::model::data::data_type::{DataType, SetDataTypeNameError, UnsupportedOperationError};
 use crate::program::model::data::data_type_component::DataTypeComponent;
@@ -208,7 +209,7 @@ impl DataTypeManager for UnionDbOwnerHandle {
     fn get_data_type_in_category(&self, path: &CategoryPath, name: &str) -> Option<Box<dyn DataType>> {
         self.0.lock().unwrap().get_data_type_in_category(path, name)
     }
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         self.0.lock().unwrap().get_data_organization()
     }
 }
@@ -563,7 +564,7 @@ impl UnionDb {
 
     /// Port of the private `UnionDB.getBitFieldAllocation(BitFieldDataType)`.
     fn bit_field_allocation(&self, bitfield_dt: &BitFieldDataType) -> i32 {
-        let bit_field_packing = self.get_data_organization().get_bit_field_packing();
+        let bit_field_packing = *self.get_data_organization().get_bit_field_packing();
         if bit_field_packing.use_ms_convention() {
             return bitfield_dt.get_base_type_size();
         }
@@ -1430,7 +1431,7 @@ impl DataType for UnionDb {
         Some(Box::new(UnionDbOwnerHandle(self.owner.clone())))
     }
 
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         self.owner.lock().unwrap().get_data_organization()
     }
 
@@ -2058,8 +2059,8 @@ mod tests {
         fn allows_default_component_settings(&self) -> bool {
             self.allows_settings
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(TestDataOrganization)
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(test_data_organization())
         }
     }
     impl DataTypeManagerDb for TestManager {
@@ -2160,89 +2161,28 @@ mod tests {
         }
     }
 
-    struct TestDataOrganization;
-    impl DataOrganization for TestDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
-            struct P;
-            impl crate::program::model::data::bit_field_packing::BitFieldPacking for P {
-                fn use_ms_convention(&self) -> bool {
-                    false
-                }
-                fn is_type_alignment_enabled(&self) -> bool {
-                    true
-                }
-                fn get_zero_length_boundary(&self) -> i32 {
-                    0
-                }
-            }
-            Box::new(P)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            Vec::new()
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            String::new()
-        }
-        fn get_alignment(&self, data_type: &dyn DataType) -> i32 {
-            data_type.get_alignment().max(1)
-        }
+    /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn test_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        org
     }
 
     // ===================================================================================

@@ -77,7 +77,7 @@
 
 use crate::docking::settings::settings_definition::{concat, SettingsDefinition};
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_impl::DataTypeImpl;
 use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -170,7 +170,7 @@ pub trait BuiltIn: DataTypeImpl + BuiltInDataType {
         type_name: &str,
         type_len: i32,
         signed: bool,
-        data_organization: &dyn DataOrganization,
+        data_organization: &DataOrganizationImpl,
         use_define: bool,
     ) -> String {
         self.get_c_type_declaration_str(
@@ -186,7 +186,7 @@ pub trait BuiltIn: DataTypeImpl + BuiltInDataType {
     fn built_in_get_c_type_declaration_for_self(
         &self,
         signed: bool,
-        data_organization: &dyn DataOrganization,
+        data_organization: &DataOrganizationImpl,
         use_define: bool,
     ) -> String {
         self.get_c_type_declaration_len(
@@ -209,7 +209,7 @@ pub trait BuiltIn: DataTypeImpl + BuiltInDataType {
     /// `Option`-shaped `get_c_type_declaration` the same way.
     fn built_in_get_c_type_declaration(
         &self,
-        data_organization: Option<&dyn DataOrganization>,
+        data_organization: Option<&DataOrganizationImpl>,
     ) -> Option<String> {
         if self.is_dynamic_type() || self.is_factory_type() {
             return None;
@@ -223,7 +223,6 @@ pub trait BuiltIn: DataTypeImpl + BuiltInDataType {
 mod tests {
     use super::*;
     use crate::docking::settings::settings::Settings;
-    use crate::program::model::data::bit_field_packing::BitFieldPacking;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
     use crate::program::model::data::source_archive::SourceArchive;
     use std::sync::Weak;
@@ -231,90 +230,28 @@ mod tests {
     struct MockSettings;
     impl Settings for MockSettings {}
 
-    struct MockBitFieldPacking;
-    impl BitFieldPacking for MockBitFieldPacking {
-        fn use_ms_convention(&self) -> bool {
-            false
-        }
-        fn is_type_alignment_enabled(&self) -> bool {
-            true
-        }
-        fn get_zero_length_boundary(&self) -> i32 {
-            0
-        }
-    }
-
-    struct MockDataOrganization;
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn BitFieldPacking> {
-            Box::new(MockBitFieldPacking)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            Vec::new()
-        }
-        fn get_integer_c_type_approximation(&self, size: i32, signed: bool) -> String {
-            format!("{}int{}", if signed { "" } else { "unsigned " }, size * 8)
-        }
-        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-            1
-        }
+            /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        org
     }
 
     struct MockDataTypeManager;
@@ -405,7 +342,7 @@ mod tests {
     impl BuiltInDataType for MockBuiltIn {
         fn get_c_type_declaration(
             &self,
-            data_organization: Option<&dyn DataOrganization>,
+            data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             self.built_in_get_c_type_declaration(data_organization)
         }
@@ -507,7 +444,7 @@ mod tests {
         impl BuiltInDataType for CustomBuiltIn {
             fn get_c_type_declaration(
                 &self,
-                data_organization: Option<&dyn DataOrganization>,
+                data_organization: Option<&DataOrganizationImpl>,
             ) -> Option<String> {
                 self.built_in_get_c_type_declaration(data_organization)
             }
@@ -567,30 +504,30 @@ mod tests {
     #[test]
     fn c_type_declaration_len_uses_organization_approximation() {
         let dt = MockBuiltIn::new("byte", 1);
-        let org = MockDataOrganization;
+        let org = mock_data_organization();
         assert_eq!(
             dt.get_c_type_declaration_len("byte", 1, false, &org, false),
-            "typedef unsigned int8    byte;"
+            "typedef unsigned char    byte;"
         );
     }
 
     #[test]
     fn c_type_declaration_for_self_uses_display_name_and_length() {
         let dt = MockBuiltIn::new("byte", 1);
-        let org = MockDataOrganization;
+        let org = mock_data_organization();
         assert_eq!(
             dt.built_in_get_c_type_declaration_for_self(false, &org, false),
-            "typedef unsigned int8    byte;"
+            "typedef unsigned char    byte;"
         );
     }
 
     #[test]
     fn built_in_c_type_declaration_delegates_when_organization_present() {
         let dt = MockBuiltIn::new("byte", 1);
-        let org = MockDataOrganization;
+        let org = mock_data_organization();
         assert_eq!(
             dt.built_in_get_c_type_declaration(Some(&org)),
-            Some("typedef unsigned int8    byte;".to_string())
+            Some("typedef unsigned char    byte;".to_string())
         );
         assert_eq!(dt.built_in_get_c_type_declaration(None), None);
     }
@@ -599,7 +536,7 @@ mod tests {
     fn built_in_c_type_declaration_is_none_for_dynamic_or_factory_types() {
         let mut dynamic = MockBuiltIn::new("dyn", 0);
         dynamic.dynamic = true;
-        let org = MockDataOrganization;
+        let org = mock_data_organization();
         assert_eq!(dynamic.built_in_get_c_type_declaration(Some(&org)), None);
 
         let mut factory = MockBuiltIn::new("factory", 0);
@@ -610,7 +547,7 @@ mod tests {
     #[test]
     fn get_c_type_declaration_via_built_in_data_type_matches_direct_call() {
         let dt = MockBuiltIn::new("byte", 1);
-        let org = MockDataOrganization;
+        let org = mock_data_organization();
         let via_trait: &dyn BuiltInDataType = &dt;
         assert_eq!(
             via_trait.get_c_type_declaration(Some(&org)),

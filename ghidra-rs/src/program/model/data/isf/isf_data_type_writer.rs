@@ -24,6 +24,7 @@
 //! `@Exclude`, so they never appear in the output and are not emitted here either.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::io::Write;
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -31,7 +32,7 @@ use serde_json::{json, Map, Value as JsonValue};
 
 use crate::program::model::address::Address;
 use crate::program::model::data::abstract_data_type::default_data_organization;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::{
     DataTypeComponent, DEFAULT_FIELD_NAME_PREFIX,
@@ -84,7 +85,7 @@ pub struct IsfDataTypeWriter {
     /// `DataOrganizationImpl.getDefaultOrganization()` when there is no data-type manager; that
     /// static is not ported, so this stays `None` there and [`DEFAULT_POINTER_SIZE`] /
     /// [`DEFAULT_BIG_ENDIAN`] -- `DataOrganizationImpl`'s own field initializers -- stand in.
-    data_organization: Option<Box<dyn DataOrganization>>,
+    data_organization: Option<Arc<DataOrganizationImpl>>,
 
     /// The root ISF document, assembled by [`gen_root`](IsfWriterImpl::gen_root).
     pub data: JsonValue,
@@ -992,87 +993,18 @@ mod tests {
             true
         }
 
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization)
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization())
         }
     }
 
-    /// Only the two members `IsfUtilities.getEndianness` and `newTypedefPointer` reach for are
-    /// answered; the rest are not exercised by these tests.
-    struct MockDataOrganization;
 
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn is_signed_char(&self) -> bool {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_char_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_short_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_integer_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_long_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_long_long_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_float_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_double_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_long_double_size(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_default_alignment(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_bit_field_packing(
-            &self,
-        ) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-            unimplemented!("not exercised by these tests")
-        }
+    /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org
     }
 
     fn writer() -> IsfDataTypeWriter {

@@ -67,7 +67,7 @@ mod tests {
     use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
     use crate::program::model::data::array_stringable::ArrayStringable;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
     use crate::program::model::data::string_data_instance::StringDataInstance;
@@ -80,7 +80,7 @@ mod tests {
         }
     }
     impl BuiltInDataType for MockInteger6DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             None
         }
         fn set_default_settings(&mut self, _settings: &dyn Settings) {}
@@ -110,7 +110,7 @@ mod tests {
     }
 
     impl BuiltInDataType for MockUnsignedInteger6DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             None
         }
         fn set_default_settings(&mut self, _settings: &dyn Settings) {}

@@ -1,5 +1,5 @@
 use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 
@@ -53,7 +53,7 @@ pub trait LongDoubleDataType: AbstractFloatDataType {
     /// since `BuiltInDataType::get_c_type_declaration` is a required (no-default) method; a
     /// concrete `impl BuiltInDataType for ...` should delegate `get_c_type_declaration` to this
     /// instead of `float_c_type_declaration`.
-    fn long_double_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+    fn long_double_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
         let _ = data_organization;
         Some(format!("typedef long double    {};", self.get_name()))
     }
@@ -86,7 +86,7 @@ mod tests {
     impl BuiltInDataType for MockLongDoubleDataType {
         fn get_c_type_declaration(
             &self,
-            data_organization: Option<&dyn DataOrganization>,
+            data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             self.long_double_c_type_declaration(data_organization)
         }

@@ -524,7 +524,7 @@ mod tests {
     impl crate::program::model::data::built_in_data_type::BuiltInDataType for MockDynamicLeaf {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+            _data_organization: Option<&crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }
@@ -595,13 +595,13 @@ mod tests {
     #[test]
     fn factory_data_type_is_rejected() {
         use crate::program::model::data::built_in_data_type::BuiltInDataType;
-        use crate::program::model::data::data_organization::DataOrganization;
+        use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
         use crate::program::model::data::factory_data_type::FactoryDataType;
 
         struct Marker;
         impl DataType for Marker {}
         impl BuiltInDataType for Marker {
-            fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+            fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
                 None
             }
             fn set_default_settings(&mut self, _settings: &dyn Settings) {}

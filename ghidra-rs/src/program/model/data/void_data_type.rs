@@ -1,6 +1,6 @@
 use crate::docking::settings::settings::Settings;
 use crate::program::model::data::built_in::BuiltIn;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 
 /// Special dataType used only for function return types. Used to indicate that a function has no
@@ -60,7 +60,7 @@ pub trait VoidDataType: BuiltIn {
     /// original's comment that `void` is a standard C-primitive name and type. Exposed under a
     /// distinct name since `BuiltInDataType::get_c_type_declaration` is a required (no-default)
     /// method; a concrete `impl BuiltInDataType for ...` should delegate to this.
-    fn void_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+    fn void_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
         let _ = data_organization;
         None
     }
@@ -162,7 +162,7 @@ mod tests {
     impl BuiltInDataType for MockVoidDataType {
         fn get_c_type_declaration(
             &self,
-            data_organization: Option<&dyn DataOrganization>,
+            data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             self.void_c_type_declaration(data_organization)
         }

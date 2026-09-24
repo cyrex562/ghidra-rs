@@ -54,10 +54,11 @@
 //! the alignment Java's synthesized unsigned-integer stand-in would report -- a corner case with no
 //! coverage in this crate's `Enum` port either.
 
+use crate::program::model::data::bit_field_packing::BitFieldPacking;
 use crate::program::model::data::bit_field_data_type::BitFieldDataType;
 use crate::program::model::data::composite_alignment_helper::get_packed_alignment_values;
 use crate::program::model::data::composite_internal::{DEFAULT_PACKING, NO_PACKING};
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_organization_impl::{get_aligned_offset, get_least_common_multiple};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::internal_data_type_component::InternalDataTypeComponent;
@@ -122,7 +123,7 @@ pub struct AlignedComponentPacker {
 
 impl AlignedComponentPacker {
     /// Port of `AlignedComponentPacker(int, DataOrganization)`.
-    pub fn new(pack_value: i32, data_organization: &dyn DataOrganization) -> Self {
+    pub fn new(pack_value: i32, data_organization: &DataOrganizationImpl) -> Self {
         let bit_field_packing = data_organization.get_bit_field_packing();
         AlignedComponentPacker {
             pack_value,
@@ -618,7 +619,7 @@ impl SeamAlignedComponentPacker for AlignedComponentPacker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::bit_field_packing::BitFieldPacking;
+    use crate::program::model::data::bit_field_packing_impl::BitFieldPackingImpl;
     use crate::program::model::data::data_type_component::DataTypeComponent;
     use crate::program::seam_stubs::AlignedComponentPacker as _;
 
@@ -782,91 +783,24 @@ mod tests {
         }
     }
 
-    impl DataOrganization for TestOrg {
-        fn is_big_endian(&self) -> bool {
-            self.big_endian
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn BitFieldPacking> {
-            struct P {
-                ms: bool,
-                type_align: bool,
-                zero_boundary: i32,
-            }
-            impl BitFieldPacking for P {
-                fn use_ms_convention(&self) -> bool {
-                    self.ms
-                }
-                fn is_type_alignment_enabled(&self) -> bool {
-                    self.type_align
-                }
-                fn get_zero_length_boundary(&self) -> i32 {
-                    self.zero_boundary
-                }
-            }
-            Box::new(P { ms: self.ms_convention, type_align: self.type_alignment_enabled, zero_boundary: self.zero_length_boundary })
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            Vec::new()
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            String::new()
-        }
-        fn get_alignment(&self, data_type: &dyn DataType) -> i32 {
-            data_type.get_alignment()
+    impl TestOrg {
+        /// The real [`DataOrganizationImpl`] these settings describe: an LP64 layout (8-byte
+        /// pointers and longs) whose size/alignment map is empty, so every primitive aligns to the
+        /// default alignment of 1.
+        fn build(&self) -> DataOrganizationImpl {
+            let mut org = DataOrganizationImpl::get_default_organization(None);
+            org.set_big_endian(self.big_endian);
+            org.set_pointer_size(8);
+            org.set_wide_char_size(2);
+            org.set_long_size(8);
+            org.set_default_pointer_alignment(8);
+            org.clear_size_alignment_map();
+            let mut packing = BitFieldPackingImpl::new();
+            packing.set_use_ms_convention(self.ms_convention);
+            packing.set_type_alignment_enabled(self.type_alignment_enabled);
+            packing.set_zero_length_boundary(self.zero_length_boundary);
+            org.set_bit_field_packing(packing);
+            org
         }
     }
 
@@ -894,7 +828,7 @@ mod tests {
     fn packs_sequential_non_bitfield_components_with_alignment_padding() {
         // char (1-byte) then int (4-byte): int must land on a 4-aligned offset, leaving 3 padding
         // bytes -- the classic packed-struct padding case.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::plain(0, int_dt("char", 1)), MockComponent::plain(1, int_dt("int", 4))];
@@ -908,7 +842,7 @@ mod tests {
 
     #[test]
     fn no_padding_needed_when_already_aligned() {
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::plain(0, int_dt("int", 4)), MockComponent::plain(1, int_dt("int", 4))];
@@ -923,7 +857,7 @@ mod tests {
     fn pack_value_caps_alignment_and_padding() {
         // Same char+int sequence as above, but pack(1) forces byte alignment throughout, so no
         // padding is introduced at all.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(1, &org);
         let mut components =
             vec![MockComponent::plain(0, int_dt("char", 1)), MockComponent::plain(1, int_dt("int", 4))];
@@ -935,7 +869,7 @@ mod tests {
 
     #[test]
     fn default_alignment_is_lcm_of_component_alignments() {
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::plain(0, int_dt("int", 4)), MockComponent::plain(1, int_dt("short", 6))];
@@ -949,7 +883,7 @@ mod tests {
     fn adjacent_gcc_bitfields_pack_into_shared_bytes() {
         // Two 4-bit fields sharing a base type pack into the same byte under GCC (non-MS)
         // conventions: total length should be 1 byte, not 2.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::bit_field(0, int_dt("uint", 4), 4, 0), MockComponent::bit_field(1, int_dt("uint", 4), 4, 0)];
@@ -964,7 +898,7 @@ mod tests {
     fn bitfield_overflowing_base_type_starts_new_storage_unit() {
         // Two 6-bit fields (base type 1 byte) can't both fit in a single byte (6+6=12 bits), so
         // the second must start a fresh storage unit at offset 1.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::bit_field(0, int_dt("uchar", 1), 6, 0), MockComponent::bit_field(1, int_dt("uchar", 1), 6, 0)];
@@ -982,7 +916,7 @@ mod tests {
         // 3-bit field fits entirely within the same 4-byte aligned storage unit `char` already
         // started (byte 1 of bytes 0..4), so it is placed right at the next free byte rather than
         // padded up to a 4-aligned offset.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::plain(0, int_dt("char", 1)), MockComponent::bit_field(1, int_dt("int", 4), 3, 0)];
@@ -998,7 +932,7 @@ mod tests {
         // type: placing it right at offset 3 would need bytes [3,6), overflowing the 4-byte
         // aligned storage unit [0,4) implied by the base type, so it must skip ahead to the next
         // aligned offset (4) instead of packing immediately.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components = vec![
             MockComponent::plain(0, int_dt("char", 1)),
@@ -1016,7 +950,7 @@ mod tests {
         // `int x; int :0; char y;` under GCC: the zero-length bitfield forces `y` up to the next
         // 4-byte boundary even though `char` itself only needs 1-byte alignment, and the
         // zero-length bitfield's own (deferred) component ends up at that same forced offset.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components = vec![
             MockComponent::plain(0, int_dt("int", 4)),
@@ -1036,7 +970,7 @@ mod tests {
     fn zero_length_bitfield_as_last_component_updates_immediately() {
         // No deferral needed (and no following component to trigger it) when the zero-length
         // bitfield is the very last component.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::plain(0, int_dt("char", 1)), MockComponent::bit_field(1, int_dt("int", 4), 0, 0)];
@@ -1048,7 +982,7 @@ mod tests {
 
     #[test]
     fn ms_convention_bitfields_do_not_share_storage_with_non_bitfield() {
-        let org = TestOrg { ms_convention: true, ..TestOrg::default() };
+        let org = TestOrg { ms_convention: true, ..TestOrg::default() }.build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut components =
             vec![MockComponent::bit_field(0, int_dt("uint", 4), 4, 0), MockComponent::plain(1, int_dt("char", 1))];
@@ -1064,7 +998,7 @@ mod tests {
     fn components_changed_false_when_offsets_already_correct() {
         // Components already at the exact offsets the packer would compute should report no
         // change.
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut c0 = MockComponent::plain(0, int_dt("int", 4));
         c0.offset = 0;
@@ -1078,7 +1012,7 @@ mod tests {
 
     #[test]
     fn components_changed_true_when_offset_must_move() {
-        let org = TestOrg::default();
+        let org = TestOrg::default().build();
         let mut packer = AlignedComponentPacker::new(0, &org);
         let mut c0 = MockComponent::plain(0, int_dt("char", 1));
         let mut c1 = MockComponent::plain(1, int_dt("int", 4));

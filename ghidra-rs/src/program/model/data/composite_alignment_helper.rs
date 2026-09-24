@@ -1,5 +1,6 @@
+use crate::program::model::data::bit_field_packing::BitFieldPacking;
 use crate::program::model::data::composite_internal::CompositeInternal;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_organization_impl::get_least_common_multiple;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 
@@ -12,7 +13,7 @@ use crate::program::model::data::data_type_component::DataTypeComponent;
 /// Port of `CompositeAlignmentHelper.getCompositeAlignmentMultiple(DataOrganization,
 /// CompositeInternal)`.
 fn get_composite_alignment_multiple(
-    data_organization: &dyn DataOrganization,
+    data_organization: &DataOrganizationImpl,
     composite: &dyn CompositeInternal,
 ) -> i32 {
     let mut all_components_lcm = 1;
@@ -31,7 +32,7 @@ fn get_composite_alignment_multiple(
 /// Port of `CompositeAlignmentHelper.getPackedAlignment(DataOrganization, int,
 /// DataTypeComponent)`.
 pub fn get_packed_alignment(
-    data_organization: &dyn DataOrganization,
+    data_organization: &DataOrganizationImpl,
     packing_value: i32,
     component: &dyn DataTypeComponent,
 ) -> i32 {
@@ -64,7 +65,7 @@ pub fn get_packed_alignment_values(component_alignment: i32, packing_value: i32)
 /// TODO: goal is to eliminate this method in favor of pack once and remember alignment (ported
 /// verbatim from the Java source's own TODO comment).
 pub fn get_alignment(
-    data_organization: &dyn DataOrganization,
+    data_organization: &DataOrganizationImpl,
     composite: &dyn CompositeInternal,
 ) -> i32 {
     let mut minimum_alignment = composite.get_stored_minimum_alignment();
@@ -99,108 +100,40 @@ pub fn get_alignment(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::bit_field_packing::BitFieldPacking;
+    use crate::program::model::data::bit_field_packing_impl::BitFieldPackingImpl;
     use crate::program::model::data::composite::Composite;
     use crate::program::model::data::data_type::DataType;
 
-    struct MockBitFieldPacking {
-        ms_convention: bool,
+            /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization(machine_alignment: i32, absolute_max_alignment: i32, ms_convention: bool) -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(4);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(absolute_max_alignment);
+        org.set_machine_alignment(machine_alignment);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        let mut packing = BitFieldPackingImpl::new();
+        packing.set_use_ms_convention(ms_convention);
+        packing.set_type_alignment_enabled(false);
+        org.set_bit_field_packing(packing);
+        org
     }
 
-    impl BitFieldPacking for MockBitFieldPacking {
-        fn use_ms_convention(&self) -> bool {
-            self.ms_convention
-        }
-
-        fn is_type_alignment_enabled(&self) -> bool {
-            false
-        }
-
-        fn get_zero_length_boundary(&self) -> i32 {
-            0
-        }
-    }
-
-    struct MockDataOrganization {
-        machine_alignment: i32,
-        absolute_max_alignment: i32,
-        ms_convention: bool,
-    }
-
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            4
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            self.absolute_max_alignment
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            self.machine_alignment
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn BitFieldPacking> {
-            Box::new(MockBitFieldPacking { ms_convention: self.ms_convention })
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            Vec::new()
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            String::new()
-        }
-        fn get_alignment(&self, data_type: &dyn DataType) -> i32 {
-            data_type.get_alignment()
-        }
-    }
-
-    fn default_organization() -> MockDataOrganization {
-        MockDataOrganization { machine_alignment: 8, absolute_max_alignment: 0, ms_convention: false }
+    fn default_organization() -> DataOrganizationImpl {
+        mock_data_organization(8, 0, false)
     }
 
     struct MockDataType {
@@ -313,7 +246,7 @@ mod tests {
 
     #[test]
     fn get_packed_alignment_honors_zero_length_bitfield_in_union_with_ms_convention() {
-        let org = MockDataOrganization { machine_alignment: 8, absolute_max_alignment: 0, ms_convention: true };
+        let org = mock_data_organization(8, 0, true);
         let comp = MockComponent { data_type_alignment: 4, is_zero_bit_field: true, parent_is_union: true };
         assert_eq!(get_packed_alignment(&org, 0, &comp), 4);
     }
@@ -389,7 +322,7 @@ mod tests {
 
     #[test]
     fn get_alignment_caps_at_absolute_max_alignment() {
-        let org = MockDataOrganization { machine_alignment: 8, absolute_max_alignment: 4, ms_convention: false };
+        let org = mock_data_organization(8, 4, false);
         let composite = MockComposite {
             components: vec![component(16)],
             packing_value: 0,

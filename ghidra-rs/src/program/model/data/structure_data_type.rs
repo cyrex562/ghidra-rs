@@ -316,7 +316,7 @@ use crate::program::model::data::composite_internal::{
     compare_component_to_offset, compare_component_to_ordinal, CompositeInternal, DEFAULT_ALIGNMENT,
     NO_PACKING,
 };
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::{DataType, SetDataTypeNameError, UnsupportedOperationError};
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl;
@@ -3020,102 +3020,6 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     }
 }
 
-/// Placeholder [`DataOrganization`] used by [`StructureDataTypeImpl::get_data_organization`] until
-/// a real per-program `DataOrganization` can be wired through a `DataTypeManager` (this crate has
-/// no concrete, production `DataOrganization` implementation yet -- every other existing concrete
-/// data type in this module, e.g. [`EnumDataType`](super::enum_data_type::EnumDataType), simply
-/// leaves [`DataType::get_data_organization`] at its `unimplemented!()` default instead). Values
-/// mirror common LP64 conventions (8-byte pointers, 4-byte `int`, 8-byte `long`), matching the
-/// identical `MockDataOrganization` test double already used throughout this module's and
-/// [`aligned_structure_packer`](super::aligned_structure_packer)'s tests -- this is the same
-/// values, promoted out of `#[cfg(test)]` so [`StructureDataTypeImpl`]'s packing-enabled alignment
-/// computation ([`AlignedStructurePacker::pack_components`]) has something real to call.
-struct DefaultDataOrganization;
-
-impl DataOrganization for DefaultDataOrganization {
-    fn is_big_endian(&self) -> bool {
-        false
-    }
-    fn get_pointer_size(&self) -> i32 {
-        8
-    }
-    fn get_pointer_shift(&self) -> i32 {
-        0
-    }
-    fn is_signed_char(&self) -> bool {
-        true
-    }
-    fn get_char_size(&self) -> i32 {
-        1
-    }
-    fn get_wide_char_size(&self) -> i32 {
-        2
-    }
-    fn get_short_size(&self) -> i32 {
-        2
-    }
-    fn get_integer_size(&self) -> i32 {
-        4
-    }
-    fn get_long_size(&self) -> i32 {
-        8
-    }
-    fn get_long_long_size(&self) -> i32 {
-        8
-    }
-    fn get_float_size(&self) -> i32 {
-        4
-    }
-    fn get_double_size(&self) -> i32 {
-        8
-    }
-    fn get_long_double_size(&self) -> i32 {
-        8
-    }
-    fn get_absolute_max_alignment(&self) -> i32 {
-        0
-    }
-    fn get_machine_alignment(&self) -> i32 {
-        8
-    }
-    fn get_default_alignment(&self) -> i32 {
-        1
-    }
-    fn get_default_pointer_alignment(&self) -> i32 {
-        8
-    }
-    fn get_size_alignment(&self, _size: i32) -> i32 {
-        1
-    }
-    fn get_bit_field_packing(&self) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
-        struct DefaultBitFieldPacking;
-        impl crate::program::model::data::bit_field_packing::BitFieldPacking for DefaultBitFieldPacking {
-            fn use_ms_convention(&self) -> bool {
-                false
-            }
-            fn is_type_alignment_enabled(&self) -> bool {
-                true
-            }
-            fn get_zero_length_boundary(&self) -> i32 {
-                0
-            }
-        }
-        Box::new(DefaultBitFieldPacking)
-    }
-    fn get_size_alignment_count(&self) -> i32 {
-        0
-    }
-    fn get_sizes(&self) -> Vec<i32> {
-        vec![]
-    }
-    fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-        String::new()
-    }
-    fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-        1
-    }
-}
-
 /// Port of `DataUtilities.isValidDataTypeName(String)`'s check as applied by the
 /// `GenericDataType` constructor chain (`StructureDataType`'s Java superclass), used by
 /// [`StructureDataTypeImpl::new_in_category`]. A local duplicate of
@@ -3147,10 +3051,10 @@ fn is_valid_structure_name(name: &str) -> bool {
 /// Known, intentional gaps (beyond the ones already documented for the [`StructureDataType`] trait
 /// itself, which all still apply verbatim -- `replace`/`replaceAtOffset`/`dataType*Changed`/
 /// `dataType.clone(dataMgr)`/parent tracking):
-///   - [`get_data_organization`](DataType::get_data_organization) returns a fixed
-///     [`DefaultDataOrganization`] rather than one derived from an associated `DataTypeManager`,
-///     since `dataMgr` is not tracked at all (matching
-///     [`EnumDataType`](super::enum_data_type::EnumDataType)'s identical simplification).
+///   - [`get_data_organization`](DataType::get_data_organization) returns
+///     `DataOrganizationImpl.getDefaultOrganization()` (Java's answer for a type with no data type
+///     manager) rather than one derived from an associated `DataTypeManager`, since `dataMgr` is
+///     not tracked at all.
 ///   - [`AlignedStructurePacker::create_component_packer`] returns the real
 ///     [`aligned_component_packer::AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)
 ///     port (2026-09; previously a simplistic sequential, non-bitfield-aware stand-in).
@@ -3276,8 +3180,8 @@ impl DataType for StructureDataTypeImpl {
         Ok(())
     }
 
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-        Box::new(DefaultDataOrganization)
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+        Arc::new(DataOrganizationImpl::get_default_organization(None))
     }
 
     fn get_mnemonic(&self, settings: &dyn Settings) -> String {
@@ -3849,7 +3753,7 @@ impl AlignedStructurePacker for StructureDataTypeImpl {
     fn create_component_packer(
         &self,
         pack_value: i32,
-        data_organization: &dyn DataOrganization,
+        data_organization: &DataOrganizationImpl,
     ) -> Box<dyn AlignedComponentPacker> {
         Box::new(RealAlignedComponentPacker::new(pack_value, data_organization))
     }
@@ -3906,103 +3810,36 @@ mod tests {
         components: Vec<DataTypeComponentImpl>,
     }
 
-    /// Minimal [`DataOrganization`] stand-in, needed only so
-    /// [`AlignedStructurePacker::pack_components`]'s default body has something to call
-    /// `get_machine_alignment()`/`is_big_endian()`/`get_bit_field_packing()` on -- matches the
-    /// identical mock already used by
-    /// [`aligned_structure_packer`](crate::program::model::data::aligned_structure_packer)'s own
-    /// tests.
-    struct MockDataOrganization;
-    impl crate::program::model::data::data_organization::DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
-            struct MockBitFieldPacking;
-            impl crate::program::model::data::bit_field_packing::BitFieldPacking for MockBitFieldPacking {
-                fn use_ms_convention(&self) -> bool {
-                    false
-                }
-                fn is_type_alignment_enabled(&self) -> bool {
-                    true
-                }
-                fn get_zero_length_boundary(&self) -> i32 {
-                    0
-                }
-            }
-            Box::new(MockBitFieldPacking)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            vec![]
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            String::new()
-        }
-        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-            1
-        }
+    /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        org
     }
 
     impl DataType for MockStructureDataType {
         fn get_name(&self) -> String {
             self.name.clone()
         }
-        fn get_data_organization(&self) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
-            Box::new(MockDataOrganization)
+        fn get_data_organization(&self) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
+            Arc::new(mock_data_organization())
         }
         fn as_composite(&self) -> Option<&dyn Composite> {
             Some(self)
@@ -4136,7 +3973,7 @@ mod tests {
         fn add_component(&mut self, dtc: &mut dyn InternalDataTypeComponent, _is_last_component: bool) {
             let length = dtc.get_length().max(1);
             self.max_length = self.max_length.max(length);
-            let offset = crate::program::seam_stubs::get_aligned_offset(length, self.next_offset);
+            let offset = crate::program::model::data::data_organization_impl::get_aligned_offset(length, self.next_offset);
             let component_length = dtc.get_length();
             dtc.update(dtc.get_ordinal(), offset, component_length);
             self.next_offset = offset + component_length;
@@ -4156,7 +3993,7 @@ mod tests {
         fn create_component_packer(
             &self,
             _pack_value: i32,
-            _data_organization: &dyn crate::program::model::data::data_organization::DataOrganization,
+            _data_organization: &crate::program::model::data::data_organization_impl::DataOrganizationImpl,
         ) -> Box<dyn crate::program::seam_stubs::AlignedComponentPacker> {
             Box::new(SequentialComponentPacker { next_offset: 0, max_length: 1 })
         }
@@ -5061,7 +4898,7 @@ mod tests {
 
         let mut machine_aligned = StructureDataTypeImpl::new("Bar", 0);
         machine_aligned.set_to_machine_aligned();
-        assert_eq!(DataType::get_alignment(&machine_aligned), 8); // DefaultDataOrganization::get_machine_alignment
+        assert_eq!(DataType::get_alignment(&machine_aligned), 8); // DataOrganizationImpl::DEFAULT_MACHINE_ALIGNMENT
     }
 
     #[test]
@@ -5070,7 +4907,7 @@ mod tests {
         s.set_packing_enabled(true);
         s.add(dt("int", 4)).expect("add int");
         s.add(dt("byte", 1)).expect("add byte");
-        // Must not panic reaching into `DefaultDataOrganization`/`AlignedComponentPacker`.
+        // Must not panic reaching into the data organization/`AlignedComponentPacker`.
         let alignment = DataType::get_alignment(&s);
         assert!(alignment >= 1);
         assert!(s.is_packing_enabled());
@@ -5123,7 +4960,7 @@ mod tests {
         let mut s = StructureDataTypeImpl::new("Packed", 0);
         s.set_packing_enabled(true);
         s.add(dt("int", 4)).expect("add int");
-        // Must not panic reaching into `DefaultDataOrganization`/`AlignedComponentPacker`, and must
+        // Must not panic reaching into the data organization/`AlignedComponentPacker`, and must
         // leave the structure in a consistent, still-packed state.
         s.structure_data_type_data_type_alignment_changed(dt("int", 4).as_ref());
         assert!(s.is_packing_enabled());

@@ -270,98 +270,30 @@ pub fn get_data_type_instance_at(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::dynamic::Dynamic;
     use crate::program::model::data::factory_data_type::FactoryDataType;
 
-    #[derive(Clone)]
-    struct MockDataOrganization {
-        pointer_size: i32,
-    }
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            self.pointer_size
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            4
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            crate::program::model::data::data_organization::NO_MAXIMUM_ALIGNMENT
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            4
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            4
-        }
-        fn get_size_alignment(&self, size: i32) -> i32 {
-            size
-        }
-        fn get_bit_field_packing(
-            &self,
-        ) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
-            struct P;
-            impl crate::program::model::data::bit_field_packing::BitFieldPacking for P {
-                fn use_ms_convention(&self) -> bool {
-                    false
-                }
-                fn is_type_alignment_enabled(&self) -> bool {
-                    true
-                }
-                fn get_zero_length_boundary(&self) -> i32 {
-                    0
-                }
-            }
-            Box::new(P)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            4
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            vec![1, 2, 4, 8]
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            "int".to_string()
-        }
-        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-            1
-        }
+    /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization(pointer_size: i32) -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(pointer_size);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(4);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_machine_alignment(4);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(4);
+        org
     }
 
     #[derive(Clone)]
@@ -379,8 +311,8 @@ mod tests {
         fn get_aligned_length(&self) -> i32 {
             self.length + 1
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization { pointer_size: 4 })
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization(4))
         }
         fn clone_data_type(
             &self,
@@ -397,8 +329,8 @@ mod tests {
         fn get_length(&self) -> i32 {
             self.length
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization { pointer_size: 8 })
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization(8))
         }
         fn is_function_definition_type(&self) -> bool {
             true
@@ -419,7 +351,7 @@ mod tests {
     impl crate::program::model::data::built_in_data_type::BuiltInDataType for MockDynamicDataType {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }
@@ -454,7 +386,7 @@ mod tests {
     impl crate::program::model::data::built_in_data_type::BuiltInDataType for MockFactoryDataType {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

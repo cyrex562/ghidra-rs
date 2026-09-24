@@ -179,7 +179,7 @@ mod tests {
     use crate::program::model::address::{Address, SpecialAddress};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::source_archive::SourceArchive;
     use crate::program::model::mem::MemoryAccessException;
     use crate::util::UniversalID;
@@ -269,7 +269,7 @@ mod tests {
     impl BuiltInDataType for MockMissingBuiltIn {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None // matches MissingBuiltInDataType.getCTypeDeclaration always returning null
         }
@@ -418,7 +418,7 @@ mod tests {
         impl BuiltInDataType for CopyTestType {
             fn get_c_type_declaration(
                 &self,
-                _data_organization: Option<&dyn DataOrganization>,
+                _data_organization: Option<&DataOrganizationImpl>,
             ) -> Option<String> {
                 None
             }

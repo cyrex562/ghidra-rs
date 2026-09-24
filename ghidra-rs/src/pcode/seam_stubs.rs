@@ -4317,7 +4317,7 @@ impl DataType for StringDataType {
 impl crate::program::model::data::built_in_data_type::BuiltInDataType for StringDataType {
     fn get_c_type_declaration(
         &self,
-        _data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+        _data_organization: Option<&crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
     ) -> Option<String> {
         unimplemented!("not reachable from this stub's one call site")
     }

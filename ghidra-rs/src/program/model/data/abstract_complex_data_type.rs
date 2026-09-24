@@ -187,7 +187,7 @@ mod tests {
     impl BuiltInDataType for MockFloat {
         fn get_c_type_declaration(
             &self,
-            data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+            data_organization: Option<&crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
         ) -> Option<String> {
             self.float_c_type_declaration(data_organization)
         }
@@ -219,7 +219,7 @@ mod tests {
     impl BuiltInDataType for MockComplex {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+            _data_organization: Option<&crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

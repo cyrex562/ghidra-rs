@@ -2,10 +2,9 @@
 //! [`BitFieldPacking`] implementation.
 //!
 //! `BitFieldPackingImpl.save`/`restore` (Java's package-private static helpers that persist
-//! bitfield-packing settings into a `DBStringMapAdapter`-backed options map) are **not** ported
-//! here: `ghidra.program.database.DBStringMapAdapter` is still `TODO` in `PORT_MANIFEST.tsv`, so
-//! there is nothing real to serialize into. `encode`/`restore_xml` *are* ported, since their real
-//! dependencies ([`Encoder`], [`XmlPullParser`], `SpecXmlUtils`) are already real.
+//! bitfield-packing settings into a `DBStringMapAdapter`) are written against the
+//! [`DbStringMapAdapter`] seam, since `ghidra.program.database.DBStringMapAdapter` is not ported
+//! yet.
 //!
 //! This crate's existing `MockBitFieldPacking`/similar test doubles for the [`BitFieldPacking`]
 //! trait scattered across `program::model::data` are left untouched -- this type is landed
@@ -19,6 +18,7 @@ use crate::program::model::pcode::ids::{
     ATTRIB_VALUE, ELEM_BITFIELD_PACKING, ELEM_TYPE_ALIGNMENT_ENABLED, ELEM_USE_MS_CONVENTION,
     ELEM_ZERO_LENGTH_BOUNDARY,
 };
+use crate::program::seam_stubs::DbStringMapAdapter;
 use crate::util::xml::spec_xml_utils::{decode_boolean, decode_int};
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_exception::XmlException;
@@ -74,6 +74,56 @@ impl BitFieldPackingImpl {
     /// A value of `0` causes the zero-length type size to be used.
     pub fn set_zero_length_boundary(&mut self, zero_length_boundary: i32) {
         self.zero_length_boundary = zero_length_boundary;
+    }
+
+    /// Save the non-default settings of `bitfield_packing` into `data_map` under `key_prefix`.
+    ///
+    /// Port of the package-private static `BitFieldPackingImpl.save`.
+    ///
+    /// # Errors
+    /// Returns an error if the map cannot be written.
+    pub(crate) fn save(
+        bitfield_packing: &dyn BitFieldPacking,
+        data_map: &mut dyn DbStringMapAdapter,
+        key_prefix: &str,
+    ) -> io::Result<()> {
+        let use_ms_convention = bitfield_packing.use_ms_convention();
+        if use_ms_convention != DEFAULT_USE_MS_CONVENTION {
+            data_map.put(&format!("{key_prefix}use_MS_convention"), &use_ms_convention.to_string())?;
+        }
+        let type_alignment_enabled = bitfield_packing.is_type_alignment_enabled();
+        if type_alignment_enabled != DEFAULT_TYPE_ALIGNMENT_ENABLED {
+            data_map.put(&format!("{key_prefix}type_alignment_enabled"), &type_alignment_enabled.to_string())?;
+        }
+        let zero_length_boundary = bitfield_packing.get_zero_length_boundary();
+        if zero_length_boundary != DEFAULT_ZERO_LENGTH_BOUNDARY {
+            data_map.put(&format!("{key_prefix}zero_length_boundary"), &zero_length_boundary.to_string())?;
+        }
+        Ok(())
+    }
+
+    /// Restore settings saved by [`save`](Self::save) from `data_map` under `key_prefix`; absent
+    /// keys keep their defaults.
+    ///
+    /// Port of the package-private static `BitFieldPackingImpl.restore`.
+    ///
+    /// # Errors
+    /// Returns an error if the map cannot be read.
+    pub(crate) fn restore(data_map: &dyn DbStringMapAdapter, key_prefix: &str) -> io::Result<BitFieldPackingImpl> {
+        let mut bit_field_packing = BitFieldPackingImpl::new();
+        bit_field_packing.use_ms_convention = data_map.get_boolean(
+            &format!("{key_prefix}{}", ELEM_USE_MS_CONVENTION.name),
+            bit_field_packing.use_ms_convention,
+        )?;
+        bit_field_packing.type_alignment_enabled = data_map.get_boolean(
+            &format!("{key_prefix}{}", ELEM_TYPE_ALIGNMENT_ENABLED.name),
+            bit_field_packing.type_alignment_enabled,
+        )?;
+        bit_field_packing.zero_length_boundary = data_map.get_int(
+            &format!("{key_prefix}{}", ELEM_ZERO_LENGTH_BOUNDARY.name),
+            bit_field_packing.zero_length_boundary,
+        )?;
+        Ok(bit_field_packing)
     }
 
     /// Port of `BitFieldPackingImpl.encode(Encoder)`.

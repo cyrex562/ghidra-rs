@@ -232,7 +232,7 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType, SpecialAddress};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::dynamic::Dynamic;
     use std::sync::Arc;
 
@@ -321,7 +321,7 @@ mod tests {
     impl BuiltInDataType for MockRepeatCount {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

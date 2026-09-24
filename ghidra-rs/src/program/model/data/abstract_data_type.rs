@@ -43,17 +43,9 @@
 //!     -- following that same precedent -- they are exposed here under distinct
 //!     `abstract_data_type_*` names for a concrete `impl DataType for ...` to delegate to.
 //!   - `getDataOrganization` (`final`) resolves through `dataMgr` when present, otherwise falls
-//!     back to the static `DataOrganizationImpl.getDefaultOrganization()`. That static factory has
-//!     no port: [`DataOrganizationImpl`](super::data_organization_impl::DataOrganizationImpl) was
-//!     itself promoted to a trait for the same cycle-breaking reason and, per its own module docs,
-//!     cannot construct "a new `Self`" generically. This mirrors the exact gap already accepted by
-//!     [`DataType::get_data_organization`] and [`DataTypeManager::get_data_organization`]'s own
-//!     defaults (both `unimplemented!()` when no concrete organization is available) -- the
-//!     `dataMgr`-absent branch here does the same rather than inventing a new placeholder for an
-//!     already-ported trait that merely lacks a default-constructing factory.
+//!     back to the static `DataOrganizationImpl.getDefaultOrganization()`.
 //!   - the `protected static getDataOrganization(DataTypeManager)` helper is ported as the free
-//!     function [`default_data_organization`], for the same reason `populate_default_organization`
-//!     in `data_organization_impl.rs` is a free function rather than a trait method.
+//!     function [`default_data_organization`].
 //!   - `getDefaultAbbreviatedLabelPrefix` delegates to `self.getDefaultLabelPrefix()` -- a *virtual*
 //!     call that picks up a concrete override -- unlike [`DataType::get_default_abbreviated_label_prefix`]'s
 //!     existing default, which unconditionally returns `None`. Exposed as
@@ -68,24 +60,21 @@
 //!     equivalent: [`CategoryPath`](super::category_path::CategoryPath) is always constructed by
 //!     value, never null.
 
+use std::sync::Arc;
+
 use crate::program::model::data::category_path::CategoryPath;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::data_utilities::DataUtilities;
 
-/// Port of the protected static `AbstractDataType.getDataOrganization(DataTypeManager)`.
+/// The data organization of `data_mgr`, or the default organization without one.
 ///
-/// # Panics
-/// Panics if `data_mgr` is `None`: no default-constructing factory is available yet for
-/// `DataOrganizationImpl.getDefaultOrganization()`. See the module-level documentation.
-pub fn default_data_organization(data_mgr: Option<&dyn DataTypeManager>) -> Box<dyn DataOrganization> {
+/// Port of the protected static `AbstractDataType.getDataOrganization(DataTypeManager)`.
+pub fn default_data_organization(data_mgr: Option<&dyn DataTypeManager>) -> Arc<DataOrganizationImpl> {
     match data_mgr {
         Some(mgr) => mgr.get_data_organization(),
-        None => unimplemented!(
-            "AbstractDataType::get_data_organization has no default organization available yet \
-             (DataOrganizationImpl::getDefaultOrganization is not ported)"
-        ),
+        None => Arc::new(DataOrganizationImpl::get_default_organization(None)),
     }
 }
 
@@ -147,7 +136,7 @@ pub trait AbstractDataType: DataType {
     /// Port of the final `AbstractDataType.getDataOrganization()`. Exposed under a distinct name
     /// since [`DataType::get_data_organization`] already provides a (panicking) placeholder
     /// default. A concrete `impl DataType for ...` should delegate to this.
-    fn abstract_data_type_get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn abstract_data_type_get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         default_data_organization(self.stored_data_type_manager().as_deref())
     }
 
@@ -162,104 +151,38 @@ pub trait AbstractDataType: DataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::bit_field_packing::BitFieldPacking;
     use crate::program::model::data::category_path::ROOT;
 
-    struct MockDataOrganization {
-        pointer_size: i32,
-    }
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            self.pointer_size
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            2
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            4
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            4
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn BitFieldPacking> {
-            struct MockBitFieldPacking;
-            impl BitFieldPacking for MockBitFieldPacking {
-                fn use_ms_convention(&self) -> bool {
-                    false
-                }
-                fn is_type_alignment_enabled(&self) -> bool {
-                    true
-                }
-                fn get_zero_length_boundary(&self) -> i32 {
-                    0
-                }
-            }
-            Box::new(MockBitFieldPacking)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            vec![]
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            String::new()
-        }
-        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-            1
-        }
+    /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization(pointer_size: i32) -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(pointer_size);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(4);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(4);
+        org.clear_size_alignment_map();
+        org
     }
 
     struct MockDataTypeManager {
         pointer_size: i32,
     }
     impl DataTypeManager for MockDataTypeManager {
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization {
-                pointer_size: self.pointer_size,
-            })
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization(self.pointer_size))
         }
     }
 
@@ -303,7 +226,7 @@ mod tests {
         fn get_data_type_manager(&self) -> Option<Box<dyn DataTypeManager>> {
             self.abstract_data_type_get_data_type_manager()
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             self.abstract_data_type_get_data_organization()
         }
         fn get_default_label_prefix(&self) -> Option<String> {

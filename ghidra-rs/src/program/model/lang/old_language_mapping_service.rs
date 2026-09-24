@@ -161,7 +161,7 @@ mod tests {
     use std::sync::Arc;
     use super::*;
     use crate::program::model::address::{Address, AddressFactory, AddressSpace, AddressSpaceType};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::lang::compiler_spec::CompilerSpec;
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
     use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
@@ -289,7 +289,7 @@ mod tests {
         fn is_global(&self, _addr: &Address) -> bool {
             true
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {

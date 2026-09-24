@@ -30,7 +30,7 @@ mod tests {
     use super::*;
     use crate::docking::settings::settings::Settings;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
     use crate::pcode::floatformat::{get_float_format, FloatFormat};
 
@@ -50,7 +50,7 @@ mod tests {
     impl BuiltInDataType for MockFloat16DataType {
         fn get_c_type_declaration(
             &self,
-            data_organization: Option<&dyn DataOrganization>,
+            data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             self.float_c_type_declaration(data_organization)
         }

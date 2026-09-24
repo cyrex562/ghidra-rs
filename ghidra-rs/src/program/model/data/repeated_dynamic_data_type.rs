@@ -352,7 +352,7 @@ mod tests {
     impl crate::program::model::data::built_in_data_type::BuiltInDataType for TestRepeated {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+            _data_organization: Option<&crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

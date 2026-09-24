@@ -2378,25 +2378,6 @@ pub trait AlignedComponentPacker {
     fn components_changed(&self) -> bool;
 }
 
-/// Placeholder for the static `ghidra.program.model.data.DataOrganizationImpl.getAlignedOffset`,
-/// referenced by
-/// [`AlignedStructurePacker`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker)
-/// before `DataOrganizationImpl` itself is ported. The algorithm has no dependency on any
-/// unported state, so it is ported faithfully here as a free function rather than left
-/// unimplemented.
-pub fn get_aligned_offset(alignment: i32, minimum_offset: i32) -> i32 {
-    if alignment <= 0 {
-        return minimum_offset;
-    }
-    let is_power_of_two = (alignment & (alignment - 1)) == 0;
-    if is_power_of_two {
-        return alignment + ((minimum_offset - 1) & !(alignment - 1));
-    }
-    let offcut = minimum_offset % alignment;
-    let adj = if offcut != 0 { alignment - offcut } else { 0 };
-    minimum_offset + adj
-}
-
 /// Placeholder for `ghidra.program.model.data.BitFieldDataType`, referenced by
 /// [`DataOrganizationImpl`](crate::program::model::data::data_organization_impl::DataOrganizationImpl)'s
 /// port of `DataOrganizationImpl.getAlignment(DataType)` (via
@@ -2623,6 +2604,37 @@ pub mod comment_utils {
     /// unchanged (equivalent to a comment containing no annotations).
     pub fn get_display_string(comment: &str, _program: &dyn crate::program::model::listing::Program) -> String {
         comment.to_string()
+    }
+}
+
+/// Placeholder for `ghidra.program.database.DBStringMapAdapter`, a string-keyed, string-valued
+/// table in a program database. Referenced by `DataOrganizationImpl.save`/`restore` and
+/// `BitFieldPackingImpl.save`/`restore` before the real (DB-table-backed) class is ported. The
+/// storage primitives are required; `getInt`/`getBoolean` are provided exactly as Java derives
+/// them from the stored string.
+pub trait DbStringMapAdapter {
+    /// Stands in for `DBStringMapAdapter.put(String, String)`.
+    fn put(&mut self, key: &str, value: &str) -> io::Result<()>;
+
+    /// Stands in for `DBStringMapAdapter.get(String)`: the stored value, or `None`.
+    fn get(&self, key: &str) -> io::Result<Option<String>>;
+
+    /// Stands in for `DBStringMapAdapter.keySet()`.
+    fn key_set(&self) -> io::Result<Vec<String>>;
+
+    /// Stands in for `DBStringMapAdapter.delete(String)`.
+    fn delete(&mut self, key: &str) -> io::Result<()>;
+
+    /// Port of `DBStringMapAdapter.getInt(String, int)`: the stored value parsed as an `int`, or
+    /// `default_value` if absent or unparsable.
+    fn get_int(&self, key: &str, default_value: i32) -> io::Result<i32> {
+        Ok(self.get(key)?.and_then(|v| v.parse::<i32>().ok()).unwrap_or(default_value))
+    }
+
+    /// Port of `DBStringMapAdapter.getBoolean(String, boolean)`: `Boolean.valueOf` of the stored
+    /// value (true only for a case-insensitive "true"), or `default_value` if absent.
+    fn get_boolean(&self, key: &str, default_value: bool) -> io::Result<bool> {
+        Ok(self.get(key)?.map_or(default_value, |v| v.eq_ignore_ascii_case("true")))
     }
 }
 

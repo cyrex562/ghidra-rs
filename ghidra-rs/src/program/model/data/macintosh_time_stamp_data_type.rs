@@ -149,7 +149,7 @@ mod tests {
     use crate::program::model::address::{Address, SpecialAddress};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_impl::DataTypeImpl;
     use crate::program::model::data::source_archive::SourceArchive;
@@ -246,7 +246,7 @@ mod tests {
     impl BuiltInDataType for MockMacTimeStamp {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

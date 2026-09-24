@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::lang::compiler_spec::{CompilerSpec, EvaluationModelType};
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
@@ -364,7 +364,7 @@ impl CompilerSpec for TestCompilerSpec {
     fn is_global(&self, _addr: &Address) -> bool {
         false
     }
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         unimplemented!("not needed to restore compiler-spec XML")
     }
     fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {

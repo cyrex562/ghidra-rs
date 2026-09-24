@@ -49,7 +49,7 @@ mod tests {
     impl BuiltInDataType for MockFactoryDataType {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+            _data_organization: Option<&crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

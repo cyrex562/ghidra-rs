@@ -79,7 +79,7 @@
 use std::sync::{Arc, Weak};
 
 use crate::docking::settings::settings::Settings;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::{DataType, UnsupportedOperationError};
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::data_utilities::DataUtilities;
@@ -175,7 +175,7 @@ pub trait DataTypeImpl: DataType {
     /// DataType for ...` should delegate to this.
     ///
     /// Requires `Self: Sized`: unlike [`data_type_impl_get_aligned_length`](Self::data_type_impl_get_aligned_length),
-    /// this must hand `self` to [`DataOrganization::get_alignment`], whose signature is fixed to
+    /// this must hand `self` to [`DataOrganizationImpl::get_alignment`](crate::program::model::data::data_organization_impl::DataOrganizationImpl::get_alignment), whose signature is fixed to
     /// `&dyn DataType`, which requires an unsized coercion only available for a known-`Sized`
     /// source. This keeps the rest of the trait (including this method's callers, via a concrete
     /// `impl DataType`) usable as `dyn DataTypeImpl`; only this one method drops out of the vtable.

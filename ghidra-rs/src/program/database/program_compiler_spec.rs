@@ -96,7 +96,7 @@ mod tests {
     use crate::program::model::lang::prototype_model::PrototypeModel;
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::listing::parameter::Parameter;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::pcode::Encoder;
     use crate::program::model::address::{Address, AddressSetView};
     use crate::program::seam_stubs::PcodeInjectLibrary;
@@ -184,7 +184,7 @@ mod tests {
             false
         }
 
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
 

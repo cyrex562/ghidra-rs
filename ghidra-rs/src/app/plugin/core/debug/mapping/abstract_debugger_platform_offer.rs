@@ -164,7 +164,7 @@ mod tests {
         }
         fn get_data_organization(
             &self,
-        ) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
+        ) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_pcode_inject_library(

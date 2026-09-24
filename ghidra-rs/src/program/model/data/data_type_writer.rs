@@ -69,16 +69,7 @@
 //!     construction time `writer`/`annotator`/`cpp_style_comments` (all needed by the write path)
 //!     have not been moved into `self` yet, and `write_built_in_declarations` needs `&mut self`.
 //!   - When no `DataTypeManager` is supplied, Java falls back to
-//!     `DataOrganizationImpl.getDefaultOrganization()`. No concrete zero-argument
-//!     `DataOrganization` factory exists yet in this crate (see
-//!     [`abstract_data_type::default_data_organization`](super::abstract_data_type::default_data_organization),
-//!     which panics without a manager). This file supplies its own minimal
-//!     [`FallbackDataOrganization`], matching `DataOrganizationImpl`'s own documented Java
-//!     `DEFAULT_*` constants (`DEFAULT_POINTER_SIZE = 4`, `DEFAULT_CHAR_SIZE = 1`, etc., read
-//!     directly from `orig_src/.../DataOrganizationImpl.java`) rather than the differently-tuned
-//!     (64-bit-pointer) test-support `DefaultDataOrganization` structs private to
-//!     `structure_data_type.rs`/`union_data_type.rs` -- this one aims to match Java's real runtime
-//!     default, not just be a plausible stand-in for unit tests.
+//!     `DataOrganizationImpl.getDefaultOrganization()`, as this port does.
 //!   - `doWrite`'s `dt = dt.clone(dtm)` ("force resize/repack for target data organization") step
 //!     is skipped everywhere in [`DataTypeWriter::do_write`]/its helpers. This crate's concrete
 //!     datatypes do not yet reliably override [`DataType::clone_data_type`] (most inherit the
@@ -150,10 +141,9 @@ use std::sync::Arc;
 
 use crate::program::model::data::annotation_handler::AnnotationHandler;
 use crate::program::model::data::array::Array;
-use crate::program::model::data::bit_field_packing::BitFieldPacking;
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
 use crate::program::model::data::composite::Composite;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -260,104 +250,6 @@ impl Ord for CompositeNode {
     }
 }
 
-/// Fallback used by [`DataTypeWriter::new`] when constructed without a `DataTypeManager`. Port of
-/// the numeric defaults documented on `ghidra.program.model.data.DataOrganizationImpl` (its
-/// `DEFAULT_*` constants), i.e. what `DataOrganizationImpl.getDefaultOrganization()` actually
-/// produces in Java -- see the module doc comment for why this crate's other
-/// `DefaultDataOrganization` test-support stand-ins were not reused.
-#[derive(Debug, Clone, Copy)]
-struct FallbackDataOrganization;
-
-/// Port of the trivial, no-op-shaped `DataOrganizationImpl.getBitFieldPacking()` default
-/// (`BitFieldPackingImpl.getDefaultBitFieldPacking()` in Java: MS convention disabled, type
-/// alignment enabled, zero-length boundary of 0).
-#[derive(Debug, Clone, Copy)]
-struct FallbackBitFieldPacking;
-
-impl BitFieldPacking for FallbackBitFieldPacking {
-    fn use_ms_convention(&self) -> bool {
-        false
-    }
-    fn is_type_alignment_enabled(&self) -> bool {
-        true
-    }
-    fn get_zero_length_boundary(&self) -> i32 {
-        0
-    }
-}
-
-impl DataOrganization for FallbackDataOrganization {
-    fn is_big_endian(&self) -> bool {
-        false
-    }
-    fn get_pointer_size(&self) -> i32 {
-        4 // DataOrganizationImpl.DEFAULT_POINTER_SIZE
-    }
-    fn get_pointer_shift(&self) -> i32 {
-        0
-    }
-    fn is_signed_char(&self) -> bool {
-        true // DataOrganizationImpl.DEFAULT_CHAR_IS_SIGNED
-    }
-    fn get_char_size(&self) -> i32 {
-        1 // DEFAULT_CHAR_SIZE
-    }
-    fn get_wide_char_size(&self) -> i32 {
-        2 // DEFAULT_WIDE_CHAR_SIZE
-    }
-    fn get_short_size(&self) -> i32 {
-        2 // DEFAULT_SHORT_SIZE
-    }
-    fn get_integer_size(&self) -> i32 {
-        4 // DEFAULT_INT_SIZE
-    }
-    fn get_long_size(&self) -> i32 {
-        4 // DEFAULT_LONG_SIZE
-    }
-    fn get_long_long_size(&self) -> i32 {
-        8 // DEFAULT_LONG_LONG_SIZE
-    }
-    fn get_float_size(&self) -> i32 {
-        4 // DEFAULT_FLOAT_SIZE
-    }
-    fn get_double_size(&self) -> i32 {
-        8 // DEFAULT_DOUBLE_SIZE
-    }
-    fn get_long_double_size(&self) -> i32 {
-        8 // DEFAULT_LONG_DOUBLE_SIZE
-    }
-    fn get_absolute_max_alignment(&self) -> i32 {
-        0 // NO_MAXIMUM_ALIGNMENT
-    }
-    fn get_machine_alignment(&self) -> i32 {
-        8 // DEFAULT_MACHINE_ALIGNMENT
-    }
-    fn get_default_alignment(&self) -> i32 {
-        1 // DEFAULT_DEFAULT_ALIGNMENT
-    }
-    fn get_default_pointer_alignment(&self) -> i32 {
-        4 // DEFAULT_DEFAULT_POINTER_ALIGNMENT
-    }
-    fn get_size_alignment(&self, _size: i32) -> i32 {
-        1
-    }
-    fn get_bit_field_packing(&self) -> Box<dyn BitFieldPacking> {
-        Box::new(FallbackBitFieldPacking)
-    }
-    fn get_size_alignment_count(&self) -> i32 {
-        0
-    }
-    fn get_sizes(&self) -> Vec<i32> {
-        Vec::new()
-    }
-    fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-        String::new()
-    }
-    fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
-        1
-    }
-}
-
 // list of type names which correspond to C/C++ compiler primitive types
 // TODO: Specified INTEGRAL_TYPES only impact treatment of typedefs whose name
 //   matches or ends with a specified name.  It's unclear if this is an appropriate
@@ -407,7 +299,7 @@ pub struct DataTypeWriter<W: Write> {
     /// crate's concrete datatypes yet).
     dtm: Option<Arc<dyn DataTypeManager>>,
     /// Port of `dataOrganization`.
-    data_organization: Box<dyn DataOrganization>,
+    data_organization: Arc<DataOrganizationImpl>,
     /// Port of `annotator`.
     annotator: Box<dyn AnnotationHandler>,
     /// Port of `cppStyleComments`.
@@ -441,9 +333,9 @@ impl<W: Write> DataTypeWriter<W> {
         annotator: Box<dyn AnnotationHandler>,
         cpp_style_comments: bool,
     ) -> Self {
-        let data_organization: Box<dyn DataOrganization> = match &dtm {
+        let data_organization: Arc<DataOrganizationImpl> = match &dtm {
             Some(dtm) => dtm.get_data_organization(),
-            None => Box::new(FallbackDataOrganization),
+            None => Arc::new(DataOrganizationImpl::get_default_organization(None)),
         };
         Self {
             resolved: HashSet::new(),
@@ -1553,7 +1445,7 @@ mod tests {
         }
     }
     impl BuiltInDataType for MockBuiltIn {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             self.0.clone()
         }
         fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
@@ -1790,7 +1682,7 @@ mod tests {
         }
     }
     impl BuiltInDataType for MockFactoryDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             None
         }
         fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
@@ -1864,7 +1756,7 @@ mod tests {
         struct StubDynamic;
         impl DataType for StubDynamic {}
         impl BuiltInDataType for StubDynamic {
-            fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+            fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
                 None
             }
             fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
@@ -1898,7 +1790,7 @@ mod tests {
         struct StubDynamic;
         impl DataType for StubDynamic {}
         impl BuiltInDataType for StubDynamic {
-            fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+            fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
                 None
             }
             fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
@@ -1934,7 +1826,7 @@ mod tests {
             }
         }
         impl BuiltInDataType for UnspecifiableDynamic {
-            fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+            fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
                 None
             }
             fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}

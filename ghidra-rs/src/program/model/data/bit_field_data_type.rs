@@ -69,7 +69,7 @@
 //!
 //! [`DataType::as_bit_field`](super::data_type::DataType::as_bit_field) already downcasts to a
 //! minimal `seam_stubs::BitFieldDataType` placeholder trait, used by
-//! [`DataOrganizationImpl::compute_alignment`](super::data_organization_impl::DataOrganizationImpl::compute_alignment),
+//! [`DataOrganizationImpl::get_alignment`](super::data_organization_impl::DataOrganizationImpl::get_alignment),
 //! [`DataTypeComponentImpl`](super::data_type_component_impl::DataTypeComponentImpl), and
 //! [`ReadOnlyDataTypeComponent`](super::read_only_data_type_component::ReadOnlyDataTypeComponent).
 //! This struct implements that placeholder trait too (delegating to the real fields) and overrides
@@ -88,7 +88,7 @@ use crate::program::model::data::abstract_data_type::{
     check_new_abstract_data_type_args, default_data_organization, AbstractDataType,
 };
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::data_utilities::DataUtilities;
@@ -425,7 +425,7 @@ impl DataType for BitFieldDataType {
         self.abstract_data_type_get_data_type_manager()
     }
 
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         // Port of the final `AbstractDataType.getDataOrganization()`, called directly via the
         // free function rather than `abstract_data_type_get_data_organization` since the latter
         // is equivalent but this avoids an extra indirection through the trait's default.
@@ -631,97 +631,39 @@ mod tests {
     use crate::docking::settings::settings::Settings;
     use crate::program::model::data::enum_::Enum;
 
-    struct MockDataOrganization;
-    impl DataOrganization for MockDataOrganization {
-        fn is_big_endian(&self) -> bool {
-            false
-        }
-        fn get_pointer_size(&self) -> i32 {
-            8
-        }
-        fn get_pointer_shift(&self) -> i32 {
-            0
-        }
-        fn is_signed_char(&self) -> bool {
-            true
-        }
-        fn get_char_size(&self) -> i32 {
-            1
-        }
-        fn get_wide_char_size(&self) -> i32 {
-            4
-        }
-        fn get_short_size(&self) -> i32 {
-            2
-        }
-        fn get_integer_size(&self) -> i32 {
-            4
-        }
-        fn get_long_size(&self) -> i32 {
-            8
-        }
-        fn get_long_long_size(&self) -> i32 {
-            8
-        }
-        fn get_float_size(&self) -> i32 {
-            4
-        }
-        fn get_double_size(&self) -> i32 {
-            8
-        }
-        fn get_long_double_size(&self) -> i32 {
-            8
-        }
-        fn get_absolute_max_alignment(&self) -> i32 {
-            0
-        }
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
-        fn get_default_alignment(&self) -> i32 {
-            1
-        }
-        fn get_default_pointer_alignment(&self) -> i32 {
-            8
-        }
-        fn get_size_alignment(&self, _size: i32) -> i32 {
-            1
-        }
-        fn get_bit_field_packing(&self) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
-            struct MockPacking;
-            impl crate::program::model::data::bit_field_packing::BitFieldPacking for MockPacking {
-                fn use_ms_convention(&self) -> bool {
-                    false
-                }
-                fn is_type_alignment_enabled(&self) -> bool {
-                    false
-                }
-                fn get_zero_length_boundary(&self) -> i32 {
-                    0
-                }
-            }
-            Box::new(MockPacking)
-        }
-        fn get_size_alignment_count(&self) -> i32 {
-            0
-        }
-        fn get_sizes(&self) -> Vec<i32> {
-            Vec::new()
-        }
-        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
-            String::new()
-        }
-        fn get_alignment(&self, data_type: &dyn DataType) -> i32 {
-            data_type.get_alignment()
-        }
+    /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(4);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        let mut packing = crate::program::model::data::bit_field_packing_impl::BitFieldPackingImpl::new();
+        packing.set_type_alignment_enabled(false);
+        org.set_bit_field_packing(packing);
+        org
     }
 
     struct MockDtm {
         id: i64,
     }
     impl DataTypeManager for MockDtm {
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization)
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization())
         }
         fn get_universal_id(&self) -> crate::util::UniversalID {
             crate::util::UniversalID::new(self.id)

@@ -417,7 +417,7 @@ use crate::program::model::mem::MemBuffer;
             false
         }
 
-        fn get_data_organization(&self) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
+        fn get_data_organization(&self) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
 

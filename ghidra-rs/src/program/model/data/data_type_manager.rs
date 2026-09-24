@@ -7,7 +7,7 @@ use crate::program::model::data::archive_type::ArchiveType;
 use crate::program::model::data::category::Category;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::composite::Composite;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_conflict_handler::DataTypeConflictHandler;
 use crate::program::model::data::data_type_dependency_exception::DataTypeDependencyException;
@@ -563,7 +563,7 @@ pub trait DataTypeManager {
     ///
     /// No meaningful `DataOrganization` fallback is available yet since no concrete
     /// implementation has been ported; overriding implementations must supply their own.
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         unimplemented!("DataTypeManager::get_data_organization has no default implementation yet")
     }
 

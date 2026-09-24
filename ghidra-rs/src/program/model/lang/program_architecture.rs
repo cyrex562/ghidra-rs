@@ -35,7 +35,7 @@ pub trait ProgramArchitecture {
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSet, AddressSpace, AddressSpaceType};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::lang::decompiler_language::DecompilerLanguage;
     use crate::program::model::lang::language_id::LanguageID;
     use crate::program::model::lang::register::RegisterRef;
@@ -387,7 +387,7 @@ mod tests {
             false
         }
 
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
 

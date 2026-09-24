@@ -47,7 +47,7 @@ use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::pcode::floatformat::{BigFloat, FloatFormat};
 use crate::pcode::utils::utils;
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_encode_exception::DataTypeEncodeException;
 use crate::program::model::mem::MemBuffer;
@@ -262,7 +262,7 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
     /// distinct name since [`BuiltInDataType::get_c_type_declaration`] already declares this
     /// method (with no default). A concrete `impl BuiltInDataType for ...` should delegate
     /// `get_c_type_declaration` to this.
-    fn float_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+    fn float_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
         let _ = data_organization;
         if self.has_language_dependant_length() {
             None
@@ -300,7 +300,7 @@ mod tests {
     }
 
     impl BuiltInDataType for TestFloat {
-        fn get_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             self.float_c_type_declaration(data_organization)
         }
         fn set_default_settings(&mut self, _settings: &dyn Settings) {}

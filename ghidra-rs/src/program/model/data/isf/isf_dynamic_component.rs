@@ -58,7 +58,7 @@ impl IsfObject for IsfDynamicComponent {}
 mod tests {
     use super::*;
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::docking::settings::settings::Settings;
     use crate::program::model::mem::MemBuffer;
 
@@ -109,7 +109,7 @@ mod tests {
     impl crate::program::model::data::built_in_data_type::BuiltInDataType for MockDynamic {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }

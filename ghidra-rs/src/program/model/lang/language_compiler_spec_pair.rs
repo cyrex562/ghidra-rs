@@ -213,7 +213,7 @@ mod tests {
     use std::sync::Arc;
     use super::*;
     use crate::program::model::address::{Address, AddressFactory, AddressSpace, AddressSpaceType};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::lang::decompiler_language::DecompilerLanguage;
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::processor_context::ProcessorContext;
@@ -599,7 +599,7 @@ mod tests {
         fn is_global(&self, _addr: &Address) -> bool {
             true
         }
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {

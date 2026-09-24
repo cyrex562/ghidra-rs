@@ -1111,7 +1111,7 @@ mod tests {
         fn is_global(&self, _addr: &Address) -> bool {
             true
         }
-        fn get_data_organization(&self) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
+        fn get_data_organization(&self) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_pcode_inject_library(&self) -> Box<dyn crate::program::seam_stubs::PcodeInjectLibrary> {

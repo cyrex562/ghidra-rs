@@ -480,7 +480,7 @@ pub trait AbstractStringDataType: DataType + Dynamic + DataTypeWithCharset + std
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, SpecialAddress};
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use std::any::Any;
 
@@ -612,7 +612,7 @@ mod tests {
     }
 
     impl BuiltInDataType for MockStringDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&dyn DataOrganization>) -> Option<String> {
+        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
             None
         }
 

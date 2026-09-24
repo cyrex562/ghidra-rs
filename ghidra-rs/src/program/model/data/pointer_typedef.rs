@@ -36,11 +36,10 @@
 //!
 //! Java's address-space constructor (`PointerTypedef(..., AddressSpace)`) can infer a pointer size
 //! of "matches the DTM's own default, so use -1" via `dtm.getDataOrganization().getPointerSize()`.
-//! No concrete [`DataOrganization`](crate::program::model::data::data_organization::DataOrganization)
-//! exists anywhere in this crate yet (it's a 20-method trait with no default bodies and no
-//! constructible implementor), so [`PointerTypedef::new_with_space`] requires an explicit positive
-//! `pointer_size` and returns `Err` otherwise, rather than silently calling the unimplemented
-//! inference path.
+//! [`DataTypeManager::get_data_organization`](crate::program::model::data::data_type_manager::DataTypeManager::get_data_organization)
+//! has no default body a bare manager can answer with, so [`PointerTypedef::new_with_space`]
+//! requires an explicit positive `pointer_size` and returns `Err` otherwise, rather than calling
+//! that inference path.
 //!
 //! ## `BuiltIn`/`GenericDataType`/`DataTypeImpl` not implemented
 //!

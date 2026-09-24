@@ -340,7 +340,7 @@ pub trait DataTypeDb: DataType + DbObject {
     ///
     /// Requires `Self: Sized`, matching
     /// [`DataTypeImpl::data_type_impl_get_alignment`](crate::program::model::data::data_type_impl::DataTypeImpl::data_type_impl_get_alignment)'s
-    /// precedent: this must hand `self` to [`DataOrganization::get_alignment`], whose signature
+    /// precedent: this must hand `self` to [`DataOrganizationImpl::get_alignment`](crate::program::model::data::data_organization_impl::DataOrganizationImpl::get_alignment), whose signature
     /// is fixed to `&dyn DataType`, which requires an unsized coercion only available for a
     /// known-`Sized` source.
     fn data_type_db_get_alignment(&self) -> i32
