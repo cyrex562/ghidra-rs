@@ -13,3 +13,22 @@
 /// `ConventionAnalysisDecompileConfigurer`, both still TODO -- are the ones that call mutating
 /// methods like `toggleCCode`/`setOptions` on it), so no members are needed yet.
 pub trait DecompInterface {}
+
+/// Placeholder for `generic.DominantPair<K, V>` (a `generic.stl.Pair` whose equality and hash
+/// consider only `first`), referenced by [`DecompilerReducer`](super::DecompilerReducer) before
+/// the real class is ported. `DecompilerReducer` only receives these as input, so only the two
+/// public fields Java's `Pair` exposes (and its constructor) are provided.
+#[derive(Debug, Clone)]
+pub struct DominantPair<K, V> {
+    /// The dominant (identity-bearing) element.
+    pub first: K,
+    /// The associated value.
+    pub second: V,
+}
+
+impl<K, V> DominantPair<K, V> {
+    /// Mirrors `new DominantPair<>(key, value)`.
+    pub fn new(first: K, second: V) -> Self {
+        Self { first, second }
+    }
+}

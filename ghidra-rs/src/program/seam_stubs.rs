@@ -3259,6 +3259,26 @@ impl DataType for TypedefDataTypePlaceholder {
     }
 }
 
+/// Placeholder handle for `ghidra.program.model.correlate.Block`, referenced by
+/// [`InstructHash`](crate::program::model::correlate::InstructHash)'s containing-block
+/// back-reference before `Block`/`HashStore` are ported.
+///
+/// Java's `Block` and `InstructHash` point at each other (a block holds its `InstructHash[]`, each
+/// `InstructHash` holds its `Block`), and `HashEntry` holds lists of `InstructHash`. That is a
+/// mutable object graph owned by a single `HashStore`, so it takes the arena + typed-ID shape
+/// (`OWNERSHIP_MIGRATION.md` convention 1): `HashStore` owns the blocks, and this is a block's
+/// position in that arena (the order of Java's `blockList`, a `TreeMap` keyed by block start
+/// address).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CorrelateBlockId(pub u32);
+
+/// Placeholder handle for `ghidra.program.model.correlate.HashEntry`, referenced by
+/// [`InstructHash`](crate::program::model::correlate::InstructHash)'s n-gram cross-reference
+/// table before `HashEntry`/`HashStore` are ported. Same arena-ID shape as [`CorrelateBlockId`]:
+/// `HashStore` owns every `HashEntry`, and this is an entry's slot in that arena.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CorrelateHashEntryId(pub u32);
+
 #[cfg(test)]
 mod share_data_type_tests {
     use super::*;

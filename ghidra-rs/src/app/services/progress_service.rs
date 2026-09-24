@@ -17,8 +17,8 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::app::seam_stubs::{MonitorReceiver, ProgressListener, Task};
-use crate::debug::api::progress::CloseableTaskMonitor;
+use crate::app::seam_stubs::Task;
+use crate::debug::api::progress::{CloseableTaskMonitor, MonitorReceiver, ProgressListener};
 use crate::util::task::TaskMonitor;
 
 /// Port of Java's `CompletableFuture<Void>`/`CompletableFuture<T>` return types used by
@@ -156,10 +156,53 @@ mod tests {
     }
 
     struct MockListener;
-    impl ProgressListener for MockListener {}
+    impl ProgressListener for MockListener {
+        fn monitor_created(&self, _monitor: &dyn MonitorReceiver) {}
+        fn monitor_disposed(
+            &self,
+            _monitor: &dyn MonitorReceiver,
+            _disposal: crate::debug::api::progress::Disposal,
+        ) {
+        }
+        fn message_updated(&self, _monitor: &dyn MonitorReceiver, _message: &str) {}
+        fn error_reported(
+            &self,
+            _monitor: &dyn MonitorReceiver,
+            _error: &(dyn std::error::Error + Send + Sync),
+        ) {
+        }
+        fn progress_updated(&self, _monitor: &dyn MonitorReceiver, _progress: i64) {}
+        fn attribute_updated(&self, _monitor: &dyn MonitorReceiver) {}
+    }
 
     struct MockMonitorReceiver;
-    impl MonitorReceiver for MockMonitorReceiver {}
+    impl MonitorReceiver for MockMonitorReceiver {
+        fn get_message(&self) -> String {
+            String::new()
+        }
+        fn is_indeterminate(&self) -> bool {
+            true
+        }
+        fn get_maximum(&self) -> i64 {
+            0
+        }
+        fn get_progress(&self) -> i64 {
+            -1
+        }
+        fn is_cancel_enabled(&self) -> bool {
+            false
+        }
+        fn cancel(&self) {}
+        fn is_cancelled(&self) -> bool {
+            false
+        }
+        fn is_valid(&self) -> bool {
+            true
+        }
+        fn is_show_progress_value(&self) -> bool {
+            true
+        }
+    }
 
     struct MockTask {
         can_cancel: bool,

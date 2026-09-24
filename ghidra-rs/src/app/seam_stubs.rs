@@ -368,17 +368,6 @@ pub struct DockingAction;
 /// so no members are needed yet.
 pub trait ViewProviderService {}
 
-/// Placeholder for `ghidra.debug.api.progress.MonitorReceiver`, referenced by
-/// [`ProgressService`](crate::app::services::ProgressService) before the real interface is
-/// ported. `ProgressService` only ever returns this type opaquely, so no members are needed yet.
-pub trait MonitorReceiver {}
-
-/// Placeholder for `ghidra.debug.api.progress.ProgressListener`, referenced by
-/// [`ProgressService`](crate::app::services::ProgressService) before the real interface is
-/// ported. `ProgressService` only ever passes this type through as a parameter, so no members
-/// are needed yet.
-pub trait ProgressListener {}
-
 /// Placeholder for `ghidra.app.plugin.core.debug.service.tracermi.DefaultTraceRmiAcceptor`,
 /// returned by [`InternalTraceRmiService`](crate::app::services::InternalTraceRmiService) before
 /// the real class is ported. `InternalTraceRmiService` only ever returns this type opaquely, so

@@ -17,7 +17,7 @@ pub trait HashCalculator {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::register::{Register, RegisterRef};
@@ -37,7 +37,8 @@ use crate::program::model::listing::CommentType;
     use crate::program::model::scalar::Scalar;
     use std::sync::Arc;
 
-    struct MockInstruction;
+    /// Minimal `Instruction` double, shared with sibling `correlate` tests.
+    pub(crate) struct MockInstruction;
 
     fn mock_address(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);

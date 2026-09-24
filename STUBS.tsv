@@ -89,8 +89,6 @@ ts	stub_class	referenced_by
 2026-07-10T00:00:00Z	Navigatable	MemorySearchService
 2026-07-10T00:00:00Z	SearchSettings	MemorySearchService
 2026-07-10T00:00:00Z	ViewProviderService	ViewManagerService
-2026-07-10T00:00:00Z	MonitorReceiver	ProgressService
-2026-07-10T00:00:00Z	ProgressListener	ProgressService
 2026-07-10T00:00:00Z	Task	ProgressService
 2026-07-10T12:30:00Z	DefaultTraceRmiAcceptor	InternalTraceRmiService
 2026-07-10T12:30:00Z	TraceRmiHandler	InternalTraceRmiService
@@ -1318,3 +1316,6 @@ ts	stub_class	referenced_by
 2026-09-24T00:36:56.000000+00:00	Pinning.Side	CtrlNGram
 2026-09-24T00:36:56.000000+00:00	CtrlVertexId	CtrlNGram
 2026-09-24T00:36:56.000000+00:00	DataVertexId	DataNGram
+2026-09-24T00:41:35.000000+00:00	DominantPair	DecompilerReducer
+2026-09-24T00:42:38.000000+00:00	CorrelateBlockId	InstructHash
+2026-09-24T00:42:38.000000+00:00	CorrelateHashEntryId	InstructHash
