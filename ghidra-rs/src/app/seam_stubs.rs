@@ -6777,6 +6777,65 @@ impl VtAttributes {
     pub const DEFAULTS: VtAttributes = VtAttributes;
 }
 
+/// Placeholder for `ghidra.app.plugin.core.terminal.vt.VtHandler.KeyMode`, referenced by
+/// [`VtState`](crate::app::plugin::core::terminal::vt::VtState) before `VtHandler` is ported.
+/// Java's version is a two-constant enum, reproduced in full here; it moves into the real
+/// `VtHandler` module when that interface is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum KeyMode {
+    /// Normal (cursor) key mode.
+    Normal,
+    /// Application key mode.
+    Application,
+}
+
+impl KeyMode {
+    /// Mirrors `KeyMode.choose`: pick `normal` or `application` according to this mode.
+    pub fn choose<T>(self, normal: T, application: T) -> T {
+        match self {
+            KeyMode::Normal => normal,
+            KeyMode::Application => application,
+        }
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.terminal.vt.VtHandler`, referenced by
+/// [`VtParser`](crate::app::plugin::core::terminal::vt::VtParser) and
+/// [`VtState`](crate::app::plugin::core::terminal::vt::VtState) before the real interface is
+/// ported. Java's version is an open `interface` (~1.7k lines) whose `handle*Exc` defaults decode
+/// control characters, CSI and OSC sequences and dispatch to ~60 abstract handlers. Only the
+/// methods the parser's state machine calls are declared here, all required: the Java defaults
+/// behind `handle_char_exc`/`handle_csi_exc`/`handle_osc_exc` arrive with the real port.
+///
+/// Java's `ByteBuffer` arguments were always flipped (position..limit is the payload) before
+/// being handed over, so they are modelled as the payload slice.
+pub trait VtHandler {
+    /// Mirrors `handleCharExc(byte)`: a character not part of an escape sequence.
+    fn handle_char_exc(&mut self, b: u8);
+    /// Mirrors `handleCsiExc(ByteBuffer, ByteBuffer, byte)`: a complete CSI sequence.
+    fn handle_csi_exc(&mut self, csi_param: &[u8], csi_inter: &[u8], csi_final: u8);
+    /// Mirrors `handleOscExc(ByteBuffer)`: a complete OSC sequence.
+    fn handle_osc_exc(&mut self, osc_param: &[u8]);
+    /// Mirrors `handleKeypadMode(KeyMode)`.
+    fn handle_keypad_mode(&mut self, mode: KeyMode);
+    /// Mirrors `handleSaveCursorPos()`.
+    fn handle_save_cursor_pos(&mut self);
+    /// Mirrors `handleRestoreCursorPos()`.
+    fn handle_restore_cursor_pos(&mut self);
+    /// Mirrors `handleScrollViewportDown(int, boolean)`.
+    fn handle_scroll_viewport_down(&mut self, n: i32, into_scroll_back: bool);
+    /// Mirrors `handleScrollViewportUp(int)`.
+    fn handle_scroll_viewport_up(&mut self, n: i32);
+    /// Mirrors `handleSetCharset(VtCharset.G, VtCharset)`.
+    fn handle_set_charset(
+        &mut self,
+        g: crate::app::plugin::core::terminal::vt::CharsetSlot,
+        cs: crate::app::plugin::core::terminal::vt::VtCharset,
+    );
+    /// Mirrors `handleFullReset()`.
+    fn handle_full_reset(&mut self);
+}
+
 /// Placeholder for `ghidra.app.plugin.core.diff.DiffController`, referenced by
 /// [`DiffControllerListener`](crate::app::plugin::core::diff::DiffControllerListener) before the
 /// real class is ported. Java's version is a concrete class, so this is a plain struct.
