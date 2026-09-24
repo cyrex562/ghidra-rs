@@ -2,6 +2,7 @@ pub mod squash_constants;
 pub mod square_fragment;
 pub mod squash_directory_table_entry;
 pub mod squash_directory_table_header;
+pub mod squash_inode;
 pub mod squash_metablock;
 pub mod squash_super_block;
 
@@ -22,5 +23,6 @@ pub use squash_constants::{
 pub use square_fragment::SquashFragment;
 pub use squash_directory_table_entry::SquashDirectoryTableEntry;
 pub use squash_directory_table_header::SquashDirectoryTableHeader;
+pub use squash_inode::{SquashInode, SquashInodeBase};
 pub use squash_metablock::SquashMetablock;
 pub use squash_super_block::SquashSuperBlock;
