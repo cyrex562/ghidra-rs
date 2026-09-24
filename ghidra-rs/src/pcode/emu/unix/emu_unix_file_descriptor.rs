@@ -22,14 +22,17 @@ pub trait EmuUnixFileDescriptor<T> {
     /// Returns [`EmuIOException`] if an error occurred.
     fn seek(&mut self, offset: T) -> Result<(), EmuIOException>;
 
-    /// Read from the file opened by this handle.
+    /// Read from the file opened by this handle into the given buffer.
+    ///
+    /// The contents are written into `buf` in place, as Java's `read(buf)` mutates its buffer
+    /// argument.
     ///
     /// Returns the number of bytes read.
     ///
     /// # Errors
     ///
     /// Returns [`EmuIOException`] if an error occurred.
-    fn read(&mut self, buf: T) -> Result<T, EmuIOException>;
+    fn read(&mut self, buf: &mut T) -> Result<T, EmuIOException>;
 
     /// Write into the file opened by this handle.
     ///
@@ -73,9 +76,9 @@ mod tests {
             Ok(())
         }
 
-        fn read(&mut self, buf: i64) -> Result<i64, EmuIOException> {
+        fn read(&mut self, buf: &mut i64) -> Result<i64, EmuIOException> {
             let start = self.offset as usize;
-            let want = buf as usize;
+            let want = *buf as usize;
             let avail = self.data.len().saturating_sub(start);
             let n = want.min(avail);
             self.offset += n as i64;
@@ -135,7 +138,7 @@ mod tests {
             stat: EmuUnixFileStat::default(),
             closed: false,
         };
-        let n = fd.read(5).unwrap();
+        let n = fd.read(&mut 5).unwrap();
         assert_eq!(n, 2);
         assert_eq!(fd.offset(), 10);
     }
@@ -188,6 +191,6 @@ mod tests {
             stat: EmuUnixFileStat::default(),
             closed: false,
         });
-        assert_eq!(fd.read(10).unwrap(), 3);
+        assert_eq!(fd.read(&mut 10).unwrap(), 3);
     }
 }

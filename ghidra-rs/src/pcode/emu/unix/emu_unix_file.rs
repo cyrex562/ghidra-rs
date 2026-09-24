@@ -21,8 +21,12 @@ pub trait EmuUnixFile<T> {
     /// This roughly follows the semantics of the UNIX `read()`. While the offset and return
     /// value may depend on the arithmetic, the actual contents read from the file should not.
     ///
+    /// The contents are written into `buf` in place, as Java's `read(arithmetic, offset, buf)`
+    /// mutates its (typically `byte[]`) buffer argument; the capacity of `buf` bounds how much is
+    /// read.
+    ///
     /// Returns the number of bytes read.
-    fn read(&mut self, arithmetic: &dyn PcodeArithmetic<T>, offset: T, buf: T) -> T;
+    fn read(&mut self, arithmetic: &dyn PcodeArithmetic<T>, offset: T, buf: &mut T) -> T;
 
     /// Write contents into the file starting at the given offset from the given buffer.
     ///
@@ -104,9 +108,9 @@ mod tests {
             &self.pathname
         }
 
-        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, offset: i64, buf: i64) -> i64 {
+        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, offset: i64, buf: &mut i64) -> i64 {
             let start = offset as usize;
-            let want = buf as usize;
+            let want = *buf as usize;
             let avail = self.data.len().saturating_sub(start);
             want.min(avail) as i64
         }
@@ -318,7 +322,7 @@ mod tests {
     fn read_returns_bytes_available_from_offset() {
         let mut file = readable_file();
         let arithmetic = NoopArithmetic;
-        let n = file.read(&arithmetic, 3, 10);
+        let n = file.read(&arithmetic, 3, &mut 10);
         assert_eq!(n, 2);
     }
 

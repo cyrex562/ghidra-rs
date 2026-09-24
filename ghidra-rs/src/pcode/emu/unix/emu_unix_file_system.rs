@@ -131,9 +131,9 @@ mod tests {
             &self.pathname
         }
 
-        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, offset: i64, buf: i64) -> i64 {
+        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, offset: i64, buf: &mut i64) -> i64 {
             let start = offset as usize;
-            let want = buf as usize;
+            let want = *buf as usize;
             self.data.len().saturating_sub(start).min(want) as i64
         }
 

@@ -374,8 +374,8 @@ pub trait AbstractEmuUnixSyscallUseropLibrary<T: Clone + 'static>:
         let space = self.default_address_space();
         // TODO: Not ideal to require concrete size, but gets unwieldy to leave it abstract
         let size = to_long(arithmetic.as_ref(), &count)? as i32;
-        let buf = arithmetic.from_const_u64(0, size);
-        let result = self.find_fd(ifd)?.read(buf.clone())?;
+        let mut buf = arithmetic.from_const_u64(0, size);
+        let result = self.find_fd(ifd)?.read(&mut buf)?;
         let iresult = to_long(arithmetic.as_ref(), &result)? as i32;
         state.set_var_abstract(&space, &buf_ptr, iresult, true, &buf);
         Ok(result)
@@ -930,8 +930,8 @@ mod tests {
         fn pathname(&self) -> &str {
             &self.pathname
         }
-        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, _offset: i64, buf: i64) -> i64 {
-            buf
+        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, _offset: i64, buf: &mut i64) -> i64 {
+            *buf
         }
         fn write(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, _offset: i64, buf: i64) -> i64 {
             buf
@@ -993,9 +993,11 @@ mod tests {
         closed: bool,
     }
 
-    /// A descriptor that logs its traffic and returns a canned read length.
+    /// A descriptor that logs its traffic, fills read buffers with canned contents and returns a
+    /// canned read length.
     struct MockDescriptor {
         read_result: i64,
+        read_contents: i64,
         log: Arc<std::sync::Mutex<DescriptorLog>>,
     }
 
@@ -1006,8 +1008,9 @@ mod tests {
         fn seek(&mut self, _offset: i64) -> Result<(), EmuIOException> {
             Ok(())
         }
-        fn read(&mut self, buf: i64) -> Result<i64, EmuIOException> {
-            self.log.lock().unwrap().reads.push(buf);
+        fn read(&mut self, buf: &mut i64) -> Result<i64, EmuIOException> {
+            self.log.lock().unwrap().reads.push(*buf);
+            *buf = self.read_contents;
             Ok(self.read_result)
         }
         fn write(&mut self, buf: i64) -> Result<i64, EmuIOException> {
@@ -1029,8 +1032,15 @@ mod tests {
     fn logged_desc(
         read_result: i64,
     ) -> (Box<dyn EmuUnixFileDescriptor<i64>>, Arc<std::sync::Mutex<DescriptorLog>>) {
+        logged_desc_with_contents(read_result, 0)
+    }
+
+    fn logged_desc_with_contents(
+        read_result: i64,
+        read_contents: i64,
+    ) -> (Box<dyn EmuUnixFileDescriptor<i64>>, Arc<std::sync::Mutex<DescriptorLog>>) {
         let log = Arc::new(std::sync::Mutex::new(DescriptorLog::default()));
-        (Box::new(MockDescriptor { read_result, log: Arc::clone(&log) }), log)
+        (Box::new(MockDescriptor { read_result, read_contents, log: Arc::clone(&log) }), log)
     }
 
     /// A state that stores whole variables by offset and serves concrete buffers out of a flat
@@ -1629,6 +1639,19 @@ mod tests {
         assert_eq!(log.lock().unwrap().reads, vec![0], "a zeroed buffer of the requested size");
         // The buffer is stored back at bufPtr, sized by the *actual* count read, not `count`.
         assert_eq!(state.cells.get(&0x100), Some(&(3, 0)));
+    }
+
+    #[test]
+    fn unix_read_stores_the_contents_the_descriptor_read_not_the_zeroed_buffer() {
+        // Java's desc.read(buf) fills buf in place; the filled buffer is what reaches memory.
+        let mut lib = TestUnixLibrary::new();
+        let (descriptor, _log) = logged_desc_with_contents(3, 0x0c0b0a);
+        let fd = lib.claim_fd(descriptor) as i64;
+        let mut state = MapState::default();
+
+        lib.unix_read(&mut state, fd, 0x100, 8).expect("descriptor is open");
+
+        assert_eq!(state.cells.get(&0x100), Some(&(3, 0x0c0b0a)));
     }
 
     #[test]

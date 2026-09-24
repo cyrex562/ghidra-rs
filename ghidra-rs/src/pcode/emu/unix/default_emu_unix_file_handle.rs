@@ -95,7 +95,7 @@ impl<T: Clone + 'static> EmuUnixFileDescriptor<T> for DefaultEmuUnixFileHandle<T
         Ok(())
     }
 
-    fn read(&mut self, buf: T) -> Result<T, EmuIOException> {
+    fn read(&mut self, buf: &mut T) -> Result<T, EmuIOException> {
         self.check_readable()?;
         let len = self.file.read(self.arithmetic.as_ref(), self.offset.clone(), buf);
         self.advance_offset(len.clone());
@@ -163,9 +163,9 @@ mod tests {
             "/tmp/test"
         }
 
-        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, offset: i64, buf: i64) -> i64 {
+        fn read(&mut self, _arithmetic: &dyn PcodeArithmetic<i64>, offset: i64, buf: &mut i64) -> i64 {
             let start = offset as usize;
-            let want = buf as usize;
+            let want = *buf as usize;
             let avail = self.data.len().saturating_sub(start);
             want.min(avail) as i64
         }
@@ -639,16 +639,16 @@ mod tests {
     #[test]
     fn read_rejects_when_not_readable() {
         let mut handle = handle_with_flags(OpenFlag::set([OpenFlag::OWronly]));
-        assert!(handle.read(10).is_err());
+        assert!(handle.read(&mut 10).is_err());
     }
 
     #[test]
     fn read_advances_offset_by_bytes_read() {
         let mut handle = handle_with_flags(OpenFlag::set([OpenFlag::ORdonly]));
-        let n = handle.read(3).unwrap();
+        let n = handle.read(&mut 3).unwrap();
         assert_eq!(n, 3);
         assert_eq!(handle.offset(), 3);
-        let n = handle.read(10).unwrap();
+        let n = handle.read(&mut 10).unwrap();
         assert_eq!(n, 2);
         assert_eq!(handle.offset(), 5);
     }

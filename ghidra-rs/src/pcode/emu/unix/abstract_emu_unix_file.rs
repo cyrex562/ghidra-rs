@@ -44,11 +44,6 @@ pub trait AbstractEmuUnixFile<T> {
 ///
 /// * Java's `truncate()` is `synchronized`; here it takes `&mut self`, so exclusivity comes from
 ///   the borrow checker instead of a monitor.
-/// * [`EmuUnixFile::read`] takes its buffer by value, so any contents copied into it are dropped
-///   when it returns (Java's `T` is typically a `byte[]`, whose mutation the caller sees). The
-///   trait's shape is shared with its other implementors and is not changed here; callers that
-///   need the bytes read use [`AbstractEmuUnixFileBase::read_into`], which carries the same logic
-///   and which the trait method delegates to.
 /// * Java's arithmetic conversions throw the unchecked `ConcretionException` when an offset is not
 ///   concrete; the `Result`-less trait methods panic with that error's message instead.
 #[derive(Debug)]
@@ -99,23 +94,6 @@ impl<C> AbstractEmuUnixFileBase<C> {
         self.contents = contents;
     }
 
-    /// Read contents from the file starting at `offset` into `buf`, returning the number of bytes
-    /// read, sized like `offset`.
-    ///
-    /// This is the body of Java's `read(PcodeArithmetic, T, T)`; see the struct docs for why it
-    /// takes `buf` by reference.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `offset` cannot be made concrete by `arithmetic`.
-    pub fn read_into<T>(&mut self, arithmetic: &dyn PcodeArithmetic<T>, offset: &T, buf: &mut T) -> T
-    where
-        C: EmuFileContents<T>,
-    {
-        let off = concrete_offset(arithmetic, offset);
-        let len = self.contents.read(off, buf, self.stat.st_size);
-        arithmetic.from_const_u64(len as u64, arithmetic.size_of(offset) as i32)
-    }
 }
 
 /// Java: `arithmetic.toLong(offset, Purpose.OTHER)`, whose failure is an unchecked exception.
@@ -130,9 +108,16 @@ impl<T, C: EmuFileContents<T>> EmuUnixFile<T> for AbstractEmuUnixFileBase<C> {
         &self.pathname
     }
 
-    fn read(&mut self, arithmetic: &dyn PcodeArithmetic<T>, offset: T, buf: T) -> T {
-        let mut buf = buf;
-        self.read_into(arithmetic, &offset, &mut buf)
+    /// Java: `read(PcodeArithmetic, T offset, T buf)`; copies at most `buf`'s capacity, bounded by
+    /// `st_size`, into `buf` and returns the count sized like `offset`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `offset` cannot be made concrete by `arithmetic`.
+    fn read(&mut self, arithmetic: &dyn PcodeArithmetic<T>, offset: T, buf: &mut T) -> T {
+        let off = concrete_offset(arithmetic, &offset);
+        let len = self.contents.read(off, buf, self.stat.st_size);
+        arithmetic.from_const_u64(len as u64, arithmetic.size_of(&offset) as i32)
     }
 
     fn write(&mut self, arithmetic: &dyn PcodeArithmetic<T>, offset: T, buf: T) -> T {
@@ -295,25 +280,27 @@ mod tests {
     }
 
     #[test]
-    fn read_into_copies_contents_up_to_file_size() {
+    fn read_copies_contents_up_to_file_size_into_the_callers_buffer() {
         let arith = BytesArithmetic;
         let mut file = new_file(MODE_R | MODE_W);
         file.write(&arith, off4(0), vec![10, 20, 30, 40]);
 
         let mut buf = vec![0u8; 8];
-        let len = file.read_into(&arith, &off4(1), &mut buf);
+        let len = file.read(&arith, off4(1), &mut buf);
         // min(buf.length, st_size - offset) = min(8, 3)
         assert_eq!(len, off4(3));
         assert_eq!(buf, vec![20, 30, 40, 0, 0, 0, 0, 0]);
     }
 
     #[test]
-    fn trait_read_reports_the_same_length_as_read_into() {
+    fn read_is_bounded_by_the_buffer_capacity() {
         let arith = BytesArithmetic;
         let mut file = new_file(MODE_R | MODE_W);
         file.write(&arith, off4(0), vec![1, 2, 3, 4]);
-        let len = EmuUnixFile::read(&mut file, &arith, off4(0), vec![0u8; 2]);
+        let mut buf = vec![0u8; 2];
+        let len = file.read(&arith, off4(0), &mut buf);
         assert_eq!(len, off4(2));
+        assert_eq!(buf, vec![1, 2]);
     }
 
     #[test]
@@ -325,7 +312,7 @@ mod tests {
         assert_eq!(EmuUnixFile::<Vec<u8>>::stat(&file).st_size, 0);
 
         let mut buf = vec![0u8; 4];
-        assert_eq!(file.read_into(&arith, &off4(0), &mut buf), off4(0));
+        assert_eq!(file.read(&arith, off4(0), &mut buf), off4(0));
     }
 
     #[test]
