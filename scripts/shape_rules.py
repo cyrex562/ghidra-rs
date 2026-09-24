@@ -727,11 +727,15 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None,
 
     # R4 -- annotation type. Not a runtime type at all.
     if kind == "@interface":
+        # Decided 2026-09-24: an annotation becomes a plain metadata struct of its
+        # elements; each annotated implementor exposes it as an associated const or
+        # `fn info() -> &'static <Name>`.
         return r(
             "R4-annotation",
-            "park",
-            "Java annotation type -- has no direct Rust equivalent; decide with a human",
-            "ambiguous",
+            "struct",
+            "Java annotation type -- port as a plain metadata struct of its elements; "
+            "annotated implementors expose it via an associated const or "
+            "`fn info() -> &'static Self`",
         )
 
     # R5 -- exception. Decided by supertype/name before any structural rule.

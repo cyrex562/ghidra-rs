@@ -220,7 +220,8 @@ python3 scripts/shape_rules.py classify  <path/under/orig_src>   # the same, as 
 | R12 | `abstract class`, no instance state | `trait` |
 | R13 | private ctor + static `INSTANCE` | `struct` + `OnceLock`, not a global `Arc<Mutex<_>>` |
 | R14 | concrete `class` | `struct` |
-| R4, R8a, R8b | annotation type; marker interface; constants-only interface | **park** — ask a human |
+| R4 | annotation type | metadata `struct` of the annotation's fields; each annotated implementor exposes it as an associated `const` or `fn info() -> &'static Info` (decided 2026-09-24) |
+| R8a, R8b | marker interface; constants-only interface | **park** — ask a human |
 
 Three things this table is deliberate about:
 

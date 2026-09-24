@@ -236,6 +236,31 @@ isn't graph-shaped (e.g. a listener registry, a cache). The smell isn't the
 type — it's using it as the default answer to "how do I share this Java
 object" instead of a deliberate choice.
 
+## Decisions recorded 2026-09-24
+
+These settle questions that repeatedly parked descent batches. Apply them without asking.
+
+- **Mutually-referencing clusters default to arena + typed IDs.** When a group of classes
+  reference each other (call graphs, linked segment chains, expression trees, scheduler/task
+  cycles), one container owns them (`slotmap` or a `Vec` with index newtypes) and every
+  cross-reference is a `Copy` ID. A back-reference becomes an ID, or an argument passed at call
+  time when the callee only needs it during the call (as `TaintSpace` does with its piece). Still
+  park if the cluster contains a high-fan-in shared type with no decided pattern.
+- **`Register` uses an arena + `RegisterId`.** The language owns every register in a `Vec`; parent,
+  child and base-register links are `RegisterId`s; lookups resolve against the language. This
+  replaces `RegisterRef = Rc<RefCell<Register>>`, which made `SleighLanguage` `!Send`.
+- **`Instruction` needs its arena/snapshot design before any backing is ported.** `InstructionDB`,
+  `DBTraceInstruction` and `PseudoInstruction` are one type with three backings. Design the shared
+  representation first; do not port `PseudoInstruction` as a standalone value type.
+- **Java `Class<T>` tokens become `std::any::TypeId`.** Registries keyed by class key by `TypeId`
+  (`T: 'static`) and store type-erased constructors (`Box<dyn Fn(..) -> Box<dyn Any>>`), downcasting
+  on retrieval.
+- **Emulator threads use a hooks trait.** `DefaultPcodeThread` is generic over a `ThreadHooks`
+  trait whose methods default to no-ops: `pre_execute_instruction`, `on_missing_userop_def`,
+  `create_instruction_decoder`, `create_executor`. Subclass behavior is a hooks impl. Machines hand
+  out typed `PcodeThread<T>`, not `Arc<dyn ErasedPcodeThread>`. The `Emulator` trait moves to the
+  real `FilteredMemoryState` and `MemoryAccessFilterChain`.
+
 ## Evaluation: `scripts/pattern_audit.py`
 
 Heuristic (regex, no rustc AST — same tradeoff `sync_check.py` already makes)
