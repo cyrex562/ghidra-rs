@@ -7,6 +7,8 @@ pub mod compiler_spec_description;
 pub mod compiler_spec_id;
 pub mod compiler_spec_not_found_exception;
 pub mod constant_pool;
+#[cfg(test)]
+pub(crate) mod cspec_test_support;
 pub mod context_setting;
 pub mod data_type_provider_context;
 pub mod decompiler_language;
@@ -145,11 +147,10 @@ pub use old_language_mapping_service::{
 };
 pub use operand_type::OperandType;
 pub use parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
-pub use param_entry::{justified_contain_address, order_within_group, ParamEntry};
+pub use param_entry::{justified_contain_address, order_within_group, ParamEntry, ParamEntryParts};
 pub use param_list::{ParamList, WithSlotRec};
 pub use param_list_register_out::ParamListRegisterOut;
 pub use param_list_standard::ParamListStandard;
-pub use param_list_standard_impl::ParamListStandardImpl;
 pub use param_list_standard_out::ParamListStandardOut;
 pub use parameter_pieces::ParameterPieces;
 pub use parser_context::ParserContext;

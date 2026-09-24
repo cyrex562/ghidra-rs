@@ -4,28 +4,13 @@ use std::sync::Arc;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::model::data::pointer::Pointer;
 use crate::program::model::lang::protorules::assign_action::AssignAction;
 use crate::program::model::pcode::{Encoder, ELEM_CONVERT_TO_PTR};
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
-
-/// Adapts a `Box<dyn Pointer>` so it can be stored/passed as `Arc<dyn DataType>`.
-///
-/// `Pointer: DataType` in the Java sense (`Pointer` is an interface extending `DataType`), but
-/// `Pointer` itself declares no `DataType` overrides, so wrapping and using the default
-/// `DataType` behavior here is equivalent to what a real upcast would observe. Mirrors the
-/// identically-motivated `PointerAsDataType` in
-/// [`param_list_standard_out`](crate::program::model::lang::param_list_standard_out).
-struct PointerAsDataType(Box<dyn Pointer>);
-
-impl DataType for PointerAsDataType {
-    fn is_pointer(&self) -> bool {
-        true
-    }
-}
 
 /// Action converting the parameter's data-type to a pointer, and assigning storage for the
 /// pointer. This assumes the data-type is stored elsewhere and only the pointer is passed as a
@@ -33,24 +18,21 @@ impl DataType for PointerAsDataType {
 ///
 /// Port of `ghidra.program.model.lang.protorules.ConvertToPointer`.
 pub struct ConvertToPointer {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
     /// Address space used for pointer size (`ConvertToPointer.space`).
     space: Option<Arc<AddressSpace>>,
 }
 
 impl ConvertToPointer {
     /// Port of the public constructor.
-    pub fn new(res: Arc<dyn ParamListStandardLike>) -> Self {
-        let space = res.spacebase();
-        ConvertToPointer { resource: res, space }
+    pub fn new(res: &ParamListStandard) -> Self {
+        ConvertToPointer { space: res.get_spacebase() }
     }
 }
 
 impl AssignAction for ConvertToPointer {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
         Ok(Box::new(ConvertToPointer::new(new_resource)))
     }
@@ -72,6 +54,7 @@ impl AssignAction for ConvertToPointer {
 
     fn assign_address(
         &self,
+        resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         proto: &PrototypePieces,
         pos: i32,
@@ -81,12 +64,10 @@ impl AssignAction for ConvertToPointer {
     ) -> i32 {
         let pointer_size = self.space.as_ref().map_or(-1, |space| space.pointer_size());
         // Convert the data-type to a pointer
-        let pointer = dt_manager.get_pointer_with_size(dt.as_ref(), pointer_size);
-        let pointer_type: Arc<dyn DataType> = Arc::new(PointerAsDataType(pointer));
+        let pointer: Box<dyn DataType> = dt_manager.get_pointer_with_size(dt.as_ref(), pointer_size);
+        let pointer_type: Arc<dyn DataType> = Arc::from(pointer);
         // (Recursively) assign storage
-        let response_code = self
-            .resource
-            .assign_address(&pointer_type, proto, pos, dt_manager, status, res);
+        let response_code = resource.assign_address(&pointer_type, proto, pos, dt_manager, status, res);
         res.is_indirect = true;
         response_code
     }
@@ -97,7 +78,11 @@ impl AssignAction for ConvertToPointer {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        _resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -128,95 +113,83 @@ mod tests {
         }
     }
 
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    use crate::program::model::lang::cspec_test_support::TestDataTypeManager as MockDataTypeManager;
+    use crate::program::model::lang::protorules::param_test_support::{TestEntry, TestResource};
+    use crate::program::model::lang::storage_class::StorageClass;
 
     fn ram_space() -> Arc<AddressSpace> {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
     }
 
-    /// A resource list that succeeds only when handed a pointer-typed data-type -- used to
-    /// verify `ConvertToPointer` actually recurses through `resource.assign_address` with the
-    /// *converted* pointer type, rather than the original (non-pointer) data-type.
-    struct PointerOnlyResource {
-        spacebase: Arc<AddressSpace>,
-    }
-    impl ParamListStandardLike for PointerOnlyResource {
-        fn spacebase(&self) -> Option<Arc<AddressSpace>> {
-            Some(self.spacebase.clone())
+    /// A resource list whose only entry accepts pointers (storage class `ptr`) -- so assignment
+    /// succeeds only if `ConvertToPointer` recursed through `resource.assign_address` with the
+    /// *converted* pointer type rather than the original data-type.
+    fn resource() -> ParamListStandard {
+        TestResource {
+            entries: vec![TestEntry {
+                space: ram_space(),
+                ty: StorageClass::Ptr,
+                addressbase: 0x100,
+                size: 8,
+                align: 0,
+                ..TestEntry::default()
+            }],
+            num_group: 1,
+            spacebase: Some(ram_space()),
         }
-        fn assign_address(
-            &self,
-            dt: &Arc<dyn DataType>,
-            _proto: &PrototypePieces,
-            _pos: i32,
-            _dt_manager: &dyn DataTypeManager,
-            status: &mut [i32],
-            res: &mut ParameterPieces,
-        ) -> i32 {
-            if !dt.is_pointer() {
-                return FAIL;
-            }
-            status[0] += 1;
-            res.data_type = Some(dt.clone());
-            SUCCESS
-        }
-    }
-
-    fn resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(PointerOnlyResource { spacebase: ram_space() })
+        .build()
     }
 
     #[test]
     fn assign_address_converts_to_pointer_and_marks_indirect() {
-        let action = ConvertToPointer::new(resource());
+        let resource = resource();
+        let action = ConvertToPointer::new(&resource);
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 32 }); // large struct-like type
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource, &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert!(res.is_indirect);
-        assert!(res.data_type.as_ref().is_some_and(|d| d.is_pointer()));
-        assert_eq!(status[0], 1);
+        assert!(res.data_type.as_ref().is_some_and(|d| d.is_pointer() && d.get_length() == 4));
+        assert_eq!(res.address.as_ref().unwrap().offset(), 0x100);
+        assert_eq!(status[0], -1);
     }
 
     #[test]
     fn assign_address_still_marks_indirect_on_failure() {
         // Matches the real Java quirk: `res.isIndirect = true` runs unconditionally after the
         // recursive assignAddress call, even if that call failed.
-        struct AlwaysFail;
-        impl ParamListStandardLike for AlwaysFail {}
-        let action = ConvertToPointer::new(Arc::new(AlwaysFail));
+        let always_fail = TestResource::default().build();
+        let action = ConvertToPointer::new(&always_fail);
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 8 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&always_fail, &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, FAIL);
         assert!(res.is_indirect);
     }
 
     #[test]
     fn is_equivalent_compares_space() {
-        let a = ConvertToPointer::new(resource());
-        let b = ConvertToPointer::new(resource());
+        let a = ConvertToPointer::new(&resource());
+        let b = ConvertToPointer::new(&resource());
         assert!(a.is_equivalent(&b));
 
-        struct NoSpace;
-        impl ParamListStandardLike for NoSpace {}
-        let c = ConvertToPointer::new(Arc::new(NoSpace));
+        let no_space = TestResource::default().build();
+        let c = ConvertToPointer::new(&no_space);
         assert!(!a.is_equivalent(&c));
     }
 
     #[test]
     fn clone_box_recomputes_space_from_new_resource() {
-        let action = ConvertToPointer::new(resource());
-        let cloned = action.clone_box(resource()).expect("clone should succeed");
+        let action = ConvertToPointer::new(&resource());
+        let cloned = action.clone_box(&resource()).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
 
@@ -262,7 +235,7 @@ mod tests {
 
     #[test]
     fn encode_writes_bare_convert_to_ptr_element() {
-        let action = ConvertToPointer::new(resource());
+        let action = ConvertToPointer::new(&resource());
         let mut enc = RecordingEncoder { elements: Vec::new() };
         action.encode(&mut enc).unwrap();
         assert_eq!(enc.elements, vec!["convert_to_ptr"]);
@@ -274,19 +247,19 @@ mod tests {
             MockElement::start("convert_to_ptr", 0, &[]),
             MockElement::end("convert_to_ptr", 0),
         ]);
-        let mut action = ConvertToPointer::new(resource());
-        assert!(action.restore_xml(&mut parser).is_ok());
+        let mut action = ConvertToPointer::new(&resource());
+        assert!(action.restore_xml(&mut parser, &resource()).is_ok());
     }
 
     #[test]
     fn usable_as_trait_object() {
-        let action: Box<dyn AssignAction> = Box::new(ConvertToPointer::new(resource()));
+        let action: Box<dyn AssignAction> = Box::new(ConvertToPointer::new(&resource()));
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 16 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
     }
 }

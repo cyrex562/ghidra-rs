@@ -1,13 +1,18 @@
+//! Port of `ghidra.program.model.lang.ParamList`.
+
 use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::language::Language;
-use crate::program::model::listing::program::Program;
+use crate::program::model::lang::param_list_register_out::ParamListRegisterOut;
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::model::lang::param_list_standard_out::ParamListStandardOut;
+use crate::program::model::lang::program_architecture::ProgramArchitecture;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::program::model::pcode::Encoder;
 use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
-    use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 
@@ -22,411 +27,178 @@ pub struct WithSlotRec {
 
 /// A group of `ParamEntry` that form a complete set for passing parameters (in one direction).
 ///
+/// Java's `ParamList` is an interface whose only implementors are the `ParamListStandard`
+/// chain: `ParamListStandard`, `ParamListStandardOut extends ParamListStandard`, and
+/// `ParamListRegisterOut extends ParamListStandardOut`. They differ only in `assignMap`, so the
+/// interface is an enum over the three concrete lists; every other operation is the shared
+/// [`ParamListStandard`] behaviour.
+///
 /// Port of `ghidra.program.model.lang.ParamList`.
-pub trait ParamList {
-    /// Given a list of datatypes, calculate the storage locations used for passing those
-    /// data-types.
+pub enum ParamList {
+    /// Input (or plain) resource list: `ParamListStandard`.
+    Standard(ParamListStandard),
+    /// Output list that falls back to a hidden return pointer: `ParamListStandardOut`.
+    StandardOut(ParamListStandardOut),
+    /// Output list with first-fit register assignment only: `ParamListRegisterOut`.
+    RegisterOut(ParamListRegisterOut),
+}
+
+impl ParamList {
+    /// The shared resource list behind every variant.
+    pub fn standard(&self) -> &ParamListStandard {
+        match self {
+            ParamList::Standard(list) => list,
+            ParamList::StandardOut(list) => list.base(),
+            ParamList::RegisterOut(list) => list.standard(),
+        }
+    }
+
+    /// Given a list of data-types, calculate the storage locations used for passing them.
     ///
-    /// # Parameters
-    /// - `proto`: the list of datatypes
-    /// - `dt_manage`: the data-type manager
-    /// - `res`: the vector for holding the storage locations and other parameter properties
-    /// - `add_auto_params`: if true add/process auto-parameters
-    fn assign_map(
+    /// Port of `ParamList.assignMap`.
+    pub fn assign_map(
         &self,
         proto: &PrototypePieces,
-        dt_manage: &dyn DataTypeManager,
+        dt_manager: &dyn DataTypeManager,
         res: &mut Vec<ParameterPieces>,
         add_auto_params: bool,
-    );
+    ) {
+        match self {
+            ParamList::Standard(list) => list.assign_map(proto, dt_manager, res, add_auto_params),
+            ParamList::StandardOut(list) => list.assign_map(proto, dt_manager, res, add_auto_params),
+            ParamList::RegisterOut(list) => list.assign_map(proto, dt_manager, res, add_auto_params),
+        }
+    }
 
-    /// Encode this param list's configuration to the stream.
+    /// Encode this list's configuration as an `<input>` or `<output>` element.
+    ///
+    /// Port of `ParamList.encode`.
     ///
     /// # Errors
     /// Returns an error for problems writing to the underlying stream.
-    fn encode(&self, encoder: &mut dyn Encoder, is_input: bool) -> std::io::Result<()>;
+    pub fn encode(&self, encoder: &mut dyn Encoder, is_input: bool) -> std::io::Result<()> {
+        self.standard().encode(encoder, is_input)
+    }
 
-    /// Restore this param list from an XML stream.
+    /// Restore this list from an `<input>` or `<output>` element.
     ///
-    /// Generic over the parser implementation (rather than a trait object) because
-    /// [`XmlPullParser`] is not object-safe; this keeps [`ParamList`] itself dyn-compatible for
-    /// every other method.
+    /// Port of `ParamList.restoreXml`.
     ///
     /// # Errors
     /// Returns an error for badly formed XML.
-    fn restore_xml<P: XmlPullParser>(
+    pub(crate) fn restore_xml<P: XmlPullParser>(
         &mut self,
         parser: &mut P,
         cspec: &dyn CompilerSpec,
-    ) -> Result<(), XmlParseException>
-    where
-        Self: Sized;
+    ) -> Result<(), XmlParseException> {
+        match self {
+            ParamList::Standard(list) => list.restore_xml(parser, cspec),
+            ParamList::StandardOut(list) => list.restore_xml(parser, cspec),
+            ParamList::RegisterOut(list) => list.restore_xml(parser, cspec),
+        }
+    }
 
-    /// Get a list of all parameter storage locations consisting of a single register.
-    fn get_potential_register_storage(&self, prog: &dyn Program) -> Vec<Box<dyn VariableStorage>>;
-
-    /// Return the amount of alignment used for parameters passed on the stack, or -1 if there
-    /// are no stack params.
-    fn get_stack_parameter_alignment(&self) -> i32;
-
-    /// Find the boundary offset that separates parameters on the stack from other local
-    /// variables. This is usually the address of the first stack parameter, but if the stack
-    /// grows positive, this is the first address after the parameters on the stack. Returns
-    /// `None` if there are no stack parameters.
-    fn get_stack_parameter_offset(&self) -> Option<i64>;
-
-    /// Determine if a particular address range is a possible parameter, and if so what slot(s)
-    /// it occupies.
+    /// All parameter storage locations consisting of a single register.
     ///
-    /// # Parameters
-    /// - `loc`: the starting address of the range
-    /// - `size`: the size of the range in bytes
-    /// - `res`: holds the resulting slot and slot-size
-    fn possible_param_with_slot(&self, loc: &Address, size: i32, res: &mut WithSlotRec) -> bool;
+    /// Port of `ParamList.getPotentialRegisterStorage(Program)`.
+    pub fn get_potential_register_storage(&self, prog: Arc<dyn ProgramArchitecture>) -> Vec<Box<dyn VariableStorage>> {
+        self.standard().get_potential_register_storage(prog)
+    }
 
-    /// Returns the associated `Language`.
-    fn get_language(&self) -> Box<dyn Language>;
-
-    /// Get the address space associated with any stack based parameters in this list. Returns
-    /// the stack address space if this models parameters passed on the stack, `None` otherwise.
-    fn get_spacebase(&self) -> Option<Arc<AddressSpace>>;
-
-    /// Return true if the this pointer occurs before an indirect return pointer.
+    /// The alignment of parameters passed on the stack, or -1 if there are no stack params.
     ///
-    /// The automatic parameters, this parameter and the hidden return value pointer, both tend
-    /// to be allocated from the initial general purpose registers reserved for parameter
-    /// passing. This method returns true if the this parameter is allocated first.
-    fn is_this_before_ret_pointer(&self) -> bool;
+    /// Port of `ParamList.getStackParameterAlignment`.
+    pub fn get_stack_parameter_alignment(&self) -> i32 {
+        self.standard().get_stack_parameter_alignment()
+    }
 
-    /// Determine if this `ParamList` is equivalent to another instance.
-    fn is_equivalent(&self, other: &dyn ParamList) -> bool;
+    /// The boundary offset separating stack parameters from other local variables, or `None`.
+    ///
+    /// Port of `ParamList.getStackParameterOffset`.
+    pub fn get_stack_parameter_offset(&self) -> Option<i64> {
+        self.standard().get_stack_parameter_offset()
+    }
 
-    /// Returns this instance as [`std::any::Any`], so an [`is_equivalent`](Self::is_equivalent)
-    /// implementation can downcast `other` to a concrete type and compare structurally -- mirrors
-    /// Java's `getClass() != obj.getClass()` check (there being no `instanceof`/reflection
-    /// equivalent for a Rust trait object), and the same `as_any`/`downcast_ref` pattern already
-    /// used by [`ModelRuleLike`](crate::program::seam_stubs::ModelRuleLike)/
-    /// [`DatatypeFilter`](crate::program::model::lang::protorules::datatype_filter::DatatypeFilter)
-    /// elsewhere in this crate. Defaulted (so existing implementors keep compiling) to a value
-    /// that downcasts to nothing meaningful, matching those other traits' "not equivalent to
-    /// anything by default" convention.
-    fn as_any(&self) -> &dyn std::any::Any {
-        &()
+    /// Determine if a memory range is a possible parameter, and if so what slot(s) it occupies.
+    ///
+    /// Port of `ParamList.possibleParamWithSlot`.
+    pub fn possible_param_with_slot(&self, loc: &Address, size: i32, res: &mut WithSlotRec) -> bool {
+        self.standard().possible_param_with_slot(loc, size, res)
+    }
+
+    /// The associated language.
+    ///
+    /// Port of `ParamList.getLanguage`.
+    pub fn get_language(&self) -> Option<Arc<dyn Language>> {
+        self.standard().get_language()
+    }
+
+    /// The address space of stack-based parameters in this list, if any.
+    ///
+    /// Port of `ParamList.getSpacebase`.
+    pub fn get_spacebase(&self) -> Option<Arc<AddressSpace>> {
+        self.standard().get_spacebase()
+    }
+
+    /// True if the `this` pointer occurs before an indirect return pointer.
+    ///
+    /// Port of `ParamList.isThisBeforeRetPointer`.
+    pub fn is_this_before_ret_pointer(&self) -> bool {
+        self.standard().is_this_before_ret_pointer()
+    }
+
+    /// Determine if this list is equivalent to another: same concrete kind (Java's
+    /// `getClass()` check) and identical configuration.
+    ///
+    /// Port of `ParamList.isEquivalent`.
+    pub fn is_equivalent(&self, other: &ParamList) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other) && self.standard().is_equivalent(other.standard())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::model::lang::cspec_test_support::{
+        int_type, parser, TestCompilerSpec, TestDataTypeManager, SYSV_INPUT, SYSV_OUTPUT,
+    };
 
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    struct MockCompilerSpec;
-    impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
-            unimplemented!()
-        }
-        fn get_compiler_spec_description(
-            &self,
-        ) -> Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>
-        {
-            unimplemented!()
-        }
-        fn get_compiler_spec_id(&self) -> crate::program::model::lang::compiler_spec_id::CompilerSpecID {
-            unimplemented!()
-        }
-        fn get_stack_pointer(&self) -> Option<crate::program::model::lang::register::RegisterRef> {
-            None
-        }
-        fn is_stack_right_justified(&self) -> bool {
-            false
-        }
-        fn get_address_space(&self, _space_name: &str) -> Option<Arc<AddressSpace>> {
-            None
-        }
-        fn get_stack_space(&self) -> Arc<AddressSpace> {
-            unimplemented!()
-        }
-        fn get_stack_base_space(&self) -> Arc<AddressSpace> {
-            unimplemented!()
-        }
-        fn stack_grows_negative(&self) -> bool {
-            true
-        }
-        fn apply_context_settings(
-            &self,
-            _ctx: &mut dyn crate::program::model::listing::default_program_context::DefaultProgramContext,
-        ) {
-        }
-        fn get_calling_conventions(
-            &self,
-        ) -> Vec<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
-            Vec::new()
-        }
-        fn get_calling_convention(
-            &self,
-            _name: &str,
-        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
-            None
-        }
-        fn get_all_models(&self) -> Vec<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
-            Vec::new()
-        }
-        fn get_default_calling_convention(
-            &self,
-        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
-            None
-        }
-        fn get_decompiler_output_language(
-            &self,
-        ) -> crate::program::model::lang::decompiler_language::DecompilerLanguage {
-            unimplemented!()
-        }
-        fn get_prototype_evaluation_model(
-            &self,
-            _model_type: crate::program::model::lang::compiler_spec::EvaluationModelType,
-        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
-            unimplemented!()
-        }
-        fn is_global(&self, _addr: &Address) -> bool {
-            false
-        }
-        fn get_data_organization(
-            &self,
-        ) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
-            unimplemented!()
-        }
-        fn get_pcode_inject_library(
-            &self,
-        ) -> Box<dyn crate::program::seam_stubs::PcodeInjectLibrary> {
-            unimplemented!()
-        }
-        fn match_convention(
-            &self,
-            _convention_name: &str,
-        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
-            unimplemented!()
-        }
-        fn find_best_calling_convention(
-            &self,
-            _params: &[&dyn crate::program::model::listing::parameter::Parameter],
-        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
-            unimplemented!()
-        }
-        fn has_property(&self, _key: &str) -> bool {
-            false
-        }
-        fn does_c_data_type_conversions(&self) -> bool {
-            false
-        }
-        fn get_property_as_int(&self, _key: &str, default_int: i32) -> i32 {
-            default_int
-        }
-        fn get_property_as_boolean(&self, _key: &str, default_boolean: bool) -> bool {
-            default_boolean
-        }
-        fn get_property_or(&self, _key: &str, default_string: &str) -> String {
-            default_string.to_string()
-        }
-        fn get_property(&self, _key: &str) -> Option<String> {
-            None
-        }
-        fn get_property_keys(&self) -> std::collections::HashSet<String> {
-            std::collections::HashSet::new()
-        }
-        fn encode(&self, _encoder: &mut dyn Encoder) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn is_equivalent(&self, _other: &dyn CompilerSpec) -> bool {
-            false
-        }
-    }
-
-    struct MockEncoder;
-    impl Encoder for MockEncoder {
-        fn open_element(
-            &mut self,
-            _elem_id: crate::program::model::pcode::ElementId,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn close_element(
-            &mut self,
-            _elem_id: crate::program::model::pcode::ElementId,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_bool(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _val: bool,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_signed_integer(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _val: i64,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_unsigned_integer(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _val: u64,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_string(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _val: &str,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_string_indexed(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _index: i32,
-            _val: &str,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_space(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _spc: &AddressSpace,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_space_indexed(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _index: i32,
-            _name: &str,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_opcode(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _opcode: crate::decompiler::opcodes::op_code::OpCode,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn write_opcode_ordinal(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _opcode: i32,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-    }
-
-    struct MockParamList {
-        stack_alignment: i32,
-    }
-
-    impl ParamList for MockParamList {
-        fn assign_map(
-            &self,
-            _proto: &PrototypePieces,
-            _dt_manage: &dyn DataTypeManager,
-            res: &mut Vec<ParameterPieces>,
-            _add_auto_params: bool,
-        ) {
-            res.push(ParameterPieces::default());
-        }
-
-        fn encode(&self, _encoder: &mut dyn Encoder, _is_input: bool) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn restore_xml<P: XmlPullParser>(
-            &mut self,
-            _parser: &mut P,
-            _cspec: &dyn CompilerSpec,
-        ) -> Result<(), XmlParseException>
-        where
-            Self: Sized,
-        {
-            Ok(())
-        }
-
-        fn get_potential_register_storage(
-            &self,
-            _prog: &dyn Program,
-        ) -> Vec<Box<dyn VariableStorage>> {
-            Vec::new()
-        }
-
-        fn get_stack_parameter_alignment(&self) -> i32 {
-            self.stack_alignment
-        }
-
-        fn get_stack_parameter_offset(&self) -> Option<i64> {
-            None
-        }
-
-        fn possible_param_with_slot(&self, _loc: &Address, size: i32, res: &mut WithSlotRec) -> bool {
-            res.slot = 0;
-            res.slotsize = size;
-            true
-        }
-
-        fn get_language(&self) -> Box<dyn Language> {
-            unimplemented!()
-        }
-
-        fn get_spacebase(&self) -> Option<Arc<AddressSpace>> {
-            None
-        }
-
-        fn is_this_before_ret_pointer(&self) -> bool {
-            false
-        }
-
-        fn is_equivalent(&self, other: &dyn ParamList) -> bool {
-            self.get_stack_parameter_alignment() == other.get_stack_parameter_alignment()
-        }
+    fn restored(mut list: ParamList, xml: &str) -> ParamList {
+        list.restore_xml(&mut parser(xml), &TestCompilerSpec::x86_64()).unwrap();
+        list
     }
 
     #[test]
-    fn usable_as_trait_object() {
-        let list: Box<dyn ParamList> = Box::new(MockParamList { stack_alignment: 4 });
+    fn variants_dispatch_assign_map() {
+        let input = restored(ParamList::Standard(ParamListStandard::new()), SYSV_INPUT);
+        let output = restored(ParamList::StandardOut(ParamListStandardOut::new()), SYSV_OUTPUT);
+        let register_out = restored(ParamList::RegisterOut(ParamListRegisterOut::new()), SYSV_OUTPUT);
+
+        let proto = PrototypePieces { outtype: Some(int_type(64)), intypes: vec![int_type(4)], ..Default::default() };
+        let mut res = Vec::new();
+        output.assign_map(&proto, &TestDataTypeManager, &mut res, true);
+        assert_eq!(res.len(), 2); // hidden return pointer requested
+        input.assign_map(&proto, &TestDataTypeManager, &mut res, true);
+        assert_eq!(res.len(), 3);
+        // The hidden return pointer takes RDI, the first real parameter RSI.
+        assert_eq!(res[1].address.as_ref().unwrap().offset(), 0x38);
+        assert_eq!(res[2].address.as_ref().unwrap().offset(), 0x30);
 
         let mut res = Vec::new();
-        list.assign_map(
-            &PrototypePieces::default(),
-            &MockDataTypeManager,
-            &mut res,
-            false,
-        );
+        register_out.assign_map(&proto, &TestDataTypeManager, &mut res, true);
         assert_eq!(res.len(), 1);
+    }
 
-        assert_eq!(list.get_stack_parameter_alignment(), 4);
-        assert_eq!(list.get_stack_parameter_offset(), None);
-        assert!(list.get_spacebase().is_none());
-        assert!(!list.is_this_before_ret_pointer());
-
-        let mut slot_rec = WithSlotRec::default();
-        let space = AddressSpace::new(
-            "ram",
-            32,
-            1,
-            crate::program::model::address::AddressSpaceType::Ram,
-            0,
-        );
-        let loc = Address::new(space, 0);
-        assert!(list.possible_param_with_slot(&loc, 4, &mut slot_rec));
-        assert_eq!(slot_rec.slotsize, 4);
-
-        assert!(list.encode(&mut MockEncoder, true).is_ok());
-
-        let other: Box<dyn ParamList> = Box::new(MockParamList { stack_alignment: 4 });
-        assert!(list.is_equivalent(other.as_ref()));
-
-        let _cspec = MockCompilerSpec;
+    #[test]
+    fn is_equivalent_requires_same_kind() {
+        let a = restored(ParamList::StandardOut(ParamListStandardOut::new()), SYSV_OUTPUT);
+        let b = restored(ParamList::StandardOut(ParamListStandardOut::new()), SYSV_OUTPUT);
+        let c = restored(ParamList::RegisterOut(ParamListRegisterOut::new()), SYSV_OUTPUT);
+        assert!(a.is_equivalent(&b));
+        assert!(!a.is_equivalent(&c));
+        assert_eq!(a.get_stack_parameter_alignment(), -1);
+        assert_eq!(a.get_stack_parameter_offset(), None);
+        assert!(a.get_spacebase().is_none());
+        assert!(!a.is_this_before_ret_pointer());
     }
 }

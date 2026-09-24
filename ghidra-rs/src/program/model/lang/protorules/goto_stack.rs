@@ -7,7 +7,8 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::param_entry::ParamEntry;
 use crate::program::model::lang::protorules::assign_action::{AssignAction, SUCCESS};
 use crate::program::model::pcode::{Encoder, ELEM_GOTO_STACK};
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
@@ -21,14 +22,10 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 ///
 /// # Errors
 /// Returns an error if no matching `<pentry>` exists.
-fn find_stack_entry(
-    resource: &Arc<dyn ParamListStandardLike>,
-) -> Result<Arc<dyn ParamEntry>, InvalidInputException> {
-    for i in 0..resource.get_num_param_entry() {
-        if let Some(entry) = resource.get_entry(i) {
-            if !entry.is_exclusion() && entry.get_space().space_type() == AddressSpaceType::Stack {
-                return Ok(entry);
-            }
+fn find_stack_entry(resource: &ParamListStandard) -> Result<Arc<ParamEntry>, InvalidInputException> {
+    for entry in resource.entries() {
+        if !entry.is_exclusion() && entry.get_space().space_type() == AddressSpaceType::Stack {
+            return Ok(entry.clone());
         }
     }
     Err(InvalidInputException::with_message(
@@ -40,10 +37,9 @@ fn find_stack_entry(
 ///
 /// Port of `ghidra.program.model.lang.protorules.GotoStack`.
 pub struct GotoStack {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
-    /// Parameter Entry corresponding to the stack (`GotoStack.stackEntry`).
-    stack_entry: Arc<dyn ParamEntry>,
+    /// Parameter Entry corresponding to the stack (`GotoStack.stackEntry`), shared with the
+    /// resource list it was found in.
+    stack_entry: Arc<ParamEntry>,
 }
 
 impl GotoStack {
@@ -51,16 +47,16 @@ impl GotoStack {
     ///
     /// # Errors
     /// Returns an error if `res` has no stack `ParamEntry`.
-    pub fn new(res: Arc<dyn ParamListStandardLike>) -> Result<Self, InvalidInputException> {
-        let stack_entry = find_stack_entry(&res)?;
-        Ok(GotoStack { resource: res, stack_entry })
+    pub fn new(res: &ParamListStandard) -> Result<Self, InvalidInputException> {
+        let stack_entry = find_stack_entry(res)?;
+        Ok(GotoStack { stack_entry })
     }
 }
 
 impl AssignAction for GotoStack {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
         Ok(Box::new(GotoStack::new(new_resource)?))
     }
@@ -73,11 +69,12 @@ impl AssignAction for GotoStack {
         let Some(other) = op.as_any().downcast_ref::<GotoStack>() else {
             return false;
         };
-        self.stack_entry.is_equivalent(other.stack_entry.as_ref())
+        self.stack_entry.is_equivalent(&other.stack_entry)
     }
 
     fn assign_address(
         &self,
+        _resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         _proto: &PrototypePieces,
         _pos: i32,
@@ -85,7 +82,6 @@ impl AssignAction for GotoStack {
         status: &mut [i32],
         res: &mut ParameterPieces,
     ) -> i32 {
-        let _ = &self.resource;
         let grp = self.stack_entry.get_group() as usize;
         res.data_type = Some(dt.clone());
         status[grp] = self.stack_entry.get_addr_by_slot(
@@ -103,7 +99,11 @@ impl AssignAction for GotoStack {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -114,7 +114,7 @@ impl AssignAction for GotoStack {
             .end()
             .map_err(|e| XmlParseException::new(e.message().to_string()))?;
         self.stack_entry =
-            find_stack_entry(&self.resource).map_err(|e| XmlParseException::new(e.0))?;
+            find_stack_entry(resource).map_err(|e| XmlParseException::new(e.0))?;
         Ok(())
     }
 }
@@ -145,57 +145,57 @@ mod tests {
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
 
-    fn stack_resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TestResource {
+    fn stack_resource() -> ParamListStandard {
+        TestResource {
             entries: vec![
-                Arc::new(TestEntry { ty: StorageClass::General, space: ram_space(), ..TestEntry::default() }),
-                Arc::new(TestEntry {
+                TestEntry { ty: StorageClass::General, space: ram_space(), ..TestEntry::default() },
+                TestEntry {
                     space: stack_space(),
                     group: 3,
                     align: 4,
                     numslots: 8,
                     addressbase: 0,
                     ..TestEntry::default()
-                }),
+                },
             ],
             num_group: 4,
             spacebase: None,
-        })
+        }.build()
     }
 
     #[test]
     fn new_finds_the_stack_entry_skipping_non_stack_entries() {
-        let action = GotoStack::new(stack_resource()).expect("stack entry should be found");
+        let action = GotoStack::new(&stack_resource()).expect("stack entry should be found");
         assert_eq!(action.stack_entry.get_group(), 3);
     }
 
     #[test]
     fn new_fails_when_no_stack_entry_exists() {
-        let no_stack = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry::default())],
+        let no_stack = TestResource {
+            entries: vec![TestEntry::default()],
             num_group: 1,
             spacebase: None,
-        });
-        assert!(GotoStack::new(no_stack).is_err());
+        }.build();
+        assert!(GotoStack::new(&no_stack).is_err());
     }
 
     #[test]
     fn assign_address_allocates_sequential_stack_slots() {
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4, alignment: 4 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut status = [0i32; 4];
         let mut res = ParameterPieces::default();
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&stack_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(res.address.unwrap().offset(), 0);
         assert_eq!(status[3], 1);
         assert!(res.data_type.as_ref().is_some());
 
         let mut res2 = ParameterPieces::default();
-        let code2 = action.assign_address(&dt, &proto, 1, &dt_manager, &mut status, &mut res2);
+        let code2 = action.assign_address(&stack_resource(), &dt, &proto, 1, &dt_manager, &mut status, &mut res2);
         assert_eq!(code2, SUCCESS);
         assert_eq!(res2.address.unwrap().offset(), 4);
         assert_eq!(status[3], 2);
@@ -203,29 +203,29 @@ mod tests {
 
     #[test]
     fn is_equivalent_compares_stack_entry() {
-        let a = GotoStack::new(stack_resource()).unwrap();
-        let b = GotoStack::new(stack_resource()).unwrap();
+        let a = GotoStack::new(&stack_resource()).unwrap();
+        let b = GotoStack::new(&stack_resource()).unwrap();
         assert!(a.is_equivalent(&b));
 
-        let different = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry {
+        let different = TestResource {
+            entries: vec![TestEntry {
                 space: stack_space(),
                 group: 5, // different group -> not equivalent
                 align: 4,
                 numslots: 8,
                 ..TestEntry::default()
-            })],
+            }],
             num_group: 6,
             spacebase: None,
-        });
-        let c = GotoStack::new(different).unwrap();
+        }.build();
+        let c = GotoStack::new(&different).unwrap();
         assert!(!a.is_equivalent(&c));
     }
 
     #[test]
     fn clone_box_recomputes_stack_entry_from_new_resource() {
-        let action = GotoStack::new(stack_resource()).unwrap();
-        let cloned = action.clone_box(stack_resource()).expect("clone should succeed");
+        let action = GotoStack::new(&stack_resource()).unwrap();
+        let cloned = action.clone_box(&stack_resource()).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
 
@@ -271,7 +271,7 @@ mod tests {
 
     #[test]
     fn encode_writes_bare_goto_stack_element() {
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new() };
         action.encode(&mut enc).unwrap();
         assert_eq!(enc.elements, vec!["goto_stack"]);
@@ -284,8 +284,8 @@ mod tests {
             MockElement::end("goto_stack", 0),
         ]);
         let resource = stack_resource();
-        let mut action = GotoStack { resource: resource.clone(), stack_entry: find_stack_entry(&resource).unwrap() };
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = GotoStack { stack_entry: find_stack_entry(&resource).unwrap() };
+        action.restore_xml(&mut parser, &resource).unwrap();
         assert_eq!(action.stack_entry.get_group(), 3);
     }
 
@@ -295,27 +295,26 @@ mod tests {
             MockElement::start("goto_stack", 0, &[]),
             MockElement::end("goto_stack", 0),
         ]);
-        let no_stack = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry::default())],
+        let no_stack = TestResource {
+            entries: vec![TestEntry::default()],
             num_group: 1,
             spacebase: None,
-        });
-        // Seed with a resource that DOES have a stack entry so construction succeeds, then
-        // swap the resource out for one that doesn't, to exercise restore_xml's own error path.
-        let mut action = GotoStack::new(stack_resource()).unwrap();
-        action.resource = no_stack;
-        assert!(action.restore_xml(&mut parser).is_err());
+        }.build();
+        // Built against a resource that DOES have a stack entry, then restored against one that
+        // doesn't, to exercise restore_xml's own error path.
+        let mut action = GotoStack::new(&stack_resource()).unwrap();
+        assert!(action.restore_xml(&mut parser, &no_stack).is_err());
     }
 
     #[test]
     fn usable_as_trait_object() {
-        let action: Box<dyn AssignAction> = Box::new(GotoStack::new(stack_resource()).unwrap());
+        let action: Box<dyn AssignAction> = Box::new(GotoStack::new(&stack_resource()).unwrap());
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4, alignment: 4 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut status = [0i32; 4];
         let mut res = ParameterPieces::default();
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&stack_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
     }
 }

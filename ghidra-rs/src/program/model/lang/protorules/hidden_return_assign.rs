@@ -9,7 +9,8 @@ use crate::program::model::lang::protorules::assign_action::{
 use crate::program::model::pcode::{
     Encoder, ATTRIB_STRATEGY, ATTRIB_VOIDLOCK, ELEM_HIDDEN_RETURN,
 };
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::spec_xml_utils::decode_boolean;
 use crate::util::xml::xml_element::XmlElement;
@@ -30,12 +31,6 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 ///
 /// Port of `ghidra.program.model.lang.protorules.HiddenReturnAssign`.
 pub struct HiddenReturnAssign {
-    /// The resource list this action was configured against (`AssignAction.resource`). Not read
-    /// by [`assign_address`](Self::assign_address) -- this action's whole behavior is just
-    /// signaling `ret_code` back to the caller -- but retained so
-    /// [`clone_box`](Self::clone_box) can carry it forward to the clone, mirroring the Java
-    /// constructor's `super(res)` call.
-    resource: Arc<dyn ParamListStandardLike>,
     /// The specific signal to pass back (`HiddenReturnAssign.retCode`).
     ret_code: i32,
 }
@@ -48,21 +43,19 @@ impl HiddenReturnAssign {
     /// (`HiddenReturnAssign.STRATEGY_NORMAL`).
     pub const STRATEGY_NORMAL: &'static str = "normalparam";
 
-    /// Port of the public constructor.
-    pub fn new(res: Arc<dyn ParamListStandardLike>, code: i32) -> Self {
-        HiddenReturnAssign {
-            resource: res,
-            ret_code: code,
-        }
+    /// Port of the public constructor. Java also passes the owning `ParamListStandard`, which
+    /// this action never reads; the resource list is a call-time argument here.
+    pub fn new(code: i32) -> Self {
+        HiddenReturnAssign { ret_code: code }
     }
 }
 
 impl AssignAction for HiddenReturnAssign {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        _new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
-        Ok(Box::new(HiddenReturnAssign::new(new_resource, self.ret_code)))
+        Ok(Box::new(HiddenReturnAssign::new(self.ret_code)))
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -78,14 +71,14 @@ impl AssignAction for HiddenReturnAssign {
 
     fn assign_address(
         &self,
-        dt: &Arc<dyn DataType>,
-        proto: &PrototypePieces,
-        pos: i32,
-        dt_manager: &dyn DataTypeManager,
-        status: &mut [i32],
-        res: &mut ParameterPieces,
+        _resource: &ParamListStandard,
+        _dt: &Arc<dyn DataType>,
+        _proto: &PrototypePieces,
+        _pos: i32,
+        _dt_manager: &dyn DataTypeManager,
+        _status: &mut [i32],
+        _res: &mut ParameterPieces,
     ) -> i32 {
-        let _ = (dt, proto, pos, dt_manager, status, res, &self.resource);
         self.ret_code // Signal to assignMap to use TYPECLASS_HIDDENRET
     }
 
@@ -100,7 +93,11 @@ impl AssignAction for HiddenReturnAssign {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        _resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -138,29 +135,27 @@ mod tests {
     use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
     use crate::program::model::pcode::{AttributeId, ElementId};
 
-    struct MockResource;
-    impl ParamListStandardLike for MockResource {}
-
     struct MockDataType;
     impl DataType for MockDataType {}
 
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
 
-    fn resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(MockResource)
+    /// An empty resource list: this action never consults its resource list.
+    fn resource() -> ParamListStandard {
+        ParamListStandard::new()
     }
 
     #[test]
     fn assign_address_always_returns_the_configured_ret_code_and_ignores_dt() {
-        let action = HiddenReturnAssign::new(resource(), HIDDENRET_SPECIALREG);
+        let action = HiddenReturnAssign::new(HIDDENRET_SPECIALREG);
         let dt: Arc<dyn DataType> = Arc::new(MockDataType);
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, HIDDENRET_SPECIALREG);
         // No resource consumed, no address assigned -- this action is a pure signal.
         assert_eq!(status[0], 0);
@@ -172,18 +167,18 @@ mod tests {
 
     #[test]
     fn is_equivalent_compares_ret_code_only() {
-        let a = HiddenReturnAssign::new(resource(), HIDDENRET_PTRPARAM);
-        let b = HiddenReturnAssign::new(resource(), HIDDENRET_PTRPARAM);
-        let c = HiddenReturnAssign::new(resource(), HIDDENRET_SPECIALREG);
+        let a = HiddenReturnAssign::new(HIDDENRET_PTRPARAM);
+        let b = HiddenReturnAssign::new(HIDDENRET_PTRPARAM);
+        let c = HiddenReturnAssign::new(HIDDENRET_SPECIALREG);
         assert!(a.is_equivalent(&b));
         assert!(!a.is_equivalent(&c));
     }
 
     #[test]
     fn clone_box_carries_ret_code_and_new_resource() {
-        let action = HiddenReturnAssign::new(resource(), HIDDENRET_SPECIALREG_VOID);
+        let action = HiddenReturnAssign::new(HIDDENRET_SPECIALREG_VOID);
         let cloned = action
-            .clone_box(resource())
+            .clone_box(&resource())
             .expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
         let cloned_concrete = cloned
@@ -248,7 +243,7 @@ mod tests {
 
     #[test]
     fn encode_writes_normal_strategy_for_ptrparam() {
-        let action = HiddenReturnAssign::new(resource(), HIDDENRET_PTRPARAM);
+        let action = HiddenReturnAssign::new(HIDDENRET_PTRPARAM);
         let mut enc = RecordingEncoder::new();
         action.encode(&mut enc).unwrap();
         assert_eq!(enc.elements, vec!["hidden_return"]);
@@ -258,7 +253,7 @@ mod tests {
 
     #[test]
     fn encode_writes_voidlock_for_specialreg_void() {
-        let action = HiddenReturnAssign::new(resource(), HIDDENRET_SPECIALREG_VOID);
+        let action = HiddenReturnAssign::new(HIDDENRET_SPECIALREG_VOID);
         let mut enc = RecordingEncoder::new();
         action.encode(&mut enc).unwrap();
         assert!(enc.strings.is_empty());
@@ -270,7 +265,7 @@ mod tests {
         // Matches the real Java quirk: HIDDENRET_SPECIALREG (the default produced by
         // restore_xml when no attributes are present) writes neither a "strategy" nor a
         // "voidlock" attribute -- round-tripping relies on restore_xml's own default.
-        let action = HiddenReturnAssign::new(resource(), HIDDENRET_SPECIALREG);
+        let action = HiddenReturnAssign::new(HIDDENRET_SPECIALREG);
         let mut enc = RecordingEncoder::new();
         action.encode(&mut enc).unwrap();
         assert!(enc.strings.is_empty());
@@ -283,8 +278,8 @@ mod tests {
             MockElement::start("hidden_return", 0, &[]),
             MockElement::end("hidden_return", 0),
         ]);
-        let mut action = HiddenReturnAssign::new(resource(), 0);
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = HiddenReturnAssign::new(0);
+        action.restore_xml(&mut parser, &resource()).unwrap();
         assert_eq!(action.ret_code, HIDDENRET_SPECIALREG);
     }
 
@@ -294,8 +289,8 @@ mod tests {
             MockElement::start("hidden_return", 0, &[("strategy", "normalparam")]),
             MockElement::end("hidden_return", 0),
         ]);
-        let mut action = HiddenReturnAssign::new(resource(), 0);
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = HiddenReturnAssign::new(0);
+        action.restore_xml(&mut parser, &resource()).unwrap();
         assert_eq!(action.ret_code, HIDDENRET_PTRPARAM);
     }
 
@@ -305,8 +300,8 @@ mod tests {
             MockElement::start("hidden_return", 0, &[("strategy", "bogus")]),
             MockElement::end("hidden_return", 0),
         ]);
-        let mut action = HiddenReturnAssign::new(resource(), 0);
-        assert!(action.restore_xml(&mut parser).is_err());
+        let mut action = HiddenReturnAssign::new(0);
+        assert!(action.restore_xml(&mut parser, &resource()).is_err());
     }
 
     #[test]
@@ -322,21 +317,21 @@ mod tests {
             ),
             MockElement::end("hidden_return", 0),
         ]);
-        let mut action = HiddenReturnAssign::new(resource(), 0);
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = HiddenReturnAssign::new(0);
+        action.restore_xml(&mut parser, &resource()).unwrap();
         assert_eq!(action.ret_code, HIDDENRET_SPECIALREG_VOID);
     }
 
     #[test]
     fn usable_as_trait_object() {
         let action: Box<dyn AssignAction> =
-            Box::new(HiddenReturnAssign::new(resource(), HIDDENRET_PTRPARAM));
+            Box::new(HiddenReturnAssign::new(HIDDENRET_PTRPARAM));
         let dt: Arc<dyn DataType> = Arc::new(MockDataType);
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
-        let code = action.assign_address(&dt, &proto, -1, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource(), &dt, &proto, -1, &dt_manager, &mut status, &mut res);
         assert_eq!(code, HIDDENRET_PTRPARAM);
         let _ = Address::new(AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0), 0);
     }

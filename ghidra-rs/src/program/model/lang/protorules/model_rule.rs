@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::sync::Arc;
 
 use crate::program::model::data::data_type::DataType;
@@ -10,9 +9,8 @@ use crate::program::model::lang::protorules::assign_action::{
 use crate::program::model::lang::protorules::datatype_filter::{self, DatatypeFilter};
 use crate::program::model::lang::protorules::qualifier_filter::{self, QualifierFilter};
 use crate::program::model::pcode::{Encoder, ELEM_RULE};
-use crate::program::seam_stubs::{
-    ModelRuleLike, ParamListStandardLike, ParameterPieces, PrototypePieces,
-};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -69,21 +67,21 @@ impl ModelRule {
     /// Returns an error if necessary resources are not present in `res`.
     pub fn from_copy(
         op2: &ModelRule,
-        res: Arc<dyn ParamListStandardLike>,
+        res: &ParamListStandard,
     ) -> Result<Self, InvalidInputException> {
         let filter = op2.filter.as_ref().map(|f| f.clone_box());
         let qualifier = op2.qualifier.as_ref().map(|q| q.clone_box());
         let assign = match &op2.assign {
-            Some(a) => Some(a.clone_box(res.clone())?),
+            Some(a) => Some(a.clone_box(res)?),
             None => None,
         };
         let mut preconditions = Vec::with_capacity(op2.preconditions.len());
         for p in &op2.preconditions {
-            preconditions.push(p.clone_box(res.clone())?);
+            preconditions.push(p.clone_box(res)?);
         }
         let mut sideeffects = Vec::with_capacity(op2.sideeffects.len());
         for s in &op2.sideeffects {
-            sideeffects.push(s.clone_box(res.clone())?);
+            sideeffects.push(s.clone_box(res)?);
         }
         Ok(ModelRule { filter, qualifier, assign, preconditions, sideeffects })
     }
@@ -97,7 +95,7 @@ impl ModelRule {
     pub fn from_components(
         type_filter: &dyn DatatypeFilter,
         action: &dyn AssignAction,
-        res: Arc<dyn ParamListStandardLike>,
+        res: &ParamListStandard,
     ) -> Result<Self, InvalidInputException> {
         Ok(ModelRule {
             filter: Some(type_filter.clone_box()),
@@ -117,7 +115,7 @@ impl ModelRule {
     pub fn restore_xml<P: XmlPullParser>(
         &mut self,
         parser: &mut P,
-        res: Arc<dyn ParamListStandardLike>,
+        res: &ParamListStandard,
     ) -> Result<(), XmlParseException> {
         parser
             .start(&[ELEM_RULE.name])
@@ -135,12 +133,12 @@ impl ModelRule {
         };
 
         let mut preconditions = Vec::new();
-        while let Some(pre_action) = restore_precondition_xml(parser, res.clone())? {
+        while let Some(pre_action) = restore_precondition_xml(parser, res)? {
             preconditions.push(pre_action);
         }
         self.preconditions = preconditions;
 
-        self.assign = Some(restore_action_xml(parser, res.clone())?);
+        self.assign = Some(restore_action_xml(parser, res)?);
 
         let mut sideeffects = Vec::new();
         loop {
@@ -148,7 +146,7 @@ impl ModelRule {
             if !peeked.is_start() {
                 break;
             }
-            sideeffects.push(restore_sideeffect_xml(parser, res.clone())?);
+            sideeffects.push(restore_sideeffect_xml(parser, res)?);
         }
         self.sideeffects = sideeffects;
 
@@ -165,9 +163,17 @@ impl Default for ModelRule {
     }
 }
 
-impl ModelRuleLike for ModelRule {
-    fn assign_address(
+impl ModelRule {
+    /// Assign an address and other details for a specific parameter or for return storage in
+    /// context, allocating from `resource`. Returns an `AssignAction` response code; [`FAIL`] if
+    /// the rule's filters don't match.
+    ///
+    /// Port of `ModelRule.assignAddress`. `resource` is the owning `ParamListStandard` (Java's
+    /// actions hold it as a field; see [`ParamListStandard`]'s doc).
+    #[allow(clippy::too_many_arguments)]
+    pub fn assign_address(
         &self,
+        resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         proto: &PrototypePieces,
         pos: i32,
@@ -193,24 +199,30 @@ impl ModelRuleLike for ModelRule {
         // Precondition response codes are discarded, matching Java exactly -- a failing
         // precondition doesn't abort the rule.
         for precondition in &self.preconditions {
-            precondition.assign_address(dt, proto, pos, dt_manager, &mut tmp_status, res);
+            precondition.assign_address(resource, dt, proto, pos, dt_manager, &mut tmp_status, res);
         }
 
         let Some(assign) = &self.assign else {
             return FAIL;
         };
-        let response = assign.assign_address(dt, proto, pos, dt_manager, &mut tmp_status, res);
+        let response = assign.assign_address(resource, dt, proto, pos, dt_manager, &mut tmp_status, res);
         if response != FAIL {
             status.copy_from_slice(&tmp_status);
             // Side-effect response codes are discarded too, matching Java exactly.
             for sideeffect in &self.sideeffects {
-                sideeffect.assign_address(dt, proto, pos, dt_manager, status, res);
+                sideeffect.assign_address(resource, dt, proto, pos, dt_manager, status, res);
             }
         }
         response
     }
 
-    fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
+    /// Encode this rule to a stream.
+    ///
+    /// Port of `ModelRule.encode`.
+    ///
+    /// # Errors
+    /// Returns an error for problems writing to the stream.
+    pub fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
         encoder.open_element(ELEM_RULE)?;
         if let Some(filter) = &self.filter {
             filter.encode(encoder)?;
@@ -231,14 +243,10 @@ impl ModelRuleLike for ModelRule {
         Ok(())
     }
 
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn is_equivalent(&self, other: &dyn ModelRuleLike) -> bool {
-        let Some(other) = other.as_any().downcast_ref::<ModelRule>() else {
-            return false;
-        };
+    /// Determine if this rule has the same encoding as another.
+    ///
+    /// Port of `ModelRule.isEquivalent`.
+    pub fn is_equivalent(&self, other: &ModelRule) -> bool {
         match (&self.assign, &other.assign) {
             (None, None) => {}
             (Some(a), Some(b)) => {
@@ -301,7 +309,6 @@ mod tests {
     use crate::program::model::lang::protorules::varargs_filter::VarargsFilter;
     use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
     use crate::program::model::lang::language::Language;
-    use crate::program::model::lang::param_entry::ParamEntry;
     use crate::program::model::lang::storage_class::StorageClass;
     use crate::program::model::pcode::pcode_data_type_manager::TYPE_INT;
     use crate::program::model::pcode::{AttributeId, ElementId};
@@ -327,32 +334,21 @@ mod tests {
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
 
-    struct StackOnlyResource {
-        entries: Vec<Arc<dyn ParamEntry>>,
-    }
-    impl ParamListStandardLike for StackOnlyResource {
-        fn get_num_param_entry(&self) -> i32 {
-            self.entries.len() as i32
-        }
-        fn get_entry(&self, index: i32) -> Option<Arc<dyn ParamEntry>> {
-            self.entries.get(index as usize).cloned()
-        }
-        fn get_language(&self) -> Option<Arc<dyn Language>> {
-            Some(Arc::new(TestLanguage { big_endian: false }))
-        }
+    fn with_language(entries: Vec<TestEntry>) -> ParamListStandard {
+        let num_group = entries.len() as i32;
+        TestResource { entries, num_group, spacebase: None }
+            .build_with_language(Some(Arc::new(TestLanguage { big_endian: false }) as Arc<dyn Language>))
     }
 
-    fn stack_resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(StackOnlyResource {
-            entries: vec![Arc::new(TestEntry {
-                space: stack_space(),
-                group: 0,
-                align: 4,
-                numslots: 8,
-                addressbase: 0,
-                ..TestEntry::default()
-            })],
-        })
+    fn stack_resource() -> ParamListStandard {
+        with_language(vec![TestEntry {
+            space: stack_space(),
+            group: 0,
+            align: 4,
+            numslots: 8,
+            addressbase: 0,
+            ..TestEntry::default()
+        }])
     }
 
     fn int_dt() -> Arc<dyn DataType> {
@@ -364,17 +360,17 @@ mod tests {
         // Bare `new()` (filter/qualifier/assign all None) is a distinct state from any
         // fully-configured rule.
         let bare = ModelRule::new();
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let filter = SizeRestrictedFilter::new();
-        let built = ModelRule::from_components(&filter, &action, stack_resource()).unwrap();
-        assert!(!(&bare as &dyn ModelRuleLike).is_equivalent(&built));
+        let built = ModelRule::from_components(&filter, &action, &stack_resource()).unwrap();
+        assert!(!bare.is_equivalent(&built));
     }
 
     #[test]
     fn assign_address_composes_filter_and_action() {
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let filter = SizeRestrictedFilter::new(); // "any" filter: matches everything
-        let rule = ModelRule::from_components(&filter, &action, stack_resource()).unwrap();
+        let rule = ModelRule::from_components(&filter, &action, &stack_resource()).unwrap();
 
         let dt = int_dt();
         let dt_manager = MockDataTypeManager;
@@ -382,7 +378,7 @@ mod tests {
         let mut status = [0i32; 1];
         let mut res = ParameterPieces::default();
 
-        let code = rule.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = rule.assign_address(&stack_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status[0], 1); // one stack slot consumed
     }
@@ -392,9 +388,9 @@ mod tests {
         // HomogeneousAggregate(TYPE_INT) only matches aggregates whose primitives are all
         // TYPE_INT; a bare, non-aggregate MockDataType is rejected outright by `filter`, well
         // before the underlying GotoStack action ever runs.
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let filter = HomogeneousAggregate::with_bounds("int-aggregate", TYPE_INT, 4, 0, 0);
-        let rule = ModelRule::from_components(&filter, &action, stack_resource()).unwrap();
+        let rule = ModelRule::from_components(&filter, &action, &stack_resource()).unwrap();
 
         let dt = int_dt();
         let dt_manager = MockDataTypeManager;
@@ -402,16 +398,16 @@ mod tests {
         let mut status = [0i32; 1];
         let mut res = ParameterPieces::default();
 
-        let code = rule.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = rule.assign_address(&stack_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, FAIL);
         assert_eq!(status[0], 0); // no resources consumed on a filter rejection
     }
 
     #[test]
     fn assign_address_fails_when_the_qualifier_rejects() {
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let filter = SizeRestrictedFilter::new();
-        let mut rule = ModelRule::from_components(&filter, &action, stack_resource()).unwrap();
+        let mut rule = ModelRule::from_components(&filter, &action, &stack_resource()).unwrap();
         rule.qualifier = Some(Box::new(PositionMatchFilter::new(3))); // only matches pos == 3
 
         let dt = int_dt();
@@ -420,7 +416,7 @@ mod tests {
         let mut status = [0i32; 1];
         let mut res = ParameterPieces::default();
 
-        let code = rule.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = rule.assign_address(&stack_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, FAIL);
     }
 
@@ -431,23 +427,8 @@ mod tests {
         // on the stack` short-circuit doesn't apply) that a ConsumeExtra side-effect consumes.
         use crate::program::model::lang::protorules::consume_extra::ConsumeExtra;
 
-        struct TwoStackResource {
-            entries: Vec<Arc<dyn ParamEntry>>,
-        }
-        impl ParamListStandardLike for TwoStackResource {
-            fn get_num_param_entry(&self) -> i32 {
-                self.entries.len() as i32
-            }
-            fn get_entry(&self, index: i32) -> Option<Arc<dyn ParamEntry>> {
-                self.entries.get(index as usize).cloned()
-            }
-            fn get_language(&self) -> Option<Arc<dyn Language>> {
-                Some(Arc::new(TestLanguage { big_endian: false }))
-            }
-        }
-        let resource: Arc<dyn ParamListStandardLike> = Arc::new(TwoStackResource {
-            entries: vec![
-                Arc::new(TestEntry {
+        let resource = with_language(vec![
+                TestEntry {
                     ty: StorageClass::General,
                     space: ram_space(),
                     group: 0,
@@ -455,8 +436,8 @@ mod tests {
                     size: 4,
                     addressbase: 0x1000,
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     ty: StorageClass::General,
                     space: ram_space(),
                     group: 1,
@@ -464,17 +445,13 @@ mod tests {
                     size: 4,
                     addressbase: 0x2000,
                     ..TestEntry::default()
-                }),
-            ],
-        });
+                },
+            ]);
 
-        let action = crate::program::model::lang::protorules::consume_as::ConsumeAs::new(
-            StorageClass::General,
-            resource.clone(),
-        );
+        let action = crate::program::model::lang::protorules::consume_as::ConsumeAs::new(StorageClass::General);
         let filter = SizeRestrictedFilter::new();
-        let mut rule = ModelRule::from_components(&filter, &action, resource.clone()).unwrap();
-        let sideeffect = ConsumeExtra::new(StorageClass::General, true, resource.clone()).unwrap();
+        let mut rule = ModelRule::from_components(&filter, &action, &resource).unwrap();
+        let sideeffect = ConsumeExtra::new(StorageClass::General, true, &resource).unwrap();
         rule.sideeffects.push(Box::new(sideeffect));
 
         let dt = int_dt();
@@ -483,7 +460,7 @@ mod tests {
         let mut status = [0i32; 2];
         let mut res = ParameterPieces::default();
 
-        let code = rule.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = rule.assign_address(&resource, &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         // ConsumeAs alone would only ever touch group 0; group 1 being consumed too proves the
         // side-effect ran.
@@ -492,34 +469,31 @@ mod tests {
 
     #[test]
     fn from_copy_produces_an_equivalent_independent_rule() {
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let filter = SizeRestrictedFilter::new();
-        let original = ModelRule::from_components(&filter, &action, stack_resource()).unwrap();
-        let copy = ModelRule::from_copy(&original, stack_resource()).unwrap();
-        assert!((&original as &dyn ModelRuleLike).is_equivalent(&copy));
+        let original = ModelRule::from_components(&filter, &action, &stack_resource()).unwrap();
+        let copy = ModelRule::from_copy(&original, &stack_resource()).unwrap();
+        assert!(original.is_equivalent(&copy));
     }
 
     #[test]
     fn is_equivalent_detects_a_different_filter() {
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let filter_a = SizeRestrictedFilter::with_min_max(0, 4);
         let filter_b = SizeRestrictedFilter::with_min_max(0, 8);
-        let rule_a = ModelRule::from_components(&filter_a, &action, stack_resource()).unwrap();
-        let rule_b = ModelRule::from_components(&filter_b, &action, stack_resource()).unwrap();
-        assert!(!(&rule_a as &dyn ModelRuleLike).is_equivalent(&rule_b));
+        let rule_a = ModelRule::from_components(&filter_a, &action, &stack_resource()).unwrap();
+        let rule_b = ModelRule::from_components(&filter_b, &action, &stack_resource()).unwrap();
+        assert!(!rule_a.is_equivalent(&rule_b));
     }
 
     #[test]
     fn is_equivalent_detects_a_different_action() {
         let filter = SizeRestrictedFilter::new();
-        let action_a = GotoStack::new(stack_resource()).unwrap();
-        let action_b = crate::program::model::lang::protorules::consume_as::ConsumeAs::new(
-            StorageClass::General,
-            stack_resource(),
-        );
-        let rule_a = ModelRule::from_components(&filter, &action_a, stack_resource()).unwrap();
-        let rule_b = ModelRule::from_components(&filter, &action_b, stack_resource()).unwrap();
-        assert!(!(&rule_a as &dyn ModelRuleLike).is_equivalent(&rule_b));
+        let action_a = GotoStack::new(&stack_resource()).unwrap();
+        let action_b = crate::program::model::lang::protorules::consume_as::ConsumeAs::new(StorageClass::General);
+        let rule_a = ModelRule::from_components(&filter, &action_a, &stack_resource()).unwrap();
+        let rule_b = ModelRule::from_components(&filter, &action_b, &stack_resource()).unwrap();
+        assert!(!rule_a.is_equivalent(&rule_b));
     }
 
     struct RecordingEncoder {
@@ -565,9 +539,9 @@ mod tests {
 
     #[test]
     fn encode_wraps_filter_and_action_in_a_rule_element() {
-        let action = GotoStack::new(stack_resource()).unwrap();
+        let action = GotoStack::new(&stack_resource()).unwrap();
         let filter = SizeRestrictedFilter::new();
-        let rule = ModelRule::from_components(&filter, &action, stack_resource()).unwrap();
+        let rule = ModelRule::from_components(&filter, &action, &stack_resource()).unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new() };
         rule.encode(&mut enc).unwrap();
         assert_eq!(enc.elements.first(), Some(&"rule"));
@@ -590,7 +564,7 @@ mod tests {
             MockElement::end("rule", 0),
         ]);
         let mut rule = ModelRule::new();
-        rule.restore_xml(&mut parser, stack_resource()).unwrap();
+        rule.restore_xml(&mut parser, &stack_resource()).unwrap();
 
         assert!(rule.filter.as_ref().unwrap().as_any().downcast_ref::<SizeRestrictedFilter>().is_some());
         assert!(rule.qualifier.as_ref().unwrap().as_any().downcast_ref::<VarargsFilter>().is_some());
@@ -615,7 +589,7 @@ mod tests {
             MockElement::end("rule", 0),
         ]);
         let mut rule = ModelRule::new();
-        rule.restore_xml(&mut parser, stack_resource()).unwrap();
+        rule.restore_xml(&mut parser, &stack_resource()).unwrap();
         assert!(rule.qualifier.as_ref().unwrap().as_any().downcast_ref::<AndFilter>().is_some());
     }
 
@@ -632,7 +606,7 @@ mod tests {
             MockElement::end("rule", 0),
         ]);
         let mut rule = ModelRule::new();
-        rule.restore_xml(&mut parser, stack_resource()).unwrap();
+        rule.restore_xml(&mut parser, &stack_resource()).unwrap();
         let meta_filter = rule.filter.as_ref().unwrap().as_any().downcast_ref::<MetaTypeFilter>();
         assert!(meta_filter.is_some());
     }
@@ -649,7 +623,7 @@ mod tests {
             MockElement::end("rule", 0),
         ]);
         let mut rule = ModelRule::new();
-        rule.restore_xml(&mut parser, stack_resource()).unwrap();
+        rule.restore_xml(&mut parser, &stack_resource()).unwrap();
         assert!(rule.qualifier.is_none());
     }
 
@@ -657,25 +631,23 @@ mod tests {
     fn restore_xml_reads_preconditions_and_sideeffects() {
         // <rule><datatype name="any"/><consume_extra storage="general" matchsize="true"/>
         //   <goto_stack/><consume_extra storage="general" matchsize="true"/></rule>
-        let resource: Arc<dyn ParamListStandardLike> = Arc::new(StackOnlyResource {
-            entries: vec![
-                Arc::new(TestEntry {
+        let resource = with_language(vec![
+                TestEntry {
                     ty: StorageClass::General,
                     space: ram_space(),
                     group: 0,
                     align: 0,
                     size: 4,
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     space: stack_space(),
                     group: 1,
                     align: 4,
                     numslots: 8,
                     ..TestEntry::default()
-                }),
-            ],
-        });
+                },
+            ]);
         let mut parser = QueueParser::new(vec![
             MockElement::start("rule", 0, &[]),
             MockElement::start("datatype", 1, &[("name", "any")]),
@@ -689,7 +661,7 @@ mod tests {
             MockElement::end("rule", 0),
         ]);
         let mut rule = ModelRule::new();
-        rule.restore_xml(&mut parser, resource).unwrap();
+        rule.restore_xml(&mut parser, &resource).unwrap();
         assert_eq!(rule.preconditions.len(), 1);
         assert_eq!(rule.sideeffects.len(), 1);
     }
@@ -704,6 +676,6 @@ mod tests {
             MockElement::end("not_a_real_action", 1),
         ]);
         let mut rule = ModelRule::new();
-        assert!(rule.restore_xml(&mut parser, stack_resource()).is_err());
+        assert!(rule.restore_xml(&mut parser, &stack_resource()).is_err());
     }
 }

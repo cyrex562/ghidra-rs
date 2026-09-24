@@ -7,7 +7,8 @@ use crate::program::model::lang::param_entry::ParamEntry;
 use crate::program::model::lang::protorules::assign_action::{AssignAction, SUCCESS};
 use crate::program::model::lang::storage_class::StorageClass;
 use crate::program::model::pcode::{Encoder, ATTRIB_MATCHSIZE, ATTRIB_STORAGE, ELEM_CONSUME_EXTRA};
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::spec_xml_utils::decode_boolean;
 use crate::util::xml::xml_element::XmlElement;
@@ -24,14 +25,12 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 ///
 /// Port of `ghidra.program.model.lang.protorules.ConsumeExtra`.
 pub struct ConsumeExtra {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
     /// The other resource list to consume from (`ConsumeExtra.resourceType`).
     resource_type: StorageClass,
     /// False if the side-effect only consumes a single register (`ConsumeExtra.matchSize`).
     match_size: bool,
     /// Registers that can be consumed (`ConsumeExtra.tiles`).
-    tiles: Vec<Arc<dyn ParamEntry>>,
+    tiles: Vec<Arc<ParamEntry>>,
 }
 
 /// Port of the private `initializeEntries` (identical logic to
@@ -41,9 +40,9 @@ pub struct ConsumeExtra {
 /// # Errors
 /// Returns an error if `resource` has no matching entries.
 fn initialize_entries(
-    resource: &Arc<dyn ParamListStandardLike>,
+    resource: &ParamListStandard,
     resource_type: StorageClass,
-) -> Result<Vec<Arc<dyn ParamEntry>>, InvalidInputException> {
+) -> Result<Vec<Arc<ParamEntry>>, InvalidInputException> {
     let tiles = resource.extract_tiles(resource_type);
     if tiles.is_empty() {
         return Err(InvalidInputException::with_message(
@@ -61,10 +60,10 @@ impl ConsumeExtra {
     pub fn new(
         store: StorageClass,
         matched: bool,
-        res: Arc<dyn ParamListStandardLike>,
+        res: &ParamListStandard,
     ) -> Result<Self, InvalidInputException> {
-        let tiles = initialize_entries(&res, store)?;
-        Ok(ConsumeExtra { resource: res, resource_type: store, match_size: matched, tiles })
+        let tiles = initialize_entries(res, store)?;
+        Ok(ConsumeExtra { resource_type: store, match_size: matched, tiles })
     }
 
     /// Port of the "protected" constructor, used to build a default-configured instance before
@@ -82,9 +81,8 @@ impl ConsumeExtra {
     /// port's `restore_xml`, which re-derives `tiles` from `self.resource_type` at the end) defer
     /// that until the resource-list lookup can use whatever `resource_type` the XML attributes
     /// end up specifying.
-    pub fn for_decode(res: Arc<dyn ParamListStandardLike>) -> Self {
+    pub fn for_decode() -> Self {
         ConsumeExtra {
-            resource: res,
             resource_type: StorageClass::General,
             match_size: true,
             tiles: Vec::new(),
@@ -95,7 +93,7 @@ impl ConsumeExtra {
 impl AssignAction for ConsumeExtra {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
         Ok(Box::new(ConsumeExtra::new(self.resource_type, self.match_size, new_resource)?))
     }
@@ -117,19 +115,19 @@ impl AssignAction for ConsumeExtra {
         self.tiles
             .iter()
             .zip(other.tiles.iter())
-            .all(|(a, b)| a.is_equivalent(b.as_ref()))
+            .all(|(a, b)| a.is_equivalent(b))
     }
 
     fn assign_address(
         &self,
+        _resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         _proto: &PrototypePieces,
         _pos: i32,
         _dt_manager: &dyn DataTypeManager,
         status: &mut [i32],
-        res: &mut ParameterPieces,
+        _res: &mut ParameterPieces,
     ) -> i32 {
-        let _ = (res, &self.resource);
         let mut size_left = dt.get_length();
         let mut iter = 0usize;
         while size_left > 0 && iter != self.tiles.len() {
@@ -156,7 +154,11 @@ impl AssignAction for ConsumeExtra {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -173,7 +175,7 @@ impl AssignAction for ConsumeExtra {
         parser
             .end()
             .map_err(|e| XmlParseException::new(e.message().to_string()))?;
-        self.tiles = initialize_entries(&self.resource, self.resource_type)
+        self.tiles = initialize_entries(resource, self.resource_type)
             .map_err(|e| XmlParseException::new(e.0))?;
         Ok(())
     }
@@ -198,87 +200,87 @@ mod tests {
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
 
-    fn two_general_registers() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TestResource {
+    fn two_general_registers() -> ParamListStandard {
+        TestResource {
             entries: vec![
-                Arc::new(TestEntry { ty: StorageClass::General, group: 0, align: 0, size: 4, space: ram_space(), ..TestEntry::default() }),
-                Arc::new(TestEntry { ty: StorageClass::General, group: 1, align: 0, size: 4, space: ram_space(), ..TestEntry::default() }),
+                TestEntry { ty: StorageClass::General, group: 0, align: 0, size: 4, space: ram_space(), ..TestEntry::default() },
+                TestEntry { ty: StorageClass::General, group: 1, align: 0, size: 4, space: ram_space(), ..TestEntry::default() },
             ],
             num_group: 2,
             spacebase: None,
-        })
+        }.build()
     }
 
     #[test]
     fn assign_address_consumes_until_size_is_covered_when_match_size() {
-        let action = ConsumeExtra::new(StorageClass::General, true, two_general_registers()).unwrap();
+        let action = ConsumeExtra::new(StorageClass::General, true, &two_general_registers()).unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 8 }); // needs both 4-byte regs
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 2];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_general_registers(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status, [-1, -1]);
     }
 
     #[test]
     fn assign_address_stops_once_size_is_covered() {
-        let action = ConsumeExtra::new(StorageClass::General, true, two_general_registers()).unwrap();
+        let action = ConsumeExtra::new(StorageClass::General, true, &two_general_registers()).unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4 }); // one 4-byte reg covers it
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 2];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_general_registers(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status, [-1, 0]); // second register left untouched
     }
 
     #[test]
     fn assign_address_consumes_only_one_register_when_not_match_size() {
-        let action = ConsumeExtra::new(StorageClass::General, false, two_general_registers()).unwrap();
+        let action = ConsumeExtra::new(StorageClass::General, false, &two_general_registers()).unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 100 }); // would need many regs if matchSize
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 2];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_general_registers(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status, [-1, 0]); // only the first register consumed
     }
 
     #[test]
     fn assign_address_skips_already_consumed_registers() {
-        let action = ConsumeExtra::new(StorageClass::General, true, two_general_registers()).unwrap();
+        let action = ConsumeExtra::new(StorageClass::General, true, &two_general_registers()).unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [5i32, 0]; // first register already consumed
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_general_registers(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status, [5, -1]); // falls through to the second register
     }
 
     #[test]
     fn is_equivalent_compares_match_size_resource_type_and_tiles() {
-        let a = ConsumeExtra::new(StorageClass::General, true, two_general_registers()).unwrap();
-        let b = ConsumeExtra::new(StorageClass::General, true, two_general_registers()).unwrap();
+        let a = ConsumeExtra::new(StorageClass::General, true, &two_general_registers()).unwrap();
+        let b = ConsumeExtra::new(StorageClass::General, true, &two_general_registers()).unwrap();
         assert!(a.is_equivalent(&b));
 
-        let diff_match = ConsumeExtra::new(StorageClass::General, false, two_general_registers()).unwrap();
+        let diff_match = ConsumeExtra::new(StorageClass::General, false, &two_general_registers()).unwrap();
         assert!(!a.is_equivalent(&diff_match));
     }
 
     #[test]
     fn clone_box_recomputes_tiles_from_new_resource() {
-        let action = ConsumeExtra::new(StorageClass::General, true, two_general_registers()).unwrap();
-        let cloned = action.clone_box(two_general_registers()).expect("clone should succeed");
+        let action = ConsumeExtra::new(StorageClass::General, true, &two_general_registers()).unwrap();
+        let cloned = action.clone_box(&two_general_registers()).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
 
@@ -328,12 +330,12 @@ mod tests {
 
     #[test]
     fn encode_writes_storage_and_matchsize() {
-        let action = ConsumeExtra::new(StorageClass::Float, false, {
-            Arc::new(TestResource {
-                entries: vec![Arc::new(TestEntry { ty: StorageClass::Float, align: 0, ..TestEntry::default() })],
+        let action = ConsumeExtra::new(StorageClass::Float, false, &{
+            TestResource {
+                entries: vec![TestEntry { ty: StorageClass::Float, align: 0, ..TestEntry::default() }],
                 num_group: 1,
                 spacebase: None,
-            })
+            }.build()
         }).unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new(), strings: Vec::new(), bools: Vec::new() };
         action.encode(&mut enc).unwrap();
@@ -348,8 +350,8 @@ mod tests {
             MockElement::start("consume_extra", 0, &[("storage", "general"), ("matchsize", "false")]),
             MockElement::end("consume_extra", 0),
         ]);
-        let mut action = ConsumeExtra::new(StorageClass::General, true, two_general_registers()).unwrap();
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = ConsumeExtra::new(StorageClass::General, true, &two_general_registers()).unwrap();
+        action.restore_xml(&mut parser, &two_general_registers()).unwrap();
         assert!(!action.match_size);
         assert_eq!(action.resource_type, StorageClass::General);
     }
@@ -358,22 +360,22 @@ mod tests {
     fn for_decode_then_restore_xml_picks_up_a_non_default_storage_class() {
         // for_decode must NOT eagerly validate against the General default -- only against
         // whatever resource_type restore_xml ends up parsing from the stream.
-        let float_only_resource = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry {
+        let float_only_resource = TestResource {
+            entries: vec![TestEntry {
                 ty: StorageClass::Float,
                 align: 0,
                 space: ram_space(),
                 ..TestEntry::default()
-            })],
+            }],
             num_group: 1,
             spacebase: None,
-        });
+        }.build();
         let mut parser = QueueParser::new(vec![
             MockElement::start("consume_extra", 0, &[("storage", "float")]),
             MockElement::end("consume_extra", 0),
         ]);
-        let mut action = ConsumeExtra::for_decode(float_only_resource);
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = ConsumeExtra::for_decode();
+        action.restore_xml(&mut parser, &float_only_resource).unwrap();
         assert_eq!(action.resource_type, StorageClass::Float);
         assert_eq!(action.tiles.len(), 1);
     }

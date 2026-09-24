@@ -1,52 +1,77 @@
+//! Port of `ghidra.program.model.lang.ParamListRegisterOut`.
+
 use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::seam_stubs::{
-    is_void_data_type, ParamListStandardLike, ParameterPieces, PrototypePieces,
-};
+use crate::program::model::lang::compiler_spec::CompilerSpec;
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::model::lang::param_list_standard_out::ParamListStandardOut;
+use crate::program::seam_stubs::{is_void_data_type, ParameterPieces, PrototypePieces};
+use crate::util::xml::xml_parse_exception::XmlParseException;
+use crate::util::xml::xml_pull_parser::XmlPullParser;
 
 /// A list of resources describing possible storage locations for a function's return value,
-/// and a strategy for selecting a storage location based on data-types in a function signature.
+/// whose strategy is to take the first storage location in the list that fits the return
+/// data-type -- with no fallback to a hidden return pointer.
 ///
-/// The assignment strategy for this class is to take the first storage location in the list
-/// that fits for the given function signature's return data-type.
-///
-/// In Java, `ParamListRegisterOut` is a concrete subclass of `ParamListStandardOut` that
-/// overrides `assignMap` with a simpler strategy: no fallback to a hidden-return-pointer if the
-/// first attempt fails to find storage, and no auto-parameter handling.
-///
-/// `ParamListStandard` is not yet ported (see [`ParamListStandardLike`]), so this is expressed
-/// as an extension trait: implementors supply the inherited `numgroup`/`assignAddress` behavior
-/// via [`ParamListStandardLike`], and get [`assign_map_register_out`](Self::assign_map_register_out)
-/// as a provided method built on top of them.
+/// Java's `extends ParamListStandardOut` is composition here: the embedded
+/// [`ParamListStandardOut`] carries the resource list, and only `assignMap` differs.
 ///
 /// Port of `ghidra.program.model.lang.ParamListRegisterOut`.
-pub trait ParamListRegisterOut: ParamListStandardLike {
-    /// Port of `ParamListRegisterOut.assignMap`.
+#[derive(Default)]
+pub struct ParamListRegisterOut {
+    base: ParamListStandardOut,
+}
+
+impl ParamListRegisterOut {
+    /// An empty, unconfigured list, ready for [`restore_xml`](Self::restore_xml).
+    pub fn new() -> Self {
+        ParamListRegisterOut { base: ParamListStandardOut::new() }
+    }
+
+    /// The embedded `ParamListStandardOut` (the Java superclass).
+    pub fn base(&self) -> &ParamListStandardOut {
+        &self.base
+    }
+
+    /// The underlying resource list.
+    pub fn standard(&self) -> &ParamListStandard {
+        self.base.base()
+    }
+
+    /// Restore the resource list from an `<output>` element.
     ///
-    /// # Parameters
-    /// - `proto`: the list of datatypes, including the return data-type being assigned storage
-    /// - `dt_manager`: the data-type manager
-    /// - `res`: the vector for holding the storage locations and other parameter properties;
-    ///   the return storage is always appended first
-    /// - `add_auto_params`: unused by this strategy (kept for API parity with the Java override)
-    fn assign_map_register_out(
+    /// Port of the inherited `ParamListStandard.restoreXml`.
+    ///
+    /// # Errors
+    /// Returns an error for badly formed or inconsistent XML.
+    pub(crate) fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        cspec: &dyn CompilerSpec,
+    ) -> Result<(), XmlParseException> {
+        self.base.restore_xml(parser, cspec)
+    }
+
+    /// Compute storage for the return value and push it onto `res`. `add_auto_params` is unused:
+    /// this strategy never creates a hidden return parameter.
+    ///
+    /// Port of `ParamListRegisterOut.assignMap`.
+    pub fn assign_map(
         &self,
         proto: &PrototypePieces,
         dt_manager: &dyn DataTypeManager,
         res: &mut Vec<ParameterPieces>,
-        add_auto_params: bool,
+        _add_auto_params: bool,
     ) {
-        let _ = add_auto_params;
-        let mut status = vec![0i32; self.num_group().max(0) as usize];
+        let list = self.standard();
+        let mut status = vec![0i32; list.num_group().max(0) as usize];
         let mut store = ParameterPieces::default();
-
         if is_void_data_type(proto.outtype.as_deref()) {
             store.data_type = proto.outtype.clone();
             res.push(store); // Don't assign storage for VOID
             return;
         }
-
         if let Some(outtype) = proto.outtype.as_ref() {
-            self.assign_address(outtype, proto, -1, dt_manager, &mut status, &mut store);
+            list.assign_address(outtype, proto, -1, dt_manager, &mut status, &mut store);
         }
         res.push(store);
     }
@@ -55,119 +80,46 @@ pub trait ParamListRegisterOut: ParamListStandardLike {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::data_type::DataType;
-    use crate::program::model::lang::protorules::assign_action;
-    use std::sync::Arc;
+    use crate::program::model::lang::cspec_test_support::{
+        int_type, parser, void_type, TestCompilerSpec, TestDataTypeManager, SYSV_OUTPUT,
+    };
 
-    struct MockVoidDataType;
-    impl DataType for MockVoidDataType {
-        fn is_void_type(&self) -> bool {
-            true
-        }
+    fn register_out() -> ParamListRegisterOut {
+        let mut list = ParamListRegisterOut::new();
+        list.restore_xml(&mut parser(SYSV_OUTPUT), &TestCompilerSpec::x86_64()).unwrap();
+        list
     }
 
-    struct MockIntDataType {
-        length: i32,
+    fn assign(outtype: std::sync::Arc<dyn crate::program::model::data::data_type::DataType>) -> Vec<ParameterPieces> {
+        let proto = PrototypePieces { outtype: Some(outtype), ..Default::default() };
+        let mut res = Vec::new();
+        register_out().assign_map(&proto, &TestDataTypeManager, &mut res, true);
+        res
     }
-    impl DataType for MockIntDataType {
-        fn get_length(&self) -> i32 {
-            self.length
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    /// A resource list with a single group that only finds storage for data-types up to 4 bytes.
-    struct FirstFitOnly;
-
-    impl ParamListStandardLike for FirstFitOnly {
-        fn num_group(&self) -> i32 {
-            1
-        }
-
-        fn assign_address(
-            &self,
-            dt: &Arc<dyn DataType>,
-            _proto: &PrototypePieces,
-            _pos: i32,
-            _dt_manager: &dyn DataTypeManager,
-            status: &mut [i32],
-            res: &mut ParameterPieces,
-        ) -> i32 {
-            status[0] += 1;
-            if dt.get_length() <= 4 {
-                res.data_type = Some(dt.clone());
-                return assign_action::SUCCESS;
-            }
-            assign_action::FAIL
-        }
-    }
-
-    impl ParamListRegisterOut for FirstFitOnly {}
 
     #[test]
-    fn void_return_type_gets_no_storage() {
-        let list = FirstFitOnly;
-        let proto = PrototypePieces {
-            outtype: Some(Arc::new(MockVoidDataType)),
-            ..Default::default()
-        };
-        let mut res = Vec::new();
-
-        list.assign_map_register_out(&proto, &MockDataTypeManager, &mut res, true);
-
+    fn fitting_return_gets_direct_storage() {
+        let res = assign(int_type(4));
         assert_eq!(res.len(), 1);
-        assert!(res[0].data_type.is_some());
+        assert_eq!(res[0].address.as_ref().unwrap().offset(), 0); // RAX
         assert!(!res[0].is_indirect);
+        assert!(register_out().standard().is_standard_out());
     }
 
     #[test]
-    fn fitting_return_type_gets_direct_storage() {
-        let list = FirstFitOnly;
-        let proto = PrototypePieces {
-            outtype: Some(Arc::new(MockIntDataType { length: 4 })),
-            ..Default::default()
-        };
-        let mut res = Vec::new();
-
-        list.assign_map_register_out(&proto, &MockDataTypeManager, &mut res, true);
-
+    fn void_return_gets_no_storage() {
+        let res = assign(void_type());
         assert_eq!(res.len(), 1);
+        assert!(res[0].address.is_none());
         assert!(res[0].data_type.is_some());
-        assert!(!res[0].is_indirect);
     }
 
     #[test]
-    fn oversized_return_type_is_not_assigned_and_no_hidden_return_fallback() {
-        // Unlike ParamListStandardOut, ParamListRegisterOut never falls back to a
-        // hidden-return-pointer strategy: a failed direct assignment just leaves the
-        // single result entry with no storage.
-        let list = FirstFitOnly;
-        let proto = PrototypePieces {
-            outtype: Some(Arc::new(MockIntDataType { length: 64 })),
-            ..Default::default()
-        };
-        let mut res = Vec::new();
-
-        list.assign_map_register_out(&proto, &MockDataTypeManager, &mut res, true);
-
+    fn oversized_return_is_unassigned_without_hidden_pointer() {
+        // Unlike ParamListStandardOut, no fallback to a hidden return pointer.
+        let res = assign(int_type(64));
         assert_eq!(res.len(), 1);
-        assert!(res[0].data_type.is_none());
+        assert!(res[0].address.is_none());
         assert!(!res[0].is_indirect);
-    }
-
-    #[test]
-    fn usable_as_trait_object() {
-        let list: Box<dyn ParamListRegisterOut> = Box::new(FirstFitOnly);
-        let proto = PrototypePieces {
-            outtype: Some(Arc::new(MockIntDataType { length: 4 })),
-            ..Default::default()
-        };
-        let mut res = Vec::new();
-
-        list.assign_map_register_out(&proto, &MockDataTypeManager, &mut res, true);
-        assert_eq!(res.len(), 1);
-        assert!(res[0].data_type.is_some());
     }
 }

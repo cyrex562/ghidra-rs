@@ -149,7 +149,7 @@ impl PrimitiveExtractor {
     /// -- the other real caller of this extractor besides
     /// [`HomogeneousAggregate`](super::homogeneous_aggregate::HomogeneousAggregate) -- can hand
     /// each primitive's data-type on to
-    /// [`ParamListStandardLike::assign_address_fallback`](crate::program::seam_stubs::ParamListStandardLike::assign_address_fallback),
+    /// [`ParamListStandard::assign_address_fallback`](crate::program::model::lang::param_list_standard::ParamListStandard::assign_address_fallback),
     /// which is `Arc`-based (see that method's doc for why). `Primitive.dt` stays a plain
     /// `Box<dyn DataType>` internally -- unaffected by, and not used by,
     /// [`HomogeneousAggregate`](super::homogeneous_aggregate::HomogeneousAggregate), which only

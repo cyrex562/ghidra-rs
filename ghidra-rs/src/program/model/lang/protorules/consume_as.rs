@@ -6,7 +6,8 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::protorules::assign_action::AssignAction;
 use crate::program::model::lang::storage_class::StorageClass;
 use crate::program::model::pcode::{Encoder, ATTRIB_STORAGE, ELEM_CONSUME};
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -19,28 +20,27 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 ///
 /// Port of `ghidra.program.model.lang.protorules.ConsumeAs`.
 pub struct ConsumeAs {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
     /// The resource list the parameter is consumed from (`ConsumeAs.resourceType`).
     resource_type: StorageClass,
 }
 
 impl ConsumeAs {
     /// Port of the public constructor.
-    pub fn new(store: StorageClass, res: Arc<dyn ParamListStandardLike>) -> Self {
-        ConsumeAs {
-            resource: res,
-            resource_type: store,
-        }
+    ///
+    /// Java's constructor also takes the owning `ParamListStandard`; here the resource list is a
+    /// call-time argument of [`assign_address`](AssignAction::assign_address) instead of a
+    /// stored back-reference, and this action needs nothing from it at construction.
+    pub fn new(store: StorageClass) -> Self {
+        ConsumeAs { resource_type: store }
     }
 }
 
 impl AssignAction for ConsumeAs {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        _new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
-        Ok(Box::new(ConsumeAs::new(self.resource_type, new_resource)))
+        Ok(Box::new(ConsumeAs::new(self.resource_type)))
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -56,6 +56,7 @@ impl AssignAction for ConsumeAs {
 
     fn assign_address(
         &self,
+        resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         _proto: &PrototypePieces,
         _pos: i32,
@@ -63,8 +64,7 @@ impl AssignAction for ConsumeAs {
         status: &mut [i32],
         res: &mut ParameterPieces,
     ) -> i32 {
-        self.resource
-            .assign_address_fallback(self.resource_type, dt, true, status, res)
+        resource.assign_address_fallback(self.resource_type, dt, true, status, res)
     }
 
     fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
@@ -74,7 +74,11 @@ impl AssignAction for ConsumeAs {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        _resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -110,32 +114,33 @@ mod tests {
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
 
-    fn float_register_resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TestResource {
+    fn float_register_resource() -> ParamListStandard {
+        TestResource {
             // align: 0 makes this a single "exclusion" slot (a single dedicated register),
             // which is the typical shape of a per-storage-class ParamEntry in a real .cspec.
-            entries: vec![Arc::new(TestEntry {
+            entries: vec![TestEntry {
                 ty: StorageClass::Float,
                 group: 0,
                 addressbase: 0x100,
                 align: 0,
                 ..TestEntry::default()
-            })],
+            }],
             num_group: 1,
             spacebase: Some(ram_space()),
-        })
+        }.build()
     }
 
     #[test]
     fn assign_address_delegates_to_resource_fallback_with_match_exact() {
-        let action = ConsumeAs::new(StorageClass::Float, float_register_resource());
+        let resource = float_register_resource();
+        let action = ConsumeAs::new(StorageClass::Float);
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource, &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(res.address.unwrap().offset(), 0x100);
         assert_eq!(status[0], -1); // Exclusion entry: fully consumed after one use
@@ -146,36 +151,37 @@ mod tests {
         // match_exact=true means a StorageClass::General entry does NOT satisfy a request for
         // StorageClass::Float (unlike the plain resource.assignAddress fallback, which would
         // accept a general entry).
-        let general_only = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry { ty: StorageClass::General, ..TestEntry::default() })],
+        let general_only = TestResource {
+            entries: vec![TestEntry { ty: StorageClass::General, ..TestEntry::default() }],
             num_group: 1,
             spacebase: None,
-        });
-        let action = ConsumeAs::new(StorageClass::Float, general_only);
+        }.build();
+        let resource = general_only;
+        let action = ConsumeAs::new(StorageClass::Float);
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource, &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, FAIL);
     }
 
     #[test]
     fn is_equivalent_compares_resource_type_only() {
-        let a = ConsumeAs::new(StorageClass::Float, float_register_resource());
-        let b = ConsumeAs::new(StorageClass::Float, float_register_resource());
-        let c = ConsumeAs::new(StorageClass::Vector, float_register_resource());
+        let a = ConsumeAs::new(StorageClass::Float);
+        let b = ConsumeAs::new(StorageClass::Float);
+        let c = ConsumeAs::new(StorageClass::Vector);
         assert!(a.is_equivalent(&b));
         assert!(!a.is_equivalent(&c));
     }
 
     #[test]
     fn clone_box_carries_resource_type_and_new_resource() {
-        let action = ConsumeAs::new(StorageClass::Ptr, float_register_resource());
+        let action = ConsumeAs::new(StorageClass::Ptr);
         let cloned = action
-            .clone_box(float_register_resource())
+            .clone_box(&float_register_resource())
             .expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
@@ -229,7 +235,7 @@ mod tests {
 
     #[test]
     fn encode_writes_consume_element_with_storage_attribute() {
-        let action = ConsumeAs::new(StorageClass::Vector, float_register_resource());
+        let action = ConsumeAs::new(StorageClass::Vector);
         let mut enc = RecordingEncoder::new();
         action.encode(&mut enc).unwrap();
         assert_eq!(enc.elements, vec!["consume"]);
@@ -242,8 +248,8 @@ mod tests {
             MockElement::start("consume", 0, &[("storage", "ptr")]),
             MockElement::end("consume", 0),
         ]);
-        let mut action = ConsumeAs::new(StorageClass::General, float_register_resource());
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = ConsumeAs::new(StorageClass::General);
+        action.restore_xml(&mut parser, &float_register_resource()).unwrap();
         assert_eq!(action.resource_type, StorageClass::Ptr);
     }
 
@@ -253,20 +259,21 @@ mod tests {
             MockElement::start("consume", 0, &[("storage", "bogus")]),
             MockElement::end("consume", 0),
         ]);
-        let mut action = ConsumeAs::new(StorageClass::General, float_register_resource());
-        assert!(action.restore_xml(&mut parser).is_err());
+        let mut action = ConsumeAs::new(StorageClass::General);
+        assert!(action.restore_xml(&mut parser, &float_register_resource()).is_err());
     }
 
     #[test]
     fn usable_as_trait_object() {
+        let resource = float_register_resource();
         let action: Box<dyn AssignAction> =
-            Box::new(ConsumeAs::new(StorageClass::Float, float_register_resource()));
+            Box::new(ConsumeAs::new(StorageClass::Float));
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource, &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
     }
 }

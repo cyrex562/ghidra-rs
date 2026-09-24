@@ -7,7 +7,8 @@ use crate::program::model::lang::protorules::assign_action::{AssignAction, FAIL,
 use crate::program::model::lang::protorules::primitive_extractor::PrimitiveExtractor;
 use crate::program::model::lang::storage_class::StorageClass;
 use crate::program::model::pcode::{Encoder, Varnode, ATTRIB_STORAGE, ELEM_JOIN_PER_PRIMITIVE};
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -21,8 +22,6 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 ///
 /// Port of `ghidra.program.model.lang.protorules.MultiMemberAssign`.
 pub struct MultiMemberAssign {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
     /// Resource list from which to consume (`MultiMemberAssign.resourceType`).
     resource_type: StorageClass,
     /// True if resources should be consumed from the stack (`MultiMemberAssign.consumeFromStack`).
@@ -33,15 +32,10 @@ pub struct MultiMemberAssign {
 }
 
 impl MultiMemberAssign {
-    /// Port of the public constructor.
-    pub fn new(
-        store: StorageClass,
-        stack: bool,
-        most_sig: bool,
-        res: Arc<dyn ParamListStandardLike>,
-    ) -> Self {
+    /// Port of the public constructor. Java also passes the owning `ParamListStandard`; here the
+    /// resource list is a call-time argument of [`assign_address`](AssignAction::assign_address).
+    pub fn new(store: StorageClass, stack: bool, most_sig: bool) -> Self {
         MultiMemberAssign {
-            resource: res,
             resource_type: store,
             consume_from_stack: stack,
             consume_most_sig: most_sig,
@@ -52,14 +46,9 @@ impl MultiMemberAssign {
 impl AssignAction for MultiMemberAssign {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        _new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
-        Ok(Box::new(MultiMemberAssign::new(
-            self.resource_type,
-            self.consume_from_stack,
-            self.consume_most_sig,
-            new_resource,
-        )))
+        Ok(Box::new(MultiMemberAssign::new(self.resource_type, self.consume_from_stack, self.consume_most_sig)))
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -77,6 +66,7 @@ impl AssignAction for MultiMemberAssign {
 
     fn assign_address(
         &self,
+        resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         _proto: &PrototypePieces,
         _pos: i32,
@@ -97,7 +87,7 @@ impl AssignAction for MultiMemberAssign {
         }
         for cur_type in primitives.into_arc_types() {
             let mut param = ParameterPieces::default();
-            if self.resource.assign_address_fallback(
+            if resource.assign_address_fallback(
                 self.resource_type,
                 &cur_type,
                 !self.consume_from_stack,
@@ -108,8 +98,7 @@ impl AssignAction for MultiMemberAssign {
                 return FAIL;
             }
             let Some(addr) = param.address else {
-                // assign_address_fallback only returns other than FAIL with param.address set;
-                // defensive fallback in case a future ParamListStandardLike override disagrees.
+                // assign_address_fallback only returns other than FAIL with param.address set.
                 return FAIL;
             };
             pieces.push(Varnode::new(addr, cur_type.get_length()));
@@ -118,9 +107,9 @@ impl AssignAction for MultiMemberAssign {
         // Commit resource usage for all the pieces
         status.copy_from_slice(&tmp_status);
         res.data_type = Some(dt.clone());
-        let Some(language) = self.resource.get_language() else {
-            // A real ParamListStandard always has an associated Language; only a placeholder
-            // resource list (see ParamListStandardLike::get_language's default) lacks one.
+        let Some(language) = resource.get_language() else {
+            // A restored ParamListStandard always has its Language; only one assembled with
+            // `from_parts` and no language lacks it.
             return FAIL;
         };
         res.assign_address_from_pieces(pieces, self.consume_most_sig, false, language.as_ref());
@@ -136,7 +125,11 @@ impl AssignAction for MultiMemberAssign {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        _resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -162,7 +155,6 @@ mod tests {
     use crate::program::model::data::data_type_component::DataTypeComponent;
     use crate::program::model::data::structure::Structure;
     use crate::program::model::lang::language::Language;
-    use crate::program::model::lang::param_entry::ParamEntry;
     use crate::program::model::lang::protorules::param_test_support::{TestEntry, TestResource};
     use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
     use crate::program::model::lang::register::RegisterRef;
@@ -423,47 +415,35 @@ mod tests {
         }
     }
 
-    struct TwoRegResource {
-        entries: Vec<Arc<dyn ParamEntry>>,
-    }
-    impl ParamListStandardLike for TwoRegResource {
-        fn get_num_param_entry(&self) -> i32 {
-            self.entries.len() as i32
-        }
-        fn get_entry(&self, index: i32) -> Option<Arc<dyn ParamEntry>> {
-            self.entries.get(index as usize).cloned()
-        }
-        fn get_language(&self) -> Option<Arc<dyn Language>> {
-            Some(Arc::new(TwoRegLanguage))
-        }
-    }
-
-    fn two_reg_resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TwoRegResource {
+    fn two_reg_resource() -> ParamListStandard {
+        TestResource {
             entries: vec![
-                Arc::new(TestEntry {
+                TestEntry {
                     ty: StorageClass::General,
                     group: 0,
                     addressbase: 0x1000,
                     align: 0, // exclusion (single register) slot
                     space: ram_space(),
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     ty: StorageClass::General,
                     group: 1,
                     addressbase: 0x2000,
                     align: 0,
                     space: ram_space(),
                     ..TestEntry::default()
-                }),
+                },
             ],
-        })
+            num_group: 2,
+            spacebase: None,
+        }
+        .build_with_language(Some(Arc::new(TwoRegLanguage)))
     }
 
     #[test]
     fn assign_address_splits_a_two_member_struct_across_two_registers() {
-        let action = MultiMemberAssign::new(StorageClass::General, false, true, two_reg_resource());
+        let action = MultiMemberAssign::new(StorageClass::General, false, true);
         let dt: Arc<dyn DataType> = Arc::new(MockStruct {
             components: vec![
                 MockComponent { offset: 0, dt_len: 4 },
@@ -475,7 +455,7 @@ mod tests {
         let mut status = [0i32; 2];
         let mut res = ParameterPieces::default();
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_reg_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status, [-1, -1]); // both exclusion registers consumed
         let pieces = res.join_pieces.expect("two disjoint registers must produce join pieces");
@@ -488,20 +468,20 @@ mod tests {
     fn assign_address_fails_when_primitive_extraction_is_invalid() {
         // A bare (non-array, non-struct) data-type is not something PrimitiveExtractor can
         // decompose into members at all.
-        let action = MultiMemberAssign::new(StorageClass::General, false, true, two_reg_resource());
+        let action = MultiMemberAssign::new(StorageClass::General, false, true);
         let dt: Arc<dyn DataType> = Arc::new(MockPrimitive { length: 4 });
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut status = [0i32; 2];
         let mut res = ParameterPieces::default();
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_reg_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, FAIL);
     }
 
     #[test]
     fn assign_address_fails_when_not_enough_registers_remain() {
-        let action = MultiMemberAssign::new(StorageClass::General, false, true, two_reg_resource());
+        let action = MultiMemberAssign::new(StorageClass::General, false, true);
         // Three int members, but only two registers available.
         let dt: Arc<dyn DataType> = Arc::new(MockArray { num_elements: 3, elem_len: 4 });
         let dt_manager = MockDataTypeManager;
@@ -509,7 +489,7 @@ mod tests {
         let mut status = [0i32; 2];
         let mut res = ParameterPieces::default();
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_reg_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, FAIL);
         // No partial commitment: status is untouched on failure (tmpStatus was discarded).
         assert_eq!(status, [0, 0]);
@@ -517,24 +497,24 @@ mod tests {
 
     #[test]
     fn is_equivalent_compares_all_three_configuration_fields() {
-        let a = MultiMemberAssign::new(StorageClass::General, false, true, two_reg_resource());
-        let b = MultiMemberAssign::new(StorageClass::General, false, true, two_reg_resource());
+        let a = MultiMemberAssign::new(StorageClass::General, false, true);
+        let b = MultiMemberAssign::new(StorageClass::General, false, true);
         assert!(a.is_equivalent(&b));
 
-        let diff_stack = MultiMemberAssign::new(StorageClass::General, true, true, two_reg_resource());
+        let diff_stack = MultiMemberAssign::new(StorageClass::General, true, true);
         assert!(!a.is_equivalent(&diff_stack));
 
-        let diff_sig = MultiMemberAssign::new(StorageClass::General, false, false, two_reg_resource());
+        let diff_sig = MultiMemberAssign::new(StorageClass::General, false, false);
         assert!(!a.is_equivalent(&diff_sig));
 
-        let diff_store = MultiMemberAssign::new(StorageClass::Float, false, true, two_reg_resource());
+        let diff_store = MultiMemberAssign::new(StorageClass::Float, false, true);
         assert!(!a.is_equivalent(&diff_store));
     }
 
     #[test]
     fn clone_box_carries_configuration_and_new_resource() {
-        let action = MultiMemberAssign::new(StorageClass::Vector, true, false, two_reg_resource());
-        let cloned = action.clone_box(two_reg_resource()).expect("clone should succeed");
+        let action = MultiMemberAssign::new(StorageClass::Vector, true, false);
+        let cloned = action.clone_box(&two_reg_resource()).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
 
@@ -582,7 +562,7 @@ mod tests {
 
     #[test]
     fn encode_omits_storage_attribute_for_general() {
-        let action = MultiMemberAssign::new(StorageClass::General, false, true, two_reg_resource());
+        let action = MultiMemberAssign::new(StorageClass::General, false, true);
         let mut enc = RecordingEncoder { elements: Vec::new(), strings: Vec::new() };
         action.encode(&mut enc).unwrap();
         assert_eq!(enc.elements, vec!["join_per_primitive"]);
@@ -591,7 +571,7 @@ mod tests {
 
     #[test]
     fn encode_writes_storage_attribute_for_non_general() {
-        let action = MultiMemberAssign::new(StorageClass::Float, false, true, two_reg_resource());
+        let action = MultiMemberAssign::new(StorageClass::Float, false, true);
         let mut enc = RecordingEncoder { elements: Vec::new(), strings: Vec::new() };
         action.encode(&mut enc).unwrap();
         assert_eq!(enc.strings, vec![("storage", "float".to_string())]);
@@ -603,8 +583,8 @@ mod tests {
             MockElement::start("join_per_primitive", 0, &[("storage", "vector")]),
             MockElement::end("join_per_primitive", 0),
         ]);
-        let mut action = MultiMemberAssign::new(StorageClass::General, false, true, two_reg_resource());
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = MultiMemberAssign::new(StorageClass::General, false, true);
+        action.restore_xml(&mut parser, &two_reg_resource()).unwrap();
         assert_eq!(action.resource_type, StorageClass::Vector);
     }
 
@@ -614,8 +594,8 @@ mod tests {
             MockElement::start("join_per_primitive", 0, &[]),
             MockElement::end("join_per_primitive", 0),
         ]);
-        let mut action = MultiMemberAssign::new(StorageClass::Ptr, false, true, two_reg_resource());
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = MultiMemberAssign::new(StorageClass::Ptr, false, true);
+        action.restore_xml(&mut parser, &two_reg_resource()).unwrap();
         assert_eq!(action.resource_type, StorageClass::Ptr);
     }
 }

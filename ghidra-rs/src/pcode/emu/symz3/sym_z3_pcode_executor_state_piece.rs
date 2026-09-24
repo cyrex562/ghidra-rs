@@ -334,8 +334,8 @@ impl<CB: PcodeStateCallbacks> PcodeExecutorStatePiece<SymValueZ3, SymValueZ3> fo
     fn get_language(&self) -> Box<dyn Language> {
         // This piece stores its language as `Arc<dyn Language>`, not `Box<dyn Language>`, and
         // `Language` has no object-safe `clone_box`, so an owned `Box<dyn Language>` cannot be
-        // produced here. Same known gap as other `Arc<dyn Language>`-holding ports (see e.g.
-        // `ParamListStandardImpl::get_language`'s docs). Use `Self::language` instead.
+        // produced here. Same known gap as other `Arc<dyn Language>`-holding ports. Use
+        // `Self::language` instead.
         unimplemented!(
             "SymZ3PcodeExecutorStatePiece::get_language needs an owned Box<dyn Language>, but this \
              piece only holds Arc<dyn Language>; use SymZ3PcodeExecutorStatePiece::language instead"

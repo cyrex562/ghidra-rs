@@ -1136,6 +1136,14 @@ pub const ATTRIB_UNAFF: AttributeId = AttributeId::new("unaff", 189);
 // instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`. Needed by
 // `JumpTable.LoadTable::decode`.
 pub const ATTRIB_NUM: AttributeId = AttributeId::new("num", 190);
+// Real Ghidra ids are 6/126/117/124 (`AttributeId.java`'s `ATTRIB_EXTRAPOP`/`ATTRIB_STACKSHIFT`/
+// `ATTRIB_HASTHIS`/`ATTRIB_POINTERMAX`), continuing the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`. Needed by `PrototypeModel`'s and
+// `ParamListStandard`'s XML restore and encode.
+pub const ATTRIB_EXTRAPOP: AttributeId = AttributeId::new("extrapop", 191);
+pub const ATTRIB_STACKSHIFT: AttributeId = AttributeId::new("stackshift", 192);
+pub const ATTRIB_HASTHIS: AttributeId = AttributeId::new("hasthis", 193);
+pub const ATTRIB_POINTERMAX: AttributeId = AttributeId::new("pointermax", 194);
 
 #[cfg(test)]
 mod tests {

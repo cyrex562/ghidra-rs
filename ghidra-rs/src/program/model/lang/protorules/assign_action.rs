@@ -4,7 +4,8 @@ use std::sync::Arc;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::pcode::{Encoder, Varnode};
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -50,7 +51,7 @@ pub trait AssignAction {
     /// Returns an error if required configuration is not present in the new resource object.
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException>;
 
     /// Returns this action as [`std::any::Any`], so that [`is_equivalent`](Self::is_equivalent)
@@ -83,7 +84,7 @@ pub trait AssignAction {
     /// `MultiMemberAssign`) need to either store `dt` into
     /// [`ParameterPieces::data_type`](crate::program::seam_stubs::ParameterPieces::data_type)
     /// (an `Option<Arc<dyn DataType>>`) or hand it on to
-    /// [`ParamListStandardLike::assign_address`](crate::program::seam_stubs::ParamListStandardLike::assign_address)/
+    /// [`ParamListStandard::assign_address`](crate::program::model::lang::param_list_standard::ParamListStandard::assign_address)/
     /// `assign_address_fallback` (which are already `Arc`-based, matching how
     /// [`PrototypePieces::intypes`](crate::program::seam_stubs::PrototypePieces::intypes) stores
     /// its data-types). `DataType` has no generic `clone()` to mint an owned/`Arc`'d copy from a
@@ -92,8 +93,10 @@ pub trait AssignAction {
     /// this package's `AssignAction` implementors were ported (2026-09-09); at that point this
     /// trait had exactly one implementor in the whole crate (the test-only `GotoStackMockAction`
     /// below), so the change carried no blast radius beyond this file.
+    #[allow(clippy::too_many_arguments)]
     fn assign_address(
         &self,
+        resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         proto: &PrototypePieces,
         pos: i32,
@@ -116,7 +119,11 @@ pub trait AssignAction {
     ///
     /// # Errors
     /// Returns an error if there are problems decoding the stream.
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized;
 }
@@ -161,7 +168,7 @@ pub fn justify_pieces(
 /// action.
 pub fn restore_action_xml<P: XmlPullParser>(
     parser: &mut P,
-    res: Arc<dyn ParamListStandardLike>,
+    res: &ParamListStandard,
 ) -> Result<Box<dyn AssignAction>, XmlParseException> {
     use crate::program::model::lang::protorules::consume_as::ConsumeAs;
     use crate::program::model::lang::protorules::convert_to_pointer::ConvertToPointer;
@@ -184,38 +191,38 @@ pub fn restore_action_xml<P: XmlPullParser>(
         // attribute could override (goto_stack has no attributes at all), and restore_xml
         // re-runs the identical lookup unconditionally regardless.
         let mut action = GotoStack::new(res).map_err(|e| XmlParseException::new(e.0))?;
-        action.restore_xml(parser)?;
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_JOIN.name {
         let mut action = MultiSlotAssign::for_decode(res);
-        action.restore_xml(parser)?;
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_CONSUME.name {
-        let mut action = ConsumeAs::new(StorageClass::General, res);
-        action.restore_xml(parser)?;
+        let mut action = ConsumeAs::new(StorageClass::General);
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_CONVERT_TO_PTR.name {
         let mut action = ConvertToPointer::new(res);
-        action.restore_xml(parser)?;
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_HIDDEN_RETURN.name {
-        let mut action = HiddenReturnAssign::new(res, HIDDENRET_SPECIALREG);
-        action.restore_xml(parser)?;
+        let mut action = HiddenReturnAssign::new(HIDDENRET_SPECIALREG);
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_JOIN_PER_PRIMITIVE.name {
         let most_sig = res.is_big_endian();
-        let mut action = MultiMemberAssign::new(StorageClass::General, false, most_sig, res);
-        action.restore_xml(parser)?;
+        let mut action = MultiMemberAssign::new(StorageClass::General, false, most_sig);
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_JOIN_DUAL_CLASS.name {
         let mut action = MultiSlotDualAssign::for_decode(res);
-        action.restore_xml(parser)?;
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     Err(XmlParseException::new(format!("Unknown model rule action: {nm}")))
@@ -233,7 +240,7 @@ pub fn restore_action_xml<P: XmlPullParser>(
 /// sideeffect.
 pub fn restore_sideeffect_xml<P: XmlPullParser>(
     parser: &mut P,
-    res: Arc<dyn ParamListStandardLike>,
+    res: &ParamListStandard,
 ) -> Result<Box<dyn AssignAction>, XmlParseException> {
     use crate::program::model::lang::protorules::consume_extra::ConsumeExtra;
     use crate::program::model::lang::protorules::consume_remaining::ConsumeRemaining;
@@ -244,8 +251,8 @@ pub fn restore_sideeffect_xml<P: XmlPullParser>(
     let elem = parser.peek();
     let nm = elem.get_name().to_string();
     if nm == ELEM_CONSUME_EXTRA.name {
-        let mut action = ConsumeExtra::for_decode(res);
-        action.restore_xml(parser)?;
+        let mut action = ConsumeExtra::for_decode();
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_EXTRA_STACK.name {
@@ -254,12 +261,12 @@ pub fn restore_sideeffect_xml<P: XmlPullParser>(
         // GotoStack's reasoning above.
         let mut action = ExtraStack::new(StorageClass::General, -1, res)
             .map_err(|e| XmlParseException::new(e.0))?;
-        action.restore_xml(parser)?;
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     if nm == ELEM_CONSUME_REMAINING.name {
-        let mut action = ConsumeRemaining::for_decode(res);
-        action.restore_xml(parser)?;
+        let mut action = ConsumeRemaining::for_decode();
+        action.restore_xml(parser, res)?;
         return Ok(Box::new(action));
     }
     Err(XmlParseException::new(format!("Unknown model rule sideeffect: {nm}")))
@@ -277,7 +284,7 @@ pub fn restore_sideeffect_xml<P: XmlPullParser>(
 /// there are problems decoding the stream.
 pub fn restore_precondition_xml<P: XmlPullParser>(
     parser: &mut P,
-    res: Arc<dyn ParamListStandardLike>,
+    res: &ParamListStandard,
 ) -> Result<Option<Box<dyn AssignAction>>, XmlParseException> {
     use crate::program::model::lang::protorules::consume_extra::ConsumeExtra;
     use crate::program::model::pcode::ELEM_CONSUME_EXTRA;
@@ -287,8 +294,8 @@ pub fn restore_precondition_xml<P: XmlPullParser>(
     if nm != ELEM_CONSUME_EXTRA.name {
         return Ok(None);
     }
-    let mut action = ConsumeExtra::for_decode(res);
-    action.restore_xml(parser)?;
+    let mut action = ConsumeExtra::for_decode();
+    action.restore_xml(parser, res)?;
     Ok(Some(Box::new(action)))
 }
 
@@ -330,26 +337,16 @@ mod tests {
     }
 
     #[derive(Clone)]
-    struct MockParamListStandard {
-        big_endian: bool,
-    }
-    impl ParamListStandardLike for MockParamListStandard {}
-
-    #[derive(Clone)]
     struct GotoStackMockAction {
-        resource: Arc<dyn ParamListStandardLike>,
         stack_offset: i32,
     }
 
     impl AssignAction for GotoStackMockAction {
         fn clone_box(
             &self,
-            new_resource: Arc<dyn ParamListStandardLike>,
+            _new_resource: &ParamListStandard,
         ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
-            Ok(Box::new(GotoStackMockAction {
-                resource: new_resource,
-                stack_offset: self.stack_offset,
-            }))
+            Ok(Box::new(GotoStackMockAction { stack_offset: self.stack_offset }))
         }
 
         fn as_any(&self) -> &dyn Any {
@@ -365,6 +362,7 @@ mod tests {
 
         fn assign_address(
             &self,
+            _resource: &ParamListStandard,
             dt: &Arc<dyn DataType>,
             _proto: &PrototypePieces,
             pos: i32,
@@ -390,6 +388,7 @@ mod tests {
         fn restore_xml<P: XmlPullParser>(
             &mut self,
             _parser: &mut P,
+            _resource: &ParamListStandard,
         ) -> Result<(), XmlParseException>
         where
             Self: Sized,
@@ -473,10 +472,8 @@ mod tests {
 
     #[test]
     fn usable_as_trait_object_and_assigns_address() {
-        let resource: Arc<dyn ParamListStandardLike> =
-            Arc::new(MockParamListStandard { big_endian: false });
+        let resource = ParamListStandard::new();
         let action: Box<dyn AssignAction> = Box::new(GotoStackMockAction {
-            resource,
             stack_offset: 8,
         });
 
@@ -486,28 +483,25 @@ mod tests {
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 1];
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&resource, &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status[0], 1);
 
-        let fail_code = action.assign_address(&dt, &proto, -1, &dt_manager, &mut status, &mut res);
+        let fail_code = action.assign_address(&resource, &dt, &proto, -1, &dt_manager, &mut status, &mut res);
         assert_eq!(fail_code, FAIL);
     }
 
     #[test]
     fn clone_box_produces_equivalent_independent_copy() {
-        let resource: Arc<dyn ParamListStandardLike> =
-            Arc::new(MockParamListStandard { big_endian: true });
+        let resource = ParamListStandard::new();
         let action = GotoStackMockAction {
-            resource: resource.clone(),
             stack_offset: 4,
         };
 
-        let cloned = action.clone_box(resource).expect("clone should succeed");
+        let cloned = action.clone_box(&resource).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
 
         let different = GotoStackMockAction {
-            resource: Arc::new(MockParamListStandard { big_endian: true }),
             stack_offset: 5,
         };
         assert!(!action.is_equivalent(&different));
@@ -515,10 +509,7 @@ mod tests {
 
     #[test]
     fn encode_reaches_the_stream() {
-        let resource: Arc<dyn ParamListStandardLike> =
-            Arc::new(MockParamListStandard { big_endian: false });
         let action = GotoStackMockAction {
-            resource,
             stack_offset: 12,
         };
         let mut encoder = NoopEncoder;
@@ -535,39 +526,39 @@ mod tests {
         use crate::program::model::lang::protorules::multi_slot_assign::MultiSlotAssign;
         use crate::program::model::lang::storage_class::StorageClass;
 
-        let resource: Arc<dyn ParamListStandardLike> = Arc::new(TestResource {
+        let resource = TestResource {
             entries: vec![
-                Arc::new(TestEntry {
+                TestEntry {
                     ty: StorageClass::General,
                     group: 0,
                     align: 0,
                     space: ram_space(),
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     space: stack_space(),
                     group: 1,
                     align: 4,
                     numslots: 8,
                     ..TestEntry::default()
-                }),
+                },
             ],
             num_group: 2,
             spacebase: None,
-        });
+        }.build();
 
         let mut goto_parser = QueueParser::new(vec![
             MockElement::start("goto_stack", 0, &[]),
             MockElement::end("goto_stack", 0),
         ]);
-        let goto_action = restore_action_xml(&mut goto_parser, resource.clone()).unwrap();
+        let goto_action = restore_action_xml(&mut goto_parser, &resource).unwrap();
         assert!(goto_action.as_any().downcast_ref::<GotoStack>().is_some());
 
         let mut join_parser = QueueParser::new(vec![
             MockElement::start("join", 0, &[]),
             MockElement::end("join", 0),
         ]);
-        let join_action = restore_action_xml(&mut join_parser, resource).unwrap();
+        let join_action = restore_action_xml(&mut join_parser, &resource).unwrap();
         assert!(join_action.as_any().downcast_ref::<MultiSlotAssign>().is_some());
     }
 
@@ -575,13 +566,12 @@ mod tests {
     fn restore_action_xml_errors_on_unknown_action_name() {
         use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
 
-        let resource: Arc<dyn ParamListStandardLike> =
-            Arc::new(MockParamListStandard { big_endian: false });
+        let resource = ParamListStandard::new();
         let mut parser = QueueParser::new(vec![
             MockElement::start("not_a_real_action", 0, &[]),
             MockElement::end("not_a_real_action", 0),
         ]);
-        assert!(restore_action_xml(&mut parser, resource).is_err());
+        assert!(restore_action_xml(&mut parser, &resource).is_err());
     }
 
     #[test]
@@ -591,22 +581,22 @@ mod tests {
         use crate::program::model::lang::protorules::consume_extra::ConsumeExtra;
         use crate::program::model::lang::storage_class::StorageClass;
 
-        let resource: Arc<dyn ParamListStandardLike> = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry {
+        let resource = TestResource {
+            entries: vec![TestEntry {
                 ty: StorageClass::General,
                 group: 0,
                 align: 0,
                 space: ram_space(),
                 ..TestEntry::default()
-            })],
+            }],
             num_group: 1,
             spacebase: None,
-        });
+        }.build();
         let mut parser = QueueParser::new(vec![
             MockElement::start("consume_extra", 0, &[("storage", "general"), ("matchsize", "true")]),
             MockElement::end("consume_extra", 0),
         ]);
-        let action = restore_sideeffect_xml(&mut parser, resource).unwrap();
+        let action = restore_sideeffect_xml(&mut parser, &resource).unwrap();
         assert!(action.as_any().downcast_ref::<ConsumeExtra>().is_some());
     }
 
@@ -614,12 +604,11 @@ mod tests {
     fn restore_precondition_xml_returns_none_for_a_non_precondition_element() {
         use crate::program::model::lang::protorules::xml_test_support::{MockElement, QueueParser};
 
-        let resource: Arc<dyn ParamListStandardLike> =
-            Arc::new(MockParamListStandard { big_endian: false });
+        let resource = ParamListStandard::new();
         let mut parser = QueueParser::new(vec![
             MockElement::start("goto_stack", 0, &[]),
             MockElement::end("goto_stack", 0),
         ]);
-        assert!(restore_precondition_xml(&mut parser, resource).unwrap().is_none());
+        assert!(restore_precondition_xml(&mut parser, &resource).unwrap().is_none());
     }
 }

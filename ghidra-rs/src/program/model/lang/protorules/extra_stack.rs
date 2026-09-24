@@ -10,7 +10,8 @@ use crate::program::model::lang::storage_class::StorageClass;
 use crate::program::model::pcode::{
     Encoder, ATTRIB_AFTER_BYTES, ATTRIB_AFTER_STORAGE, ATTRIB_STORAGE, ELEM_EXTRA_STACK,
 };
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::spec_xml_utils::decode_int;
 use crate::util::xml::xml_element::XmlElement;
@@ -27,13 +28,11 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 /// # Errors
 /// Returns an error if no matching `<pentry>` exists.
 fn find_stack_entry(
-    resource: &Arc<dyn ParamListStandardLike>,
-) -> Result<Arc<dyn ParamEntry>, InvalidInputException> {
-    for i in 0..resource.get_num_param_entry() {
-        if let Some(entry) = resource.get_entry(i) {
-            if !entry.is_exclusion() && entry.get_space().space_type() == AddressSpaceType::Stack {
-                return Ok(entry);
-            }
+    resource: &ParamListStandard,
+) -> Result<Arc<ParamEntry>, InvalidInputException> {
+    for entry in resource.entries() {
+        if !entry.is_exclusion() && entry.get_space().space_type() == AddressSpaceType::Stack {
+            return Ok(entry.clone());
         }
     }
     Err(InvalidInputException::with_message(
@@ -50,10 +49,8 @@ fn find_stack_entry(
 ///
 /// Port of `ghidra.program.model.lang.protorules.ExtraStack`.
 pub struct ExtraStack {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
     /// Parameter entry corresponding to the stack (`ExtraStack.stackEntry`).
-    stack_entry: Arc<dyn ParamEntry>,
+    stack_entry: Arc<ParamEntry>,
     /// Activate the side effect after the given number of bytes have been consumed
     /// (`ExtraStack.afterBytes`).
     after_bytes: i32,
@@ -70,11 +67,10 @@ impl ExtraStack {
     pub fn new(
         storage: StorageClass,
         offset: i32,
-        res: Arc<dyn ParamListStandardLike>,
+        res: &ParamListStandard,
     ) -> Result<Self, InvalidInputException> {
-        let stack_entry = find_stack_entry(&res)?;
+        let stack_entry = find_stack_entry(res)?;
         Ok(ExtraStack {
-            resource: res,
             stack_entry,
             after_bytes: offset,
             after_storage: storage,
@@ -85,7 +81,7 @@ impl ExtraStack {
 impl AssignAction for ExtraStack {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
         Ok(Box::new(ExtraStack::new(self.after_storage, self.after_bytes, new_resource)?))
     }
@@ -101,11 +97,12 @@ impl AssignAction for ExtraStack {
         if self.after_bytes != other.after_bytes || self.after_storage != other.after_storage {
             return false;
         }
-        self.stack_entry.is_equivalent(other.stack_entry.as_ref())
+        self.stack_entry.is_equivalent(&other.stack_entry)
     }
 
     fn assign_address(
         &self,
+        resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         _proto: &PrototypePieces,
         _pos: i32,
@@ -127,11 +124,11 @@ impl AssignAction for ExtraStack {
         // Check whether we have consumed enough storage to need to adjust the stack yet
         if self.after_bytes > 0 {
             let mut bytes_consumed = 0;
-            for i in 0..self.resource.get_num_param_entry() {
+            for i in 0..resource.get_num_param_entry() {
                 if i as usize == grp {
                     continue;
                 }
-                let Some(entry) = self.resource.get_entry(i) else {
+                let Some(entry) = resource.get_entry(i) else {
                     continue;
                 };
                 if entry.get_type() != self.after_storage {
@@ -173,7 +170,11 @@ impl AssignAction for ExtraStack {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -190,7 +191,7 @@ impl AssignAction for ExtraStack {
         parser
             .end()
             .map_err(|e| XmlParseException::new(e.message().to_string()))?;
-        self.stack_entry = find_stack_entry(&self.resource).map_err(|e| XmlParseException::new(e.0))?;
+        self.stack_entry = find_stack_entry(resource).map_err(|e| XmlParseException::new(e.0))?;
         Ok(())
     }
 }
@@ -223,16 +224,16 @@ mod tests {
 
     /// Resource with one general register (group 0), one float register (group 1), and a stack
     /// entry (group 2).
-    fn resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TestResource {
+    fn resource() -> ParamListStandard {
+        TestResource {
             entries: vec![
-                Arc::new(TestEntry { ty: StorageClass::General, group: 0, align: 0, size: 4, space: ram_space(), ..TestEntry::default() }),
-                Arc::new(TestEntry { ty: StorageClass::Float, group: 1, align: 0, size: 4, space: ram_space(), ..TestEntry::default() }),
-                Arc::new(TestEntry { space: stack_space(), group: 2, align: 4, numslots: 8, addressbase: 0, ..TestEntry::default() }),
+                TestEntry { ty: StorageClass::General, group: 0, align: 0, size: 4, space: ram_space(), ..TestEntry::default() },
+                TestEntry { ty: StorageClass::Float, group: 1, align: 0, size: 4, space: ram_space(), ..TestEntry::default() },
+                TestEntry { space: stack_space(), group: 2, align: 4, numslots: 8, addressbase: 0, ..TestEntry::default() },
             ],
             num_group: 3,
             spacebase: None,
-        })
+        }.build()
     }
 
     fn dt() -> Arc<dyn DataType> {
@@ -244,34 +245,34 @@ mod tests {
     fn assign_address_panics_if_res_address_not_yet_set() {
         // Mirrors the real Java NPE-on-null-dereference precondition: ExtraStack is only ever
         // invoked as a side-effect after a primary action has already assigned res.address.
-        let action = ExtraStack::new(StorageClass::General, -1, resource()).unwrap();
+        let action = ExtraStack::new(StorageClass::General, -1, &resource()).unwrap();
         let mut res = ParameterPieces::default();
         let mut status = [0i32; 3];
-        action.assign_address(&dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
+        action.assign_address(&resource(), &dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
     }
 
     #[test]
     fn assign_address_is_a_noop_when_already_on_the_stack() {
-        let action = ExtraStack::new(StorageClass::General, -1, resource()).unwrap();
+        let action = ExtraStack::new(StorageClass::General, -1, &resource()).unwrap();
         let mut res = ParameterPieces {
             address: Some(Address::new(stack_space(), 0)),
             ..ParameterPieces::default()
         };
         let mut status = [0i32; 3];
-        let code = action.assign_address(&dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
+        let code = action.assign_address(&resource(), &dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status, [0, 0, 0]); // no stack resources consumed
     }
 
     #[test]
     fn assign_address_consumes_stack_when_not_on_stack_and_no_threshold() {
-        let action = ExtraStack::new(StorageClass::General, -1, resource()).unwrap();
+        let action = ExtraStack::new(StorageClass::General, -1, &resource()).unwrap();
         let mut res = ParameterPieces {
             address: Some(Address::new(ram_space(), 0x10)), // assigned to a register, not the stack
             ..ParameterPieces::default()
         };
         let mut status = [0i32; 3];
-        let code = action.assign_address(&dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
+        let code = action.assign_address(&resource(), &dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status[2], 1); // stack group advanced by one slot
     }
@@ -280,13 +281,13 @@ mod tests {
     fn assign_address_waits_until_the_byte_threshold_is_reached() {
         // after_storage=General, after_bytes=4: only consume stack once >=4 bytes of General
         // storage have been used elsewhere.
-        let action = ExtraStack::new(StorageClass::General, 4, resource()).unwrap();
+        let action = ExtraStack::new(StorageClass::General, 4, &resource()).unwrap();
         let mut res = ParameterPieces {
             address: Some(Address::new(ram_space(), 0x10)),
             ..ParameterPieces::default()
         };
         let mut status = [0i32; 3]; // group 0 (General) not yet consumed
-        let code = action.assign_address(&dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
+        let code = action.assign_address(&resource(), &dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status[2], 0); // threshold not met -> no stack consumption yet
 
@@ -295,28 +296,28 @@ mod tests {
             address: Some(Address::new(ram_space(), 0x10)),
             ..ParameterPieces::default()
         };
-        let code2 = action.assign_address(&dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status2, &mut res2);
+        let code2 = action.assign_address(&resource(), &dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status2, &mut res2);
         assert_eq!(code2, SUCCESS);
         assert_eq!(status2[2], 1); // threshold met (4 >= 4) -> stack now consumed
     }
 
     #[test]
     fn is_equivalent_compares_after_bytes_after_storage_and_stack_entry() {
-        let a = ExtraStack::new(StorageClass::General, 4, resource()).unwrap();
-        let b = ExtraStack::new(StorageClass::General, 4, resource()).unwrap();
+        let a = ExtraStack::new(StorageClass::General, 4, &resource()).unwrap();
+        let b = ExtraStack::new(StorageClass::General, 4, &resource()).unwrap();
         assert!(a.is_equivalent(&b));
 
-        let diff_bytes = ExtraStack::new(StorageClass::General, 8, resource()).unwrap();
+        let diff_bytes = ExtraStack::new(StorageClass::General, 8, &resource()).unwrap();
         assert!(!a.is_equivalent(&diff_bytes));
 
-        let diff_storage = ExtraStack::new(StorageClass::Float, 4, resource()).unwrap();
+        let diff_storage = ExtraStack::new(StorageClass::Float, 4, &resource()).unwrap();
         assert!(!a.is_equivalent(&diff_storage));
     }
 
     #[test]
     fn clone_box_recomputes_stack_entry_from_new_resource() {
-        let action = ExtraStack::new(StorageClass::General, 4, resource()).unwrap();
-        let cloned = action.clone_box(resource()).expect("clone should succeed");
+        let action = ExtraStack::new(StorageClass::General, 4, &resource()).unwrap();
+        let cloned = action.clone_box(&resource()).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
 
@@ -366,7 +367,7 @@ mod tests {
 
     #[test]
     fn encode_writes_after_bytes_and_storage() {
-        let action = ExtraStack::new(StorageClass::Float, 4, resource()).unwrap();
+        let action = ExtraStack::new(StorageClass::Float, 4, &resource()).unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new(), strings: Vec::new(), unsigned: Vec::new() };
         action.encode(&mut enc).unwrap();
         assert_eq!(enc.elements, vec!["extra_stack"]);
@@ -376,7 +377,7 @@ mod tests {
 
     #[test]
     fn encode_omits_after_bytes_when_negative() {
-        let action = ExtraStack::new(StorageClass::General, -1, resource()).unwrap();
+        let action = ExtraStack::new(StorageClass::General, -1, &resource()).unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new(), strings: Vec::new(), unsigned: Vec::new() };
         action.encode(&mut enc).unwrap();
         assert!(enc.unsigned.is_empty());
@@ -389,8 +390,8 @@ mod tests {
             MockElement::start("extra_stack", 0, &[("afterbytes", "8"), ("afterstorage", "float")]),
             MockElement::end("extra_stack", 0),
         ]);
-        let mut action = ExtraStack::new(StorageClass::General, -1, resource()).unwrap();
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = ExtraStack::new(StorageClass::General, -1, &resource()).unwrap();
+        action.restore_xml(&mut parser, &resource()).unwrap();
         assert_eq!(action.after_bytes, 8);
         assert_eq!(action.after_storage, StorageClass::Float);
     }
@@ -401,7 +402,7 @@ mod tests {
         // the storage class under the "storage" attribute name, but restoreAttributesXml() only
         // recognizes "afterstorage". So an encode -> restore_xml round trip silently drops
         // after_storage back to General, even though after_bytes round-trips fine.
-        let original = ExtraStack::new(StorageClass::Float, 4, resource()).unwrap();
+        let original = ExtraStack::new(StorageClass::Float, 4, &resource()).unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new(), strings: Vec::new(), unsigned: Vec::new() };
         original.encode(&mut enc).unwrap();
         // What encode wrote uses "storage", NOT "afterstorage":
@@ -413,8 +414,8 @@ mod tests {
             MockElement::start("extra_stack", 0, &[("afterbytes", "4"), ("storage", "float")]),
             MockElement::end("extra_stack", 0),
         ]);
-        let mut restored = ExtraStack::new(StorageClass::General, -1, resource()).unwrap();
-        restored.restore_xml(&mut parser).unwrap();
+        let mut restored = ExtraStack::new(StorageClass::General, -1, &resource()).unwrap();
+        restored.restore_xml(&mut parser, &resource()).unwrap();
         assert_eq!(restored.after_bytes, 4); // this one round-trips fine
         assert_eq!(restored.after_storage, StorageClass::General); // but this one is lost
         assert_ne!(restored.after_storage, original.after_storage);
@@ -422,13 +423,13 @@ mod tests {
 
     #[test]
     fn usable_as_trait_object() {
-        let action: Box<dyn AssignAction> = Box::new(ExtraStack::new(StorageClass::General, -1, resource()).unwrap());
+        let action: Box<dyn AssignAction> = Box::new(ExtraStack::new(StorageClass::General, -1, &resource()).unwrap());
         let mut res = ParameterPieces {
             address: Some(Address::new(ram_space(), 0x10)),
             ..ParameterPieces::default()
         };
         let mut status = [0i32; 3];
-        let code = action.assign_address(&dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
+        let code = action.assign_address(&resource(), &dt(), &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
     }
 }

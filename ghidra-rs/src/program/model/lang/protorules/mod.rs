@@ -194,7 +194,7 @@ pub(crate) mod xml_test_support {
     }
 }
 
-/// Shared [`ParamEntry`]/[`ParamListStandardLike`] test doubles used by this package's
+/// Shared builders for real [`ParamEntry`]/[`ParamListStandard`] resource lists used by this package's
 /// `AssignAction` implementor tests.
 ///
 /// `ConsumeAs`, `GotoStack`, `MultiMemberAssign`, `ConsumeRemaining`, `ConsumeExtra`, and
@@ -206,9 +206,9 @@ pub(crate) mod param_test_support {
     use std::sync::Arc;
 
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
-    use crate::program::model::lang::param_entry::ParamEntry;
+    use crate::program::model::lang::param_entry::{ParamEntry, ParamEntryParts};
+    use crate::program::model::lang::param_list_standard::ParamListStandard;
     use crate::program::model::lang::storage_class::StorageClass;
-    use crate::program::seam_stubs::ParamListStandardLike;
 
     pub(crate) fn ram_space() -> Arc<AddressSpace> {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
@@ -218,7 +218,7 @@ pub(crate) mod param_test_support {
         AddressSpace::new("stack", 32, 1, AddressSpaceType::Stack, 1)
     }
 
-    /// A configurable [`ParamEntry`] test double.
+    /// Field values for a real [`ParamEntry`], with defaults for the common case.
     #[derive(Clone)]
     pub(crate) struct TestEntry {
         pub space: Arc<AddressSpace>,
@@ -250,62 +250,56 @@ pub(crate) mod param_test_support {
         }
     }
 
-    impl ParamEntry for TestEntry {
-        fn get_space(&self) -> Arc<AddressSpace> {
-            self.space.clone()
-        }
-        fn get_group(&self) -> i32 {
-            self.group
-        }
-        fn get_min_size(&self) -> i32 {
-            self.min_size
-        }
-        fn get_size(&self) -> i32 {
-            self.size
-        }
-        fn get_align(&self) -> i32 {
-            self.align
-        }
-        fn get_address_base(&self) -> i64 {
-            self.addressbase
-        }
-        fn get_type(&self) -> StorageClass {
-            self.ty
-        }
-        fn num_slots(&self) -> i32 {
-            self.numslots
-        }
-        fn is_reverse_stack(&self) -> bool {
-            self.reverse_stack
-        }
-        fn is_big_endian(&self) -> bool {
-            self.big_endian
+    impl TestEntry {
+        /// The real [`ParamEntry`] with these field values.
+        pub(crate) fn build(&self) -> Arc<ParamEntry> {
+            Arc::new(ParamEntry::from_parts(ParamEntryParts {
+                space: self.space.clone(),
+                addressbase: self.addressbase,
+                size: self.size,
+                minsize: self.min_size,
+                alignment: self.align,
+                numslots: self.numslots,
+                storage_type: self.ty,
+                group_set: vec![self.group],
+                big_endian: self.big_endian,
+                reverse_stack: self.reverse_stack,
+                force_left_justify: false,
+                grouped: false,
+                overlapping: false,
+                joinrec: None,
+            }))
         }
     }
 
-    /// A configurable [`ParamListStandardLike`] test double, backed by an explicit entry list.
+    /// Field values for a real [`ParamListStandard`] built from explicit entries.
     #[derive(Default)]
     pub(crate) struct TestResource {
-        pub entries: Vec<Arc<dyn ParamEntry>>,
+        pub entries: Vec<TestEntry>,
         pub num_group: i32,
         pub spacebase: Option<Arc<AddressSpace>>,
     }
 
-    impl ParamListStandardLike for TestResource {
-        fn num_group(&self) -> i32 {
-            self.num_group
+    impl TestResource {
+        /// The real resource list, with no language.
+        pub(crate) fn build(&self) -> ParamListStandard {
+            self.build_with_language(None)
         }
 
-        fn spacebase(&self) -> Option<Arc<AddressSpace>> {
-            self.spacebase.clone()
-        }
-
-        fn get_num_param_entry(&self) -> i32 {
-            self.entries.len() as i32
-        }
-
-        fn get_entry(&self, index: i32) -> Option<Arc<dyn ParamEntry>> {
-            self.entries.get(index as usize).cloned()
+        /// The real resource list, associated with `language`.
+        pub(crate) fn build_with_language(
+            &self,
+            language: Option<Arc<dyn crate::program::model::lang::language::Language>>,
+        ) -> ParamListStandard {
+            ParamListStandard::from_parts(
+                self.entries.iter().map(TestEntry::build).collect(),
+                self.num_group,
+                self.spacebase.clone(),
+                false,
+                false,
+                true,
+                language,
+            )
         }
     }
 

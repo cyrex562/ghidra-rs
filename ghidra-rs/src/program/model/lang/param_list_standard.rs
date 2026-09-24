@@ -1,23 +1,34 @@
+//! Port of `ghidra.program.model.lang.ParamListStandard`.
+
 use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::model::lang::param_entry::ParamEntry;
-use crate::program::model::lang::param_list::{ParamList, WithSlotRec};
+use crate::program::model::lang::compiler_spec::CompilerSpec;
+use crate::program::model::lang::language::Language;
+use crate::program::model::lang::param_entry::{order_within_group, ParamEntry};
+use crate::program::model::lang::param_list::WithSlotRec;
+use crate::program::model::lang::program_architecture::ProgramArchitecture;
 use crate::program::model::lang::protorules::assign_action;
+use crate::program::model::lang::protorules::convert_to_pointer::ConvertToPointer;
+use crate::program::model::lang::protorules::model_rule::ModelRule;
+use crate::program::model::lang::protorules::size_restricted_filter::SizeRestrictedFilter;
 use crate::program::model::lang::storage_class::StorageClass;
+use crate::program::model::listing::variable_storage::{VariableStorage, VariableStorageImpl};
 use crate::program::model::pcode::{
-    Encoder, ATTRIB_KILLEDBYCALL, ATTRIB_SEPARATEFLOAT, ATTRIB_THISBEFORERETPOINTER, ELEM_GROUP,
-    ELEM_INPUT, ELEM_OUTPUT,
+    Encoder, ATTRIB_KILLEDBYCALL, ATTRIB_POINTERMAX, ATTRIB_SEPARATEFLOAT,
+    ATTRIB_THISBEFORERETPOINTER, ELEM_GROUP, ELEM_INPUT, ELEM_OUTPUT, ELEM_PENTRY, ELEM_RULE,
 };
-use crate::program::seam_stubs::{ModelRuleLike, ParameterPieces, PrototypePieces};
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
+use crate::util::xml::spec_xml_utils::{decode_boolean, decode_int};
+use crate::util::xml::xml_element::XmlElement;
+use crate::util::xml::xml_parse_exception::XmlParseException;
+use crate::util::xml::xml_pull_parser::XmlPullParser;
 
 /// Classify a data-type for the purpose of picking a storage resource.
 ///
-/// Port of the static helper `ghidra.program.model.lang.ParamEntry.getBasicTypeClass`. Lives
-/// here rather than on [`ParamEntry`] since it only inspects the data-type, not any
-/// particular parameter-entry instance.
+/// Port of the static helper `ghidra.program.model.lang.ParamEntry.getBasicTypeClass`.
 pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
     if tp.is_typedef() {
         if let Some(base) = tp.typedef_base_data_type() {
@@ -33,81 +44,138 @@ pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
     StorageClass::General
 }
 
-/// Standard analysis for parameter lists.
+/// Standard analysis for parameter lists: a resource list of [`ParamEntry`]s describing where
+/// parameters (or a return value) can be stored, plus [`ModelRule`]s controlling how a storage
+/// location is chosen for a given data-type.
 ///
-/// A list of resources ([`ParamEntry`] entries) describing possible storage locations for a
-/// function's parameters (or return value), plus [`ModelRuleLike`] rules controlling how
-/// addresses get assigned to a given parameter's data-type.
+/// The subclasses `ParamListStandardOut` and `ParamListRegisterOut` override only `assignMap`;
+/// they are ported as structs embedding this one (see
+/// [`ParamListStandardOut`](super::param_list_standard_out::ParamListStandardOut)), and the
+/// `ParamList` interface over all three is the [`ParamList`](super::param_list::ParamList) enum.
 ///
-/// In Java, `ParamListStandard implements ParamList` directly. Several of its methods (
-/// `assignMap`, `encode`, `getStackParameterAlignment`, `getStackParameterOffset`,
-/// `possibleParamWithSlot`, `isEquivalent`) override `ParamList` methods of the same name; since
-/// Rust doesn't let a subtrait retroactively supply a supertrait's required method, those are
-/// exposed here as distinctly-named provided methods (suffixed `_std`) that a concrete type's
-/// `ParamList` impl is expected to delegate to. The remaining methods (`assignAddressFallback`,
-/// `assignAddress`, `getNumParamEntry`, `getEntry`, `isBigEndian`, `extractTiles`,
-/// `extractStack`) are unique to this class, so they keep their original names.
-///
-/// `encode` is provided (`encode_std`) since it only depends on the already-ported `Encoder`,
-/// the real [`ParamEntry`] port, and the [`ModelRuleLike`] placeholder. `restoreXml` is NOT
-/// provided: it constructs new `ParamEntry`/`ModelRule` instances from an XML stream (including
-/// `SizeRestrictedFilter`/`ConvertToPointer` for the `pointermax` attribute), which needs a real
-/// `ParamEntry` constructor (`ParamEntry.restoreXml`, still trait-only -- see
-/// [`param_entry`](crate::program::model::lang::param_entry)'s module doc) plus the private
-/// `parsePentry`/`parseGroup` helpers, neither of which exist in this port yet. It remains an
-/// abstract, required method inherited from [`ParamList`]. Likewise `getPotentialRegisterStorage`
-/// is only partially provided (see
-/// [`ParamListStandardImpl::get_potential_register_storage`](crate::program::model::lang::param_list_standard_impl::ParamListStandardImpl)):
-/// the real method constructs `VariableStorage` instances via
-/// [`VariableStorageImpl`](crate::program::model::listing::variable_storage::VariableStorageImpl),
-/// which needs an `Arc<dyn ProgramArchitecture>`; there is no way to build one from a bare `&dyn
-/// Program` in this crate (`Program::get_language` hands out `Arc<dyn Language>`, but
-/// `ProgramArchitecture::get_language` requires an owned `Box<dyn Language>`, and `Language` has
-/// no `clone_box`/owned-conversion method to bridge the two).
-///
-/// The one concrete implementor in this crate is
-/// [`ParamListStandardImpl`](crate::program::model::lang::param_list_standard_impl::ParamListStandardImpl),
-/// which also implements [`ParamListStandardLike`] so it can drive the `protorules`
-/// `AssignAction`/`ModelRule` cluster directly.
+/// # Rules and their resource list
+/// Java's `AssignAction`s hold a back-reference to the `ParamListStandard` they allocate from.
+/// Here that reference is a call-time argument instead: [`ModelRule::assign_address`] and every
+/// `AssignAction` receive `&ParamListStandard` when they run, so the list can own its rules
+/// without a reference cycle (the crate's recorded convention for back-references).
 ///
 /// Port of `ghidra.program.model.lang.ParamListStandard`.
-pub trait ParamListStandard: ParamList {
-    /// The resource list, in order (`ParamListStandard.entry`).
-    fn entries(&self) -> &[Arc<dyn ParamEntry>];
-
-    /// Rules to apply when assigning addresses (`ParamListStandard.modelRules`).
-    fn model_rules(&self) -> &[Arc<dyn ModelRuleLike>];
-
+#[derive(Default)]
+pub struct ParamListStandard {
+    /// The language associated with this convention (`ParamListStandard.language`).
+    language: Option<Arc<dyn Language>>,
     /// Number of "groups" in this parameter convention (`ParamListStandard.numgroup`).
-    fn num_group(&self) -> i32;
-
-    /// Space containing relative offset parameters (`ParamListStandard.spacebase`), or `None`.
-    fn spacebase(&self) -> Option<Arc<AddressSpace>>;
-
-    /// Do hidden return pointers usurp the storage of the `this` pointer
+    numgroup: i32,
+    /// Do hidden return pointers usurp the storage of the this pointer
     /// (`ParamListStandard.thisbeforeret`).
-    fn this_before_ret(&self) -> bool;
-
+    thisbeforeret: bool,
     /// Is storage in this list automatically "killed by call"
     /// (`ParamListStandard.autoKilledByCall`).
-    fn auto_killed_by_call(&self) -> bool;
-
+    auto_killed_by_call: bool,
     /// Are metatyped entries in separate resource sections (`ParamListStandard.splitMetatype`).
-    fn split_metatype(&self) -> bool;
+    split_metatype: bool,
+    /// The resource list, in order (`ParamListStandard.entry`).
+    entry: Vec<Arc<ParamEntry>>,
+    /// Rules to apply when assigning addresses (`ParamListStandard.modelRules`).
+    model_rules: Vec<ModelRule>,
+    /// Space containing relative offset parameters (`ParamListStandard.spacebase`).
+    spacebase: Option<Arc<AddressSpace>>,
+    /// True when this list is the base of a `ParamListStandardOut` (or `ParamListRegisterOut`).
+    /// Stands in for Java's `res instanceof ParamListStandardOut`, which `MultiSlotAssign` tests
+    /// on the resource list it is built against.
+    standard_out: bool,
+}
 
-    /// Find the (first) entry containing the given range.
+impl ParamListStandard {
+    /// An empty, unconfigured list, ready for [`restore_xml`](Self::restore_xml).
+    ///
+    /// Port of the implicit no-arg constructor.
+    pub fn new() -> Self {
+        ParamListStandard { split_metatype: true, ..Default::default() }
+    }
+
+    /// Build a list from already-constructed components, for code that synthesizes a calling
+    /// convention rather than reading one from a compiler specification. Rules that need the list
+    /// itself to be built (as `restoreXml` builds them after the entries) can be added afterwards
+    /// with [`add_model_rule`](Self::add_model_rule).
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_parts(
+        entry: Vec<Arc<ParamEntry>>,
+        numgroup: i32,
+        spacebase: Option<Arc<AddressSpace>>,
+        thisbeforeret: bool,
+        auto_killed_by_call: bool,
+        split_metatype: bool,
+        language: Option<Arc<dyn Language>>,
+    ) -> Self {
+        ParamListStandard {
+            language,
+            numgroup,
+            thisbeforeret,
+            auto_killed_by_call,
+            split_metatype,
+            entry,
+            model_rules: Vec::new(),
+            spacebase,
+            standard_out: false,
+        }
+    }
+
+    /// Append a rule to this list's rule set (applied after all existing rules).
+    pub fn add_model_rule(&mut self, rule: ModelRule) {
+        self.model_rules.push(rule);
+    }
+
+    /// Mark this list as the base of an output list; see the `standard_out` field.
+    pub(crate) fn set_standard_out(&mut self, standard_out: bool) {
+        self.standard_out = standard_out;
+    }
+
+    /// True if this list is the base of a `ParamListStandardOut`/`ParamListRegisterOut`: the
+    /// stand-in for Java's `instanceof ParamListStandardOut`.
+    pub fn is_standard_out(&self) -> bool {
+        self.standard_out
+    }
+
+    /// The resource list, in order.
+    pub fn entries(&self) -> &[Arc<ParamEntry>] {
+        &self.entry
+    }
+
+    /// The rules applied, in order, when assigning addresses.
+    pub fn model_rules(&self) -> &[ModelRule] {
+        &self.model_rules
+    }
+
+    /// Number of resource groups in this convention (`ParamListStandard.numgroup`).
+    pub fn num_group(&self) -> i32 {
+        self.numgroup
+    }
+
+    /// True if storage in this list is automatically "killed by call".
+    pub fn auto_killed_by_call(&self) -> bool {
+        self.auto_killed_by_call
+    }
+
+    /// True if metatyped entries are in separate resource sections.
+    pub fn split_metatype(&self) -> bool {
+        self.split_metatype
+    }
+
+    /// Find the (first) entry containing the given memory range.
     ///
     /// Port of the private `ParamListStandard.findEntry`.
     fn find_entry(&self, loc: &Address, size: i32) -> Option<usize> {
-        self.entries()
+        self.entry
             .iter()
             .position(|e| e.get_min_size() <= size && e.justified_contain(loc, size) == 0)
     }
 
-    /// Assign storage for the given parameter class, using the fallback assignment algorithm.
+    /// Assign storage for the given parameter class, using the fallback assignment algorithm:
+    /// the first entry of the right class with room left.
     ///
     /// Port of `ParamListStandard.assignAddressFallback`.
-    fn assign_address_fallback(
+    pub fn assign_address_fallback(
         &self,
         resource: StorageClass,
         tp: &Arc<dyn DataType>,
@@ -115,7 +183,7 @@ pub trait ParamListStandard: ParamList {
         status: &mut [i32],
         param: &mut ParameterPieces,
     ) -> i32 {
-        for element in self.entries() {
+        for element in &self.entry {
             let grp = element.get_group() as usize;
             if status[grp] < 0 {
                 continue;
@@ -125,19 +193,15 @@ pub trait ParamListStandard: ParamList {
             {
                 continue;
             }
-
-            status[grp] = element.get_addr_by_slot(
-                status[grp],
-                tp.get_aligned_length(),
-                tp.get_alignment(),
-                param,
-            );
+            status[grp] =
+                element.get_addr_by_slot(status[grp], tp.get_aligned_length(), tp.get_alignment(), param);
             if param.address.is_none() {
                 continue; // -tp- does not fit in this entry
             }
             if element.is_exclusion() {
-                for group in element.get_all_groups() {
-                    status[group as usize] = -1; // some number of groups are taken up
+                for &group in element.get_all_groups() {
+                    // For an exclusion entry some number of groups are taken up
+                    status[group as usize] = -1;
                 }
             }
             param.data_type = Some(tp.clone());
@@ -147,15 +211,12 @@ pub trait ParamListStandard: ParamList {
         assign_action::FAIL
     }
 
-    /// Fill in the address and other details for the given parameter.
+    /// Fill in the address and other details for the given parameter: apply the first model rule
+    /// that does not fail, else fall back to [`assign_address_fallback`](Self::assign_address_fallback).
+    /// Returns an `AssignAction` response code.
     ///
-    /// Attempts to apply a [`ModelRuleLike`] first; if none succeed, falls back to
-    /// [`assign_address_fallback`](Self::assign_address_fallback).
-    ///
-    /// Port of `ParamListStandard.assignAddress`. The Java method also bails out early when `dt`
-    /// is (or is a typedef wrapping) the `DataType.DEFAULT` singleton; that check is folded into
-    /// [`DataType::is_default_data_type`].
-    fn assign_address(
+    /// Port of `ParamListStandard.assignAddress`.
+    pub fn assign_address(
         &self,
         dt: &Arc<dyn DataType>,
         proto: &PrototypePieces,
@@ -177,8 +238,8 @@ pub trait ParamListStandard: ParamList {
                 }
             }
         }
-        for rule in self.model_rules() {
-            let response_code = rule.assign_address(dt, proto, pos, dt_manager, status, res);
+        for model_rule in &self.model_rules {
+            let response_code = model_rule.assign_address(self, dt, proto, pos, dt_manager, status, res);
             if response_code != assign_action::FAIL {
                 return response_code;
             }
@@ -187,74 +248,64 @@ pub trait ParamListStandard: ParamList {
         self.assign_address_fallback(store, dt, false, status, res)
     }
 
-    /// The number of [`ParamEntry`] entries in this list.
+    /// The number of entries in this list.
     ///
     /// Port of `ParamListStandard.getNumParamEntry`.
-    fn get_num_param_entry(&self) -> usize {
-        self.entries().len()
+    pub fn get_num_param_entry(&self) -> i32 {
+        self.entry.len() as i32
     }
 
-    /// Within this list, get the entry at the given index.
+    /// The entry at `index`, or `None` if out of range (Java throws
+    /// `ArrayIndexOutOfBoundsException`).
     ///
     /// Port of `ParamListStandard.getEntry`.
-    fn get_entry(&self, index: usize) -> &dyn ParamEntry {
-        self.entries()[index].as_ref()
+    pub fn get_entry(&self, index: i32) -> Option<&Arc<ParamEntry>> {
+        usize::try_from(index).ok().and_then(|i| self.entry.get(i))
     }
 
-    /// True if resources are from a big endian address space.
+    /// True if resources in this list are from a big endian address space. An empty list (where
+    /// Java would throw) reports little endian.
     ///
     /// Port of `ParamListStandard.isBigEndian`.
-    fn is_big_endian(&self) -> bool {
-        self.entries()[0].is_big_endian()
+    pub fn is_big_endian(&self) -> bool {
+        self.entry.first().is_some_and(|e| e.is_big_endian())
     }
 
-    /// Port of `ParamListStandard.assignMap`, overriding [`ParamList::assign_map`]. See the
-    /// trait-level docs for why this is not named `assign_map`.
-    fn assign_map_std(
+    /// Given the data-types of a prototype, compute the storage for each input parameter and
+    /// append it to `res`. If `add_auto_params` and `res` already holds a hidden return pointer
+    /// placeholder (from the output list), that is assigned first.
+    ///
+    /// Port of `ParamListStandard.assignMap`.
+    pub fn assign_map(
         &self,
         proto: &PrototypePieces,
         dt_manager: &dyn DataTypeManager,
         res: &mut Vec<ParameterPieces>,
         add_auto_params: bool,
     ) {
-        let mut status = vec![0i32; self.num_group().max(0) as usize];
+        let mut status = vec![0i32; self.numgroup.max(0) as usize];
 
         if add_auto_params && res.len() == 2 {
-            // Check for hidden parameters defined by the output list.
+            // Check for hidden parameters defined by the output list
             let last_idx = res.len() - 1;
-            if res[last_idx].hidden_return_ptr {
-                // Need to pull from registers marked as hiddenret.
-                if let Some(dt) = res[last_idx].data_type.clone() {
-                    self.assign_address_fallback(
-                        StorageClass::HiddenRet,
-                        &dt,
-                        false,
-                        &mut status,
-                        &mut res[last_idx],
-                    );
+            let last_type = res[last_idx].data_type.clone();
+            if let Some(dt) = last_type {
+                if res[last_idx].hidden_return_ptr {
+                    // Need to pull from registers marked as hiddenret
+                    self.assign_address_fallback(StorageClass::HiddenRet, &dt, false, &mut status, &mut res[last_idx]);
+                } else {
+                    // Assign as a regular first input pointer parameter
+                    self.assign_address(&dt, proto, 0, dt_manager, &mut status, &mut res[last_idx]);
                 }
-            } else if let Some(dt) = res[last_idx].data_type.clone() {
-                // Assign as a regular first input pointer parameter.
-                self.assign_address(&dt, proto, 0, dt_manager, &mut status, &mut res[last_idx]);
             }
             res[last_idx].hidden_return_ptr = true;
         }
-
         for i in 0..proto.intypes.len() {
             res.push(ParameterPieces::default());
             let idx = res.len() - 1;
-            let response_code = self.assign_address(
-                &proto.intypes[i],
-                proto,
-                i as i32,
-                dt_manager,
-                &mut status,
-                &mut res[idx],
-            );
-            if response_code == assign_action::FAIL || response_code == assign_action::NO_ASSIGNMENT
-            {
-                // Do not continue to assign after first failure; fill out with unassigned
-                // pieces.
+            let res_code = self.assign_address(&proto.intypes[i], proto, i as i32, dt_manager, &mut status, &mut res[idx]);
+            if res_code == assign_action::FAIL || res_code == assign_action::NO_ASSIGNMENT {
+                // Do not continue to assign after first failure; fill out with UNASSIGNED pieces
                 for _ in (i + 1)..proto.intypes.len() {
                     res.push(ParameterPieces::default());
                 }
@@ -263,123 +314,49 @@ pub trait ParamListStandard: ParamList {
         }
     }
 
-    /// Port of `ParamListStandard.getStackParameterAlignment`, overriding
-    /// [`ParamList::get_stack_parameter_alignment`].
-    fn get_stack_parameter_alignment_std(&self) -> i32 {
-        for pentry in self.entries() {
-            if pentry.get_space().space_type() == AddressSpaceType::Stack {
-                return pentry.get_align();
-            }
-        }
-        -1
-    }
-
-    /// Port of `ParamListStandard.getStackParameterOffset`, overriding
-    /// [`ParamList::get_stack_parameter_offset`].
-    fn get_stack_parameter_offset_std(&self) -> Option<i64> {
-        for element in self.entries() {
-            if element.is_exclusion() {
+    /// All parameter storage locations consisting of a single register.
+    ///
+    /// Port of `ParamListStandard.getPotentialRegisterStorage(Program)`. Takes the program as the
+    /// [`ProgramArchitecture`] it is in Java (`Program extends ProgramArchitecture`), which is
+    /// what `VariableStorage`'s constructor needs.
+    pub fn get_potential_register_storage(
+        &self,
+        prog: Arc<dyn ProgramArchitecture>,
+    ) -> Vec<Box<dyn VariableStorage>> {
+        let mut res: Vec<Box<dyn VariableStorage>> = Vec::new();
+        for pe in &self.entry {
+            if !pe.is_exclusion() {
                 continue;
             }
-            let space = element.get_space();
-            if space.space_type() != AddressSpaceType::Stack {
-                continue;
+            if pe.get_space().space_type() == AddressSpaceType::Register {
+                let addr = pe.get_space().address(pe.get_address_base());
+                // Skip this particular storage location if it is invalid (Java's
+                // `catch (InvalidInputException)`)
+                if let Ok(var) = VariableStorageImpl::from_address(prog.clone(), addr, pe.get_size()) {
+                    res.push(Box::new(var));
+                }
             }
-            let mut res = element.get_address_base();
-            if element.is_reverse_stack() {
-                res += element.get_size() as i64;
-            }
-            return Some(space.truncate_offset(res));
         }
-        None
+        res
     }
 
-    /// Port of `ParamListStandard.possibleParamWithSlot`, overriding
-    /// [`ParamList::possible_param_with_slot`].
-    fn possible_param_with_slot_std(&self, loc: &Address, size: i32, res: &mut WithSlotRec) -> bool {
-        let Some(num) = self.find_entry(loc, size) else {
-            return false;
-        };
-        let curentry = self.entries()[num].as_ref();
-        res.slot = curentry.get_slot(loc, 0);
-        if curentry.is_exclusion() {
-            res.slotsize = curentry.get_all_groups().len() as i32;
-        } else {
-            res.slotsize = ((size - 1) / curentry.get_align()) + 1;
-        }
-        true
-    }
-
-    /// Port of `ParamListStandard.isEquivalent`, overriding [`ParamList::is_equivalent`]. Omits
-    /// the Java method's leading `getClass() != obj.getClass()` check, since trait objects have
-    /// no equivalent notion here; callers comparing across genuinely different concrete types
-    /// are expected to fail one of the field comparisons below instead.
-    fn is_equivalent_std(&self, other: &dyn ParamListStandard) -> bool {
-        if self.entries().len() != other.entries().len() {
-            return false;
-        }
-        for (a, b) in self.entries().iter().zip(other.entries().iter()) {
-            if !a.is_equivalent(b.as_ref()) {
-                return false;
-            }
-        }
-        if self.model_rules().len() != other.model_rules().len() {
-            return false;
-        }
-        for (a, b) in self.model_rules().iter().zip(other.model_rules().iter()) {
-            if !a.is_equivalent(b.as_ref()) {
-                return false;
-            }
-        }
-        if self.num_group() != other.num_group() {
-            return false;
-        }
-        if self.spacebase() != other.spacebase() {
-            return false;
-        }
-        if self.this_before_ret() != other.this_before_ret() {
-            return false;
-        }
-        if self.auto_killed_by_call() != other.auto_killed_by_call() {
-            return false;
-        }
-        true
-    }
-
-    /// Extract all entries that have the given storage class and are single registers.
+    /// Encode this list as an `<input>` or `<output>` element.
     ///
-    /// Port of `ParamListStandard.extractTiles`.
-    fn extract_tiles(&self, res_type: StorageClass) -> Vec<&dyn ParamEntry> {
-        self.entries()
-            .iter()
-            .filter(|e| e.is_exclusion() && e.get_all_groups().len() == 1 && e.get_type() == res_type)
-            .map(|e| e.as_ref())
-            .collect()
-    }
-
-    /// If there is an entry corresponding to the stack resource in this list, return it.
+    /// Port of `ParamListStandard.encode`.
     ///
-    /// Port of `ParamListStandard.extractStack`.
-    fn extract_stack(&self) -> Option<&dyn ParamEntry> {
-        self.entries()
-            .iter()
-            .rev()
-            .find(|e| !e.is_exclusion() && e.get_space().space_type() == AddressSpaceType::Stack)
-            .map(|e| e.as_ref())
-    }
-
-    /// Port of `ParamListStandard.encode`, overriding [`ParamList::encode`].
-    fn encode_std(&self, encoder: &mut dyn Encoder, is_input: bool) -> std::io::Result<()> {
+    /// # Errors
+    /// Returns an error for problems writing to the underlying stream.
+    pub fn encode(&self, encoder: &mut dyn Encoder, is_input: bool) -> std::io::Result<()> {
         encoder.open_element(if is_input { ELEM_INPUT } else { ELEM_OUTPUT })?;
-        if self.this_before_ret() {
+        if self.thisbeforeret {
             encoder.write_bool(ATTRIB_THISBEFORERETPOINTER, true)?;
         }
-        encoder.write_bool(ATTRIB_KILLEDBYCALL, self.auto_killed_by_call())?;
-        if is_input && !self.split_metatype() {
+        encoder.write_bool(ATTRIB_KILLEDBYCALL, self.auto_killed_by_call)?;
+        if is_input && !self.split_metatype {
             encoder.write_bool(ATTRIB_SEPARATEFLOAT, false)?;
         }
         let mut curgroup: i32 = -1;
-        for el in self.entries() {
+        for el in &self.entry {
             if curgroup >= 0 && (!el.is_grouped() || el.get_group() != curgroup) {
                 encoder.close_element(ELEM_GROUP)?;
                 curgroup = -1;
@@ -393,483 +370,444 @@ pub trait ParamListStandard: ParamList {
         if curgroup >= 0 {
             encoder.close_element(ELEM_GROUP)?;
         }
-        for rule in self.model_rules() {
-            rule.encode(encoder)?;
+        for model_rule in &self.model_rules {
+            model_rule.encode(encoder)?;
         }
         encoder.close_element(if is_input { ELEM_INPUT } else { ELEM_OUTPUT })?;
         Ok(())
+    }
+
+    /// Parse a `<pentry>` tag and append the entry to `pe`.
+    ///
+    /// Port of the private `ParamListStandard.parsePentry`.
+    fn parse_pentry<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        cspec: &dyn CompilerSpec,
+        pe: &mut Vec<Arc<ParamEntry>>,
+        groupid: i32,
+        split_float: bool,
+        grouped: bool,
+    ) -> Result<(), XmlParseException> {
+        let mut last_class = StorageClass::Class4;
+        if let Some(last_entry) = pe.last() {
+            last_class = if last_entry.is_grouped() { StorageClass::General } else { last_entry.get_type() };
+        }
+        let pentry = ParamEntry::restore_xml(parser, cspec, pe, grouped, groupid)?;
+        if split_float {
+            let current_class = if grouped { StorageClass::General } else { pentry.get_type() };
+            if last_class != current_class && last_class.value() < current_class.value() {
+                return Err(XmlParseException::new("parameter list entries must be ordered by storage class"));
+            }
+        }
+        if pentry.get_space().space_type() == AddressSpaceType::Stack {
+            self.spacebase = Some(pentry.get_space());
+        }
+        let group_set = pentry.get_all_groups();
+        let maxgroup = group_set[group_set.len() - 1] + 1;
+        if maxgroup > self.numgroup {
+            self.numgroup = maxgroup;
+        }
+        pe.push(Arc::new(pentry));
+        Ok(())
+    }
+
+    /// Parse a sequence of `<pentry>`s that are allocated as a group (all from the same group).
+    ///
+    /// Port of the private `ParamListStandard.parseGroup`.
+    fn parse_group<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        cspec: &dyn CompilerSpec,
+        pe: &mut Vec<Arc<ParamEntry>>,
+        split_float: bool,
+    ) -> Result<(), XmlParseException> {
+        let el = parser.start(&[ELEM_GROUP.name])?;
+        let basegroup = self.numgroup;
+        let mut count = 0usize;
+        while parser.peek().is_start() {
+            self.parse_pentry(parser, cspec, pe, basegroup, split_float, true)?;
+            count += 1;
+            let last_entry = pe.last().expect("parse_pentry just pushed an entry");
+            if last_entry.get_space().space_type() == AddressSpaceType::Join {
+                return Err(XmlParseException::new("<pentry> in the join space not allowed in <group> tag"));
+            }
+        }
+        // Check that all entries in the group are distinguishable
+        for i in 1..count {
+            let cur_entry = &pe[pe.len() - 1 - i];
+            for j in 0..i {
+                order_within_group(cur_entry, &pe[pe.len() - 1 - j])?;
+            }
+        }
+        parser.end_matching(&el)?;
+        Ok(())
+    }
+
+    /// Restore this list from an `<input>` or `<output>` element.
+    ///
+    /// Port of `ParamListStandard.restoreXml`.
+    ///
+    /// # Errors
+    /// Returns an error for badly formed or inconsistent XML.
+    pub(crate) fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        cspec: &dyn CompilerSpec,
+    ) -> Result<(), XmlParseException> {
+        let mut pe: Vec<Arc<ParamEntry>> = Vec::new();
+        self.numgroup = 0;
+        self.language = Some(Arc::from(cspec.get_language()));
+        self.spacebase = None;
+        let mut pointermax = 0;
+        self.thisbeforeret = false;
+        self.auto_killed_by_call = false;
+        self.split_metatype = true;
+        self.entry.clear();
+        self.model_rules.clear();
+        let mainel = parser.start(&[])?;
+        if let Some(attribute) = mainel.get_attribute(ATTRIB_POINTERMAX.name) {
+            pointermax = decode_int(Some(&attribute));
+        }
+        if let Some(attribute) = mainel.get_attribute(ATTRIB_THISBEFORERETPOINTER.name) {
+            self.thisbeforeret = decode_boolean(&attribute);
+        }
+        if let Some(attribute) = mainel.get_attribute(ATTRIB_KILLEDBYCALL.name) {
+            self.auto_killed_by_call = decode_boolean(&attribute);
+        }
+        if let Some(attribute) = mainel.get_attribute(ATTRIB_SEPARATEFLOAT.name) {
+            self.split_metatype = decode_boolean(&attribute);
+        }
+        let split_metatype = self.split_metatype;
+        loop {
+            let el = parser.peek();
+            if !el.is_start() {
+                break;
+            }
+            let name = el.get_name();
+            if name == ELEM_PENTRY.name {
+                let groupid = self.numgroup;
+                self.parse_pentry(parser, cspec, &mut pe, groupid, split_metatype, false)?;
+            } else if name == ELEM_GROUP.name {
+                self.parse_group(parser, cspec, &mut pe, split_metatype)?;
+            } else if name == ELEM_RULE.name {
+                break;
+            } else {
+                // Java loops forever on an unrecognized child here (the element is never
+                // consumed); reject it instead.
+                return Err(XmlParseException::new(format!("Unexpected element in parameter list: {name}")));
+            }
+        }
+        self.entry = pe;
+        let mut rules = Vec::new();
+        loop {
+            let sub_id = parser.peek();
+            if !sub_id.is_start() {
+                break;
+            }
+            if sub_id.get_name() == ELEM_RULE.name {
+                let mut rule = ModelRule::new();
+                rule.restore_xml(parser, self)?;
+                rules.push(rule);
+            } else {
+                return Err(XmlParseException::new(
+                    "<pentry> and <group> elements must come before any <modelrule>",
+                ));
+            }
+        }
+        parser.end_matching(&mainel)?;
+        if pointermax > 0 {
+            // Add a ModelRule at the end that converts too big data-types to pointers
+            let type_filter = SizeRestrictedFilter::with_min_max(pointermax + 1, 0);
+            let action = ConvertToPointer::new(self);
+            let rule = ModelRule::from_components(&type_filter, &action, self)
+                .map_err(|e| XmlParseException::new(e.to_string()))?;
+            rules.push(rule);
+        }
+        self.model_rules = rules;
+        Ok(())
+    }
+
+    /// The byte alignment of parameters passed on the stack, or -1 if there are none.
+    ///
+    /// Port of `ParamListStandard.getStackParameterAlignment`.
+    pub fn get_stack_parameter_alignment(&self) -> i32 {
+        for pentry in &self.entry {
+            if pentry.get_space().space_type() == AddressSpaceType::Stack {
+                return pentry.get_align();
+            }
+        }
+        -1
+    }
+
+    /// The boundary offset separating stack parameters from other local variables, or `None` if
+    /// there are no stack parameters.
+    ///
+    /// Port of `ParamListStandard.getStackParameterOffset`.
+    pub fn get_stack_parameter_offset(&self) -> Option<i64> {
+        for pentry in &self.entry {
+            if pentry.is_exclusion() {
+                continue;
+            }
+            let space = pentry.get_space();
+            if space.space_type() != AddressSpaceType::Stack {
+                continue;
+            }
+            let mut res = pentry.get_address_base();
+            if pentry.is_reverse_stack() {
+                res += pentry.get_size() as i64;
+            }
+            return Some(space.truncate_offset(res));
+        }
+        None
+    }
+
+    /// Determine if the given memory range is a possible parameter and, if so, which slot(s) it
+    /// occupies.
+    ///
+    /// Port of `ParamListStandard.possibleParamWithSlot`.
+    pub fn possible_param_with_slot(&self, loc: &Address, size: i32, res: &mut WithSlotRec) -> bool {
+        let Some(num) = self.find_entry(loc, size) else {
+            return false;
+        };
+        let curentry = &self.entry[num];
+        res.slot = curentry.get_slot(loc, 0);
+        if curentry.is_exclusion() {
+            res.slotsize = curentry.get_all_groups().len() as i32;
+        } else {
+            res.slotsize = ((size - 1) / curentry.get_align()) + 1;
+        }
+        true
+    }
+
+    /// The language associated with this convention.
+    ///
+    /// Port of `ParamListStandard.getLanguage`.
+    pub fn get_language(&self) -> Option<Arc<dyn Language>> {
+        self.language.clone()
+    }
+
+    /// The address space of stack-based parameters in this list, if any.
+    ///
+    /// Port of `ParamListStandard.getSpacebase`.
+    pub fn get_spacebase(&self) -> Option<Arc<AddressSpace>> {
+        self.spacebase.clone()
+    }
+
+    /// Determine if this list is configured identically to another. The Java `getClass()`
+    /// check is made by the [`ParamList`](super::param_list::ParamList) enum.
+    ///
+    /// Port of `ParamListStandard.isEquivalent`.
+    pub fn is_equivalent(&self, op2: &ParamListStandard) -> bool {
+        if self.entry.len() != op2.entry.len() {
+            return false;
+        }
+        if !self.entry.iter().zip(&op2.entry).all(|(a, b)| a.is_equivalent(b)) {
+            return false;
+        }
+        if self.model_rules.len() != op2.model_rules.len() {
+            return false;
+        }
+        if !self.model_rules.iter().zip(&op2.model_rules).all(|(a, b)| a.is_equivalent(b)) {
+            return false;
+        }
+        if self.numgroup != op2.numgroup {
+            return false;
+        }
+        let same_space = match (&self.spacebase, &op2.spacebase) {
+            (None, None) => true,
+            (Some(a), Some(b)) => a.as_ref() == b.as_ref(),
+            _ => false,
+        };
+        if !same_space {
+            return false;
+        }
+        self.thisbeforeret == op2.thisbeforeret && self.auto_killed_by_call == op2.auto_killed_by_call
+    }
+
+    /// True if the `this` pointer is allocated before a hidden return pointer.
+    ///
+    /// Port of `ParamListStandard.isThisBeforeRetPointer`.
+    pub fn is_this_before_ret_pointer(&self) -> bool {
+        self.thisbeforeret
+    }
+
+    /// All entries of the given storage class that are single, exclusive registers.
+    ///
+    /// Port of `ParamListStandard.extractTiles`.
+    pub fn extract_tiles(&self, res_type: StorageClass) -> Vec<Arc<ParamEntry>> {
+        self.entry
+            .iter()
+            .filter(|e| e.is_exclusion() && e.get_all_groups().len() == 1 && e.get_type() == res_type)
+            .cloned()
+            .collect()
+    }
+
+    /// The stack resource of this list, if any. Note that this scans backward and returns the
+    /// last matching entry.
+    ///
+    /// Port of `ParamListStandard.extractStack`.
+    pub fn extract_stack(&self) -> Option<Arc<ParamEntry>> {
+        self.entry
+            .iter()
+            .rev()
+            .find(|e| !e.is_exclusion() && e.get_space().space_type() == AddressSpaceType::Stack)
+            .cloned()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::AddressSpace;
-    use crate::program::model::lang::compiler_spec::CompilerSpec;
-    use crate::program::model::lang::language::Language;
-    use crate::program::model::listing::program::Program;
-    use crate::program::model::listing::variable_storage::VariableStorage;
-    use crate::util::xml::xml_parse_exception::XmlParseException;
-    use crate::util::xml::xml_pull_parser::XmlPullParser;
+    use crate::program::model::lang::cspec_test_support::{
+        float_type, int_type, parser, register_space, stack_space, TestCompilerSpec,
+        TestDataTypeManager, SYSV_INPUT,
+    };
 
-    #[derive(Clone)]
-    struct MockEntry {
-        space: Arc<AddressSpace>,
-        group: i32,
-        min_size: i32,
-        size: i32,
-        align: i32,
-        ty: StorageClass,
-        exclusion: bool,
-        grouped: bool,
-        capacity: i32,
+    fn sysv_input() -> ParamListStandard {
+        let mut list = ParamListStandard::new();
+        list.restore_xml(&mut parser(SYSV_INPUT), &TestCompilerSpec::x86_64()).unwrap();
+        list
     }
 
-    impl ParamEntry for MockEntry {
-        fn get_space(&self) -> Arc<AddressSpace> {
-            self.space.clone()
-        }
-        fn get_group(&self) -> i32 {
-            self.group
-        }
-        fn get_min_size(&self) -> i32 {
-            self.min_size
-        }
-        fn get_size(&self) -> i32 {
-            self.size
-        }
-        fn get_align(&self) -> i32 {
-            self.align
-        }
-        fn get_address_base(&self) -> i64 {
-            0
-        }
-        fn get_type(&self) -> StorageClass {
-            self.ty
-        }
-        fn is_exclusion(&self) -> bool {
-            self.exclusion
-        }
-        fn is_grouped(&self) -> bool {
-            self.grouped
-        }
-        fn justified_contain(&self, loc: &Address, size: i32) -> i32 {
-            if loc.space() == &self.space && size <= self.size {
-                0
-            } else {
-                -1
-            }
-        }
-        fn get_slot(&self, _loc: &Address, _skip: i32) -> i32 {
-            self.group
-        }
-        fn get_addr_by_slot(
-            &self,
-            slot_num: i32,
-            _size: i32,
-            _align: i32,
-            param: &mut ParameterPieces,
-        ) -> i32 {
-            if slot_num >= self.capacity {
-                param.address = None;
-                return slot_num;
-            }
-            let offset = (self.group * 100 + slot_num) as i64 * 8;
-            param.address = Some(Address::new(self.space.clone(), offset));
-            slot_num + 1
-        }
-        fn is_equivalent(&self, other: &dyn ParamEntry) -> bool {
-            self.get_group() == other.get_group() && self.get_type() == other.get_type()
-        }
-    }
-
-    struct MockModelRule;
-    impl ModelRuleLike for MockModelRule {}
-
-    struct MockDataType {
-        length: i32,
-        is_ptr: bool,
-    }
-    impl DataType for MockDataType {
-        fn get_length(&self) -> i32 {
-            self.length
-        }
-        fn is_pointer(&self) -> bool {
-            self.is_ptr
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    fn register_space() -> Arc<AddressSpace> {
-        AddressSpace::new(
-            "register",
-            32,
-            1,
-            crate::program::model::address::AddressSpaceType::Register,
-            0,
-        )
-    }
-
-    fn stack_space() -> Arc<AddressSpace> {
-        AddressSpace::new(
-            "stack",
-            32,
-            1,
-            crate::program::model::address::AddressSpaceType::Stack,
-            0,
-        )
-    }
-
-    struct MockParamListStandard {
-        entries: Vec<Arc<dyn ParamEntry>>,
-        model_rules: Vec<Arc<dyn ModelRuleLike>>,
-    }
-
-    impl ParamListStandard for MockParamListStandard {
-        fn entries(&self) -> &[Arc<dyn ParamEntry>] {
-            &self.entries
-        }
-        fn model_rules(&self) -> &[Arc<dyn ModelRuleLike>] {
-            &self.model_rules
-        }
-        fn num_group(&self) -> i32 {
-            2
-        }
-        fn spacebase(&self) -> Option<Arc<AddressSpace>> {
-            Some(stack_space())
-        }
-        fn this_before_ret(&self) -> bool {
-            false
-        }
-        fn auto_killed_by_call(&self) -> bool {
-            true
-        }
-        fn split_metatype(&self) -> bool {
-            true
-        }
-    }
-
-    impl ParamList for MockParamListStandard {
-        fn assign_map(
-            &self,
-            proto: &PrototypePieces,
-            dt_manage: &dyn DataTypeManager,
-            res: &mut Vec<ParameterPieces>,
-            add_auto_params: bool,
-        ) {
-            self.assign_map_std(proto, dt_manage, res, add_auto_params);
-        }
-
-        fn encode(&self, encoder: &mut dyn Encoder, is_input: bool) -> std::io::Result<()> {
-            self.encode_std(encoder, is_input)
-        }
-
-        fn restore_xml<P: XmlPullParser>(
-            &mut self,
-            _parser: &mut P,
-            _cspec: &dyn CompilerSpec,
-        ) -> Result<(), XmlParseException>
-        where
-            Self: Sized,
-        {
-            unimplemented!("XML restore needs a ported ModelRule constructor and AddressXML")
-        }
-
-        fn get_potential_register_storage(&self, _prog: &dyn Program) -> Vec<Box<dyn VariableStorage>> {
-            Vec::new()
-        }
-
-        fn get_stack_parameter_alignment(&self) -> i32 {
-            self.get_stack_parameter_alignment_std()
-        }
-
-        fn get_stack_parameter_offset(&self) -> Option<i64> {
-            self.get_stack_parameter_offset_std()
-        }
-
-        fn possible_param_with_slot(&self, loc: &Address, size: i32, res: &mut WithSlotRec) -> bool {
-            self.possible_param_with_slot_std(loc, size, res)
-        }
-
-        fn get_language(&self) -> Box<dyn Language> {
-            unimplemented!()
-        }
-
-        fn get_spacebase(&self) -> Option<Arc<AddressSpace>> {
-            self.spacebase()
-        }
-
-        fn is_this_before_ret_pointer(&self) -> bool {
-            self.this_before_ret()
-        }
-
-        fn is_equivalent(&self, other: &dyn ParamList) -> bool {
-            let _ = other;
-            false
-        }
-    }
-
-    fn two_register_list() -> MockParamListStandard {
-        let reg = register_space();
-        MockParamListStandard {
-            entries: vec![
-                Arc::new(MockEntry {
-                    space: reg.clone(),
-                    group: 0,
-                    min_size: 1,
-                    size: 4,
-                    align: 4,
-                    ty: StorageClass::General,
-                    exclusion: true,
-                    grouped: false,
-                    capacity: 1,
-                }),
-                Arc::new(MockEntry {
-                    space: reg.clone(),
-                    group: 1,
-                    min_size: 1,
-                    size: 4,
-                    align: 4,
-                    ty: StorageClass::General,
-                    exclusion: true,
-                    grouped: false,
-                    capacity: 1,
-                }),
-            ],
-            model_rules: Vec::new(),
-        }
+    fn restore(xml: &str) -> Result<ParamListStandard, XmlParseException> {
+        let mut list = ParamListStandard::new();
+        list.restore_xml(&mut parser(xml), &TestCompilerSpec::x86_64())?;
+        Ok(list)
     }
 
     #[test]
-    fn assign_address_fallback_finds_free_slot_and_marks_it_consumed() {
-        let list = two_register_list();
-        let mut status = vec![0i32; 2];
-        let mut param = ParameterPieces::default();
-        let dt: Arc<dyn DataType> = Arc::new(MockDataType {
-            length: 4,
-            is_ptr: false,
-        });
-
-        let code =
-            list.assign_address_fallback(StorageClass::General, &dt, false, &mut status, &mut param);
-
-        assert_eq!(code, assign_action::SUCCESS);
-        assert!(param.address.is_some());
-        assert_eq!(status[0], -1); // exclusion entry marks its group fully consumed
-
-        // Second call finds the next entry since group 0 is now marked consumed.
-        let mut param2 = ParameterPieces::default();
-        let code2 =
-            list.assign_address_fallback(StorageClass::General, &dt, false, &mut status, &mut param2);
-        assert_eq!(code2, assign_action::SUCCESS);
-        assert_eq!(status[1], -1);
-
-        // Third call fails: both groups are consumed.
-        let mut param3 = ParameterPieces::default();
-        let code3 =
-            list.assign_address_fallback(StorageClass::General, &dt, false, &mut status, &mut param3);
-        assert_eq!(code3, assign_action::FAIL);
-        assert!(param3.address.is_none());
-    }
-
-    #[test]
-    fn assign_address_classifies_pointer_and_falls_back_when_rules_fail() {
-        let list = two_register_list();
-        let mut status = vec![0i32; 2];
-        let mut param = ParameterPieces::default();
-        let dt: Arc<dyn DataType> = Arc::new(MockDataType {
-            length: 4,
-            is_ptr: true,
-        });
-
-        let code = list.assign_address(&dt, &PrototypePieces::default(), 0, &MockDataTypeManager, &mut status, &mut param);
-
-        assert_eq!(code, assign_action::SUCCESS);
-        assert!(param.address.is_some());
-    }
-
-    #[test]
-    fn assign_map_std_assigns_each_input_type_in_order() {
-        let list = two_register_list();
-        let a: Arc<dyn DataType> = Arc::new(MockDataType {
-            length: 4,
-            is_ptr: false,
-        });
-        let b: Arc<dyn DataType> = Arc::new(MockDataType {
-            length: 4,
-            is_ptr: false,
-        });
-        let proto = PrototypePieces {
-            outtype: None,
-            intypes: vec![a, b],
-            ..Default::default()
-        };
-        let mut res = Vec::new();
-
-        list.assign_map_std(&proto, &MockDataTypeManager, &mut res, false);
-
-        assert_eq!(res.len(), 2);
-        assert!(res[0].address.is_some());
-        assert!(res[1].address.is_some());
-        // Each parameter lands in a different group's register.
-        assert_ne!(res[0].address.as_ref().unwrap().offset(), res[1].address.as_ref().unwrap().offset());
-    }
-
-    #[test]
-    fn assign_map_std_stops_and_fills_unassigned_after_first_failure() {
-        let list = two_register_list();
-        let big: Arc<dyn DataType> = Arc::new(MockDataType {
-            length: 4,
-            is_ptr: false,
-        });
-        // Three inputs but only two registers: the third should fail and the loop should not
-        // just silently drop it -- it gets appended as an unassigned placeholder.
-        let proto = PrototypePieces {
-            outtype: None,
-            intypes: vec![big.clone(), big.clone(), big],
-            ..Default::default()
-        };
-        let mut res = Vec::new();
-
-        list.assign_map_std(&proto, &MockDataTypeManager, &mut res, false);
-
-        assert_eq!(res.len(), 3);
-        assert!(res[0].address.is_some());
-        assert!(res[1].address.is_some());
-        assert!(res[2].address.is_none());
-    }
-
-    #[test]
-    fn get_num_param_entry_get_entry_and_is_big_endian() {
-        let list = two_register_list();
-        assert_eq!(list.get_num_param_entry(), 2);
-        assert_eq!(list.get_entry(0).get_group(), 0);
-        assert!(!list.is_big_endian());
-    }
-
-    #[test]
-    fn extract_tiles_and_extract_stack() {
-        let reg = register_space();
-        let stack = stack_space();
-        let list = MockParamListStandard {
-            entries: vec![
-                Arc::new(MockEntry {
-                    space: reg.clone(),
-                    group: 0,
-                    min_size: 1,
-                    size: 4,
-                    align: 4,
-                    ty: StorageClass::General,
-                    exclusion: true,
-                    grouped: false,
-                    capacity: 1,
-                }),
-                Arc::new(MockEntry {
-                    space: stack.clone(),
-                    group: 1,
-                    min_size: 1,
-                    size: 4,
-                    align: 4,
-                    ty: StorageClass::General,
-                    exclusion: false,
-                    grouped: false,
-                    capacity: 100,
-                }),
-            ],
-            model_rules: Vec::new(),
-        };
-
-        let tiles = list.extract_tiles(StorageClass::General);
-        assert_eq!(tiles.len(), 1);
-        assert_eq!(tiles[0].get_group(), 0);
-
-        let stack_entry = list.extract_stack();
-        assert!(stack_entry.is_some());
-        assert_eq!(stack_entry.unwrap().get_group(), 1);
-    }
-
-    #[test]
-    fn get_stack_parameter_alignment_and_offset() {
-        let stack = stack_space();
-        let list = MockParamListStandard {
-            entries: vec![Arc::new(MockEntry {
-                space: stack.clone(),
-                group: 0,
-                min_size: 1,
-                size: 4,
-                align: 8,
-                ty: StorageClass::General,
-                exclusion: false,
-                grouped: false,
-                capacity: 100,
-            })],
-            model_rules: Vec::new(),
-        };
-
-        assert_eq!(list.get_stack_parameter_alignment_std(), 8);
-        assert_eq!(list.get_stack_parameter_offset_std(), Some(0));
-    }
-
-    #[test]
-    fn possible_param_with_slot_reports_slot_and_size() {
-        let list = two_register_list();
-        let reg = register_space();
-        let loc = Address::new(reg, 0);
-        let mut slot_rec = WithSlotRec::default();
-
-        assert!(list.possible_param_with_slot_std(&loc, 4, &mut slot_rec));
-        assert_eq!(slot_rec.slotsize, 1); // exclusion entry -> one group
-
-        let other_space = AddressSpace::new(
-            "otherspace",
-            32,
-            1,
-            crate::program::model::address::AddressSpaceType::Ram,
-            0,
-        );
-        let miss_loc = Address::new(other_space, 0);
-        assert!(!list.possible_param_with_slot_std(&miss_loc, 4, &mut slot_rec));
-    }
-
-    #[test]
-    fn is_equivalent_std_compares_entries_and_flags() {
-        let a = two_register_list();
-        let b = two_register_list();
-        assert!(a.is_equivalent_std(&b));
-
-        let mut c = two_register_list();
-        c.entries.pop();
-        assert!(!a.is_equivalent_std(&c));
-    }
-
-    #[test]
-    fn get_basic_type_class_classifies_pointers_and_general() {
-        let ptr: Arc<dyn DataType> = Arc::new(MockDataType {
-            length: 4,
-            is_ptr: true,
-        });
-        let general: Arc<dyn DataType> = Arc::new(MockDataType {
-            length: 4,
-            is_ptr: false,
-        });
-        assert_eq!(get_basic_type_class(ptr.as_ref()), StorageClass::Ptr);
-        assert_eq!(get_basic_type_class(general.as_ref()), StorageClass::General);
-    }
-
-    #[test]
-    fn usable_as_trait_object() {
-        let list: Box<dyn ParamListStandard> = Box::new(two_register_list());
-        assert_eq!(list.get_num_param_entry(), 2);
-        assert_eq!(list.num_group(), 2);
-        assert!(list.auto_killed_by_call());
-    }
-
-    #[test]
-    fn usable_as_param_list_trait_object_via_delegation() {
-        let list: Box<dyn ParamList> = Box::new(two_register_list());
-        assert_eq!(list.get_stack_parameter_offset(), None); // no stack entries in this fixture
+    fn restore_sysv_input_list() {
+        let list = sysv_input();
+        assert_eq!(list.get_num_param_entry(), 9);
+        assert_eq!(list.num_group(), 9);
+        assert!(list.split_metatype());
+        assert!(!list.auto_killed_by_call());
         assert!(!list.is_this_before_ret_pointer());
+        assert_eq!(list.get_spacebase().unwrap().space_type(), AddressSpaceType::Stack);
+        assert_eq!(list.get_entry(0).unwrap().get_type(), StorageClass::Float);
+        assert_eq!(list.get_entry(2).unwrap().get_address_base(), 0x38); // RDI
+        assert_eq!(list.get_entry(8).unwrap().get_group(), 8);
+        assert!(list.get_entry(9).is_none());
+        assert!(list.model_rules().is_empty());
+        assert!(!list.is_big_endian());
+        assert!(list.get_language().is_some());
+    }
+
+    #[test]
+    fn assign_map_sysv_ints_floats_and_stack_overflow() {
+        let list = sysv_input();
+        let mut intypes = vec![int_type(4), float_type(8), int_type(8)];
+        intypes.extend((0..5).map(|_| int_type(8)));
+        let proto = PrototypePieces { outtype: None, intypes, ..Default::default() };
+        let mut res = Vec::new();
+        list.assign_map(&proto, &TestDataTypeManager, &mut res, false);
+        let offs: Vec<(AddressSpaceType, i64)> = res
+            .iter()
+            .map(|p| {
+                let a = p.address.as_ref().unwrap();
+                (a.space().space_type(), a.offset())
+            })
+            .collect();
+        use AddressSpaceType::{Register as R, Stack as S};
+        assert_eq!(
+            offs,
+            vec![(R, 0x38), (R, 0x1200), (R, 0x30), (R, 0x10), (R, 0x8), (R, 0x80), (R, 0x88), (S, 8)]
+        );
+    }
+
+    #[test]
+    fn assign_address_fallback_consumes_exclusive_groups() {
+        let list = sysv_input();
+        let mut status = vec![0i32; 9];
+        let dt = int_type(8);
+        let mut p = ParameterPieces::default();
+        assert_eq!(list.assign_address_fallback(StorageClass::General, &dt, false, &mut status, &mut p), assign_action::SUCCESS);
+        assert_eq!(status[2], -1);
+        // match_exact: a pointer class matches no entry exactly
+        let mut p = ParameterPieces::default();
+        assert_eq!(list.assign_address_fallback(StorageClass::Ptr, &dt, true, &mut status, &mut p), assign_action::FAIL);
+        assert!(p.address.is_none());
+    }
+
+    #[test]
+    fn stack_parameter_alignment_offset_and_slots() {
+        let list = sysv_input();
+        assert_eq!(list.get_stack_parameter_alignment(), 8);
+        assert_eq!(list.get_stack_parameter_offset(), Some(8));
+        let mut rec = WithSlotRec::default();
+        assert!(list.possible_param_with_slot(&Address::new(register_space(), 0x30), 8, &mut rec));
+        assert_eq!(rec, WithSlotRec { slot: 3, slotsize: 1 });
+        assert!(list.possible_param_with_slot(&Address::new(stack_space(), 0x18), 12, &mut rec));
+        assert_eq!(rec, WithSlotRec { slot: 8 + 2, slotsize: 2 });
+        assert!(!list.possible_param_with_slot(&Address::new(register_space(), 0x0), 8, &mut rec));
+    }
+
+    #[test]
+    fn extract_tiles_and_stack() {
+        let list = sysv_input();
+        assert_eq!(list.extract_tiles(StorageClass::General).len(), 6);
+        assert_eq!(list.extract_tiles(StorageClass::Float).len(), 2);
+        assert_eq!(list.extract_stack().unwrap().get_address_base(), 8);
+    }
+
+    #[test]
+    fn restore_attributes_group_and_pointermax() {
+        let list = restore(
+            r#"<input pointermax="8" thisbeforeretpointer="true" killedbycall="true" separatefloat="false">
+                 <group>
+                   <pentry minsize="1" maxsize="8" metatype="float"><register name="XMM0_Qa"/></pentry>
+                   <pentry minsize="1" maxsize="8"><register name="RCX"/></pentry>
+                 </group>
+                 <pentry minsize="1" maxsize="500" align="8"><addr offset="40" space="stack"/></pentry>
+               </input>"#,
+        )
+        .unwrap();
+        assert!(list.is_this_before_ret_pointer());
+        assert!(list.auto_killed_by_call());
+        assert!(!list.split_metatype());
+        assert_eq!(list.num_group(), 2);
+        assert!(list.get_entry(0).unwrap().is_grouped());
+        assert_eq!(list.get_entry(1).unwrap().get_group(), 0);
+        assert_eq!(list.get_entry(2).unwrap().get_group(), 1);
+        // pointermax adds a ConvertToPointer rule: a 16-byte struct goes by pointer in RCX.
+        assert_eq!(list.model_rules().len(), 1);
+        let mut status = vec![0i32; 2];
+        let mut p = ParameterPieces::default();
+        let code = list.assign_address(&int_type(16), &PrototypePieces::default(), 0, &TestDataTypeManager, &mut status, &mut p);
+        assert_eq!(code, assign_action::SUCCESS);
+        assert_eq!(p.address.as_ref().unwrap().offset(), 0x8);
+        assert!(p.is_indirect);
+    }
+
+    #[test]
+    fn restore_rejects_misordered_classes_and_group_conflicts() {
+        let err = restore(
+            r#"<input>
+                 <pentry minsize="1" maxsize="8"><register name="RDI"/></pentry>
+                 <pentry minsize="4" maxsize="8" metatype="float"><register name="XMM0_Qa"/></pentry>
+               </input>"#,
+        );
+        assert!(err.err().unwrap().message().contains("ordered by storage class"));
+        let err = restore(
+            r#"<input><group>
+                 <pentry minsize="1" maxsize="8"><register name="RDI"/></pentry>
+                 <pentry minsize="1" maxsize="8"><register name="RSI"/></pentry>
+               </group></input>"#,
+        );
+        assert!(err.err().unwrap().message().contains("distinguished by size or type"));
+    }
+
+    #[test]
+    fn is_equivalent_compares_entries_rules_and_flags() {
+        assert!(sysv_input().is_equivalent(&sysv_input()));
+        let other = restore(r#"<input><pentry minsize="1" maxsize="8"><register name="RDI"/></pentry></input>"#).unwrap();
+        assert!(!sysv_input().is_equivalent(&other));
+    }
+
+    #[test]
+    fn get_basic_type_class_classifies() {
+        assert_eq!(get_basic_type_class(float_type(8).as_ref()), StorageClass::Float);
+        assert_eq!(get_basic_type_class(int_type(8).as_ref()), StorageClass::General);
     }
 }

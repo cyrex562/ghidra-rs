@@ -7,7 +7,8 @@ use crate::program::model::lang::param_entry::ParamEntry;
 use crate::program::model::lang::protorules::assign_action::{AssignAction, SUCCESS};
 use crate::program::model::lang::storage_class::StorageClass;
 use crate::program::model::pcode::{Encoder, ATTRIB_STORAGE, ELEM_CONSUME_REMAINING};
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -22,12 +23,10 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 ///
 /// Port of `ghidra.program.model.lang.protorules.ConsumeRemaining`.
 pub struct ConsumeRemaining {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
     /// The resource list to consume from (`ConsumeRemaining.resourceType`).
     resource_type: StorageClass,
     /// Registers that can be consumed (`ConsumeRemaining.tiles`).
-    tiles: Vec<Arc<dyn ParamEntry>>,
+    tiles: Vec<Arc<ParamEntry>>,
 }
 
 /// Cache the specific `ParamEntry`s needed by the action: every single-register, exclusion entry
@@ -38,9 +37,9 @@ pub struct ConsumeRemaining {
 /// # Errors
 /// Returns an error if `resource` has no matching entries.
 fn initialize_entries(
-    resource: &Arc<dyn ParamListStandardLike>,
+    resource: &ParamListStandard,
     resource_type: StorageClass,
-) -> Result<Vec<Arc<dyn ParamEntry>>, InvalidInputException> {
+) -> Result<Vec<Arc<ParamEntry>>, InvalidInputException> {
     let tiles = resource.extract_tiles(resource_type);
     if tiles.is_empty() {
         return Err(InvalidInputException::with_message(
@@ -57,10 +56,10 @@ impl ConsumeRemaining {
     /// Returns an error if `res` has no `ParamEntry` matching `store`.
     pub fn new(
         store: StorageClass,
-        res: Arc<dyn ParamListStandardLike>,
+        res: &ParamListStandard,
     ) -> Result<Self, InvalidInputException> {
-        let tiles = initialize_entries(&res, store)?;
-        Ok(ConsumeRemaining { resource: res, resource_type: store, tiles })
+        let tiles = initialize_entries(res, store)?;
+        Ok(ConsumeRemaining { resource_type: store, tiles })
     }
 
     /// Port of the "protected" constructor; see
@@ -68,15 +67,15 @@ impl ConsumeRemaining {
     /// full rationale. `resource_type` here is just a placeholder default -- `restore_xml`
     /// unconditionally overwrites it from the stream's `storage` attribute and re-derives `tiles`
     /// via `initialize_entries` at the end, exactly as Java's `restoreXml` does.
-    pub fn for_decode(res: Arc<dyn ParamListStandardLike>) -> Self {
-        ConsumeRemaining { resource: res, resource_type: StorageClass::General, tiles: Vec::new() }
+    pub fn for_decode() -> Self {
+        ConsumeRemaining { resource_type: StorageClass::General, tiles: Vec::new() }
     }
 }
 
 impl AssignAction for ConsumeRemaining {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
         Ok(Box::new(ConsumeRemaining::new(self.resource_type, new_resource)?))
     }
@@ -98,19 +97,19 @@ impl AssignAction for ConsumeRemaining {
         self.tiles
             .iter()
             .zip(other.tiles.iter())
-            .all(|(a, b)| a.is_equivalent(b.as_ref()))
+            .all(|(a, b)| a.is_equivalent(b))
     }
 
     fn assign_address(
         &self,
-        dt: &Arc<dyn DataType>,
+        _resource: &ParamListStandard,
+        _dt: &Arc<dyn DataType>,
         _proto: &PrototypePieces,
         _pos: i32,
         _dt_manager: &dyn DataTypeManager,
         status: &mut [i32],
-        res: &mut ParameterPieces,
+        _res: &mut ParameterPieces,
     ) -> i32 {
-        let _ = (dt, res, &self.resource);
         for entry in &self.tiles {
             let grp = entry.get_group() as usize;
             if status[grp] != 0 {
@@ -128,7 +127,11 @@ impl AssignAction for ConsumeRemaining {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -140,7 +143,7 @@ impl AssignAction for ConsumeRemaining {
         parser
             .end()
             .map_err(|e| XmlParseException::new(e.message().to_string()))?;
-        self.tiles = initialize_entries(&self.resource, self.resource_type)
+        self.tiles = initialize_entries(resource, self.resource_type)
             .map_err(|e| XmlParseException::new(e.0))?;
         Ok(())
     }
@@ -159,33 +162,33 @@ mod tests {
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
 
-    fn two_general_registers() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TestResource {
+    fn two_general_registers() -> ParamListStandard {
+        TestResource {
             entries: vec![
-                Arc::new(TestEntry { ty: StorageClass::General, group: 0, align: 0, space: ram_space(), ..TestEntry::default() }),
-                Arc::new(TestEntry { ty: StorageClass::General, group: 1, align: 0, space: ram_space(), ..TestEntry::default() }),
+                TestEntry { ty: StorageClass::General, group: 0, align: 0, space: ram_space(), ..TestEntry::default() },
+                TestEntry { ty: StorageClass::General, group: 1, align: 0, space: ram_space(), ..TestEntry::default() },
             ],
             num_group: 2,
             spacebase: None,
-        })
+        }.build()
     }
 
     #[test]
     fn new_fails_when_no_matching_entries_exist() {
-        let empty = Arc::new(TestResource::default());
-        assert!(ConsumeRemaining::new(StorageClass::General, empty).is_err());
+        let empty = TestResource::default().build();
+        assert!(ConsumeRemaining::new(StorageClass::General, &empty).is_err());
     }
 
     #[test]
     fn assign_address_marks_all_unconsumed_tiles_as_consumed() {
-        let action = ConsumeRemaining::new(StorageClass::General, two_general_registers()).unwrap();
+        let action = ConsumeRemaining::new(StorageClass::General, &two_general_registers()).unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType);
         let dt_manager = MockDataTypeManager;
         let proto = PrototypePieces::default();
         let mut res = ParameterPieces::default();
         let mut status = [0i32, 3]; // group 1 already partially consumed (status != 0)
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_general_registers(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status[0], -1); // was 0 (unconsumed) -> now fully consumed
         assert_eq!(status[1], 3); // already nonzero -> left untouched
@@ -193,24 +196,24 @@ mod tests {
 
     #[test]
     fn is_equivalent_compares_resource_type_and_tiles() {
-        let a = ConsumeRemaining::new(StorageClass::General, two_general_registers()).unwrap();
-        let b = ConsumeRemaining::new(StorageClass::General, two_general_registers()).unwrap();
+        let a = ConsumeRemaining::new(StorageClass::General, &two_general_registers()).unwrap();
+        let b = ConsumeRemaining::new(StorageClass::General, &two_general_registers()).unwrap();
         assert!(a.is_equivalent(&b));
 
-        let c = ConsumeRemaining::new(StorageClass::Float, {
-            Arc::new(TestResource {
-                entries: vec![Arc::new(TestEntry { ty: StorageClass::Float, align: 0, ..TestEntry::default() })],
+        let c = ConsumeRemaining::new(StorageClass::Float, &{
+            TestResource {
+                entries: vec![TestEntry { ty: StorageClass::Float, align: 0, ..TestEntry::default() }],
                 num_group: 1,
                 spacebase: None,
-            })
+            }.build()
         }).unwrap();
         assert!(!a.is_equivalent(&c));
     }
 
     #[test]
     fn clone_box_recomputes_tiles_from_new_resource() {
-        let action = ConsumeRemaining::new(StorageClass::General, two_general_registers()).unwrap();
-        let cloned = action.clone_box(two_general_registers()).expect("clone should succeed");
+        let action = ConsumeRemaining::new(StorageClass::General, &two_general_registers()).unwrap();
+        let cloned = action.clone_box(&two_general_registers()).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
 
@@ -258,12 +261,12 @@ mod tests {
 
     #[test]
     fn encode_writes_storage_attribute() {
-        let action = ConsumeRemaining::new(StorageClass::Vector, {
-            Arc::new(TestResource {
-                entries: vec![Arc::new(TestEntry { ty: StorageClass::Vector, align: 0, ..TestEntry::default() })],
+        let action = ConsumeRemaining::new(StorageClass::Vector, &{
+            TestResource {
+                entries: vec![TestEntry { ty: StorageClass::Vector, align: 0, ..TestEntry::default() }],
                 num_group: 1,
                 spacebase: None,
-            })
+            }.build()
         }).unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new(), strings: Vec::new() };
         action.encode(&mut enc).unwrap();
@@ -277,8 +280,8 @@ mod tests {
             MockElement::start("consume_remaining", 0, &[("storage", "general")]),
             MockElement::end("consume_remaining", 0),
         ]);
-        let mut action = ConsumeRemaining::new(StorageClass::General, two_general_registers()).unwrap();
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = ConsumeRemaining::new(StorageClass::General, &two_general_registers()).unwrap();
+        action.restore_xml(&mut parser, &two_general_registers()).unwrap();
         assert_eq!(action.tiles.len(), 2);
     }
 
@@ -288,28 +291,28 @@ mod tests {
             MockElement::start("consume_remaining", 0, &[("storage", "float")]),
             MockElement::end("consume_remaining", 0),
         ]);
-        let mut action = ConsumeRemaining::new(StorageClass::General, two_general_registers()).unwrap();
-        assert!(action.restore_xml(&mut parser).is_err());
+        let mut action = ConsumeRemaining::new(StorageClass::General, &two_general_registers()).unwrap();
+        assert!(action.restore_xml(&mut parser, &two_general_registers()).is_err());
     }
 
     #[test]
     fn for_decode_then_restore_xml_picks_up_a_non_default_storage_class() {
-        let float_only_resource = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry {
+        let float_only_resource = TestResource {
+            entries: vec![TestEntry {
                 ty: StorageClass::Float,
                 align: 0,
                 space: ram_space(),
                 ..TestEntry::default()
-            })],
+            }],
             num_group: 1,
             spacebase: None,
-        });
+        }.build();
         let mut parser = QueueParser::new(vec![
             MockElement::start("consume_remaining", 0, &[("storage", "float")]),
             MockElement::end("consume_remaining", 0),
         ]);
-        let mut action = ConsumeRemaining::for_decode(float_only_resource);
-        action.restore_xml(&mut parser).unwrap();
+        let mut action = ConsumeRemaining::for_decode();
+        action.restore_xml(&mut parser, &float_only_resource).unwrap();
         assert_eq!(action.resource_type, StorageClass::Float);
         assert_eq!(action.tiles.len(), 1);
     }

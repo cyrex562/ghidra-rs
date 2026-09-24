@@ -12,7 +12,8 @@ use crate::program::model::pcode::{
     Encoder, ATTRIB_ALIGN, ATTRIB_BACKFILL, ATTRIB_REVERSEJUSTIFY, ATTRIB_REVERSESIGNIF,
     ATTRIB_STACKSPILL, ATTRIB_STORAGE, ELEM_JOIN,
 };
-use crate::program::seam_stubs::{ParamListStandardLike, ParameterPieces, PrototypePieces};
+use crate::program::model::lang::param_list_standard::ParamListStandard;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::exception::InvalidInputException;
 use crate::util::xml::spec_xml_utils::decode_boolean;
 use crate::util::xml::xml_element::XmlElement;
@@ -27,8 +28,6 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 ///
 /// Port of `ghidra.program.model.lang.protorules.MultiSlotAssign`.
 pub struct MultiSlotAssign {
-    /// The resource list this action allocates from (`AssignAction.resource`).
-    resource: Arc<dyn ParamListStandardLike>,
     /// Resource list from which to consume (`MultiSlotAssign.resourceType`).
     resource_type: StorageClass,
     /// True for big endian architectures (`MultiSlotAssign.isBigEndian`).
@@ -53,9 +52,9 @@ pub struct MultiSlotAssign {
     /// (`MultiSlotAssign.allowBackfill`).
     allow_backfill: bool,
     /// Registers that can be joined (`MultiSlotAssign.tiles`).
-    tiles: Vec<Arc<dyn ParamEntry>>,
+    tiles: Vec<Arc<ParamEntry>>,
     /// The stack resource (`MultiSlotAssign.stackEntry`).
-    stack_entry: Option<Arc<dyn ParamEntry>>,
+    stack_entry: Option<Arc<ParamEntry>>,
 }
 
 impl MultiSlotAssign {
@@ -68,9 +67,9 @@ impl MultiSlotAssign {
     ///
     /// # Errors
     /// Returns an error if the required elements are not available in the resource list.
-    fn initialize_entries(&mut self) -> Result<(), InvalidInputException> {
-        self.tiles = self.resource.extract_tiles(self.resource_type);
-        self.stack_entry = self.resource.extract_stack();
+    fn initialize_entries(&mut self, resource: &ParamListStandard) -> Result<(), InvalidInputException> {
+        self.tiles = resource.extract_tiles(self.resource_type);
+        self.stack_entry = resource.extract_stack();
         if self.tiles.is_empty() {
             return Err(InvalidInputException::with_message(
                 "Could not find matching resources for action: join",
@@ -92,14 +91,13 @@ impl MultiSlotAssign {
     /// Unlike [`new`](Self::new), this does **not** call [`initialize_entries`](Self::initialize_entries);
     /// Java defers that to the end of `restoreXml`, since the resource-list lookups depend on
     /// `resourceType`, which an XML attribute may still override.
-    pub fn for_decode(res: Arc<dyn ParamListStandardLike>) -> Self {
+    pub fn for_decode(res: &ParamListStandard) -> Self {
         let is_big_endian = res.is_big_endian();
         // Port of `consumeFromStack = !(res instanceof ParamListStandardOut)`; see
-        // `ParamListStandardLike::is_standard_out`'s doc for how this stands in for Java's
+        // `ParamListStandard::is_standard_out`'s doc for how this stands in for Java's
         // `instanceof` runtime type test.
         let consume_from_stack = !res.is_standard_out();
         MultiSlotAssign {
-            resource: res,
             resource_type: StorageClass::General,
             is_big_endian,
             consume_from_stack,
@@ -124,11 +122,10 @@ impl MultiSlotAssign {
         align: bool,
         just_right: bool,
         backfill: bool,
-        res: Arc<dyn ParamListStandardLike>,
+        res: &ParamListStandard,
     ) -> Result<Self, InvalidInputException> {
         let is_big_endian = res.is_big_endian();
         let mut action = MultiSlotAssign {
-            resource: res,
             resource_type: store,
             is_big_endian,
             consume_from_stack: stack,
@@ -140,7 +137,7 @@ impl MultiSlotAssign {
             tiles: Vec::new(),
             stack_entry: None,
         };
-        action.initialize_entries()?;
+        action.initialize_entries(res)?;
         Ok(action)
     }
 
@@ -196,7 +193,7 @@ impl MultiSlotAssign {
 impl AssignAction for MultiSlotAssign {
     fn clone_box(
         &self,
-        new_resource: Arc<dyn ParamListStandardLike>,
+        new_resource: &ParamListStandard,
     ) -> Result<Box<dyn AssignAction>, InvalidInputException> {
         Ok(Box::new(MultiSlotAssign::new(
             self.resource_type,
@@ -233,14 +230,14 @@ impl AssignAction for MultiSlotAssign {
             return false;
         }
         for (a, b) in self.tiles.iter().zip(other.tiles.iter()) {
-            if !a.is_equivalent(b.as_ref()) {
+            if !a.is_equivalent(b) {
                 return false;
             }
         }
         match (&self.stack_entry, &other.stack_entry) {
             (None, None) => {}
             (Some(a), Some(b)) => {
-                if !a.is_equivalent(b.as_ref()) {
+                if !a.is_equivalent(b) {
                     return false;
                 }
             }
@@ -251,6 +248,7 @@ impl AssignAction for MultiSlotAssign {
 
     fn assign_address(
         &self,
+        resource: &ParamListStandard,
         dt: &Arc<dyn DataType>,
         _proto: &PrototypePieces,
         _pos: i32,
@@ -331,9 +329,9 @@ impl AssignAction for MultiSlotAssign {
         // Commit resource usage for all the pieces.
         status.copy_from_slice(&tmp_status);
         res.data_type = Some(dt.clone());
-        let Some(language) = self.resource.get_language() else {
-            // A real ParamListStandard always has an associated Language; only a placeholder
-            // resource list (see ParamListStandardLike::get_language's default) lacks one.
+        let Some(language) = resource.get_language() else {
+            // A restored ParamListStandard always has its Language; only one assembled with
+            // `from_parts` and no language lacks it.
             return FAIL;
         };
         res.assign_address_from_pieces(pieces, self.consume_most_sig, one_piece_join, language.as_ref());
@@ -342,13 +340,13 @@ impl AssignAction for MultiSlotAssign {
 
     fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
         encoder.open_element(ELEM_JOIN)?;
-        // Note: re-queries `self.resource.is_big_endian()` rather than using the cached
-        // `self.is_big_endian` field, matching Java's `resource.isBigEndian()` call here (which
-        // likewise ignores its own cached `isBigEndian` field for this specific comparison).
-        if self.resource.is_big_endian() != self.justify_right {
+        // Java re-queries `resource.isBigEndian()` here; the resource list is not held by this
+        // action, so the value cached from the same resource at construction is used (entries are
+        // immutable once restored, so the two agree).
+        if self.is_big_endian != self.justify_right {
             encoder.write_bool(ATTRIB_REVERSEJUSTIFY, true)?;
         }
-        if self.resource.is_big_endian() != self.consume_most_sig {
+        if self.is_big_endian != self.consume_most_sig {
             encoder.write_bool(ATTRIB_REVERSESIGNIF, true)?;
         }
         if self.resource_type != StorageClass::General {
@@ -361,7 +359,11 @@ impl AssignAction for MultiSlotAssign {
         Ok(())
     }
 
-    fn restore_xml<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException>
+    fn restore_xml<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        resource: &ParamListStandard,
+    ) -> Result<(), XmlParseException>
     where
         Self: Sized,
     {
@@ -390,7 +392,7 @@ impl AssignAction for MultiSlotAssign {
         parser
             .end()
             .map_err(|e| XmlParseException::new(e.message().to_string()))?;
-        self.initialize_entries()
+        self.initialize_entries(resource)
             .map_err(|e| XmlParseException::new(e.0))?;
         Ok(())
     }
@@ -424,30 +426,19 @@ mod tests {
 
     /// Two 4-byte general-purpose exclusion tiles (groups 0/1) plus a stack entry (group 2), on
     /// a little-endian language.
-    struct TwoTileResource {
-        entries: Vec<Arc<dyn ParamEntry>>,
-        big_endian: bool,
-        standard_out: bool,
-    }
-    impl ParamListStandardLike for TwoTileResource {
-        fn get_num_param_entry(&self) -> i32 {
-            self.entries.len() as i32
-        }
-        fn get_entry(&self, index: i32) -> Option<Arc<dyn ParamEntry>> {
-            self.entries.get(index as usize).cloned()
-        }
-        fn is_standard_out(&self) -> bool {
-            self.standard_out
-        }
-        fn get_language(&self) -> Option<Arc<dyn Language>> {
-            Some(Arc::new(TestLanguage { big_endian: self.big_endian }))
-        }
+    /// A real resource list over `entries` on a language of the given endianness, optionally
+    /// marked as the base of an output list.
+    fn tile_list(entries: Vec<TestEntry>, big_endian: bool, standard_out: bool) -> ParamListStandard {
+        let num_group = entries.len() as i32;
+        let mut list = TestResource { entries, num_group, spacebase: None }
+            .build_with_language(Some(Arc::new(TestLanguage { big_endian }) as Arc<dyn Language>));
+        list.set_standard_out(standard_out);
+        list
     }
 
-    fn two_tile_resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TwoTileResource {
-            entries: vec![
-                Arc::new(TestEntry {
+    fn two_tile_resource() -> ParamListStandard {
+        tile_list(vec![
+                TestEntry {
                     ty: StorageClass::General,
                     group: 0,
                     addressbase: 0x1000,
@@ -455,8 +446,8 @@ mod tests {
                     size: 4,
                     space: ram_space(),
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     ty: StorageClass::General,
                     group: 1,
                     addressbase: 0x2000,
@@ -464,33 +455,30 @@ mod tests {
                     size: 4,
                     space: ram_space(),
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     space: stack_space(),
                     group: 2,
                     align: 4,
                     numslots: 8,
                     addressbase: 0,
                     ..TestEntry::default()
-                }),
-            ],
-            big_endian: false,
-            standard_out: false,
-        })
+                },
+            ], false, false)
     }
 
-    fn no_tile_resource() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry {
+    fn no_tile_resource() -> ParamListStandard {
+        TestResource {
+            entries: vec![TestEntry {
                 space: stack_space(),
                 group: 0,
                 align: 4,
                 numslots: 8,
                 ..TestEntry::default()
-            })],
+            }],
             num_group: 1,
             spacebase: None,
-        })
+        }.build()
     }
 
     #[test]
@@ -502,7 +490,7 @@ mod tests {
             false,
             false,
             false,
-            no_tile_resource(),
+            &no_tile_resource(),
         )
         .map(|_| ()) // MultiSlotAssign isn't Debug; unwrap_err needs the Ok side to be.
         .unwrap_err();
@@ -511,18 +499,18 @@ mod tests {
 
     #[test]
     fn new_fails_when_stack_requested_but_absent() {
-        let no_stack = Arc::new(TestResource {
-            entries: vec![Arc::new(TestEntry {
+        let no_stack = TestResource {
+            entries: vec![TestEntry {
                 ty: StorageClass::General,
                 group: 0,
                 align: 0,
                 space: ram_space(),
                 ..TestEntry::default()
-            })],
+            }],
             num_group: 1,
             spacebase: None,
-        });
-        let err = MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, no_stack)
+        }.build();
+        let err = MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, &no_stack)
             .map(|_| ())
             .unwrap_err();
         assert!(err.0.contains("<pentry>"));
@@ -534,7 +522,7 @@ mod tests {
         // piece order, keeping this test's address assertions independent of that unrelated
         // detail.
         let action =
-            MultiSlotAssign::new(StorageClass::General, false, true, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, false, true, false, false, false, &two_tile_resource())
                 .unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 8, alignment: 4 });
         let dt_manager = MockDataTypeManager;
@@ -542,7 +530,7 @@ mod tests {
         let mut status = [0i32; 3];
         let mut res = ParameterPieces::default();
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_tile_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status[0], -1);
         assert_eq!(status[1], -1);
@@ -556,7 +544,7 @@ mod tests {
     #[test]
     fn assign_address_spills_onto_the_stack_when_tiles_are_insufficient() {
         let action =
-            MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, &two_tile_resource())
                 .unwrap();
         // 12 bytes: fills both 4-byte tiles (8 bytes), spills the remaining 4 onto the stack.
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 12, alignment: 4 });
@@ -565,7 +553,7 @@ mod tests {
         let mut status = [0i32; 3];
         let mut res = ParameterPieces::default();
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_tile_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
         assert_eq!(status[0], -1);
         assert_eq!(status[1], -1);
@@ -577,7 +565,7 @@ mod tests {
     #[test]
     fn assign_address_fails_when_tiles_are_insufficient_and_stack_spill_is_disabled() {
         let action =
-            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, &two_tile_resource())
                 .unwrap();
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 12, alignment: 4 });
         let dt_manager = MockDataTypeManager;
@@ -585,7 +573,7 @@ mod tests {
         let mut status = [0i32; 3];
         let mut res = ParameterPieces::default();
 
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_tile_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, FAIL);
     }
 
@@ -596,7 +584,7 @@ mod tests {
         // adjacency check would reject this position; the real (buggy) Java implementation
         // returns `true` regardless, since `iter` never advances past tile 0.
         let action =
-            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, &two_tile_resource())
                 .unwrap();
         let tmp_status = [0i32, -1, 0]; // tile 1 (group 1) already consumed
         let fits = action.check_fit(0, /* sizeLeft = tile0.size + tile1.size */ 8, 4, 0, &tmp_status);
@@ -606,7 +594,7 @@ mod tests {
     #[test]
     fn check_fit_still_rejects_when_the_starting_tile_itself_is_consumed() {
         let action =
-            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, &two_tile_resource())
                 .unwrap();
         let tmp_status = [-1i32, 0, 0]; // tile 0 (the one checkFit is asked about) is consumed
         let fits = action.check_fit(0, 4, 4, 0, &tmp_status);
@@ -616,20 +604,20 @@ mod tests {
     #[test]
     fn is_equivalent_compares_configuration_tiles_and_stack_entry() {
         let a =
-            MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, &two_tile_resource())
                 .unwrap();
         let b =
-            MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, true, false, false, false, false, &two_tile_resource())
                 .unwrap();
         assert!(a.is_equivalent(&b));
 
         let diff_align =
-            MultiSlotAssign::new(StorageClass::General, true, false, true, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, true, false, true, false, false, &two_tile_resource())
                 .unwrap();
         assert!(!a.is_equivalent(&diff_align));
 
         let diff_backfill =
-            MultiSlotAssign::new(StorageClass::General, true, false, false, false, true, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, true, false, false, false, true, &two_tile_resource())
                 .unwrap();
         assert!(!a.is_equivalent(&diff_backfill));
     }
@@ -637,47 +625,39 @@ mod tests {
     #[test]
     fn clone_box_carries_configuration_and_new_resource() {
         let action =
-            MultiSlotAssign::new(StorageClass::General, true, true, false, true, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, true, true, false, true, false, &two_tile_resource())
                 .unwrap();
-        let cloned = action.clone_box(two_tile_resource()).expect("clone should succeed");
+        let cloned = action.clone_box(&two_tile_resource()).expect("clone should succeed");
         assert!(action.is_equivalent(cloned.as_ref()));
     }
 
     #[test]
     fn for_decode_defaults_consume_from_stack_from_standard_out_marker() {
-        let out_resource = Arc::new(TwoTileResource {
-            entries: vec![Arc::new(TestEntry {
+        let out_resource = tile_list(vec![TestEntry {
                 ty: StorageClass::General,
                 group: 0,
                 align: 0,
                 space: ram_space(),
                 ..TestEntry::default()
-            })],
-            big_endian: false,
-            standard_out: true,
-        });
-        let action = MultiSlotAssign::for_decode(out_resource);
+            }], false, true);
+        let action = MultiSlotAssign::for_decode(&out_resource);
         assert!(!action.consume_from_stack);
 
-        let action2 = MultiSlotAssign::for_decode(two_tile_resource());
+        let action2 = MultiSlotAssign::for_decode(&two_tile_resource());
         assert!(action2.consume_from_stack);
     }
 
     #[test]
     fn for_decode_derives_big_endian_defaults() {
-        let big_endian_resource = Arc::new(TwoTileResource {
-            entries: vec![Arc::new(TestEntry {
+        let big_endian_resource = tile_list(vec![TestEntry {
                 ty: StorageClass::General,
                 group: 0,
                 align: 0,
                 space: ram_space(),
                 big_endian: true,
                 ..TestEntry::default()
-            })],
-            big_endian: true,
-            standard_out: false,
-        });
-        let action = MultiSlotAssign::for_decode(big_endian_resource);
+            }], true, false);
+        let action = MultiSlotAssign::for_decode(&big_endian_resource);
         assert!(action.consume_most_sig);
         assert!(action.justify_right);
     }
@@ -729,7 +709,7 @@ mod tests {
     #[test]
     fn encode_writes_join_element_with_expected_attributes() {
         let action =
-            MultiSlotAssign::new(StorageClass::Float, true, false, true, false, false, resource_with_float_tile())
+            MultiSlotAssign::new(StorageClass::Float, true, false, true, false, false, &resource_with_float_tile())
                 .unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new(), bools: Vec::new(), strings: Vec::new() };
         action.encode(&mut enc).unwrap();
@@ -742,7 +722,7 @@ mod tests {
 
     #[test]
     fn encode_omits_storage_attribute_for_general() {
-        let action = MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, two_tile_resource())
+        let action = MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, &two_tile_resource())
             .unwrap();
         let mut enc = RecordingEncoder { elements: Vec::new(), bools: Vec::new(), strings: Vec::new() };
         action.encode(&mut enc).unwrap();
@@ -766,11 +746,11 @@ mod tests {
             MockElement::end("join", 0),
         ]);
         let mut action =
-            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, &two_tile_resource())
                 .unwrap();
         assert!(!action.justify_right);
         assert!(!action.consume_most_sig);
-        action.restore_xml(&mut parser).unwrap();
+        action.restore_xml(&mut parser, &two_tile_resource()).unwrap();
         assert!(action.justify_right); // toggled
         assert!(action.consume_most_sig); // toggled
         assert!(action.enforce_alignment);
@@ -779,36 +759,32 @@ mod tests {
         assert_eq!(action.tiles.len(), 2);
     }
 
-    fn resource_with_float_tile() -> Arc<dyn ParamListStandardLike> {
-        Arc::new(TwoTileResource {
-            entries: vec![
-                Arc::new(TestEntry {
+    fn resource_with_float_tile() -> ParamListStandard {
+        tile_list(vec![
+                TestEntry {
                     ty: StorageClass::General,
                     group: 0,
                     align: 0,
                     size: 4,
                     space: ram_space(),
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     ty: StorageClass::Float,
                     group: 1,
                     align: 0,
                     size: 8,
                     space: ram_space(),
                     ..TestEntry::default()
-                }),
-                Arc::new(TestEntry {
+                },
+                TestEntry {
                     space: stack_space(),
                     group: 2,
                     align: 4,
                     numslots: 8,
                     ..TestEntry::default()
-                }),
-            ],
-            big_endian: false,
-            standard_out: false,
-        })
+                },
+            ], false, false)
     }
 
     #[test]
@@ -819,8 +795,9 @@ mod tests {
         ]);
         // for_decode intentionally skips populating tiles (Java only calls initializeEntries() at
         // the very end of restoreXml, after resourceType is finalized from the XML attributes).
-        let mut action = MultiSlotAssign::for_decode(resource_with_float_tile());
-        action.restore_xml(&mut parser).unwrap();
+        let resource = resource_with_float_tile();
+        let mut action = MultiSlotAssign::for_decode(&resource);
+        action.restore_xml(&mut parser, &resource).unwrap();
         assert_eq!(action.resource_type, StorageClass::Float);
         assert_eq!(action.tiles.len(), 1);
         assert_eq!(action.tiles[0].get_type(), StorageClass::Float);
@@ -829,7 +806,7 @@ mod tests {
     #[test]
     fn usable_as_trait_object() {
         let action: Box<dyn AssignAction> = Box::new(
-            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, two_tile_resource())
+            MultiSlotAssign::new(StorageClass::General, false, false, false, false, false, &two_tile_resource())
                 .unwrap(),
         );
         let dt: Arc<dyn DataType> = Arc::new(MockDataType { length: 4, alignment: 4 });
@@ -837,7 +814,7 @@ mod tests {
         let proto = PrototypePieces::default();
         let mut status = [0i32; 3];
         let mut res = ParameterPieces::default();
-        let code = action.assign_address(&dt, &proto, 0, &dt_manager, &mut status, &mut res);
+        let code = action.assign_address(&two_tile_resource(), &dt, &proto, 0, &dt_manager, &mut status, &mut res);
         assert_eq!(code, SUCCESS);
     }
 }
