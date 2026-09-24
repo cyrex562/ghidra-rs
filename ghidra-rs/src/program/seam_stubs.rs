@@ -20,7 +20,6 @@ use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::model::lang::param_entry::ParamEntry;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::program::model::listing::{Function, FunctionTag, Program};
@@ -2640,6 +2639,14 @@ impl SpecExtension {
     /// show up in the program's options tree. Registering program options is not ported yet, so
     /// this is a no-op -- equivalent to a program whose extension options are already registered.
     pub fn register_options(_program: &dyn crate::program::model::listing::Program) {}
+
+    /// Port of the static `SpecExtension.isValidFormalName(String)`: a formal name (of a
+    /// prototype model or injection) is non-empty and uses only letters, digits, `_`, `.` and
+    /// `-`. Needed by `PrototypeModel.restoreXml`.
+    pub fn is_valid_formal_name(formal_name: &str) -> bool {
+        !formal_name.is_empty()
+            && formal_name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.' || c == '-')
+    }
 }
 
 /// Placeholder for `ghidra.program.model.data.Type`, referenced by

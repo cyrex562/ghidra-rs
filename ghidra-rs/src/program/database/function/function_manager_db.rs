@@ -227,11 +227,11 @@ mod tests {
             Vec::new()
         }
 
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
 
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
 

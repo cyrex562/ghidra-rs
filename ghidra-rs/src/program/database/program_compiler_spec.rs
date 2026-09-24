@@ -153,19 +153,19 @@ mod tests {
 
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
 
-        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
 
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
 
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
 
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
 
@@ -176,7 +176,7 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: crate::program::model::lang::compiler_spec::EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
+        ) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -192,11 +192,11 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Box<dyn PrototypeModel> {
+        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
 

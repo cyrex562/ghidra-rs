@@ -33,11 +33,11 @@ pub trait FunctionManager: ManagerDB {
     fn get_calling_convention_names(&self) -> Vec<String>;
 
     /// Gets the default calling convention's prototype model in this program.
-    fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>>;
+    fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>>;
 
     /// Gets the prototype model of the calling convention with the specified name in this
     /// program.
-    fn get_calling_convention(&self, name: &str) -> Option<Box<dyn PrototypeModel>>;
+    fn get_calling_convention(&self, name: &str) -> Option<Arc<PrototypeModel>>;
 
     /// Create a function with the given body at entry point within the global namespace.
     ///
@@ -239,11 +239,11 @@ mod tests {
             Vec::new()
         }
 
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
 
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
 

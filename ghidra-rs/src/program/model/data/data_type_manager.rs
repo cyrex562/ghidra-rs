@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::collections::HashSet;
 
 use thiserror::Error;
@@ -620,12 +621,12 @@ pub trait DataTypeManager {
 
     /// Get the default calling convention's prototype model in this data type manager, if
     /// known.
-    fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+    fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
         None
     }
 
     /// Get the prototype model of the calling convention with the specified name.
-    fn get_calling_convention(&self, name: &str) -> Option<Box<dyn PrototypeModel>> {
+    fn get_calling_convention(&self, name: &str) -> Option<Arc<PrototypeModel>> {
         let _ = name;
         None
     }

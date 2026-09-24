@@ -30,7 +30,7 @@ use crate::program::model::lang::prototype_model::PrototypeModel;
 #[derive(Clone)]
 pub struct PrototypePieces {
     /// (Optional) model on which the prototype is based (`PrototypePieces.model`).
-    pub model: Option<Arc<dyn PrototypeModel>>,
+    pub model: Option<Arc<PrototypeModel>>,
     /// Return data-type of the prototype (`PrototypePieces.outtype`).
     pub outtype: Option<Arc<dyn DataType>>,
     /// Input data-types of the prototype, in parameter order (`PrototypePieces.intypes`).
@@ -53,7 +53,7 @@ impl PrototypePieces {
     /// empty `old_list`, matching the `Option`-based field already established here rather than
     /// panicking.
     pub fn from_old_list(
-        model: Option<Arc<dyn PrototypeModel>>,
+        model: Option<Arc<PrototypeModel>>,
         old_list: &[Arc<dyn DataType>],
         injected_this: Option<Arc<dyn DataType>>,
     ) -> Self {
@@ -77,7 +77,7 @@ impl PrototypePieces {
     ///
     /// Port of `PrototypePieces(PrototypeModel model, DataType outType)`.
     pub fn with_out_type(
-        model: Option<Arc<dyn PrototypeModel>>,
+        model: Option<Arc<PrototypeModel>>,
         out_type: Option<Arc<dyn DataType>>,
     ) -> Self {
         PrototypePieces {

@@ -163,8 +163,6 @@ pub use program_architecture::ProgramArchitecture;
 pub use program_processor_context::ProgramProcessorContext;
 pub use protorules::{AssignAction, DatatypeFilter, QualifierFilter};
 pub use prototype_model::{PrototypeModel, UNKNOWN_EXTRAPOP};
-pub use prototype_model_error::PrototypeModelError;
-pub use prototype_model_merged::PrototypeModelMerged;
 pub use prototype_pieces::PrototypePieces;
 pub use read_only_processor_context::ReadOnlyProcessorContext;
 pub use register::{Register, RegisterRef, WeakRegisterRef};

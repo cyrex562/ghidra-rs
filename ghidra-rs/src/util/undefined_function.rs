@@ -184,7 +184,7 @@ pub trait UndefinedFunction: Function {
 
     /// Default body for [`Function::get_calling_convention`]. Port of
     /// `UndefinedFunction.getCallingConvention`.
-    fn undefined_function_get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+    fn undefined_function_get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
         self.get_program()
             .get_compiler_spec()
             .and_then(|cs| cs.get_default_calling_convention())
@@ -600,7 +600,7 @@ mod tests {
         fn has_no_return(&self) -> bool {
             false
         }
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn get_calling_convention_name(&self) -> String {
@@ -905,7 +905,7 @@ mod tests {
         fn set_custom_variable_storage(&mut self, has_custom_variable_storage: bool) {
             self.undefined_function_set_custom_variable_storage(has_custom_variable_storage)
         }
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             self.undefined_function_get_calling_convention()
         }
         fn get_calling_convention_name(&self) -> String {

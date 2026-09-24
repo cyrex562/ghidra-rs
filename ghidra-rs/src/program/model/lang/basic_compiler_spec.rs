@@ -40,6 +40,8 @@
 //! [`RegisterValue`](crate::program::seam_stubs::RegisterValue) (which has the same "arbitrary bit
 //! pattern for a register-sized value" shape) already stubs `BigInteger` in this crate.
 
+use std::sync::Arc;
+
 use crate::program::model::address::Address;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::inject_payload_sleigh::InjectPayloadSleigh;
@@ -84,7 +86,7 @@ pub trait BasicCompilerSpec: CompilerSpec {
     /// merged models).
     fn model_xrefs(
         &mut self,
-        model_list: Vec<Box<dyn PrototypeModel>>,
+        model_list: Vec<Arc<PrototypeModel>>,
         default_name: &str,
         eval_current: Option<&str>,
         eval_called: Option<&str>,
@@ -94,7 +96,7 @@ pub trait BasicCompilerSpec: CompilerSpec {
     /// from this spec's inject library.
     ///
     /// Stands in for the protected `removeProgramMechanismPayloads(Collection<PrototypeModel>)`.
-    fn remove_program_mechanism_payloads(&mut self, model_list: &[Box<dyn PrototypeModel>]);
+    fn remove_program_mechanism_payloads(&mut self, model_list: &[Arc<PrototypeModel>]);
 
     /// Register additional, Program-specific p-code inject payloads with this spec's inject
     /// library.
@@ -139,26 +141,14 @@ mod tests {
         Register::new(name, "", mock_address(0), 4, false, 0)
     }
 
-    /// A minimal named [`PrototypeModel`] mock: only `get_name` and `is_merged`/`has_injection`
-    /// are overridden since those are all [`MockBasicCompilerSpec`]'s methods below inspect.
-    struct NamedModel {
-        name: &'static str,
-        merged: bool,
-        has_injection: bool,
-    }
-
-    impl PrototypeModel for NamedModel {
-        fn get_name(&self) -> Option<String> {
-            Some(self.name.to_string())
+    /// A real, named [`PrototypeModel`], optionally flagged as carrying an "uponentry"
+    /// injection.
+    fn named_model(name: &str, has_injection: bool) -> PrototypeModel {
+        let mut model = crate::program::model::lang::cspec_test_support::named_model(name);
+        if has_injection {
+            model.set_injection_flags_for_test(true, false);
         }
-
-        fn is_merged(&self) -> bool {
-            self.merged
-        }
-
-        fn has_injection(&self) -> bool {
-            self.has_injection
-        }
+        model
     }
 
     /// An [`InjectPayloadSleigh`] mock whose members are never exercised by
@@ -303,16 +293,16 @@ mod tests {
             true
         }
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
-        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn get_decompiler_output_language(
@@ -323,7 +313,7 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
+        ) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
         fn is_global(&self, _addr: &Address) -> bool {
@@ -335,10 +325,10 @@ mod tests {
         fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Box<dyn PrototypeModel> {
+        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
         fn has_property(&self, _key: &str) -> bool {
@@ -383,7 +373,7 @@ mod tests {
 
         fn model_xrefs(
             &mut self,
-            model_list: Vec<Box<dyn PrototypeModel>>,
+            model_list: Vec<Arc<PrototypeModel>>,
             default_name: &str,
             eval_current: Option<&str>,
             eval_called: Option<&str>,
@@ -415,7 +405,7 @@ mod tests {
             Ok(found_duplicate)
         }
 
-        fn remove_program_mechanism_payloads(&mut self, model_list: &[Box<dyn PrototypeModel>]) {
+        fn remove_program_mechanism_payloads(&mut self, model_list: &[Arc<PrototypeModel>]) {
             for model in model_list {
                 if model.has_injection() {
                     if let Some(name) = model.get_name() {
@@ -448,10 +438,10 @@ mod tests {
     #[test]
     fn model_xrefs_detects_duplicate_names_and_finds_default() {
         let mut spec = MockBasicCompilerSpec::default();
-        let models: Vec<Box<dyn PrototypeModel>> = vec![
-            Box::new(NamedModel { name: "__cdecl", merged: false, has_injection: false }),
-            Box::new(NamedModel { name: "__stdcall", merged: false, has_injection: false }),
-            Box::new(NamedModel { name: "__stdcall", merged: false, has_injection: false }),
+        let models: Vec<Arc<PrototypeModel>> = vec![
+            Arc::new(named_model("__cdecl", false)),
+            Arc::new(named_model("__stdcall", false)),
+            Arc::new(named_model("__stdcall", false)),
         ];
 
         let result = spec.model_xrefs(models, "__cdecl", None, Some("__stdcall")).unwrap();
@@ -464,8 +454,8 @@ mod tests {
     #[test]
     fn model_xrefs_errors_when_default_model_missing() {
         let mut spec = MockBasicCompilerSpec::default();
-        let models: Vec<Box<dyn PrototypeModel>> =
-            vec![Box::new(NamedModel { name: "__cdecl", merged: false, has_injection: false })];
+        let models: Vec<Arc<PrototypeModel>> =
+            vec![Arc::new(named_model("__cdecl", false))];
 
         let err = spec.model_xrefs(models, "__stdcall", None, None).unwrap_err();
         assert!(err.to_string().contains("__stdcall"));
@@ -474,9 +464,9 @@ mod tests {
     #[test]
     fn remove_program_mechanism_payloads_only_removes_injected_models() {
         let mut spec = MockBasicCompilerSpec::default();
-        let models: Vec<Box<dyn PrototypeModel>> = vec![
-            Box::new(NamedModel { name: "plain", merged: false, has_injection: false }),
-            Box::new(NamedModel { name: "withfixup", merged: false, has_injection: true }),
+        let models: Vec<Arc<PrototypeModel>> = vec![
+            Arc::new(named_model("plain", false)),
+            Arc::new(named_model("withfixup", true)),
         ];
 
         spec.remove_program_mechanism_payloads(&models);

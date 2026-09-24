@@ -2146,7 +2146,7 @@ mod tests {
         fn has_no_return(&self) -> bool {
             false
         }
-        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
         fn get_calling_convention_name(&self) -> String {

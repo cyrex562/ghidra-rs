@@ -528,7 +528,7 @@ pub trait VariableUtilities {
     fn get_this_parameter(
         &self,
         function: &dyn Function,
-        convention: Option<&dyn crate::program::model::lang::PrototypeModel>,
+        convention: Option<&crate::program::model::lang::PrototypeModel>,
     ) -> Option<Box<dyn Parameter>> {
         let convention = convention?;
         if convention.get_name().as_deref()

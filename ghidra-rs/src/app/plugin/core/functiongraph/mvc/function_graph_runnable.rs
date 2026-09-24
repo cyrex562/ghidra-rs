@@ -503,7 +503,7 @@ impl Function for SyntheticUndefinedFunction {
         self.undefined_function_set_custom_variable_storage(has_custom_variable_storage)
     }
 
-    fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+    fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
         self.undefined_function_get_calling_convention()
     }
 
@@ -624,7 +624,7 @@ impl FunctionSignature for PlaceholderFunctionSignature {
         false
     }
 
-    fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+    fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
         None
     }
 
@@ -747,10 +747,10 @@ mod tests {
         fn get_calling_convention_names(&self) -> Vec<String> {
             Vec::new()
         }
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn create_function(

@@ -394,7 +394,7 @@ pub trait Function: Namespace {
     fn set_custom_variable_storage(&mut self, has_custom_variable_storage: bool);
 
     /// Gets the calling convention prototype model for this function, or `None`.
-    fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>>;
+    fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>>;
 
     /// Determine if this signature has an unknown or unrecognized calling convention name.
     fn has_unknown_calling_convention_name(&self) -> bool {
@@ -607,7 +607,7 @@ mod tests {
                     false
                 }
 
-                fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+                fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
                     None
                 }
 
@@ -845,7 +845,7 @@ mod tests {
 
         fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
 
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
 

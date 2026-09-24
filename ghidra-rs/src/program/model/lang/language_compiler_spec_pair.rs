@@ -210,6 +210,7 @@ impl Ord for LanguageCompilerSpecPair {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::program::model::address::{Address, AddressFactory, AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_organization::DataOrganization;
@@ -296,8 +297,6 @@ mod tests {
     struct MockProcessor;
     impl Processor for MockProcessor {}
 
-    struct MockPrototypeModel;
-    impl PrototypeModel for MockPrototypeModel {}
 
     struct MockPcodeInjectLibrary;
     impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
@@ -576,17 +575,17 @@ mod tests {
             true
         }
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
-        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
-            Some(Box::new(MockPrototypeModel))
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
+            Some(Arc::new(PrototypeModel::new()))
         }
         fn get_decompiler_output_language(&self) -> DecompilerLanguage {
             DecompilerLanguage::CLanguage
@@ -594,8 +593,8 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: crate::program::model::lang::compiler_spec::EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        ) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
         fn is_global(&self, _addr: &Address) -> bool {
             true
@@ -606,11 +605,11 @@ mod tests {
         fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
             Box::new(MockPcodeInjectLibrary)
         }
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
-        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
         fn has_property(&self, _key: &str) -> bool {
             false

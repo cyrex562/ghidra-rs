@@ -431,8 +431,6 @@ mod tests {
     struct MockPcodeInjectLibrary;
     impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
 
-    struct MockPrototypeModel;
-    impl PrototypeModel for MockPrototypeModel {}
 
     struct MockCompilerSpec;
 
@@ -475,19 +473,19 @@ mod tests {
 
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
 
-        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
 
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
 
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
 
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
 
@@ -498,8 +496,8 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        ) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
 
         fn is_global(&self, _addr: &Address) -> bool {
@@ -514,15 +512,15 @@ mod tests {
             Box::new(MockPcodeInjectLibrary)
         }
 
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
 
         fn find_best_calling_convention(
             &self,
             _params: &[&dyn Parameter],
-        ) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        ) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
 
         fn has_property(&self, _key: &str) -> bool {

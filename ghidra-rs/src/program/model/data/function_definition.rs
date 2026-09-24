@@ -79,6 +79,7 @@ pub trait FunctionDefinition: DataType + FunctionSignature {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
 
     struct MockFunctionDefinition;
@@ -119,7 +120,7 @@ mod tests {
 
         fn get_calling_convention(
             &self,
-        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        ) -> Option<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
 

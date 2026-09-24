@@ -417,7 +417,7 @@ mod tests {
         fn has_no_return(&self) -> bool {
             unimplemented!()
         }
-        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             unimplemented!()
         }
         fn get_calling_convention_name(&self) -> String {

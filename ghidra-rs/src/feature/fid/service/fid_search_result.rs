@@ -283,7 +283,7 @@ mod tests {
             false
         }
         fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn get_calling_convention_name(&self) -> String {

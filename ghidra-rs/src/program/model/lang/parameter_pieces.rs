@@ -28,7 +28,7 @@ use crate::program::model::lang::language::Language;
 use crate::program::model::listing::program::Program;
 use crate::program::model::listing::variable_storage::{UnassignedStorage, VariableStorage, VoidStorage};
 use crate::program::model::pcode::Varnode;
-use crate::program::seam_stubs::is_void_data_type;
+use crate::program::seam_stubs::{is_void_data_type, VarnodeListStorage};
 
 /// Stands in for `DataType.DEFAULT`, assigned by [`ParameterPieces::get_variable_storage`] when
 /// [`ParameterPieces::data_type`] is `None`, mirroring the identical `DefaultDataTypeStandIn`
@@ -100,17 +100,13 @@ impl ParameterPieces {
     /// (the "this" pointer, join-pieces, hidden-return-ptr, and the general assigned-address
     /// case). This crate's
     /// [`DynamicVariableStorage`](crate::program::model::lang::dynamic_variable_storage::DynamicVariableStorage)
-    /// is intentionally a trait only -- see that module's doc comment for why its constructors
-    /// have "no Rust trait equivalent" (no concrete backing struct with
-    /// `ProgramArchitecture`-validated varnode construction exists anywhere in this crate yet,
-    /// only test-only mocks). Until a concrete implementer lands, those branches fall back to
-    /// [`UnassignedStorage`], which mirrors Java's own `catch (InvalidInputException)` fallback
-    /// (which also resolves to "unassigned dynamic storage") -- but note this is an
-    /// approximation of the success path too here, not just the error path, since this port has
-    /// no way to actually construct assigned dynamic storage yet.
-    ///
-    /// TODO(port): replace the `UnassignedStorage` fallback below with real
-    /// `DynamicVariableStorage` construction once a concrete implementer exists in this crate.
+    /// is a trait only (no concrete, `ProgramArchitecture`-validated backing exists yet). The
+    /// cases whose storage carries no dynamic flag -- plain assigned storage that is not forced
+    /// indirect, and join pieces -- return a [`VarnodeListStorage`] of the assigned varnodes (the
+    /// crate's in-memory storage for a bare varnode list). The auto-parameter ("this", hidden
+    /// return pointer) and forced-indirect cases, whose flags a plain varnode list cannot carry,
+    /// still fall back to [`UnassignedStorage`], as does Java's own `catch
+    /// (InvalidInputException)` path.
     pub fn get_variable_storage(&mut self, _program: &dyn Program) -> Box<dyn VariableStorage> {
         if self.data_type.is_none() {
             self.data_type = Some(Arc::new(DefaultDataTypeStandIn));
@@ -127,10 +123,21 @@ impl ParameterPieces {
         if sz == 0 {
             return Box::new(UnassignedStorage);
         }
-        // See the "Known gap" doc above: every remaining Java branch (this-pointer,
-        // join-pieces, hidden-return-ptr, plain assigned-address) constructs a concrete
-        // `DynamicVariableStorage`, which this crate cannot do yet.
-        Box::new(UnassignedStorage)
+        // See the "Known gap" doc above for which Java `DynamicVariableStorage` branches are
+        // represented.
+        if self.is_this_pointer {
+            return Box::new(UnassignedStorage);
+        }
+        if let Some(join_pieces) = &self.join_pieces {
+            return Box::new(VarnodeListStorage(join_pieces.clone()));
+        }
+        if self.hidden_return_ptr || self.is_indirect {
+            return Box::new(UnassignedStorage);
+        }
+        match &self.address {
+            Some(address) => Box::new(VarnodeListStorage(vec![Varnode::new(address.clone(), sz)])),
+            None => Box::new(UnassignedStorage),
+        }
     }
 
     /// Assuming the given list of Varnodes go from most significant to least significant, merge
@@ -494,6 +501,43 @@ mod tests {
         };
         let storage = pieces.get_variable_storage(&MockProgram);
         assert!(storage.is_void_storage());
+    }
+
+    #[test]
+    fn get_variable_storage_assigned_address_and_join_pieces_report_their_varnodes() {
+        let addr = Address::new(ram_space(), 0x1000);
+        let mut pieces = ParameterPieces {
+            data_type: Some(Arc::new(MockDataType { length: 4, void: false })),
+            address: Some(addr.clone()),
+            ..Default::default()
+        };
+        let storage = pieces.get_variable_storage(&MockProgram);
+        assert_eq!(storage.get_varnodes(), vec![Varnode::new(addr.clone(), 4)]);
+
+        let join = vec![Varnode::new(Address::new(ram_space(), 0x2000), 4), Varnode::new(addr.clone(), 4)];
+        let mut pieces = ParameterPieces {
+            data_type: Some(Arc::new(MockDataType { length: 8, void: false })),
+            address: Some(addr.clone()),
+            join_pieces: Some(join.clone()),
+            ..Default::default()
+        };
+        assert_eq!(pieces.get_variable_storage(&MockProgram).get_varnodes(), join);
+
+        // Auto-parameter and forced-indirect storage need DynamicVariableStorage's flags.
+        let mut this_ptr = ParameterPieces {
+            data_type: Some(Arc::new(MockDataType { length: 4, void: false })),
+            address: Some(addr.clone()),
+            is_this_pointer: true,
+            ..Default::default()
+        };
+        assert!(this_ptr.get_variable_storage(&MockProgram).is_unassigned_storage());
+        let mut indirect = ParameterPieces {
+            data_type: Some(Arc::new(MockDataType { length: 4, void: false })),
+            address: Some(addr),
+            is_indirect: true,
+            ..Default::default()
+        };
+        assert!(indirect.get_variable_storage(&MockProgram).is_unassigned_storage());
     }
 
     #[test]

@@ -4,32 +4,25 @@
 //! that share the same output model but haven't yet been distinguished; [`Self::select_model`]
 //! scores each candidate against a function's actual parameter storage and picks the best match.
 //!
-//! In Java this `extends PrototypeModel`. Following the "`extends X`" convention established by
-//! [`PrototypeModelError`](super::prototype_model_error::PrototypeModelError) (composition, not
-//! inheritance, since [`PrototypeModel`] is a trait here), `PrototypeModelMerged` is its own
-//! struct implementing the [`PrototypeModel`] trait, holding its own `name` and `modellist`
-//! fields directly (matching `PrototypeModel`'s own `protected String name` and this class's
-//! `private PrototypeModel[] modellist` fields) rather than delegating to a wrapped model --
-//! unlike `PrototypeModelError`, there is no single "original" model to delegate to here.
+//! In Java this `extends PrototypeModel`, and a merged model is handed out wherever a
+//! `PrototypeModel` is (e.g. `CompilerSpec.getAllModels()`), so it is a [`PrototypeModel`] value
+//! whose kind is `Merged` (see that module's docs); this module holds its constructor, its
+//! methods and the scoring helper.
 //!
 //! # Deliberate deviation: default-constructed `modellist`
 //! Java's no-arg constructor leaves `modellist = null`; calling `numModels()`/`getModel(int)`/
 //! `selectModel(...)` before `restoreXml` throws `NullPointerException`. This port instead
-//! defaults `modellist` to an empty `Vec`, matching the "unconfigured model" convention already
-//! established for [`PrototypeModel`]'s own trait defaults (see that module's docs: "empty
-//! lists", not a panic, for every collection-valued accessor on a freshly-constructed model).
-//! `num_models()` returns `0` and `select_model` returns the same "no model matches" error it
-//! would for a `modellist` of length zero, rather than panicking.
+//! starts with an empty list: `num_models()` returns `0` and `select_model` returns the same "no
+//! model matches" error it would for a `modellist` of length zero.
 
 use std::sync::Arc;
 
 use crate::program::model::address::Address;
 use crate::program::model::lang::param_list::WithSlotRec;
-use crate::program::model::lang::prototype_model::PrototypeModel;
+use crate::program::model::lang::prototype_model::{ModelKind, PrototypeModel};
 use crate::program::model::listing::parameter::Parameter;
 use crate::program::model::pcode::ids::{ATTRIB_NAME, ELEM_MODEL, ELEM_RESOLVEPROTOTYPE};
 use crate::program::model::pcode::Encoder;
-use crate::program::seam_stubs::PcodeInjectLibrary;
 use crate::app::plugin::processors::sleigh::sleigh_exception::SleighException;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_exception::XmlException;
@@ -67,13 +60,13 @@ struct ScoreProtoModel<'a> {
     /// faithfully since the Java class supports both.
     isinputscore: bool,
     entry: Vec<PEntry>,
-    model: &'a dyn PrototypeModel,
+    model: &'a PrototypeModel,
     finalscore: i32,
     mismatch: i32,
 }
 
 impl<'a> ScoreProtoModel<'a> {
-    fn new(isinput: bool, model: &'a dyn PrototypeModel, numparam: usize) -> Self {
+    fn new(isinput: bool, model: &'a PrototypeModel, numparam: usize) -> Self {
         Self {
             isinputscore: isinput,
             entry: Vec::with_capacity(numparam),
@@ -141,121 +134,106 @@ impl<'a> ScoreProtoModel<'a> {
     }
 }
 
-/// A `PrototypeModel` that merges several candidate calling-convention models, used during
-/// analysis to distinguish which one actually applies to an unknown function.
-///
-/// Port of `ghidra.program.model.lang.PrototypeModelMerged`. See the module docs for how this
-/// port maps Java's `extends PrototypeModel` (with its own `name`/`modellist` fields) onto this
-/// trait-based crate.
-pub struct PrototypeModelMerged {
-    name: Option<String>,
-    modellist: Vec<Arc<dyn PrototypeModel>>,
-}
-
-impl PrototypeModelMerged {
-    /// Constructs an empty, unconfigured merged model. Call [`Self::restore_xml`] to populate it.
+impl PrototypeModel {
+    /// An empty, unconfigured merged model. Call [`restore_merged_xml`](Self::restore_merged_xml)
+    /// to populate it.
     ///
     /// Port of `PrototypeModelMerged()`.
-    pub fn new() -> Self {
-        Self { name: None, modellist: Vec::new() }
+    pub fn new_merged() -> Self {
+        let mut model = PrototypeModel::new();
+        model.kind = ModelKind::Merged(Vec::new());
+        model
+    }
+
+    /// The candidate models of a merged model (empty for any other model).
+    fn merged_models(&self) -> &[Arc<PrototypeModel>] {
+        match &self.kind {
+            ModelKind::Merged(list) => list,
+            _ => &[],
+        }
     }
 
     /// The number of candidate models being distinguished between.
     ///
     /// Port of `PrototypeModelMerged.numModels()`.
     pub fn num_models(&self) -> usize {
-        self.modellist.len()
+        self.merged_models().len()
     }
 
-    /// Returns the candidate model at index `i`.
+    /// The candidate model at index `i`.
     ///
     /// Port of `PrototypeModelMerged.getModel(int)`.
     ///
     /// # Panics
-    /// Panics if `i >= self.num_models()`, matching Java's `ArrayIndexOutOfBoundsException` for
-    /// an out-of-range index.
-    pub fn get_model(&self, i: usize) -> Arc<dyn PrototypeModel> {
-        self.modellist[i].clone()
+    /// Panics if `i >= self.num_models()`, matching Java's `ArrayIndexOutOfBoundsException`.
+    pub fn get_model(&self, i: usize) -> Arc<PrototypeModel> {
+        self.merged_models()[i].clone()
     }
 
-    /// Restores this merged model's configuration (`name` and the list of candidate models, each
-    /// looked up by name in `model_list`) from a `<resolveprototype>` XML element.
-    ///
-    /// # Errors
-    /// Returns [`XmlParseException`] for malformed XML, or if a `<model name="...">` child names
-    /// a model that isn't present in `model_list`.
+    /// Restore a merged model (its `name` and candidate models, each looked up by name in
+    /// `model_list`) from a `<resolveprototype>` element.
     ///
     /// Port of `PrototypeModelMerged.restoreXml(XmlPullParser, List<PrototypeModel>)`.
-    pub fn restore_xml<P: XmlPullParser>(
+    ///
+    /// # Errors
+    /// Returns an error for malformed XML, or if a `<model name="...">` child names a model not
+    /// present in `model_list`.
+    pub(crate) fn restore_merged_xml<P: XmlPullParser>(
         &mut self,
         parser: &mut P,
-        model_list: &[Arc<dyn PrototypeModel>],
+        model_list: &[Arc<PrototypeModel>],
     ) -> Result<(), XmlParseException> {
-        let mut mylist: Vec<Arc<dyn PrototypeModel>> = Vec::new();
+        let mut mylist: Vec<Arc<PrototypeModel>> = Vec::new();
         let el = parser.start(&[]).map_err(xml_err)?;
         self.name = el.get_attribute("name");
         while parser.peek().is_start() {
             let subel = parser.start(&[]).map_err(xml_err)?;
             let model_name = subel.get_attribute("name");
-            let found = model_name.as_deref().and_then(|mn| {
-                model_list
-                    .iter()
-                    .find(|m| m.get_name().as_deref() == Some(mn))
-                    .cloned()
-            });
-            let found = match found {
-                Some(m) => m,
-                None => {
-                    return Err(XmlParseException::new(format!(
-                        "Missing prototype model: {}",
-                        model_name.unwrap_or_default()
-                    )));
-                }
+            let found = model_name
+                .as_deref()
+                .and_then(|mn| model_list.iter().find(|m| m.name.as_deref() == Some(mn)).cloned());
+            let Some(found) = found else {
+                return Err(XmlParseException::new(format!(
+                    "Missing prototype model: {}",
+                    model_name.unwrap_or_default()
+                )));
             };
             mylist.push(found);
             parser.end_matching(&subel).map_err(xml_err)?;
         }
         parser.end_matching(&el).map_err(xml_err)?;
-        self.modellist = mylist;
+        self.kind = ModelKind::Merged(mylist);
         Ok(())
     }
 
-    /// Picks the candidate model that best fits the observed parameter storage in `params`,
-    /// scoring each candidate via [`ScoreProtoModel`] and choosing the lowest-scoring (i.e. best
-    /// matching) one. A score of `0` is a perfect match and short-circuits the search.
+    /// Pick the candidate model that best fits the observed parameter storage in `params`: each
+    /// candidate is scored via [`ScoreProtoModel`] and the lowest score wins; `0` is a perfect
+    /// match and ends the search.
+    ///
+    /// Port of `PrototypeModelMerged.selectModel(Parameter[])`.
     ///
     /// # Errors
     /// Returns a [`SleighException`] if no candidate scores below the initial threshold of `500`
-    /// (including when there are no candidate models at all), matching Java's "No model matches :
-    /// missing default".
-    ///
-    /// Port of `PrototypeModelMerged.selectModel(Parameter[])`.
-    pub fn select_model(
-        &self,
-        params: &[Box<dyn Parameter>],
-    ) -> Result<Arc<dyn PrototypeModel>, SleighException> {
+    /// (including when there are no candidates), matching Java's "No model matches : missing
+    /// default".
+    pub fn select_model(&self, params: &[Box<dyn Parameter>]) -> Result<Arc<PrototypeModel>, SleighException> {
+        let modellist = self.merged_models();
         let mut bestscore = 500;
         let mut bestindex: Option<usize> = None;
-        for (i, model) in self.modellist.iter().enumerate() {
+        for (i, model) in modellist.iter().enumerate() {
             let mut scoremodel = ScoreProtoModel::new(true, model.as_ref(), params.len());
             for p in params {
-                let storage = match p.get_variable_storage() {
-                    Some(s) => s,
-                    // Java's `getVariableStorage()` is never null for a real `Parameter`; a
-                    // `None` here (this crate's port models it as `Option`) has no assigned
-                    // storage to score, so it's treated the same as unassigned storage below.
-                    None => continue,
+                let Some(storage) = p.get_variable_storage() else {
+                    // Java's `getVariableStorage()` is never null for a real `Parameter`; with
+                    // no storage there is nothing to score, as for unassigned storage.
+                    continue;
                 };
                 if storage.is_unassigned_storage() || storage.is_bad_storage() {
                     continue;
                 }
-                let min_addr = match storage.get_min_address() {
-                    Some(a) => a,
-                    // Java calls `storage.getMinAddress()` unconditionally here and would throw
-                    // `NullPointerException` if it returned `null` for non-unassigned/non-bad
-                    // storage with no varnodes; this port skips the parameter instead of
-                    // panicking.
-                    None => continue,
+                let Some(min_addr) = storage.get_min_address() else {
+                    // Java would throw `NullPointerException`; skip the parameter instead.
+                    continue;
                 };
                 scoremodel.add_parameter(&min_addr, p.get_length());
             }
@@ -265,139 +243,89 @@ impl PrototypeModelMerged {
                 bestscore = score;
                 bestindex = Some(i);
                 if bestscore == 0 {
-                    break; // Can't get any lower.
+                    break; // Can't get any lower
                 }
             }
         }
         match bestindex {
-            Some(i) => Ok(self.modellist[i].clone()),
+            Some(i) => Ok(modellist[i].clone()),
             None => Err(SleighException::with_message("No model matches : missing default")),
         }
     }
 }
 
-impl Default for PrototypeModelMerged {
-    fn default() -> Self {
-        Self::new()
+/// Port of `PrototypeModelMerged.encode(Encoder, PcodeInjectLibrary)` (the library is unused in
+/// Java too): a `<resolveprototype>` naming each candidate model.
+pub(crate) fn encode_merged(
+    model: &PrototypeModel,
+    modellist: &[Arc<PrototypeModel>],
+    encoder: &mut dyn Encoder,
+) -> std::io::Result<()> {
+    encoder.open_element(ELEM_RESOLVEPROTOTYPE)?;
+    encoder.write_string(ATTRIB_NAME, model.name.as_deref().unwrap_or(""))?;
+    for sub in modellist {
+        encoder.open_element(ELEM_MODEL)?;
+        encoder.write_string(ATTRIB_NAME, sub.name.as_deref().unwrap_or(""))?;
+        encoder.close_element(ELEM_MODEL)?;
     }
+    encoder.close_element(ELEM_RESOLVEPROTOTYPE)
 }
 
-impl PrototypeModel for PrototypeModelMerged {
-    fn get_name(&self) -> Option<String> {
-        self.name.clone()
-    }
-
-    fn is_merged(&self) -> bool {
-        true
-    }
-
-    fn encode(
-        &self,
-        encoder: &mut dyn Encoder,
-        _inject_library: &dyn PcodeInjectLibrary,
-    ) -> std::io::Result<()> {
-        // Port of `PrototypeModelMerged.encode(Encoder, PcodeInjectLibrary)`. `injectLibrary` is
-        // unused in the Java body too (a real, faithfully-reproduced quirk: the parameter is
-        // declared but never referenced).
-        encoder.open_element(ELEM_RESOLVEPROTOTYPE)?;
-        encoder.write_string(ATTRIB_NAME, self.name.as_deref().unwrap_or(""))?;
-        for model in &self.modellist {
-            encoder.open_element(ELEM_MODEL)?;
-            encoder.write_string(ATTRIB_NAME, model.get_name().as_deref().unwrap_or(""))?;
-            encoder.close_element(ELEM_MODEL)?;
-        }
-        encoder.close_element(ELEM_RESOLVEPROTOTYPE)
-    }
-
-    fn is_equivalent(&self, obj: &dyn PrototypeModel) -> bool {
-        let Some(op2) = obj.as_any().downcast_ref::<PrototypeModelMerged>() else {
-            return false;
-        };
-        if self.modellist.len() != op2.modellist.len() {
-            return false;
-        }
-        for (a, b) in self.modellist.iter().zip(op2.modellist.iter()) {
-            // Java: `!modellist[i].getName().equals(op2.modellist[i].getName())`, which would
-            // throw `NullPointerException` if `getName()` returned `null`; comparing the
-            // `Option<String>`s directly avoids that without changing behavior for the (only
-            // realistic) case where both names are set.
-            if a.get_name() != b.get_name() {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
+/// Port of `PrototypeModelMerged.isEquivalent`'s comparison once both sides are merged models:
+/// same number of candidates with the same names, in order.
+pub(crate) fn merged_lists_equivalent(a: &[Arc<PrototypeModel>], b: &[Arc<PrototypeModel>]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(x, y)| x.name == y.name)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{AddressSpace, AddressSpaceType};
-    use crate::program::model::lang::param_list::WithSlotRec;
+    use crate::program::model::address::AddressSpace;
+    use crate::program::model::lang::cspec_test_support::{parser, register_space, TestCompilerSpec};
 
-    fn mock_address(offset: i64) -> Address {
-        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
-        Address::new(space, offset)
+    /// x86-64 System V: integer arguments in RDI, RSI, RDX, RCX, R8, R9.
+    const SYSV: &str = r#"<prototype name="__stdcall" extrapop="8" stackshift="8">
+      <input>
+        <pentry minsize="1" maxsize="8"><register name="RDI"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="RSI"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="RDX"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="RCX"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="R8"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="R9"/></pentry>
+      </input>
+      <output><pentry minsize="1" maxsize="8"><register name="RAX"/></pentry></output>
+    </prototype>"#;
+
+    /// x86-64 Microsoft: integer arguments in RCX, RDX, R8, R9.
+    const MS: &str = r#"<prototype name="__fastcall" extrapop="8" stackshift="8">
+      <input>
+        <pentry minsize="1" maxsize="8"><register name="RCX"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="RDX"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="R8"/></pentry>
+        <pentry minsize="1" maxsize="8"><register name="R9"/></pentry>
+      </input>
+      <output><pentry minsize="1" maxsize="8"><register name="RAX"/></pentry></output>
+    </prototype>"#;
+
+    fn model(xml: &str) -> Arc<PrototypeModel> {
+        let mut m = PrototypeModel::new();
+        m.restore_xml(&mut parser(xml), &TestCompilerSpec::x86_64(), None).unwrap();
+        Arc::new(m)
     }
 
-    /// A candidate model that assigns the first `slots` parameters to consecutive register
-    /// slots, mirroring a simple fixed-register calling convention for scoring purposes. `slot =
-    /// address_offset - slot_bias`, letting different candidate models disagree about which slot
-    /// a given address maps to (so tests can construct genuinely different scores for the same
-    /// observed parameter storage, rather than every candidate agreeing by construction).
-    struct FixedSlotModel {
-        name: &'static str,
-        slots: i32,
-        slot_bias: i32,
+    fn merged(models: &[Arc<PrototypeModel>]) -> PrototypeModel {
+        let mut xml = String::from(r#"<resolveprototype name="merged">"#);
+        for m in models {
+            xml.push_str(&format!(r#"<model name="{}"/>"#, m.get_name().unwrap()));
+        }
+        xml.push_str("</resolveprototype>");
+        let mut merged = PrototypeModel::new_merged();
+        merged.restore_merged_xml(&mut parser(&xml), models).unwrap();
+        merged
     }
 
-    impl FixedSlotModel {
-        fn new(name: &'static str, slots: i32) -> Self {
-            Self { name, slots, slot_bias: 0 }
-        }
-
-        fn with_bias(name: &'static str, slots: i32, slot_bias: i32) -> Self {
-            Self { name, slots, slot_bias }
-        }
-    }
-
-    impl PrototypeModel for FixedSlotModel {
-        fn get_name(&self) -> Option<String> {
-            Some(self.name.to_string())
-        }
-
-        fn possible_input_param_with_slot(
-            &self,
-            loc: &Address,
-            _size: i32,
-            res: &mut WithSlotRec,
-        ) -> bool {
-            // Slot is derived from the address offset (0-based), for test determinism.
-            let slot = loc.offset() as i32 - self.slot_bias;
-            if slot >= 0 && slot < self.slots {
-                res.slot = slot;
-                res.slotsize = 1;
-                true
-            } else {
-                false
-            }
-        }
-    }
-
-    /// A candidate model that never matches any parameter (all input queries fail), standing in
-    /// for a calling convention incompatible with the observed storage.
-    struct NeverMatchesModel {
-        name: &'static str,
-    }
-
-    impl PrototypeModel for NeverMatchesModel {
-        fn get_name(&self) -> Option<String> {
-            Some(self.name.to_string())
-        }
+    fn reg(offset: i64) -> Address {
+        Address::new(register_space(), offset)
     }
 
     struct MockDataType;
@@ -592,14 +520,10 @@ mod tests {
         }
     }
 
-    fn assigned_param(offset: i64, length: i32) -> Box<dyn Parameter> {
+    fn assigned_param(addr: Address, length: i32) -> Box<dyn Parameter> {
         Box::new(MockParameter {
             length,
-            storage: Some(MockVariableStorage {
-                min_address: Some(mock_address(offset)),
-                unassigned: false,
-                bad: false,
-            }),
+            storage: Some(MockVariableStorage { min_address: Some(addr), unassigned: false, bad: false }),
         })
     }
 
@@ -612,137 +536,75 @@ mod tests {
 
     #[test]
     fn default_constructed_is_empty_and_unnamed() {
-        let m = PrototypeModelMerged::new();
+        let m = PrototypeModel::new_merged();
         assert_eq!(m.num_models(), 0);
         assert_eq!(m.get_name(), None);
         assert!(m.is_merged());
+        assert!(!PrototypeModel::new().is_merged());
+    }
+
+    #[test]
+    fn restore_merged_xml_resolves_models_by_name() {
+        let (sysv, ms) = (model(SYSV), model(MS));
+        let m = merged(&[sysv.clone(), ms.clone()]);
+        assert_eq!(m.get_name().as_deref(), Some("merged"));
+        assert_eq!(m.num_models(), 2);
+        assert_eq!(m.get_model(1).get_name().as_deref(), Some("__fastcall"));
+
+        let mut bad = PrototypeModel::new_merged();
+        let err = bad
+            .restore_merged_xml(&mut parser(r#"<resolveprototype name="x"><model name="nope"/></resolveprototype>"#), &[sysv])
+            .err()
+            .unwrap();
+        assert_eq!(err.message(), "Missing prototype model: nope");
     }
 
     #[test]
     fn select_model_errors_when_no_models_registered() {
-        let m = PrototypeModelMerged::new();
-        let params = vec![assigned_param(0, 4)];
-        let err = m.select_model(&params).err().unwrap();
+        let m = PrototypeModel::new_merged();
+        let err = m.select_model(&[assigned_param(reg(0x38), 8)]).err().unwrap();
         assert_eq!(err.message(), "No model matches : missing default");
     }
 
     #[test]
-    fn select_model_picks_the_perfectly_matching_candidate() {
-        // Two candidates: one only has 1 slot (won't fit params at offsets 0 and 1), the other
-        // has enough slots to place both parameters with zero gaps/mismatches -> score 0.
-        let too_small = Arc::new(FixedSlotModel::new("too_small", 1)) as Arc<dyn PrototypeModel>;
-        let perfect = Arc::new(FixedSlotModel::new("perfect", 4)) as Arc<dyn PrototypeModel>;
-
-        let mut merged = PrototypeModelMerged::new();
-        merged.modellist = vec![too_small, perfect.clone()];
-
-        let params = vec![assigned_param(0, 4), assigned_param(1, 4)];
-        let selected = merged.select_model(&params).expect("a model should match");
-        assert_eq!(selected.get_name(), Some("perfect".to_string()));
+    fn select_model_picks_sysv_for_rdi_rsi_arguments() {
+        let m = merged(&[model(MS), model(SYSV)]);
+        let params = vec![assigned_param(reg(0x38), 8), assigned_param(reg(0x30), 8)];
+        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__stdcall"));
     }
 
     #[test]
     fn select_model_prefers_lower_score_over_declaration_order() {
-        // Both candidates place a parameter observed at address offset 1, but disagree about
-        // which slot that maps to (`slot = offset - slot_bias`): "gappy" (bias 0) maps it to
-        // slot 1, leaving slot 0 as a hole -> incurs a `penalty[0] = 16` hole penalty. "tight"
-        // (bias 1) maps the very same observed address to slot 0 -> a perfect score of 0.
-        let gappy = Arc::new(FixedSlotModel::with_bias("gappy", 4, 0)) as Arc<dyn PrototypeModel>;
-        let tight = Arc::new(FixedSlotModel::with_bias("tight", 4, 1)) as Arc<dyn PrototypeModel>;
-
-        let mut merged = PrototypeModelMerged::new();
-        // Declare "gappy" first to prove selection is score-driven, not declaration-order-driven.
-        merged.modellist = vec![gappy, tight];
-
-        let params = vec![assigned_param(1, 4)];
-        let selected = merged.select_model(&params).expect("a model should match");
-        assert_eq!(selected.get_name(), Some("tight".to_string()));
+        // RCX/RDX are slots 0/1 of the Microsoft model (score 0) but slots 3/2 of System V, which
+        // leaves holes at slots 0 and 1 (penalty 16 + 10). System V is declared first.
+        let m = merged(&[model(SYSV), model(MS)]);
+        let params = vec![assigned_param(reg(0x8), 8), assigned_param(reg(0x10), 8)];
+        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__fastcall"));
     }
 
     #[test]
-    fn select_model_counts_mismatches_against_never_matching_candidate() {
-        let never = Arc::new(NeverMatchesModel { name: "never" }) as Arc<dyn PrototypeModel>;
-        let fits = Arc::new(FixedSlotModel::new("fits", 4)) as Arc<dyn PrototypeModel>;
-
-        let mut merged = PrototypeModelMerged::new();
-        merged.modellist = vec![never, fits];
-
-        let params = vec![assigned_param(0, 4)];
-        let selected = merged.select_model(&params).expect("a model should match");
-        assert_eq!(selected.get_name(), Some("fits".to_string()));
+    fn select_model_counts_mismatches() {
+        // RDI is not a Microsoft parameter register: one mismatch (20) for __fastcall.
+        let m = merged(&[model(MS), model(SYSV)]);
+        let params = vec![assigned_param(reg(0x38), 8)];
+        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__stdcall"));
     }
 
     #[test]
-    fn select_model_skips_unassigned_and_bad_storage_parameters() {
-        let only = Arc::new(FixedSlotModel::new("only", 4)) as Arc<dyn PrototypeModel>;
-        let mut merged = PrototypeModelMerged::new();
-        merged.modellist = vec![only];
-
-        // A mix of a real, matching parameter and one with unassigned storage: the unassigned
-        // one must not count as a mismatch (Java skips it via `continue` before ever calling
-        // `addParameter`).
-        let params = vec![assigned_param(0, 4), unassigned_param(4)];
-        let selected = merged.select_model(&params).expect("should still match via the real param");
-        assert_eq!(selected.get_name(), Some("only".to_string()));
+    fn select_model_skips_unassigned_storage() {
+        let m = merged(&[model(MS)]);
+        let params = vec![assigned_param(reg(0x8), 8), unassigned_param(4)];
+        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__fastcall"));
     }
 
     #[test]
-    fn get_model_returns_candidate_by_index() {
-        let a = Arc::new(FixedSlotModel::new("a", 1)) as Arc<dyn PrototypeModel>;
-        let b = Arc::new(FixedSlotModel::new("b", 1)) as Arc<dyn PrototypeModel>;
-        let mut merged = PrototypeModelMerged::new();
-        merged.modellist = vec![a, b];
-
-        assert_eq!(merged.num_models(), 2);
-        assert_eq!(merged.get_model(0).get_name(), Some("a".to_string()));
-        assert_eq!(merged.get_model(1).get_name(), Some("b".to_string()));
-    }
-
-    #[test]
-    fn is_equivalent_compares_by_class_and_submodel_names() {
-        let a = Arc::new(FixedSlotModel::new("a", 1)) as Arc<dyn PrototypeModel>;
-        let b = Arc::new(FixedSlotModel::new("b", 1)) as Arc<dyn PrototypeModel>;
-
-        let mut m1 = PrototypeModelMerged::new();
-        m1.modellist = vec![a.clone(), b.clone()];
-        let mut m2 = PrototypeModelMerged::new();
-        m2.modellist = vec![a.clone(), b.clone()];
-
-        assert!(m1.is_equivalent(&m2));
-    }
-
-    #[test]
-    fn is_equivalent_false_for_different_length_modellists() {
-        let a = Arc::new(FixedSlotModel::new("a", 1)) as Arc<dyn PrototypeModel>;
-
-        let mut m1 = PrototypeModelMerged::new();
-        m1.modellist = vec![a.clone()];
-        let mut m2 = PrototypeModelMerged::new();
-        m2.modellist = vec![a.clone(), a];
-
-        assert!(!m1.is_equivalent(&m2));
-    }
-
-    #[test]
-    fn is_equivalent_false_for_different_submodel_names() {
-        let a = Arc::new(FixedSlotModel::new("a", 1)) as Arc<dyn PrototypeModel>;
-        let c = Arc::new(FixedSlotModel::new("c", 1)) as Arc<dyn PrototypeModel>;
-
-        let mut m1 = PrototypeModelMerged::new();
-        m1.modellist = vec![a];
-        let mut m2 = PrototypeModelMerged::new();
-        m2.modellist = vec![c];
-
-        assert!(!m1.is_equivalent(&m2));
-    }
-
-    #[test]
-    fn is_equivalent_false_against_a_different_concrete_prototype_model_type() {
-        struct OtherModel;
-        impl PrototypeModel for OtherModel {}
-
-        let m = PrototypeModelMerged::new();
-        assert!(!m.is_equivalent(&OtherModel));
+    fn is_equivalent_compares_by_kind_and_submodel_names() {
+        let (sysv, ms) = (model(SYSV), model(MS));
+        assert!(merged(&[sysv.clone(), ms.clone()]).is_equivalent(&merged(&[sysv.clone(), ms.clone()])));
+        assert!(!merged(&[sysv.clone()]).is_equivalent(&merged(&[sysv.clone(), ms.clone()])));
+        assert!(!merged(&[sysv.clone()]).is_equivalent(&merged(&[ms.clone()])));
+        assert!(!merged(&[sysv.clone()]).is_equivalent(&sysv));
+        assert!(!sysv.is_equivalent(&merged(&[sysv.clone()])));
     }
 
     #[test]
@@ -807,29 +669,13 @@ mod tests {
             }
         }
 
-        struct MockPcodeInjectLibrary;
-        impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
-
-        let mut merged = PrototypeModelMerged::new();
-        merged.name = Some("merged_cc".to_string());
-        merged.modellist = vec![
-            Arc::new(FixedSlotModel::new("cc_a", 1)) as Arc<dyn PrototypeModel>,
-            Arc::new(FixedSlotModel::new("cc_b", 1)) as Arc<dyn PrototypeModel>,
-        ];
-
+        let m = merged(&[model(SYSV), model(MS)]);
         let mut encoder = RecordingEncoder::default();
-        merged.encode(&mut encoder, &MockPcodeInjectLibrary).unwrap();
-
-        assert_eq!(
-            encoder.opened,
-            vec![ELEM_RESOLVEPROTOTYPE, ELEM_MODEL, ELEM_MODEL]
-        );
-        assert_eq!(
-            encoder.closed,
-            vec![ELEM_MODEL, ELEM_MODEL, ELEM_RESOLVEPROTOTYPE]
-        );
-        assert!(encoder.strings.contains(&(ATTRIB_NAME, "merged_cc".to_string())));
-        assert!(encoder.strings.contains(&(ATTRIB_NAME, "cc_a".to_string())));
-        assert!(encoder.strings.contains(&(ATTRIB_NAME, "cc_b".to_string())));
+        m.encode(&mut encoder, None).unwrap();
+        assert_eq!(encoder.opened, vec![ELEM_RESOLVEPROTOTYPE, ELEM_MODEL, ELEM_MODEL]);
+        assert_eq!(encoder.closed, vec![ELEM_MODEL, ELEM_MODEL, ELEM_RESOLVEPROTOTYPE]);
+        assert!(encoder.strings.contains(&(ATTRIB_NAME, "merged".to_string())));
+        assert!(encoder.strings.contains(&(ATTRIB_NAME, "__stdcall".to_string())));
+        assert!(encoder.strings.contains(&(ATTRIB_NAME, "__fastcall".to_string())));
     }
 }

@@ -231,14 +231,6 @@ mod tests {
         }
     }
 
-    struct MockPrototypeModel {
-        name: Option<String>,
-    }
-    impl PrototypeModel for MockPrototypeModel {
-        fn get_name(&self) -> Option<String> {
-            self.name.clone()
-        }
-    }
 
     /// A minimal [`Variable`]/[`Parameter`] pair, following the same shape as `variable.rs`'s own
     /// `MockVariable` test double.
@@ -595,10 +587,15 @@ mod tests {
             false
         }
         fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             self.calling_convention
                 .clone()
-                .map(|name| Box::new(MockPrototypeModel { name }) as Box<dyn PrototypeModel>)
+                .map(|name| {
+                    Arc::new(match name {
+                        Some(name) => crate::program::model::lang::cspec_test_support::named_model(&name),
+                        None => PrototypeModel::new(),
+                    })
+                })
         }
         fn get_calling_convention_name(&self) -> String {
             self.calling_convention

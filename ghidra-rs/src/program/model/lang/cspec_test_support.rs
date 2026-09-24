@@ -288,6 +288,9 @@ pub(crate) struct TestCompilerSpec {
     pub language: TestCspecLanguage,
     pub stack_grows_negative: bool,
     pub stack_right_justified: bool,
+    /// Spaces looked up by name before the built-in ones, letting a test resolve `<addr>` tags
+    /// into its own address spaces.
+    pub extra_spaces: Vec<Arc<AddressSpace>>,
 }
 
 impl TestCompilerSpec {
@@ -297,6 +300,7 @@ impl TestCompilerSpec {
             language: TestCspecLanguage { big_endian: false },
             stack_grows_negative: true,
             stack_right_justified: false,
+            extra_spaces: Vec::new(),
         }
     }
 }
@@ -318,6 +322,9 @@ impl CompilerSpec for TestCompilerSpec {
         self.stack_right_justified
     }
     fn get_address_space(&self, space_name: &str) -> Option<Arc<AddressSpace>> {
+        if let Some(space) = self.extra_spaces.iter().find(|s| s.name() == space_name) {
+            return Some(space.clone());
+        }
         match space_name {
             "ram" => Some(ram_space()),
             "register" => Some(register_space()),
@@ -336,22 +343,22 @@ impl CompilerSpec for TestCompilerSpec {
         self.stack_grows_negative
     }
     fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
-    fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+    fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
         Vec::new()
     }
-    fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+    fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
         None
     }
-    fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+    fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
         Vec::new()
     }
-    fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+    fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
         None
     }
     fn get_decompiler_output_language(&self) -> DecompilerLanguage {
         DecompilerLanguage::CLanguage
     }
-    fn get_prototype_evaluation_model(&self, _model_type: EvaluationModelType) -> Box<dyn PrototypeModel> {
+    fn get_prototype_evaluation_model(&self, _model_type: EvaluationModelType) -> Arc<PrototypeModel> {
         unimplemented!("not needed to restore compiler-spec XML")
     }
     fn is_global(&self, _addr: &Address) -> bool {
@@ -363,10 +370,10 @@ impl CompilerSpec for TestCompilerSpec {
     fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
         unimplemented!("not needed to restore compiler-spec XML")
     }
-    fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
+    fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
         unimplemented!("not needed to restore compiler-spec XML")
     }
-    fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Box<dyn PrototypeModel> {
+    fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Arc<PrototypeModel> {
         unimplemented!("not needed to restore compiler-spec XML")
     }
     fn has_property(&self, _key: &str) -> bool {
@@ -405,6 +412,7 @@ pub(crate) fn parser(xml: &str) -> NonThreadedXmlPullParserImpl {
 
 /// A primitive [`DataType`](crate::program::model::data::data_type::DataType) of the given shape,
 /// for driving parameter assignment.
+#[derive(Clone)]
 pub(crate) struct TestDataType {
     pub length: i32,
     pub alignment: i32,
@@ -431,6 +439,27 @@ impl crate::program::model::data::data_type::DataType for TestDataType {
     }
     fn is_integer_type(&self) -> bool {
         !self.float && !self.pointer && !self.void
+    }
+    fn clone_data_type(
+        &self,
+        _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
+    ) -> Box<dyn crate::program::model::data::data_type::DataType> {
+        Box::new(self.clone())
+    }
+}
+
+/// A program whose only capability is its [`TestDataTypeManager`].
+pub(crate) struct TestProgram;
+impl crate::framework::model::DomainObject for TestProgram {}
+impl crate::program::model::listing::program::Program for TestProgram {
+    fn get_name(&self) -> String {
+        "test".to_string()
+    }
+    fn get_language_id(&self) -> String {
+        "x86:LE:64:default".to_string()
+    }
+    fn get_data_type_manager(&self) -> Option<Box<dyn crate::program::model::data::data_type_manager::DataTypeManager>> {
+        Some(Box::new(TestDataTypeManager))
     }
 }
 
@@ -517,3 +546,19 @@ pub(crate) const SYSV_OUTPUT: &str = r#"<output>
   <pentry minsize="1" maxsize="8"><register name="RAX"/></pentry>
   <pentry minsize="9" maxsize="16"><addr space="join" piece1="RDX" piece2="RAX"/></pentry>
 </output>"#;
+
+/// A model restored from a `<prototype>` element against [`TestCompilerSpec::x86_64`].
+pub(crate) fn restore_model(xml: &str) -> PrototypeModel {
+    let mut model = PrototypeModel::new();
+    model
+        .restore_xml(&mut parser(xml), &TestCompilerSpec::x86_64(), None)
+        .expect("well-formed test prototype");
+    model
+}
+
+/// A model named `name` with empty parameter lists.
+pub(crate) fn named_model(name: &str) -> PrototypeModel {
+    restore_model(&format!(
+        r#"<prototype name="{name}" extrapop="unknown" stackshift="0"><input/><output/></prototype>"#
+    ))
+}

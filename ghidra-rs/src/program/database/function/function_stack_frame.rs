@@ -675,14 +675,17 @@ mod tests {
         }
     }
 
-    /// A minimal, always-default [`PrototypeModel`] whose only override is
-    /// `getStackParameterOffset()`, letting [`VariableUtilities::get_base_stack_param_offset`]
-    /// resolve a deterministic parameter start offset without needing a full `CompilerSpec` mock.
-    struct TestConvention(i64);
-    impl PrototypeModel for TestConvention {
-        fn get_stack_parameter_offset(&self) -> Option<i64> {
-            Some(self.0)
-        }
+    /// A real [`PrototypeModel`] whose only input resource is a stack region starting at
+    /// `offset`, so its `getStackParameterOffset()` is `offset` -- letting
+    /// [`VariableUtilities::get_base_stack_param_offset`] resolve a deterministic parameter start
+    /// offset without needing a full `CompilerSpec` mock.
+    fn test_convention(offset: i64) -> PrototypeModel {
+        crate::program::model::lang::cspec_test_support::restore_model(&format!(
+            r#"<prototype name="test" extrapop="unknown" stackshift="0">
+                 <input><pentry minsize="1" maxsize="500" align="4"><addr offset="{offset}" space="stack"/></pentry></input>
+                 <output/>
+               </prototype>"#
+        ))
     }
 
     struct TestVariableUtilities;
@@ -901,8 +904,8 @@ mod tests {
             false
         }
         fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
-            self.stack_param_offset.map(|o| Box::new(TestConvention(o)) as Box<dyn PrototypeModel>)
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
+            self.stack_param_offset.map(|o| Arc::new(test_convention(o)))
         }
         fn get_calling_convention_name(&self) -> String {
             String::new()

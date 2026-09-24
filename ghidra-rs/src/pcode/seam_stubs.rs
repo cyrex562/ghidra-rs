@@ -4061,7 +4061,7 @@ impl<T: 'static> UseropEmuSyscallDefinition<T> {
         number: i64,
         opdef: Arc<dyn PcodeUseropDefinition<T>>,
         program: &dyn Program,
-        convention: &dyn PrototypeModel,
+        convention: &PrototypeModel,
         dt_machine_word: Arc<dyn DataType>,
     ) -> Self {
         let input_count = opdef.get_input_count();

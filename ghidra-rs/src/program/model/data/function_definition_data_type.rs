@@ -259,7 +259,7 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
     }
 
     /// Default body for [`FunctionDefinition::get_calling_convention`].
-    fn function_definition_data_type_impl_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+    fn function_definition_data_type_impl_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
         let arch = self.get_data_type_manager()?.get_program_architecture()?;
         arch.get_compiler_spec()
             .get_calling_convention(&self.stored_calling_convention_name())
@@ -775,7 +775,7 @@ mod tests {
         fn has_no_return(&self) -> bool {
             self.function_definition_data_type_impl_has_no_return()
         }
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             self.function_definition_data_type_impl_calling_convention()
         }
         fn get_calling_convention_name(&self) -> String {

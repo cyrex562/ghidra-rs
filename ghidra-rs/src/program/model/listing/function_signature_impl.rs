@@ -31,6 +31,7 @@ pub trait FunctionSignatureImpl: FunctionDefinitionDataType {}
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -115,7 +116,7 @@ mod tests {
         fn has_no_return(&self) -> bool {
             self.has_no_return
         }
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn get_calling_convention_name(&self) -> String {

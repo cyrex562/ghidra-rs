@@ -218,7 +218,7 @@ mod tests {
 
         fn set_custom_variable_storage(&mut self, has_custom_variable_storage: bool) { unimplemented!("not needed for this smoke test") }
 
-        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::model::lang::PrototypeModel>> { unimplemented!("not needed for this smoke test") }
+        fn get_calling_convention(&self) -> Option<Arc<crate::program::model::lang::PrototypeModel>> { unimplemented!("not needed for this smoke test") }
 
         fn get_calling_convention_name(&self) -> String { unimplemented!("not needed for this smoke test") }
 

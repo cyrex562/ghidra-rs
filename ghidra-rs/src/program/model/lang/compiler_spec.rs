@@ -105,17 +105,17 @@ pub trait CompilerSpec {
     fn apply_context_settings(&self, ctx: &mut dyn DefaultProgramContext);
 
     /// An array of the prototype models. Each prototype model specifies a calling convention.
-    fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>>;
+    fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>>;
 
     /// Returns the Calling Convention Model with the given name, or `None` if there is none
     /// with that name.
-    fn get_calling_convention(&self, name: &str) -> Option<Box<dyn PrototypeModel>>;
+    fn get_calling_convention(&self, name: &str) -> Option<Arc<PrototypeModel>>;
 
     /// All possible `PrototypeModel`s, including calling conventions and merge models.
-    fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>>;
+    fn get_all_models(&self) -> Vec<Arc<PrototypeModel>>;
 
     /// Returns the prototype model that is the default calling convention, or `None`.
-    fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>>;
+    fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>>;
 
     /// Get the language that the decompiler produces.
     fn get_decompiler_output_language(&self) -> DecompilerLanguage;
@@ -128,7 +128,7 @@ pub trait CompilerSpec {
     fn get_prototype_evaluation_model(
         &self,
         model_type: EvaluationModelType,
-    ) -> Box<dyn PrototypeModel>;
+    ) -> Arc<PrototypeModel>;
 
     /// Returns `true` if the specified storage location (start of the storage) has been
     /// designated "global" in scope.
@@ -142,11 +142,11 @@ pub trait CompilerSpec {
 
     /// Get the `PrototypeModel` which corresponds to the given calling convention name. If no
     /// match is found the default prototype model is returned.
-    fn match_convention(&self, convention_name: &str) -> Box<dyn PrototypeModel>;
+    fn match_convention(&self, convention_name: &str) -> Arc<PrototypeModel>;
 
     /// Find the best guess at a calling convention model from this compiler spec given an
     /// ordered list of (potential) parameters with storage assignments.
-    fn find_best_calling_convention(&self, params: &[&dyn Parameter]) -> Box<dyn PrototypeModel>;
+    fn find_best_calling_convention(&self, params: &[&dyn Parameter]) -> Arc<PrototypeModel>;
 
     /// Returns whether this language has a property defined.
     fn has_property(&self, key: &str) -> bool;
@@ -451,8 +451,6 @@ mod tests {
     struct MockPcodeInjectLibrary;
     impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
 
-    struct MockPrototypeModel;
-    impl PrototypeModel for MockPrototypeModel {}
 
     struct MockEncoder;
     impl Encoder for MockEncoder {
@@ -584,24 +582,24 @@ mod tests {
 
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
 
-        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
-            vec![Box::new(MockPrototypeModel)]
+        fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
+            vec![Arc::new(PrototypeModel::new())]
         }
 
-        fn get_calling_convention(&self, name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, name: &str) -> Option<Arc<PrototypeModel>> {
             if name == CALLING_CONVENTION_CDECL {
-                Some(Box::new(MockPrototypeModel))
+                Some(Arc::new(PrototypeModel::new()))
             } else {
                 None
             }
         }
 
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
-            vec![Box::new(MockPrototypeModel)]
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
+            vec![Arc::new(PrototypeModel::new())]
         }
 
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
-            Some(Box::new(MockPrototypeModel))
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
+            Some(Arc::new(PrototypeModel::new()))
         }
 
         fn get_decompiler_output_language(&self) -> DecompilerLanguage {
@@ -611,8 +609,8 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        ) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
 
         fn is_global(&self, _addr: &Address) -> bool {
@@ -627,12 +625,12 @@ mod tests {
             Box::new(MockPcodeInjectLibrary)
         }
 
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
 
-        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Box<dyn PrototypeModel> {
-            Box::new(MockPrototypeModel)
+        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Arc<PrototypeModel> {
+            Arc::new(PrototypeModel::new())
         }
 
         fn has_property(&self, _key: &str) -> bool {

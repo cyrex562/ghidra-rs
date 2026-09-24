@@ -987,6 +987,7 @@ mod tests {
             language: TestCspecLanguage { big_endian: true },
             stack_grows_negative: false,
             stack_right_justified: false,
+            ..TestCompilerSpec::x86_64()
         };
         let e = restore(
             r#"<pentry minsize="1" maxsize="16" align="4"><addr offset="0" space="stack"/></pentry>"#,

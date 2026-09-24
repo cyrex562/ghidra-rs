@@ -72,6 +72,7 @@ impl AbstractDebuggerPlatformOfferBase {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 
@@ -128,23 +129,23 @@ mod tests {
         }
         fn get_calling_conventions(
             &self,
-        ) -> Vec<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        ) -> Vec<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_calling_convention(
             &self,
             _name: &str,
-        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        ) -> Option<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_all_models(
             &self,
-        ) -> Vec<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        ) -> Vec<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_default_calling_convention(
             &self,
-        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        ) -> Option<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_decompiler_output_language(
@@ -155,7 +156,7 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: crate::program::model::lang::compiler_spec::EvaluationModelType,
-        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
+        ) -> Arc<crate::program::model::lang::prototype_model::PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
         fn is_global(&self, _addr: &crate::program::model::address::Address) -> bool {
@@ -174,13 +175,13 @@ mod tests {
         fn match_convention(
             &self,
             _convention_name: &str,
-        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
+        ) -> Arc<crate::program::model::lang::prototype_model::PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
         fn find_best_calling_convention(
             &self,
             _params: &[&dyn crate::program::model::listing::parameter::Parameter],
-        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
+        ) -> Arc<crate::program::model::lang::prototype_model::PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
         fn has_property(&self, _key: &str) -> bool {

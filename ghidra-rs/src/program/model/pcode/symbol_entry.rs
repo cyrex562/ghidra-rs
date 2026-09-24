@@ -23,8 +23,7 @@
 //! (non-abstract) Java classes each carrying real instance state, this follows the same
 //! "abstract base becomes a trait with real default methods for the base class's real shared
 //! logic, concrete subclasses become real structs implementing it" shape already used for
-//! `HighVariable`->`HighLocal`/`HighOther`/`HighGlobal` and `PrototypeModel`->
-//! `PrototypeModelError`/`PrototypeModelMerged` elsewhere in this crate, rather than
+//! `HighVariable`->`HighLocal`/`HighOther`/`HighGlobal` elsewhere in this crate, rather than
 //! `DynamicEntry`'s field-flattening (that approach was chosen there specifically because
 //! `SymbolEntry` did not exist yet; now that it does, `SymbolEntry.decodeRangeList`/
 //! `encodeRangelist` -- real, non-trivial shared algorithms -- get a proper home here instead of

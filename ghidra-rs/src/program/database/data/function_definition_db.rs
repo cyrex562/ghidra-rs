@@ -241,7 +241,7 @@ mod tests {
         fn has_no_return(&self) -> bool {
             self.no_return
         }
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn get_calling_convention_name(&self) -> String {

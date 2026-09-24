@@ -319,7 +319,7 @@ mod tests {
         }
         fn get_calling_convention(
             &self,
-        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        ) -> Option<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_calling_convention_name(&self) -> String {

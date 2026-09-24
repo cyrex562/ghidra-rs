@@ -158,7 +158,7 @@ pub fn load_syscall_number_map(
 /// way.)
 pub fn load_syscall_convention_map(
     program: &mut (impl Program + ?Sized),
-) -> Result<HashMap<i64, Box<dyn PrototypeModel>>, NoSyscallSpaceError> {
+) -> Result<HashMap<i64, Arc<PrototypeModel>>, NoSyscallSpaceError> {
     Ok(load_syscall_function_map(program)?
         .into_iter()
         .filter_map(|(number, function)| Some((number, function.get_calling_convention()?)))

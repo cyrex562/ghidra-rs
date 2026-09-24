@@ -532,16 +532,16 @@ mod tests {
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_decompiler_output_language(&self) -> DecompilerLanguage {
@@ -550,7 +550,7 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
+        ) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
         fn is_global(&self, _addr: &Address) -> bool {
@@ -562,10 +562,10 @@ mod tests {
         fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Box<dyn PrototypeModel> {
+        fn find_best_calling_convention(&self, _params: &[&dyn Parameter]) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by this smoke test")
         }
         fn has_property(&self, _key: &str) -> bool {

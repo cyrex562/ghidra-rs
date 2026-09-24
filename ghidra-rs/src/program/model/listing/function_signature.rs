@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::parameter_definition::ParameterDefinition;
 use crate::program::model::lang::prototype_model::PrototypeModel;
@@ -48,7 +50,7 @@ pub trait FunctionSignature {
     /// Gets the calling convention prototype model for this function if associated with a
     /// compiler specification. Always `None` if this signature is not associated with a specific
     /// program architecture.
-    fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>>;
+    fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>>;
 
     /// Returns the calling convention name associated with this function definition.
     ///
@@ -110,7 +112,7 @@ mod tests {
             self.no_return
         }
 
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
 

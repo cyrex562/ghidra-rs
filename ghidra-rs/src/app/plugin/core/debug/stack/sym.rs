@@ -308,16 +308,16 @@ mod tests {
             true
         }
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
-        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn get_decompiler_output_language(&self) -> DecompilerLanguage {
@@ -326,7 +326,7 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
+        ) -> Arc<PrototypeModel> {
             unimplemented!()
         }
         fn is_global(&self, _addr: &Address) -> bool {
@@ -340,13 +340,13 @@ mod tests {
         fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
             unimplemented!()
         }
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
             unimplemented!()
         }
         fn find_best_calling_convention(
             &self,
             _params: &[&dyn Parameter],
-        ) -> Box<dyn PrototypeModel> {
+        ) -> Arc<PrototypeModel> {
             unimplemented!()
         }
         fn has_property(&self, _key: &str) -> bool {

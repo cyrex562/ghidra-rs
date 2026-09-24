@@ -47,6 +47,7 @@ impl IsfObject for IsfFunctionPointer {}
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::listing::function_signature::FunctionSignature;
@@ -113,7 +114,7 @@ mod tests {
 
         fn get_calling_convention(
             &self,
-        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
+        ) -> Option<Arc<crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
 

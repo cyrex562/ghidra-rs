@@ -159,7 +159,7 @@ impl<T: 'static> AnnotatedEmuSyscallUseropLibraryBase<T> {
 /// same number (Java: `IllegalArgumentException`, "Duplicate ... annotated methods").
 pub fn bind_syscalls<T: 'static>(
     number_map: &HashMap<i64, String>,
-    convention_map: &HashMap<i64, Box<dyn PrototypeModel>>,
+    convention_map: &HashMap<i64, Arc<PrototypeModel>>,
     userops: &UseropMap<T>,
     bindings: &[EmuSyscallBinding],
     program: &dyn Program,
@@ -257,7 +257,7 @@ pub trait AnnotatedEmuSyscallUseropLibrary<T: 'static>:
         &self,
         number: i64,
         opdef: Arc<dyn PcodeUseropDefinition<T>>,
-        convention: &dyn PrototypeModel,
+        convention: &PrototypeModel,
     ) -> UseropEmuSyscallDefinition<T> {
         UseropEmuSyscallDefinition::new(
             number,
@@ -329,7 +329,6 @@ mod tests {
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::language::Language;
     use crate::program::model::lang::register::RegisterRef;
-    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::program::model::mem::mem_buffer::MemBuffer;
     use crate::program::model::pcode::{OpCode, SequenceNumber, Varnode};
 
@@ -338,10 +337,20 @@ mod tests {
     // exercised (`Program`'s other accessors all default already).
     // -----------------------------------------------------------------------------------------
 
+    /// The program's 8-byte machine-word "pointer" type.
     struct PointerType;
     impl DataType for PointerType {
         fn get_name(&self) -> String {
             "pointer".to_string()
+        }
+        fn get_length(&self) -> i32 {
+            8
+        }
+        fn get_alignment(&self) -> i32 {
+            8
+        }
+        fn is_pointer(&self) -> bool {
+            true
         }
     }
 
@@ -378,33 +387,9 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------------------------
-    // A `VariableStorage`/`PrototypeModel` pair fixing every syscall parameter and the return
-    // value to one `ram` varnode apiece, in declaration order.
+    // A real `PrototypeModel` passing the one syscall parameter in `ram:0x1000` and returning
+    // in `ram:0x2000`.
     // -----------------------------------------------------------------------------------------
-
-    struct FixedStorage(Varnode);
-    impl VariableStorage for FixedStorage {
-        fn get_varnodes(&self) -> Vec<Varnode> {
-            vec![self.0.clone()]
-        }
-    }
-
-    struct TestConvention {
-        varnodes: Vec<Varnode>,
-    }
-
-    impl PrototypeModel for TestConvention {
-        fn get_storage_locations(
-            &self,
-            _program: &dyn Program,
-            data_types: &[Arc<dyn DataType>],
-            _add_auto_params: bool,
-            _is_var_args: bool,
-        ) -> Vec<Box<dyn VariableStorage>> {
-            assert_eq!(data_types.len(), self.varnodes.len(), "storage requested for every slot");
-            self.varnodes.iter().map(|vn| Box::new(FixedStorage(vn.clone())) as Box<dyn VariableStorage>).collect()
-        }
-    }
 
     fn ret_var() -> Varnode {
         Varnode::new(ram_space().address(0x2000), 8)
@@ -414,8 +399,23 @@ mod tests {
         Varnode::new(ram_space().address(0x1000), 8)
     }
 
-    fn convention() -> TestConvention {
-        TestConvention { varnodes: vec![ret_var(), in_var()] }
+    fn convention() -> PrototypeModel {
+        use crate::program::model::lang::cspec_test_support::{parser, TestCompilerSpec};
+        let cspec = TestCompilerSpec { extra_spaces: vec![ram_space()], ..TestCompilerSpec::x86_64() };
+        let mut model = PrototypeModel::new();
+        model
+            .restore_xml(
+                &mut parser(
+                    r#"<prototype name="syscall" extrapop="0" stackshift="0">
+                         <input><pentry minsize="1" maxsize="8"><addr space="ram" offset="0x1000"/></pentry></input>
+                         <output><pentry minsize="1" maxsize="8"><addr space="ram" offset="0x2000"/></pentry></output>
+                       </prototype>"#,
+                ),
+                &cspec,
+                None,
+            )
+            .unwrap();
+        model
     }
 
     // -----------------------------------------------------------------------------------------
@@ -450,8 +450,8 @@ mod tests {
         let bindings = vec![EmuSyscallBinding::new("write", "write")];
         let mut number_map = HashMap::new();
         number_map.insert(7, "write".to_string());
-        let mut convention_map: HashMap<i64, Box<dyn PrototypeModel>> = HashMap::new();
-        convention_map.insert(7, Box::new(convention()));
+        let mut convention_map: HashMap<i64, Arc<PrototypeModel>> = HashMap::new();
+        convention_map.insert(7, Arc::new(convention()));
         let program = TestProgram;
         let dt_machine_word = UseropEmuSyscallDefinition::<i64>::require_pointer_data_type(&program);
 
@@ -477,7 +477,7 @@ mod tests {
         let userops = userops_with("write", recording_userop(Arc::new(Mutex::new(Vec::new()))));
         let bindings = vec![EmuSyscallBinding::new("nonexistent", "write")];
         let number_map = HashMap::new();
-        let convention_map: HashMap<i64, Box<dyn PrototypeModel>> = HashMap::new();
+        let convention_map: HashMap<i64, Arc<PrototypeModel>> = HashMap::new();
         let program = TestProgram;
         let dt_machine_word = UseropEmuSyscallDefinition::<i64>::require_pointer_data_type(&program);
 
@@ -494,7 +494,7 @@ mod tests {
         let bindings = vec![EmuSyscallBinding::new("write", "write")];
         let mut number_map = HashMap::new();
         number_map.insert(7, "write".to_string());
-        let convention_map: HashMap<i64, Box<dyn PrototypeModel>> = HashMap::new();
+        let convention_map: HashMap<i64, Arc<PrototypeModel>> = HashMap::new();
         let program = TestProgram;
         let dt_machine_word = UseropEmuSyscallDefinition::<i64>::require_pointer_data_type(&program);
 
@@ -513,8 +513,8 @@ mod tests {
             vec![EmuSyscallBinding::new("write", "write"), EmuSyscallBinding::new("write", "write2")];
         let mut number_map = HashMap::new();
         number_map.insert(7, "write".to_string());
-        let mut convention_map: HashMap<i64, Box<dyn PrototypeModel>> = HashMap::new();
-        convention_map.insert(7, Box::new(convention()));
+        let mut convention_map: HashMap<i64, Arc<PrototypeModel>> = HashMap::new();
+        convention_map.insert(7, Arc::new(convention()));
         let program = TestProgram;
         let dt_machine_word = UseropEmuSyscallDefinition::<i64>::require_pointer_data_type(&program);
 
@@ -624,16 +624,16 @@ mod tests {
         }
         fn get_calling_conventions(
             &self,
-        ) -> Vec<Box<dyn PrototypeModel>> {
+        ) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self, _name: &str) -> Option<Arc<PrototypeModel>> {
             None
         }
-        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
             Vec::new()
         }
-        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
         fn get_decompiler_output_language(
@@ -644,7 +644,7 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: crate::program::model::lang::compiler_spec::EvaluationModelType,
-        ) -> Box<dyn PrototypeModel> {
+        ) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by these tests")
         }
         fn is_global(&self, _addr: &Address) -> bool {
@@ -656,13 +656,13 @@ mod tests {
         fn get_pcode_inject_library(&self) -> Box<dyn crate::program::seam_stubs::PcodeInjectLibrary> {
             unimplemented!("not exercised by these tests")
         }
-        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
+        fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by these tests")
         }
         fn find_best_calling_convention(
             &self,
             _params: &[&dyn crate::program::model::listing::parameter::Parameter],
-        ) -> Box<dyn PrototypeModel> {
+        ) -> Arc<PrototypeModel> {
             unimplemented!("not exercised by these tests")
         }
         fn has_property(&self, _key: &str) -> bool {
