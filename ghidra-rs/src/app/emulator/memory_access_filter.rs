@@ -20,19 +20,14 @@
 //! hold a `Copy` [`MemoryAccessFilterId`] rather than a shared, aliasable reference to the filter
 //! itself.
 //!
-//! `Emulator`/`FilteredMemoryState` (the `emu` field and `addFilter(Emulator)`'s registration
-//! step) are not threaded through here:
-//! [`Emulator::add_memory_access_filter`](crate::app::emulator::Emulator::add_memory_access_filter)
-//! and [`FilteredMemoryState`](crate::app::seam_stubs::FilteredMemoryState) currently treat
-//! filters as an opaque `Box<dyn` [`MemoryAccessFilter`](crate::app::seam_stubs::MemoryAccessFilter)
-//! `>` marker (see that trait's own docs), and retrofitting them to hold a chain-aware type is out
-//! of scope for this port -- the same "don't retrofit an already-committed trait" call
-//! [`AbstractMemoryState`](crate::pcode::memstate::AbstractMemoryState) made for its own analogous
-//! situation. Instead, [`MemoryAccessFilterChain::filter_read`]/
-//! [`filter_write`](MemoryAccessFilterChain::filter_write) take the emulator's `is_executing`
-//! state as a plain `bool` parameter, standing in for Java's `emu.isExecuting()` call -- a
-//! `FilteredMemoryState` implementation that embeds a `MemoryAccessFilterChain` supplies that bit
-//! itself when calling in.
+//! `Emulator` (the `emu` field and `addFilter(Emulator)`'s registration step) is not threaded
+//! through here: [`Emulator::add_memory_access_filter`](crate::app::emulator::Emulator::add_memory_access_filter)
+//! hands the filter's callbacks to the emulator's
+//! [`FilteredMemoryState`](crate::app::emulator::filtered_memory_state::FilteredMemoryState), which
+//! embeds this chain. [`MemoryAccessFilterChain::filter_read`]/
+//! [`filter_write`](MemoryAccessFilterChain::filter_write) take the emulator's `is_executing` state
+//! as a plain `bool` parameter, standing in for Java's `emu.isExecuting()` call; the filtered state
+//! supplies that bit itself when calling in.
 //!
 //! # Deprecation
 //!

@@ -1,6 +1,9 @@
 use thiserror::Error;
 
-use crate::app::seam_stubs::{FilteredMemoryState, MemoryAccessFilter};
+#[allow(deprecated)]
+use crate::app::emulator::filtered_memory_state::FilteredMemoryState;
+#[allow(deprecated)]
+use crate::app::emulator::memory_access_filter::{MemoryAccessFilterCallbacks, MemoryAccessFilterId};
 use crate::pcode::emulate::emulate_execution_state::EmulateExecutionState;
 use crate::pcode::emulate::break_table_call_back::BreakTableCallBack;
 use crate::pcode::emulate::instruction_decode_exception::InstructionDecodeException;
@@ -103,13 +106,23 @@ pub trait Emulator {
 
     /// Add a filter on memory access.
     ///
-    /// Corresponds to `Emulator.addMemoryAccessFilter(MemoryAccessFilter)`.
-    fn add_memory_access_filter(&mut self, filter: Box<dyn MemoryAccessFilter>);
+    /// Corresponds to `Emulator.addMemoryAccessFilter(MemoryAccessFilter)`, which is
+    /// `filter.addFilter(this)`: the filter becomes the head of the chain the filtered memory
+    /// state runs reads and writes through. Java's filter object is a node of that chain; here the
+    /// chain owns the filter's callbacks (see
+    /// [`MemoryAccessFilterChain`](crate::app::emulator::memory_access_filter::MemoryAccessFilterChain))
+    /// and hands back the filter's id, which is what Java's caller holds to `dispose()` it later.
+    #[allow(deprecated)]
+    fn add_memory_access_filter(
+        &mut self,
+        filter: Box<dyn MemoryAccessFilterCallbacks>,
+    ) -> MemoryAccessFilterId;
 
     /// Get the memory state, modified by all installed access filters.
     ///
     /// Corresponds to `Emulator.getFilteredMemState()`.
-    fn get_filtered_mem_state(&mut self) -> &mut dyn FilteredMemoryState;
+    #[allow(deprecated)]
+    fn get_filtered_mem_state(&mut self) -> &mut FilteredMemoryState;
 
     /// Sets the context register value at the current execute address.
     ///
@@ -284,7 +297,6 @@ mod tests {
         }
     }
 
-    impl FilteredMemoryState for NullMemoryState {}
 
     /// Builds a minimal, valid `SleighLanguage` (one `ram` space, no symbols) purely so a
     /// [`BreakTableCallBack`] can be constructed; mirrors
@@ -365,7 +377,7 @@ mod tests {
         halted: bool,
         at_breakpoint: bool,
         mem_state: NullMemoryState,
-        filtered_mem_state: NullMemoryState,
+        filtered_mem_state: FilteredMemoryState,
         break_table: BreakTableCallBack,
         context: Option<RegisterRef>,
         filter_count: usize,
@@ -416,11 +428,15 @@ mod tests {
             &mut self.mem_state
         }
 
-        fn add_memory_access_filter(&mut self, _filter: Box<dyn MemoryAccessFilter>) {
+        fn add_memory_access_filter(
+            &mut self,
+            filter: Box<dyn MemoryAccessFilterCallbacks>,
+        ) -> MemoryAccessFilterId {
             self.filter_count += 1;
+            self.filtered_mem_state.add_filter(filter)
         }
 
-        fn get_filtered_mem_state(&mut self) -> &mut dyn FilteredMemoryState {
+        fn get_filtered_mem_state(&mut self) -> &mut FilteredMemoryState {
             &mut self.filtered_mem_state
         }
 
@@ -464,7 +480,7 @@ mod tests {
             halted: false,
             at_breakpoint: false,
             mem_state: NullMemoryState,
-            filtered_mem_state: NullMemoryState,
+            filtered_mem_state: FilteredMemoryState::new(Box::new(minimal_sleigh_language())),
             break_table: BreakTableCallBack::new(Arc::new(minimal_sleigh_language())),
             context: None,
             filter_count: 0,
@@ -537,11 +553,15 @@ mod tests {
         );
     }
 
+    /// A filter that does nothing to the values it sees.
+    struct NullFilter;
+    impl MemoryAccessFilterCallbacks for NullFilter {
+        fn process_read(&mut self, _spc: &Arc<AddressSpace>, _off: i64, _size: i32, _values: &mut [u8]) {}
+        fn process_write(&mut self, _spc: &Arc<AddressSpace>, _off: i64, _size: i32, _values: &mut [u8]) {}
+    }
+
     #[test]
     fn add_memory_access_filter_is_tracked() {
-        struct NullFilter;
-        impl MemoryAccessFilter for NullFilter {}
-
         let mut emu = test_emulator();
         assert_eq!(emu.filter_count, 0);
         emu.add_memory_access_filter(Box::new(NullFilter));
@@ -550,9 +570,6 @@ mod tests {
 
     #[test]
     fn dispose_resets_filter_count() {
-        struct NullFilter;
-        impl MemoryAccessFilter for NullFilter {}
-
         let mut emu = test_emulator();
         emu.add_memory_access_filter(Box::new(NullFilter));
         emu.dispose();
