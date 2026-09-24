@@ -182,6 +182,14 @@ pub trait CompilerSpec {
 
     /// Determine if this `CompilerSpec` is equivalent to another specified instance.
     fn is_equivalent(&self, other: &dyn CompilerSpec) -> bool;
+
+    /// This spec as a
+    /// [`BasicCompilerSpec`](crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec),
+    /// if it is one: the stand-in for Java's `getClass()` check and cast in
+    /// `BasicCompilerSpec.isEquivalent`.
+    fn as_basic_compiler_spec(&self) -> Option<&crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec> {
+        None
+    }
 }
 
 #[cfg(test)]

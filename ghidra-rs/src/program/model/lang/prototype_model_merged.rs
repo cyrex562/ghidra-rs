@@ -55,7 +55,7 @@ struct PEntry {
 /// locations. Port of the private inner class `PrototypeModelMerged.ScoreProtoModel`.
 struct ScoreProtoModel<'a> {
     /// `true` to score input parameters, `false` to score outputs. Only the input path is
-    /// exercised by [`super::PrototypeModelMerged::select_model`] (it always constructs with
+    /// exercised by [`PrototypeModel::select_model`] (it always constructs with
     /// `true`, mirroring Java's `new ScoreProtoModel(true, ...)`), but both branches are ported
     /// faithfully since the Java class supports both.
     isinputscore: bool,
@@ -216,7 +216,7 @@ impl PrototypeModel {
     /// Returns a [`SleighException`] if no candidate scores below the initial threshold of `500`
     /// (including when there are no candidates), matching Java's "No model matches : missing
     /// default".
-    pub fn select_model(&self, params: &[Box<dyn Parameter>]) -> Result<Arc<PrototypeModel>, SleighException> {
+    pub fn select_model(&self, params: &[&dyn Parameter]) -> Result<Arc<PrototypeModel>, SleighException> {
         let modellist = self.merged_models();
         let mut bestscore = 500;
         let mut bestindex: Option<usize> = None;
@@ -562,7 +562,7 @@ mod tests {
     #[test]
     fn select_model_errors_when_no_models_registered() {
         let m = PrototypeModel::new_merged();
-        let err = m.select_model(&[assigned_param(reg(0x38), 8)]).err().unwrap();
+        let err = m.select_model(&[assigned_param(reg(0x38), 8).as_ref()]).err().unwrap();
         assert_eq!(err.message(), "No model matches : missing default");
     }
 
@@ -570,7 +570,7 @@ mod tests {
     fn select_model_picks_sysv_for_rdi_rsi_arguments() {
         let m = merged(&[model(MS), model(SYSV)]);
         let params = vec![assigned_param(reg(0x38), 8), assigned_param(reg(0x30), 8)];
-        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__stdcall"));
+        assert_eq!(m.select_model(&params.iter().map(|p| p.as_ref()).collect::<Vec<_>>()).unwrap().get_name().as_deref(), Some("__stdcall"));
     }
 
     #[test]
@@ -579,7 +579,7 @@ mod tests {
         // leaves holes at slots 0 and 1 (penalty 16 + 10). System V is declared first.
         let m = merged(&[model(SYSV), model(MS)]);
         let params = vec![assigned_param(reg(0x8), 8), assigned_param(reg(0x10), 8)];
-        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__fastcall"));
+        assert_eq!(m.select_model(&params.iter().map(|p| p.as_ref()).collect::<Vec<_>>()).unwrap().get_name().as_deref(), Some("__fastcall"));
     }
 
     #[test]
@@ -587,14 +587,14 @@ mod tests {
         // RDI is not a Microsoft parameter register: one mismatch (20) for __fastcall.
         let m = merged(&[model(MS), model(SYSV)]);
         let params = vec![assigned_param(reg(0x38), 8)];
-        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__stdcall"));
+        assert_eq!(m.select_model(&params.iter().map(|p| p.as_ref()).collect::<Vec<_>>()).unwrap().get_name().as_deref(), Some("__stdcall"));
     }
 
     #[test]
     fn select_model_skips_unassigned_storage() {
         let m = merged(&[model(MS)]);
         let params = vec![assigned_param(reg(0x8), 8), unassigned_param(4)];
-        assert_eq!(m.select_model(&params).unwrap().get_name().as_deref(), Some("__fastcall"));
+        assert_eq!(m.select_model(&params.iter().map(|p| p.as_ref()).collect::<Vec<_>>()).unwrap().get_name().as_deref(), Some("__fastcall"));
     }
 
     #[test]

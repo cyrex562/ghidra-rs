@@ -24,10 +24,11 @@
 //!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
 //!   which a `&mut dyn ProcessorContext` cannot be tested for here. A language can only parse
 //!   once it is shared through [`SleighLanguage::into_shared`] (prototypes hold the language).
-//! * [`Language::get_compiler_spec_by_id`] / [`Language::get_default_compiler_spec`] need a
-//!   concrete `BasicCompilerSpec` (TODO; needs cspec XML parsing via `XmlPullParserFactory` and
-//!   `PcodeInjectLibrary`). Those bodies panic with an explanatory message; they are not reachable from the
-//!   p-code emulator.
+//! * [`Language::get_compiler_spec_by_id`] builds a fresh
+//!   [`BasicCompilerSpec`](crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec)
+//!   on every call instead of caching it in `compilerSpecs` as Java does: a compiler spec holds
+//!   `Rc`-based registers, which a `Send + Sync` language cannot store. It also needs the language
+//!   to have been shared through [`SleighLanguage::into_shared`] (the spec holds its language).
 //! * [`Language::reload_language`] needs `SlaFormat.buildDecoder` (not ported) to re-read the
 //!   `.sla` file, and reports that as an I/O error, as Java does for a failed reload.
 //!
@@ -913,14 +914,13 @@ impl Language for SleighLanguage {
             .unwrap_or_default()
     }
 
-    /// Port of `getCompilerSpecByID(CompilerSpecID)`.
+    /// Port of `getCompilerSpecByID(CompilerSpecID)`: the compiler spec parsed from the `.cspec`
+    /// file named by the description (see the module docs for the caching difference).
     ///
     /// # Errors
-    /// [`CompilerSpecNotFoundException`] if the description lists no such compiler spec.
-    ///
-    /// # Panics
-    /// For a listed compiler spec, since constructing a `BasicCompilerSpec` (cspec parsing) is
-    /// not yet ported.
+    /// [`CompilerSpecNotFoundException`] if the description lists no such compiler spec, its
+    /// description names no `.cspec` file, the language was never shared through
+    /// [`SleighLanguage::into_shared`], or the file cannot be read or parsed.
     fn get_compiler_spec_by_id(
         &self,
         compiler_spec_id: &CompilerSpecID,
@@ -935,17 +935,35 @@ impl Language for SleighLanguage {
                 compiler_spec_id,
             ));
         }
-        unimplemented!(
-            "SleighLanguage::get_compiler_spec_by_id needs a concrete BasicCompilerSpec, which is \
-             not yet ported"
-        )
+        let not_found = || CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id);
+        let Some(description) = &self.description else {
+            return Err(not_found());
+        };
+        let compiler_spec_description: Arc<dyn CompilerSpecDescription> =
+            Arc::from(description.get_compiler_spec_description_by_id(compiler_spec_id)?);
+        let Some(file) = compiler_spec_description
+            .as_sleigh_compiler_spec_description()
+            .map(|d| d.get_file().clone())
+        else {
+            return Err(not_found());
+        };
+        let Some(language) = self.self_ref.upgrade() else {
+            return Err(not_found());
+        };
+        let spec = crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec::from_file(
+            compiler_spec_description,
+            language,
+            &file,
+        )?;
+        Ok(Box::new(spec))
     }
 
     /// Port of `getDefaultCompilerSpec()`: the first compatible compiler spec.
     ///
     /// # Panics
-    /// If there are no compatible compiler specs (Java's `NoSuchElementException`), or otherwise
-    /// as [`Language::get_compiler_spec_by_id`] does.
+    /// If there are no compatible compiler specs (Java's `NoSuchElementException`), or if that
+    /// spec cannot be loaded (Java wraps the `CompilerSpecNotFoundException` in an
+    /// `IllegalStateException`).
     fn get_default_compiler_spec(&self) -> Box<dyn CompilerSpec> {
         let first = self
             .get_compatible_compiler_spec_descriptions()

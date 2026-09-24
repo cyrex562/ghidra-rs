@@ -562,3 +562,105 @@ pub(crate) fn named_model(name: &str) -> PrototypeModel {
         r#"<prototype name="{name}" extrapop="unknown" stackshift="0"><input/><output/></prototype>"#
     ))
 }
+
+/// A real [`SleighLanguage`](crate::program::model::lang::sleigh::SleighLanguage) decoded from a
+/// generated `.sla`: 8-byte `ram` (the default space), a `register` space holding the
+/// [`X86_64_REGISTERS`] subset (plus a 4-byte `contextreg` with context variable `TMode`), and one
+/// user op, `syscall`. Shared (so it can be handed to a compiler spec, as Java's `this`).
+pub(crate) fn sleigh_x86_64_language(
+    description: Option<crate::program::model::lang::sleigh::SharedSleighLanguageDescription>,
+) -> Arc<crate::program::model::lang::sleigh::SleighLanguage> {
+    use crate::program::model::pcode::encoder::Encoder;
+    use crate::program::model::pcode::ids::*;
+    use crate::program::model::pcode::{PackedDecode, PackedEncode};
+
+    const RAM: i32 = 1;
+    const REGISTER: i32 = 2;
+    const UNIQUE: i32 = 3;
+    let mut e = PackedEncode::new(Vec::<u8>::new());
+    let space = |e: &mut PackedEncode<Vec<u8>>, elem: ElementId, name: &str, index: i64, size: i64, delay: i64| {
+        e.open_element(elem).unwrap();
+        e.write_string(ATTRIB_NAME, name).unwrap();
+        e.write_signed_integer(ATTRIB_INDEX, index).unwrap();
+        e.write_signed_integer(ATTRIB_SIZE, size).unwrap();
+        e.write_signed_integer(ATTRIB_DELAY, delay).unwrap();
+        e.close_element(elem).unwrap();
+    };
+    e.open_element(ELEM_SLEIGH).unwrap();
+    e.write_signed_integer(ATTRIB_VERSION, 4).unwrap();
+    e.write_bool(ATTRIB_BIGENDIAN, false).unwrap();
+    e.write_signed_integer(ATTRIB_ALIGN, 1).unwrap();
+    e.write_unsigned_integer(ATTRIB_UNIQBASE, 0x1000).unwrap();
+    e.write_unsigned_integer(ATTRIB_UNIQMASK, 0xff).unwrap();
+    e.write_unsigned_integer(ATTRIB_NUMSECTIONS, 1).unwrap();
+    e.open_element(ELEM_SPACES).unwrap();
+    e.write_string(ATTRIB_DEFAULTSPACE, "ram").unwrap();
+    e.open_element(ELEM_SPACE_OTHER).unwrap();
+    e.close_element(ELEM_SPACE_OTHER).unwrap();
+    space(&mut e, ELEM_SPACE, "ram", RAM as i64, 8, 1);
+    space(&mut e, ELEM_SPACE, "register", REGISTER as i64, 4, 0);
+    space(&mut e, ELEM_SPACE_UNIQUE, "unique", UNIQUE as i64, 4, 0);
+    e.close_element(ELEM_SPACES).unwrap();
+
+    let nregs = X86_64_REGISTERS.len() as u64;
+    e.open_element(ELEM_SYMBOL_TABLE).unwrap();
+    e.write_signed_integer(ATTRIB_SCOPESIZE, 1).unwrap();
+    e.write_signed_integer(ATTRIB_SYMBOLSIZE, (nregs + 3) as i64).unwrap();
+    e.open_element(ELEM_SCOPE).unwrap();
+    e.write_unsigned_integer(ATTRIB_ID, 0).unwrap();
+    e.write_unsigned_integer(ATTRIB_PARENT, 0).unwrap();
+    e.close_element(ELEM_SCOPE).unwrap();
+    let head = |e: &mut PackedEncode<Vec<u8>>, elem: ElementId, name: &str, id: u64| {
+        e.open_element(elem).unwrap();
+        e.write_string(ATTRIB_NAME, name).unwrap();
+        e.write_unsigned_integer(ATTRIB_ID, id).unwrap();
+        e.write_unsigned_integer(ATTRIB_SCOPE, 0).unwrap();
+        e.close_element(elem).unwrap();
+    };
+    for (i, (name, _, _)) in X86_64_REGISTERS.iter().enumerate() {
+        head(&mut e, ELEM_VARNODE_SYM_HEAD, name, i as u64);
+    }
+    head(&mut e, ELEM_VARNODE_SYM_HEAD, "contextreg", nregs);
+    head(&mut e, ELEM_CONTEXT_SYM_HEAD, "TMode", nregs + 1);
+    head(&mut e, ELEM_USEROP_HEAD, "syscall", nregs + 2);
+    let varnode = |e: &mut PackedEncode<Vec<u8>>, id: u64, offset: u64, size: i64| {
+        e.open_element(ELEM_VARNODE_SYM).unwrap();
+        e.write_unsigned_integer(ATTRIB_ID, id).unwrap();
+        e.write_space_indexed(ATTRIB_SPACE, REGISTER, "").unwrap();
+        e.write_unsigned_integer(ATTRIB_OFF, offset).unwrap();
+        e.write_signed_integer(ATTRIB_SIZE, size).unwrap();
+        e.close_element(ELEM_VARNODE_SYM).unwrap();
+    };
+    for (i, (_, off, size)) in X86_64_REGISTERS.iter().enumerate() {
+        varnode(&mut e, i as u64, *off as u64, *size as i64);
+    }
+    varnode(&mut e, nregs, 0x2000, 4);
+    e.open_element(ELEM_CONTEXT_SYM).unwrap();
+    e.write_unsigned_integer(ATTRIB_ID, nregs + 1).unwrap();
+    e.write_unsigned_integer(ATTRIB_VARNODE, nregs).unwrap();
+    e.write_signed_integer(ATTRIB_LOW, 0).unwrap();
+    e.write_signed_integer(ATTRIB_HIGH, 0).unwrap();
+    e.write_bool(ATTRIB_FLOW, false).unwrap();
+    e.open_element(ELEM_CONTEXTFIELD).unwrap();
+    e.write_bool(ATTRIB_SIGNBIT, false).unwrap();
+    e.write_signed_integer(ATTRIB_STARTBIT, 0).unwrap();
+    e.write_signed_integer(ATTRIB_ENDBIT, 0).unwrap();
+    e.write_signed_integer(ATTRIB_STARTBYTE, 0).unwrap();
+    e.write_signed_integer(ATTRIB_ENDBYTE, 0).unwrap();
+    e.write_signed_integer(ATTRIB_SHIFT, 7).unwrap();
+    e.close_element(ELEM_CONTEXTFIELD).unwrap();
+    e.close_element(ELEM_CONTEXT_SYM).unwrap();
+    e.open_element(ELEM_USEROP).unwrap();
+    e.write_unsigned_integer(ATTRIB_ID, nregs + 2).unwrap();
+    e.write_signed_integer(ATTRIB_INDEX, 0).unwrap();
+    e.close_element(ELEM_USEROP).unwrap();
+    e.close_element(ELEM_SYMBOL_TABLE).unwrap();
+    e.close_element(ELEM_SLEIGH).unwrap();
+
+    let decoder = PackedDecode::new(Arc::new(crate::program::model::address::DefaultAddressFactory::new(vec![])), e.into_inner());
+    let language = match description {
+        Some(d) => crate::program::model::lang::sleigh::SleighLanguage::decode_with_description(&decoder, d),
+        None => crate::program::model::lang::sleigh::SleighLanguage::decode(&decoder, "x86:LE:64:default".to_string()),
+    };
+    language.expect("well-formed test .sla").into_shared()
+}

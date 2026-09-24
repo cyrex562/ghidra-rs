@@ -50,6 +50,10 @@ impl CompilerSpecDescription for SleighCompilerSpecDescription {
     fn get_source(&self) -> String {
         self.file.absolute_path()
     }
+
+    fn as_sleigh_compiler_spec_description(&self) -> Option<&SleighCompilerSpecDescription> {
+        Some(self)
+    }
 }
 
 #[cfg(test)]

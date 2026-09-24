@@ -20,6 +20,36 @@ pub trait CompilerSpecDescription {
     /// The source of the described compiler spec, usually the file or facility it originated
     /// from.
     fn get_source(&self) -> String;
+
+    /// This description as a
+    /// [`SleighCompilerSpecDescription`](crate::app::plugin::processors::sleigh::sleigh_compiler_spec_description::SleighCompilerSpecDescription),
+    /// if it is one: the stand-in for Java's `(SleighCompilerSpecDescription) description` cast,
+    /// which `SleighLanguage.getCompilerSpecByID` uses to find the `.cspec` file.
+    fn as_sleigh_compiler_spec_description(
+        &self,
+    ) -> Option<&crate::app::plugin::processors::sleigh::sleigh_compiler_spec_description::SleighCompilerSpecDescription>
+    {
+        None
+    }
+}
+
+/// A shared description describes the same compiler spec.
+impl<T: CompilerSpecDescription + ?Sized> CompilerSpecDescription for std::sync::Arc<T> {
+    fn get_compiler_spec_id(&self) -> CompilerSpecID {
+        (**self).get_compiler_spec_id()
+    }
+    fn get_compiler_spec_name(&self) -> String {
+        (**self).get_compiler_spec_name()
+    }
+    fn get_source(&self) -> String {
+        (**self).get_source()
+    }
+    fn as_sleigh_compiler_spec_description(
+        &self,
+    ) -> Option<&crate::app::plugin::processors::sleigh::sleigh_compiler_spec_description::SleighCompilerSpecDescription>
+    {
+        (**self).as_sleigh_compiler_spec_description()
+    }
 }
 
 #[cfg(test)]

@@ -106,6 +106,10 @@ impl fmt::Display for PcodeInjectLibraryError {
 
 impl std::error::Error for PcodeInjectLibraryError {}
 
+/// The phrase [`PcodeInjectLibrary::parse_inject`]'s error uses to report the unported
+/// `PcodeParser`; see [`PcodeInjectLibrary::is_unported_parser_error`].
+const UNPORTED_PARSER_MARKER: &str = "has not ported PcodeParser";
+
 /// The concrete type of a payload freshly produced by [`PcodeInjectLibrary::allocate_inject`].
 ///
 /// See the module docs above for why this enum exists instead of a `Box<dyn InjectPayload>`.
@@ -255,10 +259,18 @@ impl PcodeInjectLibrary {
         let preview: String = pcode_text.chars().take(40).collect();
         Err(SleighException::with_message(format!(
             "PcodeInjectLibrary::parse_inject({source_name}): cannot compile p-code source text \
-             (starting \"{preview}\"...) -- this crate has not ported PcodeParser (no sleigh-\
+             (starting \"{preview}\"...) -- this crate {UNPORTED_PARSER_MARKER} (no sleigh-\
              compiler backend yet). Only payloads with dynamic=\"true\" (no <body>) can be \
              registered today."
         )))
+    }
+
+    /// True if `error` is [`parse_inject`](Self::parse_inject)'s report that a payload's p-code
+    /// text could not be compiled because `PcodeParser` is not ported -- as opposed to a genuine
+    /// registration error (a duplicate name, an unknown user op, ...). Compiler-spec loading uses
+    /// this to skip just those payloads.
+    pub fn is_unported_parser_error(error: &SleighException) -> bool {
+        error.message().contains(UNPORTED_PARSER_MARKER)
     }
 
     /// Returns a list of names for all installed call-fixups.
@@ -658,6 +670,87 @@ impl PcodeInjectLibrary {
         }
 
         true
+    }
+}
+
+/// A registered payload handed out through the
+/// [`seam_stubs::PcodeInjectLibrary`](crate::program::seam_stubs::PcodeInjectLibrary) view, which
+/// returns owned `Box<dyn InjectPayload>`s. The payload is shared with the library (Java hands out
+/// the same object); every query delegates to it.
+struct SharedInjectPayload(Arc<dyn InjectPayloadSleigh>);
+
+impl InjectPayload for SharedInjectPayload {
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
+    fn get_type(&self) -> i32 {
+        self.0.get_type()
+    }
+    fn get_source(&self) -> String {
+        self.0.get_source()
+    }
+    fn get_param_shift(&self) -> i32 {
+        self.0.get_param_shift()
+    }
+    fn get_input(&self) -> Vec<crate::program::model::lang::inject_payload::InjectParameter> {
+        self.0.get_input()
+    }
+    fn get_output(&self) -> Vec<crate::program::model::lang::inject_payload::InjectParameter> {
+        self.0.get_output()
+    }
+    fn is_error_placeholder(&self) -> bool {
+        self.0.is_error_placeholder()
+    }
+    fn inject(
+        &self,
+        context: &InjectContext,
+        emit: &mut dyn crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit,
+    ) -> Result<(), crate::program::model::lang::inject_payload::InjectPayloadError> {
+        self.0.inject(context, emit)
+    }
+    fn get_pcode(
+        &self,
+        program: &dyn Program,
+        context: &InjectContext,
+    ) -> Result<Vec<crate::program::model::pcode::PcodeOp>, crate::program::model::lang::inject_payload::InjectPayloadError> {
+        self.0.get_pcode(program, context)
+    }
+    fn is_fall_thru(&self) -> bool {
+        self.0.is_fall_thru()
+    }
+    fn is_incidental_copy(&self) -> bool {
+        self.0.is_incidental_copy()
+    }
+    fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
+        self.0.encode(encoder)
+    }
+    /// A registered payload is immutable (the Java library's own contract), so it cannot be
+    /// restored in place.
+    fn restore_xml<P: XmlPullParser>(&mut self, _parser: &mut P, _language: &SleighLanguage) -> Result<(), XmlParseException> {
+        Err(XmlParseException::new(format!("payload {} is registered and cannot be restored", self.0.get_name())))
+    }
+    fn is_equivalent(&self, other: &dyn InjectPayload) -> bool {
+        self.0.is_equivalent(other)
+    }
+}
+
+/// The library as seen through the
+/// [`CompilerSpec::get_pcode_inject_library`](crate::program::model::lang::compiler_spec::CompilerSpec::get_pcode_inject_library)
+/// seam.
+impl crate::program::seam_stubs::PcodeInjectLibrary for PcodeInjectLibrary {
+    fn get_payload(&self, inject_type: i32, name: &str) -> Option<Box<dyn InjectPayload>> {
+        let payload = match inject_type {
+            CALLFIXUP_TYPE => self.call_fixup_map.get(name).cloned(),
+            CALLOTHERFIXUP_TYPE => self.call_other_fixup_map.get(name).cloned().flatten(),
+            CALLMECHANISM_TYPE => self.call_mech_fixup_map.get(name).cloned(),
+            EXECUTABLEPCODE_TYPE => self.exe_pcode_map.get(name).cloned(),
+            _ => None,
+        }?;
+        Some(Box::new(SharedInjectPayload(payload)))
+    }
+
+    fn build_inject_context(&self) -> InjectContext {
+        PcodeInjectLibrary::build_inject_context(self)
     }
 }
 

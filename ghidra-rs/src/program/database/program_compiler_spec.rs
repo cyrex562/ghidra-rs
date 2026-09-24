@@ -11,10 +11,11 @@
 //! Java class and are not part of the contract a trait needs to expose.
 //!
 //! The package-private static factory `getProgramCompilerSpec(Program, CompilerSpec)` is also
-//! omitted: it constructs a new concrete `ProgramCompilerSpec` from a `BasicCompilerSpec`, which
-//! requires both a concrete implementation of this trait and a Rust port of `BasicCompilerSpec`
-//! (currently unported) to downcast against -- neither exists yet, and no already-ported Rust code
-//! calls this factory (`ProgramDB`'s Rust port does not reference `ProgramCompilerSpec`).
+//! omitted: it constructs a new concrete `ProgramCompilerSpec` from a
+//! [`BasicCompilerSpec`](crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec),
+//! which requires a concrete implementation of this trait -- none exists yet, and no
+//! already-ported Rust code calls this factory (`ProgramDB`'s Rust port does not reference
+//! `ProgramCompilerSpec`).
 //!
 //! `equals(Object)` is likewise omitted: `CompilerSpec::is_equivalent` already covers the
 //! trait-object-safe equivalence contract other ported code relies on.

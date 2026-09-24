@@ -1144,6 +1144,15 @@ pub const ATTRIB_EXTRAPOP: AttributeId = AttributeId::new("extrapop", 191);
 pub const ATTRIB_STACKSHIFT: AttributeId = AttributeId::new("stackshift", 192);
 pub const ATTRIB_HASTHIS: AttributeId = AttributeId::new("hasthis", 193);
 pub const ATTRIB_POINTERMAX: AttributeId = AttributeId::new("pointermax", 194);
+// Real Ghidra ids are 112/110/106/107/113 (`AttributeId.java`'s `ATTRIB_SIGNEXT`/`ATTRIB_REGISTER`/
+// `ATTRIB_GROWTH`/`ATTRIB_KEY`/`ATTRIB_STYLE`), continuing the local counter above instead per the
+// same non-wire-compatible numbering scheme as `ELEM_BHEAD`. Needed by `BasicCompilerSpec`'s
+// encode.
+pub const ATTRIB_SIGNEXT: AttributeId = AttributeId::new("signext", 195);
+pub const ATTRIB_REGISTER: AttributeId = AttributeId::new("register", 196);
+pub const ATTRIB_GROWTH: AttributeId = AttributeId::new("growth", 197);
+pub const ATTRIB_KEY: AttributeId = AttributeId::new("key", 198);
+pub const ATTRIB_STYLE: AttributeId = AttributeId::new("style", 199);
 
 #[cfg(test)]
 mod tests {
