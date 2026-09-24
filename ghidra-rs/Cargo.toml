@@ -41,6 +41,7 @@ native-tls = "0.2"
 regex = "1.10"
 libc = "0.2"
 slotmap = "1.0"              # arena + typed ID pattern (see OWNERSHIP_MIGRATION.md)
+quick-xml = "0.39"           # SAX layer under util/xml pull parsers (sax_parser.rs)
 
 [dev-dependencies]
 tempfile = "3.10"

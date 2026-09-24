@@ -1,45 +1,58 @@
-//! A small, non-validating, SAX-style XML reader.
+//! A non-validating, SAX-style XML reader backed by [`quick_xml`].
 //!
 //! Ghidra's pull parsers ([`NonThreadedXmlPullParserImpl`] and [`ThreadedXmlPullParserImpl`])
 //! sit on top of the JDK's `javax.xml.parsers.SAXParser`, configured by
 //! `XmlUtilities.createSecureSAXParserFactory` with namespace processing off and external
-//! entities disabled. This crate has no XML dependency, so this module supplies the SAX layer
-//! those two ports need: it is not the port of a Ghidra class, it stands in for the JDK.
+//! entities disabled. This module supplies the SAX layer those two ports need: it is not the
+//! port of a Ghidra class, it stands in for the JDK.
 //!
-//! # Supported subset
+//! Tokenizing is done by `quick-xml`. On top of it this module keeps the parts of Xerces'
+//! behavior that `quick-xml` deliberately leaves to its caller:
 //!
-//! The reader handles what Ghidra's own XML (`.ldefs`, `.pspec`, `.cspec`, `.opinion`, pattern
-//! files, program XML exports) uses, and reports a fatal error for anything malformed:
+//! * **decoding**: the input is decoded up front (UTF-8, `US-ASCII` or `ISO-8859-1` as named by
+//!   the XML declaration, or UTF-8/UTF-16 by byte-order mark) and line ends are normalized
+//!   (`\r\n` and lone `\r` become `\n`), so `quick-xml` always reads UTF-8. It can only
+//!   tokenize ASCII-compatible input, so UTF-16 has to be decoded before it sees the bytes
+//!   whether or not its `encoding` feature is on;
+//! * **well-formedness checks** `quick-xml` does not make: legal characters, XML names,
+//!   matching end tags and a single root element (reported with Xerces' messages), the XML
+//!   declaration's pseudo-attributes, `]]>` in content, `<` in attribute values, and
+//!   whitespace between attributes;
+//! * **references**: the five predefined entities and decimal/hex character references, plus
+//!   attribute-value normalization (literal tab/newline/return become a space);
+//! * **`<!DOCTYPE>`** (only when [`SaxConfig::allow_doctype`] is set, mirroring Java's
+//!   `disallow-doctype-decl` feature). `quick-xml` only delimits the declaration; the internal
+//!   subset is scanned here for general entity declarations. The external subset is never
+//!   loaded (Java's `load-external-dtd` is off), internal entities are expanded — including
+//!   ones whose replacement text contains markup — and external entities are skipped rather
+//!   than fetched (Java's `external-general-entities` is off). Other markup declarations
+//!   (`ELEMENT`, `ATTLIST`, `NOTATION`, parameter entities) are skipped without being
+//!   interpreted, so ATTLIST defaults are not applied.
 //!
-//! * the XML declaration, with `UTF-8`, `US-ASCII` or `ISO-8859-1` encodings, plus a UTF-8 or
-//!   UTF-16 byte-order mark;
-//! * elements and attributes with names taken verbatim (namespaces off, so `xmlns` and prefixed
-//!   names are ordinary attributes/names, as with Java's `namespaces` feature set to `false`);
-//! * character data, CDATA sections, comments and processing instructions;
-//! * the five predefined entities and decimal/hex character references;
-//! * `<!DOCTYPE>` (only when [`SaxConfig::allow_doctype`] is set, mirroring Java's
-//!   `disallow-doctype-decl` feature): the external subset is never loaded (Java's
-//!   `load-external-dtd` is off), internal general entities declared in the internal subset are
-//!   expanded, and external entities are skipped rather than fetched (Java's
-//!   `external-general-entities` is off). Other markup declarations (`ELEMENT`, `ATTLIST`,
-//!   `NOTATION`, parameter entities) are skipped without being interpreted, so ATTLIST defaults
-//!   are not applied.
-//! * line-end normalization (`\r\n` and lone `\r` become `\n`) and attribute-value
-//!   normalization (literal tab/newline/return become a space).
+//! Names are taken verbatim (namespaces off, so `xmlns` and prefixed names are ordinary
+//! attributes/names, as with Java's `namespaces` feature set to `false`).
 //!
 //! As with `FEATURE_SECURE_PROCESSING`, entity expansion is capped at
-//! [`ENTITY_EXPANSION_LIMIT`] expansions per document.
+//! [`ENTITY_EXPANSION_LIMIT`] expansions per document, and recursive entities are rejected.
 //!
 //! DTD validation is not supported; the pull parsers reject `validate == true` up front.
 //!
 //! Locations follow Xerces' `Locator`: 1-based line, and a 1-based column pointing just past
 //! the markup that produced the event (so `<a>` at the start of a line reports column 4).
+//! Events produced from an entity's replacement text report the location just past the
+//! entity reference.
 //!
 //! [`NonThreadedXmlPullParserImpl`]: super::non_threaded_xml_pull_parser_impl::NonThreadedXmlPullParserImpl
 //! [`ThreadedXmlPullParserImpl`]: super::threaded_xml_pull_parser_impl::ThreadedXmlPullParserImpl
 
 use std::collections::HashMap;
 use std::fmt;
+
+use quick_xml::errors::{Error as QuickXmlError, IllFormedError, SyntaxError};
+use quick_xml::escape::resolve_xml_entity;
+use quick_xml::events::attributes::AttrError;
+use quick_xml::events::{BytesStart, Event};
+use quick_xml::Reader;
 
 use crate::app::util::xml::xml_error_handler::{XmlError, XmlParseException};
 
@@ -143,28 +156,32 @@ pub(crate) fn parse<H: SaxContentHandler>(
     config: SaxConfig,
     handler: &mut H,
 ) -> Result<(), SaxError> {
-    let chars = decode(input)?;
+    let text = decode(input)?;
+    check_characters(&text)?;
     let mut parser = Parser {
-        frames: vec![Frame { chars, pos: 0, entity: None }],
-        line: 1,
-        column: 1,
         handler,
         config,
         entities: HashMap::new(),
         has_unread_declarations: false,
         expansions: 0,
+        entity_stack: Vec::new(),
         text: String::new(),
     };
-    parser.check_characters()?;
-    parser.parse_document()
+    parser.run(&text, Origin::Document(Tracker::default()))
 }
 
 fn fatal_at(line: i32, column: i32, message: impl Into<String>) -> SaxError {
     SaxError::Fatal { line, column, message: message.into() }
 }
 
-/// Decodes `input` to characters, normalizing line ends.
-fn decode(input: &[u8]) -> Result<Vec<char>, SaxError> {
+fn fatal_at_location(location: SaxLocation, message: impl Into<String>) -> SaxError {
+    fatal_at(location.line, location.column, message)
+}
+
+// ---- decoding ---------------------------------------------------------------------------
+
+/// Decodes `input` to a string, normalizing line ends.
+fn decode(input: &[u8]) -> Result<String, SaxError> {
     let text: String = if let Some(rest) = input.strip_prefix(&[0xEF, 0xBB, 0xBF]) {
         decode_utf8(rest)?
     } else if let Some(rest) = input.strip_prefix(&[0xFE, 0xFF]) {
@@ -196,7 +213,10 @@ fn decode(input: &[u8]) -> Result<Vec<char>, SaxError> {
             },
         }
     };
-    let mut out = Vec::with_capacity(text.len());
+    if !text.contains('\r') {
+        return Ok(text);
+    }
+    let mut out = String::with_capacity(text.len());
     let mut it = text.chars().peekable();
     while let Some(c) = it.next() {
         if c == '\r' {
@@ -223,11 +243,7 @@ fn decode_utf8(input: &[u8]) -> Result<String, SaxError> {
         Ok(s) => Ok(s.to_string()),
         Err(e) => {
             let (line, column) = byte_position(input, e.valid_up_to());
-            Err(fatal_at(
-                line,
-                column,
-                "Invalid byte 1 of 1-byte UTF-8 sequence.".to_string(),
-            ))
+            Err(fatal_at(line, column, "Invalid byte 1 of 1-byte UTF-8 sequence."))
         }
     }
 }
@@ -259,6 +275,19 @@ fn declared_encoding(input: &[u8]) -> Option<String> {
     Some(rest[..rest.find(quote)?].to_string())
 }
 
+/// Validates every character up front, reporting the first illegal one Xerces-style.
+fn check_characters(text: &str) -> Result<(), SaxError> {
+    match text.char_indices().find(|(_, c)| !is_xml_char(*c)) {
+        None => Ok(()),
+        Some((offset, c)) => Err(fatal_at_location(
+            Tracker::default().location(text, offset),
+            format!("An invalid XML character (Unicode: 0x{:x}) was found in the document.", c as u32),
+        )),
+    }
+}
+
+// ---- character classes ------------------------------------------------------------------
+
 /// Whether `c` is a legal XML 1.0 character.
 fn is_xml_char(c: char) -> bool {
     matches!(c as u32, 0x9 | 0xA | 0xD | 0x20..=0xD7FF | 0xE000..=0xFFFD | 0x10000..=0x10FFFF)
@@ -283,65 +312,49 @@ fn is_name_char(c: char) -> bool {
         || (!c.is_ascii() && c.is_alphanumeric())
 }
 
-/// A declared general entity.
-enum EntityDecl {
-    /// An internal entity with its replacement text (character references already expanded).
-    Internal(Vec<char>),
-    /// An external entity; never fetched.
-    External,
+/// Byte length of the longest XML name at the start of `s` (0 if `s` does not start with one).
+fn name_len(s: &str) -> usize {
+    let mut chars = s.char_indices();
+    match chars.next() {
+        Some((_, c)) if is_name_start(c) => {}
+        _ => return 0,
+    }
+    chars.find(|(_, c)| !is_name_char(*c)).map_or(s.len(), |(i, _)| i)
 }
 
-/// One level of input: the document itself, or the replacement text of an entity being
-/// expanded.
-struct Frame {
-    chars: Vec<char>,
-    pos: usize,
-    entity: Option<String>,
+fn is_name(s: &str) -> bool {
+    !s.is_empty() && name_len(s) == s.len()
 }
 
-struct Parser<'h, H> {
-    frames: Vec<Frame>,
+/// Views bytes `quick-xml` handed back as text. The reader runs over a `&str` and every event
+/// boundary is an ASCII delimiter, so these slices are always valid UTF-8.
+fn utf8(bytes: &[u8]) -> &str {
+    std::str::from_utf8(bytes).expect("quick-xml slices of a &str split at ASCII delimiters")
+}
+
+// ---- locations --------------------------------------------------------------------------
+
+/// Maps byte offsets in the decoded document to Xerces-style line/column pairs, scanning
+/// forward incrementally.
+#[derive(Clone, Copy)]
+struct Tracker {
+    offset: usize,
     line: i32,
     column: i32,
-    handler: &'h mut H,
-    config: SaxConfig,
-    entities: HashMap<String, EntityDecl>,
-    /// Set when the DTD has an external subset or parameter-entity references that were not
-    /// read; undeclared entities are then skipped instead of being fatal (XML 1.0 WFC:
-    /// Entity Declared).
-    has_unread_declarations: bool,
-    expansions: usize,
-    /// Pending character data, flushed before the next non-character event.
-    text: String,
 }
 
-impl<H: SaxContentHandler> Parser<'_, H> {
-    // ---- input primitives -------------------------------------------------------------
-
-    fn top(&self) -> &Frame {
-        self.frames.last().expect("at least the document frame")
+impl Default for Tracker {
+    fn default() -> Self {
+        Self { offset: 0, line: 1, column: 1 }
     }
+}
 
-    fn peek(&self) -> Option<char> {
-        let f = self.top();
-        f.chars.get(f.pos).copied()
-    }
-
-    fn peek_at(&self, offset: usize) -> Option<char> {
-        let f = self.top();
-        f.chars.get(f.pos + offset).copied()
-    }
-
-    fn starts_with(&self, s: &str) -> bool {
-        s.chars().enumerate().all(|(i, c)| self.peek_at(i) == Some(c))
-    }
-
-    fn advance(&mut self) -> Option<char> {
-        let at_document = self.frames.len() == 1;
-        let f = self.frames.last_mut().expect("at least the document frame");
-        let c = f.chars.get(f.pos).copied()?;
-        f.pos += 1;
-        if at_document {
+impl Tracker {
+    fn location(&mut self, src: &str, offset: usize) -> SaxLocation {
+        if offset < self.offset {
+            *self = Tracker::default();
+        }
+        for c in src[self.offset..offset].chars() {
             if c == '\n' {
                 self.line += 1;
                 self.column = 1;
@@ -349,449 +362,639 @@ impl<H: SaxContentHandler> Parser<'_, H> {
                 self.column += 1;
             }
         }
-        Some(c)
-    }
-
-    fn skip(&mut self, n: usize) {
-        for _ in 0..n {
-            self.advance();
-        }
-    }
-
-    fn location(&self) -> SaxLocation {
+        self.offset = offset;
         SaxLocation { line: self.line, column: self.column }
     }
+}
 
-    fn fatal(&self, message: impl Into<String>) -> SaxError {
-        fatal_at(self.line, self.column, message)
-    }
+/// Where the text being read came from.
+enum Origin {
+    /// The document itself: locations are tracked.
+    Document(Tracker),
+    /// The replacement text of an entity: every event reports the location just past the
+    /// reference that expanded it.
+    Entity(SaxLocation),
+}
 
-    fn eof_error(&self) -> SaxError {
-        if self.frames.len() > 1 {
-            self.fatal("The entity replacement text must contain complete markup.")
-        } else {
-            self.fatal("XML document structures must start and end within the same entity.")
+impl Origin {
+    fn location(&mut self, src: &str, offset: usize) -> SaxLocation {
+        match self {
+            Origin::Document(tracker) => tracker.location(src, offset),
+            Origin::Entity(location) => *location,
         }
     }
 
-    /// Skips whitespace; returns whether any was skipped.
+    fn fatal(&mut self, src: &str, offset: usize, message: impl Into<String>) -> SaxError {
+        fatal_at_location(self.location(src, offset), message)
+    }
+}
+
+// ---- references and entities ------------------------------------------------------------
+
+/// A declared general entity.
+enum EntityDecl {
+    /// An internal entity with its replacement text (character references already expanded).
+    Internal(String),
+    /// An external entity; never fetched.
+    External,
+}
+
+/// What a `&...;` reference resolves to.
+enum Reference {
+    Char(char),
+    Predefined(&'static str),
+    /// An internal entity: its name and replacement text.
+    Internal(String, String),
+    External(String),
+    Undeclared(String),
+}
+
+/// Decodes the body of `&#...;` (the part after `#`).
+fn character_reference_value(body: &str) -> Result<char, String> {
+    let value = if let Some(hex) = body.strip_prefix('x') {
+        if hex.is_empty() || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err("A hexadecimal representation must immediately follow the \"&#x\" in a \
+                        character reference."
+                .to_string());
+        }
+        u32::from_str_radix(hex, 16).ok()
+    } else {
+        if body.is_empty() || !body.chars().all(|c| c.is_ascii_digit()) {
+            return Err("A decimal representation must immediately follow the \"&#\" in a \
+                        character reference."
+                .to_string());
+        }
+        body.parse::<u32>().ok()
+    };
+    value
+        .and_then(char::from_u32)
+        .filter(|c| is_xml_char(*c))
+        .ok_or_else(|| format!("Character reference \"&#{body}\" is an invalid XML character."))
+}
+
+/// Checks the body of a general entity reference (between `&` and `;`) is a name.
+fn check_entity_name(body: &str) -> Result<(), String> {
+    match name_len(body) {
+        0 => Err("The entity name must immediately follow the '&' in the entity reference."
+            .to_string()),
+        n if n < body.len() => Err(format!(
+            "The reference to entity \"{}\" must end with the ';' delimiter.",
+            &body[..n]
+        )),
+        _ => Ok(()),
+    }
+}
+
+/// Expands character references in an entity value literal (they are expanded at
+/// declaration time; general entity references are left for use time).
+fn expand_character_references(literal: &str) -> Result<String, String> {
+    let mut out = String::with_capacity(literal.len());
+    let mut rest = literal;
+    while let Some(i) = rest.find("&#") {
+        out.push_str(&rest[..i]);
+        let body_and_rest = &rest[i + 2..];
+        let end = body_and_rest
+            .find(';')
+            .ok_or("The character reference must end with the ';' delimiter.")?;
+        out.push(character_reference_value(&body_and_rest[..end])?);
+        rest = &body_and_rest[end + 1..];
+    }
+    out.push_str(rest);
+    Ok(out)
+}
+
+// ---- the document type declaration ------------------------------------------------------
+
+/// What the `<!DOCTYPE>` declaration declares, as far as this reader interprets it.
+#[derive(Default)]
+struct Doctype {
+    /// General entity declarations in document order.
+    entities: Vec<(String, EntityDecl)>,
+    /// Processing instructions in the internal subset.
+    processing_instructions: Vec<(String, String)>,
+    /// Set when there is an external subset or a parameter-entity reference that was not
+    /// read; undeclared entities are then skipped instead of being fatal (XML 1.0 WFC:
+    /// Entity Declared).
+    has_unread_declarations: bool,
+}
+
+/// A DTD scanning error: byte offset into the declaration content, and message.
+type DtdError = (usize, String);
+
+const DTD_MALFORMED: &str = "The markup declarations contained or pointed to by the document \
+                             type declaration must be well-formed.";
+
+/// A cursor over the content of a `<!DOCTYPE ...>` declaration.
+struct Cursor<'a> {
+    s: &'a str,
+    pos: usize,
+}
+
+impl<'a> Cursor<'a> {
+    fn rest(&self) -> &'a str {
+        &self.s[self.pos..]
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.rest().chars().next()
+    }
+
+    fn starts_with(&self, prefix: &str) -> bool {
+        self.rest().starts_with(prefix)
+    }
+
+    fn bump(&mut self, bytes: usize) {
+        self.pos += bytes;
+    }
+
+    fn err(&self, message: impl Into<String>) -> DtdError {
+        (self.pos, message.into())
+    }
+
     fn skip_whitespace(&mut self) -> bool {
-        let mut any = false;
-        while self.peek().is_some_and(is_whitespace) {
-            self.advance();
-            any = true;
-        }
-        any
+        let rest = self.rest();
+        let skipped = rest.len() - rest.trim_start_matches(is_whitespace).len();
+        self.pos += skipped;
+        skipped > 0
     }
 
-    fn require_whitespace(&mut self, context: &str) -> Result<(), SaxError> {
+    fn require_whitespace(&mut self, context: &str) -> Result<(), DtdError> {
         if self.skip_whitespace() {
             Ok(())
         } else {
-            Err(self.fatal(format!("White space is required {context}.")))
+            Err(self.err(format!("White space is required {context}.")))
         }
     }
 
-    fn expect(&mut self, s: &str, context: &str) -> Result<(), SaxError> {
-        if self.starts_with(s) {
-            self.skip(s.chars().count());
-            Ok(())
-        } else if self.peek().is_none() {
-            Err(self.eof_error())
-        } else {
-            Err(self.fatal(format!("{context} must end with the '{s}' delimiter.")))
+    fn name(&mut self, context: &str) -> Result<&'a str, DtdError> {
+        let n = name_len(self.rest());
+        if n == 0 {
+            return Err(self.err(format!("{context} must be a valid XML name.")));
         }
-    }
-
-    fn read_name(&mut self, context: &str) -> Result<String, SaxError> {
-        match self.peek() {
-            Some(c) if is_name_start(c) => {}
-            None => return Err(self.eof_error()),
-            Some(_) => return Err(self.fatal(format!("{context} must be a valid XML name."))),
-        }
-        let mut name = String::new();
-        while let Some(c) = self.peek().filter(|c| is_name_char(*c)) {
-            name.push(c);
-            self.advance();
-        }
+        let name = &self.rest()[..n];
+        self.pos += n;
         Ok(name)
     }
 
     /// Reads a quoted literal verbatim (no reference processing).
-    fn read_quoted_literal(&mut self) -> Result<String, SaxError> {
+    fn quoted(&mut self) -> Result<&'a str, DtdError> {
         let quote = match self.peek() {
             Some(q @ ('"' | '\'')) => q,
-            None => return Err(self.eof_error()),
-            Some(_) => return Err(self.fatal("A quoted string is required.")),
+            _ => return Err(self.err("A quoted string is required.")),
         };
-        self.advance();
-        let mut s = String::new();
-        loop {
-            match self.advance() {
-                None => return Err(self.eof_error()),
-                Some(c) if c == quote => return Ok(s),
-                Some(c) => s.push(c),
-            }
-        }
+        let body = &self.rest()[1..];
+        let end = body.find(quote).ok_or_else(|| self.err(DTD_MALFORMED))?;
+        self.pos += 1 + end + 1;
+        Ok(&body[..end])
     }
 
-    /// Validates every character up front, reporting the first illegal one Xerces-style.
-    fn check_characters(&self) -> Result<(), SaxError> {
-        let mut line = 1;
-        let mut column = 1;
-        for &c in &self.top().chars {
-            if !is_xml_char(c) {
-                return Err(fatal_at(
-                    line,
-                    column,
-                    format!(
-                        "An invalid XML character (Unicode: 0x{:x}) was found in the document.",
-                        c as u32
-                    ),
-                ));
-            }
-            if c == '\n' {
-                line += 1;
-                column = 1;
-            } else {
-                column += 1;
-            }
-        }
-        Ok(())
+    /// Skips to just past `terminator`.
+    fn skip_past(&mut self, terminator: &str) -> Result<&'a str, DtdError> {
+        let end = self.rest().find(terminator).ok_or_else(|| self.err(DTD_MALFORMED))?;
+        let skipped = &self.rest()[..end];
+        self.pos += end + terminator.len();
+        Ok(skipped)
     }
 
-    // ---- document structure -------------------------------------------------------------
-
-    fn parse_document(&mut self) -> Result<(), SaxError> {
-        if self.starts_with("<?xml") && self.peek_at(5).is_some_and(is_whitespace) {
-            self.parse_xml_declaration()?;
-        }
-
-        // prolog
-        let mut seen_doctype = false;
-        loop {
-            self.skip_whitespace();
-            if self.peek().is_none() {
-                return Err(self.fatal("Premature end of file."));
-            } else if self.starts_with("<?") {
-                self.parse_processing_instruction()?;
-            } else if self.starts_with("<!--") {
-                self.parse_comment()?;
-            } else if self.starts_with("<!DOCTYPE") {
-                if seen_doctype {
-                    return Err(self.fatal("Already seen doctype."));
-                }
-                seen_doctype = true;
-                self.parse_doctype()?;
-            } else if self.starts_with("<") {
-                break;
-            } else {
-                return Err(self.fatal("Content is not allowed in prolog."));
-            }
-        }
-
-        self.parse_root_element()?;
-
-        // epilog
-        loop {
-            self.skip_whitespace();
-            if self.peek().is_none() {
-                return Ok(());
-            } else if self.starts_with("<?") {
-                self.parse_processing_instruction()?;
-            } else if self.starts_with("<!--") {
-                self.parse_comment()?;
-            } else if self.starts_with("<") && self.peek_at(1).is_some_and(is_name_start) {
-                return Err(self.fatal(
-                    "The markup in the document following the root element must be well-formed.",
-                ));
-            } else {
-                return Err(self.fatal("Content is not allowed in trailing section."));
-            }
-        }
-    }
-
-    fn parse_xml_declaration(&mut self) -> Result<(), SaxError> {
-        self.skip(5); // "<?xml"
-        let mut saw_version = false;
-        loop {
-            let had_space = self.skip_whitespace();
-            if self.starts_with("?>") {
-                self.skip(2);
-                break;
-            }
-            if self.peek().is_none() {
-                return Err(self.eof_error());
-            }
-            if !had_space {
-                return Err(self.fatal(
-                    "White space is required before the pseudo attribute in the XML declaration.",
-                ));
-            }
-            let name = self.read_name("The pseudo attribute in the XML declaration")?;
-            self.skip_whitespace();
-            self.expect("=", "The pseudo attribute in the XML declaration")?;
-            self.skip_whitespace();
-            let _value = self.read_quoted_literal()?;
-            match name.as_str() {
-                "version" => saw_version = true,
-                "encoding" | "standalone" => {}
-                _ => {
-                    return Err(self.fatal(format!(
-                        "The pseudo attribute \"{name}\" is not allowed in the XML declaration."
-                    )));
-                }
-            }
-        }
-        if !saw_version {
-            return Err(self.fatal("The version is required in the XML declaration."));
-        }
-        Ok(())
-    }
-
-    fn parse_processing_instruction(&mut self) -> Result<(), SaxError> {
-        self.skip(2); // "<?"
-        let target = self.read_name("The processing instruction target")?;
-        if target.eq_ignore_ascii_case("xml") {
-            return Err(self.fatal(
-                "The processing instruction target matching \"[xX][mM][lL]\" is not allowed.",
-            ));
-        }
-        let mut data = String::new();
-        if !self.starts_with("?>") {
-            self.require_whitespace("between the processing instruction target and data")?;
-            while !self.starts_with("?>") {
-                match self.advance() {
-                    None => return Err(self.eof_error()),
-                    Some(c) => data.push(c),
-                }
-            }
-        }
-        self.skip(2);
-        self.flush_text()?;
-        self.handler.processing_instruction(&target, &data)
-    }
-
-    fn parse_comment(&mut self) -> Result<(), SaxError> {
-        self.skip(4); // "<!--"
-        loop {
-            if self.starts_with("--") {
-                self.skip(2);
-                if self.peek() == Some('>') {
-                    self.advance();
-                    return Ok(());
-                }
-                return Err(self.fatal("The string \"--\" is not permitted within comments."));
-            }
-            if self.advance().is_none() {
-                return Err(self.eof_error());
-            }
-        }
-    }
-
-    fn parse_doctype(&mut self) -> Result<(), SaxError> {
-        if !self.config.allow_doctype {
-            return Err(self.fatal(
-                "DOCTYPE is disallowed when the feature \
-                 \"http://apache.org/xml/features/disallow-doctype-decl\" set to true.",
-            ));
-        }
-        self.skip("<!DOCTYPE".len());
-        self.require_whitespace("after \"<!DOCTYPE\" in the document type declaration")?;
-        self.read_name("The root element type in the document type declaration")?;
-        self.skip_whitespace();
-        if self.starts_with("SYSTEM") || self.starts_with("PUBLIC") {
-            self.parse_external_id()?;
-            // Java's `load-external-dtd` is off: the external subset is never read.
-            self.has_unread_declarations = true;
-            self.skip_whitespace();
-        }
-        if self.peek() == Some('[') {
-            self.advance();
-            self.parse_internal_subset()?;
-            self.skip_whitespace();
-        }
-        self.expect(">", "The document type declaration")
-    }
-
-    /// Parses `SYSTEM "sys"` or `PUBLIC "pub" "sys"`.
-    fn parse_external_id(&mut self) -> Result<(), SaxError> {
-        if self.starts_with("SYSTEM") {
-            self.skip(6);
-            self.require_whitespace("before the system identifier")?;
-            self.read_quoted_literal()?;
-        } else {
-            self.skip(6);
-            self.require_whitespace("before the public identifier")?;
-            self.read_quoted_literal()?;
-            self.require_whitespace("between the public and system identifiers")?;
-            self.read_quoted_literal()?;
-        }
-        Ok(())
-    }
-
-    fn parse_internal_subset(&mut self) -> Result<(), SaxError> {
-        loop {
-            self.skip_whitespace();
-            match self.peek() {
-                None => return Err(self.eof_error()),
-                Some(']') => {
-                    self.advance();
-                    return Ok(());
-                }
-                Some('%') => {
-                    // Parameter-entity reference: not expanded, so later declarations may be
-                    // missing.
-                    self.advance();
-                    self.read_name("The parameter entity reference")?;
-                    self.expect(";", "The parameter entity reference")?;
-                    self.has_unread_declarations = true;
-                }
-                Some('<') => {
-                    if self.starts_with("<!--") {
-                        self.parse_comment()?;
-                    } else if self.starts_with("<?") {
-                        self.parse_processing_instruction()?;
-                    } else if self.starts_with("<!ENTITY") {
-                        self.parse_entity_declaration()?;
-                    } else if self.starts_with("<!") {
-                        self.skip_markup_declaration()?;
-                    } else {
-                        return Err(self.fatal(
-                            "The markup declarations contained or pointed to by the document \
-                             type declaration must be well-formed.",
-                        ));
-                    }
-                }
-                Some(_) => {
-                    return Err(self.fatal(
-                        "The markup declarations contained or pointed to by the document type \
-                         declaration must be well-formed.",
-                    ));
-                }
-            }
-        }
-    }
-
-    /// Skips an `ELEMENT`/`ATTLIST`/`NOTATION` declaration (or a parameter-entity
-    /// declaration), honoring quoted strings.
-    fn skip_markup_declaration(&mut self) -> Result<(), SaxError> {
-        self.skip(2); // "<!"
+    /// Skips a markup declaration up to its closing `>`, honoring quoted strings.
+    fn skip_declaration(&mut self) -> Result<(), DtdError> {
         loop {
             match self.peek() {
-                None => return Err(self.eof_error()),
+                None => return Err(self.err(DTD_MALFORMED)),
                 Some('>') => {
-                    self.advance();
+                    self.bump(1);
                     return Ok(());
                 }
                 Some('"' | '\'') => {
-                    self.read_quoted_literal()?;
+                    self.quoted()?;
                 }
-                Some(_) => {
-                    self.advance();
-                }
+                Some(c) => self.bump(c.len_utf8()),
             }
         }
     }
 
-    fn parse_entity_declaration(&mut self) -> Result<(), SaxError> {
-        self.skip("<!ENTITY".len());
-        self.require_whitespace("after \"<!ENTITY\" in the entity declaration")?;
-        if self.peek() == Some('%') {
-            // Parameter entity: consumed but not interpreted.
-            loop {
-                match self.peek() {
-                    None => return Err(self.eof_error()),
-                    Some('>') => {
-                        self.advance();
-                        return Ok(());
-                    }
-                    Some('"' | '\'') => {
-                        self.read_quoted_literal()?;
-                    }
-                    Some(_) => {
-                        self.advance();
-                    }
-                }
-            }
-        }
-        let name = self.read_name("The entity name in the entity declaration")?;
-        self.require_whitespace("after the entity name in the entity declaration")?;
-        let decl = if self.starts_with("SYSTEM") || self.starts_with("PUBLIC") {
-            self.parse_external_id()?;
-            let had_space = self.skip_whitespace();
-            if had_space && self.starts_with("NDATA") {
-                self.skip(5);
-                self.require_whitespace("before the notation name")?;
-                self.read_name("The notation name")?;
-                self.skip_whitespace();
-            }
-            EntityDecl::External
+    /// Parses `SYSTEM "sys"` or `PUBLIC "pub" "sys"`.
+    fn external_id(&mut self) -> Result<(), DtdError> {
+        if self.starts_with("SYSTEM") {
+            self.bump(6);
+            self.require_whitespace("before the system identifier")?;
+            self.quoted()?;
         } else {
-            let literal = self.read_quoted_literal()?;
-            self.skip_whitespace();
-            EntityDecl::Internal(self.expand_character_references(&literal)?)
-        };
-        self.expect(">", "The declaration for the entity")?;
-        // The first declaration is binding; predefined entities cannot be redefined usefully.
-        if predefined_entity(&name).is_none() {
-            self.entities.entry(name).or_insert(decl);
+            self.bump(6);
+            self.require_whitespace("before the public identifier")?;
+            self.quoted()?;
+            self.require_whitespace("between the public and system identifiers")?;
+            self.quoted()?;
         }
         Ok(())
     }
+}
 
-    /// Expands character references in an entity value literal (they are expanded at
-    /// declaration time; general entity references are left for use time).
-    fn expand_character_references(&self, literal: &str) -> Result<Vec<char>, SaxError> {
-        let mut out = Vec::with_capacity(literal.len());
-        let chars: Vec<char> = literal.chars().collect();
-        let mut i = 0;
-        while i < chars.len() {
-            if chars[i] == '&' && chars.get(i + 1) == Some(&'#') {
-                let end = chars[i..]
-                    .iter()
-                    .position(|c| *c == ';')
-                    .map(|p| p + i)
-                    .ok_or_else(|| self.fatal("The character reference must end with the ';' delimiter."))?;
-                let body: String = chars[i + 2..end].iter().collect();
-                out.push(self.character_reference_value(&body)?);
-                i = end + 1;
-            } else {
-                out.push(chars[i]);
-                i += 1;
-            }
-        }
-        Ok(out)
+/// Scans the content of a `<!DOCTYPE ...>` declaration (as `quick-xml` delimits it: after the
+/// keyword and its whitespace, up to the closing `>`).
+fn scan_doctype(content: &str) -> Result<Doctype, DtdError> {
+    let mut c = Cursor { s: content, pos: 0 };
+    let mut doctype = Doctype::default();
+    let root = c.name("The root element type in the document type declaration")?;
+    let had_space = c.skip_whitespace();
+    if had_space && (c.starts_with("SYSTEM") || c.starts_with("PUBLIC")) {
+        c.external_id()?;
+        // Java's `load-external-dtd` is off: the external subset is never read.
+        doctype.has_unread_declarations = true;
+        c.skip_whitespace();
     }
+    if c.peek() == Some('[') {
+        c.bump(1);
+        scan_internal_subset(&mut c, &mut doctype)?;
+        c.skip_whitespace();
+    }
+    if c.peek().is_some() {
+        return Err(c.err(format!(
+            "The document type declaration for root element type \"{root}\" must end with '>'."
+        )));
+    }
+    Ok(doctype)
+}
 
-    /// Decodes the body of `&#...;` (the part after `#`).
-    fn character_reference_value(&self, body: &str) -> Result<char, SaxError> {
-        let value = if let Some(hex) = body.strip_prefix('x') {
-            if hex.is_empty() || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Err(self.fatal(
-                    "A hexadecimal representation must immediately follow the \"&#x\" in a \
-                     character reference.",
+fn scan_internal_subset(c: &mut Cursor<'_>, doctype: &mut Doctype) -> Result<(), DtdError> {
+    loop {
+        c.skip_whitespace();
+        match c.peek() {
+            None => return Err(c.err(DTD_MALFORMED)),
+            Some(']') => {
+                c.bump(1);
+                return Ok(());
+            }
+            Some('%') => {
+                // Parameter-entity reference: not expanded, so later declarations may be
+                // missing.
+                c.bump(1);
+                c.name("The parameter entity reference")?;
+                if !c.starts_with(";") {
+                    return Err(c.err(
+                        "The parameter entity reference must end with the ';' delimiter.",
+                    ));
+                }
+                c.bump(1);
+                doctype.has_unread_declarations = true;
+            }
+            Some('<') if c.starts_with("<!--") => {
+                c.bump(4);
+                if c.skip_past("-->")?.contains("--") {
+                    return Err(c.err("The string \"--\" is not permitted within comments."));
+                }
+            }
+            Some('<') if c.starts_with("<?") => {
+                c.bump(2);
+                let body = c.skip_past("?>")?;
+                let (target, data) = split_processing_instruction(body).map_err(|m| c.err(m))?;
+                doctype.processing_instructions.push((target.to_string(), data.to_string()));
+            }
+            Some('<') if c.starts_with("<!ENTITY") => {
+                c.bump("<!ENTITY".len());
+                if let Some(entity) = scan_entity_declaration(c)? {
+                    doctype.entities.push(entity);
+                }
+            }
+            Some('<') if c.starts_with("<!") => {
+                c.bump(2);
+                c.skip_declaration()?;
+            }
+            Some(_) => return Err(c.err(DTD_MALFORMED)),
+        }
+    }
+}
+
+/// Scans an entity declaration after `<!ENTITY`. Parameter-entity declarations are consumed
+/// but not interpreted (`None`).
+fn scan_entity_declaration(
+    c: &mut Cursor<'_>,
+) -> Result<Option<(String, EntityDecl)>, DtdError> {
+    c.require_whitespace("after \"<!ENTITY\" in the entity declaration")?;
+    if c.peek() == Some('%') {
+        c.skip_declaration()?;
+        return Ok(None);
+    }
+    let name = c.name("The entity name in the entity declaration")?;
+    c.require_whitespace("after the entity name in the entity declaration")?;
+    let decl = if c.starts_with("SYSTEM") || c.starts_with("PUBLIC") {
+        c.external_id()?;
+        if c.skip_whitespace() && c.starts_with("NDATA") {
+            c.bump(5);
+            c.require_whitespace("before the notation name")?;
+            c.name("The notation name")?;
+            c.skip_whitespace();
+        }
+        EntityDecl::External
+    } else {
+        let start = c.pos;
+        let literal = c.quoted()?;
+        c.skip_whitespace();
+        EntityDecl::Internal(expand_character_references(literal).map_err(|m| (start, m))?)
+    };
+    if !c.starts_with(">") {
+        return Err(c.err(format!("The declaration for the entity \"{name}\" must end with '>'.")));
+    }
+    c.bump(1);
+    Ok(Some((name.to_string(), decl)))
+}
+
+/// Splits a processing instruction's content (between `<?` and `?>`) into target and data.
+fn split_processing_instruction(content: &str) -> Result<(&str, &str), String> {
+    let n = name_len(content);
+    if n == 0 {
+        return Err("The processing instruction must begin with the name of the target.".into());
+    }
+    let (target, rest) = content.split_at(n);
+    if target.eq_ignore_ascii_case("xml") {
+        return Err(
+            "The processing instruction target matching \"[xX][mM][lL]\" is not allowed.".into()
+        );
+    }
+    if !rest.is_empty() && !rest.starts_with(is_whitespace) {
+        return Err(
+            "White space is required between the processing instruction target and data.".into()
+        );
+    }
+    Ok((target, rest.trim_start_matches(is_whitespace)))
+}
+
+/// Checks the pseudo-attributes of the XML declaration (content between `<?` and `?>`).
+fn check_xml_declaration(content: &str) -> Result<(), String> {
+    let start = BytesStart::from_content(content, 3);
+    let mut saw_version = false;
+    for attr in start.attributes() {
+        let attr = attr.map_err(|e| format!("The XML declaration is not well-formed: {e}."))?;
+        match utf8(attr.key.as_ref()) {
+            "version" => saw_version = true,
+            "encoding" | "standalone" => {}
+            name => {
+                return Err(format!(
+                    "The pseudo attribute \"{name}\" is not allowed in the XML declaration."
                 ));
             }
-            u32::from_str_radix(hex, 16).ok()
-        } else {
-            if body.is_empty() || !body.chars().all(|c| c.is_ascii_digit()) {
-                return Err(self.fatal(
-                    "A decimal representation must immediately follow the \"&#\" in a character \
-                     reference.",
-                ));
-            }
-            body.parse::<u32>().ok()
-        };
-        match value.and_then(char::from_u32).filter(|c| is_xml_char(*c)) {
-            Some(c) => Ok(c),
-            None => Err(self.fatal(format!(
-                "Character reference \"&#{body}\" is an invalid XML character."
-            ))),
         }
     }
+    if saw_version {
+        Ok(())
+    } else {
+        Err("The version is required in the XML declaration.".to_string())
+    }
+}
 
-    // ---- elements -----------------------------------------------------------------------
+// ---- the event loop -----------------------------------------------------------------------
+
+/// Where in the document the reader is.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Phase {
+    /// Before the root element.
+    Prolog,
+    /// Inside the root element (always the case in entity replacement text).
+    Content,
+    /// After the root element.
+    Epilog,
+}
+
+impl Phase {
+    /// Xerces' message for markup that is not allowed here.
+    fn bad_markup(self) -> &'static str {
+        match self {
+            Phase::Prolog => {
+                "The markup in the document preceding the root element must be well-formed."
+            }
+            Phase::Content => {
+                "The content of elements must consist of well-formed character data or markup."
+            }
+            Phase::Epilog => {
+                "The markup in the document following the root element must be well-formed."
+            }
+        }
+    }
+}
+
+const EOF_IN_DOCUMENT: &str = "XML document structures must start and end within the same entity.";
+const EOF_IN_ENTITY: &str = "The entity replacement text must contain complete markup.";
+
+struct Parser<'h, H> {
+    handler: &'h mut H,
+    config: SaxConfig,
+    entities: HashMap<String, EntityDecl>,
+    has_unread_declarations: bool,
+    expansions: usize,
+    /// Entities currently being expanded, innermost last.
+    entity_stack: Vec<String>,
+    /// Pending character data, flushed before the next non-character event.
+    text: String,
+}
+
+impl<H: SaxContentHandler> Parser<'_, H> {
+    /// Reads `src` — the document, or an entity's replacement text — reporting its events.
+    fn run(&mut self, src: &str, mut origin: Origin) -> Result<(), SaxError> {
+        let in_entity = matches!(origin, Origin::Entity(_));
+        let mut reader = Reader::from_str(src);
+        {
+            let config = reader.config_mut();
+            config.check_comments = true;
+            // End tags are matched here, against this entity's own open elements.
+            config.check_end_names = false;
+            config.allow_unmatched_ends = true;
+        }
+        let mut phase = if in_entity { Phase::Content } else { Phase::Prolog };
+        let mut open: Vec<String> = Vec::new();
+        let mut seen_doctype = false;
+
+        loop {
+            let start = reader.buffer_position() as usize;
+            let event = match reader.read_event() {
+                Ok(event) => event,
+                Err(e) => {
+                    let (offset, message) = describe_reader_error(&e, &reader, src, phase, in_entity);
+                    return Err(origin.fatal(src, offset, message));
+                }
+            };
+            let end = reader.buffer_position() as usize;
+            match event {
+                Event::Decl(decl) => {
+                    if start != 0 || in_entity {
+                        return Err(origin.fatal(
+                            src,
+                            start + 5,
+                            "The processing instruction target matching \"[xX][mM][lL]\" is not \
+                             allowed.",
+                        ));
+                    }
+                    check_xml_declaration(utf8(&decl)).map_err(|m| origin.fatal(src, end, m))?;
+                }
+                Event::PI(pi) => {
+                    let (target, data) = split_processing_instruction(utf8(&pi))
+                        .map_err(|m| origin.fatal(src, end, m))?;
+                    self.flush_text()?;
+                    self.handler.processing_instruction(target, data)?;
+                }
+                Event::Comment(_) => {}
+                Event::DocType(doctype) => {
+                    if phase != Phase::Prolog || !src[start..].starts_with("<!DOCTYPE") {
+                        return Err(origin.fatal(src, start, phase.bad_markup()));
+                    }
+                    if !self.config.allow_doctype {
+                        return Err(origin.fatal(
+                            src,
+                            start + "<!DOCTYPE".len(),
+                            "DOCTYPE is disallowed when the feature \
+                             \"http://apache.org/xml/features/disallow-doctype-decl\" set to true.",
+                        ));
+                    }
+                    if seen_doctype {
+                        return Err(origin.fatal(src, start, "Already seen doctype."));
+                    }
+                    seen_doctype = true;
+                    if !src[start + "<!DOCTYPE".len()..].starts_with(is_whitespace) {
+                        return Err(origin.fatal(
+                            src,
+                            start + "<!DOCTYPE".len(),
+                            "White space is required after \"<!DOCTYPE\" in the document type \
+                             declaration.",
+                        ));
+                    }
+                    let content = utf8(&doctype);
+                    let content_start = end - 1 - content.len();
+                    let declared = scan_doctype(content)
+                        .map_err(|(offset, m)| origin.fatal(src, content_start + offset, m))?;
+                    self.declare(declared)?;
+                }
+                Event::Start(_) | Event::Empty(_) if phase == Phase::Epilog => {
+                    return Err(origin.fatal(src, start, phase.bad_markup()));
+                }
+                Event::Start(tag) => {
+                    let (name, attributes) =
+                        self.read_tag(&tag, phase).map_err(|m| origin.fatal(src, end, m))?;
+                    self.flush_text()?;
+                    self.handler.start_element(&name, attributes, origin.location(src, end))?;
+                    open.push(name);
+                    phase = Phase::Content;
+                }
+                Event::Empty(tag) => {
+                    let (name, attributes) =
+                        self.read_tag(&tag, phase).map_err(|m| origin.fatal(src, end, m))?;
+                    self.flush_text()?;
+                    let location = origin.location(src, end);
+                    self.handler.start_element(&name, attributes, location)?;
+                    self.handler.end_element(&name, location)?;
+                    if !in_entity && open.is_empty() {
+                        phase = Phase::Epilog;
+                    } else {
+                        phase = Phase::Content;
+                    }
+                }
+                Event::End(tag) => {
+                    if phase != Phase::Content {
+                        return Err(origin.fatal(src, start, phase.bad_markup()));
+                    }
+                    let name = utf8(&tag);
+                    match open.last() {
+                        None => return Err(origin.fatal(src, end, EOF_IN_ENTITY)),
+                        Some(expected) if expected != name => {
+                            return Err(origin.fatal(
+                                src,
+                                end - 1,
+                                format!(
+                                    "The element type \"{expected}\" must be terminated by the \
+                                     matching end-tag \"</{expected}>\"."
+                                ),
+                            ));
+                        }
+                        Some(_) => {}
+                    }
+                    open.pop();
+                    self.flush_text()?;
+                    self.handler.end_element(name, origin.location(src, end))?;
+                    if !in_entity && open.is_empty() {
+                        phase = Phase::Epilog;
+                    }
+                }
+                Event::Text(text) => {
+                    let text = utf8(&text);
+                    match phase {
+                        Phase::Content => {
+                            if let Some(i) = text.find("]]>") {
+                                return Err(origin.fatal(
+                                    src,
+                                    start + i,
+                                    "The character sequence \"]]>\" must not appear in content \
+                                     unless used to mark the end of a CDATA section.",
+                                ));
+                            }
+                            self.text.push_str(text);
+                        }
+                        Phase::Prolog | Phase::Epilog => {
+                            if let Some(i) = text.find(|c| !is_whitespace(c)) {
+                                let message = if phase == Phase::Prolog {
+                                    "Content is not allowed in prolog."
+                                } else {
+                                    "Content is not allowed in trailing section."
+                                };
+                                return Err(origin.fatal(src, start + i, message));
+                            }
+                        }
+                    }
+                }
+                Event::CData(cdata) => {
+                    if phase != Phase::Content {
+                        return Err(origin.fatal(src, start, phase.bad_markup()));
+                    }
+                    self.text.push_str(utf8(&cdata));
+                }
+                Event::GeneralRef(reference) => {
+                    match phase {
+                        Phase::Prolog => {
+                            return Err(origin.fatal(src, start, "Content is not allowed in prolog."));
+                        }
+                        Phase::Epilog => {
+                            return Err(origin.fatal(
+                                src,
+                                start,
+                                "Content is not allowed in trailing section.",
+                            ));
+                        }
+                        Phase::Content => {}
+                    }
+                    let resolved =
+                        self.resolve(utf8(&reference)).map_err(|m| origin.fatal(src, end, m))?;
+                    match resolved {
+                        Reference::Char(c) => self.text.push(c),
+                        Reference::Predefined(s) => self.text.push_str(s),
+                        Reference::Internal(name, replacement) => {
+                            let location = origin.location(src, end);
+                            self.push_entity(name).map_err(|m| fatal_at_location(location, m))?;
+                            let result = self.run(&replacement, Origin::Entity(location));
+                            self.entity_stack.pop();
+                            result?;
+                        }
+                        // External entities are not fetched (Java's external-general-entities
+                        // feature is off): skipped.
+                        Reference::External(_) => {}
+                        Reference::Undeclared(name) => {
+                            self.undeclared(&name).map_err(|m| origin.fatal(src, end, m))?;
+                        }
+                    }
+                }
+                Event::Eof => {
+                    return match phase {
+                        _ if in_entity => {
+                            if open.is_empty() {
+                                Ok(())
+                            } else {
+                                Err(origin.fatal(src, end, EOF_IN_ENTITY))
+                            }
+                        }
+                        Phase::Prolog => Err(origin.fatal(src, end, "Premature end of file.")),
+                        Phase::Content => Err(origin.fatal(src, end, EOF_IN_DOCUMENT)),
+                        Phase::Epilog => Ok(()),
+                    };
+                }
+            }
+        }
+    }
 
     fn flush_text(&mut self) -> Result<(), SaxError> {
         if self.text.is_empty() {
@@ -801,284 +1004,252 @@ impl<H: SaxContentHandler> Parser<'_, H> {
         self.handler.characters(&text)
     }
 
-    /// Parses a start tag (the `<` is next). Returns the element name and whether it was an
-    /// empty-element tag.
-    fn parse_start_tag(&mut self) -> Result<(String, bool), SaxError> {
-        self.advance(); // '<'
-        let name = self.read_name("The element type")?;
-        let mut attributes: Vec<(String, String)> = Vec::new();
-        let empty = loop {
-            let had_space = self.skip_whitespace();
-            match self.peek() {
-                None => return Err(self.eof_error()),
-                Some('>') => {
-                    self.advance();
-                    break false;
-                }
-                Some('/') => {
-                    self.advance();
-                    if self.peek() != Some('>') {
-                        return Err(self.fatal(format!(
-                            "Element type \"{name}\" must be followed by either attribute \
-                             specifications, \">\" or \"/>\"."
-                        )));
-                    }
-                    self.advance();
-                    break true;
-                }
-                Some(c) if had_space && is_name_start(c) => {
-                    let attr = self.read_name("The attribute name")?;
-                    self.skip_whitespace();
-                    if self.peek() != Some('=') {
-                        return Err(self.fatal(format!(
-                            "Attribute name \"{attr}\" associated with an element type \
-                             \"{name}\" must be followed by the ' = ' character."
-                        )));
-                    }
-                    self.advance();
-                    self.skip_whitespace();
-                    let value = self.parse_attribute_value(&name, &attr)?;
-                    if attributes.iter().any(|(k, _)| *k == attr) {
-                        return Err(self.fatal(format!(
-                            "Attribute \"{attr}\" was already specified for element \"{name}\"."
-                        )));
-                    }
-                    attributes.push((attr, value));
-                }
-                Some(_) => {
-                    return Err(self.fatal(format!(
-                        "Element type \"{name}\" must be followed by either attribute \
-                         specifications, \">\" or \"/>\"."
-                    )));
-                }
-            }
-        };
-        self.flush_text()?;
-        let location = self.location();
-        self.handler.start_element(&name, attributes, location)?;
-        if empty {
-            self.handler.end_element(&name, location)?;
-        }
-        Ok((name, empty))
-    }
-
-    fn parse_attribute_value(&mut self, element: &str, attr: &str) -> Result<String, SaxError> {
-        let quote = match self.peek() {
-            Some(q @ ('"' | '\'')) => q,
-            None => return Err(self.eof_error()),
-            Some(_) => {
-                return Err(self.fatal(format!(
-                    "Open quote is expected for attribute \"{attr}\" associated with an element \
-                     type \"{element}\"."
-                )));
-            }
-        };
-        self.advance();
-        let base_depth = self.frames.len();
-        let mut value = String::new();
-        loop {
-            if self.frames.len() > base_depth && self.peek().is_none() {
-                self.frames.pop();
-                continue;
-            }
-            let c = match self.advance() {
-                None => return Err(self.eof_error()),
-                Some(c) => c,
-            };
-            let in_base = self.frames.len() == base_depth;
-            match c {
-                c if c == quote && in_base => return Ok(value),
-                '<' => {
-                    return Err(self.fatal(format!(
-                        "The value of attribute \"{attr}\" associated with an element type \
-                         \"{element}\" must not contain the '<' character."
-                    )));
-                }
-                '&' => {
-                    if self.peek() == Some('#') {
-                        value.push(self.parse_character_reference_body()?);
-                    } else {
-                        let name = self.read_name("The entity name")?;
-                        self.expect(";", &format!("The reference to entity \"{name}\""))?;
-                        if let Some(c) = predefined_entity(&name) {
-                            value.push(c);
-                        } else {
-                            match self.entities.get(&name) {
-                                Some(EntityDecl::Internal(text)) => {
-                                    let text = text.clone();
-                                    self.push_entity(name, text)?;
-                                }
-                                Some(EntityDecl::External) => {
-                                    return Err(self.fatal(format!(
-                                        "The external entity reference \"&{name};\" is not \
-                                         permitted in an attribute value."
-                                    )));
-                                }
-                                None => self.undeclared_entity(&name)?,
-                            }
-                        }
-                    }
-                }
-                '\t' | '\n' | '\r' => value.push(' '),
-                c => value.push(c),
+    /// Records the declarations of a `<!DOCTYPE>` and reports its processing instructions.
+    fn declare(&mut self, doctype: Doctype) -> Result<(), SaxError> {
+        self.has_unread_declarations |= doctype.has_unread_declarations;
+        for (name, decl) in doctype.entities {
+            // The first declaration is binding; predefined entities cannot be redefined usefully.
+            if resolve_xml_entity(&name).is_none() {
+                self.entities.entry(name).or_insert(decl);
             }
         }
-    }
-
-    /// Parses a character reference after its `&` (the `#` is next).
-    fn parse_character_reference_body(&mut self) -> Result<char, SaxError> {
-        self.advance(); // '#'
-        let mut body = String::new();
-        loop {
-            match self.advance() {
-                None => return Err(self.eof_error()),
-                Some(';') => break,
-                Some(c) if c.is_ascii_alphanumeric() => body.push(c),
-                Some(_) => {
-                    return Err(
-                        self.fatal("The character reference must end with the ';' delimiter.")
-                    );
-                }
-            }
+        for (target, data) in doctype.processing_instructions {
+            self.handler.processing_instruction(&target, &data)?;
         }
-        self.character_reference_value(&body)
-    }
-
-    fn push_entity(&mut self, name: String, text: Vec<char>) -> Result<(), SaxError> {
-        if self.frames.iter().any(|f| f.entity.as_deref() == Some(name.as_str())) {
-            return Err(self.fatal(format!("Recursive entity reference \"{name}\".")));
-        }
-        self.expansions += 1;
-        if self.expansions > ENTITY_EXPANSION_LIMIT {
-            return Err(self.fatal(format!(
-                "JAXP00010001: The parser has encountered more than \"{ENTITY_EXPANSION_LIMIT}\" \
-                 entity expansions in this document; this is the limit imposed by the JDK."
-            )));
-        }
-        self.frames.push(Frame { chars: text, pos: 0, entity: Some(name) });
         Ok(())
     }
 
-    fn undeclared_entity(&self, name: &str) -> Result<(), SaxError> {
+    /// Validates a start tag and reads its name and (expanded, normalized) attributes.
+    fn read_tag(
+        &mut self,
+        tag: &BytesStart<'_>,
+        phase: Phase,
+    ) -> Result<(String, Vec<(String, String)>), String> {
+        let content = utf8(tag);
+        // quick-xml's tag name: everything up to the first whitespace.
+        let raw_name = &content[..content.find(is_whitespace).unwrap_or(content.len())];
+        let n = name_len(raw_name);
+        if n == 0 {
+            return Err(phase.bad_markup().to_string());
+        }
+        let name = &raw_name[..n];
+        let bad_tag = || {
+            format!(
+                "Element type \"{name}\" must be followed by either attribute specifications, \
+                 \">\" or \"/>\"."
+            )
+        };
+        if n < raw_name.len() {
+            return Err(bad_tag());
+        }
+        let mut attributes = Vec::new();
+        for attr in tag.attributes() {
+            let attr = attr.map_err(|e| attribute_error_message(&e, content, name))?;
+            let key = utf8(attr.key.as_ref());
+            let key_offset = key.as_ptr() as usize - content.as_ptr() as usize;
+            if !is_name(key) || !content[..key_offset].ends_with(is_whitespace) {
+                return Err(bad_tag());
+            }
+            let mut value = String::new();
+            self.expand_attribute_value(name, key, utf8(&attr.value), &mut value)?;
+            attributes.push((key.to_string(), value));
+        }
+        Ok((name.to_string(), attributes))
+    }
+
+    /// Appends an attribute value to `out`, resolving references and normalizing literal
+    /// whitespace (XML 1.0 §3.3.3, for CDATA attributes).
+    fn expand_attribute_value(
+        &mut self,
+        element: &str,
+        attr: &str,
+        raw: &str,
+        out: &mut String,
+    ) -> Result<(), String> {
+        let mut rest = raw;
+        while let Some(i) = rest.find(['&', '<', '\t', '\n', '\r']) {
+            out.push_str(&rest[..i]);
+            let special = rest.as_bytes()[i];
+            rest = &rest[i + 1..];
+            match special {
+                b'<' => {
+                    return Err(format!(
+                        "The value of attribute \"{attr}\" associated with an element type \
+                         \"{element}\" must not contain the '<' character."
+                    ));
+                }
+                b'&' => {
+                    let Some(end) = rest.find(';') else {
+                        check_entity_name(rest)?;
+                        return Err(format!(
+                            "The reference to entity \"{rest}\" must end with the ';' delimiter."
+                        ));
+                    };
+                    let body = &rest[..end];
+                    rest = &rest[end + 1..];
+                    match self.resolve(body)? {
+                        Reference::Char(c) => out.push(c),
+                        Reference::Predefined(s) => out.push_str(s),
+                        Reference::Internal(name, replacement) => {
+                            self.push_entity(name)?;
+                            let result =
+                                self.expand_attribute_value(element, attr, &replacement, out);
+                            self.entity_stack.pop();
+                            result?;
+                        }
+                        Reference::External(name) => {
+                            return Err(format!(
+                                "The external entity reference \"&{name};\" is not permitted in \
+                                 an attribute value."
+                            ));
+                        }
+                        Reference::Undeclared(name) => self.undeclared(&name)?,
+                    }
+                }
+                _ => out.push(' '),
+            }
+        }
+        out.push_str(rest);
+        Ok(())
+    }
+
+    /// Resolves the body of a reference (between `&` and `;`).
+    fn resolve(&self, body: &str) -> Result<Reference, String> {
+        if let Some(number) = body.strip_prefix('#') {
+            return character_reference_value(number).map(Reference::Char);
+        }
+        check_entity_name(body)?;
+        if let Some(s) = resolve_xml_entity(body) {
+            return Ok(Reference::Predefined(s));
+        }
+        Ok(match self.entities.get(body) {
+            Some(EntityDecl::Internal(text)) => Reference::Internal(body.to_string(), text.clone()),
+            Some(EntityDecl::External) => Reference::External(body.to_string()),
+            None => Reference::Undeclared(body.to_string()),
+        })
+    }
+
+    /// Enters an entity's replacement text, rejecting recursion and enforcing the expansion
+    /// limit. The caller pops [`Self::entity_stack`] when done.
+    fn push_entity(&mut self, name: String) -> Result<(), String> {
+        if self.entity_stack.contains(&name) {
+            return Err(format!("Recursive entity reference \"{name}\"."));
+        }
+        self.expansions += 1;
+        if self.expansions > ENTITY_EXPANSION_LIMIT {
+            return Err(format!(
+                "JAXP00010001: The parser has encountered more than \"{ENTITY_EXPANSION_LIMIT}\" \
+                 entity expansions in this document; this is the limit imposed by the JDK."
+            ));
+        }
+        self.entity_stack.push(name);
+        Ok(())
+    }
+
+    fn undeclared(&self, name: &str) -> Result<(), String> {
         if self.has_unread_declarations {
             // May have been declared in the unread external subset: skipped.
             Ok(())
         } else {
-            Err(self.fatal(format!("The entity \"{name}\" was referenced, but not declared.")))
+            Err(format!("The entity \"{name}\" was referenced, but not declared."))
         }
-    }
-
-    fn parse_root_element(&mut self) -> Result<(), SaxError> {
-        let (root, empty) = self.parse_start_tag()?;
-        if empty {
-            return Ok(());
-        }
-        let mut open: Vec<(String, usize)> = vec![(root, self.frames.len())];
-        while !open.is_empty() {
-            if self.peek().is_none() {
-                if self.frames.len() > 1 {
-                    let depth = self.frames.len();
-                    if open.last().is_some_and(|(_, d)| *d == depth) {
-                        return Err(self.fatal(
-                            "The entity replacement text must contain complete markup.",
-                        ));
-                    }
-                    self.frames.pop();
-                    continue;
-                }
-                return Err(self.eof_error());
-            }
-            if self.starts_with("</") {
-                self.skip(2);
-                let name = self.read_name("The element type")?;
-                self.skip_whitespace();
-                let (expected, depth) = open.last().expect("non-empty").clone();
-                if name != expected {
-                    return Err(self.fatal(format!(
-                        "The element type \"{expected}\" must be terminated by the matching \
-                         end-tag \"</{expected}>\"."
-                    )));
-                }
-                if depth != self.frames.len() {
-                    return Err(
-                        self.fatal("The entity replacement text must contain complete markup.")
-                    );
-                }
-                self.expect(">", &format!("The end-tag for element type \"{name}\""))?;
-                open.pop();
-                self.flush_text()?;
-                let location = self.location();
-                self.handler.end_element(&name, location)?;
-            } else if self.starts_with("<!--") {
-                self.parse_comment()?;
-            } else if self.starts_with("<![CDATA[") {
-                self.skip("<![CDATA[".len());
-                loop {
-                    if self.starts_with("]]>") {
-                        self.skip(3);
-                        break;
-                    }
-                    match self.advance() {
-                        None => {
-                            return Err(self.fatal("The CDATA section must end with \"]]>\"."));
-                        }
-                        Some(c) => self.text.push(c),
-                    }
-                }
-            } else if self.starts_with("<?") {
-                self.parse_processing_instruction()?;
-            } else if self.starts_with("<!") {
-                return Err(self.fatal("The content of elements must consist of well-formed \
-                                       character data or markup."));
-            } else if self.peek() == Some('<') {
-                let (name, empty) = self.parse_start_tag()?;
-                if !empty {
-                    open.push((name, self.frames.len()));
-                }
-            } else if self.peek() == Some('&') {
-                self.advance();
-                if self.peek() == Some('#') {
-                    let c = self.parse_character_reference_body()?;
-                    self.text.push(c);
-                } else {
-                    let name = self.read_name("The entity name")?;
-                    self.expect(";", &format!("The reference to entity \"{name}\""))?;
-                    if let Some(c) = predefined_entity(&name) {
-                        self.text.push(c);
-                    } else {
-                        match self.entities.get(&name) {
-                            Some(EntityDecl::Internal(text)) => {
-                                let text = text.clone();
-                                self.push_entity(name, text)?;
-                            }
-                            // External entities are not fetched (Java's
-                            // external-general-entities feature is off): skipped.
-                            Some(EntityDecl::External) => {}
-                            None => self.undeclared_entity(&name)?,
-                        }
-                    }
-                }
-            } else if self.starts_with("]]>") {
-                return Err(self.fatal(
-                    "The character sequence \"]]>\" must not appear in content unless used to \
-                     mark the end of a CDATA section.",
-                ));
-            } else if let Some(c) = self.advance() {
-                self.text.push(c);
-            }
-        }
-        Ok(())
     }
 }
 
-fn predefined_entity(name: &str) -> Option<char> {
-    match name {
-        "lt" => Some('<'),
-        "gt" => Some('>'),
-        "amp" => Some('&'),
-        "quot" => Some('"'),
-        "apos" => Some('\''),
-        _ => None,
+/// Translates a `quick-xml` read error into the offset and Xerces message to report.
+fn describe_reader_error(
+    error: &QuickXmlError,
+    reader: &Reader<&[u8]>,
+    src: &str,
+    phase: Phase,
+    in_entity: bool,
+) -> (usize, String) {
+    let at = (reader.error_position() as usize).min(src.len());
+    let eof = if in_entity { EOF_IN_ENTITY } else { EOF_IN_DOCUMENT };
+    let message = match error {
+        QuickXmlError::Syntax(syntax) => {
+            // quick-xml reports an unknown `<!...>` under the error of the markup it guessed
+            // at; it is only really unclosed if the markup opened properly.
+            let opened = |opener: &str| {
+                src.get(at..at + opener.len()).is_some_and(|s| s.eq_ignore_ascii_case(opener))
+            };
+            let unclosed = match syntax {
+                SyntaxError::InvalidBangMarkup => false,
+                SyntaxError::UnclosedCData => opened("<![CDATA["),
+                SyntaxError::UnclosedComment => opened("<!--"),
+                SyntaxError::UnclosedDoctype => opened("<!DOCTYPE"),
+                _ => true,
+            };
+            if !unclosed {
+                phase.bad_markup().to_string()
+            } else if matches!(syntax, SyntaxError::UnclosedCData) {
+                "The CDATA section must end with \"]]>\".".to_string()
+            } else {
+                return (src.len(), eof.to_string());
+            }
+        }
+        QuickXmlError::IllFormed(IllFormedError::DoubleHyphenInComment) => {
+            "The string \"--\" is not permitted within comments.".to_string()
+        }
+        QuickXmlError::IllFormed(IllFormedError::UnclosedReference) => {
+            let after = &src[(at + 1).min(src.len())..];
+            match name_len(after) {
+                0 => "The entity name must immediately follow the '&' in the entity reference."
+                    .to_string(),
+                n => format!(
+                    "The reference to entity \"{}\" must end with the ';' delimiter.",
+                    &after[..n]
+                ),
+            }
+        }
+        QuickXmlError::IllFormed(IllFormedError::MissingDoctypeName) => {
+            "The root element type must appear after \"<!DOCTYPE\" in the document type \
+             declaration."
+                .to_string()
+        }
+        other => other.to_string(),
+    };
+    (at, message)
+}
+
+/// Xerces' message for a malformed attribute list reported by `quick-xml`.
+fn attribute_error_message(error: &AttrError, content: &str, element: &str) -> String {
+    /// The last whitespace-separated token of `s`.
+    fn last_token(s: &str) -> &str {
+        s.trim_end_matches(is_whitespace).rsplit(is_whitespace).next().unwrap_or("")
+    }
+    let bad_tag = || {
+        format!(
+            "Element type \"{element}\" must be followed by either attribute specifications, \
+             \">\" or \"/>\"."
+        )
+    };
+    match *error {
+        AttrError::ExpectedEq(pos) => {
+            let key = last_token(&content[..pos.min(content.len())]);
+            if is_name(key) {
+                format!(
+                    "Attribute name \"{key}\" associated with an element type \"{element}\" must \
+                     be followed by the ' = ' character."
+                )
+            } else {
+                bad_tag()
+            }
+        }
+        AttrError::ExpectedValue(pos) | AttrError::UnquotedValue(pos) => {
+            let before = &content[..pos.min(content.len())];
+            let key = last_token(&before[..before.rfind('=').unwrap_or(0)]);
+            format!(
+                "Open quote is expected for attribute \"{key}\" associated with an  element type  \
+                 \"{element}\"."
+            )
+        }
+        AttrError::ExpectedQuote(..) => EOF_IN_DOCUMENT.to_string(),
+        AttrError::Duplicated(pos, _) => {
+            let rest = &content[pos.min(content.len())..];
+            let key = &rest[..rest.find(|c: char| c == '=' || is_whitespace(c)).unwrap_or(rest.len())];
+            format!("Attribute \"{key}\" was already specified for element \"{element}\".")
+        }
     }
 }
 
@@ -1323,6 +1494,75 @@ mod tests {
             SaxConfig::default()
         )
         .contains("Invalid encoding name"));
+    }
+
+    #[test]
+    fn utf16_big_endian_with_declaration() {
+        let mut utf16 = vec![0xFE, 0xFF];
+        for u in "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\r\n<a v='\u{e9}'>\u{263a}</a>".encode_utf16() {
+            utf16.extend_from_slice(&u.to_be_bytes());
+        }
+        let mut r = Recorder::default();
+        parse(&utf16, SaxConfig::default(), &mut r).unwrap();
+        assert_eq!(r.events, vec!["start a [v=\"\u{e9}\"] @2:10", "text \"\u{263a}\"", "end a @2:15"]);
+    }
+
+    #[test]
+    fn entity_events_report_the_reference_location() {
+        let xml = "<!DOCTYPE a [<!ENTITY m \"<b/>\n<c/>\">]>\n<a>&m;</a>";
+        let ev = events_with(xml, DTD);
+        assert_eq!(
+            ev,
+            vec![
+                "start a [] @3:4",
+                "start b [] @3:7",
+                "end b @3:7",
+                "text \"\\n\"",
+                "start c [] @3:7",
+                "end c @3:7",
+                "end a @3:11",
+            ]
+        );
+    }
+
+    #[test]
+    fn entity_markup_must_be_complete() {
+        let open = "<!DOCTYPE a [<!ENTITY m \"<b>\">]><a>&m;</b></a>";
+        assert!(error_with(open.as_bytes(), DTD).contains("must contain complete markup"));
+        let close = "<!DOCTYPE a [<!ENTITY m \"</a>\">]><a>&m;";
+        assert!(error_with(close.as_bytes(), DTD).contains("must contain complete markup"));
+    }
+
+    #[test]
+    fn entity_replacement_whitespace_is_normalized_in_attributes() {
+        let xml = "<!DOCTYPE a [<!ENTITY t \"1\t2&#9;\">]><a v=\"&t;&lt;\"/>";
+        assert_eq!(events_with(xml, DTD)[0], "start a [v=\"1 2 <\"] @1:53");
+    }
+
+    #[test]
+    fn internal_subset_processing_instructions_are_reported() {
+        let xml = "<!DOCTYPE a PUBLIC \"-//x//y\" 'a.dtd' [<?pi d?><!-- c --><!ENTITY % p \"x\">%p;]><a/>";
+        let ev = events_with(xml, DTD);
+        assert_eq!(ev[0], "pi pi \"d\"");
+        assert_eq!(ev[1], "start a [] @1:83");
+    }
+
+    #[test]
+    fn more_well_formedness_errors() {
+        assert!(error("<a x=\"1\"y=\"2\"/>").contains("must be followed by either attribute"));
+        assert!(error("<a x/>").contains("must be followed by the ' = ' character"));
+        assert!(error("<a>&</a>").contains("entity name must immediately follow the '&'"));
+        assert!(error("<a>&x </a>").contains("reference to entity \"x\" must end with the ';'"));
+        assert!(error("<a><![CDATA[x</a>").contains("CDATA section must end with"));
+        assert!(error("<a><!FOO></a>").contains("content of elements must consist"));
+        assert!(error("<a>< b/></a>").contains("content of elements must consist"));
+        assert!(error("&lt;<a/>").contains("Content is not allowed in prolog."));
+        assert!(error(" <?xml version=\"1.0\"?><a/>").contains("[xX][mM][lL]"));
+        assert!(error("<?xml version=\"1.0\" bogus=\"1\"?><a/>").contains("\"bogus\" is not allowed"));
+        assert!(error("<a/></a>").contains("following the root element must be well-formed"));
+        assert!(error("<a><!-- x").contains("XML document structures must start and end"));
+        let twice = "<!DOCTYPE a><!DOCTYPE a><a/>";
+        assert!(error_with(twice.as_bytes(), DTD).contains("Already seen doctype."));
     }
 
     #[test]
