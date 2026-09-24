@@ -46,7 +46,7 @@ use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
-use crate::pcode::emu::default_pcode_thread::{DefaultPcodeThread, PcodeThreadExecutor};
+use crate::pcode::emu::default_pcode_thread::{PcodeThreadExecutor, ThreadCore};
 use crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece;
 use crate::program::model::lang::Language;
 
@@ -86,8 +86,8 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
     /// Java's default body constructs `new PcodeThreadExecutor<>(thread)`, which is
     /// [`PcodeThreadExecutor::for_thread`].
     ///
-    /// Java's parameter is a `DefaultPcodeThread<Pair<byte[], U>>`; this port's
-    /// [`DefaultPcodeThread`] also names the concrete types of its two state delegates (see
+    /// Java's parameter is a `DefaultPcodeThread<Pair<byte[], U>>`, of which this reads only the
+    /// state its `protected` members expose, i.e. the thread's [`ThreadCore`]. That core also names the concrete types of its two state delegates (see
     /// [`ThreadPcodeExecutorState`](crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState)),
     /// which this call site does not care about, so they are free parameters of the method. That
     /// costs nothing here: this trait already has generic methods, so it is not object-safe either
@@ -95,7 +95,7 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
     fn create_executor<S, L>(
         &self,
         _emulator: &dyn AuxPcodeEmulator<U>,
-        thread: &DefaultPcodeThread<(Vec<u8>, U), S, L>,
+        thread: &ThreadCore<(Vec<u8>, U), S, L>,
     ) -> PcodeThreadExecutor<(Vec<u8>, U)>
     where
         S: PcodeExecutorState<(Vec<u8>, U)> + 'static,

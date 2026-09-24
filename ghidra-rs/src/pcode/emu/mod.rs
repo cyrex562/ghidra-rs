@@ -20,9 +20,12 @@ pub mod x86;
 pub use abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase};
 pub use auxiliary::{AuxEmulatorPartsFactory, AuxPcodeEmulator};
 pub use bytes_pcode_thread::BytesPcodeThread;
-pub use default_pcode_thread::{DefaultPcodeThread, PcodeEmulationLibrary, PcodeThreadExecutor};
+pub use default_pcode_thread::{
+    DefaultPcodeThread, NoThreadHooks, PcodeEmulationLibrary, PcodeThreadExecutor, ThreadCore,
+    ThreadHooks,
+};
 pub use instruction_decoder::InstructionDecoder;
-pub use modified_pcode_thread::{ModifiedPcodeThread, PcodeStateModifier};
+pub use modified_pcode_thread::{ModifiedPcodeThread, ModifiedThreadHooks, PcodeStateModifier};
 pub use pcode_emulation_callbacks::{
     no_pcode_emulation_callbacks, NoPcodeEmulationCallbacks, PcodeEmulationCallbacks, Wrapper,
 };

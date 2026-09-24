@@ -9,129 +9,178 @@
 //! [`AuxPcodeEmulator`] and [`AuxEmulatorPartsFactory`], Java's `Pair<byte[], U>` is rendered as
 //! the tuple `(Vec<u8>, U)`.
 //!
+//! # Shape
+//!
+//! Java's `AuxPcodeThread<U> extends ModifiedPcodeThread<Pair<byte[], U>>`, overriding
+//! `createUseropLibrary()` and `createExecutor()` to defer to the emulator's parts factory. Those
+//! overrides are [`AuxThreadHooks`], which holds the [`ModifiedThreadHooks`] of its superclass and
+//! calls them where Java calls `super`; the thread itself is [`AuxPcodeThread`] =
+//! [`DefaultPcodeThread`] over those hooks.
+//!
 //! # Deviations from Java
 //!
-//! Java's `AuxPcodeThread<U> extends ModifiedPcodeThread<Pair<byte[], U>>`. Following this
-//! crate's composition-over-inheritance convention (and matching
-//! [`ModifiedPcodeThread`]'s own treatment of [`DefaultPcodeThread`]), this wraps a
-//! [`ModifiedPcodeThread`] by composition instead.
-//!
-//! * **No `getMachine()` override.** Java's override narrows `super.getMachine()` (which returns
-//!   the type-erased `AbstractPcodeMachine<T>`) back down to `AuxPcodeEmulator<U>` via an unchecked
-//!   cast. [`ModifiedPcodeThread`] stores its machine as `Arc<dyn AbstractPcodeMachine<T>>`, with
-//!   no way to recover a narrower `&dyn AuxPcodeEmulator<U>` from that handle -- the same erasure
-//!   [`AuxPcodeEmulator`]'s own module docs describe for why `getPartsFactory()` isn't a method on
-//!   that trait either. So this type does not expose an equivalent accessor; a caller that needs
-//!   the parts factory or the emulator already has both in hand from constructing this thread (see
-//!   [`AuxPcodeThread::new`]) and should hold onto them itself.
-//! * **`createUseropLibrary()` is wired at construction, not as an override.** Java's override --
-//!   `super.createUseropLibrary().compose(getPartsFactory().createLocalUseropLibrary(getMachine(),
-//!   this))` -- runs virtually from deep inside the constructor chain. [`ModifiedPcodeThread`]
-//!   builds its own (already-composed) library once, in its own `new`, with no override seam
-//!   reachable afterward except the narrow, additive
-//!   [`ModifiedPcodeThread::replace_library`] this port added for exactly this purpose (mirroring
-//!   [`DefaultPcodeThread::replace_library`], which [`ModifiedPcodeThread::new`] itself already
-//!   uses the same way). [`AuxPcodeThread::new`] reads the freshly built
-//!   [`ModifiedPcodeThread`]'s library back out, composes the parts factory's local library onto
-//!   it, and writes the result back with that method -- observably the same layering Java
-//!   performs, just sequenced after construction instead of during it.
-//! * **No `createExecutor()` override.** Java's override forwards to
-//!   `getPartsFactory().createExecutor(getMachine(), this)`
-//!   ([`AuxEmulatorPartsFactory::create_executor`]'s default body is exactly
-//!   `PcodeThreadExecutor::for_thread(thread)`). Unlike the userop library,
-//!   [`DefaultPcodeThread`] has no analogous "build once, then replace" seam for its executor (see
-//!   that module's fields: `executor` is built directly in `new` and never reachable again), so
-//!   there is nowhere to install a factory-supplied executor even when a factory overrides
-//!   [`AuxEmulatorPartsFactory::create_executor`] beyond its default. Since [`DefaultPcodeThread`]
-//!   already constructs the equivalent of that default internally, this only diverges from Java
-//!   for a parts factory that actually customizes `create_executor` -- a case this port cannot
-//!   express until `DefaultPcodeThread` grows an executor-replacement seam analogous to
-//!   [`DefaultPcodeThread::replace_library`].
+//! * **No `getMachine()` override.** Java's override narrows `super.getMachine()` back down to
+//!   `AuxPcodeEmulator<U>` via an unchecked cast. The hooks hold the narrow emulator handle
+//!   themselves (see [`AuxThreadHooks::emulator`]), which is where the two overrides need it.
+//! * **The parts factory is held by the hooks.** Java recovers it from the emulator via
+//!   `getPartsFactory()`, which cannot be a method of the object-safe [`AuxPcodeEmulator`] (see
+//!   that module's docs), so the thread's creator supplies it alongside the emulator.
 
 use std::sync::Arc;
 
 use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
 use crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory;
 use crate::pcode::emu::auxiliary::aux_pcode_emulator::AuxPcodeEmulator;
-#[allow(deprecated)]
-use crate::pcode::emu::modified_pcode_thread::{ModifiedPcodeThread, PcodeStateModifier};
+use crate::pcode::emu::default_pcode_thread::{
+    DefaultPcodeThread, PcodeThreadExecutor, ThreadCore, ThreadHooks,
+};
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
-use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
+#[allow(deprecated)]
+use crate::pcode::emu::modified_pcode_thread::{ModifiedThreadHooks, PcodeStateModifier};
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
+use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
+use crate::program::model::address::Address;
 use crate::program::model::lang::language::Language;
+use crate::program::model::pcode::PcodeOp;
+
+/// The overrides of Java's `AuxPcodeThread`, over those of its superclass `ModifiedPcodeThread`.
+///
+/// `U` is the type of auxiliary values and `F` the emulator's parts factory.
+pub struct AuxThreadHooks<U: 'static, F> {
+    parent: ModifiedThreadHooks,
+    emulator: Arc<dyn AuxPcodeEmulator<U>>,
+    parts_factory: Arc<F>,
+}
+
+impl<U: 'static, F: AuxEmulatorPartsFactory<U>> AuxThreadHooks<U, F> {
+    /// The overrides for a thread of the given emulator, whose parts come from the given factory.
+    ///
+    /// `modifier` is what [`ModifiedThreadHooks::new`] takes for the superclass.
+    #[allow(deprecated)]
+    pub fn new(
+        emulator: Arc<dyn AuxPcodeEmulator<U>>,
+        parts_factory: Arc<F>,
+        modifier: Option<Arc<dyn PcodeStateModifier>>,
+    ) -> Self {
+        Self { parent: ModifiedThreadHooks::new(modifier), emulator, parts_factory }
+    }
+
+    /// The emulator this thread belongs to. Port of the narrowed `getMachine()`.
+    pub fn emulator(&self) -> &Arc<dyn AuxPcodeEmulator<U>> {
+        &self.emulator
+    }
+
+    /// The emulator's parts factory. Port of `getPartsFactory()`.
+    pub fn parts_factory(&self) -> &Arc<F> {
+        &self.parts_factory
+    }
+
+    /// The superclass's overrides.
+    pub fn modified(&self) -> &ModifiedThreadHooks {
+        &self.parent
+    }
+}
+
+impl<U: 'static, F, S, L> ThreadHooks<(Vec<u8>, U), S, L> for AuxThreadHooks<U, F>
+where
+    F: AuxEmulatorPartsFactory<U>,
+    S: PcodeExecutorState<(Vec<u8>, U)> + 'static,
+    L: PcodeExecutorState<(Vec<u8>, U)> + 'static,
+{
+    fn create_instruction_decoder(
+        &mut self,
+        decoder: Box<dyn InstructionDecoder>,
+    ) -> Box<dyn InstructionDecoder> {
+        ThreadHooks::<(Vec<u8>, U), S, L>::create_instruction_decoder(&mut self.parent, decoder)
+    }
+
+    /// Port of the override:
+    /// `super.createUseropLibrary().compose(getPartsFactory().createLocalUseropLibrary(getMachine(), this))`.
+    fn create_userop_library(
+        &mut self,
+        thread: &ThreadCore<(Vec<u8>, U), S, L>,
+        library: Box<dyn PcodeUseropLibrary<(Vec<u8>, U)>>,
+    ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, U)>> {
+        let library = self.parent.create_userop_library(thread, library);
+        let local = self
+            .parts_factory
+            .create_local_userop_library(self.emulator.as_ref(), thread);
+        library.compose(local.as_ref())
+    }
+
+    /// Port of the override: `getPartsFactory().createExecutor(getMachine(), this)`.
+    fn create_executor(
+        &mut self,
+        thread: &ThreadCore<(Vec<u8>, U), S, L>,
+    ) -> PcodeThreadExecutor<(Vec<u8>, U)> {
+        self.parts_factory.create_executor(self.emulator.as_ref(), thread)
+    }
+
+    fn pre_execute_instruction(&mut self, thread: &mut ThreadCore<(Vec<u8>, U), S, L>) {
+        self.parent.pre_execute_instruction(thread);
+    }
+
+    fn post_execute_instruction(&mut self, thread: &mut ThreadCore<(Vec<u8>, U), S, L>) {
+        self.parent.post_execute_instruction(thread);
+    }
+
+    fn on_missing_userop_def(
+        &mut self,
+        thread: &mut ThreadCore<(Vec<u8>, U), S, L>,
+        op: &PcodeOp,
+        op_name: &str,
+    ) -> bool {
+        self.parent.on_missing_userop_def(thread, op, op_name)
+    }
+
+    fn override_counter(&mut self, thread: &mut ThreadCore<(Vec<u8>, U), S, L>, counter: &Address) {
+        self.parent.override_counter(thread, counter);
+    }
+}
 
 /// The default thread for `AuxPcodeEmulator`.
 ///
 /// `S` and `L` are the concrete types of the machine's shared (memory) and this thread's local
-/// (register/unique) state, matching [`ModifiedPcodeThread`], which this type wraps. See the
-/// module docs for how this differs from Java's subclassing.
-#[allow(deprecated)]
-pub struct AuxPcodeThread<U: 'static, S, L>
-where
-    S: PcodeExecutorState<(Vec<u8>, U)> + 'static,
-    L: PcodeExecutorState<(Vec<u8>, U)> + 'static,
-{
-    inner: ModifiedPcodeThread<(Vec<u8>, U), S, L>,
-}
+/// (register/unique) state, and `F` the emulator's parts factory. See the module docs.
+pub type AuxPcodeThread<U, S, L, F> = DefaultPcodeThread<(Vec<u8>, U), S, L, AuxThreadHooks<U, F>>;
 
-#[allow(deprecated)]
-impl<U: 'static, S, L> AuxPcodeThread<U, S, L>
+impl<U: 'static, S, L, F> DefaultPcodeThread<(Vec<u8>, U), S, L, AuxThreadHooks<U, F>>
 where
+    F: AuxEmulatorPartsFactory<U>,
     S: PcodeExecutorState<(Vec<u8>, U)> + 'static,
     L: PcodeExecutorState<(Vec<u8>, U)> + 'static,
 {
-    /// Construct a new thread with the given name belonging to the given machine.
+    /// Construct a new thread with the given name belonging to the given emulator.
     ///
-    /// Port of `AuxPcodeThread(String, AuxPcodeEmulator<U>)`. `machine`, `exec_language`,
-    /// `shared_state`, `local_state`, `decoder`, and `modifier` are exactly what
-    /// [`ModifiedPcodeThread::new`] needs (matching that constructor's own divergence from Java,
-    /// documented in its module). `emulator` and `parts_factory` are what this override needs
-    /// beyond that -- Java recovers both from `this` (via the overridden `getMachine()` and
-    /// `getPartsFactory()`), which this port cannot do from a type-erased `machine` handle alone
-    /// (see the module docs), so the caller supplies them directly. `machine` and `emulator`
-    /// are expected to be (type-erased and narrow) views of the very same emulator.
+    /// Port of `AuxPcodeThread(String, AuxPcodeEmulator<U>)`. `exec_language`, `shared_state`,
+    /// `local_state`, and `decoder` are what [`DefaultPcodeThread::new`] needs from a machine;
+    /// `modifier` is what [`ModifiedThreadHooks::new`] takes; `parts_factory` is Java's
+    /// `getPartsFactory()` -- see the module docs.
     ///
     /// # Panics
     ///
-    /// If the language has no program counter, as [`ModifiedPcodeThread::new`] requires.
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    /// If the language has no program counter, as [`DefaultPcodeThread::new`] requires.
+    #[allow(clippy::too_many_arguments, deprecated)]
+    pub fn new_aux(
         name: impl Into<String>,
-        machine: Arc<dyn AbstractPcodeMachine<(Vec<u8>, U)>>,
+        emulator: Arc<dyn AuxPcodeEmulator<U>>,
         exec_language: Arc<dyn Language>,
         shared_state: S,
         local_state: L,
         decoder: Box<dyn InstructionDecoder>,
         modifier: Option<Arc<dyn PcodeStateModifier>>,
-        emulator: &dyn AuxPcodeEmulator<U>,
-        parts_factory: &impl AuxEmulatorPartsFactory<U>,
+        parts_factory: Arc<F>,
     ) -> Self {
-        let mut inner = ModifiedPcodeThread::new(
+        let machine: Arc<dyn AbstractPcodeMachine<(Vec<u8>, U)>> = emulator.clone();
+        DefaultPcodeThread::new(
             name,
             machine,
             exec_language,
             shared_state,
             local_state,
             decoder,
-            modifier,
-        );
-
-        // Port of the overridden `createUseropLibrary()`:
-        // `super.createUseropLibrary().compose(getPartsFactory().createLocalUseropLibrary(getMachine(), this))`.
-        // See the module docs for why this runs here, after construction, rather than as an
-        // override reached from within it.
-        let local = parts_factory
-            .create_local_userop_library(emulator, &inner as &dyn ErasedPcodeThread);
-        let composed = PcodeThread::get_userop_library(&inner).compose(local.as_ref());
-        inner.replace_library(composed);
-
-        Self { inner }
-    }
-
-    /// The wrapped [`ModifiedPcodeThread`], for access to members this type does not otherwise
-    /// re-expose.
-    pub fn inner(&self) -> &ModifiedPcodeThread<(Vec<u8>, U), S, L> {
-        &self.inner
+            AuxThreadHooks::new(emulator, parts_factory, modifier),
+        )
     }
 }
 
@@ -139,6 +188,7 @@ where
 #[allow(deprecated)]
 mod tests {
     use super::*;
+    use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
     use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase;
     use crate::pcode::emu::pcode_emulation_callbacks::{
         no_pcode_emulation_callbacks, PcodeEmulationCallbacks,
@@ -775,20 +825,19 @@ mod tests {
         shared.set_var_register(&pc_register(), &(0x400000i64.to_le_bytes().to_vec(), 0));
         local.set_var_register(&pc_register(), &(0x400000i64.to_le_bytes().to_vec(), 0));
 
-        let factory = RecordingFactory;
-        let thread = AuxPcodeThread::new(
+        let _ = machine;
+        let thread = AuxPcodeThread::new_aux(
             "Thread 0",
-            machine,
+            emulator as Arc<dyn AuxPcodeEmulator<i64>>,
             Arc::new(ExecLanguage),
             shared,
             local,
             Box::new(FixedLengthDecoder { length: 4 }),
             None,
-            emulator.as_ref(),
-            &factory,
+            Arc::new(RecordingFactory),
         );
 
-        let userops = PcodeThread::get_userop_library(thread.inner()).get_userops();
+        let userops = PcodeThread::get_userop_library(&thread).get_userops();
         assert!(userops.contains_key("__local"));
         // The base library's own userops (from `DefaultPcodeThread`) are still present alongside
         // the composed-in local one.

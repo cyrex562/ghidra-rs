@@ -13,24 +13,24 @@
 //! "State modifiers" are a feature of the older `Emulator`. They are crudely incorporated into
 //! threads built from this module, so that they do not yet need to be ported to this emulator.
 //!
+//! # Shape
+//!
+//! Java's `ModifiedPcodeThread<T> extends DefaultPcodeThread<T>`, overriding
+//! `createUseropLibrary()`, `overrideCounter(Address)`, and `postExecuteInstruction()`. Those
+//! overrides are [`ModifiedThreadHooks`], so the thread itself is
+//! [`ModifiedPcodeThread`] = [`DefaultPcodeThread`] over those hooks, and every internal call Java
+//! makes to them virtually (e.g. `skipInstruction`'s `overrideCounter`) reaches the override here
+//! too. A subclass of this class (e.g.
+//! [`AuxPcodeThread`](crate::pcode::emu::auxiliary::aux_pcode_thread::AuxPcodeThread)) is a hooks
+//! type holding a [`ModifiedThreadHooks`] as its `super`.
+//!
 //! # Divergences from Java
 //!
-//! * **No subclassing.** Java's `ModifiedPcodeThread<T> extends DefaultPcodeThread<T>`, overriding
-//!   `createUseropLibrary()`, `overrideCounter(Address)`, and `postExecuteInstruction()`. Rust has
-//!   no inheritance, so [`ModifiedPcodeThread`] wraps a [`DefaultPcodeThread`] by composition.
-//!   `override_counter` is a trait method this type implements itself, so it is free to add the
-//!   modifier callback after delegating -- but only for *external* calls; `DefaultPcodeThread`'s
-//!   own internal call to `overrideCounter` from `skipInstruction` is monomorphized to itself and
-//!   cannot reach this override. `createUseropLibrary()` and `postExecuteInstruction()` have no
-//!   trait-level seam at all (Java calls them as protected virtual methods from deep inside
-//!   `DefaultPcodeThread`'s control flow), so [`DefaultPcodeThread`] grew two narrow, additive
-//!   extension points for them: [`DefaultPcodeThread::replace_library`] and
-//!   [`DefaultPcodeThread::set_post_execute_hook`]/[`PostExecuteHook`]. See that module's docs.
 //! * **No reflection.** Java's `createModifier()` looks up the language's
 //!   `EMULATE_INSTRUCTION_STATE_MODIFIER_CLASS` property and instantiates it via
 //!   `ClassSearcher`/reflection over a `Constructor<? extends EmulateInstructionStateModifier>`.
-//!   Rust has no dynamic class loading, so the modifier is a constructor parameter of
-//!   [`ModifiedPcodeThread::new`] instead: the caller resolves it however it likes (e.g. from the
+//!   Rust has no dynamic class loading, so the modifier is a parameter of
+//!   [`ModifiedThreadHooks::new`] instead: the caller resolves it however it likes (e.g. from the
 //!   same language property, via its own registry) and hands over an already-constructed
 //!   [`PcodeStateModifier`].
 //! * **`GlueEmulate` is minimal.** Java's inner `GlueEmulate` overrides five `Emulate` methods
@@ -44,40 +44,33 @@
 //!   for the same reason and panics if invoked.
 
 use std::any::TypeId;
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
 use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachine;
-use crate::pcode::emu::default_pcode_thread::{DefaultPcodeThread, PostExecuteHook};
+use crate::pcode::emu::default_pcode_thread::{DefaultPcodeThread, ThreadCore, ThreadHooks};
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
-use crate::pcode::emu::pcode_machine::PcodeMachine;
-use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
-use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
 #[allow(deprecated)]
 use crate::pcode::emulate::emulate_instruction_state_modifier::{
     EmulateInstructionStateModifier, EmulateInstructionStateModifierBase,
 };
-use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor::PcodeExecutor;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_userop_library::{
     ErasedPcodeUseropLibrary, PcodeUseropDefinition, PcodeUseropLibrary, UseropMap,
 };
-use crate::pcode::seam_stubs::{Emulate, RegisterValue};
+use crate::pcode::seam_stubs::Emulate;
 use crate::program::model::address::Address;
 use crate::program::model::lang::language::Language;
-use crate::program::model::lang::sleigh::SleighLanguage;
-use crate::program::model::listing::Instruction;
 use crate::program::model::pcode::{PcodeOp, Varnode};
-use std::collections::HashMap;
-use std::sync::MutexGuard;
 
 /// The combination Java's abstract `EmulateInstructionStateModifier` class provides to a subclass:
 /// the CALLOTHER dispatch table
 /// ([`EmulateInstructionStateModifierBase`]) plus the two overridable callbacks
 /// ([`EmulateInstructionStateModifier`]). A concrete, language-specific modifier passed to
-/// [`ModifiedPcodeThread::new`] implements both, exactly as Java's doc for
+/// [`ModifiedThreadHooks::new`] implements both, exactly as Java's doc for
 /// `EmulateInstructionStateModifierBase` anticipates.
 #[allow(deprecated)]
 pub trait PcodeStateModifier: EmulateInstructionStateModifier {
@@ -224,26 +217,49 @@ impl<T: 'static> PcodeUseropLibrary<T> for ModifierUseropLibrary<T> {
     }
 }
 
-/// Adapts a [`PcodeStateModifier`] to the [`PostExecuteHook`] seam, forwarding
-/// [`DefaultPcodeThread`]'s post-execute notification to the modifier's `postExecuteCallback`.
+/// The overrides of Java's `ModifiedPcodeThread`: the state modifier and its glue.
 ///
-/// Port of the body of `ModifiedPcodeThread.postExecuteInstruction()`.
+/// See the module docs. `ModifiedPcodeThread` extends `DefaultPcodeThread` directly, whose own
+/// behavior is the [`ThreadHooks`] defaults, so where Java calls `super` these call nothing
+/// further.
 #[allow(deprecated)]
-struct ModifierPostExecuteHook {
-    modifier: Arc<dyn PcodeStateModifier>,
+pub struct ModifiedThreadHooks {
+    /// Part of the glue that makes existing state modifiers work in this emulation framework.
+    ///
+    /// Java instantiates one per thread, rather than sharing one across the machine, because some
+    /// modifiers are stateful and assume a single-threaded model. `None` if the language declares
+    /// no `EMULATE_INSTRUCTION_STATE_MODIFIER_CLASS` (or the caller otherwise has none to supply).
+    modifier: Option<Arc<dyn PcodeStateModifier>>,
+    /// Glue for incorporating state modifiers. See [`GlueEmulate`].
     emulate: Arc<dyn Emulate>,
 }
 
 #[allow(deprecated)]
-impl<T: 'static> PostExecuteHook<T> for ModifierPostExecuteHook {
-    fn post_execute_instruction(
+impl ModifiedThreadHooks {
+    /// The overrides for a thread incorporating the given state modifier, if any.
+    ///
+    /// `modifier` stands in for Java's reflective `createModifier()` -- see the module docs.
+    pub fn new(modifier: Option<Arc<dyn PcodeStateModifier>>) -> Self {
+        Self { modifier, emulate: Arc::new(GlueEmulate) }
+    }
+
+    /// This thread's state modifier, if the language specifies one.
+    pub fn modifier(&self) -> Option<&Arc<dyn PcodeStateModifier>> {
+        self.modifier.as_ref()
+    }
+
+    /// The body of `postExecuteInstruction()`, given what it reads off the thread.
+    fn notify_post_execute(
         &self,
         last_execute_address: &Address,
         last_execute_pcode: &[PcodeOp],
         last_pcode_index: i32,
         current_address: &Address,
     ) {
-        if let Err(e) = self.modifier.post_execute_callback(
+        let Some(modifier) = &self.modifier else {
+            return;
+        };
+        if let Err(e) = modifier.post_execute_callback(
             self.emulate.as_ref(),
             last_execute_address,
             last_execute_pcode,
@@ -255,31 +271,65 @@ impl<T: 'static> PostExecuteHook<T> for ModifierPostExecuteHook {
     }
 }
 
-/// A p-code thread which incorporates per-architecture state modifiers.
-///
-/// `T` is the type of variables in the emulator, `S` the concrete type of the machine's shared
-/// (memory) state, and `L` that of this thread's local (register/unique) state -- see
-/// [`DefaultPcodeThread`], which this type wraps.
 #[allow(deprecated)]
-pub struct ModifiedPcodeThread<T: 'static, S, L>
+impl<T: 'static, S, L> ThreadHooks<T, S, L> for ModifiedThreadHooks
 where
     S: PcodeExecutorState<T> + 'static,
     L: PcodeExecutorState<T> + 'static,
 {
-    inner: DefaultPcodeThread<T, S, L>,
-    /// Part of the glue that makes existing state modifiers work in this emulation framework.
-    ///
-    /// Java instantiates one per thread, rather than sharing one across the machine, because some
-    /// modifiers are stateful and assume a single-threaded model. `None` if the language declares
-    /// no `EMULATE_INSTRUCTION_STATE_MODIFIER_CLASS` (or the caller otherwise has none to supply).
-    modifier: Option<Arc<dyn PcodeStateModifier>>,
-    /// Glue for incorporating state modifiers. See [`GlueEmulate`].
-    #[allow(dead_code)]
-    emulate: Arc<dyn Emulate>,
+    /// Port of the override: `new ModifierUseropLibrary().compose(super.createUseropLibrary(),
+    /// true)`.
+    fn create_userop_library(
+        &mut self,
+        thread: &ThreadCore<T, S, L>,
+        library: Box<dyn PcodeUseropLibrary<T>>,
+    ) -> Box<dyn PcodeUseropLibrary<T>> {
+        let modifier_library = ModifierUseropLibrary::<T>::new(
+            self.modifier.clone(),
+            thread.exec_language().as_ref(),
+            &self.emulate,
+        );
+        modifier_library.compose_with_override(library.as_ref(), true)
+    }
+
+    /// Port of the override: write through, then (if a modifier is installed) run its
+    /// `initialExecuteCallback` with the new counter and the current context.
+    fn override_counter(&mut self, thread: &mut ThreadCore<T, S, L>, counter: &Address) {
+        thread.write_counter(counter);
+        if let Some(modifier) = &self.modifier {
+            if let Err(e) =
+                modifier.initial_execute_callback(self.emulate.as_ref(), counter, thread.get_context())
+            {
+                panic!("{e}");
+            }
+        }
+    }
+
+    /// Port of the override: hand the modifier the finished instruction's address and p-code, the
+    /// frame's branch index, and the new counter.
+    fn post_execute_instruction(&mut self, thread: &mut ThreadCore<T, S, L>) {
+        if self.modifier.is_none() {
+            return;
+        }
+        let Some(instruction) = thread.get_instruction() else {
+            // Java passes a null address for an inject; the Rust callback cannot take one, and
+            // `DefaultPcodeThread` only calls this after a decoded instruction anyway.
+            return;
+        };
+        let code = thread.get_frame().map(PcodeFrame::copy_code).unwrap_or_default();
+        let branched = thread.get_frame().map(PcodeFrame::branched).unwrap_or(-1);
+        self.notify_post_execute(&instruction.get_min_address(), &code, branched, &thread.get_counter());
+    }
 }
 
+/// A p-code thread which incorporates per-architecture state modifiers.
+///
+/// `T` is the type of variables in the emulator, `S` the concrete type of the machine's shared
+/// (memory) state, and `L` that of this thread's local (register/unique) state.
+pub type ModifiedPcodeThread<T, S, L> = DefaultPcodeThread<T, S, L, ModifiedThreadHooks>;
+
 #[allow(deprecated)]
-impl<T: 'static, S, L> ModifiedPcodeThread<T, S, L>
+impl<T: 'static, S, L> DefaultPcodeThread<T, S, L, ModifiedThreadHooks>
 where
     S: PcodeExecutorState<T> + 'static,
     L: PcodeExecutorState<T> + 'static,
@@ -296,7 +346,7 @@ where
     ///
     /// If the language has no program counter, as [`DefaultPcodeThread::new`] requires.
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    pub fn new_modified(
         name: impl Into<String>,
         machine: Arc<dyn AbstractPcodeMachine<T>>,
         exec_language: Arc<dyn Language>,
@@ -305,228 +355,20 @@ where
         decoder: Box<dyn InstructionDecoder>,
         modifier: Option<Arc<dyn PcodeStateModifier>>,
     ) -> Self {
-        let mut inner = DefaultPcodeThread::new(
+        DefaultPcodeThread::new(
             name,
             machine,
-            Arc::clone(&exec_language),
+            exec_language,
             shared_state,
             local_state,
             decoder,
-        );
-
-        let emulate: Arc<dyn Emulate> = Arc::new(GlueEmulate);
-
-        // Port of `createUseropLibrary()`: `new ModifierUseropLibrary().compose(super.createUseropLibrary(), true)`.
-        let modifier_library =
-            ModifierUseropLibrary::<T>::new(modifier.clone(), exec_language.as_ref(), &emulate);
-        let composed = modifier_library.compose_with_override(inner.get_userop_library(), true);
-        inner.replace_library(composed);
-
-        // Wires `postExecuteInstruction()`'s override; see `PostExecuteHook`'s docs.
-        if let Some(modifier) = &modifier {
-            let hook: Arc<dyn PostExecuteHook<T>> = Arc::new(ModifierPostExecuteHook {
-                modifier: Arc::clone(modifier),
-                emulate: Arc::clone(&emulate),
-            });
-            inner.set_post_execute_hook(hook);
-        }
-
-        Self { inner, modifier, emulate }
-    }
-
-    /// The wrapped [`DefaultPcodeThread`], for access to members this type does not otherwise
-    /// re-expose.
-    pub fn inner(&self) -> &DefaultPcodeThread<T, S, L> {
-        &self.inner
+            ModifiedThreadHooks::new(modifier),
+        )
     }
 
     /// This thread's state modifier, if the language specifies one.
     pub fn modifier(&self) -> Option<&Arc<dyn PcodeStateModifier>> {
-        self.modifier.as_ref()
-    }
-
-    /// Replace this thread's userop library outright.
-    ///
-    /// Forwards to [`DefaultPcodeThread::replace_library`]. Added so that a further wrapper
-    /// (e.g. [`AuxPcodeThread`](crate::pcode::emu::auxiliary::aux_pcode_thread::AuxPcodeThread),
-    /// which composes onto *this* type's already-composed library, the same way this type
-    /// composes onto [`DefaultPcodeThread`]'s) can layer its own userops on top of this type's
-    /// without reaching into a private field. Mirrors the "no trait-level seam for
-    /// `createUseropLibrary()`" divergence documented at the top of this module: `self.inner`'s
-    /// library was already fixed at construction time, so a caller that wants to add to it must
-    /// read it back out, compose, and write the result here.
-    pub fn replace_library(&mut self, library: Box<dyn PcodeUseropLibrary<T>>) {
-        self.inner.replace_library(library);
-    }
-}
-
-#[allow(deprecated)]
-impl<T: 'static, S, L> ErasedPcodeThread for ModifiedPcodeThread<T, S, L>
-where
-    S: PcodeExecutorState<T> + 'static,
-    L: PcodeExecutorState<T> + 'static,
-{
-    fn erased_step_instruction(&mut self) {
-        <Self as PcodeThread<T>>::step_instruction(self);
-    }
-
-    fn erased_skip_instruction(&mut self) {
-        <Self as PcodeThread<T>>::skip_instruction(self);
-    }
-
-    fn erased_step_pcode_op(&mut self) {
-        <Self as PcodeThread<T>>::step_pcode_op(self);
-    }
-
-    fn erased_skip_pcode_op(&mut self) {
-        <Self as PcodeThread<T>>::skip_pcode_op(self);
-    }
-}
-
-#[allow(deprecated)]
-impl<T: 'static, S, L> PcodeThread<T> for ModifiedPcodeThread<T, S, L>
-where
-    S: PcodeExecutorState<T> + 'static,
-    L: PcodeExecutorState<T> + 'static,
-{
-    type SharedState = S;
-    type LocalState = L;
-
-    fn get_name(&self) -> &str {
-        self.inner.get_name()
-    }
-
-    fn get_machine(&self) -> &dyn PcodeMachine<T> {
-        self.inner.get_machine()
-    }
-
-    fn set_counter(&mut self, counter: &Address) {
-        self.inner.set_counter(counter);
-    }
-
-    fn get_counter(&self) -> Address {
-        self.inner.get_counter()
-    }
-
-    /// Port of the override: writes through, then (if a modifier is installed) runs its
-    /// `initialExecuteCallback`. Only reaches modifier-driven internal callers of
-    /// `overrideCounter` (e.g. `skipInstruction`) when they go through this type -- see the module
-    /// docs on why `DefaultPcodeThread`'s own internal call cannot be intercepted.
-    fn override_counter(&mut self, counter: &Address) {
-        self.inner.override_counter(counter);
-        if let Some(modifier) = &self.modifier {
-            if let Err(e) = modifier.initial_execute_callback(
-                self.emulate.as_ref(),
-                counter,
-                self.inner.get_context(),
-            ) {
-                panic!("{e}");
-            }
-        }
-    }
-
-    fn assign_context(&mut self, context: &dyn RegisterValue) {
-        self.inner.assign_context(context);
-    }
-
-    fn get_context(&self) -> Option<&dyn RegisterValue> {
-        self.inner.get_context()
-    }
-
-    fn override_context(&mut self, context: &dyn RegisterValue) {
-        self.inner.override_context(context);
-    }
-
-    fn override_context_with_default(&mut self) {
-        self.inner.override_context_with_default();
-    }
-
-    fn re_initialize(&mut self) {
-        self.inner.re_initialize();
-    }
-
-    fn step_instruction(&mut self) {
-        self.inner.step_instruction();
-    }
-
-    fn step_pcode_op(&mut self) {
-        self.inner.step_pcode_op();
-    }
-
-    fn skip_pcode_op(&mut self) {
-        self.inner.skip_pcode_op();
-    }
-
-    fn step_patch(&mut self, sleigh: &str) {
-        self.inner.step_patch(sleigh);
-    }
-
-    fn get_frame(&self) -> Option<&PcodeFrame> {
-        self.inner.get_frame()
-    }
-
-    fn get_instruction(&self) -> Option<Arc<dyn Instruction>> {
-        self.inner.get_instruction()
-    }
-
-    fn execute_instruction(&mut self) {
-        self.inner.execute_instruction();
-    }
-
-    fn finish_instruction(&mut self) {
-        self.inner.finish_instruction();
-    }
-
-    fn skip_instruction(&mut self) {
-        self.inner.skip_instruction();
-    }
-
-    fn drop_instruction(&mut self) {
-        self.inner.drop_instruction();
-    }
-
-    fn run(&mut self) {
-        self.inner.run();
-    }
-
-    fn set_suspended(&mut self, suspended: bool) {
-        self.inner.set_suspended(suspended);
-    }
-
-    fn is_suspended(&self) -> bool {
-        self.inner.is_suspended()
-    }
-
-    fn get_language(&self) -> &SleighLanguage {
-        self.inner.get_language()
-    }
-
-    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>> {
-        self.inner.get_arithmetic()
-    }
-
-    fn get_executor(&self) -> &PcodeExecutor<T> {
-        self.inner.get_executor()
-    }
-
-    fn get_userop_library(&self) -> &dyn PcodeUseropLibrary<T> {
-        self.inner.get_userop_library()
-    }
-
-    fn get_state(&self) -> MutexGuard<'_, ThreadPcodeExecutorState<T, S, L>> {
-        self.inner.get_state()
-    }
-
-    fn inject(&mut self, address: &Address, source: &str) {
-        self.inner.inject(address, source);
-    }
-
-    fn clear_inject(&mut self, address: &Address) {
-        self.inner.clear_inject(address);
-    }
-
-    fn clear_all_injects(&mut self) {
-        self.inner.clear_all_injects();
+        self.hooks().modifier()
     }
 }
 
@@ -534,6 +376,12 @@ where
 #[allow(deprecated)]
 mod tests {
     use super::*;
+    use crate::pcode::emu::pcode_machine::PcodeMachine;
+    use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
+    use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
+    use crate::pcode::seam_stubs::RegisterValue;
+    use crate::program::model::lang::sleigh::SleighLanguage;
+    use crate::program::model::listing::Instruction;
     use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase;
     use crate::pcode::opbehavior::OpBehaviorOther;
     use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
@@ -1166,7 +1014,7 @@ mod tests {
 
         let modifier = RecordingModifier::new(Box::new(NoopEmulate));
 
-        let thread = ModifiedPcodeThread::new(
+        let thread = ModifiedPcodeThread::new_modified(
             "Thread 0",
             Arc::clone(&machine) as Arc<dyn AbstractPcodeMachine<Vec<u8>>>,
             Arc::new(ExecLanguage { user_ops: vec!["my_modifier_op"] }),
@@ -1220,26 +1068,20 @@ mod tests {
         assert_eq!(0x400004, f.thread.get_counter().offset());
     }
 
-    /// `ModifiedPcodeThread::new` wires a [`ModifierPostExecuteHook`] into the wrapped thread's
-    /// `PostExecuteHook` seam; this exercises that adapter directly (in isolation from
-    /// `DefaultPcodeThread::advance_after_finished`, which needs a fully decoded `Instruction` --
-    /// infrastructure no test in this crate builds yet, see `default_pcode_thread`'s own tests),
-    /// confirming it forwards to the modifier's `postExecuteCallback` faithfully.
+    /// `postExecuteInstruction()`'s override forwards the finished instruction's address, the
+    /// frame's branch index, and the new counter to the modifier's `postExecuteCallback`. This
+    /// exercises the body in isolation from `DefaultPcodeThread::advance_after_finished`, which
+    /// needs a decoded `Instruction` (see `default_pcode_thread`'s tests for that path).
     #[test]
-    fn post_execute_hook_forwards_to_the_modifiers_callback() {
+    fn post_execute_forwards_to_the_modifiers_callback() {
         let modifier = RecordingModifier::new(Box::new(NoopEmulate));
-        let hook = ModifierPostExecuteHook {
-            modifier: Arc::clone(&modifier) as Arc<dyn PcodeStateModifier>,
-            emulate: Arc::new(NoopEmulate) as Arc<dyn Emulate>,
-        };
+        let hooks = ModifiedThreadHooks::new(Some(Arc::clone(&modifier) as Arc<dyn PcodeStateModifier>));
         let space = ram();
         let last = space.address(0x400000);
         let code = vec![];
         let current = space.address(0x400004);
 
-        <ModifierPostExecuteHook as PostExecuteHook<Vec<u8>>>::post_execute_instruction(
-            &hook, &last, &code, -1, &current,
-        );
+        hooks.notify_post_execute(&last, &code, -1, &current);
 
         assert_eq!(vec![(0x400000, -1, 0x400004)], *modifier.post_calls.lock().unwrap());
     }
@@ -1265,7 +1107,7 @@ mod tests {
         local.set_var_register(&pc_register(), &0x400000i64.to_le_bytes().to_vec());
         shared.set_var_register(&pc_register(), &0x400000i64.to_le_bytes().to_vec());
 
-        let mut thread = ModifiedPcodeThread::new(
+        let mut thread = ModifiedPcodeThread::new_modified(
             "Thread 0",
             Arc::clone(&machine) as Arc<dyn AbstractPcodeMachine<Vec<u8>>>,
             Arc::new(ExecLanguage { user_ops: vec![] }),

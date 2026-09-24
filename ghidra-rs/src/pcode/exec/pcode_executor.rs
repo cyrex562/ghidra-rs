@@ -27,11 +27,11 @@
 //!   `Result<_, LowlevelError>` and [`step`](PcodeExecutor::step) performs the same wrap. Java's
 //!   `SleighLinkException` (a `PcodeExecutionException` subclass) is not ported; the missing-userop
 //!   error carries Java's message as a [`LowlevelError`], which `step` then wraps identically.
-//! * **Extension points.** Java's `protected` hooks (`beforeLoad`, `afterStore`,
-//!   `branchToAddress`, ...) exist for subclasses to override. Rust cannot override an inherent
-//!   method, so they are no-op inherent methods here, faithful to the base class's own behavior.
-//!   The subclasses that override them are not yet ported; when they land they will need an
-//!   explicit hook seam.
+//! * **Extension points.** Java's `protected` hooks (`stepOp`, `beforeLoad`, `afterStore`,
+//!   `branchToAddress`, `onMissingUseropDef`, ...) exist for subclasses to override. Rust cannot
+//!   override an inherent method, so they are the methods of [`PcodeExecutorHooks`], a hooks
+//!   object passed at call time to the `*_hooked` entry points. The plain entry points pass `()`,
+//!   i.e. the base class's own behavior.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -191,7 +191,22 @@ impl<T: 'static> PcodeExecutor<T> {
         program: &PcodeProgram,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<PcodeFrame, PcodeExecutionException> {
-        self.execute_code(program.code().to_vec(), program.userop_names().clone(), library)
+        self.execute_hooked(program, library, &mut ())
+    }
+
+    /// [`execute`](Self::execute), dispatching this executor's extension points to `hooks`.
+    pub fn execute_hooked(
+        &self,
+        program: &PcodeProgram,
+        library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<PcodeFrame, PcodeExecutionException> {
+        self.execute_code_hooked(
+            program.code().to_vec(),
+            program.userop_names().clone(),
+            library,
+            hooks,
+        )
     }
 
     /// Begin execution of a list of p-code ops.
@@ -214,8 +229,20 @@ impl<T: 'static> PcodeExecutor<T> {
         userop_names: HashMap<i32, String>,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<PcodeFrame, PcodeExecutionException> {
+        self.execute_code_hooked(code, userop_names, library, &mut ())
+    }
+
+    /// [`execute_code`](Self::execute_code), dispatching this executor's extension points to
+    /// `hooks`.
+    pub fn execute_code_hooked(
+        &self,
+        code: Vec<PcodeOp>,
+        userop_names: HashMap<i32, String>,
+        library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<PcodeFrame, PcodeExecutionException> {
         let mut frame = self.begin_code(code, userop_names);
-        match self.finish(&mut frame, library) {
+        match self.finish_hooked(&mut frame, library, hooks) {
             Ok(()) => Ok(frame),
             Err(mut e) => {
                 e.set_frame_if_absent(frame);
@@ -237,8 +264,18 @@ impl<T: 'static> PcodeExecutor<T> {
         frame: &mut PcodeFrame,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<(), PcodeExecutionException> {
+        self.finish_hooked(frame, library, &mut ())
+    }
+
+    /// [`finish`](Self::finish), dispatching this executor's extension points to `hooks`.
+    pub fn finish_hooked(
+        &self,
+        frame: &mut PcodeFrame,
+        library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), PcodeExecutionException> {
         while !frame.is_finished() {
-            self.step(frame, library)?;
+            self.step_hooked(frame, library, hooks)?;
         }
         Ok(())
     }
@@ -268,6 +305,35 @@ impl<T: 'static> PcodeExecutor<T> {
         frame: &mut PcodeFrame,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<(), LowlevelError> {
+        self.step_op_hooked(op, frame, library, &mut ())
+    }
+
+    /// [`step_op`](Self::step_op), dispatching this executor's extension points to `hooks`.
+    ///
+    /// Java's overridable `stepOp` is modeled by [`PcodeExecutorHooks::before_step_op`] and
+    /// [`PcodeExecutorHooks::after_step_op`], which run around the base dispatch below exactly
+    /// where every in-tree override places its extra work relative to `super.stepOp`.
+    pub fn step_op_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
+        hooks.before_step_op(self, op, frame)?;
+        self.dispatch_op(op, frame, library, hooks)?;
+        hooks.after_step_op(self, op, frame);
+        Ok(())
+    }
+
+    /// The base class's `stepOp` body: dispatch the op by its behavior.
+    fn dispatch_op(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
         match op_behavior_kind(op.opcode) {
             OpBehaviorKind::Unary => {
                 self.execute_unary_op(op);
@@ -278,21 +344,15 @@ impl<T: 'static> PcodeExecutor<T> {
                 Ok(())
             }
             OpBehaviorKind::Special => match op.opcode {
-                OpCode::Load => {
-                    self.execute_load(op);
-                    Ok(())
-                }
-                OpCode::Store => {
-                    self.execute_store(op);
-                    Ok(())
-                }
-                OpCode::Branch => self.execute_branch(op, frame),
-                OpCode::CBranch => self.execute_conditional_branch(op, frame),
-                OpCode::BranchInd => self.execute_indirect_branch(op, frame),
-                OpCode::Call => self.execute_call(op, frame, library),
-                OpCode::CallInd => self.execute_indirect_call(op, frame),
-                OpCode::CallOther => self.execute_callother(op, frame, library),
-                OpCode::Return => self.execute_return(op, frame),
+                OpCode::Load => self.execute_load_hooked(op, hooks),
+                OpCode::Store => self.execute_store_hooked(op, hooks),
+                OpCode::Branch => self.execute_branch_hooked(op, frame, hooks),
+                OpCode::CBranch => self.execute_conditional_branch_hooked(op, frame, hooks),
+                OpCode::BranchInd => self.execute_indirect_branch_hooked(op, frame, hooks),
+                OpCode::Call => self.execute_call_hooked(op, frame, library, hooks),
+                OpCode::CallInd => self.execute_indirect_call_hooked(op, frame, hooks),
+                OpCode::CallOther => self.execute_callother_hooked(op, frame, library, hooks),
+                OpCode::Return => self.execute_return_hooked(op, frame, hooks),
                 _ => Err(self.bad_op(op)),
             },
             OpBehaviorKind::Undefined => Err(self.bad_op(op)),
@@ -307,11 +367,21 @@ impl<T: 'static> PcodeExecutor<T> {
         frame: &mut PcodeFrame,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<(), PcodeExecutionException> {
+        self.step_hooked(frame, library, &mut ())
+    }
+
+    /// [`step`](Self::step), dispatching this executor's extension points to `hooks`.
+    pub fn step_hooked(
+        &self,
+        frame: &mut PcodeFrame,
+        library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), PcodeExecutionException> {
         // Java reads `frame.nextOp()` and hands the op straight to `stepOp`, which also takes the
         // frame; Rust cannot lend the frame twice when the second lend is mutable, so the op --
         // which the frame owns -- is copied out first.
         let op = frame.next_op().clone();
-        self.step_op(&op, frame, library)
+        self.step_op_hooked(&op, frame, library, hooks)
             .map_err(|e| PcodeExecutionException::with_cause(e.message().to_string(), e))
     }
 
@@ -356,20 +426,6 @@ impl<T: 'static> PcodeExecutor<T> {
         self.state.lock().unwrap().set_var_varnode(out_var, &out);
     }
 
-    /// Extension point: logic preceding a load.
-    fn before_load(&self, _op: &PcodeOp, _space: &Arc<AddressSpace>, _offset: &T, _size: i32) {}
-
-    /// Extension point: logic proceeding a load.
-    fn after_load(
-        &self,
-        _op: &PcodeOp,
-        _space: &Arc<AddressSpace>,
-        _offset: &T,
-        _size: i32,
-        _value: &T,
-    ) {
-    }
-
     /// Get the address space for a [`OpCode::Load`] or [`OpCode::Store`] op, derived from const
     /// input 0.
     fn get_load_store_space(&self, op: &PcodeOp) -> Arc<AddressSpace> {
@@ -386,12 +442,23 @@ impl<T: 'static> PcodeExecutor<T> {
     }
 
     /// Execute a load.
-    pub fn execute_load(&self, op: &PcodeOp) {
+    ///
+    /// Java's `beforeLoad` may throw (a thread's access breakpoint interrupts this way), so this
+    /// returns the error such a hook raises.
+    pub fn execute_load(&self, op: &PcodeOp) -> Result<(), LowlevelError> {
+        self.execute_load_hooked(op, &mut ())
+    }
+
+    fn execute_load_hooked(
+        &self,
+        op: &PcodeOp,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
         let space = self.get_load_store_space(op);
         let in_offset = self.get_load_store_offset(op);
         let offset = self.state.lock().unwrap().get_var_varnode(in_offset, self.reason);
         let out_var = op.output.as_ref().expect("LOAD has no output");
-        self.before_load(op, &space, &offset, out_var.get_size());
+        hooks.before_load(self, op, &space, &offset, out_var.get_size())?;
 
         let out = self.state.lock().unwrap().get_var_abstract(
             &space,
@@ -402,29 +469,8 @@ impl<T: 'static> PcodeExecutor<T> {
         );
         let modified = self.arithmetic.mod_after_load_from_pcode_op(op, &space, &offset, &out);
         self.state.lock().unwrap().set_var_varnode(out_var, &modified);
-        self.after_load(op, &space, &offset, out_var.get_size(), &modified);
-    }
-
-    /// Extension point: logic preceding a store.
-    fn before_store(
-        &self,
-        _op: &PcodeOp,
-        _space: &Arc<AddressSpace>,
-        _offset: &T,
-        _size: i32,
-        _value: &T,
-    ) {
-    }
-
-    /// Extension point: logic proceeding a store.
-    fn after_store(
-        &self,
-        _op: &PcodeOp,
-        _space: &Arc<AddressSpace>,
-        _offset: &T,
-        _size: i32,
-        _value: &T,
-    ) {
+        hooks.after_load(self, op, &space, &offset, out_var.get_size(), &modified);
+        Ok(())
     }
 
     /// Get the value varnode (input 2) for a [`OpCode::Store`] op.
@@ -433,7 +479,17 @@ impl<T: 'static> PcodeExecutor<T> {
     }
 
     /// Execute a store.
-    pub fn execute_store(&self, op: &PcodeOp) {
+    ///
+    /// Java's `beforeStore` may throw, so this returns the error such a hook raises.
+    pub fn execute_store(&self, op: &PcodeOp) -> Result<(), LowlevelError> {
+        self.execute_store_hooked(op, &mut ())
+    }
+
+    fn execute_store_hooked(
+        &self,
+        op: &PcodeOp,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
         let space = self.get_load_store_space(op);
         let in_offset = self.get_load_store_offset(op);
         let val_var = self.get_store_value(op);
@@ -445,7 +501,7 @@ impl<T: 'static> PcodeExecutor<T> {
             )
         };
         let modified = self.arithmetic.mod_before_store_from_pcode_op(op, &space, &offset, &val);
-        self.before_store(op, &space, &offset, val_var.get_size(), &modified);
+        hooks.before_store(self, op, &space, &offset, val_var.get_size(), &modified)?;
 
         self.state.lock().unwrap().set_var_abstract(
             &space,
@@ -454,13 +510,9 @@ impl<T: 'static> PcodeExecutor<T> {
             true,
             &modified,
         );
-        self.after_store(op, &space, &offset, val_var.get_size(), &modified);
+        hooks.after_store(self, op, &space, &offset, val_var.get_size(), &modified);
+        Ok(())
     }
-
-    /// Extension point: called when execution branches to a target address.
-    ///
-    /// NOTE: This is *not* called for the fall-through case.
-    fn branch_to_address(&self, _op: &PcodeOp, _target: &Address) {}
 
     /// Convert the given offset to the machine's type and delegate to
     /// [`branch_to_offset`](Self::branch_to_offset).
@@ -474,7 +526,7 @@ impl<T: 'static> PcodeExecutor<T> {
     /// Set the state's pc to the given offset and finish the frame.
     ///
     /// This implements only part of the p-code control flow semantics. An emulator must also hook
-    /// [`branch_to_address`](Self::branch_to_address), so that it can update its internal program
+    /// [`PcodeExecutorHooks::branch_to_address`], so that it can update its internal program
     /// counter.
     ///
     /// # Panics
@@ -521,13 +573,14 @@ impl<T: 'static> PcodeExecutor<T> {
         &self,
         op: &PcodeOp,
         frame: &mut PcodeFrame,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
     ) -> Result<(), LowlevelError> {
         let target = self.get_branch_target(op);
         if target.is_constant_address() {
             self.branch_internal(op, frame, target.offset() as i32)
         } else {
             self.branch_to_offset_long(op, target.offset(), frame);
-            self.branch_to_address(op, &self.check_injected_target(&target));
+            hooks.branch_to_address(self, op, &self.check_injected_target(&target));
             Ok(())
         }
     }
@@ -538,7 +591,16 @@ impl<T: 'static> PcodeExecutor<T> {
         op: &PcodeOp,
         frame: &mut PcodeFrame,
     ) -> Result<(), LowlevelError> {
-        self.do_execute_branch(op, frame)
+        self.execute_branch_hooked(op, frame, &mut ())
+    }
+
+    fn execute_branch_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
+        self.do_execute_branch(op, frame, hooks)
     }
 
     /// Get the predicate varnode (input 1) of a [`OpCode::CBranch`] op.
@@ -552,6 +614,16 @@ impl<T: 'static> PcodeExecutor<T> {
         op: &PcodeOp,
         frame: &mut PcodeFrame,
     ) -> Result<(), LowlevelError> {
+        self.execute_conditional_branch_hooked(op, frame, &mut ())
+    }
+
+    fn execute_conditional_branch_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
+        hooks.before_conditional_branch(self, op, frame)?;
         let cond_var = self.get_conditional_branch_predicate(op);
         let cond = self.state.lock().unwrap().get_var_varnode(cond_var, self.reason);
         let taken = self
@@ -559,7 +631,7 @@ impl<T: 'static> PcodeExecutor<T> {
             .is_true(&cond, Purpose::Condition)
             .map_err(|e| LowlevelError::with_cause(e.message().to_string(), e))?;
         if taken {
-            return self.do_execute_branch(op, frame);
+            return self.do_execute_branch(op, frame, hooks);
         }
         Ok(())
     }
@@ -596,6 +668,7 @@ impl<T: 'static> PcodeExecutor<T> {
         &self,
         op: &PcodeOp,
         frame: &mut PcodeFrame,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
     ) -> Result<(), LowlevelError> {
         let offset = self
             .state
@@ -616,7 +689,7 @@ impl<T: 'static> PcodeExecutor<T> {
             .space()
             .address_from_word_offset(concrete)
             .map_err(|e| LowlevelError::with_message(e.to_string()))?;
-        self.branch_to_address(op, &self.check_injected_target(&target));
+        hooks.branch_to_address(self, op, &self.check_injected_target(&target));
         Ok(())
     }
 
@@ -626,7 +699,16 @@ impl<T: 'static> PcodeExecutor<T> {
         op: &PcodeOp,
         frame: &mut PcodeFrame,
     ) -> Result<(), LowlevelError> {
-        self.do_execute_indirect_branch(op, frame)
+        self.execute_indirect_branch_hooked(op, frame, &mut ())
+    }
+
+    fn execute_indirect_branch_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
+        self.do_execute_indirect_branch(op, frame, hooks)
     }
 
     /// Execute a call.
@@ -634,11 +716,21 @@ impl<T: 'static> PcodeExecutor<T> {
         &self,
         op: &PcodeOp,
         frame: &mut PcodeFrame,
+        library: &dyn PcodeUseropLibrary<T>,
+    ) -> Result<(), LowlevelError> {
+        self.execute_call_hooked(op, frame, library, &mut ())
+    }
+
+    fn execute_call_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
         _library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
     ) -> Result<(), LowlevelError> {
         let target = self.get_branch_target(op);
         self.branch_to_offset_long(op, target.offset(), frame);
-        self.branch_to_address(op, &self.check_injected_target(&target));
+        hooks.branch_to_address(self, op, &self.check_injected_target(&target));
         Ok(())
     }
 
@@ -648,7 +740,16 @@ impl<T: 'static> PcodeExecutor<T> {
         op: &PcodeOp,
         frame: &mut PcodeFrame,
     ) -> Result<(), LowlevelError> {
-        self.do_execute_indirect_branch(op, frame)
+        self.execute_indirect_call_hooked(op, frame, &mut ())
+    }
+
+    fn execute_indirect_call_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
+        self.do_execute_indirect_branch(op, frame, hooks)
     }
 
     /// Get the name of the userop with the given number, or `None` if it is not defined.
@@ -675,6 +776,16 @@ impl<T: 'static> PcodeExecutor<T> {
         frame: &mut PcodeFrame,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<(), LowlevelError> {
+        self.execute_callother_hooked(op, frame, library, &mut ())
+    }
+
+    fn execute_callother_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        library: &dyn PcodeUseropLibrary<T>,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
         let op_no = self.get_callother_op_number(op);
         let Some(op_name) = self.get_userop_name(op_no, frame) else {
             // Java throws an AssertionError here.
@@ -687,28 +798,27 @@ impl<T: 'static> PcodeExecutor<T> {
             op_def.execute_raw(self, library, op);
             return Ok(());
         }
-        self.on_missing_userop_def(op, frame, &op_name, library)
+        hooks.on_missing_userop_def(self, op, frame, &op_name, library)
     }
 
-    /// Extension point: behavior when a userop definition was not found in the library.
+    /// The base behavior when a userop definition was not found in the library.
     ///
-    /// The default behavior is Java's `SleighLinkException`, which is not ported; the message is
-    /// carried by a [`LowlevelError`], which [`step`](Self::step) wraps in a
-    /// [`PcodeExecutionException`] exactly as it would the Java exception.
-    fn on_missing_userop_def(
+    /// Port of the base `onMissingUseropDef`, which throws Java's `SleighLinkException`. That
+    /// exception is not ported; its message is carried by a [`LowlevelError`], which
+    /// [`step`](Self::step) wraps in a [`PcodeExecutionException`] exactly as it would the Java
+    /// exception. [`PcodeExecutorHooks::on_missing_userop_def`] returns this by default.
+    pub fn missing_userop_error(
         &self,
-        _op: &PcodeOp,
-        _frame: &PcodeFrame,
         op_name: &str,
         library: &dyn PcodeUseropLibrary<T>,
-    ) -> Result<(), LowlevelError> {
+    ) -> LowlevelError {
         // Java interpolates the library itself; `type_name_of_val` stands in for its `toString`,
         // as it does in `PcodeUseropLibrary::get_symbols`.
-        Err(LowlevelError::with_message(format!(
+        LowlevelError::with_message(format!(
             "Sleigh userop '{}' is not in the library {}",
             op_name,
             std::any::type_name_of_val(library)
-        )))
+        ))
     }
 
     /// Execute a return.
@@ -717,9 +827,136 @@ impl<T: 'static> PcodeExecutor<T> {
         op: &PcodeOp,
         frame: &mut PcodeFrame,
     ) -> Result<(), LowlevelError> {
-        self.do_execute_indirect_branch(op, frame)
+        self.execute_return_hooked(op, frame, &mut ())
+    }
+
+    fn execute_return_hooked(
+        &self,
+        op: &PcodeOp,
+        frame: &mut PcodeFrame,
+        hooks: &mut dyn PcodeExecutorHooks<T>,
+    ) -> Result<(), LowlevelError> {
+        self.do_execute_indirect_branch(op, frame, hooks)
     }
 }
+
+/// The overridable extension points of [`PcodeExecutor`].
+///
+/// Java's `PcodeExecutor` exposes `protected` methods (`stepOp`, `beforeLoad`, `afterStore`,
+/// `branchToAddress`, `executeConditionalBranch`, `onMissingUseropDef`, ...) for subclasses such as
+/// `DefaultPcodeThread.PcodeThreadExecutor` to override. Rust has no inheritance, so the executor
+/// dispatches each of those points to a hooks object passed at call time, via the `*_hooked` entry
+/// points ([`PcodeExecutor::step_hooked`], [`PcodeExecutor::finish_hooked`],
+/// [`PcodeExecutor::execute_hooked`], ...). The un-hooked entry points pass `()`, whose
+/// implementation is the base class's own behavior.
+///
+/// Every method defaults to the base class's behavior, so an implementation overrides only the
+/// points it needs. Each receives the executor, standing in for Java's `this`.
+///
+/// Two of Java's overrides wrap `super` rather than replace it, and every in-tree override does
+/// its extra work strictly before (or after) the call to `super`; those are modeled as advice:
+///
+/// * `stepOp` is [`before_step_op`](Self::before_step_op) and
+///   [`after_step_op`](Self::after_step_op), around the base dispatch.
+/// * `executeConditionalBranch` is [`before_conditional_branch`](Self::before_conditional_branch),
+///   ahead of the base decision.
+pub trait PcodeExecutorHooks<T: 'static> {
+    /// Called before an op is dispatched. An error aborts the step, as a Java override throwing
+    /// before `super.stepOp` does (e.g. a suspended thread).
+    fn before_step_op(
+        &mut self,
+        _executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _frame: &PcodeFrame,
+    ) -> Result<(), LowlevelError> {
+        Ok(())
+    }
+
+    /// Called after an op was dispatched without error.
+    fn after_step_op(&mut self, _executor: &PcodeExecutor<T>, _op: &PcodeOp, _frame: &PcodeFrame) {}
+
+    /// Port of `beforeLoad`: logic preceding a load. An error aborts the load.
+    fn before_load(
+        &mut self,
+        _executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _space: &Arc<AddressSpace>,
+        _offset: &T,
+        _size: i32,
+    ) -> Result<(), LowlevelError> {
+        Ok(())
+    }
+
+    /// Port of `afterLoad`: logic proceeding a load.
+    fn after_load(
+        &mut self,
+        _executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _space: &Arc<AddressSpace>,
+        _offset: &T,
+        _size: i32,
+        _value: &T,
+    ) {
+    }
+
+    /// Port of `beforeStore`: logic preceding a store. An error aborts the store.
+    fn before_store(
+        &mut self,
+        _executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _space: &Arc<AddressSpace>,
+        _offset: &T,
+        _size: i32,
+        _value: &T,
+    ) -> Result<(), LowlevelError> {
+        Ok(())
+    }
+
+    /// Port of `afterStore`: logic proceeding a store.
+    fn after_store(
+        &mut self,
+        _executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _space: &Arc<AddressSpace>,
+        _offset: &T,
+        _size: i32,
+        _value: &T,
+    ) {
+    }
+
+    /// Port of `branchToAddress`: called when execution branches to a target address.
+    ///
+    /// NOTE: This is *not* called for the fall-through case.
+    fn branch_to_address(&mut self, _executor: &PcodeExecutor<T>, _op: &PcodeOp, _target: &Address) {}
+
+    /// Called at the start of a conditional branch, before the predicate is decided. An error
+    /// aborts the branch.
+    fn before_conditional_branch(
+        &mut self,
+        _executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _frame: &PcodeFrame,
+    ) -> Result<(), LowlevelError> {
+        Ok(())
+    }
+
+    /// Port of `onMissingUseropDef`: behavior when a userop definition was not found in the
+    /// library. The default is the base class's link error; see
+    /// [`PcodeExecutor::missing_userop_error`].
+    fn on_missing_userop_def(
+        &mut self,
+        executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _frame: &PcodeFrame,
+        op_name: &str,
+        library: &dyn PcodeUseropLibrary<T>,
+    ) -> Result<(), LowlevelError> {
+        Err(executor.missing_userop_error(op_name, library))
+    }
+}
+
+/// No hooks: every extension point keeps the base class's behavior.
+impl<T: 'static> PcodeExecutorHooks<T> for () {}
 
 #[cfg(test)]
 mod tests {
