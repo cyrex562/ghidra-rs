@@ -49,7 +49,7 @@ use crate::program::database::map::AddressMapDB;
 use crate::program::database::register::database_range_map_adapter::DatabaseRangeMapAdapter;
 use crate::program::model::address::Address;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
-use crate::program::model::lang::ghidra_language_property_keys::GhidraLanguagePropertyKeys;
+use crate::program::model::lang::ghidra_language_property_keys::RESET_CONTEXT_ON_UPGRADE;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
@@ -75,9 +75,6 @@ pub trait ProgramRegisterContextHost {
     /// Stands in for `ProgramDB.setRegisterValuesChanged(Register, Address, Address)`.
     fn set_register_values_changed(&mut self, register: Option<&RegisterRef>, start: &Address, end: &Address);
 }
-
-struct GhidraKeys;
-impl GhidraLanguagePropertyKeys for GhidraKeys {}
 
 fn language_flag_property(language: &dyn Language, key: &str) -> bool {
     language.get_property(key).map(|s| s.eq_ignore_ascii_case("true")).unwrap_or(false)
@@ -295,7 +292,7 @@ impl ProgramRegisterContextDB {
     pub fn set_language_unchanged(&mut self, new_compiler_spec: Option<&dyn CompilerSpec>) {
         let _guard = self.lock.write();
         let language = self.context.base().language();
-        let clear_context = language_flag_property(language.as_ref(), GhidraKeys.reset_context_on_upgrade());
+        let clear_context = language_flag_property(language.as_ref(), RESET_CONTEXT_ON_UPGRADE);
         if clear_context {
             // Java calls `store.clearAll()` directly on the base-context-register store. The
             // equivalent through this port's public surface is removing every value over the

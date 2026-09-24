@@ -20,19 +20,13 @@ use std::collections::HashMap;
 
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
-use crate::program::model::lang::ghidra_language_property_keys::GhidraLanguagePropertyKeys;
+use crate::program::model::lang::ghidra_language_property_keys;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::util::{ExtensionPoint, Msg};
 
-/// Default implementor of [`GhidraLanguagePropertyKeys`], used only to read the standard
-/// `useropLibs` key name without duplicating the string literal here.
-struct DefaultLanguagePropertyKeys;
-
-impl GhidraLanguagePropertyKeys for DefaultLanguagePropertyKeys {}
-
 /// The property key for useropLib ids in pspec files. Port of `KEY_USEROP_LIBS`.
 pub fn key_userop_libs() -> &'static str {
-    DefaultLanguagePropertyKeys.useroplibs()
+    ghidra_language_property_keys::USEROP_LIBS
 }
 
 /// A discoverable factory for creating a pluggable userop library, automatically picked up by the

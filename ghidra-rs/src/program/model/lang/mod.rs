@@ -107,7 +107,6 @@ pub use disassembler_context_adapter::DisassemblerContextAdapter;
 pub use dynamic_variable_storage::DynamicVariableStorage;
 pub use endian::Endian;
 pub use external_language_compiler_spec_query::ExternalLanguageCompilerSpecQuery;
-pub use ghidra_language_property_keys::GhidraLanguagePropertyKeys;
 pub use incompatible_mask_exception::IncompatibleMaskException;
 pub use inject_context::InjectContext;
 pub use inject_payload::{InjectParameter, InjectPayload, InjectPayloadError};

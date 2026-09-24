@@ -33,7 +33,7 @@ use crate::app::seam_stubs::{new_boolean, new_integer, new_string, option_utils,
 use crate::app::util::opinion::loader::COMMAND_LINE_ARG_PREFIX;
 use crate::format::seam_stubs::ElfHeader;
 use crate::program::model::address::AddressSpace;
-use crate::program::model::lang::ghidra_language_property_keys::GhidraLanguagePropertyKeys;
+use crate::program::model::lang::ghidra_language_property_keys::MINIMUM_DATA_IMAGE_BASE;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_service::LanguageService;
 use crate::program::seam_stubs::LanguageNotFoundException;
@@ -78,12 +78,6 @@ pub const DISCARDABLE_SEGMENT_SIZE_OPTION_NAME: &str = "Max Zero-Segment Discard
 /// segment. If the program contains section headers, any zeroed segment smaller than this size
 /// is eligible for removal.
 pub const DEFAULT_DISCARDABLE_SEGMENT_SIZE: i32 = 0xff;
-
-/// Default implementor of [`GhidraLanguagePropertyKeys`], used only to read the standard
-/// `minimumDataImageBase` property key name (mirrors the same pattern used by
-/// `pcode_userop_library_factory::DefaultLanguagePropertyKeys`).
-struct DefaultLanguagePropertyKeys;
-impl GhidraLanguagePropertyKeys for DefaultLanguagePropertyKeys {}
 
 /// `ElfLoaderOptionsFactory.addOptions(List<Option>, ByteProvider, LoadSpec)`. See the module docs
 /// for how the `ByteProvider`/`ElfHeader` construction and the `LanguageNotFoundException`-causing
@@ -185,8 +179,7 @@ fn include_data_image_base_option(elf: &dyn ElfHeader, language: &dyn Language) 
 /// `ElfLoaderOptionsFactory.getRecommendedMinimumDataImageBase(ElfHeader, Language)`. See the
 /// module docs for why the (unused in Java) `elf` parameter is dropped.
 fn get_recommended_minimum_data_image_base(language: &dyn Language) -> i64 {
-    let keys = DefaultLanguagePropertyKeys;
-    if let Some(min_data_offset) = language.get_property(keys.minimum_data_image_base()) {
+    if let Some(min_data_offset) = language.get_property(MINIMUM_DATA_IMAGE_BASE) {
         return NumericUtilities::parse_hex_long(&min_data_offset)
             .expect("language-defined minimumDataImageBase property must be valid hex");
     }
@@ -595,8 +588,7 @@ mod tests {
         }
 
         fn get_property(&self, key: &str) -> std::option::Option<String> {
-            let keys = DefaultLanguagePropertyKeys;
-            if key == keys.minimum_data_image_base() {
+            if key == MINIMUM_DATA_IMAGE_BASE {
                 return self.min_data_image_base_property.clone();
             }
             None

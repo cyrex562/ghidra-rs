@@ -19,10 +19,11 @@
 //!   properties, no program counter, no context settings, no volatile ranges, no default
 //!   symbols or memory blocks, no register renames/aliases/groups/lane sizes, and no segmented
 //!   space.
-//! * [`Language::parse`] needs the concrete `SleighInstructionPrototype` and `ContextCache`
-//!   (both still trait seams), and [`Language::get_compiler_spec_by_id`] /
-//!   [`Language::get_default_compiler_spec`] need a concrete `BasicCompilerSpec` (cspec XML
-//!   parsing). Those bodies panic with an explanatory message; they are not reachable from the
+//! * [`Language::parse`] needs a concrete `SleighInstructionPrototype` (only its flow helpers
+//!   and a trait seam exist; the class is TODO in `PORT_MANIFEST.tsv`), and
+//!   [`Language::get_compiler_spec_by_id`] / [`Language::get_default_compiler_spec`] need a
+//!   concrete `BasicCompilerSpec` (TODO; needs cspec XML parsing via `XmlPullParserFactory` and
+//!   `PcodeInjectLibrary`). Those bodies panic with an explanatory message; they are not reachable from the
 //!   p-code emulator.
 //! * [`Language::reload_language`] needs `SlaFormat.buildDecoder` (not ported) to re-read the
 //!   `.sla` file, and reports that as an I/O error, as Java does for a failed reload.
@@ -47,6 +48,7 @@ use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
+use crate::program::model::lang::ghidra_language_property_keys::MAXIMUM_INSTRUCTION_LENGTH;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::{Language, ParseError};
 use crate::program::model::lang::language_description::LanguageDescription;
@@ -88,10 +90,6 @@ pub use walker::{ParserWalker, SleighError};
 use expression::{ContextField, PatternExpression};
 use manual::ManualState;
 use symbol::{ContextSymbol, SleighSymbol, SubtableSymbol, SymbolTable};
-
-/// Port of `GhidraLanguagePropertyKeys.MAXIMUM_INSTRUCTION_LENGTH` (the Rust
-/// `GhidraLanguagePropertyKeys` does not yet carry its constants).
-const MAXIMUM_INSTRUCTION_LENGTH: &str = "maximumInstructionLength";
 
 /// The language description a [`SleighLanguage`] is built from, shared so that
 /// [`Language::get_language_description`] can hand out the same description on every call.
@@ -729,7 +727,7 @@ impl Language for SleighLanguage {
     /// [`Language::get_instruction_alignment`].
     ///
     /// # Panics
-    /// For an aligned address, since `SleighInstructionPrototype`/`ContextCache` are not ported.
+    /// For an aligned address, since a concrete `SleighInstructionPrototype` is not ported.
     fn parse(
         &self,
         buf: &dyn MemBuffer,
@@ -744,8 +742,8 @@ impl Language for SleighLanguage {
             .into());
         }
         unimplemented!(
-            "SleighLanguage::parse needs the concrete SleighInstructionPrototype and ContextCache, \
-             which are not yet ported"
+            "SleighLanguage::parse needs a concrete SleighInstructionPrototype, which is not yet \
+             ported"
         )
     }
 
