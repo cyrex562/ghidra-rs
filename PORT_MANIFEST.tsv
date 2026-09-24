@@ -5054,7 +5054,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickF
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixStatusRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixTableProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/TableDataLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/TableDataLoader.java	DONE	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/RenameQuickFix.java	DONE	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/replace/SearchAndReplaceHandler.java	DONE	orig_src Ghidra Features Base src main java ghidra features base replace 
