@@ -6798,3 +6798,11 @@ impl VtAttributes {
     /// Mirrors `VtAttributes.DEFAULTS`, the attributes of a cell that was never styled.
     pub const DEFAULTS: VtAttributes = VtAttributes;
 }
+
+/// Placeholder for `ghidra.app.plugin.core.diff.DiffController`, referenced by
+/// [`DiffControllerListener`](crate::app::plugin::core::diff::DiffControllerListener) before the
+/// real class is ported. Java's version is a concrete class, so this is a plain struct.
+/// `DiffControllerListener` only ever receives this type as a parameter, so no members are
+/// needed yet.
+#[derive(Debug, Default)]
+pub struct DiffController;

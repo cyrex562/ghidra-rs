@@ -4644,7 +4644,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/TypeDefDataType
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/ValidatableLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/VariableTextLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DataTypeDiff.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html diff
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DataTypeDiffBuilder.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html diff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DataTypeDiffBuilder.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html diff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DataTypeDiffInput.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html diff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DiffLines.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html diff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DiffLinesValidator.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html diff 
@@ -6551,7 +6551,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/componen
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/ScalarValueDecompilerHover.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/ScalarValueDecompilerHoverPlugin.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/margin/DecompilerMarginProvider.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component margin 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/margin/LayoutPixelIndexMap.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component margin 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/margin/LayoutPixelIndexMap.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component margin 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/margin/LineNumberDecompilerMarginProvider.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component margin 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/margin/VerticalLayoutPixelIndexMap.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component margin 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/flatapi/FlatDecompilerAPI.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler flatapi 
@@ -8873,7 +8873,7 @@ orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/D
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffApplySettingsOptionManager.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffApplySettingsProvider.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffController.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
-orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffControllerListener.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
+orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffControllerListener.java	DONE	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffDetailsProvider.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffGoToService.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffIgnoreAllAction.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
