@@ -373,13 +373,24 @@ pub trait BinaryReader {
         Ok(v)
     }
 
-    /// Reads an unsigned int32 value, returning it as a `u32` only if it fits (which it always
-    /// does; mirrors `readNextUnsignedIntExact`, whose Java `InvalidDataException` case cannot
-    /// occur once the value is represented as an unsigned Rust integer).
+    /// Reads an unsigned int32 value, returning it only if it fits into the range
+    /// `0..=i32::MAX` of a Java `int`.
+    ///
+    /// Mirrors `readNextUnsignedIntExact`: useful for uint32 values that are going to be used to
+    /// size allocations or similar, where the value must fit a (signed) 32 bit integer. The
+    /// result is therefore always safe to cast to `i32`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidDataException`] if the read fails (carrying the read error's message and
+    /// the error itself as its source), or with the message
+    /// `"Value out of range for positive java 32 bit unsigned int: <value>"` if the value exceeds
+    /// `i32::MAX` (Java's `ensureInt32u`).
     fn read_next_unsigned_int_exact(&mut self) -> Result<u32, InvalidDataException> {
         let v = self
             .read_next_unsigned_int()
-            .map_err(InvalidDataException::with_source)?;
+            .map_err(|e| InvalidDataException::with_message_and_source(e.to_string(), e))?;
+        ensure_int32u(v)?;
         Ok(v as u32)
     }
 
@@ -502,6 +513,16 @@ pub trait BinaryReader {
         }
         Ok(value as u32)
     }
+}
+
+/// Java: `BinaryReader.ensureInt32u(long)`, which rejects values outside `0..=Integer.MAX_VALUE`.
+fn ensure_int32u(value: u64) -> Result<(), InvalidDataException> {
+    if value > i32::MAX as u64 {
+        return Err(InvalidDataException::with_message(format!(
+            "Value out of range for positive java 32 bit unsigned int: {value}"
+        )));
+    }
+    Ok(())
 }
 
 fn is_null_term(chunk: &[u8]) -> bool {
@@ -732,6 +753,51 @@ mod tests {
     fn read_next_unsigned_int_exact_succeeds() {
         let mut r = boxed_reader(vec![0, 0, 0, 1], false);
         assert_eq!(r.read_next_unsigned_int_exact().unwrap(), 1u32);
+    }
+
+    #[test]
+    fn read_next_unsigned_int_exact_accepts_i32_max() {
+        let mut r = boxed_reader(vec![0x7F, 0xFF, 0xFF, 0xFF], false);
+        assert_eq!(r.read_next_unsigned_int_exact().unwrap(), i32::MAX as u32);
+        assert_eq!(r.get_pointer_index(), 4);
+    }
+
+    #[test]
+    fn read_next_unsigned_int_exact_rejects_values_above_i32_max() {
+        // Java: ensureInt32u throws InvalidDataException with Long.toUnsignedString(value).
+        let mut r = boxed_reader(vec![0x80, 0, 0, 0], false);
+        let err = r.read_next_unsigned_int_exact().unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "Value out of range for positive java 32 bit unsigned int: 2147483648"
+        );
+
+        let mut r = boxed_reader(vec![0xFF, 0xFF, 0xFF, 0xFF], false);
+        let err = r.read_next_unsigned_int_exact().unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "Value out of range for positive java 32 bit unsigned int: 4294967295"
+        );
+    }
+
+    #[test]
+    fn read_next_unsigned_int_exact_little_endian_high_bit_is_rejected() {
+        let mut r = boxed_reader(vec![0, 0, 0, 0x80], true);
+        let err = r.read_next_unsigned_int_exact().unwrap_err();
+        let io_err: io::Error = err.into();
+        assert_eq!(io_err.kind(), io::ErrorKind::InvalidData);
+        assert_eq!(
+            io_err.to_string(),
+            "Value out of range for positive java 32 bit unsigned int: 2147483648"
+        );
+    }
+
+    #[test]
+    fn read_next_unsigned_int_exact_keeps_the_read_error_message() {
+        let mut r = boxed_reader(vec![0, 0], false);
+        let err = r.read_next_unsigned_int_exact().unwrap_err();
+        assert!(std::error::Error::source(&err).is_some());
+        assert_ne!(err.to_string(), "invalid data");
     }
 
     // ── generic helpers require a concrete (Sized) reader, not the trait object ─────

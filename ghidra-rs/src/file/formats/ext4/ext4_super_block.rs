@@ -247,18 +247,10 @@ const FIELDS: &[(&str, FieldKind)] = &[
     ("s_checksum", FieldKind::Dword),
 ];
 
-/// Reads an unsigned 32-bit value that must fit in an `i32`.
-///
-/// Mirrors Java's `readNextUnsignedIntExact()` including its `ensureInt32u` range check (the
-/// crate's `BinaryReader::read_next_unsigned_int_exact` returns a `u32` and skips that check).
+/// Reads an unsigned 32-bit value that must fit in an `i32` (Java's `readNextUnsignedIntExact()`,
+/// whose `ensureInt32u` range check guarantees the cast is lossless).
 fn read_u32_exact(reader: &mut dyn BinaryReader) -> io::Result<i32> {
-    let value = reader.read_next_unsigned_int()?;
-    i32::try_from(value).map_err(|_| {
-        io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!("Value out of range for positive java 32 bit unsigned int: {value}"),
-        )
-    })
+    Ok(reader.read_next_unsigned_int_exact()? as i32)
 }
 
 fn read_bytes<const N: usize>(reader: &mut dyn BinaryReader) -> io::Result<[u8; N]> {
