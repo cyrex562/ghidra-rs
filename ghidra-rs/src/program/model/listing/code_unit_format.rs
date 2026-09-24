@@ -383,16 +383,16 @@ impl RegIndexMap {
     }
 
     fn remove(&mut self, reg: &RegisterRef) -> Option<usize> {
-        let pos = self.0.iter().position(|(r, _)| *r.borrow() == *reg.borrow())?;
+        let pos = self.0.iter().position(|(r, _)| *r == *reg)?;
         Some(self.0.remove(pos).1)
     }
 
     fn get(&self, reg: &RegisterRef) -> Option<usize> {
-        self.0.iter().find(|(r, _)| *r.borrow() == *reg.borrow()).map(|(_, i)| *i)
+        self.0.iter().find(|(r, _)| *r == *reg).map(|(_, i)| *i)
     }
 
     fn get_register_by_address(&self, addr: &Address) -> Option<RegisterRef> {
-        self.0.iter().find(|(r, _)| r.borrow().address() == addr).map(|(r, _)| r.clone())
+        self.0.iter().find(|(r, _)| r.address() == addr).map(|(r, _)| r.clone())
     }
 
     fn keys(&self) -> impl Iterator<Item = &RegisterRef> {
@@ -419,7 +419,7 @@ fn is_read(reg: &RegisterRef, instr: &dyn Instruction) -> bool {
     instr
         .get_input_objects()
         .iter()
-        .any(|obj| matches!(obj, OperandValue::Register(r) if *r.borrow() == *reg.borrow()))
+        .any(|obj| matches!(obj, OperandValue::Register(r) if *r == *reg))
 }
 
 /// Determine if the specified register is written by the specified instruction.
@@ -427,14 +427,14 @@ fn is_written(reg: &RegisterRef, instr: &dyn Instruction) -> bool {
     instr
         .get_result_objects()
         .iter()
-        .any(|obj| matches!(obj, OperandValue::Register(r) if *r.borrow() == *reg.borrow()))
+        .any(|obj| matches!(obj, OperandValue::Register(r) if *r == *reg))
 }
 
 fn has_register_write_reference(instr: &dyn Instruction, reg: &RegisterRef) -> bool {
     instr
         .get_references_from()
         .iter()
-        .any(|r| r.reference_type().is_write() && r.to_address() == *reg.borrow().address())
+        .any(|r| r.reference_type().is_write() && r.to_address() == *reg.address())
 }
 
 /// Determine if two registers' byte ranges overlap.
@@ -443,8 +443,8 @@ fn has_register_write_reference(instr: &dyn Instruction, reg: &RegisterRef) -> b
 /// `reg1`'s byte size (rather than `reg2`'s) when computing `reg2`'s max address.
 fn registers_overlap(reg1: Option<&RegisterRef>, reg2: &RegisterRef) -> bool {
     let Some(reg1) = reg1 else { return false };
-    let reg1_b = reg1.borrow();
-    let reg2_b = reg2.borrow();
+    let reg1_b = reg1;
+    let reg2_b = reg2;
 
     let reg1_min = reg1_b.address().clone();
     let reg2_min = reg2_b.address().clone();
@@ -654,7 +654,7 @@ fn perform_register_markup(
             let is_read_flag = is_read(reg, instr);
             let operand_is_only_reg = Instruction::get_register(instr, op_index).is_some();
             let (reg_addr, reg_size) = {
-                let r = reg.borrow();
+                let r = reg;
                 (r.address().clone(), r.minimum_byte_size())
             };
             let reg_var = with_program_mut(instr, |p| {
@@ -687,7 +687,7 @@ fn perform_register_markup(
                     if operand_is_only_reg {
                         offset = reg_var
                             .get_variable_storage()
-                            .map(|s| s.get_register_offset(&reg.borrow()))
+                            .map(|s| s.get_register_offset(&reg))
                             .unwrap_or(0);
                         if offset < 0 {
                             offset = 0;
@@ -887,7 +887,7 @@ fn markup_address_as_register(
         _ => return false,
     };
     if let Some(reg) = instr.get_program().get_register_at(&addr) {
-        representation_list[address_index] = OperandRepresentationElement::Text(reg.borrow().name().to_string());
+        representation_list[address_index] = OperandRepresentationElement::Text(reg.name().to_string());
         return true;
     }
     false
@@ -945,7 +945,7 @@ fn markup_scalar_with_implied_register_variable(
     }
 
     let (reg_addr, reg_size) = {
-        let reg = associated_register.borrow();
+        let reg = associated_register;
         (reg.address().clone(), reg.minimum_byte_size())
     };
     let reg_var = with_program_mut(instr, |p| {
@@ -1069,7 +1069,7 @@ fn is_register_associated_with_referenced_variable(
         return false;
     }
     match variable.get_register() {
-        Some(var_reg) => *var_reg.borrow() == *register.borrow(),
+        Some(var_reg) => var_reg == *register,
         None => false,
     }
 }

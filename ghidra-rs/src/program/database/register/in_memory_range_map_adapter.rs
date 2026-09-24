@@ -99,7 +99,7 @@ impl RangeMapAdapter for InMemoryRangeMapAdapter {
             return Ok(());
         };
 
-        if new_reg.borrow().is_base_register() && !translator.is_value_translation_required(map_reg) {
+        if new_reg.is_base_register() && !translator.is_value_translation_required(map_reg) {
             return Ok(());
         }
 

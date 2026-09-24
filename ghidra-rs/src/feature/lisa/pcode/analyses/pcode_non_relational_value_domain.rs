@@ -79,7 +79,7 @@ pub trait PcodeNonRelationalValueDomain<T> {
                     if let Some(register_ref) = program.get_register_at(&address) {
                         let entry_point = function.get_entry_point();
                         if let Some(context) = program.get_program_context() {
-                            let register = register_ref.borrow();
+                            let register = register_ref;
                             if let Some(rv) = context.get_register_value(&register, &entry_point) {
                                 return self.get_value(Some(rv.as_ref()));
                             }
@@ -138,7 +138,7 @@ mod tests {
 
     impl PcodeNonRelationalValueDomain<TaggedValue> for TaggingDomain {
         fn get_value(&self, rv: Option<&dyn RegisterValue>) -> Option<TaggedValue> {
-            rv.map(|rv| TaggedValue(rv.get_register().borrow().name().to_string()))
+            rv.map(|rv| TaggedValue(rv.get_register().name().to_string()))
         }
     }
 

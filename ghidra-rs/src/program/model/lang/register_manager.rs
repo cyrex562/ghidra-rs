@@ -335,7 +335,7 @@ mod tests {
         let rm = builder.register_manager();
         let name_at = |offset: i64, size: i32| {
             rm.get_register_at(&addr(offset), size)
-                .map(|r| r.borrow().name().to_string())
+                .map(|r| r.name().to_string())
         };
 
         for size in [8, 7, 6, 5] {
@@ -386,7 +386,7 @@ mod tests {
         let rm = builder.register_manager();
         let name_at = |offset: i64, size: i32| {
             rm.get_register_at(&addr(offset), size)
-                .map(|r| r.borrow().name().to_string())
+                .map(|r| r.name().to_string())
         };
 
         assert_eq!(name_at(0, 8), Some("B_0_8".to_string()));
@@ -495,8 +495,8 @@ mod tests {
             ("L_2_2", "L22"),
         ] {
             let r = rm.get_register_by_name(name).expect("register present");
-            assert_eq!(r.borrow().name(), name);
-            let aliases: Vec<String> = r.borrow().aliases().cloned().collect();
+            assert_eq!(r.name(), name);
+            let aliases: Vec<String> = r.aliases().cloned().collect();
             assert_eq!(aliases, vec![alias.to_string()]);
 
             assert!(Register::same(
@@ -519,7 +519,7 @@ mod tests {
         let rm = builder.register_manager();
 
         let largest = rm.get_register(&addr(0)).unwrap();
-        assert_eq!(largest.borrow().name(), "EAX");
+        assert_eq!(largest.name(), "EAX");
 
         // A non-register address space always yields `None`, matching
         // `space.isRegisterSpace()` gating the Java lookup.
@@ -539,7 +539,7 @@ mod tests {
         let mut names: Vec<String> = rm
             .get_registers_at(&addr(0))
             .into_iter()
-            .map(|r| r.borrow().name().to_string())
+            .map(|r| r.name().to_string())
             .collect();
         names.sort();
         assert_eq!(names, vec!["AX".to_string(), "EAX".to_string()]);
@@ -557,7 +557,7 @@ mod tests {
         // NOTE: per the Java quirk documented on `get_context_base_register`, this is never
         // `None` -- it's forced to the NO_CONTEXT sentinel when no context register exists.
         let base = rm.get_context_base_register();
-        assert_eq!(base.borrow().name(), "NO_CONTEXT");
+        assert_eq!(base.name(), "NO_CONTEXT");
         assert!(rm.get_context_registers().is_empty());
     }
 
@@ -588,8 +588,8 @@ mod tests {
 
         let rm = builder.register_manager();
         let base = rm.get_context_base_register();
-        assert_eq!(base.borrow().name(), "contextreg");
-        assert!(base.borrow().is_base_register());
+        assert_eq!(base.name(), "contextreg");
+        assert!(base.is_base_register());
         // Base register plus its context field child.
         assert_eq!(rm.get_context_registers().len(), 2);
     }
@@ -620,7 +620,7 @@ mod tests {
         let names: Vec<String> = rm
             .get_sorted_vector_registers()
             .into_iter()
-            .map(|r| r.borrow().name().to_string())
+            .map(|r| r.name().to_string())
             .collect();
         assert_eq!(
             names,
@@ -635,7 +635,7 @@ mod tests {
         let names_again: Vec<String> = rm
             .get_sorted_vector_registers()
             .into_iter()
-            .map(|r| r.borrow().name().to_string())
+            .map(|r| r.name().to_string())
             .collect();
         assert_eq!(names, names_again);
     }

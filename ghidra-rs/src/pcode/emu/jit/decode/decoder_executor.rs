@@ -884,7 +884,7 @@ impl DisassemblerContextAdapter for DecoderExecutor<'_> {
     ///
     /// Port of `DecoderExecutor.setFutureRegisterValue(Address, RegisterValue)`.
     fn set_future_register_value(&mut self, address: Address, value: Box<dyn LangRegisterValue>) {
-        if !value.get_register().borrow().is_processor_context() {
+        if !value.get_register().is_processor_context() {
             return;
         }
         // Java: `futCtx.compute(address, (a, v) -> v == null ? value : v.combineValues(value))`.

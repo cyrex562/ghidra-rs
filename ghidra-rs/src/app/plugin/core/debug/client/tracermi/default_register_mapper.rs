@@ -87,7 +87,7 @@ mod tests {
 
         let mapped = mapper.map_value("eax", &rv);
 
-        assert_eq!(mapped.get_register().borrow().name(), "eax");
+        assert_eq!(mapped.get_register().name(), "eax");
         assert!(mapped.has_value());
         assert_eq!(mapped.get_unsigned_value_ignore_mask(), 0x1234);
     }
@@ -100,7 +100,7 @@ mod tests {
 
         let mapped = mapper.map_value_back("ebx", &rv);
 
-        assert_eq!(mapped.get_register().borrow().name(), "ebx");
+        assert_eq!(mapped.get_register().name(), "ebx");
         assert!(mapped.has_value());
         assert_eq!(mapped.get_unsigned_value_ignore_mask(), 0xabcd);
     }

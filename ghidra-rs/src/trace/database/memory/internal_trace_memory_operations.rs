@@ -169,7 +169,7 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
         let lock = self.write_lock();
         let _hold = LockHold::lock(lock.as_ref());
         let register_cell = value.get_register();
-        let register = register_cell.borrow();
+        let register = register_cell;
         let range = platform.get_conventional_register_range(&self.get_space(), &register);
         let combined;
         let effective: &dyn RegisterValue = if !value.has_value()
@@ -177,7 +177,7 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
         {
             // Don't try to inline to keep range. Base register may have different range.
             let base_cell = register.get_base_register();
-            let base = base_cell.borrow();
+            let base = base_cell;
             // Do not use get_view_value/getRegisterValue, as that would zero unmasked bits;
             // instead pass the original register to buffer_for_value below.
             let old = self.get_value_on_platform(platform, snap, &base);
@@ -433,7 +433,7 @@ mod tests {
             entry(&space, 5, 10, TraceMemoryState::Error),
         ];
         let register = Register::new("r0", "", addr(&space, 0), 4, false, 0);
-        require_one(&range, &states, &register.borrow());
+        require_one(&range, &states, &register);
     }
 
     // --- InternalTraceMemoryOperations end-to-end ---
@@ -749,7 +749,7 @@ mod tests {
         let register = r0(&space);
 
         assert_eq!(
-            mem.get_state_on_platform(&platform, 0, &register.borrow()),
+            mem.get_state_on_platform(&platform, 0, &register),
             TraceMemoryState::Unknown
         );
 
@@ -760,7 +760,7 @@ mod tests {
         mem.set_value_on_platform(&platform, 0, &value);
 
         assert_eq!(
-            mem.get_state_on_platform(&platform, 0, &register.borrow()),
+            mem.get_state_on_platform(&platform, 0, &register),
             TraceMemoryState::Known
         );
     }
@@ -794,7 +794,7 @@ mod tests {
         };
         mem.set_value_on_platform(&platform, 0, &value);
 
-        let got = mem.get_value_on_platform(&platform, 0, &register.borrow());
+        let got = mem.get_value_on_platform(&platform, 0, &register);
 
         assert_eq!(got.get_unsigned_value_ignore_mask(), 0xDEADBEEFu128);
     }
@@ -807,7 +807,7 @@ mod tests {
         let register = r0(&space);
         let mut buf = vec![1u8, 2, 3, 4, 5, 6];
 
-        let written = mem.put_bytes_on_platform(&platform, 0, &register.borrow(), &mut buf);
+        let written = mem.put_bytes_on_platform(&platform, 0, &register, &mut buf);
 
         assert_eq!(written, 4, "the write is clipped to the register's 4-byte length");
         assert_eq!(&mem.bytes[..4], &[1, 2, 3, 4]);
@@ -826,14 +826,14 @@ mod tests {
         };
         mem.set_value_on_platform(&platform, 0, &value);
         assert_eq!(
-            mem.get_state_on_platform(&platform, 0, &register.borrow()),
+            mem.get_state_on_platform(&platform, 0, &register),
             TraceMemoryState::Known
         );
 
-        mem.remove_value_on_platform(&platform, 0, &register.borrow());
+        mem.remove_value_on_platform(&platform, 0, &register);
 
         assert_eq!(
-            mem.get_state_on_platform(&platform, 0, &register.borrow()),
+            mem.get_state_on_platform(&platform, 0, &register),
             TraceMemoryState::Unknown
         );
     }

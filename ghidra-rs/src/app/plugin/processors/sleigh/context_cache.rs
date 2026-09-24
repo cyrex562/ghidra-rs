@@ -95,7 +95,7 @@ impl DefaultContextCache {
 impl ContextCache for DefaultContextCache {
     fn register_variable(&mut self, register: &Register) {
         let base = register.get_base_register();
-        let min_byte_size = base.borrow().minimum_byte_size();
+        let min_byte_size = base.minimum_byte_size();
         self.context_size = (min_byte_size + 3) / 4;
         self.context_base_register = Some(base);
     }
@@ -109,7 +109,7 @@ impl ContextCache for DefaultContextCache {
             return;
         };
         let context_reg_value = {
-            let reg = base_reg.borrow();
+            let reg = base_reg;
             ctx.get_register_value(&reg)
         };
         let Some(context_reg_value) = context_reg_value else {
@@ -243,7 +243,7 @@ mod tests {
         }
 
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            if self.base_register.borrow().name() == name {
+            if self.base_register.name() == name {
                 Some(self.base_register.clone())
             } else {
                 None
@@ -361,7 +361,7 @@ mod tests {
     fn register_variable_computes_context_size_in_words() {
         let mut cache = DefaultContextCache::new();
         // 8-byte context register -> 2 32-bit context words.
-        cache.register_variable(&mock_register(8).borrow());
+        cache.register_variable(&mock_register(8));
         assert_eq!(cache.get_context_size(), 2);
     }
 
@@ -369,7 +369,7 @@ mod tests {
     fn get_context_decodes_words_and_caches_last_value() {
         let mut cache = DefaultContextCache::new();
         let base_register = mock_register(8);
-        cache.register_variable(&base_register.borrow());
+        cache.register_variable(&base_register);
 
         let ctx = MockDisassemblerContext {
             base_register: base_register.clone(),
@@ -391,7 +391,7 @@ mod tests {
     fn get_context_zero_fills_when_no_value_is_set() {
         let mut cache = DefaultContextCache::new();
         let base_register = mock_register(4);
-        cache.register_variable(&base_register.borrow());
+        cache.register_variable(&base_register);
 
         let ctx = MockDisassemblerContext {
             base_register,
@@ -408,7 +408,7 @@ mod tests {
     fn set_context_encodes_mask_and_value_into_future_register_value() {
         let mut cache = DefaultContextCache::new();
         let base_register = mock_register(4);
-        cache.register_variable(&base_register.borrow());
+        cache.register_variable(&base_register);
 
         let mut ctx = MockDisassemblerContext {
             base_register,

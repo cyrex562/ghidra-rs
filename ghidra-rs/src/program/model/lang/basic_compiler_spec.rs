@@ -623,7 +623,7 @@ impl BasicCompilerSpec {
             return Err(XmlParseException::new(format!("Duplicate space name: {name}")));
         }
         let space = self.address_space_or_err(&space_name)?;
-        let reg_name = reg.borrow().name().to_string();
+        let reg_name = reg.name().to_string();
         self.space_bases.get_or_insert_with(BTreeMap::new).insert(name, (space, reg_name));
         parser.end_matching(&el)?;
         Ok(())
@@ -745,7 +745,7 @@ impl BasicCompilerSpec {
         let stack_base_space = self
             .address_space_or_err(&base_space_name)
             .map_err(|_| XmlParseException::new(format!("Undefined base stack space: {base_space_name}")))?;
-        let stack_space_size = stack_pointer.borrow().bit_length().min(stack_base_space.size());
+        let stack_space_size = stack_pointer.bit_length().min(stack_base_space.size());
         self.stack_space = Some(AddressSpace::new(
             SpaceNames::STACK_SPACE_NAME,
             stack_space_size,
@@ -947,7 +947,7 @@ impl BasicCompilerSpec {
             _ => false,
         };
         let same_register = |a: &Option<RegisterRef>, b: &Option<RegisterRef>| match (a, b) {
-            (Some(a), Some(b)) => *a.borrow() == *b.borrow(),
+            (Some(a), Some(b)) => *a == *b,
             (None, None) => true,
             _ => false,
         };
@@ -1165,7 +1165,7 @@ impl CompilerSpec for BasicCompilerSpec {
         }
         if let Some(stack_pointer) = &self.stack_pointer {
             encoder.open_element(ELEM_STACKPOINTER)?;
-            encoder.write_string(ATTRIB_REGISTER, stack_pointer.borrow().name())?;
+            encoder.write_string(ATTRIB_REGISTER, stack_pointer.name())?;
             encoder.write_space(ATTRIB_SPACE, &self.get_stack_base_space())?;
             if self.reverse_justify_stack {
                 encoder.write_bool(ATTRIB_REVERSEJUSTIFY, self.reverse_justify_stack)?;
@@ -1440,7 +1440,7 @@ mod tests {
     #[test]
     fn restores_spaces_stack_and_decompiler_settings() {
         let spec = gcc();
-        assert_eq!(spec.get_stack_pointer().unwrap().borrow().name(), "RSP");
+        assert_eq!(spec.get_stack_pointer().unwrap().name(), "RSP");
         assert!(spec.stack_grows_negative());
         assert!(!spec.is_stack_right_justified());
         assert_eq!(spec.get_stack_space().size(), 64);

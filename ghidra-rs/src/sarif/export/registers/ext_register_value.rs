@@ -17,7 +17,7 @@ impl ExtRegisterValue {
     /// Extracts the register's name and stores it along with the provided value.
     pub fn new(reg: &RegisterRef, value: impl Into<String>) -> Self {
         let name = {
-            let register = reg.borrow();
+            let register = reg;
             register.name().to_string()
         };
 

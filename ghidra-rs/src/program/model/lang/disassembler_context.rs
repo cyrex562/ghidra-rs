@@ -98,7 +98,7 @@ mod tests {
         }
 
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            if self.base_register.borrow().name() == name {
+            if self.base_register.name() == name {
                 Some(self.base_register.clone())
             } else {
                 None
@@ -141,7 +141,7 @@ mod tests {
             value: Box<dyn RegisterValue>,
         ) -> Result<(), ContextChangeException> {
             let register = value.get_register();
-            let name = register.borrow().name().to_string();
+            let name = register.name().to_string();
             self.values.borrow_mut().insert(name, 1);
             Ok(())
         }

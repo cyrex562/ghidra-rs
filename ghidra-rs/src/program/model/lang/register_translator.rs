@@ -31,7 +31,7 @@ impl RegisterTranslator {
         let mut offset_map: HashMap<i32, Vec<RegisterRef>> = HashMap::new();
         for register in registers {
             let (is_register_space, offset) = {
-                let reg = register.borrow();
+                let reg = &register;
                 // Must disregard registers which are not in the "register" named space since
                 // these would never have been encoded/decoded properly by the addressMap.
                 let is_register_space = reg.address().is_register_address()
@@ -45,7 +45,7 @@ impl RegisterTranslator {
         }
         for register_list in offset_map.values_mut() {
             // Sort largest to smallest.
-            register_list.sort_by(|r1, r2| r2.borrow().bit_length().cmp(&r1.borrow().bit_length()));
+            register_list.sort_by(|r1, r2| r2.bit_length().cmp(&r1.bit_length()));
         }
         offset_map
     }
@@ -57,7 +57,7 @@ impl RegisterTranslator {
         }
         list.iter()
             .rev()
-            .find(|reg| reg.borrow().minimum_byte_size() >= size)
+            .find(|reg| reg.minimum_byte_size() >= size)
             .cloned()
     }
 
@@ -75,12 +75,12 @@ impl RegisterTranslator {
 
     /// Returns the register in the new language with the same name as `old_reg`.
     pub fn get_new_register_for(&self, old_reg: &RegisterRef) -> Option<RegisterRef> {
-        self.new_lang.get_register_by_name(&old_reg.borrow().name())
+        self.new_lang.get_register_by_name(&old_reg.name())
     }
 
     /// Returns the register in the old language with the same name as `new_reg`.
     pub fn get_old_register_for(&self, new_reg: &RegisterRef) -> Option<RegisterRef> {
-        self.old_lang.get_register_by_name(&new_reg.borrow().name())
+        self.old_lang.get_register_by_name(&new_reg.name())
     }
 
     /// Returns all registers defined by the new language.
@@ -197,11 +197,11 @@ mod tests {
         }
 
         fn get_register_names(&self) -> Vec<String> {
-            self.registers.iter().map(|r| r.borrow().name().to_string()).collect()
+            self.registers.iter().map(|r| r.name().to_string()).collect()
         }
 
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
-            self.registers.iter().find(|r| r.borrow().name() == name).cloned()
+            self.registers.iter().find(|r| r.name() == name).cloned()
         }
 
         fn get_register_at(
@@ -351,15 +351,15 @@ mod tests {
 
         // size == 0 returns the largest register at the offset.
         let found = translator.get_old_register_at(0, 0).unwrap();
-        assert_eq!(found.borrow().name(), "R0");
+        assert_eq!(found.name(), "R0");
 
         // A size that only the smaller register can satisfy exactly still returns the smallest
         // register whose storage is big enough.
         let found = translator.get_old_register_at(0, 2).unwrap();
-        assert_eq!(found.borrow().name(), "R0L");
+        assert_eq!(found.name(), "R0L");
 
         let found = translator.get_new_register_at(0, 4).unwrap();
-        assert_eq!(found.borrow().name(), "R0");
+        assert_eq!(found.name(), "R0");
 
         assert!(translator.get_old_register_at(0x100, 0).is_none());
     }
@@ -391,9 +391,9 @@ mod tests {
         let translator = RegisterTranslator::new(old_lang, new_lang);
 
         let found = translator.get_new_register_for(&old_reg).unwrap();
-        assert_eq!(found.borrow().name(), "EAX");
+        assert_eq!(found.name(), "EAX");
 
         let found = translator.get_old_register_for(&new_reg).unwrap();
-        assert_eq!(found.borrow().name(), "EAX");
+        assert_eq!(found.name(), "EAX");
     }
 }

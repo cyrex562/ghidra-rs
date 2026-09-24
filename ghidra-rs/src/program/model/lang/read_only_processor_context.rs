@@ -97,12 +97,12 @@ mod tests {
         let lang: Arc<dyn Language> = Arc::new(test_language());
         let mut backing = ProcessorContextImpl::new(lang.clone());
         let eax = lang.get_register_by_name("eax").unwrap();
-        backing.set_value(&eax.borrow(), 0x4242).unwrap();
+        backing.set_value(&eax, 0x4242).unwrap();
 
         let ro = wrap_backing(backing);
-        assert!(ro.has_value(&eax.borrow()));
-        assert_eq!(ro.get_value(&eax.borrow(), false), Some(0x4242));
-        assert!(ro.get_register_value(&eax.borrow()).is_some());
+        assert!(ro.has_value(&eax));
+        assert_eq!(ro.get_value(&eax, false), Some(0x4242));
+        assert!(ro.get_register_value(&eax).is_some());
         assert!(ro.get_register("eax").is_some());
         assert_eq!(ro.get_registers().len(), 4);
     }
@@ -114,13 +114,13 @@ mod tests {
         let eax = lang.get_register_by_name("eax").unwrap();
 
         let mut ro = wrap_backing(backing);
-        assert!(!ro.has_value(&eax.borrow()));
+        assert!(!ro.has_value(&eax));
 
         // Real Java behavior: succeeds (never throws ContextChangeException) but changes nothing.
-        let result = ro.set_value(&eax.borrow(), 999);
+        let result = ro.set_value(&eax, 999);
         assert!(result.is_ok());
-        assert!(!ro.has_value(&eax.borrow()));
-        assert_eq!(ro.get_value(&eax.borrow(), false), None);
+        assert!(!ro.has_value(&eax));
+        assert_eq!(ro.get_value(&eax, false), None);
     }
 
     #[test]
@@ -137,7 +137,7 @@ mod tests {
         let result = ro.set_register_value(rv);
 
         assert!(result.is_ok());
-        assert!(!ro.has_value(&eax.borrow()));
+        assert!(!ro.has_value(&eax));
     }
 
     #[test]
@@ -145,17 +145,17 @@ mod tests {
         let lang: Arc<dyn Language> = Arc::new(test_language());
         let mut backing = ProcessorContextImpl::new(lang.clone());
         let eax = lang.get_register_by_name("eax").unwrap();
-        backing.set_value(&eax.borrow(), 0x99).unwrap();
+        backing.set_value(&eax, 0x99).unwrap();
 
         let mut ro = wrap_backing(backing);
-        assert!(ro.has_value(&eax.borrow()));
+        assert!(ro.has_value(&eax));
 
-        let result = ro.clear_register(&eax.borrow());
+        let result = ro.clear_register(&eax);
         assert!(result.is_ok());
         // Unlike a real clear, the value is untouched: this is the "ignored" part of
         // ReadOnlyProcessorContext's doc comment.
-        assert!(ro.has_value(&eax.borrow()));
-        assert_eq!(ro.get_value(&eax.borrow(), false), Some(0x99));
+        assert!(ro.has_value(&eax));
+        assert_eq!(ro.get_value(&eax, false), Some(0x99));
     }
 
     #[test]
@@ -165,7 +165,7 @@ mod tests {
         let eax = lang.get_register_by_name("eax").unwrap();
 
         let mut ctx: Box<dyn ProcessorContext> = Box::new(wrap_backing(backing));
-        ctx.set_value(&eax.borrow(), 1).unwrap();
-        assert!(!ctx.has_value(&eax.borrow()));
+        ctx.set_value(&eax, 1).unwrap();
+        assert!(!ctx.has_value(&eax));
     }
 }

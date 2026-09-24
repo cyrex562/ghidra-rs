@@ -495,7 +495,7 @@ mod tests {
     }
 
     fn language_with_register(is_big_endian: bool, reg: RegisterRef) -> Box<dyn Language> {
-        let name = reg.borrow().name().to_string();
+        let name = reg.name().to_string();
         let mut registers = HashMap::new();
         registers.insert(name, reg);
         Box::new(TestLanguage { is_big_endian, registers })

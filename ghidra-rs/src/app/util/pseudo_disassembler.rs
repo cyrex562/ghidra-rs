@@ -404,7 +404,7 @@ pub fn set_target_context_for_disassembly(program: &mut dyn Program, addr: Addre
 
     let new_addr = Address::new(addr.space().clone(), addr.offset() & !0x1);
     if let Some(program_context) = program.get_program_context() {
-        let register = low_bit_code_mode.borrow();
+        let register = low_bit_code_mode;
         let _ = program_context.set_value(&register, &new_addr, &new_addr, Some(1));
     }
     new_addr
@@ -902,7 +902,7 @@ mod tests {
             vec![self.base_register.clone()]
         }
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            if self.base_register.borrow().name() == name {
+            if self.base_register.name() == name {
                 Some(self.base_register.clone())
             } else {
                 None

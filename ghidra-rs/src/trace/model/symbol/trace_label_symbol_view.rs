@@ -788,7 +788,7 @@ mod tests {
     fn add_register_resolves_conventional_range_and_delegates_to_add() {
         let view = make_view();
         let register_ref = Register::new("r0", "general register", view.space.address(0x100), 4, false, 0);
-        let register = register_ref.borrow();
+        let register = register_ref;
         let sym = view
             .add_register(
                 &MockPlatform,
@@ -809,7 +809,7 @@ mod tests {
     fn add_register_panics_on_non_byte_bound_register() {
         let view = make_view();
         let register_ref = Register::with_bit_range("bit0", "sub-register", view.space.address(0x100), 4, 1, 4, false, 0);
-        let register = register_ref.borrow();
+        let register = register_ref;
         let _ = view.add_register(
             &MockPlatform,
             Lifespan::span(0, 10),

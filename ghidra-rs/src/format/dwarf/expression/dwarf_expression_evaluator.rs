@@ -1,5 +1,4 @@
 use std::fmt;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
@@ -230,7 +229,6 @@ impl DWARFExpressionEvaluator {
     }
 
     pub fn push_reg(&mut self, reg: &RegisterRef) {
-        let reg = reg.borrow();
         self.push(StackValue::Varnode(Varnode::new(
             reg.address().clone(),
             reg.minimum_byte_size(),
@@ -793,7 +791,6 @@ impl DWARFExpressionEvaluator {
     }
 
     fn new_register_varnode(&self, reg: &RegisterRef) -> Varnode {
-        let reg = reg.borrow();
         Varnode::new(reg.address().clone(), reg.minimum_byte_size())
     }
 

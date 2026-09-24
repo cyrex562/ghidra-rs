@@ -108,9 +108,7 @@ pub trait SimpleDiffUtility: Send + Sync {
             // Java looks up the register at `addr` sized to `varnode.getSize()`; this port's
             // `Program::get_register_at` has no size parameter, so the size is not matched.
             let reg = program.get_register_at(addr)?;
-            let reg = reg.borrow();
             let other_reg = other_program.get_register(reg.name())?;
-            let other_reg = other_reg.borrow();
             if reg.minimum_byte_size() != other_reg.minimum_byte_size() {
                 return None;
             }
@@ -271,9 +269,7 @@ pub trait SimpleDiffUtility: Send + Sync {
                 return Some(addr.clone());
             }
             let reg = program.get_register_at(addr)?;
-            let reg = reg.borrow();
             let other_reg = other_program.get_register(reg.name())?;
-            let other_reg = other_reg.borrow();
             if reg.minimum_byte_size() != other_reg.minimum_byte_size() {
                 return None;
             }

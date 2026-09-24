@@ -102,7 +102,7 @@ mod tests {
         let mapper = PrefixMapper;
         let rv = FixedRegisterValue { register: register_ref("eax") };
         let mapped = mapper.map_value("eax", &rv);
-        assert_eq!(mapped.get_register().borrow().name(), "r_eax");
+        assert_eq!(mapped.get_register().name(), "r_eax");
     }
 
     #[test]
@@ -110,7 +110,7 @@ mod tests {
         let mapper = PrefixMapper;
         let rv = FixedRegisterValue { register: register_ref("r_eax") };
         let mapped = mapper.map_value_back("r_eax", &rv);
-        assert_eq!(mapped.get_register().borrow().name(), "eax");
+        assert_eq!(mapped.get_register().name(), "eax");
     }
 
     #[test]

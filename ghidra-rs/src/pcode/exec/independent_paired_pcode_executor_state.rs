@@ -200,7 +200,7 @@ where
         let mut result = Vec::with_capacity(left_values.len().min(right_values.len()));
         for (right_register, right_value) in right_values {
             if let Some(pos) =
-                left_values.iter().position(|(reg, _)| *reg.borrow() == *right_register.borrow())
+                left_values.iter().position(|(reg, _)| *reg == right_register)
             {
                 let (_, left_value) = left_values.remove(pos);
                 result.push((right_register, (left_value, right_value)));
@@ -437,7 +437,7 @@ mod tests {
 
         let values = s.get_register_values();
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0].0.borrow().name(), common.borrow().name());
+        assert_eq!(values[0].0.name(), common.name());
         assert_eq!(values[0].1, (0, 0));
     }
 

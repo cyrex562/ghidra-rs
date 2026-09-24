@@ -78,7 +78,7 @@ mod tests {
         let unknown = UnknownRegister::new("test_reg", "Test Register", addr, 4, true, 0);
 
         let reg_ref = unknown.register();
-        let reg = reg_ref.borrow();
+        let reg = reg_ref;
         assert_eq!(reg.name(), "test_reg");
         assert_eq!(reg.description(), "Test Register");
         assert_eq!(reg.num_bytes(), 4);
@@ -92,7 +92,7 @@ mod tests {
         let unknown = UnknownRegister::new("sp_pc", "Stack Pointer", addr, 8, false, type_flags);
 
         let reg_ref = unknown.register();
-        let reg = reg_ref.borrow();
+        let reg = reg_ref;
         assert!(reg.is_default_frame_pointer() == false); // TYPE_SP is 2, not TYPE_FP
         assert_eq!(reg.type_flags(), type_flags);
     }
@@ -107,7 +107,7 @@ mod tests {
         let reg2_ref = unknown2.register();
 
         // Both should refer to the same underlying register
-        assert_eq!(reg1_ref.borrow().name(), reg2_ref.borrow().name());
+        assert_eq!(reg1_ref.name(), reg2_ref.name());
     }
 
     #[test]
@@ -118,17 +118,17 @@ mod tests {
         let reg_ref1 = unknown.register_ref();
         let reg_ref2 = unknown.register_ref();
 
-        assert_eq!(reg_ref1.borrow().name(), reg_ref2.borrow().name());
+        assert_eq!(reg_ref1.name(), reg_ref2.name());
     }
 
     #[test]
     fn into_register() {
         let addr = SpecialAddress::no_address();
         let unknown = UnknownRegister::new("temp", "Temporary", addr, 1, true, 0);
-        let name = unknown.register().borrow().name().to_string();
+        let name = unknown.register().name().to_string();
 
         let register_ref = unknown.into_register();
-        assert_eq!(register_ref.borrow().name(), &name);
+        assert_eq!(register_ref.name(), &name);
     }
 
     #[test]
@@ -137,17 +137,17 @@ mod tests {
         let register_ref = Register::new("original", "Original Reg", addr, 4, true, 0);
         let unknown = UnknownRegister::from(register_ref.clone());
 
-        assert_eq!(unknown.register().borrow().name(), "original");
+        assert_eq!(unknown.register().name(), "original");
     }
 
     #[test]
     fn into_register_ref_from_unknown() {
         let addr = SpecialAddress::no_address();
         let unknown = UnknownRegister::new("src", "Source", addr, 8, false, 0);
-        let name = unknown.register().borrow().name().to_string();
+        let name = unknown.register().name().to_string();
 
         let register_ref: RegisterRef = unknown.into();
-        assert_eq!(register_ref.borrow().name(), &name);
+        assert_eq!(register_ref.name(), &name);
     }
 
     #[test]
@@ -156,7 +156,7 @@ mod tests {
         let unknown = UnknownRegister::new("deref_test", "Deref Test", addr, 4, true, 0);
 
         // Through Deref, we can call RegisterRef methods
-        let borrowed = unknown.borrow();
+        let borrowed = unknown;
         assert_eq!(borrowed.name(), "deref_test");
     }
 
@@ -172,7 +172,7 @@ mod tests {
             Register::TYPE_VECTOR | Register::TYPE_HIDDEN,
         );
 
-        let reg = unknown.register().borrow();
+        let reg = unknown.register();
         assert_eq!(reg.name(), "complex");
         assert_eq!(reg.description(), "A complex register");
         assert_eq!(reg.num_bytes(), 16);

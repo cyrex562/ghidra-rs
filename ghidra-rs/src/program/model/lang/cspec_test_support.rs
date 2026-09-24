@@ -162,7 +162,7 @@ impl Language for TestCspecLanguage {
     fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
         self.get_registers()
             .into_iter()
-            .filter(|r| r.borrow().address() == address)
+            .filter(|r| r.address() == address)
             .collect()
     }
     fn get_register_in_space(

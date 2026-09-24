@@ -151,7 +151,7 @@ mod tests {
         }
 
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            if self.base_register.borrow().name() == name {
+            if self.base_register.name() == name {
                 Some(self.base_register.clone())
             } else {
                 None

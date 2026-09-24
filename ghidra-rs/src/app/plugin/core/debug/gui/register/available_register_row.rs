@@ -1,5 +1,4 @@
 use std::collections::BTreeSet;
-use std::rc::Rc;
 
 use crate::program::model::lang::RegisterRef;
 
@@ -37,8 +36,8 @@ impl AvailableRegisterRow {
     }
 
     fn collect_children(reg: &RegisterRef, set: &mut BTreeSet<String>) {
-        for child in reg.borrow().child_registers() {
-            set.insert(child.borrow().name().to_string());
+        for child in reg.child_registers() {
+            set.insert(child.name().to_string());
             Self::collect_children(&child, set);
         }
     }
@@ -55,17 +54,17 @@ impl AvailableRegisterRow {
 
     /// Returns the register's name.
     pub fn name(&self) -> String {
-        self.register.borrow().name().to_string()
+        self.register.name().to_string()
     }
 
     /// Returns the register's bit length.
     pub fn bits(&self) -> i32 {
-        self.register.borrow().bit_length()
+        self.register.bit_length()
     }
 
     /// Returns the register's group, or `"(none)"` if it has none.
     pub fn group(&self) -> String {
-        match self.register.borrow().group() {
+        match self.register.group() {
             Some(group) => group.to_string(),
             None => "(none)".to_string(),
         }
@@ -101,11 +100,11 @@ impl AvailableRegisterRow {
     /// Returns the name of this register's base register, or `""` if this register has no
     /// distinct base register.
     pub fn parent_name(&self) -> String {
-        let base = self.register.borrow().get_base_register();
+        let base = self.register.get_base_register();
         if crate::program::model::lang::Register::same(&base, &self.register) {
             return String::new();
         }
-        let name = base.borrow().name().to_string();
+        let name = base.name().to_string();
         name
     }
 }

@@ -405,7 +405,7 @@ mod tests {
         let decoder = JitPassageDecoder::new(thread);
 
         // Java: `defaultContext == null ? Register.NO_CONTEXT : ...`
-        assert_eq!(decoder.contextreg.borrow().name(), "NO_CONTEXT");
+        assert_eq!(decoder.contextreg.name(), "NO_CONTEXT");
     }
 
     #[test]
@@ -417,7 +417,7 @@ mod tests {
         let decoder = JitPassageDecoder::new(thread);
 
         // Java: `defaultContext.getBaseContextRegister()`
-        assert_eq!(decoder.contextreg.borrow().name(), "contextreg");
+        assert_eq!(decoder.contextreg.name(), "contextreg");
     }
 
     #[test]

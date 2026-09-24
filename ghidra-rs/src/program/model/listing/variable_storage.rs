@@ -511,8 +511,7 @@ fn translate_register_varnode_offset(
         .get_old_register(old_reg_addr, varnode_size)
         .or_else(|| translator.get_old_register_containing(old_reg_addr))?;
     let new_reg = translator.get_new_register(&old_reg)?;
-    let old_reg = old_reg.borrow();
-    let new_reg_borrow = new_reg.borrow();
+    let new_reg_borrow = new_reg;
     let orig_byte_shift = offset - old_reg.offset() as i64;
     let mut new_offset = new_reg_borrow.offset() as i64 + orig_byte_shift;
     if new_reg_borrow.is_big_endian() {
@@ -658,7 +657,7 @@ impl VariableStorageImpl {
         let varnodes = registers
             .iter()
             .map(|r| {
-                let reg = r.borrow();
+                let reg = r;
                 Varnode::new(reg.address().clone(), reg.minimum_byte_size())
             })
             .collect();

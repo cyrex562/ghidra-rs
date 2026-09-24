@@ -483,7 +483,7 @@ mod tests {
         state.local_state.registers.borrow_mut().push((conflict.clone(), 999));
 
         let mut values = state.get_register_values();
-        values.sort_by_key(|(r, _)| r.borrow().offset());
+        values.sort_by_key(|(r, _)| r.offset());
 
         assert_eq!(values, vec![(shared_only, 1), (local_only, 2), (conflict, 100)]);
     }

@@ -94,7 +94,7 @@ mod tests {
             Box::new(MockDefaultProgramContext { last_set: None });
 
         let reg_ref = mock_register();
-        let reg = reg_ref.borrow();
+        let reg = reg_ref;
         let start = mock_address(0x100);
         let end = mock_address(0x200);
 

@@ -198,7 +198,7 @@ mod tests {
         }
 
         fn get_new_register(&self, old_reg: &RegisterRef) -> Option<RegisterRef> {
-            self.register_map.get(old_reg.borrow().name()).cloned()
+            self.register_map.get(old_reg.name()).cloned()
         }
 
         fn get_new_context_register(&self) -> Option<RegisterRef> {
@@ -247,7 +247,7 @@ mod tests {
         let old_reg = Register::new("R0", "", reg_space.address(0x0), 1, false, Register::TYPE_NONE);
         let new_reg = Register::new("EAX", "", reg_space.address(0x0), 1, false, Register::TYPE_NONE);
         let mut register_map = HashMap::new();
-        register_map.insert(old_reg.borrow().name().to_string(), new_reg);
+        register_map.insert(old_reg.name().to_string(), new_reg);
 
         RenamingTranslator { space_map, register_map }
     }
@@ -270,7 +270,7 @@ mod tests {
         let unmapped = Register::new("R1", "", reg_space.address(0x1), 1, false, Register::TYPE_NONE);
 
         let new_reg = translator.get_new_register(&old_r0).unwrap();
-        assert_eq!(new_reg.borrow().name(), "EAX");
+        assert_eq!(new_reg.name(), "EAX");
         assert!(!translator.is_value_translation_required(&old_r0));
 
         assert!(translator.get_new_register(&unmapped).is_none());

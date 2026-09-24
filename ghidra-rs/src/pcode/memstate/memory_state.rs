@@ -290,7 +290,7 @@ mod tests {
         }
 
         fn add_register(&mut self, reg: RegisterRef) {
-            let name = reg.borrow().name().to_string();
+            let name = reg.name().to_string();
             self.registers.insert(name, reg);
         }
     }
@@ -321,7 +321,6 @@ mod tests {
                 .get(nm)
                 .cloned()
                 .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-            let reg = reg.borrow();
             self.set_value_register(&reg, cval)
         }
 
@@ -354,7 +353,6 @@ mod tests {
                 .get(nm)
                 .cloned()
                 .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-            let reg = reg.borrow();
             self.get_value_register(&reg)
         }
 
@@ -385,7 +383,6 @@ mod tests {
                 .get(nm)
                 .cloned()
                 .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-            let reg = reg.borrow();
             self.set_big_value_register(&reg, cval)
         }
 
@@ -422,7 +419,6 @@ mod tests {
                 .get(nm)
                 .cloned()
                 .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-            let reg = reg.borrow();
             self.get_big_integer_register(&reg)
         }
 
@@ -530,8 +526,8 @@ mod tests {
     fn set_value_register_then_get_value_register_round_trips() {
         let (mut state, space) = state_with_ram(false);
         let reg = Register::new("r0", "general reg 0", Address::new(space, 0x20), 4, false, 0);
-        state.set_value_register(&reg.borrow(), 0x11223344).unwrap();
-        let val = state.get_value_register(&reg.borrow()).unwrap();
+        state.set_value_register(&reg, 0x11223344).unwrap();
+        let val = state.get_value_register(&reg).unwrap();
         assert_eq!(val, 0x11223344);
     }
 

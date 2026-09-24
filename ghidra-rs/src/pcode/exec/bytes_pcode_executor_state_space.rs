@@ -10,7 +10,6 @@
 //! their sole callers ([`AbstractBytesPcodeExecutorStatePieceBase::set_in_space`](crate::pcode::exec::abstract_bytes_pcode_executor_state_piece::AbstractBytesPcodeExecutorStatePieceBase::set_in_space)
 //! and `get_from_space`), which already have it in scope.
 
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::generic::ulong_span;
@@ -145,7 +144,7 @@ impl BytesPcodeExecutorStateSpace {
                 }
             }
         }
-        regs.sort_by(|a, b| a.borrow().cmp(&b.borrow()));
+        regs.sort_by(|a, b| a.cmp(&b));
         regs
     }
 
@@ -156,7 +155,7 @@ impl BytesPcodeExecutorStateSpace {
             Msg::warn("BytesPcodeExecutorStateSpace", &format!("{message}: {}", set.print_ranges()));
         } else {
             let names =
-                regs.iter().map(|r| r.borrow().name().to_string()).collect::<Vec<_>>().join(", ");
+                regs.iter().map(|r| r.name().to_string()).collect::<Vec<_>>().join(", ");
             Msg::warn(
                 "BytesPcodeExecutorStateSpace",
                 &format!("{message}: {} (registers [{names}])", set.print_ranges()),
@@ -248,7 +247,7 @@ impl BytesPcodeExecutorStateSpace {
         let mut result = Vec::new();
         for reg in registers {
             let (min, num_bytes) = {
-                let r = reg.borrow();
+                let r = reg;
                 (r.address().offset(), r.num_bytes())
             };
             let max = min + num_bytes as i64;
@@ -270,7 +269,7 @@ impl BytesPcodeExecutorStateSpace {
 
 /// Push `r` if no register already in `regs` compares equal, mirroring `Set<Register>.add`.
 fn push_unique_register(regs: &mut Vec<RegisterRef>, r: RegisterRef) {
-    if !regs.iter().any(|x| *x.borrow() == *r.borrow()) {
+    if !regs.iter().any(|x| *x == r) {
         regs.push(r);
     }
 }

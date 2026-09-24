@@ -448,7 +448,7 @@ impl DWARFExpressionOpCode {
         };
         let reg = if reg_idx >= 0 { reg_mapping.and_then(|rm| rm.ghidra_reg(reg_idx)) } else { None };
         match reg {
-            Some(reg) => format!("{self}({})", reg.borrow().name()),
+            Some(reg) => format!("{self}({})", reg.name()),
             None => self.to_string(),
         }
     }

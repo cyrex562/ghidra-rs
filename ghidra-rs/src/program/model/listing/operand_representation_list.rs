@@ -41,7 +41,7 @@ impl fmt::Display for OperandRepresentationElement {
             OperandRepresentationElement::VariableOffset(vo) => {
                 write!(f, "{}", vo.to_display_string())
             }
-            OperandRepresentationElement::Register(r) => write!(f, "{}", r.borrow()),
+            OperandRepresentationElement::Register(r) => write!(f, "{}", r),
             OperandRepresentationElement::Address(a) => write!(f, "{a}"),
             OperandRepresentationElement::Scalar(s) => write!(f, "{s}"),
             OperandRepresentationElement::Label(l) => write!(f, "{l}"),

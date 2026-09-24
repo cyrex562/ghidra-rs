@@ -283,7 +283,7 @@ impl MarkupSarifMgr {
             return Ok(());
         };
         let reference =
-            ref_mgr.add_register_reference(from_addr, op_index, &register.borrow(), ref_type, source_type);
+            ref_mgr.add_register_reference(from_addr, op_index, &register, ref_type, source_type);
         ref_mgr.set_primary(reference, primary);
         Ok(())
     }

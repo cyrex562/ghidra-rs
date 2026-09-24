@@ -264,7 +264,7 @@ mod tests {
         let overlay = make_space();
         let reg = Register::new("R0", "", space.address(0x10), 4, false, 0);
 
-        let range = HostPlatform.get_conventional_register_range(&overlay, &reg.borrow());
+        let range = HostPlatform.get_conventional_register_range(&overlay, &reg);
 
         assert_eq!(range.min_address(), &overlay.address(0x10));
         assert_eq!(range.max_address(), &overlay.address(0x13));

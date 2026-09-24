@@ -646,7 +646,7 @@ impl SleighLanguage {
     pub fn new_context_cache(&self) -> DefaultContextCache {
         let mut cache = DefaultContextCache::new();
         if let Some(base) = self.get_context_base_register() {
-            cache.register_variable(&base.borrow());
+            cache.register_variable(&base);
         }
         cache
     }
@@ -871,7 +871,7 @@ impl Language for SleighLanguage {
     /// Port of `getContextBaseRegister()`; `None` stands in for `Register.NO_CONTEXT`.
     fn get_context_base_register(&self) -> Option<RegisterRef> {
         let base = self.register_manager.get_context_base_register();
-        let is_context = base.borrow().is_processor_context();
+        let is_context = base.is_processor_context();
         is_context.then_some(base)
     }
 
@@ -1591,7 +1591,7 @@ mod language_tests {
     }
 
     fn name(r: &RegisterRef) -> String {
-        r.borrow().name().to_string()
+        r.name().to_string()
     }
 
     #[test]
@@ -1659,8 +1659,8 @@ mod language_tests {
         assert_eq!(lang.get_registers().len(), 5);
 
         let r0 = lang.get_register_by_name("r0").unwrap();
-        assert_eq!(r0.borrow().num_bytes(), 4);
-        assert_eq!(r0.borrow().address().offset(), 0);
+        assert_eq!(r0.num_bytes(), 4);
+        assert_eq!(r0.address().offset(), 0);
         // Case-variations resolve too (RegisterBuilder's name map).
         assert_eq!(name(&lang.get_register_by_name("R0").unwrap()), "r0");
         assert!(lang.get_register_by_name("r9").is_none());
@@ -1688,7 +1688,7 @@ mod language_tests {
         let lang = language(&Sla::default());
         let tmode = lang.get_register_by_name("TMode").unwrap();
         {
-            let t = tmode.borrow();
+            let t = tmode;
             assert!(t.is_processor_context());
             assert_eq!(t.bit_length(), 1);
             // Added with lsb = contextBitLength - endbit - 1 = 31 over 4 big-endian bytes, which
@@ -1932,7 +1932,7 @@ mod language_tests {
             register: RegisterRef,
             bytes: Vec<u8>,
         ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
-            assert_eq!(register.borrow().name(), "contextreg");
+            assert_eq!(register.name(), "contextreg");
             *self.0.borrow_mut() = bytes;
             Box::new(NoValue)
         }

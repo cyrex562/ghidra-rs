@@ -198,15 +198,15 @@ mod tests {
             self.registers.clone()
         }
         fn get_register_names(&self) -> Vec<String> {
-            self.registers.iter().map(|r| r.borrow().name().to_string()).collect()
+            self.registers.iter().map(|r| r.name().to_string()).collect()
         }
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
-            self.registers.iter().find(|r| r.borrow().name() == name).cloned()
+            self.registers.iter().find(|r| r.name() == name).cloned()
         }
         fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
             self.registers
                 .iter()
-                .find(|r| r.borrow().address() == addr && (size == 0 || r.borrow().minimum_byte_size() == size))
+                .find(|r| r.address() == addr && (size == 0 || r.minimum_byte_size() == size))
                 .cloned()
         }
         fn get_program_counter(&self) -> Option<RegisterRef> {
@@ -303,7 +303,7 @@ mod tests {
         let vn = Varnode::new(Address::new(reg_space(), 0), 4);
 
         let reg = t.get_register(Some(&vn)).expect("EAX-sized varnode should resolve");
-        assert_eq!(reg.borrow().name(), "EAX");
+        assert_eq!(reg.name(), "EAX");
     }
 
     /// Port of Java's explicit `if (node == null) return null;` early-out.
@@ -325,10 +325,10 @@ mod tests {
         let t = translator(true);
         let reg = eax();
 
-        let vn = t.get_varnode(&reg.borrow());
+        let vn = t.get_varnode(&reg);
 
-        assert_eq!(vn.get_address(), reg.borrow().address());
-        assert_eq!(vn.get_size(), reg.borrow().minimum_byte_size());
+        assert_eq!(vn.get_address(), reg.address());
+        assert_eq!(vn.get_size(), reg.minimum_byte_size());
         assert_eq!(vn.get_size(), 4);
     }
 
@@ -344,6 +344,6 @@ mod tests {
         let t = translator(true);
         let regs = t.get_registers();
         assert_eq!(regs.len(), 1);
-        assert_eq!(regs[0].borrow().name(), "EAX");
+        assert_eq!(regs[0].name(), "EAX");
     }
 }

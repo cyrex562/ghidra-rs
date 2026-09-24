@@ -459,7 +459,7 @@ where
     /// this thread's state.
     pub fn write_counter(&mut self, counter: &Address) {
         self.counter = counter.clone();
-        let size = self.pc.borrow().minimum_byte_size();
+        let size = self.pc.minimum_byte_size();
         let value = self
             .arithmetic
             .from_const_u64(counter.addressable_word_offset() as u64, size);
@@ -485,7 +485,7 @@ where
             .contextreg
             .clone()
             .expect("a context value implies a context register");
-        let size = contextreg.borrow().minimum_byte_size();
+        let size = contextreg.minimum_byte_size();
         let value = self.arithmetic.from_const_big_int(
             current.get_unsigned_value_ignore_mask() as i128,
             size,
@@ -504,11 +504,11 @@ where
     /// If the value is not the contextreg's, as Java throws `IllegalArgumentException`.
     pub fn assign_context(&mut self, context: &dyn RegisterValue) {
         let register = context.get_register();
-        let base = register.borrow().get_base_register();
+        let base = register.get_base_register();
         let is_contextreg = match &self.contextreg {
             Some(contextreg) => same_register(&base, contextreg),
             // `None` is Java's `Register.NO_CONTEXT`, which only a NO_CONTEXT value matches.
-            None => base.borrow().name() == "NO_CONTEXT",
+            None => base.name() == "NO_CONTEXT",
         };
         assert!(is_contextreg, "context must be the contextreg value");
         let Some(current) = self.context.as_ref() else {
@@ -770,7 +770,7 @@ where
 /// Whether two register handles denote the same register. Java compares `Register` identity; these
 /// are separately built handles, so they are compared by where they live.
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    let (a, b) = (a.borrow(), b.borrow());
+    let (a, b) = (a, b);
     a.name() == b.name() && a.address() == b.address() && a.num_bytes() == b.num_bytes()
 }
 
@@ -778,7 +778,7 @@ fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
 /// so callers have one "no context" case rather than two.
 fn context_base_register(language: &dyn Language) -> Option<RegisterRef> {
     let contextreg = language.get_context_base_register()?;
-    let is_no_context = contextreg.borrow().name() == "NO_CONTEXT";
+    let is_no_context = contextreg.name() == "NO_CONTEXT";
     (!is_no_context).then_some(contextreg)
 }
 

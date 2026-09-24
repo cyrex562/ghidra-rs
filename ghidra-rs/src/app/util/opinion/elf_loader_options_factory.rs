@@ -190,7 +190,6 @@ fn get_recommended_minimum_data_image_base(language: &dyn Language) -> i64 {
     // logic assumes memory mapped registers reside at low-end addresses (e.g., 0)
     let mut min_offset: i64 = 0;
     for reg in language.get_registers() {
-        let reg = reg.borrow();
         let addr = reg.address();
         if default_data_space.as_ref() == addr.space().as_ref() {
             let offset = addr.offset();

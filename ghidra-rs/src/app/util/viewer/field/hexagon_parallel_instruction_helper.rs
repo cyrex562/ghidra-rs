@@ -39,7 +39,7 @@ impl ParallelInstructionLanguageHelper for HexagonParallelInstructionHelper {
             None => return false,
         };
 
-        let reg = packet_offset_reg.borrow();
+        let reg = packet_offset_reg;
         match ProcessorContextView::get_value(instruction, &reg, false) {
             Some(value) => value != 0,
             None => false,

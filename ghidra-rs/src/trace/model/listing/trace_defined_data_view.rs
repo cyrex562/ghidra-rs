@@ -822,7 +822,7 @@ mod tests {
             Box::new(MockView { units: Vec::new() });
 
         let register = Register::no_context();
-        let reg = register.borrow();
+        let reg = register;
         let created = view
             .create_on_register(Lifespan::span(0, 10), &reg, &MockDataType)
             .expect("create_on_register should succeed");

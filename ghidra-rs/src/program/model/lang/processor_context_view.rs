@@ -41,9 +41,9 @@ pub fn dump_context_value(value: &dyn RegisterValue, indent: Option<&str>) -> St
 pub fn dump_context_value_into(value: &dyn RegisterValue, indent: Option<&str>, buf: &mut String) {
     let indent = indent.unwrap_or("");
     let base_reg = value.get_register();
-    let base_reg_size = base_reg.borrow().minimum_byte_size() * 8;
-    for child_reg in base_reg.borrow().child_registers() {
-        let reg = child_reg.borrow();
+    let base_reg_size = base_reg.minimum_byte_size() * 8;
+    for child_reg in base_reg.child_registers() {
+        let reg = child_reg;
         let child_value = value.get_register_value(&reg);
         if child_value.has_any_value() {
             let v = child_value.get_unsigned_value_ignore_mask();
@@ -116,7 +116,7 @@ mod tests {
         }
 
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            if self.base_register.borrow().name() == name {
+            if self.base_register.name() == name {
                 Some(self.base_register.clone())
             } else {
                 None
@@ -160,7 +160,7 @@ mod tests {
         assert_eq!(ctx.get_registers().len(), 1);
         assert!(ctx.get_register("context").is_some());
         assert!(ctx.get_register("missing").is_none());
-        assert!(!ctx.has_value(&ctx.get_base_context_register().unwrap().borrow()));
+        assert!(!ctx.has_value(&ctx.get_base_context_register().unwrap()));
     }
 
     #[test]

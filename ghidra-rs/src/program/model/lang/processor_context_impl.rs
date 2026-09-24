@@ -81,16 +81,16 @@ impl ProcessorContextView for ProcessorContextImpl {
 
     fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValueTrait>> {
         let reg = self.resolve(register);
-        let base = reg.borrow().get_base_register();
-        let key = base.borrow().name().to_string();
+        let base = reg.get_base_register();
+        let key = base.name().to_string();
         let bytes = self.values.get(&key)?;
         Some(Box::new(RegisterValue::from_bytes(reg, bytes)))
     }
 
     fn get_value(&self, register: &Register, signed: bool) -> Option<i128> {
         let reg = self.resolve(register);
-        let base = reg.borrow().get_base_register();
-        let key = base.borrow().name().to_string();
+        let base = reg.get_base_register();
+        let key = base.name().to_string();
         let bytes = self.values.get(&key)?;
         let value = RegisterValue::from_bytes(reg, bytes);
         if signed {
@@ -132,8 +132,8 @@ impl ProcessorContext for ProcessorContextImpl {
         // this crate constructs `RegisterValue` values with either a full mask (`with_value`) or
         // no mask at all, so this is exact in practice.
         let concrete = RegisterValue::from_trait_object(value.as_ref());
-        let base_register = concrete.register().borrow().get_base_register();
-        let key = base_register.borrow().name().to_string();
+        let base_register = concrete.register().get_base_register();
+        let key = base_register.name().to_string();
 
         let existing = self.values.get(&key).cloned();
         if let Some(current_bytes) = existing {
@@ -153,7 +153,7 @@ impl ProcessorContext for ProcessorContextImpl {
         // (they resolve via the register's own base-register link, which is populated whenever
         // the register was reached through a live `RegisterRef`), so no `resolve()` is needed.
         let base_register = register.get_base_register();
-        let key = base_register.borrow().name().to_string();
+        let key = base_register.name().to_string();
         if let Some(current_bytes) = self.values.remove(&key) {
             let current_value = RegisterValue::from_bytes(base_register, &current_bytes);
             let cleared_value = current_value.clear_bit_values(&register.base_mask());
@@ -177,9 +177,9 @@ mod tests {
         let lang: Arc<dyn Language> = Arc::new(test_language());
         let ctx = ProcessorContextImpl::new(lang.clone());
         let eax = lang.get_register_by_name("eax").unwrap();
-        assert!(!ctx.has_value(&eax.borrow()));
-        assert_eq!(ctx.get_value(&eax.borrow(), false), None);
-        assert!(ctx.get_register_value(&eax.borrow()).is_none());
+        assert!(!ctx.has_value(&eax));
+        assert_eq!(ctx.get_value(&eax, false), None);
+        assert!(ctx.get_register_value(&eax).is_none());
     }
 
     #[test]
@@ -188,11 +188,11 @@ mod tests {
         let mut ctx = ProcessorContextImpl::new(lang.clone());
         let eax = lang.get_register_by_name("eax").unwrap();
 
-        ctx.set_value(&eax.borrow(), 0x1234_5678).unwrap();
+        ctx.set_value(&eax, 0x1234_5678).unwrap();
 
-        assert!(ctx.has_value(&eax.borrow()));
-        assert_eq!(ctx.get_value(&eax.borrow(), false), Some(0x1234_5678));
-        assert_eq!(ctx.get_value(&eax.borrow(), true), Some(0x1234_5678));
+        assert!(ctx.has_value(&eax));
+        assert_eq!(ctx.get_value(&eax, false), Some(0x1234_5678));
+        assert_eq!(ctx.get_value(&eax, true), Some(0x1234_5678));
     }
 
     #[test]
@@ -201,10 +201,10 @@ mod tests {
         let mut ctx = ProcessorContextImpl::new(lang.clone());
         let eax = lang.get_register_by_name("eax").unwrap();
 
-        ctx.set_value(&eax.borrow(), -2).unwrap();
+        ctx.set_value(&eax, -2).unwrap();
 
-        assert_eq!(ctx.get_value(&eax.borrow(), true), Some(-2));
-        assert_eq!(ctx.get_value(&eax.borrow(), false), Some(0xFFFF_FFFE));
+        assert_eq!(ctx.get_value(&eax, true), Some(-2));
+        assert_eq!(ctx.get_value(&eax, false), Some(0xFFFF_FFFE));
     }
 
     #[test]
@@ -214,12 +214,12 @@ mod tests {
         let al = lang.get_register_by_name("al").unwrap();
         let eax = lang.get_register_by_name("eax").unwrap();
 
-        ctx.set_value(&al.borrow(), 0xFF).unwrap();
+        ctx.set_value(&al, 0xFF).unwrap();
 
         // `al` occupies eax's low byte; the rest of eax remains unset (only al's bits combined).
-        assert!(ctx.has_value(&al.borrow()));
-        assert!(!ctx.has_value(&eax.borrow()));
-        assert_eq!(ctx.get_value(&al.borrow(), false), Some(0xFF));
+        assert!(ctx.has_value(&al));
+        assert!(!ctx.has_value(&eax));
+        assert_eq!(ctx.get_value(&al, false), Some(0xFF));
     }
 
     #[test]
@@ -230,25 +230,25 @@ mod tests {
         let ah = lang.get_register_by_name("ah").unwrap();
         let eax = lang.get_register_by_name("eax").unwrap();
 
-        ctx.set_value(&al.borrow(), 0x11).unwrap();
-        ctx.set_value(&ah.borrow(), 0x22).unwrap();
+        ctx.set_value(&al, 0x11).unwrap();
+        ctx.set_value(&ah, 0x22).unwrap();
 
         // Both bytes were combined together onto the shared base register's stored bytes: each
         // sub-register still reads back its own value...
-        assert!(ctx.has_value(&al.borrow()));
-        assert!(ctx.has_value(&ah.borrow()));
-        assert_eq!(ctx.get_value(&al.borrow(), false), Some(0x11));
-        assert_eq!(ctx.get_value(&ah.borrow(), false), Some(0x22));
+        assert!(ctx.has_value(&al));
+        assert!(ctx.has_value(&ah));
+        assert_eq!(ctx.get_value(&al, false), Some(0x11));
+        assert_eq!(ctx.get_value(&ah, false), Some(0x22));
 
         // ...but `eax` (4 bytes / 32 bits) does *not* have a value, since `al`/`ah` only cover
         // its low 2 bytes -- the upper 2 bytes were never set. This is not a stub gap; it
         // faithfully mirrors `RegisterValue.hasValue()`, which requires every bit within the
         // queried register's own range to be masked "on".
-        assert!(!ctx.has_value(&eax.borrow()));
-        assert_eq!(ctx.get_value(&eax.borrow(), false), None);
+        assert!(!ctx.has_value(&eax));
+        assert_eq!(ctx.get_value(&eax, false), None);
 
         // The raw combined bits are nonetheless present when read back ignoring the mask.
-        let combined = ctx.get_register_value(&eax.borrow()).unwrap();
+        let combined = ctx.get_register_value(&eax).unwrap();
         assert!(combined.has_any_value());
         assert_eq!(combined.get_unsigned_value_ignore_mask(), 0x2211);
     }
@@ -261,12 +261,12 @@ mod tests {
         let ah = lang.get_register_by_name("ah").unwrap();
         let eax = lang.get_register_by_name("eax").unwrap();
 
-        ctx.set_value(&eax.borrow(), 0x2211).unwrap();
-        ctx.clear_register(&al.borrow()).unwrap();
+        ctx.set_value(&eax, 0x2211).unwrap();
+        ctx.clear_register(&al).unwrap();
 
-        assert!(!ctx.has_value(&al.borrow()));
-        assert!(ctx.has_value(&ah.borrow()));
-        assert_eq!(ctx.get_value(&ah.borrow(), false), Some(0x22));
+        assert!(!ctx.has_value(&al));
+        assert!(ctx.has_value(&ah));
+        assert_eq!(ctx.get_value(&ah, false), Some(0x22));
     }
 
     #[test]
@@ -275,10 +275,10 @@ mod tests {
         let mut ctx = ProcessorContextImpl::new(lang.clone());
         let eax = lang.get_register_by_name("eax").unwrap();
 
-        ctx.set_value(&eax.borrow(), 0x1234_5678).unwrap();
-        ctx.clear_register(&eax.borrow()).unwrap();
+        ctx.set_value(&eax, 0x1234_5678).unwrap();
+        ctx.clear_register(&eax).unwrap();
 
-        assert!(!ctx.has_value(&eax.borrow()));
+        assert!(!ctx.has_value(&eax));
         assert!(ctx.values.is_empty());
     }
 
@@ -289,12 +289,12 @@ mod tests {
         let eax = lang.get_register_by_name("eax").unwrap();
         let r0 = lang.get_register_by_name("r0").unwrap();
 
-        ctx.set_value(&eax.borrow(), 1).unwrap();
-        ctx.set_value(&r0.borrow(), 2).unwrap();
+        ctx.set_value(&eax, 1).unwrap();
+        ctx.set_value(&r0, 2).unwrap();
         ctx.clear_all();
 
-        assert!(!ctx.has_value(&eax.borrow()));
-        assert!(!ctx.has_value(&r0.borrow()));
+        assert!(!ctx.has_value(&eax));
+        assert!(!ctx.has_value(&r0));
     }
 
     #[test]
@@ -302,7 +302,7 @@ mod tests {
         let lang: Arc<dyn Language> = Arc::new(test_language_with_context());
         let ctx = ProcessorContextImpl::new(lang.clone());
         let base = ctx.get_base_context_register().unwrap();
-        assert_eq!(base.borrow().name(), "contextreg");
+        assert_eq!(base.name(), "contextreg");
     }
 
     #[test]
@@ -327,7 +327,7 @@ mod tests {
         let mut ctx: Box<dyn ProcessorContext> = Box::new(ProcessorContextImpl::new(lang.clone()));
         let eax = lang.get_register_by_name("eax").unwrap();
 
-        ctx.set_value(&eax.borrow(), 7).unwrap();
-        assert_eq!(ctx.get_value(&eax.borrow(), false), Some(7));
+        ctx.set_value(&eax, 7).unwrap();
+        assert_eq!(ctx.get_value(&eax, false), Some(7));
     }
 }

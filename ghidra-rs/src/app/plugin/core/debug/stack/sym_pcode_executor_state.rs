@@ -3,7 +3,6 @@
 //! Port of `ghidra.app.plugin.core.debug.stack.SymPcodeExecutorState`.
 
 use std::fmt;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning;
@@ -155,7 +154,7 @@ impl SymPcodeExecutorState {
         let pc = self.language.get_program_counter()?;
         match self.get_var_register(&pc, Reason::Inspect) {
             Sym::StackDeref { offset, .. } => Some(self.c_spec.get_stack_space().address(offset)),
-            Sym::Register { register, .. } => Some(register.borrow().address().clone()),
+            Sym::Register { register, .. } => Some(register.address().clone()),
             _ => None,
         }
     }
@@ -228,7 +227,7 @@ impl SymPcodeExecutorState {
 /// shared through the language, so pointer identity is checked first, falling back to the
 /// register's own equality (name, size, and location).
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    crate::program::model::lang::Register::same(a, b) || *a.borrow() == *b.borrow()
+    crate::program::model::lang::Register::same(a, b) || *a == *b
 }
 
 impl fmt::Display for SymPcodeExecutorState {
@@ -515,7 +514,7 @@ mod tests {
         fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
             self.registers
                 .iter()
-                .filter(|r| r.borrow().address() == address)
+                .filter(|r| r.address() == address)
                 .cloned()
                 .collect()
         }
@@ -533,20 +532,19 @@ mod tests {
         fn get_register_names(&self) -> Vec<String> {
             self.registers
                 .iter()
-                .map(|r| r.borrow().name().to_string())
+                .map(|r| r.name().to_string())
                 .collect()
         }
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
             self.registers
                 .iter()
-                .find(|r| r.borrow().name() == name)
+                .find(|r| r.name() == name)
                 .cloned()
         }
         fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
             self.registers
                 .iter()
                 .find(|r| {
-                    let r = r.borrow();
                     r.address() == addr && (size == 0 || r.minimum_byte_size() == size)
                 })
                 .cloned()
@@ -669,7 +667,7 @@ mod tests {
         fn register(&self, name: &str) -> RegisterRef {
             self.registers
                 .iter()
-                .find(|r| r.borrow().name() == name)
+                .find(|r| r.name() == name)
                 .cloned()
                 .expect("no such test register")
         }
@@ -870,7 +868,7 @@ mod tests {
 
         let saved = f.state.compute_map_using_stack();
         assert_eq!(saved.len(), 1);
-        assert_eq!(*saved[0].0.borrow(), *rbx.borrow());
+        assert_eq!(*saved[0].0, *rbx);
         assert_eq!(saved[0].1, f.spaces.stack.address(-8));
 
         // Reading it back yields the very symbol that was stored.
@@ -926,7 +924,7 @@ mod tests {
 
         let restored = f.state.compute_map_using_registers();
         assert_eq!(restored.len(), 1);
-        assert_eq!(*restored[0].0.borrow(), *rbx.borrow());
+        assert_eq!(*restored[0].0, *rbx);
         assert_eq!(restored[0].1, f.spaces.stack.address(-8));
     }
 
@@ -939,7 +937,7 @@ mod tests {
         // Untouched, the PC reads as itself: the return address lives in the PC register.
         assert_eq!(
             f.state.compute_address_of_return(),
-            Some(pc.borrow().address().clone())
+            Some(pc.address().clone())
         );
         assert_eq!(f.state.compute_mask_of_return(), -1);
 
@@ -968,7 +966,7 @@ mod tests {
         );
         assert_eq!(
             f.state.compute_address_of_return(),
-            Some(lr.borrow().address().clone())
+            Some(lr.address().clone())
         );
         assert_eq!(f.state.compute_mask_of_return(), -4);
 

@@ -99,7 +99,6 @@ pub trait AbstractMemoryState {
         let reg = self
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.set_value_register(&reg, cval)
     }
 
@@ -134,7 +133,6 @@ pub trait AbstractMemoryState {
         let reg = self
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.get_value_register(&reg)
     }
 
@@ -165,7 +163,6 @@ pub trait AbstractMemoryState {
         let reg = self
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.set_big_value_register(&reg, cval)
     }
 
@@ -204,7 +201,6 @@ pub trait AbstractMemoryState {
         let reg = self
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.get_big_integer_register(&reg)
     }
 
@@ -255,7 +251,7 @@ mod tests {
         }
 
         fn add_register(&mut self, reg: RegisterRef) {
-            let name = reg.borrow().name().to_string();
+            let name = reg.name().to_string();
             self.registers.insert(name, reg);
         }
     }
@@ -354,8 +350,8 @@ mod tests {
         let mut state = TestAbstractMemoryState::new(false);
         let space = ram_space();
         let reg = Register::new("r0", "general reg 0", Address::new(space, 0x20), 4, false, 0);
-        state.set_value_register(&reg.borrow(), 0x11223344).unwrap();
-        assert_eq!(state.get_value_register(&reg.borrow()).unwrap(), 0x11223344);
+        state.set_value_register(&reg, 0x11223344).unwrap();
+        assert_eq!(state.get_value_register(&reg).unwrap(), 0x11223344);
     }
 
     #[test]
@@ -410,8 +406,8 @@ mod tests {
         let mut state = TestAbstractMemoryState::new(false);
         let space = ram_space();
         let reg = Register::new("r1", "general reg 1", Address::new(space, 0x70), 4, false, 0);
-        state.set_big_value_register(&reg.borrow(), 99).unwrap();
-        assert_eq!(state.get_big_integer_register(&reg.borrow()).unwrap(), 99);
+        state.set_big_value_register(&reg, 99).unwrap();
+        assert_eq!(state.get_big_integer_register(&reg).unwrap(), 99);
     }
 
     #[test]

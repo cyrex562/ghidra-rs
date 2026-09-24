@@ -196,7 +196,6 @@ pub fn restore_xml<E: XmlElement>(el: &E, cspec: &dyn CompilerSpec) -> Result<De
         let register = language
             .get_register_by_name(&reg_name)
             .ok_or_else(|| XmlParseException::new(format!("Unknown pentry register: {reg_name}")))?;
-        let register = register.borrow();
         return Ok(DefaultAddressXml::new(
             register.address_space(),
             register.address().offset(),
@@ -250,7 +249,6 @@ fn read_join_xml<E: XmlElement>(
                 let register = language.get_register_by_name(&attr_val).ok_or_else(|| {
                     XmlParseException::new(format!("Unknown pentry register: {attr_val}"))
                 })?;
-                let register = register.borrow();
                 Varnode::new(register.address().clone(), register.bit_length() / 8)
             }
             Some(off_pos) => {
@@ -292,7 +290,6 @@ pub fn restore_xml_with_language<E: XmlElement>(
         let register = language
             .get_register_by_name(&reg_name)
             .ok_or_else(|| XmlParseException::new(format!("Unknown register: {reg_name}")))?;
-        let register = register.borrow();
         return Ok(DefaultAddressXml::new(
             register.address_space(),
             register.address().offset(),
@@ -353,7 +350,6 @@ pub fn restore_range_xml<E: XmlElement>(
         let register = language
             .get_register_by_name(&reg_name)
             .ok_or_else(|| XmlParseException::new(format!("Unknown register: {reg_name}")))?;
-        let register = register.borrow();
         result.space = Some(register.address_space());
         result.offset = register.address().offset();
         last = (result.offset - 1) + register.minimum_byte_size() as i64;

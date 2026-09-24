@@ -933,7 +933,7 @@ mod tests {
     fn unoverridden_processor_context_method_panics_through_trait_object() {
         let stub: Box<dyn Instruction> = Box::new(CountingStub { length: 4 });
         let register = make_register();
-        stub.has_value(&register.borrow());
+        stub.has_value(&register);
     }
 
     fn make_register() -> RegisterRef {

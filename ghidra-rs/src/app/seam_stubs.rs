@@ -6072,7 +6072,7 @@ impl SymEntry {
             // Java's format string spells the first key "entRanage"; kept verbatim.
             Some(reg) => format!(
                 "SymEntry[entRanage={},symRange={},sym={:?}]",
-                reg.borrow().name(),
+                reg.name(),
                 self.sym_range,
                 self.sym
             ),
@@ -6247,7 +6247,7 @@ impl SymStateSpace {
         for ent in self.map.values() {
             match ent.get_register(language) {
                 Some(register) => {
-                    eprintln!("{prefix}{} = {:?}", register.borrow().name(), ent.sym)
+                    eprintln!("{prefix}{} = {:?}", register.name(), ent.sym)
                 }
                 None => eprintln!("{prefix}{}", ent.display(None)),
             }
@@ -6308,7 +6308,6 @@ impl SavedRegisterMap {
     /// ranges, so it only recognizes an access that lies entirely inside one saved register.
     pub fn redirect(&self, address: &Address, size: i32) -> StdOption<Address> {
         for (register, to) in &self.entries {
-            let register = register.borrow();
             let from = register.address();
             if !from.same_address_space(address) {
                 continue;
@@ -6505,7 +6504,7 @@ impl UnwindInfo {
     {
         let of_return = self.of_return.as_ref()?;
         let at = base.add_wrap(of_return.offset());
-        let size = pc.borrow().minimum_byte_size();
+        let size = pc.minimum_byte_size();
         let value = state.inspect_big_integer(&at, size).ok()?;
         Some(code_space.address(value as i64 & self.mask_of_return))
     }

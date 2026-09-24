@@ -135,9 +135,9 @@ mod tests {
         .unwrap();
 
         let ctx = ProgramProcessorContext::new(Box::new(backing), addr(&space, 0x1500));
-        assert!(ctx.has_value(&eax.borrow()));
-        assert_eq!(ctx.get_value(&eax.borrow(), false), Some(0xABCD_1234));
-        assert!(ctx.get_register_value(&eax.borrow()).is_some());
+        assert!(ctx.has_value(&eax));
+        assert_eq!(ctx.get_value(&eax, false), Some(0xABCD_1234));
+        assert!(ctx.get_register_value(&eax).is_some());
     }
 
     #[test]
@@ -156,8 +156,8 @@ mod tests {
         .unwrap();
 
         let ctx = ProgramProcessorContext::new(Box::new(backing), addr(&space, 0x5000));
-        assert!(!ctx.has_value(&eax.borrow()));
-        assert_eq!(ctx.get_value(&eax.borrow(), false), None);
+        assert!(!ctx.has_value(&eax));
+        assert_eq!(ctx.get_value(&eax, false), None);
     }
 
     #[test]
@@ -168,10 +168,10 @@ mod tests {
         let eax = lang.get_register_by_name("eax").unwrap();
 
         let mut ctx = ProgramProcessorContext::new(Box::new(backing), addr(&space, 0x1000));
-        ctx.set_value(&eax.borrow(), 0x99).unwrap();
+        ctx.set_value(&eax, 0x99).unwrap();
 
-        assert!(ctx.has_value(&eax.borrow()));
-        assert_eq!(ctx.get_value(&eax.borrow(), false), Some(0x99));
+        assert!(ctx.has_value(&eax));
+        assert_eq!(ctx.get_value(&eax, false), Some(0x99));
     }
 
     #[test]
@@ -189,7 +189,7 @@ mod tests {
         let recorder = RecordingProgramContext::new(lang.clone());
         let calls = recorder.set_value_calls.clone();
         let mut ctx = ProgramProcessorContext::new(Box::new(recorder), fixed.clone());
-        ctx.set_value(&eax.borrow(), 42).unwrap();
+        ctx.set_value(&eax, 42).unwrap();
 
         let recorded = calls.borrow();
         assert_eq!(recorded.len(), 1);
@@ -209,7 +209,7 @@ mod tests {
         let recorder = RecordingProgramContext::new(lang.clone());
         let calls = recorder.remove_calls.clone();
         let mut ctx = ProgramProcessorContext::new(Box::new(recorder), fixed.clone());
-        ctx.clear_register(&eax.borrow()).unwrap();
+        ctx.clear_register(&eax).unwrap();
 
         let recorded = calls.borrow();
         assert_eq!(recorded.len(), 1);
@@ -228,10 +228,10 @@ mod tests {
         let mut ctx = ProgramProcessorContext::new(Box::new(backing), addr(&space, 0x1000));
         ctx.set_register_value(Box::new(RegisterValue::with_value(eax.clone(), 0x1357)))
             .unwrap();
-        assert_eq!(ctx.get_value(&eax.borrow(), false), Some(0x1357));
+        assert_eq!(ctx.get_value(&eax, false), Some(0x1357));
 
-        ctx.clear_register(&eax.borrow()).unwrap();
-        assert!(!ctx.has_value(&eax.borrow()));
+        ctx.clear_register(&eax).unwrap();
+        assert!(!ctx.has_value(&eax));
     }
 
     #[test]
@@ -242,7 +242,7 @@ mod tests {
 
         let ctx = ProgramProcessorContext::new(Box::new(backing), addr(&space, 0x1000));
         let base = ctx.get_base_context_register().unwrap();
-        assert_eq!(base.borrow().name(), "contextreg");
+        assert_eq!(base.name(), "contextreg");
     }
 
     #[test]
@@ -266,8 +266,8 @@ mod tests {
 
         let mut ctx: Box<dyn ProcessorContext> =
             Box::new(ProgramProcessorContext::new(Box::new(backing), addr(&space, 0x1000)));
-        ctx.set_value(&eax.borrow(), 5).unwrap();
-        assert_eq!(ctx.get_value(&eax.borrow(), false), Some(5));
+        ctx.set_value(&eax, 5).unwrap();
+        assert_eq!(ctx.get_value(&eax, false), Some(5));
     }
 
     /// A `ProgramContext` that records the arguments of every mutating call it receives, so

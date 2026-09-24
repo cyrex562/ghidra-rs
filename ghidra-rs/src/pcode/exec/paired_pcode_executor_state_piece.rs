@@ -183,7 +183,7 @@ where
         let mut result = Vec::with_capacity(left_values.len().min(right_values.len()));
         for (right_register, right_value) in right_values {
             if let Some(pos) =
-                left_values.iter().position(|(reg, _)| *reg.borrow() == *right_register.borrow())
+                left_values.iter().position(|(reg, _)| *reg == right_register)
             {
                 let (_, left_value) = left_values.remove(pos);
                 result.push((right_register, (left_value, right_value)));

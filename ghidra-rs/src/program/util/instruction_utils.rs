@@ -161,10 +161,10 @@ pub trait InstructionUtils: Instruction {
     /// rather than `instr.getProgram().getProgramContext()`.
     fn get_formatted_context_register_value_breakout(&self, indent: &str) -> String {
         let context_reg = match self.get_base_context_register() {
-            Some(reg) if *reg.borrow() != *Register::no_context().borrow() => reg,
+            Some(reg) if *reg != *Register::no_context() => reg,
             _ => return format!("{indent}[Instruction context not defined]"),
         };
-        let value = self.get_register_value(&context_reg.borrow());
+        let value = self.get_register_value(&context_reg);
         get_formatted_register_value_bits(value.as_deref(), indent)
     }
 
@@ -204,7 +204,7 @@ pub fn get_formatted_register_value_bits(value: Option<&dyn RegisterValue>, inde
     };
 
     let base_reg = value.get_register();
-    let base_reg_ref = base_reg.borrow();
+    let base_reg_ref = base_reg;
     if !base_reg_ref.has_children() {
         return format!(
             "{indent}{} == 0x{:x}",
@@ -217,13 +217,13 @@ pub fn get_formatted_register_value_bits(value: Option<&dyn RegisterValue>, inde
     let children = base_reg_ref.child_registers();
     let padded_len = children
         .iter()
-        .map(|reg| reg.borrow().name().len())
+        .map(|reg| reg.name().len())
         .max()
         .unwrap_or(0);
 
     let mut buf = String::new();
     for reg_ref in &children {
-        let reg = reg_ref.borrow();
+        let reg = reg_ref;
         let child_value = value.get_register_value(&reg);
         if !child_value.has_any_value() {
             continue;
@@ -282,7 +282,7 @@ fn format_operand_values(objs: &[OperandValue]) -> Vec<String> {
                 set.insert(format!("const:{}", scalar));
             }
             OperandValue::Register(reg) => {
-                set.insert(reg.borrow().to_string());
+                set.insert(reg.to_string());
             }
             OperandValue::Address(addr) => {
                 set.insert(addr.format(true, 8));
@@ -321,7 +321,6 @@ mod tests {
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::RegisterRef;
     use crate::program::model::listing::instruction::tests::mock_instruction;
-    use std::rc::Rc;
 
     fn register_space() -> Arc<AddressSpace> {
         AddressSpace::new("register", 32, 1, AddressSpaceType::Register, 0)

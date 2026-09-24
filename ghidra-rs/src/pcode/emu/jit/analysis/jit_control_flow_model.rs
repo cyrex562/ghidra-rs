@@ -795,7 +795,7 @@ impl JitControlFlowModel {
             .map(PcodeProgram::get_language)
             .or_else(|| self.language.clone())?;
         let register = language.get_register_at(address, size)?;
-        let name = register.borrow().name().to_owned();
+        let name = register.name().to_owned();
         Some(name)
     }
 

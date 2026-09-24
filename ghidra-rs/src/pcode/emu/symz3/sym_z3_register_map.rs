@@ -31,7 +31,6 @@
 //!   bullet.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::rc::Rc;
 
 use crate::feature::seam_stubs::Z3Context;
 use crate::feature::symz3::model::sym_value_z3::SymValueZ3;
@@ -52,7 +51,7 @@ impl RegKey {
 
 impl PartialEq for RegKey {
     fn eq(&self, other: &Self) -> bool {
-        *self.0.borrow() == *other.0.borrow()
+        *self.0 == *other.0
     }
 }
 
@@ -60,7 +59,7 @@ impl Eq for RegKey {}
 
 impl std::hash::Hash for RegKey {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.borrow().hash(state);
+        self.0.hash(state);
     }
 }
 
@@ -120,12 +119,12 @@ impl SymZ3RegisterMap {
     /// Java: "make this recursive later and get children???" (preserved as-is: this lists only
     /// the base registers actually stored in [`Self::regvals`]).
     pub fn get_register_names(&self) -> Vec<String> {
-        self.regvals.keys().map(|k| k.0.borrow().name().to_string()).collect()
+        self.regvals.keys().map(|k| k.0.name().to_string()).collect()
     }
 
     /// Port of `updateRegister(Register, SymValueZ3)`.
     pub fn update_register(&mut self, ctx: &dyn Z3Context, r: &RegisterRef, update: &SymValueZ3) {
-        let name = r.borrow().name().to_string();
+        let name = r.name().to_string();
         self.register_names_updated.insert(name.clone());
         self.update_register_helper(ctx, r, update);
         self.known_registers.entry(name).or_insert_with(|| r.clone());
@@ -133,7 +132,7 @@ impl SymZ3RegisterMap {
 
     /// Port of the private `updateRegisterHelper(Context, Register, SymValueZ3)`.
     fn update_register_helper(&mut self, ctx: &dyn Z3Context, r: &RegisterRef, update: &SymValueZ3) {
-        if r.borrow().is_base_register() {
+        if r.is_base_register() {
             self.regvals.insert(RegKey(r.clone()), update.clone());
             self.by_offset = None;
             return;
@@ -143,11 +142,11 @@ impl SymZ3RegisterMap {
         let bv = update
             .get_bit_vec_expr(ctx)
             .expect("Java: unchecked getBitVecExpr(ctx) on the update value");
-        let base = r.borrow().get_base_register();
+        let base = r.get_base_register();
         let base_val = self.get_register_helper(ctx, &base);
-        let lsb_in_base = r.borrow().least_significant_bit_in_base_register();
-        let r_bit_length = r.borrow().bit_length();
-        let base_bit_length = base.borrow().bit_length();
+        let lsb_in_base = r.least_significant_bit_in_base_register();
+        let r_bit_length = r.bit_length();
+        let base_bit_length = base.bit_length();
 
         let mut result = if r_bit_length + lsb_in_base < base_bit_length {
             let high = (base_bit_length - 1) as u32;
@@ -179,7 +178,7 @@ impl SymZ3RegisterMap {
 
     /// Port of `getRegister(Register)`.
     pub fn get_register(&mut self, ctx: &dyn Z3Context, r: &RegisterRef) -> SymValueZ3 {
-        let name = r.borrow().name().to_string();
+        let name = r.name().to_string();
         self.register_names_read.insert(name.clone());
         self.known_registers.entry(name).or_insert_with(|| r.clone());
         self.get_register_helper(ctx, r)
@@ -190,23 +189,23 @@ impl SymZ3RegisterMap {
     /// Normally a call to `get` will create a symbolic, but we might want the ability to check if
     /// there is a value.
     pub fn has_value_for_register(&self, r: &RegisterRef) -> bool {
-        if r.borrow().is_base_register() {
+        if r.is_base_register() {
             return self.regvals.contains_key(&RegKey(r.clone()));
         }
-        let base = r.borrow().get_base_register();
+        let base = r.get_base_register();
         self.has_value_for_register(&base)
     }
 
     /// Port of the private `getRegisterHelper(Context, Register)`.
     fn get_register_helper(&mut self, ctx: &dyn Z3Context, r: &RegisterRef) -> SymValueZ3 {
-        if r.borrow().is_base_register() {
+        if r.is_base_register() {
             if let Some(v) = self.regvals.get(&RegKey(r.clone())) {
                 return v.clone();
             }
 
-            let is_flags = r.borrow().group() == Some("FLAGS");
-            let name = r.borrow().name().to_string();
-            let bit_length = r.borrow().bit_length();
+            let is_flags = r.group() == Some("FLAGS");
+            let name = r.name().to_string();
+            let bit_length = r.bit_length();
 
             if is_flags {
                 // We treat flags as special, because we create a single symbolic bit.
@@ -223,9 +222,9 @@ impl SymZ3RegisterMap {
             return di;
         }
 
-        let lsb_in_base = r.borrow().least_significant_bit_in_base_register();
-        let bit_length = r.borrow().bit_length();
-        let base = r.borrow().get_base_register();
+        let lsb_in_base = r.least_significant_bit_in_base_register();
+        let bit_length = r.bit_length();
+        let base = r.get_base_register();
         let base_val = self.get_register_helper(ctx, &base);
 
         let base_bv = base_val
@@ -253,12 +252,12 @@ impl SymZ3RegisterMap {
         z3p: &Z3InfixPrinter,
         r: &RegisterRef,
     ) -> (String, String) {
-        let size_string = format!(":{}", r.borrow().num_bytes() * 8);
+        let size_string = format!(":{}", r.num_bytes() * 8);
         let rv = self.get_register_helper(ctx, r);
 
-        let key = format!("{}{}", r.borrow(), size_string);
+        let key = format!("{}{}", r, size_string);
 
-        if r.borrow().num_bytes() == 1 && rv.has_bool_expr() {
+        if r.num_bytes() == 1 && rv.has_bool_expr() {
             let e = rv.get_bool_expr(ctx).expect("hasBoolExpr() implies getBoolExpr succeeds");
             // Java: `e = (BoolExpr) e.simplify();` -- not modeled; see the module docs.
             return (key, z3p.infix_top_level(e.as_expr()));
@@ -317,7 +316,7 @@ impl SymZ3RegisterMap {
         if self.by_offset.is_none() {
             let mut map = BTreeMap::new();
             for (key, val) in self.regvals.iter() {
-                map.insert(key.0.borrow().address().offset(), val.clone());
+                map.insert(key.0.address().offset(), val.clone());
             }
             self.by_offset = Some(map);
         }

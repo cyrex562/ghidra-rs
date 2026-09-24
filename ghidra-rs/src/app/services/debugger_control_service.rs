@@ -71,7 +71,7 @@ pub trait StateEditor {
     /// Sets the value of a register.
     fn set_register(&self, value: &dyn RegisterValue) -> StateEditFuture {
         let register_ref = value.get_register();
-        let register = register_ref.borrow();
+        let register = register_ref;
         let bytes = unsigned_value_to_bytes(
             value.get_unsigned_value_ignore_mask(),
             register.num_bytes(),
@@ -187,7 +187,7 @@ mod tests {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let address = Address::new(space, 0);
         let register_ref = Register::new("r0", "", address, 4, false, 0);
-        let register = register_ref.borrow();
+        let register = register_ref;
         assert!(editor.is_register_editable(&register));
     }
 

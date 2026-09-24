@@ -532,7 +532,7 @@ mod tests {
         let mut emu = test_emulator();
         emu.set_context_register_value(&TestRegisterValue { register: register.clone() });
         assert_eq!(
-            emu.get_context_register_value().get_register().borrow().name(),
+            emu.get_context_register_value().get_register().name(),
             "ctx"
         );
     }

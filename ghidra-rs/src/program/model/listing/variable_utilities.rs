@@ -769,7 +769,7 @@ fn make_pointer(
 }
 
 fn shrink_register(reg: &RegisterRef, size_reduction: i32) -> Varnode {
-    let r = reg.borrow();
+    let r = reg;
     if r.is_big_endian() {
         let addr = r
             .address()
@@ -913,11 +913,11 @@ fn expand_varnode(
 
     if let Some(mut new_reg) = reg {
         loop {
-            let too_small = new_reg.borrow().minimum_byte_size() < size;
+            let too_small = new_reg.minimum_byte_size() < size;
             if !too_small {
                 break;
             }
-            let parent = new_reg.borrow().parent_register();
+            let parent = new_reg.parent_register();
             match parent {
                 Some(p) => new_reg = p,
                 None => {
@@ -929,9 +929,9 @@ fn expand_varnode(
                 }
             }
         }
-        vn_addr = new_reg.borrow().address().clone();
+        vn_addr = new_reg.address().clone();
         if big_endian {
-            let msb = new_reg.borrow().minimum_byte_size();
+            let msb = new_reg.minimum_byte_size();
             vn_addr = vn_addr
                 .add((msb - size) as i64)
                 .map_err(|_| InvalidInputException::with_message("address overflow while expanding storage"))?;

@@ -2,7 +2,6 @@
 //!
 //! Corresponds to `ghidra.pcode.exec.PcodeArithmetic`.
 
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -237,7 +236,7 @@ pub trait PcodeArithmetic<T> {
     /// Convert the given constant concrete register value to type `T`.
     fn from_const_register_value(&self, value: &dyn RegisterValue) -> T {
         let register = value.get_register();
-        let reg = register.borrow();
+        let reg = register;
         self.from_const_big_int(
             value.get_unsigned_value_ignore_mask() as i128,
             reg.num_bytes(),
@@ -272,7 +271,7 @@ pub trait PcodeArithmetic<T> {
         value: &T,
         purpose: Purpose,
     ) -> Result<(RegisterRef, i128), ConcretionError> {
-        let effective_purpose = if register.borrow().is_processor_context() {
+        let effective_purpose = if register.is_processor_context() {
             Purpose::Context
         } else {
             purpose

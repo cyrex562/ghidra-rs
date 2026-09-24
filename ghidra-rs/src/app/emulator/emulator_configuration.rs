@@ -50,7 +50,7 @@ pub trait EmulatorConfiguration {
         let lang = self.get_language();
         match lang.get_program_counter() {
             Some(pc_reg) => {
-                let pc = pc_reg.borrow();
+                let pc = pc_reg;
                 pc.name().to_string()
             }
             None => {
@@ -286,7 +286,7 @@ mod tests {
 
         fn get_register_names(&self) -> Vec<String> {
             if let Some(ref pc) = self.pc_register {
-                vec![pc.borrow().name().to_string()]
+                vec![pc.name().to_string()]
             } else {
                 vec![]
             }
@@ -294,7 +294,7 @@ mod tests {
 
         fn get_register_by_name(&self, name: &str) -> Option<crate::program::model::lang::register::RegisterRef> {
             if let Some(ref pc) = self.pc_register {
-                if pc.borrow().name() == name {
+                if pc.name() == name {
                     return Some(pc.clone());
                 }
             }

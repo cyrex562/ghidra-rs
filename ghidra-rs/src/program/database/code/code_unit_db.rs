@@ -575,7 +575,7 @@ impl CodeUnitDbBase {
             .get_reference_manager()
             .lock()
             .unwrap()
-            .add_register_reference(address, op_index, &register.borrow(), ref_type, source_type);
+            .add_register_reference(address, op_index, &register, ref_type, source_type);
     }
 
     // -- PropertySet ------------------------------------------------------------------------
@@ -1209,7 +1209,7 @@ use crate::program::model::listing::CommentType;
         assert!(dyn_overridden.has_been_deleted(None));
         assert!(dyn_overridden.refresh(None) == false);
 
-        assert!(mock_register().borrow().name() == "context");
+        assert!(mock_register().name() == "context");
     }
 
     // =======================================================================================

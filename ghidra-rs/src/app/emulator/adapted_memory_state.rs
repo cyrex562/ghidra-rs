@@ -84,7 +84,6 @@ impl<T> MemoryState for AdaptedMemoryState<T> {
             .language
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.set_value_register(&reg, cval)
     }
 
@@ -116,7 +115,6 @@ impl<T> MemoryState for AdaptedMemoryState<T> {
             .language
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.get_value_register(&reg)
     }
 
@@ -144,7 +142,6 @@ impl<T> MemoryState for AdaptedMemoryState<T> {
             .language
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.set_big_value_register(&reg, cval)
     }
 
@@ -176,7 +173,6 @@ impl<T> MemoryState for AdaptedMemoryState<T> {
             .language
             .get_register_by_name(nm)
             .ok_or_else(|| LowlevelError::with_message(format!("unknown register: {nm}")))?;
-        let reg = reg.borrow();
         self.get_big_integer_register(&reg)
     }
 
@@ -679,8 +675,8 @@ mod tests {
             false,
             0,
         );
-        mem.set_value_register(&reg.borrow(), 0x11223344).unwrap();
-        assert_eq!(mem.get_value_register(&reg.borrow()).unwrap(), 0x11223344);
+        mem.set_value_register(&reg, 0x11223344).unwrap();
+        assert_eq!(mem.get_value_register(&reg).unwrap(), 0x11223344);
     }
 
     #[test]

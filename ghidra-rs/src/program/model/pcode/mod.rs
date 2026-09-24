@@ -1035,7 +1035,7 @@ impl Varnode {
     pub fn to_string_with_language(&self, language: &dyn Language) -> String {
         if self.is_address() || self.is_register() {
             if let Some(reg) = language.get_register_at(&self.address, self.size) {
-                return reg.borrow().name().to_string();
+                return reg.name().to_string();
             }
         }
         if self.is_unique() {
@@ -2397,7 +2397,7 @@ mod tests {
         ) -> Option<crate::program::model::lang::register::RegisterRef> {
             self.registers
                 .iter()
-                .find(|r| r.borrow().address() == addr && r.borrow().minimum_byte_size() == size)
+                .find(|r| r.address() == addr && r.minimum_byte_size() == size)
                 .cloned()
         }
         fn get_program_counter(&self) -> Option<crate::program::model::lang::register::RegisterRef> {

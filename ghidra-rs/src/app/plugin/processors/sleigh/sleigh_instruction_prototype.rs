@@ -359,7 +359,7 @@ fn to_memory_error(e: SleighError) -> MemoryAccessException {
 /// Java-style equality of two operand objects (Java puts them in a `HashSet<Object>`).
 fn same_object(a: &OperandValue, b: &OperandValue) -> bool {
     match (a, b) {
-        (OperandValue::Register(x), OperandValue::Register(y)) => *x.borrow() == *y.borrow(),
+        (OperandValue::Register(x), OperandValue::Register(y)) => *x == *y,
         (OperandValue::Address(x), OperandValue::Address(y)) => x == y,
         (OperandValue::Scalar(x), OperandValue::Scalar(y)) => {
             x.get_unsigned_value() == y.get_unsigned_value()
@@ -2430,7 +2430,7 @@ mod decode_tests {
     }
 
     fn register_name(reg: &RegisterRef) -> String {
-        reg.borrow().name().to_string()
+        reg.name().to_string()
     }
 
     #[test]

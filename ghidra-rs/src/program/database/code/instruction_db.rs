@@ -1148,7 +1148,7 @@ impl Instruction for InstructionDB {
                     buffer.push_str(&op_addr.format(false, 1));
                 }
                 // Everything else is Java's `opElem.toString()`.
-                OperandValue::Register(register) => buffer.push_str(register.borrow().name()),
+                OperandValue::Register(register) => buffer.push_str(register.name()),
                 OperandValue::Scalar(scalar) => buffer.push_str(&scalar.to_string()),
                 OperandValue::Character(c) => buffer.push(c),
                 OperandValue::Text(text) => buffer.push_str(&text),

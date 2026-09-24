@@ -34,7 +34,7 @@ impl AbstractProgramContext {
     pub fn new(language: Arc<dyn Language>) -> Self {
         let base_context_register = language.get_context_base_register().unwrap_or_else(Register::no_context);
         let default_disassembly_context = RegisterValue::new(base_context_register.clone());
-        let mask_len = base_context_register.borrow().base_mask().len();
+        let mask_len = base_context_register.base_mask().len();
 
         let mut ctx = Self {
             language,
@@ -56,8 +56,8 @@ impl AbstractProgramContext {
     /// Set those bits in `non_flowing_context_register_mask` which should not flow with
     /// context.
     fn init_context_bit_masks(&mut self, context_reg: &RegisterRef) {
-        let sub_mask = context_reg.borrow().base_mask();
-        if !context_reg.borrow().follows_flow() {
+        let sub_mask = context_reg.base_mask();
+        if !context_reg.follows_flow() {
             self.has_non_flowing_context = true;
             for i in 0..self.non_flowing_context_register_mask.len() {
                 self.non_flowing_context_register_mask[i] |= sub_mask[i];
@@ -67,8 +67,8 @@ impl AbstractProgramContext {
             for i in 0..self.flowing_context_register_mask.len() {
                 self.flowing_context_register_mask[i] |= sub_mask[i];
             }
-            if context_reg.borrow().has_children() {
-                for child_reg in context_reg.borrow().child_registers() {
+            if context_reg.has_children() {
+                for child_reg in context_reg.child_registers() {
                     self.init_context_bit_masks(&child_reg);
                 }
             }
@@ -81,7 +81,7 @@ impl AbstractProgramContext {
     pub fn init(&mut self, language: Arc<dyn Language>) {
         let base_context_register = language.get_context_base_register().unwrap_or_else(Register::no_context);
         let default_disassembly_context = RegisterValue::new(base_context_register.clone());
-        let mask_len = base_context_register.borrow().base_mask().len();
+        let mask_len = base_context_register.base_mask().len();
 
         self.language = language;
         self.base_context_register = base_context_register;
@@ -102,7 +102,7 @@ impl AbstractProgramContext {
     /// Modify a register value to eliminate non-flowing bits, returning a value suitable for
     /// flowing.
     pub fn get_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Box<dyn RegisterValueTrait> {
-        if !self.has_non_flowing_context || !value.get_register().borrow().is_processor_context() {
+        if !self.has_non_flowing_context || !value.get_register().is_processor_context() {
             return value;
         }
         let concrete = RegisterValue::from_trait_object(value.as_ref());
@@ -113,7 +113,7 @@ impl AbstractProgramContext {
     /// does not correspond to a context register or no non-flowing context fields have been
     /// defined.
     pub fn get_non_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Option<Box<dyn RegisterValueTrait>> {
-        if !self.has_non_flowing_context || !value.get_register().borrow().is_processor_context() {
+        if !self.has_non_flowing_context || !value.get_register().is_processor_context() {
             return None;
         }
         let concrete = RegisterValue::from_trait_object(value.as_ref());
@@ -416,10 +416,10 @@ mod tests {
             self.registers.clone()
         }
         fn get_register_names(&self) -> Vec<String> {
-            self.registers.iter().map(|r| r.borrow().name().to_string()).collect()
+            self.registers.iter().map(|r| r.name().to_string()).collect()
         }
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
-            self.registers.iter().find(|r| r.borrow().name() == name).cloned()
+            self.registers.iter().find(|r| r.name() == name).cloned()
         }
         fn get_register_at(&self, _addr: &Address, _size: i32) -> Option<RegisterRef> {
             None
@@ -432,7 +432,7 @@ mod tests {
         }
         fn get_context_registers(&self) -> Vec<RegisterRef> {
             match &self.context_base {
-                Some(base) => base.borrow().child_registers(),
+                Some(base) => base.child_registers(),
                 None => Vec::new(),
             }
         }
@@ -550,7 +550,7 @@ mod tests {
     #[test]
     fn base_context_register_and_registers_delegate_to_language() {
         let ctx = test_context();
-        assert_eq!(ctx.get_base_context_register().borrow().name(), "contextreg");
+        assert_eq!(ctx.get_base_context_register().name(), "contextreg");
         assert_eq!(ctx.get_context_registers().len(), 2);
         assert!(ctx.get_register("r0").is_some());
         assert!(ctx.get_register("nonexistent").is_none());
@@ -610,6 +610,6 @@ mod tests {
 
         ctx.init(Arc::new(language_without_context()));
         assert!(!ctx.has_non_flowing_context());
-        assert_eq!(ctx.get_base_context_register().borrow().name(), "NO_CONTEXT");
+        assert_eq!(ctx.get_base_context_register().name(), "NO_CONTEXT");
     }
 }

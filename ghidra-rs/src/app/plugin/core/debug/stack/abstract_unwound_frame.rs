@@ -570,7 +570,7 @@ where
         }
         let arithmetic = BytesPcodeArithmetic::for_language(&base.language);
         let bytes =
-            arithmetic.from_const_u64(addr.offset() as u64, base.pc.borrow().num_bytes());
+            arithmetic.from_const_u64(addr.offset() as u64, base.pc.num_bytes());
         editor.set_variable(&self.compute_address_of_return_address(), &bytes)
     }
 
@@ -588,7 +588,6 @@ mod tests {
 
     use std::cell::RefCell;
     use std::collections::{HashMap, HashSet};
-    use std::rc::Rc;
 
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
     use crate::pcode::exec::pcode_arithmetic::Purpose;
@@ -656,7 +655,7 @@ mod tests {
     fn register_named(spaces: &TestSpaces, name: &str) -> RegisterRef {
         registers(&spaces.register)
             .into_iter()
-            .find(|r| r.borrow().name() == name)
+            .find(|r| r.name() == name)
             .expect("test register")
     }
 
@@ -918,7 +917,7 @@ mod tests {
         fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
             self.registers
                 .iter()
-                .filter(|r| r.borrow().address() == address)
+                .filter(|r| r.address() == address)
                 .cloned()
                 .collect()
         }
@@ -936,20 +935,19 @@ mod tests {
         fn get_register_names(&self) -> Vec<String> {
             self.registers
                 .iter()
-                .map(|r| r.borrow().name().to_string())
+                .map(|r| r.name().to_string())
                 .collect()
         }
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
             self.registers
                 .iter()
-                .find(|r| r.borrow().name() == name)
+                .find(|r| r.name() == name)
                 .cloned()
         }
         fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
             self.registers
                 .iter()
                 .find(|r| {
-                    let r = r.borrow();
                     r.address() == addr && (size == 0 || r.minimum_byte_size() == size)
                 })
                 .cloned()
@@ -1176,7 +1174,7 @@ mod tests {
         // Java: language = platform.getLanguage(); codeSpace = language.getDefaultSpace();
         // pc = language.getProgramCounter().
         assert_eq!(base.code_space.name(), "ram");
-        assert_eq!(base.pc.borrow().name(), "PC");
+        assert_eq!(base.pc.name(), "PC");
         assert_eq!(base.snap, DebuggerCoordinates::nowhere().get_snap());
         assert_eq!(base.view_snap, DebuggerCoordinates::nowhere().get_view_snap());
         assert!(base.trace.is_none());
@@ -1209,11 +1207,11 @@ mod tests {
 
         // getValue(Register) reads through the SavedRegisterMap, so it sees the saved value, not
         // the one still in the register bank.
-        assert_eq!(frame.get_register_value(&rbx.borrow()), 0x2222);
+        assert_eq!(frame.get_register_value(&rbx), 0x2222);
 
         // A register the frame never saved reads straight through.
         let pc = register_named(&spaces, "PC");
-        assert_eq!(frame.get_register_value(&pc.borrow()), 0);
+        assert_eq!(frame.get_register_value(&pc), 0);
     }
 
     #[test]
@@ -1296,7 +1294,7 @@ mod tests {
         let scratch = spaces.register.address(0x100);
         let storage = VarnodeListStorage(vec![
             Varnode::new(scratch.clone(), 2),
-            Varnode::new(rbx.borrow().address().clone(), 2),
+            Varnode::new(rbx.address().clone(), 2),
         ]);
         let _ = frame.set_value(&editor, program, &storage, 0x1122_3344);
 
@@ -1382,7 +1380,7 @@ mod tests {
         assert_eq!(map.size(), 1);
         // The map redirects a read of the whole register, and nothing else.
         assert_eq!(
-            map.redirect(rbx.borrow().address(), 8),
+            map.redirect(rbx.address(), 8),
             Some(spaces.ram.address(0x7fff_0000))
         );
         assert_eq!(map.redirect(&spaces.ram.address(0x1000), 8), None);

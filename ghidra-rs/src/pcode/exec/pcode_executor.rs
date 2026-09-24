@@ -125,7 +125,7 @@ impl<T: 'static> PcodeExecutor<T> {
     ) -> Self {
         let pc = language.get_program_counter();
         let pc_size = match &pc {
-            Some(pc) => pc.borrow().num_bytes(),
+            Some(pc) => pc.num_bytes(),
             None => language.get_default_space().pointer_size(),
         };
         PcodeExecutor { language, arithmetic, state, reason, pc, pc_size }
@@ -485,7 +485,7 @@ impl<T: 'static> PcodeExecutor<T> {
             .pc
             .as_ref()
             .expect("cannot branch: the language declares no program counter");
-        let out_size = pc.borrow().minimum_byte_size();
+        let out_size = pc.minimum_byte_size();
         let trunc_off = self.arithmetic.unary_op(
             OpCode::Copy,
             out_size,
@@ -1167,7 +1167,7 @@ mod tests {
         // Java: `pcSize = pc != null ? pc.getNumBytes() : ...`. The mock's pc is 4 bytes.
         let exec = executor_with(&s, true);
         assert_eq!(exec.get_pc_size(), 4);
-        assert_eq!(exec.get_program_counter().unwrap().borrow().name(), "pc");
+        assert_eq!(exec.get_program_counter().unwrap().name(), "pc");
 
         // Java: `... : language.getDefaultSpace().getPointerSize()`. "ram" is 32 bits => 4 bytes.
         let exec = executor_with(&s, false);

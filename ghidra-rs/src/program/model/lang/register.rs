@@ -736,11 +736,6 @@ impl Register {
         a.id == b.id && Arc::ptr_eq(&a.store, &b.store)
     }
 
-    /// Migration shim for code written against `Rc<RefCell<Register>>`: returns `self`.
-    pub fn borrow(&self) -> &Register {
-        self
-    }
-
     fn handle(&self, id: RegisterId) -> Register {
         Register { store: Arc::clone(&self.store), id }
     }

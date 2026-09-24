@@ -376,7 +376,7 @@ mod tests {
         // Both mock registers live in the register space; TaintSpace.getRegisterValues sizes each
         // vector to the register but (as in Java) leaves its sets empty.
         let shown: Vec<(String, String)> =
-            values.iter().map(|(r, v)| (r.borrow().name().to_string(), v.to_display())).collect();
+            values.iter().map(|(r, v)| (r.name().to_string(), v.to_display())).collect();
         assert_eq!(
             shown,
             vec![

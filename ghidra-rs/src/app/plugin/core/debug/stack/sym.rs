@@ -3,7 +3,6 @@
 //! Port of `ghidra.app.plugin.core.debug.stack.Sym` (a Java `sealed interface`, so a Rust
 //! `enum`: the set of alternatives is closed by construction).
 
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType, SpecialAddress};
@@ -167,11 +166,10 @@ impl Sym {
         match self {
             Sym::Opaque => panic!("UnsupportedOperationException: size_of on the opaque symbol"),
             Sym::Const { size, .. } => *size as i64,
-            Sym::Register { register, .. } => register.borrow().minimum_byte_size() as i64,
+            Sym::Register { register, .. } => register.minimum_byte_size() as i64,
             Sym::StackOffset { .. } => c_spec
                 .get_stack_pointer()
                 .expect("compiler spec has no stack pointer")
-                .borrow()
                 .minimum_byte_size() as i64,
             Sym::StackDeref { size, .. } => *size as i64,
         }
@@ -217,7 +215,7 @@ impl Sym {
 fn is_stack_pointer(register: &RegisterRef, c_spec: &dyn CompilerSpec) -> bool {
     match c_spec.get_stack_pointer() {
         None => false,
-        Some(sp) => crate::program::model::lang::Register::same(register, &sp) || *register.borrow() == *sp.borrow(),
+        Some(sp) => crate::program::model::lang::Register::same(register, &sp) || *register == sp,
     }
 }
 

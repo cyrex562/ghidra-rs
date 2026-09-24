@@ -434,7 +434,7 @@ impl JavaLoader {
         use crate::program::model::address::AddressSetView;
 
         let Some(register_ref) = self.alignment_reg.as_ref() else { return };
-        let register = register_ref.borrow();
+        let register = register_ref;
         let mut alignment_value: i128 = 3;
         for address in set.addresses(true) {
             if let Some(context) = program.get_program_context() {

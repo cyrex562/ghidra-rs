@@ -456,8 +456,7 @@ impl DisassemblerPlugin {
         let Some(base_context_reg) = language.get_context_base_register() else {
             return false;
         };
-        let base_context_reg = base_context_reg.borrow();
-        *base_context_reg != *Register::no_context().borrow() && base_context_reg.has_children()
+        *base_context_reg != *Register::no_context() && base_context_reg.has_children()
     }
 
     /// Port of `disassembleArmCallback(ListingActionContext, boolean)`.
@@ -776,7 +775,6 @@ mod tests {
     use super::*;
 
     use std::collections::HashSet as StdHashSet;
-    use std::rc::Rc;
     use std::sync::atomic::AtomicUsize;
 
     use crate::app::seam_stubs::Navigatable;

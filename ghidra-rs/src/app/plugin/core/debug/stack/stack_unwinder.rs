@@ -446,7 +446,7 @@ where
             {
                 let range = self
                     .platform
-                    .get_conventional_register_range(&regs.address_space(), &register.borrow());
+                    .get_conventional_register_range(&regs.address_space(), &register);
                 if TraceMemoryState::Known == regs.get_state(view_snap, range.min_address()) {
                     let mut buf = vec![0u8; range.length() as usize];
                     regs.get_bytes(view_snap, range.min_address(), &mut buf);
@@ -513,7 +513,7 @@ where
         let Some(static_pc_loc) = self.get_program_location(snap, pc_val) else {
             return Err(UnwindFailure::Unwind(UnwindException::new(format!(
                 "Cannot find static program for frame  ({}={})",
-                self.pc.borrow().name(),
+                self.pc.name(),
                 pc_val
             ))));
         };
@@ -853,7 +853,7 @@ mod tests {
         fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
             self.registers
                 .iter()
-                .filter(|r| r.borrow().address() == address)
+                .filter(|r| r.address() == address)
                 .cloned()
                 .collect()
         }
@@ -871,20 +871,19 @@ mod tests {
         fn get_register_names(&self) -> Vec<String> {
             self.registers
                 .iter()
-                .map(|r| r.borrow().name().to_string())
+                .map(|r| r.name().to_string())
                 .collect()
         }
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
             self.registers
                 .iter()
-                .find(|r| r.borrow().name() == name)
+                .find(|r| r.name() == name)
                 .cloned()
         }
         fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
             self.registers
                 .iter()
                 .find(|r| {
-                    let r = r.borrow();
                     r.address() == addr && (size == 0 || r.minimum_byte_size() == size)
                 })
                 .cloned()
@@ -1006,7 +1005,7 @@ mod tests {
             if self.has_sp {
                 self.registers
                     .iter()
-                    .find(|r| r.borrow().name() == "SP")
+                    .find(|r| r.name() == "SP")
                     .cloned()
             } else {
                 None
@@ -1343,8 +1342,8 @@ mod tests {
     #[test]
     fn the_constructor_takes_the_pc_and_code_space_from_the_language_and_the_sp_from_the_spec() {
         let u = unwinder(true, true);
-        assert_eq!(u.pc.borrow().name(), "PC");
-        assert_eq!(u.sp.borrow().name(), "SP");
+        assert_eq!(u.pc.name(), "PC");
+        assert_eq!(u.sp.name(), "SP");
         // Java uses `platform.getLanguage().getDefaultSpace()` for the code space, not the
         // compiler spec's stack space.
         assert_eq!(u.code_space.name(), "ram");
@@ -1448,7 +1447,7 @@ mod tests {
         let spaces = TestSpaces::new();
         let sp_reg = test_registers(&spaces.register)
             .into_iter()
-            .find(|r| r.borrow().name() == "SP")
+            .find(|r| r.name() == "SP")
             .unwrap();
         let stack = spaces.ram.address(0x7fff0000);
 

@@ -717,7 +717,7 @@ impl RmiClient {
         let values = values
             .iter()
             .map(|rv| RegVal {
-                name: rv.register().borrow().name().to_string(),
+                name: rv.register().name().to_string(),
                 value: rv.to_bytes(),
             })
             .collect();

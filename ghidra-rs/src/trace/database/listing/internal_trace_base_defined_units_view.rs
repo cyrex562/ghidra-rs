@@ -363,7 +363,7 @@ mod tests {
             &mut view,
             &HostPlatform,
             Lifespan::span(0, 10),
-            &reg.borrow(),
+            &reg,
             &NeverCancelled,
         )
         .expect("clear should succeed when not cancelled");
@@ -386,7 +386,7 @@ mod tests {
             &mut view,
             &HostPlatform,
             Lifespan::span(0, 10),
-            &reg.borrow(),
+            &reg,
             &AlwaysCancelled,
         );
 
@@ -411,7 +411,7 @@ mod tests {
             units: vec![(space.address(0x100), 0, 10)],
         });
         boxed
-            .clear_platform_register(&HostPlatform, Lifespan::span(0, 10), &reg.borrow(), &NeverCancelled)
+            .clear_platform_register(&HostPlatform, Lifespan::span(0, 10), &reg, &NeverCancelled)
             .expect("clear should succeed when not cancelled");
         assert_eq!(boxed.size(), 0);
     }

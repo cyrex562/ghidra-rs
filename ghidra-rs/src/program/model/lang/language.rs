@@ -893,7 +893,7 @@ mod tests {
         assert_eq!(language.get_language_id().get_id_as_string(), "x86:LE:32:default");
         assert!(!language.is_big_endian());
         assert!(language.supports_pcode());
-        assert_eq!(language.get_register_by_name("r0").unwrap().borrow().name(), "r0");
+        assert_eq!(language.get_register_by_name("r0").unwrap().name(), "r0");
         assert!(language.get_register_by_name("bogus").is_none());
         assert_eq!(language.get_maximum_instruction_length(), Some(16));
         assert!(language

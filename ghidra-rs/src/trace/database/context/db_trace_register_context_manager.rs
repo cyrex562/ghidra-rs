@@ -797,29 +797,29 @@ mod tests {
         let lifespan = Lifespan::span(0, 10);
         let value = MockRegisterValue { register: register.clone(), value: 0x2a };
 
-        assert!(!mgr.has_register_value(&language, &register.borrow(), 0));
+        assert!(!mgr.has_register_value(&language, &register, 0));
 
         mgr.set_value(&language, &value, lifespan, &range);
 
-        assert!(mgr.has_register_value(&language, &register.borrow(), 0));
-        assert!(mgr.has_register_value_in_address_range(&language, &register.borrow(), 0, &range));
+        assert!(mgr.has_register_value(&language, &register, 0));
+        assert!(mgr.has_register_value_in_address_range(&language, &register, 0, &range));
 
-        let got = mgr.get_value(&language, &register.borrow(), 0, &addr).unwrap();
+        let got = mgr.get_value(&language, &register, 0, &addr).unwrap();
         assert_eq!(got.get_unsigned_value_ignore_mask(), 0x2a);
 
-        let ranges = mgr.get_register_value_address_ranges(&language, &register.borrow(), 0);
+        let ranges = mgr.get_register_value_address_ranges(&language, &register, 0);
         assert!(ranges.contains(&addr));
 
-        let (entry_range, entry_value) = mgr.get_entry(&language, &register.borrow(), 0, &addr).unwrap();
+        let (entry_range, entry_value) = mgr.get_entry(&language, &register, 0, &addr).unwrap();
         assert_eq!(entry_range.get_range(), range);
         assert_eq!(entry_value.get_unsigned_value_ignore_mask(), 0x2a);
 
-        mgr.remove_value(&language, &register.borrow(), lifespan, &range);
-        assert!(!mgr.has_register_value(&language, &register.borrow(), 0));
+        mgr.remove_value(&language, &register, lifespan, &range);
+        assert!(!mgr.has_register_value(&language, &register, 0));
 
         mgr.set_value(&language, &value, lifespan, &range);
         mgr.clear(lifespan, &range);
-        assert!(!mgr.has_register_value(&language, &register.borrow(), 0));
+        assert!(!mgr.has_register_value(&language, &register, 0));
     }
 
     #[test]
@@ -829,7 +829,7 @@ mod tests {
         let addr = Address::new(ram_space("ram"), 4);
         let language = MockLanguage;
 
-        let value = mgr.get_default_value(&language, &register.borrow(), &addr).unwrap();
+        let value = mgr.get_default_value(&language, &register, &addr).unwrap();
         assert_eq!(value.get_unsigned_value_ignore_mask(), 0xdefa17);
     }
 
@@ -840,7 +840,7 @@ mod tests {
         let addr = Address::new(ram_space("ram"), 4);
         let platform = MockPlatform { language: MockLanguage };
 
-        let value = mgr.get_value_with_default(&platform, &register.borrow(), 0, &addr).unwrap();
+        let value = mgr.get_value_with_default(&platform, &register, 0, &addr).unwrap();
         assert_eq!(value.get_unsigned_value_ignore_mask(), 0xdefa17);
     }
 

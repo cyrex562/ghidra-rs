@@ -44,7 +44,7 @@ impl RegisterValueStore {
     /// Constructs a new store for `register`'s base register, backed by `range_map`.
     pub fn new(register: &RegisterRef, range_map: Box<dyn RangeMapAdapter>, enable_range_write_cache: bool) -> Self {
         Self {
-            base_register: register.borrow().get_base_register(),
+            base_register: register.get_base_register(),
             range_map,
             range_write_cache_enabled: enable_range_write_cache,
             range_write_cache: None,
@@ -161,7 +161,7 @@ impl RegisterValueStore {
 
         self.flush_write_cache();
 
-        let is_base = register.is_none_or(|r| r.borrow().is_base_register());
+        let is_base = register.is_none_or(|r| r.is_base_register());
         if is_base {
             self.range_map.clear_range(start, end);
             return;
@@ -176,9 +176,9 @@ impl RegisterValueStore {
             let range_start = index_range.min_address().clone();
             let range_end = index_range.max_address().clone();
 
-            let mask = register.borrow().base_mask();
+            let mask = register.base_mask();
             let current_base_bytes = self.range_map.get_value(&range_start).unwrap_or_default();
-            let current_base_value = RegisterValue::from_bytes(register.borrow().get_base_register(), &current_base_bytes);
+            let current_base_value = RegisterValue::from_bytes(register.get_base_register(), &current_base_bytes);
             let new_base_value = current_base_value.clear_bit_values(&mask);
 
             if !new_base_value.has_any_value() {
@@ -243,14 +243,14 @@ impl RegisterValueStore {
 
         // NOTE: mirrors Java's own "// TODO: What should we do if new register is not a
         // base-register? - The code below will not work!" -- ported as-is.
-        let needs_update = new_reg.borrow().is_processor_context()
-            || !new_reg.borrow().is_base_register()
-            || new_reg.borrow().name() != self.base_register.borrow().name()
-            || new_reg.borrow().bit_length() != self.base_register.borrow().bit_length();
+        let needs_update = new_reg.is_processor_context()
+            || !new_reg.is_base_register()
+            || new_reg.name() != self.base_register.name()
+            || new_reg.bit_length() != self.base_register.bit_length();
 
         if needs_update {
             self.range_map.set_language(translator, &self.base_register, monitor)?;
-            self.base_register = new_reg.borrow().get_base_register();
+            self.base_register = new_reg.get_base_register();
         }
         Ok(true)
     }
@@ -268,7 +268,7 @@ impl RegisterValueStore {
 }
 
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    crate::program::model::lang::Register::same(a, b) || a.borrow().name() == b.borrow().name()
+    crate::program::model::lang::Register::same(a, b) || a.name() == b.name()
 }
 
 #[cfg(test)]

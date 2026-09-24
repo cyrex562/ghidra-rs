@@ -131,7 +131,6 @@ impl PowerPcElfRelocationContext {
             return;
         };
 
-        let reg = reg.borrow();
         for block in memory.get_blocks() {
             if block.is_execute() {
                 // No instructions should exist yet, so a `ContextChangeException` here would be

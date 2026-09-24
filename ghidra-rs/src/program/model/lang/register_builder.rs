@@ -360,7 +360,7 @@ mod tests {
         assert_eq!(manager.get_registers().len(), 1);
 
         let eax = manager.get_register_by_name("EAX").unwrap();
-        assert!(eax.borrow().aliases().any(|a| a == "R0"));
+        assert!(eax.aliases().any(|a| a == "R0"));
 
         let r0 = manager.get_register_by_name("R0").unwrap();
         assert!(Register::same(&eax, &r0));
@@ -397,7 +397,7 @@ mod tests {
 
         let manager = builder.register_manager();
         let reg = manager.get_register_by_name("L_0_8").unwrap();
-        assert_eq!(reg.borrow().name(), "L_0_8");
+        assert_eq!(reg.name(), "L_0_8");
         let via_alias = manager.get_register_by_name("L08").unwrap();
         assert!(Register::same(&reg, &via_alias));
         let via_lowercase = manager.get_register_by_name("l_0_8").unwrap();
@@ -438,9 +438,9 @@ mod tests {
 
         let manager = builder.register_manager();
         let v0 = manager.get_register_by_name("V0").unwrap();
-        assert_eq!(v0.borrow().group(), Some("vector"));
-        assert!(v0.borrow().is_vector_register());
-        assert!(v0.borrow().is_valid_lane_size(4));
+        assert_eq!(v0.group(), Some("vector"));
+        assert!(v0.is_vector_register());
+        assert!(v0.is_valid_lane_size(4));
     }
 
     #[test]
@@ -462,11 +462,11 @@ mod tests {
 
         let manager = builder.register_manager();
         let parent = manager.get_register_by_name("L_0_8").unwrap();
-        assert!(parent.borrow().has_children());
-        assert_eq!(parent.borrow().child_registers().len(), 2);
+        assert!(parent.has_children());
+        assert_eq!(parent.child_registers().len(), 2);
 
         let child = manager.get_register_by_name("L_0_4").unwrap();
-        let child_parent = child.borrow().parent_register().unwrap();
+        let child_parent = child.parent_register().unwrap();
         assert!(Register::same(&parent, &child_parent));
     }
 }

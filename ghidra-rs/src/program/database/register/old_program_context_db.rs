@@ -238,8 +238,8 @@ impl OldProgramContextDB {
 
     /// Port of `OldProgramContextDB.getRegisterValues(Register, Address, Address)`.
     pub fn get_register_values(&self, reg: &RegisterRef, start: &Address, end: &Address) -> Vec<RegisterValueRange> {
-        let offset = Self::get_register_offset(&reg.borrow());
-        let change_points = self.get_change_points(start, end, offset, reg.borrow().minimum_byte_size());
+        let offset = Self::get_register_offset(&reg);
+        let change_points = self.get_change_points(start, end, offset, reg.minimum_byte_size());
 
         let mut ranges = Vec::new();
         let mut current_address = start.clone();
@@ -281,13 +281,13 @@ impl OldProgramContextDB {
 
     /// Port of `OldProgramContextDB.getRegisterValue(Register, Address)`.
     fn get_register_value_concrete(&self, register: &RegisterRef, address: &Address) -> RegisterValue {
-        let base_reg = register.borrow().get_base_register();
-        let size = base_reg.borrow().minimum_byte_size();
-        let offset = Self::get_register_offset(&register.borrow());
+        let base_reg = register.get_base_register();
+        let size = base_reg.minimum_byte_size();
+        let offset = Self::get_register_offset(&register);
 
         let mut bytes = vec![0u8; 2 * size as usize];
         for i in 0..size {
-            let index = if register.borrow().is_big_endian() { i } else { size - i - 1 };
+            let index = if register.is_big_endian() { i } else { size - i - 1 };
             match self.get_byte(offset + i, address) {
                 Some(b) => {
                     bytes[(size + index) as usize] = b as u8;
@@ -372,9 +372,9 @@ impl ProgramContext for OldProgramContextDB {
         }
         let mut found = Vec::new();
         for register in self.get_registers() {
-            let has_current = self.get_register_value_address_ranges(&register.borrow()).next().is_some();
+            let has_current = self.get_register_value_address_ranges(&register).next().is_some();
             let has_default =
-                has_current || self.get_default_register_value_address_ranges(&register.borrow()).next().is_some();
+                has_current || self.get_default_register_value_address_ranges(&register).next().is_some();
             if has_current || has_default {
                 found.push(register);
             }
@@ -446,7 +446,7 @@ impl ProgramContext for OldProgramContextDB {
 
     fn get_default_register_value_address_ranges(&self, register: &Register) -> Box<dyn AddressRangeIterator> {
         let reg = self.resolve(register);
-        let key = reg.borrow().get_base_register().borrow().name().to_string();
+        let key = reg.get_base_register().name().to_string();
         match self.default_register_value_map.get(&key) {
             Some(store) if !store.borrow().is_empty() => store.borrow_mut().get_address_range_iterator(),
             _ => Box::new(AddressRangeIteratorAdapter::new(Vec::new())),
@@ -460,7 +460,7 @@ impl ProgramContext for OldProgramContextDB {
         end: &Address,
     ) -> Box<dyn AddressRangeIterator> {
         let reg = self.resolve(register);
-        let key = reg.borrow().get_base_register().borrow().name().to_string();
+        let key = reg.get_base_register().name().to_string();
         match self.default_register_value_map.get(&key) {
             Some(store) if !store.borrow().is_empty() => store.borrow_mut().get_address_range_iterator_in_range(start, end),
             _ => Box::new(AddressRangeIteratorAdapter::new(Vec::new())),
@@ -485,7 +485,7 @@ impl ProgramContext for OldProgramContextDB {
 
     fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
         let reg = self.resolve(register);
-        let key = reg.borrow().get_base_register().borrow().name().to_string();
+        let key = reg.get_base_register().name().to_string();
         let store = self.default_register_value_map.get(&key)?;
         store.borrow().get_value(&reg, address).map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
     }
@@ -511,8 +511,8 @@ impl ProgramContext for OldProgramContextDB {
 impl DefaultProgramContext for OldProgramContextDB {
     fn set_default_value(&mut self, register_value: Box<dyn RegisterValueTrait>, start: &Address, end: &Address) {
         let concrete = RegisterValue::from_trait_object(register_value.as_ref());
-        let base_register = concrete.register().borrow().get_base_register();
-        let key = base_register.borrow().name().to_string();
+        let base_register = concrete.register().get_base_register();
+        let key = base_register.name().to_string();
         if !self.default_register_value_map.contains_key(&key) {
             let adapter: Box<dyn RangeMapAdapter> = Box::new(InMemoryRangeMapAdapter::new());
             self.default_register_value_map
@@ -561,7 +561,7 @@ mod tests {
         let ctx = new_reader(Arc::new(test_language()));
         let space = ram_space();
         let r0 = ctx.get_register("r0").unwrap();
-        let value = ProgramContext::get_register_value(&ctx, &r0.borrow(), &addr(&space, 0x1000)).unwrap();
+        let value = ProgramContext::get_register_value(&ctx, &r0, &addr(&space, 0x1000)).unwrap();
         assert!(!value.has_any_value());
     }
 
@@ -578,7 +578,7 @@ mod tests {
             &addr(&space, 0xFFFF),
         );
 
-        let got = ProgramContext::get_default_value(&ctx, &r0.borrow(), &addr(&space, 0x1000)).unwrap();
+        let got = ProgramContext::get_default_value(&ctx, &r0, &addr(&space, 0x1000)).unwrap();
         assert_eq!(got.get_unsigned_value_ignore_mask(), 0x77);
     }
 
@@ -587,7 +587,7 @@ mod tests {
         let lang = test_language();
         let r0 = lang.get_register_by_name("r0").unwrap();
         // `r0` is a normal (non-bit, non-context) register: offset is just its own byte offset.
-        assert_eq!(OldProgramContextDB::get_register_offset(&r0.borrow()), r0.borrow().offset());
+        assert_eq!(OldProgramContextDB::get_register_offset(&r0), r0.offset());
     }
 
     #[test]

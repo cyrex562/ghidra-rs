@@ -252,7 +252,6 @@ pub trait AbstractPcodeFormatter {
         let register =
             language.get_register_at(&addr_space.address(offset_value), size_value as i32);
         if let Some(register) = register {
-            let register = register.borrow();
             appender.append_register(&register);
             if register.minimum_byte_size() as i64 > size_value {
                 appender.append_character(':');
@@ -524,7 +523,7 @@ mod tests {
         /// Any lookup landing exactly on EAX's address resolves to EAX, whatever the requested
         /// size -- enough to exercise both the plain and truncated (`EAX:2`) register branches.
         fn get_register_at(&self, addr: &Address, _size: i32) -> Option<RegisterRef> {
-            (*addr == *self.eax.borrow().address()).then(|| self.eax.clone())
+            (*addr == *self.eax.address()).then(|| self.eax.clone())
         }
         fn get_program_counter(&self) -> Option<RegisterRef> {
             None

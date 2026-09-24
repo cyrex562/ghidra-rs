@@ -211,11 +211,11 @@ mod tests {
         }
 
         fn get_register_names(&self) -> Vec<String> {
-            self.registers.iter().map(|r| r.borrow().name().to_string()).collect()
+            self.registers.iter().map(|r| r.name().to_string()).collect()
         }
 
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
-            self.registers.iter().find(|r| r.borrow().name() == name).cloned()
+            self.registers.iter().find(|r| r.name() == name).cloned()
         }
 
         fn get_register_at(&self, _addr: &Address, _size: i32) -> Option<RegisterRef> {
@@ -580,35 +580,35 @@ mod tests {
         let mut ops: Box<dyn TraceRegisterContextOperations> =
             Box::new(MockOperations { entries: RefCell::new(HashMap::new()) });
 
-        assert!(!ops.has_register_value(&language, &register.borrow(), 0));
+        assert!(!ops.has_register_value(&language, &register, 0));
 
         let value = MockRegisterValue { register: register.clone(), value: 0x2a };
         ops.set_value(&language, &value, lifespan, &range);
 
-        assert!(ops.has_register_value(&language, &register.borrow(), 0));
-        assert!(ops.has_register_value_in_address_range(&language, &register.borrow(), 0, &range));
+        assert!(ops.has_register_value(&language, &register, 0));
+        assert!(ops.has_register_value_in_address_range(&language, &register, 0, &range));
 
-        let got = ops.get_value(&language, &register.borrow(), 0, &addr).unwrap();
+        let got = ops.get_value(&language, &register, 0, &addr).unwrap();
         assert_eq!(got.get_unsigned_value_ignore_mask(), 0x2a);
 
         let got_default = ops
-            .get_value_with_default(&platform, &register.borrow(), 0, &addr)
+            .get_value_with_default(&platform, &register, 0, &addr)
             .unwrap();
         assert_eq!(got_default.get_unsigned_value_ignore_mask(), 0x2a);
 
-        let ranges = ops.get_register_value_address_ranges(&language, &register.borrow(), 0);
+        let ranges = ops.get_register_value_address_ranges(&language, &register, 0);
         assert!(ranges.contains(&addr));
 
         let (entry_range, entry_value) =
-            ops.get_entry(&language, &register.borrow(), 0, &addr).unwrap();
+            ops.get_entry(&language, &register, 0, &addr).unwrap();
         assert_eq!(entry_range.get_range(), range);
         assert_eq!(entry_value.get_unsigned_value_ignore_mask(), 0x2a);
 
-        ops.remove_value(&language, &register.borrow(), lifespan, &range);
-        assert!(!ops.has_register_value(&language, &register.borrow(), 0));
+        ops.remove_value(&language, &register, lifespan, &range);
+        assert!(!ops.has_register_value(&language, &register, 0));
 
         ops.set_value(&language, &value, lifespan, &range);
         ops.clear(lifespan, &range);
-        assert!(!ops.has_register_value(&language, &register.borrow(), 0));
+        assert!(!ops.has_register_value(&language, &register, 0));
     }
 }

@@ -81,7 +81,7 @@ impl ContextSetting {
         let register = language.get_register_by_name(&name).ok_or_else(|| {
             ContextSettingParseError::with_message(format!("Unknown register: {name}"))
         })?;
-        let is_processor_context = register.borrow().is_processor_context();
+        let is_processor_context = register.is_processor_context();
         if is_context_reg {
             if !is_processor_context {
                 return Err(ContextSettingParseError::with_message(format!(
@@ -125,7 +125,7 @@ impl ContextSetting {
     /// Returns an error for problems writing to the underlying stream.
     pub fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
         encoder.open_element(ELEM_SET)?;
-        encoder.write_string(ATTRIB_NAME, &self.register.borrow().name().to_string())?;
+        encoder.write_string(ATTRIB_NAME, &self.register.name().to_string())?;
         encoder.write_string(ATTRIB_VAL, &self.value.to_string())?;
         encoder.close_element(ELEM_SET)
     }
@@ -136,7 +136,7 @@ impl ContextSetting {
     pub fn is_equivalent(&self, other: &ContextSetting) -> bool {
         self.start_addr == other.start_addr
             && self.end_addr == other.end_addr
-            && *self.register.borrow() == *other.register.borrow()
+            && *self.register == *other.register
             && self.value == other.value
     }
 
@@ -231,7 +231,7 @@ impl ContextSetting {
         // refers to the "current" setting under consideration, whether or not it has been
         // written yet.
         let mut start_context = iter.next().expect("checked non-empty above");
-        let mut is_context_reg = start_context.register.borrow().is_processor_context();
+        let mut is_context_reg = start_context.register.is_processor_context();
         let mut first_addr = start_context.start_addr.clone();
         let mut last_addr = start_context.end_addr.clone();
         // NOTE: mirroring Java exactly -- this outer loop's condition is checked *after* the
@@ -244,7 +244,7 @@ impl ContextSetting {
             start_context.encode(encoder)?;
             while let Some(next) = iter.next() {
                 start_context = next;
-                let next_is_context = start_context.register.borrow().is_processor_context();
+                let next_is_context = start_context.register.is_processor_context();
                 let mut should_break = false;
                 if is_context_reg != next_is_context {
                     is_context_reg = next_is_context;

@@ -1007,7 +1007,6 @@ impl DecompileDebugFormatManager {
             log.append_msg(format!("Unknown context register: {}", reg_name));
             return;
         };
-        let register = register.borrow();
         if let Err(e) = program_context.set_value(&register, addr, addr, reg_val) {
             log.append_exception(&e);
         }

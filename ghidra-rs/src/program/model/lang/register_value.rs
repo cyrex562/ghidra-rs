@@ -96,19 +96,19 @@ impl RegisterValue {
     pub const MAX_BASE_REGISTER_BYTES: usize = 16;
 
     fn base_byte_size(register: &RegisterRef) -> usize {
-        let n = register.borrow().get_base_register().borrow().base_mask().len();
+        let n = register.get_base_register().base_mask().len();
         assert!(
             n <= Self::MAX_BASE_REGISTER_BYTES,
             "RegisterValue: base register '{}' is {n} bytes, exceeding the {}-byte limit imposed \
              by this crate's u128-based RegisterValue seam trait (get_unsigned_value_ignore_mask)",
-            register.borrow().get_base_register().borrow().name(),
+            register.get_base_register().name(),
             Self::MAX_BASE_REGISTER_BYTES
         );
         n
     }
 
     fn bit_range(register: &RegisterRef) -> (i32, i32) {
-        let reg = register.borrow();
+        let reg = register;
         let start = reg.least_significant_bit_in_base_register();
         let end = start + reg.bit_length() - 1;
         (start, end)
@@ -140,7 +140,7 @@ impl RegisterValue {
         let shifted = if start_bit >= 128 { 0 } else { masked_value << start_bit };
         let value_bytes = u128_to_bytes_be(shifted, n);
 
-        let register_mask = register.borrow().base_mask();
+        let register_mask = register.base_mask();
         let mut bytes = vec![0u8; n * 2];
         for i in 0..n {
             bytes[i] = register_mask[i];
@@ -175,7 +175,7 @@ impl RegisterValue {
             adjusted[2 * n - keep..].copy_from_slice(&bytes[bytes.len() - keep..]);
         }
 
-        let register_mask = register.borrow().base_mask();
+        let register_mask = register.base_mask();
         for i in 0..n {
             adjusted[i] &= register_mask[i];
             adjusted[n + i] &= register_mask[i];
@@ -199,13 +199,13 @@ impl RegisterValue {
     }
 
     fn check_base_register(&self, other: &RegisterRef) {
-        let self_base = self.register.borrow().get_base_register();
-        let other_base = other.borrow().get_base_register();
+        let self_base = self.register.get_base_register();
+        let other_base = other.get_base_register();
         assert!(
             same_register(&self_base, &other_base),
             "Register '{}' does not share common base register '{}'",
-            other.borrow().name(),
-            self_base.borrow().name()
+            other.name(),
+            self_base.name()
         );
     }
 
@@ -228,7 +228,7 @@ impl RegisterValue {
     ///
     /// Port of `RegisterValue.getBaseRegisterValue()`.
     pub fn base_register_value(&self) -> RegisterValue {
-        Self::from_bytes(self.register.borrow().get_base_register(), &self.bytes)
+        Self::from_bytes(self.register.get_base_register(), &self.bytes)
     }
 
     fn n(&self) -> usize {
@@ -250,7 +250,7 @@ impl RegisterValue {
     /// Port of `RegisterValue.combineValues(RegisterValue)`.
     pub fn combine_values(&self, other_value: &RegisterValue) -> RegisterValue {
         self.check_base_register(&other_value.register);
-        let base_register = self.register.borrow().get_base_register();
+        let base_register = self.register.get_base_register();
         let result_register =
             if reg_eq(&self.register, &other_value.register) { self.register.clone() } else { base_register };
 
@@ -286,7 +286,7 @@ impl RegisterValue {
     ///
     /// Port of `RegisterValue.getBaseValueMask()`.
     pub fn base_value_mask(&self) -> Vec<u8> {
-        let mask = self.register.borrow().base_mask();
+        let mask = self.register.base_mask();
         let mut out = vec![0u8; mask.len()];
         for i in 0..mask.len() {
             out[i] = mask[i] & self.bytes[i];
@@ -382,7 +382,7 @@ impl RegisterValue {
 /// definition, so name equality is the faithful analog here when the `Rc` pointers themselves
 /// differ (e.g. a register reached via two different traversal paths).
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    crate::program::model::lang::Register::same(a, b) || a.borrow().name() == b.borrow().name()
+    crate::program::model::lang::Register::same(a, b) || a.name() == b.name()
 }
 
 fn reg_eq(a: &RegisterRef, b: &RegisterRef) -> bool {
@@ -399,9 +399,9 @@ impl RegisterValueTrait for RegisterValue {
         // find the equivalent `RegisterRef` by walking from our own register up to its base and
         // back down, matching by name (see `reg_eq`'s doc comment for why name-equality is the
         // right analog of Java's reference equality in this port).
-        let base = self.register.borrow().get_base_register();
+        let base = self.register.get_base_register();
         let target = find_by_name(&base, register.name())
-            .unwrap_or_else(|| panic!("register '{}' not reachable from base '{}'", register.name(), base.borrow().name()));
+            .unwrap_or_else(|| panic!("register '{}' not reachable from base '{}'", register.name(), base.name()));
         Box::new(RegisterValue::get_register_value(self, &target))
     }
 
@@ -424,10 +424,10 @@ impl RegisterValueTrait for RegisterValue {
 }
 
 fn find_by_name(reg: &RegisterRef, name: &str) -> Option<RegisterRef> {
-    if reg.borrow().name() == name {
+    if reg.name() == name {
         return Some(reg.clone());
     }
-    for child in reg.borrow().child_registers() {
+    for child in reg.child_registers() {
         if let Some(found) = find_by_name(&child, name) {
             return Some(found);
         }
@@ -541,7 +541,7 @@ mod tests {
     fn clear_bit_values_removes_masked_bits() {
         let mut reg = base_register("r0", 4);
         let value = RegisterValue::with_value(reg.clone(), 0xFFFF_FFFF);
-        let low_byte_mask = child_register(&mut reg, "r0l", 0, 1).borrow().base_mask();
+        let low_byte_mask = child_register(&mut reg, "r0l", 0, 1).base_mask();
 
         let cleared = value.clear_bit_values(&low_byte_mask);
         assert!(!cleared.has_value()); // no longer fully specified

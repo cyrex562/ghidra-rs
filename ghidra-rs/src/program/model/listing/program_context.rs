@@ -366,7 +366,7 @@ mod tests {
         let mut ctx: Box<dyn ProgramContext> = Box::new(MockProgramContext);
 
         let reg_ref = mock_register();
-        let reg = reg_ref.borrow();
+        let reg = reg_ref;
 
         assert!(!ctx.has_non_flowing_context());
         assert!(ctx.get_registers().is_empty());

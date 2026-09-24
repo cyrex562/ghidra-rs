@@ -194,7 +194,7 @@ impl ProgramRegisterContextDB {
     }
 
     fn check_context_write(&self, reg: &RegisterRef, start: &Address, end: &Address) -> Result<(), ContextChangeException> {
-        if self.changing || !same_register(&reg.borrow().get_base_register(), &self.context.get_base_context_register()) {
+        if self.changing || !same_register(&reg.get_base_register(), &self.context.get_base_context_register()) {
             return Ok(());
         }
         match &self.program {
@@ -302,9 +302,9 @@ impl ProgramRegisterContextDB {
             // instead: iterate the register's current value ranges and remove each one.
             let base_reg = self.context.get_base_context_register();
             let ranges: Vec<crate::program::model::address::AddressRange> =
-                ProgramContext::get_register_value_address_ranges(&self.context, &base_reg.borrow()).collect();
+                ProgramContext::get_register_value_address_ranges(&self.context, &base_reg).collect();
             for range in ranges {
-                let _ = ProgramContext::remove(&mut self.context, range.min_address(), range.max_address(), &base_reg.borrow());
+                let _ = ProgramContext::remove(&mut self.context, range.min_address(), range.max_address(), &base_reg);
             }
         }
         Self::initialize_default_values(&mut self.context, language.as_ref(), new_compiler_spec);
@@ -348,7 +348,7 @@ impl ProgramRegisterContextDB {
 }
 
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    crate::program::model::lang::Register::same(a, b) || a.borrow().name() == b.borrow().name()
+    crate::program::model::lang::Register::same(a, b) || a.name() == b.name()
 }
 
 fn invalidate_read_cache(context: &mut AbstractStoredProgramContext) {
@@ -388,7 +388,7 @@ mod tests {
         }
 
         fn set_register_values_changed(&mut self, register: Option<&RegisterRef>, start: &Address, end: &Address) {
-            self.notified.push((register.map(|r| r.borrow().name().to_string()), start.offset(), end.offset()));
+            self.notified.push((register.map(|r| r.name().to_string()), start.offset(), end.offset()));
         }
     }
 
@@ -423,7 +423,7 @@ mod tests {
         ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), Box::new(RegisterValue::with_value(r0.clone(), 0xCAFE)))
             .expect("set should succeed");
 
-        let got = ProgramContext::get_register_value(&ctx.context, &r0.borrow(), &addr(&space, 0x1005)).unwrap();
+        let got = ProgramContext::get_register_value(&ctx.context, &r0, &addr(&space, 0x1005)).unwrap();
         assert_eq!(got.get_unsigned_value_ignore_mask(), 0xCAFE);
     }
 
@@ -485,9 +485,9 @@ mod tests {
 
         ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), Box::new(RegisterValue::with_value(r0.clone(), 1)))
             .unwrap();
-        ctx.remove(&addr(&space, 0x1000), &addr(&space, 0x1010), &r0.borrow()).unwrap();
+        ctx.remove(&addr(&space, 0x1000), &addr(&space, 0x1010), &r0).unwrap();
 
-        assert!(ProgramContext::get_register_value(&ctx.context, &r0.borrow(), &addr(&space, 0x1005)).is_none());
+        assert!(ProgramContext::get_register_value(&ctx.context, &r0, &addr(&space, 0x1005)).is_none());
     }
 
     #[test]
@@ -497,6 +497,6 @@ mod tests {
         let ctx = new_context_db(Arc::new(test_language()));
         let r0 = ctx.context.get_register("r0").unwrap();
         let space = ram_space();
-        assert!(ProgramContext::get_default_value(&ctx.context, &r0.borrow(), &addr(&space, 0x1000)).is_none());
+        assert!(ProgramContext::get_default_value(&ctx.context, &r0, &addr(&space, 0x1000)).is_none());
     }
 }

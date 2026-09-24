@@ -562,7 +562,7 @@ pub trait SymbolUtilities {
                 let abs_stack_offset = (v.get_offset() as i32).wrapping_abs();
                 buffy.push_str(&format!("{:x}", abs_stack_offset));
             } else if let Some(reg) = program.get_register_at(addr) {
-                buffy.push_str(reg.borrow().name());
+                buffy.push_str(reg.name());
             } else {
                 buffy.push_str(&get_variable_address_string(addr));
             }

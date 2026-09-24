@@ -865,7 +865,7 @@ mod tests {
         fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
             self.registers
                 .iter()
-                .filter(|r| r.borrow().address() == address)
+                .filter(|r| r.address() == address)
                 .cloned()
                 .collect()
         }
@@ -883,20 +883,19 @@ mod tests {
         fn get_register_names(&self) -> Vec<String> {
             self.registers
                 .iter()
-                .map(|r| r.borrow().name().to_string())
+                .map(|r| r.name().to_string())
                 .collect()
         }
         fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
             self.registers
                 .iter()
-                .find(|r| r.borrow().name() == name)
+                .find(|r| r.name() == name)
                 .cloned()
         }
         fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
             self.registers
                 .iter()
                 .find(|r| {
-                    let r = r.borrow();
                     r.address() == addr && (size == 0 || r.minimum_byte_size() == size)
                 })
                 .cloned()

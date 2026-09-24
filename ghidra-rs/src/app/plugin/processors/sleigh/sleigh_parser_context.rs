@@ -512,7 +512,7 @@ impl SleighParserContext {
     ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
         use crate::program::model::lang::language::Language;
         let base = self.language.as_ref()?.get_context_base_register()?;
-        let ctx_byte_len = base.borrow().minimum_byte_size().max(0) as usize;
+        let ctx_byte_len = base.minimum_byte_size().max(0) as usize;
         // convert context int words to byte array for RegisterValue use
         let mut ctx_value_bytes = vec![0u8; ctx_byte_len];
         for (i, &word) in self.context.borrow().iter().enumerate() {

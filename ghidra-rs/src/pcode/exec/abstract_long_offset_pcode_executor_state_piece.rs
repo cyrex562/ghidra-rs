@@ -277,7 +277,7 @@ where
     {
         let mut regs_by_space: Vec<(Arc<AddressSpace>, Vec<RegisterRef>)> = Vec::new();
         for register in piece.base().language().get_registers() {
-            let space = register.borrow().address_space();
+            let space = register.address_space();
             match regs_by_space.iter_mut().find(|(s, _)| *s == space) {
                 Some((_, registers)) => registers.push(register),
                 None => regs_by_space.push((space, vec![register])),
@@ -742,7 +742,7 @@ mod tests {
                 .iter()
                 .map(|register| {
                     let (offset, size) = {
-                        let reg = register.borrow();
+                        let reg = register;
                         (reg.address().offset(), reg.minimum_byte_size())
                     };
                     (register.clone(), space.read(offset, size))
@@ -1031,7 +1031,7 @@ mod tests {
 
         // MockLanguage reports R0 (register space) and RAM0 (ram space); only R0's space exists.
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0].0.borrow().name(), "R0");
+        assert_eq!(values[0].0.name(), "R0");
         assert_eq!(values[0].1, vec![0x11, 0x22]);
     }
 
@@ -1047,7 +1047,6 @@ mod tests {
         assert_eq!(into[&ram_space()].read(0x10, 3), vec![1, 2, 3]);
     }
 
-    use std::rc::Rc;
 
     /// A language exposing just what this class needs: an address factory (for the unique space)
     /// and a register list spanning two address spaces.

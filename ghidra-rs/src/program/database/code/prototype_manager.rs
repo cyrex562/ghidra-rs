@@ -152,7 +152,7 @@ mod tests {
 
             let context_value = context
                 .get_base_context_register()
-                .and_then(|reg| context.get_value(&reg.borrow(), false));
+                .and_then(|reg| context.get_value(&reg, false));
 
             let length = prototype.get_length();
             self.by_id.borrow_mut().insert(
@@ -499,7 +499,7 @@ mod tests {
             false,
             0,
         );
-        let base_reg = base_reg_ref.borrow();
+        let base_reg = base_reg_ref;
         assert!(manager
             .get_original_prototype_context(proto_a.as_ref(), &base_reg)
             .unwrap()

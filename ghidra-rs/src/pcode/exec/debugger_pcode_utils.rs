@@ -635,7 +635,6 @@ where
             .into_iter()
             .map(|(reg, bytes)| {
                 let (space, offset, size) = {
-                    let reg = reg.borrow();
                     (reg.address_space(), reg.address().offset(), reg.num_bytes())
                 };
                 let value = WatchValue::new(
@@ -845,7 +844,6 @@ where
 mod tests {
     use super::*;
     use std::collections::{HashMap, HashSet};
-    use std::rc::Rc;
 
     use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
     use crate::pcode::utils::{bytes_to_long, long_to_bytes};

@@ -297,7 +297,7 @@ mod tests {
             register_utils: MockRegisterUtils,
         };
         let register = make_register(0x1000, 4);
-        space.set_register_on_platform(&HostPlatform, Lifespan::span(0, 10), &register.borrow(), 42);
+        space.set_register_on_platform(&HostPlatform, Lifespan::span(0, 10), &register, 42);
 
         assert_eq!(space.get(5, &addr(0x1000)), Some(42));
         assert_eq!(space.get(5, &addr(0x1003)), Some(42));
@@ -312,12 +312,12 @@ mod tests {
             register_utils: MockRegisterUtils,
         };
         let register = make_register(0x2000, 8);
-        space.set_register_on_platform(&HostPlatform, Lifespan::span(0, 10), &register.borrow(), 7);
+        space.set_register_on_platform(&HostPlatform, Lifespan::span(0, 10), &register, 7);
 
         let found = space.get_entries_for_register_on_platform(
             &HostPlatform,
             Lifespan::span(0, 10),
-            &register.borrow(),
+            &register,
         );
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].1, 7);
@@ -327,7 +327,7 @@ mod tests {
             .get_entries_for_register_on_platform(
                 &HostPlatform,
                 Lifespan::span(0, 10),
-                &other_register.borrow(),
+                &other_register,
             )
             .is_empty());
     }
@@ -346,11 +346,11 @@ mod tests {
             9,
         );
 
-        let cleared = space.clear_register(Lifespan::span(0, 10), &register.borrow());
+        let cleared = space.clear_register(Lifespan::span(0, 10), &register);
         assert!(cleared);
         assert_eq!(space.get(5, &addr(0x4000)), None);
 
-        let cleared_again = space.clear_register(Lifespan::span(0, 10), &register.borrow());
+        let cleared_again = space.clear_register(Lifespan::span(0, 10), &register);
         assert!(!cleared_again);
     }
 }

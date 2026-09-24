@@ -472,7 +472,7 @@ fn record_context_register_info(
     };
     for (info, register) in context_register_info.iter_mut().zip(registers) {
         if let Some(register) = register {
-            let value = program_context.get_value(&register.borrow(), &entry_point, false);
+            let value = program_context.get_value(&register, &entry_point, false);
             info.set_value(value);
         }
     }

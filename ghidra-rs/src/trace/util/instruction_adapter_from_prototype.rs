@@ -202,7 +202,7 @@ pub trait InstructionAdapterFromPrototype: TraceInstruction {
                     sb.push_str("0x");
                     sb.push_str(&addr.format(false, 8));
                 }
-                OperandValue::Register(r) => sb.push_str(&r.borrow().to_string()),
+                OperandValue::Register(r) => sb.push_str(&r.to_string()),
                 OperandValue::Scalar(s) => sb.push_str(&s.to_string()),
                 OperandValue::Character(c) => sb.push(c),
                 OperandValue::Text(s) => sb.push_str(&s),

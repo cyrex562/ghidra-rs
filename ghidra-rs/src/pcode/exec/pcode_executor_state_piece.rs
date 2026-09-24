@@ -230,7 +230,6 @@ pub trait PcodeExecutorStatePiece<A, T> {
     /// Port of `setVar(Register, T)`. Like Java's default, it quantizes.
     fn set_var_register(&mut self, reg: &RegisterRef, val: &T) {
         let (space, offset, size) = {
-            let reg = reg.borrow();
             let address = reg.address();
             (Arc::clone(address.space()), address.offset(), reg.minimum_byte_size())
         };
@@ -242,7 +241,6 @@ pub trait PcodeExecutorStatePiece<A, T> {
     /// Port of `getVar(Register, Reason)`.
     fn get_var_register(&self, reg: &RegisterRef, reason: Reason) -> T {
         let (space, offset, size) = {
-            let reg = reg.borrow();
             let address = reg.address();
             (Arc::clone(address.space()), address.offset(), reg.minimum_byte_size())
         };

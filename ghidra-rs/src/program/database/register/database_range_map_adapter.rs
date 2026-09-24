@@ -41,7 +41,7 @@ impl DatabaseRangeMapAdapter {
         addr_map: Arc<RwLock<AddressMapDB>>,
         error_handler: Arc<dyn ErrorHandler>,
     ) -> io::Result<Self> {
-        let map_name = format!("{}{}", Self::NAME_PREFIX, register.borrow().name());
+        let map_name = format!("{}{}", Self::NAME_PREFIX, register.name());
         let table_name = Self::table_name(&map_name);
         let range_map =
             AddressRangeMapDB::new(db_handle, addr_map, table_name, FieldType::Binary, false)?;
@@ -225,11 +225,11 @@ impl RangeMapAdapter for DatabaseRangeMapAdapter {
             return Ok(());
         };
 
-        let new_base_reg = new_reg.borrow().get_base_register();
-        let new_map_name = format!("{}{}", Self::NAME_PREFIX, new_base_reg.borrow().name());
+        let new_base_reg = new_reg.get_base_register();
+        let new_map_name = format!("{}{}", Self::NAME_PREFIX, new_base_reg.name());
 
         let value_translation_required = translator.is_value_translation_required(map_reg);
-        if new_reg.borrow().is_base_register() && !value_translation_required {
+        if new_reg.is_base_register() && !value_translation_required {
             if self.map_name == new_map_name {
                 return Ok(()); // Nothing to change.
             }

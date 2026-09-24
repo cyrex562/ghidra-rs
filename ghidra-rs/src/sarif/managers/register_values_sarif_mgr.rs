@@ -100,8 +100,6 @@ impl RegisterValuesSarifMgr {
             None => Vec::new(),
         };
         regs.sort_by(|a, b| {
-            let a = a.borrow();
-            let b = b.borrow();
             a.minimum_byte_size()
                 .cmp(&b.minimum_byte_size())
                 .then_with(|| a.offset().cmp(&b.offset()))
@@ -237,7 +235,7 @@ fn apply_register_value(
         return Ok(());
     };
 
-    let reg_borrow = reg.borrow();
+    let reg_borrow = reg;
     context.set_value(&reg_borrow, start, end, Some(value))?;
     Ok(())
 }
@@ -290,7 +288,7 @@ mod tests {
             None
         }
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            self.registers.iter().find(|r| r.borrow().name() == name).cloned()
+            self.registers.iter().find(|r| r.name() == name).cloned()
         }
         fn get_registers(&self) -> Vec<RegisterRef> {
             self.registers.clone()
@@ -357,7 +355,7 @@ mod tests {
             Ok(())
         }
         fn get_register_names(&self) -> Vec<String> {
-            self.registers.iter().map(|r| r.borrow().name().to_string()).collect()
+            self.registers.iter().map(|r| r.name().to_string()).collect()
         }
         fn has_value_over_range(&self, _reg: &Register, _value: i128, _addr_set: &dyn AddressSetView) -> bool {
             false
@@ -483,11 +481,9 @@ mod tests {
 
         let mut regs = vec![mock_register("big", 0, 8), mock_register("small_hi", 8, 4), mock_register("small_lo", 0, 4)];
         regs.sort_by(|a, b| {
-            let a = a.borrow();
-            let b = b.borrow();
             a.minimum_byte_size().cmp(&b.minimum_byte_size()).then_with(|| a.offset().cmp(&b.offset()))
         });
-        let names: Vec<String> = regs.iter().map(|r| r.borrow().name().to_string()).collect();
+        let names: Vec<String> = regs.iter().map(|r| r.name().to_string()).collect();
         assert_eq!(names, vec!["small_lo", "small_hi", "big"]);
     }
 

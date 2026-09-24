@@ -159,7 +159,7 @@ impl TaintSpace {
         registers
             .iter()
             .map(|r| {
-                let num_bytes = r.borrow().num_bytes();
+                let num_bytes = r.num_bytes();
                 (RegisterRef::clone(r), TaintVec::new(num_bytes as usize))
             })
             .collect()
@@ -356,9 +356,9 @@ mod tests {
 
         // Java's loop looks each byte up but never stores it, so even R0's vector is empty.
         assert_eq!(values.len(), 2);
-        assert_eq!(values[0].0.borrow().name(), "R0");
+        assert_eq!(values[0].0.name(), "R0");
         assert_eq!(values[0].1.to_display(), "[][][][]");
-        assert_eq!(values[1].0.borrow().name(), "R1");
+        assert_eq!(values[1].0.name(), "R1");
         assert_eq!(values[1].1.to_display(), "[][]");
     }
 }

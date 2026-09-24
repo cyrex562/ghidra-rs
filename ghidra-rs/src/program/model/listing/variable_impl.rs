@@ -257,15 +257,15 @@ pub fn init_fields(
     }
 
     if let Some(register) = register {
-        let reg_size = register.borrow().minimum_byte_size();
+        let reg_size = register.minimum_byte_size();
         let dt = vu.check_data_type_for_program(Some(data_type), false, reg_size, program)?;
         let size = dt.get_length();
-        let reg_addr = register.borrow().address().clone();
+        let reg_addr = register.address().clone();
         if reg_size < size {
             if !force {
                 return Err(InvalidInputException::with_message(format!(
                     "Register '{}' size too small for specified data type size: {}",
-                    register.borrow().name(),
+                    register.name(),
                     size
                 )));
             }
@@ -280,7 +280,7 @@ pub fn init_fields(
             });
         }
         let mut addr = reg_addr;
-        if register.borrow().is_big_endian() && reg_size > size {
+        if register.is_big_endian() && reg_size > size {
             addr = addr.add((reg_size - size) as i64).map_err(|_| {
                 InvalidInputException::with_message("address overflow while aligning register storage")
             })?;
@@ -792,11 +792,11 @@ pub trait VariableImpl: Variable {
 
         if let Some(mut new_reg) = reg {
             loop {
-                let too_small = new_reg.borrow().minimum_byte_size() < size;
+                let too_small = new_reg.minimum_byte_size() < size;
                 if !too_small {
                     break;
                 }
-                let parent = new_reg.borrow().parent_register();
+                let parent = new_reg.parent_register();
                 match parent {
                     Some(p) => new_reg = p,
                     None => {
@@ -808,8 +808,8 @@ pub trait VariableImpl: Variable {
                 }
             }
             if big_endian {
-                let msb = new_reg.borrow().minimum_byte_size();
-                let expanded_addr = new_reg.borrow().address().add((msb - size) as i64).map_err(|_| {
+                let msb = new_reg.minimum_byte_size();
+                let expanded_addr = new_reg.address().add((msb - size) as i64).map_err(|_| {
                     InvalidInputException::with_message("address overflow while expanding storage")
                 })?;
                 return Ok(Varnode::new(expanded_addr, size));

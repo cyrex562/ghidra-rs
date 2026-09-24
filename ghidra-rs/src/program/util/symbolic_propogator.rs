@@ -75,7 +75,7 @@ impl SymbolicValue {
     pub fn get_value(&self) -> i64 {
         match &self.relative_register {
             Some(reg) => {
-                let size = reg.borrow().bit_length();
+                let size = reg.bit_length();
                 let shift = (64 - size) as u32;
                 (self.value << shift) >> shift
             }

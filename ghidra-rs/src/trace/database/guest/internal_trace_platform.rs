@@ -249,8 +249,6 @@ mod tests {
     use crate::program::model::address::{AddressFactory, AddressSpaceType};
     use crate::program::model::lang::{CompilerSpec, Language};
     use crate::trace::model::thread::TraceThread;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
     fn make_space() -> Arc<AddressSpace> {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
@@ -375,7 +373,7 @@ mod tests {
             host_shift: 0,
         };
 
-        let names = platform.list_reg_names(&reg.borrow());
+        let names = platform.list_reg_names(&reg);
 
         // The register's own name and its case variants come first, in that order -- that part
         // is a real ordering guarantee, and Java's `getConventionalRegisterObjectNames` relies
@@ -403,7 +401,7 @@ mod tests {
             host_shift: 0,
         };
 
-        let names = platform.list_reg_names(&reg.borrow());
+        let names = platform.list_reg_names(&reg);
         assert_eq!(names, vec!["SP", "sp"]);
     }
 
@@ -416,7 +414,7 @@ mod tests {
             host_shift: 0x1000,
         };
 
-        let range = InternalTracePlatform::get_conventional_register_range(&platform, &space, &reg.borrow());
+        let range = InternalTracePlatform::get_conventional_register_range(&platform, &space, &reg);
         assert_eq!(range.min_address(), &space.address(0x100 + 0x1000));
         assert_eq!(range.max_address(), &space.address(0x103 + 0x1000));
     }
@@ -470,7 +468,7 @@ mod tests {
         let space = make_space();
         let reg = make_register(&space, "R2", 0, 4, &[]);
         let platform = UnmappedPlatform(MockRegisterUtils);
-        InternalTracePlatform::get_conventional_register_range(&platform, &space, &reg.borrow());
+        InternalTracePlatform::get_conventional_register_range(&platform, &space, &reg);
     }
 
     #[test]
@@ -484,8 +482,8 @@ mod tests {
 
         // `map_guest_to_host` returns `None` in this mock, so the default falls back to
         // `list_reg_names` without ever touching a trace/symbol manager.
-        let names = platform.get_conventional_register_object_names(&reg.borrow());
-        assert_eq!(names, platform.list_reg_names(&reg.borrow()));
+        let names = platform.get_conventional_register_object_names(&reg);
+        assert_eq!(names, platform.list_reg_names(&reg));
     }
 
     #[test]

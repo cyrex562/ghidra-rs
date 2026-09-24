@@ -31,8 +31,8 @@ impl RegisterTree {
     /// Constructs a `RegisterTree` rooted at `reg`, recursively building children trees for
     /// each of `reg`'s child registers.
     pub fn new(reg: &RegisterRef) -> RegisterTreeRef {
-        let name = reg.borrow().name().to_string();
-        let register_children = reg.borrow().child_registers();
+        let name = reg.name().to_string();
+        let register_children = reg.child_registers();
 
         Rc::new_cyclic(|weak| {
             let children: Vec<RegisterTreeRef> = register_children
@@ -62,7 +62,7 @@ impl RegisterTree {
         Rc::new_cyclic(|weak| {
             let children: Vec<RegisterTreeRef> = regs
                 .iter()
-                .filter(|reg| reg.borrow().is_base_register())
+                .filter(|reg| reg.is_base_register())
                 .map(|reg| {
                     let child_tree = RegisterTree::new(reg);
                     child_tree.borrow_mut().parent = Some(weak.clone());
@@ -139,7 +139,6 @@ impl RegisterTree {
             .register
             .as_ref()
             .expect("register_path requires an associated register")
-            .borrow()
             .name()
             .to_string();
 
