@@ -11,3 +11,7 @@ pub(crate) mod xml_element_impl;
 pub(crate) mod xml_message_log;
 pub(crate) mod xml_pull_parser;
 pub(crate) mod xml_tree_node;
+pub(crate) mod sax_parser;
+pub(crate) mod non_threaded_xml_pull_parser_impl;
+pub(crate) mod threaded_xml_pull_parser_impl;
+pub(crate) mod xml_pull_parser_factory;

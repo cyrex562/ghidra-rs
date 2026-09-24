@@ -337,10 +337,10 @@ TODO	struct	3	77	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/frame
 TODO	struct	6	149	24	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/MemoryBlockStub.java
 TODO	struct	5	47	77	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoCodeUnit.java
 TODO	struct	7	71	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlUtilities.java
-TODO	struct	6	64	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/xml/NonThreadedXmlPullParserImpl.java
+DONE	struct	6	64	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/xml/NonThreadedXmlPullParserImpl.java
 TODO	struct	7	32	1	generic	Ghidra/Framework/Utility/src/main/java/generic/concurrent/GThreadPool.java
-TODO	struct	6	58	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/xml/ThreadedXmlPullParserImpl.java
-TODO	struct	6	57	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlPullParserFactory.java
+DONE	struct	6	58	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/xml/ThreadedXmlPullParserImpl.java
+DONE	struct	6	57	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlPullParserFactory.java
 TODO	struct	5	308	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadCallother.java
 TODO	struct	5	304	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadCallotherError.java
 TODO	struct	5	304	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadJumpAssist.java
