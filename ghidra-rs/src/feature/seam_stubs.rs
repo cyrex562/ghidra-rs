@@ -4066,6 +4066,30 @@ pub trait Expr: Send + Sync {
         false
     }
 
+    /// Java: `Expr.isTrue()`, i.e. this is the boolean literal `true`. Added for the real port of
+    /// `ghidra.pcode.emu.symz3.SymZ3PcodeArithmetic` (`isTrue`); defaulted, like
+    /// [`Self::is_numeral`], so existing test doubles that never model literals keep compiling.
+    fn is_true(&self) -> bool {
+        false
+    }
+
+    /// Java: `Expr.isFalse()`, i.e. this is the boolean literal `false`. See [`Self::is_true`].
+    fn is_false(&self) -> bool {
+        false
+    }
+
+    /// Java: `Expr.isBVBitOne()`, i.e. this is the one-bit bit-vector literal `bit1`. See
+    /// [`Self::is_true`].
+    fn is_bv_bit_one(&self) -> bool {
+        false
+    }
+
+    /// Java: `Expr.isBVBitZero()`, i.e. this is the one-bit bit-vector literal `bit0`. See
+    /// [`Self::is_true`].
+    fn is_bv_bit_zero(&self) -> bool {
+        false
+    }
+
     /// Java: `(BitVecExpr) e`, the implicit downcast `Z3InfixPrinter` performs once [`Self::is_bv`]
     /// (or [`Self::is_numeral`]) says it is safe to. `None` for anything that isn't backed by a
     /// bit-vector.
@@ -4157,6 +4181,24 @@ pub trait Z3Context: Send + Sync {
 
     /// Java: `ctx.mkBV(value, size_bits)`.
     fn mk_bv(&self, value: i64, size_bits: u32) -> Box<dyn BitVecExpr>;
+
+    /// Java: `ctx.mkBV(value.toString(), size_bits)`, a bit-vector numeral from an
+    /// arbitrary-precision (`BigInteger`, `i128` here) value, reduced modulo `2^size_bits` as Z3
+    /// does. Added for the real port of `ghidra.pcode.emu.symz3.SymZ3PcodeArithmetic`
+    /// (`fromConst(BigInteger, int, boolean)`).
+    ///
+    /// The provided body builds the same numeral from [`Self::mk_bv`] alone: up to 64 bits the
+    /// low 64 bits of `value` already determine it; wider, it is the concatenation of the
+    /// (arithmetically shifted) high part over the low 64 bits. A real Z3 binding may override
+    /// it with a direct string numeral.
+    fn mk_bv_big(&self, value: i128, size_bits: u32) -> Box<dyn BitVecExpr> {
+        if size_bits <= 64 {
+            return self.mk_bv(value as i64, size_bits);
+        }
+        let high = self.mk_bv((value >> 64) as i64, size_bits - 64);
+        let low = self.mk_bv(value as i64, 64);
+        self.mk_concat(&*high, &*low)
+    }
 
     /// Java: `ctx.mkBVConst(name, size_bits)`, a fresh, free (symbolic) bit-vector constant named
     /// `name`. Added for the real port of `ghidra.pcode.emu.symz3.SymZ3RegisterMap` (see

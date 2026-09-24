@@ -65,7 +65,8 @@ use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason};
 use crate::pcode::exec::pcode_state_callbacks::{PcodeStateCallbacks, NONE};
 use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread;
-use crate::pcode::seam_stubs::{SymZ3MemorySpace, SymZ3PcodeArithmetic, SymZ3RegisterSpace};
+use crate::pcode::emu::symz3::sym_z3_pcode_arithmetic::SymZ3PcodeArithmetic;
+use crate::pcode::seam_stubs::{SymZ3MemorySpace, SymZ3RegisterSpace};
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
@@ -182,16 +183,15 @@ impl<CB: PcodeStateCallbacks> SymZ3PcodeExecutorStatePiece<CB> {
     ///
     /// Port of `SymZ3PcodeExecutorStatePiece(Language, PcodeArithmetic<SymValueZ3>,
     /// PcodeStateCallbacks)`, which delegates to the primary constructor via
-    /// `SymZ3PcodeArithmetic.forLanguage(language)`. `SymZ3PcodeArithmetic` is not ported yet
-    /// (queued later in PORT_ORDER); see `pcode::seam_stubs::SymZ3PcodeArithmetic` for why calling
-    /// this constructor currently panics.
+    /// `SymZ3PcodeArithmetic.forLanguage(language)`, built here with this piece's own `ctx`.
     pub fn new_for_language(
         language: Arc<dyn Language>,
         address_arithmetic: Arc<dyn PcodeArithmetic<SymValueZ3>>,
         cb: Arc<CB>,
         ctx: Arc<dyn Z3Context>,
     ) -> Self {
-        let arithmetic = SymZ3PcodeArithmetic::for_language(&language);
+        let arithmetic: Arc<dyn PcodeArithmetic<SymValueZ3>> =
+            Arc::new(SymZ3PcodeArithmetic::for_language(language.as_ref(), Arc::clone(&ctx)));
         Self::new(language, address_arithmetic, arithmetic, cb, ctx)
     }
 
@@ -743,7 +743,8 @@ pub(crate) mod testing {
     }
 
     /// A [`Language`] test double reporting only what this piece actually needs: a unique address
-    /// space via `get_address_factory`. Every other method is unreachable and panics if called,
+    /// space via `get_address_factory`, plus (for the arithmetics' `forLanguage`) little-endianness.
+    /// Every other method is unreachable and panics if called,
     /// mirroring the `TestLanguage` pattern already established in this package (see e.g.
     /// `SymZ3MemoryMap`'s own test module).
     struct TestLanguage {
@@ -774,13 +775,7 @@ pub(crate) mod testing {
             fn get_minor_version(&self) -> i32 {
                 unimplemented!()
             }
-            fn get_default_space(&self) -> Arc<AddressSpace> {
-                unimplemented!()
-            }
             fn get_default_data_space(&self) -> Arc<AddressSpace> {
-                unimplemented!()
-            }
-            fn is_big_endian(&self) -> bool {
                 unimplemented!()
             }
             fn get_instruction_alignment(&self) -> i32 {
@@ -825,9 +820,6 @@ pub(crate) mod testing {
                 unimplemented!()
             }
             fn get_register_at(&self, _addr: &Address, _size: i32) -> Option<RegisterRef> {
-                unimplemented!()
-            }
-            fn get_program_counter(&self) -> Option<RegisterRef> {
                 unimplemented!()
             }
             fn get_context_base_register(&self) -> Option<RegisterRef> {
@@ -912,10 +904,21 @@ pub(crate) mod testing {
         fn get_address_factory(&self) -> Box<dyn AddressFactory> {
             Box::new(self.factory.clone())
         }
+        fn is_big_endian(&self) -> bool {
+            false
+        }
+        fn get_default_space(&self) -> Arc<AddressSpace> {
+            self.factory.get_default_address_space().expect("the test factory has a default space")
+        }
+        /// No program counter: a `PcodeExecutor` built over this language (as the SymZ3 thread
+        /// executor's tests do) then sizes branches by the default space's pointer size.
+        fn get_program_counter(&self) -> Option<RegisterRef> {
+            None
+        }
         unimplemented_language_methods!();
     }
 
-    fn test_language() -> Arc<dyn Language> {
+    pub(crate) fn test_language() -> Arc<dyn Language> {
         let ram = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
         let unique = AddressSpace::new("unique", 32, 1, AddressSpaceType::Unique, 0);
         let register = AddressSpace::new("register", 32, 1, AddressSpaceType::Register, 0);

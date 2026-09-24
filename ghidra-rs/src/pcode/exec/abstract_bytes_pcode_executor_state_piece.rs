@@ -43,7 +43,7 @@ use crate::pcode::exec::bytes_pcode_executor_state_space::BytesPcodeExecutorStat
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
-use crate::pcode::seam_stubs::BytesPcodeArithmetic;
+use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
@@ -155,6 +155,23 @@ impl AbstractBytesPcodeExecutorStatePieceBase {
         })
     }
 
+    /// Copy this base for a forked piece, forking every internal space so the copy's bytes are
+    /// independent of this one's.
+    ///
+    /// Port of `forkMap(result.spaceMap, this.spaceMap, s -> s.fork(result))` as a concrete
+    /// subclass's `fork` uses it. Java's `s.fork(result)` also re-points the space's back-reference
+    /// at the new piece; the ported [`BytesPcodeExecutorStateSpace`] has no such back-reference
+    /// (see its module docs), so [`BytesPcodeExecutorStateSpace::fork`] takes no piece.
+    pub fn fork(&self) -> Self {
+        Self {
+            space_map: self
+                .space_map
+                .iter()
+                .map(|(space, s)| (Arc::clone(space), s.fork()))
+                .collect(),
+        }
+    }
+
     /// Clear every internal space's contents.
     ///
     /// Port of `clear()`: clears each space in turn, but (like Java) does not remove any space
@@ -191,7 +208,8 @@ pub fn new_long_offset_base_for_language<CB>(
 where
     CB: PcodeStateCallbacks,
 {
-    let arithmetic = BytesPcodeArithmetic::for_language(&language);
+    let arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>> =
+        Arc::new(BytesPcodeArithmetic::for_language(language.as_ref()));
     new_long_offset_base(language, arithmetic, cb)
 }
 

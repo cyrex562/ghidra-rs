@@ -678,7 +678,7 @@ TODO	struct	2	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/o
 TODO	struct	2	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorFloatSub.java
 TODO	struct	2	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorFloatTrunc.java
 TODO	struct	1	10	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorFactory.java
-TODO	struct	0	105	60	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeArithmetic.java
+DONE	struct	0	105	60	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeArithmetic.java
 TODO	struct	0	105	35	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighProgramCompiler.java
 TODO	struct	0	101	24	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ValueLocation.java
 TODO	struct	3	46	72	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/util/DataTypeDependencyOrderer.java
@@ -2265,14 +2265,14 @@ TODO	struct	2	1	2	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core
 TODO	struct	1	6	8	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/breakpoint/BreakpointActionSet.java
 TODO	struct	2	5	15	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/AbstractSymZ3OffsetPcodeExecutorStatePiece.java
 TODO	struct	2	4	12	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3.java
-TODO	struct	2	4	1	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeArithmetic.java
+DONE	struct	2	4	1	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeArithmetic.java
 TODO	struct	2	1	1	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3MemorySpace.java
 TODO	struct	4	6	25	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PieceHandler.java
 TODO	struct	3	5	3	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3EmulatorFactory.java
-TODO	struct	4	3	16	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeThreadExecutor.java
+DONE	struct	4	3	16	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeThreadExecutor.java
 TODO	struct	6	4	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/pcode/StringPcodeFormatter.java
 TODO	struct	5	3	1	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3ThreadPcodeExecutorState.java
-TODO	struct	4	4	28	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PcodeExecutorState.java
+DONE	struct	4	4	28	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PcodeExecutorState.java
 TODO	struct	2	1	1	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3RegisterSpace.java
 TODO	struct	2	3	24	pcode	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3WriteDownHelper.java
 TODO	struct	0	10	6	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisOptionsDialog.java

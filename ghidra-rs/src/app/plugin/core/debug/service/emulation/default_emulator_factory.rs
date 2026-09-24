@@ -30,10 +30,7 @@ pub const TITLE: &str = "Default Concrete P-code Emulator";
 /// Java's runtime downcast/assertion). There is therefore no way to bridge
 /// `access.get_language()`'s result into the `Arc<SleighLanguage>` `PcodeEmulator::new` requires
 /// without inventing a general `Language` downcast mechanism spanning far more of this crate than
-/// this one class's port -- out of scope here, exactly like
-/// [`BytesPcodeArithmetic::for_sleigh_language`](crate::pcode::seam_stubs::BytesPcodeArithmetic::for_sleigh_language)
-/// being left unimplemented (see `pcode_emulator.rs`'s own module docs) for the identical reason,
-/// which `PcodeEmulator::new` would hit immediately afterward regardless. [`create`](Self::create)
+/// this one class's port -- out of scope here. [`create`](Self::create)
 /// therefore documents and panics at exactly that bridging step, rather than silently returning a
 /// bogus machine.
 #[derive(Debug, Default, Clone, Copy)]
@@ -62,9 +59,7 @@ impl EmulatorFactory for DefaultEmulatorFactory {
             "DefaultEmulatorFactory::create: cannot bridge PcodeDebuggerAccess::get_language()'s \
              `Box<dyn Language>` into the `Arc<SleighLanguage>` that PcodeEmulator::new requires; \
              SleighLanguage deliberately does not implement Language in this crate yet (see \
-             AbstractPcodeMachine's module docs). PcodeEmulator::new would panic immediately \
-             afterward regardless, since BytesPcodeArithmetic::for_sleigh_language is itself \
-             still unimplemented."
+             AbstractPcodeMachine's module docs)."
         );
     }
 }
@@ -90,6 +85,6 @@ mod tests {
     // implementation, which in turn requires the same unported `Language`<->`SleighLanguage`
     // bridge documented on `DefaultEmulatorFactory` itself; see that struct's own docs. Its
     // documented, deliberate panic is exactly the kind of "faithful port forced into a stub by an
-    // upstream unported dependency" already established elsewhere in this crate (e.g.
-    // `BytesPcodeArithmetic::for_sleigh_language`), not a placeholder this port silently skips.
+    // upstream unported dependency" already established elsewhere in this crate, not a
+    // placeholder this port silently skips.
 }

@@ -60,7 +60,7 @@ impl Purpose {
 
 /// An interface (trait) that defines arithmetic p-code operations on values of type `T`.
 ///
-/// See `BytesPcodeArithmetic` (not yet ported) for the typical pattern when implementing an
+/// See [`BytesPcodeArithmetic`](crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic) for the typical pattern when implementing an
 /// arithmetic. There are generally two cases: 1) Where endianness matters, 2) Where endianness
 /// does not matter. If endianness does not matter, [`PcodeArithmetic::get_endian`] should return
 /// `None`, and [`PcodeArithmetic::from_const_bytes`]-based defaults that rely on it (namely

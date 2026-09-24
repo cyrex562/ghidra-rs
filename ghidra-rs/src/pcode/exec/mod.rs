@@ -4,6 +4,7 @@ pub mod abstract_pcode_executor_state;
 pub mod abstract_sleigh_pcode_userop_definition;
 pub mod access_pcode_execution_exception;
 pub mod annotated_pcode_userop_library;
+pub mod bytes_pcode_arithmetic;
 pub mod bytes_pcode_executor_state;
 pub mod bytes_pcode_executor_state_piece;
 pub mod bytes_pcode_executor_state_space;
@@ -47,6 +48,7 @@ pub use abstract_pcode_executor_state::{
     AbstractPcodeExecutorState, AbstractPcodeExecutorStateBase,
 };
 pub use access_pcode_execution_exception::AccessPcodeExecutionException;
+pub use bytes_pcode_arithmetic::BytesPcodeArithmetic;
 pub use bytes_pcode_executor_state::BytesPcodeExecutorState;
 pub use bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece;
 pub use abstract_sleigh_pcode_userop_definition::{

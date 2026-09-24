@@ -41,7 +41,8 @@ use crate::pcode::exec::pcode_executor_state_piece::{
 };
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::trace::TraceMemoryStatePcodeArithmetic;
-use crate::pcode::seam_stubs::{AddressesReadPcodeArithmetic, BytesPcodeArithmetic, ValueLocation};
+use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
+use crate::pcode::seam_stubs::{AddressesReadPcodeArithmetic, ValueLocation};
 use crate::pcode::utils::bytes_to_big_integer;
 use crate::program::model::address::{Address, AddressSet, AddressSpace};
 use crate::program::model::lang::endian::Endian;
@@ -281,7 +282,7 @@ impl WatchValuePcodeArithmetic {
 
     /// The `bytes` component of the composition.
     fn bytes(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        BytesPcodeArithmetic::for_endian(self.is_big_endian())
+        Arc::new(BytesPcodeArithmetic::for_endian(self.is_big_endian()))
     }
 
     /// The `location` component of the composition.

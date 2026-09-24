@@ -91,6 +91,18 @@ where
     pub fn get_right(&self) -> &PR {
         &self.right
     }
+
+    /// Mutable counterpart to [`get_left`](Self::get_left). Not a Java method: a Java reference
+    /// is inherently mutable, a `&PL` is not.
+    pub fn get_left_mut(&mut self) -> &mut PL {
+        &mut self.left
+    }
+
+    /// Mutable counterpart to [`get_right`](Self::get_right). Not a Java method; see
+    /// [`get_left_mut`](Self::get_left_mut).
+    pub fn get_right_mut(&mut self) -> &mut PR {
+        &mut self.right
+    }
 }
 
 impl<L, R, PL, PR> IndependentPairedPcodeExecutorState<L, R, PL, PR>

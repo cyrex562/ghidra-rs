@@ -13,7 +13,7 @@
 //! None of those analysis/code-generation phases are ported yet (their Rust stand-ins in
 //! [`seam_stubs`](crate::pcode::seam_stubs) predate this type and are shaped for their own
 //! individual callers, not for driving the whole pipeline `compilePassage` chains them into), so
-//! [`JitCompiler::compile_passage`] panics, in the same spirit as `BytesPcodeArithmetic`. The
+//! [`JitCompiler::compile_passage`] panics. The
 //! configuration it holds is real, since the emulator reads it back on every translation.
 
 use crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass;

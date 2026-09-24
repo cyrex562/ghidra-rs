@@ -57,14 +57,17 @@ use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::NONE;
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
-use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorStatePiece};
+use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
+use crate::pcode::seam_stubs::BytesPcodeExecutorStatePiece;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::Language;
 
-/// A minimal, inert implementor of [`BytesPcodeExecutorStatePiece`], standing in for `new
-/// BytesPcodeExecutorStatePiece(SleighLanguage, PcodeStateCallbacks)` until that class is ported.
-/// `AuxEmulatorPartsFactory` never calls a method on the concrete piece it receives (the
-/// placeholder trait it takes is a bare marker), so an empty marker suffices here too.
+/// A minimal, inert implementor of the [`BytesPcodeExecutorStatePiece`] marker, standing in for
+/// `new BytesPcodeExecutorStatePiece(SleighLanguage, PcodeStateCallbacks)`. The real piece is
+/// ported ([`crate::pcode::exec::BytesPcodeExecutorStatePiece`]), but
+/// `AuxEmulatorPartsFactory::create_shared_state`/`create_local_state` still take the bare
+/// placeholder marker, so there is nothing a factory could do with a real one yet; retyping that
+/// parameter is a separate public-API change.
 struct ConcreteStatePieceStub;
 
 impl BytesPcodeExecutorStatePiece for ConcreteStatePieceStub {}
@@ -84,7 +87,7 @@ pub fn create_arithmetic<U: 'static>(
     parts_factory: &impl AuxEmulatorPartsFactory<U>,
 ) -> Arc<dyn PcodeArithmetic<(Vec<u8>, U)>> {
     Arc::new(PairedPcodeArithmetic::new(
-        BytesPcodeArithmetic::for_language(language),
+        Arc::new(BytesPcodeArithmetic::for_language(language.as_ref())),
         parts_factory.get_arithmetic(language.as_ref()),
     ))
 }

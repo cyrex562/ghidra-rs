@@ -51,7 +51,7 @@ use crate::pcode::eval::varnode_evaluator::VarnodeEvaluator;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
-use crate::pcode::seam_stubs::BytesPcodeArithmetic;
+use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
 use crate::pcode::utils::utils::big_integer_to_bytes;
 use crate::program::model::address::{Address, AddressSetView, AddressSpace};
 use crate::program::model::lang::language::Language;

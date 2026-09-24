@@ -235,8 +235,8 @@ mod tests {
     use std::cell::RefCell;
     use std::collections::HashMap;
 
-    /// Little-endian `Vec<u8>` arithmetic, standing in for `BytesPcodeArithmetic` (not yet ported;
-    /// see the real-piece panic test below).
+    /// Little-endian `Vec<u8>` test arithmetic for the mock piece below (the real
+    /// `BytesPcodeExecutorStatePiece` is exercised by the last test).
     struct BytesArithmetic;
 
     impl PcodeArithmetic<Vec<u8>> for BytesArithmetic {
@@ -449,205 +449,30 @@ mod tests {
         assert!(result.is_err(), "expected the trait's panicking default fork to be hit");
     }
 
-    /// Exercises the real construction/fork path through the concrete
-    /// [`BytesPcodeExecutorStatePiece`], showing it currently panics -- not a Java bug, but a
-    /// genuine, documented gap in this port: `BytesPcodeExecutorStatePiece::new` (and its own
-    /// inherent `fork`) both resolve their arithmetic via
-    /// `crate::pcode::seam_stubs::BytesPcodeArithmetic::for_language`, which is not yet ported and
-    /// always panics. `BytesPcodeArithmetic` is a separate Java class outside this batch, so this
-    /// test documents rather than "fixes" the gap, matching the pattern already established by
-    /// `jit_pcode_emulator.rs`'s own `#[should_panic(expected = "... not yet ported")]` tests for
-    /// analogous situations.
+    /// Exercises the real construction and fork path through the concrete
+    /// [`BytesPcodeExecutorStatePiece`] (Java's public constructor
+    /// `BytesPcodeExecutorState(Language, PcodeStateCallbacks)` and its `fork` override).
     #[test]
-    fn constructing_with_the_real_piece_panics_on_the_unported_bytes_arithmetic() {
-        use crate::program::model::address::{AddressFactory, AddressSetView};
-        use crate::program::model::lang::compiler_spec::CompilerSpec;
-        use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
-        use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
-        use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
-        use crate::program::model::lang::instruction_prototype::InstructionPrototype;
-        use crate::program::model::lang::language::ParseError;
-        use crate::program::model::lang::language_description::LanguageDescription;
-        use crate::program::model::lang::language_id::LanguageID;
-        use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
-        use crate::program::model::lang::processor_context::ProcessorContext;
-        use crate::program::model::listing::default_program_context::DefaultProgramContext;
-        use crate::program::seam_stubs::{AddressLabelInfo, Processor};
-        use crate::util::task::TaskMonitor;
-        use std::collections::HashSet;
+    fn real_piece_constructs_round_trips_and_forks_independently() {
+        use crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::testing::test_language;
+        use crate::pcode::exec::pcode_state_callbacks::NONE;
 
-        // Every method below is unreachable: `BytesPcodeArithmetic::for_language` (see this
-        // module's docs on the real-piece construction panic) discards its `&Arc<dyn Language>`
-        // argument entirely and panics immediately, before calling any method on it. This stub
-        // exists purely to satisfy the `Language` trait's (large, no-default-methods) signature so
-        // an `Arc<dyn Language>` value can be constructed at all.
-        struct StubLanguage;
-        impl Language for StubLanguage {
-            fn get_language_id(&self) -> LanguageID {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_language_description(&self) -> Box<dyn LanguageDescription> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_parallel_instruction_helper(&self) -> Option<Box<dyn ParallelInstructionLanguageHelper>> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_processor(&self) -> Box<dyn Processor> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_version(&self) -> i32 {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_minor_version(&self) -> i32 {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_address_factory(&self) -> Box<dyn AddressFactory> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_default_space(&self) -> Arc<AddressSpace> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_default_data_space(&self) -> Arc<AddressSpace> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn is_big_endian(&self) -> bool {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_instruction_alignment(&self) -> i32 {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn supports_pcode(&self) -> bool {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn is_volatile(&self, _addr: &Address) -> bool {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn parse(
-                &self,
-                _buf: &dyn MemBuffer,
-                _context: &mut dyn ProcessorContext,
-                _in_delay_slot: bool,
-            ) -> Result<Box<dyn InstructionPrototype>, ParseError> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_number_of_user_defined_op_names(&self) -> i32 {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_user_defined_op_name(&self, _index: i32) -> Option<String> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_registers_at(&self, _address: &Address) -> Vec<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_register_in_space(
-                &self,
-                _addrspc: &Arc<AddressSpace>,
-                _offset: i64,
-                _size: i32,
-            ) -> Option<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_registers(&self) -> Vec<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_register_names(&self) -> Vec<String> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_register_by_name(&self, _name: &str) -> Option<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_register_at(&self, _addr: &Address, _size: i32) -> Option<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_program_counter(&self) -> Option<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_context_base_register(&self) -> Option<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_context_registers(&self) -> Vec<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_default_memory_blocks(
-                &self,
-            ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_segmented_space(&self) -> String {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_volatile_addresses(&self) -> Box<dyn AddressSetView> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn reload_language(&self, _task_monitor: &dyn TaskMonitor) -> std::io::Result<()> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_compiler_spec_by_id(
-                &self,
-                _compiler_spec_id: &CompilerSpecID,
-            ) -> Result<Box<dyn CompilerSpec>, CompilerSpecNotFoundException> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_default_compiler_spec(&self) -> Box<dyn CompilerSpec> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn has_property(&self, _key: &str) -> bool {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_property_as_int(&self, _key: &str, _default_int: i32) -> i32 {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_property_as_boolean(&self, _key: &str, _default_boolean: bool) -> bool {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_property_or(&self, _key: &str, _default_string: &str) -> String {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_property(&self, _key: &str) -> Option<String> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_property_keys(&self) -> HashSet<String> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn has_manual(&self) -> bool {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_manual_entry(&self, _instruction_mnemonic: &str) -> Option<crate::util::manual_entry::ManualEntry> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_manual_instruction_mnemonic_keys(&self) -> HashSet<String> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_manual_exception(&self) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_register_addresses(&self) -> Box<dyn AddressSetView> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-            fn get_maximum_instruction_length(&self) -> Option<i32> {
-                unreachable!("BytesPcodeArithmetic::for_language never touches the language")
-            }
-        }
+        let language = test_language();
+        let ram = language
+            .get_address_factory()
+            .get_address_spaces()
+            .into_iter()
+            .find(|s| s.name() == "ram")
+            .unwrap();
+        let mut state = BytesPcodeExecutorState::new(language, Arc::new(NONE));
+        assert_eq!(state.get_arithmetic().get_endian(), Some(Endian::Little));
 
-        let language: Arc<dyn Language> = Arc::new(StubLanguage);
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            BytesPcodeExecutorState::new(language, Arc::new(crate::pcode::exec::pcode_state_callbacks::NONE))
-        }));
-        assert!(
-            result.is_err(),
-            "expected construction to panic on BytesPcodeArithmetic::for_language (not yet ported)"
-        );
+        state.set_var(&ram, 0x20, 2, false, &vec![0xde, 0xad]);
+        assert_eq!(state.get_var(&ram, 0x20, 2, false, Reason::Inspect), vec![0xde, 0xad]);
+
+        let mut forked = state.fork(Arc::new(NONE));
+        forked.set_var(&ram, 0x20, 1, false, &vec![0x00]);
+        assert_eq!(forked.get_var(&ram, 0x20, 2, false, Reason::Inspect), vec![0x00, 0xad]);
+        assert_eq!(state.get_var(&ram, 0x20, 2, false, Reason::Inspect), vec![0xde, 0xad]);
     }
 }

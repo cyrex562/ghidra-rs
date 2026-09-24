@@ -15,10 +15,8 @@
 //! * `createArithmetic()` is `BytesPcodeArithmetic.forLanguage(language)` in Java. `language` is
 //!   Java's field typed `SleighLanguage` (see `AbstractPcodeMachine`'s own deviation notes), so
 //!   this port calls
-//!   [`BytesPcodeArithmetic::for_sleigh_language`](crate::pcode::seam_stubs::BytesPcodeArithmetic::for_sleigh_language),
-//!   added alongside the existing `for_language` for exactly this call site. Like the rest of
-//!   `BytesPcodeArithmetic`, it is unimplemented until that class is ported, so constructing a
-//!   `PcodeEmulator` currently panics -- faithfully so, since Java has no substitute either.
+//!   [`BytesPcodeArithmetic::for_sleigh_language`](crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic::for_sleigh_language),
+//!   which selects by the language's endianness exactly as `forLanguage` does.
 //! * `createThread(String)` is `new BytesPcodeThread(name, this)`; [`BytesPcodeThread`] is added
 //!   here as a minimal placeholder (name only) for the same reason.
 //! * `createSharedState()`/`createLocalState(PcodeThread<byte[]>)` construct
@@ -45,7 +43,8 @@ use crate::pcode::emu::pcode_emulation_callbacks::{
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::emu::bytes_pcode_thread::BytesPcodeThread;
-use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorState};
+use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
+use crate::pcode::seam_stubs::BytesPcodeExecutorState;
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
 
@@ -63,7 +62,8 @@ impl PcodeEmulator {
     ///
     /// Port of `PcodeEmulator(Language, PcodeEmulationCallbacks<byte[]>)`.
     pub fn new(language: Arc<SleighLanguage>, cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>) -> Self {
-        let arithmetic = BytesPcodeArithmetic::for_sleigh_language(&language);
+        let arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>> =
+            Arc::new(BytesPcodeArithmetic::for_sleigh_language(&language));
         let library =
             AbstractPcodeMachineBase::create_userop_library(&language, arithmetic.as_ref(), "", &[]);
         // DefaultPcodeThread.PcodeEmulationLibrary, Java's default createThreadStubLibrary(), is
@@ -364,11 +364,12 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "BytesPcodeArithmetic not yet ported")]
-    fn constructor_faithfully_calls_bytes_pcode_arithmetic_for_language() {
-        // Java: `createArithmetic()` returns `BytesPcodeArithmetic.forLanguage(language)`. That
-        // class isn't ported yet (see the module docs), so real construction panics exactly as it
-        // would if `BytesPcodeArithmetic` genuinely didn't exist.
-        let _ = PcodeEmulator::with_language(Arc::new(test_language()));
+    fn constructor_uses_bytes_pcode_arithmetic_for_language() {
+        // Java: `createArithmetic()` returns `BytesPcodeArithmetic.forLanguage(language)`; the
+        // test language declares bigendian="false", so that is the little-endian instance.
+        let emulator = PcodeEmulator::with_language(Arc::new(test_language()));
+        let arithmetic = emulator.base.get_arithmetic();
+        assert_eq!(Some(crate::program::model::lang::endian::Endian::Little), arithmetic.get_endian());
+        assert_eq!(vec![0x34, 0x12], arithmetic.from_const_u64(0x1234, 2));
     }
 }

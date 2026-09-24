@@ -205,6 +205,209 @@ pub trait FloatFormat {
     /// matching how [`BigFloat::to_big_decimal`](crate::pcode::floatformat::big_float::BigFloat::to_big_decimal)
     /// represents that Java type here.
     fn get_big_float(&self, value: f64) -> Box<dyn BigFloat>;
+
+    // -- Grown for `BytesPcodeArithmetic`'s FLOAT_* dispatch (see STUBS.tsv), which stands in for
+    // the unported `OpBehaviorFloat*` classes: each of those evaluates by calling exactly one of
+    // the `op*` members below on the format `FloatFormatFactory.getFloatFormat(size)` returns.
+    // Java overloads each on `long`/`BigInteger`; the `BigInteger` forms carry a `_big` suffix
+    // and use `i128` per the crate-wide convention. They default to panicking because no
+    // `FloatFormat` can exist until the real class is ported (`FloatFormatFactory` panics first).
+
+    /// Java: `opEqual(long, long)`.
+    fn op_equal(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opEqual(BigInteger, BigInteger)`.
+    fn op_equal_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opNotEqual(long, long)`.
+    fn op_not_equal(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opNotEqual(BigInteger, BigInteger)`.
+    fn op_not_equal_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opLess(long, long)`.
+    fn op_less(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opLess(BigInteger, BigInteger)`.
+    fn op_less_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opLessEqual(long, long)`.
+    fn op_less_equal(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opLessEqual(BigInteger, BigInteger)`.
+    fn op_less_equal_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opNan(long)`.
+    fn op_nan(&self, a: i64) -> i64 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opNan(BigInteger)`.
+    fn op_nan_big(&self, a: i128) -> i128 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opAdd(long, long)`.
+    fn op_add(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opAdd(BigInteger, BigInteger)`.
+    fn op_add_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opSub(long, long)`.
+    fn op_sub(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opSub(BigInteger, BigInteger)`.
+    fn op_sub_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opDiv(long, long)`.
+    fn op_div(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opDiv(BigInteger, BigInteger)`.
+    fn op_div_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opMult(long, long)`.
+    fn op_mult(&self, a: i64, b: i64) -> i64 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opMult(BigInteger, BigInteger)`.
+    fn op_mult_big(&self, a: i128, b: i128) -> i128 {
+        let _ = (a, b);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opNeg(long)`.
+    fn op_neg(&self, a: i64) -> i64 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opNeg(BigInteger)`.
+    fn op_neg_big(&self, a: i128) -> i128 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opAbs(long)`.
+    fn op_abs(&self, a: i64) -> i64 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opAbs(BigInteger)`.
+    fn op_abs_big(&self, a: i128) -> i128 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opSqrt(long)`.
+    fn op_sqrt(&self, a: i64) -> i64 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opSqrt(BigInteger)`.
+    fn op_sqrt_big(&self, a: i128) -> i128 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opInt2Float(long, int sizein)`.
+    fn op_int2float(&self, a: i64, sizein: i32) -> i64 {
+        let _ = (a, sizein);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opInt2Float(BigInteger, int sizein, boolean signed)`.
+    fn op_int2float_big(&self, a: i128, sizein: i32, signed: bool) -> i128 {
+        let _ = (a, sizein, signed);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opFloat2Float(long, FloatFormat outformat)`.
+    fn op_float2float(&self, a: i64, outformat: &dyn FloatFormat) -> i64 {
+        let _ = (a, outformat);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opFloat2Float(BigInteger, FloatFormat outformat)`.
+    fn op_float2float_big(&self, a: i128, outformat: &dyn FloatFormat) -> i128 {
+        let _ = (a, outformat);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opTrunc(long, int sizeout)`.
+    fn op_trunc(&self, a: i64, sizeout: i32) -> i64 {
+        let _ = (a, sizeout);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opTrunc(BigInteger, int sizeout)`.
+    fn op_trunc_big(&self, a: i128, sizeout: i32) -> i128 {
+        let _ = (a, sizeout);
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opCeil(long)`.
+    fn op_ceil(&self, a: i64) -> i64 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opCeil(BigInteger)`.
+    fn op_ceil_big(&self, a: i128) -> i128 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opFloor(long)`.
+    fn op_floor(&self, a: i64) -> i64 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opFloor(BigInteger)`.
+    fn op_floor_big(&self, a: i128) -> i128 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opRound(long)`.
+    fn op_round(&self, a: i64) -> i64 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+    /// Java: `opRound(BigInteger)`.
+    fn op_round_big(&self, a: i128) -> i128 {
+        let _ = a;
+        unimplemented!("FloatFormat not yet ported")
+    }
+}
+
+/// Placeholder for `ghidra.pcode.floatformat.FloatFormatFactory`, referenced by
+/// [`BytesPcodeArithmetic`](crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic)'s
+/// FLOAT_* dispatch (standing in for the unported `OpBehaviorFloat*` classes). The real factory
+/// hands out cached [`FloatFormat`]s by byte size; `FloatFormat` itself is unported, and so is the
+/// arbitrary-precision `BigFloat` it computes with (the Rust `BigFloat` is a trait with only test
+/// doubles implementing it), so there is nothing to hand out yet.
+pub struct FloatFormatFactory;
+
+impl FloatFormatFactory {
+    /// Java: `FloatFormatFactory.getFloatFormat(int size)`.
+    pub fn get_float_format(_size: i32) -> Box<dyn FloatFormat> {
+        unimplemented!("FloatFormatFactory not yet ported (FloatFormat/BigFloat are unported)")
+    }
 }
 
 /// Placeholder for `ghidra.pcode.pcoderaw.PcodeOpRaw`, referenced by
@@ -565,42 +768,14 @@ impl DefaultProgramContext for ProgramContextImpl {
 /// The real port is [`crate::pcode::exec::BytesPcodeExecutorStatePiece`].
 pub trait BytesPcodeExecutorStatePiece: Send + Sync {}
 
-/// Placeholder for `ghidra.pcode.exec.BytesPcodeArithmetic`, referenced by
-/// [`AbstractBytesPcodeExecutorStatePiece`](crate::pcode::exec::abstract_bytes_pcode_executor_state_piece::AbstractBytesPcodeExecutorStatePiece)'s
-/// two-argument constructor solely for its static factory `forLanguage`, used to build a default
-/// arithmetic from a language alone, and by
-/// [`WatchValuePcodeArithmetic`](crate::pcode::exec::debugger_pcode_utils::WatchValuePcodeArithmetic)
-/// for `forEndian`. No other member is referenced.
-pub struct BytesPcodeArithmetic;
-
-impl BytesPcodeArithmetic {
-    /// Port of the static factory `BytesPcodeArithmetic.forLanguage(Language)`.
-    pub fn for_language(_language: &Arc<dyn Language>) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        unimplemented!("BytesPcodeArithmetic not yet ported")
-    }
-
-    /// Port of the static factory `BytesPcodeArithmetic.forEndian(boolean)`, which selects between
-    /// the Java enum's `BIG_ENDIAN` and `LITTLE_ENDIAN` constants.
-    pub fn for_endian(_big_endian: bool) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        unimplemented!("BytesPcodeArithmetic not yet ported")
-    }
-
-    /// As [`for_language`](Self::for_language), for a caller that already holds the concrete
-    /// `SleighLanguage` Java upcasts to `Language` at the call site (e.g. `PcodeEmulator`'s
-    /// `language` field, typed `SleighLanguage` per `AbstractPcodeMachine`). See
-    /// `AbstractPcodeMachine`'s module docs on why `SleighLanguage` doesn't implement `Language`
-    /// here, so the two entry points can't be unified yet.
-    pub fn for_sleigh_language(_language: &Arc<SleighLanguage>) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        unimplemented!("BytesPcodeArithmetic not yet ported")
-    }
-}
-
+// `ghidra.pcode.exec.BytesPcodeArithmetic` has graduated to a real port at
+// [`crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic`].
 
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorState`, referenced by
 /// `PcodeEmulator::create_shared_state`/`create_local_state` before the real class (composed of
 /// per-address-space `BytesPcodeExecutorStateSpace`s, also not yet ported) is ported. Only the
 /// language is retained, enough to answer `get_arithmetic`/`get_address_arithmetic` faithfully
-/// once [`BytesPcodeArithmetic`] itself is ported; every operation that would need real storage
+/// once [`BytesPcodeArithmetic`](crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic) itself is ported; every operation that would need real storage
 /// panics.
 pub struct BytesPcodeExecutorState {
     language: Arc<SleighLanguage>,
@@ -621,11 +796,11 @@ impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for BytesPcodeExecutorState {
     }
 
     fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+        Arc::new(crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic::for_sleigh_language(&self.language))
     }
 
     fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+        Arc::new(crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic::for_sleigh_language(&self.language))
     }
 
     fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
@@ -3617,11 +3792,11 @@ impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for JitDefaultBytesPcodeExecutorS
     }
 
     fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+        Arc::new(crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic::for_sleigh_language(&self.language))
     }
 
     fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+        Arc::new(crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic::for_sleigh_language(&self.language))
     }
 
     fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
@@ -5208,22 +5383,5 @@ impl SymZ3MemorySpace {
     }
 }
 
-/// Placeholder for the unported Java type `ghidra.pcode.emu.symz3.SymZ3PcodeArithmetic`,
-/// referenced by `SymZ3PcodeExecutorStatePiece`'s convenience constructor
-/// (`SymZ3PcodeExecutorStatePiece(Language, PcodeArithmetic, PcodeStateCallbacks)`, which derives
-/// its value arithmetic via `SymZ3PcodeArithmetic.forLanguage(language)`). A faithful stub would
-/// need to implement all ~25 methods of the already-ported `PcodeArithmetic<SymValueZ3>` trait
-/// (unary/binary op, concretion, etc.) with genuine Z3 semantics, which is exactly the real port's
-/// job (queued later in PORT_ORDER, at `ghidra/pcode/emu/symz3/SymZ3PcodeArithmetic.java`); only
-/// the one static factory method this caller needs is modeled here, and it panics if actually
-/// invoked, standing in until the real arithmetic exists.
-pub struct SymZ3PcodeArithmetic;
-
-impl SymZ3PcodeArithmetic {
-    /// Java: `SymZ3PcodeArithmetic.forLanguage(Language)`.
-    pub fn for_language(
-        _language: &Arc<dyn Language>,
-    ) -> Arc<dyn PcodeArithmetic<crate::feature::symz3::model::sym_value_z3::SymValueZ3>> {
-        unimplemented!("SymZ3PcodeArithmetic is a placeholder; real port pending (see PORT_ORDER.tsv)")
-    }
-}
+// `ghidra.pcode.emu.symz3.SymZ3PcodeArithmetic` has graduated to a real port at
+// [`crate::pcode::emu::symz3::sym_z3_pcode_arithmetic::SymZ3PcodeArithmetic`].

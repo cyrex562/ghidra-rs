@@ -96,9 +96,8 @@ use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
 use crate::pcode::emu::jit::jit_compiler::JitCompiler;
 use crate::pcode::emu::jit::jit_configuration::JitConfiguration;
 use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
-use crate::pcode::seam_stubs::{
-    AddrCtx, BytesPcodeArithmetic, EntryPointPrototype, JitDefaultBytesPcodeExecutorState,
-};
+use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
+use crate::pcode::seam_stubs::{AddrCtx, EntryPointPrototype, JitDefaultBytesPcodeExecutorState};
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::util::msg::Msg;
@@ -217,7 +216,8 @@ impl JitPcodeEmulator {
         cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>,
         config: JitConfiguration,
     ) -> Self {
-        let arithmetic = BytesPcodeArithmetic::for_sleigh_language(&language);
+        let arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>> =
+            Arc::new(BytesPcodeArithmetic::for_sleigh_language(&language));
         let library =
             AbstractPcodeMachineBase::create_userop_library(&language, arithmetic.as_ref(), "", &[]);
         // DefaultPcodeThread.PcodeEmulationLibrary, Java's default createThreadStubLibrary(), is
@@ -645,9 +645,8 @@ mod tests {
     }
 
     /// Builds a `JitPcodeEmulator` around a hand-built [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator) carrying
-    /// [`StubArithmetic`], since the real `createArithmetic()` path
-    /// (`BytesPcodeArithmetic.forLanguage`) is not ported and panics -- the same substitution
-    /// [`crate::pcode::emu::pcode_emulator`]'s own tests make.
+    /// [`StubArithmetic`], the same substitution [`crate::pcode::emu::pcode_emulator`]'s own
+    /// tests make, so these tests exercise only the JIT machinery.
     fn emulator_with(config: JitConfiguration) -> JitPcodeEmulator {
         let language = Arc::new(test_language());
         let arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>> = Arc::new(StubArithmetic);
