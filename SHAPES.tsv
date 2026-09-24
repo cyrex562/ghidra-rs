@@ -595,7 +595,7 @@ Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/FrameStru
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/ListingUnwoundFrame.java	ListingUnwoundFrame	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SavedRegisterMap.java	SavedRegisterMap	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarning.java	StackUnwindWarning	interface	trait	R9-open-interface	hard	10	Java `interface` with 1 abstract method(s), 10 in-repo implementor(s)
-Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarningSet.java	StackUnwindWarningSet	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
+Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarningSet.java	StackUnwindWarningSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwinder.java	StackUnwinder	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/Sym.java	Sym	interface/sealed	enum	R2-sealed	hard	5	Java `sealed interface` -- the permitted set is closed: its nested implementors
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SymPcodeArithmetic.java	SymPcodeArithmetic	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -983,7 +983,7 @@ Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/inf
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInfo.java	TraceObjectInfo	@interface	struct	R4-annotation	hard	0	Java annotation type -- port as a plain metadata struct of its elements; annotated implementors expose it via an associated const or `fn info() -> &'static Self`
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceFactory.java	TraceObjectInterfaceFactory	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceUtils.java	TraceObjectInterfaceUtils	enum	enum	R1-java-enum	hard	0	Java `enum` with 0 constants
-Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/KeyPath.java	KeyPath	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/KeyPath.java	KeyPath	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathFilter.java	PathFilter	interface	trait	R9-open-interface	hard	2	Java `interface` with 15 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathMatcher.java	PathMatcher	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathPattern.java	PathPattern	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -1090,7 +1090,7 @@ Ghidra/Debug/ProposedUtils/src/main/java/ghidra/program/model/address/CachedAddr
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/ByteBufferUtils.java	ByteBufferUtils	interface	module	R8f-statics-module	hard	0	interface with 3 `static` method(s), no instance methods, no constants, and nothing branching on it or naming it as a type -- Java's interface-as-namespace idiom. Port the statics as free functions in a plain module; there is nothing to implement and nothing to dispatch over
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/DistinctIterator.java	DistinctIterator	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java	LanguageUtilities	interface	module	R8f-statics-module	hard	0	interface with 2 `static` method(s), no instance methods, no constants, and nothing branching on it or naming it as a type -- Java's interface-as-namespace idiom. Port the statics as free functions in a plain module; there is nothing to implement and nothing to dispatch over
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.java	LazyCollection	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.java	LazyCollection	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LockHold.java	LockHold	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/MergeSortingSpliterator.java	MergeSortingSpliterator	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/PairingIteratorMerger.java	PairingIteratorMerger	class/abstract	iterator	R6a-cursor	hard	0	extends Iterator
@@ -1110,15 +1110,15 @@ Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStor
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreEntrySet.java	DBCachedObjectStoreEntrySet	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreEntrySubSet.java	DBCachedObjectStoreEntrySubSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreFactory.java	DBCachedObjectStoreFactory	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreFoundKeysValueCollection.java	DBCachedObjectStoreFoundKeysValueCollection	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreFoundKeysValueCollection.java	DBCachedObjectStoreFoundKeysValueCollection	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreKeySet.java	DBCachedObjectStoreKeySet	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreKeySubSet.java	DBCachedObjectStoreKeySubSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreMap.java	DBCachedObjectStoreMap	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreSubMap.java	DBCachedObjectStoreSubMap	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueCollection.java	DBCachedObjectStoreValueCollection	class	iterator	R6b-bare-iterable	hard	1	extends Collection and declares no other API (0 abstract method(s))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueCollection.java	DBCachedObjectStoreValueCollection	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueSubCollection.java	DBCachedObjectStoreValueSubCollection	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBObjectColumn.java	DBObjectColumn	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedCollection.java	DBSynchronizedCollection	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedCollection.java	DBSynchronizedCollection	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedIterator.java	DBSynchronizedIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedSpliterator.java	DBSynchronizedSpliterator	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DebuggerFactoryAdapter.java	DebuggerFactoryAdapter	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -1253,7 +1253,7 @@ Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeCodeMemberVisitor.ja
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFeatures.java	PcodeFeatures	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFrontend.java	PcodeFrontend	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/WorkItem.java	WorkItem	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/LongInterval.java	LongInterval	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/LongInterval.java	LongInterval	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeByteBasedConstantPropagation.java	PcodeByteBasedConstantPropagation	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeDataflowConstantPropagation.java	PcodeDataflowConstantPropagation	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeInterval.java	PcodeInterval	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
@@ -1267,7 +1267,7 @@ Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeSign.java	P
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeStability.java	PcodeStability	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeTaint.java	PcodeTaint	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeThreeLevelTaint.java	PcodeThreeLevelTaint	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeUpperBounds.java	PcodeUpperBounds	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeUpperBounds.java	PcodeUpperBounds	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/BinaryExprContext.java	BinaryExprContext	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/CallContext.java	CallContext	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/ConditionContext.java	ConditionContext	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -1583,7 +1583,7 @@ Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimH2FileDBC
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimVectorStoreManager.java	BSimVectorStoreManager	class	module	R7-statics-holder	hard	0	1 static field(s) and 2 static method(s), no instance state and no instance methods
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/H2FileFunctionDatabase.java	H2FileFunctionDatabase	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/H2VectorTable.java	H2VectorTable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/VectorStore.java	VectorStore	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/VectorStore.java	VectorStore	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/VectorStoreEntry.java	VectorStoreEntry	record	struct	R3-record	hard	0	Java `record` -- an immutable value type
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ingest/BSimLaunchable.java	BSimLaunchable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ingest/BulkSignatures.java	BulkSignatures	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -1650,7 +1650,7 @@ Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseU
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseVectorId.java	ResponseVectorId	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseVectorMatch.java	ResponseVectorMatch	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityNote.java	SimilarityNote	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityResult.java	SimilarityResult	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityResult.java	SimilarityResult	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityVectorResult.java	SimilarityVectorResult	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/StagingManager.java	StagingManager	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 3 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Features/BSim/src/screen/java/help/screenshot/BSimSearchPluginScreenShots.java	BSimSearchPluginScreenShots	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -3557,7 +3557,7 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/Co
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandler.java	CoffRelocationHandler	interface	trait	R9-open-interface	hard	5	Java `interface` with 2 abstract method(s), 5 in-repo implementor(s)
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandlerFactory.java	CoffRelocationHandlerFactory	class	module	R7-statics-holder	hard	0	1 static method(s), no instance state and no instance methods
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEAggregate.java	DIEAggregate	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEContainer.java	DIEContainer	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEContainer.java	DIEContainer	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAbbreviation.java	DWARFAbbreviation	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAccessibility.java	DWARFAccessibility	enum	enum	R1-java-enum	hard	0	Java `enum` with 3 constants
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAddressListHeader.java	DWARFAddressListHeader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -4356,10 +4356,10 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ubi/UbiException.j
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutHeader.java	UnixAoutHeader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutMachineType.java	UnixAoutMachineType	class	module	R7-statics-holder	hard	0	39 static field(s), no instance state and no instance methods
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocation.java	UnixAoutRelocation	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocationTable.java	UnixAoutRelocationTable	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocationTable.java	UnixAoutRelocationTable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutStringTable.java	UnixAoutStringTable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbol.java	UnixAoutSymbol	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbolTable.java	UnixAoutSymbolTable	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbolTable.java	UnixAoutSymbolTable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveConstants.java	XCoffArchiveConstants	class	module	R7-statics-holder	hard	0	2 static field(s), no instance state and no instance methods
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveHeader.java	XCoffArchiveHeader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveMemberHeader.java	XCoffArchiveMemberHeader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -4515,7 +4515,7 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractOrdinalSuppor
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractPeDebugLoader.java	AbstractPeDebugLoader	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 4 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProgramLoader.java	AbstractProgramLoader	class/abstract	trait	R12-abstract-pure	hard	8	abstract class with no instance state and 8 in-repo subclass(es)
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProgramWrapperLoader.java	AbstractProgramWrapperLoader	class/abstract	trait	R12-abstract-pure	hard	12	abstract class with no instance state and 12 in-repo subclass(es)
-Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AddressSetPartitioner.java	AddressSetPartitioner	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AddressSetPartitioner.java	AddressSetPartitioner	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BinaryLoader.java	BinaryLoader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BoundedBufferedReader.java	BoundedBufferedReader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/CoffLoader.java	CoffLoader	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
@@ -4549,7 +4549,7 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryLookupTable.ja
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryPathsDialog.java	LibraryPathsDialog	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibrarySymbolTable.java	LibrarySymbolTable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadException.java	LoadException	class	error	R5-exception	hard	0	extends/names a Java throwable (IOException)
-Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadResults.java	LoadResults	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadResults.java	LoadResults	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadSpec.java	LoadSpec	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loaded.java	Loaded	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadedOpen.java	LoadedOpen	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -5489,7 +5489,7 @@ Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanaly
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/DataNGram.java	DataNGram	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/DataVertex.java	DataVertex	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/Pinning.java	Pinning	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/TokenBin.java	TokenBin	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/TokenBin.java	TokenBin	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/plugin/FunctionComparisonPlugin.java	FunctionComparisonPlugin	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/plugin/FunctionComparisonProvider.java	FunctionComparisonProvider	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/plugin/FunctionComparisonProviderListener.java	FunctionComparisonProviderListener	interface	trait	R9-open-interface	hard	0	Java `interface` with 2 abstract method(s), 0 in-repo implementor(s)
@@ -5585,7 +5585,7 @@ Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangReturnType.j
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangStatement.java	ClangStatement	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangSyntaxToken.java	ClangSyntaxToken	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangToken.java	ClangToken	class	struct_trait	R14d-concrete-base	hard	11	concrete Java `class` that 11 classes extend -- a real hierarchy, not a leaf; shared state in a struct, overridable behaviour in a trait
-Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java	ClangTokenGroup	class	iterator	R6b-bare-iterable	hard	5	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java	ClangTokenGroup	class	struct_trait	R14d-concrete-base	hard	5	concrete Java `class` that 5 classes extend -- a real hierarchy, not a leaf; shared state in a struct, overridable behaviour in a trait
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTypeToken.java	ClangTypeToken	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangVariableDecl.java	ClangVariableDecl	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangVariableToken.java	ClangVariableToken	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -5633,7 +5633,7 @@ Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/Locatio
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/NameTokenMatcher.java	NameTokenMatcher	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/NullClangHighlightController.java	NullClangHighlightController	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenHighlightColors.java	TokenHighlightColors	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenHighlights.java	TokenHighlights	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenHighlights.java	TokenHighlights	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenKey.java	TokenKey	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/UserHighlights.java	UserHighlights	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DataTypeDecompilerHover.java	DataTypeDecompilerHover	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -6978,7 +6978,7 @@ Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDFragmentName.ja
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNameModifier.java	MDNameModifier	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNestedName.java	MDNestedName	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNumberedNamespace.java	MDNumberedNamespace	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualification.java	MDQualification	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualification.java	MDQualification	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedBasicName.java	MDQualifiedBasicName	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedName.java	MDQualifiedName	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java	MDQualifier	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -9186,7 +9186,7 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/Defaul
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldHighlightFactory.java	FieldHighlightFactory	interface	trait	R9-open-interface	hard	4	Java `interface` with 1 abstract method(s), 4 in-repo implementor(s)
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldLocation.java	FieldLocation	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldRange.java	FieldRange	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldSelection.java	FieldSelection	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldSelection.java	FieldSelection	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldSelectionHelper.java	FieldSelectionHelper	class	module	R7-statics-holder	hard	0	6 static method(s), no instance state and no instance methods
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldUtils.java	FieldUtils	class	module	R7-statics-holder	hard	0	2 static field(s) and 5 static method(s), no instance state and no instance methods
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/Highlight.java	Highlight	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -9364,7 +9364,7 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableFilter.java	Ta
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableItemPickedListener.java	TableItemPickedListener	interface	trait	R9-open-interface	hard	0	Java `interface` with 1 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableModelWrapper.java	TableModelWrapper	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableRowMapper.java	TableRowMapper	class/abstract	trait	R12-abstract-pure	hard	5	abstract class with no instance state and 5 in-repo subclass(es)
-Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortState.java	TableSortState	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortState.java	TableSortState	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortStateEditor.java	TableSortStateEditor	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortingContext.java	TableSortingContext	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableTextFilter.java	TableTextFilter	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -9469,7 +9469,7 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/LoadSpecif
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/NullTableFilter.java	NullTableFilter	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/SortJob.java	SortJob	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableAddRemoveStrategy.java	TableAddRemoveStrategy	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
-Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableData.java	TableData	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableData.java	TableData	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableUpdateJob.java	TableUpdateJob	class	struct_trait	R14d-concrete-base	hard	5	concrete Java `class` that 5 classes extend -- a real hierarchy, not a leaf; shared state in a struct, overridable behaviour in a trait
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/ThreadedBackupRowComparator.java	ThreadedBackupRowComparator	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/ThreadedTableColumnComparator.java	ThreadedTableColumnComparator	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -10168,7 +10168,7 @@ Ghidra/Framework/Generic/src/main/java/generic/cache/FixedSizeMRUCachingFactory.
 Ghidra/Framework/Generic/src/main/java/generic/cache/WeakReferenceCache.java	WeakReferenceCache	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/generic/complex/Complex.java	Complex	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentGraphQ.java	ConcurrentGraphQ	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentListenerSet.java	ConcurrentListenerSet	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentListenerSet.java	ConcurrentListenerSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentQ.java	ConcurrentQ	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentQBuilder.java	ConcurrentQBuilder	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/FutureTaskMonitor.java	FutureTaskMonitor	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -10256,7 +10256,7 @@ Ghidra/Framework/Generic/src/main/java/generic/stl/SetIterator.java	SetIterator	
 Ghidra/Framework/Generic/src/main/java/generic/stl/SetSTL.java	SetSTL	class	struct_trait	R14c-concrete-small-hierarchy	hard	3	concrete Java `class` that 3 classes extend -- it is BOTH instantiable and a base, so the shared state needs a struct and the overridable behaviour a trait
 Ghidra/Framework/Generic/src/main/java/generic/stl/UnmodifiableListIteratorSTL.java	UnmodifiableListIteratorSTL	class	iterator	R6a-cursor	hard	0	extends ListIterator
 Ghidra/Framework/Generic/src/main/java/generic/stl/VectorIterator.java	VectorIterator	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
-Ghidra/Framework/Generic/src/main/java/generic/stl/VectorSTL.java	VectorSTL	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/generic/stl/VectorSTL.java	VectorSTL	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGTest.java	AbstractGTest	class/abstract	struct_trait	R11-abstract-stateful	hard	1	abstract class with 3 instance field(s) and 1 in-repo subclass(es)
 Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGenericTest.java	AbstractGenericTest	class/abstract	struct_trait	R11-abstract-stateful	hard	1	abstract class with 5 instance field(s) and 1 in-repo subclass(es)
 Ghidra/Framework/Generic/src/main/java/generic/test/ConcurrentTestExceptionHandler.java	ConcurrentTestExceptionHandler	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -10435,8 +10435,8 @@ Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntListIndexer.jav
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntObjectHashtable.java	IntObjectHashtable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntSet.java	IntSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LRUMap.java	LRUMap	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LRUSet.java	LRUSet	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListAccumulator.java	ListAccumulator	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LRUSet.java	LRUSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListAccumulator.java	ListAccumulator	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerErrorHandler.java	ListenerErrorHandler	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerErrorHandlerFactory.java	ListenerErrorHandlerFactory	interface	trait	R9-open-interface	hard	0	Java `interface` with 1 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerSet.java	ListenerSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -10466,8 +10466,8 @@ Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RangeMap.java	Rang
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackEntry.java	RedBlackEntry	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackKeySet.java	RedBlackKeySet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackLongKeySet.java	RedBlackLongKeySet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackTree.java	RedBlackTree	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulator.java	SetAccumulator	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackTree.java	RedBlackTree	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulator.java	SetAccumulator	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulatorWrapper.java	SetAccumulatorWrapper	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArray.java	ShortArray	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArrayArray.java	ShortArrayArray	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -10479,8 +10479,8 @@ Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortObjectHashtab
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortStringHashtable.java	ShortStringHashtable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SizeRestrictedAccumulatorWrapper.java	SizeRestrictedAccumulatorWrapper	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SoftCacheMap.java	SoftCacheMap	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SortedRangeList.java	SortedRangeList	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Stack.java	Stack	class	iterator	R6b-bare-iterable	hard	1	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SortedRangeList.java	SortedRangeList	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Stack.java	Stack	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringArray.java	StringArray	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringArrayArray.java	StringArrayArray	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringIntHashtable.java	StringIntHashtable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -11164,7 +11164,7 @@ Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/Pag
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/PageUpAction.java	PageUpAction	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/PageUpSelectionAction.java	PageUpSelectionAction	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/Chunk.java	Chunk	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkModel.java	ChunkModel	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkModel.java	ChunkModel	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkReader.java	ChunkReader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/Pair.java	Pair	class	struct_trait	R14c-concrete-small-hierarchy	hard	2	concrete Java `class` that 2 classes extend -- it is BOTH instantiable and a base, so the shared state needs a struct and the overridable behaviour a trait
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ReverseLineReader.java	ReverseLineReader	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -11234,7 +11234,7 @@ Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderFilter
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderListenerAdapter.java	DomainFolderListenerAdapter	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 1 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObject.java	DomainObject	interface	trait	R9-open-interface	hard	3	Java `interface` with 58 abstract method(s), 3 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangeRecord.java	DomainObjectChangeRecord	class	struct_trait	R14d-concrete-base	hard	5	concrete Java `class` that 5 classes extend -- a real hierarchy, not a leaf; shared state in a struct, overridable behaviour in a trait
-Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangedEvent.java	DomainObjectChangedEvent	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangedEvent.java	DomainObjectChangedEvent	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectClosedListener.java	DomainObjectClosedListener	interface	trait	R9-open-interface	hard	5	Java `interface` with 1 abstract method(s), 5 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectDisplayUtils.java	DomainObjectDisplayUtils	class	module	R7-statics-holder	hard	0	6 static field(s) and 4 static method(s), no instance state and no instance methods
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectEvent.java	DomainObjectEvent	enum	enum	R1-java-enum	hard	0	Java `enum` with 7 constants
@@ -11486,14 +11486,14 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/slei
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/FieldSizeMatcher.java	FieldSizeMatcher	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/OperandValueMatcher.java	OperandValueMatcher	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/UnaryExpressionMatcher.java	UnaryExpressionMatcher	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyGrammar.java	AbstractAssemblyGrammar	class/abstract	iterator	R6b-bare-iterable	hard	2	extends Iterable and declares no other API (1 abstract method(s))
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyGrammar.java	AbstractAssemblyGrammar	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 6 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyProduction.java	AbstractAssemblyProduction	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 3 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyExtendedGrammar.java	AssemblyExtendedGrammar	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyExtendedProduction.java	AssemblyExtendedProduction	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyGrammar.java	AssemblyGrammar	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyGrammarException.java	AssemblyGrammarException	class	error	R5-exception	hard	0	extends/names a Java throwable (AssemblyException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyProduction.java	AssemblyProduction	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblySentential.java	AssemblySentential	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblySentential.java	AssemblySentential	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyFirstFollow.java	AssemblyFirstFollow	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseAcceptResult.java	AssemblyParseAcceptResult	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseActionGotoTable.java	AssemblyParseActionGotoTable	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -11543,7 +11543,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/slei
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyStringTerminal.java	AssemblyStringTerminal	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblySymbol.java	AssemblySymbol	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 1 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyTerminal.java	AssemblyTerminal	class/abstract	trait	R12-abstract-pure	hard	5	abstract class with no instance state and 5 in-repo subclass(es)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseBranch.java	AssemblyParseBranch	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseBranch.java	AssemblyParseBranch	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseHiddenNode.java	AssemblyParseHiddenNode	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseNumericToken.java	AssemblyParseNumericToken	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseToken.java	AssemblyParseToken	class	struct_trait	R14c-concrete-small-hierarchy	hard	3	concrete Java `class` that 3 classes extend -- it is BOTH instantiable and a base, so the shared state needs a struct and the overridable behaviour a trait
@@ -11726,7 +11726,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/sleighbase/Nam
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/sleighbase/SleighBase.java	SleighBase	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 8 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/sleighbase/address_set.java	address_set	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ConsistencyChecker.java	ConsistencyChecker	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/DirectoryVisitor.java	DirectoryVisitor	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/DirectoryVisitor.java	DirectoryVisitor	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ErrorWarningReporter.java	ErrorWarningReporter	interface	trait	R9-open-interface	hard	0	Java `interface` with 2 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ExprTree.java	ExprTree	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/FieldContext.java	FieldContext	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -12231,7 +12231,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/Add
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressOutOfBoundsException.java	AddressOutOfBoundsException	class	error	R5-exception	hard	0	extends/names a Java throwable (RuntimeException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressOverflowException.java	AddressOverflowException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRange.java	AddressRange	interface	trait	R9-open-interface	hard	1	Java `interface` with 11 abstract method(s), 1 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeChunker.java	AddressRangeChunker	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeChunker.java	AddressRangeChunker	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeImpl.java	AddressRangeImpl	class	struct_trait	R14c-concrete-small-hierarchy	hard	2	concrete Java `class` that 2 classes extend -- it is BOTH instantiable and a base, so the shared state needs a struct and the overridable behaviour a trait
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeIterator.java	AddressRangeIterator	interface	iterator	R6a-cursor	hard	15	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeSplitter.java	AddressRangeSplitter	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
@@ -12587,12 +12587,12 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Inject
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadSegment.java	InjectPayloadSegment	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadSleigh.java	InjectPayloadSleigh	class	struct_trait	R14d-concrete-base	hard	4	concrete Java `class` that 4 classes extend -- a real hierarchy, not a leaf; shared state in a struct, overridable behaviour in a trait
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InputListType.java	InputListType	enum	enum	R1-java-enum	hard	0	Java `enum` with 2 constants
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java	InstructionBlock	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java	InstructionBlock	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlockFlow.java	InstructionBlockFlow	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionContext.java	InstructionContext	interface	trait	R9-open-interface	hard	6	Java `interface` with 5 abstract method(s), 6 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionError.java	InstructionError	class	error	R5-exception	hard	0	extends/names a Java throwable (InstructionError)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionPrototype.java	InstructionPrototype	interface	trait	R9-open-interface	hard	2	Java `interface` with 32 abstract method(s), 2 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionSet.java	InstructionSet	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionSet.java	InstructionSet	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InsufficientBytesException.java	InsufficientBytesException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InvalidPrototype.java	InvalidPrototype	class	struct	R14b-concrete-one-subclass	hard	1	concrete Java `class` with a single subclass -- inheritance for reuse; port it as a struct and let the subclass embed it
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Language.java	Language	interface	trait	R9-open-interface	hard	2	Java `interface` with 47 abstract method(s), 2 in-repo implementor(s)
@@ -13122,7 +13122,7 @@ Ghidra/Framework/Utility/src/main/java/ghidra/util/Swing.java	Swing	class	module
 Ghidra/Framework/Utility/src/main/java/ghidra/util/SystemUtilities.java	SystemUtilities	class	module	R7-statics-holder	hard	0	10 static field(s) and 27 static method(s), no instance state and no instance methods
 Ghidra/Framework/Utility/src/main/java/ghidra/util/UserSearchUtils.java	UserSearchUtils	class	module	R7-statics-holder	hard	0	6 static field(s) and 15 static method(s), no instance state and no instance methods
 Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Duo.java	Duo	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
-Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Range.java	Range	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Range.java	Range	class	struct	R14a-concrete-leaf	hard	0	concrete Java `class` that nothing extends
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/AssertException.java	AssertException	class	error	R5-exception	hard	0	extends/names a Java throwable (RuntimeException)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/CancelledException.java	CancelledException	class	error	R5-exception	hard	1	extends/names a Java throwable (UsrException)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/IOCancelledException.java	IOCancelledException	class	error	R5-exception	hard	0	extends/names a Java throwable (IOException)

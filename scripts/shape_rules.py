@@ -679,25 +679,33 @@ Do not guess. Port nothing and end with: PORT_RESULT: PARKED shape undecided -- 
 }
 
 
-def classify(facts: dict, subtype_count: int, permits_resolved=None,
-             marker_use=None) -> dict:
-    """Apply the shape rules. Returns {shape, rule, why, confidence}."""
-    name, kind = facts["name"], facts["kind"]
-    all_supers = facts["extends"] + facts["implements"]
+def iterable_note_for(facts: dict) -> str:
+    """The IntoIterator advice for a non-cursor `Iterable`/`Collection`, else "".
 
-    # A rich interface that also happens to be Iterable keeps its own shape, but the porter
-    # still needs telling how to carry the iteration across -- otherwise `iterator()` comes
-    # over as a has_next/next pair, which is the double-consume bug all over again.
-    iterable_note = ""
+    A rich type that also happens to be Iterable keeps its own shape, but the porter still
+    needs telling how to carry the iteration across -- otherwise `iterator()` comes over as a
+    has_next/next pair, which is the double-consume bug all over again. SHAPES.tsv has no
+    column for this, so `directive` recomputes it from the declaration.
+    """
+    all_supers = facts["extends"] + facts["implements"]
     if any(s in ITERABLE_SUPERS for s in all_supers) and not any(
         s in CURSOR_SUPERS for s in all_supers
     ):
-        iterable_note = (
+        return (
             "\nALSO: the Java type is `Iterable`. Implement `IntoIterator` (and/or an `iter()` "
             "returning a concrete iterator) for it. Do NOT port `iterator()`/`hasNext()`/`next()` "
             "as a pair of Rust methods -- `while it.has_next() { v.push(it.next()) }` advanced "
             "the cursor twice per turn and silently dropped every other element."
         )
+    return ""
+
+
+def classify(facts: dict, subtype_count: int, permits_resolved=None,
+             marker_use=None) -> dict:
+    """Apply the shape rules. Returns {shape, rule, why, confidence}."""
+    name, kind = facts["name"], facts["kind"]
+    all_supers = facts["extends"] + facts["implements"]
+    iterable_note = iterable_note_for(facts)
 
     def r(rule, shape, why, conf="hard"):
         return dict(shape=shape, rule=rule, why=why, confidence=conf, name=name,
@@ -749,13 +757,25 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None,
         return r("R6a-cursor", "iterator", f"extends {', '.join(cursors)}")
 
     # R6b -- iterable with essentially no other API: also a sequence.
+    #
+    # "No other API" counts EVERY instance method the type declares -- abstract, default and
+    # concrete -- plus its instance state. Counting only abstract methods let every concrete
+    # class through (a concrete class has none): `ChunkModel` (a log-viewer model with fields
+    # and a dozen methods) and BSim's `VectorStore` were told "implement Iterator", when they
+    # are ordinary types that also happen to be iterable. Those fall through to their normal
+    # rule and pick up `iterable_note` (implement `IntoIterator` as well).
     iterables = [s for s in supers if s in ITERABLE_SUPERS]
-    if iterables and facts["abstract_methods"] <= ITERABLE_API_CUTOFF:
+    own_methods = facts["abstract_methods"] + facts["concrete_methods"]
+    if (
+        iterables
+        and own_methods <= ITERABLE_API_CUTOFF
+        and facts["instance_fields"] == 0
+    ):
         return r(
             "R6b-bare-iterable",
             "iterator",
             f"extends {', '.join(iterables)} and declares no other API "
-            f"({facts['abstract_methods']} abstract method(s))",
+            f"({own_methods} instance method(s), no instance state)",
         )
 
     # R7 -- statics holder: a class that exists only because Java has nowhere else to put
@@ -1221,7 +1241,10 @@ def cmd_directive(args):
     row = _lookup(args.path)
     if row is None:
         return 1
-    print(DIRECTIVES[row["shape"]].format(name=row["name"], why=row["why"]))
+    rel = args.path[len("orig_src/"):] if args.path.startswith("orig_src/") else args.path
+    fa = parse_file(os.path.join(ORIG, rel), row["name"])
+    extra = iterable_note_for(fa) if fa is not None else ""
+    print(DIRECTIVES[row["shape"]].format(name=row["name"], why=row["why"]) + extra)
     return 0
 
 
