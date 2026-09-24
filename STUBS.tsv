@@ -1322,3 +1322,4 @@ ts	stub_class	referenced_by
 2026-09-24T01:11:17.000000+00:00	VtAttributes	VtLine
 2026-09-24T01:14:13.000000+00:00	GProperties	MsdApplyOption
 2026-09-24T02:04:11.000000+00:00	DiffController	DiffControllerListener
+2026-09-24T02:11:21.000000+00:00	BreakpointActionSet	LogicalBreakpointInternal

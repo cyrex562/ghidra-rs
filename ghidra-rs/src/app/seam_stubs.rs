@@ -6806,3 +6806,13 @@ impl VtAttributes {
 /// needed yet.
 #[derive(Debug, Default)]
 pub struct DiffController;
+
+/// Placeholder for `ghidra.app.plugin.core.debug.service.breakpoint.BreakpointActionSet`,
+/// referenced by
+/// [`LogicalBreakpointInternal`](crate::app::plugin::core::debug::service::breakpoint::LogicalBreakpointInternal)
+/// before the real class is ported. Java's version is a concrete class (a `LinkedHashSet` of
+/// `BreakpointActionItem`s with `plan*` factory methods), so this is a plain struct.
+/// `LogicalBreakpointInternal` only ever receives it as the destination of its `plan*` methods,
+/// so no members are needed yet.
+#[derive(Debug, Default)]
+pub struct BreakpointActionSet;
