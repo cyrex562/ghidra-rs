@@ -1,6 +1,7 @@
 pub mod binary_expr_context;
 pub mod condition_context;
 pub mod high_statement_context;
+pub mod instruction_context;
 pub mod mem_loc_context;
 pub mod pcode_context;
 pub mod statement_context;
@@ -14,6 +15,7 @@ pub mod varnode_context;
 pub use binary_expr_context::{BinaryExprContext, VarnodeLike};
 pub use condition_context::ConditionContext;
 pub use high_statement_context::{HighStatementContext, HighStatementContextRef};
+pub use instruction_context::{InstructionContext, InstructionContextBase};
 pub use mem_loc_context::MemLocContext;
 pub use pcode_context::PcodeContext;
 pub use statement_context::StatementContext;

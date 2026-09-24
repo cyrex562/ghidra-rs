@@ -91,7 +91,7 @@ impl Ord for InstLocation {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::program::database::function::OverlappingFunctionException;
     use crate::program::model::address::{AddressSetView, AddressSpace, AddressSpaceType};
@@ -110,8 +110,8 @@ mod tests {
     use crate::util::exception::InvalidInputException;
     use crate::util::task::TaskMonitor;
 
-    // Mock implementation of Function for testing
-    struct MockFunction;
+    /// Mock implementation of Function for testing; shared with sibling LiSA context tests.
+    pub(crate) struct MockFunction;
 
     impl Namespace for MockFunction {
         fn get_symbol(&self) -> Arc<dyn Symbol> {
