@@ -235,6 +235,172 @@ pub trait Language {
     fn get_maximum_instruction_length(&self) -> Option<i32>;
 }
 
+/// A shared handle to a language is itself a language, forwarding every method to the language
+/// it points to.
+///
+/// Java passes languages around as plain object references, which Rust models as
+/// `Arc<dyn Language>`. Some ported APIs (e.g. `PcodeExecutorStatePiece::get_language`) return an
+/// owned `Box<dyn Language>`; with this impl, a holder of an `Arc` satisfies them with
+/// `Box::new(Arc::clone(&language))`, which still refers to the same language, as Java's
+/// `getLanguage()` does. This is the same forwarding impl `std` provides for `io::Read` on
+/// `Box<R>`.
+impl<L: Language + ?Sized> Language for Arc<L> {
+    fn get_language_id(&self) -> LanguageID {
+        (**self).get_language_id()
+    }
+    fn get_language_description(&self) -> Box<dyn LanguageDescription> {
+        (**self).get_language_description()
+    }
+    fn get_parallel_instruction_helper(&self) -> Option<Box<dyn ParallelInstructionLanguageHelper>> {
+        (**self).get_parallel_instruction_helper()
+    }
+    fn get_processor(&self) -> Box<dyn Processor> {
+        (**self).get_processor()
+    }
+    fn get_version(&self) -> i32 {
+        (**self).get_version()
+    }
+    fn get_minor_version(&self) -> i32 {
+        (**self).get_minor_version()
+    }
+    fn get_address_factory(&self) -> Box<dyn AddressFactory> {
+        (**self).get_address_factory()
+    }
+    fn get_default_space(&self) -> Arc<AddressSpace> {
+        (**self).get_default_space()
+    }
+    fn get_default_data_space(&self) -> Arc<AddressSpace> {
+        (**self).get_default_data_space()
+    }
+    fn is_big_endian(&self) -> bool {
+        (**self).is_big_endian()
+    }
+    fn get_instruction_alignment(&self) -> i32 {
+        (**self).get_instruction_alignment()
+    }
+    fn supports_pcode(&self) -> bool {
+        (**self).supports_pcode()
+    }
+    fn is_volatile(&self, addr: &Address) -> bool {
+        (**self).is_volatile(addr)
+    }
+    fn parse(
+        &self,
+        buf: &dyn MemBuffer,
+        context: &mut dyn ProcessorContext,
+        in_delay_slot: bool,
+    ) -> Result<Box<dyn InstructionPrototype>, ParseError> {
+        (**self).parse(buf, context, in_delay_slot)
+    }
+    fn get_number_of_user_defined_op_names(&self) -> i32 {
+        (**self).get_number_of_user_defined_op_names()
+    }
+    fn get_user_defined_op_name(&self, index: i32) -> Option<String> {
+        (**self).get_user_defined_op_name(index)
+    }
+    fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
+        (**self).get_registers_at(address)
+    }
+    fn get_register_in_space(
+        &self,
+        addrspc: &Arc<AddressSpace>,
+        offset: i64,
+        size: i32,
+    ) -> Option<RegisterRef> {
+        (**self).get_register_in_space(addrspc, offset, size)
+    }
+    fn get_registers(&self) -> Vec<RegisterRef> {
+        (**self).get_registers()
+    }
+    fn get_register_names(&self) -> Vec<String> {
+        (**self).get_register_names()
+    }
+    fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
+        (**self).get_register_by_name(name)
+    }
+    fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
+        (**self).get_register_at(addr, size)
+    }
+    fn get_program_counter(&self) -> Option<RegisterRef> {
+        (**self).get_program_counter()
+    }
+    fn get_context_base_register(&self) -> Option<RegisterRef> {
+        (**self).get_context_base_register()
+    }
+    fn get_context_registers(&self) -> Vec<RegisterRef> {
+        (**self).get_context_registers()
+    }
+    fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
+        (**self).get_default_memory_blocks()
+    }
+    fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        (**self).get_default_symbols()
+    }
+    fn get_segmented_space(&self) -> String {
+        (**self).get_segmented_space()
+    }
+    fn get_volatile_addresses(&self) -> Box<dyn AddressSetView> {
+        (**self).get_volatile_addresses()
+    }
+    fn apply_context_settings(&self, ctx: &mut dyn DefaultProgramContext) {
+        (**self).apply_context_settings(ctx)
+    }
+    fn reload_language(&self, task_monitor: &dyn TaskMonitor) -> std::io::Result<()> {
+        (**self).reload_language(task_monitor)
+    }
+    fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
+        (**self).get_compatible_compiler_spec_descriptions()
+    }
+    fn get_compiler_spec_by_id(
+        &self,
+        compiler_spec_id: &CompilerSpecID,
+    ) -> Result<Box<dyn CompilerSpec>, CompilerSpecNotFoundException> {
+        (**self).get_compiler_spec_by_id(compiler_spec_id)
+    }
+    fn get_default_compiler_spec(&self) -> Box<dyn CompilerSpec> {
+        (**self).get_default_compiler_spec()
+    }
+    fn has_property(&self, key: &str) -> bool {
+        (**self).has_property(key)
+    }
+    fn get_property_as_int(&self, key: &str, default_int: i32) -> i32 {
+        (**self).get_property_as_int(key, default_int)
+    }
+    fn get_property_as_boolean(&self, key: &str, default_boolean: bool) -> bool {
+        (**self).get_property_as_boolean(key, default_boolean)
+    }
+    fn get_property_or(&self, key: &str, default_string: &str) -> String {
+        (**self).get_property_or(key, default_string)
+    }
+    fn get_property(&self, key: &str) -> Option<String> {
+        (**self).get_property(key)
+    }
+    fn get_property_keys(&self) -> HashSet<String> {
+        (**self).get_property_keys()
+    }
+    fn has_manual(&self) -> bool {
+        (**self).has_manual()
+    }
+    fn get_manual_entry(&self, instruction_mnemonic: &str) -> Option<crate::util::manual_entry::ManualEntry> {
+        (**self).get_manual_entry(instruction_mnemonic)
+    }
+    fn get_manual_instruction_mnemonic_keys(&self) -> HashSet<String> {
+        (**self).get_manual_instruction_mnemonic_keys()
+    }
+    fn get_manual_exception(&self) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+        (**self).get_manual_exception()
+    }
+    fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
+        (**self).get_sorted_vector_registers()
+    }
+    fn get_register_addresses(&self) -> Box<dyn AddressSetView> {
+        (**self).get_register_addresses()
+    }
+    fn get_maximum_instruction_length(&self) -> Option<i32> {
+        (**self).get_maximum_instruction_length()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

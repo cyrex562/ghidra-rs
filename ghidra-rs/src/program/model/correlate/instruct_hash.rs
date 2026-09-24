@@ -10,9 +10,8 @@
 //! In Java an `InstructHash` holds a reference to its containing `Block` and a table of the
 //! `HashEntry`s its n-grams belong to, while `Block` and `HashEntry` hold `InstructHash`es back.
 //! That cycle is a mutable graph owned by one `HashStore`, so here the back-references are arena
-//! handles ([`CorrelateBlockId`], [`CorrelateHashEntryId`]) into the owning store rather than
-//! shared pointers. `Block`, `HashEntry` and `HashStore` are not ported yet; the handles are
-//! placeholders in [`crate::program::seam_stubs`].
+//! handles ([`CorrelateBlockId`], [`CorrelateHashEntryId`]) into the owning
+//! [`HashStore`](super::HashStore)'s arenas rather than shared pointers.
 //!
 //! Java's fields are `protected` (package-visible to `Block`, `HashStore`, `HashEntry` and
 //! `HashedFunctionAddressCorrelation`), so they are public here: those consumers read and
@@ -23,7 +22,8 @@ use std::sync::Arc;
 
 use super::hash::Hash;
 use crate::program::model::listing::Instruction;
-use crate::program::seam_stubs::{CorrelateBlockId, CorrelateHashEntryId};
+use super::block::CorrelateBlockId;
+use super::hash_entry::CorrelateHashEntryId;
 
 /// An instruction within a basic block, together with the n-gram hashes that start at it.
 ///
