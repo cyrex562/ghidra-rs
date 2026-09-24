@@ -26,20 +26,23 @@
 //!   once it is shared through [`SleighLanguage::into_shared`] (prototypes hold the language).
 //! * [`Language::get_compiler_spec_by_id`] builds a fresh
 //!   [`BasicCompilerSpec`](crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec)
-//!   on every call instead of caching it in `compilerSpecs` as Java does: a compiler spec holds
-//!   `Rc`-based registers, which a `Send + Sync` language cannot store. It also needs the language
-//!   to have been shared through [`SleighLanguage::into_shared`] (the spec holds its language).
+//!   on every call instead of caching it in `compilerSpecs` as Java does: a `Send + Sync`
+//!   language cannot store a compiler spec, which is not `Send + Sync` (it holds
+//!   `dyn CompilerSpecDescription`, `dyn InjectPayloadSleigh`, `dyn Language`, and the protorules
+//!   `dyn AssignAction`/`dyn DatatypeFilter`/`dyn QualifierFilter` trait objects, none of which
+//!   require `Send + Sync`). It also needs the language to have been shared through
+//!   [`SleighLanguage::into_shared`] (the spec holds its language).
 //! * [`Language::reload_language`] needs `SlaFormat.buildDecoder` (not ported) to re-read the
 //!   `.sla` file, and reports that as an I/O error, as Java does for a failed reload.
 //!
 //! # Registers and thread-safety
-//! Java lazily builds one `RegisterManager` and hands out the same `Register` objects forever.
-//! In this crate `Register`s are `Rc<RefCell<_>>` ([`RegisterRef`]), which cannot be stored in a
-//! `SleighLanguage` because `SleighLanguage` must stay `Send + Sync` (it is shared through
-//! `Arc` by the p-code emulator, `ProgramDB`, and others). The register set is instead rebuilt
-//! from the (immutable) symbol table on each register query. Registers compare by name
-//! (`Register`'s `PartialEq`), as in Java, so callers observe the same answers; only
-//! `Rc::ptr_eq` identity across calls differs.
+//! The register set is built once, from the symbol table, when the language is decoded, and
+//! kept in a [`RegisterManager`] that owns the language's
+//! [`RegisterStore`](crate::program::model::lang::register::RegisterStore). Register queries
+//! return [`Register`] handles into that one store, so a register looked up twice is the same
+//! register ([`Register::same`]), as with Java's `Register` objects. Registers, the manager and
+//! therefore `SleighLanguage` are `Send + Sync` (the language is shared through `Arc` by the
+//! p-code emulator, `ProgramDB`, and others).
 
 use super::Endian;
 use crate::app::plugin::processors::generic::MemoryBlockDefinition;
@@ -53,6 +56,7 @@ use crate::program::model::address::{
     Address, AddressFactory, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
     DefaultAddressFactory,
 };
+use crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
@@ -141,6 +145,9 @@ pub struct SleighLanguage {
     /// This language, once shared through [`SleighLanguage::into_shared`]: instruction
     /// prototypes hold their language (Java passes `this`).
     self_ref: Weak<SleighLanguage>,
+    /// `registerManager`: every register of this language, built once from the symbol table
+    /// when the language is decoded.
+    register_manager: RegisterManager,
 }
 
 impl fmt::Display for SleighLanguage {
@@ -359,11 +366,14 @@ impl SleighLanguage {
             max_instruction_length: None,
             manual: OnceLock::new(),
             self_ref: Weak::new(),
+            // Replaced below, once the symbol table the registers come from is decoded.
+            register_manager: RegisterBuilder::new().register_manager(),
         };
 
         let mut symbol_table = SymbolTable::new();
         symbol_table.decode(decoder, &sleigh)?;
         sleigh._symbol_table = symbol_table;
+        sleigh.register_manager = sleigh.build_register_manager();
 
         decoder.close_element(el)?;
 
@@ -489,8 +499,8 @@ impl SleighLanguage {
 
     /// Builds this language's registers from the sleigh symbol table. Port of
     /// `SleighLanguage.loadRegisters(RegisterBuilder)` followed by
-    /// `RegisterBuilder.getRegisterManager()`; see the module docs for why this is not cached.
-    fn register_manager(&self) -> RegisterManager {
+    /// `RegisterBuilder.getRegisterManager()`; called once, at decode time.
+    fn build_register_manager(&self) -> RegisterManager {
         let mut builder = RegisterBuilder::new();
         self.load_registers(&mut builder);
         builder.register_manager()
@@ -631,8 +641,8 @@ impl SleighLanguage {
     }
 
     /// A context cache for this language's context register (Java's `contextcache`, which
-    /// `SleighLanguage` registers the context base register with). Registers are rebuilt per
-    /// call (see the module docs), so the cache is too.
+    /// `SleighLanguage` registers the context base register with). Each call returns a new
+    /// cache; the context cache is not `Send + Sync`, so the language cannot hold one.
     pub fn new_context_cache(&self) -> DefaultContextCache {
         let mut cache = DefaultContextCache::new();
         if let Some(base) = self.get_context_base_register() {
@@ -819,7 +829,7 @@ impl Language for SleighLanguage {
 
     /// Port of `getRegisters(Address)`.
     fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
-        self.register_manager().get_registers_at(address)
+        self.register_manager.get_registers_at(address)
     }
 
     /// Port of `getRegister(AddressSpace, long, int)`.
@@ -834,22 +844,22 @@ impl Language for SleighLanguage {
 
     /// Port of `getRegisters()`.
     fn get_registers(&self) -> Vec<RegisterRef> {
-        self.register_manager().get_registers()
+        self.register_manager.get_registers()
     }
 
     /// Port of `getRegisterNames()`.
     fn get_register_names(&self) -> Vec<String> {
-        self.register_manager().get_register_names()
+        self.register_manager.get_register_names()
     }
 
     /// Port of `getRegister(String)`.
     fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
-        self.register_manager().get_register_by_name(name)
+        self.register_manager.get_register_by_name(name)
     }
 
     /// Port of `getRegister(Address, int)`.
     fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
-        self.register_manager().get_register_at(addr, size)
+        self.register_manager.get_register_at(addr, size)
     }
 
     /// Port of `getProgramCounter()`. Only a `.pspec` `<programcounter>` sets it (not ported),
@@ -860,14 +870,14 @@ impl Language for SleighLanguage {
 
     /// Port of `getContextBaseRegister()`; `None` stands in for `Register.NO_CONTEXT`.
     fn get_context_base_register(&self) -> Option<RegisterRef> {
-        let base = self.register_manager().get_context_base_register();
+        let base = self.register_manager.get_context_base_register();
         let is_context = base.borrow().is_processor_context();
         is_context.then_some(base)
     }
 
     /// Port of `getContextRegisters()`.
     fn get_context_registers(&self) -> Vec<RegisterRef> {
-        self.register_manager().get_context_registers()
+        self.register_manager.get_context_registers()
     }
 
     /// Port of `getDefaultMemoryBlocks()`: empty unless a `.pspec` declares
@@ -950,11 +960,7 @@ impl Language for SleighLanguage {
         let Some(language) = self.self_ref.upgrade() else {
             return Err(not_found());
         };
-        let spec = crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec::from_file(
-            compiler_spec_description,
-            language,
-            &file,
-        )?;
+        let spec = BasicCompilerSpec::from_file(compiler_spec_description, language, &file)?;
         Ok(Box::new(spec))
     }
 
@@ -1050,12 +1056,12 @@ impl Language for SleighLanguage {
 
     /// Port of `getSortedVectorRegisters()`.
     fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
-        self.register_manager().get_sorted_vector_registers()
+        self.register_manager.get_sorted_vector_registers()
     }
 
     /// Port of `getRegisterAddresses()`.
     fn get_register_addresses(&self) -> Box<dyn AddressSetView> {
-        self.register_manager().get_register_addresses()
+        self.register_manager.get_register_addresses()
     }
 
     /// Port of `getMaximumInstructionLength()`.
@@ -1705,10 +1711,48 @@ mod language_tests {
     #[test]
     fn register_queries_agree_across_calls() {
         let lang = language(&Sla::default());
-        assert_eq!(
-            *lang.get_register_by_name("r0").unwrap().borrow(),
-            *lang.get_register_by_name("r0").unwrap().borrow()
+        let first = lang.get_register_by_name("r0").unwrap();
+        let second = lang.get_register_by_name("r0").unwrap();
+        assert_eq!(first, second);
+        // Registers are built once at decode time: the same register (same store, same id)
+        // comes back from every query, whichever query it is.
+        assert!(Register::same(&first, &second));
+        assert_eq!(first.id(), second.id());
+        let at0 = Address::new(
+            lang.get_address_factory().get_address_space_by_name("register").unwrap(),
+            0,
         );
+        assert!(Register::same(&first, &lang.get_register_at(&at0, 4).unwrap()));
+        let from_list = lang.get_registers().into_iter().find(|r| r.name() == "r0").unwrap();
+        assert!(Register::same(&first, &from_list));
+        let base = lang.get_context_base_register().unwrap();
+        assert!(Register::same(&base, &lang.get_context_base_register().unwrap()));
+    }
+
+    #[test]
+    fn registers_are_linked_by_id_within_the_language() {
+        let lang = language(&Sla::default());
+        let r0 = lang.get_register_by_name("r0").unwrap();
+        let r0l = lang.get_register_by_name("r0l").unwrap();
+        // r0l (2 bytes at register:0) is r0's child; r0 is its own base.
+        assert_eq!(r0l.parent_id(), Some(r0.id()));
+        assert!(Register::same(&r0l.parent_register().unwrap(), &r0));
+        assert!(Register::same(&r0l.get_base_register(), &r0));
+        assert_eq!(r0.child_ids(), &[r0l.id()]);
+        assert!(r0.is_base_register());
+        assert!(r0.contains(&r0l));
+        // Little-endian: r0l is r0's low half.
+        assert_eq!(r0l.base_mask(), vec![0x00, 0x00, 0xFF, 0xFF]);
+
+        // The context field hangs off the context base register, in the same store.
+        let tmode = lang.get_register_by_name("TMode").unwrap();
+        let base = lang.get_context_base_register().unwrap();
+        assert!(Register::same(&tmode.get_base_register(), &base));
+        assert!(Arc::ptr_eq(tmode.store(), r0.store()));
+        assert_eq!(tmode.store().get(tmode.base_register_id()).name(), "contextreg");
+        // Big-endian context: bit 31 of the 4-byte base (lsb 7 of its most significant byte).
+        assert_eq!(tmode.least_significant_bit_in_base_register(), 31);
+        assert_eq!(tmode.base_mask(), vec![0x80, 0x00, 0x00, 0x00]);
     }
 
     #[test]
