@@ -52,12 +52,6 @@ use std::option::Option as StdOption;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-/// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
-/// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
-/// [`VSCodeIntegrationService`](crate::app::services::VSCodeIntegrationService) before the
-/// real class is ported. Both services only ever return this type, so no members are needed yet.
-pub trait ToolOptions {}
-
 /// Placeholder for `ghidra.app.plugin.core.byteviewer.ByteViewerConfigOptions`, referenced by
 /// [`DataFormatModel`](crate::app::plugin::core::format::DataFormatModel) before the real class
 /// is ported. Java's version is a concrete class (not an interface), so this is a plain struct

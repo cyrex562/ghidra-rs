@@ -59,9 +59,10 @@ use std::cell::Cell;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::feature::seam_stubs::{
-    MarkupItemStorageImpl, ProgramLocation, Stringable, ToolOptions, VtAssociation,
+    MarkupItemStorageImpl, ProgramLocation, Stringable, VtAssociation,
     VtMarkupItemConsideredStatus, VtMarkupType, VtMarkupTypeBase,
 };
+use crate::framework::seam_stubs::ToolOptions;
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
 use crate::feature::vt::api::main::vt_markup_item::{VtMarkupItem, USER_DEFINED_ADDRESS_SOURCE};

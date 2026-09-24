@@ -4,7 +4,8 @@
 
 use std::sync::Arc;
 
-use crate::feature::seam_stubs::{ToolOptions, VtOptions};
+use crate::feature::seam_stubs::VtOptions;
+use crate::framework::seam_stubs::ToolOptions;
 use crate::feature::vt::api::main::vt_program_correlator::VTProgramCorrelator;
 use crate::feature::vt::api::main::vt_session::VTSession;
 use crate::program::model::address::{AddressSet, AddressSetView};

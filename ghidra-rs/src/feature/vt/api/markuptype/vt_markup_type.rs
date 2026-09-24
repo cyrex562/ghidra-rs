@@ -42,7 +42,8 @@
 
 use std::sync::Arc;
 
-use crate::feature::seam_stubs::{ProgramLocation, Stringable, ToolOptions, VtAssociation, VtMarkupItem};
+use crate::feature::seam_stubs::{ProgramLocation, Stringable, VtAssociation, VtMarkupItem};
+use crate::framework::seam_stubs::ToolOptions;
 use crate::feature::vt::api::implementation::markup_item_impl::MarkupItemImpl;
 use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
 use crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType;

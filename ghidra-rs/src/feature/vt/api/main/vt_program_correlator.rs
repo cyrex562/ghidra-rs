@@ -6,7 +6,7 @@ use crate::util::task::TaskMonitor;
 
 use super::vt_match_set::VTMatchSet;
 use super::vt_session::VTSession;
-use crate::feature::seam_stubs::ToolOptions;
+use crate::framework::seam_stubs::ToolOptions;
 
 /// Interface for a program correlator that performs correlation between two programs.
 ///

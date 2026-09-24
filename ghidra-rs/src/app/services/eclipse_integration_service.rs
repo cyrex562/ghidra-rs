@@ -6,7 +6,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::app::plugin::core::eclipse::EclipseConnection;
-use crate::app::seam_stubs::ToolOptions;
+use crate::framework::seam_stubs::ToolOptions;
 use crate::util::task::TaskMonitor;
 
 /// Service that provides Eclipse-related functionality.
@@ -66,7 +66,11 @@ mod tests {
     use std::cell::RefCell;
 
     struct StubToolOptions;
-    impl ToolOptions for StubToolOptions {}
+    impl ToolOptions for StubToolOptions {
+        fn get_option(&self, _key: &str) -> Option<String> {
+            None
+        }
+    }
 
     struct MockEclipseIntegrationService {
         last_error: RefCell<Option<String>>,

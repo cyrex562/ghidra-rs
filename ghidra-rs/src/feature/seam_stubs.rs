@@ -28,11 +28,6 @@ pub trait VtSession: Send + Sync {
     fn get_name(&self) -> &str;
 }
 
-/// Placeholder for `ToolOptions`.
-pub trait ToolOptions: Send + Sync {
-    fn get_option(&self, key: &str) -> Option<String>;
-}
-
 /// Placeholder for `VTMarkupItemConsideredStatus`.
 pub trait VtMarkupItemConsideredStatus: Send + Sync {
     fn is_considered(&self) -> bool;

@@ -153,7 +153,7 @@ impl VTMatchSetTableDBAdapterBase {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::feature::seam_stubs::ToolOptions;
+    use crate::framework::seam_stubs::ToolOptions;
     use crate::program::model::address::AddressSetView;
 
     #[test]

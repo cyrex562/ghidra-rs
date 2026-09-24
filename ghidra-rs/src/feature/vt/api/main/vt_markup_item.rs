@@ -17,9 +17,9 @@
 //! used as a stand-in before `VTMarkupItem` itself was ported.
 
 use crate::feature::seam_stubs::{
-    ProgramLocation, Stringable, ToolOptions, VtAssociation, VtMarkupItemConsideredStatus,
-    VtMarkupType,
+    ProgramLocation, Stringable, VtAssociation, VtMarkupItemConsideredStatus, VtMarkupType,
 };
+use crate::framework::seam_stubs::ToolOptions;
 use crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType;
 use crate::feature::vt::api::main::vt_markup_item_destination_address_edit_status::VtMarkupItemDestinationAddressEditStatus;
 use crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus;

@@ -5,7 +5,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::app::seam_stubs::ToolOptions;
+use crate::framework::seam_stubs::ToolOptions;
 
 /// Service that provides Visual Studio Code-related functionality.
 pub trait VSCodeIntegrationService {
@@ -49,7 +49,11 @@ mod tests {
     use std::cell::RefCell;
 
     struct StubToolOptions;
-    impl ToolOptions for StubToolOptions {}
+    impl ToolOptions for StubToolOptions {
+        fn get_option(&self, _key: &str) -> Option<String> {
+            None
+        }
+    }
 
     struct MockVSCodeIntegrationService {
         last_error: RefCell<Option<String>>,

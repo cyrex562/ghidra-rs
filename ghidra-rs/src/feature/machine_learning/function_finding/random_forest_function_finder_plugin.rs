@@ -583,7 +583,11 @@ mod tests {
     }
 
     struct StubToolOptions;
-    impl ToolOptions for StubToolOptions {}
+    impl ToolOptions for StubToolOptions {
+        fn get_option(&self, _key: &str) -> Option<String> {
+            None
+        }
+    }
 
     fn stub_action() -> Arc<dyn Any + Send + Sync> {
         Arc::new(())

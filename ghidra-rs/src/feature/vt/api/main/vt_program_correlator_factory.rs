@@ -56,7 +56,7 @@ pub trait VTProgramCorrelatorFactory: ExtensionPoint + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::feature::seam_stubs::ToolOptions;
+    use crate::framework::seam_stubs::ToolOptions;
     use crate::feature::vt::api::main::vt_session::VTSession;
     use crate::util::task::TaskMonitor;
 

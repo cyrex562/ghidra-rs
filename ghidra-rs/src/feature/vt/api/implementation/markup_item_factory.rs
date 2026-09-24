@@ -283,7 +283,7 @@ mod tests {
         fn apply(
             &self,
             _apply_action: crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType,
-            _options: &dyn crate::feature::seam_stubs::ToolOptions,
+            _options: &dyn crate::framework::seam_stubs::ToolOptions,
         ) -> Result<(), crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrackingApplyException>
         {
             unimplemented!("not exercised by this test")

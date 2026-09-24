@@ -1002,11 +1002,18 @@ pub trait AsyncReferenceLike<T> {
     fn set(&self, value: T);
 }
 
-/// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
-/// [`OptionsChangeListener`](crate::framework::options::OptionsChangeListener) before the real
-/// class is ported. `OptionsChangeListener` only ever passes this type through as an opaque
-/// value, so no members are needed yet.
-pub trait ToolOptions {}
+/// Placeholder for `ghidra.framework.options.ToolOptions`, before the real class is ported.
+///
+/// The single canonical placeholder for that Java class: referenced by
+/// [`OptionsChangeListener`](crate::framework::options::OptionsChangeListener),
+/// `AddressCorrelator`, the Eclipse/VSCode integration services and the Version Tracking API
+/// (`VTProgramCorrelator`, `VTMarkupItem`, `VTMarkupType`, ...). The app and feature modules
+/// previously each declared their own unrelated `ToolOptions` placeholder; they now all use this
+/// one. `get_option` is the one member a caller (the VT markup types) reads.
+pub trait ToolOptions: Send + Sync {
+    /// Returns the string value of the option named `key`, or `None` if it is not set.
+    fn get_option(&self, key: &str) -> Option<String>;
+}
 
 /// Placeholder for `ghidra.util.bean.opteditor.OptionsVetoException`, referenced by
 /// [`OptionsChangeListener`](crate::framework::options::OptionsChangeListener) before the real

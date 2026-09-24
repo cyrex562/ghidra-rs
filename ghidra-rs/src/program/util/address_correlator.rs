@@ -111,7 +111,11 @@ use crate::program::model::listing::CommentType;
     }
 
     struct StubToolOptions;
-    impl ToolOptions for StubToolOptions {}
+    impl ToolOptions for StubToolOptions {
+        fn get_option(&self, _key: &str) -> Option<String> {
+            None
+        }
+    }
 
     struct FixedRange {
         min: Address,
