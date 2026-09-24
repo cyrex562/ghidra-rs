@@ -130,6 +130,114 @@ impl ValueSymbol {
     }
 }
 
+/// A context-variable symbol: a named bit-field of a context register.
+///
+/// Decode-side port of `ghidra.app.plugin.processors.sleigh.symbol.ContextSymbol` (Java
+/// `ContextSymbol extends ValueSymbol`). Per this module's id-based convention the Java `vn`
+/// reference to the backing [`VarnodeSymbol`] is held as `varnode_id` and resolved through the
+/// [`SymbolTable`]. This carries exactly the state `SleighLanguage` needs to build the language's
+/// context registers (`SleighLanguage.registerContext(ContextSymbol, RegisterBuilder)`); the
+/// remaining Java surface (`resolve`/`print` of the inherited `ValueSymbol` behavior) is not part
+/// of this decode-side port.
+pub struct ContextSymbol {
+    pub header: SymbolHeader,
+    /// The context field (`PatternValue`) this symbol's value is read from.
+    pub patval: Option<PatternExpression>,
+    /// Id of the [`VarnodeSymbol`] naming the context register this field lives in.
+    pub varnode_id: i32,
+    /// Least significant bit of the field within the context varnode (`low`).
+    pub low: i32,
+    /// Most significant bit of the field within the context varnode (`high`).
+    pub high: i32,
+    /// Whether the value of this context variable follows flow (`flow`).
+    pub flow: bool,
+}
+
+impl ContextSymbol {
+    /// Mirrors `ContextSymbol.followsFlow()`.
+    pub fn follows_flow(&self) -> bool {
+        self.flow
+    }
+
+    /// Mirrors `ContextSymbol.decode(Decoder, SleighLanguage)`. As with the other symbol kinds,
+    /// the `ELEM_CONTEXT_SYM` element was already opened (and `ATTRIB_ID` read) by
+    /// [`SymbolTable::decode`]'s dispatch loop.
+    ///
+    /// # Errors
+    /// Returns an error if the `low`/`high` attributes are missing ("Missing high/low
+    /// attributes", as Java's `DecoderException`), or on any underlying decode failure.
+    pub fn decode(
+        &mut self,
+        decoder: &dyn Decoder,
+        lang: &SleighLanguage,
+    ) -> Result<(), DecoderError> {
+        self.flow = false;
+        self.varnode_id = decoder.read_unsigned_integer_with_id(ATTRIB_VARNODE)? as i32;
+        let mut low_missing = true;
+        let mut high_missing = true;
+        loop {
+            let attrib = decoder.get_next_attribute_id()?;
+            if attrib == 0 {
+                break;
+            }
+            if attrib == ATTRIB_LOW.id {
+                self.low = decoder.read_signed_integer()? as i32;
+                low_missing = false;
+            } else if attrib == ATTRIB_HIGH.id {
+                self.high = decoder.read_signed_integer()? as i32;
+                high_missing = false;
+            } else if attrib == ATTRIB_FLOW.id {
+                self.flow = decoder.read_bool()?;
+            }
+        }
+        if low_missing || high_missing {
+            return Err(DecoderError::Generic("Missing high/low attributes".to_string()));
+        }
+        self.patval = Some(PatternExpression::decode(decoder, lang)?);
+        decoder.close_element(ELEM_CONTEXT_SYM.id)?;
+        Ok(())
+    }
+}
+
+/// A symbol whose value selects one of a list of varnodes (`attach variables`).
+///
+/// Decode-side port of `ghidra.app.plugin.processors.sleigh.symbol.VarnodeListSymbol`. The Java
+/// `VarnodeSymbol[] varnode_table` is held as ids (`None` for Java's `null` holes) per this
+/// module's convention. Carries what `SleighLanguage.loadRegisters` needs (the pattern value,
+/// which for a context-field varlist defines a context register); Java's `checkTableFill` /
+/// `resolve` / `getSize` behavior is not part of this decode-side port.
+pub struct VarnodeListSymbol {
+    pub header: SymbolHeader,
+    /// The pattern value selecting an entry of the table.
+    pub patval: Option<PatternExpression>,
+    /// Ids of the [`VarnodeSymbol`]s in the table, `None` where the `.sla` has a hole.
+    pub varnode_ids: Vec<Option<i32>>,
+}
+
+impl VarnodeListSymbol {
+    /// Mirrors `VarnodeListSymbol.decode(Decoder, SleighLanguage)` (element already open).
+    pub fn decode(
+        &mut self,
+        decoder: &dyn Decoder,
+        lang: &SleighLanguage,
+    ) -> Result<(), DecoderError> {
+        self.patval = Some(PatternExpression::decode(decoder, lang)?);
+        self.varnode_ids.clear();
+        while decoder.peek_element()? != 0 {
+            let subel = decoder.open_element()?;
+            if subel == ELEM_VAR.id {
+                self.varnode_ids
+                    .push(Some(decoder.read_unsigned_integer_with_id(ATTRIB_ID)? as i32));
+            } else {
+                self.varnode_ids.push(None);
+            }
+            decoder.close_element(subel)?;
+        }
+        decoder.close_element(ELEM_VARLIST_SYM.id)?;
+        Ok(())
+    }
+}
+
 pub struct SubtableSymbol {
     pub header: SymbolHeader,
     pub constructors: Vec<Arc<Constructor>>,
@@ -216,6 +324,8 @@ pub enum SleighSymbol {
     Subtable(SubtableSymbol),
     Operand(OperandSymbol),
     Triple(TripleSymbol),
+    Context(ContextSymbol),
+    VarnodeList(VarnodeListSymbol),
     Other(SymbolHeader, i32),
 }
 
@@ -228,6 +338,8 @@ impl SleighSymbol {
             Self::Subtable(s) => &s.header,
             Self::Operand(s) => &s.header,
             Self::Triple(s) => &s.header,
+            Self::Context(s) => &s.header,
+            Self::VarnodeList(s) => &s.header,
             Self::Other(h, _) => h,
         }
     }
@@ -243,6 +355,8 @@ impl SleighSymbol {
             Self::Value(s) => s.decode(decoder, sleigh),
             Self::Subtable(s) => s.decode(decoder, sleigh),
             Self::Operand(s) => s.decode(decoder, sleigh),
+            Self::Context(s) => s.decode(decoder, sleigh),
+            Self::VarnodeList(s) => s.decode(decoder, sleigh),
             Self::Triple(_) => {
                 decoder.close_element_skipping(ELEM_VARNODE_SYM.id)?; // Triple symbols are usually Varnodes or similar in SLA
                 Ok(())
@@ -409,6 +523,21 @@ impl SymbolTable {
                     triple_id: None,
                     code_address: false,
                     defexp: None,
+                })
+            } else if tag == ELEM_CONTEXT_SYM_HEAD.id {
+                SleighSymbol::Context(ContextSymbol {
+                    header: header.clone(),
+                    patval: None,
+                    varnode_id: 0,
+                    low: 0,
+                    high: 0,
+                    flow: false,
+                })
+            } else if tag == ELEM_VARLIST_SYM_HEAD.id {
+                SleighSymbol::VarnodeList(VarnodeListSymbol {
+                    header: header.clone(),
+                    patval: None,
+                    varnode_ids: Vec::new(),
                 })
             } else if tag == ELEM_SUBTABLE_SYM_HEAD.id {
                 SleighSymbol::Subtable(SubtableSymbol {

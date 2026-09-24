@@ -1,18 +1,82 @@
+//! Port of `ghidra.app.plugin.processors.sleigh.SleighLanguage`: a [`Language`] backed by a
+//! compiled SLEIGH specification (`.sla`).
+//!
+//! # What is ported
+//! * `.sla` decoding (`decode`/`parseSpaces`, including `.ldefs` endianness validation and
+//!   address-space truncation when a [`SleighLanguageDescription`] is supplied), the sleigh
+//!   [`SymbolTable`] and instruction decision tree.
+//! * Register construction from the symbol table (`loadRegisters`/`registerContext`), and every
+//!   register query of [`Language`].
+//! * Description-derived answers (id, processor, version, compiler spec descriptions), address
+//!   factory/spaces, endianness, alignment, user-op names, volatile addresses, properties,
+//!   maximum instruction length, the parallel-instruction helper, and the processor manual index
+//!   (see [`manual`]).
+//!
+//! # What is not (yet) ported
+//! * Reading the processor specification (`.pspec`; Java `readInitialDescription`/
+//!   `readRemainingSpecification`/`read`) needs `XmlPullParserFactory`, which is not ported. A
+//!   language is therefore in the state Java's is in for a `.pspec` that declares nothing: no
+//!   properties, no program counter, no context settings, no volatile ranges, no default
+//!   symbols or memory blocks, no register renames/aliases/groups/lane sizes, and no segmented
+//!   space.
+//! * [`Language::parse`] needs the concrete `SleighInstructionPrototype` and `ContextCache`
+//!   (both still trait seams), and [`Language::get_compiler_spec_by_id`] /
+//!   [`Language::get_default_compiler_spec`] need a concrete `BasicCompilerSpec` (cspec XML
+//!   parsing). Those bodies panic with an explanatory message; they are not reachable from the
+//!   p-code emulator.
+//! * [`Language::reload_language`] needs `SlaFormat.buildDecoder` (not ported) to re-read the
+//!   `.sla` file, and reports that as an I/O error, as Java does for a failed reload.
+//!
+//! # Registers and thread-safety
+//! Java lazily builds one `RegisterManager` and hands out the same `Register` objects forever.
+//! In this crate `Register`s are `Rc<RefCell<_>>` ([`RegisterRef`]), which cannot be stored in a
+//! `SleighLanguage` because `SleighLanguage` must stay `Send + Sync` (it is shared through
+//! `Arc` by the p-code emulator, `ProgramDB`, and others). The register set is instead rebuilt
+//! from the (immutable) symbol table on each register query. Registers compare by name
+//! (`Register`'s `PartialEq`), as in Java, so callers observe the same answers; only
+//! `Rc::ptr_eq` identity across calls differs.
+
 use super::Endian;
-use crate::program::model::address::{AddressSpace, AddressSpaceType, DefaultAddressFactory};
+use crate::app::plugin::processors::generic::MemoryBlockDefinition;
+use crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription;
+use crate::program::model::address::{
+    Address, AddressFactory, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
+    DefaultAddressFactory,
+};
+use crate::program::model::lang::compiler_spec::CompilerSpec;
+use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
+use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
+use crate::program::model::lang::instruction_prototype::InstructionPrototype;
+use crate::program::model::lang::language::{Language, ParseError};
+use crate::program::model::lang::language_description::LanguageDescription;
+use crate::program::model::lang::language_id::LanguageID;
+use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
+use crate::program::model::lang::processor_context::ProcessorContext;
+use crate::program::model::lang::register::{Register, RegisterRef};
+use crate::program::model::lang::register_builder::RegisterBuilder;
+use crate::program::model::lang::register_manager::RegisterManager;
+use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
+use crate::program::model::listing::default_program_context::DefaultProgramContext;
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::pcode::{
     Decoder, DecoderError, ATTRIB_ALIGN, ATTRIB_BIGENDIAN, ATTRIB_DEFAULTSPACE, ATTRIB_DELAY,
     ATTRIB_INDEX, ATTRIB_NAME, ATTRIB_NUMSECTIONS, ATTRIB_SIZE, ATTRIB_UNIQBASE, ATTRIB_UNIQMASK,
     ATTRIB_VERSION, ATTRIB_WORDSIZE, ELEM_SLEIGH, ELEM_SOURCEFILES, ELEM_SPACE, ELEM_SPACES,
     ELEM_SPACE_OTHER, ELEM_SPACE_UNIQUE,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
+use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+use crate::util::manual_entry::ManualEntry;
+use crate::util::task::TaskMonitor;
+use std::collections::{HashMap, HashSet};
+use std::fmt;
+use std::sync::{Arc, OnceLock};
 
 pub mod constructor;
 pub mod decision;
 pub mod expression;
 pub mod handle;
+pub mod manual;
 pub mod pattern;
 pub mod symbol;
 pub mod template;
@@ -21,8 +85,20 @@ pub mod walker;
 pub use handle::FixedHandle;
 pub use walker::{ParserWalker, SleighError};
 
-use symbol::{SleighSymbol, SubtableSymbol, SymbolTable};
+use expression::{ContextField, PatternExpression};
+use manual::ManualState;
+use symbol::{ContextSymbol, SleighSymbol, SubtableSymbol, SymbolTable};
 
+/// Port of `GhidraLanguagePropertyKeys.MAXIMUM_INSTRUCTION_LENGTH` (the Rust
+/// `GhidraLanguagePropertyKeys` does not yet carry its constants).
+const MAXIMUM_INSTRUCTION_LENGTH: &str = "maximumInstructionLength";
+
+/// The language description a [`SleighLanguage`] is built from, shared so that
+/// [`Language::get_language_description`] can hand out the same description on every call.
+pub type SharedSleighLanguageDescription = Arc<dyn SleighLanguageDescription + Send + Sync>;
+
+/// A [`Language`] backed by a compiled SLEIGH specification. See the module docs for what is and
+/// is not yet ported.
 pub struct SleighLanguage {
     _id: String,
     _endian: Endian,
@@ -35,6 +111,35 @@ pub struct SleighLanguage {
     _default_space: Option<Arc<AddressSpace>>,
     _space_table: HashMap<String, Arc<AddressSpace>>,
     _symbol_table: SymbolTable,
+    /// The `.ldefs` description (`description`); `None` for a language decoded straight from a
+    /// `.sla` stream via [`SleighLanguage::decode`].
+    description: Option<SharedSleighLanguageDescription>,
+    /// `defaultDataSpace`: the default space unless a `.pspec` `<data_space>` overrides it.
+    default_data_space: Option<Arc<AddressSpace>>,
+    /// `defaultPointerWordSize`: the default data space's addressable unit size.
+    default_pointer_word_size: i32,
+    /// `volatileAddresses`.
+    volatile_addresses: AddressSet,
+    /// `properties` (from the `.pspec` `<properties>` element).
+    properties: HashMap<String, String>,
+    /// `segmentedspace` (from the `.pspec` `<segmented_address>` element).
+    segmented_space: String,
+    /// `maxInstructionLength`.
+    max_instruction_length: Option<i32>,
+    /// `manual`/`manualException`, loaded on first use (`initManual`).
+    manual: OnceLock<ManualState>,
+}
+
+impl fmt::Display for SleighLanguage {
+    /// Port of `SleighLanguage.toString()`, which is `description.toString()`
+    /// (`BasicLanguageDescription.toString()`); falls back to the language id without one.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use crate::program::model::lang::basic_language_description::BasicLanguageDescription;
+        match &self.description {
+            Some(d) => f.write_str(&d.to_display_string()),
+            None => f.write_str(&self._id),
+        }
+    }
 }
 
 impl SleighLanguage {
@@ -42,6 +147,7 @@ impl SleighLanguage {
         &self._id
     }
 
+    /// Port of `SleighLanguage.getSymbolTable()` (the sleigh symbol table, not the program's).
     pub fn get_symbol_table(&self) -> &SymbolTable {
         &self._symbol_table
     }
@@ -50,8 +156,13 @@ impl SleighLanguage {
         self._address_factory.clone()
     }
 
+    /// Port of `SleighLanguage.isBigEndian()`: the `.ldefs` endianness when a description is
+    /// present, otherwise the endianness recorded in the `.sla` file.
     pub fn is_big_endian(&self) -> bool {
-        self._endian == Endian::Big
+        match &self.description {
+            Some(d) => d.get_endian().is_big_endian(),
+            None => self._endian == Endian::Big,
+        }
     }
 
     /// Returns the first free offset within the unique address space, as recorded in the `.sla`
@@ -60,6 +171,29 @@ impl SleighLanguage {
     /// Port of `SleighLanguage.getUniqueBase()`.
     pub fn get_unique_base(&self) -> u64 {
         self._unique_base
+    }
+
+    /// Number of bytes between allocations within the unique space. Port of
+    /// `SleighLanguage.getUniqueAllocationMask()`.
+    pub fn get_unique_allocation_mask(&self) -> i32 {
+        self._unique_allocate_mask
+    }
+
+    /// The (maximum) number of named p-code sections. Port of `SleighLanguage.numSections()`.
+    pub fn num_sections(&self) -> i32 {
+        self._num_sections
+    }
+
+    /// The default word size to use when analyzing pointer offsets. Port of the deprecated
+    /// `SleighLanguage.getDefaultPointerWordSize()`.
+    pub fn get_default_pointer_word_size(&self) -> i32 {
+        self.default_pointer_word_size
+    }
+
+    /// The `.ldefs` description this language was built from, if any. Port of the covariant
+    /// `SleighLanguage.getLanguageDescription()` (which returns `SleighLanguageDescription`).
+    pub fn get_sleigh_language_description(&self) -> Option<&SharedSleighLanguageDescription> {
+        self.description.as_ref()
     }
 
     /// Returns the number of user-defined (`CALLOTHER`) ops known to this language.
@@ -81,7 +215,36 @@ impl SleighLanguage {
             .map(|sym| sym.header().name.clone())
     }
 
+    /// Decodes a language from a `.sla` stream alone, identified by `id`, with no `.ldefs`
+    /// description (so no endianness validation, space truncation, or compiler specs).
     pub fn decode(decoder: &dyn Decoder, id: String) -> Result<Self, DecoderError> {
+        Self::decode_internal(decoder, id, None)
+    }
+
+    /// Decodes a language from a `.sla` stream for the given `.ldefs` description. This is the
+    /// `.sla` half of Java's `SleighLanguage(SleighLanguageDescription)` constructor (`decode`):
+    /// the language id comes from the description, the `.sla` endianness is validated against it,
+    /// and the description's address-space truncations are applied.
+    ///
+    /// # Errors
+    /// Returns an error on malformed `.sla` data, an endianness mismatch with the description, an
+    /// invalid or unapplied space truncation, or a missing default space.
+    pub fn decode_with_description(
+        decoder: &dyn Decoder,
+        description: SharedSleighLanguageDescription,
+    ) -> Result<Self, DecoderError> {
+        let id = description.get_language_id().get_id_as_string().to_string();
+        Self::decode_internal(decoder, id, Some(description))
+    }
+
+    fn decode_internal(
+        decoder: &dyn Decoder,
+        id: String,
+        description: Option<SharedSleighLanguageDescription>,
+    ) -> Result<Self, DecoderError> {
+        if id.is_empty() {
+            return Err(DecoderError::Generic("empty language id not allowed".to_string()));
+        }
         let el = decoder.open_element_with_id(ELEM_SLEIGH)?;
 
         let mut version = 0;
@@ -124,13 +287,25 @@ impl SleighLanguage {
         } else {
             Endian::Little
         };
+        let mut instruction_endian = endian;
+        if let Some(d) = &description {
+            let ldef_endian = d.get_endian();
+            let inst_endian = d.get_instruction_endian();
+            if endian != ldef_endian && inst_endian == ldef_endian {
+                return Err(DecoderError::Generic(format!(
+                    ".ldefs says {id} is {ldef_endian} but .sla says {endian}"
+                )));
+            }
+            instruction_endian = inst_endian;
+        }
 
         if decoder.peek_element()? == ELEM_SOURCEFILES.id {
             let indexer_el = decoder.open_element()?;
             decoder.close_element_skipping(indexer_el)?;
         }
 
-        let (space_table, default_space) = Self::parse_spaces(decoder)?;
+        let (space_table, default_space) =
+            Self::parse_spaces(decoder, &id, description.as_deref())?;
 
         let mut all_spaces: Vec<Arc<AddressSpace>> = space_table.values().cloned().collect();
         all_spaces.sort_by_key(|s| s.space_id());
@@ -140,18 +315,36 @@ impl SleighLanguage {
         ));
         decoder.set_address_factory(address_factory.clone());
 
+        // Java: `defaultDataSpace = default_space;
+        // defaultPointerWordSize = defaultDataSpace.getAddressableUnitSize()`, which fails (NPE)
+        // when the `.sla` names a default space it does not define.
+        let Some(default_space_ref) = default_space.as_ref() else {
+            return Err(DecoderError::Generic(format!(
+                "default address space of {id} is not defined"
+            )));
+        };
+        let default_pointer_word_size = default_space_ref.unit_size();
+
         let mut sleigh = Self {
             _id: id,
             _endian: endian,
-            _instruction_endian: endian,
+            _instruction_endian: instruction_endian,
             _unique_base: unique_base,
             _alignment: alignment,
             _unique_allocate_mask: unique_allocate_mask,
             _num_sections: num_sections,
             _address_factory: address_factory,
+            default_data_space: default_space.clone(),
             _default_space: default_space,
             _space_table: space_table,
             _symbol_table: SymbolTable::new(),
+            description,
+            default_pointer_word_size,
+            volatile_addresses: AddressSet::new(),
+            properties: HashMap::new(),
+            segmented_space: String::new(),
+            max_instruction_length: None,
+            manual: OnceLock::new(),
         };
 
         let mut symbol_table = SymbolTable::new();
@@ -160,11 +353,19 @@ impl SleighLanguage {
 
         decoder.close_element(el)?;
 
+        // Java: `getPropertyAsInt(MAXIMUM_INSTRUCTION_LENGTH, -1)`, kept only when positive.
+        let max_length = sleigh.get_property_as_int(MAXIMUM_INSTRUCTION_LENGTH, -1);
+        if max_length > 0 {
+            sleigh.max_instruction_length = Some(max_length);
+        }
+
         Ok(sleigh)
     }
 
     fn parse_spaces(
         decoder: &dyn Decoder,
+        id: &str,
+        description: Option<&(dyn SleighLanguageDescription + Send + Sync)>,
     ) -> Result<
         (
             HashMap<String, Arc<AddressSpace>>,
@@ -172,6 +373,11 @@ impl SleighLanguage {
         ),
         DecoderError,
     > {
+        let truncated_space_names: HashSet<String> = description
+            .map(|d| d.get_truncated_space_names())
+            .unwrap_or_default();
+        let mut truncated_space_cnt = truncated_space_names.len();
+
         let el = decoder.open_element_with_id(ELEM_SPACES)?;
         let defname = decoder.read_string_with_id(ATTRIB_DEFAULTSPACE)?;
 
@@ -233,15 +439,153 @@ impl SleighLanguage {
                 ));
             };
 
+            if truncated_space_names.contains(&name) {
+                if space_type != AddressSpaceType::Ram {
+                    return Err(DecoderError::Generic(format!(
+                        "Non-ram space does not support truncation: {name}"
+                    )));
+                }
+                let truncated_size = description
+                    .and_then(|d| d.get_truncated_space_size(&name))
+                    .unwrap_or(0);
+                if truncated_size <= 0 || truncated_size >= size {
+                    return Err(DecoderError::Generic(format!(
+                        "Invalid space truncation: {name}:{size} -> {truncated_size}"
+                    )));
+                }
+                size = truncated_size;
+                truncated_space_cnt -= 1;
+            }
+
             let spc = AddressSpace::new(&name, 8 * size, wordsize, space_type, index);
             space_table.insert(name.clone(), spc);
             decoder.close_element(subel)?;
+        }
+        if truncated_space_cnt > 0 {
+            return Err(DecoderError::Generic(format!(
+                "One or more truncated spaced not applied: {id}"
+            )));
         }
 
         let default_space = space_table.get(&defname).cloned();
         decoder.close_element(el)?;
 
         Ok((space_table, default_space))
+    }
+
+    /// Builds this language's registers from the sleigh symbol table. Port of
+    /// `SleighLanguage.loadRegisters(RegisterBuilder)` followed by
+    /// `RegisterBuilder.getRegisterManager()`; see the module docs for why this is not cached.
+    fn register_manager(&self) -> RegisterManager {
+        let mut builder = RegisterBuilder::new();
+        self.load_registers(&mut builder);
+        builder.register_manager()
+    }
+
+    fn load_registers(&self, builder: &mut RegisterBuilder) {
+        let big_endian = self.is_big_endian();
+        for sym in self._symbol_table.symbols.iter().flatten() {
+            match sym {
+                SleighSymbol::Varnode(vn) => {
+                    let Some(space) = &vn.space else { continue };
+                    // Java adds register- and ram-space varnodes alike; for ram it additionally
+                    // marks the space as having mapped registers, which this crate's
+                    // `AddressSpace` does not model (see `RegisterManager::is_register_addressable`).
+                    if matches!(
+                        space.space_type(),
+                        AddressSpaceType::Register | AddressSpaceType::Ram
+                    ) {
+                        let a = Address::new(space.clone(), vn.offset as i64);
+                        builder.add_register(
+                            vn.header.name.clone(),
+                            "",
+                            a,
+                            vn.size,
+                            big_endian,
+                            0,
+                        );
+                    }
+                }
+                SleighSymbol::VarnodeList(sym) => {
+                    if let Some(PatternExpression::ContextField(field)) = &sym.patval {
+                        Self::register_context_field(&sym.header.name, field, builder);
+                    }
+                }
+                SleighSymbol::Context(sym) => self.register_context_symbol(sym, builder),
+                _ => {}
+            }
+        }
+    }
+
+    /// Port of `SleighLanguage.registerContext(String, ContextField, RegisterBuilder)`.
+    fn register_context_field(name: &str, field: &ContextField, builder: &mut RegisterBuilder) {
+        let startbit = field.bitstart;
+        let endbit = field.bitend;
+        let bit_length = endbit - startbit + 1;
+        let context_byte_length = (endbit / 8) + 1;
+        let context_bit_length = context_byte_length * 8;
+        // Java passes `builder.getProcessContextAddress()` unchecked; with no context register
+        // added yet it is null and Java's `Register` constructor fails. Such a field cannot be
+        // placed, so it is skipped with an error instead.
+        let Some(address) = builder.process_context_address().cloned() else {
+            crate::util::msg::Msg::error(
+                "SleighLanguage",
+                &format!("context field {name} precedes any context register"),
+            );
+            return;
+        };
+        builder.add_register_with_bit_range(
+            name,
+            name,
+            address,
+            context_byte_length,
+            context_bit_length - endbit - 1,
+            bit_length,
+            true,
+            Register::TYPE_CONTEXT,
+        );
+    }
+
+    /// Port of `SleighLanguage.registerContext(ContextSymbol, RegisterBuilder)`.
+    fn register_context_symbol(&self, sym: &ContextSymbol, builder: &mut RegisterBuilder) {
+        let Some(PatternExpression::ContextField(field)) = &sym.patval else { return };
+        let Some(SleighSymbol::Varnode(vn)) = self._symbol_table.find_symbol(sym.varnode_id) else {
+            return;
+        };
+        let Some(space) = &vn.space else { return };
+        let startbit = field.bitstart;
+        let endbit = field.bitend;
+        let bit_length = endbit - startbit + 1;
+        let context_bit_length = vn.size * 8;
+        let a = Address::new(space.clone(), vn.offset as i64);
+
+        let mut flags = Register::TYPE_CONTEXT;
+        if !sym.follows_flow() {
+            flags |= Register::TYPE_DOES_NOT_FOLLOW_FLOW;
+        }
+        builder.add_register_with_bit_range(
+            sym.header.name.clone(),
+            sym.header.name.clone(),
+            a,
+            vn.size,
+            context_bit_length - endbit - 1,
+            bit_length,
+            true,
+            flags,
+        );
+    }
+
+    fn manual(&self) -> &ManualState {
+        self.manual.get_or_init(|| {
+            ManualState::load(self.description.as_ref().and_then(|d| d.get_manual_index_file()))
+        })
+    }
+
+    /// The default space; always present, since decoding fails without one.
+    fn default_space(&self) -> Arc<AddressSpace> {
+        self._default_space
+            .clone()
+            .expect("decode rejects a language without a default space")
     }
 
     pub fn resolve(&self, walker: &mut ParserWalker) -> Result<(), SleighError> {
@@ -282,6 +626,364 @@ impl SleighLanguage {
             }
         }
         Ok(())
+    }
+}
+
+impl Language for SleighLanguage {
+    /// Port of `getLanguageID()` (`description.getLanguageID()`); without a description, the id
+    /// the language was decoded under.
+    fn get_language_id(&self) -> LanguageID {
+        match &self.description {
+            Some(d) => d.get_language_id(),
+            None => LanguageID::new(self._id.clone()).expect("decode rejects an empty id"),
+        }
+    }
+
+    /// Port of `getLanguageDescription()`.
+    ///
+    /// # Panics
+    /// If the language was decoded without a description ([`SleighLanguage::decode`]); Java's
+    /// `SleighLanguage` always has one.
+    fn get_language_description(&self) -> Box<dyn LanguageDescription> {
+        let d = self.description.as_ref().unwrap_or_else(|| {
+            panic!("SleighLanguage {} was decoded without a language description", self._id)
+        });
+        Box::new(Arc::clone(d))
+    }
+
+    /// Port of `getParallelInstructionHelper()`. Java instantiates the class named by the
+    /// `parallelInstructionHelperClass` property, which only a `.pspec` can set (not ported), so
+    /// the helper is `null`/`None`.
+    fn get_parallel_instruction_helper(&self) -> Option<Box<dyn ParallelInstructionLanguageHelper>> {
+        None
+    }
+
+    /// Port of `getProcessor()` (`description.getProcessor()`).
+    ///
+    /// # Panics
+    /// If the language was decoded without a description (see
+    /// [`Language::get_language_description`]).
+    fn get_processor(&self) -> Box<dyn Processor> {
+        match &self.description {
+            Some(d) => d.get_processor(),
+            None => panic!(
+                "SleighLanguage {} was decoded without a language description",
+                self._id
+            ),
+        }
+    }
+
+    /// Port of `getVersion()` (`description.getVersion()`); without a description, `1`, the
+    /// constant [`Language::get_version`] documents for languages without versioning.
+    fn get_version(&self) -> i32 {
+        self.description.as_ref().map_or(1, |d| d.get_version())
+    }
+
+    /// Port of `getMinorVersion()`; without a description, `0` (see [`Self::get_version`]).
+    fn get_minor_version(&self) -> i32 {
+        self.description.as_ref().map_or(0, |d| d.get_minor_version())
+    }
+
+    /// Port of `getAddressFactory()`: the factory over the `.sla` address spaces.
+    fn get_address_factory(&self) -> Box<dyn AddressFactory> {
+        Box::new((*self._address_factory).clone())
+    }
+
+    /// Port of `getDefaultSpace()`.
+    fn get_default_space(&self) -> Arc<AddressSpace> {
+        self.default_space()
+    }
+
+    /// Port of `getDefaultDataSpace()`.
+    fn get_default_data_space(&self) -> Arc<AddressSpace> {
+        self.default_data_space
+            .clone()
+            .unwrap_or_else(|| self.default_space())
+    }
+
+    /// Port of `isBigEndian()`.
+    fn is_big_endian(&self) -> bool {
+        SleighLanguage::is_big_endian(self)
+    }
+
+    /// Port of `getInstructionAlignment()`.
+    fn get_instruction_alignment(&self) -> i32 {
+        self._alignment
+    }
+
+    /// Port of `supportsPcode()`.
+    fn supports_pcode(&self) -> bool {
+        true
+    }
+
+    /// Port of `isVolatile(Address)`.
+    fn is_volatile(&self, addr: &Address) -> bool {
+        self.volatile_addresses.contains(addr)
+    }
+
+    /// Port of `parse(MemBuffer, ProcessorContext, boolean)`. The alignment check is ported;
+    /// building the prototype is not (see the module docs).
+    ///
+    /// # Errors
+    /// [`ParseError::UnknownInstruction`] if the buffer address is not aligned to
+    /// [`Language::get_instruction_alignment`].
+    ///
+    /// # Panics
+    /// For an aligned address, since `SleighInstructionPrototype`/`ContextCache` are not ported.
+    fn parse(
+        &self,
+        buf: &dyn MemBuffer,
+        _context: &mut dyn ProcessorContext,
+        _in_delay_slot: bool,
+    ) -> Result<Box<dyn InstructionPrototype>, ParseError> {
+        if self._alignment != 1 && buf.get_address().offset() % self._alignment as i64 != 0 {
+            return Err(UnknownInstructionException::with_message(format!(
+                "Instructions must be aligned on {}byte boundary.",
+                self._alignment
+            ))
+            .into());
+        }
+        unimplemented!(
+            "SleighLanguage::parse needs the concrete SleighInstructionPrototype and ContextCache, \
+             which are not yet ported"
+        )
+    }
+
+    fn get_number_of_user_defined_op_names(&self) -> i32 {
+        SleighLanguage::get_number_of_user_defined_op_names(self)
+    }
+
+    fn get_user_defined_op_name(&self, index: i32) -> Option<String> {
+        SleighLanguage::get_user_defined_op_name(self, index)
+    }
+
+    /// Port of `getRegisters(Address)`.
+    fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
+        self.register_manager().get_registers_at(address)
+    }
+
+    /// Port of `getRegister(AddressSpace, long, int)`.
+    fn get_register_in_space(
+        &self,
+        addrspc: &Arc<AddressSpace>,
+        offset: i64,
+        size: i32,
+    ) -> Option<RegisterRef> {
+        self.get_register_at(&Address::new(addrspc.clone(), offset), size)
+    }
+
+    /// Port of `getRegisters()`.
+    fn get_registers(&self) -> Vec<RegisterRef> {
+        self.register_manager().get_registers()
+    }
+
+    /// Port of `getRegisterNames()`.
+    fn get_register_names(&self) -> Vec<String> {
+        self.register_manager().get_register_names()
+    }
+
+    /// Port of `getRegister(String)`.
+    fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
+        self.register_manager().get_register_by_name(name)
+    }
+
+    /// Port of `getRegister(Address, int)`.
+    fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
+        self.register_manager().get_register_at(addr, size)
+    }
+
+    /// Port of `getProgramCounter()`. Only a `.pspec` `<programcounter>` sets it (not ported),
+    /// so this is Java's `null`.
+    fn get_program_counter(&self) -> Option<RegisterRef> {
+        None
+    }
+
+    /// Port of `getContextBaseRegister()`; `None` stands in for `Register.NO_CONTEXT`.
+    fn get_context_base_register(&self) -> Option<RegisterRef> {
+        let base = self.register_manager().get_context_base_register();
+        let is_context = base.borrow().is_processor_context();
+        is_context.then_some(base)
+    }
+
+    /// Port of `getContextRegisters()`.
+    fn get_context_registers(&self) -> Vec<RegisterRef> {
+        self.register_manager().get_context_registers()
+    }
+
+    /// Port of `getDefaultMemoryBlocks()`: empty unless a `.pspec` declares
+    /// `<default_memory_blocks>` (not ported).
+    fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
+        Vec::new()
+    }
+
+    /// Port of `getDefaultSymbols()`: empty unless a `.pspec` declares `<default_symbols>` (not
+    /// ported).
+    fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        Vec::new()
+    }
+
+    /// Port of `getSegmentedSpace()`.
+    fn get_segmented_space(&self) -> String {
+        self.segmented_space.clone()
+    }
+
+    /// Port of `getVolatileAddresses()`.
+    fn get_volatile_addresses(&self) -> Box<dyn AddressSetView> {
+        Box::new(self.volatile_addresses.clone())
+    }
+
+    /// Port of `applyContextSettings(DefaultProgramContext)`. Context settings come only from a
+    /// `.pspec` `<context_data>` element (not ported), so there are none to apply.
+    fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
+
+    /// Port of `reloadLanguage(TaskMonitor)`. Re-reading the `.sla` file needs
+    /// `SlaFormat.buildDecoder` (not ported), so this fails the way a failed Java reload does,
+    /// with an I/O error.
+    fn reload_language(&self, _task_monitor: &dyn TaskMonitor) -> std::io::Result<()> {
+        Err(std::io::Error::other(format!(
+            "Failed to reload Sleigh language {}: reading .sla files (SlaFormat) is not yet ported",
+            self._id
+        )))
+    }
+
+    /// Port of `getCompatibleCompilerSpecDescriptions()`; empty without a description.
+    fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
+        self.description
+            .as_ref()
+            .map(|d| d.get_compatible_compiler_spec_descriptions())
+            .unwrap_or_default()
+    }
+
+    /// Port of `getCompilerSpecByID(CompilerSpecID)`.
+    ///
+    /// # Errors
+    /// [`CompilerSpecNotFoundException`] if the description lists no such compiler spec.
+    ///
+    /// # Panics
+    /// For a listed compiler spec, since constructing a `BasicCompilerSpec` (cspec parsing) is
+    /// not yet ported.
+    fn get_compiler_spec_by_id(
+        &self,
+        compiler_spec_id: &CompilerSpecID,
+    ) -> Result<Box<dyn CompilerSpec>, CompilerSpecNotFoundException> {
+        let known = self
+            .get_compatible_compiler_spec_descriptions()
+            .iter()
+            .any(|d| &d.get_compiler_spec_id() == compiler_spec_id);
+        if !known {
+            return Err(CompilerSpecNotFoundException::new(
+                &self.get_language_id(),
+                compiler_spec_id,
+            ));
+        }
+        unimplemented!(
+            "SleighLanguage::get_compiler_spec_by_id needs a concrete BasicCompilerSpec, which is \
+             not yet ported"
+        )
+    }
+
+    /// Port of `getDefaultCompilerSpec()`: the first compatible compiler spec.
+    ///
+    /// # Panics
+    /// If there are no compatible compiler specs (Java's `NoSuchElementException`), or otherwise
+    /// as [`Language::get_compiler_spec_by_id`] does.
+    fn get_default_compiler_spec(&self) -> Box<dyn CompilerSpec> {
+        let first = self
+            .get_compatible_compiler_spec_descriptions()
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| panic!("language {} has no compiler specs", self._id));
+        match self.get_compiler_spec_by_id(&first.get_compiler_spec_id()) {
+            Ok(spec) => spec,
+            Err(e) => panic!("{e}"),
+        }
+    }
+
+    /// Port of `hasProperty(String)`.
+    fn has_property(&self, key: &str) -> bool {
+        self.properties.contains_key(key)
+    }
+
+    /// Port of `getPropertyAsInt(String, int)`.
+    ///
+    /// # Panics
+    /// If the property is not an integer (Java's `NumberFormatException`).
+    fn get_property_as_int(&self, key: &str, default_int: i32) -> i32 {
+        match self.properties.get(key) {
+            Some(v) => v
+                .parse()
+                .unwrap_or_else(|_| panic!("property {key}={v} is not an integer")),
+            None => default_int,
+        }
+    }
+
+    /// Port of `getPropertyAsBoolean(String, boolean)` (`Boolean.parseBoolean` semantics).
+    fn get_property_as_boolean(&self, key: &str, default_boolean: bool) -> bool {
+        match self.properties.get(key) {
+            Some(v) => v.eq_ignore_ascii_case("true"),
+            None => default_boolean,
+        }
+    }
+
+    /// Port of `getProperty(String, String)`.
+    fn get_property_or(&self, key: &str, default_string: &str) -> String {
+        self.properties
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| default_string.to_string())
+    }
+
+    /// Port of `getProperty(String)`.
+    fn get_property(&self, key: &str) -> Option<String> {
+        self.properties.get(key).cloned()
+    }
+
+    /// Port of `getPropertyKeys()`.
+    fn get_property_keys(&self) -> HashSet<String> {
+        self.properties.keys().cloned().collect()
+    }
+
+    /// Port of `hasManual()`.
+    fn has_manual(&self) -> bool {
+        let manual = self.manual();
+        let has_index = self
+            .description
+            .as_ref()
+            .is_some_and(|d| d.get_manual_index_file().is_some());
+        has_index && manual.error.is_none()
+    }
+
+    /// Port of `getManualEntry(String)`.
+    fn get_manual_entry(&self, instruction_mnemonic: &str) -> Option<ManualEntry> {
+        self.manual().index.get_entry(instruction_mnemonic)
+    }
+
+    /// Port of `getManualInstructionMnemonicKeys()`.
+    fn get_manual_instruction_mnemonic_keys(&self) -> HashSet<String> {
+        self.manual().index.keys()
+    }
+
+    /// Port of `getManualException()`.
+    fn get_manual_exception(&self) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+        self.manual()
+            .error
+            .as_ref()
+            .map(|e| Box::new(std::io::Error::other(e.clone())) as Box<dyn std::error::Error + Send + Sync>)
+    }
+
+    /// Port of `getSortedVectorRegisters()`.
+    fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
+        self.register_manager().get_sorted_vector_registers()
+    }
+
+    /// Port of `getRegisterAddresses()`.
+    fn get_register_addresses(&self) -> Box<dyn AddressSetView> {
+        self.register_manager().get_register_addresses()
+    }
+
+    /// Port of `getMaximumInstructionLength()`.
+    fn get_maximum_instruction_length(&self) -> Option<i32> {
+        self.max_instruction_length
     }
 }
 
@@ -562,5 +1264,550 @@ mod tests {
         sleigh.resolve(&mut walker).unwrap();
 
         assert!(walker.states[0].ct.is_some());
+    }
+}
+
+/// Tests for the `Language` implementation, decoding `.sla` fixtures built with the real
+/// [`PackedEncode`](crate::program::model::pcode::PackedEncode) encoder.
+#[cfg(test)]
+mod language_tests {
+    use super::*;
+    use crate::app::plugin::processors::sleigh::sleigh_language_file::SleighLanguageFile;
+    use crate::generic::jar::resource_file::ResourceFile;
+    use crate::program::model::address::AddressSpaceType;
+    use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
+    use crate::program::model::pcode::encoder::Encoder;
+    use crate::program::model::pcode::ids::*;
+    use crate::program::model::pcode::PackedDecode;
+    use crate::program::model::pcode::PackedEncode;
+
+    const RAM: i32 = 1;
+    const REGISTER: i32 = 2;
+    const UNIQUE: i32 = 3;
+
+    /// Knobs for the generated `.sla` fixture.
+    struct Sla {
+        big_endian: bool,
+        alignment: i64,
+        ram_size: i64,
+        default_space: &'static str,
+    }
+
+    impl Default for Sla {
+        fn default() -> Self {
+            Sla { big_endian: false, alignment: 1, ram_size: 4, default_space: "ram" }
+        }
+    }
+
+    fn space(e: &mut PackedEncode<Vec<u8>>, elem: ElementId, name: &str, index: i64, size: i64, delay: i64) {
+        e.open_element(elem).unwrap();
+        e.write_string(ATTRIB_NAME, name).unwrap();
+        e.write_signed_integer(ATTRIB_INDEX, index).unwrap();
+        e.write_signed_integer(ATTRIB_SIZE, size).unwrap();
+        e.write_signed_integer(ATTRIB_DELAY, delay).unwrap();
+        e.close_element(elem).unwrap();
+    }
+
+    fn head(e: &mut PackedEncode<Vec<u8>>, elem: ElementId, name: &str, id: u64) {
+        e.open_element(elem).unwrap();
+        e.write_string(ATTRIB_NAME, name).unwrap();
+        e.write_unsigned_integer(ATTRIB_ID, id).unwrap();
+        e.write_unsigned_integer(ATTRIB_SCOPE, 0).unwrap();
+        e.close_element(elem).unwrap();
+    }
+
+    fn varnode(e: &mut PackedEncode<Vec<u8>>, id: u64, space: i32, offset: u64, size: i64) {
+        e.open_element(ELEM_VARNODE_SYM).unwrap();
+        e.write_unsigned_integer(ATTRIB_ID, id).unwrap();
+        e.write_space_indexed(ATTRIB_SPACE, space, "").unwrap();
+        e.write_unsigned_integer(ATTRIB_OFFSET, offset).unwrap();
+        e.write_signed_integer(ATTRIB_SIZE, size).unwrap();
+        e.close_element(ELEM_VARNODE_SYM).unwrap();
+    }
+
+    /// A small language: `r0` (4 bytes) and its low half `r0l` at register:0, `sp` in RAM at
+    /// 0x100, a 4-byte `contextreg` at register:0x40 holding the context variable `TMode`
+    /// (bit 0, no flow) and one user op `syscall`.
+    fn sla(cfg: &Sla) -> Vec<u8> {
+        let mut e = PackedEncode::new(Vec::<u8>::new());
+        e.open_element(ELEM_SLEIGH).unwrap();
+        e.write_signed_integer(ATTRIB_VERSION, 4).unwrap();
+        e.write_bool(ATTRIB_BIGENDIAN, cfg.big_endian).unwrap();
+        e.write_signed_integer(ATTRIB_ALIGN, cfg.alignment).unwrap();
+        e.write_unsigned_integer(ATTRIB_UNIQBASE, 0x1000).unwrap();
+        e.write_unsigned_integer(ATTRIB_UNIQMASK, 0xff).unwrap();
+        e.write_unsigned_integer(ATTRIB_NUMSECTIONS, 2).unwrap();
+
+        e.open_element(ELEM_SPACES).unwrap();
+        e.write_string(ATTRIB_DEFAULTSPACE, cfg.default_space).unwrap();
+        e.open_element(ELEM_SPACE_OTHER).unwrap();
+        e.close_element(ELEM_SPACE_OTHER).unwrap();
+        space(&mut e, ELEM_SPACE, "ram", RAM as i64, cfg.ram_size, 1);
+        space(&mut e, ELEM_SPACE, "register", REGISTER as i64, 4, 0);
+        space(&mut e, ELEM_SPACE_UNIQUE, "unique", UNIQUE as i64, 4, 0);
+        e.close_element(ELEM_SPACES).unwrap();
+
+        e.open_element(ELEM_SYMBOL_TABLE).unwrap();
+        e.write_signed_integer(ATTRIB_SCOPESIZE, 1).unwrap();
+        e.write_signed_integer(ATTRIB_SYMBOLSIZE, 6).unwrap();
+        e.open_element(ELEM_SCOPE).unwrap();
+        e.write_unsigned_integer(ATTRIB_ID, 0).unwrap();
+        e.write_unsigned_integer(ATTRIB_PARENT, 0).unwrap();
+        e.close_element(ELEM_SCOPE).unwrap();
+
+        head(&mut e, ELEM_VARNODE_SYM_HEAD, "r0", 0);
+        head(&mut e, ELEM_VARNODE_SYM_HEAD, "r0l", 1);
+        head(&mut e, ELEM_VARNODE_SYM_HEAD, "sp", 2);
+        head(&mut e, ELEM_VARNODE_SYM_HEAD, "contextreg", 3);
+        head(&mut e, ELEM_CONTEXT_SYM_HEAD, "TMode", 4);
+        head(&mut e, ELEM_USEROP_HEAD, "syscall", 5);
+
+        varnode(&mut e, 0, REGISTER, 0, 4);
+        varnode(&mut e, 1, REGISTER, 0, 2);
+        varnode(&mut e, 2, RAM, 0x100, 4);
+        varnode(&mut e, 3, REGISTER, 0x40, 4);
+
+        e.open_element(ELEM_CONTEXT_SYM).unwrap();
+        e.write_unsigned_integer(ATTRIB_ID, 4).unwrap();
+        e.write_unsigned_integer(ATTRIB_VARNODE, 3).unwrap();
+        e.write_signed_integer(ATTRIB_LOW, 0).unwrap();
+        e.write_signed_integer(ATTRIB_HIGH, 0).unwrap();
+        e.write_bool(ATTRIB_FLOW, false).unwrap();
+        e.open_element(ELEM_CONTEXTFIELD).unwrap();
+        e.write_bool(ATTRIB_SIGNBIT, false).unwrap();
+        e.write_signed_integer(ATTRIB_STARTBIT, 0).unwrap();
+        e.write_signed_integer(ATTRIB_ENDBIT, 0).unwrap();
+        e.write_signed_integer(ATTRIB_STARTBYTE, 0).unwrap();
+        e.write_signed_integer(ATTRIB_ENDBYTE, 0).unwrap();
+        e.write_signed_integer(ATTRIB_SHIFT, 7).unwrap();
+        e.close_element(ELEM_CONTEXTFIELD).unwrap();
+        e.close_element(ELEM_CONTEXT_SYM).unwrap();
+
+        e.open_element(ELEM_USEROP).unwrap();
+        e.write_unsigned_integer(ATTRIB_ID, 5).unwrap();
+        e.write_signed_integer(ATTRIB_INDEX, 0).unwrap();
+        e.close_element(ELEM_USEROP).unwrap();
+
+        e.close_element(ELEM_SYMBOL_TABLE).unwrap();
+        e.close_element(ELEM_SLEIGH).unwrap();
+        e.into_inner()
+    }
+
+    fn decoder(bytes: Vec<u8>) -> PackedDecode {
+        PackedDecode::new(Arc::new(DefaultAddressFactory::new(vec![])), bytes)
+    }
+
+    fn language(cfg: &Sla) -> SleighLanguage {
+        SleighLanguage::decode(&decoder(sla(cfg)), "toy:LE:32:default".to_string()).unwrap()
+    }
+
+    struct MockProcessor;
+    impl Processor for MockProcessor {
+        fn name(&self) -> String {
+            "toy".to_string()
+        }
+    }
+
+    struct MockCompilerSpecDescription;
+    impl CompilerSpecDescription for MockCompilerSpecDescription {
+        fn get_compiler_spec_id(&self) -> CompilerSpecID {
+            CompilerSpecID::new(Some("default"))
+        }
+        fn get_compiler_spec_name(&self) -> String {
+            "Default".to_string()
+        }
+        fn get_source(&self) -> String {
+            "toy.cspec".to_string()
+        }
+    }
+
+    /// A `.ldefs` description: data endianness `endian`, instruction endianness `inst_endian`.
+    struct MockDescription {
+        endian: Endian,
+        inst_endian: Endian,
+        truncated: HashMap<String, i32>,
+        manual_index_file: Option<ResourceFile>,
+    }
+
+    impl MockDescription {
+        fn new(endian: Endian) -> Self {
+            MockDescription {
+                endian,
+                inst_endian: endian,
+                truncated: HashMap::new(),
+                manual_index_file: None,
+            }
+        }
+    }
+
+    impl LanguageDescription for MockDescription {
+        fn get_language_id(&self) -> LanguageID {
+            LanguageID::new("toy:BE:32:v2").unwrap()
+        }
+        fn get_processor(&self) -> Box<dyn Processor> {
+            Box::new(MockProcessor)
+        }
+        fn get_endian(&self) -> Endian {
+            self.endian
+        }
+        fn get_instruction_endian(&self) -> Endian {
+            self.inst_endian
+        }
+        fn get_size(&self) -> i32 {
+            32
+        }
+        fn get_variant(&self) -> String {
+            "v2".to_string()
+        }
+        fn get_version(&self) -> i32 {
+            3
+        }
+        fn get_minor_version(&self) -> i32 {
+            7
+        }
+        fn get_description(&self) -> String {
+            "toy processor".to_string()
+        }
+        fn is_deprecated(&self) -> bool {
+            false
+        }
+        fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
+            vec![Box::new(MockCompilerSpecDescription)]
+        }
+        fn get_compiler_spec_description_by_id(
+            &self,
+            compiler_spec_id: &CompilerSpecID,
+        ) -> Result<Box<dyn CompilerSpecDescription>, CompilerSpecNotFoundException> {
+            Err(CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id))
+        }
+        fn get_external_names(&self, _external_tool: &str) -> Option<Vec<String>> {
+            None
+        }
+    }
+
+    impl SleighLanguageDescription for MockDescription {
+        fn get_truncated_space_names(&self) -> HashSet<String> {
+            self.truncated.keys().cloned().collect()
+        }
+        fn get_truncated_space_size(&self, space_name: &str) -> Option<i32> {
+            self.truncated.get(space_name).copied()
+        }
+        fn get_defs_file(&self) -> Option<&ResourceFile> {
+            None
+        }
+        fn set_defs_file(&mut self, _defs_file: Option<ResourceFile>) {}
+        fn get_spec_file(&self) -> Option<&ResourceFile> {
+            None
+        }
+        fn set_spec_file(&mut self, _spec_file: Option<ResourceFile>) {}
+        fn get_manual_index_file(&self) -> Option<&ResourceFile> {
+            self.manual_index_file.as_ref()
+        }
+        fn set_manual_index_file(&mut self, manual_index_file: Option<ResourceFile>) {
+            self.manual_index_file = manual_index_file;
+        }
+        fn get_language_file(&self) -> Option<&dyn SleighLanguageFile> {
+            None
+        }
+        fn set_language_file(&mut self, _language_file: Option<Box<dyn SleighLanguageFile>>) {}
+    }
+
+    fn with_description(cfg: &Sla, d: MockDescription) -> Result<SleighLanguage, DecoderError> {
+        SleighLanguage::decode_with_description(&decoder(sla(cfg)), Arc::new(d))
+    }
+
+    fn name(r: &RegisterRef) -> String {
+        r.borrow().name().to_string()
+    }
+
+    #[test]
+    fn is_a_send_sync_language_usable_through_arc_dyn() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<SleighLanguage>();
+        let lang: Arc<dyn Language> = Arc::new(language(&Sla::default()));
+        assert_eq!(lang.get_default_space().name(), "ram");
+        assert_eq!(lang.get_language_id().get_id_as_string(), "toy:LE:32:default");
+    }
+
+    #[test]
+    fn sla_attributes_spaces_and_defaults() {
+        let lang = language(&Sla { alignment: 2, ..Sla::default() });
+        assert!(!Language::is_big_endian(&lang));
+        assert_eq!(lang.get_instruction_alignment(), 2);
+        assert_eq!(lang.get_unique_base(), 0x1000);
+        assert_eq!(lang.get_unique_allocation_mask(), 0xff);
+        assert_eq!(lang.num_sections(), 2);
+        assert!(lang.supports_pcode());
+        assert_eq!(lang.get_default_space().name(), "ram");
+        assert_eq!(lang.get_default_data_space().name(), "ram");
+        assert_eq!(lang.get_default_pointer_word_size(), 1);
+        let factory = Language::get_address_factory(&lang);
+        assert_eq!(factory.get_default_address_space().unwrap().name(), "ram");
+        assert_eq!(
+            factory.get_address_space_by_name("register").unwrap().space_type(),
+            AddressSpaceType::Register
+        );
+        // No description: Language's documented version defaults, no compiler specs.
+        assert_eq!(lang.get_version(), 1);
+        assert_eq!(lang.get_minor_version(), 0);
+        assert!(lang.get_compatible_compiler_spec_descriptions().is_empty());
+        assert_eq!(lang.to_string(), "toy:LE:32:default");
+    }
+
+    #[test]
+    fn big_endian_sla() {
+        let lang = language(&Sla { big_endian: true, ..Sla::default() });
+        assert!(Language::is_big_endian(&lang));
+    }
+
+    #[test]
+    fn missing_default_space_is_a_decode_error() {
+        let res = SleighLanguage::decode(
+            &decoder(sla(&Sla { default_space: "nowhere", ..Sla::default() })),
+            "toy".to_string(),
+        );
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn empty_id_is_rejected() {
+        assert!(SleighLanguage::decode(&decoder(sla(&Sla::default())), String::new()).is_err());
+    }
+
+    #[test]
+    fn registers_are_built_from_the_symbol_table() {
+        let lang = language(&Sla::default());
+        // Alphabetical, including the context register and context field.
+        assert_eq!(
+            lang.get_register_names(),
+            vec!["TMode", "contextreg", "r0", "r0l", "sp"]
+        );
+        assert_eq!(lang.get_registers().len(), 5);
+
+        let r0 = lang.get_register_by_name("r0").unwrap();
+        assert_eq!(r0.borrow().num_bytes(), 4);
+        assert_eq!(r0.borrow().address().offset(), 0);
+        // Case-variations resolve too (RegisterBuilder's name map).
+        assert_eq!(name(&lang.get_register_by_name("R0").unwrap()), "r0");
+        assert!(lang.get_register_by_name("r9").is_none());
+
+        let reg_space = lang.get_address_factory().get_address_space_by_name("register").unwrap();
+        let at0 = Address::new(reg_space.clone(), 0);
+        // Size 0 is the largest register at the address; a smaller size picks the sub-register.
+        assert_eq!(name(&lang.get_register_at(&at0, 0).unwrap()), "r0");
+        assert_eq!(name(&lang.get_register_at(&at0, 4).unwrap()), "r0");
+        assert_eq!(name(&lang.get_register_at(&at0, 2).unwrap()), "r0l");
+        assert_eq!(name(&lang.get_register_in_space(&reg_space, 0, 2).unwrap()), "r0l");
+        let mut at_names: Vec<String> = lang.get_registers_at(&at0).iter().map(name).collect();
+        at_names.sort();
+        assert_eq!(at_names, vec!["r0", "r0l"]);
+
+        let regs = lang.get_register_addresses();
+        assert!(regs.contains(&Address::new(reg_space.clone(), 3)));
+        assert!(!regs.contains(&Address::new(reg_space, 4)));
+        assert!(lang.get_sorted_vector_registers().is_empty());
+        assert!(lang.get_program_counter().is_none());
+    }
+
+    #[test]
+    fn context_symbols_become_context_registers() {
+        let lang = language(&Sla::default());
+        let tmode = lang.get_register_by_name("TMode").unwrap();
+        {
+            let t = tmode.borrow();
+            assert!(t.is_processor_context());
+            assert_eq!(t.bit_length(), 1);
+            // Added with lsb = contextBitLength - endbit - 1 = 31 over 4 big-endian bytes, which
+            // `Register`'s constructor narrows to the single most significant byte (at the
+            // lowest address, 0x40), leaving lsb 31 - 3 * 8 = 7.
+            assert_eq!(t.least_significant_bit(), 7);
+            assert_eq!(t.num_bytes(), 1);
+            assert_eq!(t.address().offset(), 0x40);
+            assert_eq!(t.type_flags() & Register::TYPE_DOES_NOT_FOLLOW_FLOW, Register::TYPE_DOES_NOT_FOLLOW_FLOW);
+        }
+        // The containing varnode becomes the context base register ("if my child is context, so
+        // am I").
+        let base = lang.get_context_base_register().unwrap();
+        assert_eq!(name(&base), "contextreg");
+        let mut ctx: Vec<String> = lang.get_context_registers().iter().map(name).collect();
+        ctx.sort();
+        assert_eq!(ctx, vec!["TMode", "contextreg"]);
+    }
+
+    #[test]
+    fn register_queries_agree_across_calls() {
+        let lang = language(&Sla::default());
+        assert_eq!(
+            *lang.get_register_by_name("r0").unwrap().borrow(),
+            *lang.get_register_by_name("r0").unwrap().borrow()
+        );
+    }
+
+    #[test]
+    fn user_ops_properties_and_pspec_defaults() {
+        let lang = language(&Sla::default());
+        assert_eq!(Language::get_number_of_user_defined_op_names(&lang), 1);
+        assert_eq!(Language::get_user_defined_op_name(&lang, 0).as_deref(), Some("syscall"));
+        assert_eq!(Language::get_user_defined_op_name(&lang, 1), None);
+
+        assert!(!lang.has_property("x"));
+        assert_eq!(lang.get_property("x"), None);
+        assert_eq!(lang.get_property_or("x", "dflt"), "dflt");
+        assert_eq!(lang.get_property_as_int("x", 7), 7);
+        assert!(lang.get_property_as_boolean("x", true));
+        assert!(lang.get_property_keys().is_empty());
+        assert_eq!(lang.get_maximum_instruction_length(), None);
+        assert!(lang.get_parallel_instruction_helper().is_none());
+
+        let ram = lang.get_default_space();
+        assert!(!lang.is_volatile(&Address::new(ram, 0)));
+        assert!(lang.get_volatile_addresses().is_empty());
+        assert_eq!(lang.get_segmented_space(), "");
+        assert!(lang.get_default_symbols().is_empty());
+        assert!(lang.get_default_memory_blocks().is_empty());
+        assert!(!lang.has_manual());
+        assert!(lang.get_manual_entry("ADD").is_none());
+        assert!(lang.get_manual_exception().is_none());
+    }
+
+    #[test]
+    fn reload_is_an_io_error() {
+        let lang = language(&Sla::default());
+        let monitor = crate::util::task::DummyMonitor;
+        assert!(lang.reload_language(&monitor).is_err());
+    }
+
+    #[test]
+    fn misaligned_parse_is_unknown_instruction() {
+        struct Buf(Address);
+        impl MemBuffer for Buf {
+            fn get_byte(&self, _o: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+                Ok(0)
+            }
+            fn get_bytes(&self, buf: &mut [u8], _o: i32) -> usize {
+                buf.len()
+            }
+            fn is_big_endian(&self) -> bool {
+                false
+            }
+            fn get_address(&self) -> Address {
+                self.0.clone()
+            }
+        }
+        struct Ctx;
+        impl crate::program::model::lang::processor_context_view::ProcessorContextView for Ctx {
+            fn get_base_context_register(&self) -> Option<RegisterRef> {
+                None
+            }
+            fn get_registers(&self) -> Vec<RegisterRef> {
+                Vec::new()
+            }
+            fn get_register(&self, _name: &str) -> Option<RegisterRef> {
+                None
+            }
+            fn get_value(&self, _r: &Register, _s: bool) -> Option<i128> {
+                None
+            }
+            fn get_register_value(&self, _r: &Register) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+                None
+            }
+            fn has_value(&self, _r: &Register) -> bool {
+                false
+            }
+        }
+        impl ProcessorContext for Ctx {
+            fn set_value(&mut self, _r: &Register, _v: i128) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
+                Ok(())
+            }
+            fn set_register_value(&mut self, _v: Box<dyn crate::program::seam_stubs::RegisterValue>) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
+                Ok(())
+            }
+            fn clear_register(&mut self, _r: &Register) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
+                Ok(())
+            }
+        }
+        let lang = language(&Sla { alignment: 4, ..Sla::default() });
+        let buf = Buf(Address::new(lang.get_default_space(), 0x1002));
+        match lang.parse(&buf, &mut Ctx, false) {
+            Err(ParseError::UnknownInstruction(e)) => {
+                assert!(e.to_string().contains("aligned on 4byte boundary"))
+            }
+            _ => panic!("expected an alignment failure"),
+        }
+    }
+
+    #[test]
+    fn description_supplies_id_version_endianness_and_compiler_specs() {
+        let lang = with_description(&Sla::default(), MockDescription::new(Endian::Little)).unwrap();
+        assert_eq!(lang.get_language_id().get_id_as_string(), "toy:BE:32:v2");
+        assert_eq!(lang.get_id(), "toy:BE:32:v2");
+        assert_eq!(lang.get_version(), 3);
+        assert_eq!(lang.get_minor_version(), 7);
+        assert_eq!(lang.get_processor().name(), "toy");
+        assert_eq!(lang.get_language_description().get_variant(), "v2");
+        assert_eq!(lang.to_string(), "toy/little/32/v2");
+        let specs = lang.get_compatible_compiler_spec_descriptions();
+        assert_eq!(specs.len(), 1);
+        assert_eq!(specs[0].get_compiler_spec_id(), CompilerSpecID::new(Some("default")));
+        match lang.get_compiler_spec_by_id(&CompilerSpecID::new(Some("gcc"))) {
+            Err(e) => assert!(e.to_string().contains("gcc")),
+            Ok(_) => panic!("gcc is not a compatible compiler spec"),
+        }
+    }
+
+    #[test]
+    fn ldefs_endianness_must_match_sla_unless_instructions_differ() {
+        // Data big, instructions big, .sla little: rejected.
+        let err = with_description(&Sla::default(), MockDescription::new(Endian::Big));
+        assert!(err.is_err());
+        // Bi-endian: data big but instructions little -- accepted, and the description's data
+        // endianness wins.
+        let mut d = MockDescription::new(Endian::Big);
+        d.inst_endian = Endian::Little;
+        let lang = with_description(&Sla::default(), d).unwrap();
+        assert!(Language::is_big_endian(&lang));
+    }
+
+    #[test]
+    fn space_truncation_is_applied_and_validated() {
+        let mut d = MockDescription::new(Endian::Little);
+        d.truncated.insert("ram".to_string(), 2);
+        let lang = with_description(&Sla::default(), d).unwrap();
+        assert_eq!(lang.get_default_space().size(), 16);
+
+        // Not smaller than the real size.
+        let mut d = MockDescription::new(Endian::Little);
+        d.truncated.insert("ram".to_string(), 4);
+        assert!(with_description(&Sla::default(), d).is_err());
+
+        // Non-ram spaces cannot be truncated.
+        let mut d = MockDescription::new(Endian::Little);
+        d.truncated.insert("register".to_string(), 2);
+        assert!(with_description(&Sla::default(), d).is_err());
+
+        // A truncation naming no space is reported.
+        let mut d = MockDescription::new(Endian::Little);
+        d.truncated.insert("bogus".to_string(), 2);
+        assert!(with_description(&Sla::default(), d).is_err());
+    }
+
+    #[test]
+    fn manual_index_comes_from_the_description() {
+        let dir = std::env::temp_dir().join(format!("ghidra_rs_sleigh_lang_manual_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("toy.pdf"), b"pdf").unwrap();
+        std::fs::write(dir.join("toy.idx"), "@toy.pdf\nADD, 5\n").unwrap();
+        let mut d = MockDescription::new(Endian::Little);
+        d.manual_index_file = Some(ResourceFile::new(dir.join("toy.idx")));
+        let lang = with_description(&Sla::default(), d).unwrap();
+        assert!(lang.has_manual());
+        assert!(lang.get_manual_exception().is_none());
+        assert_eq!(lang.get_manual_entry("add").unwrap().page_number(), "5");
+        assert_eq!(
+            lang.get_manual_instruction_mnemonic_keys(),
+            ["ADD".to_string()].into_iter().collect::<HashSet<String>>()
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

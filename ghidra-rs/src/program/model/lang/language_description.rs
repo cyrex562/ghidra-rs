@@ -81,6 +81,65 @@ pub trait LanguageDescription {
     }
 }
 
+/// A shared handle to a language description is itself a language description, forwarding
+/// every method to the description it points to.
+///
+/// Java hands out the same `LanguageDescription` object from every `getLanguageDescription()`
+/// call; a holder of an `Arc` (e.g. `SleighLanguage`) satisfies the owned
+/// `Box<dyn LanguageDescription>` return type with `Box::new(Arc::clone(&description))`, which
+/// still refers to that same description. Mirrors the forwarding impl for
+/// [`Language`](crate::program::model::lang::language::Language) on `Arc<L>`.
+impl<L: LanguageDescription + ?Sized> LanguageDescription for std::sync::Arc<L> {
+    fn get_language_id(&self) -> LanguageID {
+        (**self).get_language_id()
+    }
+    fn get_processor(&self) -> Box<dyn Processor> {
+        (**self).get_processor()
+    }
+    fn get_endian(&self) -> Endian {
+        (**self).get_endian()
+    }
+    fn get_instruction_endian(&self) -> Endian {
+        (**self).get_instruction_endian()
+    }
+    fn get_size(&self) -> i32 {
+        (**self).get_size()
+    }
+    fn get_variant(&self) -> String {
+        (**self).get_variant()
+    }
+    fn get_version(&self) -> i32 {
+        (**self).get_version()
+    }
+    fn get_minor_version(&self) -> i32 {
+        (**self).get_minor_version()
+    }
+    fn get_description(&self) -> String {
+        (**self).get_description()
+    }
+    fn is_deprecated(&self) -> bool {
+        (**self).is_deprecated()
+    }
+    fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
+        (**self).get_compatible_compiler_spec_descriptions()
+    }
+    fn get_compiler_spec_description_by_id(
+        &self,
+        compiler_spec_id: &CompilerSpecID,
+    ) -> Result<Box<dyn CompilerSpecDescription>, CompilerSpecNotFoundException> {
+        (**self).get_compiler_spec_description_by_id(compiler_spec_id)
+    }
+    fn get_external_names(&self, external_tool: &str) -> Option<Vec<String>> {
+        (**self).get_external_names(external_tool)
+    }
+    fn as_sleigh(
+        &self,
+    ) -> Option<&dyn crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription>
+    {
+        (**self).as_sleigh()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
