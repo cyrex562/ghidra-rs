@@ -233,7 +233,7 @@ orig_src/Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/de
 orig_src/Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/ValueDecoder.java	DONE	orig_src Ghidra Debug Debugger-rmi-trace src main java ghidra app plugin core debug service tracermi 
 orig_src/Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/ValueSupplier.java	DONE	orig_src Ghidra Debug Debugger-rmi-trace src main java ghidra app plugin core debug service tracermi 
 orig_src/Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/services/InternalTraceRmiService.java	DONE	orig_src Ghidra Debug Debugger-rmi-trace src main java ghidra app services
-orig_src/Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/debug/spi/tracermi/TraceRmiLaunchOpinion.java	TODO	orig_src Ghidra Debug Debugger-rmi-trace src main java ghidra debug spi tracermi 
+orig_src/Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/debug/spi/tracermi/TraceRmiLaunchOpinion.java	DONE	orig_src Ghidra Debug Debugger-rmi-trace src main java ghidra debug spi tracermi 
 orig_src/Ghidra/Debug/Debugger-rmi-trace/src/screen/java/ghidra/app/plugin/core/debug/gui/tracermi/connection/TraceRmiConnectionManagerPluginScreenShots.java	TODO	orig_src Ghidra Debug Debugger-rmi-trace src screen java ghidra app plugin core debug gui tracermi connection 
 orig_src/Ghidra/Debug/Debugger-rmi-trace/src/test/java/ghidra/app/plugin/core/debug/gui/tracermi/RemoteMethodInvocationDialogTest.java	TODO	orig_src Ghidra Debug Debugger-rmi-trace src test java ghidra app plugin core debug gui tracermi 
 orig_src/Ghidra/Debug/Debugger-rmi-trace/src/test/java/ghidra/app/plugin/core/debug/gui/tracermi/connection/TraceRmiConnectionManagerProviderTest.java	TODO	orig_src Ghidra Debug Debugger-rmi-trace src test java ghidra app plugin core debug gui tracermi connection 
@@ -3247,7 +3247,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilesta
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFilesTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFilesTablePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFilesTableProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceMapEntryRowObject.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceMapEntryRowObject.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceMapEntryTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceMapEntryToAddressTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceMapEntryToProgramLocationRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core sourcefilestable 
@@ -4527,10 +4527,10 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCo
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveMemberHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffFileHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffFileHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffFileHeaderFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffFileHeaderMagic.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffOptionalHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffOptionalHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSectionHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSectionHeaderFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSectionHeaderNames.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
@@ -7743,7 +7743,7 @@ orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/re
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/view/FcgComponent.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph view 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/view/FcgView.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph view 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/EmptyFcgData.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
-orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FcgData.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
+orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FcgData.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FcgDataFactory.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FcgOptions.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FcgProvider.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 

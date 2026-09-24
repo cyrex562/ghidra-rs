@@ -37,6 +37,7 @@ pub mod references;
 pub mod scalartable;
 pub mod script;
 pub mod searchtext;
+pub mod sourcefilestable;
 pub mod stackeditor;
 pub mod string;
 pub mod strings;

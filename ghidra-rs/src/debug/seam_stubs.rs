@@ -310,3 +310,11 @@ pub trait RemoteMethod: Send + Sync {
 /// `TraceRmiConnection` only ever passes this type through (as a collection element or by-value
 /// parameter), so no members are needed yet.
 pub trait Target: Send + Sync {}
+
+/// Placeholder for the unported Java class
+/// `ghidra.app.plugin.core.debug.gui.tracermi.launcher.TraceRmiLauncherServicePlugin`, referenced
+/// by [`TraceRmiLaunchOpinion`](crate::debug::spi::tracermi::TraceRmiLaunchOpinion). The opinion
+/// interface only receives it as a pass-through parameter, so no members are needed yet. It is a
+/// concrete Java class, so the placeholder is a struct (not a trait) to keep the real port's shape.
+#[derive(Debug, Default)]
+pub struct TraceRmiLauncherServicePlugin;

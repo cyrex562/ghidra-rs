@@ -34,14 +34,14 @@ pub enum CoffFileHeaderError {
 /// `ElfInfoItem`'s `ProviderBinaryReader`), so [`CoffFileHeader::new`] constructs this minimal
 /// one -- mirroring the `GByteStore`-backed constructor of the original `BinaryReader.java`
 /// class -- and keeps it for the file header's lifetime.
-struct CoffBinaryReader {
+pub(crate) struct CoffBinaryReader {
     provider: Rc<RefCell<dyn GByteStore>>,
     is_little_endian: bool,
     current_index: u64,
 }
 
 impl CoffBinaryReader {
-    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
+    pub(crate) fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         CoffBinaryReader { provider, is_little_endian, current_index: 0 }
     }
 }

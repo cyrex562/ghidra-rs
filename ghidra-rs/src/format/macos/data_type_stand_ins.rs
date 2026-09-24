@@ -25,6 +25,8 @@ impl PrimitiveDt {
     pub(crate) const WORD: PrimitiveDt = PrimitiveDt { name: "word", length: 2 };
     /// Stand-in for `StructConverter.DWORD`.
     pub(crate) const DWORD: PrimitiveDt = PrimitiveDt { name: "dword", length: 4 };
+    /// Stand-in for `StructConverter.QWORD`.
+    pub(crate) const QWORD: PrimitiveDt = PrimitiveDt { name: "qword", length: 8 };
     /// Stand-in for `StructConverter.STRING` / `new StringDataType()`. The component length is
     /// supplied at each `add` call, as with Java's `add(DataType, int, String, String)` overload.
     pub(crate) const STRING: PrimitiveDt = PrimitiveDt { name: "string", length: 1 };

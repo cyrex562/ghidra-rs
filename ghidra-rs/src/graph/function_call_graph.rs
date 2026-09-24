@@ -323,7 +323,7 @@ impl Default for FunctionCallGraph {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::symbol::Namespace;
@@ -333,13 +333,13 @@ mod tests {
         Address::new(space, offset)
     }
 
-    struct MockFunction {
+    pub(crate) struct MockFunction {
         name: String,
         entry: Address,
     }
 
     impl MockFunction {
-        fn new(name: &str, entry_offset: i64) -> Self {
+        pub(crate) fn new(name: &str, entry_offset: i64) -> Self {
             Self {
                 name: name.to_string(),
                 entry: mock_address(entry_offset),
@@ -648,13 +648,13 @@ mod tests {
         }
     }
 
-    struct MockVertex {
+    pub(crate) struct MockVertex {
         function: Arc<dyn Function>,
         level: FcgLevel,
     }
 
     impl MockVertex {
-        fn new(function: Arc<dyn Function>, level: FcgLevel) -> Self {
+        pub(crate) fn new(function: Arc<dyn Function>, level: FcgLevel) -> Self {
             Self { function, level }
         }
     }
