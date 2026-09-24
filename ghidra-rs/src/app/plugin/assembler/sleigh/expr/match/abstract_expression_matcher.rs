@@ -384,9 +384,9 @@ mod tests {
 
     #[test]
     fn operand_values_compare_by_constructor_and_index() {
-        let a = PatternExpression::Operand(OperandValue { index: 0, constructor_id: 1 });
-        let b = PatternExpression::Operand(OperandValue { index: 0, constructor_id: 1 });
-        let c = PatternExpression::Operand(OperandValue { index: 1, constructor_id: 1 });
+        let a = PatternExpression::Operand(OperandValue { index: 0, constructor_id: 1, table_id: 0 });
+        let b = PatternExpression::Operand(OperandValue { index: 0, constructor_id: 1, table_id: 0 });
+        let c = PatternExpression::Operand(OperandValue { index: 1, constructor_id: 1, table_id: 0 });
         assert!(AbstractExpressionMatcherBase::expressions_identically_defined(&a, &b));
         assert!(!AbstractExpressionMatcherBase::expressions_identically_defined(&a, &c));
     }

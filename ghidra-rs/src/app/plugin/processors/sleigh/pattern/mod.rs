@@ -168,7 +168,7 @@ mod tests {
                 SimplePattern::AlwaysFalse => Ok(false),
                 SimplePattern::Masked { mask, value, byte_offset } => {
                     let bits = walker.get_instruction_bits(byte_offset * 8, 32)?;
-                    Ok((bits & mask) == *value)
+                    Ok(((bits as u32) & mask) == *value)
                 }
             }
         }
@@ -201,9 +201,8 @@ mod tests {
     }
 
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::lang::sleigh::walker::ParserContext;
+    use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
     use crate::program::model::mem::MemBuffer;
-    use std::collections::HashMap;
     use std::sync::Arc;
 
     struct FixedBytesMemBuffer {
@@ -241,20 +240,17 @@ mod tests {
         }
     }
 
-    fn walker_over(bytes: &[u8]) -> ParserWalker {
+    fn walker_over(bytes: &[u8]) -> ParserWalker<'static> {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space, 0);
         let mem_buffer: Arc<dyn MemBuffer> =
-            Arc::new(FixedBytesMemBuffer { address: addr.clone(), bytes: bytes.to_vec() });
-        let context = Arc::new(ParserContext {
-            addr: addr.clone(),
-            naddr: addr.clone(),
-            n2addr: addr,
-            context: Vec::new(),
-            mem_buffer,
-            handle_map: HashMap::new(),
-        });
-        ParserWalker::new(context)
+            Arc::new(FixedBytesMemBuffer { address: addr, bytes: bytes.to_vec() });
+        // The walker borrows its context; the (tiny) context is leaked for the test.
+        let context: &'static SleighParserContext =
+            Box::leak(Box::new(SleighParserContext::for_tests(mem_buffer, Vec::new())));
+        let mut walker = ParserWalker::new(context);
+        walker.base_state();
+        walker
     }
 
     #[test]

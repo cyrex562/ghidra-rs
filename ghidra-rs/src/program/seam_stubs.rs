@@ -1226,6 +1226,11 @@ pub trait RegisterValue {
 pub trait ParserContext {
     /// Stands in for `ParserContext.getPrototype()`.
     fn get_prototype(&self) -> Arc<dyn InstructionPrototype>;
+
+    /// Mirrors [`crate::program::model::lang::parser_context::ParserContext::as_any`].
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
+        None
+    }
 }
 
 // `Mask` is ported; this was a placeholder standing in for it. Re-exported so

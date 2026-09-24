@@ -176,11 +176,13 @@ impl PatternExpression {
             }
             // `ConstantValue.equals()` just compares `val`.
             (Self::Constant(a), Self::Constant(b)) => a == b,
-            // Java `OperandValue.equals()` also compares `ct` (the owning `Constructor`);
-            // this crate's `OperandValue` stores `constructor_id` in its place (see its
-            // decode/fields above), which stands in for `ct.equals(that.ct)` here.
+            // Java `OperandValue.equals()` also compares `ct` (the owning `Constructor`), whose
+            // `equals()` compares the constructor id and its subtable's id -- exactly the
+            // `constructor_id`/`table_id` pair this crate's `OperandValue` names it by.
             (Self::Operand(a), Self::Operand(b)) => {
-                a.index == b.index && a.constructor_id == b.constructor_id
+                a.index == b.index
+                    && a.constructor_id == b.constructor_id
+                    && a.table_id == b.table_id
             }
             // `StartInstructionValue`/`EndInstructionValue`/`Next2InstructionValue.equals()`
             // are each just `obj instanceof <OwnType>` -- no fields to compare.
@@ -249,13 +251,14 @@ impl PatternExpression {
             }
             // `ConstantValue.hashCode()` == `Long.hashCode(val)` == `(int)(val ^ (val >>> 32))`.
             Self::Constant(val) => (*val ^ ((*val as u64 >> 32) as i64)) as i32,
-            // `OperandValue.hashCode()`; `ct.hashCode()` stands in for `constructor_id`, as
-            // in `java_equals` above.
+            // `OperandValue.hashCode()`, with `ct.hashCode()` being `Constructor.hashCode()`
+            // (`parent.getId() * 31 + id`).
             Self::Operand(o) => {
+                let ct_hash = o.table_id.wrapping_mul(31).wrapping_add(o.constructor_id);
                 let mut result = 0i32;
                 result = result.wrapping_add(o.index);
                 result = result.wrapping_mul(31);
-                result = result.wrapping_add(o.constructor_id);
+                result = result.wrapping_add(ct_hash);
                 result
             }
             // Precomputed Java `String.hashCode()` of the literal `HASH` constants in
@@ -277,32 +280,47 @@ impl PatternExpression {
         }
     }
 
-    pub fn get_value(&self, walker: &ParserWalker) -> Result<i64, MemoryAccessException> {
+    /// Port of `PatternExpression.getValue(ParserWalker)`: the expression's value for the
+    /// instruction at the walker's position. Arithmetic wraps, as Java's `long` arithmetic does.
+    ///
+    /// # Errors
+    /// [`MemoryAccessException`] if the instruction bytes cannot be read (also used when an
+    /// `inst_next` value is requested from a context that has none).
+    pub fn get_value(&self, walker: &ParserWalker<'_>) -> Result<i64, MemoryAccessException> {
         match self {
             Self::TokenField(f) => f.get_value(walker),
             Self::ContextField(f) => f.get_value(walker),
             Self::Constant(val) => Ok(*val),
             Self::Operand(o) => o.get_value(walker),
-            Self::StartInstruction => Ok(walker.context.addr.offset() as i64),
-            Self::EndInstruction => Ok(walker.context.naddr.offset() as i64),
-            Self::Next2Instruction => Ok(walker.context.n2addr.offset() as i64),
-            Self::Plus(l, r) => Ok(l.get_value(walker)? + r.get_value(walker)?),
-            Self::Sub(l, r) => Ok(l.get_value(walker)? - r.get_value(walker)?),
-            Self::Mult(l, r) => Ok(l.get_value(walker)? * r.get_value(walker)?),
-            Self::LeftShift(l, r) => Ok(l.get_value(walker)? << r.get_value(walker)?),
-            Self::RightShift(l, r) => Ok(l.get_value(walker)? >> r.get_value(walker)?),
+            Self::StartInstruction => Ok(walker.get_addr().addressable_word_offset()),
+            Self::EndInstruction => walker
+                .get_naddr()
+                .map(|a| a.addressable_word_offset())
+                .ok_or_else(|| MemoryAccessException::new("inst_next is undefined")),
+            Self::Next2Instruction => Ok(walker.get_n2addr().addressable_word_offset()),
+            Self::Plus(l, r) => Ok(l.get_value(walker)?.wrapping_add(r.get_value(walker)?)),
+            Self::Sub(l, r) => Ok(l.get_value(walker)?.wrapping_sub(r.get_value(walker)?)),
+            Self::Mult(l, r) => Ok(l.get_value(walker)?.wrapping_mul(r.get_value(walker)?)),
+            Self::LeftShift(l, r) => {
+                Ok(l.get_value(walker)?.wrapping_shl(r.get_value(walker)? as u32))
+            }
+            Self::RightShift(l, r) => {
+                Ok(l.get_value(walker)?.wrapping_shr(r.get_value(walker)? as u32))
+            }
             Self::And(l, r) => Ok(l.get_value(walker)? & r.get_value(walker)?),
             Self::Or(l, r) => Ok(l.get_value(walker)? | r.get_value(walker)?),
             Self::Xor(l, r) => Ok(l.get_value(walker)? ^ r.get_value(walker)?),
             Self::Div(l, r) => {
+                let left = l.get_value(walker)?;
                 let divisor = r.get_value(walker)?;
                 if divisor == 0 {
-                    Ok(0) // Consistent with Ghidra's behavior in some cases, or throw?
+                    // Java raises an ArithmeticException here
+                    Err(MemoryAccessException::new("/ by zero in pattern expression"))
                 } else {
-                    Ok(l.get_value(walker)? / divisor)
+                    Ok(left.wrapping_div(divisor))
                 }
             }
-            Self::Minus(u) => Ok(-u.get_value(walker)?),
+            Self::Minus(u) => Ok(u.get_value(walker)?.wrapping_neg()),
             Self::Not(u) => Ok(!u.get_value(walker)?),
         }
     }
@@ -479,9 +497,13 @@ pub struct TokenField {
 }
 
 impl TokenField {
-    pub fn get_value(&self, walker: &ParserWalker) -> Result<i64, MemoryAccessException> {
+    /// Port of `TokenField.getValue(ParserWalker)`.
+    ///
+    /// # Errors
+    /// [`MemoryAccessException`] if the instruction bytes cannot be read.
+    pub fn get_value(&self, walker: &ParserWalker<'_>) -> Result<i64, MemoryAccessException> {
         let mut res = self.get_instruction_bytes(walker)?;
-        res >>= self.shift;
+        res = res.wrapping_shr(self.shift as u32);
         if self.signbit {
             Ok(Self::sign_extend(res, self.bitend - self.bitstart))
         } else {
@@ -489,23 +511,24 @@ impl TokenField {
         }
     }
 
-    fn get_instruction_bytes(&self, walker: &ParserWalker) -> Result<i64, MemoryAccessException> {
+    /// Port of the private `TokenField.getInstructionBytes(ParserWalker)`.
+    fn get_instruction_bytes(&self, walker: &ParserWalker<'_>) -> Result<i64, MemoryAccessException> {
         let mut res = 0i64;
-        let size = (self.byteend - self.bytestart + 1) as i32;
+        let size = self.byteend - self.bytestart + 1;
         let mut tmpsize = size;
         let mut bs = self.bytestart;
 
         while tmpsize >= 4 {
-            let tmp = walker.get_instruction_bits(bs * 8, 32)?;
-            res <<= 32;
-            res |= (tmp as u64 & 0xffffffff) as i64;
+            let tmp = walker.get_instruction_bytes(bs, 4)? as i64;
+            res = res.wrapping_shl(32);
+            res |= tmp & 0xffff_ffff;
             bs += 4;
             tmpsize -= 4;
         }
         if tmpsize > 0 {
-            let tmp = walker.get_instruction_bits(bs * 8, tmpsize * 8)?;
-            res <<= 8 * tmpsize;
-            res |= (tmp as u64 & 0xffffffff) as i64;
+            let tmp = walker.get_instruction_bytes(bs, tmpsize)? as i64;
+            res = res.wrapping_shl((8 * tmpsize) as u32);
+            res |= tmp & 0xffff_ffff;
         }
         if !self.bigendian {
             res = Self::byte_swap(res, size);
@@ -514,7 +537,7 @@ impl TokenField {
     }
 
     fn sign_extend(mut val: i64, bit: i32) -> i64 {
-        let mask = (!0i64) << bit;
+        let mask = (!0i64).wrapping_shl(bit as u32);
         if ((val >> bit) & 1) != 0 {
             val |= mask;
         } else {
@@ -524,8 +547,8 @@ impl TokenField {
     }
 
     fn zero_extend(val: i64, bit: i32) -> i64 {
-        let mut mask = (!0i64) << bit;
-        mask <<= 1;
+        let mut mask = (!0i64).wrapping_shl(bit as u32);
+        mask = mask.wrapping_shl(1);
         val & !mask
     }
 
@@ -574,13 +597,40 @@ pub struct ContextField {
 }
 
 impl ContextField {
-    pub fn get_value(&self, walker: &ParserWalker) -> Result<i64, MemoryAccessException> {
-        let mut res =
-            walker.get_context_bits(self.bitstart, self.bitend - self.bitstart + 1) as i64;
+    /// Port of `ContextField.getValue(ParserWalker)`.
+    ///
+    /// # Errors
+    /// Never; fallible for uniformity with the other pattern values.
+    pub fn get_value(&self, walker: &ParserWalker<'_>) -> Result<i64, MemoryAccessException> {
+        let mut res = self.get_context_bytes(walker);
+        res = res.wrapping_shr(self.shift as u32);
         if self.signbit {
             res = TokenField::sign_extend(res, self.bitend - self.bitstart);
+        } else {
+            res = TokenField::zero_extend(res, self.bitend - self.bitstart);
         }
         Ok(res)
+    }
+
+    /// Port of the private `ContextField.getContextBytes(ParserWalker)`. As in Java, each
+    /// fetched `int` is sign-extended into the accumulator.
+    fn get_context_bytes(&self, walker: &ParserWalker<'_>) -> i64 {
+        let mut res = 0i64;
+        let mut bs = self.bytestart;
+        let mut size = self.byteend - bs + 1;
+        while size >= 4 {
+            let tmp = walker.get_context_bytes(bs, 4);
+            res = res.wrapping_shl(32);
+            res |= tmp as i64;
+            bs += 4;
+            size = self.byteend - bs + 1;
+        }
+        if size > 0 {
+            let tmp = walker.get_context_bytes(bs, size);
+            res = res.wrapping_shl((8 * size) as u32);
+            res |= tmp as i64;
+        }
+        res
     }
 
     pub fn decode(decoder: &dyn Decoder) -> Result<Self, DecoderError> {
@@ -604,33 +654,70 @@ impl ContextField {
     }
 }
 
+/// The value of an operand of a constructor, as used in another operand's expression.
+///
+/// Port of `ghidra.app.plugin.processors.sleigh.expression.OperandValue`. Java holds the
+/// `Constructor` itself; it is named here by its subtable id (`table_id`) and its index within
+/// that subtable (`constructor_id`), resolved through the language's symbol table.
 #[derive(Debug, Clone)]
 pub struct OperandValue {
+    /// Index of the operand within its constructor (`index`).
     pub index: i32,
+    /// Index of the constructor within its subtable (Java `ct.getId()`).
     pub constructor_id: i32,
+    /// Id of the subtable holding the constructor.
+    pub table_id: i32,
 }
 
 impl OperandValue {
-    pub fn get_value(&self, walker: &ParserWalker) -> Result<i64, MemoryAccessException> {
-        // Resolve operand's value.
-        // In Ghidra, this usually calls TripleSymbol.getValue() or gets it from a handle.
-        // For simple PatternExpressions, we look at the handle in the walker.
-        if let Some(h) = walker.get_fixed_handle(self.index as usize) {
-            Ok(h.offset_offset as i64)
-        } else {
-            Ok(0)
+    /// Port of `OperandValue.getValue(ParserWalker)`: evaluates the operand's defining
+    /// expression (or its defining symbol's expression) at an out-of-band position standing
+    /// for the operand, since the operand's own branch may not have been built yet.
+    ///
+    /// # Errors
+    /// [`MemoryAccessException`] if the instruction bytes cannot be read.
+    pub fn get_value(&self, walker: &ParserWalker<'_>) -> Result<i64, MemoryAccessException> {
+        let Some(table) = walker.symbol_table() else {
+            return Ok(0);
+        };
+        let Some(ct) = table.find_constructor(self.table_id, self.constructor_id) else {
+            return Ok(0);
+        };
+        let Some(sym) = ct.get_operand(table, self.index as usize) else {
+            return Ok(0);
+        };
+        let patexp = match &sym.defexp {
+            Some(e) => e.clone(),
+            None => match sym
+                .get_defining_symbol(table)
+                .map(|d| d.get_pattern_expression())
+            {
+                Some(Ok(e)) => e,
+                _ => return Ok(0),
+            },
+        };
+        let mut newwalker = ParserWalker::new(walker.get_parser_context());
+        newwalker.set_out_of_band_state(ct, self.index as usize, walker);
+        if !newwalker.is_state() {
+            return Err(MemoryAccessException::new(
+                "operand value evaluated outside of its constructor",
+            ));
         }
+        patexp.get_value(&newwalker)
     }
 
+    /// Port of `OperandValue.decode(Decoder, SleighLanguage)`.
     pub fn decode(decoder: &dyn Decoder) -> Result<Self, DecoderError> {
         let el = decoder.open_element_with_id(ELEM_OPERAND_EXP)?;
         let index = decoder.read_signed_integer_with_id(ATTRIB_INDEX)? as i32;
-        let constructor_id = decoder.read_signed_integer_with_id(ATTRIB_ID)? as i32;
+        let table_id = decoder.read_unsigned_integer_with_id(ATTRIB_TABLE)? as i32;
+        let constructor_id = decoder.read_unsigned_integer_with_id(ATTRIB_CT)? as i32;
         decoder.close_element(el)?;
 
         Ok(Self {
             index,
             constructor_id,
+            table_id,
         })
     }
 }
@@ -730,6 +817,7 @@ mod pattern_value_tests {
         let expr = PatternExpression::Operand(OperandValue {
             index: 0,
             constructor_id: 0,
+            table_id: 0,
         });
         let min_err = expr.min_value().unwrap_err();
         let max_err = expr.max_value().unwrap_err();

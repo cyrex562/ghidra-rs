@@ -1,171 +1,165 @@
-use crate::app::seam_stubs::ConstructState;
+//! Port of `ghidra.app.plugin.processors.sleigh.OpTplWalker`.
+
 use crate::decompiler::opcodes::OpCode;
-use crate::program::model::lang::sleigh::template::OpTpl;
-use std::sync::Arc;
+use crate::program::model::lang::sleigh::template::{ConstructTpl, OpTpl};
+use crate::program::model::lang::sleigh::walker::ConstructTree;
 
 /// Result of [`OpTplWalker::next_op_tpl`]: either an ordinary [`OpTpl`] to emit, or the operand
 /// index of a virtual/BUILD directive to recurse into. Stands in for the `Object` Java's
 /// `nextOpTpl()` returns (an `Integer` or an `OpTpl`), with `null` mapped to `None`.
 #[derive(Debug, Clone)]
-pub enum NextOpTpl {
+pub enum NextOpTpl<'a> {
     /// A BUILD directive (or virtual build directive, when there is no `oparray`) naming the
     /// operand to recurse into next.
     OperandIndex(i32),
     /// An ordinary p-code template op to emit as-is.
-    Op(OpTpl),
+    Op(&'a OpTpl),
 }
 
-/// Walks the [`OpTpl`]s of a parse tree (or a single [`ConstructTpl`]) in the correct order.
+/// Walks the [`OpTpl`]s of a parse tree (or a single [`ConstructTpl`]) in the order they would
+/// be emitted.
 ///
-/// Port of `ghidra.app.plugin.processors.sleigh.OpTplWalker`. Supports walking the tree of an
-/// entire `SleighInstructionPrototype` or just a single `ConstructTpl`. The private `setupPoint`
-/// helper is exposed as a default method ([`setup_point`](Self::setup_point)) since the other
-/// default methods need to call it; it is not meant to be called directly by users of the trait.
-///
-/// Java's two constructors are dropped, as traits cannot provide them; a concrete implementor is
-/// expected to offer equivalents (one seeded with a root [`ConstructState`] and section number,
-/// walking [`setup_point`](Self::setup_point) immediately; one seeded with a single
-/// `ConstructTpl`'s op vector directly, with no `point`). Java's fixed-size `breadcrumb` array
-/// (sized to cap recursion depth at 64, or 1 for the single-template constructor) is modeled as a
-/// growable `Vec<i32>` instead, since a trait has no constructor to size it up front; this only
-/// relaxes the artificial depth cap, it does not change walking behavior.
-pub trait OpTplWalker {
-    /// The current node being visited (Java's `point` field), or `None` when walking a single
-    /// template with no parse tree.
-    fn point(&self) -> Option<Arc<dyn ConstructState>>;
-    /// Sets [`point`](Self::point).
-    fn set_point(&mut self, point: Option<Arc<dyn ConstructState>>);
+/// Port of `ghidra.app.plugin.processors.sleigh.OpTplWalker`. The tree is a [`ConstructTree`]
+/// (see its docs) and the current node is an index into it.
+pub struct OpTplWalker<'a> {
+    tree: Option<&'a ConstructTree>,
+    /// The current node being visited.
+    point: Option<usize>,
+    /// Current array of ops being traversed.
+    oparray: Option<&'a [OpTpl]>,
+    /// Depth of current node within the tree.
+    depth: i32,
+    /// Path of operands from the root.
+    breadcrumb: Vec<i32>,
+    /// Maximum number of directives for this point.
+    maxsize: i32,
+    sectionnum: i32,
+}
 
-    /// The current array of ops being traversed (Java's `oparray` field), or `None` for an empty
-    /// named section implying a straight list of build directives.
-    fn oparray(&self) -> Option<&Vec<OpTpl>>;
-    /// Sets [`oparray`](Self::oparray).
-    fn set_oparray(&mut self, oparray: Option<Vec<OpTpl>>);
+impl<'a> OpTplWalker<'a> {
+    /// Constructor for walking an entire parse tree from its node `root`, through the named
+    /// section `sectionnum` (or the main section for `-1`). Port of
+    /// `OpTplWalker(ConstructState, int)`.
+    pub fn new(tree: &'a ConstructTree, root: usize, sectionnum: i32) -> Self {
+        // NOTE: breadcrumb array size limits depth of parse
+        let mut walker = Self {
+            tree: Some(tree),
+            point: Some(root),
+            oparray: None,
+            depth: 0,
+            breadcrumb: vec![0; 64],
+            maxsize: 0,
+            sectionnum,
+        };
+        walker.setup_point();
+        walker
+    }
 
-    /// Depth of the current node within the tree (Java's `depth` field).
-    fn depth(&self) -> i32;
-    /// Sets [`depth`](Self::depth).
-    fn set_depth(&mut self, depth: i32);
+    /// Constructor for walking a single template. Port of `OpTplWalker(ConstructTpl)`.
+    pub fn for_template(tpl: &'a ConstructTpl) -> Self {
+        Self {
+            tree: None,
+            point: None,
+            oparray: Some(&tpl.vec),
+            depth: 0,
+            breadcrumb: vec![0; 1],
+            maxsize: tpl.vec.len() as i32,
+            sectionnum: -1,
+        }
+    }
 
-    /// Path of operands from the root (Java's `breadcrumb` field), indexed by
-    /// [`depth`](Self::depth).
-    fn breadcrumb(&self) -> &Vec<i32>;
-    /// Mutable access to [`breadcrumb`](Self::breadcrumb).
-    fn breadcrumb_mut(&mut self) -> &mut Vec<i32>;
-
-    /// Maximum number of directives for this point (Java's `maxsize` field).
-    fn maxsize(&self) -> i32;
-    /// Sets [`maxsize`](Self::maxsize).
-    fn set_maxsize(&mut self, maxsize: i32);
-
-    /// The named section being traversed, or -1 for the main section (Java's `sectionnum` field,
-    /// fixed at construction).
-    fn sectionnum(&self) -> i32;
-
-    /// Recomputes [`oparray`](Self::oparray)/[`maxsize`](Self::maxsize) for the current
-    /// [`point`](Self::point). Stands in for the private `setupPoint()`.
+    /// Port of the private `setupPoint()`.
     fn setup_point(&mut self) {
-        self.set_maxsize(0);
-        self.set_oparray(None);
-        let Some(point) = self.point() else {
+        self.maxsize = 0;
+        self.oparray = None;
+        let (Some(tree), Some(point)) = (self.tree, self.point) else {
             return;
         };
-        let Some(ct) = point.constructor() else {
+        let Some(ct) = tree.get(point).ct.as_ref() else {
             return;
         };
-        let sectionnum = self.sectionnum();
-        let tpl = if sectionnum < 0 {
-            match ct.templ.clone() {
-                Some(tpl) => tpl,
+        let tpl = if self.sectionnum < 0 {
+            match ct.get_templ() {
+                Some(tpl) => Some(tpl),
                 None => return,
             }
         } else {
-            match ct
-                .named_templ
-                .get(sectionnum as usize)
-                .and_then(|t| t.clone())
-            {
-                Some(tpl) => tpl,
-                // Empty named section implies straight list of build directives.
-                None => {
-                    self.set_maxsize(ct.operands.len() as i32);
-                    return;
-                }
-            }
+            ct.get_named_templ(self.sectionnum)
         };
-        self.set_maxsize(tpl.vec.len() as i32);
-        self.set_oparray(Some(tpl.vec));
-    }
-
-    /// Stands in for `OpTplWalker.getState()`.
-    fn get_state(&self) -> Option<Arc<dyn ConstructState>> {
-        self.point()
-    }
-
-    /// Stands in for `OpTplWalker.isState()`.
-    fn is_state(&self) -> bool {
-        self.point().is_some() || self.maxsize() > 0
-    }
-
-    /// While walking the [`OpTpl`]s in order, follow a particular BUILD directive into its
-    /// respective constructor/template. Use [`pop_build`](Self::pop_build) to backtrack. Stands
-    /// in for `OpTplWalker.pushBuild(int)`.
-    fn push_build(&mut self, buildnum: i32) {
-        let next = self.point().map(|point| point.sub_state(buildnum));
-        self.set_point(next);
-        self.set_depth(self.depth() + 1);
-        let depth = self.depth() as usize;
-        let breadcrumb = self.breadcrumb_mut();
-        if breadcrumb.len() <= depth {
-            breadcrumb.resize(depth + 1, 0);
+        match tpl {
+            // Empty named section implies straight list of build directives
+            None => self.maxsize = ct.get_num_operands() as i32,
+            Some(tpl) => {
+                self.oparray = Some(&tpl.vec);
+                self.maxsize = tpl.vec.len() as i32;
+            }
         }
-        breadcrumb[depth] = 0;
+    }
+
+    /// The tree node being visited. Port of `OpTplWalker.getState()`.
+    pub fn get_state(&self) -> Option<usize> {
+        self.point
+    }
+
+    /// Port of `OpTplWalker.isState()`.
+    pub fn is_state(&self) -> bool {
+        self.point.is_some() || self.maxsize > 0
+    }
+
+    /// While walking the ops in order, follow a particular BUILD directive into its respective
+    /// constructor and template; use [`OpTplWalker::pop_build`] to backtrack. Port of
+    /// `OpTplWalker.pushBuild(int)`.
+    ///
+    /// # Panics
+    /// If the walker is not on a tree node or `buildnum` is not an operand of it (Java's
+    /// `NullPointerException`/`IndexOutOfBoundsException`).
+    pub fn push_build(&mut self, buildnum: i32) {
+        let tree = self.tree.expect("pushBuild on a single-template walker");
+        let point = self.point.expect("pushBuild past the end of the walk");
+        self.point = Some(tree.get_sub_state(point, buildnum as usize));
+        self.depth += 1;
+        self.breadcrumb[self.depth as usize] = 0;
         self.setup_point();
     }
 
-    /// Moves to the parent of the current node. Stands in for `OpTplWalker.popBuild()`.
-    fn pop_build(&mut self) {
-        let Some(point) = self.point() else {
-            self.set_maxsize(0);
-            self.set_oparray(None);
+    /// Move to the parent of the current node. Port of `OpTplWalker.popBuild()`.
+    pub fn pop_build(&mut self) {
+        let (Some(tree), Some(point)) = (self.tree, self.point) else {
+            self.maxsize = 0;
+            self.oparray = None;
             return;
         };
-        let parent = point.parent();
-        self.set_point(parent.clone());
-        self.set_depth(self.depth() - 1);
-        if parent.is_some() {
+        self.point = tree.get(point).parent;
+        self.depth -= 1;
+        if self.point.is_some() {
             self.setup_point();
         } else {
-            self.set_maxsize(0);
-            self.set_oparray(None);
+            self.maxsize = 0;
+            self.oparray = None;
         }
     }
 
-    /// Returns the next [`OpTpl`] (or BUILD operand index) in traversal order, or `None` once
-    /// this point is exhausted. Stands in for `OpTplWalker.nextOpTpl()`.
-    fn next_op_tpl(&mut self) -> Option<NextOpTpl> {
-        let depth = self.depth() as usize;
-        let breadcrumb = self.breadcrumb_mut();
-        if breadcrumb.len() <= depth {
-            breadcrumb.resize(depth + 1, 0);
-        }
-        let curind = breadcrumb[depth];
-        breadcrumb[depth] += 1;
-        if curind >= self.maxsize() {
+    /// The next op (or BUILD operand index) in traversal order, or `None` once this point is
+    /// exhausted. Port of `OpTplWalker.nextOpTpl()`.
+    pub fn next_op_tpl(&mut self) -> Option<NextOpTpl<'a>> {
+        let depth = self.depth as usize;
+        let curind = self.breadcrumb[depth];
+        self.breadcrumb[depth] += 1;
+        if curind >= self.maxsize {
             return None;
         }
-        let Some(oparray) = self.oparray() else {
-            // Virtual build directive.
-            return Some(NextOpTpl::OperandIndex(curind));
+        let Some(oparray) = self.oparray else {
+            return Some(NextOpTpl::OperandIndex(curind)); // Virtual build directive
         };
         let op = &oparray[curind as usize];
         if op.get_opcode() != OpCode::CpuiMultiequal {
-            // Not a build directive: return the ordinary OpTpl.
-            return Some(NextOpTpl::Op(op.clone()));
+            // if NOT a build directive, return ordinary OpTpl
+            return Some(NextOpTpl::Op(op));
         }
-        // Get the operand index from the build directive.
-        let real_curind = op.get_in(0).offset.value_real as i32;
-        Some(NextOpTpl::OperandIndex(real_curind))
+        // Get the operand index from the build directive
+        Some(NextOpTpl::OperandIndex(
+            op.get_in(0).offset.value_real as i32,
+        ))
     }
 }
 
@@ -175,32 +169,7 @@ mod tests {
     use crate::program::model::lang::sleigh::constructor::Constructor;
     use crate::program::model::lang::sleigh::template::const_tpl::{ConstTpl, ConstTplType};
     use crate::program::model::lang::sleigh::template::varnode_tpl::VarnodeTpl;
-    use crate::program::model::lang::sleigh::template::ConstructTpl;
-    use std::sync::Mutex;
-
-    /// A tiny fixed two-node tree: a root constructor whose template contains one ordinary op
-    /// and one BUILD directive targeting operand 0, and a single child (leaf) constructor with
-    /// an empty template (a bare list of `num_operands` virtual build directives). Parent/child
-    /// links are wired up (via interior mutability, since both sides of the link must exist
-    /// before the other can reference it) once both nodes are built, in
-    /// [`build_tree`](self::build_tree).
-    struct MockConstructState {
-        ct: Option<Arc<Constructor>>,
-        parent: Mutex<Option<Arc<dyn ConstructState>>>,
-        children: Mutex<Vec<Arc<dyn ConstructState>>>,
-    }
-
-    impl ConstructState for MockConstructState {
-        fn constructor(&self) -> Option<Arc<Constructor>> {
-            self.ct.clone()
-        }
-        fn sub_state(&self, index: i32) -> Arc<dyn ConstructState> {
-            self.children.lock().unwrap()[index as usize].clone()
-        }
-        fn parent(&self) -> Option<Arc<dyn ConstructState>> {
-            self.parent.lock().unwrap().clone()
-        }
-    }
+    use std::sync::Arc;
 
     fn real_varnode(offset: u64) -> VarnodeTpl {
         VarnodeTpl {
@@ -222,7 +191,7 @@ mod tests {
         Arc::new(ct)
     }
 
-    fn root_constructor() -> Arc<Constructor> {
+    fn root_constructor(named: Option<ConstructTpl>) -> Arc<Constructor> {
         let mut copy_op = OpTpl::with_opcode(OpCode::CpuiCopy);
         copy_op.set_output(real_varnode(0));
 
@@ -235,88 +204,25 @@ mod tests {
 
         let mut ct = Constructor::new();
         ct.templ = Some(tpl);
+        ct.operands = vec![7];
+        ct.named_templ = vec![named];
         Arc::new(ct)
     }
 
-    fn build_tree() -> Arc<dyn ConstructState> {
-        let leaf: Arc<MockConstructState> = Arc::new(MockConstructState {
-            ct: Some(leaf_constructor()),
-            parent: Mutex::new(None),
-            children: Mutex::new(Vec::new()),
-        });
-        let root: Arc<MockConstructState> = Arc::new(MockConstructState {
-            ct: Some(root_constructor()),
-            parent: Mutex::new(None),
-            children: Mutex::new(vec![leaf.clone() as Arc<dyn ConstructState>]),
-        });
-        *leaf.parent.lock().unwrap() = Some(root.clone() as Arc<dyn ConstructState>);
-        root
-    }
-
-    struct MockOpTplWalker {
-        point: Option<Arc<dyn ConstructState>>,
-        oparray: Option<Vec<OpTpl>>,
-        depth: i32,
-        breadcrumb: Vec<i32>,
-        maxsize: i32,
-        sectionnum: i32,
-    }
-
-    impl MockOpTplWalker {
-        fn for_tree(root: Arc<dyn ConstructState>, sectionnum: i32) -> Self {
-            let mut walker = Self {
-                point: Some(root),
-                oparray: None,
-                depth: 0,
-                breadcrumb: vec![0],
-                maxsize: 0,
-                sectionnum,
-            };
-            walker.setup_point();
-            walker
-        }
-    }
-
-    impl OpTplWalker for MockOpTplWalker {
-        fn point(&self) -> Option<Arc<dyn ConstructState>> {
-            self.point.clone()
-        }
-        fn set_point(&mut self, point: Option<Arc<dyn ConstructState>>) {
-            self.point = point;
-        }
-        fn oparray(&self) -> Option<&Vec<OpTpl>> {
-            self.oparray.as_ref()
-        }
-        fn set_oparray(&mut self, oparray: Option<Vec<OpTpl>>) {
-            self.oparray = oparray;
-        }
-        fn depth(&self) -> i32 {
-            self.depth
-        }
-        fn set_depth(&mut self, depth: i32) {
-            self.depth = depth;
-        }
-        fn breadcrumb(&self) -> &Vec<i32> {
-            &self.breadcrumb
-        }
-        fn breadcrumb_mut(&mut self) -> &mut Vec<i32> {
-            &mut self.breadcrumb
-        }
-        fn maxsize(&self) -> i32 {
-            self.maxsize
-        }
-        fn set_maxsize(&mut self, maxsize: i32) {
-            self.maxsize = maxsize;
-        }
-        fn sectionnum(&self) -> i32 {
-            self.sectionnum
-        }
+    /// A root constructor whose template holds one ordinary op and a BUILD of operand 0, and a
+    /// leaf constructor (operand 0) with an empty template.
+    fn build_tree(named: Option<ConstructTpl>) -> ConstructTree {
+        let mut tree = ConstructTree::new();
+        tree.get_mut(ConstructTree::ROOT).ct = Some(root_constructor(named));
+        let leaf = tree.add_state(Some(ConstructTree::ROOT));
+        tree.get_mut(leaf).ct = Some(leaf_constructor());
+        tree
     }
 
     #[test]
     fn walks_ordinary_op_then_follows_build_directive_and_pops_back() {
-        let root = build_tree();
-        let mut walker = MockOpTplWalker::for_tree(root, -1);
+        let tree = build_tree(None);
+        let mut walker = OpTplWalker::new(&tree, ConstructTree::ROOT, -1);
 
         assert!(walker.is_state());
 
@@ -337,25 +243,57 @@ mod tests {
 
         // Follow the BUILD directive into the leaf constructor.
         walker.push_build(0);
-        assert!(walker.get_state().is_some());
-        // isState() is true whenever point is non-null, regardless of maxsize -- matching
-        // Java's `if (point != null) return true;` short-circuit.
+        assert_eq!(walker.get_state(), Some(1));
+        // isState() is true whenever point is non-null, regardless of maxsize
         assert!(walker.is_state());
         // The leaf's template is empty (0 ops), so there is nothing left to walk here.
         assert!(walker.next_op_tpl().is_none());
 
-        // Backtrack to the root; its second op index (BUILD) was already consumed, so the walk
-        // is exhausted there too, but the state itself should be non-null again.
+        // Backtrack to the root; its ops were already consumed.
         walker.pop_build();
-        assert!(walker.get_state().is_some());
+        assert_eq!(walker.get_state(), Some(ConstructTree::ROOT));
+        assert!(walker.next_op_tpl().is_none());
+
+        // Popping the root ends the walk.
+        walker.pop_build();
+        assert!(!walker.is_state());
     }
 
-    /// Proves `dyn OpTplWalker` is object safe and usable through a trait object.
     #[test]
-    fn is_object_safe() {
-        let root = build_tree();
-        let mut walker: Box<dyn OpTplWalker> = Box::new(MockOpTplWalker::for_tree(root, -1));
+    fn empty_named_section_is_a_list_of_virtual_builds() {
+        // Section 0 of the root is empty, so each operand is an implied BUILD.
+        let tree = build_tree(None);
+        let mut walker = OpTplWalker::new(&tree, ConstructTree::ROOT, 0);
+        match walker.next_op_tpl() {
+            Some(NextOpTpl::OperandIndex(0)) => {}
+            other => panic!("expected virtual BUILD 0, got {other:?}"),
+        }
+        assert!(walker.next_op_tpl().is_none());
+    }
+
+    #[test]
+    fn named_section_ops_are_walked_when_present() {
+        let mut named = ConstructTpl::new();
+        named.vec.push(OpTpl::with_opcode(OpCode::CpuiIntAdd));
+        let tree = build_tree(Some(named));
+        let mut walker = OpTplWalker::new(&tree, ConstructTree::ROOT, 0);
+        match walker.next_op_tpl() {
+            Some(NextOpTpl::Op(op)) => assert_eq!(op.get_opcode(), OpCode::CpuiIntAdd),
+            other => panic!("expected INT_ADD, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn single_template_walk_has_no_state() {
+        let mut tpl = ConstructTpl::new();
+        tpl.vec.push(OpTpl::with_opcode(OpCode::CpuiCopy));
+        let mut walker = OpTplWalker::for_template(&tpl);
         assert!(walker.is_state());
-        assert!(walker.next_op_tpl().is_some());
+        assert!(walker.get_state().is_none());
+        assert!(matches!(walker.next_op_tpl(), Some(NextOpTpl::Op(_))));
+        assert!(walker.next_op_tpl().is_none());
+        // popBuild with no point simply empties the walk
+        walker.pop_build();
+        assert!(!walker.is_state());
     }
 }

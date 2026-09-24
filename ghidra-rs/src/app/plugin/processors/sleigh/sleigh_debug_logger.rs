@@ -150,7 +150,7 @@ pub trait SleighDebugLogger {
         maskvec: &[i32],
         valvec: &[i32],
         byte_offset: i32,
-        pos: &dyn SleighParserContext,
+        pos: &SleighParserContext,
     );
 
     /// Dump transient context setting details.
@@ -164,7 +164,7 @@ pub trait SleighDebugLogger {
     /// * `mask` - 4-byte context mask
     ///
     /// Port of `SleighDebugLogger.dumpContextSet(SleighParserContext, int, int, int)`.
-    fn dump_context_set(&mut self, pos: &dyn SleighParserContext, num: i32, value: i32, mask: i32);
+    fn dump_context_set(&mut self, pos: &SleighParserContext, num: i32, value: i32, mask: i32);
 
     /// Dump globalset details. The target address is currently not included in the log.
     ///
@@ -177,7 +177,7 @@ pub trait SleighDebugLogger {
     /// `SleighDebugLogger.dumpGlobalSet(SleighParserContext, ConstructState, TripleSymbol, int, int, int)`.
     fn dump_global_set(
         &mut self,
-        pos: &dyn SleighParserContext,
+        pos: &SleighParserContext,
         state: &ConstructState,
         sym: &dyn TripleSymbol,
         num: i32,
@@ -380,13 +380,13 @@ mod tests {
             _maskvec: &[i32],
             _valvec: &[i32],
             _byte_offset: i32,
-            _pos: &dyn SleighParserContext,
+            _pos: &SleighParserContext,
         ) {
         }
 
         fn dump_context_set(
             &mut self,
-            _pos: &dyn SleighParserContext,
+            _pos: &SleighParserContext,
             _num: i32,
             _value: i32,
             _mask: i32,
@@ -395,7 +395,7 @@ mod tests {
 
         fn dump_global_set(
             &mut self,
-            _pos: &dyn SleighParserContext,
+            _pos: &SleighParserContext,
             _state: &ConstructState,
             _sym: &dyn TripleSymbol,
             _num: i32,

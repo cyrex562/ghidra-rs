@@ -1147,28 +1147,6 @@ pub trait RegisterValueBuilder {
     ) -> Box<dyn crate::program::seam_stubs::RegisterValue>;
 }
 
-/// Placeholder for `ghidra.app.plugin.processors.sleigh.ConstructState`, referenced by
-/// [`OpTplWalker`](crate::app::plugin::processors::sleigh::op_tpl_walker::OpTplWalker) before the
-/// real class is ported. Java's `ConstructState` exposes direct `getConstructor()`/
-/// `getSubState(int)`/`getParent()` pointer-style navigation of an already-built parse tree; the
-/// crate's existing `program::model::lang::sleigh::walker::ConstructState` models a different
-/// traversal shape (a flat `Vec<ConstructState>` arena addressed by index, built for
-/// `ParserWalker`) that doesn't support this directly, so this seam models only the three
-/// accessors `OpTplWalker` needs, in terms of the already-ported
-/// [`Constructor`](crate::program::model::lang::sleigh::constructor::Constructor).
-pub trait ConstructState: Send + Sync {
-    /// Stands in for `ConstructState.getConstructor()`.
-    fn constructor(
-        &self,
-    ) -> StdOption<std::sync::Arc<crate::program::model::lang::sleigh::constructor::Constructor>>;
-
-    /// Stands in for `ConstructState.getSubState(int)`.
-    fn sub_state(&self, index: i32) -> std::sync::Arc<dyn ConstructState>;
-
-    /// Stands in for `ConstructState.getParent()`.
-    fn parent(&self) -> StdOption<std::sync::Arc<dyn ConstructState>>;
-}
-
 /// Placeholder for `ghidra.app.plugin.languages.sleigh.SleighConstructorTraversal`, referenced by
 /// [`SleighLanguages`](crate::app::plugin::languages::sleigh::sleigh_languages::SleighLanguages)
 /// before the real class -- which walks every subtable in a `SleighLanguage`'s symbol table,

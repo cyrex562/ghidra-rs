@@ -203,3 +203,28 @@ mod tests {
         assert_eq!(encoder.opened.iter().filter(|&&n| n == "const_real").count(), 1);
     }
 }
+
+/// Run-time queries of a varnode template against a parsed instruction (the
+/// `ghidra.app.plugin.processors.sleigh.template.VarnodeTpl` half of this shared type).
+impl VarnodeTpl {
+    /// Port of `VarnodeTpl.isDynamic(ParserWalker)`: whether the offset resolves through a
+    /// dynamic (pointer) handle. Only the offset is checked, as in Java: if any piece is
+    /// dynamic, the offset is.
+    pub fn is_dynamic(
+        &self,
+        walker: &crate::program::model::lang::sleigh::walker::ParserWalker<'_>,
+    ) -> bool {
+        if self.offset.tp != ConstTplType::Handle {
+            return false;
+        }
+        walker
+            .get_fixed_handle(self.offset.handle_index as usize)
+            .offset_space
+            .is_some()
+    }
+
+    /// Port of `VarnodeTpl.isRelative()`: whether the offset is a label-relative reference.
+    pub fn is_relative(&self) -> bool {
+        self.offset.tp == ConstTplType::JRelative
+    }
+}

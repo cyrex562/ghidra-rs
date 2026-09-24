@@ -19,9 +19,12 @@
 //!   properties, no program counter, no context settings, no volatile ranges, no default
 //!   symbols or memory blocks, no register renames/aliases/groups/lane sizes, and no segmented
 //!   space.
-//! * [`Language::parse`] needs a concrete `SleighInstructionPrototype` (only its flow helpers
-//!   and a trait seam exist; the class is TODO in `PORT_MANIFEST.tsv`), and
-//!   [`Language::get_compiler_spec_by_id`] / [`Language::get_default_compiler_spec`] need a
+//! * [`Language::parse`] builds a [`SleighInstructionPrototype`] but does not cache prototypes
+//!   by hash (Java's `instructProtoMap`), and cannot apply the instruction's global context
+//!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
+//!   which a `&mut dyn ProcessorContext` cannot be tested for here. A language can only parse
+//!   once it is shared through [`SleighLanguage::into_shared`] (prototypes hold the language).
+//! * [`Language::get_compiler_spec_by_id`] / [`Language::get_default_compiler_spec`] need a
 //!   concrete `BasicCompilerSpec` (TODO; needs cspec XML parsing via `XmlPullParserFactory` and
 //!   `PcodeInjectLibrary`). Those bodies panic with an explanatory message; they are not reachable from the
 //!   p-code emulator.
@@ -39,7 +42,12 @@
 
 use super::Endian;
 use crate::app::plugin::processors::generic::MemoryBlockDefinition;
+use crate::app::plugin::processors::sleigh::context_cache::{ContextCache, DefaultContextCache};
+use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::SleighInstructionPrototype;
 use crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription;
+use crate::app::plugin::processors::sleigh::sleigh_parser_context::{
+    read_context_words, snapshot_mem_buffer,
+};
 use crate::program::model::address::{
     Address, AddressFactory, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
     DefaultAddressFactory,
@@ -58,6 +66,9 @@ use crate::program::model::lang::processor_context::ProcessorContext;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::lang::register_builder::RegisterBuilder;
 use crate::program::model::lang::register_manager::RegisterManager;
+use crate::program::model::lang::insufficient_bytes_exception::InsufficientBytesException;
+use crate::program::model::lang::nested_delay_slot_exception::NestedDelaySlotException;
+use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::mem::MemBuffer;
@@ -72,7 +83,7 @@ use crate::util::manual_entry::ManualEntry;
 use crate::util::task::TaskMonitor;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, OnceLock, Weak};
 
 pub mod constructor;
 pub mod decision;
@@ -126,6 +137,9 @@ pub struct SleighLanguage {
     max_instruction_length: Option<i32>,
     /// `manual`/`manualException`, loaded on first use (`initManual`).
     manual: OnceLock<ManualState>,
+    /// This language, once shared through [`SleighLanguage::into_shared`]: instruction
+    /// prototypes hold their language (Java passes `this`).
+    self_ref: Weak<SleighLanguage>,
 }
 
 impl fmt::Display for SleighLanguage {
@@ -343,6 +357,7 @@ impl SleighLanguage {
             segmented_space: String::new(),
             max_instruction_length: None,
             manual: OnceLock::new(),
+            self_ref: Weak::new(),
         };
 
         let mut symbol_table = SymbolTable::new();
@@ -586,44 +601,81 @@ impl SleighLanguage {
             .expect("decode rejects a language without a default space")
     }
 
-    pub fn resolve(&self, walker: &mut ParserWalker) -> Result<(), SleighError> {
-        let root_sym = self._symbol_table.find_symbol_by_name("instruction", 0);
-        if let Some(SleighSymbol::Subtable(root_sub)) = root_sym {
-            self.resolve_subtable(walker, root_sub)?;
-            Ok(())
-        } else {
-            Err(SleighError::UnknownInstruction(walker.context.addr.clone()))
+    /// Shares this language, so it can parse instructions: every instruction prototype holds
+    /// the language it was parsed with, as Java's does.
+    pub fn into_shared(self) -> Arc<Self> {
+        Arc::new_cyclic(|weak| {
+            let mut lang = self;
+            lang.self_ref = weak.clone();
+            lang
+        })
+    }
+
+    /// The constant address space.
+    pub fn constant_space(&self) -> Arc<AddressSpace> {
+        self._space_table
+            .get("constant")
+            .cloned()
+            .expect("decode always creates the constant space")
+    }
+
+    /// The `instruction` subtable, whose decision tree is the root of every instruction's
+    /// parse. Stands in for `SleighLanguage.getRootDecisionNode()` (the decision tree of that
+    /// subtable).
+    pub fn get_root_subtable(&self) -> Option<&SubtableSymbol> {
+        match self._symbol_table.find_global_symbol("instruction")? {
+            SleighSymbol::Subtable(sub) => Some(sub),
+            _ => None,
         }
     }
 
-    fn resolve_subtable(
-        &self,
-        walker: &mut ParserWalker,
-        subtable: &SubtableSymbol,
-    ) -> Result<(), SleighError> {
-        let tree = subtable
-            .decision_tree
-            .as_ref()
-            .ok_or_else(|| SleighError::UnknownInstruction(walker.context.addr.clone()))?;
-        let ct = tree.resolve(walker, subtable)?;
-
-        let state_idx = walker.current_state;
-        walker.states[state_idx].ct = Some(ct.clone());
-
-        // Resolve operands
-        for i in 0..ct.operands.len() {
-            let op = &ct.operands[i];
-            if let Some(triple_id) = op.triple_id {
-                let sym = self._symbol_table.find_symbol(triple_id);
-                if let Some(SleighSymbol::Subtable(sub)) = sym {
-                    walker.allocate_operand(i);
-                    walker.push_operand(i);
-                    self.resolve_subtable(walker, sub)?;
-                    walker.pop_operand();
-                }
-            }
+    /// A context cache for this language's context register (Java's `contextcache`, which
+    /// `SleighLanguage` registers the context base register with). Registers are rebuilt per
+    /// call (see the module docs), so the cache is too.
+    pub fn new_context_cache(&self) -> DefaultContextCache {
+        let mut cache = DefaultContextCache::new();
+        if let Some(base) = self.get_context_base_register() {
+            cache.register_variable(&base.borrow());
         }
-        Ok(())
+        cache
+    }
+
+    /// The body of Java's `parse(MemBuffer, ProcessorContext, boolean)`, given the packed
+    /// context words at the instruction: the alignment check, resolving a new prototype, and
+    /// the nested delay slot check.
+    ///
+    /// # Errors
+    /// [`SleighError::UnknownInstruction`] for a misaligned address, a byte pattern matching no
+    /// instruction, a delay slot instruction that itself has delay slots, or a language not
+    /// shared through [`SleighLanguage::into_shared`]; [`SleighError::MemoryAccess`] if the
+    /// bytes cannot be read.
+    pub fn parse_prototype(
+        &self,
+        buf: Arc<dyn MemBuffer>,
+        context: Vec<i32>,
+        in_delay_slot: bool,
+    ) -> Result<SleighInstructionPrototype, SleighError> {
+        if self._alignment != 1 && buf.get_address().offset() % self._alignment as i64 != 0 {
+            return Err(UnknownInstructionException::with_message(format!(
+                "Instructions must be aligned on {}byte boundary.",
+                self._alignment
+            ))
+            .into());
+        }
+        let language = self.self_ref.upgrade().ok_or_else(|| {
+            UnknownInstructionException::with_message(format!(
+                "SleighLanguage {} must be shared through SleighLanguage::into_shared to parse",
+                self._id
+            ))
+        })?;
+        let proto = SleighInstructionPrototype::new(language, buf, context, in_delay_slot)?;
+        if in_delay_slot && proto.has_delay_slots() {
+            return Err(UnknownInstructionException::with_message(
+                NestedDelaySlotException::new().message(),
+            )
+            .into());
+        }
+        Ok(proto)
     }
 }
 
@@ -719,32 +771,41 @@ impl Language for SleighLanguage {
         self.volatile_addresses.contains(addr)
     }
 
-    /// Port of `parse(MemBuffer, ProcessorContext, boolean)`. The alignment check is ported;
-    /// building the prototype is not (see the module docs).
+    /// Port of `parse(MemBuffer, ProcessorContext, boolean)`: resolves the instruction at
+    /// `buf` into a [`SleighInstructionPrototype`]. See the module docs for what differs from
+    /// Java (no prototype cache; global context commits are not applied).
     ///
     /// # Errors
-    /// [`ParseError::UnknownInstruction`] if the buffer address is not aligned to
-    /// [`Language::get_instruction_alignment`].
-    ///
-    /// # Panics
-    /// For an aligned address, since a concrete `SleighInstructionPrototype` is not ported.
+    /// [`ParseError::InsufficientBytes`] if the instruction bytes cannot be read, or
+    /// [`ParseError::UnknownInstruction`] for a misaligned address, a byte pattern matching no
+    /// instruction, a nested delay slot, a failure recovering the instruction's operands, or a
+    /// language not shared through [`SleighLanguage::into_shared`].
     fn parse(
         &self,
         buf: &dyn MemBuffer,
-        _context: &mut dyn ProcessorContext,
-        _in_delay_slot: bool,
+        context: &mut dyn ProcessorContext,
+        in_delay_slot: bool,
     ) -> Result<Box<dyn InstructionPrototype>, ParseError> {
-        if self._alignment != 1 && buf.get_address().offset() % self._alignment as i64 != 0 {
-            return Err(UnknownInstructionException::with_message(format!(
-                "Instructions must be aligned on {}byte boundary.",
-                self._alignment
-            ))
-            .into());
-        }
-        unimplemented!(
-            "SleighLanguage::parse needs a concrete SleighInstructionPrototype, which is not yet \
-             ported"
-        )
+        let view: &dyn ProcessorContextView = &*context;
+        let words = read_context_words(self, view);
+        let mem = snapshot_mem_buffer(buf, 0)
+            .map_err(|e| InsufficientBytesException::with_message(e.to_string()))?;
+        let proto = match self.parse_prototype(mem.clone(), words.clone(), in_delay_slot) {
+            Ok(proto) => proto,
+            Err(SleighError::MemoryAccess(e)) => {
+                return Err(InsufficientBytesException::with_message(e.to_string()).into())
+            }
+            Err(SleighError::UnknownInstruction(e)) => return Err(e.into()),
+            Err(SleighError::Sleigh(e)) => {
+                return Err(UnknownInstructionException::with_message(e.message()).into())
+            }
+        };
+        // Java builds the instruction's parser context here to apply its context commits; a
+        // failure to do so is an unknown instruction
+        proto
+            .new_parser_context(mem, words)
+            .map_err(|_| UnknownInstructionException::new())?;
+        Ok(Box::new(proto))
     }
 
     fn get_number_of_user_defined_op_names(&self) -> i32 {
@@ -1093,25 +1154,12 @@ mod tests {
 
     #[test]
     fn test_sleigh_resolve_basic() {
-        use crate::program::model::lang::sleigh::walker::ParserContext;
-
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space.clone(), 0x1000);
-        let mem = Arc::new(MockMemBuffer {
+        let mem: Arc<dyn MemBuffer> = Arc::new(MockMemBuffer {
             addr: addr.clone(),
             data: vec![0x39, 0x00, 0x00, 0x00],
         });
-
-        let context = Arc::new(ParserContext {
-            addr: addr.clone(),
-            naddr: addr.clone(),
-            n2addr: addr.clone(),
-            context: vec![0],
-            mem_buffer: mem,
-            handle_map: HashMap::new(),
-        });
-
-        let mut walker = ParserWalker::new(context);
 
         let mut data = vec![];
         // <sleigh version="4" bigendian="false">
@@ -1257,11 +1305,15 @@ mod tests {
             vec![space.clone()],
         ));
         let decoder = crate::program::model::pcode::PackedDecode::new(factory, data);
-        let sleigh = SleighLanguage::decode(&decoder, "test".to_string()).unwrap();
+        let sleigh = SleighLanguage::decode(&decoder, "test".to_string())
+            .unwrap()
+            .into_shared();
 
-        sleigh.resolve(&mut walker).unwrap();
-
-        assert!(walker.states[0].ct.is_some());
+        // The single constructor (line 1, one byte long) matches 0x39.
+        let proto = SleighInstructionPrototype::new(sleigh, mem, vec![0], false).unwrap();
+        assert_eq!(proto.get_length(), 1);
+        assert_eq!(proto.dump_constructor_tree(), "1");
+        assert_eq!(proto.get_num_operands(), 0);
     }
 }
 
@@ -1318,7 +1370,7 @@ mod language_tests {
         e.open_element(ELEM_VARNODE_SYM).unwrap();
         e.write_unsigned_integer(ATTRIB_ID, id).unwrap();
         e.write_space_indexed(ATTRIB_SPACE, space, "").unwrap();
-        e.write_unsigned_integer(ATTRIB_OFFSET, offset).unwrap();
+        e.write_unsigned_integer(ATTRIB_OFF, offset).unwrap();
         e.write_signed_integer(ATTRIB_SIZE, size).unwrap();
         e.close_element(ELEM_VARNODE_SYM).unwrap();
     }
@@ -1807,5 +1859,174 @@ mod language_tests {
             ["ADD".to_string()].into_iter().collect::<HashSet<String>>()
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Captures the bytes a `RegisterValue` would be built from.
+    struct CapturingBuilder(std::cell::RefCell<Vec<u8>>);
+
+    impl crate::app::seam_stubs::RegisterValueBuilder for CapturingBuilder {
+        fn build_register_value(
+            &self,
+            register: RegisterRef,
+            bytes: Vec<u8>,
+        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+            assert_eq!(register.borrow().name(), "contextreg");
+            *self.0.borrow_mut() = bytes;
+            Box::new(NoValue)
+        }
+    }
+
+    struct NoValue;
+
+    impl crate::program::seam_stubs::RegisterValue for NoValue {
+        fn get_register(&self) -> RegisterRef {
+            unreachable!("only construction is under test")
+        }
+        fn get_register_value(&self, _register: &Register) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+            Box::new(NoValue)
+        }
+        fn has_any_value(&self) -> bool {
+            false
+        }
+        fn get_unsigned_value_ignore_mask(&self) -> u128 {
+            0
+        }
+        fn has_value(&self) -> bool {
+            false
+        }
+        fn combine_values(
+            &self,
+            _other: &dyn crate::program::seam_stubs::RegisterValue,
+        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+            Box::new(NoValue)
+        }
+    }
+
+    #[test]
+    fn parser_context_exports_its_context_words_as_the_context_register() {
+        use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
+        use crate::program::model::mem::ByteMemBufferImpl;
+        let lang = language(&Sla::default()).into_shared();
+        let mem: Arc<dyn MemBuffer> = Arc::new(ByteMemBufferImpl::new(
+            Address::new(lang.get_default_space(), 0),
+            vec![0],
+            false,
+        ));
+        let ctx = SleighParserContext::for_resolve(mem, lang.clone(), vec![0x8012_3456u32 as i32]);
+        let builder = CapturingBuilder(std::cell::RefCell::new(Vec::new()));
+        assert!(ctx.get_context_register_value(&builder).is_some());
+        // four mask bytes, then the word big-endian
+        assert_eq!(
+            *builder.0.borrow(),
+            vec![0xff, 0xff, 0xff, 0xff, 0x80, 0x12, 0x34, 0x56]
+        );
+        // the context cache sizes the words from the same register
+        assert_eq!(lang.new_context_cache().get_context_size(), 1);
+    }
+
+    #[derive(Default)]
+    struct RecordingDisassemblerContext {
+        future: Vec<Address>,
+    }
+
+    impl crate::program::model::lang::processor_context_view::ProcessorContextView
+        for RecordingDisassemblerContext
+    {
+        fn get_base_context_register(&self) -> Option<RegisterRef> {
+            None
+        }
+        fn get_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_register(&self, _name: &str) -> Option<RegisterRef> {
+            None
+        }
+        fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
+            None
+        }
+        fn get_register_value(
+            &self,
+            _register: &Register,
+        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+            None
+        }
+        fn has_value(&self, _register: &Register) -> bool {
+            false
+        }
+    }
+
+    impl ProcessorContext for RecordingDisassemblerContext {
+        fn set_value(
+            &mut self,
+            _register: &Register,
+            _value: i128,
+        ) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException>
+        {
+            Ok(())
+        }
+        fn set_register_value(
+            &mut self,
+            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+        ) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException>
+        {
+            Ok(())
+        }
+        fn clear_register(
+            &mut self,
+            _register: &Register,
+        ) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException>
+        {
+            Ok(())
+        }
+    }
+
+    impl crate::program::model::lang::disassembler_context::DisassemblerContext
+        for RecordingDisassemblerContext
+    {
+        fn set_future_register_value(
+            &mut self,
+            address: Address,
+            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+        ) {
+            self.future.push(address);
+        }
+        fn set_future_register_value_for_flow(
+            &mut self,
+            _from_addr: Address,
+            _to_addr: Address,
+            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+        ) {
+        }
+    }
+
+    #[test]
+    fn apply_commits_sets_future_context_at_the_committed_address() {
+        use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
+        use crate::program::model::lang::sleigh::walker::ConstructTree;
+        use crate::program::model::mem::ByteMemBufferImpl;
+        let lang = language(&Sla::default()).into_shared();
+        let mem: Arc<dyn MemBuffer> = Arc::new(ByteMemBufferImpl::new(
+            Address::new(lang.get_default_space(), 0x40),
+            vec![0],
+            false,
+        ));
+        let ctx = SleighParserContext::for_resolve(mem, lang, vec![0x8000_0001u32 as i32]);
+        // globalset(sp, TMode): symbol 2 is `sp`, a varnode at ram:0x100
+        ctx.add_commit(ConstructTree::ROOT, 2, 0, 0x8000_0000u32 as i32);
+        let builder = CapturingBuilder(std::cell::RefCell::new(Vec::new()));
+        let mut dis = RecordingDisassemblerContext::default();
+        ctx.apply_commits(&mut dis, &builder).unwrap();
+
+        assert_eq!(dis.future.len(), 1);
+        assert_eq!(dis.future[0].offset(), 0x100);
+        // mask word, then the committed (masked) value word
+        assert_eq!(
+            *builder.0.borrow(),
+            vec![0x80, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00]
+        );
+        // the commits are consumed
+        assert!(ctx.get_context_commits().is_empty());
+        ctx.apply_commits(&mut dis, &builder).unwrap();
+        assert_eq!(dis.future.len(), 1);
     }
 }

@@ -8,6 +8,13 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 pub trait ParserContext {
     /// Returns the instruction prototype for this parser context.
     fn get_prototype(&self) -> Arc<dyn InstructionPrototype>;
+
+    /// This context as [`Any`](std::any::Any), so a prototype can recover its own context type.
+    /// Java documents that a `ParserContext` "may be cast to the prototype's implementation
+    /// without checking"; this is that cast. Contexts that are never cast report `None`.
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
+        None
+    }
 }
 
 #[cfg(test)]

@@ -253,6 +253,12 @@ impl LangParserContext for ParserContextBridge {
     fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
         self.0.get_prototype()
     }
+
+    /// Forwards the wrapped context, so the prototype's cast to its own context type works
+    /// through the bridge.
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
+        self.0.as_any()
+    }
 }
 
 /// Database implementation for an [`Instruction`].

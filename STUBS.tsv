@@ -193,7 +193,6 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	InstructionError	InstructionBlock
 2026-07-22T00:00:00Z	InstructionBlockFlow	InstructionBlock
 2026-07-22T00:00:00Z	HighSymbol	GlobalSymbolMap
-2026-07-22T05:20:07Z	ConstructState	ContextSet
 2026-07-22T06:00:00Z	SubtableSymbol	SleighCompile
 2026-07-22T06:00:00Z	TokenSymbol	SleighCompile
 2026-07-22T06:00:00Z	Constructor	SleighCompile
@@ -244,7 +243,6 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	Undefined	HighFunctionDBUtil
 2026-07-23T18:00:00Z	HighSymbol	HighConstant
 2026-07-23T18:00:00Z	LocalSymbolMap	HighConstant
-2026-07-23T20:00:00Z	ConstructState	OpTplWalker
 2026-07-23T21:00:00Z	ParamMeasure	HighParamID
 2026-07-23T22:00:00Z	AddressXML	ParamEntry
 2026-07-23T23:00:00Z	ProjectDataTypeManager	DataTypeArchiveDB

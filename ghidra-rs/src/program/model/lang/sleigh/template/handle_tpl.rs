@@ -134,3 +134,85 @@ mod tests {
         assert_eq!(encoder.opened.iter().filter(|&&n| n == "const_real").count(), 7);
     }
 }
+
+/// Run-time resolution of an exported handle against a parsed instruction (the
+/// `ghidra.app.plugin.processors.sleigh.template.HandleTpl` half of this shared type).
+impl HandleTpl {
+    /// Resolves this template into `hand` for the walker's position. Port of
+    /// `HandleTpl.fix(FixedHandle, ParserWalker)`.
+    ///
+    /// # Errors
+    /// A [`SleighError`](crate::program::model::lang::sleigh::walker::SleighError) if a piece
+    /// of the template cannot be evaluated.
+    pub fn fix(
+        &self,
+        hand: &mut crate::program::model::lang::sleigh::FixedHandle,
+        walker: &crate::program::model::lang::sleigh::walker::ParserWalker<'_>,
+    ) -> Result<(), crate::program::model::lang::sleigh::walker::SleighError> {
+        use super::const_tpl::ConstTplType;
+        use crate::program::model::address::AddressSpaceType;
+        if self.ptrspace.tp == ConstTplType::Real {
+            // The export is unstarred, but this doesn't mean the varnode being exported isn't
+            // dynamic
+            self.space.fillin_space(hand, walker)?;
+            hand.size = self.size.fix(walker)? as i32;
+            self.ptroffset.fillin_offset(hand, walker)?;
+        } else {
+            let space = self.space.fix_space(walker)?;
+            hand.size = self.size.fix(walker)? as i32;
+            hand.offset_offset = self.ptroffset.fix(walker)?;
+            let offset_space = self.ptrspace.fix_space(walker)?;
+            if offset_space.space_type() == AddressSpaceType::Constant {
+                hand.offset_space = None; // Could have been, but wasn't
+                hand.offset_offset = hand.offset_offset.wrapping_mul(space.unit_size() as i64);
+                hand.offset_offset = space.truncate_offset(hand.offset_offset);
+            } else {
+                hand.offset_space = Some(offset_space);
+                hand.offset_size = self.ptrsize.fix(walker)? as i32;
+                hand.temp_space = Some(self.temp_space.fix_space(walker)?);
+                hand.temp_offset = self.temp_offset.fix(walker)?;
+            }
+            hand.space = Some(space);
+        }
+        Ok(())
+    }
+
+    /// Adjusts a handle printed for operand `handle_index` when this template exports that
+    /// operand as an address. Port of
+    /// `HandleTpl.fixPrintPiece(FixedHandle, ParserWalker, int)`.
+    ///
+    /// # Errors
+    /// A [`SleighError`](crate::program::model::lang::sleigh::walker::SleighError) if the
+    /// exported space or size cannot be evaluated.
+    pub fn fix_print_piece(
+        &self,
+        hand: &mut crate::program::model::lang::sleigh::FixedHandle,
+        walker: &crate::program::model::lang::sleigh::walker::ParserWalker<'_>,
+        handle_index: i32,
+    ) -> Result<(), crate::program::model::lang::sleigh::walker::SleighError> {
+        use super::const_tpl::ConstTplType;
+        use crate::program::model::address::AddressSpaceType;
+        if !hand.fixable {
+            return Ok(());
+        }
+        if hand.space.as_ref().map(|s| s.space_type()) != Some(AddressSpaceType::Constant) {
+            hand.fixable = false;
+            return Ok(());
+        }
+        if self.space.tp == ConstTplType::SpaceId && self.space.is_unique_space() {
+            hand.fixable = false;
+            return Ok(());
+        }
+        if self.ptroffset.tp == ConstTplType::Handle
+            && self.ptroffset.handle_index as i32 == handle_index
+        {
+            let space = self.space.fix_space(walker)?;
+            hand.offset_offset = (space.unit_size() as i64).wrapping_mul(hand.offset_offset);
+            hand.size = self.size.fix(walker)? as i32;
+            hand.space = Some(space);
+        } else {
+            hand.fixable = false;
+        }
+        Ok(())
+    }
+}
