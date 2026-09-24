@@ -1232,7 +1232,7 @@ mod tests {
         let regs = register_space();
         let mut piece = test_piece(true);
         let r0 = Register::new("r0", "", regs.address(0x8), 4, false, Register::TYPE_NONE);
-        piece.bytes_piece.registers.push((Rc::clone(&r0), vec![0, 0, 0, 7]));
+        piece.bytes_piece.registers.push((r0.clone(), vec![0, 0, 0, 7]));
         piece.state_piece.cells.insert(
             long_to_bytes(0x8, regs.pointer_size() as usize, false),
             Some(TraceMemoryState::Error),

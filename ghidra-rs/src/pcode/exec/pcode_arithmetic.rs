@@ -278,7 +278,7 @@ pub trait PcodeArithmetic<T> {
             purpose
         };
         let big_int = self.to_big_integer(value, effective_purpose)?;
-        Ok((Rc::clone(register), big_int))
+        Ok((register.clone(), big_int))
     }
 
     /// Convert, if possible, the given abstract value to a concrete big integer.

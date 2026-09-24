@@ -140,7 +140,7 @@ impl Sym {
                 register,
                 mask: this_mask,
             } => Sym::Register {
-                register: Rc::clone(register),
+                register: register.clone(),
                 mask: this_mask & mask,
             },
             Sym::StackDeref {
@@ -217,7 +217,7 @@ impl Sym {
 fn is_stack_pointer(register: &RegisterRef, c_spec: &dyn CompilerSpec) -> bool {
     match c_spec.get_stack_pointer() {
         None => false,
-        Some(sp) => Rc::ptr_eq(register, &sp) || *register.borrow() == *sp.borrow(),
+        Some(sp) => crate::program::model::lang::Register::same(register, &sp) || *register.borrow() == *sp.borrow(),
     }
 }
 
@@ -290,7 +290,7 @@ mod tests {
             unimplemented!()
         }
         fn get_stack_pointer(&self) -> Option<RegisterRef> {
-            Some(Rc::clone(&self.stack_pointer))
+            Some(self.stack_pointer.clone())
         }
         fn is_stack_right_justified(&self) -> bool {
             false
@@ -444,7 +444,7 @@ mod tests {
         let mask = Sym::Const { value: 0xffff, size: 8 };
         let sp = c_spec.get_stack_pointer().unwrap();
         let reg = Sym::Register {
-            register: Rc::clone(&sp),
+            register: sp.clone(),
             mask: -1,
         };
         let deref = Sym::StackDeref { offset: -8, mask: -1, size: 8 };

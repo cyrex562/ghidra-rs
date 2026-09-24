@@ -376,7 +376,7 @@ mod tests {
         let space = register_space();
         let pc = Register::new("PC", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let value = MockRegisterValue {
-            register: Rc::clone(&pc),
+            register: pc.clone(),
             has_value: true,
             value: 0x1000,
         };
@@ -400,10 +400,11 @@ mod tests {
             false,
             Register::TYPE_NONE,
         );
-        base.borrow_mut().set_child_registers(vec![Rc::clone(&field)]);
+        let [base, field]: [Register; 2] =
+            crate::program::model::lang::register::test_support::linked(&[&base, &field], &[(0, &[1])]).try_into().unwrap();
 
         let value = MockRegisterValue {
-            register: Rc::clone(&base),
+            register: base.clone(),
             has_value: true,
             value: 0x2A,
         };

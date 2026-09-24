@@ -175,7 +175,7 @@ mod tests {
         let mappings = DWARFRegisterMappings::new(map, None, -1, None, 0, false);
         assert!(mappings
             .ghidra_reg(0)
-            .is_some_and(|r| std::rc::Rc::ptr_eq(&r, &r0)));
+            .is_some_and(|r| crate::program::model::lang::Register::same(&r, &r0)));
         assert!(mappings.ghidra_reg(1).is_none());
     }
 
@@ -188,7 +188,7 @@ mod tests {
         let mappings = DWARFRegisterMappings::new(map, None, 4, None, 0, false);
         assert!(mappings
             .stack_register()
-            .is_some_and(|r| std::rc::Rc::ptr_eq(&r, &esp)));
+            .is_some_and(|r| crate::program::model::lang::Register::same(&r, &esp)));
     }
 
     #[test]
@@ -218,7 +218,7 @@ mod tests {
             DWARFRegisterMappings::new(HashMap::new(), None, -1, Some(ebp.clone()), 8, true);
         assert!(mappings
             .stack_frame_register()
-            .is_some_and(|r| std::rc::Rc::ptr_eq(&r, &ebp)));
+            .is_some_and(|r| crate::program::model::lang::Register::same(&r, &ebp)));
         assert_eq!(mappings.stack_frame_register_offset(), 8);
         assert!(mappings.is_use_formal_parameter_storage());
     }

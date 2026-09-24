@@ -102,7 +102,7 @@ impl ValueReader for StaticStackRegisterValueReader {
 /// Java compares registers with `==`, and `Register` does not override `equals`, so identity is the
 /// comparison being ported.
 fn same_register(reg: &RegisterRef, other: Option<&RegisterRef>) -> bool {
-    other.is_some_and(|other| Rc::ptr_eq(reg, other))
+    other.is_some_and(|other| crate::program::model::lang::Register::same(reg, other))
 }
 
 /// `DWARFProgram.getStackSpace().getAddress(offset)`, wrapped in a varnode.

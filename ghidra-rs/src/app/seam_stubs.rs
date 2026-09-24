@@ -6484,7 +6484,7 @@ impl UnwindInfo {
     /// its actual address, i.e. its recorded offset taken from the frame's base pointer.
     pub fn map_saved_registers(&self, base: &Address, map: &mut SavedRegisterMap) {
         for (register, at) in &self.saved {
-            map.put(Rc::clone(register), base.add_wrap(at.offset()));
+            map.put(register.clone(), base.add_wrap(at.offset()));
         }
     }
 

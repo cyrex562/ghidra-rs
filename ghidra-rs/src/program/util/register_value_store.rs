@@ -268,7 +268,7 @@ impl RegisterValueStore {
 }
 
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    std::rc::Rc::ptr_eq(a, b) || a.borrow().name() == b.borrow().name()
+    crate::program::model::lang::Register::same(a, b) || a.borrow().name() == b.borrow().name()
 }
 
 #[cfg(test)]
@@ -296,10 +296,12 @@ mod tests {
         Register::new(name, "", Address::new(space, 0), num_bytes, false, 0)
     }
 
-    fn child_register(parent: &RegisterRef, name: &str, byte_offset: i64, num_bytes: i32) -> RegisterRef {
+    fn child_register(parent: &mut RegisterRef, name: &str, byte_offset: i64, num_bytes: i32) -> RegisterRef {
         let space = reg_space();
         let child = Register::new(name, "", Address::new(space, byte_offset), num_bytes, false, 0);
-        parent.borrow_mut().set_child_registers(vec![child.clone()]);
+        let mut linked = crate::program::model::lang::register::test_support::linked(&[parent, &child], &[(0, &[1])]);
+        let child = linked.pop().unwrap();
+        *parent = linked.pop().unwrap();
         child
     }
 
@@ -326,8 +328,8 @@ mod tests {
     #[test]
     fn setting_narrower_value_over_part_of_range_splits_and_combines() {
         let space = space();
-        let reg = base_register("eax", 4);
-        let al = child_register(&reg, "al", 0, 1);
+        let mut reg = base_register("eax", 4);
+        let al = child_register(&mut reg, "al", 0, 1);
         let mut s = store(&reg);
 
         let full = RegisterValue::with_value(reg.clone(), 0x1111_1111);
@@ -353,8 +355,8 @@ mod tests {
     #[test]
     fn clear_value_with_register_mask_only_clears_those_bits() {
         let space = space();
-        let reg = base_register("eax", 4);
-        let al = child_register(&reg, "al", 0, 1);
+        let mut reg = base_register("eax", 4);
+        let al = child_register(&mut reg, "al", 0, 1);
         let mut s = store(&reg);
 
         let full = RegisterValue::with_value(reg.clone(), 0xFFFF_FFFF);

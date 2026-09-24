@@ -861,7 +861,8 @@ pub(crate) mod test_support {
         let eax = Register::new("eax", "", Address::new(space.clone(), 0), 4, false, 0);
         let al = Register::new("al", "", Address::new(space.clone(), 0), 1, false, 0);
         let ah = Register::new("ah", "", Address::new(space.clone(), 1), 1, false, 0);
-        eax.borrow_mut().set_child_registers(vec![al.clone(), ah.clone()]);
+        let [eax, al, ah]: [Register; 3] =
+            crate::program::model::lang::register::test_support::linked(&[&eax, &al, &ah], &[(0, &[1, 2])]).try_into().unwrap();
         let r0 = Register::new("r0", "", Address::new(space, 8), 4, false, 0);
 
         TestLanguage { context_base: None, registers: vec![eax, al, ah, r0] }

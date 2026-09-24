@@ -257,7 +257,7 @@ impl BytesPcodeExecutorStateSpace {
             }
             let mut data = vec![0u8; num_bytes as usize];
             self.bytes.get_data(min as u64, &mut data);
-            result.push((Rc::clone(reg), data));
+            result.push((reg.clone(), data));
         }
         result
     }
@@ -599,15 +599,15 @@ mod tests {
         let reg = crate::program::model::lang::register::Register::new("r0", "", addr, 2, false, 0);
 
         // Uninitialized: not reported.
-        assert!(s.get_register_values(&[std::rc::Rc::clone(&reg)]).is_empty());
+        assert!(s.get_register_values(&[reg.clone()]).is_empty());
 
         // Java checks `isInitialized(min, min + numBytes)`, an inclusive range one byte past the
         // register itself, so writing exactly the register's own 2 bytes is not enough.
         s.write(&piece, 0x10, &[0xaa, 0xbb], 0, 2, &NoPcodeStateCallbacks);
-        assert!(s.get_register_values(&[std::rc::Rc::clone(&reg)]).is_empty());
+        assert!(s.get_register_values(&[reg.clone()]).is_empty());
 
         s.write(&piece, 0x10, &[0xaa, 0xbb, 0xcc], 0, 3, &NoPcodeStateCallbacks);
-        let values = s.get_register_values(&[std::rc::Rc::clone(&reg)]);
+        let values = s.get_register_values(&[reg.clone()]);
         assert_eq!(values.len(), 1);
         assert_eq!(values[0].1, vec![0xaa, 0xbb]);
     }

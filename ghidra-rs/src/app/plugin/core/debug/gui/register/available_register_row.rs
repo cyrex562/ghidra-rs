@@ -102,7 +102,7 @@ impl AvailableRegisterRow {
     /// distinct base register.
     pub fn parent_name(&self) -> String {
         let base = self.register.borrow().get_base_register();
-        if Rc::ptr_eq(&base, &self.register) {
+        if crate::program::model::lang::Register::same(&base, &self.register) {
             return String::new();
         }
         let name = base.borrow().name().to_string();
@@ -194,9 +194,7 @@ mod tests {
             false,
             0,
         );
-        parent
-            .borrow_mut()
-            .set_child_registers(vec![low_byte, high_byte]);
+        let parent = crate::program::model::lang::register::test_support::linked(&[&parent, &low_byte, &high_byte], &[(0, &[1, 2])]).remove(0);
 
         let row = AvailableRegisterRow::new(0, parent);
 

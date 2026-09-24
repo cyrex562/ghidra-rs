@@ -1,23 +1,26 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use crate::program::model::address::Address;
 use crate::util::msg::Msg;
 
-use super::register::{Register, RegisterRef};
+use super::register::{RegisterData, RegisterId, RegisterStore};
 use super::register_manager::RegisterManager;
 
-/// Builder/factory for constructing the full set of [`Register`]s for a language.
+/// Builder/factory for constructing the full set of registers for a language.
 ///
 /// Port of `ghidra.program.model.lang.RegisterBuilder`. Registers are typically added while
 /// parsing a processor-spec's `<context_data>`/register definitions; once all registers have
 /// been added, [`RegisterBuilder::register_manager`] wires up the base-register/sub-register
 /// parent-child tree and produces the immutable [`RegisterManager`] that a `Language`
 /// ultimately owns.
+///
+/// The builder owns a mutable [`RegisterStore`]; the Java `Register` objects it would share
+/// between its list and name map are [`RegisterId`]s into that store.
 pub struct RegisterBuilder {
-    register_list: Vec<RegisterRef>,
+    store: RegisterStore,
+    register_list: Vec<RegisterId>,
     /// Includes aliases and case-variations, same as the Java field.
-    register_map: HashMap<String, RegisterRef>,
+    register_map: HashMap<String, RegisterId>,
     context_address: Option<Address>,
 }
 
@@ -30,6 +33,7 @@ impl Default for RegisterBuilder {
 impl RegisterBuilder {
     pub fn new() -> Self {
         RegisterBuilder {
+            store: RegisterStore::new(),
             register_list: Vec::new(),
             register_map: HashMap::new(),
             context_address: None,
@@ -73,7 +77,7 @@ impl RegisterBuilder {
         big_endian: bool,
         type_flags: i32,
     ) {
-        let register = Register::with_bit_range(
+        let id = self.store.add(
             name,
             description,
             address,
@@ -83,19 +87,26 @@ impl RegisterBuilder {
             big_endian,
             type_flags,
         );
-        self.add_register_ref(register);
+        self.add_new_register(id);
     }
 
-    /// Adds an already-constructed [`Register`]. Mirrors the single-argument Java
-    /// `addRegister(Register)` overload, which is where all the real logic lives.
+    /// Adds a copy of an already-constructed register's base fields. Mirrors the
+    /// single-argument Java `addRegister(Register)` overload.
+    pub fn add_register_ref(&mut self, register: &RegisterData) {
+        let id = self.store.add_copy(register);
+        self.add_new_register(id);
+    }
+
+    /// The logic of Java's `addRegister(Register)` for a register just added to the store.
     ///
     /// If a previously-added register already occupies the exact same address, least
-    /// significant bit and bit length, `register` is *not* added as a new top-level register.
-    /// Instead its name is folded into the existing register as an alias -- this is how
-    /// context-field registers declared under different names (e.g. by the base language vs.
-    /// a processor variant) end up resolving to the same underlying [`Register`].
-    pub fn add_register_ref(&mut self, register: RegisterRef) {
-        let name = register.borrow().name().to_string();
+    /// significant bit and bit length, the new register is *not* added as a new top-level
+    /// register. Instead its name is folded into the existing register as an alias -- this is
+    /// how context-field registers declared under different names (e.g. by the base language
+    /// vs. a processor variant) end up resolving to the same underlying register. (The record
+    /// stays in the store, unreferenced, as the Java object would become garbage.)
+    fn add_new_register(&mut self, id: RegisterId) {
+        let name = self.store.get(id).name().to_string();
         if self.register_map.contains_key(&name) {
             // TODO: should we throw exception here - hopefully sleigh will prevent this
             // condition (kept as a faithful port of the Java comment).
@@ -104,31 +115,29 @@ impl RegisterBuilder {
 
         // Use of register alias handles case where context field is defined with different
         // names.
-        for existing in &self.register_list {
-            let matches = {
-                let existing_ref = existing.borrow();
-                let new_ref = register.borrow();
-                existing_ref.address() == new_ref.address()
-                    && existing_ref.least_significant_bit() == new_ref.least_significant_bit()
-                    && existing_ref.bit_length() == new_ref.bit_length()
-            };
-            if matches {
-                existing.borrow_mut().add_alias(name.clone());
-                self.add_register_to_name_map(&name, Rc::clone(existing));
-                return;
-            }
+        let new_reg = self.store.get(id);
+        let existing = self.register_list.iter().copied().find(|&existing| {
+            let existing_ref = self.store.get(existing);
+            existing_ref.address() == new_reg.address()
+                && existing_ref.least_significant_bit() == new_reg.least_significant_bit()
+                && existing_ref.bit_length() == new_reg.bit_length()
+        });
+        if let Some(existing) = existing {
+            self.store.add_alias(existing, name.clone());
+            self.add_register_to_name_map(&name, existing);
+            return;
         }
 
-        if self.context_address.is_none() && register.borrow().is_processor_context() {
-            self.context_address = Some(register.borrow().address().clone());
+        if self.context_address.is_none() && new_reg.is_processor_context() {
+            self.context_address = Some(new_reg.address().clone());
         }
-        self.register_list.push(Rc::clone(&register));
-        self.add_register_to_name_map(&name, register);
+        self.register_list.push(id);
+        self.add_register_to_name_map(&name, id);
     }
 
-    fn add_register_to_name_map(&mut self, name: &str, register: RegisterRef) {
-        self.register_map.insert(name.to_string(), Rc::clone(&register));
-        self.register_map.insert(name.to_lowercase(), Rc::clone(&register));
+    fn add_register_to_name_map(&mut self, name: &str, register: RegisterId) {
+        self.register_map.insert(name.to_string(), register);
+        self.register_map.insert(name.to_lowercase(), register);
         self.register_map.insert(name.to_uppercase(), register);
     }
 
@@ -145,8 +154,13 @@ impl RegisterBuilder {
     }
 
     /// Computes the current register collection and instantiates a [`RegisterManager`].
+    ///
+    /// The parent/child wiring happens on a copy of the builder's store, which is then shared
+    /// by the manager; the builder can keep being used, as in Java.
     pub fn register_manager(&self) -> RegisterManager {
-        RegisterManager::new(self.compute_registers(), self.register_map.clone())
+        let mut store = self.store.clone();
+        let registers = self.compute_registers(&mut store);
+        RegisterManager::new(store.into_shared(), registers, self.register_map.clone())
     }
 
     /// Wires up base-register/sub-register (parent/child) relationships across all top-level
@@ -154,27 +168,25 @@ impl RegisterBuilder {
     ///
     /// NOTE (faithful port of a real Java quirk): the Java method builds a second list
     /// (`regList`), sorted by ascending `bitLength`, purely to drive the child-register
-    /// computation below as a side effect (each register's `setChildRegisters` is called on
-    /// the shared `Register` object, so the mutation is visible regardless of which list holds
-    /// the reference). At the very end it returns `registerList` -- the original,
-    /// unsorted-by-size, insertion-order list -- rather than the `regList` it just built. See
-    /// `RegisterBuilder.java` lines 100-123: `return registerList;`, not `return regList;`. We
-    /// reproduce that here: `reg_list`/`unprocessed` only exist to wire up parent/child links,
-    /// and the return value is `self.register_list.clone()`.
-    fn compute_registers(&self) -> Vec<RegisterRef> {
-        let mut reg_list: Vec<RegisterRef> = Vec::new();
-        let mut unprocessed: Vec<RegisterRef> = self.register_list.clone();
+    /// computation below as a side effect. At the very end it returns `registerList` -- the
+    /// original, unsorted-by-size, insertion-order list -- rather than the `regList` it just
+    /// built. See `RegisterBuilder.java` lines 100-123: `return registerList;`, not
+    /// `return regList;`. We reproduce that here: `reg_list`/`unprocessed` only exist to wire
+    /// up parent/child links, and the return value is `self.register_list.clone()`.
+    fn compute_registers(&self, store: &mut RegisterStore) -> Vec<RegisterId> {
+        let mut reg_list: Vec<RegisterId> = Vec::new();
+        let mut unprocessed: Vec<RegisterId> = self.register_list.clone();
 
         let mut bit_size = 1;
         while !unprocessed.is_empty() {
             let mut next_larger_size = i32::MAX;
             let mut i = 0;
             while i < unprocessed.len() {
-                let bl = unprocessed[i].borrow().bit_length();
+                let bl = store.get(unprocessed[i]).bit_length();
                 if bl == bit_size {
                     let register = unprocessed.remove(i);
-                    let children = Self::get_children(&register, &mut reg_list);
-                    register.borrow_mut().set_child_registers(children);
+                    let children = Self::get_children(store, register, &mut reg_list);
+                    store.set_child_registers(register, children);
                     reg_list.push(register);
                     // Element at `i` was removed, so the next element has shifted into `i`;
                     // do not advance.
@@ -195,12 +207,15 @@ impl RegisterBuilder {
     /// claimed as a child of some other (smaller) register -- so the first sufficiently-small
     /// enclosing register in the list "wins" a given descendant, correctly forming a tree
     /// instead of a flat set of all enclosing ancestors.
-    fn get_children(parent: &RegisterRef, reg_list: &mut Vec<RegisterRef>) -> Vec<RegisterRef> {
+    fn get_children(
+        store: &RegisterStore,
+        parent: RegisterId,
+        reg_list: &mut Vec<RegisterId>,
+    ) -> Vec<RegisterId> {
         let mut children = Vec::new();
         let mut i = 0;
         while i < reg_list.len() {
-            let contains = Self::contains(&parent.borrow(), &reg_list[i].borrow());
-            if contains {
+            if Self::contains(store.get(parent), store.get(reg_list[i])) {
                 children.push(reg_list.remove(i));
             } else {
                 i += 1;
@@ -212,7 +227,7 @@ impl RegisterBuilder {
     /// Determines whether `child`'s byte range is fully contained within `parent`'s byte
     /// range, restricted to whole-byte-aligned parents (bit registers/context fields can never
     /// be a `parent` here). Method does not work for bit registers as a `parent`.
-    fn contains(parent: &Register, child: &Register) -> bool {
+    fn contains(parent: &RegisterData, child: &RegisterData) -> bool {
         if parent.address_space() != child.address_space() {
             return false;
         }
@@ -234,9 +249,10 @@ impl RegisterBuilder {
         true
     }
 
-    /// Returns the register with the given name, or `None` if not found.
-    pub fn get_register(&self, name: &str) -> Option<RegisterRef> {
-        self.register_map.get(name).cloned()
+    /// Returns the register with the given name, or `None` if not found. The record is the
+    /// builder's (not yet wired into a parent/child tree).
+    pub fn get_register(&self, name: &str) -> Option<&RegisterData> {
+        self.register_map.get(name).map(|&id| self.store.get(id))
     }
 
     /// Rename a register. This allows generic register names declared within the language
@@ -250,18 +266,17 @@ impl RegisterBuilder {
     /// name. If `old_name` is actually an alias (or a case-variation) rather than the
     /// register's canonical name, only that one name-map entry is removed and replaced --
     /// the register's *original* canonical name keeps mapping to the (now differently-named)
-    /// register too, since `register.rename()` changes the underlying `Register`'s name but
-    /// this method never removes the old canonical name from the map unless it was the exact
-    /// string passed in.
+    /// register too, since the rename changes the underlying register's name but this method
+    /// never removes the old canonical name from the map unless it was the exact string passed
+    /// in.
     pub fn rename_register(&mut self, old_name: &str, new_name: &str) -> bool {
         if self.register_map.contains_key(new_name) {
             return false;
         }
-        let register = match self.register_map.get(old_name) {
-            Some(register) => Rc::clone(register),
-            None => return false,
+        let Some(&register) = self.register_map.get(old_name) else {
+            return false;
         };
-        register.borrow_mut().rename(new_name.to_string());
+        self.store.rename(register, new_name);
         self.remove_register_from_name_map(old_name);
         self.add_register_to_name_map(new_name, register);
         true
@@ -271,14 +286,13 @@ impl RegisterBuilder {
     ///
     /// Returns `true` if the alias addition was successful, else `false`.
     pub fn add_alias(&mut self, register_name: &str, alias: &str) -> bool {
-        let register = match self.register_map.get(register_name) {
-            Some(register) => Rc::clone(register),
-            None => return false,
+        let Some(&register) = self.register_map.get(register_name) else {
+            return false;
         };
         if self.register_map.contains_key(alias) {
             return false;
         }
-        register.borrow_mut().add_alias(alias.to_string());
+        self.store.add_alias(register, alias);
         self.add_register_to_name_map(alias, register);
         true
     }
@@ -287,11 +301,10 @@ impl RegisterBuilder {
     ///
     /// Returns `true` if the register was found, else `false`.
     pub fn set_group(&mut self, register_name: &str, group_name: &str) -> bool {
-        let register = match self.register_map.get(register_name) {
-            Some(register) => Rc::clone(register),
-            None => return false,
+        let Some(&register) = self.register_map.get(register_name) else {
+            return false;
         };
-        register.borrow_mut().set_group(group_name.to_string());
+        self.store.set_group(register, group_name);
         true
     }
 
@@ -299,11 +312,10 @@ impl RegisterBuilder {
     ///
     /// Returns `true` if the register was found, else `false`.
     pub fn set_flag(&mut self, register_name: &str, register_flag: i32) -> bool {
-        let register = match self.register_map.get(register_name) {
-            Some(register) => Rc::clone(register),
-            None => return false,
+        let Some(&register) = self.register_map.get(register_name) else {
+            return false;
         };
-        register.borrow_mut().set_flag(register_flag);
+        self.store.set_flag(register, register_flag);
         true
     }
 
@@ -313,11 +325,10 @@ impl RegisterBuilder {
     /// (standing in for Java's `UnsupportedOperationException`/`IllegalArgumentException`) if
     /// the register cannot support the definition of lanes or `lane_size_in_bytes` is invalid.
     pub fn add_lane_size(&mut self, register_name: &str, lane_size_in_bytes: i32) -> Result<bool, String> {
-        let register = match self.register_map.get(register_name) {
-            Some(register) => Rc::clone(register),
-            None => return Ok(false),
+        let Some(&register) = self.register_map.get(register_name) else {
+            return Ok(false);
         };
-        register.borrow_mut().add_lane_size(lane_size_in_bytes)?;
+        self.store.add_lane_size(register, lane_size_in_bytes)?;
         Ok(true)
     }
 }
@@ -326,6 +337,7 @@ impl RegisterBuilder {
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
+    use crate::program::model::lang::register::Register;
     use std::sync::Arc;
 
     fn register_space() -> Arc<AddressSpace> {
@@ -351,7 +363,7 @@ mod tests {
         assert!(eax.borrow().aliases().any(|a| a == "R0"));
 
         let r0 = manager.get_register_by_name("R0").unwrap();
-        assert!(Rc::ptr_eq(&eax, &r0));
+        assert!(Register::same(&eax, &r0));
     }
 
     #[test]
@@ -387,9 +399,9 @@ mod tests {
         let reg = manager.get_register_by_name("L_0_8").unwrap();
         assert_eq!(reg.borrow().name(), "L_0_8");
         let via_alias = manager.get_register_by_name("L08").unwrap();
-        assert!(Rc::ptr_eq(&reg, &via_alias));
+        assert!(Register::same(&reg, &via_alias));
         let via_lowercase = manager.get_register_by_name("l_0_8").unwrap();
-        assert!(Rc::ptr_eq(&reg, &via_lowercase));
+        assert!(Register::same(&reg, &via_lowercase));
     }
 
     #[test]
@@ -402,13 +414,13 @@ mod tests {
         assert!(builder.rename_register("foo", "Bar"));
 
         let renamed = builder.get_register("Bar").unwrap();
-        assert_eq!(renamed.borrow().name(), "Bar");
+        assert_eq!(renamed.name(), "Bar");
 
         // The original canonical name "Foo" is still present in the map (bug preserved),
         // pointing at the same underlying (now differently-named) Register object.
         let stale = builder.get_register("Foo").unwrap();
-        assert!(Rc::ptr_eq(&renamed, &stale));
-        assert_eq!(stale.borrow().name(), "Bar");
+        assert_eq!(stale.id(), renamed.id());
+        assert_eq!(stale.name(), "Bar");
     }
 
     #[test]
@@ -455,6 +467,6 @@ mod tests {
 
         let child = manager.get_register_by_name("L_0_4").unwrap();
         let child_parent = child.borrow().parent_register().unwrap();
-        assert!(Rc::ptr_eq(&parent, &child_parent));
+        assert!(Register::same(&parent, &child_parent));
     }
 }

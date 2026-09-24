@@ -165,7 +165,7 @@ pub use protorules::{AssignAction, DatatypeFilter, QualifierFilter};
 pub use prototype_model::{PrototypeModel, UNKNOWN_EXTRAPOP};
 pub use prototype_pieces::PrototypePieces;
 pub use read_only_processor_context::ReadOnlyProcessorContext;
-pub use register::{Register, RegisterRef, WeakRegisterRef};
+pub use register::{Register, RegisterData, RegisterId, RegisterRef, RegisterStore};
 pub use register_builder::RegisterBuilder;
 pub use register_manager::RegisterManager;
 pub use register_translator::RegisterTranslator;

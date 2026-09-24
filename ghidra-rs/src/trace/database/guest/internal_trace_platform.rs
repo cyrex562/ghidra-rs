@@ -256,12 +256,13 @@ mod tests {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
     }
 
-    fn make_register(space: &Arc<AddressSpace>, name: &str, offset: i64, num_bytes: i32, aliases: &[&str]) -> Rc<RefCell<Register>> {
+    fn make_register(space: &Arc<AddressSpace>, name: &str, offset: i64, num_bytes: i32, aliases: &[&str]) -> Register {
         let reg = Register::new(name, "", space.address(offset), num_bytes, false, 0);
-        for alias in aliases {
-            reg.borrow_mut().add_alias(*alias);
-        }
-        reg
+        crate::program::model::lang::register::test_support::edited(&reg, |store, id| {
+            for alias in aliases {
+                store.add_alias(id, *alias);
+            }
+        })
     }
 
     struct MockRegisterUtils;

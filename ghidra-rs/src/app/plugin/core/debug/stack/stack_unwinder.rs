@@ -1453,7 +1453,7 @@ mod tests {
         let stack = spaces.ram.address(0x7fff0000);
 
         let mut base_map = SavedRegisterMap::new();
-        base_map.put(Rc::clone(&sp_reg), stack.clone());
+        base_map.put(sp_reg.clone(), stack.clone());
 
         // With no frame, Java returns the very same map.
         assert_eq!(
@@ -1469,7 +1469,7 @@ mod tests {
             None,
             None,
             -1,
-            vec![(Rc::clone(&sp_reg), spaces.ram.address(-8))],
+            vec![(sp_reg.clone(), spaces.ram.address(-8))],
             StackUnwindWarningSet::new(),
             None,
         );

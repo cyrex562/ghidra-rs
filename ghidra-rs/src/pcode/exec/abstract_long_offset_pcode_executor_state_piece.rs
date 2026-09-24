@@ -745,7 +745,7 @@ mod tests {
                         let reg = register.borrow();
                         (reg.address().offset(), reg.minimum_byte_size())
                     };
-                    (Rc::clone(register), space.read(offset, size))
+                    (register.clone(), space.read(offset, size))
                 })
                 .collect()
         }

@@ -930,8 +930,7 @@ mod tests {
                         true,
                         Register::TYPE_NONE,
                     );
-                    base.borrow_mut().set_child_registers(vec![Rc::clone(&child)]);
-                    base
+                    crate::program::model::lang::register::test_support::linked(&[&base, &child], &[(0, &[1])]).remove(0)
                 }
             };
             Some(Arc::new(MockLanguage(base)))

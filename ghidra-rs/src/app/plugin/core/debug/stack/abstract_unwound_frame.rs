@@ -1378,7 +1378,7 @@ mod tests {
         let spaces = TestSpaces::new();
         let rbx = register_named(&spaces, "RBX");
         let mut map = SavedRegisterMap::new();
-        map.put(Rc::clone(&rbx), spaces.ram.address(0x7fff_0000));
+        map.put(rbx.clone(), spaces.ram.address(0x7fff_0000));
         assert_eq!(map.size(), 1);
         // The map redirects a read of the whole register, and nothing else.
         assert_eq!(

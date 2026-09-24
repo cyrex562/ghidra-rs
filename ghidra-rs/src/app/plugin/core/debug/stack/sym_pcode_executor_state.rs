@@ -197,7 +197,7 @@ impl SymPcodeExecutorState {
             let Sym::Register { register, .. } = ent.sym() else {
                 continue;
             };
-            result.push((Rc::clone(register), ent.ent_range().min_address().clone()));
+            result.push((register.clone(), ent.ent_range().min_address().clone()));
         }
         result
     }
@@ -228,7 +228,7 @@ impl SymPcodeExecutorState {
 /// shared through the language, so pointer identity is checked first, falling back to the
 /// register's own equality (name, size, and location).
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    Rc::ptr_eq(a, b) || *a.borrow() == *b.borrow()
+    crate::program::model::lang::Register::same(a, b) || *a.borrow() == *b.borrow()
 }
 
 impl fmt::Display for SymPcodeExecutorState {
@@ -826,7 +826,7 @@ mod tests {
         assert_eq!(
             f.state.get_var_register(&sp, Reason::Inspect),
             Sym::Register {
-                register: Rc::clone(&sp),
+                register: sp.clone(),
                 mask: -1
             }
         );
@@ -863,7 +863,7 @@ mod tests {
             8,
             false,
             &Sym::Register {
-                register: Rc::clone(&rbx),
+                register: rbx.clone(),
                 mask: -1,
             },
         );
@@ -962,7 +962,7 @@ mod tests {
         f.state.set_var_register(
             &pc,
             &Sym::Register {
-                register: Rc::clone(&lr),
+                register: lr.clone(),
                 mask: -4,
             },
         );
@@ -1120,7 +1120,7 @@ mod tests {
             8,
             false,
             &Sym::Register {
-                register: Rc::clone(&rbx),
+                register: rbx.clone(),
                 mask: -1,
             },
         );

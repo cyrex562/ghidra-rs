@@ -128,13 +128,13 @@ impl SymZ3RegisterMap {
         let name = r.borrow().name().to_string();
         self.register_names_updated.insert(name.clone());
         self.update_register_helper(ctx, r, update);
-        self.known_registers.entry(name).or_insert_with(|| Rc::clone(r));
+        self.known_registers.entry(name).or_insert_with(|| r.clone());
     }
 
     /// Port of the private `updateRegisterHelper(Context, Register, SymValueZ3)`.
     fn update_register_helper(&mut self, ctx: &dyn Z3Context, r: &RegisterRef, update: &SymValueZ3) {
         if r.borrow().is_base_register() {
-            self.regvals.insert(RegKey(Rc::clone(r)), update.clone());
+            self.regvals.insert(RegKey(r.clone()), update.clone());
             self.by_offset = None;
             return;
         }
@@ -173,7 +173,7 @@ impl SymZ3RegisterMap {
             result = ctx.mk_concat(&*result, &*right);
         }
 
-        self.regvals.insert(RegKey(Rc::clone(&base)), SymValueZ3::from_bit_vec(ctx, &*result));
+        self.regvals.insert(RegKey(base.clone()), SymValueZ3::from_bit_vec(ctx, &*result));
         self.by_offset = None;
     }
 
@@ -181,7 +181,7 @@ impl SymZ3RegisterMap {
     pub fn get_register(&mut self, ctx: &dyn Z3Context, r: &RegisterRef) -> SymValueZ3 {
         let name = r.borrow().name().to_string();
         self.register_names_read.insert(name.clone());
-        self.known_registers.entry(name).or_insert_with(|| Rc::clone(r));
+        self.known_registers.entry(name).or_insert_with(|| r.clone());
         self.get_register_helper(ctx, r)
     }
 
@@ -191,7 +191,7 @@ impl SymZ3RegisterMap {
     /// there is a value.
     pub fn has_value_for_register(&self, r: &RegisterRef) -> bool {
         if r.borrow().is_base_register() {
-            return self.regvals.contains_key(&RegKey(Rc::clone(r)));
+            return self.regvals.contains_key(&RegKey(r.clone()));
         }
         let base = r.borrow().get_base_register();
         self.has_value_for_register(&base)
@@ -200,7 +200,7 @@ impl SymZ3RegisterMap {
     /// Port of the private `getRegisterHelper(Context, Register)`.
     fn get_register_helper(&mut self, ctx: &dyn Z3Context, r: &RegisterRef) -> SymValueZ3 {
         if r.borrow().is_base_register() {
-            if let Some(v) = self.regvals.get(&RegKey(Rc::clone(r))) {
+            if let Some(v) = self.regvals.get(&RegKey(r.clone())) {
                 return v.clone();
             }
 
@@ -549,8 +549,8 @@ mod tests {
         let al = Register::with_bit_range("AL", "", space.address(0x0), 1, 0, 8, false, Register::TYPE_NONE);
         let ah = Register::with_bit_range("AH", "", space.address(0x1), 1, 0, 8, false, Register::TYPE_NONE);
 
-        ax.borrow_mut().set_child_registers(vec![Rc::clone(&al), Rc::clone(&ah)]);
-        eax.borrow_mut().set_child_registers(vec![Rc::clone(&ax)]);
+        let [eax, ax, al, ah]: [Register; 4] =
+            crate::program::model::lang::register::test_support::linked(&[&eax, &ax, &al, &ah], &[(1, &[2, 3]), (0, &[1])]).try_into().unwrap();
 
         (eax, ax, al, ah)
     }
@@ -558,8 +558,7 @@ mod tests {
     fn flags_register() -> RegisterRef {
         let space = register_space();
         let flags = Register::new("EFLAGS", "", space.address(0x10), 4, false, Register::TYPE_NONE);
-        flags.borrow_mut().set_group("FLAGS");
-        flags
+        crate::program::model::lang::register::test_support::edited(&flags, |store, id| store.set_group(id, "FLAGS"))
     }
 
     fn bv_text(v: &SymValueZ3, ctx: &dyn Z3Context) -> String {

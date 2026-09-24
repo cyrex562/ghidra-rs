@@ -348,7 +348,7 @@ impl ProgramRegisterContextDB {
 }
 
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    std::rc::Rc::ptr_eq(a, b) || a.borrow().name() == b.borrow().name()
+    crate::program::model::lang::Register::same(a, b) || a.borrow().name() == b.borrow().name()
 }
 
 fn invalidate_read_cache(context: &mut AbstractStoredProgramContext) {

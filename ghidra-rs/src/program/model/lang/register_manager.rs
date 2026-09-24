@@ -1,11 +1,10 @@
-use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::{Arc, OnceLock};
 
 use crate::program::model::address::{Address, AddressSet, AddressSetView, AddressSpaceType};
 
-use super::register::{Register, RegisterRef};
+use super::register::{Register, RegisterId, RegisterRef, RegisterStore};
 
 /// Key used by [`RegisterManager`]'s address+size lookup table.
 ///
@@ -39,150 +38,120 @@ impl RegisterSizeKey {
 /// Port of `ghidra.program.model.lang.RegisterManager`. Instances are produced exclusively by
 /// [`super::RegisterBuilder::register_manager`], mirroring the Java class's package-private
 /// constructor.
+///
+/// The manager owns the language's [`RegisterStore`]; every table below holds
+/// [`RegisterId`]s into it. Queries return [`Register`] handles into that one store, so the
+/// same register is returned (see [`Register::same`]) on every call. `RegisterManager` is
+/// `Send + Sync`.
 pub struct RegisterManager {
-    registers: Vec<RegisterRef>,
+    store: Arc<RegisterStore>,
+    registers: Vec<RegisterId>,
     /// Includes aliases and case-variations, same as the Java field.
-    register_name_map: HashMap<String, RegisterRef>,
+    register_name_map: HashMap<String, RegisterId>,
     /// Alphabetically sorted; excludes aliases.
     register_names: Vec<String>,
-    context_registers: Vec<RegisterRef>,
-    context_base_register: RegisterRef,
-    size_map: HashMap<RegisterSizeKey, RegisterRef>,
-    register_address_map: HashMap<Address, Vec<RegisterRef>>,
+    context_registers: Vec<RegisterId>,
+    /// `None` stands for Java's forced default, `Register.NO_CONTEXT` (which lives outside this
+    /// store); see [`Self::get_context_base_register`].
+    context_base_register: Option<RegisterId>,
+    size_map: HashMap<RegisterSizeKey, RegisterId>,
+    register_address_map: HashMap<Address, Vec<RegisterId>>,
     register_addresses: AddressSet,
-    /// Lazily computed and cached on first call to [`Self::get_sorted_vector_registers`],
-    /// mirroring the Java field of the same name that's populated on first access.
-    sorted_vector_registers: RefCell<Option<Vec<RegisterRef>>>,
+    /// Computed on first call to [`Self::get_sorted_vector_registers`], mirroring the Java
+    /// field of the same name that's populated on first access.
+    sorted_vector_registers: OnceLock<Vec<RegisterId>>,
 }
 
 impl RegisterManager {
-    /// Constructs a `RegisterManager` from a fully-wired register collection (parent/child
-    /// relationships already established by `RegisterBuilder`) and a complete name-to-register
-    /// map including aliases and case-variations.
+    /// Constructs a `RegisterManager` over `store`, from a fully-wired register collection
+    /// (parent/child relationships already established by `RegisterBuilder`) and a complete
+    /// name-to-register map including aliases and case-variations.
     pub(crate) fn new(
-        registers: Vec<RegisterRef>,
-        register_name_map: HashMap<String, RegisterRef>,
+        store: Arc<RegisterStore>,
+        registers: Vec<RegisterId>,
+        register_name_map: HashMap<String, RegisterId>,
     ) -> Self {
         let mut manager = RegisterManager {
+            store,
             registers,
             register_name_map,
             register_names: Vec::new(),
             context_registers: Vec::new(),
-            // Placeholder; always overwritten by `initialize()` below (forced to
-            // `Register::NO_CONTEXT` when no context register is defined -- see the doc
-            // comment on `get_context_base_register`).
-            context_base_register: Register::no_context(),
+            context_base_register: None,
             size_map: HashMap::new(),
             register_address_map: HashMap::new(),
             register_addresses: AddressSet::new(),
-            sorted_vector_registers: RefCell::new(None),
+            sorted_vector_registers: OnceLock::new(),
         };
         manager.initialize();
         manager
     }
 
     fn initialize(&mut self) {
+        let store = Arc::clone(&self.store);
         let mut register_name_list: Vec<String> = Vec::with_capacity(self.registers.len());
-        let mut context_register_list: Vec<RegisterRef> = Vec::new();
-        let mut context_base_register: Option<RegisterRef> = None;
+        let mut context_register_list: Vec<RegisterId> = Vec::new();
+        let mut context_base_register: Option<RegisterId> = None;
 
         // Copy for sorting, descending by bit length. `sort_by` is stable, matching Java's
         // `Collections.sort`, so registers of equal bit length keep their original
         // (construction) order.
-        let mut sorted_by_size: Vec<RegisterRef> = self.registers.clone();
-        sorted_by_size.sort_by(|a, b| b.borrow().bit_length().cmp(&a.borrow().bit_length()));
+        let mut sorted_by_size: Vec<RegisterId> = self.registers.clone();
+        sorted_by_size.sort_by(|&a, &b| store.get(b).bit_length().cmp(&store.get(a).bit_length()));
 
-        for reg in &sorted_by_size {
-            let (reg_name, is_context, is_base, addr, is_big_endian) = {
-                let r = reg.borrow();
-                (
-                    r.name().to_string(),
-                    r.is_processor_context(),
-                    r.is_base_register(),
-                    r.address().clone(),
-                    r.is_big_endian(),
-                )
-            };
-            register_name_list.push(reg_name);
+        for &id in &sorted_by_size {
+            let reg = store.get(id);
+            register_name_list.push(reg.name().to_string());
 
-            if is_context {
-                context_register_list.push(Rc::clone(reg));
-                if is_base {
-                    context_base_register = Some(Rc::clone(reg));
+            if reg.is_processor_context() {
+                context_register_list.push(id);
+                if reg.is_base_register() {
+                    context_base_register = Some(id);
                 }
             }
 
             self.register_address_map
-                .entry(addr)
+                .entry(reg.address().clone())
                 .or_default()
-                .push(Rc::clone(reg));
-            self.add_register_addresses(reg);
+                .push(id);
+            let max = reg
+                .address()
+                .add((reg.num_bytes() - 1) as i64)
+                .expect("register address range overflow");
+            self.register_addresses.add_range(reg.address(), &max);
 
-            if is_context {
+            if reg.is_processor_context() {
                 continue;
             }
 
-            if is_big_endian {
-                self.populate_size_map_big_endian(reg);
-            } else {
-                self.populate_size_map_little_endian(reg);
+            let reg_size = reg.minimum_byte_size();
+            for i in 1..=reg_size {
+                let key_addr = if reg.is_big_endian() {
+                    reg.address()
+                        .add((reg_size - i) as i64)
+                        .expect("register address range overflow")
+                } else {
+                    reg.address().clone()
+                };
+                self.size_map.insert(RegisterSizeKey::new(key_addr, i), id);
             }
         }
 
-        // If there is no context register, force a default one. NOTE: this means
-        // `context_base_register` is unconditionally `Some` after this point, matching the
-        // real (if oddly documented) Java behavior -- see `get_context_base_register`.
-        self.context_base_register = context_base_register.unwrap_or_else(Register::no_context);
+        // If there is no context register, Java forces `Register.NO_CONTEXT`; `None` here.
+        self.context_base_register = context_base_register;
 
         // Handle the register size-0 case ("largest register at this address"): process
         // ascending by bit length so that, for registers sharing an address, later (larger)
         // puts win over earlier (smaller) ones. This intentionally includes context registers,
         // unlike the non-zero-size population above.
-        for reg in sorted_by_size.iter().rev() {
-            let addr = reg.borrow().address().clone();
-            let key = RegisterSizeKey::new(addr, 0);
-            self.size_map.insert(key, Rc::clone(reg));
+        for &id in sorted_by_size.iter().rev() {
+            let key = RegisterSizeKey::new(store.get(id).address().clone(), 0);
+            self.size_map.insert(key, id);
         }
 
         self.context_registers = context_register_list;
         register_name_list.sort();
         self.register_names = register_name_list;
-    }
-
-    fn add_register_addresses(&mut self, reg: &RegisterRef) {
-        let (min, num_bytes) = {
-            let r = reg.borrow();
-            (r.address().clone(), r.num_bytes())
-        };
-        let max = min
-            .add((num_bytes - 1) as i64)
-            .expect("register address range overflow");
-        self.register_addresses.add_range(&min, &max);
-    }
-
-    fn populate_size_map_big_endian(&mut self, reg: &RegisterRef) {
-        let (address, reg_size) = {
-            let r = reg.borrow();
-            (r.address().clone(), r.minimum_byte_size())
-        };
-        for i in 1..=reg_size {
-            let key_addr = address
-                .add((reg_size - i) as i64)
-                .expect("register address range overflow");
-            let key = RegisterSizeKey::new(key_addr, i);
-            self.size_map.insert(key, Rc::clone(reg));
-        }
-    }
-
-    fn populate_size_map_little_endian(&mut self, reg: &RegisterRef) {
-        let (address, reg_size) = {
-            let r = reg.borrow();
-            (r.address().clone(), r.minimum_byte_size())
-        };
-        for i in 1..=reg_size {
-            let key = RegisterSizeKey::new(address.clone(), i);
-            self.size_map.insert(key, Rc::clone(reg));
-        }
     }
 
     /// Mirrors `RegisterManager.getGlobalAddress`, which downcasts to
@@ -205,6 +174,24 @@ impl RegisterManager {
         addr.space().space_type() == AddressSpaceType::Register
     }
 
+    fn handle(&self, id: RegisterId) -> RegisterRef {
+        Register::from_store(&self.store, id)
+    }
+
+    fn handles(&self, ids: &[RegisterId]) -> Vec<RegisterRef> {
+        ids.iter().map(|&id| self.handle(id)).collect()
+    }
+
+    /// The store owning every register of this manager.
+    pub fn store(&self) -> &Arc<RegisterStore> {
+        &self.store
+    }
+
+    /// Id of the register named `name` (same lookup as [`Self::get_register_by_name`]).
+    pub fn register_id_by_name(&self, name: &str) -> Option<RegisterId> {
+        self.register_name_map.get(name).copied()
+    }
+
     /// Get context base-register.
     ///
     /// NOTE: the Java javadoc says this returns "null if one has not been defined by the
@@ -214,13 +201,16 @@ impl RegisterManager {
     /// preserve the real (non-`Option`) behavior here rather than the documented-but-untrue
     /// one.
     pub fn get_context_base_register(&self) -> RegisterRef {
-        Rc::clone(&self.context_base_register)
+        match self.context_base_register {
+            Some(id) => self.handle(id),
+            None => Register::no_context(),
+        }
     }
 
     /// Get an unsorted list of all processor context registers (includes the base context
     /// register and its children).
     pub fn get_context_registers(&self) -> Vec<RegisterRef> {
-        self.context_registers.clone()
+        self.handles(&self.context_registers)
     }
 
     /// Get an alphabetically sorted list of original register names (including context
@@ -231,11 +221,7 @@ impl RegisterManager {
 
     /// Returns the largest register located at the specified address, or `None` if not found.
     pub fn get_register(&self, addr: &Address) -> Option<RegisterRef> {
-        if !Self::is_register_addressable(addr) {
-            return None;
-        }
-        let key = RegisterSizeKey::new(addr.clone(), 0);
-        self.size_map.get(&key).cloned()
+        self.get_register_at(addr, 0)
     }
 
     /// Returns all registers located at the specified address (may be empty).
@@ -246,7 +232,7 @@ impl RegisterManager {
         let key = Self::get_global_address(addr);
         self.register_address_map
             .get(&key)
-            .cloned()
+            .map(|ids| self.handles(ids))
             .unwrap_or_default()
     }
 
@@ -257,35 +243,34 @@ impl RegisterManager {
             return None;
         }
         let key = RegisterSizeKey::new(addr.clone(), size);
-        self.size_map.get(&key).cloned()
+        self.size_map.get(&key).map(|&id| self.handle(id))
     }
 
     /// Get register by name. A semi-case-insensitive lookup is performed: `name` must match
     /// either the case-sensitive name or be entirely lowercase or uppercase.
     pub fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
-        self.register_name_map.get(name).cloned()
+        self.register_id_by_name(name).map(|id| self.handle(id))
     }
 
     /// Get all registers as an unsorted list.
     pub fn get_registers(&self) -> Vec<RegisterRef> {
-        self.registers.clone()
+        self.handles(&self.registers)
     }
 
     /// Get all vector registers identified by the processor specification, sorted first by
     /// size (descending) and then by offset (ascending).
     pub fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
-        if let Some(cached) = self.sorted_vector_registers.borrow().as_ref() {
-            return cached.clone();
-        }
-        let mut list: Vec<RegisterRef> = self
-            .registers
-            .iter()
-            .filter(|reg| reg.borrow().is_vector_register())
-            .cloned()
-            .collect();
-        list.sort_by(Self::compare_vector_registers);
-        *self.sorted_vector_registers.borrow_mut() = Some(list.clone());
-        list
+        let ids = self.sorted_vector_registers.get_or_init(|| {
+            let mut list: Vec<RegisterId> = self
+                .registers
+                .iter()
+                .copied()
+                .filter(|&id| self.store.get(id).is_vector_register())
+                .collect();
+            list.sort_by(|&a, &b| self.compare_vector_registers(a, b));
+            list
+        });
+        self.handles(ids)
     }
 
     /// Get the set of addresses contained in registers.
@@ -302,21 +287,16 @@ impl RegisterManager {
     /// `is_vector_register()`, so that branch can never fire in practice. `sort_by`'s
     /// comparator must be infallible, so the check is preserved as a `debug_assert!` rather
     /// than a `Result`-returning guard.
-    fn compare_vector_registers(reg1: &RegisterRef, reg2: &RegisterRef) -> Ordering {
+    fn compare_vector_registers(&self, reg1: RegisterId, reg2: RegisterId) -> Ordering {
+        let (r1, r2) = (self.store.get(reg1), self.store.get(reg2));
         debug_assert!(
-            reg1.borrow().is_vector_register() && reg2.borrow().is_vector_register(),
+            r1.is_vector_register() && r2.is_vector_register(),
             "compareVectorRegisters can only be applied to vector registers!"
         );
-        let (bit_len1, offset1) = {
-            let r = reg1.borrow();
-            (r.bit_length(), r.offset())
-        };
-        let (bit_len2, offset2) = {
-            let r = reg2.borrow();
-            (r.bit_length(), r.offset())
-        };
         // Descending order of size.
-        bit_len2.cmp(&bit_len1).then_with(|| offset1.cmp(&offset2))
+        r2.bit_length()
+            .cmp(&r1.bit_length())
+            .then_with(|| r1.offset().cmp(&r2.offset()))
     }
 }
 
@@ -519,12 +499,12 @@ mod tests {
             let aliases: Vec<String> = r.borrow().aliases().cloned().collect();
             assert_eq!(aliases, vec![alias.to_string()]);
 
-            assert!(Rc::ptr_eq(
+            assert!(Register::same(
                 &r,
                 &rm.get_register_by_name(&name.to_lowercase()).unwrap()
             ));
-            assert!(Rc::ptr_eq(&r, &rm.get_register_by_name(alias).unwrap()));
-            assert!(Rc::ptr_eq(
+            assert!(Register::same(&r, &rm.get_register_by_name(alias).unwrap()));
+            assert!(Register::same(
                 &r,
                 &rm.get_register_by_name(&alias.to_lowercase()).unwrap()
             ));
@@ -594,7 +574,7 @@ mod tests {
             false,
             Register::TYPE_CONTEXT,
         );
-        builder.add_register_ref(ctx);
+        builder.add_register_ref(&ctx);
         builder.add_register_with_bit_range(
             "field_a",
             "",

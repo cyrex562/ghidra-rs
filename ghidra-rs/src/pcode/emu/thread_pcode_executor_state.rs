@@ -477,10 +477,10 @@ mod tests {
         let local_only = Register::new("R1", "", reg.address(0x4), 4, false, Register::TYPE_NONE);
         let conflict = Register::new("R2", "", reg.address(0x8), 4, false, Register::TYPE_NONE);
 
-        state.shared_state.registers.borrow_mut().push((std::rc::Rc::clone(&shared_only), 1));
-        state.shared_state.registers.borrow_mut().push((std::rc::Rc::clone(&conflict), 100));
-        state.local_state.registers.borrow_mut().push((std::rc::Rc::clone(&local_only), 2));
-        state.local_state.registers.borrow_mut().push((std::rc::Rc::clone(&conflict), 999));
+        state.shared_state.registers.borrow_mut().push((shared_only.clone(), 1));
+        state.shared_state.registers.borrow_mut().push((conflict.clone(), 100));
+        state.local_state.registers.borrow_mut().push((local_only.clone(), 2));
+        state.local_state.registers.borrow_mut().push((conflict.clone(), 999));
 
         let mut values = state.get_register_values();
         values.sort_by_key(|(r, _)| r.borrow().offset());

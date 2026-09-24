@@ -520,7 +520,10 @@ mod tests {
             false,
             Register::TYPE_CONTEXT | Register::TYPE_DOES_NOT_FOLLOW_FLOW,
         );
-        context_base.borrow_mut().set_child_registers(vec![flowing_child.clone(), non_flowing_child.clone()]);
+        let [context_base, flowing_child, non_flowing_child]: [Register; 3] =
+            crate::program::model::lang::register::test_support::linked(&[&context_base, &flowing_child, &non_flowing_child], &[(0, &[1, 2])])
+                .try_into()
+                .unwrap();
 
         let r0 = Register::new("r0", "", Address::new(space, 8), 4, false, 0);
 

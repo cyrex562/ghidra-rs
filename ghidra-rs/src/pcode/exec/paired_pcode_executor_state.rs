@@ -425,8 +425,8 @@ mod tests {
         let left = MapPiece::new(ram.address(0x1000));
         let right = MapPiece::new(ram.address(0x2000));
         let shared = Register::new("R0", "", ram.address(0x10), 4, false, Register::TYPE_NONE);
-        left.registers.borrow_mut().push((std::rc::Rc::clone(&shared), 1));
-        right.registers.borrow_mut().push((std::rc::Rc::clone(&shared), 100));
+        left.registers.borrow_mut().push((shared.clone(), 1));
+        right.registers.borrow_mut().push((shared.clone(), 100));
 
         let state = paired_state(left, right);
         let values = state.get_register_values();

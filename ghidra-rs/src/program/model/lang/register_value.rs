@@ -382,7 +382,7 @@ impl RegisterValue {
 /// definition, so name equality is the faithful analog here when the `Rc` pointers themselves
 /// differ (e.g. a register reached via two different traversal paths).
 fn same_register(a: &RegisterRef, b: &RegisterRef) -> bool {
-    std::rc::Rc::ptr_eq(a, b) || a.borrow().name() == b.borrow().name()
+    crate::program::model::lang::Register::same(a, b) || a.borrow().name() == b.borrow().name()
 }
 
 fn reg_eq(a: &RegisterRef, b: &RegisterRef) -> bool {
@@ -454,15 +454,17 @@ mod tests {
     /// register's own address) to `parent`. Note: each call replaces `parent`'s full child list
     /// (see `Register::set_child_registers`), so tests that need multiple children on the same
     /// parent must use [`child_registers`] instead of calling this more than once per parent.
-    fn child_register(parent: &RegisterRef, name: &str, byte_offset: i64, num_bytes: i32) -> RegisterRef {
+    fn child_register(parent: &mut RegisterRef, name: &str, byte_offset: i64, num_bytes: i32) -> RegisterRef {
         let space = space();
         let child = Register::new(name, "", Address::new(space, byte_offset), num_bytes, false, 0);
-        parent.borrow_mut().set_child_registers(vec![child.clone()]);
+        let mut linked = crate::program::model::lang::register::test_support::linked(&[parent, &child], &[(0, &[1])]);
+        let child = linked.pop().unwrap();
+        *parent = linked.pop().unwrap();
         child
     }
 
     /// Attaches multiple byte-aligned child registers to `parent` in one call.
-    fn child_registers(parent: &RegisterRef, specs: &[(&str, i64, i32)]) -> Vec<RegisterRef> {
+    fn child_registers(parent: &mut RegisterRef, specs: &[(&str, i64, i32)]) -> Vec<RegisterRef> {
         let space = space();
         let children: Vec<RegisterRef> = specs
             .iter()
@@ -470,7 +472,12 @@ mod tests {
                 Register::new(*name, "", Address::new(space.clone(), *byte_offset), *num_bytes, false, 0)
             })
             .collect();
-        parent.borrow_mut().set_child_registers(children.clone());
+        let mut all: Vec<&RegisterRef> = vec![parent];
+        all.extend(children.iter());
+        let child_indices: Vec<usize> = (1..all.len()).collect();
+        let mut linked = crate::program::model::lang::register::test_support::linked(&all, &[(0, &child_indices)]);
+        let children = linked.split_off(1);
+        *parent = linked.pop().unwrap();
         children
     }
 
@@ -516,13 +523,13 @@ mod tests {
 
     #[test]
     fn combine_values_prefers_other_where_masked_on() {
-        let reg = base_register("r0", 4);
+        let mut reg = base_register("r0", 4);
         let base_val = RegisterValue::with_value(reg.clone(), 0x1111_1111);
 
         // A partial value: only the low byte known, via a child register (byte offset 0 is the
         // least-significant byte under this crate's little-endian `set_base_register_info`
         // convention, see `child_register`'s doc comment).
-        let low_byte = child_register(&reg, "r0l", 0, 1);
+        let low_byte = child_register(&mut reg, "r0l", 0, 1);
         let partial = RegisterValue::with_value(low_byte, 0xAB);
 
         let combined = base_val.combine_values(&partial);
@@ -532,9 +539,9 @@ mod tests {
 
     #[test]
     fn clear_bit_values_removes_masked_bits() {
-        let reg = base_register("r0", 4);
+        let mut reg = base_register("r0", 4);
         let value = RegisterValue::with_value(reg.clone(), 0xFFFF_FFFF);
-        let low_byte_mask = child_register(&reg, "r0l", 0, 1).borrow().base_mask();
+        let low_byte_mask = child_register(&mut reg, "r0l", 0, 1).borrow().base_mask();
 
         let cleared = value.clear_bit_values(&low_byte_mask);
         assert!(!cleared.has_value()); // no longer fully specified
@@ -543,8 +550,8 @@ mod tests {
 
     #[test]
     fn sub_register_composition_and_decomposition() {
-        let reg = base_register("eax", 4);
-        let children = child_registers(&reg, &[("al", 0, 1), ("ah", 1, 1)]);
+        let mut reg = base_register("eax", 4);
+        let children = child_registers(&mut reg, &[("al", 0, 1), ("ah", 1, 1)]);
         let al = children[0].clone();
         let ah = children[1].clone();
 
@@ -563,8 +570,8 @@ mod tests {
 
     #[test]
     fn get_register_value_widens_to_full_register_view() {
-        let reg = base_register("eax", 4);
-        let al = child_register(&reg, "al", 0, 1);
+        let mut reg = base_register("eax", 4);
+        let al = child_register(&mut reg, "al", 0, 1);
 
         let al_value = RegisterValue::with_value(al.clone(), 0x7F);
         let as_eax = al_value.get_register_value(&reg);
@@ -598,8 +605,8 @@ mod tests {
 
     #[test]
     fn base_register_value_reflects_full_bit_range() {
-        let reg = base_register("eax", 4);
-        let al = child_register(&reg, "al", 0, 1);
+        let mut reg = base_register("eax", 4);
+        let al = child_register(&mut reg, "al", 0, 1);
         let al_value = RegisterValue::with_value(al, 0x42);
 
         let base_value = al_value.base_register_value();

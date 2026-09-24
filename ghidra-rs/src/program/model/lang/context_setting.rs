@@ -388,7 +388,7 @@ mod tests {
         assert_eq!(setting.get_value(), 0xABCD);
         assert_eq!(setting.get_start_address(), &ram_space().address(0x1000));
         assert_eq!(setting.get_end_address(), &ram_space().address(0x1fff));
-        assert!(std::rc::Rc::ptr_eq(setting.get_register(), &reg));
+        assert!(crate::program::model::lang::Register::same(setting.get_register(), &reg));
     }
 
     #[test]

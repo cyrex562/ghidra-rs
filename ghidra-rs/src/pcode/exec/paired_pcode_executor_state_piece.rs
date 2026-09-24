@@ -390,9 +390,9 @@ mod tests {
 
         let shared = Register::new("R0", "", ram.address(0x10), 4, false, Register::TYPE_NONE);
         let left_only = Register::new("R1", "", ram.address(0x20), 4, false, Register::TYPE_NONE);
-        left.registers.borrow_mut().push((std::rc::Rc::clone(&shared), 1));
-        left.registers.borrow_mut().push((std::rc::Rc::clone(&left_only), 2));
-        right.registers.borrow_mut().push((std::rc::Rc::clone(&shared), 100));
+        left.registers.borrow_mut().push((shared.clone(), 1));
+        left.registers.borrow_mut().push((left_only.clone(), 2));
+        right.registers.borrow_mut().push((shared.clone(), 100));
 
         let piece = PairedPcodeExecutorStatePiece::new(left, right, Arc::new(I64Arithmetic), arithmetic);
         let values = piece.get_register_values();
