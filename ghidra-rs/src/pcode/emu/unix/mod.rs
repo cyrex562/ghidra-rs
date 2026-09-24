@@ -1,3 +1,4 @@
+pub mod abstract_emu_unix_file;
 pub mod abstract_emu_unix_syscall_userop_library;
 pub mod default_emu_unix_file_handle;
 pub mod emu_unix_exception;
@@ -7,6 +8,7 @@ pub mod emu_unix_file_stat;
 pub mod emu_unix_file_system;
 pub mod emu_unix_user;
 
+pub use abstract_emu_unix_file::{AbstractEmuUnixFile, AbstractEmuUnixFileBase};
 pub use abstract_emu_unix_syscall_userop_library::{
     AbstractEmuUnixSyscallUseropLibrary, AbstractEmuUnixSyscallUseropLibraryBase, Errno,
 };
