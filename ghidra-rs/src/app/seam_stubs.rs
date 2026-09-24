@@ -6783,3 +6783,18 @@ pub struct OperandMetadata {
     pub mask_container: std::option::Option<MaskContainer>,
     pub masked: bool,
 }
+
+/// Placeholder for `ghidra.app.plugin.core.terminal.vt.VtAttributes`, referenced by
+/// [`VtLine`](crate::app::plugin::core::terminal::vt::VtLine) before the real record is ported.
+/// Java's version is an immutable record of foreground/background colors, intensity, font,
+/// underline, blink, reverse-video, hidden, strike-through and proportional-spacing; those
+/// component types live in the still-unported `VtHandler` and `AnsiColorResolver`. `VtLine` only
+/// stores attributes per cell, compares them for equality, and falls back to
+/// [`VtAttributes::DEFAULTS`], so that is all that is modeled.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VtAttributes;
+
+impl VtAttributes {
+    /// Mirrors `VtAttributes.DEFAULTS`, the attributes of a cell that was never styled.
+    pub const DEFAULTS: VtAttributes = VtAttributes;
+}

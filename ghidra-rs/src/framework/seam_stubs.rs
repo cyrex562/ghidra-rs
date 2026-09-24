@@ -349,9 +349,26 @@ pub trait HelpLocation {}
 
 /// Placeholder for `ghidra.framework.options.GProperties`, referenced by
 /// [`CustomOption`](crate::framework::options::CustomOption) before the real class is ported.
-/// `CustomOption` only ever passes this type through as an opaque value, so no members are
-/// needed yet.
-pub trait GProperties {}
+/// Java's version is a name-to-value map with typed `put*`/`get*` pairs; only the pairs a ported
+/// [`CustomOption`](crate::framework::options::CustomOption) implementation
+/// ([`MsdApplyOption`](crate::demangler::microsoft::options::MsdApplyOption)) reads and writes
+/// are modeled.
+pub trait GProperties {
+    /// Mirrors `GProperties.putBoolean(String, boolean)`.
+    fn put_boolean(&mut self, name: &str, value: bool);
+
+    /// Mirrors `GProperties.getBoolean(String, boolean)`: the boolean stored under `name`, or
+    /// `default_value` if there is none or the stored value is not a boolean.
+    fn get_boolean(&self, name: &str, default_value: bool) -> bool;
+
+    /// Mirrors `GProperties.putEnum(String, Enum)`. The enum is given by its Java constant name
+    /// (`Enum.name()`), the form in which `GProperties` persists enum values.
+    fn put_enum(&mut self, name: &str, value: &str);
+
+    /// Mirrors `GProperties.getEnum(String, Enum)`: the constant name of the enum stored under
+    /// `name`, or `default_value` if there is none or the stored value is not an enum.
+    fn get_enum(&self, name: &str, default_value: &str) -> String;
+}
 
 /// Placeholder for `ghidra.framework.options.ActionTrigger`, referenced by
 /// [`Options`](crate::framework::options::Options) before the real class is ported. `Options`

@@ -2911,7 +2911,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionse
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionSearchData.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionTableDataObject.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionTableObserver.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionTableObserver.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/MaskContainer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/MaskSettings.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/OperandMetadata.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
@@ -3412,7 +3412,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/V
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtBuffer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtCharset.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtOutput.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtParser.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtResponseEncoder.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal vt 
@@ -7852,7 +7852,7 @@ orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demang
 orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/MicrosoftDemanglerUtil.java	TODO	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft 
 orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/MicrosoftMangledContext.java	TODO	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft 
 orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/MsCInterpretation.java	DONE	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft
-orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/options/MsdApplyOption.java	TODO	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft options 
+orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/options/MsdApplyOption.java	DONE	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft options 
 orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/options/MsdApplyOptionsEditor.java	TODO	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft options 
 orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/options/MsdOutputOption.java	TODO	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft options 
 orig_src/Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/options/MsdOutputOptionsEditor.java	TODO	orig_src Ghidra Features MicrosoftDemangler src main java ghidra app util demangler microsoft options 

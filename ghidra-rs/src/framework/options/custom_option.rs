@@ -31,7 +31,16 @@ mod tests {
     use std::fmt;
 
     struct FakeProperties;
-    impl GProperties for FakeProperties {}
+    impl GProperties for FakeProperties {
+        fn put_boolean(&mut self, _name: &str, _value: bool) {}
+        fn get_boolean(&self, _name: &str, default_value: bool) -> bool {
+            default_value
+        }
+        fn put_enum(&mut self, _name: &str, _value: &str) {}
+        fn get_enum(&self, _name: &str, default_value: &str) -> String {
+            default_value.to_string()
+        }
+    }
 
     struct IntOption(i32);
 
