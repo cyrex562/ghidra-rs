@@ -761,106 +761,12 @@ impl DefaultProgramContext for ProgramContextImpl {
     }
 }
 
-/// Marker trait for `ghidra.pcode.exec.BytesPcodeExecutorStatePiece`, referenced by
-/// [`AuxEmulatorPartsFactory::create_shared_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_shared_state)
-/// and
-/// [`AuxEmulatorPartsFactory::create_local_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_local_state).
-/// The real port is [`crate::pcode::exec::BytesPcodeExecutorStatePiece`].
-pub trait BytesPcodeExecutorStatePiece: Send + Sync {}
-
 // `ghidra.pcode.exec.BytesPcodeArithmetic` has graduated to a real port at
 // [`crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic`].
 
-/// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorState`, referenced by
-/// `PcodeEmulator::create_shared_state`/`create_local_state` before the real class (composed of
-/// per-address-space `BytesPcodeExecutorStateSpace`s, also not yet ported) is ported. Only the
-/// language is retained, enough to answer `get_arithmetic`/`get_address_arithmetic` faithfully
-/// once [`BytesPcodeArithmetic`](crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic) itself is ported; every operation that would need real storage
-/// panics.
-pub struct BytesPcodeExecutorState {
-    language: Arc<SleighLanguage>,
-}
-
-impl BytesPcodeExecutorState {
-    /// Placeholder for `new BytesPcodeExecutorState(SleighLanguage, PcodeStateCallbacks)`. The
-    /// callbacks aren't retained: without real per-address-space storage to read or write, there
-    /// is nothing to forward them to.
-    pub fn new<C: PcodeStateCallbacks>(language: Arc<SleighLanguage>, _cb: C) -> Self {
-        Self { language }
-    }
-}
-
-impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for BytesPcodeExecutorState {
-    fn get_language(&self) -> Box<dyn Language> {
-        unimplemented!("BytesPcodeExecutorState not yet ported")
-    }
-
-    fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        Arc::new(crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic::for_sleigh_language(&self.language))
-    }
-
-    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-        Arc::new(crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic::for_sleigh_language(&self.language))
-    }
-
-    fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
-        vec![]
-    }
-
-    fn set_var_abstract(
-        &mut self,
-        _space: &Arc<AddressSpace>,
-        _offset: &Vec<u8>,
-        _size: i32,
-        _quantize: bool,
-        _val: &Vec<u8>,
-    ) {
-        unimplemented!("BytesPcodeExecutorState not yet ported")
-    }
-
-    fn set_var_internal_abstract(
-        &mut self,
-        _space: &Arc<AddressSpace>,
-        _offset: &Vec<u8>,
-        _size: i32,
-        _val: &Vec<u8>,
-    ) {
-        unimplemented!("BytesPcodeExecutorState not yet ported")
-    }
-
-    fn get_var_abstract(
-        &self,
-        _space: &Arc<AddressSpace>,
-        _offset: &Vec<u8>,
-        _size: i32,
-        _quantize: bool,
-        _reason: Reason,
-    ) -> Vec<u8> {
-        unimplemented!("BytesPcodeExecutorState not yet ported")
-    }
-
-    fn get_var_internal_abstract(
-        &self,
-        _space: &Arc<AddressSpace>,
-        _offset: &Vec<u8>,
-        _size: i32,
-        _reason: Reason,
-    ) -> Vec<u8> {
-        unimplemented!("BytesPcodeExecutorState not yet ported")
-    }
-
-    fn get_register_values(&self) -> Vec<(RegisterRef, Vec<u8>)> {
-        vec![]
-    }
-
-    fn get_concrete_buffer(&self, _address: &Address, _purpose: Purpose) -> Box<dyn MemBuffer> {
-        unimplemented!("BytesPcodeExecutorState not yet ported")
-    }
-
-    fn clear(&mut self) {}
-}
-
-impl PcodeExecutorState<Vec<u8>> for BytesPcodeExecutorState {}
+// `ghidra.pcode.exec.BytesPcodeExecutorState` and `BytesPcodeExecutorStatePiece` have graduated
+// to real ports at [`crate::pcode::exec::BytesPcodeExecutorState`] and
+// [`crate::pcode::exec::BytesPcodeExecutorStatePiece`].
 
 /// Placeholder for the unported Java type `PcodeTraceMemoryAccess`
 /// (`ghidra.pcode.exec.trace.data.PcodeTraceMemoryAccess`), referenced by
@@ -3766,16 +3672,15 @@ impl std::error::Error for MethodTooLargeException {}
 /// both its shared and its per-thread states. The real class is a `DefaultPcodeExecutorState`
 /// wrapping a `JitBytesPcodeExecutorStatePiece`, whose per-address-space
 /// `JitBytesPcodeExecutorStateSpace`s the generated code pre-fetches directly; none of that is
-/// ported, so, exactly as with [`BytesPcodeExecutorState`], only the language is retained and every
-/// operation needing real storage panics.
+/// ported, so only the language is retained and every operation needing real storage panics.
 pub struct JitDefaultBytesPcodeExecutorState {
     language: Arc<SleighLanguage>,
 }
 
 impl JitDefaultBytesPcodeExecutorState {
-    /// Placeholder for `new JitDefaultBytesPcodeExecutorState(Language, PcodeStateCallbacks)`. As
-    /// with [`BytesPcodeExecutorState::new`], the callbacks aren't retained: without real
-    /// per-address-space storage to read or write, there is nothing to forward them to.
+    /// Placeholder for `new JitDefaultBytesPcodeExecutorState(Language, PcodeStateCallbacks)`. The
+    /// callbacks aren't retained: without real per-address-space storage to read or write, there
+    /// is nothing to forward them to.
     pub fn new<C: PcodeStateCallbacks>(language: Arc<SleighLanguage>, _cb: C) -> Self {
         Self { language }
     }

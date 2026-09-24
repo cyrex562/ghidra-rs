@@ -20,8 +20,8 @@
 //! * `createThread(String)` is `new BytesPcodeThread(name, this)`; [`BytesPcodeThread`] is added
 //!   here as a minimal placeholder (name only) for the same reason.
 //! * `createSharedState()`/`createLocalState(PcodeThread<byte[]>)` construct
-//!   `new BytesPcodeExecutorState(language, scb)` where `scb = cb.wrapFor(thread)`.
-//!   [`BytesPcodeExecutorState`] is added here as a minimal placeholder; `cb.wrapFor(...)` needs
+//!   `new BytesPcodeExecutorState(language, scb)` where `scb = cb.wrapFor(thread)`. This port
+//!   builds the real [`BytesPcodeExecutorState`], but `cb.wrapFor(...)` needs
 //!   the not-yet-ported `PcodeEmulationCallbacks.Wrapper` adapter, so, as in
 //!   [`AuxPcodeEmulator`](crate::pcode::emu::auxiliary::aux_pcode_emulator), this passes
 //!   [`NONE`](crate::pcode::exec::pcode_state_callbacks::NONE) instead.
@@ -44,8 +44,9 @@ use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::emu::bytes_pcode_thread::BytesPcodeThread;
 use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
-use crate::pcode::seam_stubs::BytesPcodeExecutorState;
+use crate::pcode::exec::bytes_pcode_executor_state::BytesPcodeExecutorState;
 use crate::program::model::address::{Address, AddressRange};
+use crate::program::model::lang::language::Language;
 use crate::program::model::lang::sleigh::SleighLanguage;
 
 /// A p-code machine which executes on concrete bytes and incorporates per-architecture state
@@ -76,6 +77,11 @@ impl PcodeEmulator {
         emulator
     }
 
+    /// The machine's language as the `Language` the real state constructors take.
+    fn language_dyn(&self) -> Arc<dyn Language> {
+        Arc::clone(self.base.language()) as Arc<dyn Language>
+    }
+
     /// Construct a new concrete emulator with no emulation callbacks.
     ///
     /// Port of `PcodeEmulator(Language)`, which is `this(language, PcodeEmulationCallbacks.none())`.
@@ -97,12 +103,12 @@ impl AbstractPcodeMachine<Vec<u8>> for PcodeEmulator {
 
     /// Port of the overridden `createSharedState()`.
     fn create_shared_state(&self) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
-        Box::new(BytesPcodeExecutorState::new(Arc::clone(self.base.language()), NONE))
+        Box::new(BytesPcodeExecutorState::new(self.language_dyn(), Arc::new(NONE)))
     }
 
     /// Port of the overridden `createLocalState(PcodeThread<byte[]>)`.
     fn create_local_state(&self, _thread: &dyn ErasedPcodeThread) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
-        Box::new(BytesPcodeExecutorState::new(Arc::clone(self.base.language()), NONE))
+        Box::new(BytesPcodeExecutorState::new(self.language_dyn(), Arc::new(NONE)))
     }
 
     /// Port of the overridden `createThread(String)`.
@@ -312,6 +318,13 @@ mod tests {
         data.extend_from_slice(&[0xC9, 0x21, 1]);
         data.extend_from_slice(&[0xE0, 0xAA, 0x21, 1]);
         data.extend_from_slice(&[0xA0, 0xA5]); // </space>
+        // <space_unique name="unique" size="4" index="2"/>: every real language has a unique
+        // space, and the real bytes state piece needs it.
+        data.extend_from_slice(&[0x60, 0xAE]);
+        data.extend_from_slice(&[0xCC, 0x71, 6, b'u', b'n', b'i', b'q', b'u', b'e']);
+        data.extend_from_slice(&[0xCF, 0x21, 4]);
+        data.extend_from_slice(&[0xC9, 0x21, 2]);
+        data.extend_from_slice(&[0xA0, 0xAE]); // </space_unique>
         data.extend_from_slice(&[0xA0, 0xA2]); // </spaces>
         data.extend_from_slice(&[0x60, 0xA6]); // <symbol_table scopesize="1" symbolsize="0">
         data.extend_from_slice(&[0xE0, 0xAD, 0x21, 1]);

@@ -42,10 +42,12 @@
 //! * `createSharedState`/`createLocalState`'s Java bodies build a `PcodeStateCallbacks` via
 //!   `cb.wrapFor(...)`, adapting the machine's `PcodeEmulationCallbacks` (not yet ported) to state
 //!   callbacks. That adapter class does not exist yet, so [`create_shared_state`]/
-//!   [`create_local_state`] pass
+//!   [`create_local_state`] use
 //!   [`NONE`](crate::pcode::exec::pcode_state_callbacks::NONE) (Java's own
-//!   `PcodeStateCallbacks.NONE`) instead; every callback the state pieces would receive is simply
-//!   dropped, as it would be for an emulator whose callbacks are already the default no-ops.
+//!   `PcodeStateCallbacks.NONE`) instead, both for the fresh concrete
+//!   [`BytesPcodeExecutorStatePiece`] and as the callbacks handed to the parts factory; every
+//!   callback the state pieces would receive is simply dropped, as it would be for an emulator
+//!   whose callbacks are already the default no-ops.
 
 use std::sync::Arc;
 
@@ -54,23 +56,13 @@ use crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFa
 use crate::pcode::exec::paired_pcode_arithmetic::PairedPcodeArithmetic;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
-use crate::pcode::exec::pcode_state_callbacks::NONE;
+use crate::pcode::exec::pcode_state_callbacks::{NoPcodeStateCallbacks, NONE};
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
-use crate::pcode::seam_stubs::BytesPcodeExecutorStatePiece;
+use crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::Language;
-
-/// A minimal, inert implementor of the [`BytesPcodeExecutorStatePiece`] marker, standing in for
-/// `new BytesPcodeExecutorStatePiece(SleighLanguage, PcodeStateCallbacks)`. The real piece is
-/// ported ([`crate::pcode::exec::BytesPcodeExecutorStatePiece`]), but
-/// `AuxEmulatorPartsFactory::create_shared_state`/`create_local_state` still take the bare
-/// placeholder marker, so there is nothing a factory could do with a real one yet; retyping that
-/// parameter is a separate public-API change.
-struct ConcreteStatePieceStub;
-
-impl BytesPcodeExecutorStatePiece for ConcreteStatePieceStub {}
 
 /// An emulator whose parts are manufactured by a [`AuxEmulatorPartsFactory`].
 ///
@@ -120,7 +112,9 @@ pub fn create_shared_state<U: 'static>(
     emulator: &dyn AuxPcodeEmulator<U>,
     parts_factory: &impl AuxEmulatorPartsFactory<U>,
 ) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>> {
-    parts_factory.create_shared_state(emulator, Box::new(ConcreteStatePieceStub), &NONE)
+    // Java: `scb = cb.wrapFor(null)`; see the module docs for why this is `NONE`.
+    let scb = Arc::new(NONE);
+    parts_factory.create_shared_state(emulator, new_concrete_piece(emulator, &scb), scb)
 }
 
 /// Port of the overridden `createLocalState(PcodeThread<Pair<byte[], U>>)`.
@@ -129,7 +123,19 @@ pub fn create_local_state<U: 'static>(
     thread: &dyn ErasedPcodeThread,
     parts_factory: &impl AuxEmulatorPartsFactory<U>,
 ) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>> {
-    parts_factory.create_local_state(emulator, thread, Box::new(ConcreteStatePieceStub), &NONE)
+    // Java: `scb = cb.wrapFor(thread)`; see the module docs for why this is `NONE`.
+    let scb = Arc::new(NONE);
+    parts_factory.create_local_state(emulator, thread, new_concrete_piece(emulator, &scb), scb)
+}
+
+/// Java's `new BytesPcodeExecutorStatePiece(language, scb)`, shared by [`create_shared_state`]
+/// and [`create_local_state`].
+fn new_concrete_piece<U: 'static>(
+    emulator: &dyn AuxPcodeEmulator<U>,
+    scb: &Arc<NoPcodeStateCallbacks>,
+) -> BytesPcodeExecutorStatePiece<NoPcodeStateCallbacks> {
+    let language: Arc<dyn Language> = Arc::clone(emulator.base().language()) as Arc<dyn Language>;
+    BytesPcodeExecutorStatePiece::new(language, Arc::clone(scb))
 }
 
 /// Port of the overridden `createThread(String)`.
@@ -364,6 +370,17 @@ mod tests {
         Box::new(NamedUseropLibrary { userops })
     }
 
+    /// Proves the concrete piece handed to the parts factory is a real, working
+    /// `BytesPcodeExecutorStatePiece` for the emulator's language (Java's
+    /// `new BytesPcodeExecutorStatePiece(language, scb)`): it names its default space and
+    /// round-trips a write through that space.
+    fn describe_piece<CB: PcodeStateCallbacks>(mut piece: BytesPcodeExecutorStatePiece<CB>) -> String {
+        let space = piece.get_language().get_default_space();
+        piece.set_var(&space, 0x10, 2, false, &vec![0xab, 0xcd]);
+        let read = piece.get_var(&space, 0x10, 2, false, Reason::Inspect);
+        format!("{}={:02x?}", space.name(), read)
+    }
+
     /// Records every call the free functions under test make into the parts factory, and hands
     /// back distinguishable products.
     #[derive(Default)]
@@ -403,20 +420,20 @@ mod tests {
         fn create_shared_state<CB: PcodeStateCallbacks>(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _concrete: Box<dyn BytesPcodeExecutorStatePiece>,
-            _cb: &CB,
+            concrete: BytesPcodeExecutorStatePiece<CB>,
+            _cb: Arc<CB>,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
-            self.calls.lock().unwrap().push("shared_state".into());
+            self.calls.lock().unwrap().push(format!("shared_state:{}", describe_piece(concrete)));
             Box::new(EmptyState)
         }
         fn create_local_state<CB: PcodeStateCallbacks>(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
             _thread: &dyn ErasedPcodeThread,
-            _concrete: Box<dyn BytesPcodeExecutorStatePiece>,
-            _cb: &CB,
+            concrete: BytesPcodeExecutorStatePiece<CB>,
+            _cb: Arc<CB>,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
-            self.calls.lock().unwrap().push("local_state".into());
+            self.calls.lock().unwrap().push(format!("local_state:{}", describe_piece(concrete)));
             Box::new(EmptyState)
         }
     }
@@ -572,6 +589,13 @@ mod tests {
         data.extend_from_slice(&[0xC9, 0x21, 1]);
         data.extend_from_slice(&[0xE0, 0xAA, 0x21, 1]);
         data.extend_from_slice(&[0xA0, 0xA5]); // </space>
+        // <space_unique name="unique" size="4" index="2"/>: every real language has a unique
+        // space, and the real bytes state piece needs it.
+        data.extend_from_slice(&[0x60, 0xAE]);
+        data.extend_from_slice(&[0xCC, 0x71, 6, b'u', b'n', b'i', b'q', b'u', b'e']);
+        data.extend_from_slice(&[0xCF, 0x21, 4]);
+        data.extend_from_slice(&[0xC9, 0x21, 2]);
+        data.extend_from_slice(&[0xA0, 0xAE]); // </space_unique>
         data.extend_from_slice(&[0xA0, 0xA2]); // </spaces>
         data.extend_from_slice(&[0x60, 0xA6]); // <symbol_table scopesize="1" symbolsize="0">
         data.extend_from_slice(&[0xE0, 0xAD, 0x21, 1]);
@@ -603,7 +627,10 @@ mod tests {
         // `cb.wrapFor(...)` with `PcodeStateCallbacks.NONE` (see the module docs).
         assert_eq!(
             *emulator.factory.calls.lock().unwrap(),
-            vec!["shared_state".to_string(), "local_state".to_string()]
+            vec![
+                "shared_state:ram=[ab, cd]".to_string(),
+                "local_state:ram=[ab, cd]".to_string()
+            ]
         );
     }
 

@@ -47,7 +47,7 @@ use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::emu::default_pcode_thread::{DefaultPcodeThread, PcodeThreadExecutor};
-use crate::pcode::seam_stubs::BytesPcodeExecutorStatePiece;
+use crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece;
 use crate::program::model::lang::Language;
 
 /// An auxiliary emulator parts factory.
@@ -118,11 +118,16 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
     /// This is usually composed of pieces using `PairedPcodeExecutorStatePiece`, but it does not
     /// have to be. It must incorporate the concrete piece provided. It should be self contained
     /// and relatively fast.
+    ///
+    /// Java passes the same `PcodeStateCallbacks` object both inside `concrete` and as `cb`; here
+    /// `concrete` is the real [`BytesPcodeExecutorStatePiece`] over the same callbacks type `CB`,
+    /// and `cb` is the shared handle to those callbacks, so an implementor can build further
+    /// pieces reporting to the very same callbacks.
     fn create_shared_state<CB: PcodeStateCallbacks>(
         &self,
         emulator: &dyn AuxPcodeEmulator<U>,
-        concrete: Box<dyn BytesPcodeExecutorStatePiece>,
-        cb: &CB,
+        concrete: BytesPcodeExecutorStatePiece<CB>,
+        cb: Arc<CB>,
     ) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>>;
 
     /// Create the local (register) state of a new emulator.
@@ -134,8 +139,8 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
         &self,
         emulator: &dyn AuxPcodeEmulator<U>,
         thread: &dyn ErasedPcodeThread,
-        concrete: Box<dyn BytesPcodeExecutorStatePiece>,
-        cb: &CB,
+        concrete: BytesPcodeExecutorStatePiece<CB>,
+        cb: Arc<CB>,
     ) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>>;
 }
 
@@ -705,8 +710,8 @@ mod tests {
         fn create_shared_state<CB: PcodeStateCallbacks>(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _concrete: Box<dyn BytesPcodeExecutorStatePiece>,
-            _cb: &CB,
+            _concrete: BytesPcodeExecutorStatePiece<CB>,
+            _cb: Arc<CB>,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             unimplemented!("not exercised by these tests")
         }
@@ -715,8 +720,8 @@ mod tests {
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
             _thread: &dyn ErasedPcodeThread,
-            _concrete: Box<dyn BytesPcodeExecutorStatePiece>,
-            _cb: &CB,
+            _concrete: BytesPcodeExecutorStatePiece<CB>,
+            _cb: Arc<CB>,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             unimplemented!("not exercised by these tests")
         }

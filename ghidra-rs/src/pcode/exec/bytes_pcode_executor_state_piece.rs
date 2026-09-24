@@ -26,7 +26,6 @@ use crate::pcode::exec::bytes_pcode_executor_state_space::BytesPcodeExecutorStat
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason};
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
-use crate::pcode::seam_stubs;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
@@ -69,8 +68,6 @@ where
 }
 
 impl<CB> ErasedPcodeExecutorStatePiece for BytesPcodeExecutorStatePiece<CB> where CB: PcodeStateCallbacks {}
-
-impl<CB> seam_stubs::BytesPcodeExecutorStatePiece for BytesPcodeExecutorStatePiece<CB> where CB: PcodeStateCallbacks {}
 
 unsafe impl<CB> Send for BytesPcodeExecutorStatePiece<CB> where CB: PcodeStateCallbacks {}
 unsafe impl<CB> Sync for BytesPcodeExecutorStatePiece<CB> where CB: PcodeStateCallbacks {}

@@ -634,8 +634,8 @@ mod tests {
         fn create_shared_state<CB: PcodeStateCallbacks>(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _concrete: Box<dyn crate::pcode::seam_stubs::BytesPcodeExecutorStatePiece>,
-            _cb: &CB,
+            _concrete: crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece<CB>,
+            _cb: Arc<CB>,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             unimplemented!("not exercised by these tests")
         }
@@ -643,8 +643,8 @@ mod tests {
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
             _thread: &dyn ErasedPcodeThread,
-            _concrete: Box<dyn crate::pcode::seam_stubs::BytesPcodeExecutorStatePiece>,
-            _cb: &CB,
+            _concrete: crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece<CB>,
+            _cb: Arc<CB>,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             unimplemented!("not exercised by these tests")
         }
