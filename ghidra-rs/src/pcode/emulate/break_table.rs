@@ -1,4 +1,5 @@
-use crate::pcode::seam_stubs::{Emulate, PcodeOpRaw};
+use crate::pcode::pcoderaw::PcodeOpRaw;
+use crate::pcode::seam_stubs::Emulate;
 use crate::program::model::address::Address;
 
 /// A collection of breakpoints for the emulator.
@@ -32,7 +33,7 @@ pub trait BreakTable: Send + Sync {
 	///
 	/// # Returns
 	/// true if the action of the pcode op is performed by the breakpoint
-	fn do_pcode_op_break(&self, curop: &dyn PcodeOpRaw) -> bool;
+	fn do_pcode_op_break(&self, curop: &PcodeOpRaw) -> bool;
 
 	/// Invoke any breakpoints associated with this machine address.
 	///
@@ -61,8 +62,12 @@ mod tests {
 		}
 	}
 
-	struct MockPcodeOpRaw;
-	impl PcodeOpRaw for MockPcodeOpRaw {}
+	fn sample_op() -> PcodeOpRaw {
+		use crate::program::model::address::{AddressSpace, AddressSpaceType};
+		use crate::program::model::pcode::{OpCode, PcodeOp};
+		let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+		PcodeOpRaw::from(PcodeOp::with_address_no_inputs(Address::new(space, 0x1000), 0, OpCode::CallOther))
+	}
 
 	struct TestBreakTable {
 		emulate: Option<Box<dyn Emulate>>,
@@ -80,7 +85,7 @@ mod tests {
 			emu.dispose();
 		}
 
-		fn do_pcode_op_break(&self, _curop: &dyn PcodeOpRaw) -> bool {
+		fn do_pcode_op_break(&self, _curop: &PcodeOpRaw) -> bool {
 			false
 		}
 
@@ -102,7 +107,7 @@ mod tests {
 	#[allow(deprecated)]
 	fn test_break_table_do_pcode_op_break_returns_false() {
 		let table = TestBreakTable::new();
-		let op = MockPcodeOpRaw;
+		let op = sample_op();
 		assert!(!table.do_pcode_op_break(&op));
 	}
 

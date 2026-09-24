@@ -1,5 +1,5 @@
 use crate::pcode::seam_stubs::Emulate;
-use crate::pcode::seam_stubs::PcodeOpRaw;
+use crate::pcode::pcoderaw::PcodeOpRaw;
 use crate::program::model::address::Address;
 
 /// A breakpoint object
@@ -38,7 +38,7 @@ impl BreakCallBack {
     ///
     /// # Returns
     /// `true` if the normal pcode op action should not occur
-    pub fn pcode_callback(&self, _op: &dyn PcodeOpRaw) -> bool {
+    pub fn pcode_callback(&self, _op: &PcodeOpRaw) -> bool {
         false
     }
 
@@ -90,8 +90,12 @@ mod tests {
         }
     }
 
-    struct MockPcodeOpRaw;
-    impl PcodeOpRaw for MockPcodeOpRaw {}
+    fn sample_op() -> PcodeOpRaw {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        use crate::program::model::pcode::{OpCode, PcodeOp};
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+        PcodeOpRaw::from(PcodeOp::with_address_no_inputs(Address::new(space, 0x1000), 0, OpCode::CallOther))
+    }
 
     #[test]
     #[allow(deprecated)]
@@ -111,7 +115,7 @@ mod tests {
     #[allow(deprecated)]
     fn test_pcode_callback_returns_false() {
         let callback = BreakCallBack::new();
-        let op = MockPcodeOpRaw;
+        let op = sample_op();
         assert!(!callback.pcode_callback(&op));
     }
 

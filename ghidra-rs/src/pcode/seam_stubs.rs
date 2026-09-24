@@ -410,22 +410,6 @@ impl FloatFormatFactory {
     }
 }
 
-/// Placeholder for `ghidra.pcode.pcoderaw.PcodeOpRaw`, referenced by
-/// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable) and
-/// [`BreakTableCallBack`](crate::pcode::emulate::break_table_call_back::BreakTableCallBack)
-/// before the real class is ported.
-///
-/// Grown (see `STUBS.tsv`) with a defaulted [`get_input`](Self::get_input) -- Java's
-/// `PcodeOpRaw` extends `PcodeOp`, whose `getInput(int)` `BreakTableCallBack.doPcodeOpBreak`
-/// needs -- so pre-existing bare `impl PcodeOpRaw for Foo {}` blocks keep compiling.
-pub trait PcodeOpRaw: Send + Sync {
-    /// Stands in for the inherited `PcodeOp.getInput(int)`.
-    fn get_input(&self, index: usize) -> Option<crate::program::model::pcode::Varnode> {
-        let _ = index;
-        None
-    }
-}
-
 /// Placeholder for `ghidra.pcode.emulate.Emulate`, referenced by
 /// [`OpBehaviorOther`](crate::pcode::opbehavior::OpBehaviorOther),
 /// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable), and

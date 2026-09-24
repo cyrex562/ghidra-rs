@@ -4,7 +4,8 @@ use std::sync::Arc;
 use crate::pcode::emulate::break_callback::BreakCallBack;
 use crate::pcode::emulate::break_table::BreakTable;
 use crate::pcode::error::lowlevel_error::LowlevelError;
-use crate::pcode::seam_stubs::{Emulate, PcodeOpRaw};
+use crate::pcode::pcoderaw::PcodeOpRaw;
+use crate::pcode::seam_stubs::Emulate;
 use crate::program::model::address::Address;
 use crate::program::model::lang::sleigh::symbol::SleighSymbol;
 use crate::program::model::lang::sleigh::SleighLanguage;
@@ -144,7 +145,7 @@ impl BreakTable for BreakTableCallBack {
     /// given op. If one is found, its `pcode_callback` method is invoked.
     ///
     /// Port of `doPcodeOpBreak(PcodeOpRaw)`.
-    fn do_pcode_op_break(&self, curop: &dyn PcodeOpRaw) -> bool {
+    fn do_pcode_op_break(&self, curop: &PcodeOpRaw) -> bool {
         let val = curop
             .get_input(0)
             .expect("pcode op has no input 0")
@@ -233,14 +234,14 @@ mod tests {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
     }
 
-    struct MockPcodeOpRaw {
-        inputs: Vec<Varnode>,
-    }
-
-    impl PcodeOpRaw for MockPcodeOpRaw {
-        fn get_input(&self, index: usize) -> Option<Varnode> {
-            self.inputs.get(index).cloned()
-        }
+    /// A CALLOTHER op whose input 0 is the given varnode, as `doPcodeOpBreak` receives it.
+    fn callother_op(input0: Varnode) -> PcodeOpRaw {
+        PcodeOpRaw::from(crate::program::model::pcode::PcodeOp::with_address_no_output(
+            Address::new(ram_space(), 0x1000),
+            0,
+            crate::program::model::pcode::OpCode::CallOther,
+            vec![input0],
+        ))
     }
 
     #[test]
@@ -338,9 +339,7 @@ mod tests {
         // exercise doPcodeOpBreak's lookup-by-offset behavior directly.
         table.pcode_callback.insert(5, BreakCallBack::new());
 
-        let op = MockPcodeOpRaw {
-            inputs: vec![Varnode::new(Address::new(ram_space(), 5), 8)],
-        };
+        let op = callother_op(Varnode::new(Address::new(ram_space(), 5), 8));
         assert!(!table.do_pcode_op_break(&op));
     }
 
@@ -353,9 +352,7 @@ mod tests {
             .register_pcode_callback(BreakTableCallBack::DEFAULT_NAME, BreakCallBack::new())
             .unwrap();
 
-        let op = MockPcodeOpRaw {
-            inputs: vec![Varnode::new(Address::new(ram_space(), 999), 8)],
-        };
+        let op = callother_op(Varnode::new(Address::new(ram_space(), 999), 8));
         assert!(!table.do_pcode_op_break(&op));
     }
 
@@ -364,9 +361,7 @@ mod tests {
     fn do_pcode_op_break_with_no_match_and_no_default_returns_false() {
         let table = BreakTableCallBack::new(Arc::new(minimal_sleigh_language()));
 
-        let op = MockPcodeOpRaw {
-            inputs: vec![Varnode::new(Address::new(ram_space(), 999), 8)],
-        };
+        let op = callother_op(Varnode::new(Address::new(ram_space(), 999), 8));
         assert!(!table.do_pcode_op_break(&op));
     }
 }

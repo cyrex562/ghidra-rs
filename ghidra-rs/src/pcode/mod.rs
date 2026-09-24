@@ -7,6 +7,7 @@ pub mod floatformat;
 pub mod load_image;
 pub mod memstate;
 pub mod opbehavior;
+pub mod pcoderaw;
 pub mod seam_stubs;
 pub mod r#struct;
 pub mod utils;
