@@ -11,13 +11,9 @@
 //!   divergence), so the dispatch is a `match` on the opcode that mirrors the factory's table
 //!   entry for entry, calling the same concrete behavior. An opcode the factory maps to a
 //!   `SpecialOpBehavior` (or to nothing) fails Java's cast; here it panics with the mnemonic.
-//! * **FLOAT_\* ops.** The `OpBehaviorFloat*` classes are not ported. Each one's body is a single
-//!   call on the `FloatFormat` that `FloatFormatFactory.getFloatFormat(size)` returns; those
-//!   bodies are reproduced here verbatim against the
-//!   [`FloatFormatFactory`](crate::pcode::seam_stubs::FloatFormatFactory) /
-//!   [`FloatFormat`](crate::pcode::seam_stubs::FloatFormat) placeholders. `FloatFormat` (and the
-//!   arbitrary-precision `BigFloat` it needs) is unported, so evaluating a FLOAT_* op panics in
-//!   that placeholder until it is.
+//! * **FLOAT_\* ops.** Dispatched to the `OpBehaviorFloat*` behaviors like every other op; they
+//!   evaluate through [`FloatFormat`](crate::pcode::floatformat::FloatFormat) (host `f64` for
+//!   operands of at most 8 bytes, [`BigFloat`](crate::pcode::floatformat::BigFloat) otherwise).
 //! * **`BigInteger`.** Values wider than 8 bytes take Java's `BigInteger` path, which is `i128`
 //!   here per the crate-wide convention, so operands wider than 16 bytes are not representable.
 
@@ -25,7 +21,11 @@ use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::opbehavior::{
     BinaryOpBehavior, OpBehaviorBoolAnd, OpBehaviorBoolNegate, OpBehaviorBoolOr, OpBehaviorBoolXor,
-    OpBehaviorCopy, OpBehaviorEqual, OpBehaviorInt2Comp, OpBehaviorIntAdd, OpBehaviorIntAnd,
+    OpBehaviorCopy, OpBehaviorEqual, OpBehaviorFloatAbs, OpBehaviorFloatAdd, OpBehaviorFloatCeil,
+    OpBehaviorFloatDiv, OpBehaviorFloatEqual, OpBehaviorFloatFloat2Float, OpBehaviorFloatFloor,
+    OpBehaviorFloatInt2Float, OpBehaviorFloatLess, OpBehaviorFloatLessEqual, OpBehaviorFloatMult,
+    OpBehaviorFloatNan, OpBehaviorFloatNeg, OpBehaviorFloatNotEqual, OpBehaviorFloatRound,
+    OpBehaviorFloatSqrt, OpBehaviorFloatSub, OpBehaviorFloatTrunc, OpBehaviorInt2Comp, OpBehaviorIntAdd, OpBehaviorIntAnd,
     OpBehaviorIntCarry, OpBehaviorIntDiv, OpBehaviorIntLeft, OpBehaviorIntLess,
     OpBehaviorIntLessEqual, OpBehaviorIntMult, OpBehaviorIntNegate, OpBehaviorIntOr,
     OpBehaviorIntRem, OpBehaviorIntRight, OpBehaviorIntSborrow, OpBehaviorIntScarry,
@@ -34,7 +34,6 @@ use crate::pcode::opbehavior::{
     OpBehaviorLzcount, OpBehaviorNotEqual, OpBehaviorPiece, OpBehaviorPopcount, OpBehaviorSubpiece,
     UnaryOpBehavior,
 };
-use crate::pcode::seam_stubs::FloatFormatFactory;
 use crate::pcode::utils::{big_integer_to_bytes, bytes_to_big_integer, bytes_to_long, long_to_bytes};
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::endian::Endian;
@@ -106,21 +105,16 @@ fn evaluate_unary_long(opcode: OpCode, sizeout: i32, sizein: i32, in1: i64) -> i
         BoolNegate => OpBehaviorBoolNegate::new().evaluate_unary_i64(sizeout, sizein, in1),
         Popcount => OpBehaviorPopcount::new().evaluate_unary_i64(sizeout, sizein, in1),
         Lzcount => OpBehaviorLzcount::new().evaluate_unary_i64(sizeout, sizein, in1),
-        // OpBehaviorFloat*: see the module docs.
-        FloatNan => FloatFormatFactory::get_float_format(sizein).op_nan(in1),
-        FloatNeg => FloatFormatFactory::get_float_format(sizein).op_neg(in1),
-        FloatAbs => FloatFormatFactory::get_float_format(sizein).op_abs(in1),
-        FloatSqrt => FloatFormatFactory::get_float_format(sizein).op_sqrt(in1),
-        FloatInt2Float => FloatFormatFactory::get_float_format(sizeout).op_int2float(in1, sizein),
-        FloatFloat2Float => {
-            let formatout = FloatFormatFactory::get_float_format(sizeout);
-            let formatin = FloatFormatFactory::get_float_format(sizein);
-            formatin.op_float2float(in1, &*formatout)
-        }
-        FloatTrunc => FloatFormatFactory::get_float_format(sizein).op_trunc(in1, sizeout),
-        FloatCeil => FloatFormatFactory::get_float_format(sizein).op_ceil(in1),
-        FloatFloor => FloatFormatFactory::get_float_format(sizein).op_floor(in1),
-        FloatRound => FloatFormatFactory::get_float_format(sizein).op_round(in1),
+        FloatNan => OpBehaviorFloatNan::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatNeg => OpBehaviorFloatNeg::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatAbs => OpBehaviorFloatAbs::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatSqrt => OpBehaviorFloatSqrt::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatInt2Float => OpBehaviorFloatInt2Float::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatFloat2Float => OpBehaviorFloatFloat2Float::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatTrunc => OpBehaviorFloatTrunc::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatCeil => OpBehaviorFloatCeil::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatFloor => OpBehaviorFloatFloor::new().evaluate_unary_i64(sizeout, sizein, in1),
+        FloatRound => OpBehaviorFloatRound::new().evaluate_unary_i64(sizeout, sizein, in1),
         other => panic!("{} is not a unary p-code op (OpBehaviorFactory has no UnaryOpBehavior for it)", other.mnemonic()),
     }
 }
@@ -137,22 +131,16 @@ fn evaluate_unary_big(opcode: OpCode, sizeout: i32, sizein: i32, in1: i128) -> i
         BoolNegate => OpBehaviorBoolNegate::new().evaluate_unary_i128(sizeout, sizein, in1),
         Popcount => OpBehaviorPopcount::new().evaluate_unary_i128(sizeout, sizein, in1),
         Lzcount => OpBehaviorLzcount::new().evaluate_unary_i128(sizeout, sizein, in1),
-        FloatNan => FloatFormatFactory::get_float_format(sizein).op_nan_big(in1),
-        FloatNeg => FloatFormatFactory::get_float_format(sizein).op_neg_big(in1),
-        FloatAbs => FloatFormatFactory::get_float_format(sizein).op_abs_big(in1),
-        FloatSqrt => FloatFormatFactory::get_float_format(sizein).op_sqrt_big(in1),
-        FloatInt2Float => {
-            FloatFormatFactory::get_float_format(sizeout).op_int2float_big(in1, sizein, true)
-        }
-        FloatFloat2Float => {
-            let formatout = FloatFormatFactory::get_float_format(sizeout);
-            let formatin = FloatFormatFactory::get_float_format(sizein);
-            formatin.op_float2float_big(in1, &*formatout)
-        }
-        FloatTrunc => FloatFormatFactory::get_float_format(sizein).op_trunc_big(in1, sizeout),
-        FloatCeil => FloatFormatFactory::get_float_format(sizein).op_ceil_big(in1),
-        FloatFloor => FloatFormatFactory::get_float_format(sizein).op_floor_big(in1),
-        FloatRound => FloatFormatFactory::get_float_format(sizein).op_round_big(in1),
+        FloatNan => OpBehaviorFloatNan::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatNeg => OpBehaviorFloatNeg::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatAbs => OpBehaviorFloatAbs::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatSqrt => OpBehaviorFloatSqrt::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatInt2Float => OpBehaviorFloatInt2Float::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatFloat2Float => OpBehaviorFloatFloat2Float::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatTrunc => OpBehaviorFloatTrunc::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatCeil => OpBehaviorFloatCeil::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatFloor => OpBehaviorFloatFloor::new().evaluate_unary_i128(sizeout, sizein, in1),
+        FloatRound => OpBehaviorFloatRound::new().evaluate_unary_i128(sizeout, sizein, in1),
         other => panic!("{} is not a unary p-code op (OpBehaviorFactory has no UnaryOpBehavior for it)", other.mnemonic()),
     }
 }
@@ -189,15 +177,14 @@ fn evaluate_binary_long(opcode: OpCode, sizeout: i32, sizein: i32, in1: i64, in2
         BoolXor => OpBehaviorBoolXor::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
         BoolAnd => OpBehaviorBoolAnd::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
         BoolOr => OpBehaviorBoolOr::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
-        // OpBehaviorFloat*: see the module docs.
-        FloatEqual => FloatFormatFactory::get_float_format(sizein).op_equal(in1, in2),
-        FloatNotEqual => FloatFormatFactory::get_float_format(sizein).op_not_equal(in1, in2),
-        FloatLess => FloatFormatFactory::get_float_format(sizein).op_less(in1, in2),
-        FloatLessEqual => FloatFormatFactory::get_float_format(sizein).op_less_equal(in1, in2),
-        FloatAdd => FloatFormatFactory::get_float_format(sizein).op_add(in1, in2),
-        FloatDiv => FloatFormatFactory::get_float_format(sizein).op_div(in1, in2),
-        FloatMult => FloatFormatFactory::get_float_format(sizein).op_mult(in1, in2),
-        FloatSub => FloatFormatFactory::get_float_format(sizein).op_sub(in1, in2),
+        FloatEqual => OpBehaviorFloatEqual::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
+        FloatNotEqual => OpBehaviorFloatNotEqual::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
+        FloatLess => OpBehaviorFloatLess::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
+        FloatLessEqual => OpBehaviorFloatLessEqual::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
+        FloatAdd => OpBehaviorFloatAdd::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
+        FloatDiv => OpBehaviorFloatDiv::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
+        FloatMult => OpBehaviorFloatMult::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
+        FloatSub => OpBehaviorFloatSub::new().evaluate_binary_i64(sizeout, sizein, in1, in2),
         other => panic!("{} is not a binary p-code op (OpBehaviorFactory has no BinaryOpBehavior for it)", other.mnemonic()),
     }
 }
@@ -233,14 +220,14 @@ fn evaluate_binary_big(opcode: OpCode, sizeout: i32, sizein: i32, in1: i128, in2
         BoolXor => OpBehaviorBoolXor::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
         BoolAnd => OpBehaviorBoolAnd::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
         BoolOr => OpBehaviorBoolOr::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
-        FloatEqual => FloatFormatFactory::get_float_format(sizein).op_equal_big(in1, in2),
-        FloatNotEqual => FloatFormatFactory::get_float_format(sizein).op_not_equal_big(in1, in2),
-        FloatLess => FloatFormatFactory::get_float_format(sizein).op_less_big(in1, in2),
-        FloatLessEqual => FloatFormatFactory::get_float_format(sizein).op_less_equal_big(in1, in2),
-        FloatAdd => FloatFormatFactory::get_float_format(sizein).op_add_big(in1, in2),
-        FloatDiv => FloatFormatFactory::get_float_format(sizein).op_div_big(in1, in2),
-        FloatMult => FloatFormatFactory::get_float_format(sizein).op_mult_big(in1, in2),
-        FloatSub => FloatFormatFactory::get_float_format(sizein).op_sub_big(in1, in2),
+        FloatEqual => OpBehaviorFloatEqual::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
+        FloatNotEqual => OpBehaviorFloatNotEqual::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
+        FloatLess => OpBehaviorFloatLess::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
+        FloatLessEqual => OpBehaviorFloatLessEqual::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
+        FloatAdd => OpBehaviorFloatAdd::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
+        FloatDiv => OpBehaviorFloatDiv::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
+        FloatMult => OpBehaviorFloatMult::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
+        FloatSub => OpBehaviorFloatSub::new().evaluate_binary_i128(sizeout, sizein, in1, in2),
         other => panic!("{} is not a binary p-code op (OpBehaviorFactory has no BinaryOpBehavior for it)", other.mnemonic()),
     }
 }
@@ -423,6 +410,100 @@ mod tests {
         assert_eq!(BE.from_const_u64(0x1234, 2), vec![0x12, 0x34]);
         assert_eq!(LE.from_const_u64(0x1234, 2), vec![0x34, 0x12]);
         assert_eq!(LE.to_long(&vec![0x34, 0x12], Purpose::Inspect).unwrap(), 0x1234);
+    }
+
+    fn f32_be(v: f32) -> Vec<u8> {
+        v.to_bits().to_be_bytes().to_vec()
+    }
+
+    fn f64_le(v: f64) -> Vec<u8> {
+        v.to_bits().to_le_bytes().to_vec()
+    }
+
+    /// x87 80-bit extended value, big-endian: `sign_exp` (16 bits) then the 64-bit significand.
+    fn x87_be(sign_exp: u16, significand: u64) -> Vec<u8> {
+        let mut v = sign_exp.to_be_bytes().to_vec();
+        v.extend_from_slice(&significand.to_be_bytes());
+        v
+    }
+
+    #[test]
+    fn float_binary_ops_single_precision() {
+        let bin = |op, a: f32, b: f32| BE.binary_op(op, 4, 4, &f32_be(a), 4, &f32_be(b));
+        assert_eq!(bin(OpCode::FloatAdd, 1.5, 2.25), f32_be(3.75));
+        assert_eq!(bin(OpCode::FloatSub, 1.5, 2.25), f32_be(-0.75));
+        assert_eq!(bin(OpCode::FloatMult, 1.5, -2.0), f32_be(-3.0));
+        assert_eq!(bin(OpCode::FloatDiv, 1.0, 3.0), vec![0x3e, 0xaa, 0xaa, 0xab]);
+        assert_eq!(bin(OpCode::FloatDiv, 1.0, 0.0), f32_be(f32::INFINITY));
+        // inf - inf is the quiet NaN (the sign of a host-generated NaN is host-dependent; x86
+        // produces the negative "real indefinite", as the JVM does on the same hardware)
+        let nan = bin(OpCode::FloatSub, f32::INFINITY, f32::INFINITY);
+        assert_eq!((nan[0] & 0x7f, nan[1], nan[2], nan[3]), (0x7f, 0xc0, 0, 0));
+        // 1.0f + 2^-24 is a tie: round half to even keeps 1.0f
+        assert_eq!(bin(OpCode::FloatAdd, 1.0, 2f32.powi(-24)), f32_be(1.0));
+
+        // comparisons produce one-byte booleans
+        let cmp = |op, a: f32, b: f32| BE.binary_op(op, 1, 4, &f32_be(a), 4, &f32_be(b));
+        assert_eq!(cmp(OpCode::FloatEqual, 2.0, 2.0), vec![1]);
+        assert_eq!(cmp(OpCode::FloatEqual, 0.0, -0.0), vec![1]);
+        assert_eq!(cmp(OpCode::FloatEqual, f32::NAN, f32::NAN), vec![0]);
+        assert_eq!(cmp(OpCode::FloatNotEqual, 2.0, 3.0), vec![1]);
+        assert_eq!(cmp(OpCode::FloatLess, -1.0, 1.0), vec![1]);
+        assert_eq!(cmp(OpCode::FloatLess, 1.0, 1.0), vec![0]);
+        assert_eq!(cmp(OpCode::FloatLess, 1.0, f32::NAN), vec![0]);
+        assert_eq!(cmp(OpCode::FloatLessEqual, 1.0, 1.0), vec![1]);
+    }
+
+    #[test]
+    fn float_unary_ops_double_precision_little_endian() {
+        let un = |op, v: f64| LE.unary_op(op, 8, 8, &f64_le(v));
+        assert_eq!(un(OpCode::FloatNeg, 2.5), f64_le(-2.5));
+        assert_eq!(un(OpCode::FloatAbs, -2.5), f64_le(2.5));
+        assert_eq!(un(OpCode::FloatSqrt, 2.0), f64_le(2f64.sqrt()));
+        assert_eq!(un(OpCode::FloatCeil, -2.5), f64_le(-2.0));
+        assert_eq!(un(OpCode::FloatFloor, -2.5), f64_le(-3.0));
+        assert_eq!(un(OpCode::FloatRound, 2.5), f64_le(3.0));
+        assert_eq!(un(OpCode::FloatRound, -2.5), f64_le(-2.0));
+        assert_eq!(LE.unary_op(OpCode::FloatNan, 1, 8, &f64_le(f64::NAN)), vec![1]);
+        assert_eq!(LE.unary_op(OpCode::FloatNan, 1, 8, &f64_le(f64::INFINITY)), vec![0]);
+        // FLOAT_TRUNC to a 4-byte integer: -2.9 -> -2 (0xfffffffe, little-endian)
+        assert_eq!(LE.unary_op(OpCode::FloatTrunc, 4, 8, &f64_le(-2.9)), vec![0xfe, 0xff, 0xff, 0xff]);
+        // FLOAT_INT2FLOAT from a signed 2-byte integer: 0xff9c is -100
+        assert_eq!(LE.unary_op(OpCode::FloatInt2Float, 8, 2, &vec![0x9c, 0xff]), f64_le(-100.0));
+        // FLOAT_FLOAT2FLOAT double -> float: 0.1 rounds to 0x3dcccccd
+        assert_eq!(LE.unary_op(OpCode::FloatFloat2Float, 4, 8, &f64_le(0.1)), vec![0xcd, 0xcc, 0xcc, 0x3d]);
+        // ... and float -> double is exact
+        assert_eq!(
+            LE.unary_op(OpCode::FloatFloat2Float, 8, 4, &vec![0xcd, 0xcc, 0xcc, 0x3d]),
+            f64_le(0.1f32 as f64)
+        );
+    }
+
+    #[test]
+    fn float_ops_on_x87_extended_take_the_big_path() {
+        let one = x87_be(0x3fff, 0x8000000000000000);
+        let two = x87_be(0x4000, 0x8000000000000000);
+        let three = x87_be(0x4000, 0xc000000000000000);
+        assert_eq!(BE.binary_op(OpCode::FloatAdd, 10, 10, &one, 10, &two), three);
+        assert_eq!(BE.binary_op(OpCode::FloatSub, 10, 10, &one, 10, &two), x87_be(0xbfff, 0x8000000000000000));
+        assert_eq!(BE.binary_op(OpCode::FloatMult, 10, 10, &two, 10, &three), x87_be(0x4001, 0xc000000000000000));
+        // 1/3 with a 64-bit significand, rounded to nearest
+        assert_eq!(BE.binary_op(OpCode::FloatDiv, 10, 10, &one, 10, &three), x87_be(0x3ffd, 0xaaaaaaaaaaaaaaab));
+        assert_eq!(BE.unary_op(OpCode::FloatSqrt, 10, 10, &two), x87_be(0x3fff, 0xb504f333f9de6484));
+        assert_eq!(BE.unary_op(OpCode::FloatNeg, 10, 10, &one), x87_be(0xbfff, 0x8000000000000000));
+        assert_eq!(BE.binary_op(OpCode::FloatLess, 1, 10, &one, 10, &two), vec![1]);
+        assert_eq!(BE.binary_op(OpCode::FloatEqual, 1, 10, &three, 10, &three), vec![1]);
+        // widen a double to extended and back
+        let d = 1.5f64.to_bits().to_be_bytes().to_vec();
+        let ext = BE.unary_op(OpCode::FloatFloat2Float, 10, 8, &d);
+        assert_eq!(ext, x87_be(0x3fff, 0xc000000000000000));
+        assert_eq!(BE.unary_op(OpCode::FloatFloat2Float, 8, 10, &ext), d);
+        // FLOAT_TRUNC of -3.0 extended to an 8-byte integer
+        let neg3 = x87_be(0xc000, 0xc000000000000000);
+        assert_eq!(BE.unary_op(OpCode::FloatTrunc, 8, 10, &neg3), (-3i64).to_be_bytes().to_vec());
+        // FLOAT_INT2FLOAT of an 8-byte i64::MIN into extended precision: exactly -2^63
+        let min = i64::MIN.to_be_bytes().to_vec();
+        assert_eq!(BE.unary_op(OpCode::FloatInt2Float, 10, 8, &min), x87_be(0xc03e, 0x8000000000000000));
     }
 
     #[test]

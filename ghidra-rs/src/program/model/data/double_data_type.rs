@@ -45,49 +45,7 @@ mod tests {
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::data_organization::DataOrganization;
     use crate::program::model::data::data_type::DataType;
-    use crate::program::seam_stubs::FloatFormat;
-
-    struct MockFloatFormat;
-    impl FloatFormat for MockFloatFormat {
-        fn decode_big_float(
-            &self,
-            value: i64,
-        ) -> Result<
-            Box<dyn crate::pcode::floatformat::big_float::BigFloat>,
-            crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException,
-        > {
-            let _ = value;
-            unimplemented!("not exercised by these tests")
-        }
-        fn decode_big_float_from_big_integer(
-            &self,
-            value: i128,
-        ) -> Result<
-            Box<dyn crate::pcode::floatformat::big_float::BigFloat>,
-            crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException,
-        > {
-            let _ = value;
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_encoding(&self, value: f64) -> i64 {
-            value as i64
-        }
-        fn get_encoding_big_float(&self, value: &dyn crate::pcode::floatformat::big_float::BigFloat) -> i128 {
-            let _ = value;
-            0
-        }
-        fn get_big_float(&self, repr: &str) -> Box<dyn crate::pcode::floatformat::big_float::BigFloat> {
-            let _ = repr;
-            unimplemented!("not exercised by these tests")
-        }
-        fn round(&self, value: &mut dyn crate::pcode::floatformat::big_float::BigFloat) {
-            let _ = value;
-        }
-        fn to_decimal_string(&self, value: &dyn crate::pcode::floatformat::big_float::BigFloat, use_english: bool) -> String {
-            let _ = (value, use_english);
-            String::new()
-        }
-    }
+    use crate::pcode::floatformat::{get_float_format, FloatFormat};
 
     struct MockDoubleDataType {
         length: i32,
@@ -120,8 +78,8 @@ mod tests {
         fn encoded_length(&self) -> i32 {
             self.length
         }
-        fn float_format(&self) -> Option<&dyn FloatFormat> {
-            Some(&MockFloatFormat)
+        fn float_format(&self) -> Option<&FloatFormat> {
+            get_float_format(self.encoded_length()).ok()
         }
         fn build_description(&self) -> String {
             self.double_data_type_description()

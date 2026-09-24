@@ -34,33 +34,23 @@
 //! ported and are unrelated to breaking this cycle, so no placeholder is created for them; port
 //! them alongside those concrete types instead.
 //!
-//! The Java `FloatFormat` (`ghidra.pcode.floatformat.FloatFormat`) is referenced here with a
-//! larger surface (`decodeBigFloat`, `getEncoding`, `getBigFloat(String)`, `round`,
-//! `toDecimalString`) than the minimal placeholder already defined at
-//! [`crate::pcode::seam_stubs::FloatFormat`] for `BigFloat`'s own needs, so a second,
-//! independently minimal placeholder for the same Java class is defined at
-//! [`crate::program::seam_stubs::FloatFormat`] instead of widening or duplicating the pcode one;
-//! see `STUBS.tsv`. `MemBuffer.getBytes(byte[], int)`/`isBigEndian()` were likewise missing from
-//! the existing [`crate::program::model::mem::MemBuffer`] placeholder and are added there.
+//! `FloatFormat`/`BigFloat` are the real [`crate::pcode::floatformat`] ports; implementors
+//! typically obtain their format from
+//! [`get_float_format`](crate::pcode::floatformat::get_float_format)`(encoded_length)`.
+//! Values wider than 8 bytes use arbitrary-precision [`num_bigint::BigInt`] encodings, so 16- and
+//! 32-byte floats are not truncated.
 
 use std::any::TypeId;
 
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
-use crate::pcode::floatformat::big_float::BigFloat;
+use crate::pcode::floatformat::{BigFloat, FloatFormat};
 use crate::pcode::utils::utils;
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
 use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_encode_exception::DataTypeEncodeException;
-use crate::program::seam_stubs::{FloatFormat};
 use crate::program::model::mem::MemBuffer;
-
-/// Marker type standing in for `BigFloat.class`, returned (wrapped in a `TypeId`) by
-/// [`AbstractFloatDataType::float_value_type_id`] since `BigFloat` is a trait -- not a concrete
-/// class -- in this port, and so has no single `TypeId` of its own.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct BigFloatValue;
 
 /// Value accepted by [`AbstractFloatDataType::encode_float_value`], standing in for the
 /// `Object value` parameter of `AbstractFloatDataType.encodeValue`, documented in the Java source
@@ -69,13 +59,13 @@ pub enum FloatEncodeValue {
     /// A plain numeric value, used for the standard 4- and 8-byte IEEE 754 encodings.
     Number(f64),
     /// An arbitrary-precision float value, required for non-standard lengths.
-    Big(Box<dyn BigFloat>),
+    Big(BigFloat),
 }
 
 fn describe_value(value: &FloatEncodeValue) -> String {
     match value {
         FloatEncodeValue::Number(v) => v.to_string(),
-        FloatEncodeValue::Big(v) => v.to_display_string(),
+        FloatEncodeValue::Big(v) => v.to_string(),
     }
 }
 
@@ -95,7 +85,7 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
     /// `UnsupportedFloatFormatException` and leaving `floatFormat` as `null`.
     ///
     /// Port of the private final `floatFormat` field.
-    fn float_format(&self) -> Option<&dyn FloatFormat>;
+    fn float_format(&self) -> Option<&FloatFormat>;
 
     /// Port of the protected final `AbstractFloatDataType.buildIEEE754StandardDescription()`.
     fn build_ieee754_standard_description(&self) -> String {
@@ -132,11 +122,11 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
 
     /// Port of `AbstractFloatDataType.getValueClass(Settings)`, exposed under a distinct name
     /// since [`DataType::get_value_class`] already provides a default. Always identifies
-    /// [`BigFloatValue`], standing in for `BigFloat.class`. A concrete `impl DataType for ...`
-    /// should delegate `get_value_class` to this.
+    /// [`BigFloat`] (Java `BigFloat.class`). A concrete `impl DataType for ...` should delegate
+    /// `get_value_class` to this.
     fn float_value_type_id(&self, settings: &dyn Settings) -> TypeId {
         let _ = settings;
-        TypeId::of::<BigFloatValue>()
+        TypeId::of::<BigFloat>()
     }
 
     /// Port of the final `AbstractFloatDataType.getValue(MemBuffer, Settings, int)`, exposed
@@ -149,7 +139,7 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
         buf: &dyn MemBuffer,
         _settings: &dyn Settings,
         _length: i32,
-    ) -> Option<Box<dyn BigFloat>> {
+    ) -> Option<BigFloat> {
         let len = self.encoded_length() as usize;
         let format = self.float_format()?;
         let mut bytes = vec![0u8; len];
@@ -158,10 +148,10 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
         }
         if len <= 8 {
             let value = utils::bytes_to_long(&bytes, len, buf.is_big_endian());
-            format.decode_big_float(value).ok()
+            Some(format.decode_big_float(value))
         } else {
-            let value = utils::bytes_to_big_integer(&bytes, len, buf.is_big_endian(), false);
-            format.decode_big_float_from_big_integer(value).ok()
+            let value = utils::bytes_to_big_int(&bytes, len, buf.is_big_endian(), false);
+            Some(format.decode_big_float_big(&value))
         }
     }
 
@@ -197,8 +187,8 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
                 Ok(utils::long_to_bytes(encoding, len, buf.is_big_endian()))
             }
             (_, FloatEncodeValue::Big(v)) => {
-                let encoding = format.get_encoding_big_float(v.as_ref());
-                Ok(utils::big_integer_to_bytes(encoding, len, buf.is_big_endian()))
+                let encoding = format.get_encoding_big(v);
+                Ok(utils::big_int_to_bytes(&encoding, len, buf.is_big_endian()))
             }
             (_, FloatEncodeValue::Number(_)) => Err(DataTypeEncodeException::new(
                 "non-standard float length requires BigFloat type",
@@ -215,8 +205,8 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
         match self.float_value(buf, settings, length) {
             None => "??".to_string(),
             Some(value) => match self.float_format() {
-                Some(format) => format.to_decimal_string(value.as_ref(), true),
-                None => value.to_display_string(),
+                Some(format) => format.to_decimal_string_compact(&value, true),
+                None => value.to_string(),
             },
         }
     }
@@ -246,8 +236,11 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
             })?;
             return self.encode_float_value(&FloatEncodeValue::Number(value), buf, settings, length);
         }
-        let mut bf = format.get_big_float(repr);
-        format.round(bf.as_mut());
+        let bf = format.get_big_float_str(repr).map_err(|e| {
+            DataTypeEncodeException::with_cause_only(repr, self.get_name(), Box::new(e))
+        })?;
+        // Java calls floatFormat.round(bf) here and discards the returned BigDecimal.
+        let _ = format.round(&bf);
         self.encode_float_value(&FloatEncodeValue::Big(bf), buf, settings, length)
     }
 
@@ -282,220 +275,53 @@ pub trait AbstractFloatDataType: DataType + BuiltInDataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::floatformat::float_kind::FloatKind;
+    use crate::pcode::floatformat::get_float_format;
     use crate::program::model::address::{Address, SpecialAddress};
 
-    #[derive(Debug, Clone, Copy)]
-    struct MockBigFloat {
-        value: f64,
-    }
-
-    impl BigFloat for MockBigFloat {
-        fn fracbits(&self) -> i32 {
-            52
-        }
-        fn expbits(&self) -> i32 {
-            11
-        }
-        fn kind(&self) -> FloatKind {
-            if self.value.is_nan() {
-                FloatKind::QuietNan
-            } else if self.value.is_infinite() {
-                FloatKind::Infinite
-            } else {
-                FloatKind::Finite
-            }
-        }
-        fn sign(&self) -> i32 {
-            if self.value.is_sign_negative() {
-                -1
-            } else {
-                1
-            }
-        }
-        fn scale(&self) -> i32 {
-            0
-        }
-        fn unscaled(&self) -> i128 {
-            self.value as i128
-        }
-        fn is_normal(&self) -> bool {
-            self.value.is_normal()
-        }
-        fn is_denormal(&self) -> bool {
-            false
-        }
-        fn is_nan(&self) -> bool {
-            self.value.is_nan()
-        }
-        fn is_infinite(&self) -> bool {
-            self.value.is_infinite()
-        }
-        fn is_zero(&self) -> bool {
-            self.value == 0.0
-        }
-        fn copy(&self) -> Box<dyn BigFloat> {
-            Box::new(*self)
-        }
-        fn add(&mut self, other: &dyn BigFloat) {
-            self.value += other.to_big_integer() as f64;
-        }
-        fn sub(&mut self, other: &dyn BigFloat) {
-            self.value -= other.to_big_integer() as f64;
-        }
-        fn mul(&mut self, other: &dyn BigFloat) {
-            self.value *= other.to_big_integer() as f64;
-        }
-        fn div(&mut self, other: &dyn BigFloat) {
-            self.value /= other.to_big_integer() as f64;
-        }
-        fn sqrt(&mut self) {
-            self.value = self.value.sqrt();
-        }
-        fn floor(&mut self) {
-            self.value = self.value.floor();
-        }
-        fn ceil(&mut self) {
-            self.value = self.value.ceil();
-        }
-        fn trunc(&mut self) {
-            self.value = self.value.trunc();
-        }
-        fn negate(&mut self) {
-            self.value = -self.value;
-        }
-        fn abs(&mut self) {
-            self.value = self.value.abs();
-        }
-        fn round(&mut self) {
-            self.value = self.value.round();
-        }
-        fn to_big_integer(&self) -> i128 {
-            self.value as i128
-        }
-        fn to_big_decimal(&self) -> Option<f64> {
-            if self.value.is_nan() {
-                None
-            } else {
-                Some(self.value)
-            }
-        }
-        fn to_binary_string(&self) -> String {
-            format!("{:b}", self.value.to_bits())
-        }
-        fn to_display_string(&self) -> String {
-            self.value.to_string()
-        }
-        fn to_display_string_with_context(
-            &self,
-            _context: crate::pcode::floatformat::big_float::MathContext,
-        ) -> String {
-            self.value.to_string()
-        }
-        fn to_display_string_with_format(
-            &self,
-            _format: &dyn crate::pcode::seam_stubs::FloatFormat,
-            _compact: bool,
-        ) -> String {
-            self.value.to_string()
-        }
-        fn zero(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits);
-            MockBigFloat {
-                value: 0.0 * sign as f64,
-            }
-        }
-        fn infinity(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits);
-            MockBigFloat {
-                value: sign as f64 * f64::INFINITY,
-            }
-        }
-        fn quiet_nan(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits, sign);
-            MockBigFloat { value: f64::NAN }
-        }
-    }
-
-    struct MockFloatFormat;
-
-    impl FloatFormat for MockFloatFormat {
-        fn decode_big_float(
-            &self,
-            value: i64,
-        ) -> Result<Box<dyn BigFloat>, crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException>
-        {
-            Ok(Box::new(MockBigFloat { value: value as f64 }))
-        }
-
-        fn decode_big_float_from_big_integer(
-            &self,
-            value: i128,
-        ) -> Result<Box<dyn BigFloat>, crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException>
-        {
-            Ok(Box::new(MockBigFloat { value: value as f64 }))
-        }
-
-        fn get_encoding(&self, value: f64) -> i64 {
-            value as i64
-        }
-
-        fn get_encoding_big_float(&self, value: &dyn BigFloat) -> i128 {
-            value.to_big_integer()
-        }
-
-        fn get_big_float(&self, repr: &str) -> Box<dyn BigFloat> {
-            Box::new(MockBigFloat {
-                value: repr.parse().unwrap_or(0.0),
-            })
-        }
-
-        fn round(&self, value: &mut dyn BigFloat) {
-            value.round();
-        }
-
-        fn to_decimal_string(&self, value: &dyn BigFloat, _use_english: bool) -> String {
-            value.to_display_string()
-        }
-    }
-
-    struct MockFloat {
+    struct TestFloat {
         length: i32,
-        format: Option<MockFloatFormat>,
+        format: Option<&'static FloatFormat>,
     }
 
-    impl DataType for MockFloat {
+    impl TestFloat {
+        /// Mirrors the Java constructor: the format for `length`, or none if unsupported.
+        fn new(length: i32) -> Self {
+            Self { length, format: get_float_format(length).ok() }
+        }
+    }
+
+    impl DataType for TestFloat {
         fn get_name(&self) -> String {
-            "float4".to_string()
+            format!("float{}", self.length)
         }
         fn get_length(&self) -> i32 {
             self.encoded_length()
         }
     }
 
-    impl BuiltInDataType for MockFloat {
+    impl BuiltInDataType for TestFloat {
         fn get_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>) -> Option<String> {
             self.float_c_type_declaration(data_organization)
         }
         fn set_default_settings(&mut self, _settings: &dyn Settings) {}
     }
 
-    impl AbstractFloatDataType for MockFloat {
+    impl AbstractFloatDataType for TestFloat {
         fn encoded_length(&self) -> i32 {
             self.length
         }
-        fn float_format(&self) -> Option<&dyn FloatFormat> {
-            self.format.as_ref().map(|f| f as &dyn FloatFormat)
+        fn float_format(&self) -> Option<&FloatFormat> {
+            self.format
         }
     }
 
-    struct MockSettings;
-    impl Settings for MockSettings {}
+    struct TestSettings;
+    impl Settings for TestSettings {}
 
-    struct FixedMemBuffer(Vec<u8>);
+    struct FixedMemBuffer(Vec<u8>, bool);
     impl MemBuffer for FixedMemBuffer {
-        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
-            unimplemented!("not exercised by these tests")
+        fn get_byte(&self, offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            Ok(self.0[offset as usize])
         }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
@@ -503,19 +329,20 @@ mod tests {
         fn get_bytes(&self, buffer: &mut [u8], _offset: i32) -> usize {
             let n = buffer.len().min(self.0.len());
             buffer[..n].copy_from_slice(&self.0[..n]);
-            n 
+            n
         }
         fn is_big_endian(&self) -> bool {
-            true
+            self.1
         }
+    }
+
+    fn be(bytes: Vec<u8>) -> FixedMemBuffer {
+        FixedMemBuffer(bytes, true)
     }
 
     #[test]
     fn usable_as_trait_object() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
+        let dt = TestFloat::new(4);
         let dyn_dt: &dyn AbstractFloatDataType = &dt;
         assert_eq!(dyn_dt.encoded_length(), 4);
         assert!(dyn_dt.build_ieee754_standard_description().contains("32-bit"));
@@ -527,190 +354,136 @@ mod tests {
 
     #[test]
     fn build_description_defaults_to_ieee754_standard_description() {
-        let dt = MockFloat {
-            length: 8,
-            format: Some(MockFloatFormat),
-        };
+        let dt = TestFloat::new(8);
         assert_eq!(dt.build_description(), dt.build_ieee754_standard_description());
         assert_eq!(dt.float_description(), dt.build_description());
     }
 
     #[test]
     fn float_mnemonic_and_value_type_id() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        assert_eq!(dt.float_mnemonic(&settings), "float4");
-        assert_eq!(dt.float_value_type_id(&settings), TypeId::of::<BigFloatValue>());
+        let dt = TestFloat::new(4);
+        assert_eq!(dt.float_mnemonic(&TestSettings), "float4");
+        assert_eq!(dt.float_value_type_id(&TestSettings), TypeId::of::<BigFloat>());
     }
 
     #[test]
     fn float_value_decodes_short_length_via_bytes_to_long() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(vec![0, 0, 0, 42]);
-        let value = dt.float_value(&buf, &settings, -1).expect("decodes");
-        assert_eq!(value.to_display_string(), "42");
+        let dt = TestFloat::new(4);
+        // 42.0f = 0x42280000
+        let value = dt.float_value(&be(vec![0x42, 0x28, 0, 0]), &TestSettings, -1).expect("decodes");
+        assert_eq!(value, get_float_format(4).unwrap().get_big_float_f32(42.0));
+        // little-endian buffer
+        let le = FixedMemBuffer(vec![0, 0, 0x28, 0x42], false);
+        assert_eq!(dt.float_value(&le, &TestSettings, -1), Some(value));
     }
 
     #[test]
-    fn float_value_decodes_long_length_via_bytes_to_big_integer() {
-        let dt = MockFloat {
-            length: 10,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let mut bytes = vec![0u8; 10];
-        bytes[9] = 7;
-        let buf = FixedMemBuffer(bytes);
-        let value = dt.float_value(&buf, &settings, -1).expect("decodes");
-        assert_eq!(value.to_display_string(), "7");
+    fn float_value_decodes_long_length_via_big_integer() {
+        let dt = TestFloat::new(10);
+        // x87 80-bit 7.0 = 0x4001 e000000000000000
+        let bytes = vec![0x40, 0x01, 0xe0, 0, 0, 0, 0, 0, 0, 0];
+        let value = dt.float_value(&be(bytes), &TestSettings, -1).expect("decodes");
+        assert_eq!(value, get_float_format(10).unwrap().get_big_float_f64(7.0));
     }
 
     #[test]
     fn float_value_and_is_encodable_are_none_false_without_format() {
-        let dt = MockFloat {
-            length: 4,
-            format: None,
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(vec![0, 0, 0, 1]);
-        assert!(dt.float_value(&buf, &settings, -1).is_none());
+        let dt = TestFloat::new(3);
+        assert!(dt.float_format().is_none());
+        assert!(dt.float_value(&be(vec![0, 0, 1]), &TestSettings, -1).is_none());
         assert!(!dt.is_float_encodable());
-    }
-
-    #[test]
-    fn is_float_encodable_true_when_format_present() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
-        assert!(dt.is_float_encodable());
+        assert!(TestFloat::new(4).is_float_encodable());
     }
 
     #[test]
     fn encode_float_value_number_path_for_standard_length() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(Vec::new());
+        let dt = TestFloat::new(4);
         let bytes = dt
-            .encode_float_value(&FloatEncodeValue::Number(3.0), &buf, &settings, 4)
+            .encode_float_value(&FloatEncodeValue::Number(3.0), &be(Vec::new()), &TestSettings, 4)
             .expect("encodes");
-        assert_eq!(bytes, utils::long_to_bytes(3, 4, true));
+        assert_eq!(bytes, vec![0x40, 0x40, 0, 0]);
+        let dt8 = TestFloat::new(8);
+        let bytes = dt8
+            .encode_float_value(&FloatEncodeValue::Number(-0.5), &FixedMemBuffer(Vec::new(), false), &TestSettings, 8)
+            .expect("encodes");
+        assert_eq!(bytes, (-0.5f64).to_bits().to_le_bytes().to_vec());
     }
 
     #[test]
     fn encode_float_value_big_path_for_nonstandard_length() {
-        let dt = MockFloat {
-            length: 10,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(Vec::new());
+        let dt = TestFloat::new(10);
+        let five = get_float_format(10).unwrap().get_big_float_f64(5.0);
         let bytes = dt
-            .encode_float_value(
-                &FloatEncodeValue::Big(Box::new(MockBigFloat { value: 5.0 })),
-                &buf,
-                &settings,
-                10,
-            )
+            .encode_float_value(&FloatEncodeValue::Big(five), &be(Vec::new()), &TestSettings, 10)
             .expect("encodes");
-        assert_eq!(bytes.len(), 10);
-        assert_eq!(
-            utils::bytes_to_big_integer(&bytes, 10, true, false),
-            5
-        );
+        // 5.0 = 0x4001 a000000000000000
+        assert_eq!(bytes, vec![0x40, 0x01, 0xa0, 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn encode_float_value_big_path_for_32_byte_float() {
+        let dt = TestFloat::new(32);
+        let ff = get_float_format(32).unwrap();
+        let neg_one = ff.get_big_float_f64(-1.0);
+        let bytes = dt
+            .encode_float_value(&FloatEncodeValue::Big(neg_one.clone()), &be(Vec::new()), &TestSettings, 32)
+            .expect("encodes");
+        assert_eq!(bytes.len(), 32);
+        // sign bit + exponent 262143 (0x3ffff) in the top 20 bits
+        assert_eq!(&bytes[..3], &[0xbf, 0xff, 0xf0]);
+        assert!(bytes[3..].iter().all(|&b| b == 0));
+        assert_eq!(dt.float_value(&be(bytes), &TestSettings, -1), Some(neg_one));
     }
 
     #[test]
     fn encode_float_value_rejects_number_for_nonstandard_length() {
-        let dt = MockFloat {
-            length: 10,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(Vec::new());
+        let dt = TestFloat::new(10);
         let err = dt
-            .encode_float_value(&FloatEncodeValue::Number(1.0), &buf, &settings, 10)
+            .encode_float_value(&FloatEncodeValue::Number(1.0), &be(Vec::new()), &TestSettings, 10)
             .unwrap_err();
         assert!(err.message().contains("non-standard float length"));
     }
 
     #[test]
     fn encode_float_value_errors_when_format_unsupported() {
-        let dt = MockFloat {
-            length: 4,
-            format: None,
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(Vec::new());
+        let dt = TestFloat::new(3);
         let err = dt
-            .encode_float_value(&FloatEncodeValue::Number(1.0), &buf, &settings, 4)
+            .encode_float_value(&FloatEncodeValue::Number(1.0), &be(Vec::new()), &TestSettings, 3)
             .unwrap_err();
         assert!(err.message().contains("Unsupported float format"));
     }
 
     #[test]
     fn float_representation_renders_decoded_value_or_placeholder() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let ok_buf = FixedMemBuffer(vec![0, 0, 0, 9]);
-        assert_eq!(dt.float_representation(&ok_buf, &settings, -1), "9");
-
-        let short_buf = FixedMemBuffer(vec![0, 0]);
-        assert_eq!(dt.float_representation(&short_buf, &settings, -1), "??");
+        let dt = TestFloat::new(4);
+        assert_eq!(dt.float_representation(&be(vec![0x41, 0x10, 0, 0]), &TestSettings, -1), "9.0");
+        // 0.1f is shown compactly
+        assert_eq!(dt.float_representation(&be(vec![0x3d, 0xcc, 0xcc, 0xcd]), &TestSettings, -1), "0.1");
+        assert_eq!(dt.float_representation(&be(vec![0x7f, 0x80, 0, 0]), &TestSettings, -1), "+Infinity");
+        assert_eq!(dt.float_representation(&be(vec![0, 0]), &TestSettings, -1), "??");
     }
 
     #[test]
     fn encode_float_representation_parses_decimal_for_standard_length() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(Vec::new());
-        let bytes = dt
-            .encode_float_representation("3", &buf, &settings, 4)
-            .expect("encodes");
-        assert_eq!(bytes, utils::long_to_bytes(3, 4, true));
+        let dt = TestFloat::new(4);
+        let bytes = dt.encode_float_representation("3", &be(Vec::new()), &TestSettings, 4).expect("encodes");
+        assert_eq!(bytes, vec![0x40, 0x40, 0, 0]);
     }
 
     #[test]
     fn encode_float_representation_uses_big_float_for_nonstandard_length() {
-        let dt = MockFloat {
-            length: 10,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(Vec::new());
-        let bytes = dt
-            .encode_float_representation("7", &buf, &settings, 10)
-            .expect("encodes");
-        assert_eq!(bytes.len(), 10);
-        assert_eq!(utils::bytes_to_big_integer(&bytes, 10, true, false), 7);
+        let dt = TestFloat::new(10);
+        let bytes = dt.encode_float_representation("7", &be(Vec::new()), &TestSettings, 10).expect("encodes");
+        assert_eq!(bytes, vec![0x40, 0x01, 0xe0, 0, 0, 0, 0, 0, 0, 0]);
+        let bytes = dt.encode_float_representation("-Infinity", &be(Vec::new()), &TestSettings, 10).expect("encodes");
+        assert_eq!(bytes, vec![0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0]);
     }
 
     #[test]
     fn encode_float_representation_rejects_invalid_decimal() {
-        let dt = MockFloat {
-            length: 4,
-            format: Some(MockFloatFormat),
-        };
-        let settings = MockSettings;
-        let buf = FixedMemBuffer(Vec::new());
-        assert!(dt
-            .encode_float_representation("not-a-number", &buf, &settings, 4)
-            .is_err());
+        let dt = TestFloat::new(4);
+        assert!(dt.encode_float_representation("not-a-number", &be(Vec::new()), &TestSettings, 4).is_err());
+        let dt10 = TestFloat::new(10);
+        assert!(dt10.encode_float_representation("1.2.3", &be(Vec::new()), &TestSettings, 10).is_err());
     }
 }

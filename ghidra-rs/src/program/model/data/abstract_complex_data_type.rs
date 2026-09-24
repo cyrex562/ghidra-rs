@@ -39,9 +39,9 @@
 //! real Java `toDouble` would fall through every `instanceof` check and throw
 //! `IllegalArgumentException` -- or, if `getValue` returned `null` (unsupported float format),
 //! `NullPointerException` from the `obj.getClass()` call inside the exception message. In this
-//! port [`AbstractFloatDataType::float_value`] returns `Option<Box<dyn BigFloat>>`, so
+//! port [`AbstractFloatDataType::float_value`] returns `Option<BigFloat>`, so
 //! `big_float_to_double` instead converts the `BigFloat` directly via
-//! [`BigFloat::to_big_decimal`], and [`AbstractComplexDataType::complex_value`] returns `None`
+//! [`BigFloat::to_big_decimal`] (then `BigDecimal.doubleValue()`), and [`AbstractComplexDataType::complex_value`] returns `None`
 //! (rendered as `"??"` by [`complex_representation`](AbstractComplexDataType::complex_representation),
 //! matching `getRepresentation`'s existing null-check) when either component is unavailable,
 //! rather than reproducing either Java failure mode.
@@ -57,7 +57,7 @@
 
 use crate::docking::settings::settings::Settings;
 use crate::generic::complex::Complex;
-use crate::pcode::floatformat::big_float::BigFloat;
+use crate::pcode::floatformat::BigFloat;
 use crate::program::model::address::Address;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
@@ -72,8 +72,8 @@ use crate::program::model::mem::MemBuffer;
 /// [`BigFloat::to_big_decimal`]'s own `None`-for-NaN convention by mapping that case to
 /// [`f64::NAN`] instead of `None`, since every other component of a decoded value (finite or
 /// infinite) is representable as an `f64`.
-fn big_float_to_double(value: &dyn BigFloat) -> f64 {
-    value.to_big_decimal().unwrap_or(f64::NAN)
+fn big_float_to_double(value: &BigFloat) -> f64 {
+    value.to_big_decimal().map(|bd| bd.double_value()).unwrap_or(f64::NAN)
 }
 
 /// Adapter standing in for `new WrappedMemBuffer(buf, offset)` for this module's narrow need:
@@ -151,7 +151,7 @@ pub trait AbstractComplexDataType: DataType + BuiltInDataType {
         let a = self.float_type().float_value(buf, settings, half)?;
         let wrapped = OffsetMemBuffer { inner: buf, offset: half };
         let b = self.float_type().float_value(&wrapped, settings, half)?;
-        Some(Complex::new(big_float_to_double(a.as_ref()), big_float_to_double(b.as_ref())))
+        Some(Complex::new(big_float_to_double(&a), big_float_to_double(&b)))
     }
 
     /// Port of `AbstractComplexDataType.getRepresentation(MemBuffer, Settings, int)`, exposed
@@ -168,177 +168,8 @@ pub trait AbstractComplexDataType: DataType + BuiltInDataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::floatformat::float_kind::FloatKind;
+    use crate::pcode::floatformat::{get_float_format, FloatFormat};
     use crate::program::model::address::SpecialAddress;
-    use crate::program::seam_stubs::FloatFormat;
-
-    #[derive(Debug, Clone, Copy)]
-    struct MockBigFloat {
-        value: f64,
-    }
-
-    impl BigFloat for MockBigFloat {
-        fn fracbits(&self) -> i32 {
-            52
-        }
-        fn expbits(&self) -> i32 {
-            11
-        }
-        fn kind(&self) -> FloatKind {
-            if self.value.is_nan() {
-                FloatKind::QuietNan
-            } else if self.value.is_infinite() {
-                FloatKind::Infinite
-            } else {
-                FloatKind::Finite
-            }
-        }
-        fn sign(&self) -> i32 {
-            if self.value.is_sign_negative() {
-                -1
-            } else {
-                1
-            }
-        }
-        fn scale(&self) -> i32 {
-            0
-        }
-        fn unscaled(&self) -> i128 {
-            self.value as i128
-        }
-        fn is_normal(&self) -> bool {
-            self.value.is_normal()
-        }
-        fn is_denormal(&self) -> bool {
-            false
-        }
-        fn is_nan(&self) -> bool {
-            self.value.is_nan()
-        }
-        fn is_infinite(&self) -> bool {
-            self.value.is_infinite()
-        }
-        fn is_zero(&self) -> bool {
-            self.value == 0.0
-        }
-        fn copy(&self) -> Box<dyn BigFloat> {
-            Box::new(*self)
-        }
-        fn add(&mut self, other: &dyn BigFloat) {
-            self.value += other.to_big_integer() as f64;
-        }
-        fn sub(&mut self, other: &dyn BigFloat) {
-            self.value -= other.to_big_integer() as f64;
-        }
-        fn mul(&mut self, other: &dyn BigFloat) {
-            self.value *= other.to_big_integer() as f64;
-        }
-        fn div(&mut self, other: &dyn BigFloat) {
-            self.value /= other.to_big_integer() as f64;
-        }
-        fn sqrt(&mut self) {
-            self.value = self.value.sqrt();
-        }
-        fn floor(&mut self) {
-            self.value = self.value.floor();
-        }
-        fn ceil(&mut self) {
-            self.value = self.value.ceil();
-        }
-        fn trunc(&mut self) {
-            self.value = self.value.trunc();
-        }
-        fn negate(&mut self) {
-            self.value = -self.value;
-        }
-        fn abs(&mut self) {
-            self.value = self.value.abs();
-        }
-        fn round(&mut self) {
-            self.value = self.value.round();
-        }
-        fn to_big_integer(&self) -> i128 {
-            self.value as i128
-        }
-        fn to_big_decimal(&self) -> Option<f64> {
-            if self.value.is_nan() {
-                None
-            } else {
-                Some(self.value)
-            }
-        }
-        fn to_binary_string(&self) -> String {
-            format!("{:b}", self.value.to_bits())
-        }
-        fn to_display_string(&self) -> String {
-            self.value.to_string()
-        }
-        fn to_display_string_with_context(
-            &self,
-            _context: crate::pcode::floatformat::big_float::MathContext,
-        ) -> String {
-            self.value.to_string()
-        }
-        fn to_display_string_with_format(
-            &self,
-            _format: &dyn crate::pcode::seam_stubs::FloatFormat,
-            _compact: bool,
-        ) -> String {
-            self.value.to_string()
-        }
-        fn zero(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits);
-            MockBigFloat { value: 0.0 * sign as f64 }
-        }
-        fn infinity(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits);
-            MockBigFloat { value: sign as f64 * f64::INFINITY }
-        }
-        fn quiet_nan(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits, sign);
-            MockBigFloat { value: f64::NAN }
-        }
-    }
-
-    struct MockFloatFormat;
-
-    impl FloatFormat for MockFloatFormat {
-        fn decode_big_float(
-            &self,
-            value: i64,
-        ) -> Result<Box<dyn BigFloat>, crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException>
-        {
-            Ok(Box::new(MockBigFloat { value: value as f64 }))
-        }
-
-        fn decode_big_float_from_big_integer(
-            &self,
-            value: i128,
-        ) -> Result<Box<dyn BigFloat>, crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException>
-        {
-            Ok(Box::new(MockBigFloat { value: value as f64 }))
-        }
-
-        fn get_encoding(&self, value: f64) -> i64 {
-            value as i64
-        }
-
-        fn get_encoding_big_float(&self, value: &dyn BigFloat) -> i128 {
-            value.to_big_integer()
-        }
-
-        fn get_big_float(&self, repr: &str) -> Box<dyn BigFloat> {
-            Box::new(MockBigFloat { value: repr.parse().unwrap_or(0.0) })
-        }
-
-        fn round(&self, value: &mut dyn BigFloat) {
-            value.round();
-        }
-
-        fn to_decimal_string(&self, value: &dyn BigFloat, _use_english: bool) -> String {
-            value.to_display_string()
-        }
-    }
 
     struct MockFloat {
         length: i32,
@@ -367,8 +198,8 @@ mod tests {
         fn encoded_length(&self) -> i32 {
             self.length
         }
-        fn float_format(&self) -> Option<&dyn FloatFormat> {
-            Some(&MockFloatFormat)
+        fn float_format(&self) -> Option<&FloatFormat> {
+            get_float_format(self.length).ok()
         }
     }
 
@@ -453,8 +284,8 @@ mod tests {
     fn complex_value_decodes_real_and_imaginary_from_adjacent_halves() {
         let dt = complex4();
         let settings = MockSettings;
-        // 8 bytes: first 4 decode (big-endian) to 3, next 4 decode to 7.
-        let buf = FixedMemBuffer(vec![0, 0, 0, 3, 0, 0, 0, 7]);
+        // 8 bytes: 3.0f (0x40400000) then 7.0f (0x40e00000), big-endian.
+        let buf = FixedMemBuffer(vec![0x40, 0x40, 0, 0, 0x40, 0xe0, 0, 0]);
         let value = dt.complex_value(&buf, &settings, 8).expect("decodes");
         assert_eq!(value.get_real(), 3.0);
         assert_eq!(value.get_imaginary(), 7.0);
@@ -472,7 +303,8 @@ mod tests {
     fn complex_representation_renders_decoded_value_or_placeholder() {
         let dt = complex4();
         let settings = MockSettings;
-        let ok_buf = FixedMemBuffer(vec![0, 0, 0, 1, 0, 0, 0, 2]);
+        // 1.0f (0x3f800000), 2.0f (0x40000000)
+        let ok_buf = FixedMemBuffer(vec![0x3f, 0x80, 0, 0, 0x40, 0, 0, 0]);
         assert_eq!(dt.complex_representation(&ok_buf, &settings, 8), "1 + 2i");
 
         let short_buf = FixedMemBuffer(vec![0, 0]);
@@ -481,9 +313,10 @@ mod tests {
 
     #[test]
     fn big_float_to_double_maps_nan_to_nan() {
-        let nan = MockBigFloat { value: f64::NAN };
-        assert!(big_float_to_double(&nan).is_nan());
-        let finite = MockBigFloat { value: 42.5 };
-        assert_eq!(big_float_to_double(&finite), 42.5);
+        let ff = get_float_format(8).unwrap();
+        assert!(big_float_to_double(&ff.get_big_nan(false)).is_nan());
+        assert_eq!(big_float_to_double(&ff.get_big_float_f64(42.5)), 42.5);
+        assert_eq!(big_float_to_double(&ff.get_big_infinity(true)), f64::NEG_INFINITY);
+        assert_eq!(big_float_to_double(&ff.get_big_float_f64(0.1)), 0.1);
     }
 }

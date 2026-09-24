@@ -6,6 +6,24 @@ pub mod op_behavior_bool_or;
 pub mod op_behavior_bool_xor;
 pub mod op_behavior_copy;
 pub mod op_behavior_equal;
+pub mod op_behavior_float_abs;
+pub mod op_behavior_float_add;
+pub mod op_behavior_float_ceil;
+pub mod op_behavior_float_div;
+pub mod op_behavior_float_equal;
+pub mod op_behavior_float_float2_float;
+pub mod op_behavior_float_floor;
+pub mod op_behavior_float_int2_float;
+pub mod op_behavior_float_less;
+pub mod op_behavior_float_less_equal;
+pub mod op_behavior_float_mult;
+pub mod op_behavior_float_nan;
+pub mod op_behavior_float_neg;
+pub mod op_behavior_float_not_equal;
+pub mod op_behavior_float_round;
+pub mod op_behavior_float_sqrt;
+pub mod op_behavior_float_sub;
+pub mod op_behavior_float_trunc;
 pub mod op_behavior_int2_comp;
 pub mod op_behavior_int_add;
 pub mod op_behavior_int_and;
@@ -47,6 +65,24 @@ pub use op_behavior_bool_or::OpBehaviorBoolOr;
 pub use op_behavior_bool_xor::OpBehaviorBoolXor;
 pub use op_behavior_copy::OpBehaviorCopy;
 pub use op_behavior_equal::OpBehaviorEqual;
+pub use op_behavior_float_abs::OpBehaviorFloatAbs;
+pub use op_behavior_float_add::OpBehaviorFloatAdd;
+pub use op_behavior_float_ceil::OpBehaviorFloatCeil;
+pub use op_behavior_float_div::OpBehaviorFloatDiv;
+pub use op_behavior_float_equal::OpBehaviorFloatEqual;
+pub use op_behavior_float_float2_float::OpBehaviorFloatFloat2Float;
+pub use op_behavior_float_floor::OpBehaviorFloatFloor;
+pub use op_behavior_float_int2_float::OpBehaviorFloatInt2Float;
+pub use op_behavior_float_less::OpBehaviorFloatLess;
+pub use op_behavior_float_less_equal::OpBehaviorFloatLessEqual;
+pub use op_behavior_float_mult::OpBehaviorFloatMult;
+pub use op_behavior_float_nan::OpBehaviorFloatNan;
+pub use op_behavior_float_neg::OpBehaviorFloatNeg;
+pub use op_behavior_float_not_equal::OpBehaviorFloatNotEqual;
+pub use op_behavior_float_round::OpBehaviorFloatRound;
+pub use op_behavior_float_sqrt::OpBehaviorFloatSqrt;
+pub use op_behavior_float_sub::OpBehaviorFloatSub;
+pub use op_behavior_float_trunc::OpBehaviorFloatTrunc;
 pub use op_behavior_int2_comp::OpBehaviorInt2Comp;
 pub use op_behavior_int_add::OpBehaviorIntAdd;
 pub use op_behavior_int_and::OpBehaviorIntAnd;
@@ -79,3 +115,13 @@ pub use op_behavior_popcount::OpBehaviorPopcount;
 pub use op_behavior_subpiece::OpBehaviorSubpiece;
 pub use special_op_behavior::{special_op_behavior, SpecialOpBehavior};
 pub use unary_op_behavior::{UnaryOpBehavior, UnaryOpBehaviorImpl};
+
+/// Java's `FloatFormatFactory.getFloatFormat(size)` as the `OpBehaviorFloat*` classes use it:
+/// `UnsupportedFloatFormatException` is unchecked in Java and these trait methods are
+/// infallible, so an unsupported size panics with the exception's message.
+pub(crate) fn float_format_for(size: i32) -> &'static crate::pcode::floatformat::FloatFormat {
+    match crate::pcode::floatformat::get_float_format(size) {
+        Ok(format) => format,
+        Err(e) => panic!("{}", e),
+    }
+}

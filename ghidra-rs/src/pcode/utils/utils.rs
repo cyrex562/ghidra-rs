@@ -180,9 +180,68 @@ pub fn big_integer_to_bytes(val: i128, size: usize, big_endian: bool) -> Vec<u8>
     }
 }
 
+/// Port of `Utils.bytesToBigInteger(byte[], int, boolean, boolean)` producing a real
+/// arbitrary-precision [`num_bigint::BigInt`] (so sizes over 16 bytes, e.g. 32-byte floats, are not
+/// truncated as the `i128` [`bytes_to_big_integer`] is).
+pub fn bytes_to_big_int(byte_buf: &[u8], size: usize, big_endian: bool, signed: bool) -> num_bigint::BigInt {
+    let bytes = &byte_buf[..size];
+    if signed {
+        if big_endian {
+            num_bigint::BigInt::from_signed_bytes_be(bytes)
+        }
+        else {
+            num_bigint::BigInt::from_signed_bytes_le(bytes)
+        }
+    }
+    else if big_endian {
+        num_bigint::BigInt::from_bytes_be(num_bigint::Sign::Plus, bytes)
+    }
+    else {
+        num_bigint::BigInt::from_bytes_le(num_bigint::Sign::Plus, bytes)
+    }
+}
+
+/// Port of `Utils.bigIntegerToBytes(BigInteger, int, boolean)` for a
+/// [`num_bigint::BigInt`]: the low `size` bytes of `val`'s two's-complement form.
+pub fn big_int_to_bytes(val: &num_bigint::BigInt, size: usize, big_endian: bool) -> Vec<u8> {
+    let mut le = val.to_signed_bytes_le();
+    let fill = if val.sign() == num_bigint::Sign::Minus { 0xff } else { 0 };
+    le.resize(size.max(le.len()), fill);
+    le.truncate(size);
+    if big_endian {
+        le.reverse();
+    }
+    le
+}
+
+/// Narrows a [`num_bigint::BigInt`] to the low 128 bits of its two's-complement form, as an
+/// `i128` (the crate's `BigInteger` stand-in; callers truncate further to the output size).
+pub fn big_int_to_i128(val: &num_bigint::BigInt) -> i128 {
+    let bytes = big_int_to_bytes(val, 16, false);
+    i128::from_le_bytes(bytes.try_into().expect("16 bytes"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn big_int_byte_conversions() {
+        use num_bigint::BigInt;
+        assert_eq!(bytes_to_big_int(&[0x80, 0x01], 2, true, false), BigInt::from(0x8001));
+        assert_eq!(bytes_to_big_int(&[0x80, 0x01], 2, true, true), BigInt::from(-32767));
+        assert_eq!(bytes_to_big_int(&[0x01, 0x80], 2, false, false), BigInt::from(0x8001));
+        let wide = vec![0xffu8; 32];
+        assert_eq!(bytes_to_big_int(&wide, 32, true, false), (BigInt::from(1) << 256u32) - 1);
+        assert_eq!(big_int_to_bytes(&BigInt::from(0x1234), 4, true), vec![0, 0, 0x12, 0x34]);
+        assert_eq!(big_int_to_bytes(&BigInt::from(0x1234), 4, false), vec![0x34, 0x12, 0, 0]);
+        assert_eq!(big_int_to_bytes(&BigInt::from(-2), 3, true), vec![0xff, 0xff, 0xfe]);
+        assert_eq!(big_int_to_bytes(&BigInt::from(0x123456), 2, true), vec![0x34, 0x56]);
+        assert_eq!(big_int_to_bytes(&((BigInt::from(1) << 255u32) + 5), 32, false)[31], 0x80);
+        assert_eq!(big_int_to_i128(&((BigInt::from(1) << 128u32) - 1)), -1);
+        assert_eq!(big_int_to_i128(&BigInt::from(-5)), -5);
+        assert_eq!(big_int_to_i128(&BigInt::from(i64::MAX)), i64::MAX as i128);
+    }
 
     #[test]
     fn convert_to_signed_value_high_bit_set() {

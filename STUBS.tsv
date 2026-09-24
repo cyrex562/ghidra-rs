@@ -143,8 +143,6 @@ ts	stub_class	referenced_by
 2026-07-20T09:30:00Z	SignedDWordDataType	DWordDataType
 2026-07-20T10:00:00Z	UnsignedIntegerDataType	IntegerDataType
 2026-07-20T10:30:00Z	PointerType	PointerTypedefBuilder
-2026-07-20T11:00:00Z	FloatFormat	BigFloat
-2026-07-20T12:30:00Z	FloatFormat	AbstractFloatDataType
 2026-07-20T12:00:00Z	SignedWordDataType	WordDataType
 2026-07-20T13:00:00Z	UnsignedShortDataType	ShortDataType
 2026-07-20T14:00:00Z	PcodeBlock	BlockGraph
@@ -1306,8 +1304,6 @@ ts	stub_class	referenced_by
 2026-09-24T01:14:13.000000+00:00	GProperties	MsdApplyOption
 2026-09-24T02:04:11.000000+00:00	DiffController	DiffControllerListener
 2026-09-24T02:11:21.000000+00:00	BreakpointActionSet	LogicalBreakpointInternal
-2026-09-24T03:00:00.000000+00:00	FloatFormatFactory	BytesPcodeArithmetic
-2026-09-24T03:00:00.000000+00:00	FloatFormat	BytesPcodeArithmetic
 2026-09-24T03:00:00.000000+00:00	Expr	SymZ3PcodeArithmetic
 2026-09-24T03:00:00.000000+00:00	Z3Context	SymZ3PcodeArithmetic
 2026-09-24T06:11:06.000000+00:00	VtHandler	VtParser

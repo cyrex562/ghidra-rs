@@ -49,183 +49,13 @@ pub trait FloatComplexDataType: AbstractComplexDataType {
 mod tests {
     use super::*;
     use crate::docking::settings::settings::Settings;
-    use crate::pcode::floatformat::big_float::BigFloat;
-    use crate::pcode::floatformat::float_kind::FloatKind;
     use crate::program::model::address::{Address, SpecialAddress};
     use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::data_organization::DataOrganization;
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::mem::MemBuffer;
-    use crate::program::seam_stubs::FloatFormat;
-
-    #[derive(Debug, Clone, Copy)]
-    struct MockBigFloat {
-        value: f64,
-    }
-
-    impl BigFloat for MockBigFloat {
-        fn fracbits(&self) -> i32 {
-            52
-        }
-        fn expbits(&self) -> i32 {
-            11
-        }
-        fn kind(&self) -> FloatKind {
-            if self.value.is_nan() {
-                FloatKind::QuietNan
-            } else if self.value.is_infinite() {
-                FloatKind::Infinite
-            } else {
-                FloatKind::Finite
-            }
-        }
-        fn sign(&self) -> i32 {
-            if self.value.is_sign_negative() {
-                -1
-            } else {
-                1
-            }
-        }
-        fn scale(&self) -> i32 {
-            0
-        }
-        fn unscaled(&self) -> i128 {
-            self.value as i128
-        }
-        fn is_normal(&self) -> bool {
-            self.value.is_normal()
-        }
-        fn is_denormal(&self) -> bool {
-            false
-        }
-        fn is_nan(&self) -> bool {
-            self.value.is_nan()
-        }
-        fn is_infinite(&self) -> bool {
-            self.value.is_infinite()
-        }
-        fn is_zero(&self) -> bool {
-            self.value == 0.0
-        }
-        fn copy(&self) -> Box<dyn BigFloat> {
-            Box::new(*self)
-        }
-        fn add(&mut self, other: &dyn BigFloat) {
-            self.value += other.to_big_integer() as f64;
-        }
-        fn sub(&mut self, other: &dyn BigFloat) {
-            self.value -= other.to_big_integer() as f64;
-        }
-        fn mul(&mut self, other: &dyn BigFloat) {
-            self.value *= other.to_big_integer() as f64;
-        }
-        fn div(&mut self, other: &dyn BigFloat) {
-            self.value /= other.to_big_integer() as f64;
-        }
-        fn sqrt(&mut self) {
-            self.value = self.value.sqrt();
-        }
-        fn floor(&mut self) {
-            self.value = self.value.floor();
-        }
-        fn ceil(&mut self) {
-            self.value = self.value.ceil();
-        }
-        fn trunc(&mut self) {
-            self.value = self.value.trunc();
-        }
-        fn negate(&mut self) {
-            self.value = -self.value;
-        }
-        fn abs(&mut self) {
-            self.value = self.value.abs();
-        }
-        fn round(&mut self) {
-            self.value = self.value.round();
-        }
-        fn to_big_integer(&self) -> i128 {
-            self.value as i128
-        }
-        fn to_big_decimal(&self) -> Option<f64> {
-            if self.value.is_nan() {
-                None
-            } else {
-                Some(self.value)
-            }
-        }
-        fn to_binary_string(&self) -> String {
-            format!("{:b}", self.value.to_bits())
-        }
-        fn to_display_string(&self) -> String {
-            self.value.to_string()
-        }
-        fn to_display_string_with_context(
-            &self,
-            _context: crate::pcode::floatformat::big_float::MathContext,
-        ) -> String {
-            self.value.to_string()
-        }
-        fn to_display_string_with_format(
-            &self,
-            _format: &dyn crate::pcode::seam_stubs::FloatFormat,
-            _compact: bool,
-        ) -> String {
-            self.value.to_string()
-        }
-        fn zero(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits);
-            MockBigFloat { value: 0.0 * sign as f64 }
-        }
-        fn infinity(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits);
-            MockBigFloat { value: sign as f64 * f64::INFINITY }
-        }
-        fn quiet_nan(fracbits: i32, expbits: i32, sign: i32) -> Self {
-            let _ = (fracbits, expbits, sign);
-            MockBigFloat { value: f64::NAN }
-        }
-    }
-
-    struct MockFloatFormat;
-
-    impl FloatFormat for MockFloatFormat {
-        fn decode_big_float(
-            &self,
-            value: i64,
-        ) -> Result<Box<dyn BigFloat>, crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException>
-        {
-            Ok(Box::new(MockBigFloat { value: value as f64 }))
-        }
-
-        fn decode_big_float_from_big_integer(
-            &self,
-            value: i128,
-        ) -> Result<Box<dyn BigFloat>, crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException>
-        {
-            Ok(Box::new(MockBigFloat { value: value as f64 }))
-        }
-
-        fn get_encoding(&self, value: f64) -> i64 {
-            value as i64
-        }
-
-        fn get_encoding_big_float(&self, value: &dyn BigFloat) -> i128 {
-            value.to_big_integer()
-        }
-
-        fn get_big_float(&self, repr: &str) -> Box<dyn BigFloat> {
-            Box::new(MockBigFloat { value: repr.parse().unwrap_or(0.0) })
-        }
-
-        fn round(&self, value: &mut dyn BigFloat) {
-            value.round();
-        }
-
-        fn to_decimal_string(&self, value: &dyn BigFloat, _use_english: bool) -> String {
-            value.to_display_string()
-        }
-    }
+    use crate::pcode::floatformat::{get_float_format, FloatFormat};
 
     struct MockFloat {
         length: i32,
@@ -254,8 +84,8 @@ mod tests {
         fn encoded_length(&self) -> i32 {
             self.length
         }
-        fn float_format(&self) -> Option<&dyn FloatFormat> {
-            Some(&MockFloatFormat)
+        fn float_format(&self) -> Option<&FloatFormat> {
+            get_float_format(self.encoded_length()).ok()
         }
     }
 
@@ -355,8 +185,9 @@ mod tests {
     fn complex_value_decodes_real_and_imaginary_from_adjacent_halves() {
         let dt = complex_floatcomplex();
         let settings = MockSettings;
-        let mut bytes = vec![0, 0, 0, 3];
-        bytes.extend(vec![0, 0, 0, 7]);
+        // real 3.0, imaginary 7.0 as big-endian 4-byte IEEE 754 encodings
+        let mut bytes = vec![0x40, 0x40, 0x00, 0x00];
+        bytes.extend(vec![0x40, 0xe0, 0x00, 0x00]);
         let buf = FixedMemBuffer(bytes);
         let value = dt.complex_value(&buf, &settings, 8).expect("decodes");
         assert_eq!(value.get_real(), 3.0);
