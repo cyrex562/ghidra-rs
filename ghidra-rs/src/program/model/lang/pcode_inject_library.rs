@@ -27,8 +27,9 @@
 //!
 //! - **`parseInject`/`PcodeParser`**: Java's `parseInject` hands a payload's raw p-code source
 //!   text to `new PcodeParser(language, uniqueBase)` and compiles it into a `ConstructTpl`. This
-//!   crate has not ported `PcodeParser` (there is no sleigh-compiler backend yet -- see the
-//!   `sleigh compiler descope` project notes). [`PcodeInjectLibrary::parse_inject`] is real for
+//!   crate has not ported `PcodeParser` (manifest TODO; it extends the still-TODO
+//!   `pcodeCPort.slgh_compile.PcodeCompile` and drives the ANTLR sleigh semantic grammar, which
+//!   the hand-written `sleigh::grammar::frontend` does not cover yet). [`PcodeInjectLibrary::parse_inject`] is real for
 //!   the "nothing to compile" cases (a payload with `dynamic="true"`, i.e.
 //!   `release_parse_string()` returns `None`, so `Ok(())` is returned immediately -- exactly
 //!   mirroring Java's own early return), but for a payload with real `<body>` text it returns a
@@ -49,6 +50,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::app::plugin::processors::sleigh::sleigh_exception::SleighException;
+use crate::app::plugin::processors::sleigh::unique_layout::UniqueLayout;
 use crate::program::model::lang::constant_pool::ConstantPool;
 use crate::program::model::lang::inject_context::InjectContext;
 use crate::program::model::lang::inject_payload::{
@@ -64,14 +66,6 @@ use crate::program::model::pcode::Encoder;
 use crate::util::msg::Msg;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
-
-/// Starting offset (relative to [`SleighLanguage::get_unique_base`]) of the range of the unique
-/// address space reserved for `PcodeInjectLibrary` p-code snippets.
-///
-/// Port of `UniqueLayout.INJECT`'s constant `0x200` (`UniqueLayout` itself is not otherwise ported
-/// -- every other variant is either used solely by the (unported) SLEIGH p-code generator/runtime
-/// or the decompiler, neither of which this library touches).
-const INJECT_OFFSET: u64 = 0x200;
 
 /// Error produced by [`PcodeInjectLibrary::restore_xml_inject`], which can fail either while
 /// parsing the payload's XML or (via [`PcodeInjectLibrary::register_inject`]) while registering it.
@@ -163,7 +157,7 @@ impl PcodeInjectLibrary {
     ///
     /// Port of `PcodeInjectLibrary(SleighLanguage)`.
     pub fn new(language: Arc<SleighLanguage>) -> Self {
-        let unique_base = language.get_unique_base() + INJECT_OFFSET;
+        let unique_base = UniqueLayout::Inject.get_offset(Some(&language));
         PcodeInjectLibrary {
             language,
             unique_base,
@@ -963,7 +957,7 @@ mod tests {
         let lang = test_language(false);
         assert_eq!(lang.get_unique_base(), 0); // .sla test fixture never sets uniqbase
         let lib = PcodeInjectLibrary::new(lang);
-        assert_eq!(lib.get_unique_base(), INJECT_OFFSET);
+        assert_eq!(lib.get_unique_base(), 0x200); // UniqueLayout.INJECT
     }
 
     // --- has_user_defined_op ---
