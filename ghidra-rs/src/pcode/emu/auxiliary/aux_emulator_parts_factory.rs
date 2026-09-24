@@ -744,10 +744,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "AuxPcodeThread not yet ported")]
-    fn create_thread_default_panics_until_aux_pcode_thread_is_ported() {
-        // Java's default constructs `new AuxPcodeThread<>(name, emulator)`; until that class is
-        // ported, the default cannot be implemented faithfully.
+    #[should_panic(expected = "AuxEmulatorPartsFactory has no generic createThread")]
+    fn create_thread_default_panics_without_typed_states() {
+        // Java's default constructs `new AuxPcodeThread<>(name, emulator)`; that thread's typed
+        // state delegates cannot be recovered from this factory's erased states, so there is no
+        // generic default.
         let factory = MockFactory;
         let emulator = MockAuxPcodeEmulator::new();
         let _ = factory.create_thread(&emulator, "thread0");
