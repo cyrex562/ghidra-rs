@@ -1315,3 +1315,6 @@ ts	stub_class	referenced_by
 2026-09-23T03:20:00.000000+00:00	DemangledAddressTable	GnuDemangler
 2026-09-23T03:30:00.000000+00:00	SymbolNameProgramCorrelator	SymbolNameProgramCorrelatorFactory
 2026-09-23T03:45:00.000000+00:00	WildOperandInfo	WildAssemblyResolvedPatterns
+2026-09-24T00:36:56.000000+00:00	Pinning.Side	CtrlNGram
+2026-09-24T00:36:56.000000+00:00	CtrlVertexId	CtrlNGram
+2026-09-24T00:36:56.000000+00:00	DataVertexId	DataNGram

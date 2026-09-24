@@ -4477,3 +4477,78 @@ impl SearchType {
         &self.description
     }
 }
+
+/// Placeholder for the nested enum `ghidra.features.codecompare.graphanalysis.Pinning.Side`,
+/// referenced by [`CtrlNGram`](crate::feature::codecompare::graphanalysis::CtrlNGram) and
+/// [`DataNGram`](crate::feature::codecompare::graphanalysis::DataNGram) before the enclosing
+/// `Pinning` class is ported. Nested in a `pinning` module so the path mirrors Java's
+/// `Pinning.Side`; it moves into `graphanalysis::pinning` when `Pinning` is ported.
+///
+/// Not to be confused with `ghidra.util.datastruct.Duo.Side`
+/// ([`crate::util::datastruct::duo::Side`]), an unrelated Java enum with no integer encoding.
+pub mod pinning {
+    /// Labels for the two functions being compared by the Pinning algorithm.
+    ///
+    /// Variant order matches Java's declaration order, so the derived `Ord` agrees with Java's
+    /// `Enum.compareTo` (`LEFT < RIGHT`).
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub enum Side {
+        /// `LEFT(0)`
+        Left,
+        /// `RIGHT(1)`
+        Right,
+    }
+
+    impl Side {
+        /// Java: `getValue()` -- the integer encoding of the side, used in vertex uid encodings.
+        pub fn get_value(self) -> i32 {
+            match self {
+                Side::Left => 0,
+                Side::Right => 1,
+            }
+        }
+    }
+}
+
+/// Placeholder handle for `ghidra.features.codecompare.graphanalysis.CtrlVertex`, referenced by
+/// [`CtrlNGram`](crate::feature::codecompare::graphanalysis::CtrlNGram)'s `root` before
+/// `CtrlVertex`/`CtrlGraph` are ported.
+///
+/// Per `OWNERSHIP_MIGRATION.md` convention 1 (arena + typed `Copy` ID), an n-gram names its root
+/// vertex by ID rather than holding a reference into the graph. The ID carries the owning graph's
+/// [`pinning::Side`] (Java reaches it as `root.graph.side`; the Pinning algorithm builds exactly
+/// one control-flow graph per side) and the vertex's position in that graph's node list (Java's
+/// constructor `id` argument).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CtrlVertexId {
+    /// Side of the control-flow graph owning the vertex.
+    pub side: pinning::Side,
+    /// Index of the vertex within its graph's node list.
+    pub index: u32,
+}
+
+impl CtrlVertexId {
+    /// Java's `CtrlVertex.uid`: `id * 2 + graph.side.getValue()`.
+    pub fn uid(self) -> i32 {
+        (self.index as i32).wrapping_mul(2).wrapping_add(self.side.get_value())
+    }
+}
+
+/// Placeholder handle for `ghidra.features.codecompare.graphanalysis.DataVertex`, referenced by
+/// [`DataNGram`](crate::feature::codecompare::graphanalysis::DataNGram)'s `root` before
+/// `DataVertex`/`DataGraph` are ported. Same arena-ID shape as [`CtrlVertexId`]: the Pinning
+/// algorithm builds exactly one data-flow graph per side, so the side identifies the graph.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DataVertexId {
+    /// Side of the data-flow graph owning the vertex.
+    pub side: pinning::Side,
+    /// Index of the vertex within its graph's node list (Java's `uniqueID` constructor argument).
+    pub index: u32,
+}
+
+impl DataVertexId {
+    /// Java's `DataVertex.uid`: `uniqueID * 2 + graph.side.getValue()`.
+    pub fn uid(self) -> i32 {
+        (self.index as i32).wrapping_mul(2).wrapping_add(self.side.get_value())
+    }
+}
