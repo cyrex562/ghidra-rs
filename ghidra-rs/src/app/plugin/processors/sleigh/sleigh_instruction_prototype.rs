@@ -20,8 +20,6 @@
 //!   `SleighDebugLogger`, which is not ported: [`InstructionPrototype::get_instruction_mask`] and
 //!   [`InstructionPrototype::get_operand_value_mask`] report `None`, which Java reports when the
 //!   mask computation fails.
-//! * [`InstructionPrototype::get_pcode_packed`] needs a concrete `PcodeEmitPacked`, which is not
-//!   ported; it reports an error instead of encoding.
 //! * Overlay spaces (`handleOverlayAddress`, `getOverlayAddress`) and spaces with mapped
 //!   registers: this crate's `AddressSpace` models neither, so addresses are used as computed.
 
@@ -30,6 +28,8 @@ use std::sync::{Arc, Mutex};
 use crate::app::plugin::processors::sleigh::op_tpl_walker::{NextOpTpl, OpTplWalker};
 use crate::app::plugin::processors::sleigh::pcode_emit::{PcodeEmit, PcodeEmitBuildError};
 use crate::app::plugin::processors::sleigh::pcode_emit_objects::PcodeEmitObjects;
+use crate::app::plugin::processors::sleigh::pcode_emit_packed::PcodeEmitPacked;
+use crate::util::msg::Msg;
 use crate::app::plugin::processors::sleigh::sleigh_exception::SleighException;
 use crate::app::plugin::processors::sleigh::sleigh_parser_context::{
     read_context_words, snapshot_mem_buffer, SleighParserContext,
@@ -48,7 +48,9 @@ use crate::program::model::lang::unknown_instruction_exception::UnknownInstructi
 use crate::program::model::lang::{InstructionContext, InstructionPrototype, Mask, ProcessorContextView};
 use crate::program::model::listing::instruction::OperandValue;
 use crate::program::model::mem::{MemBuffer, MemoryAccessException};
-use crate::program::model::pcode::{PatchEncoder, PcodeOp, PcodeOverride, Varnode};
+use crate::program::model::pcode::{
+    PatchEncoder, PcodeOp, PcodeOverride, Varnode, ATTRIB_OFFSET, ELEM_UNIMPL,
+};
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
 use crate::program::seam_stubs::FlowOverride;
@@ -947,12 +949,13 @@ impl SleighInstructionPrototype {
         )]
     }
 
-    /// The body of `getPcode(InstructionContext, PcodeOverride)`.
-    fn build_pcode(
+    /// The fall offset including every delay-slot instruction, and the delay-slot byte count
+    /// when the instruction has delay slots (the shared prologue of `getPcode` and
+    /// `getPcodePacked`).
+    fn fall_offset_with_delay_slots(
         &self,
         context: &dyn InstructionContext,
-        pcode_override: Option<&dyn PcodeOverride>,
-    ) -> Result<Vec<PcodeOp>, PcodeEmitBuildError> {
+    ) -> Result<(i32, Option<i32>), PcodeEmitBuildError> {
         let mut fall_offset = self.get_length();
         let mut delay_bytes = None;
         if self.inner.delay_slot_byte_cnt > 0 {
@@ -976,6 +979,16 @@ impl SleighInstructionPrototype {
             }
             delay_bytes = Some(bytecount);
         }
+        Ok((fall_offset, delay_bytes))
+    }
+
+    /// The body of `getPcode(InstructionContext, PcodeOverride)`.
+    fn build_pcode(
+        &self,
+        context: &dyn InstructionContext,
+        pcode_override: Option<&dyn PcodeOverride>,
+    ) -> Result<Vec<PcodeOp>, PcodeEmitBuildError> {
+        let (fall_offset, delay_bytes) = self.fall_offset_with_delay_slots(context)?;
         self.with_parser_context(context, |proto_context| {
             let delay_context;
             let proto_context = match delay_bytes {
@@ -995,6 +1008,38 @@ impl SleighInstructionPrototype {
                 emit.resolve_final_fallthrough()?;
             }
             Ok(emit.into_pcode_ops())
+        })?
+    }
+
+    /// The body of `getPcodePacked(PatchEncoder, InstructionContext, PcodeOverride)`'s `try`.
+    fn build_pcode_packed(
+        &self,
+        encoder: &mut dyn PatchEncoder,
+        context: &dyn InstructionContext,
+        pcode_override: Option<&dyn PcodeOverride>,
+    ) -> Result<(), PcodeEmitBuildError> {
+        let (fall_offset, delay_bytes) = self.fall_offset_with_delay_slots(context)?;
+        self.with_parser_context(context, |proto_context| {
+            let delay_context;
+            let proto_context = match delay_bytes {
+                Some(bytecount) => {
+                    delay_context = SleighParserContext::for_delay_slot(proto_context, bytecount);
+                    &delay_context
+                }
+                None => proto_context,
+            };
+            let mut walker = ParserWalker::new(proto_context);
+            walker.base_state();
+            let mut emit =
+                PcodeEmitPacked::new(encoder, walker, Some(context), fall_offset, pcode_override);
+            emit.emit_header()?;
+            emit.build_current()?;
+            emit.resolve_relatives()?;
+            if !self.inner.isindelayslot {
+                emit.resolve_final_fallthrough()?;
+            }
+            emit.emit_tail()?;
+            Ok(())
         })?
     }
 
@@ -1631,17 +1676,28 @@ impl InstructionPrototype for SleighInstructionPrototype {
         }
     }
 
-    /// See the module docs: the packed encoding is not ported.
+    /// Port of `getPcodePacked(PatchEncoder, InstructionContext, PcodeOverride)`: encodes the
+    /// instruction's p-code as an `<inst>` element, or -- when the semantics cannot be built --
+    /// an `<unimpl>` element carrying the instruction length (after logging the failure, unless
+    /// the constructor simply has no semantics).
     fn get_pcode_packed(
         &self,
-        _encoder: &mut dyn PatchEncoder,
-        _context: &dyn InstructionContext,
-        _override: Option<&dyn PcodeOverride>,
+        encoder: &mut dyn PatchEncoder,
+        context: &dyn InstructionContext,
+        pcode_override: Option<&dyn PcodeOverride>,
     ) -> std::io::Result<()> {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "SleighInstructionPrototype::get_pcode_packed needs a concrete PcodeEmitPacked",
-        ))
+        match self.build_pcode_packed(encoder, context, pcode_override) {
+            Ok(()) => return Ok(()),
+            Err(PcodeEmitBuildError::NotYetImplemented(_)) => {} // unimpl
+            Err(e) => Msg::error(
+                "SleighInstructionPrototype",
+                &format!("Pcode error at {}: {e}", context.get_address()),
+            ),
+        }
+        encoder.clear();
+        encoder.open_element(ELEM_UNIMPL)?;
+        encoder.write_signed_integer(ATTRIB_OFFSET, self.get_length() as i64)?;
+        encoder.close_element(ELEM_UNIMPL)
     }
 
     /// Port of `getPcode(InstructionContext, int)`: the p-code computing a subtable operand's
@@ -2665,6 +2721,91 @@ mod decode_tests {
         let pcode = insn.proto.get_pcode(&insn, None);
         assert_eq!(pcode.len(), 1);
         assert_eq!(pcode[0].get_opcode(), P::Unimplemented);
+    }
+
+    /// Decodes `bytes` (a packed stream) against the toy language's spaces.
+    fn packed_decoder(lang: &Arc<SleighLanguage>, bytes: Vec<u8>) -> PackedDecode {
+        PackedDecode::new(Arc::from(lang.get_address_factory()), bytes)
+    }
+
+    fn packed_pcode(insn: &Parsed) -> Vec<u8> {
+        use crate::program::model::pcode::{CachedEncoder, PatchPackedEncode};
+        let mut enc = PatchPackedEncode::new();
+        insn.proto.get_pcode_packed(&mut enc, insn, None).unwrap();
+        let mut bytes = Vec::new();
+        enc.write_to(&mut bytes).unwrap();
+        bytes
+    }
+
+    /// `jmp 0x1007` packs as `<inst offset=2><addr ram:0x1000/><op code=BRANCH size=1><void/>
+    /// <addr ram:0x1007 size=4/></op></inst>` -- the same op `get_pcode` builds as an object.
+    #[test]
+    fn packed_pcode_of_jmp_matches_the_object_pcode() {
+        use crate::program::model::pcode::Decoder;
+        let lang = language();
+        let insn = parse(&lang, 0x1000, &[0x20, 0x05]).unwrap();
+        let d = packed_decoder(&lang, packed_pcode(&insn));
+
+        let inst = d.open_element_with_id(ELEM_INST).unwrap();
+        assert_eq!(d.read_signed_integer_with_id(ATTRIB_OFFSET).unwrap(), 2);
+        let addr = d.open_element_with_id(ELEM_ADDR).unwrap();
+        assert_eq!(d.read_space_with_id(ATTRIB_SPACE).unwrap().name(), "ram");
+        assert_eq!(d.read_unsigned_integer_with_id(ATTRIB_OFFSET).unwrap(), 0x1000);
+        d.close_element(addr).unwrap();
+
+        let op = d.open_element_with_id(ELEM_OP).unwrap();
+        assert_eq!(
+            d.read_signed_integer_with_id(ATTRIB_CODE).unwrap(),
+            OpCode::CpuiBranch.ordinal() as i64
+        );
+        assert_eq!(d.read_signed_integer_with_id(ATTRIB_SIZE).unwrap(), 1);
+        let void = d.open_element_with_id(ELEM_VOID).unwrap();
+        d.close_element(void).unwrap();
+        let dest = d.open_element_with_id(ELEM_ADDR).unwrap();
+        assert_eq!(d.read_space_with_id(ATTRIB_SPACE).unwrap().name(), "ram");
+        assert_eq!(d.read_unsigned_integer_with_id(ATTRIB_OFFSET).unwrap(), 0x1007);
+        assert_eq!(d.read_signed_integer_with_id(ATTRIB_SIZE).unwrap(), 4);
+        d.close_element(dest).unwrap();
+        d.close_element(op).unwrap();
+        d.close_element(inst).unwrap();
+    }
+
+    /// The delay slot is woven in: the fall offset covers both instructions, and the delay
+    /// slot's COPY precedes the BRANCH.
+    #[test]
+    fn packed_pcode_of_a_delay_slot_branch_covers_both_instructions() {
+        use crate::program::model::pcode::Decoder;
+        let lang = language();
+        let insn = parse(&lang, 0x1000, &[0x40, 0x10, 0x11, 0x2a]).unwrap();
+        let d = packed_decoder(&lang, packed_pcode(&insn));
+        let inst = d.open_element_with_id(ELEM_INST).unwrap();
+        assert_eq!(d.read_signed_integer_with_id(ATTRIB_OFFSET).unwrap(), 4);
+        let addr = d.open_element_with_id(ELEM_ADDR).unwrap();
+        d.close_element_skipping(addr).unwrap();
+        let mut codes = Vec::new();
+        while d.peek_element().unwrap() != 0 {
+            let op = d.open_element_with_id(ELEM_OP).unwrap();
+            codes.push(d.read_signed_integer_with_id(ATTRIB_CODE).unwrap());
+            d.close_element_skipping(op).unwrap();
+        }
+        d.close_element(inst).unwrap();
+        assert_eq!(
+            codes,
+            vec![OpCode::CpuiCopy.ordinal() as i64, OpCode::CpuiBranch.ordinal() as i64]
+        );
+    }
+
+    /// Semantics that cannot be built (the delay slot is missing) pack as `<unimpl>` carrying
+    /// the instruction length.
+    #[test]
+    fn packed_pcode_of_an_unbuildable_instruction_is_unimpl() {
+        use crate::program::model::pcode::Decoder;
+        let lang = language();
+        let insn = parse(&lang, 0x1000, &[0x40, 0x10]).unwrap();
+        let d = packed_decoder(&lang, packed_pcode(&insn));
+        let el = d.open_element_with_id(ELEM_UNIMPL).unwrap();
+        assert_eq!(d.read_signed_integer_with_id(ATTRIB_OFFSET).unwrap(), 2);
+        d.close_element(el).unwrap();
     }
 
     #[test]

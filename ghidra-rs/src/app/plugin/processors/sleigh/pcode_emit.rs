@@ -497,6 +497,12 @@ impl<'a> PcodeEmitBase<'a> {
         self.labeldef.get(label_index as usize).copied().flatten()
     }
 
+    /// Number of p-code ops generated so far (the protected `numOps` field concrete emitters
+    /// read).
+    pub fn num_ops(&self) -> i32 {
+        self.num_ops
+    }
+
     /// Port of `checkOverrides(int, VarnodeData[])`.
     pub fn check_overrides(&self, opcode: OpCode, in_: &mut [VarnodeData]) -> OpCode {
         check_overrides(

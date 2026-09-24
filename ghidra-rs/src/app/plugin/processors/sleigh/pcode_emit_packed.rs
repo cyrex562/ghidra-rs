@@ -1,16 +1,23 @@
+//! Port of `ghidra.app.plugin.processors.sleigh.PcodeEmitPacked`.
+
+use super::pcode_emit::{PcodeEmit, PcodeEmitBase, PcodeEmitBuildError, PcodeEmitSink};
 use super::sleigh_exception::SleighException;
+use super::sleigh_parser_context::SleighParserContext;
 use super::varnode_data::VarnodeData;
 use crate::decompiler::opcodes::op_code::OpCode;
 use crate::program::model::address::Address;
+use crate::program::model::lang::instruction_context::InstructionContext;
+use crate::program::model::lang::sleigh::template::ConstructTpl;
+use crate::program::model::lang::sleigh::ParserWalker;
 use crate::program::model::pcode::{
-    PatchEncoder, ATTRIB_CODE, ATTRIB_NAME, ATTRIB_OFFSET, ATTRIB_SIZE, ATTRIB_SPACE, ELEM_ADDR,
-    ELEM_INST, ELEM_OP, ELEM_SPACEID, ELEM_VOID,
+    encode_addr, PatchEncoder, PcodeOverride, ATTRIB_CODE, ATTRIB_NAME, ATTRIB_OFFSET,
+    ATTRIB_SIZE, ELEM_INST, ELEM_OP, ELEM_SPACEID, ELEM_VOID,
 };
 use std::io;
 
 /// One patch-pending reference to a sleigh label within a `BRANCH`/`CBRANCH` operand, recorded
 /// so the operand can be converted from a label index to a relative op offset once every label
-/// definition has been seen (by [`PcodeEmitPacked::resolve_relatives`]).
+/// definition has been seen (by [`PcodeEmit::resolve_relatives`]).
 ///
 /// Mirrors the `LabelRef` nested class of `ghidra.app.plugin.processors.sleigh.PcodeEmitPacked`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,6 +33,7 @@ pub struct LabelRef {
 }
 
 impl LabelRef {
+    /// Port of `LabelRef(int op, int lab, int size, int stream)`.
     pub fn new(op_index: i32, label_index: i32, label_size: i32, streampos: i32) -> Self {
         Self {
             op_index,
@@ -36,181 +44,72 @@ impl LabelRef {
     }
 }
 
-/// Emits p-code operations in Ghidra's packed binary encoding, deferring relative branch/call
-/// operands until every referenced label has been seen so they can be patched to their final
-/// op-relative offset.
-///
-/// Port of `ghidra.app.plugin.processors.sleigh.PcodeEmitPacked`. In Java this extends the
-/// abstract `PcodeEmit`, which drives parsing of a `ConstructTpl` and owns the `numOps` counter
-/// and `labeldef` table that this class's overrides read. That base class's own template-walking
-/// driver (`build` and its private helpers) is still out of scope for a full port -- see
-/// [`PcodeEmit::build`](crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit::build)'s
-/// docs -- so those fields are exposed here as accessor methods instead. `dump`'s `instrAddr` parameter is
-/// dropped: it goes unused in the Java override, existing only to satisfy the base class's
-/// abstract signature.
-pub trait PcodeEmitPacked {
-    /// The stream encoder p-code is packed into.
-    fn encoder(&self) -> &dyn PatchEncoder;
-    /// Mutable access to the stream encoder p-code is packed into.
-    fn encoder_mut(&mut self) -> &mut dyn PatchEncoder;
+/// The encoder and pending label references of a [`PcodeEmitPacked`]: the part of the emitter
+/// the [`PcodeEmitBase`] driver writes to.
+pub struct PackedOpSink<'e> {
+    encoder: &'e mut dyn PatchEncoder,
+    /// Pending relative label references (`labelref`).
+    labelref: Vec<LabelRef>,
+    /// Set by `addLabelRef`: the next op dumped carries a relative label operand
+    /// (`hasRelativePatch`).
+    has_relative_patch: bool,
+}
 
-    /// Stands in for the base `PcodeEmit.getFallOffset()`: the default instruction fall offset
-    /// (i.e. instruction length including delay-slotted instructions).
-    fn fall_offset(&self) -> i32;
-
-    /// Stands in for the base `PcodeEmit.getStartAddress()`: the address of the instruction
-    /// whose p-code is being emitted.
-    fn start_address(&self) -> Address;
-
-    /// Stands in for the base `PcodeEmit.numOps` counter of p-code ops generated so far.
-    fn num_ops(&self) -> i32;
-
-    /// Stands in for `PcodeEmit.labeldef.get(label_index)`. Returns `None` both when
-    /// `label_index` is out of bounds and when the base class's corresponding entry is unset,
-    /// matching the Java override's single combined bounds/null check.
-    fn label_def(&self, label_index: i32) -> Option<i32>;
-
-    /// Whether [`add_label_ref`](Self::add_label_ref) has flagged the operand about to be
-    /// dumped as needing a [`LabelRef`].
-    fn has_relative_patch(&self) -> bool;
-    /// Sets the flag returned by [`has_relative_patch`](Self::has_relative_patch).
-    fn set_has_relative_patch(&mut self, value: bool);
-
-    /// Patch-pending label references accumulated so far.
-    fn label_refs(&self) -> &[LabelRef];
-    /// Mutable access to the patch-pending label references, appended to by
-    /// [`add_label_ref_delayed`](Self::add_label_ref_delayed).
-    fn label_refs_mut(&mut self) -> &mut Vec<LabelRef>;
-
-    /// Applies opcode-specific call/jump overrides. Stands in for the base
-    /// `PcodeEmit.checkOverrides(int, VarnodeData[])`. Defaults to no override support, leaving
-    /// `opcode` and `in_` unchanged, since overrides are optional (a `null` `PcodeOverride` in
-    /// Java short-circuits the same way).
-    fn check_overrides(&self, opcode: OpCode, in_: &mut [VarnodeData]) -> OpCode {
-        let _ = in_;
-        opcode
+impl<'e> PackedOpSink<'e> {
+    fn new(encoder: &'e mut dyn PatchEncoder) -> Self {
+        Self {
+            encoder,
+            labelref: Vec::new(),
+            has_relative_patch: false,
+        }
     }
 
-    /// Emits the `<inst>` element opening a packed instruction: its fall offset and start
-    /// address.
-    fn emit_header(&mut self) -> io::Result<()> {
-        self.encoder_mut().open_element(ELEM_INST)?;
-        let fall_offset = self.fall_offset();
-        self.encoder_mut()
-            .write_signed_integer(ATTRIB_OFFSET, fall_offset as i64)?;
-        let addr = self.start_address();
-        self.encoder_mut().open_element(ELEM_ADDR)?;
-        self.encoder_mut().write_space(ATTRIB_SPACE, addr.space())?;
-        self.encoder_mut()
-            .write_unsigned_integer(ATTRIB_OFFSET, addr.unsigned_offset())?;
-        self.encoder_mut().close_element(ELEM_ADDR)?;
-        Ok(())
-    }
-
-    /// Closes the `<inst>` element opened by [`emit_header`](Self::emit_header).
-    fn emit_tail(&mut self) -> io::Result<()> {
-        self.encoder_mut().close_element(ELEM_INST)
-    }
-
-    /// Marks the operand about to be dumped next as a relative label reference needing a
-    /// [`LabelRef`], created lazily once the parameter is actually written (see
-    /// [`add_label_ref_delayed`](Self::add_label_ref_delayed)).
-    fn add_label_ref(&mut self) {
-        self.set_has_relative_patch(true);
-    }
-
-    /// Creates the pending [`LabelRef`] now that the next element written will be the operand
-    /// needing a patch, and forces its encoding to a maximum-length placeholder (offset `-1`) so
-    /// there is room to later overwrite it with the resolved relative offset.
-    fn add_label_ref_delayed(&mut self, in_: &mut [VarnodeData]) {
+    /// Port of the private `addLabelRefDelayed()`: creates the [`LabelRef`] now that the next
+    /// element written will be the parameter needing a patch, and forces the encoder to write a
+    /// maximum-length encoding (offset `-1`) so there is room for whatever value is patched in
+    /// once the relative is resolved.
+    fn add_label_ref_delayed(&mut self, num_ops: i32, in_: &mut [VarnodeData]) {
         let label_index = in_[0].offset as i32;
         let label_size = in_[0].size;
         in_[0].offset = -1;
-
-        let num_ops = self.num_ops();
-        let streampos = self.encoder().size();
-        self.label_refs_mut()
+        let streampos = self.encoder.size();
+        self.labelref
             .push(LabelRef::new(num_ops, label_index, label_size, streampos));
-        self.set_has_relative_patch(false);
+        self.has_relative_patch = false; // Mark patch as handled
     }
 
-    /// Encodes a raw address-space id as a `<spaceid>` element, used for the space operand of
-    /// `LOAD`/`STORE` ops.
+    /// Port of the private `dumpSpaceId(VarnodeData)`: the raw space id operand of a
+    /// `LOAD`/`STORE`.
     fn dump_space_id(&mut self, v: &VarnodeData) -> io::Result<()> {
-        self.encoder_mut().open_element(ELEM_SPACEID)?;
-        self.encoder_mut().write_space_id(ATTRIB_NAME, v.offset)?;
-        self.encoder_mut().close_element(ELEM_SPACEID)?;
-        Ok(())
+        self.encoder.open_element(ELEM_SPACEID)?;
+        self.encoder.write_space_id(ATTRIB_NAME, v.offset)?;
+        self.encoder.close_element(ELEM_SPACEID)
     }
 
-    /// Encodes a single p-code operation as an `<op>` element.
-    fn dump(
-        &mut self,
-        opcode: OpCode,
-        in_: &mut [VarnodeData],
-        isize: usize,
-        out: Option<&VarnodeData>,
-    ) -> io::Result<()> {
-        let updated_opcode = self.check_overrides(opcode, in_);
-        let isize = if opcode == OpCode::CpuiCallother && updated_opcode == OpCode::CpuiCall {
-            // CALLOTHER_CALL_OVERRIDE: ignore inputs other than the call destination.
-            1
-        } else {
-            isize
-        };
-
-        self.encoder_mut().open_element(ELEM_OP)?;
-        self.encoder_mut().write_opcode(ATTRIB_CODE, updated_opcode)?;
-        self.encoder_mut()
-            .write_signed_integer(ATTRIB_SIZE, isize as i64)?;
-        match out {
-            None => {
-                self.encoder_mut().open_element(ELEM_VOID)?;
-                self.encoder_mut().close_element(ELEM_VOID)?;
-            }
-            Some(out) => out.encode(self.encoder_mut())?,
-        }
-
-        let mut i = 0;
-        if updated_opcode == OpCode::CpuiLoad || updated_opcode == OpCode::CpuiStore {
-            self.dump_space_id(&in_[0])?;
-            i = 1;
-        } else if self.has_relative_patch() {
-            self.add_label_ref_delayed(in_);
-        }
-        for varnode in &in_[i..isize] {
-            varnode.encode(self.encoder_mut())?;
-        }
-        self.encoder_mut().close_element(ELEM_OP)?;
-        Ok(())
-    }
-
-    /// Now that every label definition and reference has been seen, patches each pending
-    /// relative branch/call operand to its resolved op-relative offset.
+    /// Port of `resolveRelatives()`: patches every pending relative operand to its resolved
+    /// op-relative offset.
     ///
     /// # Errors
-    /// Returns a [`SleighException`] if a reference names a label index with no definition, or
-    /// if the encoder rejects the patch.
-    fn resolve_relatives(&mut self) -> Result<(), SleighException> {
-        let refs = self.label_refs().to_vec();
-        for r in refs {
-            let Some(label_def) = self.label_def(r.label_index) else {
+    /// A [`SleighException`] if a reference names a label with no definition, or the encoder
+    /// cannot patch the operand.
+    fn resolve_relatives(
+        &mut self,
+        label_def: impl Fn(i32) -> Option<i32>,
+    ) -> Result<(), SleighException> {
+        for r in &self.labelref {
+            let Some(def) = label_def(r.label_index) else {
                 return Err(SleighException::with_message(
                     "Reference to non-existant sleigh label",
                 ));
             };
-            let mut res = (label_def as i64).wrapping_sub(r.op_index as i64);
+            let mut res = (def as i64).wrapping_sub(r.op_index as i64);
             if r.label_size < 8 {
                 let shift = ((8 - r.label_size) * 8) as u32;
-                let mask = if shift >= 64 {
-                    -1i64
-                } else {
-                    ((-1i64 as u64) >> shift) as i64
-                };
+                let mask = (-1i64 as u64).wrapping_shr(shift) as i64;
                 res &= mask;
             }
             if !self
-                .encoder_mut()
+                .encoder
                 .patch_integer_attribute(r.streampos, ATTRIB_OFFSET, res)
             {
                 return Err(SleighException::with_message(
@@ -222,287 +121,443 @@ pub trait PcodeEmitPacked {
     }
 }
 
+impl PcodeEmitSink for PackedOpSink<'_> {
+    fn add_label_ref(&mut self, _num_ops: i32) {
+        // Delay putting in the LabelRef until we are ready to emit the parameter
+        self.has_relative_patch = true;
+    }
+
+    fn dump(
+        &mut self,
+        base: &PcodeEmitBase<'_>,
+        _instr_addr: Address,
+        opcode: OpCode,
+        in_: &mut [VarnodeData],
+        isize: usize,
+        out: Option<&VarnodeData>,
+    ) -> io::Result<()> {
+        let updated_opcode = base.check_overrides(opcode, in_);
+        let isize = if opcode == OpCode::CpuiCallother && updated_opcode == OpCode::CpuiCall {
+            1 // CALLOTHER_CALL_OVERRIDE, ignore inputs other than call dest
+        } else {
+            isize
+        };
+        self.encoder.open_element(ELEM_OP)?;
+        self.encoder
+            .write_signed_integer(ATTRIB_CODE, updated_opcode.ordinal() as i64)?;
+        self.encoder.write_signed_integer(ATTRIB_SIZE, isize as i64)?;
+        match out {
+            None => {
+                self.encoder.open_element(ELEM_VOID)?;
+                self.encoder.close_element(ELEM_VOID)?;
+            }
+            Some(out) => out.encode(self.encoder)?,
+        }
+        let mut i = 0;
+        if updated_opcode == OpCode::CpuiLoad || updated_opcode == OpCode::CpuiStore {
+            self.dump_space_id(&in_[0])?;
+            i = 1;
+        } else if self.has_relative_patch {
+            self.add_label_ref_delayed(base.num_ops(), in_);
+        }
+        for v in &in_[i..isize] {
+            v.encode(self.encoder)?;
+        }
+        self.encoder.close_element(ELEM_OP)
+    }
+}
+
+/// Emits p-code operations in Ghidra's packed binary encoding, patching relative branch
+/// operands once every label definition has been seen.
+///
+/// Port of `ghidra.app.plugin.processors.sleigh.PcodeEmitPacked` (Java `extends PcodeEmit`):
+/// the inherited state and driver are the [`PcodeEmitBase`], the encoder and pending label
+/// references the [`PackedOpSink`].
+pub struct PcodeEmitPacked<'a, 'e> {
+    base: PcodeEmitBase<'a>,
+    walker: ParserWalker<'a>,
+    sink: PackedOpSink<'e>,
+}
+
+impl<'a, 'e> PcodeEmitPacked<'a, 'e> {
+    /// Port of `PcodeEmitPacked(PatchEncoder, ParserWalker, InstructionContext, int,
+    /// PcodeOverride)`: `encoder` receives the packed stream, `ictx` resolves delay-slot and
+    /// crossbuild directives, `fall_offset` is the default instruction fall offset (the length
+    /// including delay-slotted instructions) and `pcode_override` steers p-code overrides.
+    pub fn new(
+        encoder: &'e mut dyn PatchEncoder,
+        walker: ParserWalker<'a>,
+        ictx: Option<&'a dyn InstructionContext>,
+        fall_offset: i32,
+        pcode_override: Option<&'a dyn PcodeOverride>,
+    ) -> Self {
+        let base = PcodeEmitBase::new(&walker, ictx, fall_offset, pcode_override);
+        Self {
+            base,
+            walker,
+            sink: PackedOpSink::new(encoder),
+        }
+    }
+
+    /// Port of `emitHeader()`: opens the `<inst>` element with the fall offset and start
+    /// address.
+    ///
+    /// # Errors
+    /// Errors from the underlying stream.
+    pub fn emit_header(&mut self) -> io::Result<()> {
+        let encoder = &mut *self.sink.encoder;
+        encoder.open_element(ELEM_INST)?;
+        encoder.write_signed_integer(ATTRIB_OFFSET, self.base.get_fall_offset() as i64)?;
+        encode_addr(encoder, &self.base.get_start_address())
+    }
+
+    /// Port of `emitTail()`: closes the `<inst>` element.
+    ///
+    /// # Errors
+    /// Errors from the underlying stream.
+    pub fn emit_tail(&mut self) -> io::Result<()> {
+        self.sink.encoder.close_element(ELEM_INST)
+    }
+
+    /// The pending relative label references.
+    pub fn label_refs(&self) -> &[LabelRef] {
+        &self.sink.labelref
+    }
+
+    /// The shared emitter state.
+    pub fn base(&self) -> &PcodeEmitBase<'a> {
+        &self.base
+    }
+
+    /// [`PcodeEmit::build`] for a possibly absent template: a constructor with no semantics
+    /// reports [`PcodeEmitBuildError::NotYetImplemented`], as Java's `build(null, ...)` throws
+    /// `NotYetImplementedException`.
+    ///
+    /// # Errors
+    /// See [`PcodeEmitBase::build`].
+    pub fn build_template(
+        &mut self,
+        construct: Option<&ConstructTpl>,
+        secnum: i32,
+    ) -> Result<(), PcodeEmitBuildError> {
+        let context: &'a SleighParserContext = self.walker.get_parser_context();
+        let mut walker = std::mem::replace(&mut self.walker, ParserWalker::new(context));
+        let res = self.base.build(&mut self.sink, &mut walker, construct, secnum);
+        self.walker = walker;
+        res
+    }
+
+    /// Builds the main template of the constructor at the walker's position
+    /// (`build(walker.getConstructor().getTempl(), -1)`).
+    ///
+    /// # Errors
+    /// See [`PcodeEmitBase::build`].
+    pub fn build_current(&mut self) -> Result<(), PcodeEmitBuildError> {
+        let ct = self.walker.get_constructor();
+        self.build_template(ct.as_ref().and_then(|c| c.get_templ()), -1)
+    }
+}
+
+impl PcodeEmit for PcodeEmitPacked<'_, '_> {
+    fn start_address(&self) -> Address {
+        self.base.get_start_address()
+    }
+
+    fn fall_offset(&self) -> i32 {
+        self.base.get_fall_offset()
+    }
+
+    fn walker(&self) -> &ParserWalker<'_> {
+        &self.walker
+    }
+
+    fn pcode_override(&self) -> Option<&dyn PcodeOverride> {
+        self.base.pcode_override()
+    }
+
+    fn fall_override(&self) -> Option<Address> {
+        self.base.fall_override()
+    }
+
+    fn default_fall_address(&self) -> Option<Address> {
+        self.base.default_fall_address()
+    }
+
+    fn add_label_ref(&mut self) {
+        let num_ops = self.base.num_ops();
+        self.sink.add_label_ref(num_ops);
+    }
+
+    fn resolve_relatives(&mut self) -> Result<(), SleighException> {
+        let base = &self.base;
+        self.sink.resolve_relatives(|id| base.label_def(id))
+    }
+
+    fn dump(
+        &mut self,
+        instr_addr: Address,
+        opcode: OpCode,
+        in_: &mut [VarnodeData],
+        isize: usize,
+        out: Option<&VarnodeData>,
+    ) -> io::Result<()> {
+        self.sink.dump(&self.base, instr_addr, opcode, in_, isize, out)
+    }
+
+    fn build(&mut self, construct: &ConstructTpl, secnum: i32) -> Result<(), PcodeEmitBuildError> {
+        self.build_template(Some(construct), secnum)
+    }
+
+    fn resolve_final_fallthrough(&mut self) -> io::Result<()> {
+        self.base.resolve_final_fallthrough(&mut self.sink)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{AddressSpace, AddressSpaceType};
-    use crate::program::model::pcode::CachedEncoder;
+    use crate::program::model::address::{
+        AddressFactory, AddressSpace, AddressSpaceType, DefaultAddressFactory,
+    };
+    use crate::program::model::lang::sleigh::template::{ConstTpl, ConstTplType, OpTpl, VarnodeTpl};
+    use crate::program::model::pcode::{
+        CachedEncoder, Decoder, PackedDecode, PatchPackedEncode, ATTRIB_SPACE, ELEM_ADDR,
+    };
     use std::sync::Arc;
 
-    /// A minimal record-based encoder: each write is logged as an (attribute, value) pair
-    /// (only the attribute kinds `PcodeEmitPacked` actually writes are modeled), and
-    /// `patch_integer_attribute` scans forward from a recorded position to find and overwrite
-    /// the matching attribute -- mirroring how the real packed encoder locates an attribute
-    /// within the element that was open at that position.
-    #[derive(Default)]
-    struct MockEncoder {
-        log: Vec<(crate::program::model::pcode::AttributeId, i64)>,
-    }
-
-    impl crate::program::model::pcode::Encoder for MockEncoder {
-        fn open_element(&mut self, _elem_id: crate::program::model::pcode::ElementId) -> io::Result<()> {
-            Ok(())
-        }
-        fn close_element(&mut self, _elem_id: crate::program::model::pcode::ElementId) -> io::Result<()> {
-            Ok(())
-        }
-        fn write_bool(&mut self, _attrib_id: crate::program::model::pcode::AttributeId, _val: bool) -> io::Result<()> {
-            Ok(())
-        }
-        fn write_signed_integer(
-            &mut self,
-            attrib_id: crate::program::model::pcode::AttributeId,
-            val: i64,
-        ) -> io::Result<()> {
-            self.log.push((attrib_id, val));
-            Ok(())
-        }
-        fn write_unsigned_integer(
-            &mut self,
-            attrib_id: crate::program::model::pcode::AttributeId,
-            val: u64,
-        ) -> io::Result<()> {
-            self.log.push((attrib_id, val as i64));
-            Ok(())
-        }
-        fn write_string(&mut self, _attrib_id: crate::program::model::pcode::AttributeId, _val: &str) -> io::Result<()> {
-            Ok(())
-        }
-        fn write_string_indexed(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _index: i32,
-            _val: &str,
-        ) -> io::Result<()> {
-            Ok(())
-        }
-        fn write_space(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _spc: &AddressSpace,
-        ) -> io::Result<()> {
-            Ok(())
-        }
-        fn write_space_indexed(
-            &mut self,
-            _attrib_id: crate::program::model::pcode::AttributeId,
-            _index: i32,
-            _name: &str,
-        ) -> io::Result<()> {
-            Ok(())
-        }
-        fn write_opcode(&mut self, attrib_id: crate::program::model::pcode::AttributeId, opcode: OpCode) -> io::Result<()> {
-            self.log.push((attrib_id, opcode.ordinal() as i64));
-            Ok(())
-        }
-        fn write_opcode_ordinal(&mut self, attrib_id: crate::program::model::pcode::AttributeId, opcode: i32) -> io::Result<()> {
-            self.log.push((attrib_id, opcode as i64));
-            Ok(())
-        }
-    }
-
-    impl CachedEncoder for MockEncoder {
-        fn clear(&mut self) {
-            self.log.clear();
-        }
-        fn is_empty(&self) -> bool {
-            self.log.is_empty()
-        }
-        fn write_to(&self, _writer: &mut dyn io::Write) -> io::Result<()> {
-            Ok(())
-        }
-    }
-
-    impl PatchEncoder for MockEncoder {
-        fn write_space_id(&mut self, attrib_id: crate::program::model::pcode::AttributeId, space_id: i64) -> io::Result<()> {
-            self.log.push((attrib_id, space_id));
-            Ok(())
-        }
-        fn size(&self) -> i32 {
-            self.log.len() as i32
-        }
-        fn patch_integer_attribute(
-            &mut self,
-            pos: i32,
-            attrib_id: crate::program::model::pcode::AttributeId,
-            val: i64,
-        ) -> bool {
-            let pos = pos as usize;
-            if pos > self.log.len() {
-                return false;
-            }
-            match self.log[pos..].iter_mut().find(|(id, _)| *id == attrib_id) {
-                Some(entry) => {
-                    entry.1 = val;
-                    true
-                }
-                None => false,
-            }
-        }
-    }
-
-    struct MockPcodeEmitPacked {
-        encoder: MockEncoder,
-        fall_offset: i32,
-        start_address: Address,
-        num_ops: i32,
-        labeldef: Vec<Option<i32>>,
-        has_relative_patch: bool,
-        label_refs: Vec<LabelRef>,
-    }
-
-    impl MockPcodeEmitPacked {
-        fn new(fall_offset: i32, start_address: Address) -> Self {
-            Self {
-                encoder: MockEncoder::default(),
-                fall_offset,
-                start_address,
-                num_ops: 0,
-                labeldef: Vec::new(),
-                has_relative_patch: false,
-                label_refs: Vec::new(),
-            }
-        }
-
-        fn set_label(&mut self, label_index: usize, op_index: i32) {
-            while self.labeldef.len() <= label_index {
-                self.labeldef.push(None);
-            }
-            self.labeldef[label_index] = Some(op_index);
-        }
-    }
-
-    impl PcodeEmitPacked for MockPcodeEmitPacked {
-        fn encoder(&self) -> &dyn PatchEncoder {
-            &self.encoder
-        }
-        fn encoder_mut(&mut self) -> &mut dyn PatchEncoder {
-            &mut self.encoder
-        }
-        fn fall_offset(&self) -> i32 {
-            self.fall_offset
-        }
-        fn start_address(&self) -> Address {
-            self.start_address.clone()
-        }
-        fn num_ops(&self) -> i32 {
-            self.num_ops
-        }
-        fn label_def(&self, label_index: i32) -> Option<i32> {
-            self.labeldef.get(label_index as usize).copied().flatten()
-        }
-        fn has_relative_patch(&self) -> bool {
-            self.has_relative_patch
-        }
-        fn set_has_relative_patch(&mut self, value: bool) {
-            self.has_relative_patch = value;
-        }
-        fn label_refs(&self) -> &[LabelRef] {
-            &self.label_refs
-        }
-        fn label_refs_mut(&mut self) -> &mut Vec<LabelRef> {
-            &mut self.label_refs
-        }
-    }
-
     fn ram_space() -> Arc<AddressSpace> {
-        AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
+        AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1)
     }
 
     fn const_space() -> Arc<AddressSpace> {
-        AddressSpace::new("const", 32, 1, AddressSpaceType::Constant, 0)
+        AddressSpace::new("const", 64, 1, AddressSpaceType::Constant, 0)
     }
 
-    #[test]
-    fn emit_header_and_tail_bracket_the_instruction() {
-        let mut emit = MockPcodeEmitPacked::new(4, Address::new(ram_space(), 0x1000));
-        emit.emit_header().unwrap();
-        emit.emit_tail().unwrap();
+    fn walker_at(addr: Address) -> ParserWalker<'static> {
+        // The emitter owns its walker, so the (tiny) snippet context is leaked for the test.
+        let context: &'static SleighParserContext = Box::leak(Box::new(
+            SleighParserContext::for_snippet(
+                addr.clone(),
+                Some(addr),
+                None,
+                None,
+                Some(const_space()),
+            ),
+        ));
+        ParserWalker::new(context)
+    }
 
-        // write_space is a no-op in this mock (it never needs to be scanned/patched), so only
-        // the two `ATTRIB_OFFSET` integer writes show up in the log.
+    fn cpl(tp: ConstTplType, value: u64, space: Option<Arc<AddressSpace>>) -> ConstTpl {
+        ConstTpl {
+            tp,
+            value_real: value,
+            value_spaceid: space,
+            handle_index: 0,
+            select: None,
+        }
+    }
+
+    fn vn(space: Arc<AddressSpace>, offset: u64, size: u64) -> VarnodeTpl {
+        VarnodeTpl {
+            space: cpl(ConstTplType::SpaceId, 0, Some(space)),
+            offset: cpl(ConstTplType::Real, offset, None),
+            size: cpl(ConstTplType::Real, size, None),
+        }
+    }
+
+    fn relative(label: u64, size: u64) -> VarnodeTpl {
+        VarnodeTpl {
+            space: cpl(ConstTplType::SpaceId, 0, Some(const_space())),
+            offset: cpl(ConstTplType::JRelative, label, None),
+            size: cpl(ConstTplType::Real, size, None),
+        }
+    }
+
+    fn op(opc: OpCode, out: Option<VarnodeTpl>, inputs: Vec<VarnodeTpl>) -> OpTpl {
+        let mut op = OpTpl::with_opcode(opc);
+        if let Some(out) = out {
+            op.set_output(out);
+        }
+        for i in inputs {
+            op.add_input(i);
+        }
+        op
+    }
+
+    fn bytes_of(enc: &PatchPackedEncode) -> Vec<u8> {
+        let mut out = Vec::new();
+        enc.write_to(&mut out).unwrap();
+        out
+    }
+
+    fn decoder(bytes: Vec<u8>) -> PackedDecode {
+        let factory: Arc<dyn AddressFactory> =
+            Arc::new(DefaultAddressFactory::new(vec![const_space(), ram_space()]));
+        PackedDecode::new(factory, bytes)
+    }
+
+    /// Decodes an `<addr>` element's space name, offset and size.
+    fn read_varnode(d: &PackedDecode) -> (String, u64, i64) {
+        let el = d.open_element_with_id(ELEM_ADDR).unwrap();
+        let space = d.read_space_with_id(ATTRIB_SPACE).unwrap().name().to_string();
+        let offset = d.read_unsigned_integer_with_id(ATTRIB_OFFSET).unwrap();
+        let size = d.read_signed_integer_with_id(ATTRIB_SIZE).unwrap();
+        d.close_element(el).unwrap();
+        (space, offset, size)
+    }
+
+    /// `COPY ram:0x100:4 <- const:0x2a:4 ; BRANCH <label 0> ; COPY ... ; label 0:` -- the packed
+    /// stream carries the header, both ops, and the branch operand patched from the forced `-1`
+    /// placeholder to the op-relative distance 2 (label at op 3, referenced from op 1).
+    #[test]
+    fn build_encodes_ops_and_patches_relative_branch() {
+        let start = Address::new(ram_space(), 0x1000);
+        let mut enc = PatchPackedEncode::new();
+        {
+            let mut emit = PcodeEmitPacked::new(&mut enc, walker_at(start), None, 4, None);
+            let mut tpl = ConstructTpl::new();
+            tpl.num_labels = 1;
+            tpl.vec = vec![
+                op(
+                    OpCode::CpuiCopy,
+                    Some(vn(ram_space(), 0x100, 4)),
+                    vec![vn(const_space(), 0x2a, 4)],
+                ),
+                op(OpCode::CpuiBranch, None, vec![relative(0, 4)]),
+                op(
+                    OpCode::CpuiCopy,
+                    Some(vn(ram_space(), 0x104, 4)),
+                    vec![vn(const_space(), 1, 4)],
+                ),
+                op(OpCode::CpuiPtradd, None, vec![vn(const_space(), 0, 4)]),
+                op(
+                    OpCode::CpuiCopy,
+                    Some(vn(ram_space(), 0x108, 4)),
+                    vec![vn(const_space(), 2, 4)],
+                ),
+            ];
+            emit.emit_header().unwrap();
+            emit.build(&tpl, -1).unwrap();
+            assert_eq!(emit.label_refs().len(), 1);
+            assert_eq!(emit.label_refs()[0].op_index, 1);
+            assert_eq!(emit.label_refs()[0].label_index, 0);
+            emit.resolve_relatives().unwrap();
+            emit.resolve_final_fallthrough().unwrap();
+            emit.emit_tail().unwrap();
+        }
+
+        let d = decoder(bytes_of(&enc));
+        let inst = d.open_element_with_id(ELEM_INST).unwrap();
+        assert_eq!(d.read_signed_integer_with_id(ATTRIB_OFFSET).unwrap(), 4);
+        let addr = d.open_element_with_id(ELEM_ADDR).unwrap();
+        assert_eq!(d.read_unsigned_integer_with_id(ATTRIB_OFFSET).unwrap(), 0x1000);
+        d.close_element(addr).unwrap();
+
+        // op 0: COPY
+        let el = d.open_element_with_id(ELEM_OP).unwrap();
         assert_eq!(
-            emit.encoder.log,
-            vec![(ATTRIB_OFFSET, 4), (ATTRIB_OFFSET, 0x1000)]
+            d.read_signed_integer_with_id(ATTRIB_CODE).unwrap(),
+            OpCode::CpuiCopy.ordinal() as i64
         );
+        assert_eq!(d.read_signed_integer_with_id(ATTRIB_SIZE).unwrap(), 1);
+        assert_eq!(read_varnode(&d), ("ram".to_string(), 0x100, 4));
+        assert_eq!(read_varnode(&d), ("const".to_string(), 0x2a, 4));
+        d.close_element(el).unwrap();
+
+        // op 1: BRANCH, void output, patched relative operand
+        let el = d.open_element_with_id(ELEM_OP).unwrap();
+        assert_eq!(
+            d.read_signed_integer_with_id(ATTRIB_CODE).unwrap(),
+            OpCode::CpuiBranch.ordinal() as i64
+        );
+        let void = d.open_element_with_id(ELEM_VOID).unwrap();
+        d.close_element(void).unwrap();
+        assert_eq!(read_varnode(&d), ("const".to_string(), 2, 4));
+        d.close_element(el).unwrap();
+
+        // op 2 and op 3 (after the label directive, which emits nothing)
+        for expected in [0x104u64, 0x108] {
+            let el = d.open_element_with_id(ELEM_OP).unwrap();
+            assert_eq!(read_varnode(&d).1, expected);
+            d.close_element_skipping(el).unwrap();
+        }
+        d.close_element(inst).unwrap();
     }
 
-    /// Exercises the whole relative-branch patch cycle: `add_label_ref` flags the next dump as
-    /// needing a patch, `dump` captures a `LabelRef` and forces the operand to a placeholder
-    /// `-1`, and `resolve_relatives` -- once the label has actually been defined -- rewrites
-    /// that placeholder to the real op-relative offset (label defined at op 5, referenced from
-    /// op 2, so offset 3).
+    /// A backwards label reference through a 1-byte operand is masked to 8 bits (Java's
+    /// `mask >>>= (8 - labelSize) * 8`).
     #[test]
-    fn resolve_relatives_patches_branch_target_to_relative_offset() {
-        let mut emit = MockPcodeEmitPacked::new(2, Address::new(ram_space(), 0x2000));
-        emit.num_ops = 2;
-        emit.set_label(0, 5);
-
-        // A relative branch operand: label index 0, encoded as an 8-byte relative offset.
-        let mut inputs = [VarnodeData::new(const_space(), 0, 8)];
-        emit.add_label_ref();
-        emit.dump(OpCode::CpuiBranch, &mut inputs, 1, None).unwrap();
-
-        // The placeholder was forced in before encoding.
-        assert_eq!(inputs[0].offset, -1);
-        assert_eq!(emit.label_refs().len(), 1);
-        assert_eq!(emit.label_refs()[0].op_index, 2);
-        assert_eq!(emit.label_refs()[0].label_index, 0);
-
-        // The encoded placeholder offset is still the sentinel prior to resolution.
-        let offset_writes: Vec<i64> = emit
-            .encoder
-            .log
-            .iter()
-            .filter(|(id, _)| *id == ATTRIB_OFFSET)
-            .map(|(_, v)| *v)
-            .collect();
-        assert!(offset_writes.contains(&-1));
-
-        emit.resolve_relatives().unwrap();
-
-        let offset_writes: Vec<i64> = emit
-            .encoder
-            .log
-            .iter()
-            .filter(|(id, _)| *id == ATTRIB_OFFSET)
-            .map(|(_, v)| *v)
-            .collect();
-        assert!(!offset_writes.contains(&-1));
-        assert!(offset_writes.contains(&3));
+    fn backward_relative_is_masked_to_the_label_size() {
+        let start = Address::new(ram_space(), 0x2000);
+        let mut enc = PatchPackedEncode::new();
+        {
+            let mut emit = PcodeEmitPacked::new(&mut enc, walker_at(start), None, 2, None);
+            let mut tpl = ConstructTpl::new();
+            tpl.num_labels = 1;
+            tpl.vec = vec![
+                op(OpCode::CpuiPtradd, None, vec![vn(const_space(), 0, 4)]),
+                op(
+                    OpCode::CpuiCopy,
+                    Some(vn(ram_space(), 0x100, 4)),
+                    vec![vn(const_space(), 7, 4)],
+                ),
+                op(OpCode::CpuiBranch, None, vec![relative(0, 1)]),
+            ];
+            emit.build(&tpl, -1).unwrap();
+            emit.resolve_relatives().unwrap();
+        }
+        let d = decoder(bytes_of(&enc));
+        let el = d.open_element_with_id(ELEM_OP).unwrap();
+        d.close_element_skipping(el).unwrap();
+        let el = d.open_element_with_id(ELEM_OP).unwrap();
+        let void = d.open_element_with_id(ELEM_VOID).unwrap();
+        d.close_element(void).unwrap();
+        // label at op 0, referenced from op 1: -1 masked to one byte
+        assert_eq!(read_varnode(&d).1, 0xff);
+        d.close_element(el).unwrap();
     }
 
     #[test]
     fn resolve_relatives_rejects_undefined_label() {
-        let mut emit = MockPcodeEmitPacked::new(0, Address::new(ram_space(), 0));
-        let mut inputs = [VarnodeData::new(const_space(), 7, 8)];
-        emit.add_label_ref();
-        emit.dump(OpCode::CpuiCbranch, &mut inputs, 1, None).unwrap();
-
+        let start = Address::new(ram_space(), 0);
+        let mut enc = PatchPackedEncode::new();
+        let mut emit = PcodeEmitPacked::new(&mut enc, walker_at(start), None, 0, None);
+        let mut tpl = ConstructTpl::new();
+        tpl.num_labels = 1;
+        tpl.vec = vec![op(OpCode::CpuiBranch, None, vec![relative(0, 8)])];
+        emit.build(&tpl, -1).unwrap();
         let err = emit.resolve_relatives().unwrap_err();
         assert!(err.message().contains("non-existant"));
     }
 
+    /// `LOAD`'s first operand is written as a raw `<spaceid>`, and a template-less build reports
+    /// the missing semantics.
     #[test]
-    fn dump_load_encodes_space_id_before_remaining_inputs() {
-        let mut emit = MockPcodeEmitPacked::new(0, Address::new(ram_space(), 0));
-        let mut inputs = [
-            VarnodeData::new(const_space(), 0x50, 4),
-            VarnodeData::new(ram_space(), 0x8000, 4),
-        ];
-        emit.dump(OpCode::CpuiLoad, &mut inputs, 2, None).unwrap();
-
-        // ATTRIB_NAME is only ever written by dump_space_id.
-        assert!(emit.encoder.log.iter().any(|(id, v)| *id == ATTRIB_NAME && *v == 0x50));
+    fn load_space_operand_is_a_spaceid_element() {
+        let start = Address::new(ram_space(), 0);
+        let mut enc = PatchPackedEncode::new();
+        {
+            let mut emit = PcodeEmitPacked::new(&mut enc, walker_at(start), None, 0, None);
+            let sid = VarnodeData::new(const_space(), ram_space().space_id() as i64, 8);
+            let mut inputs = [sid, VarnodeData::new(ram_space(), 0x10, 4)];
+            let out = VarnodeData::new(ram_space(), 0x20, 4);
+            emit.dump(start_addr(), OpCode::CpuiLoad, &mut inputs, 2, Some(&out)).unwrap();
+            assert!(matches!(
+                emit.build_template(None, -1),
+                Err(PcodeEmitBuildError::NotYetImplemented(_))
+            ));
+        }
+        let d = decoder(bytes_of(&enc));
+        let el = d.open_element_with_id(ELEM_OP).unwrap();
+        assert_eq!(read_varnode(&d), ("ram".to_string(), 0x20, 4));
+        let spc = d.open_element_with_id(ELEM_SPACEID).unwrap();
+        assert_eq!(d.read_space_with_id(ATTRIB_NAME).unwrap().name(), "ram");
+        d.close_element(spc).unwrap();
+        assert_eq!(read_varnode(&d), ("ram".to_string(), 0x10, 4));
+        d.close_element(el).unwrap();
     }
 
-    /// Proves `dyn PcodeEmitPacked` is object safe and usable through a trait object.
-    #[test]
-    fn is_object_safe() {
-        let mut emit: Box<dyn PcodeEmitPacked> =
-            Box::new(MockPcodeEmitPacked::new(1, Address::new(ram_space(), 0x10)));
-        emit.emit_header().unwrap();
-        emit.emit_tail().unwrap();
-        assert!(emit.resolve_relatives().is_ok());
+    fn start_addr() -> Address {
+        Address::new(ram_space(), 0)
     }
 }
