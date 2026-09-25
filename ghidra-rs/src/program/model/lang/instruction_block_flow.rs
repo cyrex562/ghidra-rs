@@ -3,19 +3,12 @@
 //! A small value type describing a single control-flow edge leaving an [`InstructionBlock`]
 //! (crate::program::model::lang::instruction_block::InstructionBlock) -- a branch, call,
 //! call-fallthrough, or forced "priority" start -- pointing at the address the flow lands on.
-//!
-//! This concrete type also implements the pre-existing marker seam trait
-//! [`seam_stubs::InstructionBlockFlow`](crate::program::seam_stubs::InstructionBlockFlow), so it
-//! can be stored wherever `InstructionBlock` (already ported as a trait, see that module's docs
-//! for why) holds `Box<dyn seam_stubs::InstructionBlockFlow>` without needing to touch that
-//! already-ported file.
 
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::InstructionBlockFlow as InstructionBlockFlowSeam;
 
 /// The kind of flow a given [`InstructionBlockFlow`] represents.
 ///
@@ -152,8 +145,6 @@ impl fmt::Display for InstructionBlockFlow {
     }
 }
 
-impl InstructionBlockFlowSeam for InstructionBlockFlow {}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -261,12 +252,5 @@ mod tests {
         assert_eq!(InstructionBlockFlowType::Branch.to_string(), "BRANCH");
         assert_eq!(InstructionBlockFlowType::CallFallthrough.to_string(), "CALL_FALLTHROUGH");
         assert_eq!(InstructionBlockFlowType::Call.to_string(), "CALL");
-    }
-
-    #[test]
-    fn implements_seam_marker_trait() {
-        fn assert_impl(_v: &dyn InstructionBlockFlowSeam) {}
-        let flow = InstructionBlockFlow::new(ram_addr(0x2000), None, InstructionBlockFlowType::Branch);
-        assert_impl(&flow);
     }
 }

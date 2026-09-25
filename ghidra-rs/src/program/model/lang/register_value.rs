@@ -189,6 +189,10 @@ impl RegisterValue {
     /// exactly and which it approximates.
     pub fn from_trait_object(value: &dyn RegisterValueTrait) -> Self {
         let register = value.get_register();
+        if let Some(bytes) = value.exact_bytes() {
+            // A real value: its mask and value bytes cross the trait boundary intact.
+            return Self::from_bytes(register, &bytes);
+        }
         if value.has_value() {
             Self::with_value(register, value.get_unsigned_value_ignore_mask())
         } else {
@@ -421,7 +425,21 @@ impl RegisterValueTrait for RegisterValue {
         let other_concrete = RegisterValue::from_trait_object(other);
         Box::new(RegisterValue::combine_values(self, &other_concrete))
     }
+
+    fn exact_bytes(&self) -> Option<Vec<u8>> {
+        Some(self.bytes.clone())
+    }
 }
+
+/// Port of `RegisterValue.equals(Object)`: the same register (Java's `==` on `Register`, whose
+/// analog here is [`same_register`]) and the same mask/value bytes.
+impl PartialEq for RegisterValue {
+    fn eq(&self, other: &Self) -> bool {
+        same_register(&self.register, &other.register) && self.bytes == other.bytes
+    }
+}
+
+impl Eq for RegisterValue {}
 
 fn find_by_name(reg: &RegisterRef, name: &str) -> Option<RegisterRef> {
     if reg.name() == name {
@@ -590,6 +608,23 @@ mod tests {
 
         let reconstructed = RegisterValue::from_trait_object(boxed.as_ref());
         assert_eq!(reconstructed.unsigned_value(), Some(0xCAFEBABE));
+    }
+
+    /// A partially-known value (only `al` of `eax`) keeps its exact mask across a trait-object
+    /// boundary, and equality is Java's: same register, same bytes.
+    #[test]
+    fn trait_object_round_trip_keeps_a_partial_mask() {
+        let mut reg = base_register("eax", 4);
+        let al = child_register(&mut reg, "al", 0, 1);
+        let partial = RegisterValue::with_value(al, 0x7F).get_register_value(&reg);
+        assert!(partial.has_any_value() && !partial.has_value());
+
+        let boxed: Box<dyn RegisterValueTrait> = Box::new(partial.clone());
+        let reconstructed = RegisterValue::from_trait_object(boxed.as_ref());
+        assert_eq!(reconstructed, partial);
+        assert!(!reconstructed.has_value());
+        assert_eq!(reconstructed.base_value_mask(), partial.base_value_mask());
+        assert_ne!(reconstructed, RegisterValue::with_value(reg, 0x7F));
     }
 
     #[test]

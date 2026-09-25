@@ -2,24 +2,18 @@
 //!
 //! Describes an error or conflict detected while adding disassembled instructions to a program:
 //! duplicate/conflicting code units, a failed parse, a memory error while parsing, or an
-//! unaligned flow. Constructed (and owned) by whichever [`InstructionBlock`] it was raised
-//! against.
+//! unaligned flow. Raised against (and owned by) an
+//! [`InstructionBlock`](crate::program::model::lang::instruction_block::InstructionBlock).
 //!
-//! `InstructionBlock` -- the block that owns/raises these errors -- was already ported (before
-//! this file) as a trait rather than a concrete struct, specifically because Java's
-//! `InstructionBlock` constructs `InstructionError`s that reference it back
-//! (`new InstructionError(this, type, ...)`), and `InstructionError` didn't exist yet. That
-//! trait's methods reference this crate's [`seam_stubs::InstructionError`] marker trait (via
-//! `Box<dyn InstructionError>`) rather than this concrete type, so no change to that already-done
-//! file is needed: this concrete [`InstructionError`] implements that marker trait (see its impl
-//! below) and is otherwise a full, real port of the Java class.
-
-use std::sync::Arc;
+//! Java's constructors take the owning block (`new InstructionError(this, type, ...)`) and
+//! expose it again through `getInstructionBlock()`. The block owns its error, so that
+//! back-reference is dropped here (decision 2026-09-24: back-references become IDs or call-time
+//! arguments): whoever holds an error reached it through its block. No Java caller outside
+//! `InstructionError` itself reads `getInstructionBlock()`.
 
 use crate::program::model::address::Address;
-use crate::program::model::lang::instruction_block::InstructionBlock;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::Instruction;
-use crate::program::seam_stubs::{InstructionError as InstructionErrorSeam, RegisterValue};
 use crate::program::util::instruction_utils::InstructionUtils;
 use crate::util::Msg;
 
@@ -79,15 +73,15 @@ impl InstructionErrorType {
 ///
 /// Port of `ghidra.program.model.lang.InstructionError`.
 pub struct InstructionError {
-    block: Arc<dyn InstructionBlock>,
     error_type: InstructionErrorType,
     /// Address of another code unit which conflicts with the new instruction (only applies to
     /// CODE_UNIT or DUPLICATE conflict errors).
     conflict_address: Option<Address>,
     /// Address of the intended instruction which failed to be created.
     instruction_address: Address,
-    /// Disassembly context at `instruction_address` (applies to PARSE error only).
-    parse_context: Option<Box<dyn RegisterValue>>,
+    /// Disassembly context at `instruction_address` (applies to PARSE error only; `None` for a
+    /// language without a context register).
+    parse_context: Option<RegisterValue>,
     /// Flow-from address (`None` if unknown).
     flow_from_address: Option<Address>,
     message: String,
@@ -98,10 +92,9 @@ impl InstructionError {
     ///
     /// Port of the package-private general constructor
     /// `InstructionError(InstructionBlock, InstructionErrorType, Address, Address, Address,
-    /// String)`.
+    /// String)`, less the owning block (see the module docs).
     ///
     /// # Arguments
-    /// * `block` - instruction block which corresponds to this error
     /// * `error_type` - type of instruction error/conflict
     /// * `instruction_address` - address of new intended instruction which failed to be created
     /// * `conflict_address` - address of another code unit which conflicts with new intended
@@ -109,7 +102,6 @@ impl InstructionError {
     /// * `flow_from_address` - flow from address
     /// * `message` - a message describing the conflict
     pub(crate) fn new(
-        block: Arc<dyn InstructionBlock>,
         error_type: InstructionErrorType,
         instruction_address: Address,
         conflict_address: Option<Address>,
@@ -117,7 +109,6 @@ impl InstructionError {
         message: String,
     ) -> Self {
         InstructionError {
-            block,
             error_type,
             conflict_address,
             instruction_address,
@@ -130,35 +121,28 @@ impl InstructionError {
     /// Construct a PARSE error.
     ///
     /// Port of the package-private PARSE constructor `InstructionError(InstructionBlock,
-    /// RegisterValue, Address, Address, String)`.
+    /// RegisterValue, Address, Address, String)`, less the owning block (see the module docs).
     ///
     /// # Arguments
-    /// * `block` - instruction block which corresponds to this error
-    /// * `context_value` - disassembler context used during instruction parse
+    /// * `context_value` - disassembler context used during instruction parse (`None`, Java's
+    ///   `null`, for a language without a context register)
     /// * `instruction_address` - address of new intended instruction which failed to be created
     /// * `flow_from_address` - flow from address
     /// * `message` - a message describing the conflict
     pub(crate) fn new_parse_error(
-        block: Arc<dyn InstructionBlock>,
-        context_value: Box<dyn RegisterValue>,
+        context_value: Option<RegisterValue>,
         instruction_address: Address,
         flow_from_address: Option<Address>,
         message: String,
     ) -> Self {
         InstructionError {
-            block,
             error_type: InstructionErrorType::Parse,
             conflict_address: None,
             instruction_address,
-            parse_context: Some(context_value),
+            parse_context: context_value,
             flow_from_address,
             message,
         }
-    }
-
-    /// Instruction block which corresponds to this error.
-    pub fn get_instruction_block(&self) -> Arc<dyn InstructionBlock> {
-        self.block.clone()
     }
 
     /// Type of instruction error.
@@ -191,8 +175,8 @@ impl InstructionError {
 
     /// Disassembler context at intended instruction address (required for PARSE error, `None`
     /// for others).
-    pub fn get_parse_context_value(&self) -> Option<&dyn RegisterValue> {
-        self.parse_context.as_deref()
+    pub fn get_parse_context_value(&self) -> Option<&RegisterValue> {
+        self.parse_context.as_ref()
     }
 
     /// Flow-from address if known, else `None`.
@@ -220,12 +204,6 @@ impl InstructionError {
         buf.push_str("\n  Existing Instruction: ");
         buf.push_str(&get_instruction_details(existing_instr));
         Msg::debug("InstructionError", &buf);
-    }
-}
-
-impl InstructionErrorSeam for InstructionError {
-    fn get_instruction_address(&self) -> Address {
-        self.instruction_address.clone()
     }
 }
 
@@ -292,107 +270,9 @@ mod tests {
         Register::new("r0", "", Address::new(register_space(), 0), 4, false, 0)
     }
 
-    /// Minimal `InstructionBlock` stand-in used only to give constructed `InstructionError`s
-    /// something to reference and return via `get_instruction_block()`.
-    struct StubBlock {
-        start: Address,
-    }
-
-    impl InstructionBlock for StubBlock {
-        fn set_start_of_flow(&mut self, _is_start: bool) {}
-        fn is_flow_start(&self) -> bool {
-            false
-        }
-        fn get_start_address(&self) -> Address {
-            self.start.clone()
-        }
-        fn get_max_address(&self) -> Address {
-            self.start.clone()
-        }
-        fn get_instruction_at(&self, _address: &Address) -> Option<Arc<dyn Instruction>> {
-            None
-        }
-        fn find_first_intersecting_instruction(
-            &self,
-            _min: &Address,
-            _max: &Address,
-        ) -> Option<Arc<dyn Instruction>> {
-            None
-        }
-        fn add_instruction(&mut self, _instruction: Arc<dyn Instruction>) {}
-        fn add_block_flow(
-            &mut self,
-            _block_flow: Box<dyn crate::program::seam_stubs::InstructionBlockFlow>,
-        ) {
-        }
-        fn add_branch_flow(&mut self, _destination_address: Address) {}
-        fn set_fall_through(&mut self, _fallthrough_address: Option<Address>) {}
-        fn get_branch_flows(&self) -> Vec<Address> {
-            Vec::new()
-        }
-        fn get_block_flows(
-            &self,
-        ) -> Option<Vec<Box<dyn crate::program::seam_stubs::InstructionBlockFlow>>> {
-            None
-        }
-        fn get_fall_through(&self) -> Option<Address> {
-            None
-        }
-        fn set_instruction_error(
-            &mut self,
-            _error_type: crate::program::seam_stubs::InstructionErrorType,
-            _intended_instruction_address: Address,
-            _conflict_address: Address,
-            _flow_from_address: Option<Address>,
-            _message: String,
-        ) {
-        }
-        fn set_parse_conflict(
-            &mut self,
-            _conflict_address: Address,
-            _context_value: Box<dyn RegisterValue>,
-            _flow_from_address: Option<Address>,
-            _message: String,
-        ) {
-        }
-        fn clear_conflict(&mut self) {}
-        fn get_instruction_conflict(&self) -> Option<Box<dyn InstructionErrorSeam>> {
-            None
-        }
-        fn iter_instructions(&self) -> Box<dyn Iterator<Item = Arc<dyn Instruction>> + '_> {
-            Box::new(std::iter::empty())
-        }
-        fn get_last_instruction_address(&self) -> Option<Address> {
-            None
-        }
-        fn is_empty(&self) -> bool {
-            true
-        }
-        fn get_instruction_count(&self) -> usize {
-            0
-        }
-        fn get_instructions_added_count(&self) -> i32 {
-            0
-        }
-        fn set_instructions_added_count(&mut self, _count: i32) {}
-        fn get_flow_from_address(&self) -> Option<Address> {
-            None
-        }
-        fn set_flow_from_address(&mut self, _flow_from: Option<Address>) {}
-        fn has_instruction_error(&self) -> bool {
-            false
-        }
-    }
-
-    fn stub_block() -> Arc<dyn InstructionBlock> {
-        Arc::new(StubBlock { start: ram_addr(0x1000) })
-    }
-
     #[test]
     fn general_constructor_populates_all_fields_except_parse_context() {
-        let block = stub_block();
         let err = InstructionError::new(
-            block.clone(),
             InstructionErrorType::InstructionConflict,
             ram_addr(0x2000),
             Some(ram_addr(0x2000)),
@@ -400,7 +280,6 @@ mod tests {
             "conflict!".to_string(),
         );
 
-        assert!(Arc::ptr_eq(&err.get_instruction_block(), &block));
         assert_eq!(err.get_instruction_error_type(), InstructionErrorType::InstructionConflict);
         assert_eq!(err.get_instruction_address(), ram_addr(0x2000));
         assert_eq!(err.get_conflict_address(), Some(ram_addr(0x2000)));
@@ -411,11 +290,9 @@ mod tests {
 
     #[test]
     fn parse_constructor_forces_parse_type_and_no_conflict_address() {
-        let block = stub_block();
         let context = RealRegisterValue::with_value(test_register(), 0x42);
         let err = InstructionError::new_parse_error(
-            block,
-            Box::new(context),
+            Some(context),
             ram_addr(0x3000),
             None,
             "parse failed".to_string(),
@@ -426,14 +303,13 @@ mod tests {
         assert_eq!(err.get_flow_from_address(), None);
         assert!(err.get_parse_context_value().is_some());
         assert_eq!(
-            err.get_parse_context_value().unwrap().get_unsigned_value_ignore_mask(),
+            err.get_parse_context_value().unwrap().unsigned_value_ignore_mask(),
             0x42
         );
     }
 
     #[test]
     fn is_instruction_conflict_true_only_for_instruction_conflict_and_offcut() {
-        let block = stub_block();
         for (error_type, expected) in [
             (InstructionErrorType::Duplicate, false),
             (InstructionErrorType::InstructionConflict, true),
@@ -444,7 +320,6 @@ mod tests {
             (InstructionErrorType::FlowAlignment, false),
         ] {
             let err = InstructionError::new(
-                block.clone(),
                 error_type,
                 ram_addr(0x1000),
                 None,
@@ -457,9 +332,7 @@ mod tests {
 
     #[test]
     fn is_offcut_error_true_only_for_offcut_instruction() {
-        let block = stub_block();
         let offcut = InstructionError::new(
-            block.clone(),
             InstructionErrorType::OffcutInstruction,
             ram_addr(0x1000),
             None,
@@ -467,7 +340,6 @@ mod tests {
             String::new(),
         );
         let not_offcut = InstructionError::new(
-            block,
             InstructionErrorType::InstructionConflict,
             ram_addr(0x1000),
             None,
@@ -487,22 +359,6 @@ mod tests {
         assert!(!InstructionErrorType::Parse.is_conflict());
         assert!(!InstructionErrorType::Memory.is_conflict());
         assert!(!InstructionErrorType::FlowAlignment.is_conflict());
-    }
-
-    #[test]
-    fn seam_trait_get_instruction_address_matches_inherent_getter() {
-        let block = stub_block();
-        let err = InstructionError::new(
-            block,
-            InstructionErrorType::Memory,
-            ram_addr(0x4000),
-            None,
-            None,
-            String::new(),
-        );
-        let as_seam: &dyn InstructionErrorSeam = &err;
-        assert_eq!(as_seam.get_instruction_address(), ram_addr(0x4000));
-        assert_eq!(as_seam.get_instruction_address(), err.get_instruction_address());
     }
 
     #[test]

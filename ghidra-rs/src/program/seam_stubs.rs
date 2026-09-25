@@ -1122,30 +1122,6 @@ pub use crate::program::model::listing::variable_filter::VariableFilter;
 // every importer converges on one type instead of two same-named ones.
 pub use crate::program::model::lang::instruction_error::InstructionErrorType;
 
-/// Placeholder for `ghidra.program.model.lang.InstructionError`, referenced by
-/// [`InstructionBlock`](crate::program::model::lang::instruction_block::InstructionBlock) before
-/// the real class was ported. The real class's constructor takes the owning `InstructionBlock`
-/// back (`new InstructionError(this, type, ...)`), which is the source of the cycle
-/// `InstructionBlock` was cut at, so `InstructionBlock` still only depends on this marker trait
-/// (via `Box<dyn InstructionError>`) rather than the concrete
-/// [`InstructionError`](crate::program::model::lang::instruction_error::InstructionError) type
-/// directly. The real, concrete `InstructionError` (see that module) implements this trait.
-///
-/// Grown one method beyond a pure marker: `InstructionSet`'s block-flow iterator
-/// (`InstructionSet.BlockIterator.addFlows`) needs `getInstructionAddress()` off of whatever
-/// `InstructionBlock::get_instruction_conflict` returns, so that accessor is exposed here too.
-pub trait InstructionError {
-    /// Address of the intended instruction which failed to be created. Mirrors
-    /// `InstructionError.getInstructionAddress()`.
-    fn get_instruction_address(&self) -> Address;
-}
-
-/// Placeholder for `ghidra.program.model.lang.InstructionBlockFlow`, referenced by
-/// [`InstructionBlock`](crate::program::model::lang::instruction_block::InstructionBlock) before
-/// the real class is ported. `InstructionBlock` only ever stores and returns this type opaquely,
-/// so no members are needed yet.
-pub trait InstructionBlockFlow {}
-
 /// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
 /// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext) (which
 /// only ever passes this type through) and by
@@ -1178,6 +1154,15 @@ pub trait RegisterValue {
     /// Combines `other`'s masked bits onto this value, preferring `other` wherever both specify a
     /// bit. Mirrors `RegisterValue.combineValues(RegisterValue)`.
     fn combine_values(&self, other: &dyn RegisterValue) -> Box<dyn RegisterValue>;
+
+    /// Stands in for `RegisterValue.toBytes()`: the base register's mask bytes followed by its
+    /// value bytes, when this value carries them. The real
+    /// [`RegisterValue`](crate::program::model::lang::register_value::RegisterValue) always does,
+    /// which is what lets a value with a partial mask cross a `Box<dyn RegisterValue>` boundary
+    /// without losing which bits are known; a test double without a byte form returns `None`.
+    fn exact_bytes(&self) -> Option<Vec<u8>> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.program.model.lang.ParserContext`, referenced by
