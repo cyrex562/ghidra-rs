@@ -113,7 +113,26 @@ impl LocalBufferFile {
         })
     }
 
+    /// Length of the fixed part of the header (magic, file ID, version, block size, free index,
+    /// parameter count). Mirrors Java's `VER1_FIXED_HEADER_LENGTH`.
+    const VER1_FIXED_HEADER_LENGTH: usize = 32;
+
+    /// Writes the header block. As in Java's `writeHeader()`, the fixed header plus every user
+    /// parameter must fit within one buffer; otherwise this fails with "Buffer size too small"
+    /// rather than spilling into buffer 0's block. (Java detects the overflow part-way through
+    /// writing; this checks before writing anything, so a failed call leaves the old header
+    /// intact.)
     fn write_header(&mut self) -> io::Result<()> {
+        let header_len = Self::VER1_FIXED_HEADER_LENGTH
+            + self
+                .parameters
+                .keys()
+                .map(|name| 8 + name.len())
+                .sum::<usize>();
+        if header_len > self.buffer_size {
+            return Err(io::Error::new(io::ErrorKind::Other, "Buffer size too small"));
+        }
+
         self.file.seek(SeekFrom::Start(0))?;
         self.file.write_all(&Self::MAGIC_NUMBER.to_be_bytes())?;
         self.file.write_all(&self.file_id.to_be_bytes())?;
@@ -318,5 +337,47 @@ impl BufferFile for LocalBufferFile {
         // because we don't want to write header if we are deleting.
         std::fs::remove_file(path)?;
         Ok(true)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn header_that_does_not_fit_one_buffer_is_rejected_not_spilled() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("small.gbf");
+        let mut lbf = LocalBufferFile::create(path.clone(), 64).unwrap();
+
+        // 32 fixed + (8 + 12) + (8 + 12) == 72 > 64.
+        lbf.set_parameter("parameter-01", 1);
+        lbf.set_parameter("parameter-02", 2);
+        let mut buf = DataBuffer::new(7, 64);
+        buf.get_data_mut()[0] = 0x5A;
+        lbf.put(&buf, 0).unwrap();
+        let err = lbf.close().unwrap_err();
+        assert_eq!(err.to_string(), "Buffer size too small");
+
+        // Buffer 0 is intact: the header was not written over it.
+        let reread = lbf.get(0).unwrap();
+        assert_eq!(reread.get_id(), 7);
+        assert_eq!(reread.get_data()[0], 0x5A);
+    }
+
+    #[test]
+    fn header_that_exactly_fits_is_written() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("fit.gbf");
+        {
+            let mut lbf = LocalBufferFile::create(path.clone(), 64).unwrap();
+            // 32 fixed + (8 + 12) + (8 + 4) == 64.
+            lbf.set_parameter("parameter-01", 1);
+            lbf.set_parameter("p-02", 2);
+            lbf.close().unwrap();
+        }
+        let lbf = LocalBufferFile::open(path, true).unwrap();
+        assert_eq!(lbf.get_parameter("parameter-01"), Some(1));
+        assert_eq!(lbf.get_parameter("p-02"), Some(2));
     }
 }

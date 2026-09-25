@@ -740,7 +740,13 @@ mod tests {
         fn set_prev_in_checkpoint(&mut self, _node: Option<BufferNodeRef>) {}
     }
 
-    const BUF_SIZE: usize = 256;
+    /// Buffer size for the source (and so the recovery) files. A recovery file's header holds
+    /// `RecoveryFile`'s ten parameters plus this manager's `CHANGE_SET_REQUIRED_PARM`: 263 bytes,
+    /// which must fit in one buffer (`LocalBufferFile::write_header()` fails with "Buffer size
+    /// too small" otherwise, as in Java). Before that check existed, 256 let the header spill
+    /// into buffer 0's block; whether the spill corrupted anything depended on `HashMap`
+    /// iteration order, which made these tests flaky.
+    const BUF_SIZE: usize = 512;
 
     fn make_source(dir: &Path) -> MockSource {
         let src = LocalBufferFile::create(dir.join("src.bf"), BUF_SIZE).unwrap();

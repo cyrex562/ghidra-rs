@@ -24,7 +24,7 @@
 //! `ZipFileSystem`, `ZipFileSystemBuiltin` and `SevenZipFileSystemFactory` are not yet ported;
 //! see [`crate::file::seam_stubs`] for their minimal placeholders (STUBS.tsv).
 
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -136,6 +136,27 @@ impl GFileSystemFactoryByteProvider<ZipFileSystem> for ZipFileSystemFactory {
     }
 }
 
+/// Atomically creates a new, uniquely named file in the system temp directory.
+///
+/// Mirrors Java's `Application.createTempFile(prefix, Long.toString(System.currentTimeMillis()))`,
+/// which bottoms out in `File.createTempFile`: the name is `prefix + <random unsigned long> +
+/// <millis>`, and the file is created exclusively, retrying with a new random component if the
+/// name is taken. (A name built from the prefix and millisecond clock alone lets two calls in the
+/// same millisecond truncate and interleave writes into one shared file.)
+fn create_temp_file(filename_prefix: &str) -> io::Result<(PathBuf, File)> {
+    let millis = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let dir = std::env::temp_dir();
+    loop {
+        let random: u64 = rand::random();
+        let path = dir.join(format!("{filename_prefix}{random}{millis}"));
+        match OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(file) => return Ok((path, file)),
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e),
+        }
+    }
+}
+
 /// Copies `byte_provider`'s contents into a fresh plaintext temp file, returning its path.
 ///
 /// Mirrors `FileSystemService.createPlaintextTempFile(GByteStore, String, TaskMonitor)` (which
@@ -148,14 +169,11 @@ fn create_plaintext_temp_file(
     monitor: &dyn TaskMonitor,
 ) -> io::Result<PathBuf> {
     let len = byte_provider.length()?;
-    let millis = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
-    let mut path = std::env::temp_dir();
-    path.push(format!("{filename_prefix}{millis}"));
+    let (path, mut file) = create_temp_file(filename_prefix)?;
 
     monitor.set_message("Copying to temp file");
     monitor.initialize(len as i64);
 
-    let mut file = File::create(&path)?;
     const CHUNK: u64 = 64 * 1024;
     let mut offset = 0u64;
     while offset < len {
@@ -254,6 +272,15 @@ mod tests {
         assert_eq!(contents, b"hello zip world");
 
         let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn temp_files_created_in_the_same_millisecond_are_distinct() {
+        let (a, _fa) = create_temp_file(ZipFileSystemBuiltin::TEMPFILE_PREFIX).unwrap();
+        let (b, _fb) = create_temp_file(ZipFileSystemBuiltin::TEMPFILE_PREFIX).unwrap();
+        assert_ne!(a, b);
+        let _ = std::fs::remove_file(&a);
+        let _ = std::fs::remove_file(&b);
     }
 
     #[test]

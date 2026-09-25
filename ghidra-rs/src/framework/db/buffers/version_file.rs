@@ -754,18 +754,13 @@ mod tests {
 
     /// Smallest buffer size that safely holds `VersionFile`'s own header parameters.
     ///
-    /// This is unrelated to anything `VersionFile` itself does -- it works around a real, latent
-    /// bug found in this crate's pre-existing `LocalBufferFile::write_header()` (outside this
-    /// class's scope, so not fixed here): that method serializes every parameter into the file's
-    /// single header block with no bounds check against `block_size`, so if the serialized
-    /// parameters don't fit, the overflow silently spills into (and corrupts) the data blocks
-    /// that immediately follow the header, rather than erroring or spanning extra blocks. Every
-    /// `VersionFile` unconditionally sets 9 header parameters by the time it's closed (7 in the
-    /// write constructor, 2 more in `close()`), whose keys alone total 136 bytes, so any test
-    /// that closes and then re-parses a `VersionFile` needs a buffer size comfortably above the
-    /// resulting ~240-byte header -- a tiny `buffer_size` like 32 or 64 (otherwise convenient for
-    /// exercising multi-block chaining in isolation) reliably corrupts buffer index 0 the moment
-    /// `close()` rewrites the header.
+    /// `LocalBufferFile::write_header()` requires the fixed 32-byte header plus every
+    /// parameter (8 bytes + name each) to fit in one buffer, failing with "Buffer size too small"
+    /// otherwise, as Java's `LocalBufferFile.writeHeader()` does. Every `VersionFile`
+    /// unconditionally sets 9 header parameters by the time it's closed (7 in the write
+    /// constructor, 2 more in `close()`), whose keys alone total 136 bytes, so any test that
+    /// closes a `VersionFile` needs a buffer size above the resulting ~240-byte header -- a tiny
+    /// `buffer_size` like 32 or 64 makes `close()` fail.
     const SAFE_TEST_BUFFER_SIZE: usize = 256;
 
     /// Like [`SAFE_TEST_BUFFER_SIZE`], but with extra headroom for tests that also copy a couple
@@ -790,7 +785,7 @@ mod tests {
     #[test]
     fn create_records_original_and_target_file_ids() {
         let dir = tempfile::tempdir().unwrap();
-        let (original, target) = make_pair(dir.path(), 64);
+        let (original, target) = make_pair(dir.path(), SAFE_TEST_BUFFER_SIZE);
 
         let vf = VersionFile::create(&original, &target, dir.path().join("v.vf")).unwrap();
         assert_eq!(vf.get_original_file_id(), original.get_file_id());
@@ -853,7 +848,7 @@ mod tests {
         // Mirrors Java's putOldBuffer(): a disallowed index is silently ignored rather than
         // raising an error (only isPutOK() gates the store).
         let dir = tempfile::tempdir().unwrap();
-        let (original, target) = make_pair(dir.path(), 64);
+        let (original, target) = make_pair(dir.path(), SAFE_TEST_BUFFER_SIZE);
         let mut vf = VersionFile::create(&original, &target, dir.path().join("v.vf")).unwrap();
 
         let buf = DataBuffer::new(0, 64);
@@ -866,7 +861,7 @@ mod tests {
     #[test]
     fn operations_on_closed_version_file_return_closed_error() {
         let dir = tempfile::tempdir().unwrap();
-        let (original, target) = make_pair(dir.path(), 64);
+        let (original, target) = make_pair(dir.path(), SAFE_TEST_BUFFER_SIZE);
         let mut vf = VersionFile::create(&original, &target, dir.path().join("v.vf")).unwrap();
         vf.close().unwrap();
 
@@ -985,7 +980,7 @@ mod tests {
     #[test]
     fn abort_on_new_write_file_deletes_it() {
         let dir = tempfile::tempdir().unwrap();
-        let (original, target) = make_pair(dir.path(), 64);
+        let (original, target) = make_pair(dir.path(), SAFE_TEST_BUFFER_SIZE);
         let vfile_path = dir.path().join("v.vf");
         let mut vf = VersionFile::create(&original, &target, vfile_path.clone()).unwrap();
         assert!(vfile_path.exists());
@@ -1030,7 +1025,7 @@ mod tests {
         // open()/parseFile(), so originalBufCount/freeIndexes/bufferIndexMap stay empty even
         // though the underlying BufferFile is a real, valid version file.
         let dir = tempfile::tempdir().unwrap();
-        let (original, target) = make_pair(dir.path(), 64);
+        let (original, target) = make_pair(dir.path(), SAFE_TEST_BUFFER_SIZE);
         let vfile_path = dir.path().join("v.vf");
         let mut vf = VersionFile::create(&original, &target, vfile_path.clone()).unwrap();
         vf.close().unwrap();
@@ -1047,7 +1042,7 @@ mod tests {
         // This branch is unreachable through the public constructors (see module docs), but its
         // shape is still ported; exercise it directly to pin down the documented-gap error.
         let dir = tempfile::tempdir().unwrap();
-        let (original, target) = make_pair(dir.path(), 64);
+        let (original, target) = make_pair(dir.path(), SAFE_TEST_BUFFER_SIZE);
         let mut vf = VersionFile::create(&original, &target, dir.path().join("v.vf")).unwrap();
         vf.read_only = false; // already false, kept explicit for clarity
         vf.initial_buf_count = 5; // force the otherwise-unreachable branch

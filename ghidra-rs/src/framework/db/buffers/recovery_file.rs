@@ -828,15 +828,13 @@ mod tests {
     use super::*;
 
     /// Smallest buffer size that safely holds `RecoveryFile`'s own header parameters. See
-    /// `version_file.rs`'s `SAFE_TEST_BUFFER_SIZE` doc comment for the underlying
-    /// `LocalBufferFile::write_header()` overflow bug this works around: it serializes every
-    /// parameter into the file's single header block with no bounds check, so a too-small buffer
-    /// size lets the header spill into (and corrupt) the data blocks that follow. `RecoveryFile`
-    /// unconditionally sets up to 10 header parameters (`MAGIC_NUMBER_PARM`,
+    /// `version_file.rs`'s `SAFE_TEST_BUFFER_SIZE` doc comment: `LocalBufferFile::write_header()`
+    /// fails with "Buffer size too small" when the header parameters do not fit in one buffer.
+    /// `RecoveryFile` unconditionally sets up to 10 header parameters (`MAGIC_NUMBER_PARM`,
     /// `SRC_FILE_ID_HI/LOW_PARM`, `IS_VALID_PARM`, `TIMESTAMP_HI/LOW_PARM`,
     /// `MAP_BUFFER_INDEX_PARM`, `FREE_LIST_BUFFER_INDEX_PARM`, `FREE_LIST_SIZE_PARM`,
-    /// `INDEX_COUNT_PARM`) by the time it's closed, so any test that closes and re-parses a
-    /// `RecoveryFile` needs a buffer size comfortably above the resulting header.
+    /// `INDEX_COUNT_PARM`) by the time it's closed, so any test that closes a `RecoveryFile`
+    /// needs a buffer size comfortably above the resulting header.
     const SAFE_TEST_BUFFER_SIZE: usize = 256;
 
     /// As [`SAFE_TEST_BUFFER_SIZE`], with extra headroom for tests that also set a couple of
@@ -928,7 +926,7 @@ mod tests {
     #[test]
     fn operations_on_closed_recovery_file_return_closed_error() {
         let dir = tempfile::tempdir().unwrap();
-        let src = LocalBufferFile::create(dir.path().join("src.bf"), 64).unwrap();
+        let src = LocalBufferFile::create(dir.path().join("src.bf"), SAFE_TEST_BUFFER_SIZE).unwrap();
         let mut rf = RecoveryFile::new(&src, dir.path().join("r.rf"), true).unwrap();
         rf.close().unwrap();
 
