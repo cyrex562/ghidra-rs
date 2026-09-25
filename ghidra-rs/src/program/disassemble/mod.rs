@@ -1,7 +1,12 @@
+pub mod disassembler;
 pub mod disassembler_conflict_handler;
 pub mod disassembler_context_impl;
 pub mod disassembler_message_listener;
 
+pub use disassembler::{
+    DisassembledBlock, DisassembledInstruction, Disassembler, DisassemblerInstructionContext,
+    DisassemblerProgramContext,
+};
 pub use disassembler_conflict_handler::DisassemblerConflictHandler;
 pub use disassembler_context_impl::DisassemblerContextImpl;
 pub use disassembler_message_listener::{
@@ -10,8 +15,7 @@ pub use disassembler_message_listener::{
 
 // The three program options the disassembler honours. Each is registered under the
 // [`DISASSEMBLER_PROPERTIES`](crate::program::model::listing::DISASSEMBLER_PROPERTIES) options
-// list; they stand in for the `Disassembler` constants of the same names, and should move onto
-// that type once it is ported.
+// list; `Disassembler` re-exposes them as associated constants of the same names.
 
 /// Place an ERROR bookmark at locations where disassembly could not be performed.
 ///

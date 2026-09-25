@@ -753,6 +753,39 @@ impl SleighLanguage {
         }
         Ok(proto)
     }
+    /// [`Language::parse`], yielding the concrete prototype: what a caller that shares
+    /// prototypes across threads (a [`SharedPrototype`](crate::program::model::listing::instruction_record::SharedPrototype))
+    /// needs, since the trait method boxes it without `Send + Sync`.
+    ///
+    /// # Errors
+    /// As [`Language::parse`].
+    pub fn parse_sleigh(
+        &self,
+        buf: &dyn MemBuffer,
+        context: &mut dyn ProcessorContext,
+        in_delay_slot: bool,
+    ) -> Result<SleighInstructionPrototype, ParseError> {
+        let view: &dyn ProcessorContextView = &*context;
+        let words = read_context_words(self, view);
+        let mem = snapshot_mem_buffer(buf, 0)
+            .map_err(|e| InsufficientBytesException::with_message(e.to_string()))?;
+        let proto = match self.parse_prototype(mem.clone(), words.clone(), in_delay_slot) {
+            Ok(proto) => proto,
+            Err(SleighError::MemoryAccess(e)) => {
+                return Err(InsufficientBytesException::with_message(e.to_string()).into())
+            }
+            Err(SleighError::UnknownInstruction(e)) => return Err(e.into()),
+            Err(SleighError::Sleigh(e)) => {
+                return Err(UnknownInstructionException::with_message(e.message()).into())
+            }
+        };
+        // Java builds the instruction's parser context here to apply its context commits; a
+        // failure to do so is an unknown instruction
+        proto
+            .new_parser_context(mem, words)
+            .map_err(|_| UnknownInstructionException::new())?;
+        Ok(proto)
+    }
 }
 
 impl Language for SleighLanguage {
@@ -862,26 +895,7 @@ impl Language for SleighLanguage {
         context: &mut dyn ProcessorContext,
         in_delay_slot: bool,
     ) -> Result<Box<dyn InstructionPrototype>, ParseError> {
-        let view: &dyn ProcessorContextView = &*context;
-        let words = read_context_words(self, view);
-        let mem = snapshot_mem_buffer(buf, 0)
-            .map_err(|e| InsufficientBytesException::with_message(e.to_string()))?;
-        let proto = match self.parse_prototype(mem.clone(), words.clone(), in_delay_slot) {
-            Ok(proto) => proto,
-            Err(SleighError::MemoryAccess(e)) => {
-                return Err(InsufficientBytesException::with_message(e.to_string()).into())
-            }
-            Err(SleighError::UnknownInstruction(e)) => return Err(e.into()),
-            Err(SleighError::Sleigh(e)) => {
-                return Err(UnknownInstructionException::with_message(e.message()).into())
-            }
-        };
-        // Java builds the instruction's parser context here to apply its context commits; a
-        // failure to do so is an unknown instruction
-        proto
-            .new_parser_context(mem, words)
-            .map_err(|_| UnknownInstructionException::new())?;
-        Ok(Box::new(proto))
+        Ok(Box::new(self.parse_sleigh(buf, context, in_delay_slot)?))
     }
 
     fn get_number_of_user_defined_op_names(&self) -> i32 {

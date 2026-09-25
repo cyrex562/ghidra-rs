@@ -30,6 +30,7 @@ pub mod query;
 pub mod permissions;
 pub mod recognizer;
 pub mod ref_repeat_comment;
+pub mod repeat_instruction_byte_tracker;
 pub mod sourcelanguage;
 pub mod symbol_path;
 pub mod symbol_path_parser;

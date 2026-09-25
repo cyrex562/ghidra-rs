@@ -100,12 +100,15 @@ impl AbstractStoredProgramContext {
     }
 
     /// Resolves a `&Register` (as supplied by every `ProgramContext` trait method) into this
-    /// context's own [`RegisterRef`] for the same register, via a language lookup by name.
+    /// context's own [`RegisterRef`] for the same register, via a language lookup by name. A
+    /// register the language does not have (e.g. `Register.NO_CONTEXT`, the base context register
+    /// of a language without one) is used as given: Java looks such a register up in its value
+    /// maps directly and finds no store, so every read of it yields no value.
     fn resolve(&self, register: &Register) -> RegisterRef {
         self.base
             .language()
             .get_register_by_name(register.name())
-            .unwrap_or_else(|| panic!("register '{}' not found in this context's language", register.name()))
+            .unwrap_or_else(|| register.clone())
     }
 
     fn base_register_key(register: &RegisterRef) -> String {

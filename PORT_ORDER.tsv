@@ -400,7 +400,7 @@ TODO	struct	7	7	6	sleigh	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/
 DONE	struct	6	307	61	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PcodeParser.java
 DONE	struct	5	310	13	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PcodeInjectLibrary.java
 TODO	struct	4	79	58	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoInstruction.java
-TODO	struct	4	46	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/RepeatInstructionByteTracker.java
+DONE	struct	4	46	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/RepeatInstructionByteTracker.java
 TODO	struct	4	3	45	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/disassemble/DisassemblerQueue.java
 TODO	struct	5	3	24	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/register/InMemoryRangeMapAdapter.java
 TODO	struct	5	177	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AbstractStoredProgramContext.java
