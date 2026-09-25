@@ -2,65 +2,56 @@
 //!
 //! Corresponds to `ghidra.pcode.emu.auxiliary.AuxPcodeEmulator`.
 //!
-//! See the parts factory trait: [`AuxEmulatorPartsFactory`]. Also see the Taint Analyzer (not yet
-//! ported) for a complete example based on this class.
+//! See the parts factory trait: [`AuxEmulatorPartsFactory`]. Also see
+//! [`SymZ3PcodeEmulator`](crate::pcode::emu::symz3::state::sym_z3_pcode_emulator::SymZ3PcodeEmulator)
+//! for a complete example based on this class.
 //!
 //! `U` is Java's `AuxPcodeEmulator<U>` type parameter: the type of auxiliary values. As with
 //! [`AuxEmulatorPartsFactory`], Java's `Pair<byte[], U>` is rendered as the tuple `(Vec<u8>, U)`.
 //!
-//! Deviations from the Java source, both forced by object-safety:
+//! Deviations from the Java source:
 //!
-//! * Java's sole abstract member, `getPartsFactory()`, is not part of this trait.
-//!   [`AuxEmulatorPartsFactory::create_shared_state`]/[`AuxEmulatorPartsFactory::create_local_state`]
-//!   are generic per Java's `PcodeStateCallbacks`-typed overloads (see that trait's docs), which
-//!   makes `AuxEmulatorPartsFactory` itself not object-safe -- there is no valid `&dyn
-//!   AuxEmulatorPartsFactory<U>`. But `AuxPcodeEmulator` *does* need to exist as `&dyn
-//!   AuxPcodeEmulator<U>` (see [`AuxEmulatorPartsFactory`]'s own erasure convention for the
-//!   emulator parameter), so a trait method returning the factory polymorphically is not
-//!   expressible either way. Instead, Java's overridden `createArithmetic`/`createUseropLibrary`/
-//!   `createThreadStubLibrary`/`createSharedState`/`createLocalState`/`createThread` are all free
-//!   functions below, each taking the concrete implementer's factory generically (`impl
-//!   AuxEmulatorPartsFactory<U>`) alongside whatever else they need. A concrete implementer stores
-//!   its own factory (Java says it "should just be a singleton") and forwards
-//!   [`AbstractPcodeMachine`]'s `create_shared_state`/`create_local_state`/`create_thread` to
-//!   these functions, passing that stored factory.
+//! * Java's sole abstract member, `getPartsFactory()`, is not part of this trait: the factory's
+//!   products are associated types (see [`AuxEmulatorPartsFactory`]), so a method returning the
+//!   factory polymorphically would make `AuxPcodeEmulator` impossible to use as the `&dyn
+//!   AuxPcodeEmulator<U>` the factory's own methods receive. Instead, Java's overridden
+//!   `createArithmetic`/`createUseropLibrary`/`createThreadStubLibrary`/`createSharedState`/
+//!   `createLocalState`/`createThread` are all free functions below, each taking the concrete
+//!   implementer's factory alongside whatever else they need. A concrete implementer stores its
+//!   own factory (Java says it "should just be a singleton") and forwards
+//!   [`AbstractPcodeMachine`]'s `create_shared_state`/`create_local_state` and
+//!   [`AbstractPcodeMachineThreads`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineThreads)'s
+//!   `create_thread` to these functions, passing that stored factory.
 //! * Java calls `createArithmetic()`/`createUseropLibrary()`/`createThreadStubLibrary()` from
-//!   within `super(language, cb)`, on a `this` whose fields (including those of
-//!   `AbstractPcodeMachine`) do not exist yet. Rust cannot construct `&self` before `self` exists,
-//!   so [`create_arithmetic`]/[`create_userop_library`]/[`create_thread_stub_library`] take
-//!   `language`/`parts_factory` (and, where Java's override also needs `this`, an already-built
-//!   `emulator` handle) as plain parameters, matching the deviation
+//!   within `super(language, cb)`, on a `this` whose fields do not exist yet. Rust cannot
+//!   construct `&self` before `self` exists, so [`create_arithmetic`]/[`create_userop_library`]/
+//!   [`create_thread_stub_library`] take the language (and the parts factory) as plain
+//!   parameters, matching the deviation
 //!   [`AbstractPcodeMachineBase::new`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase::new)
-//!   already documents for these same three constructor-time factories. Producing that `emulator`
-//!   handle before the machine is fully built is left to whichever concrete implementation needs
-//!   it, exactly as that constructor already leaves `language`/`arithmetic`/`library` to its
-//!   caller.
-//! * `createThreadStubLibrary`'s Java default (`super.createThreadStubLibrary()`) is
-//!   `DefaultPcodeThread.PcodeEmulationLibrary`, not yet ported (see
-//!   `AbstractPcodeMachineBase`'s docs), so [`create_thread_stub_library`] composes the parts
-//!   factory's local stub onto an empty library instead of Java's real default.
+//!   already documents for these same three constructor-time factories.
 //! * `createSharedState`/`createLocalState`'s Java bodies build a `PcodeStateCallbacks` via
-//!   `cb.wrapFor(...)`, adapting the machine's `PcodeEmulationCallbacks` (not yet ported) to state
-//!   callbacks. That adapter class does not exist yet, so [`create_shared_state`]/
-//!   [`create_local_state`] use
-//!   [`NONE`](crate::pcode::exec::pcode_state_callbacks::NONE) (Java's own
-//!   `PcodeStateCallbacks.NONE`) instead, both for the fresh concrete
+//!   `cb.wrapFor(...)`, adapting the machine's `PcodeEmulationCallbacks` to state callbacks. That
+//!   adapter ([`Wrapper`](crate::pcode::emu::pcode_emulation_callbacks::Wrapper)) borrows the
+//!   callbacks for a lifetime, so a state cannot keep it; [`create_shared_state`]/
+//!   [`create_local_state`] use [`NONE`](crate::pcode::exec::pcode_state_callbacks::NONE) (Java's
+//!   own `PcodeStateCallbacks.NONE`) instead, both for the fresh concrete
 //!   [`BytesPcodeExecutorStatePiece`] and as the callbacks handed to the parts factory; every
 //!   callback the state pieces would receive is simply dropped, as it would be for an emulator
-//!   whose callbacks are already the default no-ops.
+//!   whose callbacks are already the default no-ops. The factory is therefore the one for
+//!   [`NoPcodeStateCallbacks`], the default of its `CB` parameter.
 
 use std::sync::Arc;
 
 use crate::pcode::emu::abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase};
 use crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory;
-use crate::pcode::exec::paired_pcode_arithmetic::PairedPcodeArithmetic;
-use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
-use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
-use crate::pcode::exec::pcode_state_callbacks::{NoPcodeStateCallbacks, NONE};
-use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
-use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::emu::auxiliary::aux_pcode_thread::AuxThreadParts;
+use crate::pcode::emu::default_pcode_thread::PcodeEmulationLibrary;
 use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
 use crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece;
+use crate::pcode::exec::paired_pcode_arithmetic::PairedPcodeArithmetic;
+use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
+use crate::pcode::exec::pcode_state_callbacks::{NoPcodeStateCallbacks, NONE};
+use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::Language;
 
@@ -90,42 +81,46 @@ pub fn create_userop_library<U: 'static>(
     language: &SleighLanguage,
     arithmetic: &dyn PcodeArithmetic<(Vec<u8>, U)>,
     parts_factory: &impl AuxEmulatorPartsFactory<U>,
-    emulator: &dyn AuxPcodeEmulator<U>,
 ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, U)>> {
     let base = AbstractPcodeMachineBase::create_userop_library(language, arithmetic, "", &[]);
-    base.compose(parts_factory.create_shared_userop_library(emulator).as_ref())
+    base.compose(parts_factory.create_shared_userop_library(language).as_ref())
 }
 
-/// Port of the overridden `createThreadStubLibrary()`: composes an empty library (standing in for
-/// Java's not-yet-ported `super.createThreadStubLibrary()`; see the module docs) with the parts
-/// factory's local userop stub.
+/// Port of the overridden `createThreadStubLibrary()`: composes the machine's default stub
+/// library, `new DefaultPcodeThread.PcodeEmulationLibrary<>(null)`, with the parts factory's local
+/// userop stub.
 pub fn create_thread_stub_library<U: 'static>(
+    language: &SleighLanguage,
     parts_factory: &impl AuxEmulatorPartsFactory<U>,
-    emulator: &dyn AuxPcodeEmulator<U>,
 ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, U)>> {
-    let base: Box<dyn PcodeUseropLibrary<(Vec<u8>, U)>> = Box::new(nil());
-    base.compose(parts_factory.create_local_userop_stub(emulator).as_ref())
+    let base: Box<dyn PcodeUseropLibrary<(Vec<u8>, U)>> = Box::new(PcodeEmulationLibrary::new(None));
+    base.compose(parts_factory.create_local_userop_stub(language).as_ref())
 }
 
 /// Port of the overridden `createSharedState()`.
-pub fn create_shared_state<U: 'static>(
+///
+/// The emulator shares the product with its threads by putting it behind a
+/// [`SharedPcodeExecutorState`](crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState)
+/// handle, as [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator) does.
+pub fn create_shared_state<U: 'static, F: AuxEmulatorPartsFactory<U>>(
     emulator: &dyn AuxPcodeEmulator<U>,
-    parts_factory: &impl AuxEmulatorPartsFactory<U>,
-) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>> {
+    parts_factory: &F,
+) -> F::SharedState {
     // Java: `scb = cb.wrapFor(null)`; see the module docs for why this is `NONE`.
     let scb = Arc::new(NONE);
     parts_factory.create_shared_state(emulator, new_concrete_piece(emulator, &scb), scb)
 }
 
-/// Port of the overridden `createLocalState(PcodeThread<Pair<byte[], U>>)`.
-pub fn create_local_state<U: 'static>(
+/// Port of the overridden `createLocalState(PcodeThread<Pair<byte[], U>>)`, for the thread that
+/// will be named `thread_name` (see [`AuxEmulatorPartsFactory::create_local_state`]).
+pub fn create_local_state<U: 'static, F: AuxEmulatorPartsFactory<U>>(
     emulator: &dyn AuxPcodeEmulator<U>,
-    thread: &dyn ErasedPcodeThread,
-    parts_factory: &impl AuxEmulatorPartsFactory<U>,
-) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>> {
+    thread_name: &str,
+    parts_factory: &F,
+) -> F::LocalState {
     // Java: `scb = cb.wrapFor(thread)`; see the module docs for why this is `NONE`.
     let scb = Arc::new(NONE);
-    parts_factory.create_local_state(emulator, thread, new_concrete_piece(emulator, &scb), scb)
+    parts_factory.create_local_state(emulator, thread_name, new_concrete_piece(emulator, &scb), scb)
 }
 
 /// Java's `new BytesPcodeExecutorStatePiece(language, scb)`, shared by [`create_shared_state`]
@@ -138,13 +133,16 @@ fn new_concrete_piece<U: 'static>(
     BytesPcodeExecutorStatePiece::new(language, Arc::clone(scb))
 }
 
-/// Port of the overridden `createThread(String)`.
-pub fn create_thread<U: 'static>(
+/// Port of the overridden `createThread(String)`: `getPartsFactory().createThread(this, name)`.
+///
+/// `parts` is what the thread's constructor reads off the emulator; see [`AuxThreadParts`].
+pub fn create_thread<U: 'static, F: AuxEmulatorPartsFactory<U>>(
     emulator: &dyn AuxPcodeEmulator<U>,
     name: &str,
-    parts_factory: &impl AuxEmulatorPartsFactory<U>,
-) -> Arc<dyn ErasedPcodeThread> {
-    parts_factory.create_thread(emulator, name)
+    parts_factory: &Arc<F>,
+    parts: AuxThreadParts<U, F::SharedState, F::LocalState>,
+) -> F::Thread {
+    Arc::clone(parts_factory).create_thread(emulator, name, parts)
 }
 
 #[cfg(test)]
@@ -152,6 +150,10 @@ mod tests {
     use std::sync::Mutex;
 
     use super::*;
+    use crate::pcode::emu::abstract_pcode_machine::PcodeMachineShared;
+    use crate::pcode::emu::auxiliary::aux_pcode_thread::AuxPcodeThread;
+    use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+    use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
     use crate::pcode::emu::pcode_machine::{AccessKind, ErasedPcodeMachine, PcodeMachine, SwiMode};
     use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_arithmetic::Purpose;
@@ -159,7 +161,7 @@ mod tests {
         ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
     };
     use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
-    use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropDefinition, UseropMap};
+    use crate::pcode::exec::pcode_userop_library::{nil, ErasedPcodeUseropLibrary, PcodeUseropDefinition, UseropMap};
     use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType, DefaultAddressFactory};
     use crate::program::model::lang::endian::Endian;
@@ -275,20 +277,20 @@ mod tests {
             &self,
             _space: &Arc<AddressSpace>,
             _offset: &(Vec<u8>, i64),
-            _size: i32,
+            size: i32,
             _quantize: bool,
             _reason: Reason,
         ) -> (Vec<u8>, i64) {
-            (vec![], 0)
+            (vec![0; size as usize], 0)
         }
         fn get_var_internal_abstract(
             &self,
             _space: &Arc<AddressSpace>,
             _offset: &(Vec<u8>, i64),
-            _size: i32,
+            size: i32,
             _reason: Reason,
         ) -> (Vec<u8>, i64) {
-            (vec![], 0)
+            (vec![0; size as usize], 0)
         }
         fn get_register_values(&self) -> Vec<(RegisterRef, (Vec<u8>, i64))> {
             vec![]
@@ -301,10 +303,28 @@ mod tests {
 
     impl PcodeExecutorState<(Vec<u8>, i64)> for EmptyState {}
 
-    /// A thread that carries only its name, mirroring `abstract_pcode_machine`'s `NamedThread`.
-    struct NamedThread(#[allow(dead_code)] String);
+    /// A decoder the threads built by these tests never get to use: they are not stepped.
+    struct UnusedDecoder;
 
-    impl ErasedPcodeThread for NamedThread {}
+    impl crate::pcode::emu::instruction_decoder::InstructionDecoder for UnusedDecoder {
+        fn get_language(&self) -> Arc<dyn Language> {
+            unreachable!("the thread is never stepped")
+        }
+        fn decode_instruction(
+            &mut self,
+            _address: &Address,
+            _context: Option<&dyn crate::pcode::seam_stubs::RegisterValue>,
+        ) -> Result<Box<dyn crate::pcode::seam_stubs::PseudoInstruction>, Box<dyn std::error::Error>> {
+            unreachable!("the thread is never stepped")
+        }
+        fn branched(&mut self, _address: &Address) {}
+        fn get_last_instruction(&self) -> Option<Arc<dyn crate::program::model::listing::Instruction>> {
+            None
+        }
+        fn get_last_length_with_delays(&self) -> i32 {
+            0
+        }
+    }
 
     /// A named userop that does nothing, just enough to populate a library and be found by name,
     /// mirroring the double `aux_emulator_parts_factory`'s own tests use.
@@ -389,52 +409,65 @@ mod tests {
     }
 
     impl AuxEmulatorPartsFactory<i64> for RecordingFactory {
+        type SharedState = EmptyState;
+        type LocalState = EmptyState;
+        type Thread = AuxPcodeThread<i64, RecordingFactory>;
+
         fn get_arithmetic(&self, _language: &dyn Language) -> Arc<dyn PcodeArithmetic<i64>> {
-            unimplemented!("not exercised by these tests")
+            unreachable!("not exercised by these tests")
         }
         fn create_shared_userop_library(
             &self,
-            _emulator: &dyn AuxPcodeEmulator<i64>,
+            _language: &SleighLanguage,
         ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, i64)>> {
             self.calls.lock().unwrap().push("shared_userop".into());
             named_userop_library("__shared")
         }
         fn create_local_userop_stub(
             &self,
-            _emulator: &dyn AuxPcodeEmulator<i64>,
+            _language: &SleighLanguage,
         ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, i64)>> {
             self.calls.lock().unwrap().push("stub_userop".into());
             named_userop_library("__stub")
         }
         fn create_local_userop_library(
             &self,
-            _emulator: &dyn AuxPcodeEmulator<i64>,
+            _emulator: &PcodeMachineShared<(Vec<u8>, i64)>,
             _thread: &dyn ErasedPcodeThread,
         ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, i64)>> {
-            unimplemented!("not exercised by these tests")
+            self.calls.lock().unwrap().push("local_userop".into());
+            named_userop_library("__local")
         }
-        fn create_thread(&self, _emulator: &dyn AuxPcodeEmulator<i64>, name: &str) -> Arc<dyn ErasedPcodeThread> {
+        fn create_thread(
+            self: Arc<Self>,
+            _emulator: &dyn AuxPcodeEmulator<i64>,
+            name: &str,
+            parts: AuxThreadParts<i64, EmptyState, EmptyState>,
+        ) -> Self::Thread {
             self.calls.lock().unwrap().push(format!("thread:{name}"));
-            Arc::new(NamedThread(name.to_string()))
+            AuxPcodeThread::new_aux(name, parts, None, self)
         }
-        fn create_shared_state<CB: PcodeStateCallbacks>(
+        fn create_shared_state(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            concrete: BytesPcodeExecutorStatePiece<CB>,
-            _cb: Arc<CB>,
-        ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
+            concrete: BytesPcodeExecutorStatePiece<NoPcodeStateCallbacks>,
+            _cb: Arc<NoPcodeStateCallbacks>,
+        ) -> EmptyState {
             self.calls.lock().unwrap().push(format!("shared_state:{}", describe_piece(concrete)));
-            Box::new(EmptyState)
+            EmptyState
         }
-        fn create_local_state<CB: PcodeStateCallbacks>(
+        fn create_local_state(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _thread: &dyn ErasedPcodeThread,
-            concrete: BytesPcodeExecutorStatePiece<CB>,
-            _cb: Arc<CB>,
-        ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
-            self.calls.lock().unwrap().push(format!("local_state:{}", describe_piece(concrete)));
-            Box::new(EmptyState)
+            thread_name: &str,
+            concrete: BytesPcodeExecutorStatePiece<NoPcodeStateCallbacks>,
+            _cb: Arc<NoPcodeStateCallbacks>,
+        ) -> EmptyState {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(format!("local_state:{thread_name}:{}", describe_piece(concrete)));
+            EmptyState
         }
     }
 
@@ -443,7 +476,7 @@ mod tests {
     /// `AbstractPcodeMachine`'s abstract methods to this module's free functions.
     struct TestEmulator {
         base: AbstractPcodeMachineBase<(Vec<u8>, i64)>,
-        factory: RecordingFactory,
+        factory: Arc<RecordingFactory>,
     }
 
     impl TestEmulator {
@@ -456,7 +489,7 @@ mod tests {
                 Box::new(nil()),
                 None,
             );
-            Self { base, factory: RecordingFactory::default() }
+            Self { base, factory: Arc::new(RecordingFactory::default()) }
         }
     }
 
@@ -470,13 +503,13 @@ mod tests {
             &mut self.base
         }
         fn create_shared_state(&self) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
-            create_shared_state(self, &self.factory)
+            Box::new(create_shared_state(self, self.factory.as_ref()))
         }
         fn create_local_state(
             &self,
-            thread: &dyn ErasedPcodeThread,
+            _thread: &dyn ErasedPcodeThread,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
-            create_local_state(self, thread, &self.factory)
+            unreachable!("not exercised by these tests")
         }
     
         /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
@@ -592,20 +625,56 @@ mod tests {
         SleighLanguage::decode(&decoder, "test".to_string()).unwrap()
     }
 
+    /// A language answering from the test language, but declaring a program counter, which a
+    /// thread requires.
+    fn exec_language() -> Arc<dyn Language> {
+        let register = crate::program::model::address::AddressSpace::new(
+            "register",
+            32,
+            1,
+            AddressSpaceType::Register,
+            3,
+        );
+        let pc = crate::program::model::lang::register::Register::new(
+            "pc",
+            "program counter",
+            register.address(0),
+            4,
+            false,
+            crate::program::model::lang::register::Register::TYPE_PC,
+        );
+        Arc::new(crate::pcode::emu::test_support::PcLanguage {
+            inner: Arc::new(test_language()) as Arc<dyn Language>,
+            pc,
+        })
+    }
+
     #[test]
     fn create_thread_delegates_to_the_parts_factory_with_the_given_name() {
         let emulator = TestEmulator::new();
-        let _ = create_thread(&emulator, "worker", &emulator.factory);
-        assert_eq!(*emulator.factory.calls.lock().unwrap(), vec!["thread:worker".to_string()]);
+        let parts = AuxThreadParts {
+            machine: Arc::clone(emulator.base.shared()),
+            exec_language: exec_language(),
+            shared_state: crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState::new(EmptyState),
+            local_state: EmptyState,
+            decoder: Box::new(UnusedDecoder),
+        };
+        let thread = create_thread(&emulator, "worker", &emulator.factory, parts);
+
+        assert_eq!(crate::pcode::emu::pcode_thread::PcodeThread::get_name(&thread), "worker");
+        // Java's AuxPcodeThread constructor asks the factory for the thread's local userops.
+        assert_eq!(
+            *emulator.factory.calls.lock().unwrap(),
+            vec!["thread:worker".to_string(), "local_userop".to_string()]
+        );
     }
 
     #[test]
     fn create_shared_and_local_state_delegate_with_a_concrete_piece_and_no_callbacks() {
         let emulator = TestEmulator::new();
-        let thread = NamedThread("t0".to_string());
 
-        let _ = create_shared_state(&emulator, &emulator.factory);
-        let _ = create_local_state(&emulator, &thread, &emulator.factory);
+        let _ = create_shared_state(&emulator, emulator.factory.as_ref());
+        let _ = create_local_state(&emulator, "t0", emulator.factory.as_ref());
 
         // Java's createSharedState/createLocalState each call getPartsFactory().createXState
         // exactly once, passing a fresh concrete piece; this crate stands in Java's
@@ -614,7 +683,7 @@ mod tests {
             *emulator.factory.calls.lock().unwrap(),
             vec![
                 "shared_state:ram=[ab, cd]".to_string(),
-                "local_state:ram=[ab, cd]".to_string()
+                "local_state:t0:ram=[ab, cd]".to_string()
             ]
         );
     }
@@ -625,19 +694,21 @@ mod tests {
         let language = test_language();
         let arithmetic: Arc<dyn PcodeArithmetic<(Vec<u8>, i64)>> = Arc::new(StubArithmetic);
 
-        let lib = create_userop_library(&language, arithmetic.as_ref(), &emulator.factory, &emulator);
+        let lib = create_userop_library(&language, arithmetic.as_ref(), emulator.factory.as_ref());
 
         assert!(lib.get_userops().contains_key("__shared"));
         assert_eq!(*emulator.factory.calls.lock().unwrap(), vec!["shared_userop".to_string()]);
     }
 
     #[test]
-    fn create_thread_stub_library_composes_an_empty_library_with_the_factorys_local_stub() {
+    fn create_thread_stub_library_composes_the_emulation_library_with_the_factorys_local_stub() {
         let emulator = TestEmulator::new();
 
-        let lib = create_thread_stub_library(&emulator.factory, &emulator);
+        let lib = create_thread_stub_library(&test_language(), emulator.factory.as_ref());
 
         assert!(lib.get_userops().contains_key("__stub"));
+        // Java's super.createThreadStubLibrary() is DefaultPcodeThread.PcodeEmulationLibrary.
+        assert!(lib.get_userops().contains_key("emu_swi"));
         assert_eq!(*emulator.factory.calls.lock().unwrap(), vec!["stub_userop".to_string()]);
     }
 }
