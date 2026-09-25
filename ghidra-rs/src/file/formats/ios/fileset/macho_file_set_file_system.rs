@@ -42,11 +42,12 @@ use super::macho_file_set_entry::MachoFileSetEntry;
 use super::macho_file_set_extractor;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::file::seam_stubs::{
-    ExtractedMacho, FileSystemIndexHelper, MachHeader, SegmentCommand,
+    ExtractedMacho, MachHeader, SegmentCommand,
 };
 use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::g_file::GFile;
+use crate::filesystem::gfilesystem::file_system_index_helper::FileSystemIndexHelper;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
@@ -521,7 +522,7 @@ mod tests {
         fs.close();
         assert!(fs.is_closed());
         assert!(fs.get_macho_file_set_provider().is_none());
-        assert_eq!(fs.get_file_count(), 1);
+        assert_eq!(fs.get_file_count(), 0, "Java's fsIndex.clear() also drops the root dir entry");
     }
 
     #[test]

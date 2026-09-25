@@ -18,10 +18,6 @@ use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnu
 use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
-use crate::filesystem::gfilesystem::g_file::GFile;
-use crate::filesystem::gfilesystem::g_file_impl::{
-    FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
-};
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
 use crate::filesystem::seam_stubs::{FileSystemServiceLike, GFileSystemLike};
 use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
@@ -501,128 +497,6 @@ impl FileCacheEntryBuilder {
             .map(|bytes| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
             .unwrap_or_default();
         Ok(FileCacheEntry { bytes: self.bytes, md5 })
-    }
-}
-
-/// Placeholder for the unported Java type `ghidra.formats.gfilesystem.FileSystemIndexHelper`,
-/// referenced by `SevenZipFileSystem` as its `fsIndex` field.
-///
-/// Concrete stub: Java class, not interface. Only the members THIS type needs are included --
-/// the flat index by archive item number plus per-file metadata; the real helper additionally
-/// maintains a directory tree, path lookups, symlink resolution and case-insensitive matching.
-/// Replace with the real port when available.
-pub struct FileSystemIndexHelper<FS, Fsrl, M> {
-    filesystem: FS,
-    root_dir: GFileImpl<FS, Fsrl>,
-    entries: Vec<IndexEntry<FS, Fsrl, M>>,
-    by_file_index: HashMap<i64, usize>,
-}
-
-struct IndexEntry<FS, Fsrl, M> {
-    /// The normalized path this entry was stored under; kept separately so a later
-    /// [`FileSystemIndexHelper::update_fsrl`] cannot break lookups.
-    path: String,
-    file: GFileImpl<FS, Fsrl>,
-    metadata: M,
-}
-
-impl<FS, Fsrl, M> FileSystemIndexHelper<FS, Fsrl, M>
-where
-    FS: Clone + HasFsrlRoot<Fsrl> + FsGetListing<FS, Fsrl> + 'static,
-    Fsrl: GFileFsrlLike + 'static,
-{
-    /// Creates an index rooted at `root_fsrl`. Mirrors
-    /// `FileSystemIndexHelper(GFileSystem, FSRLRoot)`.
-    pub fn new(filesystem: FS, root_fsrl: Fsrl) -> Self {
-        let root_dir = GFileImpl::from_fsrl(filesystem.clone(), None, root_fsrl, true, -1);
-        FileSystemIndexHelper {
-            filesystem,
-            root_dir,
-            entries: Vec::new(),
-            by_file_index: HashMap::new(),
-        }
-    }
-
-    /// Indexes a file at `path`, keyed by the archive's own `file_index`.
-    /// Mirrors `storeFile(String, long, boolean, long, METADATATYPE)`.
-    pub fn store_file(
-        &mut self,
-        path: &str,
-        file_index: i64,
-        is_directory: bool,
-        length: i64,
-        metadata: M,
-    ) -> &GFileImpl<FS, Fsrl> {
-        let file = GFileImpl::from_path_string(
-            self.filesystem.clone(),
-            path,
-            None,
-            is_directory,
-            length,
-        );
-        let stored_path = file.get_path().to_string();
-        self.by_file_index.insert(file_index, self.entries.len());
-        self.entries.push(IndexEntry { path: stored_path, file, metadata });
-        &self.entries[self.entries.len() - 1].file
-    }
-
-    /// Replaces the FSRL of an already-indexed file. Mirrors `updateFSRL(GFile, FSRL)`.
-    pub fn update_fsrl(&mut self, file: &GFileImpl<FS, Fsrl>, new_fsrl: Fsrl) {
-        let path = file.get_path().to_string();
-        if let Some(entry) = self.entries.iter_mut().find(|e| e.path == path) {
-            let is_directory = entry.file.is_directory();
-            let length = entry.file.get_length();
-            entry.file = GFileImpl::from_fsrl(
-                self.filesystem.clone(),
-                None,
-                new_fsrl,
-                is_directory,
-                length,
-            );
-        }
-    }
-}
-
-impl<FS, Fsrl, M> FileSystemIndexHelper<FS, Fsrl, M>
-where
-    FS: FsGetListing<FS, Fsrl>,
-{
-    /// The synthetic root directory. Mirrors `getRootDir()`.
-    pub fn get_root_dir(&self) -> &GFileImpl<FS, Fsrl> {
-        &self.root_dir
-    }
-
-    /// The file stored under archive item number `file_index`, or `None`.
-    /// Mirrors `getFileByIndex(long)`.
-    pub fn get_file_by_index(&self, file_index: i64) -> Option<&GFileImpl<FS, Fsrl>> {
-        self.by_file_index
-            .get(&file_index)
-            .map(|&i| &self.entries[i].file)
-    }
-
-    /// The file stored at `path`, or `None`. Mirrors `lookup(String)`.
-    pub fn lookup(&self, path: &str) -> Option<&GFileImpl<FS, Fsrl>> {
-        self.entries.iter().find(|e| e.path == path).map(|e| &e.file)
-    }
-
-    /// The metadata stored alongside `file`, or `None`. Mirrors `getMetadata(GFile)`.
-    pub fn get_metadata(&self, file: &GFileImpl<FS, Fsrl>) -> Option<&M> {
-        let path = file.get_path();
-        self.entries
-            .iter()
-            .find(|e| e.path == path)
-            .map(|e| &e.metadata)
-    }
-
-    /// Number of indexed files. Mirrors `getFileCount()` (which also counts the root dir).
-    pub fn get_file_count(&self) -> i32 {
-        self.entries.len() as i32 + 1
-    }
-
-    /// Forgets every indexed file, keeping the root directory. Mirrors `clear()`.
-    pub fn clear(&mut self) {
-        self.entries.clear();
-        self.by_file_index.clear();
     }
 }
 

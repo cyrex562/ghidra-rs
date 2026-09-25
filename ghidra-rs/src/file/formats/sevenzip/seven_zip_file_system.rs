@@ -42,13 +42,14 @@ use std::io;
 use std::rc::Rc;
 
 use crate::file::seam_stubs::{
-    FileCacheEntry, FileCacheEntryBuilder, FileSystemIndexHelper,
+    FileCacheEntry, FileCacheEntryBuilder,
 };
 use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use crate::filesystem::gfilesystem::crypto::crypto_session::CryptoSession;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
 use crate::filesystem::gfilesystem::g_file::GFile;
+use crate::filesystem::gfilesystem::file_system_index_helper::{copy_file, FileSystemIndexHelper};
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
@@ -954,11 +955,9 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
             if let Some(g_file) = self.fs_index.get_file_by_index(file_index as i64) {
                 if g_file.get_fsrl().md5().is_none() {
                     let new_fsrl = g_file.get_fsrl().with_md5(md5);
-                    // `get_file_by_index` borrows the index; re-look-up by path to mutate.
-                    let path = g_file.get_path().to_string();
-                    if let Some(target) = self.file_by_path(&path) {
-                        self.fs_index.update_fsrl(&target, new_fsrl);
-                    }
+                    // `get_file_by_index` borrows the index; detach a copy to mutate it.
+                    let target = copy_file(g_file);
+                    self.fs_index.update_fsrl(&target, new_fsrl);
                 }
             }
         }
@@ -982,18 +981,11 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
         ))
     }
 
-    /// Rebuilds a detached [`SzGFile`] for `path` so the index can be mutated while the
-    /// original borrow is released.
+    /// A detached copy of the indexed [`SzGFile`] at `path` (or `None` if not indexed), so the
+    /// index can be mutated while the original borrow is released.
+    #[cfg(test)]
     fn file_by_path(&self, path: &str) -> Option<SzGFile> {
-        let root = self.fs_index.get_root_dir();
-        let handle = SzFsHandle::new(SzFsrl::new(root.get_path()));
-        Some(GFileImpl::from_fsrl(
-            handle,
-            None,
-            SzFsrl::new(path),
-            false,
-            -1,
-        ))
+        self.fs_index.lookup(path).map(|f| copy_file(f))
     }
 }
 
@@ -1888,7 +1880,15 @@ mod tests {
         let archive = FakeArchive::new(ArchiveFormat::SevenZip, vec![FakeItem::file(0, "a.txt", 1)]);
         fs.mount(Box::new(archive), &DummyMonitor).unwrap();
 
-        let stranger = fs.file_by_path("/not/in/the/archive").unwrap();
+        assert!(fs.file_by_path("/not/in/the/archive").is_none());
+        let root = fs.fs_index.get_root_dir();
+        let stranger = GFileImpl::from_fsrl(
+            root.get_filesystem().clone(),
+            None,
+            SzFsrl::new("/not/in/the/archive"),
+            false,
+            -1,
+        );
         assert!(fs.get_byte_provider(&stranger, &DummyMonitor).unwrap().is_none());
     }
 

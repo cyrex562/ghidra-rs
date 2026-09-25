@@ -123,6 +123,24 @@ pub fn append_path(paths: &[Option<&str>]) -> Option<String> {
     Some(buffer)
 }
 
+/// Splits `path` into its individual directory and filename components. For example,
+/// `"/dir/dir/dir/file"` becomes `["", "dir", "dir", "dir", "file"]`.
+///
+/// Mirrors `FSUtilities.splitPath(String)`: `None` is treated as `""`, back slashes are
+/// normalized to forward slashes, and -- like Java's `String.split` -- trailing empty
+/// components are dropped (so `"/"` yields no components, while `""` yields one empty one).
+pub fn split_path(path: Option<&str>) -> Vec<String> {
+    let normalized = path.unwrap_or("").replace('\\', "/");
+    if normalized.is_empty() {
+        return vec![String::new()];
+    }
+    let mut parts: Vec<String> = normalized.split('/').map(str::to_owned).collect();
+    while parts.last().is_some_and(String::is_empty) {
+        parts.pop();
+    }
+    parts
+}
+
 /// Converts a native OS path (which may use `\` separators) into an absolute unix-style path.
 ///
 /// Mirrors `FSUtilities.normalizeNativePath(String)`, which is
@@ -165,6 +183,19 @@ pub fn get_extension(path: &str, ext_level: usize) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // -- split_path -----------------------------------------------------------
+
+    #[test]
+    fn split_path_matches_java_string_split() {
+        assert_eq!(split_path(Some("/dir/dir/dir/file")), ["", "dir", "dir", "dir", "file"]);
+        assert_eq!(split_path(Some("a\\b/c")), ["a", "b", "c"]);
+        assert_eq!(split_path(Some("a//b/")), ["a", "", "b"]);
+        assert!(split_path(Some("/")).is_empty());
+        assert!(split_path(Some("///")).is_empty());
+        assert_eq!(split_path(Some("")), [""]);
+        assert_eq!(split_path(None), [""]);
+    }
 
     // -- append_path ----------------------------------------------------------
 
