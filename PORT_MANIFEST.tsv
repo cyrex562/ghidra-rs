@@ -1499,12 +1499,12 @@ orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/SymZ3LinuxAmd64SyscallLibrary.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3InfixPrinter.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/Z3MemoryWitness.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3MemorySpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3MemorySpace.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PcodeEmulator.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PcodeExecutorState.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3PieceHandler.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3Preconditions.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3RegisterSpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3RegisterSpace.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3Space.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3UniqueSpace.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/state/SymZ3WriteDownHelper.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 state 

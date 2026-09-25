@@ -359,6 +359,9 @@ pub(crate) mod testing {
         fn is_bv_bit_zero(&self) -> bool {
             self.size == 1 && self.value == Some(0)
         }
+        fn as_bit_vec(&self) -> Option<&dyn BitVecExpr> {
+            Some(self)
+        }
         fn as_any(&self) -> &dyn Any {
             self
         }

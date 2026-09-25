@@ -28,12 +28,11 @@
 //! * The internal space map's value type is `SymZ3Space` in Java (a common supertype of
 //!   `SymZ3RegisterSpace`/`SymZ3UniqueSpace`/`SymZ3MemorySpace`). The ported `SymZ3Space` trait
 //!   has a generic `CB` method parameter and so is not object-safe (`&dyn SymZ3Space` does not
-//!   exist), so the map instead holds the closed [`SymZ3SpaceKind`] enum. Only
-//!   [`SymZ3UniqueSpace`] is a real port; `SymZ3RegisterSpace`/`SymZ3MemorySpace` are unported
-//!   forward references, minimally stubbed in `pcode::seam_stubs` (queued later in
-//!   `PORT_ORDER.tsv` for their real ports, which delegate to the already-ported
-//!   `SymZ3RegisterMap`/`SymZ3MemoryMap` plus a callback fired through a back-reference to the
-//!   owning piece -- wiring that self-reference is left to those real ports).
+//!   exist), so the map instead holds the closed [`SymZ3SpaceKind`] enum over the three.
+//! * Java's register and memory spaces report `dataWritten`/`readUninitialized` through a
+//!   back-reference to this piece. This piece owns its spaces, so it fires those callbacks itself,
+//!   around its calls into a register or memory space, at the points Java's spaces do; see
+//!   [`SymZ3RegisterSpace`]'s module docs.
 //! * `AbstractSymZ3OffsetPcodeExecutorStatePiece.getVarInternal`'s constant-space branch builds a
 //!   fresh `SymValueZ3` from the offset's `BigInteger` value via `ctx.mkBV(b.toString(), size *
 //!   8)`. The [`Z3Context`] seam's [`Z3Context::mk_bv`] takes an `i64` (not an arbitrary-precision
@@ -66,7 +65,8 @@ use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePie
 use crate::pcode::exec::pcode_state_callbacks::{PcodeStateCallbacks, NONE};
 use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread;
 use crate::pcode::emu::symz3::sym_z3_pcode_arithmetic::SymZ3PcodeArithmetic;
-use crate::pcode::seam_stubs::{SymZ3MemorySpace, SymZ3RegisterSpace};
+use crate::pcode::emu::symz3::state::sym_z3_memory_space::SymZ3MemorySpace;
+use crate::pcode::emu::symz3::state::sym_z3_register_space::SymZ3RegisterSpace;
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
@@ -86,37 +86,51 @@ enum SymZ3SpaceKind {
 }
 
 impl SymZ3SpaceKind {
+    // Every variant is called through `SymZ3Space` by UFCS: `SymZ3UniqueSpace` also has inherent
+    // `set(i64, ...)`/`get(i64, ...)`, which plain dot-call dispatch would pick instead.
     fn set<CB: PcodeStateCallbacks>(&mut self, offset: &SymValueZ3, size: i32, val: &SymValueZ3, cb: &CB) {
         match self {
-            // `SymZ3RegisterSpace`/`SymZ3MemorySpace` only have inherent `set`, so plain dot-call
-            // dispatch is unambiguous.
-            Self::Register(s) => s.set(offset, size, val, cb),
-            // `SymZ3UniqueSpace` has both an inherent `set(i64, ...)` and this trait's
-            // `set(&SymValueZ3, ...)`; UFCS picks the trait method unambiguously.
+            Self::Register(s) => SymZ3Space::set(s, offset, size, val, cb),
             Self::Unique(s) => SymZ3Space::set(s, offset, size, val, cb),
-            Self::Memory(s) => s.set(offset, size, val, cb),
+            Self::Memory(s) => SymZ3Space::set(s, offset, size, val, cb),
         }
     }
 
     fn get<CB: PcodeStateCallbacks>(&self, offset: &SymValueZ3, size: i32, reason: Reason, cb: &CB) -> SymValueZ3 {
         match self {
-            Self::Register(s) => s.get(offset, size, reason, cb),
+            Self::Register(s) => SymZ3Space::get(s, offset, size, reason, cb),
             Self::Unique(s) => SymZ3Space::get(s, offset, size, reason, cb),
-            Self::Memory(s) => s.get(offset, size, reason, cb),
+            Self::Memory(s) => SymZ3Space::get(s, offset, size, reason, cb),
+        }
+    }
+
+    /// Whether this space reports writes and uninitialized reads (Java's register and memory
+    /// spaces do; its unique space does not).
+    fn reports_callbacks(&self) -> bool {
+        !matches!(self, Self::Unique(_))
+    }
+
+    /// Whether Java's `get` would report `readUninitialized` for this read: the register or memory
+    /// has no value there. A register offset naming no register reports nothing.
+    fn reads_uninitialized(&self, offset: &SymValueZ3, size: i32) -> bool {
+        match self {
+            Self::Register(s) => s.has_value_for(offset, size) == Some(false),
+            Self::Unique(_) => false,
+            Self::Memory(s) => !s.has_value_for(offset, size),
         }
     }
 
     fn printable_summary(&self) -> String {
         match self {
-            Self::Register(s) => s.printable_summary(),
+            Self::Register(s) => SymZ3Space::printable_summary(s),
             Self::Unique(s) => s.printable_summary(),
-            Self::Memory(s) => s.printable_summary(),
+            Self::Memory(s) => SymZ3Space::printable_summary(s),
         }
     }
 
     fn stream_valuations(&self, ctx: &dyn Z3Context, z3p: &Z3InfixPrinter) -> Vec<(String, String)> {
         match self {
-            Self::Register(s) => s.stream_valuations(ctx, z3p),
+            Self::Register(s) => SymZ3Space::stream_valuations(s, ctx, z3p),
             Self::Unique(s) => s.stream_valuations(ctx, z3p),
             Self::Memory(s) => s.stream_valuations(ctx, z3p),
         }
@@ -201,13 +215,21 @@ impl<CB: PcodeStateCallbacks> SymZ3PcodeExecutorStatePiece<CB> {
             panic!("AssertionError: the constant space has no storage");
         }
         if space.space_type() == AddressSpaceType::Register {
-            return SymZ3SpaceKind::Register(SymZ3RegisterSpace::new());
+            return SymZ3SpaceKind::Register(SymZ3RegisterSpace::new(
+                Arc::clone(&self.language),
+                Arc::clone(space),
+                Arc::clone(&self.ctx),
+            ));
         }
         if space.space_type() == AddressSpaceType::Unique {
             return SymZ3SpaceKind::Unique(SymZ3UniqueSpace::new(Arc::clone(&self.ctx)));
         }
         if space.is_loaded_memory_space() {
-            return SymZ3SpaceKind::Memory(SymZ3MemorySpace::new());
+            return SymZ3SpaceKind::Memory(SymZ3MemorySpace::new(
+                Arc::clone(&self.language),
+                Arc::clone(space),
+                Arc::clone(&self.ctx),
+            ));
         }
         panic!("not yet supported space: {}", space.name());
     }
@@ -248,7 +270,13 @@ impl<CB: PcodeStateCallbacks> SymZ3PcodeExecutorStatePiece<CB> {
             self.get_or_create_space(&unique_space).set(offset, size, val, cb);
             return;
         }
-        self.get_or_create_space(space).set(offset, size, val, cb);
+        let target = self.get_or_create_space(space);
+        target.set(offset, size, val, cb);
+        let reports = target.reports_callbacks();
+        if reports {
+            // Java's register/memory space: `cb.dataWritten(piece, space, offset, size, val)`.
+            cb.data_written_abstract::<SymValueZ3, SymValueZ3>(&*self, space, offset, size, val);
+        }
     }
 
     /// Port of the private helper `getVarInternal(AddressSpace, SymValueZ3, int, boolean, Reason,
@@ -278,7 +306,14 @@ impl<CB: PcodeStateCallbacks> SymZ3PcodeExecutorStatePiece<CB> {
             };
         }
         match self.get_for_space(space) {
-            Some(s) => s.get(offset, size, reason, cb),
+            Some(s) => {
+                if s.reads_uninitialized(offset, size) {
+                    // Java's register/memory space: `cb.readUninitialized(piece, space, offset,
+                    // size, reason)`, before the read.
+                    cb.read_uninitialized_abstract::<SymValueZ3, SymValueZ3>(self, space, offset, size, reason);
+                }
+                s.get(offset, size, reason, cb)
+            }
             None => {
                 Msg::warn(
                     "SymZ3PcodeExecutorStatePiece",
@@ -320,9 +355,8 @@ impl<CB: PcodeStateCallbacks> SymZ3PcodeExecutorStatePiece<CB> {
         self.preconditions.stream_preconditions(ctx, z3p)
     }
 
-    /// Access the language this piece was constructed with (an addition; Java only exposes it via
-    /// the interface's `getLanguage()`, which this port cannot implement -- see
-    /// [`PcodeExecutorStatePiece::get_language`]'s docs below).
+    /// Access the language this piece was constructed with, as the shared handle it holds (Java
+    /// only exposes it via the interface's `getLanguage()`).
     pub fn language(&self) -> &Arc<dyn Language> {
         &self.language
     }
@@ -332,14 +366,8 @@ impl<CB: PcodeStateCallbacks> ErasedPcodeExecutorStatePiece for SymZ3PcodeExecut
 
 impl<CB: PcodeStateCallbacks> PcodeExecutorStatePiece<SymValueZ3, SymValueZ3> for SymZ3PcodeExecutorStatePiece<CB> {
     fn get_language(&self) -> Box<dyn Language> {
-        // This piece stores its language as `Arc<dyn Language>`, not `Box<dyn Language>`, and
-        // `Language` has no object-safe `clone_box`, so an owned `Box<dyn Language>` cannot be
-        // produced here. Same known gap as other `Arc<dyn Language>`-holding ports. Use
-        // `Self::language` instead.
-        unimplemented!(
-            "SymZ3PcodeExecutorStatePiece::get_language needs an owned Box<dyn Language>, but this \
-             piece only holds Arc<dyn Language>; use SymZ3PcodeExecutorStatePiece::language instead"
-        )
+        // `Arc<dyn Language>` is itself a `Language`, sharing this piece's.
+        Box::new(Arc::clone(&self.language))
     }
 
     fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<SymValueZ3>> {
