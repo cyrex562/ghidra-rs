@@ -2,6 +2,7 @@ pub mod android;
 pub mod bplist;
 pub mod cart;
 pub mod complzss;
+pub mod cpio;
 pub mod cramfs;
 pub mod dtb;
 pub mod dump;
