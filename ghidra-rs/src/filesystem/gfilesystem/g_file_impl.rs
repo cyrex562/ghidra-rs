@@ -8,7 +8,8 @@ const SEPARATOR: char = '/';
 
 /// Operations [`GFileImpl`] requires from an FSRL type.
 ///
-/// This trait will be implemented by the concrete `FSRL` type once `FSRL.java` is ported.
+/// Implemented by the real [`Fsrl`](super::fsrl::Fsrl) (below) and by filesystem-local key
+/// types that have not yet moved onto it.
 pub trait FsrlLike: Sized + Clone {
     /// The name component (last path segment) of this FSRL.
     fn fsrl_name(&self) -> String;
@@ -18,6 +19,22 @@ pub trait FsrlLike: Sized + Clone {
 
     /// Return a new FSRL formed by appending `segment` to this FSRL's path.
     fn append_path(&self, segment: &str) -> Self;
+}
+
+/// The real `FSRL`: name/path mirror `getName()`/`getPath()` (empty for a path-less FSRL),
+/// and appending delegates to `FSRL.appendPath`.
+impl FsrlLike for super::fsrl::Fsrl {
+    fn fsrl_name(&self) -> String {
+        self.name().unwrap_or_default()
+    }
+
+    fn fsrl_path(&self) -> String {
+        self.path().unwrap_or_default().to_owned()
+    }
+
+    fn append_path(&self, segment: &str) -> Self {
+        super::fsrl::Fsrl::append_path(self, segment)
+    }
 }
 
 /// Operation required from a filesystem type to derive an FSRL for files where no

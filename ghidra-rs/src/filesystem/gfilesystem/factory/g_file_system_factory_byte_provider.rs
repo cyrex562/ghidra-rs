@@ -1,6 +1,7 @@
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
-use crate::filesystem::seam_stubs::{FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
+use crate::filesystem::seam_stubs::{FileSystemServiceLike, GFileSystemLike};
 use crate::util::task::TaskMonitor;
 
 use super::g_file_system_factory::GFileSystemFactory;
@@ -24,7 +25,7 @@ pub trait GFileSystemFactoryByteProvider<FSTYPE: GFileSystemLike>:
     /// requested to cancel the operation, and updated with progress information.
     fn create(
         &self,
-        target_fsrl: &dyn FsrlRootLike,
+        target_fsrl: &FsrlRoot,
         byte_provider: Box<dyn GByteStore>,
         fs_service: &dyn FileSystemServiceLike,
         monitor: &dyn TaskMonitor,
@@ -38,9 +39,6 @@ mod tests {
 
     struct DummyFileSystem;
     impl GFileSystemLike for DummyFileSystem {}
-
-    struct DummyFsrlRoot;
-    impl FsrlRootLike for DummyFsrlRoot {}
 
     struct DummyFsService;
     impl FileSystemServiceLike for DummyFsService {}
@@ -75,7 +73,7 @@ mod tests {
     impl GFileSystemFactoryByteProvider<DummyFileSystem> for MockFactory {
         fn create(
             &self,
-            _target_fsrl: &dyn FsrlRootLike,
+            _target_fsrl: &FsrlRoot,
             mut byte_provider: Box<dyn GByteStore>,
             _fs_service: &dyn FileSystemServiceLike,
             _monitor: &dyn TaskMonitor,
@@ -92,7 +90,7 @@ mod tests {
         let factory = MockFactory;
         let bp: Box<dyn GByteStore> = Box::new(RecordingByteProvider);
         let monitor = crate::util::task::DummyMonitor;
-        let result = factory.create(&DummyFsrlRoot, bp, &DummyFsService, &monitor);
+        let result = factory.create(&FsrlRoot::make_root("file"), bp, &DummyFsService, &monitor);
         assert!(result.is_ok());
     }
 
@@ -101,7 +99,7 @@ mod tests {
         let factory: Box<dyn GFileSystemFactoryByteProvider<DummyFileSystem>> = Box::new(MockFactory);
         let bp: Box<dyn GByteStore> = Box::new(RecordingByteProvider);
         let monitor = crate::util::task::DummyMonitor;
-        let fs = factory.create(&DummyFsrlRoot, bp, &DummyFsService, &monitor).unwrap();
+        let fs = factory.create(&FsrlRoot::make_root("file"), bp, &DummyFsService, &monitor).unwrap();
         let _: Box<dyn GFileSystemLike> = fs;
     }
 }

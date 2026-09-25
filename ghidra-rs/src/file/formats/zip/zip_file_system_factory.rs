@@ -37,7 +37,8 @@ use crate::filesystem::gfilesystem::factory::g_file_system_probe::GFileSystemPro
 use crate::filesystem::gfilesystem::factory::g_file_system_probe_bytes_only::GFileSystemProbeBytesOnly;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::filesystem::seam_stubs::{FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
+use crate::filesystem::seam_stubs::{FileSystemServiceLike, GFileSystemLike};
 use crate::util::task::TaskMonitor;
 
 /// Mirrors `ZipFileSystemFactory.START_BYTES_REQUIRED`.
@@ -89,7 +90,7 @@ impl<Fsrl> GFileSystemProbeBytesOnly<Fsrl> for ZipFileSystemFactory {
 impl GFileSystemFactoryByteProvider<ZipFileSystem> for ZipFileSystemFactory {
     fn create(
         &self,
-        target_fsrl: &dyn FsrlRootLike,
+        target_fsrl: &FsrlRoot,
         mut byte_provider: Box<dyn GByteStore>,
         fs_service: &dyn FileSystemServiceLike,
         monitor: &dyn TaskMonitor,
@@ -227,7 +228,6 @@ mod tests {
     }
 
     struct DummyFsrlRoot;
-    impl FsrlRootLike for DummyFsrlRoot {}
     struct DummyFsService;
     impl FileSystemServiceLike for DummyFsService {}
 
@@ -294,7 +294,7 @@ mod tests {
         let provider: Box<dyn GByteStore> =
             Box::new(MemoryByteProvider { bytes: b"PK\x03\x04".to_vec() });
         let monitor = crate::util::task::DummyMonitor;
-        let result = factory.create(&DummyFsrlRoot, provider, &DummyFsService, &monitor);
+        let result = factory.create(&FsrlRoot::make_root("file"), provider, &DummyFsService, &monitor);
         assert!(result.is_err());
     }
 

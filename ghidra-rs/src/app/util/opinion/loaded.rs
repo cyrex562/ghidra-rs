@@ -85,7 +85,7 @@ pub trait Loaded {
     ///
     /// Mirrors the protected field `fsrl` (no public getter exists in Java; it is only consulted
     /// internally by `save()`/`mirror()`).
-    fn fsrl(&self) -> Option<&dyn Fsrl>;
+    fn fsrl(&self) -> Option<&Fsrl>;
 
     /// The [`Project`] this will get saved to during a [`Loaded::save`] operation, if any.
     ///
@@ -573,7 +573,7 @@ mod tests {
             self.name.clone()
         }
 
-        fn fsrl(&self) -> Option<&dyn Fsrl> {
+        fn fsrl(&self) -> Option<&Fsrl> {
             None
         }
 

@@ -300,7 +300,7 @@ mod tests {
     }
 
     impl ByteProviderLike for MockProvider {
-        fn get_fsrl(&self) -> Option<Box<dyn Fsrl>> {
+        fn get_fsrl(&self) -> Option<Fsrl> {
             None
         }
 

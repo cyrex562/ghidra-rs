@@ -4,7 +4,7 @@ DONE	trait	10	15	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/
 DONE	trait	9	118	9	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystem.java
 DONE	trait	8	100	4	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRefManager.java
 DONE	trait	7	101	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRef.java
-TODO	trait	4	164	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRL.java
+DONE	trait	4	164	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRL.java
 DONE	trait	3	182	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/EmptyByteProvider.java
 DONE	trait	2	436	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProvider.java
 DONE	trait	7	14	12	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SymbolTable.java
@@ -299,7 +299,7 @@ TODO	struct	5	16	4	util	Ghidra/Framework/Utility/src/main/java/utility/module/Mo
 TODO	struct	3	16	1	generic	Ghidra/Framework/Generic/src/main/java/generic/util/Path.java
 TODO	struct	1	19	39	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GUID.java
 TODO	struct	9	23	1	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfoManager.java
-TODO	struct	5	118	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRLRoot.java
+DONE	struct	5	118	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRLRoot.java
 TODO	struct	6	204	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteArrayProvider.java
 TODO	struct	6	197	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderWrapper.java
 TODO	struct	6	181	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FaultTolerantInputStream.java

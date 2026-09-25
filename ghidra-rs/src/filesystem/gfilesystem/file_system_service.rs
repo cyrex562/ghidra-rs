@@ -9,7 +9,7 @@ use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::filesystem::gfilesystem::refd_file::RefdFile;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::seam_stubs::{
-    FileCacheEntryBuilderLike, FileCacheEntryLike, FsrlLike, FsrlRootLike, GFileSystemLike,
+    FileCacheEntryBuilderLike, FileCacheEntryLike, FsrlLike, GFileSystemLike,
     LocalFileSystemLike,
 };
 use crate::util::task::TaskMonitor;
@@ -61,7 +61,6 @@ pub trait FileSystemService<Fs, Fsrl, FsrlRoot>
 where
     Fs: GFileSystemLike,
     Fsrl: FsrlLike,
-    FsrlRoot: FsrlRootLike,
 {
     /// Forcefully closes all open filesystems and clears caches.
     fn clear(&mut self);
@@ -287,7 +286,6 @@ mod tests {
     impl FsrlLike for MockFsrl {}
 
     struct MockFsrlRoot(String);
-    impl FsrlRootLike for MockFsrlRoot {}
 
     struct MockLocalFs;
     impl LocalFileSystemLike for MockLocalFs {}

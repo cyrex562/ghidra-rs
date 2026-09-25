@@ -446,7 +446,7 @@ pub trait TreePath {}
 /// other members are needed yet.
 pub trait ByteProviderLike {
     /// Stands in for `GByteStore.getFSRL()`.
-    fn get_fsrl(&self) -> StdOption<Box<dyn crate::filesystem::gfilesystem::fsrl::Fsrl>>;
+    fn get_fsrl(&self) -> StdOption<crate::filesystem::gfilesystem::fsrl::Fsrl>;
 
     /// Stands in for `GByteStore.getName()`.
     fn get_name(&self) -> StdOption<String>;

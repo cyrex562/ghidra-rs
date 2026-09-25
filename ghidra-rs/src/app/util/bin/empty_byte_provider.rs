@@ -18,7 +18,7 @@ use crate::filesystem::gfilesystem::fsrl::Fsrl;
 ///
 /// Mirrors `ghidra.app.util.bin.EmptyByteProvider`.
 pub struct EmptyByteProvider {
-    fsrl: Option<Box<dyn Fsrl>>,
+    fsrl: Option<Fsrl>,
 }
 
 impl EmptyByteProvider {
@@ -32,7 +32,7 @@ impl EmptyByteProvider {
     /// Creates an instance with the given [`Fsrl`] identity.
     ///
     /// Mirrors `EmptyByteProvider(FSRL fsrl)`.
-    pub fn with_fsrl(fsrl: Option<Box<dyn Fsrl>>) -> Self {
+    pub fn with_fsrl(fsrl: Option<Fsrl>) -> Self {
         EmptyByteProvider { fsrl }
     }
 }
@@ -88,8 +88,8 @@ impl ByteProvider for EmptyByteProvider {
     }
 
     /// Mirrors `getFSRL()`.
-    fn get_fsrl(&self) -> Option<&dyn Fsrl> {
-        self.fsrl.as_deref()
+    fn get_fsrl(&self) -> Option<&Fsrl> {
+        self.fsrl.as_ref()
     }
 
     /// Mirrors `isEmpty()`.

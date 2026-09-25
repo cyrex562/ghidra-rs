@@ -323,7 +323,7 @@ mod tests {
             self.name.clone()
         }
 
-        fn fsrl(&self) -> Option<&dyn Fsrl> {
+        fn fsrl(&self) -> Option<&Fsrl> {
             None
         }
 
@@ -505,7 +505,7 @@ mod tests {
             fn get_name(&self) -> String {
                 self.inner.get_name()
             }
-            fn fsrl(&self) -> Option<&dyn Fsrl> {
+            fn fsrl(&self) -> Option<&Fsrl> {
                 self.inner.fsrl()
             }
             fn get_project(&self) -> Option<&dyn Project> {

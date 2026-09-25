@@ -9,8 +9,7 @@ const ESCAPE_CHARS: &str = "%?|";
 /// Returns a copy of `s` with FSRL-problematic characters escaped as `%nn` sequences, where
 /// `nn` are hexdigits specifying the byte value (UTF-8 encoded for non-ASCII characters).
 ///
-/// Mirrors `FSUtilities.escapeEncode(String)`. The inverse (`escapeDecode`) is not ported here;
-/// nothing in the current port needs to parse FSRL strings back into structured values yet.
+/// Mirrors `FSUtilities.escapeEncode(String)`; the inverse is [`escape_decode`].
 pub fn escape_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
@@ -26,6 +25,64 @@ pub fn escape_encode(s: &str) -> String {
         }
     }
     out
+}
+
+/// A malformed FSRL / URL-ish string, mirroring the `java.net.MalformedURLException` thrown by
+/// `FSUtilities.escapeDecode` and `FSRL.fromString`.
+///
+/// Java's `MalformedURLException` is an `IOException`, so this converts into [`std::io::Error`]
+/// (kind [`std::io::ErrorKind::InvalidInput`]) for callers that propagate I/O errors.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("{0}")]
+pub struct MalformedUrlError(pub String);
+
+impl From<MalformedUrlError> for std::io::Error {
+    fn from(e: MalformedUrlError) -> Self {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, e)
+    }
+}
+
+/// Decodes a string previously encoded with [`escape_encode`], replacing each run of `%nn`
+/// sequences with the UTF-8 string those byte values encode.
+///
+/// Mirrors `FSUtilities.escapeDecode(String)`. Where Java lets a non-hex escape surface as an
+/// unchecked `NumberFormatException`, this reports it as a [`MalformedUrlError`] like the other
+/// bad-escape cases.
+pub fn escape_decode(s: &str) -> Result<String, MalformedUrlError> {
+    let chars: Vec<char> = s.chars().collect();
+    let len = chars.len();
+    let mut sb = String::with_capacity(s.len());
+    let mut i = 0;
+    while i < len {
+        let mut c = chars[i];
+        if c == '%' {
+            let mut bytes: Vec<u8> = Vec::new();
+            while i + 2 < len && c == '%' {
+                let hex: String = chars[i + 1..i + 3].iter().collect();
+                let v = i64::from_str_radix(&hex, 16).map_err(|_| {
+                    MalformedUrlError(format!("Bad hex characters in escape (%) pattern: {s}"))
+                })?;
+                if v < 0 {
+                    return Err(MalformedUrlError(format!(
+                        "Bad hex characters in escape (%) pattern: {s}"
+                    )));
+                }
+                bytes.push(v as u8);
+                i += 3;
+                if i < len {
+                    c = chars[i];
+                }
+            }
+            if i < len && c == '%' {
+                return Err(MalformedUrlError(format!("Bad escape pattern in {s}")));
+            }
+            sb.push_str(&String::from_utf8_lossy(&bytes));
+        } else {
+            sb.push(c);
+            i += 1;
+        }
+    }
+    Ok(sb)
 }
 
 /// Concatenates path strings, ensuring correct separators between parts.

@@ -4,7 +4,7 @@ use std::io;
 use thiserror::Error;
 
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemRefManagerLike, FsrlRootLike};
+use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemRefManagerLike};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -24,10 +24,9 @@ pub enum GFileSystemError {
 
 /// A filesystem that contains files, mirroring `ghidra.formats.gfilesystem.GFileSystem`.
 ///
-/// This is a cycle cut-point: the Java interface references `FSRLRoot`,
-/// `FileSystemRefManager`, and `fileinfo.FileAttributes`, none of which are ported yet. Those
-/// are represented here by the [`FsrlRootLike`], [`FileSystemRefManagerLike`], and
-/// [`FileAttributesLike`] seams (see `crate::filesystem::seam_stubs`) until the real types
+/// This is a cycle cut-point: the Java interface references `FileSystemRefManager` and
+/// `fileinfo.FileAttributes`, which are not ported yet. Those are represented here by the
+/// [`FileSystemRefManagerLike`] and [`FileAttributesLike`] seams (see `crate::filesystem::seam_stubs`) until the real types
 /// land.
 ///
 /// `FS` and `Fsrl` are the same kind of type parameters used by [`GFile`] -- `FS` will be
@@ -40,7 +39,6 @@ pub trait GFileSystem<FS, Fsrl, FsrlRoot, RefManager>
 where
     FS: 'static,
     Fsrl: 'static,
-    FsrlRoot: FsrlRootLike,
     RefManager: FileSystemRefManagerLike,
 {
     /// File system volume name -- typically the name of the container file or an internally
@@ -203,7 +201,6 @@ mod tests {
     // ── Mock seam types ─────────────────────────────────────────────────────
 
     struct MockFsrlRoot;
-    impl FsrlRootLike for MockFsrlRoot {}
 
     struct MockRefManager;
     impl FileSystemRefManagerLike for MockRefManager {}

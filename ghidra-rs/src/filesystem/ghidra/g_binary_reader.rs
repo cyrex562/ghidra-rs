@@ -26,7 +26,7 @@ pub trait GByteStore {
     /// `GByteStore.getFSRL()`.
     ///
     /// Defaults to `None`, which is exactly the `null` Java's default implementation returns.
-    fn get_fsrl(&self) -> Option<&dyn Fsrl> {
+    fn get_fsrl(&self) -> Option<&Fsrl> {
         None
     }
 

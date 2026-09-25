@@ -86,7 +86,7 @@ pub trait ByteProvider {
     /// override this directly, exactly as `EmptyByteProvider.getFSRL()` does in Java.
     ///
     /// Mirrors the default `getFSRL()`.
-    fn get_fsrl(&self) -> Option<&dyn Fsrl> {
+    fn get_fsrl(&self) -> Option<&Fsrl> {
         None
     }
 

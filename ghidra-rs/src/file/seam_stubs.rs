@@ -24,7 +24,8 @@ use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
-use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
+use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemServiceLike, GFileSystemLike};
 use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
@@ -413,7 +414,7 @@ impl GByteStore for ByteArrayProvider {
         Err(io::Error::new(io::ErrorKind::Unsupported, "ByteArrayProvider is read-only"))
     }
 
-    fn get_fsrl(&self) -> Option<&dyn Fsrl> {
+    fn get_fsrl(&self) -> Option<&Fsrl> {
         None
     }
 
@@ -791,7 +792,7 @@ impl GFileSystemLike for ZipFileSystem {}
 impl ZipFileSystem {
     /// Mirrors `ZipFileSystem(FSRLRoot, FileSystemService)`. The real port stores both
     /// (as `SevenZipFileSystemBase` already does); this stub has nowhere to put them yet.
-    pub fn new(_fsrl: &dyn FsrlRootLike, _fs_service: &dyn FileSystemServiceLike) -> Self {
+    pub fn new(_fsrl: &FsrlRoot, _fs_service: &dyn FileSystemServiceLike) -> Self {
         ZipFileSystem
     }
 
@@ -827,7 +828,7 @@ impl ZipFileSystemBuiltin {
     pub const TEMPFILE_PREFIX: &'static str = "ghidra_tmp_zipfile";
 
     /// Mirrors `ZipFileSystemBuiltin(FSRLRoot, FileSystemService)`.
-    pub fn new(_fsrl: &dyn FsrlRootLike, _fs_service: &dyn FileSystemServiceLike) -> Self {
+    pub fn new(_fsrl: &FsrlRoot, _fs_service: &dyn FileSystemServiceLike) -> Self {
         ZipFileSystemBuiltin
     }
 

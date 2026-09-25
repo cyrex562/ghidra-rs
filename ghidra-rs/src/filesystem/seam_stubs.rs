@@ -22,84 +22,10 @@ pub trait FileAttributeTypeLike {
     fn display_name(&self) -> &str;
 }
 
-/// Placeholder for `ghidra.formats.gfilesystem.FSRLRoot`, needed by
-/// [`crate::filesystem::gfilesystem::g_file_system::GFileSystem::get_fsrl`] (which never calls
-/// a method on it, only stores and hands the value back to callers) and, since the real
-/// `FSRL` port, by [`crate::filesystem::gfilesystem::fsrl::Fsrl`]'s default methods, which
-/// need to walk and render the container chain a `FSRLRoot` sits at the top of.
-///
-/// Every method here has a default body so the pre-existing empty `impl FsrlRootLike for X {}`
-/// marker usages elsewhere keep compiling unchanged (as a "no container, empty protocol" root);
-/// a real `FSRLRoot` port should override all of them. `protocol`/`has_container`/
-/// `get_container` mirror `FSRLRoot.getProtocol`/`hasContainer`/`getContainer`;
-/// `append_to_string` mirrors `FSRLRoot`'s override of `FSRL.appendToStringBuilder`;
-/// `root_equals`/`root_hash` mirror `FSRLRoot`'s inherited (not overridden in Java)
-/// `FSRL.equals`/`hashCode`, simplified to ignore MD5 since a real `FSRLRoot` never carries one
-/// (its constructor only ever calls `FSRL`'s 2-arg, MD5-less constructor).
-pub trait FsrlRootLike {
-    /// The "protocol" portion, eg. `"file"` for a FSRLRoot rendering as `"file://"`.
-    fn protocol(&self) -> &str {
-        ""
-    }
-
-    /// `true` if there is a parent container file, `false` for a root-level filesystem.
-    fn has_container(&self) -> bool {
-        false
-    }
-
-    /// The parent container FSRL, or `None` for a root-level filesystem.
-    fn get_container(&self) -> Option<&dyn Fsrl> {
-        None
-    }
-
-    /// Appends this root's string representation (and, if `recurse`, its container's) to `out`.
-    fn append_to_string(
-        &self,
-        out: &mut String,
-        recurse: bool,
-        include_params: bool,
-        include_fs_root: bool,
-    ) {
-        if self.has_container() && recurse {
-            if let Some(container) = self.get_container() {
-                container.append_to_string_builder(out, recurse, include_params, include_fs_root);
-                out.push('|');
-            }
-        }
-        if include_fs_root {
-            out.push_str(self.protocol());
-            out.push_str("://");
-        }
-    }
-
-    /// Value equality against another root: same protocol and (recursively) equivalent
-    /// containers.
-    fn root_equals(&self, other: &dyn FsrlRootLike) -> bool {
-        self.protocol() == other.protocol()
-            && match (self.get_container(), other.get_container()) {
-                (None, None) => true,
-                (Some(a), Some(b)) => a.is_equivalent(b),
-                _ => false,
-            }
-    }
-
-    /// A hash consistent with [`FsrlRootLike::root_equals`].
-    fn root_hash(&self) -> u64 {
-        let mut h: u64 = 17;
-        for b in self.protocol().as_bytes() {
-            h = h.wrapping_mul(31).wrapping_add(*b as u64);
-        }
-        if let Some(c) = self.get_container() {
-            h = h.wrapping_mul(31).wrapping_add(c.fsrl_hash());
-        }
-        h
-    }
-}
-
 /// Placeholder for `ghidra.formats.gfilesystem.FileSystemRefManager`, needed by
 /// [`crate::filesystem::gfilesystem::g_file_system::GFileSystem::get_ref_manager`].
 ///
-/// Like [`FsrlRootLike`], `GFileSystem` only returns this value to callers and never calls a
+/// `GFileSystem` only returns this value to callers and never calls a
 /// method on it itself, so this is an empty marker trait.
 pub trait FileSystemRefManagerLike {}
 
@@ -175,6 +101,26 @@ pub trait CachedFsrlLike: FsrlLike {
     fn fsrl_md5(&self) -> Option<String>;
 }
 
+/// The real [`Fsrl`] is usable wherever the opaque [`FsrlLike`] key seam is still threaded as a
+/// generic parameter.
+impl FsrlLike for Fsrl {}
+
+/// The real [`Fsrl`] supplies the accessors [`CachedFsrlLike`] models.
+impl CachedFsrlLike for Fsrl {
+    fn fsrl_string(&self) -> String {
+        self.to_string()
+    }
+    fn fsrl_pretty_string(&self) -> String {
+        self.to_pretty_string()
+    }
+    fn fsrl_name(&self) -> String {
+        self.name().unwrap_or_default()
+    }
+    fn fsrl_md5(&self) -> Option<String> {
+        self.md5().map(str::to_owned)
+    }
+}
+
 /// Placeholder for `ghidra.formats.gfilesystem.LocalFileSystem` (distinct from the unrelated,
 /// already-ported `ghidra.framework.store.local.LocalFileSystem`), needed by
 /// [`crate::filesystem::gfilesystem::file_system_service::FileSystemService::get_local_fs`].
@@ -195,10 +141,10 @@ pub trait LocalFileSystemLike {
     /// Returns `Err` if `fsrl` does not name a file on the local filesystem, mirroring Java's
     /// `throws IOException`. The default implementation always does, since a placeholder knows
     /// of no local files.
-    fn get_local_file(&self, fsrl: &dyn Fsrl) -> std::io::Result<std::path::PathBuf> {
+    fn get_local_file(&self, fsrl: &Fsrl) -> std::io::Result<std::path::PathBuf> {
         Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("{} is not a local file", fsrl.fsrl_string()),
+            format!("{fsrl} is not a local file"),
         ))
     }
 }

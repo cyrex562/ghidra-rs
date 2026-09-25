@@ -133,7 +133,7 @@ pub trait AbstractOrdinalSupportLoader {
         &self,
         lib: &dyn Program,
         lib_name: &str,
-        lib_fsrl: &dyn Fsrl,
+        lib_fsrl: &Fsrl,
         size: i32,
         app: &dyn Application,
         local_fs: &dyn LocalFileSystemLike,
@@ -159,7 +159,7 @@ pub trait AbstractOrdinalSupportLoader {
                 Err(CreateFileError::Io(_)) => {
                     log.append_msg(&format!(
                         "Unable to create exports file for {}",
-                        lib_fsrl.fsrl_string()
+                        lib_fsrl.to_string()
                     ));
                 }
                 Err(CreateFileError::Cancelled(e)) => return Err(e),
@@ -235,7 +235,7 @@ fn should_perform_ordinal_lookup(options: &[Box<dyn Option>]) -> bool {
 /// `getLocalFile(FSRL)`: if `fsrl` is from a local filesystem, its corresponding local file.
 fn get_local_file(
     local_fs: &dyn LocalFileSystemLike,
-    fsrl: &dyn Fsrl,
+    fsrl: &Fsrl,
 ) -> std::option::Option<std::path::PathBuf> {
     local_fs.get_local_file(fsrl).ok()
 }

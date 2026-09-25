@@ -98,7 +98,7 @@ mod tests {
             ))
         }
 
-        fn get_fsrl(&self) -> Option<&dyn crate::filesystem::gfilesystem::fsrl::Fsrl> {
+        fn get_fsrl(&self) -> Option<&crate::filesystem::gfilesystem::fsrl::Fsrl> {
             None
         }
 
