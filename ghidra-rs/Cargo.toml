@@ -45,6 +45,11 @@ quick-xml = "0.39"           # SAX layer under util/xml pull parsers (sax_parser
 prost = "0.14"               # protobuf messages for Trace RMI / ISF (generated code in debug/rmi/proto, debug/dbg/isf/protocol)
 num-bigint = "0.4"           # java.math.BigInteger for BigFloat / FloatFormat (pcode/floatformat)
 num-traits = "0.2"           # Zero/One/Signed/ToPrimitive traits used with num-bigint (already in the tree transitively)
+z3 = { version = "0.21", optional = true }  # real Z3 solver behind the SymZ3 Z3Context seam; needs libz3 (feature `z3`)
+
+[features]
+# Off by default: the default build/test must not need libz3. See feature/symz3/z3_solver_context.rs.
+z3 = ["dep:z3"]
 
 [dev-dependencies]
 tempfile = "3.10"
