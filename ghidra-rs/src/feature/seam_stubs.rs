@@ -50,13 +50,6 @@ pub trait Stringable: Send + Sync {
     fn to_string(&self) -> String;
 }
 
-/// Placeholder for the unported Java type `VTMatchInfo`, referenced by `VTMatchSet::add_match`.
-/// `VTMatchInfo` is a concrete Java class (not an interface), so this stub is a struct rather
-/// than a trait. Generated stub: shape hint only, no fields yet since nothing in the crate reads
-/// them. Replace with the real port when available.
-#[derive(Debug, Default, Clone)]
-pub struct VtMatchInfo;
-
 /// Placeholder for the unported Java type `VTMatchSet`, referenced by `VTSession`.
 /// Generated stub: only a shape hint. `add_match`/`get_program_correlator_info` are omitted
 /// pending ports of `VTMatchInfo`/`VTProgramCorrelatorInfo`, which have no known shape yet.
@@ -115,32 +108,6 @@ impl VTMatchTagDBAdapterV0 {
         }
         Ok(Self { table })
     }
-}
-
-/// Placeholder for the unported Java type `VTMatchInfo`, referenced by
-/// `VTMatchTableDBAdapter::insert_match_record`. Trimmed to the accessors that
-/// `VTMatchTableDBAdapterV0.insertMatchRecord` actually reads (similarity/confidence score,
-/// source/destination length); see `VTMatchInfo.java` for the type's full public surface.
-/// Replace with the real port when available.
-pub trait VTMatchInfo: Send + Sync {
-    fn get_similarity_score(&self) -> crate::feature::vt::api::main::vt_score::VtScore;
-    fn get_confidence_score(&self) -> crate::feature::vt::api::main::vt_score::VtScore;
-    fn get_source_length(&self) -> i32;
-    fn get_destination_length(&self) -> i32;
-
-    /// Java: `VTMatchInfo.getSourceAddress()`. Grown for the
-    /// [`VTMatchSetDB`](crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB) port, whose
-    /// `addMatch` reads it to look the association up.
-    fn get_source_address(&self) -> AddressType;
-
-    /// Java: `VTMatchInfo.getDestinationAddress()`. See [`get_source_address`](Self::get_source_address).
-    fn get_destination_address(&self) -> AddressType;
-
-    /// Java: `VTMatchInfo.getAssociationType()`. See [`get_source_address`](Self::get_source_address).
-    fn get_association_type(&self) -> VtAssociationType;
-
-    /// Java: `VTMatchInfo.getTag()`. See [`get_source_address`](Self::get_source_address).
-    fn get_tag(&self) -> crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
 }
 
 /// Placeholder for the unported Java type `VTMatchDB`, the database-backed
@@ -744,12 +711,23 @@ impl crate::feature::vt::api::main::db::vt_match_table_db_adapter::VTMatchTableD
 {
     fn insert_match_record(
         &self,
-        info: &dyn VTMatchInfo,
+        info: &crate::feature::vt::api::main::vt_match_info::VtMatchInfo,
         _match_set: &crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB,
         association: &crate::feature::vt::api::db::vt_association_db::VTAssociationDB,
         tag: Option<&dyn VTMatchTagDB>,
     ) -> std::io::Result<crate::framework::db::DBRecord> {
         use crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription;
+
+        // Java dereferences both scores unconditionally (a null score throws); surface that as an
+        // error instead of writing a null column.
+        let missing = |what: &str| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("match info has no {what} score"),
+            )
+        };
+        let similarity = info.similarity_score().ok_or_else(|| missing("similarity"))?;
+        let confidence = info.confidence_score().ok_or_else(|| missing("confidence"))?;
 
         let mut table = self.table.write().unwrap();
         let key = table.get_next_key();
@@ -761,17 +739,17 @@ impl crate::feature::vt::api::main::db::vt_match_table_db_adapter::VTMatchTableD
         record.set_long(ColumnDescription::TagKeyCol.column(), tag.map_or(-1, |t| t.get_key()));
         record.set_string(
             ColumnDescription::SimilarityScoreCol.column(),
-            Some(info.get_similarity_score().to_storage_string()),
+            Some(similarity.to_storage_string()),
         );
         record.set_string(
             ColumnDescription::ConfidenceScoreCol.column(),
-            Some(info.get_confidence_score().to_storage_string()),
+            Some(confidence.to_storage_string()),
         );
         record.set_long(ColumnDescription::AssociationCol.column(), association.get_key());
-        record.set_int(ColumnDescription::SourceLengthCol.column(), info.get_source_length());
+        record.set_int(ColumnDescription::SourceLengthCol.column(), info.source_length());
         record.set_int(
             ColumnDescription::DestinationLengthCol.column(),
-            info.get_destination_length(),
+            info.destination_length(),
         );
 
         table.put_record(record.clone())?;

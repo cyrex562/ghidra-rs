@@ -129,7 +129,7 @@ PARK	trait	0	8	15	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 DONE	trait	0	8	72	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsInode.java
 DONE	trait	0	8	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashInode.java
 PARK	trait	0	8	5	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/DataMatchProgramCorrelator.java
-PARK	trait	0	8	1	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNode.java
+DONE	trait	0	8	1	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNode.java
 DONE	trait	0	8	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphActionContext.java
 DONE	trait	0	8	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkModel.java
 PARK	trait	0	7	26	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisScheduler.java
@@ -657,7 +657,7 @@ TODO	struct	4	18	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer
 TODO	struct	2	12	5	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassJar.java
 TODO	struct	2	12	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassPackage.java
 TODO	struct	0	185	60	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/CodeBrowserPlugin.java
-TODO	struct	0	132	1	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchInfo.java
+DONE	struct	0	132	1	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchInfo.java
 DONE	struct	3	48	1	pcode	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/floatformat/FloatFormatFactory.java
 DONE	struct	2	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorFloatAbs.java
 DONE	struct	2	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorFloatAdd.java
@@ -2409,7 +2409,7 @@ TODO	struct	0	8	4	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/f
 TODO	struct	0	8	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/PostCommentMarkupType.java
 TODO	struct	0	8	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/PreCommentMarkupType.java
 TODO	struct	0	8	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/RepeatableCommentMarkupType.java
-TODO	struct	1	5	2	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionPair.java
+DONE	struct	1	5	2	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionPair.java
 DONE	struct	1	7	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/Chunk.java
 TODO	struct	1	7	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkReader.java
 TODO	struct	0	8	19	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/OperandValueSolver.java
@@ -3233,7 +3233,7 @@ TODO	struct	0	3	67	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util
 TODO	struct	0	3	21	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/datatypes/SwiftTuple.java
 TODO	struct	0	3	22	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/UseropEmuSyscallDefinition.java
 TODO	struct	0	3	27	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/address/StraightLineCorrelation.java
-TODO	struct	0	3	4	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNodeContainer.java
+DONE	struct	0	3	4	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNodeContainer.java
 TODO	struct	2	2	4	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/MemoryImage.java
 TODO	struct	2	2	28	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/ProgramLoadImage.java
 TODO	struct	2	2	1	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/ProgramMappedLoadImage.java

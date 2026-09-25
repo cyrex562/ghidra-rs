@@ -1,4 +1,5 @@
-use crate::feature::seam_stubs::{VtAssociation, VtMatch, VtMatchInfo};
+use crate::feature::seam_stubs::{VtAssociation, VtMatch};
+use crate::feature::vt::api::main::vt_match_info::VtMatchInfo;
 use crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo;
 use crate::feature::vt::api::main::vt_program_correlator::VTProgramCorrelator;
 use crate::feature::vt::api::main::vt_session::VTSession;

@@ -9435,7 +9435,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/mai
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItemDestinationAddressEditStatus.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItemStatus.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatch.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchInfo.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchInfo.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchSet.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchTag.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelator.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main
@@ -9787,9 +9787,9 @@ orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api
 orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/BSimProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
 orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/BSimProgramCorrelatorMatching.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
 orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/BinningSystem.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
-orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNode.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
-orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNodeContainer.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
-orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionPair.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
+orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNode.java	DONE	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
+orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNodeContainer.java	DONE	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
+orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionPair.java	DONE	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
 orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/NamespaceNeighborhood.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
 orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/NeighborGenerator.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 
 orig_src/Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/PotentialPair.java	TODO	orig_src Ghidra Features VersionTrackingBSim src main java ghidra feature vt api 

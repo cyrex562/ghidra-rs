@@ -11,8 +11,8 @@
 //!   Rust factories build the adapter eagerly, so the handle is borrowed for the call and not
 //!   retained -- which also keeps the struct free of a database handle it would otherwise have to
 //!   share.
-//! * The `VTMatchSet` trait's signatures are written in terms of seam stubs that carry no data yet
-//!   (`VtMatchInfo` is a fieldless placeholder, and the `VTSessionDB -> VTSession` bridge does not
+//! * The `VTMatchSet` trait's signatures are written in terms of types this port cannot produce
+//!   yet (`VTMatchDB` does not implement `VtMatch`, and the `VTSessionDB -> VTSession` bridge does not
 //!   exist -- the same gap already documented on
 //!   [`VTAssociationDB`](crate::feature::vt::api::db::vt_association_db::VTAssociationDB)). The real
 //!   port therefore lives on concretely-typed inherent methods; the trait impl forwards the four
@@ -28,9 +28,11 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::feature::seam_stubs::{
-    ProgramCorrelatorInfoImpl, VTMatchDB, VTMatchInfo, VTSessionDB, VtAssociation,
+    ProgramCorrelatorInfoImpl, VTMatchDB, VTSessionDB, VtAssociation,
 };
 use crate::feature::vt::api::db::vt_association_db::VTAssociationDB;
+use crate::feature::vt::api::main::vt_match_info::VtMatchInfo;
+use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
 use crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo;
 use crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager;
 use crate::feature::vt::api::main::db::deleted_match::DeletedMatch;
@@ -339,15 +341,19 @@ impl VTMatchSetDB {
 
     /// Java: `addMatch(VTMatchInfo)`. Returns `None` when the insert failed, mirroring the `null`
     /// Java returns after routing the `IOException` through `dbError`.
-    pub fn add_match(&self, info: &dyn VTMatchInfo) -> Option<Arc<VTMatchDB>> {
+    ///
+    /// An info without source/destination addresses or an association type yields `None`, where
+    /// Java would fail on the `null`. A missing tag is treated as untagged, as
+    /// `getOrCreateMatchTagDB(null)` is.
+    pub fn add_match(&self, info: &VtMatchInfo) -> Option<Arc<VTMatchDB>> {
         let association_manager = self.session.get_association_manager_dbm();
         let association_db = association_manager.get_or_create_association_db(
-            &info.get_source_address(),
-            &info.get_destination_address(),
-            info.get_association_type(),
+            info.source_address()?,
+            info.destination_address()?,
+            info.association_type()?,
         )?;
 
-        let tag = info.get_tag();
+        let tag = info.tag().cloned().unwrap_or(VtMatchTag::Untagged);
         let new_match = {
             let _guard = self.lock.write();
             let tag_db = self.session.get_or_create_match_tag_db(&tag);
@@ -562,11 +568,11 @@ impl VTMatchSet for VTMatchSetDB {
 
     fn add_match(
         &mut self,
-        _info: crate::feature::seam_stubs::VtMatchInfo,
+        _info: crate::feature::vt::api::main::vt_match_info::VtMatchInfo,
     ) -> Box<dyn crate::feature::seam_stubs::VtMatch> {
         unimplemented!(
-            "VTMatchSetDB::add_match needs the real VTMatchInfo port (the seam placeholder carries \
-             no addresses, type or tag); use the inherent VTMatchSetDB::add_match"
+            "VTMatchSetDB::add_match needs the real VTMatchDB port to implement VTMatch; use the \
+             inherent VTMatchSetDB::add_match"
         )
     }
 
@@ -854,32 +860,20 @@ pub(crate) mod test_support {
         pub(crate) dest_len: i32,
     }
 
-    impl VTMatchInfo for FakeMatchInfo {
-        fn get_similarity_score(&self) -> VtScore {
-            VtScore::new(0.75)
-        }
-        fn get_confidence_score(&self) -> VtScore {
-            VtScore::new(0.5)
-        }
-        fn get_source_length(&self) -> i32 {
-            self.source_len
-        }
-        fn get_destination_length(&self) -> i32 {
-            self.dest_len
-        }
-        fn get_source_address(&self) -> AddressType {
-            self.source.clone()
-        }
-        fn get_destination_address(&self) -> AddressType {
-            self.destination.clone()
-        }
-        fn get_association_type(
-            &self,
-        ) -> crate::feature::vt::api::main::vt_association_type::VtAssociationType {
-            crate::feature::vt::api::main::vt_association_type::VtAssociationType::Function
-        }
-        fn get_tag(&self) -> VtMatchTag {
-            VtMatchTag::Untagged
+    impl From<FakeMatchInfo> for VtMatchInfo {
+        fn from(fake: FakeMatchInfo) -> Self {
+            let mut info = VtMatchInfo::new(7);
+            info.set_similarity_score(VtScore::new(0.75));
+            info.set_confidence_score(VtScore::new(0.5));
+            info.set_source_length(fake.source_len);
+            info.set_destination_length(fake.dest_len);
+            info.set_source_address(fake.source);
+            info.set_destination_address(fake.destination);
+            info.set_association_type(
+                crate::feature::vt::api::main::vt_association_type::VtAssociationType::Function,
+            );
+            info.set_tag(Some(VtMatchTag::Untagged));
+            info
         }
     }
 
@@ -904,13 +898,14 @@ mod tests {
         (db_handle, session, match_set)
     }
 
-    fn info(session: &MockSession, source: i64, destination: i64) -> FakeMatchInfo {
+    fn info(session: &MockSession, source: i64, destination: i64) -> VtMatchInfo {
         FakeMatchInfo {
             source: session.address(source),
             destination: session.address(destination),
             source_len: 10,
             dest_len: 20,
         }
+        .into()
     }
 
     /// Java: `getID()` is the match set record's key, and the record's correlator columns are

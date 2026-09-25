@@ -11,9 +11,10 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::feature::seam_stubs::{VTMatchInfo, VTMatchTableDBAdapterV0, VTMatchTagDB};
+use crate::feature::seam_stubs::{VTMatchTableDBAdapterV0, VTMatchTagDB};
 use crate::feature::vt::api::db::vt_association_db::VTAssociationDB;
 use crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB;
+use crate::feature::vt::api::main::vt_match_info::VtMatchInfo;
 use crate::framework::data::OpenMode;
 use crate::framework::db::{DBHandle, DBRecord, FieldType, RecordIterator, Schema};
 use crate::util::exception::VersionException;
@@ -107,7 +108,7 @@ impl ColumnDescription {
 pub trait VTMatchTableDBAdapter: Send + Sync {
     fn insert_match_record(
         &self,
-        info: &dyn VTMatchInfo,
+        info: &VtMatchInfo,
         match_set: &VTMatchSetDB,
         association: &VTAssociationDB,
         tag: Option<&dyn VTMatchTagDB>,
@@ -236,32 +237,14 @@ mod tests {
         source_len: i32,
         dest_len: i32,
     }
-    impl VTMatchInfo for FakeMatchInfo {
-        fn get_similarity_score(&self) -> VtScore {
-            self.similarity.clone()
-        }
-        fn get_confidence_score(&self) -> VtScore {
-            self.confidence.clone()
-        }
-        fn get_source_length(&self) -> i32 {
-            self.source_len
-        }
-        fn get_destination_length(&self) -> i32 {
-            self.dest_len
-        }
-        fn get_source_address(&self) -> crate::feature::seam_stubs::AddressType {
-            unimplemented!("insertMatchRecord never reads the info's addresses")
-        }
-        fn get_destination_address(&self) -> crate::feature::seam_stubs::AddressType {
-            unimplemented!("insertMatchRecord never reads the info's addresses")
-        }
-        fn get_association_type(
-            &self,
-        ) -> crate::feature::vt::api::main::vt_association_type::VtAssociationType {
-            unimplemented!("insertMatchRecord never reads the info's association type")
-        }
-        fn get_tag(&self) -> crate::feature::vt::api::main::vt_match_tag::VtMatchTag {
-            unimplemented!("insertMatchRecord takes the resolved tag as a separate argument")
+    impl From<FakeMatchInfo> for VtMatchInfo {
+        fn from(fake: FakeMatchInfo) -> Self {
+            let mut info = VtMatchInfo::new(1);
+            info.set_similarity_score(fake.similarity);
+            info.set_confidence_score(fake.confidence);
+            info.set_source_length(fake.source_len);
+            info.set_destination_length(fake.dest_len);
+            info
         }
     }
 
@@ -299,12 +282,13 @@ mod tests {
         let mut db_handle = DBHandle::new().unwrap();
         let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
 
-        let info = FakeMatchInfo {
+        let info: VtMatchInfo = FakeMatchInfo {
             similarity: VtScore::new(0.75),
             confidence: VtScore::new(0.5),
             source_len: 10,
             dest_len: 20,
-        };
+        }
+        .into();
         let match_set = fake_match_set(&mut db_handle);
         let association = fake_association(7);
         let tag = FakeTag(3);
@@ -331,17 +315,30 @@ mod tests {
     }
 
     #[test]
+    fn insert_match_record_without_scores_is_an_error() {
+        let mut db_handle = DBHandle::new().unwrap();
+        let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
+        let match_set = fake_match_set(&mut db_handle);
+        let info = VtMatchInfo::new(1);
+        let err = adapter
+            .insert_match_record(&info, &match_set, &fake_association(1), None)
+            .unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+
+    #[test]
     fn insert_match_record_with_no_tag_stores_negative_one() {
         let mut db_handle = DBHandle::new().unwrap();
         let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
         let match_set = fake_match_set(&mut db_handle);
 
-        let info = FakeMatchInfo {
+        let info: VtMatchInfo = FakeMatchInfo {
             similarity: VtScore::new(0.1),
             confidence: VtScore::new(0.2),
             source_len: 1,
             dest_len: 2,
-        };
+        }
+        .into();
         let record = adapter
             .insert_match_record(&info, &match_set, &fake_association(1), None)
             .unwrap();
@@ -355,12 +352,13 @@ mod tests {
         let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
         let match_set = fake_match_set(&mut db_handle);
 
-        let info = FakeMatchInfo {
+        let info: VtMatchInfo = FakeMatchInfo {
             similarity: VtScore::new(0.1),
             confidence: VtScore::new(0.2),
             source_len: 1,
             dest_len: 2,
-        };
+        }
+        .into();
         let record = adapter
             .insert_match_record(&info, &match_set, &fake_association(1), None)
             .unwrap();
@@ -377,12 +375,13 @@ mod tests {
         let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
         let match_set = fake_match_set(&mut db_handle);
 
-        let info = FakeMatchInfo {
+        let info: VtMatchInfo = FakeMatchInfo {
             similarity: VtScore::new(0.1),
             confidence: VtScore::new(0.2),
             source_len: 1,
             dest_len: 2,
-        };
+        }
+        .into();
         adapter
             .insert_match_record(&info, &match_set, &fake_association(1), None)
             .unwrap();
