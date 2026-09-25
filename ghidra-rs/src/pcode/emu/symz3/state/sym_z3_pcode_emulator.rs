@@ -351,7 +351,7 @@ mod tests {
     use crate::pcode::emu::symz3::sym_z3_records_preconditions::SymZ3RecordsPreconditions;
     use crate::pcode::emu::test_support::{PcLanguage, SleighTestDecoder};
     use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
-    use crate::program::model::address::{AddressFactory, AddressSpace};
+    use crate::program::model::address::AddressSpace;
     use crate::program::model::lang::register::Register;
 
     /// The parts factory over the seam's concretely-evaluating test context.

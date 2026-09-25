@@ -148,7 +148,6 @@ mod tests {
     use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
     use crate::pcode::emu::symz3::sym_z3_pcode_arithmetic::testing::EvalCtx;
     use crate::pcode::exec::pcode_state_callbacks::NONE;
-    use crate::program::model::address::AddressFactory;
 
     fn space() -> SymZ3RegisterSpace {
         let language = decode_tests::language();
