@@ -1,3 +1,4 @@
+pub mod abstract_file_system;
 pub mod abstract_single_payload_file_system;
 pub mod annotations;
 pub mod crypto;

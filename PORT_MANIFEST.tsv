@@ -5089,7 +5089,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/values/ProgramF
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/values/ProjectFileValue.java	TODO	orig_src Ghidra Features Base src main java ghidra features base values 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/values/ProjectFolderValue.java	TODO	orig_src Ghidra Features Base src main java ghidra features base values 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractFileExtractorTask.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractFileSystem.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractFileSystem.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractSinglePayloadFileSystem.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRL.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRLRoot.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
