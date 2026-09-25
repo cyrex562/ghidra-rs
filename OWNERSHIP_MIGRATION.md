@@ -367,6 +367,32 @@ program-less path is complete and tested, the class is not.
 `PseudoDisassembler` were mock-only traits standing in for concrete Java classes, and their
 manifest rows went back to `TODO` with this change.
 
+### Blocks, sets and the disassembler's context (2026-09-25, later)
+
+The pseudo-disassembly path landed on this design:
+
+- **`InstructionBlock<I>` owns its instructions** (`program/model/lang/instruction_block.rs`), as
+  point 5 above says; the disassembler's element type is
+  `DisassembledInstruction = PseudoInstruction<DisassemblerInstructionContext>`, whose context is
+  Java's immutable `Disassembler.InstructionContext` (the context register value an instruction
+  was decoded under). The block owns its `InstructionError`; the error's back-reference to its
+  block is gone (no Java caller reads it).
+- **`InstructionSet<I>` is an arena of blocks** keyed by `BlockId`. Java's disassembler mutates
+  blocks after they join a set (resuming after a delay slot, conflict marking, added counts), so
+  the set owns them, `block_mut(id)` is the mutation path, and the block iterator is a cursor
+  taking the set as a call-time argument, which keeps Java's "a conflict marked between `next()`
+  calls is respected" behaviour without shared ownership.
+- **`DisassemblerContextImpl<P>` owns its program context.** Java's disassembler holds both the
+  proxy `DisassemblerProgramContext` and the `DisassemblerContextImpl` built over it, and talks to
+  both; here the context owns the proxy and lends it out (`program_context[_mut]`), so there is one
+  owner and no shared reference.
+- **Prototypes are `SleighInstructionPrototype`s** from `SleighLanguage::parse_sleigh`: a
+  `SharedPrototype` must be `Send + Sync`, which `Language::parse`'s boxed trait object is not.
+
+`SleighInstructionDecoder` is ported on top (`pcode/emu/sleigh_instruction_decoder.rs`) and is the
+emulators' default decoder. The program-mutating half of `Disassembler` (listing writes,
+`InstructionSet` building, flow following, bookmarks) lands with the program arena.
+
 ### Migration path for the other backings
 
 - **`InstructionDB`**: replace `proto`/`flags`/`flow_override`/`length_override` with an
