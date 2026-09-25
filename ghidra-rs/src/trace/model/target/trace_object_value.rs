@@ -10,7 +10,7 @@ use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::duplicate_key_exception::DuplicateKeyException;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 use crate::trace::model::target::trace_object::{ConflictResolution, TraceObject};
 
 /// The outcome of [`TraceObjectValue::truncate_or_delete`].
@@ -341,25 +341,28 @@ mod tests {
         hidden_keys: Vec<String>,
     }
 
-    impl TraceObjectSchema for MockSchema {
-        fn get_name(&self) -> SchemaName {
-            self.name.clone()
-        }
-
-        fn to_string(&self) -> String {
-            self.name.to_string()
-        }
-
-        fn is_hidden(&self, name: &str) -> bool {
-            self.hidden_keys.iter().any(|k| k == name)
-        }
-
-        fn check_aliased_attribute(&self, name: &str) -> String {
-            if name == "alias" {
-                "real".to_string()
-            } else {
-                name.to_string()
+    impl MockSchema {
+        /// A real schema declaring `hidden_keys` as always-hidden attributes, plus an attribute
+        /// `real` aliased as `alias`.
+        fn build(
+            &self,
+        ) -> crate::trace::model::target::schema::default_trace_object_schema::DefaultTraceObjectSchema
+        {
+            use crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext;
+            use crate::trace::model::target::schema::trace_object_schema::{AttributeSchema, Hidden};
+            let ctx = DefaultSchemaContext::new();
+            let mut b = ctx.builder(self.name.clone());
+            for key in &self.hidden_keys {
+                let attr =
+                    AttributeSchema::new(key.as_str(), SchemaName::new("ANY"), false, false, Hidden::True)
+                        .unwrap();
+                b.add_attribute_schema(attr, "test").unwrap();
             }
+            let real = AttributeSchema::new("real", SchemaName::new("ANY"), false, false, Hidden::Default)
+                .unwrap();
+            b.add_attribute_schema(real, "test").unwrap();
+            b.add_attribute_alias("alias", "real", "test").unwrap();
+            b.build_and_add().unwrap()
         }
     }
 
@@ -406,10 +409,7 @@ mod tests {
 
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
-            Box::new(MockSchema {
-                name: self.schema.name.clone(),
-                hidden_keys: self.schema.hidden_keys.clone(),
-            })
+            Box::new(self.schema.build())
         }
 
 

@@ -40,6 +40,7 @@
 //!   MEMORY.md's note on eager panic-payload extraction) and which isn't warranted for a `Vec`
 //!   builder with no in-repo implementor yet.
 
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchemaExt;
 use crate::app::plugin::core::debug::mapping::DebuggerPlatformOffer;
 use crate::app::seam_stubs::{
     TRACE_ENVIRONMENT_KEY_ARCH, TRACE_ENVIRONMENT_KEY_DEBUGGER, TRACE_ENVIRONMENT_KEY_ENDIAN,

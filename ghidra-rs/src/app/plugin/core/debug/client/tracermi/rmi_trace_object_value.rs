@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::app::plugin::core::debug::client::tracermi::{RmiTraceObject, RmiValue};
 use crate::trace::model::lifespan::Lifespan;
-use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 
 /// One value of a trace object: its parent, lifespan, key, value, and the schema of the value's
 /// type. A record, so the components are plain fields.
@@ -41,15 +41,6 @@ mod tests {
     use super::*;
     use crate::debug::api::tracermi::SchemaName;
 
-    struct Named;
-    impl TraceObjectSchema for Named {
-        fn get_name(&self) -> SchemaName {
-            SchemaName::new("LONG")
-        }
-        fn to_string(&self) -> String {
-            "LONG".into()
-        }
-    }
 
     #[test]
     fn components_are_readable_and_clone_shares_schema() {
@@ -58,7 +49,7 @@ mod tests {
             span: Lifespan::span(2, 4),
             key: "_pid".into(),
             value: RmiValue::Long(99),
-            schema: Arc::new(Named),
+            schema: Arc::new(crate::trace::model::target::schema::primitive_trace_object_schema::PrimitiveTraceObjectSchema::Long),
         };
         let c = v.clone();
         assert_eq!(c.parent.get_path(), Some("Processes[1]"));

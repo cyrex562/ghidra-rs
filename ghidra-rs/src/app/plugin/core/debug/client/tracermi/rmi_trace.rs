@@ -228,16 +228,14 @@ impl RmiTrace {
         client.delete_registers(self.id, self.snap_or_current(snap), ppath, names)
     }
 
-    /// Mirrors `createRootObject(SchemaContext, String)`. See
-    /// [`RmiClient::create_root_object`] for why the serialized context is passed in.
+    /// Mirrors `createRootObject(SchemaContext, String)`.
     pub fn create_root_object(
         &self,
         client: &RmiClient,
         schema_context: Arc<dyn SchemaContext>,
-        schema_context_xml: &str,
         schema: &str,
     ) -> Result<(), RmiClientError> {
-        client.create_root_object(self.id, schema_context, schema_context_xml, schema)
+        client.create_root_object(self.id, schema_context, schema)
     }
 
     /// Mirrors `createObject(String)`: the returned proxy learns its id when the reply arrives.
@@ -487,7 +485,8 @@ mod tests {
         ValDesc,
     };
     use crate::program::model::lang::LanguageID;
-    use crate::trace::seam_stubs::TraceObjectSchema;
+    use crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext;
+    use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 
     const WAIT: Duration = Duration::from_secs(10);
 
@@ -500,27 +499,19 @@ mod tests {
         trace
     }
 
-    struct NamedSchema(SchemaName);
-    impl TraceObjectSchema for NamedSchema {
-        fn get_name(&self) -> SchemaName {
-            self.0.clone()
-        }
-        fn to_string(&self) -> String {
-            self.0.to_string()
-        }
-    }
-
-    struct NameEchoContext;
-    impl SchemaContext for NameEchoContext {
-        fn get_schema(&self, name: &SchemaName) -> Box<dyn TraceObjectSchema> {
-            Box::new(NamedSchema(name.clone()))
-        }
-        fn get_schema_or_null(&self, name: &SchemaName) -> Option<Box<dyn TraceObjectSchema>> {
-            Some(self.get_schema(name))
-        }
-        fn get_all_schemas(&self) -> Vec<Box<dyn TraceObjectSchema>> {
-            Vec::new()
-        }
+    /// A real context: the primitives plus an aggregate `Session` schema.
+    fn session_context() -> DefaultSchemaContext {
+        let ctx = DefaultSchemaContext::new();
+        let mut b = ctx.builder(SchemaName::new("Session"));
+        b.add_interface(
+            crate::trace::model::target::info::trace_object_interface_utils::get_info_by_name(
+                "Aggregate",
+            )
+            .unwrap()
+            .clone(),
+        );
+        b.build_and_add().unwrap();
+        ctx
     }
 
     #[test]
@@ -643,11 +634,15 @@ mod tests {
         let trace = new_trace(&h);
         trace.set_memory_mapper(Arc::new(RamMapper));
         trace
-            .create_root_object(&h.client, Arc::new(NameEchoContext), "<context/>", "Session")
+            .create_root_object(&h.client, Arc::new(session_context()), "Session")
             .unwrap();
         match h.recv() {
             root_message::Msg::RequestCreateRootObject(r) => {
-                assert_eq!(r.schema_context, "<context/>");
+                assert_eq!(
+                    r.schema_context,
+                    "<context>\r\n    <schema name=\"Session\">\r\n        \
+                     <interface name=\"Aggregate\" />\r\n    </schema>\r\n</context>"
+                );
                 assert_eq!(r.root_schema, "Session");
             }
             other => panic!("unexpected {other:?}"),

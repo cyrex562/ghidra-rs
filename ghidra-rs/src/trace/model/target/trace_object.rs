@@ -33,7 +33,9 @@ use crate::trace::model::target::trace_object_value::TraceObjectValue;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_execution_state::TraceExecutionState;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{LifeSet, TraceObjectSchema};
+use crate::trace::seam_stubs::LifeSet;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchemaExt;
 use crate::trace::model::target::iface::TraceObjectInterface;
 
 /// The attribute holding a comma-separated list of extra schema interfaces an object provides
@@ -872,22 +874,15 @@ mod tests {
         }
     }
 
-    struct MockSchema {
-        interfaces: Vec<TraceObjectInfo>,
-    }
-
-    impl TraceObjectSchema for MockSchema {
-        fn get_name(&self) -> SchemaName {
-            SchemaName::new("Mock")
-        }
-
-        fn to_string(&self) -> String {
-            "Mock".to_string()
-        }
-
-        fn get_interfaces(&self) -> Vec<TraceObjectInfo> {
-            self.interfaces.clone()
-        }
+    /// A real object schema named `Mock` declaring `interfaces`.
+    fn mock_schema(
+        interfaces: &[TraceObjectInfo],
+    ) -> crate::trace::model::target::schema::default_trace_object_schema::DefaultTraceObjectSchema
+    {
+        let ctx = crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext::new();
+        let mut b = ctx.builder(SchemaName::new("Mock"));
+        b.set_interfaces(interfaces.to_vec());
+        b.build_and_add().unwrap()
     }
 
     /// A value entry which only carries a string, enough to exercise the `_extra_ifs` lookup.
@@ -1166,9 +1161,7 @@ mod tests {
         }
 
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
-            Box::new(MockSchema {
-                interfaces: self.interfaces.clone(),
-            })
+            Box::new(mock_schema(&self.interfaces))
         }
 
         fn find_ancestors_interface(

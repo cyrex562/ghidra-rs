@@ -119,9 +119,9 @@ DONE	trait	1	7	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/
 DONE	trait	0	9	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/InstructHash.java
 DONE	trait	1	4	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/ProgressListener.java
 DONE	trait	0	8	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/MonitorReceiver.java
-PARK	trait	4	8	29	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/client/tracermi/RmiTrace.java
+DONE	trait	4	8	29	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/client/tracermi/RmiTrace.java
 DONE	trait	3	8	2	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/client/tracermi/RmiTraceObject.java
-PARK	trait	0	8	57	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/client/tracermi/RmiClient.java
+DONE	trait	0	8	57	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/client/tracermi/RmiClient.java
 DONE	trait	2	3	1	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/disassemble/DisassemblyInjectInfo.java
 DONE	trait	1	5	3	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/disassemble/DisassemblyInject.java
 DONE	trait	1	5	1	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/TableDataLoader.java
@@ -916,8 +916,8 @@ TODO	struct	20	9	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 TODO	struct	18	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceViewportSpanIterator.java
 TODO	struct	17	3	46	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/breakpoint/DBTraceBreakpointLocation.java
 TODO	struct	17	2	10	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/thread/DBTraceThread.java
-TODO	struct	17	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/SchemaBuilder.java
-TODO	struct	17	38	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/XmlSchemaContext.java
+DONE	struct	17	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/SchemaBuilder.java
+DONE	struct	17	38	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/XmlSchemaContext.java
 TODO	struct	15	4	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/breakpoint/DBTraceBreakpointManager.java
 TODO	struct	16	19	41	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceUtils.java
 TODO	struct	17	21	49	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/map/DBTraceAddressSnapRangePropertyMapSpace.java

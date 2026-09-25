@@ -990,7 +990,7 @@ mod tests {
 
         fn create_root_object(
             &mut self,
-            _schema: Box<dyn crate::trace::seam_stubs::TraceObjectSchema>,
+            _schema: Box<dyn crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema>,
         ) -> Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue> {
             unimplemented!("not exercised by this smoke test")
         }
@@ -1002,7 +1002,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_root_schema(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceObjectSchema>> {
+        fn get_root_schema(&self) -> Option<Box<dyn crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema>> {
             unimplemented!("not exercised by this smoke test")
         }
 

@@ -63,7 +63,8 @@ mod tests {
     use super::*;
     use crate::debug::api::tracermi::SchemaName;
     use crate::framework::model::DomainObjectEvent;
-    use crate::trace::seam_stubs::{LifeSet, TraceObjectSchema};
+    use crate::trace::seam_stubs::LifeSet;
+    use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 
     struct MockObjectKey(i32);
 
@@ -82,17 +83,7 @@ mod tests {
         }
     }
 
-    struct MockSchema;
 
-    impl TraceObjectSchema for MockSchema {
-        fn get_name(&self) -> SchemaName {
-            SchemaName::new("Thread")
-        }
-
-        fn to_string(&self) -> String {
-            "Thread".to_string()
-        }
-    }
 
     struct MockLifeSet {
         empty: bool,
@@ -121,7 +112,7 @@ mod tests {
 
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
-            Box::new(MockSchema)
+            Box::new(crate::trace::model::target::schema::schema_builder::plain_schema("Thread"))
         }
 
 

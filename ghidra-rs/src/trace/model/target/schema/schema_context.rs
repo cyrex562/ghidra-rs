@@ -1,9 +1,12 @@
+//! Port of `ghidra.trace.model.target.schema.SchemaContext`.
 use crate::debug::api::tracermi::SchemaName;
-use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 
 /// A collection of related schemas all for the same trace or target.
 ///
-/// Mirrors `ghidra.trace.model.target.schema.SchemaContext`.
+/// Mirrors `ghidra.trace.model.target.schema.SchemaContext`. The concrete contexts are
+/// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
+/// and [`XmlSchemaContext`](crate::trace::model::target::schema::xml_schema_context::XmlSchemaContext).
 pub trait SchemaContext: Send + Sync {
     /// Resolves a schema in this context by name.
     ///
@@ -24,91 +27,25 @@ pub trait SchemaContext: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext;
 
-    struct MockSchema {
-        name: SchemaName,
-    }
-
-    impl TraceObjectSchema for MockSchema {
-        fn get_name(&self) -> SchemaName {
-            self.name.clone()
-        }
-
-        fn to_string(&self) -> String {
-            self.name.to_string()
-        }
-    }
-
-    struct MockContext {
-        schemas: Vec<SchemaName>,
-    }
-
-    impl SchemaContext for MockContext {
-        fn get_schema(&self, name: &SchemaName) -> Box<dyn TraceObjectSchema> {
-            Box::new(MockSchema { name: name.clone() })
-        }
-
-        fn get_schema_or_null(&self, name: &SchemaName) -> Option<Box<dyn TraceObjectSchema>> {
-            if self.schemas.contains(name) {
-                Some(Box::new(MockSchema { name: name.clone() }))
-            } else {
-                None
-            }
-        }
-
-        fn get_all_schemas(&self) -> Vec<Box<dyn TraceObjectSchema>> {
-            self.schemas
-                .iter()
-                .cloned()
-                .map(|name| Box::new(MockSchema { name }) as Box<dyn TraceObjectSchema>)
-                .collect()
-        }
-    }
-
-    fn as_dyn(c: &MockContext) -> &dyn SchemaContext {
+    fn as_dyn(c: &DefaultSchemaContext) -> &dyn SchemaContext {
         c
     }
 
     #[test]
-    fn is_object_safe() {
-        let ctx = MockContext {
-            schemas: vec![SchemaName::new("Root")],
-        };
-        let _dyn_ref = as_dyn(&ctx);
-    }
-
-    #[test]
-    fn get_schema_or_null_finds_existing() {
-        let ctx = MockContext {
-            schemas: vec![SchemaName::new("Root"), SchemaName::new("Process")],
-        };
-        assert!(ctx.get_schema_or_null(&SchemaName::new("Process")).is_some());
-    }
-
-    #[test]
-    fn get_schema_or_null_missing_returns_none() {
-        let ctx = MockContext {
-            schemas: vec![SchemaName::new("Root")],
-        };
+    fn resolves_through_the_trait_object() {
+        let ctx = DefaultSchemaContext::new();
+        ctx.builder(SchemaName::new("Process")).build_and_add().unwrap();
+        let ctx = as_dyn(&ctx);
+        assert_eq!(
+            ctx.get_schema_or_null(&SchemaName::new("Process")).unwrap().get_name(),
+            SchemaName::new("Process")
+        );
         assert!(ctx.get_schema_or_null(&SchemaName::new("Missing")).is_none());
-    }
-
-    #[test]
-    fn get_schema_never_fails_for_unknown_name() {
-        let ctx = MockContext { schemas: vec![] };
-        let _schema = ctx.get_schema(&SchemaName::new("Unknown"));
-    }
-
-    #[test]
-    fn get_all_schemas_preserves_insertion_order() {
-        let ctx = MockContext {
-            schemas: vec![
-                SchemaName::new("Root"),
-                SchemaName::new("Process"),
-                SchemaName::new("Thread"),
-            ],
-        };
+        assert_eq!(ctx.get_schema(&SchemaName::new("Missing")).get_name(), SchemaName::new("ANY"));
         let all = ctx.get_all_schemas();
-        assert_eq!(all.len(), 3);
+        assert_eq!(all.len(), 23);
+        assert_eq!(all.last().unwrap().get_name(), SchemaName::new("Process"));
     }
 }

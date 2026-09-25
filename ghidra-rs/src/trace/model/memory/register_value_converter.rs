@@ -434,7 +434,7 @@ mod tests {
         ) -> Result<Option<Box<dyn TraceObjectValue>>, DuplicateKeyException> {
             unimplemented!("not exercised by these tests")
         }
-        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+        fn get_schema(&self) -> Box<dyn crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema> {
             unimplemented!("not exercised by these tests")
         }
         fn find_ancestors_interface(

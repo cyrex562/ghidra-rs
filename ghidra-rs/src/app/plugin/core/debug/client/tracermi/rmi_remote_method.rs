@@ -14,7 +14,7 @@ use std::sync::Arc;
 use crate::app::plugin::core::debug::client::tracermi::{
     RmiRemoteMethodParameter, RmiValue, TraceRmiMethod,
 };
-use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 
 /// The callable behind an [`RmiRemoteMethod`]: Java's `Method.invoke(container, args)`.
 ///
@@ -147,7 +147,7 @@ impl RmiRemoteMethod {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::plugin::core::debug::client::tracermi::rmi_remote_method_parameter::tests::Named;
+    use crate::app::plugin::core::debug::client::tracermi::rmi_remote_method_parameter::tests::named;
 
     #[test]
     fn annotated_copies_metadata_and_invokes() {
@@ -160,7 +160,7 @@ mod tests {
         };
         let param = RmiRemoteMethodParameter::new(
             "count",
-            Arc::new(Named("INT")),
+            named("INT"),
             false,
             RmiValue::Int(1),
             "Count",
@@ -169,7 +169,7 @@ mod tests {
         let m = RmiRemoteMethod::annotated(
             "step_into",
             &ann,
-            Arc::new(Named("Thread")),
+            named("Thread"),
             vec![param],
             Box::new(|args| match args.as_slice() {
                 [RmiValue::Int(n)] => Ok(Some(RmiValue::Int(n * 2))),

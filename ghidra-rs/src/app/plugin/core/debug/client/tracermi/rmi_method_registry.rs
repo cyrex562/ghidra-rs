@@ -59,13 +59,13 @@ impl RmiMethodRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::plugin::core::debug::client::tracermi::rmi_remote_method_parameter::tests::Named;
+    use crate::app::plugin::core::debug::client::tracermi::rmi_remote_method_parameter::tests::named;
 
     fn method(name: &str) -> RmiRemoteMethod {
         RmiRemoteMethod::annotated(
             name,
             &TraceRmiMethod::default(),
-            Arc::new(Named("VOID")),
+            named("VOID"),
             vec![],
             Box::new(|_| Ok(None)),
         )

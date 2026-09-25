@@ -1,229 +1,370 @@
-//! The general-purpose [`TraceObjectSchema`] implementation, ported as a trait because it was
-//! selected as a cycle cut-point: in the original Java, every `DefaultTraceObjectSchema` is
-//! built by a `SchemaBuilder` obtained from (and tied back to) a `SchemaContext`, while
-//! `DefaultTraceObjectSchema.getContext()` returns that very context -- a value-level cycle
-//! between schema and context, the same shape that made
-//! [`PrimitiveTraceObjectSchema`](crate::trace::model::target::schema::primitive_trace_object_schema::PrimitiveTraceObjectSchema)
-//! and
-//! [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
-//! traits rather than concrete types.
-//!
-//! Java source: `ghidra.trace.model.target.schema.DefaultTraceObjectSchema`.
-//!
-//! As with `PrimitiveTraceObjectSchema`, `Class<?>` (used by `getType()`) has no Rust reflection
-//! analog, so it is represented as a stable type-name string. `TraceObjectInterface` and
-//! `AttributeSchema` are not yet ported beyond the marker stubs in
-//! [`seam_stubs`](crate::trace::seam_stubs) -- `DefaultTraceObjectSchema` (like
-//! `PrimitiveTraceObjectSchema`) only ever hands these back opaquely, never inspecting them, so
-//! the markers suffice here too.
-//!
-//! The Java class also declares a nested `DefaultAttributeSchema` (a concrete
-//! [`AttributeSchema`](crate::trace::seam_stubs::AttributeSchema) implementation) and a
-//! package-private `AliasResolver` helper. Neither is part of the public schema API this
-//! cut-point exists to break, so they are left unported; `AttributeSchema` stays an opaque marker
-//! until a caller needs to inspect one, at which point that nested class is the natural port
-//! target. Likewise, `equals`/`hashCode` are omitted: Java's `equals` performs structural
-//! comparison of the interfaces set, element/attribute schema maps, and default attribute schema,
-//! none of which is possible through the current opaque `TraceObjectInterface`/`AttributeSchema`
-//! markers.
-use std::collections::HashMap;
+//! Port of `ghidra.trace.model.target.schema.DefaultTraceObjectSchema` (with its nested
+//! `AliasResolver`; the nested `DefaultAttributeSchema` is
+//! [`AttributeSchema`](crate::trace::model::target::schema::trace_object_schema::AttributeSchema)).
+use std::cmp::Ordering;
+use std::fmt;
+use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
-use crate::trace::model::target::schema::schema_context::SchemaContext;
-use crate::trace::model::target::iface::TraceObjectInterface;
-use crate::trace::seam_stubs::{AttributeSchema, TraceObjectSchema};
+use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
+use crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext;
+use crate::trace::model::target::schema::trace_object_schema::{
+    AttributeSchema, SchemaArgumentError, TraceObjectSchema,
+};
 
-/// The "type descriptor" of a trace object.
-///
-/// Mirrors `ghidra.trace.model.target.schema.DefaultTraceObjectSchema`.
-pub trait DefaultTraceObjectSchema: TraceObjectSchema {
-    /// The context this schema is a member of. All schema names referenced by this schema are
-    /// resolved in this same context.
-    ///
-    /// Mirrors `getContext()`.
-    fn get_context(&self) -> Box<dyn SchemaContext>;
+const INDENT: &str = "  ";
 
-    /// The Java class that best represents this type: either a primitive, or `TraceObject`.
-    ///
-    /// Mirrors `getType()`. `Class<?>` has no Rust reflection analog, so it is represented by a
-    /// stable name (e.g. `"ghidra.trace.model.target.TraceObject"`).
-    fn get_type(&self) -> &'static str;
+/// Looks up `key` in an insertion-ordered association list.
+fn lookup<'a, V>(entries: &'a [(String, V)], key: &str) -> Option<&'a V> {
+    entries.iter().find(|(k, _)| k == key).map(|(_, v)| v)
+}
 
-    /// The minimum interfaces supported by a conforming object.
-    ///
-    /// Mirrors `getInterfaces()`.
-    fn get_interfaces(&self) -> Vec<Box<dyn TraceObjectInterface>>;
+/// Java `LinkedHashMap.put`: replace in place, or append.
+fn put<V>(entries: &mut Vec<(String, V)>, key: String, value: V) {
+    match entries.iter_mut().find(|(k, _)| *k == key) {
+        Some(entry) => entry.1 = value,
+        None => entries.push((key, value)),
+    }
+}
 
-    /// Whether this object is the canonical container for its elements.
-    ///
-    /// Mirrors `isCanonicalContainer()`.
-    fn is_canonical_container(&self) -> bool;
+/// Resolves attribute alias chains. Mirrors `DefaultTraceObjectSchema.AliasResolver`.
+struct AliasResolver<'a> {
+    schemas: &'a [(String, AttributeSchema)],
+    aliases: &'a [(String, String)],
+    default_schema: &'a AttributeSchema,
+    resolved_aliases: Vec<(String, String)>,
+}
 
-    /// The map of element indices to named schemas.
-    ///
-    /// Mirrors `getElementSchemas()`.
-    fn get_element_schemas(&self) -> HashMap<String, SchemaName>;
-
-    /// The default schema for elements not covered by [`Self::get_element_schemas`].
-    ///
-    /// Mirrors `getDefaultElementSchema()`.
-    fn get_default_element_schema(&self) -> SchemaName;
-
-    /// The map of attribute names to named schemas, with aliases already resolved to their
-    /// target's schema.
-    ///
-    /// Mirrors `getAttributeSchemas()`.
-    fn get_attribute_schemas(&self) -> HashMap<String, Box<dyn AttributeSchema>>;
-
-    /// The map of attribute name aliases to the (possibly transitively resolved) name they refer
-    /// to.
-    ///
-    /// Mirrors `getAttributeAliases()`.
-    fn get_attribute_aliases(&self) -> HashMap<String, String>;
-
-    /// The default schema for attributes not covered by [`Self::get_attribute_schemas`].
-    ///
-    /// Mirrors `getDefaultAttributeSchema()`.
-    fn get_default_attribute_schema(&self) -> Box<dyn AttributeSchema>;
-
-    /// Compares two schemas by name, matching `Comparable<DefaultTraceObjectSchema>`.
-    ///
-    /// Mirrors `compareTo(DefaultTraceObjectSchema)`, which delegates to `SchemaName`'s natural
-    /// (string) ordering.
-    fn compare_to(&self, other: &dyn DefaultTraceObjectSchema) -> i32 {
-        match self.get_name().cmp(&other.get_name()) {
-            std::cmp::Ordering::Less => -1,
-            std::cmp::Ordering::Equal => 0,
-            std::cmp::Ordering::Greater => 1,
+impl<'a> AliasResolver<'a> {
+    fn resolve_aliases(&mut self) -> Result<Vec<(String, String)>, SchemaArgumentError> {
+        self.resolved_aliases = Vec::new();
+        for (alias, _) in self.aliases {
+            if alias.is_empty() {
+                return Err(SchemaArgumentError("Key '' cannot be an alias".into()));
+            }
+            if lookup(self.schemas, alias).is_some() {
+                return Err(SchemaArgumentError(format!(
+                    "Key '{alias}' cannot be both an attribute and an alias"
+                )));
+            }
+            self.resolve_alias(alias, &mut Vec::new())?;
         }
+        Ok(self.resolved_aliases.clone())
+    }
+
+    fn resolve_alias(
+        &mut self,
+        alias: &str,
+        visited: &mut Vec<String>,
+    ) -> Result<String, SchemaArgumentError> {
+        if let Some(already) = lookup(&self.resolved_aliases, alias) {
+            return Ok(already.clone());
+        }
+        if visited.iter().any(|v| v == alias) {
+            return Err(SchemaArgumentError(format!(
+                "Cycle of aliases: [{}]",
+                visited.join(", ")
+            )));
+        }
+        visited.push(alias.to_string());
+        let Some(to) = lookup(self.aliases, alias) else {
+            return Ok(alias.to_string());
+        };
+        if to.is_empty() {
+            return Err(SchemaArgumentError(format!(
+                "Cannot alias to key '' (from {alias})"
+            )));
+        }
+        let result = self.resolve_alias(&to.clone(), visited)?;
+        put(&mut self.resolved_aliases, alias.to_string(), result.clone());
+        Ok(result)
+    }
+
+    fn resolve_schemas(&self) -> Vec<(String, AttributeSchema)> {
+        let mut resolved = self.schemas.to_vec();
+        for (alias, target) in &self.resolved_aliases {
+            let schema = lookup(self.schemas, target).unwrap_or(self.default_schema).clone();
+            put(&mut resolved, alias.clone(), schema);
+        }
+        resolved
+    }
+}
+
+/// The context-free content of a [`DefaultTraceObjectSchema`], as stored in its context.
+#[derive(Debug, PartialEq, Eq)]
+pub struct DefaultSchemaData {
+    name: SchemaName,
+    type_name: &'static str,
+    interfaces: Vec<TraceObjectInfo>,
+    is_canonical_container: bool,
+    element_schemas: Vec<(String, SchemaName)>,
+    default_element_schema: SchemaName,
+    attribute_schemas: Vec<(String, AttributeSchema)>,
+    attribute_aliases: Vec<(String, String)>,
+    default_attribute_schema: AttributeSchema,
+}
+
+/// A schema for trace objects, built by a
+/// [`SchemaBuilder`](crate::trace::model::target::schema::schema_builder::SchemaBuilder).
+///
+/// Mirrors `ghidra.trace.model.target.schema.DefaultTraceObjectSchema`. Cloning is cheap: the
+/// content is shared.
+#[derive(Clone)]
+pub struct DefaultTraceObjectSchema {
+    data: Arc<DefaultSchemaData>,
+    context: DefaultSchemaContext,
+}
+
+impl DefaultTraceObjectSchema {
+    /// Mirrors the package-private constructor: interfaces are de-duplicated (by schema name,
+    /// first occurrence wins) and aliases are resolved, which fails for an empty-named alias, an
+    /// alias that is also an attribute, an alias to `''`, or a cycle of aliases.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn new(
+        context: DefaultSchemaContext,
+        name: SchemaName,
+        type_name: &'static str,
+        interfaces: &[TraceObjectInfo],
+        is_canonical_container: bool,
+        element_schemas: &[(String, SchemaName)],
+        default_element_schema: SchemaName,
+        attribute_schemas: &[(String, AttributeSchema)],
+        attribute_aliases: &[(String, String)],
+        default_attribute_schema: AttributeSchema,
+    ) -> Result<Self, SchemaArgumentError> {
+        let mut unique: Vec<TraceObjectInfo> = Vec::new();
+        for iface in interfaces {
+            if !unique.iter().any(|i| i.schema_name == iface.schema_name) {
+                unique.push(iface.clone());
+            }
+        }
+        let mut resolver = AliasResolver {
+            schemas: attribute_schemas,
+            aliases: attribute_aliases,
+            default_schema: &default_attribute_schema,
+            resolved_aliases: Vec::new(),
+        };
+        let resolved_aliases = resolver.resolve_aliases()?;
+        let resolved_schemas = resolver.resolve_schemas();
+        let data = DefaultSchemaData {
+            name,
+            type_name,
+            interfaces: unique,
+            is_canonical_container,
+            element_schemas: element_schemas.to_vec(),
+            default_element_schema,
+            attribute_schemas: resolved_schemas,
+            attribute_aliases: resolved_aliases,
+            default_attribute_schema,
+        };
+        Ok(DefaultTraceObjectSchema { data: Arc::new(data), context })
+    }
+
+    pub(super) fn from_parts(data: Arc<DefaultSchemaData>, context: DefaultSchemaContext) -> Self {
+        DefaultTraceObjectSchema { data, context }
+    }
+
+    pub(super) fn data(&self) -> &Arc<DefaultSchemaData> {
+        &self.data
+    }
+}
+
+fn map_to_string<V: fmt::Display>(entries: &[(String, V)]) -> String {
+    let inner: Vec<String> = entries.iter().map(|(k, v)| format!("{k}={v}")).collect();
+    format!("{{{}}}", inner.join(", "))
+}
+
+impl TraceObjectSchema for DefaultTraceObjectSchema {
+    fn get_context(&self) -> DefaultSchemaContext {
+        self.context.clone()
+    }
+
+    fn get_name(&self) -> SchemaName {
+        self.data.name.clone()
+    }
+
+    fn get_type(&self) -> &'static str {
+        self.data.type_name
+    }
+
+    fn get_interfaces(&self) -> Vec<TraceObjectInfo> {
+        self.data.interfaces.clone()
+    }
+
+    fn is_canonical_container(&self) -> bool {
+        self.data.is_canonical_container
+    }
+
+    fn get_element_schemas(&self) -> &[(String, SchemaName)] {
+        &self.data.element_schemas
+    }
+
+    fn get_default_element_schema(&self) -> SchemaName {
+        self.data.default_element_schema.clone()
+    }
+
+    fn get_attribute_schemas(&self) -> &[(String, AttributeSchema)] {
+        &self.data.attribute_schemas
+    }
+
+    fn get_attribute_aliases(&self) -> &[(String, String)] {
+        &self.data.attribute_aliases
+    }
+
+    fn get_default_attribute_schema(&self) -> AttributeSchema {
+        self.data.default_attribute_schema.clone()
+    }
+
+    fn to_string(&self) -> String {
+        let d = &self.data;
+        let mut sb = String::new();
+        sb.push_str("schema ");
+        sb.push_str(d.name.as_str());
+        if d.is_canonical_container {
+            sb.push('*');
+        }
+        sb.push_str(" {\n");
+        sb.push_str(INDENT);
+        sb.push_str("ifaces = [");
+        for iface in &d.interfaces {
+            sb.push_str(&iface.schema_name);
+            sb.push(' ');
+        }
+        sb.push_str("]\n");
+        sb.push_str(INDENT);
+        sb.push_str("elements = ");
+        sb.push_str(&map_to_string(&d.element_schemas));
+        sb.push_str(&format!(" default {}", d.default_element_schema));
+        sb.push('\n');
+        sb.push_str(INDENT);
+        sb.push_str("attributes = ");
+        sb.push_str(&map_to_string(&d.attribute_schemas));
+        sb.push_str(&format!(" default {}", d.default_attribute_schema));
+        sb.push_str(&format!(" aliases {}", map_to_string(&d.attribute_aliases)));
+        sb.push_str("\n}");
+        sb
+    }
+}
+
+impl fmt::Debug for DefaultTraceObjectSchema {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&TraceObjectSchema::to_string(self))
+    }
+}
+
+impl PartialEq for DefaultTraceObjectSchema {
+    /// Mirrors `equals`: every field but the context. (Map equality is order-insensitive in
+    /// Java; declaration order is part of the data here, as it is for serialization.)
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+
+impl Eq for DefaultTraceObjectSchema {}
+
+impl std::hash::Hash for DefaultTraceObjectSchema {
+    /// Mirrors `hashCode()`: the name's hash.
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.data.name.hash(state);
+    }
+}
+
+impl PartialOrd for DefaultTraceObjectSchema {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for DefaultTraceObjectSchema {
+    /// Mirrors `compareTo`: by name.
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.data.name.cmp(&other.data.name)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::trace::model::target::schema::trace_object_schema::{Hidden, TRACE_OBJECT_TYPE};
 
-    struct MockSchema {
-        name: SchemaName,
-        is_canonical: bool,
-        elements: HashMap<String, SchemaName>,
+    fn attr(name: &str, schema: &str) -> AttributeSchema {
+        AttributeSchema::new(name, SchemaName::new(schema), false, false, Hidden::Default).unwrap()
     }
 
-    impl TraceObjectSchema for MockSchema {
-        fn get_name(&self) -> SchemaName {
-            self.name.clone()
-        }
-
-        fn to_string(&self) -> String {
-            format!("schema {}", self.name)
-        }
-    }
-
-    struct MockContext;
-
-    impl SchemaContext for MockContext {
-        fn get_schema(&self, name: &SchemaName) -> Box<dyn TraceObjectSchema> {
-            Box::new(MockSchema {
-                name: name.clone(),
-                is_canonical: false,
-                elements: HashMap::new(),
-            })
-        }
-
-        fn get_schema_or_null(&self, _name: &SchemaName) -> Option<Box<dyn TraceObjectSchema>> {
-            None
-        }
-
-        fn get_all_schemas(&self) -> Vec<Box<dyn TraceObjectSchema>> {
-            Vec::new()
-        }
-    }
-
-    impl DefaultTraceObjectSchema for MockSchema {
-        fn get_context(&self) -> Box<dyn SchemaContext> {
-            Box::new(MockContext)
-        }
-
-        fn get_type(&self) -> &'static str {
-            "ghidra.trace.model.target.TraceObject"
-        }
-
-        fn get_interfaces(&self) -> Vec<Box<dyn TraceObjectInterface>> {
-            Vec::new()
-        }
-
-        fn is_canonical_container(&self) -> bool {
-            self.is_canonical
-        }
-
-        fn get_element_schemas(&self) -> HashMap<String, SchemaName> {
-            self.elements.clone()
-        }
-
-        fn get_default_element_schema(&self) -> SchemaName {
-            SchemaName::new("VOID")
-        }
-
-        fn get_attribute_schemas(&self) -> HashMap<String, Box<dyn AttributeSchema>> {
-            HashMap::new()
-        }
-
-        fn get_attribute_aliases(&self) -> HashMap<String, String> {
-            HashMap::new()
-        }
-
-        fn get_default_attribute_schema(&self) -> Box<dyn AttributeSchema> {
-            struct DefaultVoid;
-            impl AttributeSchema for DefaultVoid {}
-            Box::new(DefaultVoid)
-        }
-    }
-
-    fn as_dyn(s: &MockSchema) -> &dyn DefaultTraceObjectSchema {
-        s
+    fn build(
+        attrs: &[(String, AttributeSchema)],
+        aliases: &[(&str, &str)],
+    ) -> Result<DefaultTraceObjectSchema, SchemaArgumentError> {
+        let aliases: Vec<(String, String)> =
+            aliases.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect();
+        DefaultTraceObjectSchema::new(
+            DefaultSchemaContext::new(),
+            SchemaName::new("Process"),
+            TRACE_OBJECT_TYPE,
+            &[],
+            false,
+            &[],
+            SchemaName::new("OBJECT"),
+            attrs,
+            &aliases,
+            AttributeSchema::default_any(),
+        )
     }
 
     #[test]
-    fn is_object_safe() {
-        let schema = MockSchema {
-            name: SchemaName::new("Process"),
-            is_canonical: true,
-            elements: HashMap::new(),
-        };
-        let _dyn_ref = as_dyn(&schema);
-    }
-
-    #[test]
-    fn compare_to_orders_by_name() {
-        let a = MockSchema {
-            name: SchemaName::new("AAA"),
-            is_canonical: false,
-            elements: HashMap::new(),
-        };
-        let b = MockSchema {
-            name: SchemaName::new("BBB"),
-            is_canonical: false,
-            elements: HashMap::new(),
-        };
-        assert_eq!(a.compare_to(&b), -1);
-        assert_eq!(b.compare_to(&a), 1);
-        assert_eq!(a.compare_to(&a), 0);
-    }
-
-    #[test]
-    fn exposes_element_schemas_and_canonical_flag() {
-        let mut elements = HashMap::new();
-        elements.insert("0".to_string(), SchemaName::new("Thread"));
-        let schema = MockSchema {
-            name: SchemaName::new("ThreadContainer"),
-            is_canonical: true,
-            elements,
-        };
-        assert!(schema.is_canonical_container());
+    fn alias_chains_resolve_to_their_final_target() {
+        let attrs = vec![("Exit Code".to_string(), attr("Exit Code", "LONG"))];
+        let s = build(&attrs, &[("_exit_code", "code"), ("code", "Exit Code")]).unwrap();
+        // Inner aliases complete first, as in Java's LinkedHashMap.
         assert_eq!(
-            schema.get_element_schemas().get("0"),
-            Some(&SchemaName::new("Thread"))
+            s.get_attribute_aliases(),
+            &[
+                ("code".to_string(), "Exit Code".to_string()),
+                ("_exit_code".to_string(), "Exit Code".to_string())
+            ]
         );
-        assert_eq!(schema.get_default_element_schema(), SchemaName::new("VOID"));
+        assert_eq!(s.check_aliased_attribute("_exit_code"), "Exit Code");
+        assert_eq!(s.get_attribute_schema("_exit_code").get_schema(), &SchemaName::new("LONG"));
+        assert_eq!(s.get_attribute_schema("_exit_code").get_name(), "Exit Code");
+    }
+
+    #[test]
+    fn alias_to_undeclared_attribute_gets_default_schema() {
+        let s = build(&[], &[("a", "b")]).unwrap();
+        assert_eq!(s.get_attribute_schemas()[0].1, AttributeSchema::default_any());
+    }
+
+    #[test]
+    fn alias_errors_match_java_messages() {
+        let attrs = vec![("x".to_string(), attr("x", "INT"))];
+        assert_eq!(build(&attrs, &[("x", "y")]).unwrap_err().0,
+            "Key 'x' cannot be both an attribute and an alias");
+        assert_eq!(build(&[], &[("", "y")]).unwrap_err().0, "Key '' cannot be an alias");
+        assert_eq!(build(&[], &[("a", "")]).unwrap_err().0, "Cannot alias to key '' (from a)");
+        assert_eq!(build(&[], &[("a", "b"), ("b", "a")]).unwrap_err().0,
+            "Cycle of aliases: [a, b]");
+    }
+
+    #[test]
+    fn to_string_matches_java_format() {
+        let attrs = vec![("_pid".to_string(), attr("_pid", "LONG"))];
+        let s = build(&attrs, &[("pid", "_pid")]).unwrap();
+        assert_eq!(
+            TraceObjectSchema::to_string(&s),
+            "schema Process {\n  ifaces = []\n  elements = {} default OBJECT\n  \
+             attributes = {_pid=<attr name=_pid schema=LONG required=false fixed=false \
+             hidden=false>, pid=<attr name=_pid schema=LONG required=false fixed=false \
+             hidden=false>} default <attr name= schema=ANY required=false fixed=false \
+             hidden=default> aliases {pid=_pid}\n}"
+        );
+    }
+
+    #[test]
+    fn equality_ignores_context_and_ordering_is_by_name() {
+        let a = build(&[], &[]).unwrap();
+        let b = build(&[], &[]).unwrap();
+        assert!(!a.get_context().same_context(&b.get_context()));
+        assert_eq!(a, b);
+        assert_eq!(a.cmp(&b), Ordering::Equal);
     }
 }

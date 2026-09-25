@@ -128,7 +128,8 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType, DefaultAddressFactory};
     use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
-    use crate::trace::seam_stubs::{DBTraceObjectManager, LifeSet, ObjectKey, TraceObjectSchema};
+    use crate::trace::seam_stubs::{DBTraceObjectManager, LifeSet, ObjectKey};
+    use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
     use crate::trace::model::target::trace_object::TraceObject;
     use std::sync::Arc;
 

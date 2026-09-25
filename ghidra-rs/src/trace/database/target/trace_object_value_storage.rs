@@ -68,7 +68,8 @@ mod tests {
 
     use crate::debug::api::tracermi::SchemaName;
     use crate::trace::model::target::path::key_path::KeyPath;
-    use crate::trace::seam_stubs::{LifeSet, ObjectKey, TraceObjectSchema};
+    use crate::trace::seam_stubs::{LifeSet, ObjectKey};
+    use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
     use crate::trace::model::target::trace_object::TraceObject;
 
     struct MockManager;
@@ -88,16 +89,8 @@ mod tests {
 
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
-            struct S;
-            impl TraceObjectSchema for S {
-                fn get_name(&self) -> SchemaName {
-                    SchemaName::new("Mock")
-                }
-                fn to_string(&self) -> String {
-                    "Mock".to_string()
-                }
-            }
-            Box::new(S)
+
+            Box::new(crate::trace::model::target::schema::schema_builder::plain_schema("Mock"))
         }
 
 

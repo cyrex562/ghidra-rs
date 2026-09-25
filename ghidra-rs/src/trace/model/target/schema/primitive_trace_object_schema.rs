@@ -1,280 +1,277 @@
-//! The built-in schemas common to every context, ported as a trait because it was selected as a
-//! cycle cut-point: in the original Java, `PrimitiveTraceObjectSchema` is an enum whose constants
-//! (e.g. `ANY`, `OBJECT`, `VOID`) are handed to [`DefaultSchemaContext::new`] to seed a fresh
-//! context, while `PrimitiveTraceObjectSchema.getContext()` returns a `DefaultSchemaContext`
-//! singleton (`MinimalSchemaContext.INSTANCE`) -- a direct value-level cycle between the two
-//! types.
+//! Port of `ghidra.trace.model.target.schema.PrimitiveTraceObjectSchema`: the schemas common to
+//! all contexts, as they describe the primitive and built-in types.
 //!
-//! Java source: `ghidra.trace.model.target.schema.PrimitiveTraceObjectSchema`.
-//!
-//! [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
-//! is itself a trait (for the same reason), so `getContext()` here is a required trait method
-//! rather than a hardwired reference to a concrete singleton -- that is precisely how the cycle
-//! is cut. Likewise, `Class<?>` (used by `getType()`/`getTypes()`/`schemaForPrimitive(Class)`) has
-//! no Rust reflection analog, so it is represented as a stable type-name string.
-//!
-//! `TraceObjectInterface` and `AttributeSchema` are not yet ported (see
-//! [`seam_stubs::TraceObjectInterface`](crate::trace::model::target::iface::TraceObjectInterface) and
-//! [`seam_stubs::AttributeSchema`](crate::trace::seam_stubs::AttributeSchema)), and the static
-//! `PrimitiveTraceObjectSchema.values()` registry has no Rust equivalent without a concrete enum,
-//! so [`schema_for_primitive`] and [`name_for_primitive`] take the candidate set as a parameter
-//! rather than reaching for a static list.
-use std::collections::HashMap;
+//! Java `Class<?>` tokens are represented by class names: `Class.getName()` for scalar types and
+//! `Class.getCanonicalName()` (e.g. `boolean[]`) for arrays, so that
+//! [`PrimitiveTraceObjectSchema::schema_for_primitive`] can be queried with readable names.
+use std::sync::OnceLock;
 
 use crate::debug::api::tracermi::SchemaName;
-use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
-use crate::trace::model::target::schema::schema_context::SchemaContext;
-use crate::trace::model::target::iface::TraceObjectInterface;
-use crate::trace::seam_stubs::{AttributeSchema, TraceObjectSchema};
+use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
+use crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext;
+use crate::trace::model::target::schema::trace_object_schema::{
+    AttributeSchema, TraceObjectSchema, TRACE_OBJECT_TYPE,
+};
 
-/// A built-in schema describing a primitive or built-in type (as opposed to a user-defined
-/// object schema).
-///
-/// Mirrors `ghidra.trace.model.target.schema.PrimitiveTraceObjectSchema`.
-pub trait PrimitiveTraceObjectSchema: TraceObjectSchema {
-    /// The context this primitive is a member of.
-    ///
-    /// Mirrors `getContext()`, which in Java always returns the same
-    /// `MinimalSchemaContext.INSTANCE`. That singleton would require a concrete
-    /// `DefaultSchemaContext` implementation to construct, so it is left to the implementer here.
-    fn get_context(&self) -> Box<dyn SchemaContext>;
+/// The built-in schemas. Mirrors the Java enum constant-for-constant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum PrimitiveTraceObjectSchema {
+    /// The top-most type descriptor: any primitive or a `TraceObject`.
+    Any,
+    /// The least restrictive, but least informative object schema.
+    Object,
+    /// A Java class.
+    Type,
+    /// No value.
+    Void,
+    /// `boolean`.
+    Bool,
+    /// `byte`.
+    Byte,
+    /// `short`.
+    Short,
+    /// `int`.
+    Int,
+    /// `long`.
+    Long,
+    /// `String`.
+    String,
+    /// `Address`.
+    Address,
+    /// `AddressRange`.
+    Range,
+    /// `TraceExecutionState`.
+    ExecutionState,
+    /// Method parameter maps (not yet described in Java either: `Unfinished`).
+    MapParameters,
+    /// `char` (additional types supported by the Trace database follow).
+    Char,
+    /// `boolean[]`.
+    BoolArr,
+    /// `byte[]`.
+    ByteArr,
+    /// `char[]`.
+    CharArr,
+    /// `short[]`.
+    ShortArr,
+    /// `int[]`.
+    IntArr,
+    /// `long[]`.
+    LongArr,
+    /// `String[]`.
+    StringArr,
+}
 
-    /// The Java classes (boxed and/or primitive) this schema accepts, in preference order.
-    ///
-    /// Mirrors `getTypes()`. `Class<?>` has no Rust reflection analog, so each class is
-    /// represented by a stable name (e.g. `"java.lang.Boolean"`, `"boolean"`).
-    fn get_types(&self) -> Vec<&'static str>;
+impl PrimitiveTraceObjectSchema {
+    /// All constants in declaration order. Mirrors `values()`.
+    pub const VALUES: [PrimitiveTraceObjectSchema; 22] = [
+        Self::Any,
+        Self::Object,
+        Self::Type,
+        Self::Void,
+        Self::Bool,
+        Self::Byte,
+        Self::Short,
+        Self::Int,
+        Self::Long,
+        Self::String,
+        Self::Address,
+        Self::Range,
+        Self::ExecutionState,
+        Self::MapParameters,
+        Self::Char,
+        Self::BoolArr,
+        Self::ByteArr,
+        Self::CharArr,
+        Self::ShortArr,
+        Self::IntArr,
+        Self::LongArr,
+        Self::StringArr,
+    ];
 
-    /// The Java class that best represents this type, i.e. the first of [`Self::get_types`].
-    ///
-    /// Mirrors `getType()`.
+    /// The Java constant name, which is also the schema name. Mirrors `name()`.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Any => "ANY",
+            Self::Object => "OBJECT",
+            Self::Type => "TYPE",
+            Self::Void => "VOID",
+            Self::Bool => "BOOL",
+            Self::Byte => "BYTE",
+            Self::Short => "SHORT",
+            Self::Int => "INT",
+            Self::Long => "LONG",
+            Self::String => "STRING",
+            Self::Address => "ADDRESS",
+            Self::Range => "RANGE",
+            Self::ExecutionState => "EXECUTION_STATE",
+            Self::MapParameters => "MAP_PARAMETERS",
+            Self::Char => "CHAR",
+            Self::BoolArr => "BOOL_ARR",
+            Self::ByteArr => "BYTE_ARR",
+            Self::CharArr => "CHAR_ARR",
+            Self::ShortArr => "SHORT_ARR",
+            Self::IntArr => "INT_ARR",
+            Self::LongArr => "LONG_ARR",
+            Self::StringArr => "STRING_ARR",
+        }
+    }
+
+    /// The Java classes this schema accepts, the preferred one first. Mirrors `getTypes()`.
+    pub fn get_types(self) -> &'static [&'static str] {
+        match self {
+            Self::Any => &["java.lang.Object"],
+            Self::Object => &[TRACE_OBJECT_TYPE],
+            Self::Type => &["java.lang.Class"],
+            Self::Void => &["java.lang.Void", "void"],
+            Self::Bool => &["java.lang.Boolean", "boolean"],
+            Self::Byte => &["java.lang.Byte", "byte"],
+            Self::Short => &["java.lang.Short", "short"],
+            Self::Int => &["java.lang.Integer", "int"],
+            Self::Long => &["java.lang.Long", "long"],
+            Self::String => &["java.lang.String"],
+            Self::Address => &["ghidra.program.model.address.Address"],
+            Self::Range => &["ghidra.program.model.address.AddressRange"],
+            Self::ExecutionState => &["ghidra.trace.model.TraceExecutionState"],
+            Self::MapParameters => &["ghidra.lifecycle.Unfinished"],
+            Self::Char => &["java.lang.Character", "char"],
+            Self::BoolArr => &["boolean[]"],
+            Self::ByteArr => &["byte[]"],
+            Self::CharArr => &["char[]"],
+            Self::ShortArr => &["short[]"],
+            Self::IntArr => &["int[]"],
+            Self::LongArr => &["long[]"],
+            Self::StringArr => &["java.lang.String[]"],
+        }
+    }
+
+    /// Look up the schema whose [types](Self::get_types) include `cls`. Mirrors
+    /// `schemaForPrimitive(Class)`.
+    pub fn schema_for_primitive(cls: &str) -> Option<PrimitiveTraceObjectSchema> {
+        Self::VALUES.into_iter().find(|s| s.get_types().contains(&cls))
+    }
+
+    /// The name of the schema for `cls`, if any. Mirrors `nameForPrimitive(Class)`.
+    pub fn name_for_primitive(cls: &str) -> Option<SchemaName> {
+        Self::schema_for_primitive(cls).map(|s| SchemaName::new(s.name()))
+    }
+
+    /// Look up a primitive by its schema name.
+    pub fn from_name(name: &SchemaName) -> Option<PrimitiveTraceObjectSchema> {
+        Self::VALUES.into_iter().find(|s| s.name() == name.as_str())
+    }
+
+    /// The context holding exactly the primitives. Mirrors
+    /// `MinimalSchemaContext.INSTANCE`.
+    pub fn minimal_context() -> DefaultSchemaContext {
+        static INSTANCE: OnceLock<DefaultSchemaContext> = OnceLock::new();
+        INSTANCE.get_or_init(DefaultSchemaContext::new).clone()
+    }
+}
+
+impl TraceObjectSchema for PrimitiveTraceObjectSchema {
+    fn get_context(&self) -> DefaultSchemaContext {
+        Self::minimal_context()
+    }
+
+    fn get_name(&self) -> SchemaName {
+        SchemaName::new(self.name())
+    }
+
     fn get_type(&self) -> &'static str {
-        self.get_types()
-            .into_iter()
-            .next()
-            .expect("a primitive schema always names at least one type")
+        self.get_types()[0]
     }
 
-    /// Whether a value satisfying `that` also satisfies this schema.
-    ///
-    /// Mirrors `isAssignableFrom(TraceObjectSchema)`. `ANY` and `OBJECT` override this to always
-    /// return `true`; every other primitive keeps the default of `false`, since primitives (other
-    /// than those two) are not assignable from an arbitrary schema.
-    fn is_assignable_from(&self, _that: &dyn TraceObjectSchema) -> bool {
-        false
-    }
-
-    /// The minimum interfaces supported by a conforming object.
-    ///
-    /// Mirrors `getInterfaces()`, which every primitive returns as an empty set.
-    fn get_interfaces(&self) -> Vec<Box<dyn TraceObjectInterface>> {
+    fn get_interfaces(&self) -> Vec<TraceObjectInfo> {
         Vec::new()
     }
 
-    /// Whether this is the canonical container for its elements.
-    ///
-    /// Mirrors `isCanonicalContainer()`, which every primitive returns as `false`.
     fn is_canonical_container(&self) -> bool {
         false
     }
 
-    /// The map of element indices to named schemas.
-    ///
-    /// Mirrors `getElementSchemas()`, which every primitive returns as empty (primitives cannot
-    /// have successors).
-    fn get_element_schemas(&self) -> HashMap<String, SchemaName> {
-        HashMap::new()
+    fn get_element_schemas(&self) -> &[(String, SchemaName)] {
+        &[]
     }
 
-    /// The default schema for elements.
-    ///
-    /// Mirrors `getDefaultElementSchema()`. `ANY` and `OBJECT` override this to `OBJECT`'s name;
-    /// every other primitive keeps the default of `VOID`'s name, since primitives cannot have
-    /// successors.
     fn get_default_element_schema(&self) -> SchemaName {
-        SchemaName::new("VOID")
+        match self {
+            Self::Any | Self::Object => Self::Object.get_name(),
+            _ => Self::Void.get_name(),
+        }
     }
 
-    /// The map of attribute names to named schemas.
-    ///
-    /// Mirrors `getAttributeSchemas()`, which every primitive returns as empty.
-    fn get_attribute_schemas(&self) -> HashMap<String, Box<dyn AttributeSchema>> {
-        HashMap::new()
+    fn get_attribute_schemas(&self) -> &[(String, AttributeSchema)] {
+        &[]
     }
 
-    /// The map of attribute name aliases.
-    ///
-    /// Mirrors `getAttributeAliases()`, which every primitive returns as empty.
-    fn get_attribute_aliases(&self) -> HashMap<String, String> {
-        HashMap::new()
+    fn get_attribute_aliases(&self) -> &[(String, String)] {
+        &[]
     }
 
-    /// The default schema for attributes.
-    ///
-    /// Mirrors `getDefaultAttributeSchema()`. `ANY` and `OBJECT` override this to
-    /// `AttributeSchema.DEFAULT_ANY`; every other primitive keeps the default of
-    /// `AttributeSchema.DEFAULT_VOID`, forbidding additional attributes.
-    fn get_default_attribute_schema(&self) -> Box<dyn AttributeSchema> {
-        Box::new(DefaultVoidAttributeSchema)
+    fn get_default_attribute_schema(&self) -> AttributeSchema {
+        match self {
+            Self::Any | Self::Object => AttributeSchema::default_any(),
+            _ => AttributeSchema::default_void(),
+        }
     }
 
-    /// Searches for a path filter matching successors satisfying `type`.
-    ///
-    /// Mirrors `searchFor(Class, boolean)`, which every primitive returns as `PathFilter.NONE`
-    /// (primitives have no successors to search). Represented as `None` since no concrete
-    /// "matches nothing" [`PathFilter`] is exported yet.
-    fn search_for(&self, _type: &str, _require_canonical: bool) -> Option<Box<dyn PathFilter>> {
-        None
+    fn is_primitive(&self) -> bool {
+        true
     }
 
-    /// Searches for the canonical container of `type` among this schema's successors.
-    ///
-    /// Mirrors `searchForCanonicalContainer(Class)`, which every primitive returns as `null`.
-    fn search_for_canonical_container(&self, _type: &str) -> Option<KeyPath> {
-        None
+    fn to_string(&self) -> String {
+        self.name().to_string()
     }
 
-    // `searchForSuitable(Class, KeyPath)` is declared on `TraceObjectSchema` itself (see
-    // `seam_stubs::TraceObjectSchema::search_for_suitable`), whose default of "not found" is
-    // already what every primitive returns, so it is inherited rather than re-declared here.
-}
-
-/// Marker [`AttributeSchema`] backing [`PrimitiveTraceObjectSchema::get_default_attribute_schema`]'s
-/// default. Mirrors `AttributeSchema.DEFAULT_VOID`.
-struct DefaultVoidAttributeSchema;
-impl AttributeSchema for DefaultVoidAttributeSchema {}
-
-/// Marker [`AttributeSchema`] for use by `ANY`/`OBJECT`-like overrides of
-/// [`PrimitiveTraceObjectSchema::get_default_attribute_schema`]. Mirrors
-/// `AttributeSchema.DEFAULT_ANY`.
-pub struct DefaultAnyAttributeSchema;
-impl AttributeSchema for DefaultAnyAttributeSchema {}
-
-/// Finds the primitive among `candidates` whose [`PrimitiveTraceObjectSchema::get_types`]
-/// contains `type_name`.
-///
-/// Mirrors the static `schemaForPrimitive(Class<?>)`, which searches `values()`; here the
-/// candidate set is passed in explicitly since there is no static registry.
-pub fn schema_for_primitive<'a>(
-    candidates: &'a [Box<dyn PrimitiveTraceObjectSchema>],
-    type_name: &str,
-) -> Option<&'a dyn PrimitiveTraceObjectSchema> {
-    candidates
-        .iter()
-        .find(|schema| schema.get_types().contains(&type_name))
-        .map(|schema| schema.as_ref())
-}
-
-/// Finds the name of the primitive among `candidates` whose [`PrimitiveTraceObjectSchema::get_types`]
-/// contains `type_name`.
-///
-/// Mirrors the static `nameForPrimitive(Class<?>)`.
-pub fn name_for_primitive(
-    candidates: &[Box<dyn PrimitiveTraceObjectSchema>],
-    type_name: &str,
-) -> Option<SchemaName> {
-    schema_for_primitive(candidates, type_name).map(|schema| schema.get_name())
+    fn is_assignable_from(&self, that: &dyn TraceObjectSchema) -> bool {
+        match self {
+            // OBJECT: "That it has a schema implies it's a TraceObject"
+            Self::Any | Self::Object => true,
+            _ => that.is_primitive() && that.get_name().as_str() == self.name(),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::trace::model::target::path::KeyPath;
+    use crate::trace::model::target::schema::schema_context::SchemaContext;
+    use crate::trace::model::target::schema::trace_object_schema::{
+        Hidden, TraceObjectSchemaExt,
+    };
 
-    struct MockContext;
-
-    impl SchemaContext for MockContext {
-        fn get_schema(&self, _name: &SchemaName) -> Box<dyn TraceObjectSchema> {
-            Box::new(MockAny)
-        }
-
-        fn get_schema_or_null(&self, _name: &SchemaName) -> Option<Box<dyn TraceObjectSchema>> {
-            None
-        }
-
-        fn get_all_schemas(&self) -> Vec<Box<dyn TraceObjectSchema>> {
-            Vec::new()
-        }
-    }
-
-    struct MockAny;
-
-    impl TraceObjectSchema for MockAny {
-        fn get_name(&self) -> SchemaName {
-            SchemaName::new("ANY")
-        }
-
-        fn to_string(&self) -> String {
-            "ANY".to_string()
-        }
-    }
-
-    impl PrimitiveTraceObjectSchema for MockAny {
-        fn get_context(&self) -> Box<dyn SchemaContext> {
-            Box::new(MockContext)
-        }
-
-        fn get_types(&self) -> Vec<&'static str> {
-            vec!["java.lang.Object"]
-        }
-
-        fn is_assignable_from(&self, _that: &dyn TraceObjectSchema) -> bool {
-            true
-        }
-
-        fn get_default_element_schema(&self) -> SchemaName {
-            SchemaName::new("OBJECT")
-        }
-
-        fn get_default_attribute_schema(&self) -> Box<dyn AttributeSchema> {
-            Box::new(DefaultAnyAttributeSchema)
-        }
-    }
-
-    struct MockVoid;
-
-    impl TraceObjectSchema for MockVoid {
-        fn get_name(&self) -> SchemaName {
-            SchemaName::new("VOID")
-        }
-
-        fn to_string(&self) -> String {
-            "VOID".to_string()
-        }
-    }
-
-    impl PrimitiveTraceObjectSchema for MockVoid {
-        fn get_context(&self) -> Box<dyn SchemaContext> {
-            Box::new(MockContext)
-        }
-
-        fn get_types(&self) -> Vec<&'static str> {
-            vec!["java.lang.Void", "void"]
-        }
-    }
-
-    fn as_dyn(p: &MockAny) -> &dyn PrimitiveTraceObjectSchema {
-        p
+    #[test]
+    fn names_match_java_constants() {
+        assert_eq!(PrimitiveTraceObjectSchema::Any.get_name(), SchemaName::new("ANY"));
+        assert_eq!(PrimitiveTraceObjectSchema::ExecutionState.name(), "EXECUTION_STATE");
+        assert_eq!(PrimitiveTraceObjectSchema::StringArr.name(), "STRING_ARR");
+        assert_eq!(PrimitiveTraceObjectSchema::VALUES.len(), 22);
     }
 
     #[test]
-    fn is_object_safe() {
-        let any = MockAny;
-        let _dyn_ref = as_dyn(&any);
-    }
-
-    #[test]
-    fn any_overrides_defaults() {
-        let any = MockAny;
-        assert!(any.is_assignable_from(&MockVoid));
+    fn any_and_object_override_defaults() {
+        let any = PrimitiveTraceObjectSchema::Any;
+        assert!(any.is_assignable_from(&PrimitiveTraceObjectSchema::Void));
         assert_eq!(any.get_default_element_schema(), SchemaName::new("OBJECT"));
+        assert_eq!(any.get_default_attribute_schema(), AttributeSchema::default_any());
         assert_eq!(any.get_type(), "java.lang.Object");
+        let obj = PrimitiveTraceObjectSchema::Object;
+        assert!(obj.is_assignable_from(&PrimitiveTraceObjectSchema::Int));
+        assert_eq!(obj.get_type(), TRACE_OBJECT_TYPE);
     }
 
     #[test]
-    fn void_keeps_common_defaults() {
-        let void = MockVoid;
-        assert!(!void.is_assignable_from(&MockAny));
+    fn other_primitives_forbid_successors() {
+        let void = PrimitiveTraceObjectSchema::Void;
+        assert!(!void.is_assignable_from(&PrimitiveTraceObjectSchema::Any));
+        assert!(void.is_assignable_from(&PrimitiveTraceObjectSchema::Void));
         assert_eq!(void.get_default_element_schema(), SchemaName::new("VOID"));
+        let das = PrimitiveTraceObjectSchema::Int.get_default_attribute_schema();
+        assert_eq!(das, AttributeSchema::default_void());
+        assert_eq!(das.get_hidden(), Hidden::True);
+        assert!(das.is_fixed());
         assert!(!void.is_canonical_container());
         assert!(void.get_element_schemas().is_empty());
         assert!(void.search_for("Process", false).is_none());
@@ -283,22 +280,44 @@ mod tests {
     }
 
     #[test]
-    fn schema_for_primitive_finds_by_type_name() {
-        let candidates: Vec<Box<dyn PrimitiveTraceObjectSchema>> =
-            vec![Box::new(MockAny), Box::new(MockVoid)];
-        let found = schema_for_primitive(&candidates, "void").expect("void is registered");
-        assert_eq!(found.get_name(), SchemaName::new("VOID"));
-        assert!(schema_for_primitive(&candidates, "java.lang.String").is_none());
+    fn get_type_is_first_of_types() {
+        assert_eq!(PrimitiveTraceObjectSchema::Bool.get_types(), &["java.lang.Boolean", "boolean"]);
+        assert_eq!(PrimitiveTraceObjectSchema::Bool.get_type(), "java.lang.Boolean");
     }
 
     #[test]
-    fn name_for_primitive_finds_by_type_name() {
-        let candidates: Vec<Box<dyn PrimitiveTraceObjectSchema>> =
-            vec![Box::new(MockAny), Box::new(MockVoid)];
+    fn schema_for_primitive_searches_all_types() {
         assert_eq!(
-            name_for_primitive(&candidates, "java.lang.Object"),
-            Some(SchemaName::new("ANY"))
+            PrimitiveTraceObjectSchema::schema_for_primitive("int"),
+            Some(PrimitiveTraceObjectSchema::Int)
         );
-        assert_eq!(name_for_primitive(&candidates, "nope"), None);
+        assert_eq!(
+            PrimitiveTraceObjectSchema::name_for_primitive("java.lang.Long"),
+            Some(SchemaName::new("LONG"))
+        );
+        assert_eq!(
+            PrimitiveTraceObjectSchema::name_for_primitive("byte[]"),
+            Some(SchemaName::new("BYTE_ARR"))
+        );
+        assert_eq!(PrimitiveTraceObjectSchema::schema_for_primitive("java.util.List"), None);
+    }
+
+    #[test]
+    fn minimal_context_holds_exactly_the_primitives() {
+        let ctx = PrimitiveTraceObjectSchema::Long.get_context();
+        let all = ctx.get_all_schema_names();
+        assert_eq!(all.len(), 22);
+        assert_eq!(all[0], SchemaName::new("ANY"));
+        assert!(ctx.get_schema_or_null(&SchemaName::new("STRING")).is_some());
+    }
+
+    #[test]
+    fn child_schema_of_any_is_object() {
+        let any = PrimitiveTraceObjectSchema::Any;
+        assert_eq!(any.get_child_schema("[0]").get_name(), SchemaName::new("OBJECT"));
+        assert_eq!(any.get_child_schema("foo").get_name(), SchemaName::new("ANY"));
+        assert!(any.is_hidden("_foo"));
+        assert!(!any.is_hidden("foo"));
+        assert!(!any.is_hidden("[_0]"));
     }
 }

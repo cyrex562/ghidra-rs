@@ -12,7 +12,9 @@ use crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWit
 use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
 use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{DBTraceGuestLanguage, TraceObjectSchema, TraceRegisterUtils};
+use crate::trace::seam_stubs::{DBTraceGuestLanguage, TraceRegisterUtils};
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchemaExt;
 use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::trace::model::target::trace_object::TraceObject;
 
@@ -203,8 +205,7 @@ pub trait InternalTracePlatform: TracePlatform + ProgramArchitecture {
     /// Get the expected path where an object defining the register value would be, rooted at the
     /// trace's root schema. Mirrors `getConventionalRegisterPath(AddressSpace, Register)`.
     ///
-    /// Returns `None` if the trace has no root schema, or if the root schema has no successor at
-    /// `overlay`'s name -- both of which are `null` returns in the Java method.
+    /// Returns `None` if the trace has no root schema (or `overlay`'s name is not a valid path).
     fn get_conventional_register_path_for_space(
         &self,
         overlay: &Arc<AddressSpace>,
@@ -212,8 +213,8 @@ pub trait InternalTracePlatform: TracePlatform + ProgramArchitecture {
     ) -> Option<Box<dyn PathFilter>> {
         let path = KeyPath::parse(overlay.name()).ok()?;
         let root_schema = self.get_trace().get_object_manager().get_root_schema()?;
-        let schema = root_schema.get_successor_schema(&path)?;
-        Some(self.get_conventional_register_path(schema.as_ref(), &path, register))
+        let schema = root_schema.get_successor_schema(&path);
+        Some(self.get_conventional_register_path(&*schema, &path, register))
     }
 
     /// Add a label that conventionally maps the value of a `TraceRegister` in the object manager

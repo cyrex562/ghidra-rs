@@ -22,7 +22,8 @@ use crate::trace::model::target::trace_object_val_path::TraceObjectValPath;
 use crate::trace::model::target::trace_object_value::{TraceObjectValue, TruncateOrDelete};
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{LifeSet, ObjectKey, TraceObjectSchema};
+use crate::trace::seam_stubs::{LifeSet, ObjectKey};
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 
 struct ObjSpec {
     path: KeyPath,
@@ -99,15 +100,6 @@ impl Builder {
     }
 }
 
-struct FixtureSchema;
-impl TraceObjectSchema for FixtureSchema {
-    fn get_name(&self) -> crate::debug::api::tracermi::SchemaName {
-        crate::debug::api::tracermi::SchemaName::new("Fixture")
-    }
-    fn to_string(&self) -> String {
-        "Fixture".to_string()
-    }
-}
 
 struct FixtureLifeSet;
 impl LifeSet for FixtureLifeSet {
@@ -161,7 +153,7 @@ impl TraceUniqueObject for FixtureObject {
 
 impl TraceObject for FixtureObject {
     fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
-        Box::new(FixtureSchema)
+        Box::new(crate::trace::model::target::schema::schema_builder::plain_schema("Fixture"))
     }
     fn get_life(&self) -> Box<dyn LifeSet> {
         Box::new(FixtureLifeSet)

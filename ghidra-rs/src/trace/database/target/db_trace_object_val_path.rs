@@ -246,7 +246,7 @@ mod tests {
     }
 
     impl TraceObject for MockObject {
-        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+        fn get_schema(&self) -> Box<dyn crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {

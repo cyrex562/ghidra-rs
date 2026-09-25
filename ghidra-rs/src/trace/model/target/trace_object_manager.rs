@@ -13,7 +13,7 @@ use crate::trace::model::target::trace_object_val_path::TraceObjectValPath;
 use crate::trace::model::target::trace_object_value::TraceObjectValue;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::target::iface::TraceObjectInterface;
-use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 use crate::trace::model::target::trace_object::TraceObject;
 
 /// A handle to automatically re-enable the write cache.
@@ -135,7 +135,8 @@ pub trait TraceObjectManager: Send + Sync {
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace};
-    use crate::trace::seam_stubs::{ObjectKey, TraceObjectSchema as SchemaTrait};
+    use crate::trace::seam_stubs::ObjectKey;
+    use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema as SchemaTrait;
 
 
 
@@ -174,17 +175,7 @@ mod tests {
         }
     }
 
-    struct MockSchema;
 
-    impl SchemaTrait for MockSchema {
-        fn get_name(&self) -> crate::debug::api::tracermi::SchemaName {
-            crate::debug::api::tracermi::SchemaName::new("Root")
-        }
-
-        fn to_string(&self) -> String {
-            "Root".to_string()
-        }
-    }
 
     struct MockObject;
 
@@ -200,7 +191,7 @@ mod tests {
 
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn SchemaTrait> {
-            Box::new(MockSchema)
+            Box::new(crate::trace::model::target::schema::schema_builder::plain_schema("Root"))
         }
 
 
@@ -239,7 +230,7 @@ mod tests {
 
         fn get_root_schema(&self) -> Option<Box<dyn SchemaTrait>> {
             if self.root.is_some() {
-                Some(Box::new(MockSchema))
+                Some(Box::new(crate::trace::model::target::schema::schema_builder::plain_schema("Root")))
             } else {
                 None
             }
@@ -333,7 +324,7 @@ mod tests {
     fn require_root_schema_returns_schema_with_root() {
         let manager = MockManager { root: Some(()), object_count: 0 };
         let schema = manager.require_root_schema();
-        assert_eq!(schema.to_string(), "Root");
+        assert_eq!(schema.get_name().as_str(), "Root");
     }
 
     #[test]

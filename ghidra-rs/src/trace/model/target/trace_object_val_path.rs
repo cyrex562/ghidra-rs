@@ -128,7 +128,8 @@ mod tests {
     use crate::trace::model::target::duplicate_key_exception::DuplicateKeyException;
     use crate::trace::model::target::trace_object_value::TruncateOrDelete;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::{LifeSet, ObjectKey, TraceObjectSchema};
+    use crate::trace::seam_stubs::{LifeSet, ObjectKey};
+    use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
     use crate::trace::model::target::trace_object::ConflictResolution;
 
     struct MockObjectKey;
@@ -151,15 +152,6 @@ mod tests {
         }
     }
 
-    struct MockSchema;
-    impl TraceObjectSchema for MockSchema {
-        fn get_name(&self) -> crate::debug::api::tracermi::SchemaName {
-            crate::debug::api::tracermi::SchemaName::new("Test")
-        }
-        fn to_string(&self) -> String {
-            "Test".to_string()
-        }
-    }
 
     struct MockObject {
         path: KeyPath,
@@ -177,7 +169,7 @@ mod tests {
 
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
-            Box::new(MockSchema)
+            Box::new(crate::trace::model::target::schema::schema_builder::plain_schema("Test"))
         }
         fn get_life(&self) -> Box<dyn LifeSet> {
             Box::new(MockLifeSet)

@@ -200,7 +200,7 @@ impl RmiReplyHandlerThread {
 mod tests {
     use super::*;
     use crate::app::plugin::core::debug::client::tracermi::rmi_client::tests::Harness;
-    use crate::app::plugin::core::debug::client::tracermi::rmi_remote_method_parameter::tests::Named;
+    use crate::app::plugin::core::debug::client::tracermi::rmi_remote_method_parameter::tests::named;
     use crate::app::plugin::core::debug::client::tracermi::{
         RmiMethodRegistry, RmiRemoteMethod, RmiRemoteMethodParameter, RmiValue, TraceRmiMethod,
     };
@@ -216,15 +216,15 @@ mod tests {
     fn registry_with_echo(seen: Arc<Mutex<Vec<Vec<String>>>>) -> Arc<RmiMethodRegistry> {
         let reg = Arc::new(RmiMethodRegistry::new());
         let params = vec![
-            RmiRemoteMethodParameter::new("a", Arc::new(Named("STRING")), true, RmiValue::Null, "A", ""),
-            RmiRemoteMethodParameter::new("b", Arc::new(Named("INT")), false, RmiValue::Int(3), "B", ""),
+            RmiRemoteMethodParameter::new("a", named("STRING"), true, RmiValue::Null, "A", ""),
+            RmiRemoteMethodParameter::new("b", named("INT"), false, RmiValue::Int(3), "B", ""),
         ];
         reg.put_method(
             "echo",
             RmiRemoteMethod::annotated(
                 "echo",
                 &TraceRmiMethod { action: "refresh".into(), ..Default::default() },
-                Arc::new(Named("Session")),
+                named("Session"),
                 params,
                 Box::new(move |args| {
                     seen.lock().unwrap().push(args.iter().map(|a| format!("{a:?}")).collect());

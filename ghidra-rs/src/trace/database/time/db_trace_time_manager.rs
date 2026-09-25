@@ -930,7 +930,7 @@ mod tests {
         fn is_canonical(&self) -> bool {
             false
         }
-        fn get_target_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+        fn get_target_schema(&self) -> Box<dyn crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema> {
             unimplemented!()
         }
         fn set_lifespan(&mut self, _lifespan: Lifespan) {
@@ -986,7 +986,7 @@ mod tests {
     }
 
     impl crate::trace::model::target::trace_object::TraceObject for SharedRoot {
-        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+        fn get_schema(&self) -> Box<dyn crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {

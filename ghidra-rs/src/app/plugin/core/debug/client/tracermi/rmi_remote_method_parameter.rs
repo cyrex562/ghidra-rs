@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::app::plugin::core::debug::client::tracermi::RmiValue;
 use crate::debug::rmi::proto::ValueType;
-use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 
 /// One parameter of an [`RmiRemoteMethod`](super::RmiRemoteMethod), as advertised to the front
 /// end during negotiation.
@@ -92,13 +92,13 @@ pub(crate) mod tests {
     use super::*;
     use crate::debug::api::tracermi::SchemaName;
 
-    pub(crate) struct Named(pub &'static str);
-    impl TraceObjectSchema for Named {
-        fn get_name(&self) -> SchemaName {
-            SchemaName::new(self.0)
-        }
-        fn to_string(&self) -> String {
-            self.0.to_string()
+
+    /// A real schema named `name`: the primitive of that name, else a plain object schema.
+    pub(crate) fn named(name: &str) -> Arc<dyn TraceObjectSchema> {
+        use crate::trace::model::target::schema::primitive_trace_object_schema::PrimitiveTraceObjectSchema;
+        match PrimitiveTraceObjectSchema::from_name(&SchemaName::new(name)) {
+            Some(p) => Arc::new(p),
+            None => Arc::new(crate::trace::model::target::schema::schema_builder::plain_schema(name)),
         }
     }
 
@@ -106,7 +106,7 @@ pub(crate) mod tests {
     fn type_is_named_after_schema() {
         let p = RmiRemoteMethodParameter::new(
             "thread",
-            Arc::new(Named("Thread")),
+            named("Thread"),
             true,
             RmiValue::Null,
             "Thread",

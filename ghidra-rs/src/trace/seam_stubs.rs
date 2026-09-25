@@ -7,7 +7,6 @@
 use std::any::TypeId;
 use std::sync::Arc;
 
-use crate::debug::api::tracermi::SchemaName;
 use crate::trace::model::thread::TraceThread;
 use crate::program::model::address::{
     Address, AddressFactory, AddressRange, AddressSet, AddressSetView, AddressSpace,
@@ -25,9 +24,6 @@ use crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag;
 use crate::trace::model::memory::trace_memory_region::TraceMemoryRegion;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
-use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::model::target::path::key_path::KeyPath;
-use crate::trace::model::target::path::path_pattern::PathPattern;
 use crate::trace::model::target::trace_object::TraceObject;
 use crate::trace::model::time::schedule::compare_result::CompareResult;
 use crate::trace::model::time::schedule::step::Step;
@@ -697,168 +693,12 @@ pub trait TraceOverlappedRegionException: Send + Sync {
     ) -> Vec<Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>>;
 }
 
-/// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema`, referenced by
-/// [`SchemaContext`](crate::trace::model::target::schema::schema_context::SchemaContext) and
-/// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
-/// before the real port is available. Grown beyond an opaque marker to add the two members
-/// `DefaultSchemaContext` needs: the name a schema is keyed by in a context, and its
-/// `toString()` representation.
-pub trait TraceObjectSchema: Send + Sync {
-    /// The name this schema is registered under. Mirrors `TraceObjectSchema.getName()`.
-    fn get_name(&self) -> SchemaName;
-
-    /// Mirrors `TraceObjectSchema.toString()`.
-    fn to_string(&self) -> String;
-
-    /// Checks whether the given attribute key is hidden by this schema. Mirrors
-    /// `TraceObjectSchema.isHidden(String)`, used by
-    /// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
-    /// default `isHidden()`.
-    ///
-    /// The real Java default resolves this via a per-schema `Hidden` predicate not yet ported, so
-    /// this placeholder defaults to "never hidden" until that machinery exists.
-    fn is_hidden(&self, _name: &str) -> bool {
-        false
-    }
-
-    /// Resolves an attribute name (or one of its aliases) to its canonical key. Mirrors
-    /// `TraceObjectSchema.checkAliasedAttribute(String)`, used by
-    /// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
-    /// default `hasEntryKey()`.
-    ///
-    /// The real Java default resolves this via an attribute-alias map not yet ported, so this
-    /// placeholder defaults to identity (no aliasing).
-    fn check_aliased_attribute(&self, name: &str) -> String {
-        name.to_string()
-    }
-
-    /// Resolves the schema for a given child key (attribute or element). Mirrors
-    /// `TraceObjectSchema.getChildSchema(String)`, used by
-    /// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
-    /// default `getTargetSchema()`.
-    ///
-    /// The real Java default resolves this via the element/attribute schema maps not yet ported,
-    /// so this placeholder defaults to the "ANY" primitive schema, mirroring
-    /// `SchemaContext::get_schema`'s documented fallback for unresolved names.
-    fn get_child_schema(&self, _key: &str) -> Box<dyn TraceObjectSchema> {
-        struct FallbackAnySchema;
-        impl TraceObjectSchema for FallbackAnySchema {
-            fn get_name(&self) -> SchemaName {
-                SchemaName::new("ANY")
-            }
-
-            fn to_string(&self) -> String {
-                "ANY".to_string()
-            }
-        }
-        Box::new(FallbackAnySchema)
-    }
-
-    /// Resolves the schema of the (possibly indirect) successor object at the given path from
-    /// this schema. Mirrors `TraceObjectSchema.getSuccessorSchema(KeyPath)`, used by
-    /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)'s
-    /// `getConventionalRegisterPath(AddressSpace, Register)` default.
-    ///
-    /// The real Java method walks the element/attribute schema maps (not yet ported) to resolve
-    /// each path component, so this placeholder defaults to "unresolved" until that machinery
-    /// exists.
-    fn get_successor_schema(&self, _path: &KeyPath) -> Option<Box<dyn TraceObjectSchema>> {
-        None
-    }
-
-    /// The trace interfaces this schema declares its objects provide. Mirrors
-    /// `TraceObjectSchema.getInterfaces()`, used by
-    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
-    /// `isMethod()`.
-    ///
-    /// Java returns the interfaces' class tokens; this crate reifies the `@TraceObjectInfo`
-    /// annotation those tokens are read through as [`TraceObjectInfo`], so that is the element
-    /// type here. Defaults to "declares nothing" until the real schema port lands.
-    fn get_interfaces(&self) -> Vec<TraceObjectInfo> {
-        Vec::new()
-    }
-
-    /// Search this (root) schema for the unique path of an object suitable to provide the
-    /// interface named `iface` in the context of the object at `seed`. Mirrors
-    /// `TraceObjectSchema.searchForSuitable(Class, KeyPath)`, used by
-    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
-    /// `findSuitableInterface()`/`getExecutionState()`.
-    ///
-    /// The interface is named by its schema name rather than a class token, following the
-    /// convention
-    /// [`PrimitiveTraceObjectSchema`](crate::trace::model::target::schema::primitive_trace_object_schema)
-    /// already uses for the `Class<?>` arguments of this same family of `searchFor*` methods.
-    ///
-    /// The real Java method walks the schema's ancestry and aggregate attributes (not yet
-    /// ported), so this placeholder defaults to "not found".
-    fn search_for_suitable(&self, _iface: &str, _seed: &KeyPath) -> Option<KeyPath> {
-        None
-    }
-
-    /// As [`Self::search_for_suitable`], but searching for an object with the given schema rather
-    /// than a given interface. Mirrors the
-    /// `searchForSuitable(TraceObjectSchema, KeyPath)` overload, used by
-    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
-    /// `findSuitableSchema()`.
-    fn search_for_suitable_schema(
-        &self,
-        _schema: &dyn TraceObjectSchema,
-        _seed: &KeyPath,
-    ) -> Option<KeyPath> {
-        None
-    }
-
-    /// As [`Self::search_for_suitable`], but searching for the canonical *container* of `iface`.
-    /// Mirrors `TraceObjectSchema.searchForSuitableContainer(Class, KeyPath)`, used by
-    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
-    /// `findSuitableContainerInterface()`.
-    fn search_for_suitable_container(&self, _iface: &str, _seed: &KeyPath) -> Option<KeyPath> {
-        None
-    }
-
-    /// Search this (root) schema for the register container(s) applicable to the object at
-    /// `seed` at the given frame level. Mirrors
-    /// `TraceObjectSchema.searchForRegisterContainer(int, KeyPath)`, used by
-    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
-    /// `findRegisterContainer()`.
-    ///
-    /// Java returns a `PathFilter` (in practice a `PathMatcher`) whose only use at that call site
-    /// is enumerating its patterns. `PathMatcher` is not ported and this crate's
-    /// [`PathFilter`](crate::trace::model::target::path::PathFilter) has no `getPatterns()`, so
-    /// the patterns are returned directly. Defaults to "no candidates".
-    fn search_for_register_container(
-        &self,
-        _frame_level: i32,
-        _seed: &KeyPath,
-    ) -> Vec<PathPattern> {
-        Vec::new()
-    }
-}
-
 /// Placeholder for the nested `ghidra.trace.model.Lifespan.LifeSet`, referenced by
 /// [`TraceObject`] before the real port is available. Mirrors the one member
 /// `DBTraceObjectInterface`'s default `isDeleted()` needs: whether the set of lifespans is empty.
 pub trait LifeSet: Send + Sync {
     /// Mirrors `Span.SpanSet.isEmpty()`, as inherited by `LifeSet`.
     fn is_empty(&self) -> bool;
-}
-
-/// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema.AttributeSchema`,
-/// referenced by
-/// [`PrimitiveTraceObjectSchema`](crate::trace::model::target::schema::primitive_trace_object_schema::PrimitiveTraceObjectSchema)
-/// before the real port is available. `PrimitiveTraceObjectSchema` only ever hands these back as
-/// opaque values (`AttributeSchema.DEFAULT_ANY`/`DEFAULT_VOID`), never inspecting them, so this is
-/// a marker trait rather than reproducing `getName`/`getSchema`/`isRequired`/`isFixed`/`getHidden`.
-pub trait AttributeSchema: Send + Sync {}
-
-/// Placeholder for `ghidra.trace.model.target.schema.SchemaBuilder`, referenced by
-/// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
-/// before the real port is available. `DefaultSchemaContext` only invokes `buildAndAdd()` on
-/// builders it constructs, so that is the only member ported here.
-pub trait SchemaBuilder: Send + Sync {
-    /// Builds the schema and adds it to the context the builder was created from. Mirrors
-    /// `SchemaBuilder.buildAndAdd()`.
-    fn build_and_add(&self) -> Box<dyn TraceObjectSchema>;
 }
 
 /// Placeholder for `ghidra.trace.database.target.DBTraceObject`, referenced by

@@ -32,10 +32,8 @@
 //!   JVM.
 //! * `RequestResult.get()`'s assertion against waiting on the Swing thread has no counterpart:
 //!   there is no Swing thread.
-//! * **`loadSchema` and the schema serialization in `createRootObject` are not ported.** Both need
-//!   `XmlSchemaContext` (unported; it pulls in `SchemaBuilder` and `TraceObjectInterfaceUtils`).
-//!   [`RmiClient::create_root_object`] therefore takes the already-serialized context XML
-//!   alongside the context itself.
+//! * **`loadSchema` reads a file**, not a class-path resource, and reports failure as an error
+//!   rather than an `AssertionError`.
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
@@ -70,7 +68,8 @@ use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::lang::{CompilerSpecID, LanguageID};
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::schema::schema_context::SchemaContext;
-use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::schema::xml_schema_context::{XmlSchemaContext, XmlSchemaError};
+use crate::trace::model::target::schema::trace_object_schema::TraceObjectSchema;
 use crate::util::msg::Msg;
 
 /// An error reported by the remote end of a Trace RMI connection.
@@ -750,22 +749,20 @@ impl RmiClient {
     }
 
     /// Mirrors `createRootObject(int, SchemaContext, String)`: remembers `schema_context` (for
-    /// [`get_schema`](Self::get_schema)) and sends it with the root schema's name.
-    ///
-    /// Java serializes the context itself with `XmlSchemaContext.serialize`; that class is not
-    /// ported yet, so the caller supplies the serialized form as `schema_context_xml`.
+    /// [`get_schema`](Self::get_schema)) and sends it, serialized by
+    /// [`XmlSchemaContext::serialize`], with the root schema's name.
     pub fn create_root_object(
         &self,
         trace_id: i32,
         schema_context: Arc<dyn SchemaContext>,
-        schema_context_xml: &str,
         schema: &str,
     ) -> Result<(), RmiClientError> {
+        let xml_ctx = XmlSchemaContext::serialize(schema_context.as_ref());
         *self.inner.schema_context.write().unwrap_or_else(|e| e.into_inner()) =
             Some(schema_context);
         self.send(root(root_message::Msg::RequestCreateRootObject(RequestCreateRootObject {
             oid: oid(trace_id),
-            schema_context: schema_context_xml.to_string(),
+            schema_context: xml_ctx,
             root_schema: schema.to_string(),
         })))?;
         Ok(())
@@ -1261,6 +1258,16 @@ impl RmiClient {
         Ok(())
     }
 
+    /// Mirrors the static `loadSchema(String, String)`: reads the schema context in the XML file
+    /// at `resource` and resolves `root_name` in it (the "ANY" primitive if it is absent).
+    pub fn load_schema(
+        resource: &std::path::Path,
+        root_name: &str,
+    ) -> Result<Box<dyn TraceObjectSchema>, XmlSchemaError> {
+        let schema_context = XmlSchemaContext::deserialize_file(resource)?;
+        Ok(schema_context.get_schema(&schema_context.name(root_name)))
+    }
+
     /// Mirrors `getSchema(String)`: resolves a schema name in the context given to
     /// [`create_root_object`](Self::create_root_object). Fails if no root object was created
     /// (Java dereferences the `null` context).
@@ -1349,6 +1356,27 @@ pub(crate) mod tests {
 
     fn x86() -> LanguageID {
         LanguageID::new("x86:LE:64:default").unwrap()
+    }
+
+    #[test]
+    fn load_schema_reads_jdi_schema_resource() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
+            "../orig_src/Ghidra/Debug/Debugger-jpda/src/main/resources/ghidra/app/plugin/core/debug/client/tracermi/jdi_schema.xml",
+        );
+        let root = RmiClient::load_schema(&path, "Debugger").unwrap();
+        assert_eq!(root.get_name(), SchemaName::new("Debugger"));
+        let ifaces: Vec<String> =
+            root.get_interfaces().into_iter().map(|i| i.schema_name).collect();
+        assert_eq!(ifaces, vec!["EventScope", "FocusScope", "Aggregate"]);
+        assert_eq!(root.get_default_element_schema(), SchemaName::new("VOID"));
+        let accessible = root.get_attribute_schema("_accessible");
+        assert_eq!(accessible.get_schema(), &SchemaName::new("BOOL"));
+        assert!(accessible.is_required());
+        assert!(root.is_hidden("_accessible"));
+        // An unknown root name resolves to ANY, as in Java.
+        let any = RmiClient::load_schema(&path, "NoSuchSchema").unwrap();
+        assert_eq!(any.get_name(), SchemaName::new("ANY"));
+        assert!(RmiClient::load_schema(std::path::Path::new("/no/such/file.xml"), "X").is_err());
     }
 
     #[test]
