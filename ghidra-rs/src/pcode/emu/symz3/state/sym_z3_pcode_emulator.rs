@@ -13,11 +13,11 @@
 //! * **Language.** Java takes a `Language` and asserts it is a `SleighLanguage`; the machine base
 //!   takes an `Arc<SleighLanguage>` (see
 //!   [`abstract_pcode_machine`](crate::pcode::emu::abstract_pcode_machine)'s module docs).
-//! * **Threads.** Java's threads build a `SleighInstructionDecoder`, not ported, and read the
-//!   program counter off the language, which only a `.pspec` declares. So, as for
-//!   [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator), a machine that will
-//!   create threads is built with [`ThreadDecoding`], and one built without it panics when asked
-//!   for a thread, naming what is missing.
+//! * **Threads.** Java's threads decode with a [`SleighInstructionDecoder`](crate::pcode::emu::sleigh_instruction_decoder::SleighInstructionDecoder)
+//!   and read the program counter off the language, which only a `.pspec` declares. So, as for
+//!   [`PcodeEmulator`](crate::pcode::emu::pcode_emulator::PcodeEmulator), a machine's threads bind
+//!   to the language given by its [`ThreadDecoding`] (by default the machine's own, which for a
+//!   `.sla`-only language has no program counter, so creating a thread fails as in Java).
 //! * **Covariant getters.** Java narrows `newThread`/`getAllThreads`/`getSharedState` to the
 //!   SymZ3 types. The [`PcodeMachineThreads`] methods already return [`SymZ3PcodeThread`]; the
 //!   shared state is reached through
@@ -61,7 +61,7 @@ pub struct SymZ3PcodeEmulator {
     threads: ThreadList<SymZ3PcodeThread>,
     /// The machine's shared state as its threads hold it; set when the shared state is created.
     shared_memory: OnceLock<SymZ3SharedState>,
-    thread_decoding: Option<ThreadDecoding<SymZ3State>>,
+    thread_decoding: ThreadDecoding<SymZ3State>,
 }
 
 impl SymZ3PcodeEmulator {
@@ -75,7 +75,9 @@ impl SymZ3PcodeEmulator {
         cb: Arc<dyn PcodeEmulationCallbacks<Pair>>,
         parts_factory: Arc<SymZ3PartsFactory>,
     ) -> Self {
-        Self::build(language, cb, parts_factory, None)
+        let exec_language: Arc<dyn Language> = Arc::clone(&language) as Arc<dyn Language>;
+        let thread_decoding = ThreadDecoding::sleigh::<Pair>(Arc::clone(&language), exec_language);
+        Self::build(language, cb, parts_factory, thread_decoding)
     }
 
     /// Create an emulator with no emulation callbacks.
@@ -96,7 +98,7 @@ impl SymZ3PcodeEmulator {
         parts_factory: Arc<SymZ3PartsFactory>,
         thread_decoding: ThreadDecoding<SymZ3State>,
     ) -> Self {
-        Self::build(language, cb, parts_factory, Some(thread_decoding))
+        Self::build(language, cb, parts_factory, thread_decoding)
     }
 
     /// The constructor body: Java's `AuxPcodeEmulator(Language, PcodeEmulationCallbacks)`, whose
@@ -106,7 +108,7 @@ impl SymZ3PcodeEmulator {
         language: Arc<SleighLanguage>,
         cb: Arc<dyn PcodeEmulationCallbacks<Pair>>,
         parts_factory: Arc<SymZ3PartsFactory>,
-        thread_decoding: Option<ThreadDecoding<SymZ3State>>,
+        thread_decoding: ThreadDecoding<SymZ3State>,
     ) -> Self {
         let language_dyn: Arc<dyn Language> = Arc::clone(&language) as Arc<dyn Language>;
         let arithmetic = aux_pcode_emulator::create_arithmetic(&language_dyn, parts_factory.as_ref());
@@ -184,14 +186,9 @@ impl AbstractPcodeMachineThreads<Pair> for SymZ3PcodeEmulator {
     ///
     /// # Panics
     ///
-    /// If this machine was built without [`ThreadDecoding`]; see the module docs.
+    /// If the language the threads bind to has no program counter, as Java's constructor throws.
     fn create_thread(&mut self, name: &str) -> SymZ3PcodeThread {
-        let Some(decoding) = self.thread_decoding.clone() else {
-            panic!(
-                "SymZ3PcodeEmulator cannot create threads without ThreadDecoding: \
-                 SleighInstructionDecoder is not ported (see SymZ3PcodeEmulator::with_thread_decoding)"
-            );
-        };
+        let decoding = self.thread_decoding.clone();
         let shared = self.shared_state_handle();
         // Java: `machine.createLocalState(this)`.
         let local = aux_pcode_emulator::create_local_state(self, name, self.parts_factory.as_ref());
@@ -349,7 +346,7 @@ mod tests {
     use crate::pcode::emu::symz3::sym_z3_pcode_arithmetic::testing::EvalCtx;
     use crate::pcode::emu::symz3::sym_z3_pcode_emulator_trait::SymZ3PcodeEmulatorTrait;
     use crate::pcode::emu::symz3::sym_z3_records_preconditions::SymZ3RecordsPreconditions;
-    use crate::pcode::emu::test_support::{PcLanguage, SleighTestDecoder};
+    use crate::pcode::emu::test_support::PcLanguage;
     use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
     use crate::program::model::address::AddressSpace;
     use crate::program::model::lang::register::Register;
@@ -360,27 +357,13 @@ mod tests {
     }
 
     /// Thread parts for the Sleigh fixture: its own semantics plus a 4-byte `pc` at
-    /// `register:0x100`, and a decoder reading the concrete side of the machine's memory.
+    /// `register:0x100`, decoding with the real `SleighInstructionDecoder`, which reads the
+    /// concrete side of the machine's memory.
     fn thread_decoding(language: &Arc<SleighLanguage>, register: &Arc<AddressSpace>) -> ThreadDecoding<SymZ3State> {
         let pc = Register::new("pc", "program counter", register.address(0x100), 4, false, Register::TYPE_PC);
         let exec_language: Arc<dyn Language> =
             Arc::new(PcLanguage { inner: Arc::clone(language) as Arc<dyn Language>, pc });
-        let language = Arc::clone(language);
-        ThreadDecoding {
-            exec_language,
-            decoder: Arc::new(move |_exec_language, memory: &SymZ3SharedState| {
-                let memory = memory.clone();
-                Box::new(SleighTestDecoder::with_reader(
-                    Arc::clone(&language),
-                    Box::new(move |address, length| {
-                        memory.with_concrete(|concrete| {
-                            concrete.get_var(address.space(), address.offset(), length, false, Reason::ExecuteDecode)
-                        })
-                    }),
-                    Arc::new(std::sync::Mutex::new(Vec::new())),
-                ))
-            }),
-        }
+        ThreadDecoding::sleigh::<Pair>(Arc::clone(language), exec_language)
     }
 
     struct Fixture {
@@ -536,9 +519,11 @@ mod tests {
         assert!(emulator.get_stub_userop_library().get_userops().contains_key("emu_swi"));
     }
 
+    /// Java's threads bind to the machine's language, which must declare a program counter; a
+    /// language decoded from a `.sla` alone does not.
     #[test]
-    #[should_panic(expected = "SleighInstructionDecoder is not ported")]
-    fn a_machine_without_thread_decoding_cannot_create_threads() {
+    #[should_panic(expected = "Language has no program counter")]
+    fn a_thread_needs_a_language_with_a_program_counter() {
         let mut emulator = SymZ3PcodeEmulator::with_language(decode_tests::language(), parts_factory());
         emulator.new_thread();
     }

@@ -1889,7 +1889,7 @@ TODO	struct	0	23	1	script	Ghidra/Features/Base/src/main/java/ghidra/app/script/I
 TODO	struct	0	23	7	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/values/GhidraValuesMap.java
 TODO	struct	0	23	27	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/FSBFileNode.java
 TODO	struct	0	23	2	sarif	Ghidra/Features/Sarif/src/main/java/sarif/SarifProgramOptions.java
-PARK	struct	0	23	47	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/SleighInstructionDecoder.java
+DONE	struct	0	23	47	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/SleighInstructionDecoder.java
 TODO	struct	0	23	24	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/SparseAddressRangeMap.java
 TODO	struct	0	23	2	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/layout/GridLocationMap.java
 TODO	struct	0	23	11	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/FindCheckoutsTableModel.java

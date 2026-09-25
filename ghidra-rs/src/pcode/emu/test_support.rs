@@ -1,44 +1,28 @@
-//! Test fixtures shared by the emulator's tests: a language with a program counter, and an
-//! instruction decoder that decodes real Sleigh instructions from a machine's memory.
+//! Test fixtures shared by the emulator's tests: a language with a program counter.
 //!
-//! Both stand in for pieces not yet ported: a `.sla`-only
+//! It stands in for the piece not yet ported: a `.sla`-only
 //! [`SleighLanguage`](crate::program::model::lang::sleigh::SleighLanguage) has no program counter
-//! (only a `.pspec` declares one), and `SleighInstructionDecoder` waits on the `Instruction`
-//! family's design.
+//! (only a `.pspec` declares one). Threads decode with the real
+//! [`SleighInstructionDecoder`](crate::pcode::emu::sleigh_instruction_decoder::SleighInstructionDecoder).
 
 use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-use crate::pcode::emu::bytes_pcode_thread::BytesState;
-use crate::pcode::emu::instruction_decoder::InstructionDecoder;
-use crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState;
-use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
-use crate::pcode::seam_stubs::{PseudoInstruction, RegisterValue};
 use crate::program::model::address::{Address, AddressFactory, AddressSetView, AddressSpace};
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
-use crate::program::model::lang::instruction_context::{InstructionContext, InstructionContextError};
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
-use crate::program::model::lang::invalid_prototype::DefaultInvalidPrototype;
 use crate::program::model::lang::language::{Language, ParseError};
 use crate::program::model::lang::language_description::LanguageDescription;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
-use crate::program::model::lang::parser_context::ParserContext as LangParserContext;
 use crate::program::model::lang::processor_context::ProcessorContext;
-use crate::program::model::lang::processor_context_impl::ProcessorContextImpl;
-use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register::RegisterRef;
-use crate::program::model::lang::sleigh::SleighLanguage;
-use crate::program::model::lang::unknown_context_exception::UnknownContextException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
-use crate::program::model::listing::instruction_stub::InstructionStub;
-use crate::program::model::listing::Instruction;
-use crate::program::model::mem::{ByteMemBufferImpl, MemBuffer, MemoryAccessException};
-use crate::program::model::pcode::PcodeOp;
+use crate::program::model::mem::MemBuffer;
 use crate::program::seam_stubs::{AddressLabelInfo, Processor};
 use crate::util::task::TaskMonitor;
 
@@ -203,158 +187,5 @@ impl Language for PcLanguage {
     }
     fn get_maximum_instruction_length(&self) -> Option<i32> {
         Language::get_maximum_instruction_length(self.inner.as_ref())
-    }
-}
-
-/// Mirrors `InstructionDB`'s bridge from the prototype's parser context to the one an instruction
-/// context hands out.
-struct Bridge(Box<dyn crate::program::seam_stubs::ParserContext>);
-
-impl LangParserContext for Bridge {
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
-        self.0.get_prototype()
-    }
-    fn as_any(&self) -> Option<&dyn std::any::Any> {
-        self.0.as_any()
-    }
-}
-
-/// An instruction parsed from bytes at an address, as the instruction context its prototype
-/// builds p-code against.
-struct Parsed {
-    proto: Box<dyn InstructionPrototype>,
-    mem: ByteMemBufferImpl,
-    processor: ProcessorContextImpl,
-}
-
-impl InstructionContext for Parsed {
-    fn get_address(&self) -> Address {
-        self.mem.get_address()
-    }
-    fn get_processor_context(&self) -> &dyn ProcessorContextView {
-        &self.processor
-    }
-    fn get_mem_buffer(&self) -> &dyn MemBuffer {
-        &self.mem
-    }
-    fn get_parser_context(&self) -> Result<Box<dyn LangParserContext>, MemoryAccessException> {
-        Ok(Box::new(Bridge(self.proto.get_parser_context(&self.mem, &self.processor)?)))
-    }
-    fn get_parser_context_at(
-        &self,
-        _instruction_address: Address,
-    ) -> Result<Box<dyn LangParserContext>, InstructionContextError> {
-        Err(UnknownContextException::with_message("no delay slots in these tests").into())
-    }
-}
-
-/// A decoded instruction: its address, length, and p-code. The prototype answers only its
-/// language, which is all [`PcodeProgram::from_instruction`](crate::pcode::exec::pcode_program::PcodeProgram::from_instruction)
-/// asks of it.
-struct DecodedInstruction {
-    address: Address,
-    length: i32,
-    pcode: Vec<PcodeOp>,
-    language: Arc<SleighLanguage>,
-}
-
-impl InstructionStub for DecodedInstruction {
-    fn get_min_address(&self) -> Address {
-        self.address.clone()
-    }
-    fn get_length(&self) -> i32 {
-        self.length
-    }
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
-        Arc::new(DefaultInvalidPrototype::new(Arc::clone(&self.language) as Arc<dyn Language>))
-    }
-    fn get_pcode(&self) -> Vec<PcodeOp> {
-        self.pcode.clone()
-    }
-    fn get_pcode_with_overrides(&self, _include_overrides: bool) -> Vec<PcodeOp> {
-        self.pcode.clone()
-    }
-}
-
-struct NoPseudoInstruction;
-impl PseudoInstruction for NoPseudoInstruction {}
-
-/// Reads the concrete bytes of a machine's memory: `(address, length)` to bytes.
-pub(crate) type ConcreteReader = Box<dyn Fn(&Address, i32) -> Vec<u8>>;
-
-/// Decodes real Sleigh instructions from a machine's shared memory, standing in for
-/// `SleighInstructionDecoder`: read the bytes at the counter, parse them with the Sleigh language,
-/// and build the instruction's p-code from its prototype.
-pub(crate) struct SleighTestDecoder {
-    pub(crate) language: Arc<SleighLanguage>,
-    /// Reads the machine's memory, as Java's decoder reads through the state's concrete buffer.
-    read: ConcreteReader,
-    /// Every address this decoder was told the thread branched to.
-    pub(crate) branched: Arc<std::sync::Mutex<Vec<i64>>>,
-    last: Option<Arc<DecodedInstruction>>,
-}
-
-impl SleighTestDecoder {
-    /// A decoder over a concrete bytes machine's memory.
-    pub(crate) fn new(
-        language: Arc<SleighLanguage>,
-        memory: SharedPcodeExecutorState<BytesState>,
-        branched: Arc<std::sync::Mutex<Vec<i64>>>,
-    ) -> Self {
-        let read: ConcreteReader = Box::new(move |address, length| {
-            memory.lock().get_var(address.space(), address.offset(), length, false, Reason::ExecuteDecode)
-        });
-        Self::with_reader(language, read, branched)
-    }
-
-    /// A decoder over any machine's memory, whose concrete bytes `read` reads.
-    pub(crate) fn with_reader(
-        language: Arc<SleighLanguage>,
-        read: ConcreteReader,
-        branched: Arc<std::sync::Mutex<Vec<i64>>>,
-    ) -> Self {
-        Self { language, read, branched, last: None }
-    }
-}
-
-impl InstructionDecoder for SleighTestDecoder {
-    fn get_language(&self) -> Arc<dyn Language> {
-        Arc::clone(&self.language) as Arc<dyn Language>
-    }
-
-    fn decode_instruction(
-        &mut self,
-        address: &Address,
-        _context: Option<&dyn RegisterValue>,
-    ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
-        // Java's decoder reads through the state's concrete buffer; the fixture's instructions
-        // are at most two bytes long.
-        let bytes = (self.read)(address, 2);
-        let mem = ByteMemBufferImpl::new(address.clone(), bytes, self.language.is_big_endian());
-        let mut processor = ProcessorContextImpl::new(self.language.clone());
-        let proto = Language::parse(self.language.as_ref(), &mem, &mut processor, false)
-            .map_err(|e| format!("cannot decode at {address}: {e:?}"))?;
-        let parsed = Parsed { proto, mem, processor };
-        let pcode = parsed.proto.get_pcode(&parsed, None);
-        let length = parsed.proto.get_length();
-        self.last = Some(Arc::new(DecodedInstruction {
-            address: address.clone(),
-            length,
-            pcode,
-            language: Arc::clone(&self.language),
-        }));
-        Ok(Box::new(NoPseudoInstruction))
-    }
-
-    fn branched(&mut self, address: &Address) {
-        self.branched.lock().unwrap().push(address.offset());
-    }
-
-    fn get_last_instruction(&self) -> Option<Arc<dyn Instruction>> {
-        self.last.clone().map(|i| i as Arc<dyn Instruction>)
-    }
-
-    fn get_last_length_with_delays(&self) -> i32 {
-        self.last.as_ref().map_or(0, |i| i.length)
     }
 }

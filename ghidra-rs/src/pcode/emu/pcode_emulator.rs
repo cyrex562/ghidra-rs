@@ -20,13 +20,14 @@
 //!   [`AuxPcodeEmulator`](crate::pcode::emu::auxiliary::aux_pcode_emulator), passes
 //!   [`NONE`] for the state callbacks.
 //! * **Threads.** `createThread(String)` is `new BytesPcodeThread(name, this)`, whose constructor
-//!   chain builds a `SleighInstructionDecoder` (not ported) and reads the program counter off the
-//!   language (which only a `.pspec` declares; not ported either). So a machine that will create
-//!   threads is built with [`with_thread_decoding`](PcodeEmulator::with_thread_decoding), which
-//!   supplies both; [`new`](PcodeEmulator::new) builds a machine whose
-//!   [`new_thread`](PcodeMachineThreads::new_thread) panics naming what is missing. The shared
-//!   state a thread holds is the machine's own, via a [`SharedPcodeExecutorState`] handle, so
-//!   every thread and the machine see the same memory, as in Java.
+//!   chain builds a [`SleighInstructionDecoder`] over the shared state and reads the program
+//!   counter off the language. Only a `.pspec` declares the program counter, and a
+//!   [`SleighLanguage`] decoded from a `.sla` alone has none, so, exactly as in Java, a thread of
+//!   such a language cannot be created ("Language has no program counter"). A machine can instead
+//!   be given [`ThreadDecoding`] naming the language its threads bind to (one declaring a program
+//!   counter) and the decoder they use; [`ThreadDecoding::sleigh`] is Java's default decoder. The
+//!   shared state a thread holds is the machine's own, via a [`SharedPcodeExecutorState`] handle,
+//!   so every thread and the machine see the same memory, as in Java.
 //! * The default `createThreadStubLibrary()`, `new DefaultPcodeThread.PcodeEmulationLibrary<>(null)`,
 //!   is what [`PcodeEmulator::new`] passes as the thread stub library.
 
@@ -44,12 +45,14 @@ use crate::pcode::emu::pcode_machine::{
 use crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
+use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
 use crate::pcode::exec::pcode_state_callbacks::NONE;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::emu::pcode_emulation_callbacks::{
     no_pcode_emulation_callbacks, PcodeEmulationCallbacks,
 };
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::emu::sleigh_instruction_decoder::SleighInstructionDecoder;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
 use crate::pcode::exec::bytes_pcode_executor_state::BytesPcodeExecutorState;
@@ -57,8 +60,8 @@ use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::sleigh::SleighLanguage;
 
-/// Builds a thread's instruction decoder over the machine's shared state: the stand-in for Java's
-/// `createInstructionDecoder(sharedState)`, whose `SleighInstructionDecoder` is not ported.
+/// Builds a thread's instruction decoder over the machine's shared state: Java's
+/// `createInstructionDecoder(sharedState)`, given the language the thread binds to.
 ///
 /// `S` is the machine's shared state, as its threads hold it; it defaults to the concrete bytes
 /// state of a [`PcodeEmulator`].
@@ -68,8 +71,9 @@ pub type InstructionDecoderFactory<S = BytesState> = Arc<
         + Sync,
 >;
 
-/// What a machine needs to build its threads that Java derives from the language: see the module
-/// docs. `S` is as for [`InstructionDecoderFactory`].
+/// What a machine builds its threads with: the language a thread's executor and register lookups
+/// bind to, and the decoder factory. See the module docs. `S` is as for
+/// [`InstructionDecoderFactory`].
 pub struct ThreadDecoding<S = BytesState> {
     /// The language a thread's executor and decoder bind to; it must declare a program counter.
     pub exec_language: Arc<dyn Language>,
@@ -83,6 +87,23 @@ impl<S> Clone for ThreadDecoding<S> {
     }
 }
 
+impl<S: 'static> ThreadDecoding<S> {
+    /// Threads binding to `exec_language` that decode with Java's default decoder,
+    /// `new SleighInstructionDecoder(language, sharedState)`, over the machine's shared state of
+    /// `T` values.
+    pub fn sleigh<T: 'static>(language: Arc<SleighLanguage>, exec_language: Arc<dyn Language>) -> Self
+    where
+        SharedPcodeExecutorState<S>: PcodeExecutorStatePiece<T, T>,
+    {
+        ThreadDecoding {
+            exec_language,
+            decoder: Arc::new(move |_exec_language, shared_state| {
+                Box::new(SleighInstructionDecoder::<T, _>::new(Arc::clone(&language), shared_state.clone()))
+            }),
+        }
+    }
+}
+
 /// A p-code machine which executes on concrete bytes and incorporates per-architecture state
 /// modifiers.
 ///
@@ -93,25 +114,24 @@ pub struct PcodeEmulator {
     threads: ThreadList<BytesPcodeThread>,
     /// The machine's shared state as its threads hold it; set when the shared state is created.
     shared_memory: OnceLock<SharedPcodeExecutorState<BytesState>>,
-    thread_decoding: Option<ThreadDecoding>,
+    thread_decoding: ThreadDecoding,
 }
 
 impl PcodeEmulator {
     /// Construct a new concrete emulator.
     ///
-    /// Port of `PcodeEmulator(Language, PcodeEmulationCallbacks<byte[]>)`. The machine cannot
-    /// create threads; see the module docs and
-    /// [`with_thread_decoding`](Self::with_thread_decoding).
+    /// Port of `PcodeEmulator(Language, PcodeEmulationCallbacks<byte[]>)`. Its threads bind to
+    /// `language` and decode with a [`SleighInstructionDecoder`]; see the module docs.
     pub fn new(language: Arc<SleighLanguage>, cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>) -> Self {
-        let arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>> =
-            Arc::new(BytesPcodeArithmetic::for_sleigh_language(&language));
-        Self::with_arithmetic(language, cb, arithmetic, None)
+        let exec_language: Arc<dyn Language> = Arc::clone(&language) as Arc<dyn Language>;
+        let thread_decoding = ThreadDecoding::sleigh::<Vec<u8>>(Arc::clone(&language), exec_language);
+        Self::with_thread_decoding(language, cb, thread_decoding)
     }
 
-    /// Construct a new concrete emulator whose threads decode with the given parts.
+    /// Construct a new concrete emulator whose threads bind to and decode with the given parts.
     ///
     /// Port of `PcodeEmulator(Language, PcodeEmulationCallbacks<byte[]>)`; see the module docs on
-    /// `thread_decoding`.
+    /// [`ThreadDecoding`].
     pub fn with_thread_decoding(
         language: Arc<SleighLanguage>,
         cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>,
@@ -119,7 +139,7 @@ impl PcodeEmulator {
     ) -> Self {
         let arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>> =
             Arc::new(BytesPcodeArithmetic::for_sleigh_language(&language));
-        Self::with_arithmetic(language, cb, arithmetic, Some(thread_decoding))
+        Self::with_arithmetic(language, cb, arithmetic, thread_decoding)
     }
 
     /// The constructor body, given the product of `createArithmetic()`.
@@ -127,7 +147,7 @@ impl PcodeEmulator {
         language: Arc<SleighLanguage>,
         cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>,
         arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>>,
-        thread_decoding: Option<ThreadDecoding>,
+        thread_decoding: ThreadDecoding,
     ) -> Self {
         let library =
             AbstractPcodeMachineBase::create_userop_library(&language, arithmetic.as_ref(), "", &[]);
@@ -198,14 +218,9 @@ impl AbstractPcodeMachineThreads<Vec<u8>> for PcodeEmulator {
     ///
     /// # Panics
     ///
-    /// If this machine was built without [`ThreadDecoding`]; see the module docs.
+    /// If the language the threads bind to has no program counter, as Java's constructor throws.
     fn create_thread(&mut self, name: &str) -> BytesPcodeThread {
-        let Some(decoding) = self.thread_decoding.clone() else {
-            panic!(
-                "PcodeEmulator cannot create threads without ThreadDecoding: \
-                 SleighInstructionDecoder is not ported (see PcodeEmulator::with_thread_decoding)"
-            );
-        };
+        let decoding = self.thread_decoding.clone();
         AbstractPcodeMachineBase::get_shared_state(self);
         let shared = self
             .shared_memory
@@ -335,7 +350,7 @@ impl PcodeMachine<Vec<u8>> for PcodeEmulator {
 mod tests {
     use super::*;
     use crate::pcode::emu::pcode_thread::PcodeThread;
-    use crate::pcode::emu::test_support::{PcLanguage, SleighTestDecoder};
+    use crate::pcode::emu::test_support::PcLanguage;
     use crate::pcode::exec::pcode_userop_library::nil;
     use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_arithmetic::Purpose;
@@ -408,7 +423,7 @@ mod tests {
             Arc::clone(&language),
             no_pcode_emulation_callbacks(),
             Arc::new(StubArithmetic),
-            Some(thread_decoding(language, register_space())),
+            thread_decoding(language, register_space()),
         )
     }
 
@@ -424,7 +439,7 @@ mod tests {
     }
 
     /// Thread parts for the given Sleigh language: its own semantics, plus a 4-byte `pc` at
-    /// `register:0x100` (see `test_support`), and a decoder reading the machine's memory.
+    /// `register:0x100` (see `test_support`), decoding with the real `SleighInstructionDecoder`.
     fn thread_decoding(
         language: Arc<SleighLanguage>,
         register: Arc<crate::program::model::address::AddressSpace>,
@@ -441,17 +456,7 @@ mod tests {
             inner: Arc::clone(&language) as Arc<dyn Language>,
             pc,
         });
-        let branched = Arc::new(std::sync::Mutex::new(Vec::new()));
-        ThreadDecoding {
-            exec_language,
-            decoder: Arc::new(move |_exec_language, memory| {
-                Box::new(SleighTestDecoder::new(
-                    Arc::clone(&language),
-                    memory.clone(),
-                    Arc::clone(&branched),
-                ))
-            }),
-        }
+        ThreadDecoding::sleigh::<Vec<u8>>(language, exec_language)
     }
 
     /// Builds a minimal but real `SleighLanguage`, mirroring the identical helper in
@@ -538,11 +543,11 @@ mod tests {
         assert_eq!(vec![0x34, 0x12], arithmetic.from_const_u64(0x1234, 2));
     }
 
-    /// Without thread decoding, the machine says what it cannot build rather than building a
-    /// thread that cannot decode.
+    /// Java's threads bind to the machine's language, which must declare a program counter; a
+    /// language decoded from a `.sla` alone does not.
     #[test]
-    #[should_panic(expected = "SleighInstructionDecoder is not ported")]
-    fn a_machine_without_thread_decoding_cannot_create_threads() {
+    #[should_panic(expected = "Language has no program counter")]
+    fn a_thread_needs_a_language_with_a_program_counter() {
         let mut emulator = PcodeEmulator::with_language(Arc::new(test_language()));
         emulator.new_thread();
     }
@@ -630,5 +635,71 @@ mod tests {
         other.step_instruction();
         assert_eq!(vec![0, 0, 0, 7], r0(other));
         assert_eq!(0x100b, other.get_counter().offset());
+    }
+
+    /// The real decoder weaves a branch's delay slot into its p-code, and the thread steps the
+    /// pair as one instruction:
+    ///
+    /// ```text
+    /// 0x1000: 40 04   jd 0x1006
+    /// 0x1002: 11 2a     mov r1, 0x2a   (delay slot)
+    /// 0x1004: 10 05   mov r0, 5       (jumped over)
+    /// 0x1006: 31 00   ret             (return [r1])
+    /// ```
+    #[test]
+    fn a_bytes_thread_steps_a_delay_slotted_branch() {
+        use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
+        use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
+
+        let language = decode_tests::language();
+        let register = language
+            .get_address_factory()
+            .get_address_space_by_name("register")
+            .expect("the fixture has a register space");
+        let ram = Language::get_default_space(language.as_ref());
+        let mut emulator = PcodeEmulator::with_thread_decoding(
+            Arc::clone(&language),
+            no_pcode_emulation_callbacks(),
+            thread_decoding(Arc::clone(&language), Arc::clone(&register)),
+        );
+        emulator.get_shared_state_mut().set_var(
+            &ram,
+            0x1000,
+            8,
+            false,
+            &vec![0x40, 0x04, 0x11, 0x2a, 0x10, 0x05, 0x31, 0x00],
+        );
+
+        let thread = emulator.new_thread();
+        thread.override_counter(&ram.address(0x1000));
+        thread.step_instruction();
+        assert_eq!(0x1006, thread.get_counter().offset());
+        assert_eq!(vec![0, 0, 0, 0x2a], thread.get_state().get_var(&register, 4, 4, false, Reason::Inspect));
+        assert_eq!(vec![0, 0, 0, 0], thread.get_state().get_var(&register, 0, 4, false, Reason::Inspect));
+        thread.step_instruction();
+        assert_eq!(0x2a, thread.get_counter().offset());
+    }
+
+    /// Undecodable bytes stop the thread with the decoder's error at the counter.
+    #[test]
+    #[should_panic(expected = "Unknown disassembly error (PC=ram:0x1000)")]
+    fn a_bytes_thread_cannot_step_undecodable_bytes() {
+        use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
+
+        let language = decode_tests::language();
+        let register = language
+            .get_address_factory()
+            .get_address_space_by_name("register")
+            .expect("the fixture has a register space");
+        let ram = Language::get_default_space(language.as_ref());
+        let mut emulator = PcodeEmulator::with_thread_decoding(
+            Arc::clone(&language),
+            no_pcode_emulation_callbacks(),
+            thread_decoding(Arc::clone(&language), register),
+        );
+        emulator.get_shared_state_mut().set_var(&ram, 0x1000, 2, false, &vec![0x00, 0x00]);
+        let thread = emulator.new_thread();
+        thread.override_counter(&ram.address(0x1000));
+        thread.step_instruction();
     }
 }

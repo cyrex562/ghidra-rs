@@ -40,10 +40,12 @@
 //! * **The factory methods.** Java's constructor calls the overridable `createThreadState`,
 //!   `createInstructionDecoder`, `createExecutor`, and (lazily) `createUseropLibrary` on a
 //!   half-built `this`. Here the construction-time hooks are called from
-//!   [`DefaultPcodeThread::new`] in the same order. `createInstructionDecoder`'s base product,
-//!   `SleighInstructionDecoder`, is not ported, so the base decoder is a constructor parameter and
-//!   [`ThreadHooks::create_instruction_decoder`] receives it to keep or wrap -- which is what every
-//!   in-tree override does with `super`'s decoder. `createThreadState` needs no hook: the state
+//!   [`DefaultPcodeThread::new`] in the same order. `createInstructionDecoder`'s base product (a
+//!   [`SleighInstructionDecoder`](crate::pcode::emu::sleigh_instruction_decoder::SleighInstructionDecoder)
+//!   over the shared state, which the machine builds; see
+//!   [`ThreadDecoding`](crate::pcode::emu::pcode_emulator::ThreadDecoding)) is a constructor
+//!   parameter, and [`ThreadHooks::create_instruction_decoder`] receives it to keep or wrap --
+//!   which is what every in-tree override does with `super`'s decoder. `createThreadState` needs no hook: the state
 //!   delegates' concrete types are type parameters (see [`ThreadPcodeExecutorState`]), which is
 //!   the narrowing Java's overrides exist to express.
 //! * **Two languages.** [`PcodeThread::get_language`] hands back the machine's
@@ -2205,8 +2207,9 @@ mod tests {
     // ---- Hooks: the overrides of Java's subclasses ----
 
     /// A decoded instruction with fixed p-code, standing in for the `PseudoInstruction` a
-    /// `SleighInstructionDecoder` yields (not ported). Only what `DefaultPcodeThread` reads is
-    /// answered: the address, the p-code, and the prototype's language.
+    /// `SleighInstructionDecoder` yields, so these tests can script p-code the toy language
+    /// cannot express. Only what `DefaultPcodeThread` reads is answered: the address, the p-code,
+    /// and the prototype's language.
     struct ScriptedInstruction {
         address: Address,
         pcode: Vec<PcodeOp>,

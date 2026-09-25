@@ -10,6 +10,7 @@ pub mod pcode_emulator;
 pub mod pcode_machine;
 pub mod pcode_state_initializer;
 pub mod pcode_thread;
+pub mod sleigh_instruction_decoder;
 pub mod symz3;
 pub mod sys;
 pub mod taint;
@@ -38,4 +39,5 @@ pub use pcode_emulator::{InstructionDecoderFactory, PcodeEmulator, ThreadDecodin
 pub use pcode_machine::{AccessKind, ErasedPcodeMachine, PcodeMachine, PcodeMachineThreads, SwiMode};
 pub use pcode_state_initializer::PcodeStateInitializer;
 pub use pcode_thread::{ErasedPcodeThread, PcodeThread};
+pub use sleigh_instruction_decoder::SleighInstructionDecoder;
 pub use thread_pcode_executor_state::{SharedPcodeExecutorState, ThreadPcodeExecutorState};
