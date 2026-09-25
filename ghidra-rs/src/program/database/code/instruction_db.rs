@@ -65,6 +65,7 @@ use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::listing::instruction::{Instruction, OperandValue, MAX_LENGTH_OVERRIDE};
 use crate::program::model::listing::instruction_pcode_override::InstructionPcodeOverrideImpl;
+use crate::program::model::listing::instruction_record::modified_flow_type;
 use crate::program::model::listing::program::Program;
 use crate::program::model::listing::CommentType;
 use crate::program::model::mem::{MemBuffer, Memory, MemoryAccessException};
@@ -134,104 +135,6 @@ fn flow_override_ordinal(flow_override: FlowOverride) -> u8 {
         .iter()
         .position(|candidate| *candidate == flow_override)
         .unwrap_or(0) as u8
-}
-
-/// Port of `FlowOverride.getModifiedFlowType(FlowType, FlowOverride)`.
-///
-/// Java's `FlowType` is the flow-carrying subset of `RefType`; the ported [`RefType`] is a single
-/// enum covering both, so the parameter and return type are `RefType` here.
-fn modified_flow_type(original_flow_type: RefType, flow_override: FlowOverride) -> RefType {
-    let flow_type = original_flow_type;
-    if flow_override == FlowOverride::None
-        || (!flow_type.is_jump() && !flow_type.is_terminal() && !flow_type.is_call())
-    {
-        return flow_type;
-    }
-    // NOTE: The following flow-type overrides assume that a return will always be the last flow
-    // pcode-op - since it is the first primary flow pcode-op that will get replaced.
-    match flow_override {
-        FlowOverride::Branch => {
-            if flow_type.is_jump() {
-                return flow_type;
-            }
-            if flow_type.is_conditional() {
-                // assume that we will never start with a complex flow with terminator
-                // i.e., CONDITIONAL-JUMP-TERMINATOR
-                if flow_type.is_terminal() {
-                    // assume return replaced
-                    return RefType::ConditionalComputedJump;
-                }
-                return RefType::ConditionalJump;
-            }
-            if flow_type.is_computed() {
-                return RefType::ComputedJump;
-            }
-            if flow_type.is_terminal() {
-                // assume return replaced
-                return RefType::ComputedJump;
-            }
-            RefType::UnconditionalJump
-        }
-        FlowOverride::Call => {
-            if flow_type.is_call() {
-                return flow_type;
-            }
-            if flow_type.is_conditional() {
-                if flow_type.is_terminal() && (flow_type.is_call() || flow_type.is_jump()) {
-                    // assume original return was preserved
-                    return RefType::ConditionalCallTerminator;
-                }
-                if flow_type.is_terminal() {
-                    // assume return was replaced
-                    return RefType::ConditionalComputedCall;
-                }
-                return RefType::ConditionalCall;
-            }
-            if flow_type.is_computed() {
-                if flow_type.is_terminal() && (flow_type.is_call() || flow_type.is_jump()) {
-                    // assume original return was preserved
-                    return RefType::ComputedCallTerminator;
-                }
-                return RefType::ComputedCall;
-            }
-            if flow_type.is_terminal() && (flow_type.is_call() || flow_type.is_jump()) {
-                // assume original return was preserved
-                return RefType::CallTerminator;
-            }
-            if flow_type.is_terminal() {
-                // assume return was replaced
-                return RefType::ComputedCall;
-            }
-            RefType::UnconditionalCall
-        }
-        FlowOverride::CallReturn => {
-            if flow_type.is_conditional() {
-                if flow_type.is_computed() {
-                    return RefType::ConditionalComputedCall;
-                }
-                if flow_type.is_terminal() {
-                    // assume return was replaced
-                    return RefType::ComputedCallTerminator;
-                }
-                return flow_type; // don't replace
-            }
-            if flow_type.is_computed() {
-                return RefType::ComputedCallTerminator;
-            }
-            if flow_type.is_terminal() {
-                // assume return was replaced
-                return RefType::ComputedCallTerminator;
-            }
-            RefType::CallTerminator
-        }
-        FlowOverride::Return => {
-            if flow_type.is_conditional() {
-                return RefType::ConditionalTerminator;
-            }
-            RefType::Terminator
-        }
-        FlowOverride::None => flow_type,
-    }
 }
 
 /// Bridges the [`SeamParserContext`] an [`InstructionPrototype`] returns onto the

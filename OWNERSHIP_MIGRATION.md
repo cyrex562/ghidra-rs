@@ -261,6 +261,121 @@ These settle questions that repeatedly parked descent batches. Apply them withou
   out typed `PcodeThread<T>`, not `Arc<dyn ErasedPcodeThread>`. The `Emulator` trait moves to the
   real `FilteredMemoryState` and `MemoryAccessFilterChain`.
 
+## Instruction/CodeUnit arena (2026-09-25)
+
+Supersedes the "design first, park" entry above for `Instruction`. `CONVENTION_QUEUE.tsv` has
+`Instruction` and `CodeUnit` as ARENA and `InstructionPrototype` as STRUCT; this section says what
+that means concretely and what has landed.
+
+### What the survey found
+
+- `Instruction` is a 122-method trait (with `CodeUnit`, `MemBuffer`, `PropertySet`,
+  `ProcessorContextView`, `ProcessorContext` as supertraits). It has **one** real implementer,
+  `InstructionDB`, plus ~20 test doubles and the `InstructionStub` blanket. It is named through
+  `dyn Instruction` 357 times in 74 files; `dyn CodeUnit` another 255 times.
+- `Data` is *not* an arena yet, despite its ARENA verdict — there is no store to mirror. The
+  arena/ID patterns that do exist are `GroupTree` (slotmap), `EquateStore` (snapshot +
+  transaction, monotonic id = DB record key) and `RegisterStore`/`RegisterId` (a `Vec` owned by
+  the language).
+- `InstructionDB` holds `Arc<dyn InstructionPrototype>`, flow-override flags, a length override,
+  a mnemonic cache, and a `Weak` self-reference — the self-reference exists only because
+  `InstructionPcodeOverrideImpl::new` and `Instruction::get_instruction_context` demand an
+  `Arc<dyn Instruction>` of `self`. Its bytes and context come from the program (through
+  `CodeUnitDbBase` and the `CodeUnitOwner` seam). `DBTraceInstruction` is not ported; its Java
+  base `InstructionAdapterFromPrototype` is, as a trait in `trace/util/`.
+- Every backing answers most `Instruction` queries the same way: it hands the prototype an
+  `InstructionContext` (address + bytes + context register state) and post-processes with its
+  overrides. Only the reference-, symbol- and neighbour-based queries differ, and those are
+  program/trace queries keyed by address, not properties of the instruction.
+
+### The design
+
+**1. One record, three backings.** `InstructionRecord`
+(`program/model/listing/instruction_record.rs`) is the backing-independent state of a decoded
+instruction: its address, its prototype, and its overrides (flow override, fall-through override,
+length override). The Java `Address.NO_ADDRESS` sentinel for "fall-through removed" becomes
+`FallThroughOverride::{Removed, Target(Address)}`. Setters that Java writes through the program
+(`InstructionDB.setFlowOverride` retyping references, …) stay with the backing; the record only
+holds the value.
+
+**2. The prototype stays a shared trait object for now:** `SharedPrototype =
+Arc<dyn InstructionPrototype + Send + Sync>`. The STRUCT verdict (collapse to the concrete
+`SleighInstructionPrototype` with the invalid prototype as `Option`) is a separate change —
+`DecodeErrorInstruction`'s prototype is an `InvalidPrototype` subclass *with behaviour* (its p-code
+is a decode-error op), so the null object is not purely "no value" there. When that lands, only the
+alias changes.
+
+**3. The snapshot is what a backing supplies.** `InstructionSnapshot` is the read-only source a
+record is resolved against: the bytes (`MemBuffer`) and the processor context at the instruction,
+plus how to get a parser context for *another* instruction (cross-builds / delay slots), which is
+the one genuinely backing-specific lookup. Per convention 3, a snapshot never goes stale; there is
+no `refreshIfNeeded`/`invalidate` on any backing.
+
+| backing | record lives in | snapshot is | handed out as |
+|---|---|---|---|
+| pseudo (emulator, pseudo-disassembly) | the `PseudoInstruction` value itself | owned: cached bytes (`PseudoCodeUnit`) + an owned context `C` | the value, `Box`/`Arc` of it |
+| program (`InstructionDB`) | the program's listing store, keyed by the address key | program memory + program context at a program version | `InstructionId` resolved against `Arc<ListingStore>` (below) |
+| trace (`DBTraceInstruction`) | the trace code space, keyed by (snap range, address) | trace memory + context at a snap | trace id resolved against the trace snapshot |
+
+**4. Behaviour lives on a borrowed view, not on the id.** `InstructionView<'a, S>` borrows a
+record and a snapshot. It implements `lang::InstructionContext` (so it *is* what the prototype is
+queried with) and carries the query logic every backing shares as inherent methods: mnemonic,
+operands and their representation, flow type with override, default/overridden fall-through,
+default flows, delay-slot depth, p-code, the display string. A backing's `Instruction` impl
+builds a view and delegates; only `getFlows` (program adds flow references), `getOperandRefType`
+(program asks the prototype with an override; pseudo computes it), and reference/symbol/neighbour
+queries remain backing code. This is the "borrowed view implementing the query methods" option:
+IDs resolve to views, views answer questions, and nothing needs `Arc<Self>`.
+
+**5. Pseudo instructions have no id.** They are ephemeral values that own their snapshot, which
+is exactly what the storage-backing rule asks for; a store adds nothing. Their ephemeral container
+is `InstructionBlock` (the pseudo-disassembler's output), keyed by address.
+
+**6. The `Instruction` trait stays — as the read-only query interface.** Replacing 357 `dyn
+Instruction` sites in one change is not staged migration. The trait remains what callers name;
+each backing implements it by delegating to `InstructionView`. The trait's two `Arc<Self>`
+demands are the parts that fight the design and are retired incrementally:
+`InstructionPcodeOverrideImpl` now borrows (`&'a dyn Instruction`) — the Java object lives for one
+`getPcode` call, so a borrow is its natural shape; `get_instruction_context` still returns the
+empty placeholder marker and should become `&dyn lang::InstructionContext` (Java returns `this`)
+when `InstructionDB` migrates.
+
+### What landed in this change
+
+- `InstructionRecord`, `FallThroughOverride`, `SharedPrototype`, `InstructionSnapshot`,
+  `InstructionView`, and the shared `modified_flow_type` (moved out of `InstructionDB`, which now
+  calls the shared one).
+- `PseudoCodeUnit` (the shared state of Java's abstract class — address range, byte cache,
+  endianness, comments) and `PseudoInstruction<C>` in `app/util/`, generic over the owned context
+  snapshot `C: ProcessorContext`. `PseudoInstruction<C>` is `Send + Sync` whenever `C` is, and
+  implements the emulator's decoded-instruction seam (`pcode::seam_stubs::PseudoInstruction`),
+  so a real one can flow through `InstructionDecoder` today.
+- `InstructionPcodeOverrideImpl` borrows its instruction.
+
+Not in this change, deliberately: the program-attached `PseudoInstruction(Program, …)`
+constructor and `setInstructionBlock`. Both are program/neighbour queries (references through
+`ReferenceManager`, `getNext`/`getPrevious` through `Listing`, cross-build lookups through the
+block), and the current `Program` trait reaches `ReferenceManager` and `Listing` only through
+`&mut self`, which a shared handle cannot call. They land with the program arena, where those
+become queries against the program snapshot by address rather than through an object back-link.
+
+### Migration path for the other backings
+
+- **`InstructionDB`**: replace `proto`/`flags`/`flow_override`/`length_override` with an
+  `InstructionRecord`; implement `InstructionSnapshot` over `CodeUnitDbBase` (bytes) and the
+  program context; delegate the shared queries to `InstructionView`. The atomics and `RwLock`s go
+  away once the listing store hands out snapshots (convention 3), and with
+  `InstructionPcodeOverrideImpl` borrowing, the `Weak` self-reference is needed only for
+  `get_instruction_context` — retire that trait method's `Arc` return at the same time. The
+  `InstructionId` for the program store is the DB address key (monotonic, never reused, restores
+  under the same id on undo — the `EquateId` constraint).
+- **`DBTraceInstruction`**: port it on the record from the start. `InstructionAdapterFromPrototype`'s
+  `get_prototype_context`/`as_instruction_arc` workarounds become "build an `InstructionView` over
+  the trace snapshot at this snap".
+- **`PseudoData` / `DataDB`**: `CodeUnit`'s ARENA verdict applies the same way — a `DataRecord`
+  (address, data type, length) resolved against the same snapshot sources; `PseudoCodeUnit` is
+  already the shared pseudo state both would compose.
+
 ## Evaluation: `scripts/pattern_audit.py`
 
 Heuristic (regex, no rustc AST — same tradeoff `sync_check.py` already makes)

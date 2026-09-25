@@ -40,6 +40,7 @@ pub mod incompatible_language_exception;
 pub mod instruction;
 pub mod instruction_iterator;
 pub mod instruction_pcode_override;
+pub mod instruction_record;
 pub mod instruction_stub;
 pub mod label_string;
 pub mod library;
