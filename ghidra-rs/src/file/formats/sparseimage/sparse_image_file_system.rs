@@ -123,4 +123,39 @@ mod tests {
             4096
         );
     }
+
+    #[test]
+    fn tiny_sparse_image_expands_into_payload() {
+        use crate::file::formats::sparseimage::sparse_constants::{CHUNK_TYPE_DONT_CARE, CHUNK_TYPE_RAW};
+        use crate::file::formats::sparseimage::sparse_image_decompressor::SparseImageDecompressor;
+        use crate::format::macos::test_support::VecReader;
+
+        let mut img = Vec::new();
+        for v in [0xED26_FF3Au32] {
+            img.extend_from_slice(&v.to_le_bytes());
+        }
+        for v in [1u16, 0, 28, 12] {
+            img.extend_from_slice(&v.to_le_bytes());
+        }
+        for v in [4u32, 2, 2, 0] {
+            img.extend_from_slice(&v.to_le_bytes());
+        }
+        for (ty, sz, body) in [(CHUNK_TYPE_RAW, 1u32, &b"abcd"[..]), (CHUNK_TYPE_DONT_CARE, 1, &[][..])] {
+            img.extend_from_slice(&ty.to_le_bytes());
+            img.extend_from_slice(&0u16.to_le_bytes());
+            img.extend_from_slice(&sz.to_le_bytes());
+            img.extend_from_slice(&(12 + body.len() as u32).to_le_bytes());
+            img.extend_from_slice(body);
+        }
+        let mut reader = VecReader::little_endian(img);
+        let mut expanded = Vec::new();
+        SparseImageDecompressor::new(&mut reader, &mut expanded).decompress(&DummyMonitor).unwrap();
+
+        let fs = mount(expanded);
+        let monitor = DummyMonitor;
+        let f = fs.lookup(Some("/system.img.raw")).unwrap();
+        assert_eq!(f.get_length(), 8);
+        let bp = fs.get_byte_provider(f, &monitor).unwrap();
+        assert_eq!(bp.read_bytes(0, 8).unwrap(), b"abcd\0\0\0\0");
+    }
 }

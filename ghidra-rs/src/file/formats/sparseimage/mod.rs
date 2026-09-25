@@ -1,4 +1,7 @@
+pub mod chunk_header;
 pub mod sparse_constants;
+pub mod sparse_header;
+pub mod sparse_image_decompressor;
 pub mod sparse_image_file_system;
 
 pub use sparse_constants::{
