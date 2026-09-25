@@ -56,7 +56,6 @@ pub mod param_entry;
 pub mod param_list;
 pub mod param_list_register_out;
 pub mod param_list_standard;
-pub mod param_list_standard_impl;
 pub mod param_list_standard_out;
 pub mod parameter_pieces;
 pub mod parser_context;
