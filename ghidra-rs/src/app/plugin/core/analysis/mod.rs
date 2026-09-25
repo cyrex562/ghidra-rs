@@ -1,6 +1,10 @@
 pub mod analysis_options_updater;
+pub mod analysis_scheduler;
+pub mod analysis_task;
+pub mod analysis_task_list;
 pub mod analysis_worker;
 pub mod analyzer_enablement_state;
+pub mod auto_analysis_manager;
 pub mod auto_analysis_manager_listener;
 pub mod auto_analysis_plugin;
 pub mod reference_address_pair;

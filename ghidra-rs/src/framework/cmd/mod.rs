@@ -1,3 +1,4 @@
+pub mod background_command;
 pub mod binary_analysis_command;
 pub mod command;
 pub mod compound_cmd;

@@ -132,7 +132,7 @@ PARK	trait	0	8	5	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/fe
 DONE	trait	0	8	1	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/FunctionNode.java
 DONE	trait	0	8	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphActionContext.java
 DONE	trait	0	8	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkModel.java
-PARK	trait	0	7	26	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisScheduler.java
+DONE	trait	0	7	26	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisScheduler.java
 PARK	trait	0	7	75	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/ParamInfo.java
 DONE	trait	0	7	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionTableObserver.java
 PARK	trait	0	7	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/MarginProviderSupplier.java
@@ -2425,7 +2425,7 @@ TODO	struct	0	7	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsi
 TODO	struct	0	7	15	app	Ghidra/Features/Base/src/main/java/ghidra/app/analyzers/AbstractBinaryFormatAnalyzer.java
 TODO	struct	0	7	7	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/AbstractAddMemoryBlockCmd.java
 TODO	struct	0	7	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/FunctionVariableStorageConflicts.java
-TODO	struct	1	5	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisTask.java
+DONE	struct	1	5	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisTask.java
 TODO	struct	1	1	52	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/query/AlignedObjectBasedPreviewTableModel.java
 TODO	struct	0	7	55	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/FindReferencesTableModel.java
 TODO	struct	0	7	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/RegisterContextBuilder.java
@@ -2674,7 +2674,7 @@ TODO	struct	1	4	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 TODO	struct	0	5	42	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/AbstractModularizationCmd.java
 TODO	struct	0	5	8	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/AssociateSymbolCmd.java
 TODO	struct	0	5	8	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/SetExternalRefCmd.java
-TODO	struct	0	5	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisTaskList.java
+DONE	struct	0	5	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisTaskList.java
 TODO	struct	0	5	57	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/DWARFAnalyzer.java
 TODO	struct	0	5	93	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/EmbeddedMediaAnalyzer.java
 TODO	struct	0	5	58	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/FindPossibleReferencesPlugin.java
