@@ -329,8 +329,8 @@ TODO	struct	6	7	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/g
 TODO	struct	7	93	4	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractFileExtractorTask.java
 TODO	struct	8	94	4	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemIndexHelper.java
 TODO	struct	7	92	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractFileSystem.java
-TODO	struct	8	93	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/SingleFileSystemIndexHelper.java
-TODO	struct	7	96	8	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractSinglePayloadFileSystem.java
+DONE	struct	8	93	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/SingleFileSystemIndexHelper.java
+DONE	struct	7	96	8	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractSinglePayloadFileSystem.java
 TODO	struct	6	6	24	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemFactoryMgr.java
 TODO	struct	0	402	24	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramSelection.java
 TODO	struct	3	77	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/BackgroundCommand.java

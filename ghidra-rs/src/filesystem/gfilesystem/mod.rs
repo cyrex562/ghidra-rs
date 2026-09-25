@@ -1,3 +1,4 @@
+pub mod abstract_single_payload_file_system;
 pub mod annotations;
 pub mod crypto;
 pub mod factory;
@@ -19,3 +20,4 @@ pub mod g_file_system_iterator;
 pub mod g_file_system_program_provider;
 pub mod refd_file;
 pub mod refd_input_stream;
+pub mod single_file_system_index_helper;
