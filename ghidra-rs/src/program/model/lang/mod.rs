@@ -60,6 +60,7 @@ pub mod param_list_standard_out;
 pub mod parameter_pieces;
 pub mod parser_context;
 pub mod pcode_inject_library;
+pub mod pcode_parser;
 pub mod processor;
 pub mod processor_context;
 pub mod processor_context_impl;

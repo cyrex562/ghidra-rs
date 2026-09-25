@@ -26,6 +26,10 @@
 //!    both constructors and `macro` definitions.
 //! 7. [`tree_walk`] -- visitor/driver scaffold for the pass that will drive
 //!    the separately-ported `pcodeCPort` backend (`SleighCompiler.g`).
+//! 8. [`semantic_compiler`] -- the semantic-section rules of
+//!    `SleighCompiler.g`, driving a `pcodeCPort` `PcodeCompile` over a
+//!    [`SemanticBody`]; used by `PcodeParser` for compiler-spec p-code
+//!    snippets.
 //!
 //! // TODO(sleigh-frontend): increment 4 -- drive the pcodeCPort backend
 //! // (`SleighCompile`/`PcodeCompile`) from the tree walk.
@@ -38,6 +42,7 @@ pub mod parser;
 pub mod preprocessor;
 pub mod preprocessor_definitions;
 pub mod semantic_lexer;
+pub mod semantic_compiler;
 pub mod semantic_parser;
 pub mod tree_walk;
 
@@ -49,6 +54,7 @@ pub use parser::{ParseError, SleighParser};
 pub use preprocessor::{PreprocessorError, PreprocessorWriter, SleighPreprocessor};
 pub use preprocessor_definitions::{HashMapPreprocessorDefinitions, PreprocessorDefinitions};
 pub use semantic_lexer::{NumberMode, SemanticLexer};
+pub use semantic_compiler::{compile_semantic, SemanticResult};
 pub use semantic_parser::SemanticParser;
 pub use tree_walk::{walk_spec, SpecVisitor};
 

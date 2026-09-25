@@ -181,7 +181,10 @@ impl<'a> SemanticParser<'a> {
         let text = t.text().unwrap_or("");
         // TODO(sleigh-frontend): the Java front-end carries these as
         // RadixBigInteger; i64 covers real specs so far (see ast::Integer).
-        let value = i64::from_str_radix(&text[skip..], radix).map_err(|e| ParseError {
+        // Literals are read as unsigned 64-bit values (Java's `check` admits
+        // anything up to 64 bits, e.g. `0xffffffffffffffff`) and kept as the
+        // same bit pattern in the `i64`.
+        let value = u64::from_str_radix(&text[skip..], radix).map(|v| v as i64).map_err(|e| ParseError {
             message: format!("invalid integer literal '{text}': {e}"),
             line: t.line(),
             location: t.location().cloned(),
@@ -216,6 +219,21 @@ impl<'a> SemanticParser<'a> {
                     return Ok(SemanticBody { statements });
                 }
                 TokenType::Eof => return Err(self.err_here("unterminated semantic body")),
+                _ => statements.push(self.parse_statement()?),
+            }
+        }
+    }
+
+    /// `semantic : code_block` for a stand-alone p-code snippet (the body of
+    /// a compiler-spec `<pcode>` / `<callfixup>` injection), which has no
+    /// surrounding braces: statements run to end of input. This is the entry
+    /// `PcodeParser.compilePcode` uses (`parser.semantic()` with the lexer
+    /// pushed into SEMANTIC mode).
+    pub fn parse_semantic_snippet(&mut self) -> PResult<SemanticBody> {
+        let mut statements = Vec::new();
+        loop {
+            match self.peek_ty() {
+                TokenType::Eof => return Ok(SemanticBody { statements }),
                 _ => statements.push(self.parse_statement()?),
             }
         }

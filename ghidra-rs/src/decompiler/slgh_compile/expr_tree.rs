@@ -117,6 +117,105 @@ pub trait ExprTree {
     }
 }
 
+/// The concrete flattened expression tree: the Java `ExprTree` class itself.
+///
+/// The [`ExprTree`] trait above keeps the Java class's behavior (`setOutput`, `toVector`,
+/// `appendParams`) independent of storage; this is the storage the p-code compiler
+/// ([`crate::decompiler::slgh_compile::PcodeCompile`]) builds its expressions in. Java keeps the
+/// "unnamed" flag on each `VarnodeTpl` (`unnamed_flag`); the in-repo [`VarnodeTpl`] does not carry
+/// it (see that type's docs), so the flag of the expression's current output rides alongside it
+/// here (`out_unnamed`), copied exactly where Java's clone constructor `VarnodeTpl(Location,
+/// VarnodeTpl)` would copy it. After [`ExprTree::set_output`] the flag keeps its previous value
+/// (the trait cannot see the new output's flag); every Java caller of `setOutput` immediately
+/// claims the ops with `toVector` and discards the expression, so the flag is never read again.
+#[derive(Debug, Clone)]
+pub struct ExprTreeImpl {
+    location: Location,
+    ops: Option<Vec<OpTpl>>,
+    outvn: Option<VarnodeTpl>,
+    out_unnamed: bool,
+}
+
+impl ExprTreeImpl {
+    /// An expression with neither ops nor output (Java's `ExprTree(Location)`).
+    pub fn new(location: Location) -> Self {
+        Self {
+            location,
+            ops: None,
+            outvn: None,
+            out_unnamed: false,
+        }
+    }
+
+    /// An expression that is just the (named) varnode `vn`, with an empty op list (Java's
+    /// `ExprTree(Location, VarnodeTpl)`).
+    pub fn with_varnode(location: Location, vn: VarnodeTpl) -> Self {
+        Self::with_output(location, Vec::new(), vn, false)
+    }
+
+    /// An expression consisting of the single op `op`, whose output (if any) becomes the
+    /// expression's output (Java's `ExprTree(Location, OpTpl)`). `out_unnamed` is the unnamed flag
+    /// of `op`'s output varnode, which Java's clone constructor would copy.
+    pub fn with_op(location: Location, op: OpTpl, out_unnamed: bool) -> Self {
+        let outvn = op.get_out().cloned();
+        Self {
+            location,
+            ops: Some(vec![op]),
+            out_unnamed: outvn.is_some() && out_unnamed,
+            outvn,
+        }
+    }
+
+    /// An expression with the given ops and output varnode (whose unnamed flag is
+    /// `out_unnamed`). This is the state every `PcodeCompile` builder leaves an expression in.
+    pub fn with_output(
+        location: Location,
+        ops: Vec<OpTpl>,
+        outvn: VarnodeTpl,
+        out_unnamed: bool,
+    ) -> Self {
+        Self {
+            location,
+            ops: Some(ops),
+            outvn: Some(outvn),
+            out_unnamed,
+        }
+    }
+
+    /// Replaces the expression's output with `outvn` (unnamed flag `out_unnamed`) -- Java's
+    /// direct `expr.outvn = new VarnodeTpl(location, outvn)` field writes.
+    pub fn set_out(&mut self, outvn: Option<VarnodeTpl>, out_unnamed: bool) {
+        self.out_unnamed = outvn.is_some() && out_unnamed;
+        self.outvn = outvn;
+    }
+}
+
+impl ExprTree for ExprTreeImpl {
+    fn location(&self) -> &Location {
+        &self.location
+    }
+
+    fn ops(&self) -> Option<&Vec<OpTpl>> {
+        self.ops.as_ref()
+    }
+
+    fn ops_mut(&mut self) -> &mut Option<Vec<OpTpl>> {
+        &mut self.ops
+    }
+
+    fn out_varnode(&self) -> Option<&VarnodeTpl> {
+        self.outvn.as_ref()
+    }
+
+    fn out_varnode_mut(&mut self) -> &mut Option<VarnodeTpl> {
+        &mut self.outvn
+    }
+
+    fn out_is_unnamed(&self) -> bool {
+        self.outvn.is_some() && self.out_unnamed
+    }
+}
+
 /// Creates an op expression with the entire list of expression inputs.
 ///
 /// Mirrors the static, package-private `ExprTree.appendParams`: flattens every parameter's ops
@@ -330,5 +429,28 @@ mod tests {
             assert!(param.ops().is_none());
             assert!(param.out_varnode().is_none());
         }
+    }
+
+    #[test]
+    fn expr_tree_impl_constructors_follow_java() {
+        let empty = ExprTreeImpl::new(loc());
+        assert!(empty.ops().is_none() && empty.out_varnode().is_none());
+
+        let named = ExprTreeImpl::with_varnode(loc(), real_varnode(4, 4));
+        assert_eq!(named.ops().unwrap().len(), 0);
+        assert!(!named.out_is_unnamed());
+
+        let mut op = OpTpl::with_opcode(OpCode::CpuiCopy);
+        op.set_output(real_varnode(8, 4));
+        let mut from_op = ExprTreeImpl::with_op(loc(), op, true);
+        assert!(from_op.out_is_unnamed());
+        // An unnamed output is replaced in place rather than copied.
+        from_op.set_output(loc(), real_varnode(12, 4)).unwrap();
+        assert_eq!(from_op.ops().unwrap().len(), 1);
+        assert_eq!(from_op.ops().unwrap()[0].get_out().unwrap().offset.value_real, 12);
+
+        let mut no_out = ExprTreeImpl::with_op(loc(), OpTpl::with_opcode(OpCode::CpuiBranch), true);
+        assert!(!no_out.out_is_unnamed());
+        assert!(no_out.set_output(loc(), real_varnode(0, 4)).is_err());
     }
 }

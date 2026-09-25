@@ -5,6 +5,7 @@ pub mod expr_tree;
 pub mod field_context;
 pub mod field_quality;
 pub mod optimize_record;
+pub mod pcode_compile;
 pub mod regression;
 pub mod rtl_pair;
 pub mod section_vector;
@@ -17,7 +18,10 @@ pub mod star_quality;
 pub use consistency_checker::ConsistencyChecker;
 pub use directory_visitor::DirectoryVisitor;
 pub use error_warning_reporter::ErrorWarningReporter;
-pub use expr_tree::{append_params, ExprTree};
+pub use expr_tree::{append_params, ExprTree, ExprTreeImpl};
+pub use pcode_compile::{
+    ApplyResult, PcodeCompile, PcodeCompileBase, SemanticSymbol,
+};
 pub use field_context::FieldContext;
 pub use field_quality::FieldQuality;
 pub use optimize_record::OptimizeRecord;
