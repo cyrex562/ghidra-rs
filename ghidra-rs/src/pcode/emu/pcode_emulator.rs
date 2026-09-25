@@ -59,20 +59,28 @@ use crate::program::model::lang::sleigh::SleighLanguage;
 
 /// Builds a thread's instruction decoder over the machine's shared state: the stand-in for Java's
 /// `createInstructionDecoder(sharedState)`, whose `SleighInstructionDecoder` is not ported.
-pub type InstructionDecoderFactory = Arc<
-    dyn Fn(&Arc<dyn Language>, &SharedPcodeExecutorState<BytesState>) -> Box<dyn InstructionDecoder>
+///
+/// `S` is the machine's shared state, as its threads hold it; it defaults to the concrete bytes
+/// state of a [`PcodeEmulator`].
+pub type InstructionDecoderFactory<S = BytesState> = Arc<
+    dyn Fn(&Arc<dyn Language>, &SharedPcodeExecutorState<S>) -> Box<dyn InstructionDecoder>
         + Send
         + Sync,
 >;
 
-/// What a [`PcodeEmulator`] needs to build its threads that Java derives from the language: see
-/// the module docs.
-#[derive(Clone)]
-pub struct ThreadDecoding {
+/// What a machine needs to build its threads that Java derives from the language: see the module
+/// docs. `S` is as for [`InstructionDecoderFactory`].
+pub struct ThreadDecoding<S = BytesState> {
     /// The language a thread's executor and decoder bind to; it must declare a program counter.
     pub exec_language: Arc<dyn Language>,
     /// Builds each thread's instruction decoder.
-    pub decoder: InstructionDecoderFactory,
+    pub decoder: InstructionDecoderFactory<S>,
+}
+
+impl<S> Clone for ThreadDecoding<S> {
+    fn clone(&self) -> Self {
+        Self { exec_language: Arc::clone(&self.exec_language), decoder: Arc::clone(&self.decoder) }
+    }
 }
 
 /// A p-code machine which executes on concrete bytes and incorporates per-architecture state

@@ -1,458 +1,316 @@
 //! Port of `ghidra.pcode.emu.symz3.SymZ3PcodeThread`.
 //!
-//! # Deviations from Java
+//! # Shape
 //!
 //! Java's `SymZ3PcodeThread extends AuxPcodeThread<SymValueZ3> implements
-//! InternalSymZ3RecordsPreconditions`. Its surface splits into two very different kinds of
-//! member, and this port treats them very differently:
+//! InternalSymZ3RecordsPreconditions`. Following the emulator's thread convention (see
+//! [`default_pcode_thread`](crate::pcode::emu::default_pcode_thread)'s module docs), its overrides
+//! are [`SymZ3ThreadHooks`], which hold the [`AuxThreadHooks`] of its superclass, and the thread
+//! is [`SymZ3PcodeThread`] = [`DefaultPcodeThread`] over those hooks, with the state delegates the
+//! [`SymZ3PartsFactory`] makes: the emulator's paired memory behind its
+//! [`SharedPcodeExecutorState`] handle, and the thread's own paired registers.
 //!
-//! * **Execution-machinery overrides** (`createInstructionDecoder`, `createThreadState`,
-//!   `getState()`'s covariant narrowing): these wire the thread into the surrounding emulator
-//!   (decoder, machine, counter, injects). `createInstructionDecoder` specifically needs
-//!   `SleighInstructionDecoder`, which is not ported (the identical blocker
-//!   [`JitPcodeThread`](crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread)'s own module
-//!   docs describe for the same reason). `createThreadState`'s return type,
-//!   `SymZ3ThreadPcodeExecutorState`, is Java's covariant-narrowing subclass of the already-ported
-//!   generic [`ThreadPcodeExecutorState`] -- since Rust generics do not erase `S`/`L` the way
-//!   Java's `PcodeExecutorState<T>` field type does, `ThreadPcodeExecutorState<(Vec<u8>,
-//!   SymValueZ3), S, L>` (used directly, with `S`/`L` bounded to
-//!   [`SymZ3PairedPcodeExecutorState`]) already **is** the narrowed type Java needs a subclass
-//!   for, so no separate `SymZ3ThreadPcodeExecutorState` port or stub is needed at all. None of
-//!   this machinery is ported here; see [`Self::with_state`] for what this type builds instead.
-//! * **State-touching convenience members** (`getSharedConcreteState`/`getSharedSymbolicState`/
-//!   `getLocalConcreteState`/`getLocalSymbolicState`, `addPrecondition`/`getPreconditions`,
-//!   `addInstruction`/`addOp`): these only need access to the thread's paired (concrete, symbolic)
-//!   state, not the full execution machinery above. This port provides them for real, backed by
-//!   [`Self::with_state`] rather than the (blocked) full constructor.
-//! * **Register/memory comparison debug tools** (`printRegisterComparison`/`registerComparison`/
-//!   `printMemoryComparisonRegPlusOffset`/`memoryComparisonRegPlusOffset`): these additionally need
-//!   a live `Language` (for `getRegister`/`getAddressFactory`), a concrete arithmetic, and Z3
-//!   simplification, none of which this thread otherwise holds or needs. Not ported; a caller
-//!   that already has all of that context can reimplement them inline more simply than this type
-//!   could re-expose it.
+//! * `createInstructionDecoder` wraps the base decoder in one that records each decoded
+//!   instruction against the emulator's shared symbolic state (Java's anonymous
+//!   `SleighInstructionDecoder` subclass).
+//! * `createThreadState`/`getState()` narrow the thread's state to `SymZ3ThreadPcodeExecutorState`.
+//!   The Rust thread state is already typed by its delegates, so that narrowing needs no type of
+//!   its own.
+//! * The state-touching members (`getSharedSymbolicState` and friends, `addInstruction`/`addOp`,
+//!   `addPrecondition`/`getPreconditions`) are inherent methods on [`SymZ3PcodeThread`]. Java hands
+//!   out the pieces themselves; the Rust thread's state sits behind locks, so the getters run a
+//!   closure against the piece instead (see
+//!   [`SharedPcodeExecutorState::with_symbolic`](crate::pcode::emu::symz3::sym_z3_paired_pcode_executor_state)).
 //!
-//! Four other in-repo files ([`RecInstruction`]/[`RecOp`](crate::pcode::emu::symz3::sym_z3_records_execution),
-//! [`InternalSymZ3RecordsExecution`](crate::pcode::emu::symz3::internal_sym_z3_records_execution),
-//! [`SymZ3PcodeEmulatorTrait`](crate::pcode::emu::symz3::sym_z3_pcode_emulator_trait)) already
-//! store or return a bare, non-generic `SymZ3PcodeThread` value (a placeholder, prior to this
-//! port, modeling just Java's inherited `getName()`) and clone it freely, standing in for Java's
-//! shared-reference semantics. Making this type generic over `S`/`L` -- the straightforward
-//! reading of "wrap an `AuxPcodeThread<SymValueZ3, S, L>`" -- would force that genericity onto all
-//! four of those already-ported files, `dyn`-hostile since [`AuxPcodeThread`] cannot be boxed
-//! (it is not itself object-safe). Instead, this type stays non-generic: its (optional) state is
-//! type-erased behind the small local [`SymZ3ThreadState`] trait and shared via `Arc<Mutex<_>>`,
-//! so [`Clone`] is cheap (an `Arc` bump) and, faithfully to Java's reference semantics, every
-//! clone observes the same mutations.
+//! # Identity in records
 //!
-//! `add_instruction`/`add_op`/`add_precondition` all need to *mutate* the paired state's symbolic
-//! side reached through [`SymZ3PairedPcodeExecutorState::get_right`], which only exposes `&self`
-//! access; [`ThreadPcodeExecutorState::get_shared_state_mut`]/[`SymZ3PairedPcodeExecutorState::get_right_mut`]
-//! are small additive extensions this port made to those already-real types for exactly this need
-//! (see their own docs).
+//! Java's `RecInstruction`/`RecOp` hold the thread object and read only its name. A Rust thread is
+//! owned by its emulator, under that name (see
+//! [`ThreadList`](crate::pcode::emu::abstract_pcode_machine::ThreadList)), so records hold a
+//! [`SymZ3ThreadId`]: the thread's name, which is its key in the emulator.
+//!
+//! # Not ported
+//!
+//! The register/memory comparison debug tools (`printRegisterComparison`/`registerComparison`/
+//! `printMemoryComparisonRegPlusOffset`/`memoryComparisonRegPlusOffset`) additionally need Z3
+//! simplification, which the [`Z3Context`](crate::feature::seam_stubs::Z3Context) seam does not
+//! expose; a caller can compose them from [`SymZ3PcodeThread::with_local_concrete_state`] and
+//! [`SymZ3PcodeThread::with_local_symbolic_state`].
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
+use crate::feature::symz3::model::sym_value_z3::SymValueZ3;
+use crate::pcode::emu::auxiliary::aux_pcode_thread::{AuxThreadHooks, AuxThreadParts};
+use crate::pcode::emu::default_pcode_thread::{
+    DefaultPcodeThread, PcodeThreadExecutor, ThreadCore, ThreadHooks,
+};
+use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 use crate::pcode::emu::symz3::internal_sym_z3_records_execution::InternalSymZ3RecordsExecution;
 use crate::pcode::emu::symz3::internal_sym_z3_records_preconditions::InternalSymZ3RecordsPreconditions;
+use crate::pcode::emu::symz3::state::sym_z3_pcode_executor_state::SymZ3PcodeExecutorState;
 use crate::pcode::emu::symz3::sym_z3_paired_pcode_executor_state::SymZ3PairedPcodeExecutorState;
+use crate::pcode::emu::symz3::sym_z3_parts_factory::SymZ3PartsFactory;
 use crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::SymZ3PcodeExecutorStatePiece;
 use crate::pcode::emu::symz3::sym_z3_records_preconditions::SymZ3RecordsPreconditions;
-use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
+use crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState;
+use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
 use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
-use crate::feature::symz3::model::sym_value_z3::SymValueZ3;
+use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
+use crate::pcode::seam_stubs::{PseudoInstruction, RegisterValue};
+use crate::program::model::address::Address;
+use crate::program::model::lang::language::Language;
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::pcode::PcodeOp;
 
-/// Type-erased access to a thread's paired (concrete, symbolic) shared/local state.
-///
-/// Not a port of any Java type -- see the module docs for why [`SymZ3PcodeThread`] needs this
-/// rather than storing `ThreadPcodeExecutorState<(Vec<u8>, SymValueZ3), S, L>` directly.
-trait SymZ3ThreadState {
-    fn shared_state(&self) -> &dyn SymZ3PairedPcodeExecutorState;
-    fn shared_state_mut(&mut self) -> &mut dyn SymZ3PairedPcodeExecutorState;
-    fn local_state(&self) -> &dyn SymZ3PairedPcodeExecutorState;
-    fn local_state_mut(&mut self) -> &mut dyn SymZ3PairedPcodeExecutorState;
+type Pair = (Vec<u8>, SymValueZ3);
+
+/// The paired state of a SymZ3 emulator: its memory, and each thread's registers.
+pub type SymZ3State = SymZ3PcodeExecutorState<NoPcodeStateCallbacks>;
+
+/// The emulator's paired memory, as each of its threads holds it.
+pub type SymZ3SharedState = SharedPcodeExecutorState<SymZ3State>;
+
+/// A SymZ3 thread, as its emulator's records refer to it: by the name it is kept under in its
+/// emulator. See the module docs.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct SymZ3ThreadId(Arc<str>);
+
+impl SymZ3ThreadId {
+    /// The thread named `name`.
+    pub fn new(name: impl AsRef<str>) -> Self {
+        Self(Arc::from(name.as_ref()))
+    }
+
+    /// Java: `thread.getName()`.
+    pub fn get_name(&self) -> &str {
+        &self.0
+    }
 }
 
-impl<S, L> SymZ3ThreadState for ThreadPcodeExecutorState<(Vec<u8>, SymValueZ3), S, L>
-where
-    S: SymZ3PairedPcodeExecutorState + 'static,
-    L: SymZ3PairedPcodeExecutorState + 'static,
-{
-    fn shared_state(&self) -> &dyn SymZ3PairedPcodeExecutorState {
-        self.get_shared_state()
+/// Java's anonymous `SleighInstructionDecoder` subclass: a decoder that records each instruction
+/// it decodes against the emulator's shared symbolic state, as `addInstruction(instruction)`.
+struct SymZ3InstructionDecoder {
+    decoder: Box<dyn InstructionDecoder>,
+    thread: SymZ3ThreadId,
+    shared: SymZ3SharedState,
+}
+
+impl InstructionDecoder for SymZ3InstructionDecoder {
+    fn get_language(&self) -> Arc<dyn Language> {
+        self.decoder.get_language()
     }
-    fn shared_state_mut(&mut self) -> &mut dyn SymZ3PairedPcodeExecutorState {
-        self.get_shared_state_mut()
+
+    fn decode_instruction(
+        &mut self,
+        address: &Address,
+        context: Option<&dyn RegisterValue>,
+    ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
+        let instruction = self.decoder.decode_instruction(address, context)?;
+        // The decoded `PseudoInstruction` is not (yet) an `Instruction`; the decoder keeps the one
+        // it decoded, as `DefaultPcodeThread` itself reads it back.
+        if let Some(decoded) = self.decoder.get_last_instruction() {
+            let thread = &self.thread;
+            self.shared.with_symbolic_mut(|symbolic| symbolic.add_instruction(thread, decoded));
+        }
+        Ok(instruction)
     }
-    fn local_state(&self) -> &dyn SymZ3PairedPcodeExecutorState {
-        self.get_local_state()
+
+    fn branched(&mut self, address: &Address) {
+        self.decoder.branched(address);
     }
-    fn local_state_mut(&mut self) -> &mut dyn SymZ3PairedPcodeExecutorState {
-        self.get_local_state_mut()
+
+    fn get_last_instruction(&self) -> Option<Arc<dyn Instruction>> {
+        self.decoder.get_last_instruction()
+    }
+
+    fn get_last_length_with_delays(&self) -> i32 {
+        self.decoder.get_last_length_with_delays()
+    }
+}
+
+/// The overrides of Java's `SymZ3PcodeThread`, over those of its superclass `AuxPcodeThread`.
+pub struct SymZ3ThreadHooks {
+    parent: AuxThreadHooks<SymValueZ3, SymZ3PartsFactory>,
+    thread: SymZ3ThreadId,
+    shared: SymZ3SharedState,
+}
+
+impl SymZ3ThreadHooks {
+    /// The overrides for the thread named `thread` over the emulator's memory `shared`, whose
+    /// parts come from `parts_factory`.
+    pub fn new(parts_factory: Arc<SymZ3PartsFactory>, thread: SymZ3ThreadId, shared: SymZ3SharedState) -> Self {
+        Self { parent: AuxThreadHooks::new(parts_factory, None), thread, shared }
+    }
+
+    /// The superclass's overrides.
+    pub fn aux(&self) -> &AuxThreadHooks<SymValueZ3, SymZ3PartsFactory> {
+        &self.parent
+    }
+}
+
+impl ThreadHooks<Pair, SymZ3SharedState, SymZ3State> for SymZ3ThreadHooks {
+    /// Port of the override: the base decoder, recording each decoded instruction.
+    fn create_instruction_decoder(
+        &mut self,
+        decoder: Box<dyn InstructionDecoder>,
+    ) -> Box<dyn InstructionDecoder> {
+        let decoder = self.parent.create_instruction_decoder(decoder);
+        Box::new(SymZ3InstructionDecoder {
+            decoder,
+            thread: self.thread.clone(),
+            shared: self.shared.clone(),
+        })
+    }
+
+    fn create_userop_library(
+        &mut self,
+        thread: &ThreadCore<Pair, SymZ3SharedState, SymZ3State>,
+        library: Box<dyn PcodeUseropLibrary<Pair>>,
+    ) -> Box<dyn PcodeUseropLibrary<Pair>> {
+        self.parent.create_userop_library(thread, library)
+    }
+
+    fn create_executor(
+        &mut self,
+        thread: &ThreadCore<Pair, SymZ3SharedState, SymZ3State>,
+    ) -> PcodeThreadExecutor<Pair> {
+        self.parent.create_executor(thread)
+    }
+
+    fn pre_execute_instruction(&mut self, thread: &mut ThreadCore<Pair, SymZ3SharedState, SymZ3State>) {
+        self.parent.pre_execute_instruction(thread);
+    }
+
+    fn post_execute_instruction(&mut self, thread: &mut ThreadCore<Pair, SymZ3SharedState, SymZ3State>) {
+        self.parent.post_execute_instruction(thread);
+    }
+
+    fn on_missing_userop_def(
+        &mut self,
+        thread: &mut ThreadCore<Pair, SymZ3SharedState, SymZ3State>,
+        op: &PcodeOp,
+        op_name: &str,
+    ) -> bool {
+        self.parent.on_missing_userop_def(thread, op, op_name)
+    }
+
+    fn override_counter(&mut self, thread: &mut ThreadCore<Pair, SymZ3SharedState, SymZ3State>, counter: &Address) {
+        self.parent.override_counter(thread, counter);
     }
 }
 
 /// A thread of SymZ3 (symbolic Z3) p-code emulation.
 ///
-/// Port of `ghidra.pcode.emu.symz3.SymZ3PcodeThread`. See the module docs for the split between
-/// what is and is not ported here.
-#[derive(Clone)]
-pub struct SymZ3PcodeThread {
-    name: String,
-    state: Option<Arc<Mutex<dyn SymZ3ThreadState>>>,
-}
+/// Port of `ghidra.pcode.emu.symz3.SymZ3PcodeThread`. See the module docs.
+pub type SymZ3PcodeThread = DefaultPcodeThread<Pair, SymZ3SharedState, SymZ3State, SymZ3ThreadHooks>;
 
-impl SymZ3PcodeThread {
-    /// Construct a thread with only a name, no state.
+impl DefaultPcodeThread<Pair, SymZ3SharedState, SymZ3State, SymZ3ThreadHooks> {
+    /// Construct a new thread with the given name belonging to the given emulator.
     ///
-    /// This is what [`SymZ3PcodeEmulatorTrait`](crate::pcode::emu::symz3::sym_z3_pcode_emulator_trait::SymZ3PcodeEmulatorTrait)
-    /// implementors can build without the unported execution machinery (see the module docs);
-    /// most methods below panic on a thread built this way. This mirrors the placeholder this
-    /// port replaces and [`JitPcodeThread::named`](crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread::named)'s
-    /// identical accommodation.
-    pub fn named(name: impl Into<String>) -> Self {
-        Self { name: name.into(), state: None }
-    }
-
-    /// Construct a thread backed by real paired shared/local state.
-    ///
-    /// Not a direct port of any Java constructor (Java's sole constructor is `(String,
-    /// AuxPcodeEmulator<SymValueZ3>)`, which derives this same shared/local pairing from the
-    /// machine via the unported execution machinery -- see the module docs); this is what a
-    /// caller with the pieces `AuxPcodeThread::new` would otherwise need can build today.
-    pub fn with_state<S, L>(name: impl Into<String>, shared_state: S, local_state: L) -> Self
-    where
-        S: SymZ3PairedPcodeExecutorState + 'static,
-        L: SymZ3PairedPcodeExecutorState + 'static,
-    {
-        let state: ThreadPcodeExecutorState<(Vec<u8>, SymValueZ3), S, L> =
-            ThreadPcodeExecutorState::new(shared_state, local_state);
-        Self { name: name.into(), state: Some(Arc::new(Mutex::new(state))) }
-    }
-
-    /// Java: `PcodeThread.getName()`, inherited.
-    pub fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    /// The state this thread was built with, or a panic naming what's missing.
+    /// Port of `SymZ3PcodeThread(String, AuxPcodeEmulator<SymValueZ3>)`; `parts` is what the
+    /// constructor chain reads off the emulator (see [`AuxThreadParts`]), and `parts_factory` is
+    /// the emulator's parts factory.
     ///
     /// # Panics
     ///
-    /// If this thread was built via [`Self::named`] (no state).
-    fn require_state(&self) -> &Arc<Mutex<dyn SymZ3ThreadState>> {
-        self.state.as_ref().expect(
-            "this SymZ3PcodeThread has no state; construct it via SymZ3PcodeThread::with_state \
-             (a name-only thread, from SymZ3PcodeThread::named, has none -- see the module docs)",
-        )
+    /// If the language has no program counter, as [`DefaultPcodeThread::new`] requires.
+    pub fn new_symz3(
+        name: impl Into<String>,
+        parts: AuxThreadParts<SymValueZ3, SymZ3State, SymZ3State>,
+        parts_factory: Arc<SymZ3PartsFactory>,
+    ) -> Self {
+        let name = name.into();
+        let AuxThreadParts { machine, exec_language, shared_state, local_state, decoder } = parts;
+        let hooks = SymZ3ThreadHooks::new(parts_factory, SymZ3ThreadId::new(&name), shared_state.clone());
+        DefaultPcodeThread::new(name, machine, exec_language, shared_state, local_state, decoder, hooks)
     }
 
-    /// Run `f` against the shared symbolic state.
-    ///
-    /// Java: `getSharedSymbolicState()`, but see the module docs for why this cannot simply
-    /// return `&SymZ3PcodeExecutorStatePiece` (it would borrow from a lock guard that does not
-    /// outlive the call).
+    /// This thread, as the emulator's records refer to it.
+    pub fn get_thread_id(&self) -> SymZ3ThreadId {
+        self.hooks().thread.clone()
+    }
+
+    /// The emulator's paired memory, as this thread holds it.
+    pub fn shared_state_handle(&self) -> SymZ3SharedState {
+        self.hooks().shared.clone()
+    }
+
+    /// Run `f` against the shared (memory) concrete piece. Java: `getSharedConcreteState()`.
+    pub fn with_shared_concrete_state<R>(
+        &self,
+        f: impl FnOnce(&dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>) -> R,
+    ) -> R {
+        self.hooks().shared.with_concrete(f)
+    }
+
+    /// Run `f` against the shared (memory) symbolic piece. Java: `getSharedSymbolicState()`.
     pub fn with_shared_symbolic_state<R>(
         &self,
         f: impl FnOnce(&SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>) -> R,
     ) -> R {
-        let guard = self.require_state().lock().expect("SymZ3PcodeThread state lock poisoned");
-        f(guard.shared_state().get_right())
+        self.hooks().shared.with_symbolic(f)
     }
 
-    /// Mutable counterpart to [`Self::with_shared_symbolic_state`].
-    pub fn with_shared_symbolic_state_mut<R>(
+    /// Run `f` against the local (register) concrete piece. Java: `getLocalConcreteState()`.
+    pub fn with_local_concrete_state<R>(
         &self,
-        f: impl FnOnce(&mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>) -> R,
+        f: impl FnOnce(&dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>) -> R,
     ) -> R {
-        let mut guard = self.require_state().lock().expect("SymZ3PcodeThread state lock poisoned");
-        f(guard.shared_state_mut().get_right_mut())
+        f(self.core().get_state().get_local_state().get_left())
     }
 
-    /// Run `f` against the local symbolic state.
-    ///
-    /// Java: `getLocalSymbolicState()`. See [`Self::with_shared_symbolic_state`]'s docs.
+    /// Run `f` against the local (register) symbolic piece. Java: `getLocalSymbolicState()`.
     pub fn with_local_symbolic_state<R>(
         &self,
         f: impl FnOnce(&SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>) -> R,
     ) -> R {
-        let guard = self.require_state().lock().expect("SymZ3PcodeThread state lock poisoned");
-        f(guard.local_state().get_right())
+        f(self.core().get_state().get_local_state().get_right())
     }
 
-    /// Mutable counterpart to [`Self::with_local_symbolic_state`].
+    /// Run `f` against the local (register) symbolic piece, for writing.
     pub fn with_local_symbolic_state_mut<R>(
         &self,
         f: impl FnOnce(&mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>) -> R,
     ) -> R {
-        let mut guard = self.require_state().lock().expect("SymZ3PcodeThread state lock poisoned");
-        f(guard.local_state_mut().get_right_mut())
+        f(self.core().get_state().get_local_state_mut().get_right_mut())
     }
 
-    /// Java: `getSharedConcreteState()`.
-    pub fn with_shared_concrete_state<R>(
-        &self,
-        f: impl FnOnce(&dyn crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>) -> R,
-    ) -> R {
-        let guard = self.require_state().lock().expect("SymZ3PcodeThread state lock poisoned");
-        f(guard.shared_state().get_left())
-    }
-
-    /// Java: `getLocalConcreteState()`.
-    pub fn with_local_concrete_state<R>(
-        &self,
-        f: impl FnOnce(&dyn crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>) -> R,
-    ) -> R {
-        let guard = self.require_state().lock().expect("SymZ3PcodeThread state lock poisoned");
-        f(guard.local_state().get_left())
-    }
-
-    /// Java: `addInstruction(Instruction)`. Records the instruction against this thread's shared
-    /// symbolic state, exactly as `getSharedSymbolicState().addInstruction(this, inst)`.
+    /// Java: `addInstruction(Instruction)`, which is
+    /// `getSharedSymbolicState().addInstruction(this, inst)`.
     pub fn add_instruction(&self, inst: Arc<dyn Instruction>) {
-        let recorded_as = self.clone();
-        self.with_shared_symbolic_state_mut(|state| {
-            InternalSymZ3RecordsExecution::add_instruction(state, &recorded_as, inst)
-        });
+        let thread = self.get_thread_id();
+        self.hooks().shared.with_symbolic_mut(|symbolic| symbolic.add_instruction(&thread, inst));
     }
 
-    /// Java: `addOp(PcodeOp)`.
+    /// Java: `addOp(PcodeOp)`, which is `getSharedSymbolicState().addOp(this, op)`.
     pub fn add_op(&self, op: PcodeOp) {
-        let recorded_as = self.clone();
-        self.with_shared_symbolic_state_mut(|state| {
-            InternalSymZ3RecordsExecution::add_op(state, &recorded_as, op)
-        });
+        let thread = self.get_thread_id();
+        self.hooks().shared.with_symbolic_mut(|symbolic| symbolic.add_op(&thread, op));
     }
 }
 
 impl InternalSymZ3RecordsPreconditions for SymZ3PcodeThread {
     /// Java: `addPrecondition(String)`, delegating to `getLocalSymbolicState().addPrecondition`.
     fn add_precondition(&mut self, precondition: String) {
-        self.with_local_symbolic_state_mut(|state| {
-            InternalSymZ3RecordsPreconditions::add_precondition(state, precondition)
-        });
+        self.with_local_symbolic_state_mut(|symbolic| symbolic.add_precondition(precondition));
     }
 }
 
 impl SymZ3RecordsPreconditions for SymZ3PcodeThread {
     /// Java: `getPreconditions()`, delegating to `getLocalSymbolicState().getPreconditions()`.
     fn get_preconditions(&self) -> Vec<String> {
-        self.with_local_symbolic_state(|state| SymZ3RecordsPreconditions::get_preconditions(state))
+        self.with_local_symbolic_state(|symbolic| symbolic.get_preconditions())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::testing::piece;
-    use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
-    use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason};
-    use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
-    use crate::program::model::address::{Address, AddressSpace};
-    use crate::program::model::lang::language::Language;
-    use crate::program::model::lang::register::RegisterRef;
-    use crate::program::model::mem::MemBuffer;
-    use crate::program::model::pcode::OpCode;
-
-    /// A `PcodeArithmetic<(Vec<u8>, SymValueZ3)>` that is never actually invoked: `ThreadPcodeExecutorState::new`
-    /// eagerly caches `shared_state.get_arithmetic()` at construction (see its own docs), so
-    /// `FakePairedState::get_arithmetic` needs *something* to return even though this test never
-    /// exercises arithmetic through it.
-    struct DummyPairArithmetic;
-
-    impl PcodeArithmetic<(Vec<u8>, SymValueZ3)> for DummyPairArithmetic {
-        fn get_endian(&self) -> Option<crate::program::model::lang::endian::Endian> {
-            unimplemented!("not exercised by this test")
-        }
-        fn unary_op(&self, _opcode: OpCode, _sizeout: i32, _sizein1: i32, _in1: &(Vec<u8>, SymValueZ3)) -> (Vec<u8>, SymValueZ3) {
-            unimplemented!("not exercised by this test")
-        }
-        fn binary_op(
-            &self,
-            _opcode: OpCode,
-            _sizeout: i32,
-            _sizein1: i32,
-            _in1: &(Vec<u8>, SymValueZ3),
-            _sizein2: i32,
-            _in2: &(Vec<u8>, SymValueZ3),
-        ) -> (Vec<u8>, SymValueZ3) {
-            unimplemented!("not exercised by this test")
-        }
-        fn mod_before_store(
-            &self,
-            _sizein_offset: i32,
-            _space: &AddressSpace,
-            _in_offset: &(Vec<u8>, SymValueZ3),
-            _sizein_value: i32,
-            _in_value: &(Vec<u8>, SymValueZ3),
-        ) -> (Vec<u8>, SymValueZ3) {
-            unimplemented!("not exercised by this test")
-        }
-        fn mod_after_load(
-            &self,
-            _sizein_offset: i32,
-            _space: &AddressSpace,
-            _in_offset: &(Vec<u8>, SymValueZ3),
-            _sizein_value: i32,
-            _in_value: &(Vec<u8>, SymValueZ3),
-        ) -> (Vec<u8>, SymValueZ3) {
-            unimplemented!("not exercised by this test")
-        }
-        fn from_const_bytes(&self, _value: &[u8]) -> (Vec<u8>, SymValueZ3) {
-            unimplemented!("not exercised by this test")
-        }
-        fn to_concrete(&self, _value: &(Vec<u8>, SymValueZ3), _purpose: Purpose) -> Result<Vec<u8>, crate::pcode::exec::concretion_error::ConcretionError> {
-            unimplemented!("not exercised by this test")
-        }
-        fn size_of(&self, _value: &(Vec<u8>, SymValueZ3)) -> i64 {
-            unimplemented!("not exercised by this test")
-        }
-    }
-
-    /// A minimal concrete (`Vec<u8>`) left-hand piece, only enough of `PcodeExecutorStatePiece`
-    /// to satisfy `SymZ3PairedPcodeExecutorState::get_left`'s trait object -- mirroring
-    /// `SymZ3PairedPcodeExecutorState`'s own test module's `FakeLeft`.
-    struct FakeLeft;
-
-    impl ErasedPcodeExecutorStatePiece for FakeLeft {}
-
-    impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for FakeLeft {
-        fn get_language(&self) -> Box<dyn Language> {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
-            unimplemented!("not exercised by this test")
-        }
-        fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
-            vec![self]
-        }
-        fn set_var_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _quantize: bool, _val: &Vec<u8>) {}
-        fn set_var_internal_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _val: &Vec<u8>) {}
-        fn get_var_abstract(&self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _quantize: bool, _reason: Reason) -> Vec<u8> {
-            Vec::new()
-        }
-        fn get_var_internal_abstract(&self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _reason: Reason) -> Vec<u8> {
-            Vec::new()
-        }
-        fn get_register_values(&self) -> Vec<(RegisterRef, Vec<u8>)> {
-            Vec::new()
-        }
-        fn get_concrete_buffer(&self, _address: &Address, _purpose: Purpose) -> Box<dyn MemBuffer> {
-            unimplemented!("not exercised by this test")
-        }
-        fn clear(&mut self) {}
-    }
-
-    /// A paired state pairing [`FakeLeft`] with a real
-    /// [`SymZ3PcodeExecutorStatePiece`](crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::SymZ3PcodeExecutorStatePiece)
-    /// (via [`piece`]), so `SymZ3PcodeThread`'s state-touching methods have something real to
-    /// mutate.
-    struct FakePairedState {
-        left: FakeLeft,
-        right: SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>,
-    }
-
-    impl ErasedPcodeExecutorStatePiece for FakePairedState {}
-
-    impl PcodeExecutorStatePiece<(Vec<u8>, SymValueZ3), (Vec<u8>, SymValueZ3)> for FakePairedState {
-        fn get_language(&self) -> Box<dyn Language> {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<(Vec<u8>, SymValueZ3)>> {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<(Vec<u8>, SymValueZ3)>> {
-            Arc::new(DummyPairArithmetic)
-        }
-        fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
-            vec![self]
-        }
-        fn set_var_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &(Vec<u8>, SymValueZ3), _size: i32, _quantize: bool, _val: &(Vec<u8>, SymValueZ3)) {}
-        fn set_var_internal_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &(Vec<u8>, SymValueZ3), _size: i32, _val: &(Vec<u8>, SymValueZ3)) {}
-        fn get_var_abstract(&self, _space: &Arc<AddressSpace>, _offset: &(Vec<u8>, SymValueZ3), _size: i32, _quantize: bool, _reason: Reason) -> (Vec<u8>, SymValueZ3) {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_var_internal_abstract(&self, _space: &Arc<AddressSpace>, _offset: &(Vec<u8>, SymValueZ3), _size: i32, _reason: Reason) -> (Vec<u8>, SymValueZ3) {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_register_values(&self) -> Vec<(RegisterRef, (Vec<u8>, SymValueZ3))> {
-            Vec::new()
-        }
-        fn get_concrete_buffer(&self, _address: &Address, _purpose: Purpose) -> Box<dyn MemBuffer> {
-            unimplemented!("not exercised by this test")
-        }
-        fn clear(&mut self) {}
-    }
-
-    impl PcodeExecutorState<(Vec<u8>, SymValueZ3)> for FakePairedState {}
-
-    impl SymZ3PairedPcodeExecutorState for FakePairedState {
-        fn get_left(&self) -> &dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> {
-            &self.left
-        }
-        fn get_right(&self) -> &SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks> {
-            &self.right
-        }
-        fn get_right_mut(&mut self) -> &mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks> {
-            &mut self.right
-        }
-    }
-
-    fn paired() -> FakePairedState {
-        FakePairedState { left: FakeLeft, right: piece() }
-    }
-
-    fn thread() -> SymZ3PcodeThread {
-        SymZ3PcodeThread::with_state("[Threads][0]", paired(), paired())
-    }
 
     #[test]
-    fn named_thread_reports_its_name() {
-        let t = SymZ3PcodeThread::named("[Threads][7]");
-        assert_eq!(t.get_name(), "[Threads][7]");
-    }
-
-    #[test]
-    #[should_panic(expected = "has no state")]
-    fn named_thread_panics_on_state_access() {
-        let t = SymZ3PcodeThread::named("[Threads][7]");
-        t.with_local_symbolic_state(|_| ());
-    }
-
-    #[test]
-    fn add_precondition_and_get_preconditions_round_trip() {
-        let mut t = thread();
-        InternalSymZ3RecordsPreconditions::add_precondition(&mut t, "x > 0".to_string());
-        assert_eq!(SymZ3RecordsPreconditions::get_preconditions(&t), vec!["x > 0".to_string()]);
-    }
-
-    #[test]
-    fn add_instruction_and_add_op_accumulate_on_the_shared_state() {
-        use crate::pcode::emu::symz3::sym_z3_records_execution::SymZ3RecordsExecution;
-
-        let t = thread();
-        let ram = AddressSpace::new("ram", 64, 1, crate::program::model::address::AddressSpaceType::Ram, 0);
-        let addr = ram.address(0x400);
-
-        t.add_op(PcodeOp::with_address_no_inputs(addr, 0, OpCode::Copy));
-
-        let ops = t.with_shared_symbolic_state(|s| SymZ3RecordsExecution::get_ops(s));
-        assert_eq!(ops.len(), 1);
-        assert_eq!(ops[0].thread.get_name(), "[Threads][0]");
-    }
-
-    #[test]
-    fn cloned_thread_shares_the_same_underlying_state() {
-        let t = thread();
-        let mut clone = t.clone();
-
-        InternalSymZ3RecordsPreconditions::add_precondition(&mut clone, "shared".to_string());
-        // Adding through the clone must be visible from the original: all clones share one
-        // Arc<Mutex<_>>, faithfully standing in for Java's shared object reference.
-        assert_eq!(SymZ3RecordsPreconditions::get_preconditions(&t), vec!["shared".to_string()]);
+    fn a_thread_id_is_its_name() {
+        let id = SymZ3ThreadId::new("[Threads][7]");
+        assert_eq!(id.get_name(), "[Threads][7]");
+        assert_eq!(id, SymZ3ThreadId::new(String::from("[Threads][7]")));
     }
 }

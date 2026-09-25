@@ -1,6 +1,6 @@
 //! Port of `ghidra.pcode.emu.symz3.SymZ3RecordsExecution`.
 
-use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread;
+use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3ThreadId;
 use crate::program::model::address::Address;
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::pcode::PcodeOp;
@@ -10,15 +10,19 @@ use crate::trace::model::target::path::key_path::KeyPath;
 /// instruction)`. Rust has no nested/inner-class equivalent, so this is a flat, free-standing
 /// struct alongside the trait, per this crate's established convention (see
 /// e.g. `Z3InfixPrinter::RegisterPlusConstant`).
+///
+/// Java's record holds the thread itself and reads only its name; the Rust thread is owned by its
+/// emulator under that name, so the record holds the thread's [`SymZ3ThreadId`] (see
+/// [`sym_z3_pcode_thread`](crate::pcode::emu::symz3::sym_z3_pcode_thread)'s module docs).
 #[derive(Clone)]
 pub struct RecInstruction {
     pub index: i32,
-    pub thread: SymZ3PcodeThread,
+    pub thread: SymZ3ThreadId,
     pub instruction: std::sync::Arc<dyn Instruction>,
 }
 
 impl RecInstruction {
-    pub fn new(index: i32, thread: SymZ3PcodeThread, instruction: std::sync::Arc<dyn Instruction>) -> Self {
+    pub fn new(index: i32, thread: SymZ3ThreadId, instruction: std::sync::Arc<dyn Instruction>) -> Self {
         Self { index, thread, instruction }
     }
 
@@ -54,16 +58,17 @@ impl RecInstruction {
     }
 }
 
-/// Port of the nested `record RecOp(int index, SymZ3PcodeThread thread, PcodeOp op)`.
+/// Port of the nested `record RecOp(int index, SymZ3PcodeThread thread, PcodeOp op)`. As for
+/// [`RecInstruction`], the thread is held by its [`SymZ3ThreadId`].
 #[derive(Clone)]
 pub struct RecOp {
     pub index: i32,
-    pub thread: SymZ3PcodeThread,
+    pub thread: SymZ3ThreadId,
     pub op: PcodeOp,
 }
 
 impl RecOp {
-    pub fn new(index: i32, thread: SymZ3PcodeThread, op: PcodeOp) -> Self {
+    pub fn new(index: i32, thread: SymZ3ThreadId, op: PcodeOp) -> Self {
         Self { index, thread, op }
     }
 
@@ -80,7 +85,7 @@ impl RecOp {
 
 /// Shared helper for `RecInstruction::getThreadName`/`RecOp::getThreadName`, both of which are
 /// Java's `KeyPath.parse(thread.getName()).index()`.
-fn thread_index(thread: &SymZ3PcodeThread) -> Option<String> {
+fn thread_index(thread: &SymZ3ThreadId) -> Option<String> {
     KeyPath::parse(&thread.get_name())
         .ok()
         .and_then(|kp| kp.last_index().ok().flatten().map(|s| s.to_string()))
@@ -113,7 +118,7 @@ mod tests {
         let a = addr(&space, 0x1000);
         let seq = SequenceNumber::new(a.clone(), 0);
         let op = PcodeOp::with_address_no_inputs(a.clone(), 0, OpCode::Copy);
-        let thread = SymZ3PcodeThread::named("[Threads][1]");
+        let thread = SymZ3ThreadId::new("[Threads][1]");
         let rec = RecOp::new(0, thread, op);
 
         // Java: KeyPath.parse("[Threads][1]").index() == "1"

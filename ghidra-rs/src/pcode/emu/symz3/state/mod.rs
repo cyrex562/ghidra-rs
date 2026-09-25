@@ -14,6 +14,7 @@
 //! `SymZ3Space` first.
 
 pub mod sym_z3_memory_space;
+pub mod sym_z3_pcode_emulator;
 pub mod sym_z3_pcode_executor_state;
 pub mod sym_z3_preconditions;
 pub mod sym_z3_register_space;
@@ -21,6 +22,7 @@ pub mod sym_z3_space;
 pub mod sym_z3_unique_space;
 
 pub use sym_z3_memory_space::SymZ3MemorySpace;
+pub use sym_z3_pcode_emulator::SymZ3PcodeEmulator;
 pub use sym_z3_pcode_executor_state::SymZ3PcodeExecutorState;
 pub use sym_z3_preconditions::SymZ3Preconditions;
 pub use sym_z3_register_space::SymZ3RegisterSpace;

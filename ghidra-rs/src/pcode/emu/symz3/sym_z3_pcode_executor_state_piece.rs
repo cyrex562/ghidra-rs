@@ -63,7 +63,7 @@ use crate::pcode::emu::symz3::sym_z3_records_preconditions::SymZ3RecordsPrecondi
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason};
 use crate::pcode::exec::pcode_state_callbacks::{PcodeStateCallbacks, NONE};
-use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3PcodeThread;
+use crate::pcode::emu::symz3::sym_z3_pcode_thread::SymZ3ThreadId;
 use crate::pcode::emu::symz3::sym_z3_pcode_arithmetic::SymZ3PcodeArithmetic;
 use crate::pcode::emu::symz3::state::sym_z3_memory_space::SymZ3MemorySpace;
 use crate::pcode::emu::symz3::state::sym_z3_register_space::SymZ3RegisterSpace;
@@ -443,12 +443,12 @@ impl<CB: PcodeStateCallbacks> SymZ3RecordsExecution for SymZ3PcodeExecutorStateP
 }
 
 impl<CB: PcodeStateCallbacks> InternalSymZ3RecordsExecution for SymZ3PcodeExecutorStatePiece<CB> {
-    fn add_instruction(&mut self, thread: &SymZ3PcodeThread, inst: Arc<dyn Instruction>) {
+    fn add_instruction(&mut self, thread: &SymZ3ThreadId, inst: Arc<dyn Instruction>) {
         let index = self.instructions.len() as i32;
         self.instructions.push(RecInstruction::new(index, thread.clone(), inst));
     }
 
-    fn add_op(&mut self, thread: &SymZ3PcodeThread, op: PcodeOp) {
+    fn add_op(&mut self, thread: &SymZ3ThreadId, op: PcodeOp) {
         let index = self.ops.len() as i32;
         self.ops.push(RecOp::new(index, thread.clone(), op));
     }
@@ -1105,7 +1105,7 @@ pub(crate) mod testing {
         use crate::program::model::pcode::OpCode;
 
         let mut p = piece();
-        let thread = SymZ3PcodeThread::named("[Threads][0]");
+        let thread = SymZ3ThreadId::new("[Threads][0]");
         let ram = ram_space(&p);
         let addr = ram.address(0x400);
 
@@ -1138,7 +1138,7 @@ pub(crate) mod testing {
         let val = numeral(&ctx, 2, 8);
         p.set_var_abstract(&space, &offset, 1, false, &val);
         InternalSymZ3RecordsPreconditions::add_precondition(&mut p, "a".to_string());
-        let thread = SymZ3PcodeThread::named("[Threads][0]");
+        let thread = SymZ3ThreadId::new("[Threads][0]");
         p.add_op(&thread, PcodeOp::with_address_no_inputs(ram_space(&p).address(0), 0, crate::program::model::pcode::OpCode::Copy));
 
         p.clear();

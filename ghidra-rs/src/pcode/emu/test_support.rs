@@ -279,24 +279,41 @@ impl InstructionStub for DecodedInstruction {
 struct NoPseudoInstruction;
 impl PseudoInstruction for NoPseudoInstruction {}
 
+/// Reads the concrete bytes of a machine's memory: `(address, length)` to bytes.
+pub(crate) type ConcreteReader = Box<dyn Fn(&Address, i32) -> Vec<u8>>;
+
 /// Decodes real Sleigh instructions from a machine's shared memory, standing in for
 /// `SleighInstructionDecoder`: read the bytes at the counter, parse them with the Sleigh language,
 /// and build the instruction's p-code from its prototype.
 pub(crate) struct SleighTestDecoder {
     pub(crate) language: Arc<SleighLanguage>,
-    pub(crate) memory: SharedPcodeExecutorState<BytesState>,
+    /// Reads the machine's memory, as Java's decoder reads through the state's concrete buffer.
+    read: ConcreteReader,
     /// Every address this decoder was told the thread branched to.
     pub(crate) branched: Arc<std::sync::Mutex<Vec<i64>>>,
     last: Option<Arc<DecodedInstruction>>,
 }
 
 impl SleighTestDecoder {
+    /// A decoder over a concrete bytes machine's memory.
     pub(crate) fn new(
         language: Arc<SleighLanguage>,
         memory: SharedPcodeExecutorState<BytesState>,
         branched: Arc<std::sync::Mutex<Vec<i64>>>,
     ) -> Self {
-        Self { language, memory, branched, last: None }
+        let read: ConcreteReader = Box::new(move |address, length| {
+            memory.lock().get_var(address.space(), address.offset(), length, false, Reason::ExecuteDecode)
+        });
+        Self::with_reader(language, read, branched)
+    }
+
+    /// A decoder over any machine's memory, whose concrete bytes `read` reads.
+    pub(crate) fn with_reader(
+        language: Arc<SleighLanguage>,
+        read: ConcreteReader,
+        branched: Arc<std::sync::Mutex<Vec<i64>>>,
+    ) -> Self {
+        Self { language, read, branched, last: None }
     }
 }
 
@@ -312,7 +329,7 @@ impl InstructionDecoder for SleighTestDecoder {
     ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
         // Java's decoder reads through the state's concrete buffer; the fixture's instructions
         // are at most two bytes long.
-        let bytes = self.memory.lock().get_var(address.space(), address.offset(), 2, false, Reason::ExecuteDecode);
+        let bytes = (self.read)(address, 2);
         let mem = ByteMemBufferImpl::new(address.clone(), bytes, self.language.is_big_endian());
         let mut processor = ProcessorContextImpl::new(self.language.clone());
         let proto = Language::parse(self.language.as_ref(), &mem, &mut processor, false)

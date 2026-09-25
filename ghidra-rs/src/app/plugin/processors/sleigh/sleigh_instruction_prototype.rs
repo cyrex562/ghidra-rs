@@ -1849,6 +1849,8 @@ mod tests {
 /// jd rel            is op=4 ; rel                 { build rel; delayslot(2); goto rel; } (line 50)
 /// ld reg, mem       is op=5 & reg ; mem           { build mem; reg = mem; } (line 60)
 /// mem: [reg2]       is reg2                       { export *[ram]:4 reg2; }   (line 70)
+/// add reg, reg2     is op=6 & reg ; reg2          { reg = reg + reg2; }      (line 80)
+/// bz reg, rel       is op=7 & reg ; rel           { build rel; if (reg == 0) goto rel; } (line 90)
 /// rel: reloc        is simm8 [ reloc = inst_start + 2 + simm8; ] { export *[ram]:4 reloc; } (line 40)
 /// ```
 #[cfg(test)]
@@ -1892,6 +1894,10 @@ pub(crate) mod decode_tests {
     const LD_REG_OP: u64 = 13;
     const LD_MEM_OP: u64 = 14;
     const REG2_OP: u64 = 15;
+    const ADD_DST_OP: u64 = 16;
+    const ADD_SRC_OP: u64 = 17;
+    const BZ_REG_OP: u64 = 18;
+    const BZ_REL_OP: u64 = 19;
 
     fn encoding_space(name: &str, ty: AddressSpaceType, index: i32) -> Arc<AddressSpace> {
         AddressSpace::new(name, if ty == AddressSpaceType::Constant { 64 } else { 32 }, 1, ty, index)
@@ -2114,7 +2120,7 @@ pub(crate) mod decode_tests {
 
         e.open_element(ELEM_SYMBOL_TABLE).unwrap();
         e.write_signed_integer(ATTRIB_SCOPESIZE, 1).unwrap();
-        e.write_signed_integer(ATTRIB_SYMBOLSIZE, 16).unwrap();
+        e.write_signed_integer(ATTRIB_SYMBOLSIZE, 20).unwrap();
         e.open_element(ELEM_SCOPE).unwrap();
         e.write_unsigned_integer(ATTRIB_ID, 0).unwrap();
         e.write_unsigned_integer(ATTRIB_PARENT, 0).unwrap();
@@ -2138,6 +2144,10 @@ pub(crate) mod decode_tests {
         head(&mut e, ELEM_OPERAND_SYM_HEAD, "ldst", LD_REG_OP);
         head(&mut e, ELEM_OPERAND_SYM_HEAD, "ldsrc", LD_MEM_OP);
         head(&mut e, ELEM_OPERAND_SYM_HEAD, "base", REG2_OP);
+        head(&mut e, ELEM_OPERAND_SYM_HEAD, "adst", ADD_DST_OP);
+        head(&mut e, ELEM_OPERAND_SYM_HEAD, "asrc", ADD_SRC_OP);
+        head(&mut e, ELEM_OPERAND_SYM_HEAD, "breg", BZ_REG_OP);
+        head(&mut e, ELEM_OPERAND_SYM_HEAD, "btarget", BZ_REL_OP);
 
         varnode(&mut e, R0, REGISTER, 0, 4);
         varnode(&mut e, R1, REGISTER, 4, 4);
@@ -2177,6 +2187,10 @@ pub(crate) mod decode_tests {
         operand_sym(&mut e, LD_REG_OP, 0, Some(REG), false, INSTRUCTION, None);
         operand_sym(&mut e, LD_MEM_OP, 1, Some(MEM), false, INSTRUCTION, None);
         operand_sym(&mut e, REG2_OP, 0, Some(REG2), false, MEM, None);
+        operand_sym(&mut e, ADD_DST_OP, 0, Some(REG), false, INSTRUCTION, None);
+        operand_sym(&mut e, ADD_SRC_OP, 1, Some(REG2), false, INSTRUCTION, None);
+        operand_sym(&mut e, BZ_REG_OP, 0, Some(REG), false, INSTRUCTION, None);
+        operand_sym(&mut e, BZ_REL_OP, 1, Some(REL), true, INSTRUCTION, None);
         // reloc = inst_start + 2 + simm8
         let reloc_exp = |e: &mut Enc| {
             e.open_element(ELEM_PLUS_EXP).unwrap();
@@ -2195,7 +2209,7 @@ pub(crate) mod decode_tests {
         // instruction table
         e.open_element(ELEM_SUBTABLE_SYM).unwrap();
         e.write_unsigned_integer(ATTRIB_ID, INSTRUCTION).unwrap();
-        e.write_signed_integer(ATTRIB_NUMCT, 5).unwrap();
+        e.write_signed_integer(ATTRIB_NUMCT, 7).unwrap();
         // mov reg, imm8 { reg = imm8; }
         let mov = templ(
             None,
@@ -2288,6 +2302,53 @@ pub(crate) mod decode_tests {
             &[Piece::Text("ld"), Piece::Text(" "), Piece::Op(0), Piece::Text(","), Piece::Op(1)],
             &ld,
         );
+        // add reg, reg2 { reg = reg + reg2; }
+        let add = templ(
+            None,
+            vec![op(
+                OpCode::CpuiIntAdd,
+                Some(VarnodeTpl::with_handle(0, false)),
+                vec![VarnodeTpl::with_handle(0, false), VarnodeTpl::with_handle(1, false)],
+            )],
+        );
+        constructor(
+            &mut e,
+            INSTRUCTION,
+            1,
+            2,
+            80,
+            &[ADD_DST_OP, ADD_SRC_OP],
+            &[Piece::Text("add"), Piece::Text(" "), Piece::Op(0), Piece::Text(","), Piece::Op(1)],
+            &add,
+        );
+        // bz reg, rel { build rel; if (reg == 0) goto rel; }
+        let zero = encoding_space("unique", AddressSpaceType::Unique, UNIQUE);
+        let is_zero = || VarnodeTpl::with_fields(space_id(zero.clone()), real(0x20), real(1));
+        let bz = templ(
+            None,
+            vec![
+                op(OpCode::CpuiMultiequal, None, vec![VarnodeTpl::with_fields(real(0), real(1), real(0))]),
+                op(
+                    OpCode::CpuiIntEqual,
+                    Some(is_zero()),
+                    vec![
+                        VarnodeTpl::with_handle(0, false),
+                        VarnodeTpl::with_fields(space_id(constant.clone()), real(0), real(4)),
+                    ],
+                ),
+                op(OpCode::CpuiCbranch, None, vec![VarnodeTpl::with_handle(1, false), is_zero()]),
+            ],
+        );
+        constructor(
+            &mut e,
+            INSTRUCTION,
+            1,
+            2,
+            90,
+            &[BZ_REG_OP, BZ_REL_OP],
+            &[Piece::Text("bz"), Piece::Text(" "), Piece::Op(0), Piece::Text(","), Piece::Op(1)],
+            &bz,
+        );
         decision(
             &mut e,
             &[
@@ -2296,6 +2357,8 @@ pub(crate) mod decode_tests {
                 (2, 0xf000_0000, 0x3000_0000),
                 (3, 0xf000_0000, 0x4000_0000),
                 (4, 0xf000_0000, 0x5000_0000),
+                (5, 0xf000_0000, 0x6000_0000),
+                (6, 0xf000_0000, 0x7000_0000),
             ],
         );
         e.close_element(ELEM_SUBTABLE_SYM).unwrap();
@@ -2433,6 +2496,37 @@ pub(crate) mod decode_tests {
 
     fn register_name(reg: &RegisterRef) -> String {
         reg.name().to_string()
+    }
+
+    #[test]
+    fn add_and_bz_decode_to_their_pcode() {
+        let lang = language();
+        // add r1, r0  ->  INT_ADD register:4:4 <- register:4:4, register:0:4
+        let insn = parse(&lang, 0x1000, &[0x61, 0x00]).unwrap();
+        assert_eq!(insn.proto.get_mnemonic(&insn), "add");
+        let pcode = insn.proto.get_pcode(&insn, None);
+        assert_eq!(pcode.len(), 1);
+        assert_eq!(pcode[0].get_opcode(), P::IntAdd);
+        let offsets = |vns: &[crate::program::model::pcode::Varnode]| {
+            vns.iter().map(|v| (v.get_offset(), v.get_size())).collect::<Vec<_>>()
+        };
+        let out = pcode[0].get_output().unwrap();
+        assert_eq!((out.get_offset(), out.get_size()), (4, 4));
+        assert_eq!(offsets(pcode[0].get_inputs()), vec![(4, 4), (0, 4)]);
+
+        // bz r0, +4  ->  INT_EQUAL unique <- r0, 0 ; CBRANCH *[ram]0x1006, unique
+        let insn = parse(&lang, 0x1000, &[0x70, 0x04]).unwrap();
+        assert_eq!(insn.proto.get_mnemonic(&insn), "bz");
+        let pcode = insn.proto.get_pcode(&insn, None);
+        assert_eq!(
+            pcode.iter().map(|op| op.get_opcode()).collect::<Vec<_>>(),
+            vec![P::IntEqual, P::CBranch]
+        );
+        assert_eq!(offsets(pcode[0].get_inputs()), vec![(0, 4), (0, 4)]);
+        let target = &pcode[1].get_inputs()[0];
+        assert_eq!((target.get_offset(), target.get_size()), (0x1006, 4));
+        assert_eq!(pcode[1].get_inputs()[1], *pcode[0].get_output().unwrap());
+        assert_eq!(insn.proto.get_flow_type(&insn), RefType::ConditionalJump);
     }
 
     #[test]

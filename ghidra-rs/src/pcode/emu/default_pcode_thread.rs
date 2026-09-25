@@ -455,6 +455,14 @@ where
         self.state.clone()
     }
 
+    /// A handle to this thread's multiplexed state, typed: the same state the executor holds
+    /// through [`state_handle`](Self::state_handle). An executor extension (see
+    /// [`PcodeThreadExecutor::with_extension`]) keeps one to reach the state's delegates, as a Java
+    /// `PcodeThreadExecutor` subclass does through `getThread().getState()`.
+    pub fn typed_state_handle(&self) -> Arc<Mutex<ThreadPcodeExecutorState<T, S, L>>> {
+        Arc::clone(&self.state)
+    }
+
     /// This thread's multiplexed state, typed. Port of the `state` field.
     pub fn get_state(&self) -> MutexGuard<'_, ThreadPcodeExecutorState<T, S, L>> {
         self.state.lock().expect("thread state lock poisoned")

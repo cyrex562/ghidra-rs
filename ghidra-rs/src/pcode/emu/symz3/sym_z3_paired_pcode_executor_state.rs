@@ -2,6 +2,7 @@
 
 use crate::feature::symz3::model::sym_value_z3::SymValueZ3;
 use crate::pcode::emu::symz3::sym_z3_pcode_executor_state_piece::SymZ3PcodeExecutorStatePiece;
+use crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
 use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
@@ -9,7 +10,7 @@ use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
 /// Port of `ghidra.pcode.emu.symz3.SymZ3PairedPcodeExecutorState`.
 ///
 /// A genuine open extension point (per `scripts/shape_rules.py`): the one in-repo implementor is
-/// the not-yet-ported `state.SymZ3PcodeExecutorState` (distinct from the now-ported
+/// `state.SymZ3PcodeExecutorState` (distinct from the
 /// `SymZ3PcodeExecutorStatePiece` referenced below -- two different Java classes despite the
 /// similar name).
 ///
@@ -35,6 +36,33 @@ pub trait SymZ3PairedPcodeExecutorState: PcodeExecutorState<(Vec<u8>, SymValueZ3
     /// is not). Not itself a Java method -- see [`ThreadPcodeExecutorState::get_shared_state_mut`](crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState::get_shared_state_mut)'s
     /// docs for the same pattern one layer up.
     fn get_right_mut(&mut self) -> &mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>;
+}
+
+/// Java's `getLeft()`/`getRight()` on the emulator's shared state, which every thread holds
+/// through a [`SharedPcodeExecutorState`] handle.
+///
+/// A handle cannot lend out a borrow of the state behind its lock the way Java hands out the piece
+/// itself, so these run a closure against the piece while the state is locked. Do not reach the
+/// same handle again from inside the closure: the lock is not reentrant.
+impl<S: SymZ3PairedPcodeExecutorState> SharedPcodeExecutorState<S> {
+    /// Run `f` against the concrete (left) piece. Java: `getLeft()`.
+    pub fn with_concrete<R>(&self, f: impl FnOnce(&dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>) -> R) -> R {
+        f(self.lock().get_left())
+    }
+
+    /// Run `f` against the symbolic (right) piece. Java: `getRight()`.
+    pub fn with_symbolic<R>(&self, f: impl FnOnce(&SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>) -> R) -> R {
+        f(self.lock().get_right())
+    }
+
+    /// Run `f` against the symbolic (right) piece, for writing. Java: `getRight()`, whose result
+    /// Java callers mutate.
+    pub fn with_symbolic_mut<R>(
+        &self,
+        f: impl FnOnce(&mut SymZ3PcodeExecutorStatePiece<NoPcodeStateCallbacks>) -> R,
+    ) -> R {
+        f(self.lock().get_right_mut())
+    }
 }
 
 #[cfg(test)]
