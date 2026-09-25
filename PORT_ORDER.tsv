@@ -225,7 +225,7 @@ PARK	trait	0	2	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra
 DONE	trait	0	2	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFileRowObject.java
 TODO	trait	1	2	26	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/translate/TranslateStringsPlugin.java
 TODO	trait	0	2	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/translate/ManualStringTranslationService.java
-TODO	trait	0	2	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringTrigramIterator.java
+DONE	trait	0	2	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringTrigramIterator.java
 TODO	trait	0	2	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageFileSystem.java
 TODO	trait	0	2	4	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/BSimProgramCorrelatorFactory.java
 TODO	trait	0	2	5	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/featurette/VisualGraphFeaturette.java
@@ -3356,7 +3356,7 @@ TODO	struct	1	2	38	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core
 TODO	struct	0	2	5	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/DefinedStringsContext.java
 TODO	struct	0	2	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/HasTranslationValueColumnConstraint.java
 TODO	struct	0	2	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/IsAsciiColumnConstraint.java
-TODO	struct	1	2	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/Trigram.java
+DONE	struct	1	2	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/Trigram.java
 TODO	struct	0	2	17	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/TrigramStringValidator.java
 TODO	struct	0	2	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/actions/ClearPinSymbolAction.java
 TODO	struct	0	2	5	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/actions/CloneSymbolTreeAction.java
