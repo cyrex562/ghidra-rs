@@ -301,7 +301,7 @@ TODO	struct	1	19	39	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/datat
 TODO	struct	9	23	1	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfoManager.java
 DONE	struct	5	118	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRLRoot.java
 TODO	struct	6	204	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteArrayProvider.java
-TODO	struct	6	197	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderWrapper.java
+DONE	struct	6	197	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderWrapper.java
 TODO	struct	6	181	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FaultTolerantInputStream.java
 TODO	struct	6	191	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileByteProvider.java
 TODO	struct	6	183	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileBytesProvider.java

@@ -3,6 +3,7 @@ pub mod byte_array_converter;
 pub mod byte_provider;
 pub mod byte_provider_input_stream;
 pub mod byte_provider_padded_input_stream;
+pub mod byte_provider_wrapper;
 pub mod empty_byte_provider;
 pub mod ghidra_random_access_file;
 pub mod input_stream_byte_provider;
