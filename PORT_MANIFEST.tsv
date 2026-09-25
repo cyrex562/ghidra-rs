@@ -4959,7 +4959,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/XMLErrorHandler.
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/XmlProgramOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/graph/CircleWithLabelVertex.java	TODO	orig_src Ghidra Features Base src main java ghidra base graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/graph/CircleWithLabelVertexShapeProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra base graph 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/graph/VertexExpansionListener.java	TODO	orig_src Ghidra Features Base src main java ghidra base graph 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/graph/VertexExpansionListener.java	DONE	orig_src Ghidra Features Base src main java ghidra base graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/help/GhidraHelpService.java	TODO	orig_src Ghidra Features Base src main java ghidra base help 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/project/GhidraProject.java	TODO	orig_src Ghidra Features Base src main java ghidra base project 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/widgets/table/constraint/provider/AddressBasedLocationColumnTypeMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra base widgets table constraint provider 

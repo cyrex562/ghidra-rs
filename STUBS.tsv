@@ -1296,3 +1296,4 @@ ts	stub_class	referenced_by
 2026-09-24T18:00:00Z	TraceRmiHandler.VERSION	RmiClient
 2026-09-24T12:00:00Z	DbStringMapAdapter	DataOrganizationImpl
 2026-09-25T05:00:28Z	TraceDisassembleCommand	DisassemblyInject
+2026-09-25T07:07:13Z	VisualVertex	VertexExpansionListener

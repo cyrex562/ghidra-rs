@@ -16,6 +16,7 @@ pub mod keyed_object_factory;
 pub mod path;
 pub mod simple_weighted_digraph;
 pub mod vertex;
+pub mod vertex_expansion_listener;
 pub mod vertex_set;
 pub mod weighted_digraph;
 

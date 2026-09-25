@@ -224,13 +224,13 @@ PARK	trait	0	2	1	debug	Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/Is
 PARK	trait	0	2	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceFactory.java
 DONE	trait	0	2	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/sourcefilestable/SourceFileRowObject.java
 TODO	trait	1	2	26	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/translate/TranslateStringsPlugin.java
-TODO	trait	0	2	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/translate/ManualStringTranslationService.java
+PARK	trait	0	2	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/translate/ManualStringTranslationService.java
 DONE	trait	0	2	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringTrigramIterator.java
-TODO	trait	0	2	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageFileSystem.java
-TODO	trait	0	2	4	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/BSimProgramCorrelatorFactory.java
+PARK	trait	0	2	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageFileSystem.java
+PARK	trait	0	2	4	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidra/feature/vt/api/BSimProgramCorrelatorFactory.java
 TODO	trait	0	2	5	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/featurette/VisualGraphFeaturette.java
 TODO	trait	0	1	87	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/platform/dbgeng/DbgengDebuggerPlatformOpinion.java
-TODO	trait	0	1	1	util	Ghidra/Features/Base/src/main/java/ghidra/base/graph/VertexExpansionListener.java
+DONE	trait	0	1	1	util	Ghidra/Features/Base/src/main/java/ghidra/base/graph/VertexExpansionListener.java
 TODO	trait	0	1	1	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/decompile/DiffClangHighlightListener.java
 TODO	trait	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/analyzer/DexHeaderFormatAnalyzer.java
 TODO	trait	0	1	32	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cart/CartFileSystem.java
