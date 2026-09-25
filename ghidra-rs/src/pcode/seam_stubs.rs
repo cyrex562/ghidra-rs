@@ -465,6 +465,12 @@ pub use crate::pcode::exec::injection_error_pcode_execution_exception::Injection
 /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) builds from
 /// its language when the language has a context register.
 ///
+/// The real class is ported as
+/// [`program::util::program_context_impl::ProgramContextImpl`](crate::program::util::program_context_impl::ProgramContextImpl).
+/// This placeholder remains only because `DefaultPcodeThread` holds its context in this module's
+/// placeholder [`RegisterValue`] domain; it goes when that thread's context handling moves to the
+/// real `RegisterValue`.
+///
 /// The one behavior this stub really implements is receiving a language's context settings, since
 /// that is what the thread's constructor does with it
 /// (`language.applyContextSettings(defaultContext)`). Every read-back is a value of the *other*

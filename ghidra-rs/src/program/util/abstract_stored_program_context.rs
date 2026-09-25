@@ -881,6 +881,37 @@ pub(crate) mod test_support {
         lang
     }
 
+    /// Same as [`test_language`], plus a 4-byte `contextreg` processor-context base register with
+    /// two 4-bit fields: `mode` (bits 28..=31), which flows, and `phase` (bits 24..=27), which
+    /// does not follow flow.
+    pub(crate) fn test_language_with_context_fields() -> TestLanguage {
+        let mut lang = test_language();
+        let space = reg_space();
+        let at = Address::new(space, 16);
+        let context = Register::TYPE_CONTEXT;
+        let contextreg = Register::new("contextreg", "", at.clone(), 4, false, context);
+        let mode = Register::with_bit_range("mode", "", at.clone(), 4, 28, 4, false, context);
+        let phase = Register::with_bit_range(
+            "phase",
+            "",
+            at,
+            4,
+            24,
+            4,
+            false,
+            context | Register::TYPE_DOES_NOT_FOLLOW_FLOW,
+        );
+        let [contextreg, mode, phase]: [Register; 3] = crate::program::model::lang::register::test_support::linked(
+            &[&contextreg, &mode, &phase],
+            &[(0, &[2, 1])],
+        )
+        .try_into()
+        .unwrap();
+        lang.registers.extend([contextreg.clone(), mode, phase]);
+        lang.context_base = Some(contextreg);
+        lang
+    }
+
 }
 
 #[cfg(test)]

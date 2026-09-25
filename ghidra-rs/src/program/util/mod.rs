@@ -49,6 +49,7 @@ pub mod parallel_instruction_location;
 pub mod processor_symbol_type;
 pub mod program_change_record;
 pub mod program_conflict_exception;
+pub mod program_context_impl;
 pub mod program_diff_filter;
 pub mod program_event;
 pub mod program_location;
