@@ -35,7 +35,7 @@ pub trait DebuggerPlatformMapper {
     /// Mirrors the Java default method `getLangauge(TraceObject, long)` (note the upstream
     /// misspelling is preserved only in the Java name; the Rust method is spelled correctly).
     fn get_language(&self, object: &dyn TraceObject, snap: i64) -> Option<Box<dyn Language>> {
-        self.get_compiler_spec(object, snap).map(|c| c.get_language())
+        self.get_compiler_spec(object, snap).map(|c| -> Box<dyn Language> { c.get_language() })
     }
 
     /// Prepare the given trace for interpretation under this mapper.

@@ -351,7 +351,7 @@ use crate::program::model::mem::MemBuffer;
     }
 
     impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             unimplemented!("not exercised by this smoke test")
         }
 

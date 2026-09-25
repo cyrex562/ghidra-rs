@@ -129,7 +129,7 @@ impl ParamList {
     /// The associated language.
     ///
     /// Port of `ParamList.getLanguage`.
-    pub fn get_language(&self) -> Option<Arc<dyn Language>> {
+    pub fn get_language(&self) -> Option<Arc<dyn Language + Send + Sync>> {
         self.standard().get_language()
     }
 

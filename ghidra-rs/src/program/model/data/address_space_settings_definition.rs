@@ -435,7 +435,7 @@ mod tests {
     struct MockCompilerSpec;
 
     impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             Box::new(MockLanguage)
         }
 

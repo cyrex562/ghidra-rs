@@ -58,7 +58,7 @@ pub(crate) fn xml_err(e: XmlException) -> XmlParseException {
 /// A payload of p-code defined via a string passed to the sleigh compiler.
 ///
 /// Port of `ghidra.program.model.lang.InjectPayloadSleigh`.
-pub trait InjectPayloadSleigh: InjectPayload {
+pub trait InjectPayloadSleigh: InjectPayload + Send + Sync {
     /// Takes (and clears) the raw p-code source text parsed from this payload's XML `<body>`, so
     /// the sleigh compiler can compile it into a [`ConstructTpl`]. Returns `None` once already
     /// taken, or if this payload has no `<body>` (a dynamic payload).

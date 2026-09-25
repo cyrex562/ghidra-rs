@@ -431,7 +431,7 @@ mod tests {
     fn tile_list(entries: Vec<TestEntry>, big_endian: bool, standard_out: bool) -> ParamListStandard {
         let num_group = entries.len() as i32;
         let mut list = TestResource { entries, num_group, spacebase: None }
-            .build_with_language(Some(Arc::new(TestLanguage { big_endian }) as Arc<dyn Language>));
+            .build_with_language(Some(Arc::new(TestLanguage { big_endian }) as Arc<dyn Language + Send + Sync>));
         list.set_standard_out(standard_out);
         list
     }

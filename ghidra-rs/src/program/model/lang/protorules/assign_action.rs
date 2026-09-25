@@ -41,7 +41,7 @@ pub const HIDDENRET_SPECIALREG_VOID: i32 = 5;
 /// actions is ported, these are ported too as free functions below --
 /// [`restore_action_xml`], [`restore_sideeffect_xml`], [`restore_precondition_xml`] -- needed by
 /// [`ModelRule::restore_xml`](super::model_rule::ModelRule::restore_xml).
-pub trait AssignAction {
+pub trait AssignAction: Send + Sync {
     /// Make a copy of this action, to be owned by `new_resource`.
     ///
     /// Port of the Java `clone(ParamListStandard)` method; renamed because `clone` returning

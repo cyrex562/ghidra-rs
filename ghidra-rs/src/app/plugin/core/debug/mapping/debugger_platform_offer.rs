@@ -36,7 +36,7 @@ pub trait DebuggerPlatformOffer {
 
     /// Get the language to which this offer can map.
     fn get_language(&self) -> Option<Box<dyn Language>> {
-        self.get_compiler_spec().map(|c_spec| c_spec.get_language())
+        self.get_compiler_spec().map(|c_spec| -> Box<dyn Language> { c_spec.get_language() })
     }
 
     /// Get the language ID to which this offer can map.
@@ -128,7 +128,7 @@ mod tests {
         id: CompilerSpecID,
     }
     impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             Box::new(MockLanguage)
         }
         fn get_compiler_spec_description(&self) -> Box<dyn CompilerSpecDescription> {

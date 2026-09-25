@@ -73,7 +73,11 @@ pub trait CompilerSpec {
     /// Get the Language this compiler spec is based on. Note that compiler specs may be reused
     /// across multiple languages in the cspec files on disk, but once loaded in memory are
     /// actually separate objects. (M:N on disk, 1:N in memory)
-    fn get_language(&self) -> Box<dyn Language>;
+    ///
+    /// `Send + Sync` because the language is stored by thread-shareable parts of a spec (a
+    /// parameter list's language). A spec owned by its language returns a non-owning handle
+    /// (see [`WeakLanguage`](crate::program::model::lang::language::WeakLanguage)).
+    fn get_language(&self) -> Box<dyn Language + Send + Sync>;
 
     /// A brief description of the compiler spec.
     fn get_compiler_spec_description(&self) -> Box<dyn CompilerSpecDescription>;
@@ -189,6 +193,106 @@ pub trait CompilerSpec {
     /// `BasicCompilerSpec.isEquivalent`.
     fn as_basic_compiler_spec(&self) -> Option<&crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec> {
         None
+    }
+}
+
+/// Forwarding impl so a shared spec (`Arc<BasicCompilerSpec>`, as a `SleighLanguage` caches it)
+/// can be handed out as a `Box<dyn CompilerSpec>` that still refers to the same spec, the way
+/// Java's `getCompilerSpecByID` returns the cached object. Mirrors the `Arc` impl of
+/// [`Language`].
+impl<C: CompilerSpec + ?Sized> CompilerSpec for Arc<C> {
+    fn get_language(&self) -> Box<dyn Language + Send + Sync> {
+        (**self).get_language()
+    }
+    fn get_compiler_spec_description(&self) -> Box<dyn CompilerSpecDescription> {
+        (**self).get_compiler_spec_description()
+    }
+    fn get_compiler_spec_id(&self) -> CompilerSpecID {
+        (**self).get_compiler_spec_id()
+    }
+    fn get_stack_pointer(&self) -> Option<RegisterRef> {
+        (**self).get_stack_pointer()
+    }
+    fn is_stack_right_justified(&self) -> bool {
+        (**self).is_stack_right_justified()
+    }
+    fn get_address_space(&self, space_name: &str) -> Option<Arc<AddressSpace>> {
+        (**self).get_address_space(space_name)
+    }
+    fn get_stack_space(&self) -> Arc<AddressSpace> {
+        (**self).get_stack_space()
+    }
+    fn get_stack_base_space(&self) -> Arc<AddressSpace> {
+        (**self).get_stack_base_space()
+    }
+    fn stack_grows_negative(&self) -> bool {
+        (**self).stack_grows_negative()
+    }
+    fn apply_context_settings(&self, ctx: &mut dyn DefaultProgramContext) {
+        (**self).apply_context_settings(ctx)
+    }
+    fn get_calling_conventions(&self) -> Vec<Arc<PrototypeModel>> {
+        (**self).get_calling_conventions()
+    }
+    fn get_calling_convention(&self, name: &str) -> Option<Arc<PrototypeModel>> {
+        (**self).get_calling_convention(name)
+    }
+    fn get_all_models(&self) -> Vec<Arc<PrototypeModel>> {
+        (**self).get_all_models()
+    }
+    fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
+        (**self).get_default_calling_convention()
+    }
+    fn get_decompiler_output_language(&self) -> DecompilerLanguage {
+        (**self).get_decompiler_output_language()
+    }
+    fn get_prototype_evaluation_model(&self, model_type: EvaluationModelType) -> Arc<PrototypeModel> {
+        (**self).get_prototype_evaluation_model(model_type)
+    }
+    fn is_global(&self, addr: &Address) -> bool {
+        (**self).is_global(addr)
+    }
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+        (**self).get_data_organization()
+    }
+    fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+        (**self).get_pcode_inject_library()
+    }
+    fn match_convention(&self, convention_name: &str) -> Arc<PrototypeModel> {
+        (**self).match_convention(convention_name)
+    }
+    fn find_best_calling_convention(&self, params: &[&dyn Parameter]) -> Arc<PrototypeModel> {
+        (**self).find_best_calling_convention(params)
+    }
+    fn has_property(&self, key: &str) -> bool {
+        (**self).has_property(key)
+    }
+    fn does_c_data_type_conversions(&self) -> bool {
+        (**self).does_c_data_type_conversions()
+    }
+    fn get_property_as_int(&self, key: &str, default_int: i32) -> i32 {
+        (**self).get_property_as_int(key, default_int)
+    }
+    fn get_property_as_boolean(&self, key: &str, default_boolean: bool) -> bool {
+        (**self).get_property_as_boolean(key, default_boolean)
+    }
+    fn get_property_or(&self, key: &str, default_string: &str) -> String {
+        (**self).get_property_or(key, default_string)
+    }
+    fn get_property(&self, key: &str) -> Option<String> {
+        (**self).get_property(key)
+    }
+    fn get_property_keys(&self) -> HashSet<String> {
+        (**self).get_property_keys()
+    }
+    fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
+        (**self).encode(encoder)
+    }
+    fn is_equivalent(&self, other: &dyn CompilerSpec) -> bool {
+        (**self).is_equivalent(other)
+    }
+    fn as_basic_compiler_spec(&self) -> Option<&crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec> {
+        (**self).as_basic_compiler_spec()
     }
 }
 
@@ -546,7 +650,7 @@ mod tests {
     }
 
     impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             Box::new(MockLanguage)
         }
 

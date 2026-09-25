@@ -10,7 +10,7 @@ use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 /// This trait was promoted from a minimal placeholder (see `seam_stubs.rs`) that declared no
 /// methods; the placeholder's (empty) surface is retained here as part of the full trait, so
 /// existing mock implementations continue to compile.
-pub trait CompilerSpecDescription {
+pub trait CompilerSpecDescription: Send + Sync {
     /// The identifier of the described compiler spec.
     fn get_compiler_spec_id(&self) -> CompilerSpecID;
 

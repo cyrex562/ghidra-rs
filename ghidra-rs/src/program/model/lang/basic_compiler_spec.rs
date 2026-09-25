@@ -19,7 +19,7 @@
 //!   translation applies.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use crate::generic::jar::resource_file::ResourceFile;
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView, AddressSpace, AddressSpaceType};
@@ -37,7 +37,7 @@ use crate::program::model::lang::ghidra_language_property_keys::PCODE_INJECT_LIB
 use crate::program::model::lang::inject_payload::{CALLFIXUP_TYPE, CALLOTHERFIXUP_TYPE};
 use crate::program::model::lang::inject_payload_segment::InjectPayloadSegment;
 use crate::program::model::lang::inject_payload_sleigh::InjectPayloadSleigh;
-use crate::program::model::lang::language::Language;
+use crate::program::model::lang::language::{Language, WeakLanguage};
 use crate::program::model::lang::pcode_inject_library::{PcodeInjectLibrary, PcodeInjectLibraryError};
 use crate::program::model::lang::prototype_model::PrototypeModel;
 use crate::program::model::lang::register::RegisterRef;
@@ -77,7 +77,9 @@ const DEFAULT_CALLING_CONVENTION_STRING: &str = "default";
 pub struct BasicCompilerSpec {
     description: Arc<dyn CompilerSpecDescription>,
     source_name: String,
-    language: Arc<SleighLanguage>,
+    /// The language this spec was built for. Weak because the language owns (caches) its specs;
+    /// see [`WeakLanguage`] for the invariant that the language outlives every use of the spec.
+    language: Weak<SleighLanguage>,
     data_organization: Arc<DataOrganizationImpl>,
     ctxsetting: Vec<ContextSetting>,
     default_model: Option<Arc<PrototypeModel>>,
@@ -124,6 +126,12 @@ pub struct BasicCompilerSpec {
     infer_ptr_bounds: Option<Vec<AddressRange>>,
 }
 
+// A `SleighLanguage` (itself `Send + Sync`) caches its compiler specs, so a spec must be too.
+const _: fn() = || {
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<BasicCompilerSpec>();
+};
+
 /// A failure while reading a `.cspec`. Java's reader throws `XmlParseException`, the unchecked
 /// `SleighException` (unknown register/space, bad stack growth) and `DuplicateNameException`; all
 /// are reported as this one type.
@@ -139,7 +147,7 @@ impl BasicCompilerSpec {
     /// missing default prototype, or duplicate prototype model names.
     pub fn from_xml(
         description: Arc<dyn CompilerSpecDescription>,
-        language: Arc<SleighLanguage>,
+        language: &Arc<SleighLanguage>,
         xml: &str,
     ) -> Result<Self, XmlParseException> {
         let mut spec = Self::uninitialized(description, language)?;
@@ -158,7 +166,7 @@ impl BasicCompilerSpec {
     /// line the parser reached), as in Java.
     pub fn from_file(
         description: Arc<dyn CompilerSpecDescription>,
-        language: Arc<SleighLanguage>,
+        language: &Arc<SleighLanguage>,
         cspec_file: &ResourceFile,
     ) -> Result<Self, CompilerSpecNotFoundException> {
         let language_id = language.get_language_id();
@@ -166,7 +174,7 @@ impl BasicCompilerSpec {
         let fail = |detail: String, cause: &dyn std::error::Error| {
             CompilerSpecNotFoundException::with_resource_read_error(&language_id, &spec_id, &detail, cause)
         };
-        let mut spec = Self::uninitialized(description.clone(), language.clone())
+        let mut spec = Self::uninitialized(description.clone(), language)
             .map_err(|e| fail(cspec_file.name(), &e))?;
         let stream = cspec_file.get_input_stream().map_err(|e| fail(cspec_file.name(), &e))?;
         let mut parser =
@@ -188,9 +196,9 @@ impl BasicCompilerSpec {
     /// The field state both constructors start from, before the `.cspec` is read.
     fn uninitialized(
         description: Arc<dyn CompilerSpecDescription>,
-        language: Arc<SleighLanguage>,
+        language: &Arc<SleighLanguage>,
     ) -> Result<Self, XmlParseException> {
-        let pcode_inject = Self::build_inject_library(&language)?;
+        let pcode_inject = Self::build_inject_library(language)?;
         let data_organization = Arc::new(DataOrganizationImpl::get_default_organization(Some(language.as_ref())));
         Ok(BasicCompilerSpec {
             description,
@@ -224,7 +232,7 @@ impl BasicCompilerSpec {
             func_ptr_align: 0,
             dead_code_delay: None,
             infer_ptr_bounds: None,
-            language,
+            language: Arc::downgrade(language),
         })
     }
 
@@ -263,7 +271,7 @@ impl BasicCompilerSpec {
                 language.get_language_id()
             )));
         }
-        Ok(PcodeInjectLibrary::new(language.clone()))
+        Ok(PcodeInjectLibrary::new(language))
     }
 
     /// Record a default context register setting over the given address range.
@@ -380,8 +388,14 @@ impl BasicCompilerSpec {
     }
 
     /// The language this spec was built for.
-    pub fn sleigh_language(&self) -> &Arc<SleighLanguage> {
-        &self.language
+    ///
+    /// # Panics
+    /// If the language has been dropped: a spec must not outlive its language (see
+    /// [`WeakLanguage`]).
+    pub fn sleigh_language(&self) -> Arc<SleighLanguage> {
+        self.language
+            .upgrade()
+            .expect("language dropped while its compiler spec is still in use")
     }
 
     /// Where the decompiler expects the return address, from `<returnaddress>`.
@@ -497,9 +511,9 @@ impl BasicCompilerSpec {
                     parser.end()?;
                 }
                 "segmentop" => {
-                    let source = format!("cspec: {}", self.language.get_language_id().get_id_as_string());
+                    let source = format!("cspec: {}", self.sleigh_language().get_language_id().get_id_as_string());
                     let mut payload = InjectPayloadSegment::new(source);
-                    payload.restore_xml(parser, &self.language)?;
+                    payload.restore_xml(parser, &self.sleigh_language())?;
                     self.register_payload(Arc::new(payload))?;
                 }
                 "aggressivetrim" => {
@@ -534,7 +548,7 @@ impl BasicCompilerSpec {
         }
         parser.end()?;
         if self.stack_pointer.is_none() {
-            let default_space = self.language.get_default_space();
+            let default_space = self.sleigh_language().get_default_space();
             self.stack_space = Some(AddressSpace::new(
                 SpaceNames::STACK_SPACE_NAME,
                 default_space.size(),
@@ -614,12 +628,13 @@ impl BasicCompilerSpec {
         let el = parser.start(&[])?;
         let name = el.get_attribute("name").unwrap_or_default();
         let register_name = el.get_attribute("register").unwrap_or_default();
-        let Some(reg) = self.language.get_register_by_name(&register_name) else {
+        let Some(reg) = self.sleigh_language().get_register_by_name(&register_name) else {
             return Err(XmlParseException::new(format!("Unknown register: {name}")));
         };
         let space_name = el.get_attribute("space").unwrap_or_default();
+        let language = self.sleigh_language();
         let bases = self.space_bases.get_or_insert_with(BTreeMap::new);
-        if self.language.get_address_factory().get_address_space_by_name(&name).is_some() || bases.contains_key(&name) {
+        if language.get_address_factory().get_address_space_by_name(&name).is_some() || bases.contains_key(&name) {
             return Err(XmlParseException::new(format!("Duplicate space name: {name}")));
         }
         let space = self.address_space_or_err(&space_name)?;
@@ -738,7 +753,7 @@ impl BasicCompilerSpec {
     fn set_stack_pointer<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlParseException> {
         let el = parser.start(&[])?;
         let reg_name = el.get_attribute("register").unwrap_or_default();
-        let Some(stack_pointer) = self.language.get_register_by_name(&reg_name) else {
+        let Some(stack_pointer) = self.sleigh_language().get_register_by_name(&reg_name) else {
             return Err(XmlParseException::new(format!("Unknown register: {reg_name}")));
         };
         let base_space_name = el.get_attribute("space").unwrap_or_default();
@@ -799,7 +814,7 @@ impl BasicCompilerSpec {
         } else {
             let mut model = PrototypeModel::new();
             // The model registers its injection in this spec's library while reading this spec.
-            let placeholder = PcodeInjectLibrary::new(self.language.clone());
+            let placeholder = PcodeInjectLibrary::new(&self.sleigh_language());
             let mut library = std::mem::replace(&mut self.pcode_inject, placeholder);
             let res = model.restore_xml(parser, &*self, Some(&mut library));
             self.pcode_inject = library;
@@ -980,8 +995,9 @@ impl BasicCompilerSpec {
 }
 
 impl CompilerSpec for BasicCompilerSpec {
-    fn get_language(&self) -> Box<dyn Language> {
-        Box::new(self.language.clone())
+    /// A non-owning handle (the language owns this spec; see [`WeakLanguage`]).
+    fn get_language(&self) -> Box<dyn Language + Send + Sync> {
+        Box::new(WeakLanguage::from_weak(self.language.clone()))
     }
 
     fn get_compiler_spec_description(&self) -> Box<dyn CompilerSpecDescription> {
@@ -997,7 +1013,7 @@ impl CompilerSpec for BasicCompilerSpec {
     }
 
     fn is_stack_right_justified(&self) -> bool {
-        let big_endian = self.language.is_big_endian();
+        let big_endian = self.sleigh_language().is_big_endian();
         (big_endian && !self.reverse_justify_stack) || (!big_endian && self.reverse_justify_stack)
     }
 
@@ -1007,7 +1023,7 @@ impl CompilerSpec for BasicCompilerSpec {
         } else if space_name == SpaceNames::JOIN_SPACE_NAME {
             Some(self.join_space.clone())
         } else {
-            self.language.get_address_factory().get_address_space_by_name(space_name)
+            self.sleigh_language().get_address_factory().get_address_space_by_name(space_name)
         };
         if space_name == SpaceNames::OTHER_SPACE_NAME {
             return Some(AddressSpace::new(
@@ -1030,7 +1046,7 @@ impl CompilerSpec for BasicCompilerSpec {
     /// Java returns `null` without a `<stackpointer>`; this trait's signature has no absent
     /// value, so the language's default space (where such a stack would live) is returned.
     fn get_stack_base_space(&self) -> Arc<AddressSpace> {
-        self.stack_base_space.clone().unwrap_or_else(|| self.language.get_default_space())
+        self.stack_base_space.clone().unwrap_or_else(|| self.sleigh_language().get_default_space())
     }
 
     fn stack_grows_negative(&self) -> bool {
@@ -1349,8 +1365,15 @@ mod tests {
         Arc::new(BasicCompilerSpecDescription::new(CompilerSpecID::new(Some("gcc")), "gcc"))
     }
 
+    /// The language the test specs are built for. A spec does not keep its language alive, so it
+    /// is kept for the whole test run.
+    fn x86_64_language() -> &'static Arc<SleighLanguage> {
+        static LANGUAGE: std::sync::OnceLock<Arc<SleighLanguage>> = std::sync::OnceLock::new();
+        LANGUAGE.get_or_init(|| sleigh_x86_64_language(None))
+    }
+
     fn spec_from(xml: &str) -> Result<BasicCompilerSpec, XmlParseException> {
-        BasicCompilerSpec::from_xml(description(), sleigh_x86_64_language(None), xml)
+        BasicCompilerSpec::from_xml(description(), x86_64_language(), xml)
     }
 
     fn gcc() -> BasicCompilerSpec {
@@ -1610,18 +1633,19 @@ mod tests {
         let path = dir.path().join("x86-64-gcc.cspec");
         std::fs::write(&path, X86_64_GCC).unwrap();
         let file = ResourceFile::new(path.clone());
-        let spec = BasicCompilerSpec::from_file(description(), sleigh_x86_64_language(None), &file).unwrap();
+        let spec = BasicCompilerSpec::from_file(description(), x86_64_language(), &file).unwrap();
         assert_eq!(spec.get_source_name(), file.absolute_path());
         assert_eq!(spec.get_calling_conventions().len(), 4);
 
         std::fs::write(&path, "<compiler_spec><stackpointer register=\"NOPE\" space=\"ram\"/></compiler_spec>").unwrap();
-        let err = BasicCompilerSpec::from_file(description(), sleigh_x86_64_language(None), &file).err().unwrap();
+        let err = BasicCompilerSpec::from_file(description(), x86_64_language(), &file).err().unwrap();
         assert!(err.message().contains("x86-64-gcc.cspec"), "{}", err.message());
         assert!(err.message().contains("Unknown register: NOPE"), "{}", err.message());
     }
 
-    #[test]
-    fn sleigh_language_loads_its_compiler_spec() {
+    /// The x86-64 test language, shared, with a description offering one compiler spec, `gcc`,
+    /// read from `cspec` (as Java's `SleighLanguage` gets it from its `.ldefs` description).
+    fn language_with_gcc_cspec(cspec: std::path::PathBuf) -> Arc<SleighLanguage> {
         use crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription;
         use crate::app::plugin::processors::sleigh::sleigh_language_file::SleighLanguageFile;
         use crate::program::model::lang::endian::Endian;
@@ -1703,10 +1727,21 @@ mod tests {
             fn set_language_file(&mut self, _language_file: Option<Box<dyn SleighLanguageFile>>) {}
         }
 
+        sleigh_x86_64_language(Some(Arc::new(Description { cspec: ResourceFile::new(cspec) })))
+    }
+
+    /// A temporary directory holding `X86_64_GCC` as `x86-64-gcc.cspec`, and that file's path.
+    fn gcc_cspec_file() -> (tempfile::TempDir, std::path::PathBuf) {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("x86-64-gcc.cspec");
         std::fs::write(&path, X86_64_GCC).unwrap();
-        let language = sleigh_x86_64_language(Some(Arc::new(Description { cspec: ResourceFile::new(path) })));
+        (dir, path)
+    }
+
+    #[test]
+    fn sleigh_language_loads_its_compiler_spec() {
+        let (_dir, path) = gcc_cspec_file();
+        let language = language_with_gcc_cspec(path);
         let spec = language.get_compiler_spec_by_id(&CompilerSpecID::new(Some("gcc"))).unwrap();
         assert_eq!(spec.get_default_calling_convention().unwrap().get_name().as_deref(), Some("__stdcall"));
         assert!(spec.as_basic_compiler_spec().is_some());
@@ -1714,5 +1749,76 @@ mod tests {
         let default_spec = language.get_default_compiler_spec();
         assert_eq!(default_spec.get_compiler_spec_id(), CompilerSpecID::new(Some("gcc")));
         assert!(language.get_compiler_spec_by_id(&CompilerSpecID::new(Some("clang"))).is_err());
+    }
+
+    #[test]
+    fn sleigh_language_caches_its_compiler_specs() {
+        let (_dir, path) = gcc_cspec_file();
+        let language = language_with_gcc_cspec(path);
+        let gcc = CompilerSpecID::new(Some("gcc"));
+        let first = language.get_basic_compiler_spec_by_id(&gcc).unwrap();
+        let second = language.get_basic_compiler_spec_by_id(&gcc).unwrap();
+        assert!(Arc::ptr_eq(&first, &second));
+
+        // The `Language` trait hands out the same cached spec.
+        let via_trait = Language::get_compiler_spec_by_id(language.as_ref(), &gcc).unwrap();
+        assert!(std::ptr::eq(via_trait.as_basic_compiler_spec().unwrap(), first.as_ref()));
+
+        // Java's getDefaultCompilerSpec goes through getCompilerSpecByID, and so the cache.
+        let default_spec = language.get_default_compiler_spec();
+        assert!(std::ptr::eq(default_spec.as_basic_compiler_spec().unwrap(), first.as_ref()));
+
+        // An unknown id is still rejected, and is not cached.
+        assert!(language.get_basic_compiler_spec_by_id(&CompilerSpecID::new(Some("clang"))).is_err());
+    }
+
+    #[test]
+    fn cached_spec_refers_back_to_its_language() {
+        let (_dir, path) = gcc_cspec_file();
+        let language = language_with_gcc_cspec(path);
+        let spec = language.get_basic_compiler_spec_by_id(&CompilerSpecID::new(Some("gcc"))).unwrap();
+        assert!(Arc::ptr_eq(&spec.sleigh_language(), &language));
+        assert_eq!(spec.get_language().get_language_id(), language.get_language_id());
+        // A parameter list's language is the spec's language too.
+        let model = spec.get_default_calling_convention().unwrap();
+        let param_language = model.get_input_params().unwrap().get_language().unwrap();
+        assert_eq!(param_language.get_language_id(), language.get_language_id());
+    }
+
+    #[test]
+    fn dropping_the_language_frees_it_and_its_cached_specs() {
+        let (_dir, path) = gcc_cspec_file();
+        let language = language_with_gcc_cspec(path);
+        let spec = language.get_basic_compiler_spec_by_id(&CompilerSpecID::new(Some("gcc"))).unwrap();
+        let weak_language = Arc::downgrade(&language);
+        let weak_spec = Arc::downgrade(&spec);
+        drop(spec);
+        drop(language);
+        // No `Arc` cycle through the spec (or its inject library or parameter lists) keeps
+        // either alive.
+        assert!(weak_language.upgrade().is_none());
+        assert!(weak_spec.upgrade().is_none());
+    }
+
+    #[test]
+    fn a_spec_does_not_keep_its_language_alive() {
+        let (_dir, path) = gcc_cspec_file();
+        let language = language_with_gcc_cspec(path);
+        let spec = language.get_basic_compiler_spec_by_id(&CompilerSpecID::new(Some("gcc"))).unwrap();
+        let weak_language = Arc::downgrade(&language);
+        drop(language);
+        assert!(weak_language.upgrade().is_none());
+        // The language's handle held by the spec reports the language as gone.
+        let handle = spec.get_language();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| handle.get_language_id()));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn basic_compiler_spec_is_send_and_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<BasicCompilerSpec>();
+        assert_send_sync::<Arc<BasicCompilerSpec>>();
+        assert_send_sync::<SleighLanguage>();
     }
 }

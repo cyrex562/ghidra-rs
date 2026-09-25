@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use thiserror::Error;
 
@@ -398,6 +398,211 @@ impl<L: Language + ?Sized> Language for Arc<L> {
     }
     fn get_maximum_instruction_length(&self) -> Option<i32> {
         (**self).get_maximum_instruction_length()
+    }
+}
+
+/// A non-owning [`Language`] handle: a [`Weak`] reference that implements [`Language`] by
+/// upgrading on every call.
+///
+/// Java objects may reference each other freely; Rust `Arc`s may not without leaking. A
+/// `SleighLanguage` owns (caches) its compiler specs, and a spec, its p-code inject library and its
+/// prototype models' parameter lists all refer back to that language. Those back-references are
+/// `WeakLanguage`s so the language and its specs are freed together.
+///
+/// # Invariant
+/// The handle is only valid while some `Arc` to the language is alive. A compiler spec is owned
+/// by, and reached through, its language, so the language outlives every use of the spec's
+/// back-reference. Calling a [`Language`] method after the language has been dropped is a logic
+/// error and panics; use [`WeakLanguage::upgrade`] to test first.
+pub struct WeakLanguage<L: ?Sized>(Weak<L>);
+
+impl<L: ?Sized> WeakLanguage<L> {
+    /// A handle to `language` that does not keep it alive.
+    pub fn new(language: &Arc<L>) -> Self {
+        WeakLanguage(Arc::downgrade(language))
+    }
+
+    /// A handle wrapping an existing weak reference.
+    pub fn from_weak(language: Weak<L>) -> Self {
+        WeakLanguage(language)
+    }
+
+    /// The language, if it is still alive.
+    pub fn upgrade(&self) -> Option<Arc<L>> {
+        self.0.upgrade()
+    }
+
+    /// The language.
+    ///
+    /// # Panics
+    /// If the language has been dropped (see the type's invariant).
+    fn strong(&self) -> Arc<L> {
+        self.0
+            .upgrade()
+            .expect("language dropped while a compiler spec still refers to it")
+    }
+}
+
+impl<L: ?Sized> Clone for WeakLanguage<L> {
+    fn clone(&self) -> Self {
+        WeakLanguage(self.0.clone())
+    }
+}
+
+impl<L: Language + ?Sized> Language for WeakLanguage<L> {
+    fn get_language_id(&self) -> LanguageID {
+        self.strong().get_language_id()
+    }
+    fn get_language_description(&self) -> Box<dyn LanguageDescription> {
+        self.strong().get_language_description()
+    }
+    fn get_parallel_instruction_helper(&self) -> Option<Box<dyn ParallelInstructionLanguageHelper>> {
+        self.strong().get_parallel_instruction_helper()
+    }
+    fn get_processor(&self) -> Box<dyn Processor> {
+        self.strong().get_processor()
+    }
+    fn get_version(&self) -> i32 {
+        self.strong().get_version()
+    }
+    fn get_minor_version(&self) -> i32 {
+        self.strong().get_minor_version()
+    }
+    fn get_address_factory(&self) -> Box<dyn AddressFactory> {
+        self.strong().get_address_factory()
+    }
+    fn get_default_space(&self) -> Arc<AddressSpace> {
+        self.strong().get_default_space()
+    }
+    fn get_default_data_space(&self) -> Arc<AddressSpace> {
+        self.strong().get_default_data_space()
+    }
+    fn is_big_endian(&self) -> bool {
+        self.strong().is_big_endian()
+    }
+    fn get_instruction_alignment(&self) -> i32 {
+        self.strong().get_instruction_alignment()
+    }
+    fn supports_pcode(&self) -> bool {
+        self.strong().supports_pcode()
+    }
+    fn is_volatile(&self, addr: &Address) -> bool {
+        self.strong().is_volatile(addr)
+    }
+    fn parse(
+        &self,
+        buf: &dyn MemBuffer,
+        context: &mut dyn ProcessorContext,
+        in_delay_slot: bool,
+    ) -> Result<Box<dyn InstructionPrototype>, ParseError> {
+        self.strong().parse(buf, context, in_delay_slot)
+    }
+    fn get_number_of_user_defined_op_names(&self) -> i32 {
+        self.strong().get_number_of_user_defined_op_names()
+    }
+    fn get_user_defined_op_name(&self, index: i32) -> Option<String> {
+        self.strong().get_user_defined_op_name(index)
+    }
+    fn get_registers_at(&self, address: &Address) -> Vec<RegisterRef> {
+        self.strong().get_registers_at(address)
+    }
+    fn get_register_in_space(
+        &self,
+        addrspc: &Arc<AddressSpace>,
+        offset: i64,
+        size: i32,
+    ) -> Option<RegisterRef> {
+        self.strong().get_register_in_space(addrspc, offset, size)
+    }
+    fn get_registers(&self) -> Vec<RegisterRef> {
+        self.strong().get_registers()
+    }
+    fn get_register_names(&self) -> Vec<String> {
+        self.strong().get_register_names()
+    }
+    fn get_register_by_name(&self, name: &str) -> Option<RegisterRef> {
+        self.strong().get_register_by_name(name)
+    }
+    fn get_register_at(&self, addr: &Address, size: i32) -> Option<RegisterRef> {
+        self.strong().get_register_at(addr, size)
+    }
+    fn get_program_counter(&self) -> Option<RegisterRef> {
+        self.strong().get_program_counter()
+    }
+    fn get_context_base_register(&self) -> Option<RegisterRef> {
+        self.strong().get_context_base_register()
+    }
+    fn get_context_registers(&self) -> Vec<RegisterRef> {
+        self.strong().get_context_registers()
+    }
+    fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
+        self.strong().get_default_memory_blocks()
+    }
+    fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        self.strong().get_default_symbols()
+    }
+    fn get_segmented_space(&self) -> String {
+        self.strong().get_segmented_space()
+    }
+    fn get_volatile_addresses(&self) -> Box<dyn AddressSetView> {
+        self.strong().get_volatile_addresses()
+    }
+    fn apply_context_settings(&self, ctx: &mut dyn DefaultProgramContext) {
+        self.strong().apply_context_settings(ctx)
+    }
+    fn reload_language(&self, task_monitor: &dyn TaskMonitor) -> std::io::Result<()> {
+        self.strong().reload_language(task_monitor)
+    }
+    fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
+        self.strong().get_compatible_compiler_spec_descriptions()
+    }
+    fn get_compiler_spec_by_id(
+        &self,
+        compiler_spec_id: &CompilerSpecID,
+    ) -> Result<Box<dyn CompilerSpec>, CompilerSpecNotFoundException> {
+        self.strong().get_compiler_spec_by_id(compiler_spec_id)
+    }
+    fn get_default_compiler_spec(&self) -> Box<dyn CompilerSpec> {
+        self.strong().get_default_compiler_spec()
+    }
+    fn has_property(&self, key: &str) -> bool {
+        self.strong().has_property(key)
+    }
+    fn get_property_as_int(&self, key: &str, default_int: i32) -> i32 {
+        self.strong().get_property_as_int(key, default_int)
+    }
+    fn get_property_as_boolean(&self, key: &str, default_boolean: bool) -> bool {
+        self.strong().get_property_as_boolean(key, default_boolean)
+    }
+    fn get_property_or(&self, key: &str, default_string: &str) -> String {
+        self.strong().get_property_or(key, default_string)
+    }
+    fn get_property(&self, key: &str) -> Option<String> {
+        self.strong().get_property(key)
+    }
+    fn get_property_keys(&self) -> HashSet<String> {
+        self.strong().get_property_keys()
+    }
+    fn has_manual(&self) -> bool {
+        self.strong().has_manual()
+    }
+    fn get_manual_entry(&self, instruction_mnemonic: &str) -> Option<crate::util::manual_entry::ManualEntry> {
+        self.strong().get_manual_entry(instruction_mnemonic)
+    }
+    fn get_manual_instruction_mnemonic_keys(&self) -> HashSet<String> {
+        self.strong().get_manual_instruction_mnemonic_keys()
+    }
+    fn get_manual_exception(&self) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+        self.strong().get_manual_exception()
+    }
+    fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
+        self.strong().get_sorted_vector_registers()
+    }
+    fn get_register_addresses(&self) -> Box<dyn AddressSetView> {
+        self.strong().get_register_addresses()
+    }
+    fn get_maximum_instruction_length(&self) -> Option<i32> {
+        self.strong().get_maximum_instruction_length()
     }
 }
 

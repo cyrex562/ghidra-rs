@@ -116,7 +116,7 @@ mod tests {
     }
 
     impl CompilerSpec for MockProgramCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             unimplemented!("not exercised by this smoke test")
         }
 

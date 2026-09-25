@@ -1057,7 +1057,7 @@ mod tests {
     }
 
     impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn crate::program::model::lang::language::Language> {
+        fn get_language(&self) -> Box<dyn crate::program::model::lang::language::Language + Send + Sync> {
             Box::new(SharedLanguage(self.language.clone()))
         }
         fn get_compiler_spec_description(

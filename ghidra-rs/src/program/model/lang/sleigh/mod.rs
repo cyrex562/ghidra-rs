@@ -24,14 +24,8 @@
 //!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
 //!   which a `&mut dyn ProcessorContext` cannot be tested for here. A language can only parse
 //!   once it is shared through [`SleighLanguage::into_shared`] (prototypes hold the language).
-//! * [`Language::get_compiler_spec_by_id`] builds a fresh
-//!   [`BasicCompilerSpec`](crate::program::model::lang::basic_compiler_spec::BasicCompilerSpec)
-//!   on every call instead of caching it in `compilerSpecs` as Java does: a `Send + Sync`
-//!   language cannot store a compiler spec, which is not `Send + Sync` (it holds
-//!   `dyn CompilerSpecDescription`, `dyn InjectPayloadSleigh`, `dyn Language`, and the protorules
-//!   `dyn AssignAction`/`dyn DatatypeFilter`/`dyn QualifierFilter` trait objects, none of which
-//!   require `Send + Sync`). It also needs the language to have been shared through
-//!   [`SleighLanguage::into_shared`] (the spec holds its language).
+//! * [`Language::get_compiler_spec_by_id`] needs the language to have been shared through
+//!   [`SleighLanguage::into_shared`] (a spec refers back to its language).
 //! * [`Language::reload_language`] needs `SlaFormat.buildDecoder` (not ported) to re-read the
 //!   `.sla` file, and reports that as an I/O error, as Java does for a failed reload.
 //!
@@ -43,6 +37,14 @@
 //! register ([`Register::same`]), as with Java's `Register` objects. Registers, the manager and
 //! therefore `SleighLanguage` are `Send + Sync` (the language is shared through `Arc` by the
 //! p-code emulator, `ProgramDB`, and others).
+//!
+//! # Compiler specs
+//! As in Java (`compilerSpecs`), each compiler spec is loaded on first request and cached, so
+//! every request for the same id returns the same spec. The language owns its specs; a spec
+//! refers back to its language only weakly (see
+//! [`WeakLanguage`](crate::program::model::lang::language::WeakLanguage)), so dropping the last
+//! `Arc` to the language frees the language and its specs together. A spec must therefore not be
+//! used after its language has been dropped.
 
 use super::Endian;
 use crate::app::plugin::processors::generic::MemoryBlockDefinition;
@@ -88,7 +90,7 @@ use crate::util::manual_entry::ManualEntry;
 use crate::util::task::TaskMonitor;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::sync::{Arc, OnceLock, Weak};
+use std::sync::{Arc, Mutex, OnceLock, Weak};
 
 pub mod constructor;
 pub mod decision;
@@ -148,6 +150,8 @@ pub struct SleighLanguage {
     /// `registerManager`: every register of this language, built once from the symbol table
     /// when the language is decoded.
     register_manager: RegisterManager,
+    /// `compilerSpecs`: the compiler specs loaded so far, by id.
+    compiler_specs: Mutex<HashMap<CompilerSpecID, Arc<BasicCompilerSpec>>>,
 }
 
 impl fmt::Display for SleighLanguage {
@@ -366,6 +370,7 @@ impl SleighLanguage {
             max_instruction_length: None,
             manual: OnceLock::new(),
             self_ref: Weak::new(),
+            compiler_specs: Mutex::new(HashMap::new()),
             // Replaced below, once the symbol table the registers come from is decoded.
             register_manager: RegisterBuilder::new().register_manager(),
         };
@@ -610,6 +615,66 @@ impl SleighLanguage {
         self._default_space
             .clone()
             .expect("decode rejects a language without a default space")
+    }
+
+    /// The compiler spec `compiler_spec_id`, loaded from its `.cspec` file on first request and
+    /// cached: repeated requests return the same spec.
+    ///
+    /// Port of `SleighLanguage.getCompilerSpecByID`, returning the concrete spec;
+    /// [`Language::get_compiler_spec_by_id`] hands out this same spec as a `dyn CompilerSpec`.
+    ///
+    /// # Errors
+    /// [`CompilerSpecNotFoundException`] if the description lists no such compiler spec, its
+    /// description names no `.cspec` file, the language was never shared through
+    /// [`SleighLanguage::into_shared`], or the file cannot be read or parsed.
+    pub fn get_basic_compiler_spec_by_id(
+        &self,
+        compiler_spec_id: &CompilerSpecID,
+    ) -> Result<Arc<BasicCompilerSpec>, CompilerSpecNotFoundException> {
+        let known = self
+            .get_compatible_compiler_spec_descriptions()
+            .iter()
+            .any(|d| &d.get_compiler_spec_id() == compiler_spec_id);
+        if !known {
+            return Err(CompilerSpecNotFoundException::new(
+                &self.get_language_id(),
+                compiler_spec_id,
+            ));
+        }
+        if let Some(spec) = self.cached_compiler_specs().get(compiler_spec_id) {
+            return Ok(spec.clone());
+        }
+        let not_found = || CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id);
+        let Some(description) = &self.description else {
+            return Err(not_found());
+        };
+        let compiler_spec_description: Arc<dyn CompilerSpecDescription> =
+            Arc::from(description.get_compiler_spec_description_by_id(compiler_spec_id)?);
+        let Some(file) = compiler_spec_description
+            .as_sleigh_compiler_spec_description()
+            .map(|d| d.get_file().clone())
+        else {
+            return Err(not_found());
+        };
+        let Some(language) = self.self_ref.upgrade() else {
+            return Err(not_found());
+        };
+        // Built without holding the lock: reading the `.cspec` calls back into this language.
+        let spec = Arc::new(BasicCompilerSpec::from_file(compiler_spec_description, &language, &file)?);
+        // If another thread loaded the same spec meanwhile, keep the first so every caller
+        // shares one spec.
+        let mut specs = self.cached_compiler_specs();
+        Ok(specs.entry(compiler_spec_id.clone()).or_insert(spec).clone())
+    }
+
+    /// The compiler-spec cache. A panic while it was held cannot leave it inconsistent (it is
+    /// only ever inserted into), so a poisoned lock is recovered.
+    fn cached_compiler_specs(
+        &self,
+    ) -> std::sync::MutexGuard<'_, HashMap<CompilerSpecID, Arc<BasicCompilerSpec>>> {
+        self.compiler_specs
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Shares this language, so it can parse instructions: every instruction prototype holds
@@ -924,44 +989,17 @@ impl Language for SleighLanguage {
             .unwrap_or_default()
     }
 
-    /// Port of `getCompilerSpecByID(CompilerSpecID)`: the compiler spec parsed from the `.cspec`
-    /// file named by the description (see the module docs for the caching difference).
+    /// Port of `getCompilerSpecByID(CompilerSpecID)`: the cached compiler spec parsed from the
+    /// `.cspec` file named by the description; see
+    /// [`SleighLanguage::get_basic_compiler_spec_by_id`].
     ///
     /// # Errors
-    /// [`CompilerSpecNotFoundException`] if the description lists no such compiler spec, its
-    /// description names no `.cspec` file, the language was never shared through
-    /// [`SleighLanguage::into_shared`], or the file cannot be read or parsed.
+    /// As [`SleighLanguage::get_basic_compiler_spec_by_id`].
     fn get_compiler_spec_by_id(
         &self,
         compiler_spec_id: &CompilerSpecID,
     ) -> Result<Box<dyn CompilerSpec>, CompilerSpecNotFoundException> {
-        let known = self
-            .get_compatible_compiler_spec_descriptions()
-            .iter()
-            .any(|d| &d.get_compiler_spec_id() == compiler_spec_id);
-        if !known {
-            return Err(CompilerSpecNotFoundException::new(
-                &self.get_language_id(),
-                compiler_spec_id,
-            ));
-        }
-        let not_found = || CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id);
-        let Some(description) = &self.description else {
-            return Err(not_found());
-        };
-        let compiler_spec_description: Arc<dyn CompilerSpecDescription> =
-            Arc::from(description.get_compiler_spec_description_by_id(compiler_spec_id)?);
-        let Some(file) = compiler_spec_description
-            .as_sleigh_compiler_spec_description()
-            .map(|d| d.get_file().clone())
-        else {
-            return Err(not_found());
-        };
-        let Some(language) = self.self_ref.upgrade() else {
-            return Err(not_found());
-        };
-        let spec = BasicCompilerSpec::from_file(compiler_spec_description, language, &file)?;
-        Ok(Box::new(spec))
+        Ok(Box::new(self.get_basic_compiler_spec_by_id(compiler_spec_id)?))
     }
 
     /// Port of `getDefaultCompilerSpec()`: the first compatible compiler spec.

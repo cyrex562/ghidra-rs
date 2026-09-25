@@ -337,7 +337,7 @@ mod tests {
     fn with_language(entries: Vec<TestEntry>) -> ParamListStandard {
         let num_group = entries.len() as i32;
         TestResource { entries, num_group, spacebase: None }
-            .build_with_language(Some(Arc::new(TestLanguage { big_endian: false }) as Arc<dyn Language>))
+            .build_with_language(Some(Arc::new(TestLanguage { big_endian: false }) as Arc<dyn Language + Send + Sync>))
     }
 
     fn stack_resource() -> ParamListStandard {

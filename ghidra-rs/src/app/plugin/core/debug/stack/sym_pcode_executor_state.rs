@@ -78,7 +78,7 @@ impl SymPcodeExecutorState {
                 .get_compiler_spec()
                 .expect("program has no compiler spec"),
         );
-        let language: Arc<dyn Language> = Arc::from(c_spec.get_language());
+        let language: Arc<dyn Language + Send + Sync> = Arc::from(c_spec.get_language());
         let arithmetic = Arc::new(SymPcodeArithmetic::new(Arc::clone(&c_spec)));
         SymPcodeExecutorState {
             program,
@@ -674,7 +674,7 @@ mod tests {
     }
 
     impl CompilerSpec for TestCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             Box::new(TestLanguage::new(&self.spaces.register))
         }
         fn get_compiler_spec_description(&self) -> Box<dyn CompilerSpecDescription> {

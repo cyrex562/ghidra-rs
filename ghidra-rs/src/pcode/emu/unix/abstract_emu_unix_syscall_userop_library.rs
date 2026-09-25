@@ -694,7 +694,7 @@ mod tests {
 
     struct MockCompilerSpec;
     impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn crate::program::model::lang::language::Language> {
+        fn get_language(&self) -> Box<dyn crate::program::model::lang::language::Language + Send + Sync> {
             unimplemented!("not exercised by these tests")
         }
         fn get_compiler_spec_description(

@@ -47,7 +47,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use crate::app::plugin::processors::sleigh::sleigh_exception::SleighException;
 use crate::app::plugin::processors::sleigh::unique_layout::UniqueLayout;
@@ -137,7 +137,10 @@ impl AllocatedInjectPayload {
 /// Port of `ghidra.program.model.lang.PcodeInjectLibrary`.
 #[derive(Clone)]
 pub struct PcodeInjectLibrary {
-    language: Arc<SleighLanguage>,
+    /// The language. Weak because the language owns (caches) the compiler spec that owns this
+    /// library; the language must outlive every use of the library (see
+    /// [`WeakLanguage`](crate::program::model::lang::language::WeakLanguage)).
+    language: Weak<SleighLanguage>,
     /// Current base address for new temporary registers.
     unique_base: u64,
     /// Map of names to registered call-fixups.
@@ -159,11 +162,12 @@ pub struct PcodeInjectLibrary {
 impl PcodeInjectLibrary {
     /// Constructs a library for the given language.
     ///
-    /// Port of `PcodeInjectLibrary(SleighLanguage)`.
-    pub fn new(language: Arc<SleighLanguage>) -> Self {
-        let unique_base = UniqueLayout::Inject.get_offset(Some(&language));
+    /// Port of `PcodeInjectLibrary(SleighLanguage)`. The library does not keep `language` alive;
+    /// the caller must.
+    pub fn new(language: &Arc<SleighLanguage>) -> Self {
+        let unique_base = UniqueLayout::Inject.get_offset(Some(language));
         PcodeInjectLibrary {
-            language,
+            language: Arc::downgrade(language),
             unique_base,
             call_fixup_map: BTreeMap::new(),
             call_other_fixup_map: BTreeMap::new(),
@@ -291,12 +295,22 @@ impl PcodeInjectLibrary {
             .collect()
     }
 
+    /// The language.
+    ///
+    /// # Panics
+    /// If the language has been dropped while this library is still in use.
+    fn language(&self) -> Arc<SleighLanguage> {
+        self.language
+            .upgrade()
+            .expect("language dropped while its p-code inject library is still in use")
+    }
+
     /// Builds a fresh [`InjectContext`] carrying this library's language.
     ///
     /// Port of `buildInjectContext()`.
     pub fn build_inject_context(&self) -> InjectContext {
         let mut res = InjectContext::new();
-        res.language = Some(self.language.clone());
+        res.language = Some(self.language());
         res
     }
 
@@ -308,9 +322,10 @@ impl PcodeInjectLibrary {
     /// Port of `hasUserDefinedOp(String)`.
     pub fn has_user_defined_op(&mut self, name: &str) -> bool {
         if self.call_other_fixup_map.is_empty() {
-            let max = self.language.get_number_of_user_defined_op_names();
+            let language = self.language();
+            let max = language.get_number_of_user_defined_op_names();
             for i in 0..max {
-                if let Some(opname) = self.language.get_user_defined_op_name(i) {
+                if let Some(opname) = language.get_user_defined_op_name(i) {
                     self.call_other_fixup_map.insert(opname, None);
                 }
             }
@@ -807,12 +822,16 @@ mod tests {
         Arc::new(SleighLanguage::decode(&decoder, "test".to_string()).expect("test language should decode"))
     }
 
+    /// A library does not keep its language alive, so the fixtures it is built on are kept for
+    /// the whole test run.
     fn library() -> PcodeInjectLibrary {
-        PcodeInjectLibrary::new(test_language(false))
+        static LANGUAGE: std::sync::OnceLock<Arc<SleighLanguage>> = std::sync::OnceLock::new();
+        PcodeInjectLibrary::new(LANGUAGE.get_or_init(|| test_language(false)))
     }
 
     fn library_with_userop() -> PcodeInjectLibrary {
-        PcodeInjectLibrary::new(test_language(true))
+        static LANGUAGE: std::sync::OnceLock<Arc<SleighLanguage>> = std::sync::OnceLock::new();
+        PcodeInjectLibrary::new(LANGUAGE.get_or_init(|| test_language(true)))
     }
 
     /// Unwraps the `Err` side of a [`PcodeInjectLibrary::register_inject`] result. A plain
@@ -1049,7 +1068,7 @@ mod tests {
     fn new_computes_unique_base_from_language() {
         let lang = test_language(false);
         assert_eq!(lang.get_unique_base(), 0); // .sla test fixture never sets uniqbase
-        let lib = PcodeInjectLibrary::new(lang);
+        let lib = PcodeInjectLibrary::new(&lang);
         assert_eq!(lib.get_unique_base(), 0x200); // UniqueLayout.INJECT
     }
 

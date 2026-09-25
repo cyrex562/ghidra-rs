@@ -513,7 +513,7 @@ mod tests {
     fn dual_list(entries: Vec<TestEntry>, big_endian: bool) -> ParamListStandard {
         let num_group = entries.len() as i32;
         TestResource { entries, num_group, spacebase: None }
-            .build_with_language(Some(Arc::new(TestLanguage { big_endian }) as Arc<dyn Language>))
+            .build_with_language(Some(Arc::new(TestLanguage { big_endian }) as Arc<dyn Language + Send + Sync>))
     }
 
     /// One 4-byte general (base) exclusion tile (group 0), one 4-byte float (alt) exclusion tile

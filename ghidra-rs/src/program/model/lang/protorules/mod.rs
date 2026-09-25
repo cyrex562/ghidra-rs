@@ -289,7 +289,7 @@ pub(crate) mod param_test_support {
         /// The real resource list, associated with `language`.
         pub(crate) fn build_with_language(
             &self,
-            language: Option<Arc<dyn crate::program::model::lang::language::Language>>,
+            language: Option<Arc<dyn crate::program::model::lang::language::Language + Send + Sync>>,
         ) -> ParamListStandard {
             ParamListStandard::from_parts(
                 self.entries.iter().map(TestEntry::build).collect(),

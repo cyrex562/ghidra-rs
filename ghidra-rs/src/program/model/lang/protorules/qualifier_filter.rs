@@ -15,7 +15,7 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 /// [`filter`](QualifierFilter::filter).
 ///
 /// Port of `ghidra.program.model.lang.protorules.QualifierFilter`.
-pub trait QualifierFilter {
+pub trait QualifierFilter: Send + Sync {
     /// Make a copy of this qualifier, boxed as a trait object.
     ///
     /// Port of the Java `clone()` method; renamed because `clone` returning `Self` is not

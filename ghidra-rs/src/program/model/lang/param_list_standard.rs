@@ -63,7 +63,7 @@ pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
 #[derive(Default)]
 pub struct ParamListStandard {
     /// The language associated with this convention (`ParamListStandard.language`).
-    language: Option<Arc<dyn Language>>,
+    language: Option<Arc<dyn Language + Send + Sync>>,
     /// Number of "groups" in this parameter convention (`ParamListStandard.numgroup`).
     numgroup: i32,
     /// Do hidden return pointers usurp the storage of the this pointer
@@ -106,7 +106,7 @@ impl ParamListStandard {
         thisbeforeret: bool,
         auto_killed_by_call: bool,
         split_metatype: bool,
-        language: Option<Arc<dyn Language>>,
+        language: Option<Arc<dyn Language + Send + Sync>>,
     ) -> Self {
         ParamListStandard {
             language,
@@ -583,7 +583,7 @@ impl ParamListStandard {
     /// The language associated with this convention.
     ///
     /// Port of `ParamListStandard.getLanguage`.
-    pub fn get_language(&self) -> Option<Arc<dyn Language>> {
+    pub fn get_language(&self) -> Option<Arc<dyn Language + Send + Sync>> {
         self.language.clone()
     }
 

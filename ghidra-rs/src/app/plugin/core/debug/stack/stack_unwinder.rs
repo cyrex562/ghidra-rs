@@ -992,7 +992,7 @@ mod tests {
     }
 
     impl CompilerSpec for TestCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             Box::new(TestLanguage::new(self.spaces.clone(), true))
         }
         fn get_compiler_spec_description(&self) -> Box<dyn CompilerSpecDescription> {

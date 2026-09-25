@@ -544,7 +544,7 @@ mod tests {
         compiler_spec_id: CompilerSpecID,
     }
     impl CompilerSpec for MockCompilerSpec {
-        fn get_language(&self) -> Box<dyn Language> {
+        fn get_language(&self) -> Box<dyn Language + Send + Sync> {
             Box::new(MockLanguage {
                 language_id: self.language_id.clone(),
                 compiler_spec_id: self.compiler_spec_id.clone(),

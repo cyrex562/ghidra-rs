@@ -15,7 +15,7 @@ use crate::util::xml::xml_pull_parser::XmlPullParser;
 /// [`filter`](DatatypeFilter::filter) method.
 ///
 /// Port of `ghidra.program.model.lang.protorules.DatatypeFilter`.
-pub trait DatatypeFilter {
+pub trait DatatypeFilter: Send + Sync {
     /// Make a copy of this filter, boxed as a trait object.
     ///
     /// Port of the Java `clone()` method; renamed because `clone` returning `Self` is not
