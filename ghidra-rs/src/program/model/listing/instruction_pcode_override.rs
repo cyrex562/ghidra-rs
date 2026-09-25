@@ -31,10 +31,13 @@ pub trait InstructionPcodeOverride: PcodeOverride {}
 ///
 /// The cache is populated lazily (on first query) and never refreshed, mirroring the Java
 /// class's assumption that instances are short-lived (the duration of a single `PcodeEmit`
-/// pass). All mutator methods take `&self`, per [`PcodeOverride`]'s contract; the applied flags
-/// and reference cache are carried via interior mutability instead of the Java fields.
-pub struct InstructionPcodeOverrideImpl {
-    instr: Arc<dyn Instruction>,
+/// pass). That lifetime is why the instruction is *borrowed*: the override never outlives the
+/// `getPcode` call that builds it, so an instruction can hand out `&self` rather than having to
+/// manufacture an `Arc` of itself (see `OWNERSHIP_MIGRATION.md`, "Instruction/CodeUnit arena").
+/// All mutator methods take `&self`, per [`PcodeOverride`]'s contract; the applied flags and
+/// reference cache are carried via interior mutability instead of the Java fields.
+pub struct InstructionPcodeOverrideImpl<'a> {
+    instr: &'a dyn Instruction,
     call_override_applied: Cell<bool>,
     jump_override_applied: Cell<bool>,
     call_other_call_override_applied: Cell<bool>,
@@ -43,11 +46,11 @@ pub struct InstructionPcodeOverrideImpl {
     primary_overriding_references: RefCell<Option<Vec<Arc<dyn Reference>>>>,
 }
 
-impl InstructionPcodeOverrideImpl {
+impl<'a> InstructionPcodeOverrideImpl<'a> {
     /// This constructor caches nothing eagerly; the primary and overriding "from" references of
     /// `instr` are computed and cached lazily on first query. Mirrors the Java constructor
     /// `InstructionPcodeOverride(Instruction instr)`.
-    pub fn new(instr: Arc<dyn Instruction>) -> Self {
+    pub fn new(instr: &'a dyn Instruction) -> Self {
         InstructionPcodeOverrideImpl {
             instr,
             call_override_applied: Cell::new(false),
@@ -96,7 +99,7 @@ impl InstructionPcodeOverrideImpl {
     }
 }
 
-impl PcodeOverride for InstructionPcodeOverrideImpl {
+impl PcodeOverride for InstructionPcodeOverrideImpl<'_> {
     fn get_instruction_start(&self) -> Address {
         self.instr.get_min_address()
     }
@@ -202,7 +205,7 @@ impl PcodeOverride for InstructionPcodeOverrideImpl {
     }
 }
 
-impl InstructionPcodeOverride for InstructionPcodeOverrideImpl {}
+impl InstructionPcodeOverride for InstructionPcodeOverrideImpl<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -547,7 +550,7 @@ use crate::program::model::mem::MemBuffer;
             length_overridden: false,
             refs_from: Vec::new(),
         });
-        let over = InstructionPcodeOverrideImpl::new(instr);
+        let over = InstructionPcodeOverrideImpl::new(&*instr);
         let dyn_over: &dyn InstructionPcodeOverride = &over;
         assert_eq!(dyn_over.get_instruction_start(), addr(&space, 0x1000));
     }
@@ -584,7 +587,7 @@ use crate::program::model::mem::MemBuffer;
             length_overridden: false,
             refs_from: refs,
         });
-        let over = InstructionPcodeOverrideImpl::new(instr);
+        let over = InstructionPcodeOverrideImpl::new(&*instr);
 
         assert!(over.has_potential_override());
         assert_eq!(
@@ -616,7 +619,7 @@ use crate::program::model::mem::MemBuffer;
             length_overridden: false,
             refs_from: Vec::new(),
         });
-        let over = InstructionPcodeOverrideImpl::new(instr);
+        let over = InstructionPcodeOverrideImpl::new(&*instr);
 
         // RefType::UnconditionalCall is not an override type, so this must return None even
         // though it is never in the reference set.

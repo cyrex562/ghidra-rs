@@ -62,10 +62,10 @@ use crate::trace::model::listing::trace_instruction::TraceInstruction;
 ///   that [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
 ///   actually consumes. Until those two are reconciled, implementors
 ///   must supply the real context here directly.
-/// - [`Self::as_instruction_arc`]: a shared-ownership handle to `self` as `Arc<dyn Instruction>`,
-///   needed to construct an [`InstructionPcodeOverrideImpl`] (which requires ownership, not just
-///   `&self`) for [`Self::get_operand_ref_type`] and [`Self::get_pcode_with_overrides`]. Mirrors
-///   Java's `new InstructionPcodeOverride(this)`.
+/// - [`Self::as_instruction_arc`]: a handle to `self` as `Arc<dyn Instruction>`, used to build the
+///   `&dyn Instruction` an [`InstructionPcodeOverrideImpl`] borrows for
+///   [`Self::get_operand_ref_type`] and [`Self::get_pcode_with_overrides`] (the shadowing default
+///   methods cannot coerce an unsized `Self`). Mirrors Java's `new InstructionPcodeOverride(this)`.
 pub trait InstructionAdapterFromPrototype: TraceInstruction {
     /// The [`InstructionContext`] to pass to
     /// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
@@ -262,7 +262,8 @@ pub trait InstructionAdapterFromPrototype: TraceInstruction {
     {
         let prototype = self.get_prototype();
         let context = self.get_prototype_context();
-        let override_ = InstructionPcodeOverrideImpl::new(self.as_instruction_arc());
+        let instr = self.as_instruction_arc();
+        let override_ = InstructionPcodeOverrideImpl::new(&*instr);
         prototype.get_operand_ref_type(op_index, context.as_ref(), Some(&override_))
     }
 
@@ -293,7 +294,8 @@ pub trait InstructionAdapterFromPrototype: TraceInstruction {
         if !include_overrides {
             return prototype.get_pcode(context.as_ref(), None);
         }
-        let override_ = InstructionPcodeOverrideImpl::new(self.as_instruction_arc());
+        let instr = self.as_instruction_arc();
+        let override_ = InstructionPcodeOverrideImpl::new(&*instr);
         prototype.get_pcode(context.as_ref(), Some(&override_))
     }
 

@@ -36,11 +36,12 @@
 //! `Arc<dyn Instruction>`).
 //!
 //! [`InstructionDB::new`] returns an `Arc<InstructionDB>` built with [`Arc::new_cyclic`] because
-//! several Java methods return `this` as a *different* interface -- `getInstructionContext()`
-//! returns `this` as an `InstructionContext`, and `getOperandRefType`/`getPcode` pass `this` to
-//! `new InstructionPcodeOverride(this)`, whose ported constructor takes an
-//! `Arc<dyn Instruction>`. A `&self` method cannot manufacture an `Arc` of itself, so the object
-//! keeps a `Weak` back-reference to itself, set at construction.
+//! `getInstructionContext()` returns `this` as a *different* interface, and the ported
+//! [`Instruction::get_instruction_context`] returns an `Arc<dyn InstructionContext>`. A `&self`
+//! method cannot manufacture an `Arc` of itself, so the object keeps a `Weak` back-reference to
+//! itself, set at construction. (`new InstructionPcodeOverride(this)` used to need it too; the
+//! override now borrows its instruction. See `OWNERSHIP_MIGRATION.md`, "Instruction/CodeUnit
+//! arena", for how the remaining use goes away.)
 
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
 use std::sync::{Arc, RwLock, Weak};
@@ -1105,7 +1106,7 @@ impl Instruction for InstructionDB {
         // always reflects current flowOverride
         let _guard = self.base.lock().read();
         self.refresh_if_needed();
-        let pcode_override = InstructionPcodeOverrideImpl::new(self.arc_self());
+        let pcode_override = InstructionPcodeOverrideImpl::new(self);
         self.proto
             .get_operand_ref_type(operand_index, self, Some(&pcode_override))
     }
@@ -1298,7 +1299,7 @@ impl Instruction for InstructionDB {
         if !include_overrides {
             return self.proto.get_pcode(self, None);
         }
-        let pcode_override = InstructionPcodeOverrideImpl::new(self.arc_self());
+        let pcode_override = InstructionPcodeOverrideImpl::new(self);
         self.proto.get_pcode(self, Some(&pcode_override))
     }
 
