@@ -1,4 +1,5 @@
 pub mod client;
+pub mod disassemble;
 pub mod event;
 pub mod gui;
 pub mod mapping;

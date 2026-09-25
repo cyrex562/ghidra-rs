@@ -6762,3 +6762,13 @@ pub struct DiffController;
 /// so no members are needed yet.
 #[derive(Debug, Default)]
 pub struct BreakpointActionSet;
+
+/// Placeholder for `ghidra.app.plugin.core.debug.disassemble.TraceDisassembleCommand`,
+/// referenced by
+/// [`DisassemblyInject::pre`](crate::app::plugin::core::debug::disassemble::DisassemblyInject::pre)
+/// before the real class is ported. Java's version is a concrete class (a `BackgroundCommand`
+/// that disassembles into a trace platform), so this is a plain struct rather than a trait.
+/// `DisassemblyInject` only passes it through to implementors to configure, so no members are
+/// needed yet.
+#[derive(Debug, Default)]
+pub struct TraceDisassembleCommand;
