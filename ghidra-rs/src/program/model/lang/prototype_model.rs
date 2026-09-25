@@ -25,8 +25,7 @@ use crate::program::model::lang::param_list::{ParamList, WithSlotRec};
 use crate::program::model::lang::param_list_register_out::ParamListRegisterOut;
 use crate::program::model::lang::param_list_standard::ParamListStandard;
 use crate::program::model::lang::param_list_standard_out::ParamListStandardOut;
-use crate::program::model::lang::pcode_inject_library::{PcodeInjectLibrary, PcodeInjectLibraryError};
-use crate::util::msg::Msg;
+use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 use crate::program::model::lang::program_architecture::ProgramArchitecture;
 use crate::program::model::listing::parameter::Parameter;
 use crate::program::model::listing::program::Program;
@@ -633,14 +632,8 @@ impl PrototypeModel {
                         "No p-code injection library to register {inject_name}"
                     )));
                 };
-                match library.restore_xml_inject(&source, &inject_name, CALLMECHANISM_TYPE, parser) {
-                    Ok(_) => {}
-                    // The payload's p-code text needs the unported PcodeParser: it is parsed but
-                    // left unregistered (see PcodeInjectLibrary's module docs).
-                    Err(PcodeInjectLibraryError::Sleigh(e)) if PcodeInjectLibrary::is_unported_parser_error(&e) => {
-                        Msg::warn("PrototypeModel", &format!("{inject_name} not registered: {e}"));
-                    }
-                    Err(e) => return Err(XmlParseException::new(e.to_string())),
+                if let Err(e) = library.restore_xml_inject(&source, &inject_name, CALLMECHANISM_TYPE, parser) {
+                    return Err(XmlParseException::new(e.to_string()));
                 }
             } else if el_name == ELEM_UNAFFECTED.name {
                 self.unaffected = Some(read_varnodes(parser, cspec)?);

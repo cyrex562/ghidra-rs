@@ -2,11 +2,6 @@
 //! information in a `.cspec` file.
 //!
 //! # Known gaps
-//! * **P-code text payloads.** `<callfixup>`, `<callotherfixup>` and a prototype's `<pcode>`
-//!   injection are parsed and handed to the [`PcodeInjectLibrary`], which can only register
-//!   payloads that need no compilation (`dynamic="true"`): compiling p-code source text needs the
-//!   unported `PcodeParser`. Such payloads are skipped with a warning, so the spec loads but lacks
-//!   them (and a prototype model that declares one cannot [`encode`](PrototypeModel::encode)).
 //! * **Custom inject libraries.** A language naming a `pcodeInjectLibraryClass` property gets its
 //!   class by reflection in Java; this port has only the default library and rejects the spec.
 //!   Java's `language.getAdditionalInject()` payloads come from the unported `.pspec` reader, so
@@ -56,7 +51,6 @@ use crate::program::model::pcode::{
     ELEM_READONLY, ELEM_RETURNADDRESS, ELEM_SPACEBASE, ELEM_STACKPOINTER, ELEM_VARNODE,
 };
 use crate::program::seam_stubs::PcodeInjectLibrary as PcodeInjectLibraryView;
-use crate::util::msg::Msg;
 use crate::util::xml::spec_xml_utils::{decode_boolean, decode_int, decode_long};
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -575,29 +569,19 @@ impl BasicCompilerSpec {
         Ok(())
     }
 
-    /// Restore a `<callfixup>`/`<callotherfixup>` into the inject library, skipping (with a
-    /// warning) a payload whose p-code text needs the unported `PcodeParser`.
+    /// Restore a `<callfixup>`/`<callotherfixup>` into the inject library.
     fn restore_inject<P: XmlPullParser>(&mut self, name: String, tp: i32, parser: &mut P) -> Result<(), XmlParseException> {
-        match self.pcode_inject.restore_xml_inject(self.source_name.clone(), name.clone(), tp, parser) {
+        match self.pcode_inject.restore_xml_inject(self.source_name.clone(), name, tp, parser) {
             Ok(_) => Ok(()),
-            Err(PcodeInjectLibraryError::Sleigh(e)) if PcodeInjectLibrary::is_unported_parser_error(&e) => {
-                Msg::warn("BasicCompilerSpec", &format!("{name} not registered: {e}"));
-                Ok(())
-            }
             Err(PcodeInjectLibraryError::Sleigh(e)) => Err(XmlParseException::new(e.message().to_string())),
             Err(PcodeInjectLibraryError::Xml(e)) => Err(e),
         }
     }
 
-    /// Register an already-restored payload, skipping one that needs the unported `PcodeParser`.
+    /// Register an already-restored payload.
     fn register_payload(&mut self, payload: Arc<dyn InjectPayloadSleigh>) -> Result<(), XmlParseException> {
-        let name = payload.get_name();
         match self.pcode_inject.register_inject(payload) {
             Ok(_) => Ok(()),
-            Err(e) if PcodeInjectLibrary::is_unported_parser_error(&e) => {
-                Msg::warn("BasicCompilerSpec", &format!("{name} not registered: {e}"));
-                Ok(())
-            }
             Err(e) => Err(XmlParseException::new(e.message().to_string())),
         }
     }
@@ -1491,13 +1475,16 @@ mod tests {
     }
 
     #[test]
-    fn inject_library_registers_dynamic_payloads_and_skips_pcode_text() {
+    fn inject_library_registers_dynamic_and_compiled_payloads() {
         let spec = gcc();
         let library = spec.pcode_inject_library();
         // The dynamic callotherfixup needs no compilation and is registered.
         assert_eq!(library.get_callother_fixup_names(), vec!["syscall".to_string()]);
-        // The callfixup's p-code body needs the unported PcodeParser, so it is skipped.
-        assert!(library.get_call_fixup_names().is_empty());
+        // The callfixup's p-code body is compiled by PcodeParser and registered too.
+        assert_eq!(library.get_call_fixup_names(), vec!["x86_return_thunk".to_string()]);
+        // Two temporaries (the load and the add results) were allocated past the inject base
+        // (0x1000 + 0x200).
+        assert_eq!(library.get_unique_base(), 0x1400);
         let view = spec.get_pcode_inject_library();
         assert!(view.get_payload(CALLOTHERFIXUP_TYPE, "syscall").is_some_and(|p| p.get_name() == "syscall"));
         assert!(view.get_payload(CALLMECHANISM_TYPE, "syscall").is_none());

@@ -25,17 +25,10 @@
 //!
 //! # Gaps
 //!
-//! - **`parseInject`/`PcodeParser`**: Java's `parseInject` hands a payload's raw p-code source
-//!   text to `new PcodeParser(language, uniqueBase)` and compiles it into a `ConstructTpl`. This
-//!   crate has not ported `PcodeParser` (manifest TODO; it extends the still-TODO
-//!   `pcodeCPort.slgh_compile.PcodeCompile` and drives the ANTLR sleigh semantic grammar, which
-//!   the hand-written `sleigh::grammar::frontend` does not cover yet). [`PcodeInjectLibrary::parse_inject`] is real for
-//!   the "nothing to compile" cases (a payload with `dynamic="true"`, i.e.
-//!   `release_parse_string()` returns `None`, so `Ok(())` is returned immediately -- exactly
-//!   mirroring Java's own early return), but for a payload with real `<body>` text it returns a
-//!   precise [`SleighException`] naming the blocker instead of silently pretending to succeed.
-//!   Consequently only dynamic payloads can be successfully registered through this port's
-//!   [`register_inject`](PcodeInjectLibrary::register_inject) today.
+//! - **`parseInject` failures**: Java's `PcodeParser.compilePcode` returns `null` (after logging)
+//!   when the snippet had reported errors, and `parseInject` installs that `null` template.
+//!   [`PcodeParser::compile_pcode`] returns an error instead, so
+//!   [`PcodeInjectLibrary::parse_inject`] (and thus registration) fails for such a payload.
 //! - **`allocateInject`/`restoreXmlInject`'s polymorphic dispatch**: Java calls
 //!   `payload.restoreXml(parser, language)` on whatever concrete subclass `allocateInject`
 //!   returned. [`InjectPayload::restore_xml`] is generic over the parser type (`where Self:
@@ -60,7 +53,9 @@ use crate::program::model::lang::inject_payload_callfixup::InjectPayloadCallfixu
 use crate::program::model::lang::inject_payload_callother::InjectPayloadCallother;
 use crate::program::model::lang::inject_payload_segment::InjectPayloadSegment;
 use crate::program::model::lang::inject_payload_sleigh::{InjectPayloadSleigh, InjectPayloadSleighImpl};
+use crate::program::model::lang::pcode_parser::PcodeParser;
 use crate::program::model::lang::sleigh::SleighLanguage;
+use crate::sleigh::grammar::Location;
 use crate::program::model::listing::program::Program;
 use crate::program::model::pcode::Encoder;
 use crate::util::msg::Msg;
@@ -105,10 +100,6 @@ impl fmt::Display for PcodeInjectLibraryError {
 }
 
 impl std::error::Error for PcodeInjectLibraryError {}
-
-/// The phrase [`PcodeInjectLibrary::parse_inject`]'s error uses to report the unported
-/// `PcodeParser`; see [`PcodeInjectLibrary::is_unported_parser_error`].
-const UNPORTED_PARSER_MARKER: &str = "has not ported PcodeParser";
 
 /// The concrete type of a payload freshly produced by [`PcodeInjectLibrary::allocate_inject`].
 ///
@@ -241,17 +232,17 @@ impl PcodeInjectLibrary {
     /// Convert the raw p-code source text of the given payload into a `ConstructTpl`. The payload
     /// should be unattached (not already installed in the library).
     ///
-    /// Port of `parseInject(InjectPayload)`. See the module docs' "Gaps" section: this crate has
-    /// not ported `PcodeParser`, so a payload that actually has `<body>` text to compile cannot be
-    /// registered -- only dynamic payloads (`release_parse_string()` returning `None`) can. Unlike
-    /// Java (whose `InjectPayload payload` parameter can be any implementor, guarded by an
-    /// `instanceof InjectPayloadSleigh` check that returns early for anything else), this takes
-    /// `&mut dyn InjectPayloadSleigh` directly: every payload type this crate can construct
-    /// already implements that trait, so the `instanceof` guard would never actually fire here.
+    /// Port of `parseInject(InjectPayload)`: the payload's input and output parameters become
+    /// operand symbols of a [`PcodeParser`] built on this library's language, the text is
+    /// compiled, the parser's next free temporary becomes this library's unique base, and the
+    /// template is installed with `set_template`. A payload without text (`dynamic="true"`, or
+    /// already parsed) is left alone. Unlike Java (whose `InjectPayload payload` parameter can be
+    /// any implementor, guarded by an `instanceof InjectPayloadSleigh` check that returns early
+    /// for anything else), this takes `&mut dyn InjectPayloadSleigh` directly: every payload type
+    /// this crate can construct already implements that trait.
     ///
     /// # Errors
-    /// Returns an error if the payload has non-dynamic p-code source text, since compiling it
-    /// requires the unported `PcodeParser`.
+    /// Returns an error if the p-code text does not compile (see [`PcodeParser::compile_pcode`]).
     pub fn parse_inject(&mut self, payload: &mut dyn InjectPayloadSleigh) -> Result<(), SleighException> {
         let source_name = payload.get_source();
         let source_name = if source_name.is_empty() { "unknown".to_string() } else { source_name };
@@ -260,21 +251,21 @@ impl PcodeInjectLibrary {
             None => return Ok(()), // Dynamic p-code generation, or already parsed.
             Some(text) => text,
         };
-        let preview: String = pcode_text.chars().take(40).collect();
-        Err(SleighException::with_message(format!(
-            "PcodeInjectLibrary::parse_inject({source_name}): cannot compile p-code source text \
-             (starting \"{preview}\"...) -- this crate {UNPORTED_PARSER_MARKER} (no sleigh-\
-             compiler backend yet). Only payloads with dynamic=\"true\" (no <body>) can be \
-             registered today."
-        )))
-    }
 
-    /// True if `error` is [`parse_inject`](Self::parse_inject)'s report that a payload's p-code
-    /// text could not be compiled because `PcodeParser` is not ported -- as opposed to a genuine
-    /// registration error (a duplicate name, an unknown user op, ...). Compiler-spec loading uses
-    /// this to skip just those payloads.
-    pub fn is_unported_parser_error(error: &SleighException) -> bool {
-        error.message().contains(UNPORTED_PARSER_MARKER)
+        let language = self.language();
+        let mut parser = PcodeParser::new(&language, self.unique_base)?;
+        let loc = Location::new(source_name.clone(), 1);
+        for element in payload.get_input().iter().chain(payload.get_output().iter()) {
+            parser
+                .add_operand(&loc, element.get_name(), element.get_index())
+                .map_err(|e| SleighException::with_message(format!("{}: {}", e.location, e.message())))?;
+        }
+        let construct_tpl = parser.compile_pcode(&pcode_text, &source_name, 1)?;
+
+        self.unique_base = parser.get_next_temp_offset();
+
+        payload.set_template(construct_tpl);
+        Ok(())
     }
 
     /// Returns a list of names for all installed call-fixups.
@@ -1159,7 +1150,31 @@ mod tests {
         assert!(err.to_string().contains("Executable p-code registered multiple times"));
     }
 
-    // --- parse_inject gap ---
+    // --- parse_inject ---
+
+    /// A library over a language with a register file and a unique space (x86-64 subset,
+    /// unique base 0x1000, so injected temporaries start at 0x1200).
+    fn x86_library() -> PcodeInjectLibrary {
+        static LANGUAGE: std::sync::OnceLock<Arc<SleighLanguage>> = std::sync::OnceLock::new();
+        PcodeInjectLibrary::new(LANGUAGE.get_or_init(|| {
+            crate::program::model::lang::cspec_test_support::sleigh_x86_64_language(None)
+        }))
+    }
+
+    fn callfixup_with_body(name: &str, body: &str) -> InjectPayloadCallfixupImpl {
+        let mut payload = InjectPayloadCallfixupImpl::new("src.cspec");
+        let elements = vec![
+            MockElement::start("callfixup", 0, &[("name", name)]),
+            MockElement::start("pcode", 1, &[]),
+            MockElement::start("body", 2, &[]),
+            MockElement::end_with_text("body", 2, body),
+            MockElement::end("pcode", 1),
+            MockElement::end("callfixup", 0),
+        ];
+        let mut parser = QueueParser::new(elements);
+        payload.restore_xml(&mut parser).unwrap();
+        payload
+    }
 
     #[test]
     fn parse_inject_ok_for_dynamic_payload() {
@@ -1169,40 +1184,78 @@ mod tests {
     }
 
     #[test]
-    fn parse_inject_reports_gap_for_non_dynamic_payload() {
-        let mut lib = library();
+    fn parse_inject_compiles_body_text_into_the_template() {
+        let mut lib = x86_library();
+        assert_eq!(lib.get_unique_base(), 0x1200);
         let mut payload = InjectPayloadSleighImpl::new("p", CALLFIXUP_TYPE, "src.pspec");
         let elements = vec![
             MockElement::start("pcode", 0, &[]),
             MockElement::start("body", 1, &[]),
-            MockElement::end_with_text("body", 1, " local tmp:1 = 0; "),
+            MockElement::end_with_text("body", 1, " local tmp:1 = 0; RAX = zext(tmp); "),
             MockElement::end("pcode", 0),
         ];
         let mut parser = QueueParser::new(elements);
         payload.restore_xml_pcode_element(&mut parser).unwrap();
+        assert!(!payload.is_fall_thru(), "no template yet");
 
-        let err = lib.parse_inject(&mut payload).unwrap_err();
-        assert!(err.to_string().contains("PcodeParser"));
+        lib.parse_inject(&mut payload).unwrap();
+
+        // set_template ran: the compiled template ends in a ZEXT, which falls through.
+        assert!(payload.is_fall_thru());
+        // Two temporaries (tmp and the zext result) were allocated from the library's base.
+        assert_eq!(lib.get_unique_base(), 0x1200 + 2 * 0x100);
+        // The text was consumed: a second parse is a no-op.
+        assert!(lib.parse_inject(&mut payload).is_ok());
+        assert_eq!(lib.get_unique_base(), 0x1400);
     }
 
     #[test]
-    fn register_inject_fails_for_non_dynamic_payload_via_parse_inject_gap() {
-        let mut lib = library();
-        let mut payload = InjectPayloadCallfixupImpl::new("src.pspec");
+    fn parse_inject_binds_input_and_output_parameters_as_operands() {
+        let mut lib = x86_library();
+        let mut payload = InjectPayloadSleighImpl::new("p", CALLFIXUP_TYPE, "src.pspec");
         let elements = vec![
-            MockElement::start("callfixup", 0, &[("name", "real_fixup")]),
-            MockElement::start("pcode", 1, &[]),
-            MockElement::start("body", 2, &[]),
-            MockElement::end_with_text("body", 2, " local tmp:1 = 0; "),
-            MockElement::end("pcode", 1),
-            MockElement::end("callfixup", 0),
+            MockElement::start("pcode", 0, &[]),
+            MockElement::start("input", 1, &[("name", "src"), ("size", "8")]),
+            MockElement::end("input", 1),
+            MockElement::start("output", 1, &[("name", "dst"), ("size", "8")]),
+            MockElement::end("output", 1),
+            MockElement::start("body", 1, &[]),
+            MockElement::end_with_text("body", 1, " dst = src + RAX; "),
+            MockElement::end("pcode", 0),
         ];
         let mut parser = QueueParser::new(elements);
-        payload.restore_xml(&mut parser).unwrap();
+        payload.restore_xml_pcode_element(&mut parser).unwrap();
+        lib.parse_inject(&mut payload).unwrap();
 
+        // Without the operands the names would be unknown.
+        let mut unbound = InjectPayloadSleighImpl::new("q", CALLFIXUP_TYPE, "src.pspec");
+        let elements = vec![
+            MockElement::start("pcode", 0, &[]),
+            MockElement::start("body", 1, &[]),
+            MockElement::end_with_text("body", 1, " RAX = src; "),
+            MockElement::end("pcode", 0),
+        ];
+        let mut parser = QueueParser::new(elements);
+        unbound.restore_xml_pcode_element(&mut parser).unwrap();
+        let err = lib.parse_inject(&mut unbound).unwrap_err();
+        assert!(err.message().contains("unknown varnode or bitrange symbol 'src'"), "{}", err.message());
+    }
+
+    #[test]
+    fn register_inject_compiles_and_installs_non_dynamic_payload() {
+        let mut lib = x86_library();
+        let payload = callfixup_with_body("real_fixup", " local tmp:1 = 0; ");
+        lib.register_inject(Arc::new(payload)).unwrap();
+        assert!(lib.get_payload(CALLFIXUP_TYPE, Some("real_fixup")).is_some());
+    }
+
+    #[test]
+    fn register_inject_rejects_payload_whose_text_does_not_compile() {
+        let mut lib = x86_library();
+        let payload = callfixup_with_body("bad_fixup", " RAX = nosuchreg; ");
         let err = expect_register_err(lib.register_inject(Arc::new(payload)));
-        assert!(err.to_string().contains("PcodeParser"));
-        assert!(lib.get_payload(CALLFIXUP_TYPE, Some("real_fixup")).is_none());
+        assert!(err.to_string().contains("nosuchreg"), "{err}");
+        assert!(lib.get_payload(CALLFIXUP_TYPE, Some("bad_fixup")).is_none());
     }
 
     // --- allocate_inject / restore_xml_inject ---
@@ -1287,19 +1340,9 @@ mod tests {
 
     #[test]
     fn register_program_inject_skips_failing_payload_and_logs_but_keeps_others() {
-        let mut lib = library();
-        // A non-dynamic payload will fail via the parse_inject gap; a dynamic one succeeds.
-        let mut failing = InjectPayloadCallfixupImpl::new("bad.pspec");
-        let elements = vec![
-            MockElement::start("callfixup", 0, &[("name", "bad_fixup")]),
-            MockElement::start("pcode", 1, &[]),
-            MockElement::start("body", 2, &[]),
-            MockElement::end_with_text("body", 2, " local tmp:1 = 0; "),
-            MockElement::end("pcode", 1),
-            MockElement::end("callfixup", 0),
-        ];
-        let mut parser = QueueParser::new(elements);
-        failing.restore_xml(&mut parser).unwrap();
+        let mut lib = x86_library();
+        // A payload whose text does not compile fails; a dynamic one succeeds.
+        let failing = callfixup_with_body("bad_fixup", " RAX = nosuchreg; ");
 
         let good = dynamic_callfixup("good.pspec");
         lib.register_program_inject(vec![Arc::new(failing), good]);
