@@ -57,10 +57,40 @@ impl std::error::Error for SledException {
     }
 }
 
+/// Java's generic-processor evaluation methods (`BinaryExpression`, `Operand`, `ExpressionTerm`,
+/// `ConstantTemplate`, ...) all declare a broad `throws Exception`, and evaluation mixes
+/// [`ExpressionValue`](super::expression_value::ExpressionValue)'s
+/// [`MemoryAccessException`](crate::program::model::mem::MemoryAccessException) with this
+/// package's own `SledException`. `SledException` is the single error type of that evaluation
+/// chain; a memory-access failure is wrapped, keeping it reachable through
+/// [`std::error::Error::source`].
+impl From<crate::program::model::mem::MemoryAccessException> for SledException {
+    fn from(e: crate::program::model::mem::MemoryAccessException) -> Self {
+        SledException::from_error(e)
+    }
+}
+
+/// See the [`MemoryAccessException`](crate::program::model::mem::MemoryAccessException)
+/// conversion: an out-of-range constant address raised while building a
+/// [`Handle`](super::Handle) is wrapped the same way.
+impl From<crate::program::model::address::AddressOutOfBoundsException> for SledException {
+    fn from(e: crate::program::model::address::AddressOutOfBoundsException) -> Self {
+        SledException::from_error(e)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::error::Error;
+
+    #[test]
+    fn from_memory_access_exception_wraps_source() {
+        let e: SledException =
+            crate::program::model::mem::MemoryAccessException::new("unreadable").into();
+        assert_eq!(e.message(), "unreadable");
+        assert!(e.source().is_some());
+    }
 
     #[test]
     fn new_has_empty_message() {

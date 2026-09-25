@@ -146,8 +146,8 @@ PARK	trait	0	7	9	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/fe
 PARK	trait	0	7	17	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/SimilarSymbolNameProgramCorrelator.java
 DONE	trait	2	7	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/GraphJobListener.java
 DONE	trait	1	7	2	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/GraphJob.java
-PARK	trait	1	2	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/BinaryExpression.java
-PARK	trait	0	7	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Operand.java
+DONE	trait	1	2	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/BinaryExpression.java
+DONE	trait	0	7	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Operand.java
 PARK	trait	0	6	26	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/progress/ProgressServicePlugin.java
 PARK	trait	0	6	4	script	Ghidra/Extensions/Jython/src/main/java/ghidra/jython/GhidraJythonInterpreter.java
 DONE	trait	4	4	4	feature	Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/InstructionContext.java
@@ -218,7 +218,7 @@ PARK	trait	0	3	14	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph
 DONE	trait	0	3	1	script	Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraConsole.java
 PARK	trait	0	3	75	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/AdaptedEmulator.java
 DONE	trait	0	3	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphSatelliteActionContext.java
-PARK	trait	0	3	27	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/VarnodeTemplate.java
+DONE	trait	0	3	27	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/VarnodeTemplate.java
 PARK	trait	0	2	2	filesystem	GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgFileReader.java
 PARK	trait	0	2	1	debug	Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfClientHandler.java
 PARK	trait	0	2	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceFactory.java
@@ -2484,8 +2484,8 @@ TODO	struct	0	7	2	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/Ab
 TODO	struct	2	4	2	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/AbstractDominanceAlgorithm.java
 TODO	struct	1	6	21	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/ChkDominanceAlgorithm.java
 TODO	struct	1	5	2	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/ChkPostDominanceAlgorithm.java
-TODO	struct	3	2	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Offset.java
-TODO	struct	2	1	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ExpressionTerm.java
+DONE	struct	3	2	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/Offset.java
+DONE	struct	2	1	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ExpressionTerm.java
 TODO	struct	2	2	3	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/progress/DefaultMonitorReceiver.java
 TODO	struct	1	1	2	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/progress/DefaultCloseableTaskMonitor.java
 TODO	struct	1	6	20	script	Ghidra/Extensions/Jython/src/main/java/ghidra/jython/JythonScript.java
@@ -3249,7 +3249,7 @@ TODO	struct	0	3	11	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewe
 TODO	struct	0	3	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/html/HtmlLineSplitter.java
 TODO	struct	0	3	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/project/extensions/ExtensionRowObject.java
 TODO	struct	0	3	18	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/SleighAssembler.java
-TODO	struct	0	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstantTemplate.java
+DONE	struct	0	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstantTemplate.java
 TODO	struct	1	2	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/OpTemplate.java
 TODO	struct	0	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/InstructionPattern.java
 TODO	struct	0	3	6	pcode	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/utils/SlaFormat.java
