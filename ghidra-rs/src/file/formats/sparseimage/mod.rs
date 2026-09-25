@@ -1,4 +1,5 @@
 pub mod sparse_constants;
+pub mod sparse_image_file_system;
 
 pub use sparse_constants::{
     CHUNK_TYPE_CRC32, CHUNK_TYPE_DONT_CARE, CHUNK_TYPE_FILL, CHUNK_TYPE_RAW,
