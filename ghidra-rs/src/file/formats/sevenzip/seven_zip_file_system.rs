@@ -42,9 +42,9 @@ use std::io;
 use std::rc::Rc;
 
 use crate::file::seam_stubs::{
-    FileAttributeValue, FileAttributes, FileCacheEntry, FileCacheEntryBuilder,
-    FileSystemIndexHelper,
+    FileCacheEntry, FileCacheEntryBuilder, FileSystemIndexHelper,
 };
+use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use crate::filesystem::gfilesystem::crypto::crypto_session::CryptoSession;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;

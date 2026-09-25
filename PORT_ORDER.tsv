@@ -314,7 +314,7 @@ TODO	struct	6	182	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/R
 TODO	struct	6	202	71	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/StructConverterUtil.java
 TODO	struct	6	181	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/UnlimitedByteProviderWrapper.java
 TODO	struct	6	95	63	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileCache.java
-TODO	struct	11	43	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributes.java
+DONE	struct	11	43	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributes.java
 TODO	struct	9	96	7	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemBase.java
 TODO	struct	12	79	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/WeakSet.java
 TODO	struct	11	15	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ThreadUnsafeWeakSet.java

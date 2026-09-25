@@ -42,9 +42,9 @@ use super::macho_file_set_entry::MachoFileSetEntry;
 use super::macho_file_set_extractor;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::file::seam_stubs::{
-    ExtractedMacho, FileAttributeValue, FileAttributes, FileSystemIndexHelper, MachHeader,
-    SegmentCommand,
+    ExtractedMacho, FileSystemIndexHelper, MachHeader, SegmentCommand,
 };
+use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{

@@ -2,7 +2,6 @@
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
 use crate::filesystem::gfilesystem::factory::file_system_info_rec::FileSystemInfoRec;
-use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
 
 /// Placeholder for `ghidra.formats.gfilesystem.GFileSystem`, needed by
@@ -28,17 +27,6 @@ pub trait FileAttributeTypeLike {
 /// `GFileSystem` only returns this value to callers and never calls a
 /// method on it itself, so this is an empty marker trait.
 pub trait FileSystemRefManagerLike {}
-
-/// Placeholder for `ghidra.formats.gfilesystem.fileinfo.FileAttributes`, needed by
-/// [`crate::filesystem::gfilesystem::g_file_system::GFileSystem::get_file_attributes`].
-///
-/// Only exposes the single lookup that `GFileSystem`'s default `getFileType()` needs
-/// (`attrs.get(FileAttributeType.FILE_TYPE_ATTR, FileType.class, ...)`); the full attribute
-/// container (arbitrary keyed values, merging, read-only wrapping) is ported separately.
-pub trait FileAttributesLike {
-    /// The explicit `FileType` attribute, if the filesystem recorded one.
-    fn file_type_attr(&self) -> Option<FileType>;
-}
 
 /// Placeholder for `ghidra.formats.gfilesystem.FileSystemRef`, needed by
 /// [`crate::filesystem::gfilesystem::file_system_ref_manager::FileSystemRefManager`]'s

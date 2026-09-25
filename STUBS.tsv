@@ -195,7 +195,6 @@ ts	stub_class	referenced_by
 2026-07-22T06:28:30Z	GFileSystemLike	GFileSystemFactory
 2026-07-22T06:38:48Z	FileAttributeTypeLike	FileAttribute
 2026-07-22T09:15:00Z	FileSystemRefManagerLike	GFileSystem
-2026-07-22T09:15:00Z	FileAttributesLike	GFileSystem
 2026-07-22T10:00:00Z	FileSystemRefLike	FileSystemRefManager
 2026-07-22T11:00:00Z	FileSystemServiceLike	GFileSystemFactoryByteProvider
 2026-07-22T12:00:00Z	SelectFromListDialogLike	FileSystemProbeConflictResolver
@@ -763,7 +762,6 @@ ts	stub_class	referenced_by
 2026-08-14T00:00:00.000000+00:00	DexUtil	ClassDefItem
 2026-08-14T07:29:22.125774+00:00	AndroidXmlConvertor	AndroidXmlFileSystem
 2026-08-14T07:29:22.389252+00:00	ByteArrayProvider	AndroidXmlFileSystem
-2026-08-14T07:39:12.400000+00:00	FileAttributes	SevenZipFileSystem
 2026-08-14T07:39:12.410000+00:00	FileCacheEntry	SevenZipFileSystem
 2026-08-14T07:39:12.420000+00:00	FileCacheEntryBuilder	SevenZipFileSystem
 2026-08-14T07:39:12.430000+00:00	FileSystemIndexHelper	SevenZipFileSystem

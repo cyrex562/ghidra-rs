@@ -4,10 +4,12 @@ use std::io;
 use thiserror::Error;
 
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemRefManagerLike};
+use crate::filesystem::seam_stubs::FileSystemRefManagerLike;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
+use super::fileinfo::file_attribute_type::FileAttributeType;
+use super::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use super::fileinfo::file_type::FileType;
 use super::g_file::GFile;
 use super::g_file_system_iterator::GFileSystemIterator;
@@ -24,10 +26,9 @@ pub enum GFileSystemError {
 
 /// A filesystem that contains files, mirroring `ghidra.formats.gfilesystem.GFileSystem`.
 ///
-/// This is a cycle cut-point: the Java interface references `FileSystemRefManager` and
-/// `fileinfo.FileAttributes`, which are not ported yet. Those are represented here by the
-/// [`FileSystemRefManagerLike`] and [`FileAttributesLike`] seams (see `crate::filesystem::seam_stubs`) until the real types
-/// land.
+/// This is a cycle cut-point: the Java interface references `FileSystemRefManager`, which is
+/// represented here by the [`FileSystemRefManagerLike`] seam (see
+/// `crate::filesystem::seam_stubs`) until a concrete ref manager lands.
 ///
 /// `FS` and `Fsrl` are the same kind of type parameters used by [`GFile`] -- `FS` will be
 /// instantiated with the concrete implementing filesystem type and `Fsrl` with the ported
@@ -138,7 +139,7 @@ where
         &self,
         file: &dyn GFile<FS, Fsrl>,
         monitor: &dyn TaskMonitor,
-    ) -> Box<dyn FileAttributesLike>;
+    ) -> FileAttributes;
 
     /// Converts `file` into its symlink destination, or `None` if not a symlink or the
     /// destination is invalid.
@@ -154,15 +155,16 @@ where
 
     /// The [`FileType`] of `file`.
     fn get_file_type(&self, file: &dyn GFile<FS, Fsrl>, monitor: &dyn TaskMonitor) -> FileType {
-        self.get_file_attributes(file, monitor)
-            .file_type_attr()
-            .unwrap_or_else(|| {
+        match self.get_file_attributes(file, monitor).get(FileAttributeType::FileTypeAttr) {
+            Some(FileAttributeValue::FileType(t)) => *t,
+            _ => {
                 if file.is_directory() {
                     FileType::Directory
                 } else {
                     FileType::File
                 }
-            })
+            }
+        }
     }
 
     /// Closes the filesystem, releasing any resources it holds.
@@ -204,13 +206,6 @@ mod tests {
 
     struct MockRefManager;
     impl FileSystemRefManagerLike for MockRefManager {}
-
-    struct MockAttrs(Option<FileType>);
-    impl FileAttributesLike for MockAttrs {
-        fn file_type_attr(&self) -> Option<FileType> {
-            self.0
-        }
-    }
 
     // ── Mock GFile ────────────────────────────────────────────────────────────
     //
@@ -406,10 +401,19 @@ mod tests {
 
         fn get_file_attributes(
             &self,
-            _file: &dyn GFile<MockFsMarker, MockFsrl>,
+            file: &dyn GFile<MockFsMarker, MockFsrl>,
             _monitor: &dyn TaskMonitor,
-        ) -> Box<dyn FileAttributesLike> {
-            Box::new(MockAttrs(None))
+        ) -> FileAttributes {
+            // "/sub/b.txt" records an explicit FILE_TYPE_ATTR that overrides the
+            // directory-flag fallback in the default `get_file_type`.
+            if file.get_path() == "/sub/b.txt" {
+                FileAttributes::of([(
+                    FileAttributeType::FileTypeAttr,
+                    Some(FileAttributeValue::FileType(FileType::SymbolicLink)),
+                )])
+            } else {
+                FileAttributes::new()
+            }
         }
 
         fn close(&mut self) -> io::Result<()> {
@@ -545,6 +549,14 @@ mod tests {
 
         let dir = fs.lookup(Some("/sub")).unwrap().unwrap();
         assert_eq!(fs.get_file_type(dir.as_ref(), &monitor), FileType::Directory);
+    }
+
+    #[test]
+    fn get_file_type_prefers_explicit_file_type_attribute() {
+        let fs = mockfs();
+        let monitor = crate::util::task::DummyMonitor;
+        let file = fs.lookup(Some("/sub/b.txt")).unwrap().unwrap();
+        assert_eq!(fs.get_file_type(file.as_ref(), &monitor), FileType::SymbolicLink);
     }
 
     #[test]

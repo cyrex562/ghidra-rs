@@ -17,15 +17,13 @@ use crate::file::formats::android::dex::format::dex_header::DexHeader;
 use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnum;
 use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
-use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
-use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemServiceLike, GFileSystemLike};
+use crate::filesystem::seam_stubs::{FileSystemServiceLike, GFileSystemLike};
 use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
@@ -420,139 +418,6 @@ impl GByteStore for ByteArrayProvider {
 
     fn get_file(&self) -> Option<PathBuf> {
         None
-    }
-}
-
-/// A value carried by a [`FileAttributes`] entry.
-///
-/// Java's `FileAttributes.add` takes an `Object` whose class is expected to match the
-/// attribute type's `getValueType()`; this enum names the small closed set of value classes
-/// actually used (`String`, `FileType`, `Boolean`, `Long`, and `Date` as epoch millis).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FileAttributeValue {
-    Str(String),
-    FileType(FileType),
-    Boolean(bool),
-    Long(i64),
-    /// A `java.util.Date`, as epoch milliseconds.
-    Date(i64),
-}
-
-impl From<&str> for FileAttributeValue {
-    fn from(s: &str) -> Self {
-        FileAttributeValue::Str(s.to_string())
-    }
-}
-
-impl From<String> for FileAttributeValue {
-    fn from(s: String) -> Self {
-        FileAttributeValue::Str(s)
-    }
-}
-
-impl From<FileType> for FileAttributeValue {
-    fn from(t: FileType) -> Self {
-        FileAttributeValue::FileType(t)
-    }
-}
-
-impl From<bool> for FileAttributeValue {
-    fn from(b: bool) -> Self {
-        FileAttributeValue::Boolean(b)
-    }
-}
-
-impl From<i64> for FileAttributeValue {
-    fn from(v: i64) -> Self {
-        FileAttributeValue::Long(v)
-    }
-}
-
-/// Placeholder for the unported Java type `ghidra.formats.gfilesystem.fileinfo.FileAttributes`,
-/// referenced by `SevenZipFileSystem::get_file_attributes`.
-///
-/// Concrete stub: Java class, not interface. Carries the ordered `(type, display name, value)`
-/// triples that `add()` accumulates plus the lookups this type needs. The existing
-/// [`FileAttributesLike`] seam only exposes the single `FILE_TYPE_ATTR` lookup that
-/// `GFileSystem`'s default `getFileType()` needs, which is too narrow for a filesystem that
-/// *populates* attributes, so this stub implements that seam rather than replacing it.
-/// Replace with the real port when available.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct FileAttributes {
-    attributes: Vec<(FileAttributeType, String, FileAttributeValue)>,
-}
-
-impl FileAttributes {
-    /// Creates a new, empty instance. Mirrors `new FileAttributes()`.
-    pub fn new() -> Self {
-        FileAttributes::default()
-    }
-
-    /// Adds a typed attribute, labelled with the type's own display name.
-    ///
-    /// Mirrors `add(FileAttributeType, Object)`; as in Java, a `None` value is silently
-    /// skipped rather than stored.
-    pub fn add(&mut self, attribute_type: FileAttributeType, value: Option<FileAttributeValue>) {
-        let display_name = attribute_type.display_name().to_string();
-        self.add_with_display_name(attribute_type, display_name, value);
-    }
-
-    /// Adds a custom-named attribute. Mirrors `add(String, Object)`, which records the value
-    /// under `UNKNOWN_ATTRIBUTE` with `name` as its display label.
-    pub fn add_named(&mut self, name: &str, value: Option<FileAttributeValue>) {
-        self.add_with_display_name(
-            FileAttributeType::UnknownAttribute,
-            name.to_string(),
-            value,
-        );
-    }
-
-    /// Mirrors `add(FileAttributeType, String, Object)`.
-    pub fn add_with_display_name(
-        &mut self,
-        attribute_type: FileAttributeType,
-        display_name: String,
-        value: Option<FileAttributeValue>,
-    ) {
-        if let Some(value) = value {
-            self.attributes.push((attribute_type, display_name, value));
-        }
-    }
-
-    /// The value of the first attribute of `attribute_type`, or `None`. Mirrors `get()`.
-    pub fn get(&self, attribute_type: FileAttributeType) -> Option<&FileAttributeValue> {
-        self.attributes
-            .iter()
-            .find(|(t, _, _)| *t == attribute_type)
-            .map(|(_, _, v)| v)
-    }
-
-    /// The value of the first custom-named attribute labelled `name`, or `None`.
-    pub fn get_named(&self, name: &str) -> Option<&FileAttributeValue> {
-        self.attributes
-            .iter()
-            .find(|(t, n, _)| *t == FileAttributeType::UnknownAttribute && n == name)
-            .map(|(_, _, v)| v)
-    }
-
-    /// `true` if an attribute of `attribute_type` is present. Mirrors `contains()`.
-    pub fn contains(&self, attribute_type: FileAttributeType) -> bool {
-        self.get(attribute_type).is_some()
-    }
-
-    /// All accumulated `(type, display name, value)` triples, in insertion order.
-    /// Mirrors `getAttributes()`.
-    pub fn get_attributes(&self) -> &[(FileAttributeType, String, FileAttributeValue)] {
-        &self.attributes
-    }
-}
-
-impl FileAttributesLike for FileAttributes {
-    fn file_type_attr(&self) -> Option<FileType> {
-        match self.get(FileAttributeType::FileTypeAttr) {
-            Some(FileAttributeValue::FileType(t)) => Some(*t),
-            _ => None,
-        }
     }
 }
 
