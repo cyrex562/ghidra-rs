@@ -231,7 +231,7 @@ PARK	trait	0	2	4	feature	Ghidra/Features/VersionTrackingBSim/src/main/java/ghidr
 TODO	trait	0	2	5	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/featurette/VisualGraphFeaturette.java
 TODO	trait	0	1	87	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/platform/dbgeng/DbgengDebuggerPlatformOpinion.java
 DONE	trait	0	1	1	util	Ghidra/Features/Base/src/main/java/ghidra/base/graph/VertexExpansionListener.java
-TODO	trait	0	1	1	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/decompile/DiffClangHighlightListener.java
+PARK	trait	0	1	1	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/decompile/DiffClangHighlightListener.java
 TODO	trait	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/analyzer/DexHeaderFormatAnalyzer.java
 TODO	trait	0	1	32	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cart/CartFileSystem.java
 TODO	trait	0	1	28	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/coff/CoffArchiveFileSystem.java
