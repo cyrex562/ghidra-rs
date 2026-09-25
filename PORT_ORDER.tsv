@@ -179,8 +179,8 @@ PARK	trait	0	5	5	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/
 PARK	trait	0	5	20	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/actions/PCodeCfgGraphTask.java
 DONE	trait	0	5	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img2/Img2Constants.java
 DONE	trait	0	5	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img3/Img3Constants.java
-PARK	trait	1	5	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/EdgeSegment.java
-PARK	trait	0	5	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/ColumnSegment.java
+DONE	trait	1	5	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/EdgeSegment.java
+DONE	trait	0	5	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/ColumnSegment.java
 DONE	trait	0	5	4	graph	Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FcgData.java
 PARK	trait	1	4	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/InterpreterPanelService.java
 PARK	trait	0	5	48	asm	Ghidra/Features/WildcardAssembler/src/main/java/ghidra/asm/wild/sem/WildAssemblyTreeResolver.java
@@ -2740,7 +2740,7 @@ TODO	struct	3	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 TODO	struct	2	1	17	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img3/tag/Img3TagFactory.java
 TODO	struct	1	3	22	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img3/Img3.java
 TODO	struct	0	5	20	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashUtils.java
-TODO	struct	2	5	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/RowSegment.java
+DONE	struct	2	5	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/RowSegment.java
 TODO	struct	0	5	2	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/DefaultFidPopulateResultReporter.java
 TODO	struct	0	5	1	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FIDFixedSizeMRUCachingFactory.java
 TODO	struct	0	5	18	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidProgramSeeker.java
@@ -3472,9 +3472,9 @@ TODO	struct	0	2	3	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plu
 TODO	struct	0	2	5	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/action/FunctionGraphUneditableVertexLocationActionContext.java
 TODO	struct	0	2	4	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/action/FunctionGraphValidGraphActionContext.java
 TODO	struct	0	2	4	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/action/FunctionGraphVertexLocationInFullViewModeActionContext.java
-TODO	struct	0	2	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/ColSegmentList.java
-TODO	struct	1	2	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/RowSegmentList.java
-TODO	struct	0	2	5	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/EdgeSegmentMap.java
+DONE	struct	0	2	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/ColSegmentList.java
+DONE	struct	1	2	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/RowSegmentList.java
+DONE	struct	0	2	5	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/EdgeSegmentMap.java
 TODO	struct	0	2	8	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/flowchart/FGFlowChartLayout.java
 TODO	struct	0	2	4	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/util/job/AbstractFunctionGraphTransitionJob.java
 TODO	struct	1	2	7	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/RemoteInputBlockStreamHandle.java
