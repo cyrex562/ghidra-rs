@@ -937,4 +937,52 @@ mod tests {
         assert_eq!(t.get_default_space().name(), "ram");
         assert_eq!(t.get_unique_space().name(), "unique");
     }
+
+    /// Every `<body><![CDATA[...]]></body>` p-code snippet shipped in the processor `.cspec` and
+    /// `.pspec` files parses (syntax only: symbols are language-specific). Skipped when the
+    /// reference sources are not checked out next to the crate.
+    #[test]
+    fn every_shipped_snippet_parses() {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../orig_src/Ghidra/Processors");
+        if !root.is_dir() {
+            eprintln!("skipping: orig_src not present");
+            return;
+        }
+        let mut files = Vec::new();
+        let mut dirs = vec![root];
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    dirs.push(path);
+                } else if matches!(path.extension().and_then(|e| e.to_str()), Some("cspec" | "pspec")) {
+                    files.push(path);
+                }
+            }
+        }
+        let (mut parsed, mut failures) = (0, Vec::new());
+        for file in files {
+            let text = std::fs::read_to_string(&file).unwrap_or_default();
+            for chunk in text.split("<body>").skip(1) {
+                let Some(body) = chunk.split("</body>").next() else { continue };
+                let body = body.trim();
+                let body = body
+                    .strip_prefix("<![CDATA[")
+                    .and_then(|b| b.strip_suffix("]]>"))
+                    .unwrap_or(body);
+                let mut src = String::new();
+                for line in body.lines() {
+                    src.push_str(line);
+                    src.push('\n');
+                }
+                let mut lexer = BaseLexer::new(&src);
+                match SemanticParser::new(&mut lexer).parse_semantic_snippet() {
+                    Ok(_) => parsed += 1,
+                    Err(e) => failures.push(format!("{}: {e}", file.display())),
+                }
+            }
+        }
+        assert!(parsed > 100, "only {parsed} snippets found");
+        assert!(failures.is_empty(), "{} of {} snippets failed:\n{}", failures.len(), parsed + failures.len(), failures.join("\n"));
+    }
 }
