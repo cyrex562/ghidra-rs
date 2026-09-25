@@ -7268,7 +7268,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Ext4
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/MultiProgramMemoryByteProvider.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/NewExt4Analyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipFileSystem.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipUtil.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ExtractedMacho.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios 
