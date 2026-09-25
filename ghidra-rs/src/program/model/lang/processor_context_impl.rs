@@ -23,6 +23,12 @@ use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
 ///
 /// Note that [`ContextChangeException`] will never be returned by this implementation of
 /// `ProcessorContext` (mirrors the Java class's doc comment).
+///
+/// `Clone` copies the register values (sharing the language), which is what taking a snapshot of
+/// a context means -- e.g. for a
+/// [`PseudoInstruction`](crate::app::util::pseudo_instruction::PseudoInstruction), which owns the
+/// context it was decoded under.
+#[derive(Clone)]
 pub struct ProcessorContextImpl {
     /// Keyed by base register name, mirroring Java's `Map<Register, byte[]>` (which is keyed by
     /// `Register`'s `equals`/`hashCode`, effectively identity/name within one `Language`).

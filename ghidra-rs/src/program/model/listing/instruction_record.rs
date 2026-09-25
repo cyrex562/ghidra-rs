@@ -290,8 +290,9 @@ pub trait InstructionSnapshot {
 
 /// Adapts the prototype's parser context (`program::seam_stubs::ParserContext`) to the one an
 /// [`InstructionContext`] hands out, forwarding `as_any` so the prototype's cast back to its own
-/// context type still works.
-struct ParserContextBridge(Box<dyn crate::program::seam_stubs::ParserContext>);
+/// context type still works. Needed while the crate carries both same-named `ParserContext`
+/// traits; see `InstructionDB`'s identical bridge.
+pub struct ParserContextBridge(pub Box<dyn crate::program::seam_stubs::ParserContext>);
 
 impl ParserContext for ParserContextBridge {
     fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {

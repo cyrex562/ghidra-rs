@@ -358,6 +358,14 @@ constructor and `setInstructionBlock`. Both are program/neighbour queries (refer
 block), and the current `Program` trait reaches `ReferenceManager` and `Listing` only through
 `&mut self`, which a shared handle cannot call. They land with the program arena, where those
 become queries against the program snapshot by address rather than through an object back-link.
+Until then `PseudoCodeUnit`/`PseudoInstruction` stay `TODO` in `PORT_MANIFEST.tsv`: the
+program-less path is complete and tested, the class is not.
+
+`SleighInstructionDecoder` (and so `AdaptedEmulator`) no longer waits on this design; it waits on
+`Disassembler.pseudoDisassembleBlock`, `DisassemblerContextImpl` (the context a decoded
+`PseudoInstruction` owns) and a concrete `InstructionBlock` — the Rust `InstructionBlock` and
+`PseudoDisassembler` were mock-only traits standing in for concrete Java classes, and their
+manifest rows went back to `TODO` with this change.
 
 ### Migration path for the other backings
 

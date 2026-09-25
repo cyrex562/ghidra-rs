@@ -286,10 +286,15 @@ impl SleighPcodeUseropDefinition for OverloadedSleighPcodeUseropDefinition {
     }
 }
 
-/// Placeholder for `ghidra.app.util.PseudoInstruction`, referenced by
-/// [`InstructionDecoder`](crate::pcode::emu::instruction_decoder::InstructionDecoder) before the
-/// real class is ported. This is a minimal interface stub exposing only the methods needed by
-/// existing references.
+/// The emulator's narrow handle on a decoded `ghidra.app.util.PseudoInstruction`, returned by
+/// [`InstructionDecoder`](crate::pcode::emu::instruction_decoder::InstructionDecoder). The real
+/// class is ported as the concrete, generic
+/// [`app::util::pseudo_instruction::PseudoInstruction`](crate::app::util::pseudo_instruction::PseudoInstruction),
+/// which implements this trait; the trait remains because `DecodeErrorInstruction` (below) is
+/// still a placeholder that must travel through the same decoder signature. Retire it by
+/// repointing `InstructionDecoder` at the real type once `DecodeErrorInstruction` is ported on it
+/// (its prototype is a behaviour-carrying `InvalidPrototype` subclass; see `OWNERSHIP_MIGRATION.md`,
+/// "Instruction/CodeUnit arena").
 ///
 /// Grown (see `STUBS.tsv`) with the two members
 /// [`DecoderExecutor`](crate::pcode::emu::jit::decode::decoder_executor::DecoderExecutor) reads off
@@ -310,6 +315,14 @@ pub trait PseudoInstruction: Send + Sync {
     /// every normally-decoded instruction returns `None`.
     fn decode_error_message(&self) -> Option<&str> {
         None
+    }
+}
+
+/// A real pseudo instruction is a decoded instruction the emulator can hold. It is never a
+/// `DecodeErrorInstruction`, so it reports no decode error.
+impl<C: Send + Sync> PseudoInstruction for crate::app::util::pseudo_instruction::PseudoInstruction<C> {
+    fn get_max_address(&self) -> Address {
+        self.code_unit().max_address().clone()
     }
 }
 

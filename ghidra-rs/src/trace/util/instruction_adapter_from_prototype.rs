@@ -64,8 +64,8 @@ use crate::trace::model::listing::trace_instruction::TraceInstruction;
 ///   must supply the real context here directly.
 /// - [`Self::as_instruction_arc`]: a handle to `self` as `Arc<dyn Instruction>`, used to build the
 ///   `&dyn Instruction` an [`InstructionPcodeOverrideImpl`] borrows for
-///   [`Self::get_operand_ref_type`] and [`Self::get_pcode_with_overrides`] (the shadowing default
-///   methods cannot coerce an unsized `Self`). Mirrors Java's `new InstructionPcodeOverride(this)`.
+///   [`Self::get_operand_ref_type`] and [`Self::get_pcode_with_overrides`]. Mirrors Java's
+///   `new InstructionPcodeOverride(this)`.
 pub trait InstructionAdapterFromPrototype: TraceInstruction {
     /// The [`InstructionContext`] to pass to
     /// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
