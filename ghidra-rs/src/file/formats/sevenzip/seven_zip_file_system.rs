@@ -41,9 +41,8 @@ use std::fmt;
 use std::io;
 use std::rc::Rc;
 
-use crate::file::seam_stubs::{
-    FileCacheEntry, FileCacheEntryBuilder,
-};
+use crate::app::util::bin::byte_provider::ByteProvider;
+use crate::filesystem::gfilesystem::file_cache::{FileCacheEntry, FileCacheEntryBuilder};
 use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use crate::filesystem::gfilesystem::crypto::crypto_session::CryptoSession;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
@@ -55,7 +54,6 @@ use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, GFileImpl, HasFsrlRoot,
 };
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::util::exception::{CancelledException, CryptoException};
 use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
@@ -358,16 +356,17 @@ pub type SzGFile = GFileImpl<SzFsHandle>;
 /// The two `ghidra.formats.gfilesystem.FileSystemService` operations this filesystem uses.
 ///
 /// The ported [`FileSystemService`](crate::filesystem::gfilesystem::file_system_service::FileSystemService)
-/// cannot serve this class yet: its `create_temp_file` hands back the empty
-/// `FileCacheEntryBuilderLike` marker, which has no `write`/`finish`, because `FileCache`
-/// itself is unported. This narrow seam names exactly what is needed and should be dropped in
-/// favour of the real service once `FileCache` lands.
+/// cannot serve this class yet: it has no `newCryptoSession()` (that needs the unported
+/// `CryptoProviders`). This narrow seam names exactly what is needed; temp files are the real
+/// [`FileCache`](crate::filesystem::gfilesystem::file_cache::FileCache) builders, so an
+/// implementation backed by the service forwards `create_temp_file` to
+/// [`FileSystemService::create_temp_file`](crate::filesystem::gfilesystem::file_system_service::FileSystemService::create_temp_file).
 pub trait SevenZipFsService {
     /// Mirrors `FileSystemService.newCryptoSession()`.
     fn new_crypto_session(&self) -> Box<dyn CryptoSession>;
 
     /// Mirrors `FileSystemService.createTempFile(long)`.
-    fn create_temp_file(&self, size_hint: i64) -> io::Result<FileCacheEntryBuilder>;
+    fn create_temp_file(&self, size_hint: i64) -> io::Result<FileCacheEntryBuilder<'_>>;
 }
 
 // ─── The abstract operations ──────────────────────────────────────────────────
@@ -831,7 +830,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
         &mut self,
         file: &SzGFile,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Option<Box<dyn GByteStore>>, GetByteProviderError> {
+    ) -> Result<Option<Box<dyn ByteProvider>>, GetByteProviderError> {
         let Some(item) = self.fs_index.get_metadata(file).map(Rc::clone) else {
             return Ok(None);
         };
@@ -905,7 +904,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
         };
         Ok(Some(
             result
-                .as_byte_provider()
+                .as_byte_provider(file.get_fsrl())
                 .map_err(GetByteProviderError::Io)?,
         ))
     }
@@ -976,7 +975,7 @@ struct SZExtractCallback<'a, S: SevenZipFsService> {
     current_index: i32,
     current_is_folder: bool,
     current_name: String,
-    current_cache_entry_builder: Option<FileCacheEntryBuilder>,
+    current_cache_entry_builder: Option<FileCacheEntryBuilder<'a>>,
     save_results: bool,
     extract_results: Vec<(i32, FileCacheEntry)>,
     /// `(item index, md5)` pairs the owning filesystem should stamp onto its index. The Java
@@ -1126,7 +1125,7 @@ impl<S: SevenZipFsService> ArchiveExtractCallback for SZExtractCallback<'_, S> {
                 self.current_index, self.current_name
             )));
         };
-        builder.write(data).map_err(SevenZipError::from_io)?;
+        io::Write::write_all(builder, data).map_err(SevenZipError::from_io)?;
         self.monitor.increment_progress(data.len() as i64);
         Ok(data.len())
     }
@@ -1136,7 +1135,7 @@ impl<S: SevenZipFsService> ArchiveExtractCallback for SZExtractCallback<'_, S> {
         extract_operation_result: ExtractOperationResult,
     ) -> SzResult<()> {
         // STEP 4: SevenZip calls this to signal that the extract is done for this file.
-        let Some(builder) = self.current_cache_entry_builder.take() else {
+        let Some(mut builder) = self.current_cache_entry_builder.take() else {
             return Ok(());
         };
         let outcome = (|| -> SzResult<()> {
@@ -1148,7 +1147,7 @@ impl<S: SevenZipFsService> ArchiveExtractCallback for SZExtractCallback<'_, S> {
                     &format!(
                         "Wrote file to cache: {}, {}",
                         self.current_name,
-                        format_size(fce.length())
+                        format_size(fce.length() as i64)
                     ),
                 );
                 if self.save_results {
@@ -1349,6 +1348,7 @@ fn strip_extension(path: &str) -> &str {
 mod tests {
     use super::*;
     use crate::framework::generic::auth::password::Password;
+    use crate::filesystem::gfilesystem::file_cache::FileCache;
     use crate::util::task::DummyMonitor;
     use std::cell::RefCell;
 
@@ -1541,13 +1541,18 @@ mod tests {
     struct FakeService {
         passwords: Vec<String>,
         accepted: Rc<RefCell<Vec<String>>>,
+        file_cache: FileCache,
+        _cache_dir: tempfile::TempDir,
     }
 
     impl FakeService {
         fn new(passwords: &[&str]) -> Self {
+            let cache_dir = tempfile::tempdir().unwrap();
             FakeService {
                 passwords: passwords.iter().map(|s| s.to_string()).collect(),
                 accepted: Rc::new(RefCell::new(Vec::new())),
+                file_cache: FileCache::new(cache_dir.path()).unwrap(),
+                _cache_dir: cache_dir,
             }
         }
     }
@@ -1560,15 +1565,15 @@ mod tests {
             })
         }
 
-        fn create_temp_file(&self, size_hint: i64) -> io::Result<FileCacheEntryBuilder> {
-            Ok(FileCacheEntryBuilder::new(size_hint))
+        fn create_temp_file(&self, size_hint: i64) -> io::Result<FileCacheEntryBuilder<'_>> {
+            self.file_cache.create_cache_entry_builder(size_hint)
         }
     }
 
-    /// `Result::unwrap_err` needs the `Ok` type to be `Debug`, which `Box<dyn GByteStore>`
+    /// `Result::unwrap_err` needs the `Ok` type to be `Debug`, which `Box<dyn ByteProvider>`
     /// is not.
     fn expect_err(
-        result: Result<Option<Box<dyn GByteStore>>, GetByteProviderError>,
+        result: Result<Option<Box<dyn ByteProvider>>, GetByteProviderError>,
     ) -> GetByteProviderError {
         match result {
             Err(e) => e,
@@ -1788,10 +1793,16 @@ mod tests {
 
         let path = fs.fs_index.get_file_by_index(0).unwrap().get_path().to_string();
         let file = fs.file_by_path(&path).unwrap();
-        let mut provider = fs.get_byte_provider(&file, &DummyMonitor).unwrap().unwrap();
+        let provider = fs.get_byte_provider(&file, &DummyMonitor).unwrap().unwrap();
 
-        assert_eq!(provider.length().unwrap(), 5);
+        assert_eq!(provider.length(), 5);
         assert_eq!(provider.read_bytes(0, 5).unwrap(), b"hello".to_vec());
+        // Java's `fce.asByteProvider(file.getFSRL())`: the provider carries the file's FSRL.
+        assert_eq!(provider.get_fsrl().unwrap().path(), file.get_fsrl().path());
+        // The extracted bytes are a real file-cache entry, keyed by their MD5.
+        let md5 = fs.fs_index.get_file_by_index(0).unwrap().get_fsrl().md5().unwrap().to_string();
+        assert_eq!(md5, "5d41402abc4b2a76b9719d911017c592");
+        assert!(fs.fs_service.file_cache.has_entry(&md5));
     }
 
     #[test]

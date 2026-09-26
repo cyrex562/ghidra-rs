@@ -9,7 +9,6 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5DigestChecksumAlgorithm;
 use crate::program::model::data::data_type::DataType;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
@@ -363,89 +362,6 @@ pub mod android_typed_value {
     pub const TYPE_LAST_COLOR_INT: i32 = 0x1f;
     pub const TYPE_LAST_INT: i32 = 0xff;
     pub const COMPLEX_UNIT_MASK: i32 = 0xf;
-}
-
-/// Placeholder for the unported Java type `ghidra.formats.gfilesystem.FileCache.FileCacheEntry`,
-/// referenced by `SevenZipFileSystem::get_byte_provider`.
-///
-/// Concrete stub: Java inner class, not interface. The real entry is a file on disk in the
-/// cache directory named after its MD5; this stub keeps the bytes in memory, which is enough
-/// for the three members this type needs (`getMD5`, `length`, `asByteProvider`).
-/// Replace with the real port when available.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FileCacheEntry {
-    bytes: Vec<u8>,
-    md5: String,
-}
-
-impl FileCacheEntry {
-    /// The lowercase hex MD5 of the entry's contents. Mirrors `getMD5()`.
-    pub fn get_md5(&self) -> &str {
-        &self.md5
-    }
-
-    /// The entry's size in bytes. Mirrors `length()`.
-    pub fn length(&self) -> i64 {
-        self.bytes.len() as i64
-    }
-
-    /// Exposes the entry's contents as a [`GByteStore`]. Mirrors `asByteProvider(FSRL)`.
-    ///
-    /// The Java method tags the returned provider with the caller's `FSRL`; [`ByteArrayProvider`]
-    /// carries no FSRL (its `get_fsrl` returns `None`), so that tagging is dropped here until
-    /// the real `FileCache` lands.
-    pub fn as_byte_provider(&self) -> io::Result<Box<dyn GByteStore>> {
-        Ok(Box::new(ByteArrayProvider::new(self.bytes.clone())))
-    }
-}
-
-/// Placeholder for the unported Java type
-/// `ghidra.formats.gfilesystem.FileCache.FileCacheEntryBuilder`, referenced by
-/// `SevenZipFileSystem`'s extract callback.
-///
-/// Concrete stub: Java inner class, not interface. Accumulates written bytes and hashes them
-/// on [`finish`](Self::finish), mirroring the real builder's streaming MD5.
-/// Replace with the real port when available.
-#[derive(Debug, Default)]
-pub struct FileCacheEntryBuilder {
-    bytes: Vec<u8>,
-}
-
-impl FileCacheEntryBuilder {
-    /// Creates a builder for a payload of roughly `size_hint` bytes (`-1` if unknown).
-    /// Mirrors `FileSystemService.createTempFile(long)`.
-    pub fn new(size_hint: i64) -> Self {
-        FileCacheEntryBuilder {
-            bytes: Vec::with_capacity(if size_hint > 0 { size_hint as usize } else { 0 }),
-        }
-    }
-
-    /// Appends `data` to the entry being built. Mirrors `write(byte[])`.
-    pub fn write(&mut self, data: &[u8]) -> io::Result<()> {
-        self.bytes.extend_from_slice(data);
-        Ok(())
-    }
-
-    /// The number of bytes written so far.
-    pub fn len(&self) -> usize {
-        self.bytes.len()
-    }
-
-    /// `true` if nothing has been written yet.
-    pub fn is_empty(&self) -> bool {
-        self.bytes.is_empty()
-    }
-
-    /// Seals the builder into a [`FileCacheEntry`]. Mirrors `finish()`.
-    pub fn finish(self) -> io::Result<FileCacheEntry> {
-        let mut digest = MD5DigestChecksumAlgorithm::new();
-        digest.update_checksum(&self.bytes);
-        let md5 = digest
-            .checksum()
-            .map(|bytes| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
-            .unwrap_or_default();
-        Ok(FileCacheEntry { bytes: self.bytes, md5 })
-    }
 }
 
 /// Placeholder for the unported Java type `ghidra.file.formats.sevenzip.SevenZipFileSystemFactory`,
