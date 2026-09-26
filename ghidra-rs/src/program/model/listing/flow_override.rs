@@ -13,22 +13,6 @@
 //! applying the override -- mirroring `FlowOverride.getModifiedFlowType(FlowType, FlowOverride)`
 //! exactly, including its somewhat redundant (but harmless) repeated `isCall()` checks in the
 //! `CALL` branch (see the inline comment there).
-//!
-//! ## Relationship to `crate::program::seam_stubs::FlowOverride`
-//!
-//! A placeholder `FlowOverride` enum with the same five variants already exists at
-//! `crate::program::seam_stubs::FlowOverride`, used by `InstructionDB`
-//! (`program/database/code/instruction_db.rs`) and the SARIF code manager
-//! (`sarif/managers/code_sarif_mgr.rs`). Its doc comment already flags this: "the real enum
-//! carr[ies] `getFlowOverride(int)`, `ordinal()` and `getModifiedFlowType(FlowType,
-//! FlowOverride)`... omitted [from the placeholder]... belong on `FlowOverride` itself once that
-//! placeholder is replaced by a real port of `FlowOverride.java`." `instruction_db.rs` in fact
-//! already hand-rolls faithful copies of exactly those three statics
-//! (`flow_override_from_ordinal`, `flow_override_ordinal`, `modified_flow_type`) as free
-//! functions, duplicating what this module now provides as real methods. Migrating those two
-//! call sites onto this module (and deleting the `seam_stubs` placeholder plus its duplicated
-//! logic) is a mechanical follow-up, intentionally left out of this port to stay within this
-//! session's file scope (both call sites sit in files owned by concurrent porting work).
 
 use crate::program::model::symbol::FlowType;
 

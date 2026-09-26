@@ -1188,20 +1188,6 @@ pub use crate::program::model::lang::mask::Mask;
 /// `get_instruction_context`), so no members are needed yet.
 pub trait InstructionContext {}
 
-/// Placeholder for `ghidra.program.model.listing.FlowOverride`, referenced by
-/// [`Instruction`](crate::program::model::listing::instruction::Instruction)
-/// before the real enum is ported. `Instruction` only gets/sets this value, so the static
-/// `FlowOverride.getModifiedFlowType`/`getFlowOverride` helper logic is omitted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum FlowOverride {
-    #[default]
-    None,
-    Branch,
-    Call,
-    CallReturn,
-    Return,
-}
-
 // The listing iterators are ported. These were placeholders declared here while they were
 // not, and they outlived their purpose: `Listing` and `CodeManager` kept importing the empty
 // local traits, so `Box<dyn CodeUnitIterator>` in those files and `Box<dyn CodeUnitIterator>`

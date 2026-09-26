@@ -79,7 +79,8 @@ mod tests {
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::pcode::PcodeOp;
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, RefType, SourceType, Symbol};
-    use crate::program::seam_stubs::{FlowOverride, InstructionContext, RegisterValue};
+    use crate::program::seam_stubs::{InstructionContext, RegisterValue};
+    use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::program::util::CodeUnitInsertionException;

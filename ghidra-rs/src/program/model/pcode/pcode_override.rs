@@ -1,7 +1,7 @@
 use crate::program::model::address::Address;
 use crate::program::model::lang::InjectPayload;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::FlowOverride;
+use crate::program::model::listing::FlowOverride;
 
 /// Reports and records p-code/flow overrides that apply to a single instruction, as consulted by
 /// analyses that work with p-code (Decompiler, SymbolicPropagator).

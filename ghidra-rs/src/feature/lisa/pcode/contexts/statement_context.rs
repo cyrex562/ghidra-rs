@@ -237,7 +237,8 @@ mod tests {
         SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{FlowOverride, RegisterValue};
+    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::listing::FlowOverride;
     use crate::program::util::CodeUnitInsertionException;
 
     fn ram_space() -> std::sync::Arc<AddressSpace> {

@@ -77,9 +77,9 @@ use crate::program::model::symbol::{
 };
 use crate::program::model::util::PropertySet;
 use crate::program::seam_stubs::{
-    FlowOverride, InstructionContext as SeamInstructionContext,
-    ParserContext as SeamParserContext, RegisterValue,
+    InstructionContext as SeamInstructionContext, ParserContext as SeamParserContext, RegisterValue,
 };
+use crate::program::model::listing::FlowOverride;
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::NoValueException;
 use crate::util::saveable::Saveable;
@@ -102,41 +102,6 @@ const LENGTH_OVERRIDE_SET_MASK: u8 = 0x70;
 const LENGTH_OVERRIDE_CLEAR_MASK: u8 = !LENGTH_OVERRIDE_SET_MASK;
 /// Stands in for `InstructionDB.LENGTH_OVERRIDE_SHIFT`.
 const LENGTH_OVERRIDE_SHIFT: u32 = 4;
-
-// ===========================================================================================
-// `FlowOverride` helpers.
-//
-// Java's `FlowOverride` is a real enum carrying `getFlowOverride(int)`, `ordinal()` and
-// `getModifiedFlowType(FlowType, FlowOverride)`. The ported `FlowOverride` in `seam_stubs` is a
-// bare placeholder enum with none of those, so `InstructionDB`'s three uses of them are supplied
-// here. They are faithful ports of the Java statics and belong on `FlowOverride` itself once
-// that placeholder is replaced by a real port of `FlowOverride.java`.
-// ===========================================================================================
-
-/// Port of `FlowOverride.values()` order, which the persisted flag bits index into.
-const FLOW_OVERRIDE_VALUES: [FlowOverride; 5] = [
-    FlowOverride::None,
-    FlowOverride::Branch,
-    FlowOverride::Call,
-    FlowOverride::CallReturn,
-    FlowOverride::Return,
-];
-
-/// Port of `FlowOverride.getFlowOverride(int)`: `NONE` for an unknown ordinal.
-fn flow_override_from_ordinal(ordinal: i32) -> FlowOverride {
-    match usize::try_from(ordinal) {
-        Ok(index) if index < FLOW_OVERRIDE_VALUES.len() => FLOW_OVERRIDE_VALUES[index],
-        _ => FlowOverride::None,
-    }
-}
-
-/// Port of `FlowOverride.ordinal()`.
-fn flow_override_ordinal(flow_override: FlowOverride) -> u8 {
-    FLOW_OVERRIDE_VALUES
-        .iter()
-        .position(|candidate| *candidate == flow_override)
-        .unwrap_or(0) as u8
-}
 
 /// Bridges the [`SeamParserContext`] an [`InstructionPrototype`] returns onto the
 /// [`LangParserContext`] the [`LangInstructionContext`] trait requires.
@@ -214,7 +179,7 @@ impl InstructionDB {
                 base: CodeUnitDbBase::new(owner, addr, address, addr, length),
                 proto,
                 flags: AtomicU8::new(flags),
-                flow_override: RwLock::new(flow_override_from_ordinal(i32::from(
+                flow_override: RwLock::new(FlowOverride::get_flow_override(i32::from(
                     (flags & FLOW_OVERRIDE_SET_MASK) >> FLOW_OVERRIDE_SHIFT,
                 ))),
                 length_override: AtomicI32::new(0),
@@ -523,7 +488,7 @@ impl InstructionDB {
         let _orig_flow_type = self.get_flow_type();
 
         let flags = (self.flags() & FLOW_OVERRIDE_CLEAR_MASK)
-            | (flow_override_ordinal(flow) << FLOW_OVERRIDE_SHIFT);
+            | ((flow.ordinal() as u8) << FLOW_OVERRIDE_SHIFT);
         self.flags.store(flags, Ordering::SeqCst);
         self.base.owner().set_flags(self.base.addr(), flags);
         *self.flow_override.write().unwrap() = flow;
@@ -1490,7 +1455,7 @@ impl CodeUnitDb for InstructionDB {
 
         let flags = rec.get_byte(FLAGS_COL).unwrap_or(0) as u8;
         self.flags.store(flags, Ordering::SeqCst);
-        *self.flow_override.write().unwrap() = flow_override_from_ordinal(i32::from(
+        *self.flow_override.write().unwrap() = FlowOverride::get_flow_override(i32::from(
             (flags & FLOW_OVERRIDE_SET_MASK) >> FLOW_OVERRIDE_SHIFT,
         ));
         self.refresh_length();
@@ -2637,13 +2602,19 @@ mod tests {
 
     #[test]
     fn flow_override_ordinals_round_trip_through_the_flag_bits() {
-        for expected in FLOW_OVERRIDE_VALUES {
-            let ordinal = flow_override_ordinal(expected);
-            assert_eq!(flow_override_from_ordinal(i32::from(ordinal)), expected);
+        for expected in [
+            FlowOverride::None,
+            FlowOverride::Branch,
+            FlowOverride::Call,
+            FlowOverride::CallReturn,
+            FlowOverride::Return,
+        ] {
+            let ordinal = expected.ordinal() as u8;
+            assert_eq!(FlowOverride::get_flow_override(i32::from(ordinal)), expected);
         }
         // Java's getFlowOverride answers NONE for an unknown ordinal.
-        assert_eq!(flow_override_from_ordinal(7), FlowOverride::None);
-        assert_eq!(flow_override_from_ordinal(-1), FlowOverride::None);
+        assert_eq!(FlowOverride::get_flow_override(7), FlowOverride::None);
+        assert_eq!(FlowOverride::get_flow_override(-1), FlowOverride::None);
     }
 
     #[test]

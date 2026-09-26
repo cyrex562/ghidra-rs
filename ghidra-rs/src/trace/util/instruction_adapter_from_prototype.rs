@@ -354,7 +354,8 @@ mod tests {
         ExternalReference, Reference, ReferenceIterator, SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{FlowOverride, ParserContext, RegisterValue};
+    use crate::program::seam_stubs::{ParserContext, RegisterValue};
+    use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::trace::model::lifespan::Lifespan;

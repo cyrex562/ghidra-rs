@@ -8,7 +8,7 @@ use serde_json::Value;
 use crate::program::disassemble::DisassemblerMessageListener;
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView};
 use crate::program::model::listing::{Instruction, InstructionIterator, Program};
-use crate::program::seam_stubs::FlowOverride;
+use crate::program::model::listing::FlowOverride;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 

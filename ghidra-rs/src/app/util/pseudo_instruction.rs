@@ -74,8 +74,9 @@ use crate::program::model::symbol::{
 };
 use crate::program::model::util::PropertySet;
 use crate::program::seam_stubs::{
-    FlowOverride, InstructionContext as SeamInstructionContext, RegisterValue,
+    InstructionContext as SeamInstructionContext, RegisterValue,
 };
+use crate::program::model::listing::FlowOverride;
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::NoValueException;
 use crate::util::saveable::Saveable;

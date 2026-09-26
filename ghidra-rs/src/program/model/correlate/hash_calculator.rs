@@ -28,7 +28,8 @@ pub(crate) mod tests {
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::symbol::RefType;
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{FlowOverride, InstructionContext, RegisterValue};
+    use crate::program::seam_stubs::{InstructionContext, RegisterValue};
+    use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::program::model::listing::{OperandValue, program::Program};

@@ -373,11 +373,11 @@ mod tests {
             true
         }
 
-        fn get_flow_override(&self) -> crate::program::seam_stubs::FlowOverride {
-            crate::program::seam_stubs::FlowOverride::None
+        fn get_flow_override(&self) -> crate::program::model::listing::FlowOverride {
+            crate::program::model::listing::FlowOverride::None
         }
 
-        fn set_flow_override(&mut self, _flow_override: crate::program::seam_stubs::FlowOverride) {}
+        fn set_flow_override(&mut self, _flow_override: crate::program::model::listing::FlowOverride) {}
 
         fn set_length_override(&mut self, _length: i32) -> Result<(), crate::program::util::CodeUnitInsertionException> {
             Ok(())

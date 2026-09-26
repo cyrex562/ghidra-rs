@@ -813,7 +813,8 @@ mod tests {
         ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{FlowOverride, InstructionContext};
+    use crate::program::seam_stubs::InstructionContext;
+    use crate::program::model::listing::FlowOverride;
     use crate::program::util::{CodeUnitInsertionException, ProgramLocation};
 
     fn ram() -> Arc<AddressSpace> {

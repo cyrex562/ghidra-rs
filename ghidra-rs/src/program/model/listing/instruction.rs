@@ -9,7 +9,8 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::pcode::PcodeOp;
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{FlowOverride, InstructionContext};
+use crate::program::seam_stubs::InstructionContext;
+use crate::program::model::listing::FlowOverride;
 use crate::program::util::CodeUnitInsertionException;
 
 /// Port of `InstructionPrototype.INVALID_DEPTH_CHANGE` (2^24).

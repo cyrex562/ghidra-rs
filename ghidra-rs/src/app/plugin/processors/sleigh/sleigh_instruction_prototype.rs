@@ -53,7 +53,7 @@ use crate::program::model::pcode::{
 };
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::FlowOverride;
+use crate::program::model::listing::FlowOverride;
 
 /// Port of `SleighInstructionPrototype.RETURN`.
 pub const RETURN: i32 = 0x01;

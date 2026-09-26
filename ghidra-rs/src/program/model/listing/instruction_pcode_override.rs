@@ -10,7 +10,7 @@ use crate::program::model::listing::function::Function;
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::pcode::PcodeOverride;
 use crate::program::model::symbol::{RefType, Reference};
-use crate::program::seam_stubs::FlowOverride;
+use crate::program::model::listing::FlowOverride;
 use crate::util::Msg;
 
 /// Port of `ghidra.program.model.listing.InstructionPcodeOverride`.

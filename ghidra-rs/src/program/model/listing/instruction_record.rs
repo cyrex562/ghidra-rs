@@ -30,7 +30,7 @@ use crate::program::model::mem::{MemBuffer, MemoryAccessException};
 use crate::program::model::pcode::{PcodeOp, PcodeOverride};
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::FlowOverride;
+use crate::program::model::listing::FlowOverride;
 
 /// The prototype an [`InstructionRecord`] is decoded by, shared between every instruction of the
 /// same constructor tree.

@@ -20,7 +20,7 @@ use crate::program::model::mem::MemoryBlock;
 use crate::program::model::reloc::Relocation;
 use crate::program::model::symbol::source_type::SourceType;
 use crate::program::model::symbol::{Namespace, Symbol};
-use crate::program::seam_stubs::FlowOverride;
+use crate::program::model::listing::FlowOverride;
 use crate::util::exception::DuplicateNameException;
 use crate::util::task::TaskMonitor;
 

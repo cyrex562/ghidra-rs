@@ -51,7 +51,8 @@ use crate::app::plugin::processors::sleigh::sleigh_debug_logger::{
 };
 use crate::program::model::lang::Register;
 use crate::program::model::listing::{Instruction, OperandValue};
-use crate::program::seam_stubs::{FlowOverride, RegisterValue};
+use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::listing::FlowOverride;
 use crate::util::string_utilities::StringUtilities;
 
 /// Static instruction-formatting helpers, ported from `ghidra.program.util.InstructionUtils` as a

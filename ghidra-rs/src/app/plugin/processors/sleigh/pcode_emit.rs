@@ -14,7 +14,7 @@ use crate::program::model::lang::sleigh::template::{
 };
 use crate::program::model::lang::sleigh::{ParserWalker, SleighLanguage};
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
-use crate::program::seam_stubs::FlowOverride;
+use crate::program::model::listing::FlowOverride;
 use std::sync::Arc;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::PcodeOverride;
@@ -1193,7 +1193,7 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
     use crate::program::model::lang::InjectPayload;
-    use crate::program::seam_stubs::FlowOverride;
+    use crate::program::model::listing::FlowOverride;
     use std::cell::Cell;
     use std::sync::Arc;
 
