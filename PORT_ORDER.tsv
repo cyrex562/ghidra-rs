@@ -175,7 +175,7 @@ PARK	trait	1	2	1	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim
 PARK	trait	0	5	8	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimH2FileDBConnectionManager.java
 PARK	trait	0	5	30	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datawindow/DataWindowPlugin.java
 DONE	trait	0	5	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/vt/VtParser.java
-PARK	trait	0	5	5	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroup.java
+DONE	trait	0	5	5	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroup.java
 PARK	trait	0	5	20	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/actions/PCodeCfgGraphTask.java
 DONE	trait	0	5	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img2/Img2Constants.java
 DONE	trait	0	5	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img3/Img3Constants.java
@@ -2705,9 +2705,9 @@ TODO	struct	1	2	38	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/headle
 TODO	struct	1	3	19	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/headless/HeadlessScript.java
 TODO	struct	1	3	52	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/project/DefaultProject.java
 TODO	struct	0	5	72	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/DtParser.java
-TODO	struct	1	5	1	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroupLoadSpec.java
-TODO	struct	1	3	2	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchSegregatingCriteria.java
-TODO	struct	1	4	1	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/UserAddedSourceInfo.java
+DONE	struct	1	5	1	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroupLoadSpec.java
+DONE	struct	1	3	2	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchSegregatingCriteria.java
+DONE	struct	1	4	1	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/UserAddedSourceInfo.java
 TODO	struct	0	5	3	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/decompile/AbstractMatchedTokensAction.java
 TODO	struct	0	5	2	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/functiongraph/FgDisplaySynchronizer.java
 TODO	struct	0	5	7	graph	Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegLayout.java

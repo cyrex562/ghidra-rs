@@ -5208,14 +5208,14 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/filehandler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/filehandlers/RefreshFSBFileHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins fsbrowser filehandlers 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/filehandlers/TextFSBFileHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins fsbrowser filehandlers 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/tasks/GFileSystemExtractAllTask.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins fsbrowser tasks 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroup.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroupLoadSpec.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroup.java	DONE	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchGroupLoadSpec.java	DONE	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchImportDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchImportTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchProjectDestinationPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchSegregatingCriteria.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/UserAddedSourceInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/BatchSegregatingCriteria.java	DONE	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/batch/UserAddedSourceInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra plugins importer batch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/plugins/importer/tasks/ImportBatchTask.java	TODO	orig_src Ghidra Features Base src main java ghidra plugins importer tasks 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/database/GhidraDataTypeArchiveMergeManagerFactory.java	DONE	orig_src Ghidra Features Base src main java ghidra program database
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/database/GhidraProgramMultiUserMergeManagerFactory.java	DONE	orig_src Ghidra Features Base src main java ghidra program database 
