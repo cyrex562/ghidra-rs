@@ -761,7 +761,7 @@ use crate::program::model::listing::CommentType;
     }
 
     struct MockProgram {
-        listing: Option<MockListing>,
+        listing: Option<crate::program::model::listing::ManagerCell<MockListing>>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {
@@ -779,9 +779,12 @@ use crate::program::model::listing::CommentType;
             "x86".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-            self.listing.as_mut().map(|l| l as &mut dyn crate::program::model::listing::Listing)
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        match &self.listing {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -827,7 +830,7 @@ use crate::program::model::listing::CommentType;
         let mut cmd = SetFunctionNameCmd::new(addr, "new_name".to_string(), SourceType::UserDefined);
 
         let listing = MockListing { function: None };
-        let mut program = MockProgram { listing: Some(listing) };
+        let mut program = MockProgram { listing: Some(crate::program::model::listing::ManagerCell::new(listing)) };
 
         let result = cmd.apply_to(&mut program);
         assert!(result);

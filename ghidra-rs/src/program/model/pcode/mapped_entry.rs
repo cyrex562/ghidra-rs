@@ -271,7 +271,7 @@ mod tests {
     struct MockProgram {
         language_volatile: Option<bool>,
         memory: Option<Arc<dyn Memory>>,
-        reference_manager: Option<MockReferenceManager>,
+        reference_manager: Option<crate::program::model::listing::ManagerCell<MockReferenceManager>>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -289,9 +289,12 @@ mod tests {
         fn get_memory(&self) -> Option<Arc<dyn Memory>> {
             self.memory.clone()
         }
-        fn get_reference_manager(&mut self) -> Option<&mut dyn ReferenceManager> {
-            self.reference_manager.as_mut().map(|rm| rm as &mut dyn ReferenceManager)
+        fn get_reference_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ReferenceManager>> {
+        match &self.reference_manager {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     fn program_with(
@@ -299,7 +302,11 @@ mod tests {
         memory: Option<Arc<dyn Memory>>,
         reference_manager: Option<MockReferenceManager>,
     ) -> Arc<dyn Program> {
-        Arc::new(MockProgram { language_volatile, memory, reference_manager })
+        Arc::new(MockProgram {
+            language_volatile,
+            memory,
+            reference_manager: reference_manager.map(crate::program::model::listing::ManagerCell::new),
+        })
     }
 
     struct MockLanguage {

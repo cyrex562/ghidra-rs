@@ -144,7 +144,7 @@ mod tests {
     }
 
     struct MockRowProgram {
-        table: MockSymbolTable,
+        table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
     impl DomainObject for MockRowProgram {}
     impl Program for MockRowProgram {
@@ -154,9 +154,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.table))
+    }
     }
 
     fn ram_address(offset: i64) -> Address {
@@ -169,7 +169,7 @@ mod tests {
         for (id, symbol) in symbols {
             table.symbols.insert(id, symbol);
         }
-        Arc::new(MockRowProgram { table })
+        Arc::new(MockRowProgram { table: crate::program::model::listing::ManagerCell::new(table) })
     }
 
     #[test]

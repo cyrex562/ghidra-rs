@@ -373,7 +373,7 @@ impl DecompileDebugFormatManager {
 
                 if namespace.is_none() {
                     let parent_namespace = self.scope_map.get(&parent_id).cloned();
-                    if let (Some(parent_namespace), Some(symbol_table)) =
+                    if let (Some(parent_namespace), Some(mut symbol_table)) =
                         (parent_namespace, prog.get_symbol_table())
                     {
                         match symbol_table.get_or_create_name_space(
@@ -553,7 +553,7 @@ impl DecompileDebugFormatManager {
         match symbol_addr {
             Some(Ok(xml_addr)) => {
                 let symbol_addr = xml_addr.get_first_address();
-                if let Some(symbol_table) = prog.get_symbol_table() {
+                if let Some(mut symbol_table) = prog.get_symbol_table() {
                     match symbol_table.create_label(
                         &symbol_addr,
                         &symbol_name,
@@ -634,7 +634,7 @@ impl DecompileDebugFormatManager {
                     SourceType::Imported,
                 ) {
                     Ok(Some(created_symbol)) => {
-                        if let Some(symbol_table) = prog.get_symbol_table() {
+                        if let Some(mut symbol_table) = prog.get_symbol_table() {
                             if let Err(e) = symbol_table.set_primary_symbol(created_symbol.get_id())
                             {
                                 log.append_exception(&e);
@@ -657,7 +657,7 @@ impl DecompileDebugFormatManager {
 
                 if let Some(data_type) = data_type {
                     let display_name = data_type.get_display_name();
-                    if let Some(listing) = prog.get_listing() {
+                    if let Some(mut listing) = prog.get_listing() {
                         if let Err(e) =
                             listing.create_data_sized(symbol_addr.clone(), data_type, size as i32)
                         {
@@ -716,7 +716,7 @@ impl DecompileDebugFormatManager {
             }
         };
 
-        let Some(memory) = prog.get_memory_mut() else {
+        let Some(mut memory) = prog.get_memory_mut() else {
             log.append_msg(format!(
                 "No writable memory available for data at address: {}",
                 symbol_addr
@@ -828,7 +828,7 @@ impl DecompileDebugFormatManager {
         comment_text: &str,
         prog: &mut dyn Program,
     ) {
-        let Some(listing) = prog.get_listing() else {
+        let Some(mut listing) = prog.get_listing() else {
             return;
         };
         if listing.get_code_unit_at(comment_addr).is_some() {
@@ -914,7 +914,7 @@ impl DecompileDebugFormatManager {
                     .collect();
                 match parse_hex(&hex_string) {
                     Ok(raw_bytes) => match prog.get_memory_mut() {
-                        Some(memory) => {
+                        Some(mut memory) => {
                             if let Err(e) = memory.set_bytes(&string_addr, &raw_bytes) {
                                 log.append_exception(&e);
                             }
@@ -1000,7 +1000,7 @@ impl DecompileDebugFormatManager {
         addr: &Address,
         log: &mut XmlMessageLog,
     ) {
-        let Some(program_context) = prog.get_program_context() else {
+        let Some(mut program_context) = prog.get_program_context() else {
             return;
         };
         let Some(register) = program_context.get_register(reg_name) else {

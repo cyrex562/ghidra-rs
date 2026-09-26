@@ -5,7 +5,9 @@ use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
-use crate::program::model::listing::{BookmarkManager, FunctionManager, Listing, ProgramContext};
+use crate::program::model::listing::{
+    BookmarkManager, FunctionManager, Listing, ManagerGuard, ProgramContext,
+};
 use crate::program::model::mem::Memory;
 use crate::program::model::reloc::relocation_table::RelocationTable;
 use crate::program::model::symbol::{EquateTable, ExternalManager, Namespace, ReferenceManager, SymbolTable};
@@ -79,7 +81,7 @@ pub trait Program: DomainObject + Send + Sync {
         Box::new(AddressSet::new())
     }
 
-    fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+    fn get_listing(&self) -> Option<ManagerGuard<'_, dyn Listing>> {
         None
     }
 
@@ -114,7 +116,7 @@ pub trait Program: DomainObject + Send + Sync {
     /// which writes string bytes into memory and creates blocks for data symbols. Java has only
     /// `getMemory()`, because a Java `Memory` reference is mutable through; this port's
     /// [`get_memory`](Self::get_memory) hands out an `Arc<dyn Memory>`, which is not.
-    fn get_memory_mut(&mut self) -> Option<&mut dyn Memory> {
+    fn get_memory_mut(&self) -> Option<ManagerGuard<'_, dyn Memory>> {
         None
     }
 
@@ -129,17 +131,17 @@ pub trait Program: DomainObject + Send + Sync {
     }
 
     /// Get the reference manager for this program.
-    fn get_reference_manager(&mut self) -> Option<&mut dyn ReferenceManager> {
+    fn get_reference_manager(&self) -> Option<ManagerGuard<'_, dyn ReferenceManager>> {
         None
     }
 
     /// Get the equate table for this program.
-    fn get_equate_table(&mut self) -> Option<&mut dyn EquateTable> {
+    fn get_equate_table(&self) -> Option<ManagerGuard<'_, dyn EquateTable>> {
         None
     }
 
     /// Get the symbol table for this program.
-    fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
+    fn get_symbol_table(&self) -> Option<ManagerGuard<'_, dyn SymbolTable>> {
         None
     }
 
@@ -162,12 +164,12 @@ pub trait Program: DomainObject + Send + Sync {
     }
 
     /// Get the external manager for this program.
-    fn get_external_manager(&mut self) -> Option<&mut dyn ExternalManager> {
+    fn get_external_manager(&self) -> Option<ManagerGuard<'_, dyn ExternalManager>> {
         None
     }
 
     /// Get the function manager for this program.
-    fn get_function_manager(&mut self) -> Option<&mut dyn FunctionManager> {
+    fn get_function_manager(&self) -> Option<ManagerGuard<'_, dyn FunctionManager>> {
         None
     }
 
@@ -177,7 +179,7 @@ pub trait Program: DomainObject + Send + Sync {
     /// [`dyld_chained_fixups::fixup_chained_pointers`](crate::format::macho::commands::chained::dyld_chained_fixups::fixup_chained_pointers)'s
     /// port of `Program.getRelocationTable()`, which needs it to record each chained-pointer
     /// fixup's outcome.
-    fn get_relocation_table(&mut self) -> Option<&mut dyn RelocationTable> {
+    fn get_relocation_table(&self) -> Option<ManagerGuard<'_, dyn RelocationTable>> {
         None
     }
 
@@ -201,7 +203,7 @@ pub trait Program: DomainObject + Send + Sync {
     /// this port's [`get_bookmark_manager`](Self::get_bookmark_manager) hands out an
     /// `Arc<dyn BookmarkManager>`, which is not -- the same split
     /// [`get_memory_mut`](Self::get_memory_mut) makes.
-    fn get_bookmark_manager_mut(&mut self) -> Option<&mut dyn BookmarkManager> {
+    fn get_bookmark_manager_mut(&self) -> Option<ManagerGuard<'_, dyn BookmarkManager>> {
         None
     }
 
@@ -326,7 +328,7 @@ pub trait Program: DomainObject + Send + Sync {
 
     /// Get the program context (register value ranges keyed by address) associated with this
     /// program's language.
-    fn get_program_context(&mut self) -> Option<&mut dyn ProgramContext> {
+    fn get_program_context(&self) -> Option<ManagerGuard<'_, dyn ProgramContext>> {
         None
     }
 

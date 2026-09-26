@@ -362,7 +362,7 @@ pub fn set_target_context_for_disassembly(program: &mut dyn Program, addr: Addre
     };
 
     let new_addr = Address::new(addr.space().clone(), addr.offset() & !0x1);
-    if let Some(program_context) = program.get_program_context() {
+    if let Some(mut program_context) = program.get_program_context() {
         let register = low_bit_code_mode;
         let _ = program_context.set_value(&register, &new_addr, &new_addr, Some(1));
     }
@@ -595,7 +595,7 @@ mod tests {
     // instead.
     struct MockProgram {
         has_low_bit_register: bool,
-        program_context: Option<MockProgramContext>,
+        program_context: Option<crate::program::model::listing::ManagerCell<MockProgramContext>>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -617,11 +617,12 @@ mod tests {
             }
         }
 
-        fn get_program_context(&mut self) -> Option<&mut dyn ProgramContext> {
-            self.program_context
-                .as_mut()
-                .map(|ctx| ctx as &mut dyn ProgramContext)
+        fn get_program_context(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ProgramContext>> {
+        match &self.program_context {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     struct MockProgramContext {
@@ -825,15 +826,15 @@ mod tests {
     fn set_target_context_for_disassembly_clears_bit_and_records_context_write() {
         let mut program = MockProgram {
             has_low_bit_register: true,
-            program_context: Some(MockProgramContext {
+            program_context: Some(crate::program::model::listing::ManagerCell::new(MockProgramContext {
                 set_value_calls: Vec::new(),
-            }),
+            })),
         };
 
         let result = set_target_context_for_disassembly(&mut program, mock_address(0x2001));
         assert_eq!(result.offset(), 0x2000);
         assert_eq!(
-            program.program_context.unwrap().set_value_calls,
+            program.program_context.unwrap().lock().set_value_calls,
             vec![(
                 LOW_BIT_CODE_MODE_REGISTER_NAME.to_string(),
                 0x2000,

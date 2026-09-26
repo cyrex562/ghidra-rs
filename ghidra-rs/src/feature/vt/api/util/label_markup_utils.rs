@@ -24,7 +24,7 @@ use crate::program::model::symbol::{Symbol, SymbolType};
 /// symbols = symbolTable.getSymbols(address)`), so removing one symbol never disturbs iteration
 /// over the rest.
 pub fn remove_all_labels(destination_program: &mut dyn Program, address: &Address) {
-    let Some(symbol_table) = destination_program.get_symbol_table() else {
+    let Some(mut symbol_table) = destination_program.get_symbol_table() else {
         return;
     };
     let symbols = symbol_table.get_symbols(address).unwrap_or_default();
@@ -122,7 +122,7 @@ mod tests {
     }
 
     struct MockProgram {
-        symbol_table: RecordingSymbolTable,
+        symbol_table: crate::program::model::listing::ManagerCell<RecordingSymbolTable>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -133,9 +133,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.symbol_table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symbol_table))
+    }
     }
 
     #[test]
@@ -144,15 +144,15 @@ mod tests {
         let label1 = Arc::new(MockSymbol { id: 1, address: addr.clone(), symbol_type: SymbolType::Label });
         let label2 = Arc::new(MockSymbol { id: 2, address: addr.clone(), symbol_type: SymbolType::Label });
         let mut program = MockProgram {
-            symbol_table: RecordingSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable {
                 symbols_by_address: vec![(addr.clone(), vec![label1, label2])],
                 removed_ids: Mutex::new(Vec::new()),
-            },
+            }),
         };
 
         remove_all_labels(&mut program, &addr);
 
-        let mut removed = program.symbol_table.removed_ids.lock().unwrap().clone();
+        let mut removed = program.symbol_table.lock().removed_ids.lock().unwrap().clone();
         removed.sort();
         assert_eq!(removed, vec![1, 2]);
     }
@@ -163,32 +163,32 @@ mod tests {
         let label = Arc::new(MockSymbol { id: 10, address: addr.clone(), symbol_type: SymbolType::Label });
         let function = Arc::new(MockSymbol { id: 11, address: addr.clone(), symbol_type: SymbolType::Function });
         let mut program = MockProgram {
-            symbol_table: RecordingSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable {
                 symbols_by_address: vec![(addr.clone(), vec![label, function])],
                 removed_ids: Mutex::new(Vec::new()),
-            },
+            }),
         };
 
         remove_all_labels(&mut program, &addr);
 
         // Only the label (id 10) is removed; the function symbol (id 11) is left untouched,
         // mirroring Java's `if (symbol instanceof FunctionSymbol) continue;`.
-        assert_eq!(program.symbol_table.removed_ids.lock().unwrap().clone(), vec![10]);
+        assert_eq!(program.symbol_table.lock().removed_ids.lock().unwrap().clone(), vec![10]);
     }
 
     #[test]
     fn does_nothing_when_there_are_no_symbols_at_the_address() {
         let addr = ram_address(0x3000);
         let mut program = MockProgram {
-            symbol_table: RecordingSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable {
                 symbols_by_address: vec![],
                 removed_ids: Mutex::new(Vec::new()),
-            },
+            }),
         };
 
         remove_all_labels(&mut program, &addr);
 
-        assert!(program.symbol_table.removed_ids.lock().unwrap().is_empty());
+        assert!(program.symbol_table.lock().removed_ids.lock().unwrap().is_empty());
     }
 
     #[test]

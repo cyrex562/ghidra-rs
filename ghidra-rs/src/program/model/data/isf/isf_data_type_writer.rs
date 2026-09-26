@@ -291,7 +291,7 @@ impl IsfDataTypeWriter {
                     while let Some(symbol) = iterator.next_symbol() {
                         symbol_to_json(
                             image_base.as_ref(),
-                            symbol_table,
+                            &*symbol_table,
                             &linkages,
                             &mut map,
                             &*symbol,
@@ -309,7 +309,7 @@ impl IsfDataTypeWriter {
                         for symbol in symbols {
                             symbol_to_json(
                                 image_base.as_ref(),
-                                symbol_table,
+                                &*symbol_table,
                                 &linkages,
                                 &mut map,
                                 &*symbol,
@@ -323,7 +323,7 @@ impl IsfDataTypeWriter {
                     while let Some(symbol) = iterator.next_symbol() {
                         symbol_to_json(
                             image_base.as_ref(),
-                            symbol_table,
+                            &*symbol_table,
                             &linkages,
                             &mut map,
                             &*symbol,

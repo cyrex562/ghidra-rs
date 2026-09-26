@@ -539,9 +539,9 @@ pub trait SimpleDiffUtility: Send + Sync {
         if !other_storage.is_valid() {
             return None;
         }
-        let other_sym_table = other_program.get_symbol_table()?;
+        let mut other_sym_table = other_program.get_symbol_table()?;
         let min_var =
-            self.get_overlapping_variable(other_sym_table, var, other_storage, other_function_symbol)?;
+            self.get_overlapping_variable(&mut *other_sym_table, var, other_storage, other_function_symbol)?;
         min_var.get_symbol()
     }
 

@@ -872,7 +872,7 @@ mod tests {
     }
 
     struct MockProgram {
-        function_manager: std::sync::Mutex<MockFunctionManager>,
+        function_manager: crate::program::model::listing::ManagerCell<MockFunctionManager>,
         closed: bool,
     }
 
@@ -889,9 +889,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_function_manager(&mut self) -> Option<&mut dyn FunctionManager> {
-            Some(self.function_manager.get_mut().unwrap())
-        }
+        fn get_function_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn FunctionManager>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.function_manager))
+    }
     }
 
     struct MockLocation {
@@ -944,7 +944,7 @@ mod tests {
     #[test]
     fn swing_run_cancelled_reports_cancelled_message() {
         let program = MockProgram {
-            function_manager: std::sync::Mutex::new(MockFunctionManager { function_at_entry: None }),
+            function_manager: crate::program::model::listing::ManagerCell::new(MockFunctionManager { function_at_entry: None }),
             closed: false,
         };
         let (model, runnable) = make_runnable(program, addr(0x1000));
@@ -961,7 +961,7 @@ mod tests {
     #[test]
     fn swing_run_closed_program_reports_closed_message() {
         let program = MockProgram {
-            function_manager: std::sync::Mutex::new(MockFunctionManager { function_at_entry: None }),
+            function_manager: crate::program::model::listing::ManagerCell::new(MockFunctionManager { function_at_entry: None }),
             closed: true,
         };
         let (model, runnable) = make_runnable(program, addr(0x2000));
@@ -977,7 +977,7 @@ mod tests {
     #[test]
     fn swing_run_with_no_prior_graph_data_reports_no_function_message() {
         let program = MockProgram {
-            function_manager: std::sync::Mutex::new(MockFunctionManager { function_at_entry: None }),
+            function_manager: crate::program::model::listing::ManagerCell::new(MockFunctionManager { function_at_entry: None }),
             closed: false,
         };
         let (model, runnable) = make_runnable(program, addr(0x3000));
@@ -993,7 +993,7 @@ mod tests {
     #[test]
     fn monitored_run_with_no_function_reports_expected_message() {
         let program = MockProgram {
-            function_manager: std::sync::Mutex::new(MockFunctionManager { function_at_entry: None }),
+            function_manager: crate::program::model::listing::ManagerCell::new(MockFunctionManager { function_at_entry: None }),
             closed: false,
         };
         let (_model, runnable) = make_runnable(program, addr(0x4000));
@@ -1007,7 +1007,7 @@ mod tests {
     #[test]
     fn contains_location_is_false_when_no_function_was_found() {
         let program = MockProgram {
-            function_manager: std::sync::Mutex::new(MockFunctionManager { function_at_entry: None }),
+            function_manager: crate::program::model::listing::ManagerCell::new(MockFunctionManager { function_at_entry: None }),
             closed: false,
         };
         let (_model, runnable) = make_runnable(program, addr(0x5000));
@@ -1019,7 +1019,7 @@ mod tests {
     #[test]
     fn get_location_returns_constructor_location() {
         let program = MockProgram {
-            function_manager: std::sync::Mutex::new(MockFunctionManager { function_at_entry: None }),
+            function_manager: crate::program::model::listing::ManagerCell::new(MockFunctionManager { function_at_entry: None }),
             closed: false,
         };
         let (_model, runnable) = make_runnable(program, addr(0x6000));

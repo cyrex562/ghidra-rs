@@ -121,7 +121,7 @@ pub trait LoadCommand: StructConverter + Send + Sync {
             return;
         };
         let comment = self.get_contextual_name(source, additional_description);
-        if let Some(listing) = program.get_listing() {
+        if let Some(mut listing) = program.get_listing() {
             listing.set_comment(address, CommentType::Plate, Some(comment));
         }
     }

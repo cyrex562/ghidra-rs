@@ -30,7 +30,7 @@ impl RemoveEquateCmd {
 
 impl Command<dyn Program + 'static> for RemoveEquateCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(equate_table) = program.get_equate_table() else {
+        let Some(mut equate_table) = program.get_equate_table() else {
             self.msg = Some("No equate table available for program.".to_string());
             return false;
         };
@@ -70,7 +70,7 @@ mod tests {
     use crate::program::model::symbol::{EquateTable, SimpleEquateTable};
 
     struct MockProgram {
-        equate_table: Option<SimpleEquateTable>,
+        equate_table: Option<crate::program::model::listing::ManagerCell<SimpleEquateTable>>,
     }
 
     impl DomainObject for MockProgram {
@@ -88,15 +88,16 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
             None
         }
 
-        fn get_equate_table(&mut self) -> Option<&mut dyn EquateTable> {
-            self.equate_table
-                .as_mut()
-                .map(|table| table as &mut dyn EquateTable)
+        fn get_equate_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn EquateTable>> {
+        match &self.equate_table {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -122,7 +123,7 @@ mod tests {
         let mut table = SimpleEquateTable::new();
         table.create_equate("FLAG", 0x80).unwrap();
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = RemoveEquateCmd::new(vec!["FLAG"]);
@@ -130,7 +131,7 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
 
         let equate_table = program.equate_table.as_ref().unwrap();
-        assert!(equate_table.equate("FLAG").is_none());
+        assert!(equate_table.lock().equate("FLAG").is_none());
     }
 
     #[test]
@@ -141,7 +142,7 @@ mod tests {
         table.create_equate("VALUE", 42).unwrap();
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = RemoveEquateCmd::new(vec!["FLAG", "MASK"]);
@@ -149,9 +150,9 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
 
         let equate_table = program.equate_table.as_ref().unwrap();
-        assert!(equate_table.equate("FLAG").is_none());
-        assert!(equate_table.equate("MASK").is_none());
-        assert!(equate_table.equate("VALUE").is_some());
+        assert!(equate_table.lock().equate("FLAG").is_none());
+        assert!(equate_table.lock().equate("MASK").is_none());
+        assert!(equate_table.lock().equate("VALUE").is_some());
     }
 
     #[test]
@@ -160,7 +161,7 @@ mod tests {
         table.create_equate("FLAG", 0x80).unwrap();
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = RemoveEquateCmd::new(vec!["NONEXISTENT"]);
@@ -171,7 +172,7 @@ mod tests {
         );
 
         let equate_table = program.equate_table.as_ref().unwrap();
-        assert!(equate_table.equate("FLAG").is_some());
+        assert!(equate_table.lock().equate("FLAG").is_some());
     }
 
     #[test]
@@ -181,7 +182,7 @@ mod tests {
         table.create_equate("MASK", 0xFF).unwrap();
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = RemoveEquateCmd::new(vec!["FLAG", "NONEXISTENT", "MASK"]);
@@ -192,8 +193,8 @@ mod tests {
         );
 
         let equate_table = program.equate_table.as_ref().unwrap();
-        assert!(equate_table.equate("FLAG").is_none());
-        assert!(equate_table.equate("MASK").is_none());
+        assert!(equate_table.lock().equate("FLAG").is_none());
+        assert!(equate_table.lock().equate("MASK").is_none());
     }
 
     #[test]
@@ -214,7 +215,7 @@ mod tests {
         table.create_equate("FLAG", 0x80).unwrap();
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = RemoveEquateCmd::new(Vec::<String>::new());
@@ -222,7 +223,7 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
 
         let equate_table = program.equate_table.as_ref().unwrap();
-        assert!(equate_table.equate("FLAG").is_some());
+        assert!(equate_table.lock().equate("FLAG").is_some());
     }
 
     #[test]
@@ -233,7 +234,7 @@ mod tests {
         table.create_equate("C", 3).unwrap();
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = RemoveEquateCmd::new(vec!["A", "B", "C"]);
@@ -241,8 +242,8 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
 
         let equate_table = program.equate_table.as_ref().unwrap();
-        assert!(equate_table.equate("A").is_none());
-        assert!(equate_table.equate("B").is_none());
-        assert!(equate_table.equate("C").is_none());
+        assert!(equate_table.lock().equate("A").is_none());
+        assert!(equate_table.lock().equate("B").is_none());
+        assert!(equate_table.lock().equate("C").is_none());
     }
 }

@@ -307,7 +307,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
                 if memory.is_big_endian() { v32.to_be_bytes().to_vec() } else { v32.to_le_bytes().to_vec() }
             };
             {
-                let memory_mut = program
+                let mut memory_mut = program
                     .get_memory_mut()
                     .ok_or_else(|| MemoryAccessException::new("program has no memory"))?;
                 memory_mut.set_bytes(&addr, &bytes)?;
@@ -324,7 +324,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
                     .add(fixup.offset)
                     .map_err(|e| MemoryAccessException::new(e.to_string()))?;
                 if add_relocations {
-                    if let Some(table) = program.get_relocation_table() {
+                    if let Some(mut table) = program.get_relocation_table() {
                         let _ = table.add_with_byte_length(
                             addr.clone(),
                             RelocationStatus::Applied,
@@ -648,9 +648,9 @@ mod tests {
 
     struct MockProgram {
         memory_shared: Arc<SharedMemory>,
-        memory_owned: SharedMemory,
+        memory_owned: crate::program::model::listing::ManagerCell<SharedMemory>,
         space: Arc<AddressSpace>,
-        relocation_table: MockRelocationTable,
+        relocation_table: crate::program::model::listing::ManagerCell<MockRelocationTable>,
     }
 
     impl DomainObject for MockProgram {}
@@ -665,27 +665,27 @@ mod tests {
         fn get_memory(&self) -> Option<Arc<dyn Memory>> {
             Some(self.memory_shared.clone() as Arc<dyn Memory>)
         }
-        fn get_memory_mut(&mut self) -> Option<&mut dyn Memory> {
-            Some(&mut self.memory_owned)
-        }
+        fn get_memory_mut(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Memory>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.memory_owned))
+    }
         fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {
             Some(Arc::new(DefaultAddressFactory::new(vec![self.space.clone()])) as Arc<dyn AddressFactory>)
         }
         fn get_default_pointer_size(&self) -> i32 {
             8
         }
-        fn get_relocation_table(&mut self) -> Option<&mut dyn RelocationTable> {
-            Some(&mut self.relocation_table)
-        }
+        fn get_relocation_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn RelocationTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.relocation_table))
+    }
     }
 
     fn mock_program(initial_len: usize, big_endian: bool) -> MockProgram {
         let bytes = Arc::new(RwLock::new(vec![0u8; initial_len]));
         MockProgram {
             memory_shared: Arc::new(SharedMemory { bytes: Arc::clone(&bytes), big_endian }),
-            memory_owned: SharedMemory { bytes, big_endian },
+            memory_owned: crate::program::model::listing::ManagerCell::new(SharedMemory { bytes, big_endian }),
             space: AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0),
-            relocation_table: MockRelocationTable { relocations: Vec::new() },
+            relocation_table: crate::program::model::listing::ManagerCell::new(MockRelocationTable { relocations: Vec::new() }),
         }
     }
 
@@ -740,7 +740,8 @@ mod tests {
         info.fixup_slide_pointers(&mut program, false, false, &log, &NoopMonitor)
             .expect("fixup should succeed");
 
-        let bytes = program.memory_owned.bytes.read().unwrap();
+        let memory = program.memory_owned.lock();
+        let bytes = memory.bytes.read().unwrap();
         assert_eq!(&bytes[0..8], &0x1122_3344_5566_7788u64.to_le_bytes());
     }
 
@@ -757,7 +758,8 @@ mod tests {
         info.fixup_slide_pointers(&mut program, false, false, &log, &NoopMonitor)
             .expect("fixup should succeed even with an unresolved value");
 
-        let bytes = program.memory_owned.bytes.read().unwrap();
+        let memory = program.memory_owned.lock();
+        let bytes = memory.bytes.read().unwrap();
         assert_eq!(&bytes[0..8], &[0u8; 8]);
     }
 
@@ -774,9 +776,10 @@ mod tests {
         info.fixup_slide_pointers(&mut program, true, true, &log, &NoopMonitor)
             .expect("fixup should succeed");
 
-        let bytes = program.memory_owned.bytes.read().unwrap();
+        let memory = program.memory_owned.lock();
+        let bytes = memory.bytes.read().unwrap();
         assert_eq!(&bytes[4..8], &0xAABB_CCDDu32.to_le_bytes());
-        assert_eq!(program.relocation_table.relocations.len(), 1);
-        assert_eq!(program.relocation_table.relocations[0].type_(), 3);
+        assert_eq!(program.relocation_table.lock().relocations.len(), 1);
+        assert_eq!(program.relocation_table.lock().relocations[0].type_(), 3);
     }
 }

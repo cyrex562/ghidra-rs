@@ -1058,7 +1058,7 @@ mod tests {
 
     struct TestProgram {
         factory: Option<Arc<dyn AddressFactory>>,
-        symbols: TestSymbolTable,
+        symbols: crate::program::model::listing::ManagerCell<TestSymbolTable>,
     }
 
     impl crate::framework::model::domain_object::DomainObject for TestProgram {}
@@ -1073,9 +1073,9 @@ mod tests {
         fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {
             self.factory.clone()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.symbols)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symbols))
+    }
     }
 
     #[test]
@@ -1084,11 +1084,11 @@ mod tests {
         let ram = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         let mut program = TestProgram {
             factory: Some(Arc::new(DefaultAddressFactory::new(vec![ram]))),
-            symbols: TestSymbolTable {
+            symbols: crate::program::model::listing::ManagerCell::new(TestSymbolTable {
                 symbols: Vec::new(),
                 handed_out: Arc::new(Mutex::new(0)),
                 start: Arc::new(Mutex::new(None)),
-            },
+            }),
         };
 
         // `Arc<dyn Function>` is not `Debug`, so the `Ok` side can't go through `assert_eq!`.
@@ -1123,11 +1123,11 @@ mod tests {
                 Arc::clone(&syscall),
                 Arc::clone(&ram),
             ]))),
-            symbols: TestSymbolTable {
+            symbols: crate::program::model::listing::ManagerCell::new(TestSymbolTable {
                 symbols,
                 handed_out: Arc::clone(&handed_out),
                 start: Arc::clone(&start),
-            },
+            }),
         };
 
         let map = load_syscall_function_map(&mut program).expect("syscall space exists");

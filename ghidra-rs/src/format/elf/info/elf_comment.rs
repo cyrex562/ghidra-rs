@@ -89,7 +89,7 @@ impl ElfInfoItem for ElfComment {
                 options.set_string(&format!("Elf Comment[{comment_num}]"), comment_str);
 
                 {
-                    let Some(symbol_table) = program.get_symbol_table() else {
+                    let Some(mut symbol_table) = program.get_symbol_table() else {
                         // No symbol table available on this Program implementation; Java's
                         // `program.getSymbolTable()` never returns null, so this has no direct
                         // Java analog -- treat it like any other markup failure.
@@ -610,7 +610,7 @@ mod tests {
     fn markup_program_records_label_before_data_markup_fails() {
         struct ProgramWithSymbolTableOnly {
             options_calls: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
-            symtab: RecordingSymbolTable,
+            symtab: crate::program::model::listing::ManagerCell<RecordingSymbolTable>,
         }
         impl crate::framework::model::DomainObject for ProgramWithSymbolTableOnly {
             fn get_options(&self, _property_list_name: &str) -> Box<dyn Options> {
@@ -624,9 +624,9 @@ mod tests {
             fn get_language_id(&self) -> String {
                 "test:LE:32:default".to_string()
             }
-            fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-                Some(&mut self.symtab)
-            }
+            fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symtab))
+    }
         }
 
         let comment = ElfComment::new(vec!["only".to_string()], vec![5]);
@@ -634,9 +634,9 @@ mod tests {
         let created_labels = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let mut program = ProgramWithSymbolTableOnly {
             options_calls: std::sync::Arc::clone(&options_calls),
-            symtab: RecordingSymbolTable {
+            symtab: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable {
                 created_labels: std::sync::Arc::clone(&created_labels),
-            },
+            }),
         };
 
         let addr = test_address();

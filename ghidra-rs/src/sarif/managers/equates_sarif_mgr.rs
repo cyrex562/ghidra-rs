@@ -67,7 +67,7 @@ impl EquatesSarifMgr {
         let name = result.get("name").and_then(Value::as_str).unwrap_or("");
         let value = result.get("value").and_then(Value::as_f64).unwrap_or(0.0) as i64;
 
-        let Some(equate_table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_equate_table())
+        let Some(mut equate_table) = self.program.get_equate_table()
         else {
             return;
         };
@@ -107,7 +107,7 @@ impl EquatesSarifMgr {
     ) -> Result<(), CancelledException> {
         monitor.set_message("Writing EQUATES ...");
 
-        let request: Vec<SimpleEquate> = match Arc::get_mut(&mut self.program).and_then(|p| p.get_equate_table())
+        let request: Vec<SimpleEquate> = match self.program.get_equate_table()
         {
             Some(equate_table) => equate_table.equates().into_iter().cloned().collect(),
             None => Vec::new(),
@@ -133,7 +133,7 @@ mod tests {
     use crate::util::task::DummyMonitor;
 
     struct MockProgram {
-        equates: SimpleEquateTable,
+        equates: crate::program::model::listing::ManagerCell<SimpleEquateTable>,
     }
 
     impl DomainObject for MockProgram {}
@@ -145,14 +145,14 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:64:default".to_string()
         }
-        fn get_equate_table(&mut self) -> Option<&mut dyn EquateTable> {
-            Some(&mut self.equates)
-        }
+        fn get_equate_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn EquateTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.equates))
+    }
     }
 
     fn empty_mock_program() -> Arc<dyn Program> {
         Arc::new(MockProgram {
-            equates: SimpleEquateTable::new(),
+            equates: crate::program::model::listing::ManagerCell::new(SimpleEquateTable::new()),
         })
     }
 
@@ -175,7 +175,7 @@ mod tests {
         ]);
         assert!(mgr.read(&result, None, &DummyMonitor));
 
-        let equate_table = Arc::get_mut(&mut mgr.program).unwrap().get_equate_table().unwrap();
+        let equate_table = mgr.program.get_equate_table().unwrap();
         assert_eq!(equate_table.equate("ONE").unwrap().value(), 1);
         assert!(mgr.log.messages().is_empty());
     }

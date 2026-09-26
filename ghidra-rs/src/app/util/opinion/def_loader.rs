@@ -171,7 +171,7 @@ impl DefLoader {
                 continue;
             };
 
-            let Some(symbol_table) = program.get_symbol_table() else {
+            let Some(mut symbol_table) = program.get_symbol_table() else {
                 continue;
             };
             match symbol_table.create_label(&symbol.get_address(), def.name(), SourceType::Imported) {
@@ -481,7 +481,7 @@ mod tests {
 
     struct MockProgram {
         format: String,
-        symbol_table: MockSymbolTable,
+        symbol_table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
 
     impl DomainObject for MockProgram {}
@@ -496,9 +496,9 @@ mod tests {
         fn get_executable_format(&self) -> String {
             self.format.clone()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.symbol_table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symbol_table))
+    }
     }
 
     fn ram_address(offset: i64) -> Address {
@@ -509,11 +509,11 @@ mod tests {
     fn load_rejects_non_pe_program() {
         let mut program = MockProgram {
             format: "Not PE".to_string(),
-            symbol_table: MockSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable {
                 ordinal_symbols: Vec::new(),
                 created_labels: Vec::new(),
                 primary_ids: Vec::new(),
-            },
+            }),
         };
         let log = MessageLog::new();
 
@@ -531,11 +531,11 @@ mod tests {
         });
         let mut program = MockProgram {
             format: PeLoader::PE_NAME.to_string(),
-            symbol_table: MockSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable {
                 ordinal_symbols: vec![ordinal_symbol],
                 created_labels: Vec::new(),
                 primary_ids: Vec::new(),
-            },
+            }),
         };
 
         let log = MessageLog::new();
@@ -544,13 +544,13 @@ mod tests {
         DefLoader.load(&mut program, &p, &log).unwrap();
 
         assert_eq!(
-            program.symbol_table.created_labels,
+            program.symbol_table.lock().created_labels,
             vec![(ram_address(0x1000), "MyExport".to_string())]
         );
         // `set_primary_symbol` is called with the newly created label's ID (100 per
         // `MockSymbolTable::create_label`), not the ordinal symbol's ID (7): Java's
         // `symtab.createLabel(...).setPrimary()` acts on the label it just created.
-        assert_eq!(program.symbol_table.primary_ids, vec![100]);
+        assert_eq!(program.symbol_table.lock().primary_ids, vec![100]);
         assert!(log.messages().is_empty());
     }
 
@@ -558,19 +558,19 @@ mod tests {
     fn load_skips_exports_without_ordinal() {
         let mut program = MockProgram {
             format: PeLoader::PE_NAME.to_string(),
-            symbol_table: MockSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable {
                 ordinal_symbols: Vec::new(),
                 created_labels: Vec::new(),
                 primary_ids: Vec::new(),
-            },
+            }),
         };
         let log = MessageLog::new();
 
         let p = provider(b"EXPORTS\nNoOrdinalExport\n", "library.def");
         DefLoader.load(&mut program, &p, &log).unwrap();
 
-        assert!(program.symbol_table.created_labels.is_empty());
-        assert!(program.symbol_table.primary_ids.is_empty());
+        assert!(program.symbol_table.lock().created_labels.is_empty());
+        assert!(program.symbol_table.lock().primary_ids.is_empty());
     }
 
     #[test]
@@ -580,11 +580,11 @@ mod tests {
         // silent, mirroring Java's `if (symbol == null) { continue; }` with no log call.
         let mut program = MockProgram {
             format: PeLoader::PE_NAME.to_string(),
-            symbol_table: MockSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable {
                 ordinal_symbols: Vec::new(),
                 created_labels: Vec::new(),
                 primary_ids: Vec::new(),
-            },
+            }),
         };
 
         let log = MessageLog::new();
@@ -592,8 +592,8 @@ mod tests {
         let p = provider(b"EXPORTS\nMyExport @1\n", "library.def");
         DefLoader.load(&mut program, &p, &log).unwrap();
 
-        assert!(program.symbol_table.created_labels.is_empty());
-        assert!(program.symbol_table.primary_ids.is_empty());
+        assert!(program.symbol_table.lock().created_labels.is_empty());
+        assert!(program.symbol_table.lock().primary_ids.is_empty());
         assert!(log.messages().is_empty());
     }
 

@@ -293,7 +293,7 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
             None
         }
     }
@@ -301,7 +301,7 @@ mod tests {
     // A second program type whose `get_listing` returns a real listing, used only by the reload
     // tests (kept separate so `MockProgram`'s `Listing` field-based override stays simple).
     struct ReloadableProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
     }
     impl DomainObject for ReloadableProgram {}
     impl Program for ReloadableProgram {
@@ -311,9 +311,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
-            Some(&mut self.listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     struct MockListingModel;
@@ -438,7 +438,7 @@ mod tests {
             data_at: Some(addr(0x6000)),
             component_by_path: Some(component_addr.clone()),
         };
-        let program: Arc<dyn Program> = Arc::new(ReloadableProgram { listing });
+        let program: Arc<dyn Program> = Arc::new(ReloadableProgram { listing: crate::program::model::listing::ManagerCell::new(listing) });
         let d = data(addr(0x6000), vec![0]);
         let proxy = DataProxy::new(model(), program, d);
 
@@ -453,7 +453,7 @@ mod tests {
     #[test]
     fn reload_path_returns_none_when_listing_has_no_data_at_the_address() {
         let listing = MockListing { data_at: None, component_by_path: None };
-        let program: Arc<dyn Program> = Arc::new(ReloadableProgram { listing });
+        let program: Arc<dyn Program> = Arc::new(ReloadableProgram { listing: crate::program::model::listing::ManagerCell::new(listing) });
         let d = data(addr(0x7000), vec![]);
         let proxy = DataProxy::new(model(), program, d);
 

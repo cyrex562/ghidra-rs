@@ -31,7 +31,7 @@ impl PinSymbolCmd {
 
 impl Command<dyn Program + 'static> for PinSymbolCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(symbol_table) = program.get_symbol_table() else {
+        let Some(mut symbol_table) = program.get_symbol_table() else {
             self.msg = Some("No symbol table available for program.".to_string());
             return false;
         };
@@ -184,7 +184,7 @@ mod tests {
     }
 
     struct MockProgram {
-        symbol_table: Option<MockSymbolTable>,
+        symbol_table: Option<crate::program::model::listing::ManagerCell<MockSymbolTable>>,
     }
 
     impl DomainObject for MockProgram {
@@ -202,13 +202,16 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
             None
         }
 
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            self.symbol_table.as_mut().map(|table| table as &mut dyn SymbolTable)
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        match &self.symbol_table {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -223,7 +226,7 @@ mod tests {
         table.add_symbol(1, "my_label", addr(0x1000));
 
         let mut program = MockProgram {
-            symbol_table: Some(table),
+            symbol_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = PinSymbolCmd::new(addr(0x1000), "my_label", true);
@@ -237,7 +240,7 @@ mod tests {
         table.add_symbol(1, "my_label", addr(0x1000));
 
         let mut program = MockProgram {
-            symbol_table: Some(table),
+            symbol_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = PinSymbolCmd::new(addr(0x1000), "my_label", false);
@@ -248,7 +251,7 @@ mod tests {
     #[test]
     fn apply_to_fails_when_symbol_not_found() {
         let mut program = MockProgram {
-            symbol_table: Some(MockSymbolTable::new()),
+            symbol_table: Some(crate::program::model::listing::ManagerCell::new(MockSymbolTable::new())),
         };
 
         let mut cmd = PinSymbolCmd::new(addr(0x1000), "nonexistent", true);
@@ -273,7 +276,7 @@ mod tests {
         table.add_symbol(1, "my_label", addr(0x1000));
 
         let mut program = MockProgram {
-            symbol_table: Some(table),
+            symbol_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = PinSymbolCmd::new(addr(0x2000), "my_label", true);

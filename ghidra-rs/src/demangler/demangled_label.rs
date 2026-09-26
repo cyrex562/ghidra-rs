@@ -280,7 +280,7 @@ mod tests {
 
     struct MockProgram {
         global_namespace: Option<Arc<dyn Namespace>>,
-        symbol_table: MockSymbolTable,
+        symbol_table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -295,9 +295,9 @@ mod tests {
         fn get_global_namespace(&self) -> Option<Arc<dyn Namespace>> {
             self.global_namespace.clone()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.symbol_table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symbol_table))
+    }
     }
 
     fn program_with_global_namespace() -> MockProgram {
@@ -310,7 +310,7 @@ mod tests {
         });
         MockProgram {
             global_namespace: Some(Arc::new(MockGlobalNamespace(global_symbol))),
-            symbol_table: MockSymbolTable { symbols: Vec::new() },
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable { symbols: Vec::new() }),
         }
     }
 

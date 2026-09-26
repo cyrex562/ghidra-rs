@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::program::model::address::Address;
 use crate::program::model::block::CodeBlockModel;
-use crate::program::model::listing::Program;
+use crate::program::model::listing::{ManagerGuard, Program};
 use crate::program::model::symbol::SymbolTable;
 use crate::util::task::DummyMonitor;
 
@@ -40,9 +40,9 @@ impl SubroutineMatchSet {
     /// `aProgram.getSymbolTable()`/`bProgram.getSymbolTable()` into `aSymbolTable`/`bSymbolTable`
     /// fields; per [`FunctionMatchSet`](crate::app::plugin::match::FunctionMatchSet)'s identical
     /// precedent (see its own module docs), this port does not store those handles as fields --
-    /// `Program::get_symbol_table` returns `&mut dyn SymbolTable` borrowed from `&mut self`, which
-    /// cannot be held alongside the `Arc<dyn Program>` fields here -- and instead computes them on
-    /// demand in [`Self::get_a_table`]/[`Self::get_b_table`].
+    /// `Program::get_symbol_table` returns a lock-backed [`ManagerGuard`], and holding one in a
+    /// field would keep that program's symbol table locked for the set's whole lifetime -- and
+    /// instead takes them on demand in [`Self::get_a_table`]/[`Self::get_b_table`].
     pub fn new(
         a_program: Arc<dyn Program>,
         a_model: Box<dyn CodeBlockModel>,
@@ -103,19 +103,19 @@ impl SubroutineMatchSet {
         self.b_model.as_ref()
     }
 
-    /// Returns the symbol table for `a_program`, if it is currently uniquely owned.
+    /// Returns the symbol table for `a_program`.
     ///
     /// Ported from the package-private `SubroutineMatchSet.getATable`. See [`Self::new`]'s docs
     /// for why this is computed on demand rather than cached in a field.
-    pub(crate) fn get_a_table(&mut self) -> Option<&mut dyn SymbolTable> {
-        Arc::get_mut(&mut self.a_program)?.get_symbol_table()
+    pub(crate) fn get_a_table(&self) -> Option<ManagerGuard<'_, dyn SymbolTable>> {
+        self.a_program.get_symbol_table()
     }
 
-    /// Returns the symbol table for `b_program`, if it is currently uniquely owned.
+    /// Returns the symbol table for `b_program`.
     ///
     /// Ported from the package-private `SubroutineMatchSet.getBTable`. See [`Self::new`]'s docs.
-    pub(crate) fn get_b_table(&mut self) -> Option<&mut dyn SymbolTable> {
-        Arc::get_mut(&mut self.b_program)?.get_symbol_table()
+    pub(crate) fn get_b_table(&self) -> Option<ManagerGuard<'_, dyn SymbolTable>> {
+        self.b_program.get_symbol_table()
     }
 }
 
@@ -183,7 +183,7 @@ mod tests {
     }
 
     struct ProgramWithSymbolTable {
-        table: MockSymbolTable,
+        table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
     impl crate::framework::model::DomainObject for ProgramWithSymbolTable {}
     impl Program for ProgramWithSymbolTable {
@@ -193,13 +193,13 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.table))
+    }
     }
 
     fn program_with_symbol_table() -> Arc<dyn Program> {
-        Arc::new(ProgramWithSymbolTable { table: MockSymbolTable })
+        Arc::new(ProgramWithSymbolTable { table: crate::program::model::listing::ManagerCell::new(MockSymbolTable) })
     }
 
     /// A single-entry `CodeBlock` covering a fixed address range, for [`SingleEntryModel`].
@@ -483,7 +483,7 @@ mod tests {
 
     #[test]
     fn get_a_table_returns_symbol_table_when_uniquely_owned() {
-        let mut set = SubroutineMatchSet::new(
+        let set = SubroutineMatchSet::new(
             program_with_symbol_table(),
             empty_model(),
             no_listing_program(),
@@ -493,16 +493,18 @@ mod tests {
     }
 
     #[test]
-    fn get_a_table_returns_none_when_shared() {
+    fn get_a_table_returns_symbol_table_even_when_shared() {
+        // Java's getATable always returns the table; the old `Arc::get_mut` workaround (needed
+        // while the accessor took `&mut self`) returned None here.
         let a = program_with_symbol_table();
         let _clone = Arc::clone(&a);
-        let mut set = SubroutineMatchSet::new(a, empty_model(), no_listing_program(), empty_model());
-        assert!(set.get_a_table().is_none());
+        let set = SubroutineMatchSet::new(a, empty_model(), no_listing_program(), empty_model());
+        assert!(set.get_a_table().is_some());
     }
 
     #[test]
     fn get_b_table_returns_symbol_table_when_uniquely_owned() {
-        let mut set = SubroutineMatchSet::new(
+        let set = SubroutineMatchSet::new(
             no_listing_program(),
             empty_model(),
             program_with_symbol_table(),

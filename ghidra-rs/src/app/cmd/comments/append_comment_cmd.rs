@@ -288,7 +288,7 @@ mod tests {
     }
 
     struct FixtureProgram {
-        listing: FixtureListing,
+        listing: crate::program::model::listing::ManagerCell<FixtureListing>,
     }
 
     impl DomainObject for FixtureProgram {
@@ -304,20 +304,20 @@ mod tests {
         fn get_language_id(&self) -> String {
             "fixture:LE:32:default".to_string()
         }
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-            Some(&mut self.listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     fn mk_program(initial_comment: Option<&str>) -> FixtureProgram {
         let comment = Arc::new(Mutex::new(initial_comment.map(str::to_string)));
-        FixtureProgram { listing: FixtureListing { min_addr: mk_addr(0x1000), comment } }
+        FixtureProgram { listing: crate::program::model::listing::ManagerCell::new(FixtureListing { min_addr: mk_addr(0x1000), comment }) }
     }
 
     #[test]
     fn applies_comment_when_none_existing() {
         let mut program = mk_program(None);
-        let comment = program.listing.comment.clone();
+        let comment = program.listing.lock().comment.clone();
         let mut cmd = AppendCommentCmd::new(mk_addr(0x1000), CommentType::Eol, "hello", "; ");
         assert!(cmd.apply_to(&mut program));
         assert_eq!(*comment.lock().unwrap(), Some("hello".to_string()));
@@ -327,7 +327,7 @@ mod tests {
     #[test]
     fn appends_with_separator_when_comment_exists() {
         let mut program = mk_program(Some("existing"));
-        let comment = program.listing.comment.clone();
+        let comment = program.listing.lock().comment.clone();
         let mut cmd = AppendCommentCmd::new(mk_addr(0x1000), CommentType::Eol, "new", "; ");
         assert!(cmd.apply_to(&mut program));
         assert_eq!(*comment.lock().unwrap(), Some("existing; new".to_string()));
@@ -342,7 +342,7 @@ mod tests {
             }
         }
         struct NoCodeUnitProgram {
-            listing: NoCodeUnitListing,
+            listing: crate::program::model::listing::ManagerCell<NoCodeUnitListing>,
         }
         impl DomainObject for NoCodeUnitProgram {
             fn is_changed(&self) -> bool {
@@ -356,12 +356,12 @@ mod tests {
             fn get_language_id(&self) -> String {
                 "fixture:LE:32:default".to_string()
             }
-            fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-                Some(&mut self.listing)
-            }
+            fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
         }
 
-        let mut program = NoCodeUnitProgram { listing: NoCodeUnitListing };
+        let mut program = NoCodeUnitProgram { listing: crate::program::model::listing::ManagerCell::new(NoCodeUnitListing) };
         let addr = mk_addr(0x2000);
         let mut cmd = AppendCommentCmd::new(addr, CommentType::Eol, "hello", "; ");
         assert!(!cmd.apply_to(&mut program));

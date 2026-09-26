@@ -52,7 +52,7 @@ impl SetExternalNameCmd {
 
 impl Command<dyn Program + 'static> for SetExternalNameCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(ext_mgr) = program.get_external_manager() else {
+        let Some(mut ext_mgr) = program.get_external_manager() else {
             self.status = Some("External manager not available".to_string());
             return false;
         };
@@ -303,7 +303,7 @@ mod tests {
     }
 
     struct MockProgram {
-        ext_mgr: Option<MockExternalManager>,
+        ext_mgr: Option<crate::program::model::listing::ManagerCell<MockExternalManager>>,
     }
 
     impl DomainObject for MockProgram {
@@ -321,9 +321,12 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_external_manager(&mut self) -> Option<&mut dyn ExternalManager> {
-            self.ext_mgr.as_mut().map(|m| m as &mut dyn ExternalManager)
+        fn get_external_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ExternalManager>> {
+        match &self.ext_mgr {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -341,13 +344,13 @@ mod tests {
     #[test]
     fn apply_to_creates_library_when_missing_and_sets_path() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 library_exists: false,
                 added_libraries: vec![],
                 set_paths: vec![],
                 add_should_fail: false,
                 set_path_should_fail: false,
-            }),
+            })),
         };
         let mut cmd = SetExternalNameCmd::with_source(
             "test_lib",
@@ -359,11 +362,11 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
         let ext_mgr = program.ext_mgr.as_ref().unwrap();
         assert_eq!(
-            ext_mgr.added_libraries,
+            ext_mgr.lock().added_libraries,
             vec![("test_lib".to_string(), SourceType::UserDefined)]
         );
         assert_eq!(
-            ext_mgr.set_paths,
+            ext_mgr.lock().set_paths,
             vec![(
                 "test_lib".to_string(),
                 Some("/External/test_lib.dll".to_string()),
@@ -375,51 +378,51 @@ mod tests {
     #[test]
     fn apply_to_skips_add_when_library_already_exists() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 library_exists: true,
                 added_libraries: vec![],
                 set_paths: vec![],
                 add_should_fail: false,
                 set_path_should_fail: false,
-            }),
+            })),
         };
         let mut cmd =
             SetExternalNameCmd::new("test_lib", "/External/test_lib.dll");
 
         assert!(cmd.apply_to(&mut program));
         let ext_mgr = program.ext_mgr.as_ref().unwrap();
-        assert!(ext_mgr.added_libraries.is_empty());
-        assert_eq!(ext_mgr.set_paths.len(), 1);
+        assert!(ext_mgr.lock().added_libraries.is_empty());
+        assert_eq!(ext_mgr.lock().set_paths.len(), 1);
     }
 
     #[test]
     fn apply_to_fails_when_add_fails() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 library_exists: false,
                 added_libraries: vec![],
                 set_paths: vec![],
                 add_should_fail: true,
                 set_path_should_fail: false,
-            }),
+            })),
         };
         let mut cmd = SetExternalNameCmd::new("test_lib", "/External/test_lib.dll");
 
         assert!(!cmd.apply_to(&mut program));
         assert_eq!(cmd.status_msg(), Some("cannot add".to_string()));
-        assert!(program.ext_mgr.as_ref().unwrap().set_paths.is_empty());
+        assert!(program.ext_mgr.as_ref().unwrap().lock().set_paths.is_empty());
     }
 
     #[test]
     fn apply_to_fails_when_set_path_fails() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 library_exists: true,
                 added_libraries: vec![],
                 set_paths: vec![],
                 add_should_fail: false,
                 set_path_should_fail: true,
-            }),
+            })),
         };
         let mut cmd = SetExternalNameCmd::new("test_lib", "/External/test_lib.dll");
 

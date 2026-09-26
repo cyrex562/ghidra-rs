@@ -27,7 +27,7 @@ impl RemoveExternalRefCmd {
 
 impl Command<dyn Program + 'static> for RemoveExternalRefCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(ref_mgr) = program.get_reference_manager() else {
+        let Some(mut ref_mgr) = program.get_reference_manager() else {
             self.status = Some("Reference manager not available".to_string());
             return false;
         };
@@ -412,7 +412,7 @@ mod tests {
     }
 
     struct MockProgram {
-        ref_mgr: Option<MockReferenceManager>,
+        ref_mgr: Option<crate::program::model::listing::ManagerCell<MockReferenceManager>>,
     }
 
     impl DomainObject for MockProgram {
@@ -430,11 +430,12 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_reference_manager(&mut self) -> Option<&mut dyn ReferenceManager> {
-            self.ref_mgr
-                .as_mut()
-                .map(|m| m as &mut dyn ReferenceManager)
+        fn get_reference_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ReferenceManager>> {
+        match &self.ref_mgr {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -451,16 +452,16 @@ mod tests {
             Arc::new(MockReference::new(addr(0x1000), addr(0x3000), 0, false));
 
         let mut program = MockProgram {
-            ref_mgr: Some(MockReferenceManager {
+            ref_mgr: Some(crate::program::model::listing::ManagerCell::new(MockReferenceManager {
                 references: vec![external_ref.clone(), non_external_ref.clone()],
                 deleted_references: vec![],
-            }),
+            })),
         };
 
         let mut cmd = RemoveExternalRefCmd::new(addr(0x1000), 0);
         assert!(cmd.apply_to(&mut program));
 
-        let deleted = &program.ref_mgr.as_ref().unwrap().deleted_references;
+        let deleted = &program.ref_mgr.as_ref().unwrap().lock().deleted_references;
         assert_eq!(deleted.len(), 1);
         assert!(deleted[0].is_external_reference());
     }
@@ -471,32 +472,32 @@ mod tests {
             Arc::new(MockReference::new(addr(0x1000), addr(0x3000), 0, false));
 
         let mut program = MockProgram {
-            ref_mgr: Some(MockReferenceManager {
+            ref_mgr: Some(crate::program::model::listing::ManagerCell::new(MockReferenceManager {
                 references: vec![non_external_ref],
                 deleted_references: vec![],
-            }),
+            })),
         };
 
         let mut cmd = RemoveExternalRefCmd::new(addr(0x1000), 0);
         assert!(cmd.apply_to(&mut program));
 
-        let deleted = &program.ref_mgr.as_ref().unwrap().deleted_references;
+        let deleted = &program.ref_mgr.as_ref().unwrap().lock().deleted_references;
         assert_eq!(deleted.len(), 0);
     }
 
     #[test]
     fn apply_to_succeeds_with_empty_references() {
         let mut program = MockProgram {
-            ref_mgr: Some(MockReferenceManager {
+            ref_mgr: Some(crate::program::model::listing::ManagerCell::new(MockReferenceManager {
                 references: vec![],
                 deleted_references: vec![],
-            }),
+            })),
         };
 
         let mut cmd = RemoveExternalRefCmd::new(addr(0x1000), 0);
         assert!(cmd.apply_to(&mut program));
 
-        let deleted = &program.ref_mgr.as_ref().unwrap().deleted_references;
+        let deleted = &program.ref_mgr.as_ref().unwrap().lock().deleted_references;
         assert_eq!(deleted.len(), 0);
     }
 
@@ -515,10 +516,10 @@ mod tests {
     #[test]
     fn status_is_none_on_success() {
         let mut program = MockProgram {
-            ref_mgr: Some(MockReferenceManager {
+            ref_mgr: Some(crate::program::model::listing::ManagerCell::new(MockReferenceManager {
                 references: vec![],
                 deleted_references: vec![],
-            }),
+            })),
         };
 
         let mut cmd = RemoveExternalRefCmd::new(addr(0x1000), 0);
@@ -544,16 +545,16 @@ mod tests {
             Arc::new(MockReference::new(addr(0x1000), addr(0x4000), 0, false));
 
         let mut program = MockProgram {
-            ref_mgr: Some(MockReferenceManager {
+            ref_mgr: Some(crate::program::model::listing::ManagerCell::new(MockReferenceManager {
                 references: vec![ext_ref1, ext_ref2, non_external_ref],
                 deleted_references: vec![],
-            }),
+            })),
         };
 
         let mut cmd = RemoveExternalRefCmd::new(addr(0x1000), 0);
         assert!(cmd.apply_to(&mut program));
 
-        let deleted = &program.ref_mgr.as_ref().unwrap().deleted_references;
+        let deleted = &program.ref_mgr.as_ref().unwrap().lock().deleted_references;
         assert_eq!(deleted.len(), 2);
         assert!(deleted.iter().all(|r| r.is_external_reference()));
     }

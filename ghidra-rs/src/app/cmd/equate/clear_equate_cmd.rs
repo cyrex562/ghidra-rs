@@ -1,7 +1,7 @@
 use crate::framework::cmd::Command;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
-use crate::program::model::symbol::{Equate, EquateTable};
+use crate::program::model::symbol::Equate;
 
 /// Command for removing an equate reference at a location.
 pub struct ClearEquateCmd {
@@ -31,7 +31,7 @@ impl ClearEquateCmd {
 
 impl Command<dyn Program + 'static> for ClearEquateCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(equate_table) = program.get_equate_table() else {
+        let Some(mut equate_table) = program.get_equate_table() else {
             self.msg = Some("No equate table available for program.".to_string());
             return false;
         };
@@ -72,7 +72,7 @@ mod tests {
     }
 
     struct MockProgram {
-        equate_table: Option<SimpleEquateTable>,
+        equate_table: Option<crate::program::model::listing::ManagerCell<SimpleEquateTable>>,
     }
 
     impl DomainObject for MockProgram {
@@ -90,15 +90,16 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
             None
         }
 
-        fn get_equate_table(&mut self) -> Option<&mut dyn EquateTable> {
-            self.equate_table
-                .as_mut()
-                .map(|table| table as &mut dyn EquateTable)
+        fn get_equate_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn EquateTable>> {
+        match &self.equate_table {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -115,7 +116,7 @@ mod tests {
         equate.add_reference(addr(0x1000), 0);
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = ClearEquateCmd::new("FLAG", addr(0x1000), 0);
@@ -123,7 +124,7 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
 
         let equate_table = program.equate_table.as_ref().unwrap();
-        assert!(equate_table.equate("FLAG").is_none());
+        assert!(equate_table.lock().equate("FLAG").is_none());
     }
 
     #[test]
@@ -136,14 +137,14 @@ mod tests {
         equate.add_reference(addr(0x1000), 1);
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = ClearEquateCmd::new("FLAG", addr(0x1000), 0);
         assert!(cmd.apply_to(&mut program));
         assert_eq!(cmd.status_msg(), None);
 
-        let equate_table = program.equate_table.as_ref().unwrap();
+        let equate_table = program.equate_table.as_ref().unwrap().lock();
         let equate = equate_table.equate("FLAG").unwrap();
         assert_eq!(equate.reference_count(), 2);
         assert!(equate.references_at(&addr(0x1000)).iter().all(|r| r.op_index() != 0));
@@ -152,7 +153,7 @@ mod tests {
     #[test]
     fn apply_to_handles_nonexistent_equate() {
         let mut program = MockProgram {
-            equate_table: Some(SimpleEquateTable::new()),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(SimpleEquateTable::new())),
         };
 
         let mut cmd = ClearEquateCmd::new("NONEXISTENT", addr(0x1000), 0);
@@ -181,13 +182,13 @@ mod tests {
         equate.add_reference(addr(0x1000), 1);
 
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = ClearEquateCmd::new("VALUE", addr(0x1000), 0);
         assert!(cmd.apply_to(&mut program));
 
-        let equate_table = program.equate_table.as_ref().unwrap();
+        let equate_table = program.equate_table.as_ref().unwrap().lock();
         let equate = equate_table.equate("VALUE").unwrap();
         assert_eq!(equate.reference_count(), 1);
         let refs = equate.references_at(&addr(0x1000));

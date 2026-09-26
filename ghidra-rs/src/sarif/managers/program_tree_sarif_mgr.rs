@@ -124,7 +124,7 @@ impl ProgramTreeSarifMgr {
         let factory = self.program.get_address_factory();
         let mut tree_name = result.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
 
-        let Some(listing) = Arc::get_mut(&mut self.program).and_then(|p| p.get_listing()) else {
+        let Some(mut listing) = self.program.get_listing() else {
             self.log.append_msg("Program is not exclusively owned; cannot mutate its program tree");
             return Ok(());
         };
@@ -234,7 +234,7 @@ impl ProgramTreeSarifMgr {
         monitor.set_message("Writing PROGRAM TREES ...");
 
         let mut request: Vec<(String, Arc<dyn ProgramModule>)> = Vec::new();
-        if let Some(listing) = Arc::get_mut(&mut self.program).and_then(|p| p.get_listing()) {
+        if let Some(listing) = self.program.get_listing() {
             for n in listing.get_tree_names() {
                 if monitor.is_cancelled() {
                     return Err(CancelledException::default());

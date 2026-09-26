@@ -426,7 +426,7 @@ impl MipsElfRelocationContext {
 
         // See the module docs: program mutation is best-effort through `Arc::get_mut`.
         let mut program = self.base.get_program().clone();
-        let Some(memory) = Arc::get_mut(&mut program).and_then(|p| p.get_memory_mut()) else {
+        let Some(mut memory) = Arc::get_mut(&mut program).and_then(|p| p.get_memory_mut()) else {
             log.append_msg(&format!("Failed to create {block_name} block"));
             return;
         };

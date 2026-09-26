@@ -410,6 +410,72 @@ emulators' default decoder. The program-mutating half of `Disassembler` (listing
   (address, data type, length) resolved against the same snapshot sources; `PseudoCodeUnit` is
   already the shared pseudo state both would compose.
 
+## Program manager access (2026-09-26)
+
+Decided 2026-09-25 ("Program API" in the descent brief): `Program`'s manager accessors take
+`&self` and return shared handles; managers mutate through locks or transactions, never through
+`&mut Program`.
+
+### What the survey found
+
+- Ten accessors took `&mut self` and returned `Option<&mut dyn Manager>`: `get_listing`,
+  `get_memory_mut`, `get_reference_manager`, `get_equate_table`, `get_symbol_table`,
+  `get_external_manager`, `get_function_manager`, `get_relocation_table`,
+  `get_bookmark_manager_mut`, `get_program_context`. `get_memory`, `get_bookmark_manager`,
+  `get_symbol_table_ref` and `get_data_type_manager` were already `&self` (returning `Arc`/`Box`
+  read handles) precisely because callers only had a shared program.
+- ~400 `impl Program` blocks, **all** test doubles except `ProgramDB`, which is a skeleton
+  (address map, memory, namespace and symbol managers, each already an `Arc<RwLock<_>>` shared
+  between managers) and overrode none of the manager accessors. ~85 of the doubles overrode one.
+- The `&mut self` shape had forced workarounds that changed behaviour, not just ergonomics:
+  `Arc::get_mut(&mut self.program)?.get_x()` in the SARIF managers, `FunctionMatchSet`,
+  `SubroutineMatchSet`, `InstructionPcodeOverride::function_at` and others silently returned
+  `None` whenever the program `Arc` had a second owner -- i.e. in every real session. Java always
+  returns the manager. It also made two managers unobtainable at once (`&mut` twice), and it is
+  what blocked the program-attached `PseudoInstruction` constructor (see the Instruction arena
+  section above).
+
+### The design
+
+- **Handle type: `ManagerGuard<'_, dyn Manager>`** (`program/model/listing/manager_handle.rs`),
+  an exclusive, lock-backed handle that derefs (mutably) to the manager. Manager *traits are
+  unchanged* -- their mutators keep `&mut self`, reached through the guard. Converting every
+  manager trait to `&self` + interior mutability would have touched ~130 manager implementors
+  (including the DB-backed ones that are due to move to snapshot + transaction anyway) for no
+  gain over locking at the manager boundary.
+- **Locking granularity: one lock per manager**, not one program-wide lock. Java's `ProgramDB`
+  serialises writers on one domain-object lock, but its readers do not take it and its managers
+  are handed out freely; the observable contract is "any number of managers can be used at once,
+  and every holder sees every committed change". Per-manager locks give exactly that, let a
+  caller hold the listing and the symbol table together, and keep independent managers from
+  contending. A single program lock would have made "listing + symbol table at once" impossible,
+  which is the most common thing Java callers do.
+- **Storage: `ManagerCell<T>`** for implementors that own a manager outright (a `Mutex` plus an
+  owner-thread token). `&ManagerCell<Concrete>` coerces to `&ManagerCell<dyn Manager>`, so an
+  accessor is one line: `Some(ManagerGuard::lock(&self.listing))`. Implementors whose managers are
+  already shared between managers as `Arc<RwLock<_>>` (`ProgramDB`) use `ManagerGuard::write`.
+- **Re-entrancy is a loud error, not a hang.** Asking for a manager the same thread already holds
+  used to be a borrow-check error; with a lock it would deadlock. `ManagerCell::lock` detects it
+  and panics ("already held on this thread"), the way `RefCell` does. Keep handles short-lived:
+  scope them in a block, or take what you need out of the manager before asking for it again.
+  The migration found and fixed three sites that held a handle across a second request
+  (`StructureFactory`, `ExternalLibSarifMgr::process_external_lib`, a SARIF test) -- all were
+  legal under NLL with `&mut` and all panicked immediately under the lock, which is the point --
+  plus one found by inspection (`DyldCacheProgramBuilder` held the symbol table while calling a
+  helper that takes the program).
+- **Relationship to snapshot + transaction.** A handle is the transaction boundary for managers
+  that are still plain structs: taking it is `startTransaction`, dropping it is `endTransaction`.
+  When a manager moves to convention 3 (as `EquateStore` has), its accessor keeps the same
+  signature -- the guard then wraps the store's writer -- and read-mostly callers can move to the
+  store's `snapshot()` instead. `Send + Sync` on `Program` is kept; handles are usable from any
+  thread (`ProgramDB` has a test that labels from four threads).
+- **Left for later, deliberately:** the read-only twins (`get_memory`/`get_memory_mut`,
+  `get_bookmark_manager`/`get_bookmark_manager_mut`, `get_symbol_table_ref`) still exist;
+  collapsing each pair onto the guard accessor changes ~200 call sites of the read side and is a
+  separate, mechanical change. `get_data_type_manager` still returns a boxed read handle.
+  `&mut dyn Program` parameters still compile against the `&self` accessors and are narrowed to
+  `&dyn Program` only where they existed solely to reach a manager.
+
 ## Evaluation: `scripts/pattern_audit.py`
 
 Heuristic (regex, no rustc AST — same tradeoff `sync_check.py` already makes)

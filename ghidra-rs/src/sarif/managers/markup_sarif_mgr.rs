@@ -198,8 +198,7 @@ impl MarkupSarifMgr {
         };
 
         if !overwrite {
-            let blocked = Arc::get_mut(&mut self.program)
-                .and_then(|p| p.get_reference_manager())
+            let blocked = self.program.get_reference_manager()
                 .map(|ref_mgr| ref_mgr.get_references_from_operand(from_addr.clone(), op_index))
                 .is_some_and(|existing| existing.first().is_some_and(|r| !r.is_memory_reference()));
             if blocked {
@@ -213,7 +212,7 @@ impl MarkupSarifMgr {
         let ref_type = Self::ref_type_of(result)?;
         let source_type = self.source_type_of(result);
 
-        let Some(ref_mgr) = Arc::get_mut(&mut self.program).and_then(|p| p.get_reference_manager()) else {
+        let Some(mut ref_mgr) = self.program.get_reference_manager() else {
             return Ok(());
         };
         let reference = match &base_addr {
@@ -264,8 +263,7 @@ impl MarkupSarifMgr {
         let primary = result.get("primary").and_then(Value::as_bool).unwrap_or(false);
 
         if !overwrite {
-            let blocked = Arc::get_mut(&mut self.program)
-                .and_then(|p| p.get_reference_manager())
+            let blocked = self.program.get_reference_manager()
                 .map(|ref_mgr| ref_mgr.get_references_from_operand(from_addr.clone(), op_index))
                 .is_some_and(|existing| !existing.is_empty());
             if blocked {
@@ -279,7 +277,7 @@ impl MarkupSarifMgr {
         let ref_type = Self::ref_type_of(result)?;
         let source_type = self.source_type_of(result);
 
-        let Some(ref_mgr) = Arc::get_mut(&mut self.program).and_then(|p| p.get_reference_manager()) else {
+        let Some(mut ref_mgr) = self.program.get_reference_manager() else {
             return Ok(());
         };
         let reference =
@@ -300,8 +298,7 @@ impl MarkupSarifMgr {
             .ok_or_else(|| AddressFormatException::new("Incompatible Stack Reference Address"))?;
         let op_index = Self::op_index(result);
 
-        let code_unit = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_listing())
+        let code_unit = self.program.get_listing()
             .and_then(|listing| listing.get_code_unit_containing(&addr));
         let Some(code_unit) = code_unit else {
             self.log.append_msg(format!("No codeunit at {addr}"));
@@ -309,8 +306,7 @@ impl MarkupSarifMgr {
         };
 
         if !overwrite {
-            let blocked = Arc::get_mut(&mut self.program)
-                .and_then(|p| p.get_reference_manager())
+            let blocked = self.program.get_reference_manager()
                 .map(|ref_mgr| ref_mgr.get_references_from_operand(addr.clone(), op_index))
                 .is_some_and(|existing| !existing.is_empty());
             if blocked {
@@ -330,7 +326,7 @@ impl MarkupSarifMgr {
         let ref_type = Self::ref_type_of(result)?;
         let source_type = self.source_type_of(result);
 
-        if let Some(ref_mgr) = Arc::get_mut(&mut self.program).and_then(|p| p.get_reference_manager()) {
+        if let Some(mut ref_mgr) = self.program.get_reference_manager() {
             ref_mgr.add_stack_reference(addr, op_index, offset, ref_type, source_type);
         }
         Ok(())
@@ -348,8 +344,7 @@ impl MarkupSarifMgr {
             .ok_or_else(|| AddressFormatException::new("Incompatible Shifted Reference Address"))?;
         let op_index = Self::op_index(result);
 
-        let code_unit = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_listing())
+        let code_unit = self.program.get_listing()
             .and_then(|listing| listing.get_code_unit_containing(&addr));
         let Some(code_unit) = code_unit else {
             self.log.append_msg(format!("No codeunit at {addr}"));
@@ -357,8 +352,7 @@ impl MarkupSarifMgr {
         };
 
         if !overwrite {
-            let blocked = Arc::get_mut(&mut self.program)
-                .and_then(|p| p.get_reference_manager())
+            let blocked = self.program.get_reference_manager()
                 .map(|ref_mgr| ref_mgr.get_references_from_operand(addr.clone(), op_index))
                 .is_some_and(|existing| !existing.is_empty());
             if blocked {
@@ -378,7 +372,7 @@ impl MarkupSarifMgr {
         let ref_type = Self::ref_type_of(result)?;
         let source_type = self.source_type_of(result);
 
-        if let Some(ref_mgr) = Arc::get_mut(&mut self.program).and_then(|p| p.get_reference_manager()) {
+        if let Some(mut ref_mgr) = self.program.get_reference_manager() {
             ref_mgr.add_shifted_mem_reference(addr, to_addr, shift, ref_type, source_type, op_index);
         }
         Ok(())
@@ -424,8 +418,7 @@ impl MarkupSarifMgr {
             return Ok(());
         }
 
-        let code_unit = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_listing())
+        let code_unit = self.program.get_listing()
             .and_then(|listing| listing.get_code_unit_containing(&addr));
         let Some(code_unit) = code_unit else {
             self.log.append_msg(format!("No codeunit at {addr}"));
@@ -436,7 +429,7 @@ impl MarkupSarifMgr {
             if !overwrite {
                 return Ok(());
             }
-            if let Some(ref_mgr) = Arc::get_mut(&mut self.program).and_then(|p| p.get_reference_manager()) {
+            if let Some(mut ref_mgr) = self.program.get_reference_manager() {
                 ref_mgr.delete(existing);
             }
         }
@@ -468,7 +461,7 @@ impl MarkupSarifMgr {
             }
         }
 
-        if let Some(ref_mgr) = Arc::get_mut(&mut self.program).and_then(|p| p.get_reference_manager()) {
+        if let Some(mut ref_mgr) = self.program.get_reference_manager() {
             ref_mgr.add_external_reference_for_location(addr, op_index, ext_loc, source_type, ref_type)?;
         }
         Ok(())
@@ -508,7 +501,7 @@ impl MarkupSarifMgr {
 
         let library = Self::get_library(&namespace).unwrap_or_else(|| namespace.clone());
 
-        let Some(ext_manager) = Arc::get_mut(&mut self.program).and_then(|p| p.get_external_manager()) else {
+        let Some(mut ext_manager) = self.program.get_external_manager() else {
             return Err(InvalidInputException::new().into());
         };
         let mut loc = match (is_function, name0) {
@@ -571,8 +564,7 @@ impl MarkupSarifMgr {
             .get_location(result)?
             .ok_or_else(|| AddressFormatException::new("Incompatible Equate Reference Address"))?;
 
-        let undefined = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_listing())
+        let undefined = self.program.get_listing()
             .is_some_and(|listing| listing.is_undefined(&addr, &addr));
         if undefined {
             self.log
@@ -580,8 +572,7 @@ impl MarkupSarifMgr {
             return Ok(());
         }
 
-        let code_unit = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_listing())
+        let code_unit = self.program.get_listing()
             .and_then(|listing| listing.get_code_unit_containing(&addr));
         let Some(code_unit) = code_unit else {
             self.log.append_msg(format!("No codeunit at {addr}"));
@@ -644,10 +635,10 @@ impl MarkupSarifMgr {
             },
         };
 
-        let existing_value = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_equate_table())
-            .and_then(|table| table.equate(&equate_name))
-            .map(|equate| equate.value());
+        let existing_value = self
+            .program
+            .get_equate_table()
+            .and_then(|table| table.equate(&equate_name).map(|equate| equate.value()));
         match existing_value {
             Some(existing_value) => {
                 if existing_value != value {
@@ -659,9 +650,8 @@ impl MarkupSarifMgr {
                 }
             }
             None => {
-                let created = Arc::get_mut(&mut self.program)
-                    .and_then(|p| p.get_equate_table())
-                    .map(|table| table.create_equate(&equate_name, value).map(|_| ()));
+                let created = self.program.get_equate_table()
+                    .map(|mut table| table.create_equate(&equate_name, value).map(|_| ()));
                 match created {
                     // Java's `DuplicateNameException` arm (an `AssertException`) is unreachable:
                     // the lookup above already established there is no equate by this name, so a
@@ -676,23 +666,22 @@ impl MarkupSarifMgr {
             }
         }
 
-        let displaced = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_equate_table())
-            .and_then(|table| table.equate_at_value(&addr, op_index as i16, value))
-            .map(|equate| equate.name().to_string());
+        let displaced = self.program.get_equate_table().and_then(|table| {
+            table
+                .equate_at_value(&addr, op_index as i16, value)
+                .map(|equate| equate.name().to_string())
+        });
         if let (Some(displaced), true) = (displaced, overwrite) {
-            if let Some(equate) = Arc::get_mut(&mut self.program)
-                .and_then(|p| p.get_equate_table())
-                .and_then(|table| table.equate_mut(&displaced))
-            {
-                equate.remove_reference(&addr, op_index as i16);
+            if let Some(mut table) = self.program.get_equate_table() {
+                if let Some(equate) = table.equate_mut(&displaced) {
+                    equate.remove_reference(&addr, op_index as i16);
+                }
             }
         }
-        if let Some(equate) = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_equate_table())
-            .and_then(|table| table.equate_mut(&equate_name))
-        {
-            equate.add_reference(addr, op_index as i16);
+        if let Some(mut table) = self.program.get_equate_table() {
+            if let Some(equate) = table.equate_mut(&equate_name) {
+                equate.add_reference(addr, op_index as i16);
+            }
         }
         Ok(())
     }
@@ -718,7 +707,7 @@ impl MarkupSarifMgr {
         };
 
         monitor.set_message("Exporting References...");
-        let request: Vec<Address> = match Arc::get_mut(&mut self.program).and_then(|p| p.get_reference_manager())
+        let request: Vec<Address> = match self.program.get_reference_manager()
         {
             Some(ref_mgr) => ref_mgr
                 .get_reference_source_iterator_in_set(Some(effective_set), true)

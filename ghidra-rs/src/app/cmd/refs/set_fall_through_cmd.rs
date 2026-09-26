@@ -837,7 +837,7 @@ mod tests {
     }
 
     struct MockProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
     }
 
     impl DomainObject for MockProgram {
@@ -855,9 +855,9 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-            Some(&mut self.listing as &mut dyn crate::program::model::listing::Listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     #[test]
@@ -886,9 +886,9 @@ mod tests {
         });
         let mut cmd = SetFallThroughCmd::new(inst_addr, fallthrough_addr.clone());
         let mut program = MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 instruction: Some(mock_inst.clone()),
-            },
+            }),
         };
 
         assert!(cmd.apply_to(&mut program));
@@ -901,9 +901,9 @@ mod tests {
         let fallthrough_addr = addr(0x1004);
         let mut cmd = SetFallThroughCmd::new(inst_addr, fallthrough_addr);
         let mut program = MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 instruction: None,
-            },
+            }),
         };
 
         assert!(!cmd.apply_to(&mut program));

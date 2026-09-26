@@ -123,7 +123,7 @@ fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &mut dyn Progra
     let table_addr = Address::new(space, table_pointer);
 
     // Label the start of the table.
-    if let Some(symbol_table) = program.get_symbol_table() {
+    if let Some(mut symbol_table) = program.get_symbol_table() {
         if let Err(e) = symbol_table.create_label(&table_addr, GUARD_CF_FUNCTION_TABLE_NAME, SourceType::Imported) {
             log.append_msg(&format!("Unable to label ControlFlowGuard function table: {e}"));
         }
@@ -220,7 +220,7 @@ fn markup_cfg_address_taken_iat_entry_table(lcd: &LoadConfigDirectory, program: 
     };
     let table_addr = Address::new(space, table_pointer);
 
-    if let Some(symbol_table) = program.get_symbol_table() {
+    if let Some(mut symbol_table) = program.get_symbol_table() {
         if let Err(e) =
             symbol_table.create_label(&table_addr, GUARD_CF_ADDRESS_TAKEN_IAT_TABLE_NAME, SourceType::Imported)
         {
@@ -293,7 +293,7 @@ fn markup_cfg_function(
         }
     };
 
-    if let Some(symbol_table) = program.get_symbol_table() {
+    if let Some(mut symbol_table) = program.get_symbol_table() {
         if let Err(e) = symbol_table.create_label(&function_addr, label, SourceType::Imported) {
             log.append_msg(&format!(
                 "Unable to apply label '{label}' to {description} function at {function_addr}: {e}"
@@ -580,7 +580,7 @@ mod tests {
     struct TestProgram {
         address_factory: Arc<dyn crate::program::model::address::AddressFactory>,
         memory: Arc<dyn Memory>,
-        symbol_table: RecordingSymbolTable,
+        symbol_table: crate::program::model::listing::ManagerCell<RecordingSymbolTable>,
     }
     impl crate::framework::model::DomainObject for TestProgram {}
     impl ProgramTrait for TestProgram {
@@ -596,10 +596,10 @@ mod tests {
         fn get_memory(&self) -> Option<Arc<dyn Memory>> {
             Some(self.memory.clone())
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.symbol_table)
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+            Some(crate::program::model::listing::ManagerGuard::lock(&self.symbol_table))
         }
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
             None
         }
     }
@@ -617,14 +617,14 @@ mod tests {
         let mut program = TestProgram {
             address_factory: factory,
             memory: Arc::new(FixtureMemory { start: Address::new(space, 0), data: vec![] }),
-            symbol_table: RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) },
+            symbol_table: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) }),
         };
         let log = MessageLog::new();
         let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("label", "desc", 0, &mut program, &nt, &log);
 
-        assert!(program.symbol_table.created_labels.lock().unwrap().is_empty());
+        assert!(program.symbol_table.lock().created_labels.lock().unwrap().is_empty());
         assert!(log.messages().is_empty());
     }
 
@@ -642,7 +642,7 @@ mod tests {
         let mut program = TestProgram {
             address_factory: factory,
             memory: Arc::new(FixtureMemory { start, data }),
-            symbol_table: RecordingSymbolTable { created_labels: created_labels.clone() },
+            symbol_table: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable { created_labels: created_labels.clone() }),
         };
         let log = MessageLog::new();
         let nt = FixtureNtHeader::new(false);
@@ -668,14 +668,14 @@ mod tests {
         let mut program = TestProgram {
             address_factory: factory,
             memory: Arc::new(FixtureMemory { start, data: vec![] }),
-            symbol_table: RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) },
+            symbol_table: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable { created_labels: Arc::new(Mutex::new(Vec::new())) }),
         };
         let log = MessageLog::new();
         let nt = FixtureNtHeader::new(false);
 
         markup_cfg_function("label", "ControlFlowGuard check", 0x2000, &mut program, &nt, &log);
 
-        assert!(program.symbol_table.created_labels.lock().unwrap().is_empty());
+        assert!(program.symbol_table.lock().created_labels.lock().unwrap().is_empty());
         assert_eq!(log.messages().len(), 1);
         assert!(log.messages()[0].contains("Failed to read"));
     }
@@ -693,7 +693,7 @@ mod tests {
         let mut program = TestProgram {
             address_factory: factory,
             memory: Arc::new(FixtureMemory { start: Address::new(space, 0), data: vec![] }),
-            symbol_table: RecordingSymbolTable { created_labels: created_labels.clone() },
+            symbol_table: crate::program::model::listing::ManagerCell::new(RecordingSymbolTable { created_labels: created_labels.clone() }),
         };
         let log = MessageLog::new();
 

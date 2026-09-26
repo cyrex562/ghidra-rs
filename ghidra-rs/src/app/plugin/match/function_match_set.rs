@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressSetView};
-use crate::program::model::listing::Program;
+use crate::program::model::listing::{ManagerGuard, Program};
 use crate::program::model::symbol::SymbolTable;
 
 use super::SubroutineMatch;
@@ -40,20 +40,18 @@ impl FunctionMatchSet {
     /// Returns the length, in addresses, of the function containing `addr` in `program`.
     ///
     /// Returns `None` if `program` has no listing, or no function contains `addr`.
-    pub fn get_length(&self, addr: &Address, program: &mut dyn Program) -> Option<usize> {
+    pub fn get_length(&self, addr: &Address, program: &dyn Program) -> Option<usize> {
         Self::length_at(addr, program)
     }
 
     /// Same as [`Self::get_length`], assuming `addr` is in `a_program`.
     ///
-    /// Returns `None` if `a_program` is currently shared (its listing cannot be borrowed
-    /// mutably while other `Arc` clones exist), has no listing, or has no function containing
-    /// `addr`.
-    pub fn get_length_in_a(&mut self, addr: &Address) -> Option<usize> {
-        Self::length_at(addr, Arc::get_mut(&mut self.a_program)?)
+    /// Returns `None` if `a_program` has no listing, or has no function containing `addr`.
+    pub fn get_length_in_a(&self, addr: &Address) -> Option<usize> {
+        Self::length_at(addr, self.a_program.as_ref())
     }
 
-    fn length_at(addr: &Address, program: &mut dyn Program) -> Option<usize> {
+    fn length_at(addr: &Address, program: &dyn Program) -> Option<usize> {
         let listing = program.get_listing()?;
         let func = listing.get_function_containing(addr)?;
         Some(Self::function_body_length(func.get_body().as_ref()))
@@ -63,18 +61,18 @@ impl FunctionMatchSet {
         body.num_addresses() as usize
     }
 
-    /// Returns the symbol table for `a_program`, if it is currently uniquely owned.
+    /// Returns the symbol table for `a_program`.
     ///
     /// Ported from the package-private `FunctionMatchSet.getATable`.
-    pub(crate) fn get_a_table(&mut self) -> Option<&mut dyn SymbolTable> {
-        Arc::get_mut(&mut self.a_program)?.get_symbol_table()
+    pub(crate) fn get_a_table(&self) -> Option<ManagerGuard<'_, dyn SymbolTable>> {
+        self.a_program.get_symbol_table()
     }
 
-    /// Returns the symbol table for `b_program`, if it is currently uniquely owned.
+    /// Returns the symbol table for `b_program`.
     ///
     /// Ported from the package-private `FunctionMatchSet.getBTable`.
-    pub(crate) fn get_b_table(&mut self) -> Option<&mut dyn SymbolTable> {
-        Arc::get_mut(&mut self.b_program)?.get_symbol_table()
+    pub(crate) fn get_b_table(&self) -> Option<ManagerGuard<'_, dyn SymbolTable>> {
+        self.b_program.get_symbol_table()
     }
 }
 
@@ -140,7 +138,7 @@ mod tests {
     }
 
     struct ProgramWithSymbolTable {
-        table: MockSymbolTable,
+        table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
     impl DomainObject for ProgramWithSymbolTable {}
     impl Program for ProgramWithSymbolTable {
@@ -150,13 +148,13 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.table))
+    }
     }
 
     fn program_with_symbol_table() -> Arc<dyn Program> {
-        Arc::new(ProgramWithSymbolTable { table: MockSymbolTable })
+        Arc::new(ProgramWithSymbolTable { table: crate::program::model::listing::ManagerCell::new(MockSymbolTable) })
     }
 
     #[test]
@@ -197,13 +195,13 @@ mod tests {
     #[test]
     fn get_length_returns_none_without_listing() {
         let set = FunctionMatchSet::new(no_listing_program(), no_listing_program());
-        let mut program = NoListingProgram;
-        assert_eq!(set.get_length(&addr(0x1000), &mut program), None);
+        let program = NoListingProgram;
+        assert_eq!(set.get_length(&addr(0x1000), &program), None);
     }
 
     #[test]
     fn get_length_in_a_returns_none_without_listing() {
-        let mut set = FunctionMatchSet::new(no_listing_program(), no_listing_program());
+        let set = FunctionMatchSet::new(no_listing_program(), no_listing_program());
         assert_eq!(set.get_length_in_a(&addr(0x1000)), None);
     }
 
@@ -211,27 +209,29 @@ mod tests {
     fn get_length_in_a_returns_none_when_a_program_is_shared() {
         let a = no_listing_program();
         let _clone = Arc::clone(&a);
-        let mut set = FunctionMatchSet::new(a, no_listing_program());
+        let set = FunctionMatchSet::new(a, no_listing_program());
         assert_eq!(set.get_length_in_a(&addr(0x1000)), None);
     }
 
     #[test]
     fn get_a_table_returns_symbol_table_when_uniquely_owned() {
-        let mut set = FunctionMatchSet::new(program_with_symbol_table(), no_listing_program());
+        let set = FunctionMatchSet::new(program_with_symbol_table(), no_listing_program());
         assert!(set.get_a_table().is_some());
     }
 
     #[test]
-    fn get_a_table_returns_none_when_shared() {
+    fn get_a_table_returns_symbol_table_even_when_shared() {
+        // Java's getATable always returns the table; the old `Arc::get_mut` workaround (needed
+        // while the accessor took `&mut self`) returned None here.
         let a = program_with_symbol_table();
         let _clone = Arc::clone(&a);
-        let mut set = FunctionMatchSet::new(a, no_listing_program());
-        assert!(set.get_a_table().is_none());
+        let set = FunctionMatchSet::new(a, no_listing_program());
+        assert!(set.get_a_table().is_some());
     }
 
     #[test]
     fn get_b_table_returns_symbol_table_when_uniquely_owned() {
-        let mut set = FunctionMatchSet::new(no_listing_program(), program_with_symbol_table());
+        let set = FunctionMatchSet::new(no_listing_program(), program_with_symbol_table());
         assert!(set.get_b_table().is_some());
     }
 }

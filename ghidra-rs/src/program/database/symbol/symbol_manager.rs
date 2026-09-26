@@ -88,8 +88,10 @@ impl SymbolManagerDB {
 
         let mut table_lock = table.write().unwrap();
         let mut next_id = table_lock.get_next_key();
-        if next_id <= 0 {
-            next_id = 1; // Skip 0, reserved for global namespace
+        while next_id <= 0 {
+            // Skip 0, reserved for global namespace. Allocate past it rather than substituting 1,
+            // which the table has not handed out yet and would give to the next record too.
+            next_id = table_lock.get_next_key();
         }
 
         let address_key = self.addr_map.read().unwrap().get_key(address, true);

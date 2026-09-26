@@ -56,7 +56,7 @@ mod tests {
                 "mock:LE:64:default".to_string()
             }
 
-            fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+            fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
                 None
             }
         }

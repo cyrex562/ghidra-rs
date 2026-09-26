@@ -41,7 +41,7 @@ impl SetEquateCmd {
 
 impl Command<dyn Program + 'static> for SetEquateCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(equate_table) = program.get_equate_table() else {
+        let Some(mut equate_table) = program.get_equate_table() else {
             self.msg = Some("No equate table available for program.".to_string());
             return false;
         };
@@ -99,7 +99,7 @@ mod tests {
     }
 
     struct MockProgram {
-        equate_table: Option<SimpleEquateTable>,
+        equate_table: Option<crate::program::model::listing::ManagerCell<SimpleEquateTable>>,
     }
 
     impl DomainObject for MockProgram {
@@ -117,15 +117,16 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
             None
         }
 
-        fn get_equate_table(&mut self) -> Option<&mut dyn EquateTable> {
-            self.equate_table
-                .as_mut()
-                .map(|table| table as &mut dyn EquateTable)
+        fn get_equate_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn EquateTable>> {
+        match &self.equate_table {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -137,7 +138,7 @@ mod tests {
     #[test]
     fn apply_to_creates_new_equate_and_adds_reference() {
         let mut program = MockProgram {
-            equate_table: Some(SimpleEquateTable::new()),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(SimpleEquateTable::new())),
         };
         let mut cmd = SetEquateCmd::new("ONE", addr(0x1000), 1, 1);
 
@@ -155,7 +156,7 @@ mod tests {
         let mut table = SimpleEquateTable::new();
         table.create_equate("FIVE", 5).unwrap();
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
         let mut cmd = SetEquateCmd::new("FIVE", addr(0x2000), 2, 5);
 
@@ -169,7 +170,7 @@ mod tests {
         let mut table = SimpleEquateTable::new();
         table.create_equate("FIVE", 5).unwrap();
         let mut program = MockProgram {
-            equate_table: Some(table),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
         let mut cmd = SetEquateCmd::new("FIVE", addr(0x2000), 2, 6);
 
@@ -184,7 +185,7 @@ mod tests {
     #[test]
     fn apply_to_fails_for_invalid_equate_name() {
         let mut program = MockProgram {
-            equate_table: Some(SimpleEquateTable::new()),
+            equate_table: Some(crate::program::model::listing::ManagerCell::new(SimpleEquateTable::new())),
         };
         let mut cmd = SetEquateCmd::new("bad name", addr(0x1000), 0, 1);
 

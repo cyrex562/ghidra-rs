@@ -26,7 +26,7 @@ impl ClearExternalPathCmd {
 
 impl Command<dyn Program + 'static> for ClearExternalPathCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(ext_mgr) = program.get_external_manager() else {
+        let Some(mut ext_mgr) = program.get_external_manager() else {
             self.status = Some("External manager not available".to_string());
             return false;
         };
@@ -266,7 +266,7 @@ mod tests {
     }
 
     struct MockProgram {
-        ext_mgr: Option<MockExternalManager>,
+        ext_mgr: Option<crate::program::model::listing::ManagerCell<MockExternalManager>>,
     }
 
     impl DomainObject for MockProgram {
@@ -284,9 +284,12 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_external_manager(&mut self) -> Option<&mut dyn ExternalManager> {
-            self.ext_mgr.as_mut().map(|m| m as &mut dyn ExternalManager)
+        fn get_external_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ExternalManager>> {
+        match &self.ext_mgr {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -298,10 +301,10 @@ mod tests {
     #[test]
     fn apply_to_succeeds_when_library_exists() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 library_exists: true,
                 should_succeed: true,
-            }),
+            })),
         };
         let mut cmd = ClearExternalPathCmd::new("test_lib");
 
@@ -313,10 +316,10 @@ mod tests {
     #[test]
     fn apply_to_fails_when_library_not_found() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 library_exists: false,
                 should_succeed: true,
-            }),
+            })),
         };
         let mut cmd = ClearExternalPathCmd::new("missing_lib");
 
@@ -331,10 +334,10 @@ mod tests {
     #[test]
     fn apply_to_fails_when_set_external_path_fails() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 library_exists: true,
                 should_succeed: false,
-            }),
+            })),
         };
         let mut cmd = ClearExternalPathCmd::new("test_lib");
 

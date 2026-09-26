@@ -539,7 +539,7 @@ mod tests {
     }
 
     struct MockProgram {
-        function_manager: MockFunctionManager,
+        function_manager: crate::program::model::listing::ManagerCell<MockFunctionManager>,
     }
 
     impl DomainObject for MockProgram {
@@ -555,9 +555,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "x86:LE:32:default".to_string()
         }
-        fn get_function_manager(&mut self) -> Option<&mut dyn FunctionManager> {
-            Some(&mut self.function_manager)
-        }
+        fn get_function_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn FunctionManager>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.function_manager))
+    }
     }
 
     /// Simplified [`CreateFunctionCmd`] backing the smoke test. Its `apply_to` mirrors the
@@ -574,7 +574,7 @@ mod tests {
 
     impl CreateFunctionCmd for SimpleCreateFunctionCmd {
         fn apply_to(&mut self, program: &mut dyn Program, _monitor: &dyn TaskMonitor) -> bool {
-            let Some(function_manager) = program.get_function_manager() else {
+            let Some(mut function_manager) = program.get_function_manager() else {
                 self.msg = Some("no function manager".to_string());
                 return false;
             };
@@ -628,7 +628,7 @@ mod tests {
     fn create_function_cmd_creates_function_and_reports_it_via_trait_object() {
         let entry = addr(0x1000);
         let mut program = MockProgram {
-            function_manager: MockFunctionManager { functions: Mutex::new(Vec::new()) },
+            function_manager: crate::program::model::listing::ManagerCell::new(MockFunctionManager { functions: Mutex::new(Vec::new()) }),
         };
         let mut cmd: Box<dyn CreateFunctionCmd> = Box::new(SimpleCreateFunctionCmd {
             entry: entry.clone(),

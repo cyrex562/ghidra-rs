@@ -119,8 +119,8 @@ impl SarifMgr {
         let rest = namespace[sep + 2..].to_string();
 
         if let Some(addr) = addr {
-            let func = Arc::get_mut(program)
-                .and_then(|p| p.get_function_manager())
+            let func = program
+                .get_function_manager()
                 .and_then(|fm| fm.get_function_containing(addr));
             match func {
                 Some(func) => {
@@ -138,8 +138,8 @@ impl SarifMgr {
             }
         }
 
-        let child = match Arc::get_mut(program).and_then(|p| p.get_symbol_table()) {
-            Some(symbol_table) => symbol_table
+        let child = match program.get_symbol_table() {
+            Some(mut symbol_table) => symbol_table
                 .get_or_create_name_space(parent.clone(), tag, source_type)
                 .map_err(|_| format!("Error creating namespace for {tag}"))?,
             None => parent.clone(),

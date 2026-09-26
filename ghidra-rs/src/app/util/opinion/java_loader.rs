@@ -273,7 +273,7 @@ impl JavaLoader {
         let content = provider.borrow_mut().read_bytes(0, full_len as usize)?;
 
         {
-            let memory = program.get_memory_mut().ok_or_else(|| {
+            let mut memory = program.get_memory_mut().ok_or_else(|| {
                 io::Error::new(io::ErrorKind::InvalidData, "program has no memory")
             })?;
             memory.create_initialized_block(&block_name, &address, full_len, 0, monitor, false)?;
@@ -291,7 +291,7 @@ impl JavaLoader {
     /// `JavaLoader.createMethodLookupMemoryBlock(Program, TaskMonitor)`.
     fn create_method_lookup_memory_block(program: &mut dyn Program, monitor: &dyn TaskMonitor) {
         let address = Self::to_addr(program, JavaClassUtil::LOOKUP_ADDRESS);
-        let Some(memory) = program.get_memory_mut() else { return };
+        let Some(mut memory) = program.get_memory_mut() else { return };
         match memory.create_initialized_block(
             "method_lookup",
             &address,
@@ -351,7 +351,7 @@ impl JavaLoader {
             };
 
             let block = {
-                let Some(memory) = program.get_memory_mut() else { break };
+                let Some(mut memory) = program.get_memory_mut() else { break };
                 let block = match memory
                     .create_initialized_block(&method_name, &start, length as u64, 0, monitor, false)
                 {
@@ -371,7 +371,7 @@ impl JavaLoader {
             let method_index_address = JavaClassUtil::to_lookup_address(program, i as i32);
 
             {
-                let Some(memory) = program.get_memory_mut() else { break };
+                let Some(mut memory) = program.get_memory_mut() else { break };
                 let big_endian = memory.is_big_endian();
                 let offset_value = start.offset() as i32;
                 let bytes =
@@ -382,7 +382,7 @@ impl JavaLoader {
                 }
             }
 
-            if let Some(listing) = program.get_listing() {
+            if let Some(mut listing) = program.get_listing() {
                 if let Err(e) =
                     listing.create_data(method_index_address.clone(), Box::new(FallbackPointerDataType))
                 {
@@ -437,7 +437,7 @@ impl JavaLoader {
         let register = register_ref;
         let mut alignment_value: i128 = 3;
         for address in set.addresses(true) {
-            if let Some(context) = program.get_program_context() {
+            if let Some(mut context) = program.get_program_context() {
                 if let Err(e) = context.set_value(&register, &address, &address, Some(alignment_value))
                 {
                     Msg::error_with_error("JavaLoader", &e.to_string(), &e);

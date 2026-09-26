@@ -38,7 +38,7 @@ impl UpdateExternalNameCmd {
 
 impl Command<dyn Program + 'static> for UpdateExternalNameCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(ext_mgr) = program.get_external_manager() else {
+        let Some(mut ext_mgr) = program.get_external_manager() else {
             self.status = Some("External manager not available".to_string());
             return false;
         };
@@ -248,7 +248,7 @@ mod tests {
     }
 
     struct MockProgram {
-        ext_mgr: Option<MockExternalManager>,
+        ext_mgr: Option<crate::program::model::listing::ManagerCell<MockExternalManager>>,
     }
 
     impl DomainObject for MockProgram {
@@ -266,9 +266,12 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_external_manager(&mut self) -> Option<&mut dyn ExternalManager> {
-            self.ext_mgr.as_mut().map(|m| m as &mut dyn ExternalManager)
+        fn get_external_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ExternalManager>> {
+        match &self.ext_mgr {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -280,19 +283,19 @@ mod tests {
     #[test]
     fn apply_to_succeeds_when_library_renamed() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 updated_names: vec![],
                 should_succeed: true,
                 return_duplicate: false,
                 return_invalid: false,
-            }),
+            })),
         };
         let mut cmd = UpdateExternalNameCmd::new("kernel32", "kernel64", SourceType::Default);
 
         assert!(cmd.apply_to(&mut program));
         assert_eq!(cmd.status_msg(), None);
         assert_eq!(
-            program.ext_mgr.as_ref().unwrap().updated_names,
+            program.ext_mgr.as_ref().unwrap().lock().updated_names,
             vec![("kernel32".to_string(), "kernel64".to_string())]
         );
     }
@@ -300,12 +303,12 @@ mod tests {
     #[test]
     fn apply_to_fails_when_old_name_not_found() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 updated_names: vec![],
                 should_succeed: false,
                 return_duplicate: false,
                 return_invalid: false,
-            }),
+            })),
         };
         let mut cmd = UpdateExternalNameCmd::new("nonexistent", "newname", SourceType::Default);
 
@@ -316,12 +319,12 @@ mod tests {
     #[test]
     fn apply_to_fails_when_duplicate_name() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 updated_names: vec![],
                 should_succeed: false,
                 return_duplicate: true,
                 return_invalid: false,
-            }),
+            })),
         };
         let mut cmd = UpdateExternalNameCmd::new("kernel32", "existing_lib", SourceType::Default);
 
@@ -333,12 +336,12 @@ mod tests {
     #[test]
     fn apply_to_fails_with_invalid_input() {
         let mut program = MockProgram {
-            ext_mgr: Some(MockExternalManager {
+            ext_mgr: Some(crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 updated_names: vec![],
                 should_succeed: false,
                 return_duplicate: false,
                 return_invalid: true,
-            }),
+            })),
         };
         let mut cmd = UpdateExternalNameCmd::new("kernel32", "new64", SourceType::Default);
 

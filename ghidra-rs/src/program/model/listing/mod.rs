@@ -47,6 +47,7 @@ pub mod library;
 pub mod listing;
 pub mod local_variable;
 pub mod local_variable_impl;
+pub mod manager_handle;
 pub mod operand_representation_list;
 pub mod parameter;
 pub mod parameter_impl;
@@ -126,6 +127,7 @@ pub use label_string::{LabelString, LabelType};
 pub use library::{Library, UNKNOWN as UNKNOWN_LIBRARY_NAME};
 pub use listing::{CreateFunctionError, Listing, DEFAULT_TREE_NAME};
 pub use local_variable::LocalVariable;
+pub use manager_handle::{ManagerCell, ManagerGuard};
 pub use operand_representation_list::{
     OperandRepresentationElement, OperandRepresentationList, OperandRepresentationListImpl,
 };

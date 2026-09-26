@@ -95,7 +95,7 @@ impl RegisterValuesSarifMgr {
     ///
     /// `RegisterValuesSarifMgr.getUniqueRegisters`.
     fn get_unique_registers(&mut self) -> Vec<RegisterRef> {
-        let mut regs: Vec<RegisterRef> = match Arc::get_mut(&mut self.program).and_then(|p| p.get_program_context()) {
+        let mut regs: Vec<RegisterRef> = match self.program.get_program_context() {
             Some(context) => context.get_registers(),
             None => Vec::new(),
         };
@@ -127,12 +127,12 @@ impl RegisterValuesSarifMgr {
 
         let language_id = self.program.get_language_id();
         let end = addr.add_no_wrap((len - 1) as i64)?;
-        let Some(context) = Arc::get_mut(&mut self.program).and_then(|p| p.get_program_context()) else {
+        let Some(mut context) = self.program.get_program_context() else {
             return Ok(());
         };
 
         apply_register_value(
-            context,
+            &mut *context,
             reg_name,
             &addr,
             &end,

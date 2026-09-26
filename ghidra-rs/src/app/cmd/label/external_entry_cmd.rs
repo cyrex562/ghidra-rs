@@ -28,7 +28,7 @@ impl ExternalEntryCmd {
 
 impl Command<dyn Program + 'static> for ExternalEntryCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(symbol_table) = program.get_symbol_table() else {
+        let Some(mut symbol_table) = program.get_symbol_table() else {
             self.msg = Some("No symbol table available for program.".to_string());
             return false;
         };
@@ -73,7 +73,7 @@ mod tests {
     }
 
     struct MockProgram {
-        symbol_table: Option<MockSymbolTable>,
+        symbol_table: Option<crate::program::model::listing::ManagerCell<MockSymbolTable>>,
     }
 
     impl DomainObject for MockProgram {
@@ -91,13 +91,16 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
             None
         }
 
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            self.symbol_table.as_mut().map(|table| table as &mut dyn SymbolTable)
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        match &self.symbol_table {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     struct MockSymbolTable {
@@ -164,7 +167,7 @@ mod tests {
     #[test]
     fn apply_to_adds_external_entry_point() {
         let mut program = MockProgram {
-            symbol_table: Some(MockSymbolTable::new()),
+            symbol_table: Some(crate::program::model::listing::ManagerCell::new(MockSymbolTable::new())),
         };
 
         let mut cmd = ExternalEntryCmd::new(addr(0x1000), true);
@@ -172,7 +175,7 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
 
         if let Some(table) = &program.symbol_table {
-            assert!(table.is_external_entry(&addr(0x1000)));
+            assert!(table.lock().is_external_entry(&addr(0x1000)));
         } else {
             panic!("Expected symbol table");
         }
@@ -184,7 +187,7 @@ mod tests {
         table.external_entries.insert(addr(0x1000).to_string());
 
         let mut program = MockProgram {
-            symbol_table: Some(table),
+            symbol_table: Some(crate::program::model::listing::ManagerCell::new(table)),
         };
 
         let mut cmd = ExternalEntryCmd::new(addr(0x1000), false);
@@ -192,7 +195,7 @@ mod tests {
         assert_eq!(cmd.status_msg(), None);
 
         if let Some(table) = &program.symbol_table {
-            assert!(!table.is_external_entry(&addr(0x1000)));
+            assert!(!table.lock().is_external_entry(&addr(0x1000)));
         } else {
             panic!("Expected symbol table");
         }
@@ -215,7 +218,7 @@ mod tests {
     #[test]
     fn status_msg_is_none_on_success() {
         let mut program = MockProgram {
-            symbol_table: Some(MockSymbolTable::new()),
+            symbol_table: Some(crate::program::model::listing::ManagerCell::new(MockSymbolTable::new())),
         };
 
         let mut cmd = ExternalEntryCmd::new(addr(0x1000), true);

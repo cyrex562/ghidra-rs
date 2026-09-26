@@ -111,7 +111,7 @@ impl AbstractFrameSectionBase {
                 addr = addr.add_wrap(alignment);
 
                 let has_primary_symbol = {
-                    let mut program = self.program.lock().expect("program lock poisoned");
+                    let program = self.program.lock().expect("program lock poisoned");
                     program
                         .get_symbol_table()
                         .and_then(|table| table.get_primary_symbol(&addr).ok().flatten())
@@ -192,8 +192,8 @@ impl AbstractFrameSectionBase {
     /// Creates a label indicating there is an CIE at the address.
     pub fn create_cie_label(&mut self, cur_address: &Address) {
         let cie_label = format!("cie_{}", cur_address);
-        let mut program = self.program.lock().expect("program lock poisoned");
-        let Some(table) = program.get_symbol_table() else {
+        let program = self.program.lock().expect("program lock poisoned");
+        let Some(mut table) = program.get_symbol_table() else {
             return;
         };
 
@@ -363,7 +363,7 @@ mod tests {
 
     struct MockProgram {
         memory: Option<Arc<dyn Memory>>,
-        symbol_table: Option<MockSymbolTable>,
+        symbol_table: Option<crate::program::model::listing::ManagerCell<MockSymbolTable>>,
     }
     impl DomainObject for MockProgram {}
     impl Program for MockProgram {
@@ -376,9 +376,12 @@ mod tests {
         fn get_memory(&self) -> Option<Arc<dyn Memory>> {
             self.memory.clone()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            self.symbol_table.as_mut().map(|t| t as &mut dyn SymbolTable)
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        match &self.symbol_table {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     fn section_with(program: MockProgram) -> AbstractFrameSectionBase {
@@ -503,7 +506,7 @@ mod tests {
             create_label_calls: Arc::clone(&create_label_calls),
             existing_primary: None,
         };
-        let mut section = section_with(MockProgram { memory: None, symbol_table: Some(symbol_table) });
+        let mut section = section_with(MockProgram { memory: None, symbol_table: Some(crate::program::model::listing::ManagerCell::new(symbol_table)) });
         let addr = ram_address(0x2000);
         let create_calls = Arc::new(AtomicUsize::new(0));
 
@@ -534,7 +537,7 @@ mod tests {
             create_label_calls: Arc::clone(&create_label_calls),
             existing_primary: None,
         };
-        let mut section = section_with(MockProgram { memory: None, symbol_table: Some(symbol_table) });
+        let mut section = section_with(MockProgram { memory: None, symbol_table: Some(crate::program::model::listing::ManagerCell::new(symbol_table)) });
         let addr = ram_address(0x3000);
         let create_calls = Arc::new(AtomicUsize::new(0));
 
@@ -565,7 +568,7 @@ mod tests {
             create_label_calls: Arc::clone(&create_label_calls),
             existing_primary: Some(existing),
         };
-        let mut section = section_with(MockProgram { memory: None, symbol_table: Some(symbol_table) });
+        let mut section = section_with(MockProgram { memory: None, symbol_table: Some(crate::program::model::listing::ManagerCell::new(symbol_table)) });
 
         section.create_cie_label(&ram_address(0x4000));
 

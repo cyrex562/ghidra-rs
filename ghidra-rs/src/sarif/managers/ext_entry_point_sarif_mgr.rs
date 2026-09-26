@@ -78,7 +78,7 @@ impl ExtEntryPointSarifMgr {
             }
         };
 
-        let Some(symbol_table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) else {
+        let Some(mut symbol_table) = self.program.get_symbol_table() else {
             self.log.append_exception(&NoValueException::new(), &[]);
             return false;
         };
@@ -105,7 +105,7 @@ impl ExtEntryPointSarifMgr {
     ) -> Result<(), CancelledException> {
         monitor.set_message("Writing ENTRY POINTS ...");
 
-        let request: Vec<_> = match Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) {
+        let request: Vec<_> = match self.program.get_symbol_table() {
             Some(symbol_table) => symbol_table.get_external_entry_point_iterator().collect(),
             None => Vec::new(),
         };
@@ -177,7 +177,7 @@ mod tests {
     }
 
     struct MockProgram {
-        symbol_table: MockSymbolTable,
+        symbol_table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
 
     impl DomainObject for MockProgram {}
@@ -189,16 +189,16 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:64:default".to_string()
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.symbol_table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symbol_table))
+    }
     }
 
     fn empty_mock_program() -> Arc<dyn Program> {
         Arc::new(MockProgram {
-            symbol_table: MockSymbolTable {
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable {
                 entry_points: Vec::new(),
-            },
+            }),
         })
     }
 
@@ -231,13 +231,15 @@ mod tests {
 
     #[test]
     fn process_entry_point_adds_address_to_symbol_table() {
-        let mut mgr = ExtEntryPointSarifMgr::new(empty_mock_program(), MessageLog::new());
+        let mgr = ExtEntryPointSarifMgr::new(empty_mock_program(), MessageLog::new());
         let addr = test_address(0x1000);
 
-        let symbol_table = Arc::get_mut(&mut mgr.program).unwrap().get_symbol_table().unwrap();
-        assert!(symbol_table.add_external_entry_point(&addr).is_ok());
+        {
+            let mut symbol_table = mgr.program.get_symbol_table().unwrap();
+            assert!(symbol_table.add_external_entry_point(&addr).is_ok());
+        }
 
-        let symbol_table = Arc::get_mut(&mut mgr.program).unwrap().get_symbol_table().unwrap();
+        let symbol_table = mgr.program.get_symbol_table().unwrap();
         let entries: Vec<Address> = symbol_table.get_external_entry_point_iterator().collect();
         assert_eq!(entries, vec![addr]);
     }
@@ -255,7 +257,7 @@ mod tests {
         let one = test_address(0x1000);
         let two = test_address(0x2000);
         {
-            let symbol_table = Arc::get_mut(&mut mgr.program).unwrap().get_symbol_table().unwrap();
+            let mut symbol_table = mgr.program.get_symbol_table().unwrap();
             symbol_table.add_external_entry_point(&one).unwrap();
             symbol_table.add_external_entry_point(&two).unwrap();
         }

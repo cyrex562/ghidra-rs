@@ -284,7 +284,7 @@ fn apply_library_symbols(
     let global_namespace = program.get_global_namespace();
     let global_namespace_id = global_namespace.as_ref().map(|ns| ns.get_id());
 
-    let Some(symbol_table) = program.get_symbol_table() else {
+    let Some(mut symbol_table) = program.get_symbol_table() else {
         return Ok(());
     };
 
@@ -373,7 +373,7 @@ fn apply_imports(
         .get_language_description()
         .get_size();
 
-    let Some(em) = program.get_external_manager() else {
+    let Some(mut em) = program.get_external_manager() else {
         return Ok(());
     };
 
@@ -426,7 +426,7 @@ fn apply_imports(
                         continue;
                     };
                     let address = ext_loc.get_address();
-                    if let Some(location) = external_location_mut(em, &ext_loc) {
+                    if let Some(location) = external_location_mut(&mut *em, &ext_loc) {
                         if let Err(e) =
                             location.set_location(exp_sym.name(), address, SourceType::Imported)
                         {
@@ -447,7 +447,7 @@ fn apply_imports(
             let has_no_return = exp_sym.has_no_return(app);
 
             // Create or get external function
-            if let Some(location) = external_location_mut(em, &ext_loc) {
+            if let Some(location) = external_location_mut(&mut *em, &ext_loc) {
                 if let Some(ext_func) = location.create_function_mut() {
                     ext_func.set_stack_purge_size(purge_size);
                     if has_no_return {

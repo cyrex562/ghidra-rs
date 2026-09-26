@@ -169,7 +169,7 @@ mod tests {
     }
 
     struct MockProgram {
-        table: MockSymbolTable,
+        table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
 
     impl DomainObject for MockProgram {}
@@ -183,9 +183,9 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.table))
+    }
     }
 
     fn mock_program(symbols: Vec<(i64, &str)>) -> Arc<dyn Program> {
@@ -201,7 +201,7 @@ mod tests {
                 }) as Arc<dyn Symbol>,
             );
         }
-        Arc::new(MockProgram { table })
+        Arc::new(MockProgram { table: crate::program::model::listing::ManagerCell::new(table) })
     }
 
     #[test]

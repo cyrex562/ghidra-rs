@@ -818,7 +818,7 @@ pub trait SymbolUtilities {
             return Err(InvalidInputException::with_message("no global namespace available"));
         };
 
-        let symbol_table = program
+        let mut symbol_table = program
             .get_symbol_table()
             .ok_or_else(|| InvalidInputException::with_message("no symbol table available"))?;
 
@@ -1191,7 +1191,7 @@ mod tests {
 
     struct MockProgramWithSymbolTable {
         global_namespace: Arc<dyn Namespace>,
-        symbol_table: MockSymbolTable,
+        symbol_table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
 
     impl DomainObject for MockProgramWithSymbolTable {}
@@ -1206,9 +1206,9 @@ mod tests {
         fn get_global_namespace(&self) -> Option<Arc<dyn Namespace>> {
             Some(self.global_namespace.clone())
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn crate::program::model::symbol::SymbolTable> {
-            Some(&mut self.symbol_table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::symbol::SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symbol_table))
+    }
     }
 
     fn mock_program_with_symbol_table() -> MockProgramWithSymbolTable {
@@ -1221,7 +1221,7 @@ mod tests {
         });
         MockProgramWithSymbolTable {
             global_namespace: Arc::new(MockGlobalNamespace(global_symbol)),
-            symbol_table: MockSymbolTable { symbols_by_name: Vec::new() },
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable { symbols_by_name: Vec::new() }),
         }
     }
 
@@ -1232,7 +1232,7 @@ mod tests {
 
         assert!(SU.get_unique_symbol(&mut program, "foo").is_none());
 
-        program.symbol_table.symbols_by_name.push(Arc::new(MockSymbol {
+        program.symbol_table.lock().symbols_by_name.push(Arc::new(MockSymbol {
             address: addr.clone(),
             name: "foo".to_string(),
             symbol_type: SymbolType::Label,
@@ -1241,7 +1241,7 @@ mod tests {
         }));
         assert_eq!(SU.get_unique_symbol(&mut program, "foo").unwrap().get_id(), 1);
 
-        program.symbol_table.symbols_by_name.push(Arc::new(MockSymbol {
+        program.symbol_table.lock().symbols_by_name.push(Arc::new(MockSymbol {
             address: addr,
             name: "foo".to_string(),
             symbol_type: SymbolType::Label,

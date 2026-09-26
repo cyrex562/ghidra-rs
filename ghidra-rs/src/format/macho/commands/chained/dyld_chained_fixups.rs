@@ -230,14 +230,14 @@ pub fn fixup_chained_pointers(
                 if let Some(addr) = ext_addr.clone() {
                     let sym = fixup_symbol.as_deref().unwrap();
                     let step: io::Result<()> = (|| {
-                        if let Some(st) = program.get_symbol_table() {
+                        if let Some(mut st) = program.get_symbol_table() {
                             st.create_label(&addr, sym, SourceType::Imported)?;
                         }
                         fixup_value = Some(addr.offset());
                         if let Some(mut stub_func) =
                             macho_program_builder.create_one_byte_function(program, sym, &addr)
                         {
-                            if let Some(ext_mgr) = program.get_external_manager() {
+                            if let Some(mut ext_mgr) = program.get_external_manager() {
                                 if let Ok(mut loc) = ext_mgr.add_ext_location_in_library(
                                     library::UNKNOWN,
                                     Some(sym),
@@ -262,7 +262,7 @@ pub fn fixup_chained_pointers(
 
             if let Some(v) = fixup_value {
                 if fixup.size == 8 || fixup.size == 4 {
-                    let mem = program.get_memory_mut().ok_or_else(|| "no memory".to_string())?;
+                    let mut mem = program.get_memory_mut().ok_or_else(|| "no memory".to_string())?;
                     let bytes: Vec<u8> = if mem.is_big_endian() {
                         if fixup.size == 8 {
                             v.to_be_bytes().to_vec()
@@ -299,7 +299,7 @@ pub fn fixup_chained_pointers(
             status = RelocationStatus::Failure;
         }
 
-        if let Some(rt) = program.get_relocation_table() {
+        if let Some(mut rt) = program.get_relocation_table() {
             rt.add_with_byte_length(
                 fixup_addr,
                 status,

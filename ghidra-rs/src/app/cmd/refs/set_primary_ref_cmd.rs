@@ -54,7 +54,7 @@ impl SetPrimaryRefCmd {
 
 impl Command<dyn Program + 'static> for SetPrimaryRefCmd {
     fn apply_to(&mut self, program: &mut (dyn Program + 'static)) -> bool {
-        let Some(ref_mgr) = program.get_reference_manager() else {
+        let Some(mut ref_mgr) = program.get_reference_manager() else {
             self.status = Some("Reference not found".to_string());
             return false;
         };
@@ -431,7 +431,7 @@ mod tests {
     }
 
     struct MockProgram {
-        ref_mgr: Option<MockReferenceManager>,
+        ref_mgr: Option<crate::program::model::listing::ManagerCell<MockReferenceManager>>,
     }
 
     impl DomainObject for MockProgram {
@@ -449,11 +449,12 @@ mod tests {
             "mock:LE:32:default".to_string()
         }
 
-        fn get_reference_manager(&mut self) -> Option<&mut dyn ReferenceManager> {
-            self.ref_mgr
-                .as_mut()
-                .map(|m| m as &mut dyn ReferenceManager)
+        fn get_reference_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ReferenceManager>> {
+        match &self.ref_mgr {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -486,16 +487,16 @@ mod tests {
             is_primary: false,
         });
         let mut program = MockProgram {
-            ref_mgr: Some(MockReferenceManager {
+            ref_mgr: Some(crate::program::model::listing::ManagerCell::new(MockReferenceManager {
                 reference: Some(mock_ref),
                 last_primary_call: None,
-            }),
+            })),
         };
         let mut cmd = SetPrimaryRefCmd::new(addr(0x1000), 0, addr(0x2000), true);
 
         assert!(cmd.apply_to(&mut program));
         assert_eq!(
-            program.ref_mgr.as_ref().unwrap().last_primary_call,
+            program.ref_mgr.as_ref().unwrap().lock().last_primary_call,
             Some(true)
         );
         assert_eq!(cmd.status_msg(), None);
@@ -504,10 +505,10 @@ mod tests {
     #[test]
     fn apply_to_returns_false_when_reference_not_found() {
         let mut program = MockProgram {
-            ref_mgr: Some(MockReferenceManager {
+            ref_mgr: Some(crate::program::model::listing::ManagerCell::new(MockReferenceManager {
                 reference: None,
                 last_primary_call: None,
-            }),
+            })),
         };
         let mut cmd = SetPrimaryRefCmd::new(addr(0x1000), 0, addr(0x2000), true);
 

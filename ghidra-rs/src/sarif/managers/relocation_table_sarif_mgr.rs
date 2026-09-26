@@ -125,7 +125,7 @@ impl RelocationTableSarifMgr {
             ));
         }
 
-        if let Some(table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_relocation_table()) {
+        if let Some(mut table) = self.program.get_relocation_table() {
             table.add(addr, status, type_, values, bytes, symbol_name);
         }
         Ok(())
@@ -140,7 +140,7 @@ impl RelocationTableSarifMgr {
         monitor.set_message("Writing RELOCATION TABLE ...");
 
         let mut request: Vec<Relocation> = Vec::new();
-        if let Some(table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_relocation_table()) {
+        if let Some(table) = self.program.get_relocation_table() {
             for reloc in table.relocation_iter() {
                 monitor.check_cancelled()?;
                 request.push(reloc);
@@ -258,7 +258,7 @@ mod tests {
     }
 
     struct MockProgram {
-        relocations: MockRelocationTable,
+        relocations: crate::program::model::listing::ManagerCell<MockRelocationTable>,
     }
 
     impl DomainObject for MockProgram {}
@@ -270,17 +270,17 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_relocation_table(&mut self) -> Option<&mut dyn RelocationTable> {
-            Some(&mut self.relocations)
-        }
+        fn get_relocation_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn RelocationTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.relocations))
+    }
     }
 
     fn empty_mock_program() -> Arc<dyn Program> {
         Arc::new(MockProgram {
-            relocations: MockRelocationTable {
+            relocations: crate::program::model::listing::ManagerCell::new(MockRelocationTable {
                 added: Vec::new(),
                 relocations: Vec::new(),
-            },
+            }),
         })
     }
 
@@ -351,7 +351,7 @@ mod tests {
     fn write_collects_every_relocation_from_the_table() {
         let mut mgr = RelocationTableSarifMgr::new(
             Arc::new(MockProgram {
-                relocations: MockRelocationTable {
+                relocations: crate::program::model::listing::ManagerCell::new(MockRelocationTable {
                     added: Vec::new(),
                     relocations: vec![Relocation::new(
                         addr(0x1000),
@@ -361,7 +361,7 @@ mod tests {
                         None,
                         None,
                     )],
-                },
+                }),
             }),
             MessageLog::new(),
         );

@@ -208,8 +208,7 @@ impl SymbolTableSarifMgr {
             return Ok(());
         }
 
-        let already_exists = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_symbol_table())
+        let already_exists = self.program.get_symbol_table()
             .and_then(|st| st.find_symbol_by_name_address_namespace(name, &addr, scope.as_ref()).ok())
             .flatten()
             .is_some();
@@ -230,14 +229,14 @@ impl SymbolTableSarifMgr {
 
         if let Some(symbol) = &created {
             if is_primary && self.overwrite_primary {
-                if let Some(symbol_table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) {
+                if let Some(mut symbol_table) = self.program.get_symbol_table() {
                     let _ = symbol_table.set_primary_symbol(symbol.get_id());
                 }
             }
         }
         if is_pinned {
             let symbol = created.ok_or(ProcessSymbolError::NullSymbolWhilePinning)?;
-            if let Some(symbol_table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) {
+            if let Some(mut symbol_table) = self.program.get_symbol_table() {
                 let _ = symbol_table.set_symbol_pinned(symbol.get_id(), true);
             }
         }
@@ -253,7 +252,7 @@ impl SymbolTableSarifMgr {
         name: &str,
         source_type: SourceType,
     ) -> Result<(), GetOrCreateNamespaceError> {
-        let Some(symbol_table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) else {
+        let Some(mut symbol_table) = self.program.get_symbol_table() else {
             return Ok(());
         };
         symbol_table.get_or_create_name_space(scope, name, source_type)?;
@@ -264,14 +263,13 @@ impl SymbolTableSarifMgr {
     /// via the [`ExternalManager`](crate::program::model::symbol::ExternalManager) instead of
     /// `SymbolTable`. See the struct docs for why.
     fn get_or_create_library(&mut self, name: &str, source_type: SourceType) -> Result<(), AddExternalLibraryNameError> {
-        let exists = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_external_manager())
+        let exists = self.program.get_external_manager()
             .map(|em| em.get_external_library(name).is_some())
             .unwrap_or(false);
         if exists {
             return Ok(());
         }
-        let Some(ext_manager) = Arc::get_mut(&mut self.program).and_then(|p| p.get_external_manager()) else {
+        let Some(mut ext_manager) = self.program.get_external_manager() else {
             return Ok(());
         };
         ext_manager.add_external_library_name(name, source_type)?;
@@ -288,7 +286,7 @@ impl SymbolTableSarifMgr {
         monitor.set_message("Writing SYMBOL TABLE ...");
 
         let mut request: Vec<Arc<dyn Symbol>> = Vec::new();
-        if let Some(symbol_table) = Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) {
+        if let Some(symbol_table) = self.program.get_symbol_table() {
             let mut iter = symbol_table.get_symbol_iterator("*", true);
             while let Some(symbol) = iter.next_symbol() {
                 request.push(symbol);
@@ -438,7 +436,7 @@ mod tests {
     }
 
     struct MockProgram {
-        symbol_table: MockSymbolTable,
+        symbol_table: crate::program::model::listing::ManagerCell<MockSymbolTable>,
     }
 
     impl DomainObject for MockProgram {}
@@ -453,14 +451,14 @@ mod tests {
         fn get_global_namespace(&self) -> Option<Arc<dyn Namespace>> {
             Some(global_namespace())
         }
-        fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
-            Some(&mut self.symbol_table)
-        }
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn SymbolTable>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.symbol_table))
+    }
     }
 
     fn empty_mock_program() -> Arc<dyn Program> {
         Arc::new(MockProgram {
-            symbol_table: MockSymbolTable::default(),
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable::default()),
         })
     }
 
@@ -565,10 +563,10 @@ mod tests {
 
     #[test]
     fn write_collects_every_symbol_from_the_table() {
-        let mut program = MockProgram {
-            symbol_table: MockSymbolTable::default(),
+        let program = MockProgram {
+            symbol_table: crate::program::model::listing::ManagerCell::new(MockSymbolTable::default()),
         };
-        program.symbol_table.symbols.push(Arc::new(MockSymbol {
+        program.symbol_table.lock().symbols.push(Arc::new(MockSymbol {
             address: addr(0x1000),
             name: "foo".to_string(),
             id: 1,

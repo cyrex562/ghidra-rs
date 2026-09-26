@@ -206,13 +206,15 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         match entry_point {
             Some(entry_point) => {
                 let entry_point_addr = self.space.address(entry_point);
-                let symbol_table = self.program.get_symbol_table().ok_or_else(|| {
-                    io::Error::new(
-                        io::ErrorKind::Unsupported,
-                        "program has no symbol table to record an external entry point in",
-                    )
-                })?;
-                symbol_table.add_external_entry_point(&entry_point_addr)?;
+                {
+                    let mut symbol_table = self.program.get_symbol_table().ok_or_else(|| {
+                        io::Error::new(
+                            io::ErrorKind::Unsupported,
+                            "program has no symbol table to record an external entry point in",
+                        )
+                    })?;
+                    symbol_table.add_external_entry_point(&entry_point_addr)?;
+                }
                 macho_program_builder::create_one_byte_function(
                     self.program,
                     "entry",
@@ -277,7 +279,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
                         )
                     );
                     let start = block.get_start();
-                    if let Some(bookmark_manager) = self.program.get_bookmark_manager_mut() {
+                    if let Some(mut bookmark_manager) = self.program.get_bookmark_manager_mut() {
                         bookmark_manager.set_bookmark(
                             start,
                             INFO,
@@ -395,7 +397,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
                 .unwrap_or_default();
             let global_namespace = self.program.get_global_namespace();
             let result = match self.program.get_symbol_table() {
-                Some(symbol_table) => match global_namespace {
+                Some(mut symbol_table) => match global_namespace {
                     Some(global_namespace) => symbol_table.create_label_in_namespace(
                         &addr,
                         &label,
@@ -591,7 +593,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         )?;
 
         if !info.name.is_empty() {
-            if let Some(listing) = self.program.get_listing() {
+            if let Some(mut listing) = self.program.get_listing() {
                 listing.set_comment(
                     &info.header_addr,
                     CommentType::Plate,
@@ -616,7 +618,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         let space = Arc::clone(&self.space);
         let log = self.log;
 
-        let Some(listing) = self.program.get_listing() else {
+        let Some(mut listing) = self.program.get_listing() else {
             return Ok(());
         };
         let Some(root) = listing.get_default_root_module_mut() else {

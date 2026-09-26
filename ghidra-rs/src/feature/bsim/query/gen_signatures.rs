@@ -376,7 +376,7 @@ impl GenSignatures {
         };
 
         let (func, root_symbol, root_addr) = {
-            let mut program = program.lock().expect("program lock poisoned");
+            let program = program.lock().expect("program lock poisoned");
             let func = program
                 .get_function_manager()
                 .and_then(|fmanage| fmanage.get_referenced_function(addr));
@@ -508,7 +508,7 @@ impl GenSignatures {
         let Some(program) = self.program.as_ref() else {
             return false;
         };
-        let mut program = program.lock().expect("program lock poisoned");
+        let program = program.lock().expect("program lock poisoned");
         let Some(listing) = program.get_listing() else {
             return false;
         };
@@ -620,11 +620,12 @@ impl GenSignatures {
                 let Some(program) = self.program.clone() else {
                     return;
                 };
-                let mut program = program.lock().expect("program lock poisoned");
-                match program.get_function_manager() {
+                let program = program.lock().expect("program lock poisoned");
+                let functions = match program.get_function_manager() {
                     Some(fmanage) => fmanage.get_functions(true).collect(),
                     None => Vec::new(),
-                }
+                };
+                functions
             }
         };
         for func in functions {

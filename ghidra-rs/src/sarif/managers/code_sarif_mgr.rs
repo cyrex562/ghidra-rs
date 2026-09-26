@@ -127,7 +127,7 @@ impl CodeSarifMgr {
     /// `CodeSarifMgr.getInstructionAt`, folding `program.getListing().getInstructionAt(addr)`
     /// (with its two possibly-absent hops) into one call.
     fn get_instruction_at(&mut self, addr: &Address) -> Option<Arc<dyn Instruction>> {
-        Arc::get_mut(&mut self.program)?.get_listing()?.get_instruction_at(addr)
+        self.program.get_listing()?.get_instruction_at(addr)
     }
 
     /// `program.getMemory()`, viewed as the `AddressSetView` Java's `Memory` interface also is.
@@ -184,9 +184,7 @@ impl CodeSarifMgr {
 
     /// `program.getListing().getInstructions(true)` / `getInstructions(set, true)`.
     fn instructions_iterator(&mut self, set: Option<&dyn AddressSetView>) -> Box<dyn InstructionIterator> {
-        let listing = Arc::get_mut(&mut self.program)
-            .expect("CodeSarifMgr holds the only handle to its Program")
-            .get_listing()
+        let listing = self.program.get_listing()
             .expect("CodeSarifMgr's Program has no Listing");
         match set {
             Some(set) => listing.get_instructions_in(set, true),
@@ -276,7 +274,7 @@ mod tests {
     }
 
     struct MockProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
         memory: Arc<MockMemory>,
     }
 
@@ -289,9 +287,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:64:default".to_string()
         }
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
-            Some(&mut self.listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
         fn get_memory(&self) -> Option<Arc<dyn Memory>> {
             Some(self.memory.clone() as Arc<dyn Memory>)
         }
@@ -299,7 +297,7 @@ mod tests {
 
     fn empty_mock_program() -> Arc<dyn Program> {
         Arc::new(MockProgram {
-            listing: MockListing,
+            listing: crate::program::model::listing::ManagerCell::new(MockListing),
             memory: Arc::new(MockMemory {
                 initialized: AddressSet::new(),
             }),

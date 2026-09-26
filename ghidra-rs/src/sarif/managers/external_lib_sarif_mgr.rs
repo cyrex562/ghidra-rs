@@ -156,11 +156,14 @@ impl ExternalLibSarifMgr {
     ) -> Result<(), AddExternalLibraryNameError> {
         let prog_name = result.get("name").and_then(Value::as_str).unwrap_or_default();
 
-        let Some(ext_manager) = Arc::get_mut(&mut self.program).and_then(|p| p.get_external_manager())
+        let Some(existing) = self
+            .program
+            .get_external_manager()
+            .map(|ext_manager| ext_manager.get_external_library(prog_name).is_some())
         else {
             return Ok(());
         };
-        if ext_manager.get_external_library(prog_name).is_some() {
+        if existing {
             return Ok(()); // already has a value--don't override it
         }
 
@@ -170,7 +173,7 @@ impl ExternalLibSarifMgr {
             source_type = SourceType::Imported;
         }
 
-        let Some(ext_manager) = Arc::get_mut(&mut self.program).and_then(|p| p.get_external_manager())
+        let Some(mut ext_manager) = self.program.get_external_manager()
         else {
             return Ok(());
         };
@@ -238,7 +241,7 @@ impl ExternalLibSarifMgr {
         let lib = Self::find_library(&p).unwrap_or_else(|| p.clone());
         let is_function = result.get("isFunction").and_then(Value::as_bool).unwrap_or(false);
 
-        let Some(ext_manager) = Arc::get_mut(&mut self.program).and_then(|prog| prog.get_external_manager())
+        let Some(mut ext_manager) = self.program.get_external_manager()
         else {
             return Err(InvalidInputException::new());
         };
@@ -324,14 +327,12 @@ impl ExternalLibSarifMgr {
     ) -> Result<(), CancelledException> {
         monitor.set_message("Writing EXTERNAL LIBRARIES ...");
 
-        let request0: Vec<String> = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_external_manager())
+        let request0: Vec<String> = self.program.get_external_manager()
             .map(|em| em.get_external_library_names())
             .unwrap_or_default();
         Self::write_ext_as_sarif(&request0, results, monitor);
 
-        let request1: Vec<Arc<dyn GhidraClass>> = Arc::get_mut(&mut self.program)
-            .and_then(|p| p.get_symbol_table())
+        let request1: Vec<Arc<dyn GhidraClass>> = self.program.get_symbol_table()
             .map(|st| st.get_class_namespaces())
             .unwrap_or_default();
         Self::write_namespace_as_sarif(&request1, results, monitor);
@@ -598,7 +599,7 @@ mod tests {
     }
 
     struct MockProgram {
-        external_manager: MockExternalManager,
+        external_manager: crate::program::model::listing::ManagerCell<MockExternalManager>,
     }
 
     impl DomainObject for MockProgram {}
@@ -610,9 +611,9 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:64:default".to_string()
         }
-        fn get_external_manager(&mut self) -> Option<&mut dyn ExternalManager> {
-            Some(&mut self.external_manager)
-        }
+        fn get_external_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn ExternalManager>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.external_manager))
+    }
         fn get_global_namespace(&self) -> Option<Arc<dyn Namespace>> {
             Some(global_namespace())
         }
@@ -620,7 +621,7 @@ mod tests {
 
     fn empty_mock_program() -> Arc<dyn Program> {
         Arc::new(MockProgram {
-            external_manager: MockExternalManager::default(),
+            external_manager: crate::program::model::listing::ManagerCell::new(MockExternalManager::default()),
         })
     }
 
@@ -629,10 +630,10 @@ mod tests {
     fn program_with_source_type_sensor() -> (Arc<dyn Program>, Arc<std::sync::Mutex<Option<SourceType>>>) {
         let sensor = Arc::new(std::sync::Mutex::new(None));
         let program: Arc<dyn Program> = Arc::new(MockProgram {
-            external_manager: MockExternalManager {
+            external_manager: crate::program::model::listing::ManagerCell::new(MockExternalManager {
                 libraries: HashMap::new(),
                 last_source_type: sensor.clone(),
-            },
+            }),
         });
         (program, sensor)
     }
@@ -663,7 +664,7 @@ mod tests {
         ]);
         assert!(mgr.read(&result, None, &DummyMonitor));
 
-        let ext_manager = Arc::get_mut(&mut mgr.program).unwrap().get_external_manager().unwrap();
+        let ext_manager = mgr.program.get_external_manager().unwrap();
         assert!(ext_manager.contains("ADVAPI32.DLL"));
     }
 
@@ -754,7 +755,7 @@ mod tests {
 
         assert!(mgr.read_results(Some(&list), None, &DummyMonitor).is_ok());
 
-        let ext_manager = Arc::get_mut(&mut mgr.program).unwrap().get_external_manager().unwrap();
+        let ext_manager = mgr.program.get_external_manager().unwrap();
         assert!(ext_manager.contains("ADVAPI32.DLL"));
         assert!(mgr.external_map.contains_key("ext1"));
         // The two-phase loop leaves `libraries` false, matching Java's field mutation persisting

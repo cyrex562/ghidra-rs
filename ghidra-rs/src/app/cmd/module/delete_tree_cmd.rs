@@ -15,7 +15,7 @@ impl DeleteTreeCmd {
 
 impl<T: Program + ?Sized> Command<T> for DeleteTreeCmd {
     fn apply_to(&mut self, program: &mut T) -> bool {
-        if let Some(listing) = program.get_listing() {
+        if let Some(mut listing) = program.get_listing() {
             listing.remove_tree(&self.tree_name)
         } else {
             false
@@ -443,7 +443,7 @@ mod tests {
     }
 
     struct MockProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -457,9 +457,9 @@ mod tests {
             "test_lang".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-            Some(&mut self.listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     #[test]
@@ -467,9 +467,9 @@ mod tests {
         let removed_trees = Arc::new(std::sync::Mutex::new(Vec::new()));
         let mut cmd = DeleteTreeCmd::new("MyTree".to_string());
         let mut program = MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 removed_trees: removed_trees.clone(),
-            },
+            }),
         };
 
         assert!(cmd.apply_to(&mut program));
@@ -493,9 +493,9 @@ mod tests {
         let removed_trees = Arc::new(std::sync::Mutex::new(Vec::new()));
         let mut cmd = DeleteTreeCmd::new("Program Tree".to_string());
         let mut program = MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 removed_trees: removed_trees.clone(),
-            },
+            }),
         };
 
         assert!(cmd.apply_to(&mut program));
@@ -507,9 +507,9 @@ mod tests {
         let removed_trees = Arc::new(std::sync::Mutex::new(Vec::new()));
         let mut cmd = DeleteTreeCmd::new("Tree1".to_string());
         let mut program = MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 removed_trees: removed_trees.clone(),
-            },
+            }),
         };
 
         cmd.apply_to(&mut program);

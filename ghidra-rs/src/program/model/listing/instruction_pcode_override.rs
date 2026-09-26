@@ -88,14 +88,11 @@ impl<'a> InstructionPcodeOverrideImpl<'a> {
 
     /// Looks up the function at `addr`, if any.
     ///
-    /// Requires unique ownership of the underlying program in order to obtain its function
-    /// manager; returns `None` if the program is currently shared elsewhere. Stands in for
-    /// `instr.getProgram().getFunctionManager().getFunctionAt(addr)`.
+    /// Stands in for `instr.getProgram().getFunctionManager().getFunctionAt(addr)`.
     fn function_at(&self, addr: &Address) -> Option<Arc<dyn Function>> {
-        let mut program = self.instr.get_program();
-        Arc::get_mut(&mut program)?
-            .get_function_manager()?
-            .get_function_at(addr)
+        let program = self.instr.get_program();
+        let function = program.get_function_manager()?.get_function_at(addr);
+        function
     }
 }
 

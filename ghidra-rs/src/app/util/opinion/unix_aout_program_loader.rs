@@ -911,16 +911,22 @@ impl<'a> UnixAoutProgramLoader<'a> {
     }
 
     fn symbol_table(
-        &mut self,
-    ) -> Result<&mut dyn crate::program::model::symbol::SymbolTable, LoadAoutError> {
+        &self,
+    ) -> Result<
+        crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::symbol::SymbolTable>,
+        LoadAoutError,
+    > {
         self.program
             .get_symbol_table()
             .ok_or(LoadAoutError::MissingProgramComponent("symbol table"))
     }
 
     fn function_manager(
-        &mut self,
-    ) -> Result<&mut dyn crate::program::model::listing::FunctionManager, LoadAoutError> {
+        &self,
+    ) -> Result<
+        crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::FunctionManager>,
+        LoadAoutError,
+    > {
         self.program
             .get_function_manager()
             .ok_or(LoadAoutError::MissingProgramComponent("function manager"))

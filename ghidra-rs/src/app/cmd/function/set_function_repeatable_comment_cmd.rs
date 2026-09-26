@@ -756,7 +756,7 @@ use crate::program::model::listing::CommentType;
     }
 
     struct MockProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {
@@ -774,9 +774,9 @@ use crate::program::model::listing::CommentType;
             "mock:LE:32:default".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-            Some(&mut self.listing as &mut dyn crate::program::model::listing::Listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     #[test]
@@ -805,9 +805,9 @@ use crate::program::model::listing::CommentType;
             Some("new repeatable comment".to_string()),
         );
         let mut program = MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 function: Some(mock_func.clone()),
-            },
+            }),
         };
 
         assert_eq!(mock_func.get_repeatable_comment(), None);
@@ -827,9 +827,9 @@ use crate::program::model::listing::CommentType;
         });
         let mut cmd = SetFunctionRepeatableCommentCmd::new(entry, None);
         let mut program = MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 function: Some(mock_func.clone()),
-            },
+            }),
         };
 
         assert_eq!(
@@ -848,7 +848,7 @@ use crate::program::model::listing::CommentType;
             Some("new comment".to_string()),
         );
         let mut program = MockProgram {
-            listing: MockListing { function: None },
+            listing: crate::program::model::listing::ManagerCell::new(MockListing { function: None }),
         };
 
         assert!(!cmd.apply_to(&mut program));

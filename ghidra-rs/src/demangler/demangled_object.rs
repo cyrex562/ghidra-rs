@@ -427,12 +427,9 @@ impl DemangledObjectBase {
             Self::create_namespace(program, self.namespace.as_deref(), parent_namespace, false);
 
         let result = ns.and_then(|ns| {
-            program
-                .get_external_manager()
-                .and_then(|external_manager| {
-                    external_manager.get_external_location_mut(Arc::clone(&symbol))
-                })
-                .map(|ext_loc| ext_loc.set_name(ns, symbol_name, SourceType::Imported))
+            let mut external_manager = program.get_external_manager()?;
+            let ext_loc = external_manager.get_external_location_mut(Arc::clone(&symbol))?;
+            Some(ext_loc.set_name(ns, symbol_name, SourceType::Imported))
         });
         if let Some(Err(e)) = result {
             Msg::error_with_error(
@@ -468,7 +465,7 @@ impl DemangledObjectBase {
         };
 
         let namespace_names = namespace_list(type_namespace);
-        let symbol_table = program.get_symbol_table()?;
+        let mut symbol_table = program.get_symbol_table()?;
         for namespace_name in namespace_names {
             // TODO - This is compensating for too long templates. We should probably genericize
             //        templates so that any class with the same number of template parameters and
@@ -573,7 +570,7 @@ fn set_label_primary(
     namespace: Option<Arc<dyn Namespace>>,
 ) -> Option<Arc<dyn Symbol>> {
     let namespace = namespace.or_else(|| prog.get_global_namespace())?;
-    let symbol_table = prog.get_symbol_table()?;
+    let mut symbol_table = prog.get_symbol_table()?;
     let symbol = symbol_table
         .find_symbol_by_name_address_namespace(symbol_name, addr, namespace.as_ref())
         .ok()
@@ -688,7 +685,7 @@ pub trait DemangledObject: Demangled {
         }
 
         let new_comment = self.generate_plate_comment();
-        let Some(listing) = program.get_listing() else {
+        let Some(mut listing) = program.get_listing() else {
             return Ok(true);
         };
         let comment = listing.get_comment(CommentType::Plate, address);

@@ -102,7 +102,7 @@ impl CommentsSarifMgr {
             return;
         };
 
-        let Some(listing) = Arc::get_mut(&mut self.program).and_then(|p| p.get_listing()) else {
+        let Some(mut listing) = self.program.get_listing() else {
             return;
         };
 
@@ -175,9 +175,7 @@ impl CommentsSarifMgr {
 
         let mut request0: Vec<(Arc<dyn CodeUnit>, (String, String))> = Vec::new();
         {
-            let listing = Arc::get_mut(&mut self.program)
-                .expect("CommentsSarifMgr holds the only handle to its Program")
-                .get_listing()
+            let listing = self.program.get_listing()
                 .expect("CommentsSarifMgr's Program has no Listing");
             let mut iter = listing.get_code_unit_iterator_in(COMMENT_PROPERTY, effective_set, true);
             while let Some(cu) = iter.next() {
@@ -195,9 +193,7 @@ impl CommentsSarifMgr {
 
         let mut request1: Vec<(Address, (String, String))> = Vec::new();
         {
-            let listing = Arc::get_mut(&mut self.program)
-                .expect("CommentsSarifMgr holds the only handle to its Program")
-                .get_listing()
+            let listing = self.program.get_listing()
                 .expect("CommentsSarifMgr's Program has no Listing");
             for &comment_type in ALL_COMMENT_TYPES.iter() {
                 let aiter = listing.get_comment_address_iterator(comment_type, effective_set, true);
@@ -285,7 +281,7 @@ mod tests {
     }
 
     struct MockProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
     }
 
     impl DomainObject for MockProgram {}
@@ -297,13 +293,13 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:64:default".to_string()
         }
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-            Some(&mut self.listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     fn empty_mock_program() -> Arc<dyn Program> {
-        Arc::new(MockProgram { listing: MockListing })
+        Arc::new(MockProgram { listing: crate::program::model::listing::ManagerCell::new(MockListing) })
     }
 
     #[test]

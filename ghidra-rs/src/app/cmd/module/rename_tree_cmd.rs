@@ -21,7 +21,7 @@ impl RenameTreeCmd {
 
 impl<T: Program + ?Sized> Command<T> for RenameTreeCmd {
     fn apply_to(&mut self, program: &mut T) -> bool {
-        if let Some(listing) = program.get_listing() {
+        if let Some(mut listing) = program.get_listing() {
             match listing.rename_tree(&self.old_name, &self.new_name) {
                 Ok(()) => true,
                 Err(e) => {
@@ -464,7 +464,7 @@ mod tests {
     }
 
     struct MockProgram {
-        listing: Option<MockListing>,
+        listing: Option<crate::program::model::listing::ManagerCell<MockListing>>,
     }
 
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -478,9 +478,12 @@ mod tests {
             "test_lang".to_string()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-            self.listing.as_mut().map(|l| l as &mut dyn crate::program::model::listing::Listing)
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
+        match &self.listing {
+            Some(cell) => Some(crate::program::model::listing::ManagerGuard::lock(cell)),
+            None => None,
         }
+    }
     }
 
     #[test]
@@ -488,10 +491,10 @@ mod tests {
         let renamed_trees = Arc::new(std::sync::Mutex::new(Vec::new()));
         let mut cmd = RenameTreeCmd::new("OldName".to_string(), "NewName".to_string());
         let mut program = MockProgram {
-            listing: Some(MockListing {
+            listing: Some(crate::program::model::listing::ManagerCell::new(MockListing {
                 renamed_trees: renamed_trees.clone(),
                 should_fail: false,
-            }),
+            })),
         };
 
         assert!(cmd.apply_to(&mut program));
@@ -507,10 +510,10 @@ mod tests {
         let renamed_trees = Arc::new(std::sync::Mutex::new(Vec::new()));
         let mut cmd = RenameTreeCmd::new("OldName".to_string(), "DuplicateName".to_string());
         let mut program = MockProgram {
-            listing: Some(MockListing {
+            listing: Some(crate::program::model::listing::ManagerCell::new(MockListing {
                 renamed_trees: renamed_trees.clone(),
                 should_fail: true,
-            }),
+            })),
         };
 
         assert!(!cmd.apply_to(&mut program));
@@ -546,10 +549,10 @@ mod tests {
         let renamed_trees = Arc::new(std::sync::Mutex::new(Vec::new()));
         let mut cmd = RenameTreeCmd::new("Program Tree".to_string(), "New Program Tree".to_string());
         let mut program = MockProgram {
-            listing: Some(MockListing {
+            listing: Some(crate::program::model::listing::ManagerCell::new(MockListing {
                 renamed_trees: renamed_trees.clone(),
                 should_fail: false,
-            }),
+            })),
         };
 
         assert!(cmd.apply_to(&mut program));
@@ -565,10 +568,10 @@ mod tests {
         let mut cmd1 = RenameTreeCmd::new("Tree1".to_string(), "Renamed1".to_string());
         let mut cmd2 = RenameTreeCmd::new("Tree2".to_string(), "Renamed2".to_string());
         let mut program = MockProgram {
-            listing: Some(MockListing {
+            listing: Some(crate::program::model::listing::ManagerCell::new(MockListing {
                 renamed_trees: renamed_trees.clone(),
                 should_fail: false,
-            }),
+            })),
         };
 
         assert!(cmd1.apply_to(&mut program));

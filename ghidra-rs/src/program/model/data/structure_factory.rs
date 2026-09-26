@@ -155,13 +155,14 @@ pub trait StructureFactory {
         structure_name: &str,
         make_unique_name: bool,
     ) -> Result<Box<dyn Structure>, String> {
-        let listing = program
-            .get_listing()
-            .ok_or_else(|| "IllegalArgumentException: program has no listing".to_string())?;
-
-        let data = listing
-            .get_data_containing(address)
-            .ok_or_else(|| "IllegalArgumentException: Invalid selection".to_string())?;
+        let data = {
+            let listing = program
+                .get_listing()
+                .ok_or_else(|| "IllegalArgumentException: program has no listing".to_string())?;
+            listing
+                .get_data_containing(address)
+                .ok_or_else(|| "IllegalArgumentException: Invalid selection".to_string())?
+        };
 
         let comp1 = data
             .get_component_by_path(from_path)
@@ -929,7 +930,7 @@ use crate::program::model::listing::CommentType;
     }
 
     struct MockProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
     }
     impl crate::framework::model::DomainObject for MockProgram {}
     impl Program for MockProgram {
@@ -939,17 +940,17 @@ use crate::program::model::listing::CommentType;
         fn get_language_id(&self) -> String {
             "test:LE:32:default".to_string()
         }
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
-            Some(&mut self.listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     fn mock_program(parent_is_structure: bool) -> MockProgram {
         MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 data_type_manager_calls: std::sync::atomic::AtomicI32::new(0),
                 parent_is_structure,
-            },
+            }),
         }
     }
 
@@ -1286,7 +1287,7 @@ use crate::program::model::listing::CommentType;
         assert_eq!(
             program
                 .listing
-                .data_type_manager_calls
+                .lock().data_type_manager_calls
                 .load(std::sync::atomic::Ordering::SeqCst),
             1
         );

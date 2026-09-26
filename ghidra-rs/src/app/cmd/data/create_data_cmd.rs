@@ -576,7 +576,7 @@ mod tests {
     }
 
     struct MockProgram {
-        listing: MockListing,
+        listing: crate::program::model::listing::ManagerCell<MockListing>,
     }
     impl DomainObject for MockProgram {}
     impl Program for MockProgram {
@@ -586,18 +586,18 @@ mod tests {
         fn get_language_id(&self) -> String {
             "mock:LE:32:default".to_string()
         }
-        fn get_listing(&mut self) -> Option<&mut dyn Listing> {
-            Some(&mut self.listing)
-        }
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn Listing>> {
+        Some(crate::program::model::listing::ManagerGuard::lock(&self.listing))
+    }
     }
 
     fn mock_program(addr: Address) -> MockProgram {
         MockProgram {
-            listing: MockListing {
+            listing: crate::program::model::listing::ManagerCell::new(MockListing {
                 existing: addr,
                 existing_type_name: "existing_type",
                 create_data_sized_calls: std::sync::atomic::AtomicI32::new(0),
-            },
+            }),
         }
     }
 
@@ -622,7 +622,7 @@ mod tests {
             cmd.status_msg(),
             Some(format!("Could not create Data at address {addr}"))
         );
-        assert_eq!(program.listing.create_data_sized_calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+        assert_eq!(program.listing.lock().create_data_sized_calls.load(std::sync::atomic::Ordering::SeqCst), 0);
     }
 
     #[test]
@@ -633,6 +633,6 @@ mod tests {
 
         assert!(cmd.apply_to(&mut program));
         assert_eq!(cmd.status_msg(), None);
-        assert_eq!(program.listing.create_data_sized_calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert_eq!(program.listing.lock().create_data_sized_calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 }

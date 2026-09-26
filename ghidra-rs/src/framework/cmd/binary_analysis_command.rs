@@ -106,7 +106,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
+        fn get_listing(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::Listing>> {
             None
         }
 
@@ -116,9 +116,7 @@ mod tests {
             None
         }
 
-        fn get_memory_mut(
-            &mut self,
-        ) -> Option<&mut dyn crate::program::model::mem::Memory> {
+        fn get_memory_mut(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::mem::Memory>> {
             None
         }
 
@@ -128,33 +126,23 @@ mod tests {
             None
         }
 
-        fn get_reference_manager(
-            &mut self,
-        ) -> Option<&mut dyn crate::program::model::symbol::ReferenceManager> {
+        fn get_reference_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::symbol::ReferenceManager>> {
             None
         }
 
-        fn get_equate_table(
-            &mut self,
-        ) -> Option<&mut dyn crate::program::model::symbol::EquateTable> {
+        fn get_equate_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::symbol::EquateTable>> {
             None
         }
 
-        fn get_symbol_table(
-            &mut self,
-        ) -> Option<&mut dyn crate::program::model::symbol::SymbolTable> {
+        fn get_symbol_table(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::symbol::SymbolTable>> {
             None
         }
 
-        fn get_external_manager(
-            &mut self,
-        ) -> Option<&mut dyn crate::program::model::symbol::ExternalManager> {
+        fn get_external_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::symbol::ExternalManager>> {
             None
         }
 
-        fn get_function_manager(
-            &mut self,
-        ) -> Option<&mut dyn crate::program::model::listing::FunctionManager> {
+        fn get_function_manager(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::FunctionManager>> {
             None
         }
 
@@ -199,9 +187,7 @@ mod tests {
             None
         }
 
-        fn get_program_context(
-            &mut self,
-        ) -> Option<&mut dyn crate::program::model::listing::ProgramContext> {
+        fn get_program_context(&self) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::ProgramContext>> {
             None
         }
 

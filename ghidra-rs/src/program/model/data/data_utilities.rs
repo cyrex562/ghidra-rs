@@ -168,8 +168,8 @@ pub trait DataUtilities {
         let mut stack_pointers = stack_pointers;
 
         let data = {
-            let listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
-            get_data(addr, clear_mode, listing)?
+            let mut listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
+            get_data(addr, clear_mode, &mut *listing)?
         };
 
         let mut existing_length = addr.space().unit_size();
@@ -202,7 +202,10 @@ pub trait DataUtilities {
                 addr,
                 new_type.is_pointer(),
                 stack_pointers,
-                program.get_reference_manager(),
+                program
+                    .get_reference_manager()
+                    .as_deref_mut()
+                    .map(|rm| rm as &mut dyn ReferenceManager),
                 existing_type.is_pointer(),
             );
         }
@@ -223,7 +226,7 @@ pub trait DataUtilities {
         })?;
 
         if stack_pointers && existing_type.is_pointer() && new_type_is_pointer {
-            if let Some(listing) = program.get_listing() {
+            if let Some(mut listing) = program.get_listing() {
                 listing.clear_code_units(addr, addr, false);
             }
         }
@@ -231,7 +234,7 @@ pub trait DataUtilities {
         let dti_length = dti.get_length();
         let create_result = {
             let new_data_type = dti.get_data_type();
-            let listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
+            let mut listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
             listing.create_data_sized(addr.clone(), new_data_type, dti_length)
         };
 
@@ -239,19 +242,22 @@ pub trait DataUtilities {
             Ok(d) => d,
             Err(_) => {
                 if clear_mode == ClearDataMode::ClearSingleData {
-                    if let Some(listing) = program.get_listing() {
+                    if let Some(mut listing) = program.get_listing() {
                         listing.clear_code_units(addr, addr, false);
                     }
                 } else {
                     check_enough_space(program, addr, existing_length, dti.as_ref(), clear_mode)?;
                 }
                 let new_data_type = dti.get_data_type();
-                let listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
+                let mut listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
                 listing.create_data_sized(addr.clone(), new_data_type, dti_length)?
             }
         };
 
-        restore_reference(new_type_is_pointer, program.get_reference_manager(), ext_ref);
+        restore_reference(new_type_is_pointer, program
+                    .get_reference_manager()
+                    .as_deref_mut()
+                    .map(|rm| rm as &mut dyn ReferenceManager), ext_ref);
 
         Ok(new_data)
     }
@@ -443,12 +449,12 @@ pub trait DataUtilities {
         let end = addr.add((length - 1) as i64).ok()?;
 
         let data_addr = {
-            let listing = program.get_listing()?;
-            first_defined_data_start_in_range(listing, addr, &end, ignore_undefined_data)
+            let mut listing = program.get_listing()?;
+            first_defined_data_start_in_range(&mut *listing, addr, &end, ignore_undefined_data)
         };
         let instruction_addr = {
-            let listing = program.get_listing()?;
-            first_instruction_start_in_range(listing, addr, &end)
+            let mut listing = program.get_listing()?;
+            first_instruction_start_in_range(&mut *listing, addr, &end)
         };
 
         match (data_addr, instruction_addr) {
@@ -747,7 +753,7 @@ fn check_enough_space(
         .add_no_wrap((dti.get_length() - 1) as i64)
         .map_err(|_| not_enough_space())?;
 
-    let listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
+    let mut listing = program.get_listing().ok_or_else(|| no_data_at(addr))?;
 
     if let Some(instr) = listing.get_instruction_after(&end) {
         if instr.get_min_address() <= new_end {
@@ -770,7 +776,7 @@ fn check_enough_space(
     ) && !is_data_clearing_denied(defined_data.get_data_type().as_ref(), clear_mode);
 
     if clearing_allowed {
-        check_for_defined_data(dti, listing, &new_end, &defined_data.get_max_address(), clear_mode)?;
+        check_for_defined_data(dti, &mut *listing, &new_end, &defined_data.get_max_address(), clear_mode)?;
     } else if clear_mode != ClearDataMode::ClearAllConflictData {
         return Err(not_enough_space());
     }

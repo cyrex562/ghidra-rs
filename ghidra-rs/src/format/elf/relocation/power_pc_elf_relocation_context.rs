@@ -127,7 +127,7 @@ impl PowerPcElfRelocationContext {
         let Some(program) = Arc::get_mut(&mut program) else {
             return;
         };
-        let Some(context) = program.get_program_context() else {
+        let Some(mut context) = program.get_program_context() else {
             return;
         };
 
@@ -200,7 +200,7 @@ impl PowerPcElfRelocationContext {
 
         let mut program_clone = program.clone();
         if let Some(program) = Arc::get_mut(&mut program_clone) {
-            if let Some(symbol_table) = program.get_symbol_table() {
+            if let Some(mut symbol_table) = program.get_symbol_table() {
                 let _ = symbol_table.create_label(&base_addr, symbol_name, SourceType::Analysis);
             }
         }
