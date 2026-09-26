@@ -34,6 +34,7 @@ pub mod pcode_userop_library;
 pub mod pcode_userop_library_factory;
 pub mod sleigh_link_exception;
 pub mod sleigh_pcode_userop_definition;
+pub mod sleigh_program_compiler;
 pub mod suspended_pcode_execution_exception;
 pub mod trace;
 

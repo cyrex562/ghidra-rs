@@ -210,8 +210,8 @@ pub use crate::pcode::exec::composed_pcode_userop_library::ComposedPcodeUseropLi
 /// [`Builder::build`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder::build)
 /// before the real class (a single-signature `AbstractSleighPcodeUseropDefinition` subclass) is
 /// ported. `get_body` is implemented faithfully (it only needs `SignatureDef::generate_body`);
-/// `program_for` panics if actually invoked, since compiling Sleigh source requires the
-/// also-unported `SleighProgramCompiler`.
+/// `program_for` panics if actually invoked, since [`compile_userop`](crate::pcode::exec::sleigh_program_compiler::compile_userop)
+/// needs a typed library and this seam's `program_for` only receives an erased one.
 pub struct FixedSleighPcodeUseropDefinition {
     #[allow(dead_code)]
     base: AbstractSleighPcodeUseropDefinitionBase,
@@ -239,7 +239,7 @@ impl SleighPcodeUseropDefinition for FixedSleighPcodeUseropDefinition {
         _library: &dyn ErasedPcodeUseropLibrary,
     ) -> PcodeProgram {
         unimplemented!(
-            "FixedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
+            "FixedSleighPcodeUseropDefinition::program_for needs a typed userop library, not yet ported"
         )
     }
 }
@@ -248,8 +248,9 @@ impl SleighPcodeUseropDefinition for FixedSleighPcodeUseropDefinition {
 /// [`Builder::build`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder::build)
 /// before the real class (a multi-signature `AbstractSleighPcodeUseropDefinition` subclass) is
 /// ported. `get_body` is implemented faithfully (dispatching on argument count, like Java's
-/// `requireSignatureDef`); `program_for` panics if actually invoked, since compiling Sleigh
-/// source requires the also-unported `SleighProgramCompiler`.
+/// `requireSignatureDef`); `program_for` panics if actually invoked, since
+/// [`compile_userop`](crate::pcode::exec::sleigh_program_compiler::compile_userop) needs a typed
+/// library and this seam's `program_for` only receives an erased one.
 pub struct OverloadedSleighPcodeUseropDefinition {
     #[allow(dead_code)]
     base: AbstractSleighPcodeUseropDefinitionBase,
@@ -281,7 +282,7 @@ impl SleighPcodeUseropDefinition for OverloadedSleighPcodeUseropDefinition {
         _library: &dyn ErasedPcodeUseropLibrary,
     ) -> PcodeProgram {
         unimplemented!(
-            "OverloadedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
+            "OverloadedSleighPcodeUseropDefinition::program_for needs a typed userop library, not yet ported"
         )
     }
 }
@@ -408,24 +409,8 @@ impl<V> SparseAddressRangeMap<V> {
 /// re-exported here so any old references to this seam-stub path keep resolving.
 pub use crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException;
 
-/// Placeholder for `ghidra.pcode.exec.SleighProgramCompiler`, referenced by
-/// [`AbstractPcodeMachineBase::compile_sleigh`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase::compile_sleigh)
-/// before the real class is ported. Only the one static that call site uses is declared; it panics
-/// if invoked, since compiling Sleigh source needs the whole (unported) compiler.
-pub struct SleighProgramCompiler;
-
-impl SleighProgramCompiler {
-    /// Placeholder for the static
-    /// `SleighProgramCompiler.compileProgram(SleighLanguage, String, String, PcodeUseropLibrary)`.
-    pub fn compile_program<T: 'static>(
-        _language: &SleighLanguage,
-        _source_name: &str,
-        _source: &str,
-        _library: &dyn PcodeUseropLibrary<T>,
-    ) -> PcodeProgram {
-        unimplemented!("SleighProgramCompiler not yet ported")
-    }
-}
+/// `ghidra.pcode.exec.SleighProgramCompiler` has graduated to a real port, the module
+/// [`crate::pcode::exec::sleigh_program_compiler`] (a Java `enum` of statics becomes a module).
 
 /// `ghidra.pcode.exec.SuspendedPcodeExecutionException` has graduated to a real port at
 /// [`crate::pcode::exec::suspended_pcode_execution_exception::SuspendedPcodeExecutionException`];

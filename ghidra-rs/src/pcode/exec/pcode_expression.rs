@@ -101,6 +101,17 @@ impl<T: 'static + Clone> AnnotatedPcodeUseropLibrary<T> for ValueCapturingPcodeU
     }
 }
 
+/// The userop symbols of the result-capturing library, which an expression is compiled against.
+///
+/// Stands for Java's `PcodeExpression.CAPTURING.getSymbols(language)` as
+/// `SleighProgramCompiler.compileExpression` calls it; the capturing library is private to this
+/// module.
+pub(crate) fn capturing_symbols(
+    language: &crate::program::model::lang::sleigh::SleighLanguage,
+) -> HashMap<i32, UserOpSymbol> {
+    ValueCapturingPcodeUseropLibrary::<i64>::new().get_symbols(language)
+}
+
 /// A p-code program that evaluates a Sleigh expression.
 pub struct PcodeExpression {
     program: PcodeProgram,

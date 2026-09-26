@@ -80,8 +80,9 @@ use crate::pcode::exec::pcode_userop_library_factory::{
 use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
+use crate::pcode::exec::sleigh_program_compiler;
 use crate::pcode::seam_stubs::{
-    InterruptPcodeExecutionException, SleighProgramCompiler, SparseAddressRangeMap,
+    InterruptPcodeExecutionException, SparseAddressRangeMap,
 };
 use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::lang::language::Language;
@@ -231,12 +232,13 @@ impl<T: 'static> PcodeMachineShared<T> {
     /// Compile the given Sleigh code for execution by a thread of this machine, linking it against
     /// the stub library. Port of `compileSleigh(String, String)`.
     pub fn compile_sleigh(&self, source_name: &str, source: &str) -> PcodeProgram {
-        SleighProgramCompiler::compile_program(
+        sleigh_program_compiler::compile_program(
             &self.language,
             source_name,
             source,
             self.stub_library.as_ref(),
         )
+        .unwrap_or_else(|e| panic!("{e}"))
     }
 
     /// Perform checks on a requested `LOAD`, returning the interrupt the `LOAD` should cause, if

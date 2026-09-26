@@ -91,7 +91,7 @@ use crate::pcode::exec::pcode_userop_library::{
 use crate::pcode::exec::injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException;
 use crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException;
 use crate::pcode::exec::suspended_pcode_execution_exception::SuspendedPcodeExecutionException;
-use crate::pcode::seam_stubs::SleighProgramCompiler;
+use crate::pcode::exec::sleigh_program_compiler;
 use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::program_context::ProgramContext;
@@ -1546,12 +1546,13 @@ where
     }
 
     fn inject(&mut self, address: &Address, source: &str) {
-        let pcode = SleighProgramCompiler::compile_program(
+        let pcode = sleigh_program_compiler::compile_program(
             &self.core.language,
             &format!("thread_inject:{address}"),
             source,
             self.library.as_ref(),
-        );
+        )
+        .unwrap_or_else(|e| panic!("{e}"));
         self.core.put_inject(address.clone(), Arc::new(pcode));
     }
 

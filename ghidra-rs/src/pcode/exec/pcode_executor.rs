@@ -14,7 +14,7 @@
 //!   `.sla`-only port: it does not implement [`Language`] and exposes none of those five. All five
 //!   *are* on [`Language`], so the executor binds to `Arc<dyn Language>`, which is also exactly
 //!   what [`PcodeFrame::new`] wants. Only `execute_sleigh` genuinely needs the Sleigh-specific
-//!   language, and it is blocked on `SleighProgramCompiler` regardless.
+//!   language (to compile against), which an `Arc<dyn Language>` cannot be turned back into.
 //! * **Op behavior dispatch.** Java asks `OpBehaviorFactory` for an `OpBehavior` and then switches
 //!   on its *class* to decide unary vs. binary vs. special. There is no factory in this crate's
 //!   [`opbehavior`](crate::pcode::opbehavior) module (the behaviors carry no per-op instances), so
@@ -173,9 +173,12 @@ impl<T: 'static> PcodeExecutor<T> {
     ///
     /// # Panics
     ///
-    /// Always: `SleighProgramCompiler` is not yet ported.
+    /// Always: compiling needs the executor's `SleighLanguage`, and it binds an `Arc<dyn Language>`
+    /// (see the module docs). Callers holding the Sleigh language compile with
+    /// [`sleigh_program_compiler::compile_program`](crate::pcode::exec::sleigh_program_compiler::compile_program)
+    /// and [`execute`](Self::execute) the result, which is what Java's body does.
     pub fn execute_sleigh(&self, _source: &str) -> PcodeFrame {
-        unimplemented!("PcodeExecutor::execute_sleigh needs SleighProgramCompiler, not yet ported")
+        unimplemented!("PcodeExecutor::execute_sleigh needs the executor's SleighLanguage, which it does not hold")
     }
 
     /// Begin execution of the given program, e.g., from an injection or a decoded instruction.

@@ -94,7 +94,7 @@ use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
 use crate::pcode::seam_stubs::{
-    AddrCtx, EntryPoint, JitDefaultBytesPcodeExecutorState, JitThreadBytesPcodeExecutorState, SleighProgramCompiler, SuspendedPcodeExecutionException,
+    AddrCtx, EntryPoint, JitDefaultBytesPcodeExecutorState, JitThreadBytesPcodeExecutorState, SuspendedPcodeExecutionException,
 };
 use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::Address;
@@ -348,12 +348,13 @@ impl JitPcodeThread {
     /// If this thread has no machine, since the source is compiled against its language.
     pub fn inject(&self, address: &Address, source: &str) {
         let machine = self.require_machine();
-        let program = SleighProgramCompiler::compile_program(
-            PcodeMachine::get_language(machine.as_ref()),
+        let program = crate::pcode::exec::sleigh_program_compiler::compile_program(
+            machine.language_arc(),
             &format!("thread_inject:{address}"),
             source,
             self.userop_library.as_ref(),
-        );
+        )
+        .unwrap_or_else(|e| panic!("{e}"));
         self.injects
             .lock()
             .expect("injects poisoned")

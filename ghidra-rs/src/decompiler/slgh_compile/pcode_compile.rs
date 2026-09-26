@@ -188,6 +188,22 @@ pub struct PcodeCompileBase {
     /// Every reported error, formatted as Java logs it. Java only logs them; they are kept here
     /// so a caller can say *why* a compile failed.
     error_messages: Vec<String>,
+    /// Every reported error and warning, unformatted, in report order. This is what a Java
+    /// subclass overriding `reportError`/`reportWarning` (e.g. `SleighProgramCompiler`'s
+    /// `ErrorCollectingPcodeParser`) would see.
+    reports: Vec<CompileReport>,
+}
+
+/// One error or warning reported during a compile: the arguments of Java's
+/// `reportError(Location, String)` / `reportWarning(Location, String)`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompileReport {
+    /// Whether this is an error (as opposed to a warning).
+    pub is_error: bool,
+    /// Where in the source the problem is, if known.
+    pub location: Option<Location>,
+    /// The unformatted message.
+    pub message: String,
 }
 
 impl PcodeCompileBase {
@@ -198,6 +214,11 @@ impl PcodeCompileBase {
     /// The formatted messages of every error reported so far.
     pub fn error_messages(&self) -> &[String] {
         &self.error_messages
+    }
+
+    /// Every error and warning reported so far, in report order.
+    pub fn reports(&self) -> &[CompileReport] {
+        &self.reports
     }
 }
 
@@ -653,6 +674,11 @@ pub trait PcodeCompile {
         let base = self.base_mut();
         base.errors += 1;
         base.error_messages.push(formatted);
+        base.reports.push(CompileReport {
+            is_error: true,
+            location: location.cloned(),
+            message: msg.to_string(),
+        });
     }
 
     fn get_errors(&self) -> i32 {
@@ -662,7 +688,13 @@ pub trait PcodeCompile {
     /// Reports (logs and counts) a warning.
     fn report_warning(&mut self, location: Option<&Location>, msg: &str) {
         Msg::warn("PcodeCompile", &message_formatting_utils::format(location, msg));
-        self.base_mut().warnings += 1;
+        let base = self.base_mut();
+        base.warnings += 1;
+        base.reports.push(CompileReport {
+            is_error: false,
+            location: location.cloned(),
+            message: msg.to_string(),
+        });
     }
 
     fn get_warnings(&self) -> i32 {

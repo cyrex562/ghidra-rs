@@ -490,6 +490,13 @@ impl AbstractPcodeMachine<Vec<u8>> for JitPcodeEmulator {
     }
 }
 
+impl JitPcodeEmulator {
+    /// The emulation target language, shared: what Sleigh compiled for this machine binds to.
+    pub fn language_arc(&self) -> &Arc<SleighLanguage> {
+        self.base.language()
+    }
+}
+
 impl PcodeMachine<Vec<u8>> for JitPcodeEmulator {
     fn get_language(&self) -> &SleighLanguage {
         self.base.get_language()
