@@ -1210,7 +1210,7 @@ TODO	struct	16	2	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 TODO	struct	14	5	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java
 TODO	struct	15	9	91	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcOptimization.java
 TODO	struct	14	5	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcDylib.java
-TODO	struct	13	35	48	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java
+PARK	struct	13	35	48	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java
 TODO	struct	15	51	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDynamicTable.java
 TODO	struct	15	51	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfProgramHeader.java
 TODO	struct	18	52	93	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationTableDataType.java
@@ -1291,7 +1291,7 @@ TODO	struct	19	1	77	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	16	4	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/NoteGoBuildId.java
 TODO	struct	15	4	93	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoBuildId.java
 TODO	struct	18	1	6	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/MachoPrelinkParser.java
-TODO	struct	17	33	49	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MachoPrelinkUtils.java
+PARK	struct	17	33	49	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MachoPrelinkUtils.java
 TODO	struct	19	5	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/chained/DyldChainedImport.java
 TODO	struct	19	4	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/chained/DyldChainedImports.java
 TODO	struct	20	3	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/chained/DyldChainedStartsInSegment.java
@@ -3753,8 +3753,8 @@ TODO	struct	0	1	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 TODO	struct	2	1	25	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgDecryptorStream.java
 TODO	struct	2	1	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/xar/XARUtil.java
 TODO	struct	1	1	28	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgClientFileSystemFactory.java
-TODO	struct	0	1	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dyldcache/DyldCacheFileSystemFactory.java
-TODO	struct	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/fileset/MachoFileSetFileSystemFactory.java
+PARK	struct	0	1	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dyldcache/DyldCacheFileSystemFactory.java
+PARK	struct	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/fileset/MachoFileSetFileSystemFactory.java
 TODO	struct	1	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/hfs/HFSPlusFileSystemFactory.java
 TODO	struct	1	1	27	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img2/Img2FileSystemFactory.java
 TODO	struct	0	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img2/Img2Util.java
