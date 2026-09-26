@@ -1106,12 +1106,6 @@ pub trait LoadSpecLike {}
 /// members are needed yet.
 pub trait LoadResultsLike {}
 
-/// Placeholder for `ghidra.app.util.PseudoInstruction`, referenced by
-/// [`PseudoFlowProcessor`](crate::app::util::pseudo_flow_processor::PseudoFlowProcessor) before
-/// the real class is ported. `PseudoFlowProcessor` only ever passes this type through as a
-/// parameter, so no members are needed yet.
-pub trait PseudoInstructionLike {}
-
 /// Placeholder for `ghidra.app.plugin.processors.sleigh.symbol.TripleSymbol`, referenced by
 /// [`SleighParserContext`](crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext)
 /// before the real class is ported. This is distinct from the identically-named

@@ -359,7 +359,10 @@ block), and the current `Program` trait reaches `ReferenceManager` and `Listing`
 `&mut self`, which a shared handle cannot call. They land with the program arena, where those
 become queries against the program snapshot by address rather than through an object back-link.
 Until then `PseudoCodeUnit`/`PseudoInstruction` stay `TODO` in `PORT_MANIFEST.tsv`: the
-program-less path is complete and tested, the class is not.
+program-less path is complete and tested, the class is not. *(Resolved 2026-09-26, see "Program
+manager access" below: with `&self` manager accessors the program-attached constructor asks the
+program for its managers per call, and `setInstructionBlock` became the block argument of
+`get_previous_in`/`get_parser_context_in`. Both rows are `DONE`.)*
 
 `SleighInstructionDecoder` (and so `AdaptedEmulator`) no longer waits on this design; it waits on
 `Disassembler.pseudoDisassembleBlock`, `DisassemblerContextImpl` (the context a decoded
@@ -469,6 +472,14 @@ Decided 2026-09-25 ("Program API" in the descent brief): `Program`'s manager acc
   signature -- the guard then wraps the store's writer -- and read-mostly callers can move to the
   store's `snapshot()` instead. `Send + Sync` on `Program` is kept; handles are usable from any
   thread (`ProgramDB` has a test that labels from four threads).
+- **Consumers unblocked in the same change:** `FunctionNodeContainer::new(program, nodes)` takes
+  the function manager from the program, as Java does (it had to be passed in separately);
+  `PseudoCodeUnit`/`PseudoInstruction` gained the program-attached path (labels, symbols, stored
+  references, block names, out-of-cache bytes, `getNext`/`getPrevious` through the listing) and
+  the instruction block as a call-time argument, and the `PseudoInstructionLike` placeholder is
+  retired onto the disassembler's `DisassembledInstruction`. `HashStore` still takes the listing
+  as an argument (a caller now passes `&*program.get_listing()?`); the program-mutating half of
+  `Disassembler` is still for a later batch.
 - **Left for later, deliberately:** the read-only twins (`get_memory`/`get_memory_mut`,
   `get_bookmark_manager`/`get_bookmark_manager_mut`, `get_symbol_table_ref`) still exist;
   collapsing each pair onto the guard accessor changes ~200 call sites of the read side and is a

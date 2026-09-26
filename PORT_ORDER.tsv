@@ -335,7 +335,7 @@ TODO	struct	6	6	24	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/
 TODO	struct	0	402	24	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramSelection.java
 TODO	struct	3	77	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/BackgroundCommand.java
 TODO	struct	6	149	24	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/MemoryBlockStub.java
-TODO	struct	5	47	77	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoCodeUnit.java
+DONE	struct	5	47	77	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoCodeUnit.java
 TODO	struct	7	71	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlUtilities.java
 DONE	struct	6	64	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/xml/NonThreadedXmlPullParserImpl.java
 TODO	struct	7	32	1	generic	Ghidra/Framework/Utility/src/main/java/generic/concurrent/GThreadPool.java
@@ -399,7 +399,7 @@ TODO	struct	7	5	2	sleigh	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/
 TODO	struct	7	7	6	sleigh	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/SourceFileIndexer.java
 DONE	struct	6	307	61	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PcodeParser.java
 DONE	struct	5	310	13	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PcodeInjectLibrary.java
-TODO	struct	4	79	58	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoInstruction.java
+DONE	struct	4	79	58	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoInstruction.java
 DONE	struct	4	46	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/RepeatInstructionByteTracker.java
 TODO	struct	4	3	45	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/disassemble/DisassemblerQueue.java
 TODO	struct	5	3	24	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/register/InMemoryRangeMapAdapter.java

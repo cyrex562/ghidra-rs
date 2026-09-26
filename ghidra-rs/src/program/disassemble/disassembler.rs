@@ -1027,7 +1027,7 @@ pub struct DisassemblerInstructionContext {
 }
 
 impl DisassemblerInstructionContext {
-    fn new(language: Arc<SleighLanguage>, context_value: Option<RegisterValue>) -> Self {
+    pub(crate) fn new(language: Arc<SleighLanguage>, context_value: Option<RegisterValue>) -> Self {
         DisassemblerInstructionContext { language, context_value }
     }
 

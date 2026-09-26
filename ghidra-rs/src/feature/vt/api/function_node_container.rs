@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use crate::program::model::address::Address;
-use crate::program::model::listing::{FunctionManager, Program};
+use crate::program::model::listing::Program;
 
 use super::function_node::{FunctionNode, NodeId};
 
@@ -22,21 +22,18 @@ pub struct FunctionNodeContainer<V> {
 impl<V> FunctionNodeContainer<V> {
     /// Builds the container and its call graph.
     ///
-    /// `function_manager` is `program.getFunctionManager()` in Java; it is passed separately
-    /// because [`Program::get_function_manager`] needs `&mut` access that a shared
-    /// `Arc<dyn Program>` cannot give. When two nodes share an address the later one wins, as with
-    /// Java's `TreeMap.put`.
-    pub fn new(
-        program: Arc<dyn Program>,
-        node_list: Vec<FunctionNode<V>>,
-        function_manager: &dyn FunctionManager,
-    ) -> Self {
-        Self::with_thunk_resolver(program, node_list, |addr| {
-            function_manager
-                .get_function_at(addr)
-                .filter(|f| f.is_thunk())
-                .and_then(|f| f.get_thunked_function(false))
-                .map(|thunked| thunked.get_entry_point())
+    /// Port of `FunctionNodeContainer(Program, List<FunctionNode>)`: thunks are resolved through
+    /// `program.getFunctionManager()`. When two nodes share an address the later one wins, as with
+    /// Java's `TreeMap.put`. A program without a function manager resolves no thunks.
+    pub fn new(program: Arc<dyn Program>, node_list: Vec<FunctionNode<V>>) -> Self {
+        let lookup = Arc::clone(&program);
+        Self::with_thunk_resolver(program, node_list, move |addr| {
+            // The manager handle is released before the thunk is followed.
+            let function = lookup.get_function_manager()?.get_function_at(addr)?;
+            if !function.is_thunk() {
+                return None;
+            }
+            function.get_thunked_function(false).map(|thunked| thunked.get_entry_point())
         })
     }
 
@@ -148,6 +145,59 @@ pub(crate) mod tests {
         fn get_language_id(&self) -> String {
             "test:LE:32:default".to_string()
         }
+    }
+
+    struct ProgramWithFunctions {
+        functions: crate::program::model::listing::ManagerCell<
+            crate::program::model::listing::function_manager::tests::MockFunctionManager,
+        >,
+    }
+
+    impl crate::framework::model::DomainObject for ProgramWithFunctions {}
+
+    impl Program for ProgramWithFunctions {
+        fn get_name(&self) -> String {
+            "with_functions.bin".to_string()
+        }
+
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
+        }
+
+        fn get_function_manager(
+            &self,
+        ) -> Option<crate::program::model::listing::ManagerGuard<'_, dyn crate::program::model::listing::FunctionManager>>
+        {
+            Some(crate::program::model::listing::ManagerGuard::lock(&self.functions))
+        }
+    }
+
+    #[test]
+    fn new_resolves_thunks_through_the_programs_function_manager() {
+        use crate::graph::function_call_graph::tests::MockFunction;
+        use crate::program::model::listing::function_manager::tests::MockFunctionManager;
+        use crate::program::model::listing::Function;
+
+        // 0x100 calls the thunk at 0x200, which thunks 0x300. The thunk has no node of its own
+        // (Java only follows thunks for call targets that are not nodes), so the call resolves
+        // to the target's node.
+        let target: Arc<dyn Function> = Arc::new(MockFunction::new("target", 0x300));
+        let thunk: Arc<dyn Function> = Arc::new(MockFunction::thunk("thunk", 0x200, target.clone()));
+        let program: Arc<dyn Program> = Arc::new(ProgramWithFunctions {
+            functions: crate::program::model::listing::ManagerCell::new(MockFunctionManager {
+                functions: vec![thunk, target],
+            }),
+        });
+        // A second owner of the program, as in any real session.
+        let _other = Arc::clone(&program);
+        let c = FunctionNodeContainer::new(
+            program,
+            vec![node(0x100, "caller", &[0x200, 0x250], 1), node(0x300, "target", &[], 1)],
+        );
+        let caller = c.get(&addr(0x100)).unwrap();
+        let target_node = c.get(&addr(0x300)).unwrap();
+        assert_eq!(c.node(caller).children(), &ids(&c, &[0x300]));
+        assert!(c.node(target_node).parents().contains(&caller));
     }
 
     /// Builds a container over a bare program with a thunk map given as offsets.

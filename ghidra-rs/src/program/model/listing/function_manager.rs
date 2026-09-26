@@ -197,11 +197,15 @@ pub trait FunctionManager: ManagerDB {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::io;
 
-    struct MockFunctionManager;
+    /// A function manager over a fixed set of functions, looked up by entry point.
+    #[derive(Default)]
+    pub(crate) struct MockFunctionManager {
+        pub(crate) functions: Vec<Arc<dyn Function>>,
+    }
 
     impl ManagerDB for MockFunctionManager {
         fn invalidate_cache(&mut self, _all: bool) -> io::Result<()> {
@@ -288,8 +292,8 @@ mod tests {
             false
         }
 
-        fn get_function_at(&self, _entry_point: &Address) -> Option<Arc<dyn Function>> {
-            None
+        fn get_function_at(&self, entry_point: &Address) -> Option<Arc<dyn Function>> {
+            self.functions.iter().find(|f| &f.get_entry_point() == entry_point).cloned()
         }
 
         fn get_referenced_function(&self, _address: &Address) -> Option<Arc<dyn Function>> {
@@ -400,7 +404,7 @@ mod tests {
 
     #[test]
     fn mock_function_manager_is_object_safe() {
-        let manager: Box<dyn FunctionManager> = Box::new(MockFunctionManager);
+        let manager: Box<dyn FunctionManager> = Box::new(MockFunctionManager::default());
         assert_eq!(manager.get_function_count(), 0);
         assert!(!manager.is_in_function(&test_address(0x1000)));
         assert!(manager.get_calling_convention_names().is_empty());

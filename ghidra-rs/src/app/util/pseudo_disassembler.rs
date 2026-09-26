@@ -23,9 +23,9 @@
 //! `ghidra.app.util.PseudoDisassemblerContext` (the concrete context class Java passes to several
 //! overloads) is not ported here -- it directly `implements DisassemblerContext` and adds no
 //! methods of its own, so `&mut dyn `[`DisassemblerContext`]` already stands in for it without
-//! needing a placeholder stub. Likewise `PseudoInstruction` (the return type of the `disassemble`
-//! methods) reuses the existing [`PseudoInstructionLike`] placeholder that
-//! [`PseudoFlowProcessor`] already established.
+//! needing a placeholder stub. `PseudoInstruction` (the return type of the `disassemble` methods)
+//! is the disassembler's [`DisassembledInstruction`]: Java's `PseudoDisassembler` gets its
+//! instructions from `Disassembler.pseudoDisassembleBlock`, whose ported element type that is.
 //!
 //! Java's static helper methods (the block at the bottom of the class, `getNormalizedDisassemblyAddress`,
 //! `getTargetContextRegisterValueForDisassembly`, `hasLowBitCodeModeInAddrValues`, and the two
@@ -38,9 +38,9 @@ use std::any::Any;
 
 use thiserror::Error;
 
-use crate::app::seam_stubs::PseudoInstructionLike;
 use crate::app::util::pseudo_data::PseudoData;
 use crate::app::util::pseudo_flow_processor::PseudoFlowProcessor;
+use crate::program::disassemble::disassembler::DisassembledInstruction;
 use crate::program::model::address::{Address, AddressSet};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::lang::{
@@ -106,7 +106,7 @@ pub trait PseudoDisassembler {
     fn disassemble(
         &mut self,
         addr: Address,
-    ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError>;
+    ) -> Result<Option<DisassembledInstruction>, DisassembleError>;
 
     /// Disassemble a single instruction. The program is not affected.
     ///
@@ -116,7 +116,7 @@ pub trait PseudoDisassembler {
         addr: Address,
         disassembler_context: &mut dyn DisassemblerContext,
         is_in_delay_slot: bool,
-    ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError>;
+    ) -> Result<Option<DisassembledInstruction>, DisassembleError>;
 
     /// Disassemble a location in memory using the given bytes instead of whatever is currently
     /// defined in the program at that address.
@@ -126,7 +126,7 @@ pub trait PseudoDisassembler {
         &mut self,
         addr: Address,
         bytes: &[u8],
-    ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError>;
+    ) -> Result<Option<DisassembledInstruction>, DisassembleError>;
 
     /// Disassemble a location in memory using the given bytes and disassembler context.
     ///
@@ -136,7 +136,7 @@ pub trait PseudoDisassembler {
         addr: Address,
         bytes: &[u8],
         disassembler_context: &mut dyn DisassemblerContext,
-    ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError>;
+    ) -> Result<Option<DisassembledInstruction>, DisassembleError>;
 
     /// Apply a datatype to the program at the given address without affecting the program.
     /// Returns a [`PseudoData`] that acts like `Data` retrieved from a program.
@@ -446,7 +446,7 @@ mod tests {
         fn disassemble(
             &mut self,
             _addr: Address,
-        ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError> {
+        ) -> Result<Option<DisassembledInstruction>, DisassembleError> {
             Ok(None)
         }
 
@@ -455,7 +455,7 @@ mod tests {
             _addr: Address,
             _disassembler_context: &mut dyn DisassemblerContext,
             _is_in_delay_slot: bool,
-        ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError> {
+        ) -> Result<Option<DisassembledInstruction>, DisassembleError> {
             Ok(None)
         }
 
@@ -463,7 +463,7 @@ mod tests {
             &mut self,
             _addr: Address,
             _bytes: &[u8],
-        ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError> {
+        ) -> Result<Option<DisassembledInstruction>, DisassembleError> {
             Ok(None)
         }
 
@@ -472,7 +472,7 @@ mod tests {
             _addr: Address,
             _bytes: &[u8],
             _disassembler_context: &mut dyn DisassemblerContext,
-        ) -> Result<Option<Box<dyn PseudoInstructionLike>>, DisassembleError> {
+        ) -> Result<Option<DisassembledInstruction>, DisassembleError> {
             Ok(None)
         }
 

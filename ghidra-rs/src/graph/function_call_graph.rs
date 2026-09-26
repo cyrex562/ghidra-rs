@@ -336,6 +336,7 @@ pub(crate) mod tests {
     pub(crate) struct MockFunction {
         name: String,
         entry: Address,
+        thunked: Option<Arc<dyn Function>>,
     }
 
     impl MockFunction {
@@ -343,7 +344,13 @@ pub(crate) mod tests {
             Self {
                 name: name.to_string(),
                 entry: mock_address(entry_offset),
+                thunked: None,
             }
+        }
+
+        /// A thunk function at `entry_offset` that thunks `target`.
+        pub(crate) fn thunk(name: &str, entry_offset: i64, target: Arc<dyn Function>) -> Self {
+            Self { thunked: Some(target), ..Self::new(name, entry_offset) }
         }
     }
 
@@ -584,7 +591,7 @@ pub(crate) mod tests {
         }
 
         fn get_thunked_function(&self, _recursive: bool) -> Option<Arc<dyn Function>> {
-            None
+            self.thunked.clone()
         }
 
         fn set_thunked_function(&mut self, _thunked_function: Option<Arc<dyn Function>>) -> Result<(), String> {
@@ -596,7 +603,7 @@ pub(crate) mod tests {
         }
 
         fn is_thunk(&self) -> bool {
-            false
+            self.thunked.is_some()
         }
 
         fn has_var_args(&self) -> bool {
