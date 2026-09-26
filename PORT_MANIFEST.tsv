@@ -7142,7 +7142,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cart/Cart
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/coff/CoffArchiveFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats coff 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/coff/CoffArchiveFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats coff 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/complzss/CompLzssFileSystem.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats complzss 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/complzss/CompLzssFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats complzss 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/complzss/CompLzssFileSystemFactory.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats complzss 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cpio/CpioFileSystem.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats cpio 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cpio/CpioFileSystemFactory.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats cpio 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cramfs 
@@ -7381,7 +7381,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzfse/Lzf
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzfse/LzfseFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats lzfse 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats lzss 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssCodec.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats lzss 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssCompressionHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats lzss 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssCompressionHeader.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats lzss 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats lzss 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssUtil.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats lzss 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/omf/OmfArchiveFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats omf 

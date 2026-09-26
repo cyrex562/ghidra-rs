@@ -3,7 +3,8 @@
 //! A pseudo-filesystem holding the decompressed contents of an Apple `complzss` container
 //! (an `LzssCompressionHeader` followed by an LZSS stream). The
 //! decompression, via [`crate::file::formats::lzss::lzss_codec::decompress`], happens in
-//! `CompLzssFileSystemFactory` (not yet ported); this type only presents the result.
+//! [`CompLzssFileSystemFactory`](super::comp_lzss_file_system_factory::CompLzssFileSystemFactory);
+//! this type only presents the result.
 
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;

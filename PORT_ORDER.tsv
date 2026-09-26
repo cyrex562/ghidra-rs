@@ -3445,7 +3445,7 @@ TODO	struct	0	2	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 TODO	struct	0	2	91	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ibootim/iBootImHeader.java
 TODO	struct	0	2	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/png/IHDRChunk.java
 TODO	struct	0	2	73	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/png/ProcessedPNG.java
-TODO	struct	0	2	20	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssCompressionHeader.java
+DONE	struct	0	2	20	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssCompressionHeader.java
 TODO	struct	0	2	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipCliToolWrapper.java
 TODO	struct	1	1	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/RecognizerService.java
 TODO	struct	1	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipCustomInitializer.java
@@ -3739,7 +3739,7 @@ TODO	struct	0	1	9	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 TODO	struct	1	1	25	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cart/CartFileSystemFactory.java
 TODO	struct	1	1	24	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/coff/CoffArchiveFileSystemFactory.java
 TODO	struct	2	1	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzss/LzssAnalyzer.java
-TODO	struct	1	1	28	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/complzss/CompLzssFileSystemFactory.java
+DONE	struct	1	1	28	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/complzss/CompLzssFileSystemFactory.java
 DONE	struct	1	1	24	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cpio/CpioFileSystemFactory.java
 TODO	struct	0	1	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsBlockFactory.java
 TODO	struct	0	1	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/LazyCramFsInputStream.java

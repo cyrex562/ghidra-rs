@@ -10,6 +10,8 @@ use std::rc::Rc;
 use crate::filesystem::gfilesystem::abstract_single_payload_file_system::SinglePayloadFileSystem;
 use crate::filesystem::gfilesystem::factory::file_system_factory_mgr::FileSystemFactoryMgr;
 
+use super::complzss::comp_lzss_file_system::CompLzssFileSystem;
+use super::complzss::comp_lzss_file_system_factory::CompLzssFileSystemFactory;
 use super::cpio::cpio_file_system::CpioFileSystem;
 use super::cpio::cpio_file_system_factory::CpioFileSystemFactory;
 use super::gzip::g_zip_file_system::GZipFileSystem;
@@ -17,6 +19,7 @@ use super::gzip::g_zip_file_system_factory::GZipFileSystemFactory;
 
 /// Registers every filesystem in `crate::file::formats` that has a ported factory.
 pub fn register_file_system_factories(mgr: &mut FileSystemFactoryMgr) {
+    mgr.register::<CompLzssFileSystem>(&CompLzssFileSystem::INFO, Rc::new(CompLzssFileSystemFactory));
     mgr.register::<CpioFileSystem>(&CpioFileSystem::INFO, Rc::new(CpioFileSystemFactory));
     mgr.register::<GZipFileSystem>(&GZipFileSystem::INFO, Rc::new(GZipFileSystemFactory));
 }
@@ -71,6 +74,66 @@ mod tests {
         assert!(names.contains(&"GZIP".to_string()));
         assert_eq!(mgr.get_file_system_type::<CpioFileSystem>().as_deref(), Some("cpio"));
         assert!(names.contains(&"CPIO".to_string()));
+    }
+
+    /// A container as `CompLzssFileSystemFactory` accepts it: an `LzssCompressionHeader` whose
+    /// first two ints are `"lzss"`, `"comp"` (Java's probe order), then the LZSS stream.
+    fn lzss_container_bytes(payload: &[u8]) -> Vec<u8> {
+        use crate::file::formats::lzss::lzss_constants::PADDING_LENGTH;
+        let mut compressed = Vec::new();
+        crate::file::formats::lzss::lzss_codec::compress(&mut compressed, &mut &payload[..]).unwrap();
+        let mut b = Vec::new();
+        b.extend_from_slice(b"lzsscomp");
+        b.extend_from_slice(&0u32.to_be_bytes());
+        b.extend_from_slice(&(payload.len() as u32).to_be_bytes());
+        b.extend_from_slice(&(compressed.len() as u32).to_be_bytes());
+        b.extend(std::iter::repeat_n(0u8, PADDING_LENGTH));
+        b.extend_from_slice(&compressed);
+        b
+    }
+
+    #[test]
+    fn lzss_payload_by_fsrl_string_is_decompressed_through_the_service() {
+        let dir = tempfile::tempdir().unwrap();
+        let container = dir.path().join("kernelcache");
+        let payload: Vec<u8> = PAYLOAD.iter().copied().cycle().take(5000).collect();
+        std::fs::write(&container, lzss_container_bytes(&payload)).unwrap();
+        let svc = service(dir.path());
+
+        let fsrl =
+            Fsrl::from_string(&format!("file://{}|lzss:///lzss_decompressed", container.display())).unwrap();
+        let bp = svc.get_byte_provider(&fsrl, false, &DummyMonitor).unwrap();
+        assert_eq!(bp.length(), payload.len() as u64);
+        assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), payload);
+        assert!(bp.get_fsrl().unwrap().md5().is_some());
+        drop(bp);
+
+        let local = svc.get_local_fsrl(&container);
+        let fs_ref = svc
+            .probe_file_for_filesystem(&local, &DummyMonitor, None, PRIORITY_LOWEST)
+            .unwrap()
+            .expect("lzss recognized");
+        let fs = std::rc::Rc::clone(fs_ref.get_filesystem());
+        assert_eq!(fs.get_type(), "lzss");
+        assert_eq!(fs.get_description(), "LZSS Compression");
+        let listing = fs.get_listing(None).unwrap();
+        assert_eq!(listing.len(), 1);
+        assert_eq!(listing[0].get_name(), "lzss_decompressed");
+        assert!(svc.has_derived_file(&svc.get_fully_qualified_fsrl(&local, &DummyMonitor).unwrap(), "decompressed lzss", &DummyMonitor).unwrap());
+        svc.release_file_system_immediate(Some(fs_ref));
+        assert!(fs.is_closed());
+    }
+
+    #[test]
+    fn apple_comp_lzss_order_is_not_probed_like_java() {
+        let dir = tempfile::tempdir().unwrap();
+        let container = dir.path().join("apple.lzss");
+        let mut bytes = lzss_container_bytes(PAYLOAD);
+        bytes[..8].copy_from_slice(b"complzss");
+        std::fs::write(&container, bytes).unwrap();
+        let svc = service(dir.path());
+        let local = svc.get_local_fsrl(&container);
+        assert!(!svc.is_file_filesystem_container(&local, &DummyMonitor).unwrap());
     }
 
     fn cpio_archive_bytes() -> Vec<u8> {
