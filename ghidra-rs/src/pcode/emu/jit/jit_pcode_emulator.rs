@@ -726,7 +726,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn crate::pcode::seam_stubs::RegisterValue>,
+            _context: Option<&crate::program::model::lang::register_value::RegisterValue>,
         ) -> Result<Box<dyn crate::pcode::seam_stubs::PseudoInstruction>, Box<dyn std::error::Error>>
         {
             unimplemented!("not exercised by these tests")
@@ -806,13 +806,26 @@ mod tests {
         // The cache is keyed by (contextreg value, address): a different context at the same
         // address is a different entry point. Java: `AddrCtx.equals` compares `biCtx` and
         // `address`.
-        struct Ctx(i128);
-        impl crate::pcode::seam_stubs::RegisterValue for Ctx {
-            fn get_unsigned_value(&self) -> i128 {
-                self.0
-            }
+        /// A real contextreg value: a 4-byte `contextreg` register fully known as `value`.
+        fn context_value(value: u128) -> crate::program::model::lang::register_value::RegisterValue {
+            let space = crate::program::model::address::AddressSpace::new(
+                "register",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Register,
+                0,
+            );
+            let contextreg = crate::program::model::lang::register::Register::new(
+                "contextreg",
+                "",
+                crate::program::model::address::Address::new(space, 0),
+                4,
+                false,
+                0,
+            );
+            crate::program::model::lang::register_value::RegisterValue::with_value(contextreg, value)
         }
-        let other_ctx = AddrCtx::new(Some(Arc::new(Ctx(7))), ram(0x400));
+        let other_ctx = AddrCtx::new(Some(context_value(7)), ram(0x400));
         assert!(!emulator.has_entry_prototype(&other_ctx));
     }
 

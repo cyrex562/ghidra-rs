@@ -56,7 +56,8 @@ use crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
 use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
-use crate::pcode::seam_stubs::{PseudoInstruction, RegisterValue};
+use crate::pcode::seam_stubs::PseudoInstruction;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::Address;
 use crate::program::model::lang::language::Language;
 use crate::program::model::listing::instruction::Instruction;
@@ -103,7 +104,7 @@ impl InstructionDecoder for SymZ3InstructionDecoder {
     fn decode_instruction(
         &mut self,
         address: &Address,
-        context: Option<&dyn RegisterValue>,
+        context: Option<&RegisterValue>,
     ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
         let instruction = self.decoder.decode_instruction(address, context)?;
         // The decoded `PseudoInstruction` is not (yet) an `Instruction`; the decoder keeps the one

@@ -38,9 +38,9 @@ use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::emu::jit::analysis::jit_control_flow_model::{BlockSplitter, BlockTable, JitBlock};
 use crate::pcode::seam_stubs::{
-    exit_pcode_op, nop_pcode_op, AddrCtx, ErrBranch, PBranch, PseudoInstruction, Reachability,
-    RegisterValue, SBranch, SExtBranch, SIndBranch, SIntBranch,
+    exit_pcode_op, nop_pcode_op, AddrCtx, ErrBranch, PBranch, PseudoInstruction, Reachability, SBranch, SExtBranch, SIndBranch, SIntBranch,
 };
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::{Address, AddressSpaceType};
 use crate::program::model::lang::disassembler_context::DisassemblerContext;
 use crate::program::model::lang::disassembler_context_adapter::DisassemblerContextAdapter;
@@ -86,14 +86,11 @@ pub struct DecoderExecutor<'d> {
 
     /// The input context for the next decoded instruction, not accounting for `globalset`. Port of
     /// `DecoderExecutor.flow`. See [`set_instruction`](Self::set_instruction).
-    flow: Option<Arc<dyn RegisterValue>>,
+    flow: Option<RegisterValue>,
     /// The context changes this instruction's constructors placed at specific addresses via
     /// `globalset`. Port of `DecoderExecutor.futCtx`.
     ///
-    /// The values are `program::seam_stubs::RegisterValue`, not the `pcode::seam_stubs` trait
-    /// [`flow`](Self::flow) uses: they arrive through [`DisassemblerContext`], which speaks the
-    /// former. The two are placeholders for the same unported Java class, and combining across them
-    /// is what blocks [`take_target_context`](Self::take_target_context)'s second arm.
+    /// They arrive through [`DisassemblerContext`].
     fut_ctx: HashMap<Address, LangRegisterValue>,
 
     /// Every op interpreted during this step, in order. Port of `DecoderExecutor.opsForThisStep`.
@@ -187,11 +184,9 @@ impl<'d> DecoderExecutor<'d> {
     ///
     /// # Panics
     ///
-    /// When the language has a context register *and* a non-error instruction was decoded: the
-    /// flow context is built as `new RegisterValue(contextreg, ZERO).combineValues(...)`, and
-    /// `ghidra.program.model.lang.RegisterValue` is not ported -- there is no concrete
-    /// implementation of either `RegisterValue` placeholder to construct. Languages without a
-    /// context register take the other arm and work.
+    /// When the language has a context register *and* a non-error instruction was decoded: that
+    /// arm builds the flow context and then runs Java's `processContextChanges()`, which is not
+    /// ported yet. Languages without a context register take the other arm and work.
     pub fn set_instruction(&mut self, instruction: Option<Arc<dyn PseudoInstruction>>) {
         let is_decode_error =
             instruction.as_deref().is_some_and(|i| i.decode_error_message().is_some());
@@ -202,7 +197,7 @@ impl<'d> DecoderExecutor<'d> {
         }
         let _ = (self.decoder.contextreg(), self.decoder.default_context());
         unimplemented!(
-            "DecoderExecutor::set_instruction: the flow context needs RegisterValue, not yet ported"
+            "DecoderExecutor::set_instruction: the flow context needs processContextChanges, not yet ported"
         )
     }
 
@@ -216,7 +211,7 @@ impl<'d> DecoderExecutor<'d> {
     pub fn decode_instruction(&mut self) -> Arc<dyn PseudoInstruction> {
         let decoded = self
             .decoder
-            .decode_instruction(&self.at.address, self.at.rv_ctx.as_deref())
+            .decode_instruction(&self.at.address, self.at.rv_ctx.as_ref())
             .unwrap_or_else(|err| panic!("DecoderExecutor::decode_instruction: {err}"));
         // Java keeps the one instruction object in both this executor and the stride's list; `Arc`
         // is how that aliasing is spelled here.
@@ -572,18 +567,15 @@ impl<'d> DecoderExecutor<'d> {
     ///
     /// # Panics
     ///
-    /// When a `globalset` did land on `target`: combining requires the two `RegisterValue`
-    /// placeholders to be one type (see [`fut_ctx`](Self::fut_ctx)). Without a `globalset` -- the
-    /// case for every instruction that does not modify context -- this is exact.
+    /// When a `globalset` landed on `target` but there is no flow context (Java's
+    /// `NullPointerException` on `flow.combineValues`).
     pub fn take_target_context(&self, target: &Address) -> AddrCtx {
-        if !self.fut_ctx.contains_key(target) {
+        let Some(fut) = self.fut_ctx.get(target) else {
             return AddrCtx::new(self.flow.clone(), target.clone());
-        }
+        };
         // Do not remove, in case there are multiple branches to the same target address.
-        unimplemented!(
-            "DecoderExecutor::take_target_context cannot combine a globalset context: the decode \
-             context and the disassembler context are separate RegisterValue placeholders"
-        )
+        let flow = self.flow.as_ref().expect("a globalset context implies a flow context");
+        AddrCtx::new(Some(flow.combine_values(fut)), target.clone())
     }
 
     /// After p-code interpretation, check if the instruction has fall through, notify the stride
@@ -946,7 +938,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             unimplemented!("not exercised by these smoke tests")
         }
@@ -1204,6 +1196,35 @@ mod tests {
         let to = executor.take_target_context(&ram(0x2000));
         assert!(to == AddrCtx::new(None, ram(0x2000)));
         assert_eq!(to.bi_ctx, 0);
+    }
+
+    /// Java: when a `globalset` landed on the target, `takeTargetContext` combines it onto the
+    /// flow context -- the committed bits win, the rest of the flow context is kept.
+    #[test]
+    fn take_target_context_combines_a_globalset_onto_the_flow_context() {
+        let space = AddressSpace::new("register", 32, 1, AddressSpaceType::Register, 0);
+        let contextreg = crate::program::model::lang::register::Register::new(
+            "contextreg",
+            "",
+            Address::new(space, 0),
+            4,
+            false,
+            crate::program::model::lang::register::Register::TYPE_CONTEXT,
+        );
+        let decoder = mock_decoder();
+        let flow = LangRegisterValue::with_value(contextreg.clone(), 0x0000_0010);
+        let mut executor = DecoderExecutor::new(&decoder, AddrCtx::new(Some(flow), ram(0x1000)));
+        // With no decoded instruction the flow context is the input context.
+        executor.set_instruction(None);
+
+        // A commit of just the second byte at 0x2000.
+        let commit = LangRegisterValue::with_value_and_mask(contextreg, 0x0000_0200, 0x0000_FF00);
+        DisassemblerContextAdapter::set_future_register_value(&mut executor, ram(0x2000), commit);
+
+        assert_eq!(executor.take_target_context(&ram(0x2000)).bi_ctx, 0x0210);
+        // Other targets see the plain flow context; the commit is not consumed.
+        assert_eq!(executor.take_target_context(&ram(0x3000)).bi_ctx, 0x0010);
+        assert_eq!(executor.take_target_context(&ram(0x2000)).bi_ctx, 0x0210);
     }
 
     /// Java: with no decoded instruction, `getAdvancedAddress` warns and returns the current

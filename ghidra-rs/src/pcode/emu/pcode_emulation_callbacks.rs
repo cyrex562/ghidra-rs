@@ -45,7 +45,7 @@ use crate::pcode::exec::pcode_state_callbacks::{rng_set, PcodeStateCallbacks};
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
-use crate::pcode::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::{Address, AddressSet, AddressSetView, AddressSpace};
 use crate::program::model::listing::Instruction;
 use crate::program::model::pcode::PcodeOp;
@@ -120,7 +120,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
         &self,
         _thread: &dyn ErasedPcodeThread,
         _counter: &Address,
-        _context: Option<&dyn RegisterValue>,
+        _context: Option<&RegisterValue>,
     ) {
     }
 

@@ -14,10 +14,6 @@
 //!
 //! # Deviations
 //!
-//! * The context comes in through the emulator's placeholder `RegisterValue`
-//!   ([`crate::pcode::seam_stubs::RegisterValue`]), which carries no mask; it is taken as a value
-//!   of the whole register, which is what the emulator's context always is (Java builds it as
-//!   `new RegisterValue(contextreg, value)`).
 //! * Java's disassembly listener logs through `Msg.warn(this, msg)` and records the message; the
 //!   recorded message is shared with the listener the disassembler holds.
 
@@ -31,7 +27,7 @@ use crate::pcode::emulate::instruction_decode_exception::InstructionDecodeExcept
 use crate::pcode::exec::decode_pcode_execution_exception::DecodePcodeExecutionException;
 use crate::pcode::exec::pcode_arithmetic::Purpose;
 use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
-use crate::pcode::seam_stubs::{PseudoInstruction as DecodedInstruction, RegisterValue as EmulatorRegisterValue};
+use crate::pcode::seam_stubs::PseudoInstruction as DecodedInstruction;
 use crate::program::disassemble::disassembler::{DisassembledBlock, DisassembledInstruction, Disassembler};
 use crate::program::disassemble::disassembler_message_listener::DisassemblerMessageListener;
 use crate::program::model::address::{Address, AddressFactory};
@@ -170,14 +166,11 @@ impl<T, S: PcodeExecutorStatePiece<T, T>> InstructionDecoder for SleighInstructi
     fn decode_instruction(
         &mut self,
         address: &Address,
-        context: Option<&dyn EmulatorRegisterValue>,
+        context: Option<&RegisterValue>,
     ) -> Result<Box<dyn DecodedInstruction>, Box<dyn std::error::Error>> {
         *self.last_msg.lock().expect("last message lock poisoned") = DEFAULT_ERROR.to_string();
         if !self.use_cached_instruction(address) {
-            // see the module docs on the context's mask
-            let context = context
-                .map(|c| RegisterValue::with_value(c.get_register(), c.get_unsigned_value_ignore_mask()));
-            self.parse_new_block(address, context.as_ref())?;
+            self.parse_new_block(address, context)?;
         }
         self.length_with_delays = self.compute_length()?;
         let instruction = self.instruction.as_ref().expect("an instruction was decoded");

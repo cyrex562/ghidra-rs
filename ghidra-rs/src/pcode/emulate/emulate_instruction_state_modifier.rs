@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use crate::pcode::error::lowlevel_error::LowlevelError;
 use crate::pcode::opbehavior::OpBehaviorOther;
-use crate::pcode::seam_stubs::{Emulate, RegisterValue};
+use crate::pcode::seam_stubs::Emulate;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::Address;
 use crate::program::model::lang::Language;
 use crate::program::model::pcode::PcodeOp;
@@ -128,7 +129,7 @@ pub trait EmulateInstructionStateModifier {
         &self,
         _emulate: &dyn Emulate,
         _current_address: &Address,
-        _context_register_value: Option<&dyn RegisterValue>,
+        _context_register_value: Option<&RegisterValue>,
     ) -> Result<(), LowlevelError> {
         // no default implementation
         Ok(())

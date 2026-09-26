@@ -115,6 +115,25 @@ impl RegisterValue {
         Self { register, bytes, start_bit, end_bit }
     }
 
+    /// Constructs a new `RegisterValue` for `register` using a specified value and mask, where
+    /// the set bits of `mask` (relative to `register`'s least significant bit) identify which value
+    /// bits are valid.
+    ///
+    /// Port of `RegisterValue(Register, BigInteger, BigInteger)`: like Java, the mask is shifted
+    /// into position and copied over the mask half as-is (bits above the base register are
+    /// dropped), and the value half is then limited to the masked bits.
+    pub fn with_value_and_mask(register: RegisterRef, value: u128, mask: u128) -> Self {
+        let mut result = Self::with_value(register, value);
+        let n = result.n();
+        let shifted_mask = if result.start_bit >= 128 { 0 } else { mask << result.start_bit };
+        let mask_bytes = u128_to_bytes_be(shifted_mask, n);
+        for i in 0..n {
+            result.bytes[i] = mask_bytes[i];
+            result.bytes[n + i] &= mask_bytes[i];
+        }
+        result
+    }
+
     /// Constructs a new `RegisterValue` object for the given register and the mask/value byte
     /// array (mask/value halves, both sized to the register's *base* register byte length).
     ///
@@ -243,6 +262,45 @@ impl RegisterValue {
             out[i] = mask[i] & self.bytes[i];
         }
         out
+    }
+
+    /// Returns the value mask that indicates which bits relative to this value's register (bit 0
+    /// being its least significant bit) have a valid value.
+    ///
+    /// Port of `RegisterValue.getValueMask()`.
+    pub fn value_mask(&self) -> u128 {
+        let base_mask = bytes_to_u128_be(&self.base_value_mask());
+        if self.start_bit >= 128 { 0 } else { base_mask >> self.start_bit }
+    }
+
+    /// Assigns `value` to the portion of this register value that `sub_register` covers: only
+    /// the bits `value` actually has are applied.
+    ///
+    /// Port of `RegisterValue.assign(Register, RegisterValue)`.
+    ///
+    /// # Panics
+    /// If `sub_register` does not share this value's base register (Java's
+    /// `IllegalArgumentException`).
+    pub fn assign(&self, sub_register: &RegisterRef, value: &RegisterValue) -> RegisterValue {
+        self.check_base_register(sub_register);
+        let other = Self::with_value_and_mask(
+            sub_register.clone(),
+            value.unsigned_value_ignore_mask(),
+            value.value_mask(),
+        );
+        self.combine_values(&other)
+    }
+
+    /// Assigns the fully-known `value` to the portion of this register value that `sub_register`
+    /// covers.
+    ///
+    /// Port of `RegisterValue.assign(Register, BigInteger)`.
+    ///
+    /// # Panics
+    /// If `sub_register` does not share this value's base register.
+    pub fn assign_value(&self, sub_register: &RegisterRef, value: u128) -> RegisterValue {
+        self.check_base_register(sub_register);
+        self.combine_values(&Self::with_value(sub_register.clone(), value))
     }
 
     /// Tests if this `RegisterValue` contains valid value bits for the entire register (i.e.
@@ -508,6 +566,48 @@ mod tests {
         assert_eq!(copy, partial);
         assert_eq!(copy.base_value_mask(), partial.base_value_mask());
         assert_ne!(copy, RegisterValue::with_value(reg, 0x7F));
+    }
+
+    #[test]
+    fn with_value_and_mask_keeps_only_masked_value_bits() {
+        let reg = base_register("r0", 4);
+        let value = RegisterValue::with_value_and_mask(reg, 0x1234_5678, 0x0000_FFFF);
+        assert!(!value.has_value());
+        assert!(value.has_any_value());
+        assert_eq!(value.unsigned_value_ignore_mask(), 0x5678);
+        assert_eq!(value.value_mask(), 0xFFFF);
+        assert_eq!(value.to_bytes(), vec![0, 0, 0xFF, 0xFF, 0, 0, 0x56, 0x78]);
+    }
+
+    #[test]
+    fn value_mask_is_relative_to_the_value_register() {
+        let mut reg = base_register("eax", 4);
+        let ah = child_register(&mut reg, "ah", 1, 1);
+        let ah_value = RegisterValue::with_value(ah, 0x22);
+        // Relative to `ah` itself: all 8 of its bits are known.
+        assert_eq!(ah_value.value_mask(), 0xFF);
+        // Relative to the base register, the known bits sit at bits 8..16.
+        assert_eq!(ah_value.base_register_value().value_mask(), 0xFF00);
+    }
+
+    /// Java's `assign(Register, RegisterValue)` applies only the bits the assigned value has.
+    #[test]
+    fn assign_applies_only_known_bits_of_the_sub_value() {
+        let mut reg = base_register("eax", 4);
+        let children = child_registers(&mut reg, &[("al", 0, 1), ("ah", 1, 1)]);
+        let (al, ah) = (children[0].clone(), children[1].clone());
+        let whole = RegisterValue::with_value(reg.clone(), 0x1111_1111);
+
+        let assigned = whole.assign(&al, &RegisterValue::with_value(al.clone(), 0xAB));
+        assert_eq!(assigned.unsigned_value(), Some(0x1111_11AB));
+
+        // An empty value assigns nothing.
+        let unchanged = whole.assign(&ah, &RegisterValue::new(ah.clone()));
+        assert_eq!(unchanged.unsigned_value(), Some(0x1111_1111));
+
+        let by_int = RegisterValue::new(reg).assign_value(&ah, 0x7F);
+        assert_eq!(by_int.get_register_value(&ah).unsigned_value(), Some(0x7F));
+        assert_eq!(by_int.get_register_value(&al).unsigned_value(), None);
     }
 
     #[test]

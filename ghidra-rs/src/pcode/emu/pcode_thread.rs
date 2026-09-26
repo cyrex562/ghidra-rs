@@ -11,7 +11,7 @@ use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::exec::pcode_executor::PcodeExecutor;
-use crate::pcode::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::Address;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::Instruction;
@@ -123,19 +123,19 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     /// value in the given context are applied to the current context.
     ///
     /// See [`override_context`](Self::override_context).
-    fn assign_context(&mut self, context: &dyn RegisterValue);
+    fn assign_context(&mut self, context: &RegisterValue);
 
     /// Get the thread's decoding context.
     ///
     /// `None` where Java returns `null`, i.e. for a language with no context register.
     /// `RegisterValue` is not clonable here (it is still a bare seam stub), so this hands back a
     /// borrow rather than the owned value Java's reference amounts to.
-    fn get_context(&self) -> Option<&dyn RegisterValue>;
+    fn get_context(&self) -> Option<&RegisterValue>;
 
     /// Adjust the thread's decoding context and write the contextreg of its executor state.
     ///
     /// See [`assign_context`](Self::assign_context).
-    fn override_context(&mut self, context: &dyn RegisterValue);
+    fn override_context(&mut self, context: &RegisterValue);
 
     /// Set the context at the current counter to the default given by the language.
     ///
@@ -470,13 +470,13 @@ mod tests {
             self.set_counter(counter);
         }
 
-        fn assign_context(&mut self, _context: &dyn RegisterValue) {}
+        fn assign_context(&mut self, _context: &RegisterValue) {}
 
-        fn get_context(&self) -> Option<&dyn RegisterValue> {
+        fn get_context(&self) -> Option<&RegisterValue> {
             None
         }
 
-        fn override_context(&mut self, _context: &dyn RegisterValue) {}
+        fn override_context(&mut self, _context: &RegisterValue) {}
 
         fn override_context_with_default(&mut self) {}
 

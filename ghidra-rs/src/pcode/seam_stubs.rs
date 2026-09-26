@@ -63,7 +63,7 @@ use crate::program::model::lang::language::Language;
 use crate::program::model::lang::prototype_model::PrototypeModel;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
-use crate::program::model::listing::default_program_context::DefaultProgramContext;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::program::Program;
 use crate::program::model::listing::program_context::ProgramContext;
 use crate::program::model::listing::variable_storage::VariableStorage;
@@ -326,49 +326,6 @@ impl<C: Send + Sync> PseudoInstruction for crate::app::util::pseudo_instruction:
     }
 }
 
-/// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
-/// [`InstructionDecoder`](crate::pcode::emu::instruction_decoder::InstructionDecoder) before the
-/// real class is ported. This is a minimal interface stub exposing only the methods needed by
-/// existing references.
-///
-/// Grown (see `STUBS.tsv`) with the five members
-/// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread)'s context
-/// handling and [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder)'s
-/// `AddrCtx` construction need. All five are defaulted so pre-existing bare
-/// `impl RegisterValue for Foo {}` blocks keep compiling; the defaults panic, since the real class
-/// carries the value and mask this stub does not.
-pub trait RegisterValue: Send + Sync {
-    /// Stands in for `RegisterValue.getRegister()`: the register this value is associated with.
-    fn get_register(&self) -> RegisterRef {
-        unimplemented!("RegisterValue not yet ported")
-    }
-
-    /// Stands in for `RegisterValue.assign(Register, RegisterValue)`: apply only those bits having
-    /// a value in `value` to this value, yielding the combined value.
-    fn assign(&self, register: &RegisterRef, value: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-        let _ = (register, value);
-        unimplemented!("RegisterValue not yet ported")
-    }
-
-    /// Stands in for `RegisterValue.getUnsignedValueIgnoreMask()`.
-    fn get_unsigned_value_ignore_mask(&self) -> u128 {
-        unimplemented!("RegisterValue not yet ported")
-    }
-
-    /// Stands in for `RegisterValue.combineValues(RegisterValue)`: combine `other`'s masked bits
-    /// onto this value, preferring `other` wherever both specify a bit.
-    fn combine_values(&self, other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-        let _ = other;
-        unimplemented!("RegisterValue not yet ported")
-    }
-
-    /// Stands in for `RegisterValue.getUnsignedValue()`: this value as an unsigned integer
-    /// (`BigInteger` in Java, `i128` here per the crate-wide convention).
-    fn get_unsigned_value(&self) -> i128 {
-        unimplemented!("RegisterValue not yet ported")
-    }
-}
-
 /// Placeholder for `ghidra.pcode.emu.SparseAddressRangeMap`, referenced by
 /// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
 /// as its store of access breakpoints. Exposes the four members that class needs, with the same
@@ -460,86 +417,6 @@ pub use crate::pcode::exec::suspended_pcode_execution_exception::SuspendedPcodeE
 /// [`crate::pcode::exec::injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException`];
 /// re-exported here so any old references to this seam-stub path keep resolving.
 pub use crate::pcode::exec::injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException;
-
-/// Placeholder for `ghidra.program.util.ProgramContextImpl`, the default-context store
-/// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) builds from
-/// its language when the language has a context register.
-///
-/// The real class is ported as
-/// [`program::util::program_context_impl::ProgramContextImpl`](crate::program::util::program_context_impl::ProgramContextImpl).
-/// This placeholder remains only because `DefaultPcodeThread` holds its context in this module's
-/// placeholder [`RegisterValue`] domain; it goes when that thread's context handling moves to the
-/// real `RegisterValue`.
-///
-/// The one behavior this stub really implements is receiving a language's context settings, since
-/// that is what the thread's constructor does with it
-/// (`language.applyContextSettings(defaultContext)`). Every read-back is a value of the *other*
-/// `RegisterValue` stub -- [`crate::program::seam_stubs::RegisterValue`] is what
-/// [`DefaultProgramContext`] deals in, while this module's [`RegisterValue`] is what the emulator
-/// deals in -- and neither stub can be constructed, so the reads panic until the real class lands.
-pub struct ProgramContextImpl {
-    defaults: Vec<(crate::program::model::lang::register_value::RegisterValue, Address, Address)>,
-}
-
-impl ProgramContextImpl {
-    /// Placeholder for `new ProgramContextImpl(Language)`.
-    pub fn new() -> Self {
-        Self { defaults: Vec::new() }
-    }
-
-    /// The context settings received so far, i.e. what `Language.applyContextSettings` recorded.
-    pub fn defaults(&self) -> &[(crate::program::model::lang::register_value::RegisterValue, Address, Address)] {
-        &self.defaults
-    }
-
-    /// Placeholder for the inherited `ProgramContext.getDefaultDisassemblyContext()`.
-    pub fn get_default_disassembly_context(&self) -> Box<dyn RegisterValue> {
-        unimplemented!("ProgramContextImpl not yet ported")
-    }
-
-    /// Placeholder for the inherited `ProgramContext.getDefaultValue(Register, Address)`, in the
-    /// emulator's `RegisterValue` domain. Java returns `null` where there is no default.
-    pub fn get_default_value(
-        &self,
-        register: &RegisterRef,
-        address: &Address,
-    ) -> Option<Box<dyn RegisterValue>> {
-        let _ = (register, address);
-        unimplemented!("ProgramContextImpl not yet ported")
-    }
-
-    /// Placeholder for the inherited `ProgramContext.getFlowValue(RegisterValue)`: the part of the
-    /// given context that flows to the next instruction.
-    pub fn get_flow_value(&self, value: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-        let _ = value;
-        unimplemented!("ProgramContextImpl not yet ported")
-    }
-}
-
-impl Default for ProgramContextImpl {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl DefaultProgramContext for ProgramContextImpl {
-    fn set_default_value(
-        &mut self,
-        register_value: crate::program::model::lang::register_value::RegisterValue,
-        start: &Address,
-        end: &Address,
-    ) {
-        self.defaults.push((register_value, start.clone(), end.clone()));
-    }
-
-    fn get_default_value(
-        &self,
-        _register: &crate::program::model::lang::register::Register,
-        _address: &Address,
-    ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
-        unimplemented!("ProgramContextImpl not yet ported")
-    }
-}
 
 // `ghidra.pcode.exec.BytesPcodeArithmetic` has graduated to a real port at
 // [`crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic`].
@@ -3254,7 +3131,7 @@ impl DecodeErrorInstruction {
     pub fn new(
         _language: Arc<dyn Language>,
         _address: Address,
-        _ctx: Option<&dyn RegisterValue>,
+        _ctx: Option<&RegisterValue>,
         message: impl Into<String>,
     ) -> Self {
         Self { message: message.into() }
@@ -3334,7 +3211,7 @@ impl JitPassage {
     pub fn decode_error(
         language: Arc<dyn Language>,
         address: Address,
-        ctx: Option<&dyn RegisterValue>,
+        ctx: Option<&RegisterValue>,
         message: impl Into<String>,
     ) -> DecodeErrorInstruction {
         DecodeErrorInstruction::new(language, address, ctx, message)
@@ -3366,25 +3243,22 @@ impl JitPassage {
 /// Port of the nested `ghidra.pcode.emu.jit.JitPassage.AddrCtx` record: an address paired with the
 /// contextreg value in effect when decode reaches it. Modelled as a free-standing type here since
 /// Rust has no static nested class; see [`JitPassage`] for the type it nests under in Java.
-///
-/// Not `Debug`: `rv_ctx` is `Option<Arc<dyn RegisterValue>>`, and the stub trait doesn't require
-/// `Debug` of its implementors.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AddrCtx {
     /// The contextreg value as an unsigned integer, or `0` when `rv_ctx` is `None`. Port of
     /// `AddrCtx.biCtx`.
     pub bi_ctx: i128,
     /// The contextreg value, or `None` when the language has no context register. Port of
     /// `AddrCtx.rvCtx`.
-    pub rv_ctx: Option<Arc<dyn RegisterValue>>,
+    pub rv_ctx: Option<RegisterValue>,
     /// The address. Port of `AddrCtx.address`.
     pub address: Address,
 }
 
 impl AddrCtx {
     /// Port of `new AddrCtx(RegisterValue, Address)`.
-    pub fn new(ctx: Option<Arc<dyn RegisterValue>>, address: Address) -> Self {
-        let bi_ctx = ctx.as_deref().map(RegisterValue::get_unsigned_value).unwrap_or(0);
+    pub fn new(ctx: Option<RegisterValue>, address: Address) -> Self {
+        let bi_ctx = ctx.as_ref().map_or(0, |ctx| ctx.unsigned_value_ignore_mask() as i128);
         Self { bi_ctx, rv_ctx: ctx, address }
     }
 
@@ -3407,10 +3281,9 @@ impl PartialEq for AddrCtx {
 
 impl Eq for AddrCtx {}
 
-/// Port of `AddrCtx.toString()`: `"AddrCtx[ctx=%s,addr=%s]".formatted(rvCtx, address)`. `rvCtx` is
-/// an `Option<Arc<dyn RegisterValue>>` and the stub trait doesn't require `Display` of its
-/// implementors, so the context prints as `bi_ctx`, the value `rvCtx` was reduced to -- or as
-/// `null`, matching Java's rendering of a null `rvCtx`, when there is none.
+/// Port of `AddrCtx.toString()`: `"AddrCtx[ctx=%s,addr=%s]".formatted(rvCtx, address)`. The
+/// context prints as `bi_ctx`, the value `rvCtx` was reduced to -- or as `null`, matching Java's
+/// rendering of a null `rvCtx`, when there is none.
 impl std::fmt::Display for AddrCtx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.rv_ctx {
@@ -3812,12 +3685,12 @@ pub struct SIndBranch {
     pub from: PcodeOp,
     /// The decode context after the branch is taken, or `None` when the language has no context
     /// register. Port of `SIndBranch.flowCtx()`.
-    pub flow_ctx: Option<Arc<dyn RegisterValue>>,
+    pub flow_ctx: Option<RegisterValue>,
 }
 
 impl SIndBranch {
     /// Port of `new SIndBranch(PcodeOp, RegisterValue)`.
-    pub fn new(from: PcodeOp, flow_ctx: Option<Arc<dyn RegisterValue>>) -> Self {
+    pub fn new(from: PcodeOp, flow_ctx: Option<RegisterValue>) -> Self {
         Self { from, flow_ctx }
     }
 
@@ -3834,7 +3707,7 @@ pub struct RIndBranch {
     /// The op performing the branch. Port of `RIndBranch.from()`.
     pub from: PcodeOp,
     /// The decode context after the branch is taken. Port of `RIndBranch.flowCtx()`.
-    pub flow_ctx: Option<Arc<dyn RegisterValue>>,
+    pub flow_ctx: Option<RegisterValue>,
     /// The intra-instruction reachability. Port of `RIndBranch.reach()`.
     pub reach: Reachability,
 }

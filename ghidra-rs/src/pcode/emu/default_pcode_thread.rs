@@ -53,10 +53,13 @@
 //!   `Arc<dyn Language>` constructor parameter, exactly as [`PcodeExecutor`] does. A
 //!   `SleighLanguage` built from a `.sla` alone has no program counter (only a `.pspec` declares
 //!   one), which this class requires.
-//! * **Context.** `RegisterValue` is still a bare seam stub in this crate (two of them, in fact --
-//!   see [`ProgramContextImpl`]), and cannot be constructed, so the paths that build a context
-//!   value panic. A language without a context register -- Java's `Register.NO_CONTEXT`, rendered
-//!   here as `None` -- is fully supported, and that is what the tests exercise.
+//! * **Context.** The decode context is the real [`RegisterValue`], seeded from a real
+//!   [`ProgramContextImpl`] over the language's context settings, and re-read from the state by
+//!   [`ThreadCore::re_initialize`]. Advancing it after an instruction
+//!   ([`DefaultPcodeThread::advance_after_finished`]) additionally needs Java's
+//!   `getContextAfterCommits` (the decoded instruction's parser-context commits), which is not
+//!   ported yet, so that path panics for a language with a context register. A language without
+//!   one -- Java's `Register.NO_CONTEXT`, rendered here as `None` -- is fully supported.
 //! * **Exceptions.** Java throws from `stepInstruction`, `executeInstruction`, and friends;
 //!   [`PcodeThread`]'s documented Rust rendering is to panic, so a `PcodeExecutionException`
 //!   escaping the executor is recorded into [`get_frame`](PcodeThread::get_frame) (as Java does)
@@ -88,9 +91,11 @@ use crate::pcode::exec::pcode_userop_library::{
 use crate::pcode::exec::injection_error_pcode_execution_exception::InjectionErrorPcodeExecutionException;
 use crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException;
 use crate::pcode::exec::suspended_pcode_execution_exception::SuspendedPcodeExecutionException;
-use crate::pcode::seam_stubs::{
-    ProgramContextImpl, RegisterValue, SleighProgramCompiler,
-};
+use crate::pcode::seam_stubs::SleighProgramCompiler;
+use crate::program::model::lang::register_value::RegisterValue;
+use crate::program::model::listing::default_program_context::DefaultProgramContext;
+use crate::program::model::listing::program_context::ProgramContext;
+use crate::program::util::program_context_impl::ProgramContextImpl;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
@@ -414,7 +419,7 @@ where
     /// The language's context register, or `None` for Java's `Register.NO_CONTEXT`.
     contextreg: Option<RegisterRef>,
     counter: Address,
-    context: Option<Box<dyn RegisterValue>>,
+    context: Option<RegisterValue>,
     instruction: Option<Arc<dyn Instruction>>,
     frame: Option<PcodeFrame>,
     default_context: Option<ProgramContextImpl>,
@@ -496,8 +501,8 @@ where
     }
 
     /// The thread's decoding context. Port of `getContext()`.
-    pub fn get_context(&self) -> Option<&dyn RegisterValue> {
-        self.context.as_deref()
+    pub fn get_context(&self) -> Option<&RegisterValue> {
+        self.context.as_ref()
     }
 
     /// The current frame, if present. Port of the `frame` field.
@@ -533,7 +538,7 @@ where
 
     /// Port of the final `writeContext(RegisterValue)`: adjust the context and write the contextreg
     /// of this thread's state.
-    pub fn write_context(&mut self, context: Option<&dyn RegisterValue>) {
+    pub fn write_context(&mut self, context: Option<&RegisterValue>) {
         if self.contextreg.is_none() && context.is_none() {
             return;
         }
@@ -549,7 +554,7 @@ where
             .expect("a context value implies a context register");
         let size = contextreg.minimum_byte_size();
         let value = self.arithmetic.from_const_big_int(
-            current.get_unsigned_value_ignore_mask() as i128,
+            current.unsigned_value_ignore_mask() as i128,
             size,
             true,
         );
@@ -564,8 +569,8 @@ where
     /// # Panics
     ///
     /// If the value is not the contextreg's, as Java throws `IllegalArgumentException`.
-    pub fn assign_context(&mut self, context: &dyn RegisterValue) {
-        let register = context.get_register();
+    pub fn assign_context(&mut self, context: &RegisterValue) {
+        let register = context.register();
         let base = register.get_base_register();
         let is_contextreg = match &self.contextreg {
             Some(contextreg) => same_register(&base, contextreg),
@@ -588,9 +593,10 @@ where
         else {
             return;
         };
-        let default_value = default_context.get_default_value(&contextreg, &self.counter);
+        let default_value =
+            DefaultProgramContext::get_default_value(default_context, &contextreg, &self.counter);
         if let Some(default_value) = default_value {
-            self.write_context(Some(default_value.as_ref()));
+            self.write_context(Some(&default_value));
         }
     }
 
@@ -620,12 +626,20 @@ where
             .address_from_word_offset(offset)
             .unwrap_or_else(|e| panic!("{e:?}"));
 
-        if self.contextreg.is_some() {
-            // Java reads the contextreg from the state and assigns `new RegisterValue(contextreg,
-            // ctx)`. RegisterValue is still a seam stub here and cannot be constructed.
-            unimplemented!(
-                "re-initializing the decode context needs the real RegisterValue port"
-            );
+        if let Some(contextreg) = self.contextreg.clone() {
+            // Java catches an `AccessPcodeExecutionException` from `getVar` here ("contextreg not
+            // recorded in trace"); state reads in this port do not report access failures, so the
+            // value read is always assigned.
+            let value = self
+                .state
+                .lock()
+                .expect("thread state lock poisoned")
+                .get_var_register(&contextreg, Reason::ReInit);
+            let ctx = self
+                .arithmetic
+                .to_big_integer(&value, Purpose::Context)
+                .unwrap_or_else(|e| panic!("{e}"));
+            self.assign_context(&RegisterValue::with_value(contextreg, ctx as u128));
         }
 
         #[allow(deprecated)]
@@ -715,7 +729,7 @@ where
     /// This crate's decoder hands back a `PseudoInstruction`, which is not (yet) an
     /// [`Instruction`], so the decoded instruction is recovered from the decoder itself.
     fn decode_instruction(&mut self, address: &Address) {
-        let context = self.context.as_deref();
+        let context = self.context.as_ref();
         self.decoder
             .decode_instruction(address, context)
             .unwrap_or_else(|e| panic!("{e}"));
@@ -946,7 +960,7 @@ where
         // the thread's context from it.
         let (default_context, context) = match &contextreg {
             Some(_) => {
-                let mut default_context = ProgramContextImpl::new();
+                let mut default_context = ProgramContextImpl::new(Arc::clone(&exec_language));
                 exec_language.apply_context_settings(&mut default_context);
                 let context = default_context.get_default_disassembly_context();
                 (Some(default_context), Some(context))
@@ -1031,7 +1045,7 @@ where
     }
 
     /// Port of the final `writeContext(RegisterValue)`. See [`ThreadCore::write_context`].
-    pub fn write_context(&mut self, context: Option<&dyn RegisterValue>) {
+    pub fn write_context(&mut self, context: Option<&RegisterValue>) {
         self.core.write_context(context);
     }
 
@@ -1121,8 +1135,9 @@ where
         }
         if self.core.contextreg.is_some() {
             // Java combines the language default, the flow value, and the context committed while
-            // decoding, then writes the result. Each of those is a RegisterValue, still a seam stub.
-            unimplemented!("advancing the decode context needs the real RegisterValue port");
+            // decoding (`getContextAfterCommits`, which reads the decoded instruction's parser
+            // context commits), then writes the result. The commit read is not ported yet.
+            unimplemented!("advancing the decode context needs getContextAfterCommits");
         }
         self.hooks.post_execute_instruction(&mut self.core);
         cb.after_execute_instruction(&*self, instruction.as_ref());
@@ -1233,15 +1248,15 @@ where
         self.hooks.override_counter(&mut self.core, counter);
     }
 
-    fn assign_context(&mut self, context: &dyn RegisterValue) {
+    fn assign_context(&mut self, context: &RegisterValue) {
         self.core.assign_context(context);
     }
 
-    fn get_context(&self) -> Option<&dyn RegisterValue> {
+    fn get_context(&self) -> Option<&RegisterValue> {
         self.core.get_context()
     }
 
-    fn override_context(&mut self, context: &dyn RegisterValue) {
+    fn override_context(&mut self, context: &RegisterValue) {
         self.core.write_context(Some(context));
     }
 
@@ -1319,7 +1334,7 @@ where
     fn execute_instruction(&mut self) {
         let cb = Arc::clone(self.core.machine.callbacks());
         let counter = self.core.counter.clone();
-        cb.before_decode_instruction(&*self, &counter, self.core.context.as_deref());
+        cb.before_decode_instruction(&*self, &counter, self.core.context.as_ref());
         self.core.decode_instruction(&counter);
         let instruction = self.core.require_instruction();
         let ins_prog = PcodeProgram::from_instruction(instruction.as_ref());
@@ -1348,7 +1363,7 @@ where
         self.core.assert_completed_instruction();
         let cb = Arc::clone(self.core.machine.callbacks());
         let counter = self.core.counter.clone();
-        cb.before_decode_instruction(&*self, &counter, self.core.context.as_deref());
+        cb.before_decode_instruction(&*self, &counter, self.core.context.as_ref());
         self.core.decode_instruction(&counter);
         let advanced = counter.add_wrap(self.core.decoder.get_last_length_with_delays() as i64);
         self.override_counter(&advanced);
@@ -1628,7 +1643,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             self.decoded.lock().unwrap().push(address.offset());
             Ok(Box::new(NoInstruction))
@@ -1656,7 +1671,7 @@ mod tests {
             &self,
             _thread: &dyn ErasedPcodeThread,
             counter: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) {
             self.events
                 .lock()
@@ -2247,7 +2262,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             let pcode = self
                 .program

@@ -410,10 +410,8 @@ ts	stub_class	referenced_by
 2026-08-09T02:51:08.910349+00:00	OverloadedSleighPcodeUseropDefinition	AbstractSleighPcodeUseropDefinition
 2026-08-09T03:02:53.728677+00:00	ValueLocation	LocationPcodeArithmetic
 2026-08-08T23:28:25.000000+00:00	PseudoInstruction	InstructionDecoder
-2026-08-08T23:28:25.000000+00:00	RegisterValue	InstructionDecoder
 2026-08-09T05:10:00.000000+00:00	ComposedPcodeUseropLibrary	PcodeUseropLibrary
 2026-08-09T06:00:00.000000+00:00	Emulate	EmulateInstructionStateModifier
-2026-08-09T06:00:00.000000+00:00	RegisterValue	EmulateInstructionStateModifier
 2026-08-09T06:31:24.372319+00:00	SparseAddressRangeMap	AbstractPcodeMachine
 2026-08-09T06:31:24.372319+00:00	InterruptPcodeExecutionException	AbstractPcodeMachine
 2026-08-09T06:31:24.372319+00:00	SleighProgramCompiler	AbstractPcodeMachine
@@ -434,8 +432,6 @@ ts	stub_class	referenced_by
 2026-08-09T00:00:00.000000+00:00	PcodeInjectLibrary(grown)	PcodeProgram
 2026-08-10T04:31:06.962065+00:00	SuspendedPcodeExecutionException	DefaultPcodeThread
 2026-08-10T04:31:06.962065+00:00	InjectionErrorPcodeExecutionException	DefaultPcodeThread
-2026-08-10T04:31:06.962065+00:00	ProgramContextImpl	DefaultPcodeThread
-2026-08-10T04:31:06.962065+00:00	RegisterValue	DefaultPcodeThread
 2026-08-10T07:42:31.608240+00:00	LogicalBreakpoint	LogicalBreakpointsChangeListener
 2026-08-10T08:12:00.000000+00:00	LogicalBreakpoint	DebuggerLogicalBreakpointService
 2026-08-10T08:12:00.000000+00:00	LogicalBreakpointState	DebuggerLogicalBreakpointService
@@ -599,7 +595,6 @@ ts	stub_class	referenced_by
 2026-08-12T10:08:50.449345+00:00	DecodePcodeExecutionException	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	JitPassage	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	DecoderForOnePassage	JitPassageDecoder
-2026-08-12T10:08:50.449345+00:00	RegisterValue	JitPassageDecoder
 2026-08-13T01:15:04.853356+00:00	Reachability	DecoderForOneStride
 2026-08-13T01:15:04.853356+00:00	RExtBranch	DecoderForOneStride
 2026-08-13T01:15:04.853356+00:00	DecodedStride	DecoderForOneStride

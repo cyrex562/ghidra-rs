@@ -25,8 +25,8 @@ use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
 use crate::pcode::seam_stubs::{
     AddrCtx, DecodePcodeExecutionException, DecoderForOnePassage, JitPassage, PseudoInstruction,
-    RegisterValue,
 };
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::Address;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::program_context::ProgramContext;
@@ -76,7 +76,7 @@ impl JitPassageDecoder {
     pub fn decode_passage_at(
         &self,
         seed: &Address,
-        ctx_in: Option<Arc<dyn RegisterValue>>,
+        ctx_in: Option<RegisterValue>,
         max_ops: i32,
     ) -> JitPassage {
         self.decode_passage(AddrCtx::new(ctx_in, seed.clone()), max_ops)
@@ -115,7 +115,7 @@ impl JitPassageDecoder {
     pub(crate) fn decode_instruction(
         &self,
         address: &Address,
-        ctx: Option<&dyn RegisterValue>,
+        ctx: Option<&RegisterValue>,
     ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
         let mut decoder = self.decoder.lock().expect("decoder mutex poisoned");
         match decoder.decode_instruction(address, ctx) {
@@ -211,7 +211,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             match self.next.take().expect("decode_instruction called more than once") {
                 Ok(instr) => Ok(instr),
@@ -460,13 +460,26 @@ mod tests {
         assert_eq!(none_ctx.bi_ctx, 0);
         assert!(none_ctx.rv_ctx.is_none());
 
-        struct FixedValue(i128);
-        impl RegisterValue for FixedValue {
-            fn get_unsigned_value(&self) -> i128 {
-                self.0
-            }
+        /// A real contextreg value: a 4-byte `contextreg` register fully known as `value`.
+        fn context_value(value: u128) -> crate::program::model::lang::register_value::RegisterValue {
+            let space = crate::program::model::address::AddressSpace::new(
+                "register",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Register,
+                0,
+            );
+            let contextreg = crate::program::model::lang::register::Register::new(
+                "contextreg",
+                "",
+                crate::program::model::address::Address::new(space, 0),
+                4,
+                false,
+                0,
+            );
+            crate::program::model::lang::register_value::RegisterValue::with_value(contextreg, value)
         }
-        let some_ctx: Arc<dyn RegisterValue> = Arc::new(FixedValue(42));
+        let some_ctx = context_value(42);
         let addr_ctx = AddrCtx::new(Some(some_ctx), mock_address(0x400));
         assert_eq!(addr_ctx.bi_ctx, 42);
         assert!(addr_ctx.rv_ctx.is_some());

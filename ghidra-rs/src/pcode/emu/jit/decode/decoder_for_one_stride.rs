@@ -229,7 +229,7 @@ mod tests {
     use crate::pcode::emu::instruction_decoder::InstructionDecoder;
     use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap};
     use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
-    use crate::pcode::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::language::Language;
     use std::sync::{Arc, Mutex};
@@ -242,7 +242,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             unimplemented!("not exercised by this smoke test")
         }
@@ -291,9 +291,7 @@ mod tests {
         let mut stride = DecoderForOneStride::new(&jit_decoder, &mut passage, start.clone());
         let decoded = stride.decode();
 
-        // `AddrCtx` isn't `Debug` (its `rv_ctx` is `Option<Arc<dyn RegisterValue>>`), so compare
-        // via `PartialEq` instead of `assert_eq!`.
-        assert!(decoded.start == start);
+        assert_eq!(decoded.start, start);
         assert!(decoded.instructions.is_empty());
         assert!(decoded.ops.is_empty());
     }
@@ -301,15 +299,28 @@ mod tests {
     /// Java: `AddrCtx.equals` (and thus `Map<AddrCtx, _>` lookups) compare `biCtx`/`address` only.
     #[test]
     fn addr_ctx_equality_ignores_context_object_identity() {
-        struct FixedValue(i128);
-        impl RegisterValue for FixedValue {
-            fn get_unsigned_value(&self) -> i128 {
-                self.0
-            }
+        /// A real contextreg value: a 4-byte `contextreg` register fully known as `value`.
+        fn context_value(value: u128) -> crate::program::model::lang::register_value::RegisterValue {
+            let space = crate::program::model::address::AddressSpace::new(
+                "register",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Register,
+                0,
+            );
+            let contextreg = crate::program::model::lang::register::Register::new(
+                "contextreg",
+                "",
+                crate::program::model::address::Address::new(space, 0),
+                4,
+                false,
+                0,
+            );
+            crate::program::model::lang::register_value::RegisterValue::with_value(contextreg, value)
         }
         let addr = mock_address(0x2000);
-        let a = AddrCtx::new(Some(Arc::new(FixedValue(7))), addr.clone());
-        let b = AddrCtx::new(Some(Arc::new(FixedValue(7))), addr);
+        let a = AddrCtx::new(Some(context_value(7)), addr.clone());
+        let b = AddrCtx::new(Some(context_value(7)), addr);
         assert!(a == b);
     }
 }

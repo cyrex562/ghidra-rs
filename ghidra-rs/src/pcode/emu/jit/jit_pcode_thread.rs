@@ -94,9 +94,9 @@ use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
 use crate::pcode::seam_stubs::{
-    AddrCtx, EntryPoint, JitDefaultBytesPcodeExecutorState, JitThreadBytesPcodeExecutorState,
-    RegisterValue, SleighProgramCompiler, SuspendedPcodeExecutionException,
+    AddrCtx, EntryPoint, JitDefaultBytesPcodeExecutorState, JitThreadBytesPcodeExecutorState, SleighProgramCompiler, SuspendedPcodeExecutionException,
 };
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::address::Address;
 use crate::program::model::address::AddressFactory;
 use crate::program::model::listing::program_context::ProgramContext;
@@ -144,7 +144,7 @@ pub struct JitPcodeThread {
     /// language's default space; a thread built without a machine has no language, hence `None`.
     counter: Arc<Mutex<Option<Address>>>,
     /// The decode context. Port of the inherited `context` field.
-    context: Arc<Mutex<Option<Arc<dyn RegisterValue>>>>,
+    context: Arc<Mutex<Option<RegisterValue>>>,
     /// Whether execution is suspended. Port of the inherited executor's suspension flag, which
     /// `setSuspended`/`isSuspended` reach.
     suspended: Arc<AtomicBool>,
@@ -485,7 +485,7 @@ impl JitPcodeThread {
     pub fn write_counter_and_context(
         &self,
         counter: &Address,
-        context: Option<Arc<dyn RegisterValue>>,
+        context: Option<RegisterValue>,
     ) {
         self.write_counter(counter);
         if let Some(context) = context {
@@ -508,7 +508,7 @@ impl JitPcodeThread {
     pub fn set_counter_and_context(
         &self,
         counter: &Address,
-        context: Option<Arc<dyn RegisterValue>>,
+        context: Option<RegisterValue>,
     ) {
         self.set_counter(counter);
         if let Some(context) = context {
@@ -534,14 +534,14 @@ impl JitPcodeThread {
     }
 
     /// Port of the inherited `PcodeThread.getContext()`.
-    pub fn get_context(&self) -> Option<Arc<dyn RegisterValue>> {
+    pub fn get_context(&self) -> Option<RegisterValue> {
         self.context.lock().expect("context poisoned").clone()
     }
 
     /// Port of the inherited `DefaultPcodeThread.writeContext(RegisterValue)`: adjust the context,
     /// and write the contextreg of this thread's state -- which this port cannot yet do; see the
     /// module docs.
-    pub fn write_context(&self, context: Arc<dyn RegisterValue>) {
+    pub fn write_context(&self, context: RegisterValue) {
         *self.context.lock().expect("context poisoned") = Some(context);
     }
 
@@ -606,7 +606,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn crate::pcode::seam_stubs::PseudoInstruction>, Box<dyn std::error::Error>>
         {
             unimplemented!("not exercised by these tests")
@@ -637,12 +637,24 @@ mod tests {
         }
     }
 
-    /// A contextreg value, as `AddrCtx` reduces it.
-    struct Ctx(i128);
-    impl RegisterValue for Ctx {
-        fn get_unsigned_value(&self) -> i128 {
-            self.0
-        }
+    /// A real contextreg value: a 4-byte `contextreg` register fully known as `value`.
+    fn ctx(value: u128) -> crate::program::model::lang::register_value::RegisterValue {
+        let space = crate::program::model::address::AddressSpace::new(
+            "register",
+            32,
+            1,
+            crate::program::model::address::AddressSpaceType::Register,
+            0,
+        );
+        let contextreg = crate::program::model::lang::register::Register::new(
+            "contextreg",
+            "",
+            crate::program::model::address::Address::new(space, 0),
+            4,
+            false,
+            0,
+        );
+        crate::program::model::lang::register_value::RegisterValue::with_value(contextreg, value)
     }
 
     fn ram(offset: i64) -> Address {
@@ -690,17 +702,17 @@ mod tests {
         assert!(thread.get_counter().is_none());
         assert!(thread.get_context().is_none());
 
-        thread.write_counter_and_context(&ram(0x1000), Some(Arc::new(Ctx(7))));
+        thread.write_counter_and_context(&ram(0x1000), Some(ctx(7)));
         assert_eq!(Some(ram(0x1000)), thread.get_counter());
-        assert_eq!(7, thread.get_context().expect("context was written").get_unsigned_value());
+        assert_eq!(Some(7), thread.get_context().expect("context was written").unsigned_value());
 
         thread.write_counter_and_context(&ram(0x1004), None);
         assert_eq!(Some(ram(0x1004)), thread.get_counter());
-        assert_eq!(7, thread.get_context().expect("context is unchanged").get_unsigned_value());
+        assert_eq!(Some(7), thread.get_context().expect("context is unchanged").unsigned_value());
 
-        thread.set_counter_and_context(&ram(0x2000), Some(Arc::new(Ctx(9))));
+        thread.set_counter_and_context(&ram(0x2000), Some(ctx(9)));
         assert_eq!(Some(ram(0x2000)), thread.get_counter());
-        assert_eq!(9, thread.get_context().expect("context was written").get_unsigned_value());
+        assert_eq!(Some(9), thread.get_context().expect("context was written").unsigned_value());
     }
 
     #[test]

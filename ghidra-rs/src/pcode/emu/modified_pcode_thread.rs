@@ -380,7 +380,7 @@ mod tests {
     use crate::pcode::emu::pcode_machine::PcodeMachine;
     use crate::pcode::emu::pcode_thread::{ErasedPcodeThread, PcodeThread};
     use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
-    use crate::pcode::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::lang::sleigh::SleighLanguage;
     use crate::program::model::listing::Instruction;
     use crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase;
@@ -581,7 +581,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             Ok(Box::new(NoInstruction))
         }
@@ -940,7 +940,7 @@ mod tests {
             &self,
             _emulate: &dyn Emulate,
             current_address: &Address,
-            _context_register_value: Option<&dyn RegisterValue>,
+            _context_register_value: Option<&RegisterValue>,
         ) -> Result<(), LowlevelError> {
             self.initial_calls.lock().unwrap().push(current_address.offset());
             Ok(())

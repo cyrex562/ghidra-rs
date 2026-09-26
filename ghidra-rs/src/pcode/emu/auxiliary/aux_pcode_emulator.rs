@@ -313,7 +313,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn crate::pcode::seam_stubs::RegisterValue>,
+            _context: Option<&crate::program::model::lang::register_value::RegisterValue>,
         ) -> Result<Box<dyn crate::pcode::seam_stubs::PseudoInstruction>, Box<dyn std::error::Error>> {
             unreachable!("the thread is never stepped")
         }

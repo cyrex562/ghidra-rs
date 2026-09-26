@@ -1,7 +1,8 @@
 use crate::program::model::address::Address;
 use crate::program::model::lang::Language;
 use crate::program::model::listing::Instruction;
-use crate::pcode::seam_stubs::{PseudoInstruction, RegisterValue};
+use crate::pcode::seam_stubs::PseudoInstruction;
+use crate::program::model::lang::register_value::RegisterValue;
 use std::sync::Arc;
 
 /// A means of decoding machine instructions from the bytes contained in the machine state.
@@ -29,7 +30,7 @@ pub trait InstructionDecoder {
     fn decode_instruction(
         &mut self,
         address: &Address,
-        context: Option<&dyn RegisterValue>,
+        context: Option<&RegisterValue>,
     ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>>;
 
     /// Inform the decoder that the emulator thread just branched.
@@ -54,14 +55,32 @@ pub trait InstructionDecoder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{PseudoInstruction, RegisterValue};
+    use crate::pcode::seam_stubs::PseudoInstruction;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
     struct MockPseudoInstruction;
     impl PseudoInstruction for MockPseudoInstruction {}
 
-    struct MockRegisterValue;
-    impl RegisterValue for MockRegisterValue {}
+    /// A real contextreg value: a 4-byte `contextreg` register fully known as `value`.
+    fn context_value(value: u128) -> crate::program::model::lang::register_value::RegisterValue {
+        let space = crate::program::model::address::AddressSpace::new(
+            "register",
+            32,
+            1,
+            crate::program::model::address::AddressSpaceType::Register,
+            0,
+        );
+        let contextreg = crate::program::model::lang::register::Register::new(
+            "contextreg",
+            "",
+            crate::program::model::address::Address::new(space, 0),
+            4,
+            false,
+            0,
+        );
+        crate::program::model::lang::register_value::RegisterValue::with_value(contextreg, value)
+    }
 
     struct TestDecoder {
         last_length_with_delays: i32,
@@ -75,7 +94,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: Option<&dyn RegisterValue>,
+            _context: Option<&RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             Ok(Box::new(MockPseudoInstruction))
         }
@@ -117,7 +136,7 @@ mod tests {
 
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space, 0x1000);
-        let ctx = MockRegisterValue;
+        let ctx = context_value(0);
 
         let result = decoder.decode_instruction(&addr, Some(&ctx));
         assert!(result.is_ok());

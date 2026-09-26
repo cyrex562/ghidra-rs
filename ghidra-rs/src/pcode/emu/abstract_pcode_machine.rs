@@ -788,13 +788,13 @@ mod tests {
         fn override_counter(&mut self, _counter: &Address) {
             unimplemented!("test should not call this")
         }
-        fn assign_context(&mut self, _context: &dyn crate::pcode::seam_stubs::RegisterValue) {
+        fn assign_context(&mut self, _context: &crate::program::model::lang::register_value::RegisterValue) {
             unimplemented!("test should not call this")
         }
-        fn get_context(&self) -> Option<&dyn crate::pcode::seam_stubs::RegisterValue> {
+        fn get_context(&self) -> Option<&crate::program::model::lang::register_value::RegisterValue> {
             unimplemented!("test should not call this")
         }
-        fn override_context(&mut self, _context: &dyn crate::pcode::seam_stubs::RegisterValue) {
+        fn override_context(&mut self, _context: &crate::program::model::lang::register_value::RegisterValue) {
             unimplemented!("test should not call this")
         }
         fn override_context_with_default(&mut self) {
