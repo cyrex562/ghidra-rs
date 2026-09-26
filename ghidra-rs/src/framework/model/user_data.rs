@@ -28,8 +28,10 @@ mod tests {
 
     #[test]
     fn user_data_trait_object_preserved_through_type_erasing() {
-        let obj: Box<dyn UserData> = Box::new(MockUserData);
-        let _any_obj = obj as Box<dyn std::any::Any + Send + Sync>;
+        let _obj: Box<dyn UserData> = Box::new(MockUserData);
+        // `UserData` is `Send + Sync`, so a boxed implementor can be type-erased to `Any`.
+        let any_obj: Box<dyn std::any::Any + Send + Sync> = Box::new(MockUserData);
+        assert!(any_obj.downcast_ref::<MockUserData>().is_some());
     }
 
     struct AnotherUserData {

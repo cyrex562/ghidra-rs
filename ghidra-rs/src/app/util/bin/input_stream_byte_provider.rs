@@ -1,8 +1,8 @@
 use std::io::{self, Read};
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
-/// A [`ByteProvider`] that wraps a forward-only [`Read`] stream.
+/// A [`GByteStore`] that wraps a forward-only [`Read`] stream.
 ///
 /// Reads are permitted only at ever-increasing offsets. Attempting to read from
 /// an offset earlier than the current stream position returns an error. Skipping
@@ -49,7 +49,7 @@ impl InputStreamByteProvider {
     }
 }
 
-impl ByteProvider for InputStreamByteProvider {
+impl GByteStore for InputStreamByteProvider {
     fn length(&mut self) -> io::Result<u64> {
         Ok(self.length)
     }

@@ -8,8 +8,11 @@ use thiserror::Error;
 use crate::framework::client::NotConnectedException;
 use crate::framework::data::CheckinHandler;
 use crate::framework::model::change_set::ChangeSet;
+use crate::framework::model::domain_folder::DomainFolder;
 use crate::framework::model::domain_object::{DomainObject, DomainObjectConsumer};
-use crate::framework::seam_stubs::{DomainFolder, ItemCheckoutStatus, LinkFileInfo, ProjectLocator, Version};
+use crate::framework::model::link_file_info::LinkFileInfo;
+use crate::framework::model::project_locator::ProjectLocator;
+use crate::framework::seam_stubs::{ItemCheckoutStatus, Version};
 use crate::program::model::data::playable::Icon;
 use crate::util::exception::{
     CancelledException, DuplicateFileException, FileInUseException, InvalidNameException,

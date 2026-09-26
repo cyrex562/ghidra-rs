@@ -191,9 +191,10 @@ pub fn get_packing_string(composite: &dyn Composite) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::program::model::data::alignment_type::AlignmentType;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::packing_type::PackingType;
 
     struct MockDataTypeComponent {
@@ -293,17 +294,34 @@ mod tests {
         assert_eq!(get_min_alignment_string(&s), "");
     }
 
-    struct MockDataOrganization;
-    impl DataOrganization for MockDataOrganization {
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
+            /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        org
     }
 
     struct MachineAlignedStructure;
     impl DataType for MachineAlignedStructure {
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization)
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization())
         }
     }
     impl Composite for MachineAlignedStructure {

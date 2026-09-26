@@ -38,6 +38,27 @@ impl Table {
         self.max_key
     }
 
+    /// Returns the key that the next call to [`get_next_key`](Self::get_next_key) would produce,
+    /// without allocating it. Mirrors Java's `db.Table.getKey()`, which is a pure peek (unlike
+    /// this Rust type's own `get_next_key`, which allocates): some callers -- e.g.
+    /// `ProtoDBAdapter.getKey()` -- hand out the next key to a caller that may or may not go on
+    /// to actually create a record with it (the record's own key is chosen by that caller, not
+    /// derived from a `put_record` call), so peeking without consuming is required for
+    /// observable parity with Java.
+    pub fn peek_next_key(&self) -> i64 {
+        self.max_key + 1
+    }
+
+    /// Ensure the next value returned by [`get_next_key`](Self::get_next_key) is at least
+    /// `floor + 1`. Used by callers that reserve a floor for externally-chosen keys (e.g. a
+    /// minimum ID below which keys are reserved for another purpose) so the table's own key
+    /// sequence stays monotonic and collision-free afterward.
+    pub fn ensure_next_key_at_least(&mut self, floor: i64) {
+        if floor > self.max_key {
+            self.max_key = floor;
+        }
+    }
+
     pub fn get_name(&self) -> &str {
         &self.name
     }
@@ -180,41 +201,13 @@ impl Table {
     }
 
     pub fn get_record(&self, key: &Field) -> io::Result<Option<DBRecord>> {
-        if self.root_buffer_id < 0 {
-            return Ok(self.records.get(key).cloned());
-        }
-
-        if self.schema.use_long_key_nodes() {
-            let mut node = self.node_mgr.get_long_key_node(self.root_buffer_id)?;
-            let k = key.get_long_value();
-
-            loop {
-                match node {
-                    LongKeyNode::Interior(n) => {
-                        let id_index = n.get_id_index(k);
-                        let child_id = n.get_child_id(id_index as i32);
-                        node = self.node_mgr.get_long_key_node(child_id)?;
-                    }
-                    LongKeyNode::FixedRec(n) => {
-                        let index = n.get_key_index(k);
-                        if index >= 0 {
-                            return Ok(Some(n.get_record(index as i32, self.schema.clone())));
-                        } else {
-                            return Ok(None);
-                        }
-                    }
-                    LongKeyNode::VarRec(n) => {
-                        let index = n.get_key_index(k);
-                        if index >= 0 {
-                            return Ok(Some(n.get_record(index as i32, self.schema.clone())));
-                        } else {
-                            return Ok(None);
-                        }
-                    }
-                }
-            }
-        }
-
+        // `self.records` (the in-memory fallback map) is the authoritative store: `put_record`
+        // always keeps it in sync with the on-disk B-tree nodes, `get_record_iterator` already
+        // reads exclusively from it, but `delete_record` (below) only ever removes from it, not
+        // from the B-tree nodes (whose deletion support does not exist yet). Reading through the
+        // B-tree here as well as previously done would therefore let a deleted record's stale
+        // node-level copy resurrect it. Always reading the fallback keeps `get_record` consistent
+        // with `get_record_iterator`/`delete_record` and avoids that resurrection.
         Ok(self.records.get(key).cloned())
     }
 
@@ -243,6 +236,44 @@ impl Table {
         Ok(Box::new(BTreeRecordIterator {
             iter: Box::new(self.records.range(start_key..).map(|(_, v)| v)),
         }))
+    }
+
+    /// Returns true if a record exists for the given key.
+    ///
+    /// Port of `db.Table.hasRecord(Field)`.
+    pub fn has_record(&self, key: &Field) -> bool {
+        self.records.contains_key(key)
+    }
+
+    /// Deletes every record in the table. Port of `db.Table.deleteAll()`.
+    pub fn clear_all(&mut self) -> io::Result<()> {
+        self.records.clear();
+        self.record_count = 0;
+        self.max_key = -1;
+        self.root_buffer_id = -1;
+        Ok(())
+    }
+
+    /// Deletes all records whose (long-typed) primary key falls within `[min_key, max_key]`,
+    /// inclusive. Returns `true` if any record was deleted.
+    ///
+    /// Port of `db.Table.deleteRecords(long, long)`. Java's implementation walks a live B-tree
+    /// cursor; this port instead collects the matching keys from the authoritative `records` map
+    /// (see the doc comment on [`get_record`](Self::get_record) for why that map -- not the
+    /// B-tree nodes -- is authoritative) and removes each one, which is observably equivalent.
+    pub fn delete_records(&mut self, min_key: i64, max_key: i64) -> io::Result<bool> {
+        let keys: Vec<Field> = self
+            .records
+            .range(Field::Long(Some(min_key))..=Field::Long(Some(max_key)))
+            .map(|(k, _)| k.clone())
+            .collect();
+        let mut deleted = false;
+        for key in keys {
+            if self.delete_record(&key)? {
+                deleted = true;
+            }
+        }
+        Ok(deleted)
     }
 }
 

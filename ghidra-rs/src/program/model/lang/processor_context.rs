@@ -1,7 +1,7 @@
 use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register::Register;
 use crate::program::model::listing::context_change_exception::ContextChangeException;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Defines the interface for an object containing the state of all processor registers
 /// relative to a specific address.
@@ -28,7 +28,7 @@ pub trait ProcessorContext: ProcessorContextView {
     /// Returns [`ContextChangeException`] on an illegal attempt to change context.
     fn set_register_value(
         &mut self,
-        value: Box<dyn RegisterValue>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException>;
 
     /// Clears the register within this context.
@@ -45,31 +45,6 @@ mod tests {
     use crate::program::model::lang::register::RegisterRef;
     use std::cell::RefCell;
     use std::collections::HashMap;
-
-    struct MockRegisterValue {
-        register: RegisterRef,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            true
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-    }
-
     struct MockProcessorContext {
         base_register: RegisterRef,
         values: RefCell<HashMap<String, i128>>,
@@ -85,7 +60,7 @@ mod tests {
         }
 
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            if self.base_register.borrow().name() == name {
+            if self.base_register.name() == name {
                 Some(self.base_register.clone())
             } else {
                 None
@@ -96,11 +71,9 @@ mod tests {
             self.values.borrow().get(register.name()).copied()
         }
 
-        fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
             if self.has_value(register) {
-                Some(Box::new(MockRegisterValue {
-                    register: self.base_register.clone(),
-                }))
+                Some(RegisterValue::with_value(self.base_register.clone(), 0))
             } else {
                 None
             }
@@ -125,10 +98,10 @@ mod tests {
 
         fn set_register_value(
             &mut self,
-            value: Box<dyn RegisterValue>,
+            value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
-            let register = value.get_register();
-            let name = register.borrow().name().to_string();
+            let register = value.register();
+            let name = register.name().to_string();
             self.values.borrow_mut().insert(name, 1);
             Ok(())
         }
@@ -159,7 +132,7 @@ mod tests {
             values: RefCell::new(HashMap::new()),
         });
 
-        let reg = base_register.borrow();
+        let reg = &base_register;
         assert!(!ctx.has_value(&reg));
 
         ctx.set_value(&reg, 42).unwrap();
@@ -169,9 +142,7 @@ mod tests {
         ctx.clear_register(&reg).unwrap();
         assert!(!ctx.has_value(&reg));
 
-        ctx.set_register_value(Box::new(MockRegisterValue {
-            register: base_register.clone(),
-        }))
+        ctx.set_register_value(RegisterValue::with_value(base_register.clone(), 0))
         .unwrap();
         assert!(ctx.has_value(&reg));
     }

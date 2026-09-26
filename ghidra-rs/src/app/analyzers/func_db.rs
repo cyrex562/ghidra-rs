@@ -135,13 +135,21 @@ mod tests {
             false
         }
 
-        fn peek(&self) -> &Self::Element {
-            &MockXmlElement
+        fn peek(&self) -> Self::Element {
+            MockXmlElement
         }
 
         fn next(&mut self) -> Self::Element {
             MockXmlElement
         }
+
+        fn is_pulling_content(&self) -> bool {
+            false
+        }
+
+        fn set_pulling_content(&mut self, _pulling_content: bool) {}
+
+        fn dispose(&mut self) {}
     }
 
     impl FuncDB<String> for TestFuncDB {

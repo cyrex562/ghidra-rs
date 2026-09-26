@@ -176,7 +176,14 @@ mod tests {
 
     impl MemBuffer for MockMemBuffer {
         fn get_address(&self) -> Address {
-            Address::default()
+            let space = crate::program::model::address::AddressSpace::new(
+                "ram",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Ram,
+                1,
+            );
+            Address::new(space, 0)
         }
 
         fn get_byte(&self, _offset: i32) -> Result<u8, MemoryAccessException> {

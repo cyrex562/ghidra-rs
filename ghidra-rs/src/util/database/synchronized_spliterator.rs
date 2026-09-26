@@ -56,86 +56,28 @@ impl<T: 'static> Spliterator for Box<dyn Spliterator<Item = T>> {
     }
 }
 
-/// Wraps a [`Spliterator`] in one that synchronizes all operations on a shared lock.
+/// `SynchronizedSpliterator` (Java: `ghidra.util.database.SynchronizedSpliterator`) is
+/// deliberately absent.
 ///
-/// Element access is locked; element processing by the caller occurs outside the lock.
-/// This matches the Java semantics where the consumer action in `tryAdvance` runs after
-/// the `synchronized` block exits — avoiding holding the lock while arbitrary user code
-/// runs.
+/// The Java class wraps a spliterator and runs every operation inside `synchronized (lock)` on
+/// a caller-supplied intrinsic monitor, with splits sharing that monitor. Ported literally it
+/// became a struct holding `Arc<Mutex<()>>` -- a lock over no data -- around an inner
+/// spliterator it owns by value, so it serialized callers without protecting anything the
+/// borrow checker did not already protect. Its `try_split` hands out *disjoint* owned halves,
+/// so even the split case shares no state to guard.
 ///
-/// Multiple `SynchronizedSpliterator`s produced by [`try_split`][Self::try_split] share
-/// the same `Arc<Mutex>` lock, matching the Java behavior where split halves synchronize
-/// on the same intrinsic lock as the parent.
+/// A caller that genuinely needs to serialize access to a resource should hold that lock
+/// itself for the duration of its use of the stream (which the Java doc already recommended
+/// for any consistency guarantee), or put the resource behind the lock -- see the "Ported Java
+/// locks" convention in `OWNERSHIP_MIGRATION.md`.
 ///
-/// Port of `ghidra.util.database.SynchronizedSpliterator`.
-pub struct SynchronizedSpliterator<S> {
-    inner: S,
-    lock: Arc<Mutex<()>>,
-}
-
-impl<S: Spliterator> SynchronizedSpliterator<S> {
-    /// Creates a `SynchronizedSpliterator` using the provided shared lock.
-    ///
-    /// Mirrors the Java constructor `SynchronizedSpliterator(Spliterator<T>, Object lock)`.
-    /// Pass an `Arc<Mutex<()>>` that is shared with the owning collection so that all
-    /// callers coordinate on the same monitor.
-    pub fn new(inner: S, lock: Arc<Mutex<()>>) -> Self {
-        Self { inner, lock }
-    }
-}
-
-impl<S: Spliterator> Spliterator for SynchronizedSpliterator<S> {
-    type Item = S::Item;
-
-    /// Advances to the next element under the lock and returns it, or `None` if exhausted.
-    ///
-    /// The lock is released before the element is returned to the caller, so any work
-    /// done with the element happens outside the critical section.
-    fn try_advance(&mut self) -> Option<S::Item> {
-        let item = {
-            let _guard = self.lock.lock().unwrap();
-            self.inner.try_advance()
-        };
-        item
-    }
-
-    /// Splits off a portion of this spliterator, wrapping the result in a new
-    /// `SynchronizedSpliterator` that shares the same lock.
-    fn try_split(&mut self) -> Option<Box<dyn Spliterator<Item = S::Item>>> {
-        let new_split = {
-            let _guard = self.lock.lock().unwrap();
-            self.inner.try_split()
-        }?;
-        Some(Box::new(SynchronizedSpliterator {
-            inner: new_split,
-            lock: Arc::clone(&self.lock),
-        }))
-    }
-
-    fn estimate_size(&self) -> u64 {
-        let _guard = self.lock.lock().unwrap();
-        self.inner.estimate_size()
-    }
-
-    fn characteristics(&self) -> u32 {
-        let _guard = self.lock.lock().unwrap();
-        self.inner.characteristics()
-    }
-}
-
-impl<S: Spliterator> Iterator for SynchronizedSpliterator<S> {
-    type Item = S::Item;
-
-    fn next(&mut self) -> Option<S::Item> {
-        Spliterator::try_advance(self)
-    }
-}
+/// [`DBSynchronizedSpliterator`](super::db_synchronized_spliterator::DBSynchronizedSpliterator)
+/// is unaffected: it takes `Arc<dyn Lock>`, the crate's real lock abstraction, whose
+/// acquire/release contract is pinned by its own tests.
 
 #[cfg(test)]
 mod tests {
-    use super::{characteristics, Spliterator, SynchronizedSpliterator};
-    use std::sync::{Arc, Mutex};
-    use std::thread;
+    use super::{characteristics, Spliterator};
 
     struct VecSpliterator<T> {
         data: Vec<T>,
@@ -181,8 +123,8 @@ mod tests {
         }
     }
 
-    fn make(data: Vec<i32>) -> SynchronizedSpliterator<VecSpliterator<i32>> {
-        SynchronizedSpliterator::new(VecSpliterator::new(data), Arc::new(Mutex::new(())))
+    fn make(data: Vec<i32>) -> VecSpliterator<i32> {
+        VecSpliterator::new(data)
     }
 
     #[test]
@@ -201,48 +143,41 @@ mod tests {
     }
 
     #[test]
-    fn iterator_trait_yields_same_sequence() {
-        let s = make(vec![10, 20, 30]);
-        let collected: Vec<i32> = s.collect();
-        assert_eq!(collected, vec![10, 20, 30]);
-    }
-
-    #[test]
     fn estimate_size_decreases_as_consumed() {
         let mut s = make(vec![1, 2, 3]);
         assert_eq!(s.estimate_size(), 3);
         s.try_advance();
         assert_eq!(s.estimate_size(), 2);
-        s.try_advance();
-        assert_eq!(s.estimate_size(), 1);
-        s.try_advance();
-        assert_eq!(s.estimate_size(), 0);
     }
 
     #[test]
-    fn characteristics_forwarded_from_inner() {
-        let s = make(vec![1]);
-        let expected =
-            characteristics::ORDERED | characteristics::SIZED | characteristics::SUBSIZED;
-        assert_eq!(s.characteristics(), expected);
+    fn characteristics_are_forwarded() {
+        let s = make(vec![1, 2]);
+        assert_eq!(
+            s.characteristics(),
+            characteristics::ORDERED | characteristics::SIZED | characteristics::SUBSIZED
+        );
     }
 
     #[test]
     fn try_split_divides_elements() {
         let mut s = make(vec![1, 2, 3, 4]);
-        let mut split = s.try_split().unwrap();
-        // VecSpliterator splits at midpoint: split gets [1,2], original gets [3,4]
-        assert_eq!(split.try_advance(), Some(1));
-        assert_eq!(split.try_advance(), Some(2));
-        assert_eq!(split.try_advance(), None);
-        assert_eq!(s.try_advance(), Some(3));
-        assert_eq!(s.try_advance(), Some(4));
-        assert_eq!(s.try_advance(), None);
+        let mut left = s.try_split().expect("splittable");
+        let mut got_left = vec![];
+        while let Some(x) = left.try_advance() {
+            got_left.push(x);
+        }
+        let mut got_right = vec![];
+        while let Some(x) = s.try_advance() {
+            got_right.push(x);
+        }
+        assert_eq!(got_left, vec![1, 2]);
+        assert_eq!(got_right, vec![3, 4]);
     }
 
     #[test]
     fn try_split_none_when_too_small() {
-        let mut s = make(vec![42]);
+        let mut s = make(vec![1]);
         assert!(s.try_split().is_none());
     }
 
@@ -252,64 +187,29 @@ mod tests {
         assert!(s.try_split().is_none());
     }
 
+    /// The splits own disjoint halves -- the fact that made the removed wrapper's shared
+    /// `Mutex<()>` guard nothing: there is no shared state for a lock to protect.
+    ///
+    /// Note this cannot be demonstrated across threads: `try_split` returns
+    /// `Box<dyn Spliterator<Item = T>>` with no `Send` bound, so a split cannot be moved to
+    /// another thread at all. The parallel decomposition that `java.util.Spliterator` exists
+    /// for is therefore not expressible in this port as it stands -- which is a further reason
+    /// the synchronization wrapper protected nothing: nothing could run in parallel.
     #[test]
-    fn split_shares_same_lock() {
-        let lock = Arc::new(Mutex::new(()));
-        let mut s = SynchronizedSpliterator::new(VecSpliterator::new(vec![1, 2, 3, 4]), Arc::clone(&lock));
-        let _split = s.try_split().unwrap();
-        // If both shared the same lock, trying to lock here (with no holder) succeeds.
-        assert!(lock.try_lock().is_ok());
-    }
+    fn splits_own_disjoint_halves() {
+        let mut s = make(vec![1, 2, 3, 4]);
+        let mut left = s.try_split().expect("splittable");
 
-    #[test]
-    fn lock_is_released_before_item_returned() {
-        // After try_advance returns, the lock must be free for another acquisition.
-        let lock = Arc::new(Mutex::new(()));
-        let mut s = SynchronizedSpliterator::new(
-            VecSpliterator::new(vec![99]),
-            Arc::clone(&lock),
-        );
-        let item = s.try_advance();
-        assert_eq!(item, Some(99));
-        // Lock must be released at this point.
-        assert!(
-            lock.try_lock().is_ok(),
-            "lock should be released after try_advance returns"
-        );
-    }
+        let mut got_left = vec![];
+        while let Some(x) = left.try_advance() {
+            got_left.push(x);
+        }
+        let mut got_right = vec![];
+        while let Some(x) = s.try_advance() {
+            got_right.push(x);
+        }
 
-    #[test]
-    fn concurrent_access_from_two_threads_is_safe() {
-        let lock = Arc::new(Mutex::new(()));
-        let mut a = SynchronizedSpliterator::new(
-            VecSpliterator::new(vec![1, 2, 3]),
-            Arc::clone(&lock),
-        );
-        let mut b = SynchronizedSpliterator::new(
-            VecSpliterator::new(vec![4, 5, 6]),
-            Arc::clone(&lock),
-        );
-
-        let ha = thread::spawn(move || {
-            let mut out = vec![];
-            while let Some(x) = a.try_advance() {
-                out.push(x);
-            }
-            out
-        });
-        let hb = thread::spawn(move || {
-            let mut out = vec![];
-            while let Some(x) = b.try_advance() {
-                out.push(x);
-            }
-            out
-        });
-
-        let mut ra = ha.join().unwrap();
-        let mut rb = hb.join().unwrap();
-        ra.sort_unstable();
-        rb.sort_unstable();
-        assert_eq!(ra, vec![1, 2, 3]);
-        assert_eq!(rb, vec![4, 5, 6]);
+        assert_eq!(got_left, vec![1, 2]);
+        assert_eq!(got_right, vec![3, 4]);
     }
 }

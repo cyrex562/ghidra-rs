@@ -1,0 +1,229 @@
+"""Finds placeholder stubs that SHADOW a real ported type, and who is wired to them.
+
+The seam/descent harnesses let a port define a minimal placeholder (`seam_stubs.rs`) for a type
+it references but that is not ported yet -- without that, cycles could never be broken. The
+placeholder is supposed to be retired when the real port lands: replace the importers, delete
+the stub, drop its STUBS.tsv row. That retirement is only ever *instructed*, never verified, and
+it does not happen at all when the class is ported as a struct rather than a trait
+(descent_night.sh gates PROMOTE MODE on `mode == trait`).
+
+The result is silent fragmentation: two types with the same name, one real and one empty, and
+call sites wired to whichever their port happened to import. They compile, they pass tests, and
+they cannot interoperate. `PatternExpression` had 23 files on the placeholder while the real
+type existed; `MemBuffer` 22.
+
+Output is STUB_DEBT.tsv, the same shape as the other frontier files, ranked by how many files
+are wired to the wrong type:
+
+    status  importers  stubs  class  manifest  real_path  stub_paths
+
+`manifest` is the ported status of the Java class of the same name; DONE means the real port
+landed and the placeholder is pure debt. A `-` means no Java class of that name exists, so the
+name is probably a synthetic helper and the collision may be coincidental -- those need a human
+eye rather than a sweep.
+
+**Pairing is by Java class, not by bare name.** Ghidra reuses simple names across packages, and
+the first version of this tool collapsed them: `PatternExpression` is two unrelated classes --
+`ghidra.app.plugin.processors.sleigh.expression` (the runtime expression, ported as an enum) and
+`ghidra.pcodeCPort.slghpatexpress` (the sleigh compiler's AST node, ported as a trait with 32
+implementers) -- and pairing them by basename reported "real is an enum, stub is a trait" as an
+ENUM-vs-`dyn` design conflict. It is not a conflict; they are different types, both correctly
+placed. `Processor` (`program.model.lang` vs the PDB reader) and `Constructor` (sleigh runtime vs
+`pcodeCPort.slghsymbol`) were the same false alarm. 12 of 40 rows were this.
+
+Such rows carry `pairing = ambiguous(N)` and list every candidate Java class, and they sort below
+the actionable ones. `pairing` is deliberately a separate column from `status`: it is a fact
+about the name, and folding it into the triage value let a preserved `PARK` hide it.
+
+**A high importer count does NOT mean a big mechanical win.** Triaging the top rows showed three
+different shapes, and only one is a rewire:
+
+  * MECHANICAL -- both sides are the same kind and the real one is a superset. Rewire the
+    references, delete the placeholder. `CommentType` (63 importers, identical enum variants,
+    zero implementers) and `DataTypeManagerOwner` (19) were these.
+  * CONSOLIDATION -- both sides are traits, but the implementers only satisfy one of them.
+    `MemBuffer` has 100 `impl` blocks of which just 17 define the real trait's four methods; the
+    other 83 implement the stub's single `get_address`. Converging means adding methods to 83
+    types, so it is a port consolidation, not a cleanup.
+  * DESIGN -- the two sides chose different Rust shapes for one Java concept, so they cannot be
+    merged at all. `PatternExpression` is an `enum` on one side and a trait with 81 implementers
+    on the other; `Processor` and `Constructor` likewise. These are ENUM-vs-`dyn` decisions and
+    belong in CONVENTION_QUEUE.tsv, not here.
+
+Rows in the latter two categories are marked PARK so the count is not mistaken for a backlog of
+sweeps.
+
+    python scripts/stub_audit.py --out STUB_DEBT.tsv
+    python scripts/stub_audit.py --top 20        # print, don't write
+"""
+import argparse
+import csv
+import os
+import re
+import sys
+from collections import defaultdict
+
+RE_DECL = re.compile(
+    r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:unsafe\s+)?(?:trait|struct|enum)\s+(\w+)", re.M
+)
+COLUMNS = ["status", "pairing", "importers", "stubs", "class", "manifest", "java_classes", "real_path", "stub_paths"]
+
+
+def scan_sources(root):
+    """(text by path, stub declarations, real declarations)."""
+    texts, stub_decl, real_decl = {}, defaultdict(list), defaultdict(list)
+    for dirpath, _dirs, files in os.walk(root):
+        for fn in files:
+            if not fn.endswith(".rs"):
+                continue
+            path = os.path.join(dirpath, fn)
+            try:
+                with open(path, encoding="utf-8", errors="ignore") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            texts[path] = text
+            target = stub_decl if fn == "seam_stubs.rs" else real_decl
+            for name in RE_DECL.findall(text):
+                target[name].append(path)
+    return texts, stub_decl, real_decl
+
+
+def manifest_classes(manifest):
+    """Java class name -> [(java_path, status), ...].
+
+    A LIST, not a single status: Ghidra reuses simple names across packages, and collapsing them
+    is what made this tool invent design conflicts. `PatternExpression` is two unrelated classes
+    -- ghidra.app.plugin.processors.sleigh.expression (the runtime expression, ported as an enum)
+    and ghidra.pcodeCPort.slghpatexpress (the sleigh compiler's AST node, ported as a trait with
+    32 implementers). Pairing them by basename reported "real is an enum, stub is a trait" and
+    called it an ENUM-vs-dyn conflict. It is not; they are different types that both belong.
+    `Processor` (program.model.lang vs pdb2.pdbreader) and `Constructor` (sleigh runtime vs
+    pcodeCPort.slghsymbol) are the same story.
+    """
+    classes = defaultdict(list)
+    if not os.path.exists(manifest):
+        return classes
+    with open(manifest, encoding="utf-8") as fh:
+        for line in fh:
+            cols = line.rstrip("\n").split("\t")
+            if len(cols) > 1 and cols[0].endswith(".java"):
+                name = os.path.basename(cols[0])[: -len(".java")]
+                classes[name].append((cols[0], cols[1]))
+    return classes
+
+
+def importers_of_stub(texts, name):
+    """Files wired to the placeholder, by `use` OR by fully-qualified path.
+
+    Counting only `use` statements undercounted badly -- MemBuffer reported 23 against 92 real
+    references -- because a call site can name the stub inline (`impl
+    crate::program::seam_stubs::MemBuffer for X`) with no import at all. That form is exactly
+    what had to be hand-fixed when retiring DataTypeManagerOwner, so it is the form that matters.
+    """
+    n = re.escape(name)
+    patterns = [
+        # use crate::..::seam_stubs::{ .., Name, .. };  (single- or multi-line)
+        re.compile(rf"use\s+[\w:]*seam_stubs::\{{[^}}]*\b{n}\b[^}}]*\}}\s*;", re.S),
+        # use crate::..::seam_stubs::Name;   (optionally `as Alias`)
+        re.compile(rf"use\s+[\w:]*seam_stubs::{n}\b"),
+        # any inline fully-qualified mention
+        re.compile(rf"[\w:]*seam_stubs::{n}\b"),
+    ]
+    return [p for p, t in texts.items() if any(rx.search(t) for rx in patterns)]
+
+
+def load_prior_status(path):
+    """class -> status, so regenerating never discards triage already done."""
+    prior = {}
+    if not path or not os.path.exists(path):
+        return prior
+    with open(path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh, delimiter="\t"):
+            cls = (row.get("class") or "").strip()
+            if cls:
+                prior[cls] = (row.get("status") or "TODO").strip()
+    return prior
+
+
+def build(root, manifest, out_path):
+    texts, stub_decl, real_decl = scan_sources(root)
+    classes = manifest_classes(manifest)
+    prior = load_prior_status(out_path)
+
+    rows = []
+    for name, stub_paths in stub_decl.items():
+        real_paths = real_decl.get(name)
+        if not real_paths:
+            continue  # a placeholder with no real counterpart yet is legitimate, not debt
+        importers = importers_of_stub(texts, name)
+        java = classes.get(name, [])
+        # More than one Java class shares this name, so which one the placeholder stands in for
+        # cannot be inferred from the name. Say AMBIGUOUS instead of asserting a conflict.
+        # `pairing` is a FACT about the name, kept separate from `status`, which is triage.
+        # Overloading status let a preserved TODO/PARK hide the ambiguity.
+        pairing = f"ambiguous({len(java)})" if len(java) > 1 else "unique"
+        manifest_col = (
+            "|".join(sorted({st for _p, st in java})) if java else "-"
+        )
+        rows.append(
+            {
+                "status": prior.get(name, "TODO"),
+                "pairing": pairing,
+                "importers": len(importers),
+                "stubs": len(stub_paths),
+                "class": name,
+                "manifest": manifest_col,
+                "java_classes": ";".join(
+                    p.replace("orig_src/Ghidra/", "").replace("/src/main/java/", ":")
+                    for p, _st in java
+                ) or "-",
+                "real_path": os.path.relpath(real_paths[0], os.path.dirname(root) or "."),
+                "stub_paths": ";".join(
+                    os.path.relpath(p, os.path.dirname(root) or ".") for p in stub_paths
+                ),
+            }
+        )
+    # unique pairings first: an ambiguous row is not actionable until a human says which class
+    rows.sort(key=lambda r: (r["pairing"] != "unique", -r["importers"], -r["stubs"], r["class"]))
+    return rows, len(stub_decl)
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Find placeholder stubs shadowing real ported types")
+    ap.add_argument("--root", default="ghidra-rs/src")
+    ap.add_argument("--manifest", default="PORT_MANIFEST.tsv")
+    ap.add_argument("--out", help="Write STUB_DEBT.tsv here (preserves existing statuses)")
+    ap.add_argument("--top", type=int, default=20, help="Rows to print when not writing")
+    args = ap.parse_args()
+
+    rows, total_stubs = build(args.root, args.manifest, args.out)
+    actionable = [r for r in rows if r["pairing"] == "unique"]
+    ambiguous = [r for r in rows if r["pairing"] != "unique"]
+    wired = sum(r["importers"] for r in actionable)
+    confirmed = [r for r in actionable if r["manifest"] == "DONE"]
+
+    if args.out:
+        with open(args.out, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=COLUMNS, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+        print(
+            f"wrote {len(rows)} row(s) to {args.out}: {len(actionable)} shadowed "
+            f"({len(confirmed)} whose class is already DONE; {wired} file(s) wired to a placeholder), "
+            f"{len(ambiguous)} AMBIGUOUS (name shared by several Java classes -- not a conflict); "
+            f"{total_stubs} stub names in total",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            f"{len(rows)} of {total_stubs} stub names shadow a real type; "
+            f"{wired} file(s) import the placeholder\n"
+        )
+        print(f"  {'importers':>9} {'stubs':>5} {'manifest':<9} class")
+        for r in rows[: args.top]:
+            print(f"  {r['importers']:>9} {r['stubs']:>5} {r['manifest']:<9} {r['class']}")
+
+
+if __name__ == "__main__":
+    main()

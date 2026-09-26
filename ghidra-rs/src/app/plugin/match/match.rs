@@ -254,7 +254,8 @@ mod tests {
     use crate::program::model::scalar::Scalar;
     use crate::program::model::symbol::{ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
@@ -262,31 +263,46 @@ mod tests {
     }
 
     struct FakeProgram;
+    impl crate::framework::model::DomainObject for FakeProgram {}
     impl Program for FakeProgram {
-        fn get_name(&self) -> &str {
-            "fake.bin"
+        fn get_name(&self) -> String {
+            "fake.bin".to_string()
         }
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
     }
 
     struct FakeReferenceIterator;
-    impl ReferenceIterator for FakeReferenceIterator {
-        fn has_next(&self) -> bool {
-            false
-        }
-        fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    impl Iterator for FakeReferenceIterator {
+        type Item = Arc<dyn Reference>;
+
+        fn next(&mut self) -> Option<Self::Item> {
             None
         }
     }
+
+    impl ReferenceIterator for FakeReferenceIterator {}
 
     struct FakeCodeUnit {
         min_address: Address,
         length: i32,
     }
 
-    impl MemBuffer for FakeCodeUnit {}
+    impl MemBuffer for FakeCodeUnit {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            self.min_address.clone()
+        }
+    }
     impl PropertySet for FakeCodeUnit {}
 
     impl CodeUnit for FakeCodeUnit {

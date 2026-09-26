@@ -28,6 +28,10 @@ mod tests {
     impl EntryPointReference for TestEntryPointReference {}
 
     impl Reference for TestEntryPointReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             addr(0x1000)
         }

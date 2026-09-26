@@ -61,7 +61,7 @@ mod tests {
 
         fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
             use crate::program::model::data::category_path::CategoryPath;
-            CategoryPath::from_path(&self.category_path)
+            CategoryPath::parse(&self.category_path).unwrap()
         }
 
         fn get_length(&self) -> i32 {

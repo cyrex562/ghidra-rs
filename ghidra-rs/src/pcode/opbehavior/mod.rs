@@ -1,5 +1,127 @@
+pub mod binary_op_behavior;
 pub mod op_behavior;
+pub mod op_behavior_bool_and;
+pub mod op_behavior_bool_negate;
+pub mod op_behavior_bool_or;
+pub mod op_behavior_bool_xor;
+pub mod op_behavior_copy;
+pub mod op_behavior_equal;
+pub mod op_behavior_float_abs;
+pub mod op_behavior_float_add;
+pub mod op_behavior_float_ceil;
+pub mod op_behavior_float_div;
+pub mod op_behavior_float_equal;
+pub mod op_behavior_float_float2_float;
+pub mod op_behavior_float_floor;
+pub mod op_behavior_float_int2_float;
+pub mod op_behavior_float_less;
+pub mod op_behavior_float_less_equal;
+pub mod op_behavior_float_mult;
+pub mod op_behavior_float_nan;
+pub mod op_behavior_float_neg;
+pub mod op_behavior_float_not_equal;
+pub mod op_behavior_float_round;
+pub mod op_behavior_float_sqrt;
+pub mod op_behavior_float_sub;
+pub mod op_behavior_float_trunc;
+pub mod op_behavior_int2_comp;
+pub mod op_behavior_int_add;
+pub mod op_behavior_int_and;
+pub mod op_behavior_int_carry;
+pub mod op_behavior_int_div;
+pub mod op_behavior_int_left;
+pub mod op_behavior_int_less;
+pub mod op_behavior_int_less_equal;
+pub mod op_behavior_int_mult;
+pub mod op_behavior_int_negate;
+pub mod op_behavior_int_or;
+pub mod op_behavior_int_rem;
+pub mod op_behavior_int_right;
+pub mod op_behavior_int_sborrow;
+pub mod op_behavior_int_scarry;
+pub mod op_behavior_int_sdiv;
+pub mod op_behavior_int_sext;
+pub mod op_behavior_int_sless;
+pub mod op_behavior_int_sless_equal;
+pub mod op_behavior_int_srem;
+pub mod op_behavior_int_sright;
+pub mod op_behavior_int_sub;
+pub mod op_behavior_int_xor;
+pub mod op_behavior_int_zext;
+pub mod op_behavior_lzcount;
+pub mod op_behavior_not_equal;
+pub mod op_behavior_other;
+pub mod op_behavior_piece;
+pub mod op_behavior_popcount;
+pub mod op_behavior_subpiece;
 pub mod special_op_behavior;
+pub mod unary_op_behavior;
 
+pub use binary_op_behavior::{BinaryOpBehavior, BinaryOpBehaviorImpl};
 pub use op_behavior::OpBehavior;
-pub use special_op_behavior::{SpecialOpBehavior, special_op_behavior};
+pub use op_behavior_bool_and::OpBehaviorBoolAnd;
+pub use op_behavior_bool_negate::OpBehaviorBoolNegate;
+pub use op_behavior_bool_or::OpBehaviorBoolOr;
+pub use op_behavior_bool_xor::OpBehaviorBoolXor;
+pub use op_behavior_copy::OpBehaviorCopy;
+pub use op_behavior_equal::OpBehaviorEqual;
+pub use op_behavior_float_abs::OpBehaviorFloatAbs;
+pub use op_behavior_float_add::OpBehaviorFloatAdd;
+pub use op_behavior_float_ceil::OpBehaviorFloatCeil;
+pub use op_behavior_float_div::OpBehaviorFloatDiv;
+pub use op_behavior_float_equal::OpBehaviorFloatEqual;
+pub use op_behavior_float_float2_float::OpBehaviorFloatFloat2Float;
+pub use op_behavior_float_floor::OpBehaviorFloatFloor;
+pub use op_behavior_float_int2_float::OpBehaviorFloatInt2Float;
+pub use op_behavior_float_less::OpBehaviorFloatLess;
+pub use op_behavior_float_less_equal::OpBehaviorFloatLessEqual;
+pub use op_behavior_float_mult::OpBehaviorFloatMult;
+pub use op_behavior_float_nan::OpBehaviorFloatNan;
+pub use op_behavior_float_neg::OpBehaviorFloatNeg;
+pub use op_behavior_float_not_equal::OpBehaviorFloatNotEqual;
+pub use op_behavior_float_round::OpBehaviorFloatRound;
+pub use op_behavior_float_sqrt::OpBehaviorFloatSqrt;
+pub use op_behavior_float_sub::OpBehaviorFloatSub;
+pub use op_behavior_float_trunc::OpBehaviorFloatTrunc;
+pub use op_behavior_int2_comp::OpBehaviorInt2Comp;
+pub use op_behavior_int_add::OpBehaviorIntAdd;
+pub use op_behavior_int_and::OpBehaviorIntAnd;
+pub use op_behavior_int_carry::OpBehaviorIntCarry;
+pub use op_behavior_int_div::OpBehaviorIntDiv;
+pub use op_behavior_int_left::OpBehaviorIntLeft;
+pub use op_behavior_int_less::OpBehaviorIntLess;
+pub use op_behavior_int_less_equal::OpBehaviorIntLessEqual;
+pub use op_behavior_int_mult::OpBehaviorIntMult;
+pub use op_behavior_int_negate::OpBehaviorIntNegate;
+pub use op_behavior_int_or::OpBehaviorIntOr;
+pub use op_behavior_int_rem::OpBehaviorIntRem;
+pub use op_behavior_int_right::OpBehaviorIntRight;
+pub use op_behavior_int_sborrow::OpBehaviorIntSborrow;
+pub use op_behavior_int_scarry::OpBehaviorIntScarry;
+pub use op_behavior_int_sdiv::OpBehaviorIntSdiv;
+pub use op_behavior_int_sext::OpBehaviorIntSext;
+pub use op_behavior_int_sless::OpBehaviorIntSless;
+pub use op_behavior_int_sless_equal::OpBehaviorIntSlessEqual;
+pub use op_behavior_int_srem::OpBehaviorIntSrem;
+pub use op_behavior_int_sright::OpBehaviorIntSright;
+pub use op_behavior_int_sub::OpBehaviorIntSub;
+pub use op_behavior_int_xor::OpBehaviorIntXor;
+pub use op_behavior_int_zext::OpBehaviorIntZext;
+pub use op_behavior_lzcount::OpBehaviorLzcount;
+pub use op_behavior_not_equal::OpBehaviorNotEqual;
+pub use op_behavior_other::OpBehaviorOther;
+pub use op_behavior_piece::OpBehaviorPiece;
+pub use op_behavior_popcount::OpBehaviorPopcount;
+pub use op_behavior_subpiece::OpBehaviorSubpiece;
+pub use special_op_behavior::{special_op_behavior, SpecialOpBehavior};
+pub use unary_op_behavior::{UnaryOpBehavior, UnaryOpBehaviorImpl};
+
+/// Java's `FloatFormatFactory.getFloatFormat(size)` as the `OpBehaviorFloat*` classes use it:
+/// `UnsupportedFloatFormatException` is unchecked in Java and these trait methods are
+/// infallible, so an unsupported size panics with the exception's message.
+pub(crate) fn float_format_for(size: i32) -> &'static crate::pcode::floatformat::FloatFormat {
+    match crate::pcode::floatformat::get_float_format(size) {
+        Ok(format) => format,
+        Err(e) => panic!("{}", e),
+    }
+}

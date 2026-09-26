@@ -1,4 +1,4 @@
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::docking::settings::settings::Settings;
 
@@ -19,7 +19,7 @@ pub trait BuiltInDataType: DataType {
     ///
     /// Returns the definition C-statement (e.g. #define or typedef), or `None` if the type
     /// name is a standard C-primitive name or if the type is a FactoryDataType or Dynamic.
-    fn get_c_type_declaration(&self, data_organization: Option<&dyn DataOrganization>)
+    fn get_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>)
         -> Option<String>;
 
     /// Set the default settings for this data type.
@@ -44,7 +44,7 @@ mod tests {
     impl BuiltInDataType for MockBuiltInDataType {
         fn get_c_type_declaration(
             &self,
-            data_organization: Option<&dyn DataOrganization>,
+            data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             data_organization.map(|_| "typedef int mock_t;".to_string())
         }

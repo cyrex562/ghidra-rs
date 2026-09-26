@@ -5,7 +5,9 @@ use crate::program::database::mem::MemoryMapDB;
 use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
 use crate::program::database::symbol::SymbolManagerDB;
 use crate::program::model::lang::sleigh::SleighLanguage;
-use crate::program::model::listing::Program;
+use crate::program::model::listing::{ManagerGuard, Program};
+use crate::program::model::mem::Memory;
+use crate::program::model::symbol::SymbolTable;
 use std::io;
 use std::sync::{Arc, RwLock};
 
@@ -82,6 +84,30 @@ impl Program for ProgramDB {
     fn get_address_factory(&self) -> Option<std::sync::Arc<dyn crate::program::model::address::AddressFactory>> {
         Some(self.language.get_address_factory())
     }
+
+    fn get_loaded_and_initialized_address_set(&self) -> std::boxed::Box<dyn crate::program::model::address::AddressSetView> {
+        std::boxed::Box::new(crate::program::model::address::AddressSet::new())
+    }
+
+    fn get_all_initialized_address_set(&self) -> std::boxed::Box<dyn crate::program::model::address::AddressSetView> {
+        std::boxed::Box::new(crate::program::model::address::AddressSet::new())
+    }
+
+    /// The program's symbol table, write-locked for the life of the returned handle.
+    ///
+    /// Stands in for `ProgramDB.getSymbolTable()`. The symbol manager is already shared with the
+    /// other managers as an `Arc<RwLock<_>>`, so the handle locks that same lock: a symbol created
+    /// through it is visible through [`ProgramDB::get_symbol_table`]'s shared handle and through
+    /// every later handle.
+    fn get_symbol_table(&self) -> Option<ManagerGuard<'_, dyn SymbolTable>> {
+        Some(ManagerGuard::write(&*self.symbol_mgr))
+    }
+
+    /// The program's memory, write-locked for the life of the returned handle. Stands in for
+    /// `ProgramDB.getMemory()` where the caller modifies memory.
+    fn get_memory_mut(&self) -> Option<ManagerGuard<'_, dyn Memory>> {
+        Some(ManagerGuard::write(&*self.memory))
+    }
 }
 
 #[cfg(test)]
@@ -144,5 +170,101 @@ mod tests {
         let symbols = symbol_table.get_symbols(&addr).unwrap();
         assert_eq!(symbols.len(), 1);
         assert_eq!(symbols[0].get_name(), "test_label");
+    }
+
+    fn test_program() -> (ProgramDB, Address) {
+        let mut data = vec![];
+        data.extend_from_slice(&[0x60, 0xA1, 0xE0, 0xA2, 0x21, 4, 0xE0, 0xA3, 0x10]);
+        data.extend_from_slice(&[0x60, 0xA2, 0xE0, 0xA9, 0x71, 3, b'r', b'a', b'm']);
+        data.extend_from_slice(&[0x60, 0xAD, 0xA0, 0xAD]);
+        data.extend_from_slice(&[
+            0x60, 0xA5, 0xCC, 0x71, 3, b'r', b'a', b'm', 0xCF, 0x21, 4, 0xC9, 0x21, 1, 0xE0, 0xAA,
+            0x21, 1, 0xA0, 0xA5,
+        ]);
+        data.extend_from_slice(&[0xA0, 0x80 | 34]);
+        data.extend_from_slice(&[0x60, 0xA6, 0xE0, 0xAD, 0x21, 1, 0xE0, 0xAE, 0x21, 0]);
+        data.extend_from_slice(&[0x56, 0xC3, 0x41, 0, 0xD6, 0x41, 0, 0x96]);
+        data.extend_from_slice(&[0xA0, 0x80 | 38]);
+        data.extend_from_slice(&[0xA0, 0x80 | 33]);
+        let factory = Arc::new(crate::program::model::address::DefaultAddressFactory::new(
+            vec![],
+        ));
+        let decoder = PackedDecode::new(factory, data);
+        let language = Arc::new(SleighLanguage::decode(&decoder, "test".to_string()).unwrap());
+        let space = language
+            .get_address_factory()
+            .get_address_space_by_name("ram")
+            .unwrap();
+        let program = ProgramDB::new("test_prog".to_string(), language).unwrap();
+        (program, Address::new(space, 0x1000))
+    }
+
+    #[test]
+    fn program_db_is_send_and_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<ProgramDB>();
+    }
+
+    #[test]
+    fn two_managers_can_be_held_at_once_from_a_shared_program() {
+        let (program, addr) = test_program();
+        let program: &dyn Program = &program;
+        let mut symbol_table = program.get_symbol_table().expect("symbol table");
+        let memory = program.get_memory_mut().expect("memory");
+        symbol_table
+            .create_label(&addr, "both_held", SourceType::UserDefined)
+            .unwrap();
+        assert!(memory.get_block(&addr).is_none());
+        assert_eq!(symbol_table.get_symbols(&addr).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn mutation_through_one_handle_is_visible_through_the_next() {
+        let (program, addr) = test_program();
+        let shared: Arc<dyn Program> = Arc::new(program);
+        let other_owner = Arc::clone(&shared);
+        shared
+            .get_symbol_table()
+            .unwrap()
+            .create_label(&addr, "via_first", SourceType::UserDefined)
+            .unwrap();
+        let symbols = other_owner.get_symbol_table().unwrap().get_symbols(&addr).unwrap();
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].get_name(), "via_first");
+    }
+
+    #[test]
+    fn trait_handle_and_inherent_shared_handle_see_the_same_symbol_table() {
+        let (program, addr) = test_program();
+        Program::get_symbol_table(&program)
+            .unwrap()
+            .create_label(&addr, "trait_side", SourceType::UserDefined)
+            .unwrap();
+        let shared = program.get_symbol_table();
+        let symbols = shared.read().unwrap().get_symbols(&addr).unwrap();
+        assert_eq!(symbols[0].get_name(), "trait_side");
+    }
+
+    #[test]
+    fn handles_can_be_used_from_other_threads() {
+        let (program, addr) = test_program();
+        let shared: Arc<dyn Program> = Arc::new(program);
+        let workers: Vec<_> = (0..4)
+            .map(|i| {
+                let program = Arc::clone(&shared);
+                let addr = addr.clone();
+                std::thread::spawn(move || {
+                    program
+                        .get_symbol_table()
+                        .unwrap()
+                        .create_label(&addr, &format!("label_{i}"), SourceType::UserDefined)
+                        .unwrap();
+                })
+            })
+            .collect();
+        for worker in workers {
+            worker.join().unwrap();
+        }
+        assert_eq!(shared.get_symbol_table().unwrap().get_symbols(&addr).unwrap().len(), 4);
     }
 }

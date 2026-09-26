@@ -5,12 +5,17 @@ use crate::program::model::pcode::{
 };
 
 use crate::program::model::lang::sleigh::walker::ParserWalker;
+use crate::program::model::mem::MemoryAccessException;
 
 pub trait Pattern: Send + Sync {
     fn is_always_true(&self) -> bool;
     fn is_always_false(&self) -> bool;
     fn is_always_instruction_true(&self) -> bool;
-    fn is_match(&self, walker: &ParserWalker) -> bool;
+    /// Port of `Pattern.isMatch(ParserWalker, SleighDebugLogger)` (without the debug logger).
+    ///
+    /// # Errors
+    /// [`MemoryAccessException`] if the instruction bytes cannot be read.
+    fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException>;
 }
 
 pub trait DisjointPatternTrait: Pattern {
@@ -48,7 +53,7 @@ impl Pattern for DisjointPattern {
         }
     }
 
-    fn is_match(&self, walker: &ParserWalker) -> bool {
+    fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException> {
         match self {
             Self::Instruction(p) => p.is_match(walker),
             Self::Context(p) => p.is_match(walker),
@@ -103,7 +108,7 @@ impl InstructionPattern {
         }
     }
 
-    pub fn is_match(&self, walker: &ParserWalker) -> bool {
+    pub fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException> {
         self.maskvalue.is_instruction_match(walker)
     }
 }
@@ -118,7 +123,7 @@ impl Pattern for InstructionPattern {
     fn is_always_instruction_true(&self) -> bool {
         self.maskvalue.is_always_true()
     }
-    fn is_match(&self, walker: &ParserWalker) -> bool {
+    fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException> {
         self.maskvalue.is_instruction_match(walker)
     }
 }
@@ -143,8 +148,8 @@ impl ContextPattern {
         }
     }
 
-    pub fn is_match(&self, walker: &ParserWalker) -> bool {
-        self.maskvalue.is_context_match(walker)
+    pub fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException> {
+        Ok(self.maskvalue.is_context_match(walker))
     }
 }
 
@@ -158,8 +163,8 @@ impl Pattern for ContextPattern {
     fn is_always_instruction_true(&self) -> bool {
         true
     }
-    fn is_match(&self, walker: &ParserWalker) -> bool {
-        self.maskvalue.is_context_match(walker)
+    fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException> {
+        Ok(self.maskvalue.is_context_match(walker))
     }
 }
 
@@ -185,8 +190,8 @@ impl CombinePattern {
         }
     }
 
-    pub fn is_match(&self, walker: &ParserWalker) -> bool {
-        self.context.is_match(walker) && self.instr.is_match(walker)
+    pub fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException> {
+        Ok(self.instr.is_match(walker)? && self.context.is_match(walker)?)
     }
 }
 
@@ -200,7 +205,7 @@ impl Pattern for CombinePattern {
     fn is_always_instruction_true(&self) -> bool {
         self.instr.is_always_instruction_true()
     }
-    fn is_match(&self, walker: &ParserWalker) -> bool {
-        self.context.is_match(walker) && self.instr.is_match(walker)
+    fn is_match(&self, walker: &ParserWalker<'_>) -> Result<bool, MemoryAccessException> {
+        Ok(self.instr.is_match(walker)? && self.context.is_match(walker)?)
     }
 }

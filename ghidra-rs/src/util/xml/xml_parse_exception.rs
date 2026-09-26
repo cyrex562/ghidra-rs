@@ -42,6 +42,16 @@ impl std::error::Error for XmlParseException {
     }
 }
 
+/// Lets `?` lift a pull-parser navigation failure ([`XmlException`] from
+/// [`XmlPullParser::start`](super::xml_pull_parser::XmlPullParser::start)/`end`) into the
+/// [`XmlParseException`] that spec-file `restoreXml` methods report. Java's
+/// `XmlPullParser.start`/`end` throw `XmlParseException` directly, so no message is lost.
+impl From<super::xml_exception::XmlException> for XmlParseException {
+    fn from(e: super::xml_exception::XmlException) -> Self {
+        XmlParseException::new(e.message().to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,0 +1,807 @@
+use std::io;
+
+use crate::generic::lsh::vector::idf_lookup::IdfLookup;
+use crate::generic::lsh::vector::vector_compare::VectorCompare;
+use crate::generic::lsh::vector::weight_factory::WeightFactory;
+use crate::generic::lsh::vector::LSHVector;
+use crate::util::xml::spec_xml_utils;
+use crate::util::xml::xml_element::XmlElement;
+use crate::util::xml::xml_exception::XmlException;
+use crate::util::xml::xml_pull_parser::XmlPullParser;
+
+/// Shared state and concrete (non-abstract) method bodies of `generic.lsh.vector.LSHVectorFactory`.
+///
+/// Java models `LSHVectorFactory` as an abstract class: three protected fields
+/// (`weightFactory`, `idfLookup`, `settings`) plus a mix of concrete methods that read and
+/// mutate them, alongside four abstract "build a vector" methods that concrete subclasses (e.g.
+/// `WeightedLSHCosineVectorFactory`) implement. Rust traits can't hold state, so -- per this
+/// crate's established composition-over-inheritance convention for abstract classes with shared
+/// mutable state (see e.g. `CodeUnitDbBase`, composed into
+/// [`DataDB`](crate::program::database::code::data_db::DataDB)) -- that shared state and every
+/// concrete method body live here, and the [`LSHVectorFactory`] trait's default methods just
+/// delegate to it via `AsRef`/`AsMut`.
+#[derive(Default)]
+pub struct LSHVectorFactoryBase {
+    /// Container for vector weighting information and score normalization.
+    weight_factory: Option<WeightFactory>,
+    /// Container for Inverse Document Frequency (IDF) information.
+    idf_lookup: Option<IdfLookup>,
+    /// Settings used to generate weights and lookup hashes.
+    settings: i32,
+}
+
+impl LSHVectorFactoryBase {
+    /// Creates a factory with no weights loaded yet, matching Java's default field
+    /// initialization (`null`/`null`/`0`).
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Loads the factory with weights and the feature map.
+    ///
+    /// Port of `LSHVectorFactory.set(WeightFactory, IDFLookup, int)`.
+    pub fn set(&mut self, weight_factory: WeightFactory, idf_lookup: IdfLookup, settings: i32) {
+        self.weight_factory = Some(weight_factory);
+        self.idf_lookup = Some(idf_lookup);
+        self.settings = settings;
+    }
+
+    /// True if this factory has weights and lookup loaded.
+    ///
+    /// Port of `LSHVectorFactory.isLoaded()`.
+    pub fn is_loaded(&self) -> bool {
+        match &self.idf_lookup {
+            Some(lookup) => !lookup.empty(),
+            None => false,
+        }
+    }
+
+    /// The weight table's significance scale for this factory.
+    ///
+    /// Port of `LSHVectorFactory.getSignificanceScale()`. Java reads `weightFactory.getScale()`
+    /// straight off the (possibly still-null) field, so calling this before [`Self::set`] /
+    /// [`Self::read_weights`] throws a `NullPointerException`. `.unwrap()` panics the same way
+    /// here rather than silently substituting a placeholder value -- faithfully reproduced, not
+    /// guarded away.
+    pub fn get_significance_scale(&self) -> f64 {
+        self.weight_factory.as_ref().unwrap().get_scale()
+    }
+
+    /// The weight table's significance addend for this factory.
+    ///
+    /// Port of `LSHVectorFactory.getSignificanceAddend()`. See [`Self::get_significance_scale`]
+    /// for the unloaded-factory panic/NPE parity note.
+    pub fn get_significance_addend(&self) -> f64 {
+        self.weight_factory.as_ref().unwrap().get_addend()
+    }
+
+    /// The settings ID used to generate this factory's current weights.
+    ///
+    /// Port of `LSHVectorFactory.getSettings()`.
+    pub fn get_settings(&self) -> i32 {
+        self.settings
+    }
+
+    /// Direct access to the loaded weight table.
+    ///
+    /// Java's `weightFactory` field is `protected`, so a subclass (e.g.
+    /// `WeightedLSHCosineVectorFactory`) reads it directly rather than through a getter. This
+    /// exposes the same access point on the composed base. See [`Self::get_significance_scale`]
+    /// for the unloaded-factory panic/NPE parity note this shares.
+    pub fn weight_factory(&self) -> &WeightFactory {
+        self.weight_factory.as_ref().unwrap()
+    }
+
+    /// Direct access to the loaded IDF lookup table.
+    ///
+    /// See [`Self::weight_factory`]: mirrors reading Java's `protected IDFLookup idfLookup`
+    /// field directly. Unlike `weight_factory`, an *unloaded* factory's `idfLookup` is still
+    /// `Some` (populated with a fresh, empty `IdfLookup`) as soon as [`Self::set`] is called, and
+    /// remains `None` (panicking here) only before that -- matching Java's field, which is
+    /// `null` only before the first `set`/`readWeights` call.
+    pub fn idf_lookup(&self) -> &IdfLookup {
+        self.idf_lookup.as_ref().unwrap()
+    }
+
+    /// Calculates a vector's significance as compared to itself, normalized for this factory's
+    /// specific weight settings.
+    ///
+    /// Port of `LSHVectorFactory.getSelfSignificance(LSHVector)`. See
+    /// [`Self::get_significance_scale`] for the unloaded-factory panic/NPE parity note.
+    pub fn get_self_significance<V: LSHVector + ?Sized>(&self, vector: &V) -> f64 {
+        let length = vector.get_length();
+        length * length + self.weight_factory.as_ref().unwrap().get_addend()
+    }
+
+    /// Given comparison data generated by [`LSHVector::compare`], calculates the significance of
+    /// any similarity between the two vectors, normalized for this factory's specific weight
+    /// settings.
+    ///
+    /// Port of `LSHVectorFactory.calculateSignificance(VectorCompare)`. See
+    /// [`Self::get_significance_scale`] for the unloaded-factory panic/NPE parity note. Java
+    /// divides by `data.max` (an `int`, implicitly widened to `double`); if `data.max` is `0`
+    /// this produces `Infinity`/`NaN` rather than throwing `ArithmeticException` (integer
+    /// division-by-zero rules don't apply once the divisor is a `double`) -- `as f64` division
+    /// here reproduces that same floating-point behavior rather than guarding against zero.
+    pub fn calculate_significance(&self, data: &mut VectorCompare) -> f64 {
+        data.fill_out();
+        let wf = self.weight_factory.as_ref().unwrap();
+        data.dotproduct
+            - data.numflip as f64 * (wf.get_flip_norm0() + wf.get_flip_norm1() / data.max as f64)
+            - data.diff as f64 * (wf.get_diff_norm0() + wf.get_diff_norm1() / data.max as f64)
+            + wf.get_addend()
+    }
+
+    /// Reads both the weights and the lookup hashes from an XML stream.
+    ///
+    /// Port of `LSHVectorFactory.readWeights(XmlPullParser)`.
+    ///
+    /// Java reassigns the `weightFactory`/`idfLookup` fields to fresh instances -- and parses
+    /// and stores `settings` -- immediately, *before* checking whether the `<weightfactory>` and
+    /// `<idflookup>` tags actually turned up while scanning the wrapping element's children.
+    /// That means a call that fails (because one of those tags is missing) still leaves this
+    /// factory's state overwritten with the freshly-created objects -- fully populated for
+    /// whichever tag *was* found, freshly-empty for the one that wasn't -- rather than restoring
+    /// (or preserving) whatever state existed before the call. This looks like a bug, but it's
+    /// exactly what the Java source does, so it's faithfully reproduced here rather than staged
+    /// through local temporaries and only committed on success.
+    pub fn read_weights<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlException> {
+        self.weight_factory = Some(WeightFactory::new());
+        self.idf_lookup = Some(IdfLookup::new());
+        let mut found_weights = false;
+        let mut found_lookup = false;
+
+        let el = parser.start(&[])?;
+        self.settings = spec_xml_utils::decode_int(el.get_attribute("settings").as_deref());
+
+        // The <weightfactory> and <idflookup> tags must be at the second level of the xml.
+        let mut peeked = parser.peek();
+        while peeked.is_start() {
+            if peeked.get_name() == "weightfactory" {
+                self.weight_factory.as_mut().unwrap().restore_xml(parser)?;
+                found_weights = true;
+            } else if peeked.get_name() == "idflookup" {
+                self.idf_lookup.as_mut().unwrap().restore_xml(parser)?;
+                found_lookup = true;
+            } else {
+                parser.discard_sub_tree();
+            }
+            peeked = parser.peek();
+        }
+
+        if !found_weights {
+            return Err(XmlException::with_message(
+                "Could not find <weightfactory> tag in configuration",
+            ));
+        }
+        if !found_lookup {
+            return Err(XmlException::with_message(
+                "Could not find <idflookup> tag in configuration",
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// Abstract factory for constructing and reconstituting [`LSHVector`] instances.
+///
+/// Port of `generic.lsh.vector.LSHVectorFactory`. See [`LSHVectorFactoryBase`]'s docs for why
+/// the shared state and concrete method bodies live on a separate composed struct rather than on
+/// this trait. Implementors embed an [`LSHVectorFactoryBase`] (directly or via a field) and
+/// implement `AsRef`/`AsMut` for it to pick up every concrete method for free; the four methods
+/// declared directly on this trait are the ones Java leaves `abstract`.
+///
+/// [`LSHVector`]'s own comparison methods are generic over their argument type (see its docs),
+/// which makes it non-object-safe; this trait mirrors that by exposing the vector type it builds
+/// as an associated type rather than `Box<dyn LSHVector>`.
+pub trait LSHVectorFactory: AsRef<LSHVectorFactoryBase> + AsMut<LSHVectorFactoryBase> {
+    /// The concrete [`LSHVector`] type this factory builds.
+    type Vector: LSHVector;
+
+    /// Generates a vector with all coefficients zero.
+    fn build_zero_vector(&self) -> Self::Vector;
+
+    /// Generates an [`LSHVector`] from a feature set; individual features are integer hashes.
+    /// The integers MUST already be sorted. The same integer can occur more than once in the
+    /// array (term frequency (TF) > 1). The factory decides internally how to create weights
+    /// based on term frequency and any knowledge of Inverse Document Frequency (IDF).
+    fn build_vector(&self, feature: &[i32]) -> Self::Vector;
+
+    /// Generates an [`LSHVector`] based on the XML tag seen by the pull parser. The factory
+    /// generates weights based on term frequency info in the XML tag and its internal IDF
+    /// knowledge.
+    fn restore_vector_from_xml<P: XmlPullParser>(&self, parser: &mut P) -> Self::Vector;
+
+    /// Generates an [`LSHVector`] based on a string returned from an SQL query. The factory
+    /// generates weights based on term frequency info in the string and its internal IDF
+    /// knowledge.
+    fn restore_vector_from_sql(&self, sql: &str) -> io::Result<Self::Vector>;
+
+    /// Loads the factory with weights and the feature map.
+    fn set(&mut self, weight_factory: WeightFactory, idf_lookup: IdfLookup, settings: i32) {
+        self.as_mut().set(weight_factory, idf_lookup, settings);
+    }
+
+    /// True if this factory has weights and lookup loaded.
+    fn is_loaded(&self) -> bool {
+        self.as_ref().is_loaded()
+    }
+
+    /// The weight table's significance scale for this factory.
+    fn get_significance_scale(&self) -> f64 {
+        self.as_ref().get_significance_scale()
+    }
+
+    /// The weight table's significance addend for this factory.
+    fn get_significance_addend(&self) -> f64 {
+        self.as_ref().get_significance_addend()
+    }
+
+    /// The settings ID used to generate this factory's current weights.
+    fn get_settings(&self) -> i32 {
+        self.as_ref().get_settings()
+    }
+
+    /// Calculates a vector's significance as compared to itself, normalized for this factory's
+    /// specific weight settings.
+    fn get_self_significance<V: LSHVector + ?Sized>(&self, vector: &V) -> f64 {
+        self.as_ref().get_self_significance(vector)
+    }
+
+    /// Given comparison data generated by [`LSHVector::compare`], calculates the significance of
+    /// any similarity between the two vectors, normalized for this factory's specific weight
+    /// settings.
+    fn calculate_significance(&self, data: &mut VectorCompare) -> f64 {
+        self.as_ref().calculate_significance(data)
+    }
+
+    /// Reads both the weights and the lookup hashes from an XML stream.
+    fn read_weights<P: XmlPullParser>(&mut self, parser: &mut P) -> Result<(), XmlException> {
+        self.as_mut().read_weights(parser)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::generic::lsh::vector::hash_entry::HashEntry;
+    use crate::util::xml::xml_element_impl::XmlElementImpl;
+    use crate::util::xml::xml_exception::XmlException as XmlErr;
+
+    // ---- LSHVectorFactoryBase: concrete methods, no XML involved ----
+
+    #[test]
+    fn new_factory_is_not_loaded() {
+        let base = LSHVectorFactoryBase::new();
+        assert!(!base.is_loaded());
+    }
+
+    #[test]
+    fn set_then_is_loaded_reflects_the_idf_lookup() {
+        let mut base = LSHVectorFactoryBase::new();
+        let mut idf = IdfLookup::new();
+        idf.set(&[1, 10]);
+        base.set(WeightFactory::new(), idf, 7);
+        assert!(base.is_loaded());
+        assert_eq!(base.get_settings(), 7);
+    }
+
+    #[test]
+    fn set_with_empty_idf_lookup_is_not_loaded() {
+        // Java: `isLoaded()` is `idfLookup != null && !idfLookup.empty()` -- an explicitly
+        // `set()` factory with an empty IDFLookup is still "not loaded".
+        let mut base = LSHVectorFactoryBase::new();
+        base.set(WeightFactory::new(), IdfLookup::new(), 3);
+        assert!(!base.is_loaded());
+    }
+
+    #[test]
+    fn significance_scale_and_addend_read_through_to_weight_factory() {
+        let mut base = LSHVectorFactoryBase::new();
+        let mut wf = WeightFactory::new();
+        wf.set(&vec![1.0; wf.get_size()]).unwrap();
+        base.set(wf, IdfLookup::new(), 0);
+        // WeightFactory::set's last two entries are scale then addend (see WeightFactory::set),
+        // both fed 1.0 here.
+        assert_eq!(base.get_significance_scale(), 1.0);
+        assert_eq!(base.get_significance_addend(), 1.0);
+    }
+
+    #[test]
+    fn get_significance_scale_before_set_panics_like_javas_null_pointer_exception() {
+        // Java: `getSignificanceScale()` calls `weightFactory.getScale()` directly on the
+        // still-null field before `set()`/`readWeights()` ever run, throwing a
+        // `NullPointerException`. Scoped tightly around just this call (per this crate's
+        // testing convention) rather than relying on a loose `#[should_panic]` over a
+        // multi-step test.
+        let base = LSHVectorFactoryBase::new();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            base.get_significance_scale()
+        }));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_self_significance_matches_java_formula() {
+        let mut base = LSHVectorFactoryBase::new();
+        let mut wf = WeightFactory::new();
+        let mut array = vec![0.0; wf.get_size()];
+        let last = array.len();
+        array[last - 1] = 2.5; // addend
+        array[last - 2] = 1.0; // scale
+        wf.set(&array).unwrap();
+        base.set(wf, IdfLookup::new(), 0);
+
+        struct FixedLengthVector(f64);
+        impl LSHVector for FixedLengthVector {
+            fn num_entries(&self) -> i32 {
+                0
+            }
+            fn get_entry(&self, _i: i32) -> Option<HashEntry> {
+                None
+            }
+            fn get_entries(&self) -> Vec<HashEntry> {
+                Vec::new()
+            }
+            fn get_length(&self) -> f64 {
+                self.0
+            }
+            fn compare<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &mut VectorCompare) -> f64 {
+                0.0
+            }
+            fn compare_counts<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &mut VectorCompare) {}
+            fn compare_detail<T: LSHVector + ?Sized>(&self, _op2: &T, _buf: &mut String) -> f64 {
+                0.0
+            }
+            fn save_xml(&self, _fwrite: &mut dyn std::io::Write) -> io::Result<()> {
+                Ok(())
+            }
+            fn save_sql(&self) -> String {
+                String::new()
+            }
+            fn save_base64(&self, _buffer: &mut [char], _encoder: &[char]) {}
+            fn restore_xml<P: XmlPullParser>(
+                &mut self,
+                _parser: &mut P,
+                _weight_factory: &WeightFactory,
+                _idf_lookup: &IdfLookup,
+            ) -> Result<(), Box<dyn std::error::Error>> {
+                Ok(())
+            }
+            fn restore_sql(
+                &mut self,
+                _sql: &str,
+                _weight_factory: &WeightFactory,
+                _idf_lookup: &IdfLookup,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+            fn restore_base64(
+                &mut self,
+                _input: &mut dyn std::io::Read,
+                _buffer: &[char],
+                _wfactory: &WeightFactory,
+                _idflookup: &IdfLookup,
+                _decode: &[i32],
+            ) -> io::Result<()> {
+                Ok(())
+            }
+            fn calc_unique_hash(&self) -> u64 {
+                0
+            }
+        }
+
+        // Java: `vector.getLength() * vector.getLength() + weightFactory.getAddend()`.
+        let v = FixedLengthVector(3.0);
+        assert_eq!(base.get_self_significance(&v), 3.0 * 3.0 + 2.5);
+    }
+
+    #[test]
+    fn calculate_significance_matches_java_formula() {
+        let mut base = LSHVectorFactoryBase::new();
+        let mut wf = WeightFactory::new();
+        wf.set(&vec![1.0; wf.get_size()]).unwrap();
+        base.set(wf, IdfLookup::new(), 0);
+
+        let mut data = VectorCompare {
+            dotproduct: 10.0,
+            acount: 8,
+            bcount: 3,
+            intersectcount: 2,
+            ..Default::default()
+        };
+        let score = base.calculate_significance(&mut data);
+
+        // `fill_out` runs as a side effect first (min=3, max=8, diff=5, numflip=1), then the
+        // significance is derived from the (all-1.0-weighted) WeightFactory built above.
+        assert_eq!(data.min, 3);
+        assert_eq!(data.max, 8);
+        assert_eq!(data.diff, 5);
+        assert_eq!(data.numflip, 1);
+        let wf = WeightFactory::new();
+        let mut wf2 = wf;
+        wf2.set(&vec![1.0; wf2.get_size()]).unwrap();
+        let expected = data.dotproduct
+            - data.numflip as f64 * (wf2.get_flip_norm0() + wf2.get_flip_norm1() / data.max as f64)
+            - data.diff as f64 * (wf2.get_diff_norm0() + wf2.get_diff_norm1() / data.max as f64)
+            + wf2.get_addend();
+        assert_eq!(score, expected);
+    }
+
+    // ---- LSHVectorFactoryBase::read_weights ----
+
+    /// Minimal `XmlPullParser` over a pre-built element list, mirroring the `VecParser` test
+    /// fixture already established in `idf_lookup.rs`/`weight_factory.rs`.
+    struct VecParser {
+        elements: Vec<XmlElementImpl>,
+        pos: usize,
+    }
+
+    impl VecParser {
+        fn new(elements: Vec<XmlElementImpl>) -> Self {
+            Self { elements, pos: 0 }
+        }
+    }
+
+    impl XmlPullParser for VecParser {
+        type Element = XmlElementImpl;
+
+        fn get_name(&self) -> &str {
+            "vec"
+        }
+
+        fn get_processing_instruction(&self, _name: &str, _attribute: &str) -> Option<String> {
+            None
+        }
+
+        fn get_line_number(&self) -> i32 {
+            0
+        }
+
+        fn get_column_number(&self) -> i32 {
+            0
+        }
+
+        fn is_pulling_content(&self) -> bool {
+            false
+        }
+
+        fn set_pulling_content(&mut self, _pulling_content: bool) {}
+
+        fn get_current_level(&self) -> i32 {
+            0
+        }
+
+        fn has_next(&self) -> bool {
+            self.pos < self.elements.len()
+        }
+
+        fn peek(&self) -> XmlElementImpl {
+            self.elements[self.pos].clone()
+        }
+
+        fn next(&mut self) -> XmlElementImpl {
+            let elem = self.elements[self.pos].clone();
+            self.pos += 1;
+            elem
+        }
+
+        fn start(&mut self, names: &[&str]) -> Result<XmlElementImpl, XmlErr> {
+            let elem = self.next();
+            if !elem.is_start() {
+                return Err(XmlErr::with_message("expected start element"));
+            }
+            if !names.is_empty() && !names.iter().any(|n| *n == elem.get_name()) {
+                return Err(XmlErr::with_message("unexpected start element name"));
+            }
+            Ok(elem)
+        }
+
+        fn end(&mut self) -> Result<XmlElementImpl, XmlErr> {
+            let elem = self.next();
+            if !elem.is_end() {
+                return Err(XmlErr::with_message("expected end element"));
+            }
+            Ok(elem)
+        }
+
+        fn end_matching(&mut self, element: &XmlElementImpl) -> Result<XmlElementImpl, XmlErr> {
+            let elem = self.end()?;
+            if elem.get_name() != element.get_name() {
+                return Err(XmlErr::with_message("mismatched end element"));
+            }
+            Ok(elem)
+        }
+
+        fn soft_start(&mut self, names: &[&str]) -> Option<XmlElementImpl> {
+            if !self.has_next() {
+                return None;
+            }
+            let elem = self.peek();
+            if !elem.is_start() {
+                return None;
+            }
+            if !names.is_empty() && !names.iter().any(|n| *n == elem.get_name()) {
+                return None;
+            }
+            Some(self.next())
+        }
+
+        fn discard_sub_tree(&mut self) -> i32 {
+            0
+        }
+
+        fn discard_sub_tree_named(&mut self, _name: &str) -> Result<i32, XmlErr> {
+            Ok(0)
+        }
+
+        fn discard_sub_tree_element(&mut self, _element: &XmlElementImpl) -> i32 {
+            0
+        }
+
+        fn dispose(&mut self) {}
+    }
+
+    fn start_elem(name: &str, attrs: Vec<(String, String)>) -> XmlElementImpl {
+        XmlElementImpl::new(true, false, name, 0, attrs, None, 0, 0).unwrap()
+    }
+
+    fn end_elem(name: &str, text: Option<String>) -> XmlElementImpl {
+        XmlElementImpl::new(false, true, name, 0, Vec::new(), text, 0, 0).unwrap()
+    }
+
+    fn text_tag(name: &str, value: f64) -> Vec<XmlElementImpl> {
+        vec![start_elem(name, Vec::new()), end_elem(name, Some(value.to_string()))]
+    }
+
+    /// Builds a well-formed `<weightfactory>...</weightfactory>` element sequence matching
+    /// exactly what `WeightFactory::restore_xml` (see `weight_factory.rs`) expects: 512 `<idf>`
+    /// tags then 64 `<tf>` tags (the crate-private `IDF_SIZE`/`TF_SIZE` constants) followed by
+    /// the five scalar tags, all wrapped by the `scale`/`addend`-bearing start tag.
+    fn weightfactory_elements(scale: f64, addend: f64) -> Vec<XmlElementImpl> {
+        let mut elements = vec![start_elem(
+            "weightfactory",
+            vec![
+                ("scale".to_string(), scale.to_string()),
+                ("addend".to_string(), addend.to_string()),
+            ],
+        )];
+        for _ in 0..512 {
+            elements.extend(text_tag("idf", 1.0));
+        }
+        for _ in 0..64 {
+            elements.extend(text_tag("tf", 1.0));
+        }
+        elements.extend(text_tag("weightnorm", 1.0));
+        elements.extend(text_tag("probflip0", 0.1));
+        elements.extend(text_tag("probflip1", 0.2));
+        elements.extend(text_tag("probdiff0", 0.3));
+        elements.extend(text_tag("probdiff1", 0.4));
+        elements.push(end_elem("weightfactory", Some(String::new())));
+        elements
+    }
+
+    /// Builds a well-formed `<idflookup>...</idflookup>` element sequence containing one hash
+    /// entry (hash `0x5`, count `50`), matching `IdfLookup::restore_xml`.
+    fn idflookup_elements() -> Vec<XmlElementImpl> {
+        vec![
+            start_elem("idflookup", vec![("size".to_string(), "1".to_string())]),
+            start_elem("hash", vec![("count".to_string(), "50".to_string())]),
+            end_elem("hash", Some("0x5".to_string())),
+            end_elem("idflookup", Some(String::new())),
+        ]
+    }
+
+    #[test]
+    fn read_weights_round_trips_a_well_formed_document() {
+        let mut elements = vec![start_elem(
+            "lshvectorfactory",
+            vec![("settings".to_string(), "5".to_string())],
+        )];
+        elements.extend(weightfactory_elements(2.0, 0.5));
+        elements.extend(idflookup_elements());
+        elements.push(end_elem("lshvectorfactory", Some(String::new())));
+
+        let mut parser = VecParser::new(elements);
+        let mut base = LSHVectorFactoryBase::new();
+        base.read_weights(&mut parser).unwrap();
+
+        assert_eq!(base.get_settings(), 5);
+        assert!(base.is_loaded());
+        assert_eq!(base.get_significance_scale(), 2.0);
+        assert_eq!(base.get_significance_addend(), 0.5);
+        assert_eq!(base.idf_lookup.as_ref().unwrap().get_count(5), 50);
+    }
+
+    #[test]
+    fn read_weights_missing_weightfactory_tag_errors_but_still_overwrites_state() {
+        // Java: `weightFactory`/`idfLookup`/`settings` are all overwritten *before* the
+        // presence checks run, so a failed call (missing `<weightfactory>`) still leaves
+        // `idfLookup` populated with whatever *was* successfully parsed, and `weightFactory`
+        // reset to a fresh (unpopulated) instance -- not left as `None` or as prior state.
+        let mut elements = vec![start_elem(
+            "lshvectorfactory",
+            vec![("settings".to_string(), "7".to_string())],
+        )];
+        elements.extend(idflookup_elements());
+        elements.push(end_elem("lshvectorfactory", Some(String::new())));
+
+        let mut parser = VecParser::new(elements);
+        let mut base = LSHVectorFactoryBase::new();
+        base.settings = 999; // prior state that a failed call still clobbers
+
+        let err = base.read_weights(&mut parser).unwrap_err();
+        assert_eq!(err.message(), "Could not find <weightfactory> tag in configuration");
+
+        assert_eq!(base.settings, 7);
+        assert!(base.idf_lookup.as_ref().unwrap().get_count(5) == 50);
+        assert!(base.weight_factory.is_some());
+    }
+
+    #[test]
+    fn read_weights_missing_idflookup_tag_errors_but_still_overwrites_state() {
+        let mut elements = vec![start_elem(
+            "lshvectorfactory",
+            vec![("settings".to_string(), "9".to_string())],
+        )];
+        elements.extend(weightfactory_elements(3.0, 1.5));
+        elements.push(end_elem("lshvectorfactory", Some(String::new())));
+
+        let mut parser = VecParser::new(elements);
+        let mut base = LSHVectorFactoryBase::new();
+
+        let err = base.read_weights(&mut parser).unwrap_err();
+        assert_eq!(err.message(), "Could not find <idflookup> tag in configuration");
+
+        assert_eq!(base.settings, 9);
+        assert_eq!(base.weight_factory.as_ref().unwrap().get_scale(), 3.0);
+        // idf_lookup was reset to a fresh, empty instance (its tag never appeared).
+        assert!(base.idf_lookup.as_ref().unwrap().empty());
+    }
+
+    #[test]
+    fn read_weights_settings_attribute_uses_integer_decode_semantics() {
+        // Java: `Integer.decode(el.getAttribute("settings"))` accepts `0x`-prefixed hex.
+        let mut elements = vec![start_elem(
+            "lshvectorfactory",
+            vec![("settings".to_string(), "0x10".to_string())],
+        )];
+        elements.extend(weightfactory_elements(1.0, 1.0));
+        elements.extend(idflookup_elements());
+        elements.push(end_elem("lshvectorfactory", Some(String::new())));
+
+        let mut parser = VecParser::new(elements);
+        let mut base = LSHVectorFactoryBase::new();
+        base.read_weights(&mut parser).unwrap();
+        assert_eq!(base.get_settings(), 16);
+    }
+
+    // ---- LSHVectorFactory trait: default-method delegation through a concrete implementor ----
+
+    #[derive(Default)]
+    struct MockVector;
+
+    impl LSHVector for MockVector {
+        fn num_entries(&self) -> i32 {
+            0
+        }
+        fn get_entry(&self, _i: i32) -> Option<HashEntry> {
+            None
+        }
+        fn get_entries(&self) -> Vec<HashEntry> {
+            Vec::new()
+        }
+        fn get_length(&self) -> f64 {
+            2.0
+        }
+        fn compare<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &mut VectorCompare) -> f64 {
+            0.0
+        }
+        fn compare_counts<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &mut VectorCompare) {}
+        fn compare_detail<T: LSHVector + ?Sized>(&self, _op2: &T, _buf: &mut String) -> f64 {
+            0.0
+        }
+        fn save_xml(&self, _fwrite: &mut dyn std::io::Write) -> io::Result<()> {
+            Ok(())
+        }
+        fn save_sql(&self) -> String {
+            String::new()
+        }
+        fn save_base64(&self, _buffer: &mut [char], _encoder: &[char]) {}
+        fn restore_xml<P: XmlPullParser>(
+            &mut self,
+            _parser: &mut P,
+            _weight_factory: &WeightFactory,
+            _idf_lookup: &IdfLookup,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            Ok(())
+        }
+        fn restore_sql(
+            &mut self,
+            _sql: &str,
+            _weight_factory: &WeightFactory,
+            _idf_lookup: &IdfLookup,
+        ) -> io::Result<()> {
+            Ok(())
+        }
+        fn restore_base64(
+            &mut self,
+            _input: &mut dyn std::io::Read,
+            _buffer: &[char],
+            _wfactory: &WeightFactory,
+            _idflookup: &IdfLookup,
+            _decode: &[i32],
+        ) -> io::Result<()> {
+            Ok(())
+        }
+        fn calc_unique_hash(&self) -> u64 {
+            0
+        }
+    }
+
+    #[derive(Default)]
+    struct MockFactory {
+        base: LSHVectorFactoryBase,
+    }
+
+    impl AsRef<LSHVectorFactoryBase> for MockFactory {
+        fn as_ref(&self) -> &LSHVectorFactoryBase {
+            &self.base
+        }
+    }
+
+    impl AsMut<LSHVectorFactoryBase> for MockFactory {
+        fn as_mut(&mut self) -> &mut LSHVectorFactoryBase {
+            &mut self.base
+        }
+    }
+
+    impl LSHVectorFactory for MockFactory {
+        type Vector = MockVector;
+
+        fn build_zero_vector(&self) -> MockVector {
+            MockVector
+        }
+
+        fn build_vector(&self, _feature: &[i32]) -> MockVector {
+            MockVector
+        }
+
+        fn restore_vector_from_xml<P: XmlPullParser>(&self, _parser: &mut P) -> MockVector {
+            MockVector
+        }
+
+        fn restore_vector_from_sql(&self, _sql: &str) -> io::Result<MockVector> {
+            Ok(MockVector)
+        }
+    }
+
+    #[test]
+    fn trait_default_methods_delegate_to_the_composed_base() {
+        let mut factory = MockFactory::default();
+        assert!(!factory.is_loaded());
+
+        factory.set(WeightFactory::new(), IdfLookup::new(), 4);
+        assert_eq!(factory.get_settings(), 4);
+
+        let _ = factory.build_zero_vector();
+        let _ = factory.build_vector(&[1, 2, 3]);
+        let vector = factory.restore_vector_from_sql("ignored").unwrap();
+        assert_eq!(vector.get_length(), 2.0);
+    }
+
+    #[test]
+    fn trait_get_self_significance_delegates_through_the_base() {
+        let mut factory = MockFactory::default();
+        let mut wf = WeightFactory::new();
+        let mut array = vec![0.0; wf.get_size()];
+        let last = array.len();
+        array[last - 1] = 1.0; // addend
+        wf.set(&array).unwrap();
+        factory.set(wf, IdfLookup::new(), 0);
+
+        let vector = MockVector;
+        // Java: `vector.getLength() * vector.getLength() + weightFactory.getAddend()`.
+        assert_eq!(factory.get_self_significance(&vector), 2.0 * 2.0 + 1.0);
+    }
+}

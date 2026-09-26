@@ -27,13 +27,15 @@ mod tests {
         name: String,
     }
 
+    impl crate::framework::model::DomainObject for MockProgram {}
+
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            &self.name
+        fn get_name(&self) -> String {
+            self.name.clone()
         }
 
-        fn get_language_id(&self) -> &str {
-            "x86:LE:64:default"
+        fn get_language_id(&self) -> String {
+            "x86:LE:64:default".to_string()
         }
 
         fn get_address_factory(&self) -> Option<std::sync::Arc<dyn crate::program::model::address::AddressFactory>> {
@@ -65,7 +67,7 @@ mod tests {
 
         fn active_program_changed(&self, active_program: &dyn Program) {
             *self.active_program_changed_called.borrow_mut() = true;
-            *self.active_program_name.borrow_mut() = active_program.get_name().to_string();
+            *self.active_program_name.borrow_mut() = Program::get_name(active_program).to_string();
         }
     }
 

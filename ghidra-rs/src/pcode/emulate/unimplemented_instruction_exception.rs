@@ -53,7 +53,7 @@ mod tests {
         #[allow(deprecated)]
         let exc = UnimplementedInstructionException::new(addr);
 
-        assert_eq!(exc.message(), "Unimplemented instruction, PC=ram:00001000");
+        assert_eq!(exc.message(), "Unimplemented instruction, PC=ram:0x1000");
     }
 
     #[test]
@@ -75,7 +75,7 @@ mod tests {
         let exc = UnimplementedInstructionException::new(addr);
 
         let msg = format!("{}", exc);
-        assert_eq!(msg, "Unimplemented instruction, PC=code:00000100");
+        assert_eq!(msg, "Unimplemented instruction, PC=code:0x100");
     }
 
     #[test]

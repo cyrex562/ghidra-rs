@@ -1,10 +1,59 @@
+pub mod abstract_dependency_graph;
 pub mod addable_long_double_hashtable;
 pub mod addable_long_int_hashtable;
+pub mod attributes;
+pub mod dependency_graph;
+pub mod deterministic_dependency_graph;
+pub mod depth_first_search;
+pub mod directed_graph;
+pub mod dominator;
+pub mod edge;
+pub mod edge_set;
+pub mod graph_iterator;
+pub mod key_indexable_set;
+pub mod keyed_object;
+pub mod keyed_object_factory;
 pub mod path;
+pub mod simple_weighted_digraph;
+pub mod vertex;
+pub mod vertex_expansion_listener;
+pub mod vertex_set;
+pub mod weighted_digraph;
 
+pub use abstract_dependency_graph::{AbstractDependencyGraph, CycleDetectedError};
+pub use dependency_graph::DependencyGraph;
+pub use deterministic_dependency_graph::DeterministicDependencyGraph;
 #[allow(deprecated)]
 pub use addable_long_double_hashtable::AddableLongDoubleHashtable;
 #[allow(deprecated)]
 pub use addable_long_int_hashtable::AddableLongIntHashtable;
 #[allow(deprecated)]
+pub use attributes::AttributeManager;
+#[allow(deprecated)]
+pub use depth_first_search::DepthFirstSearch;
+#[allow(deprecated)]
+pub use directed_graph::{verts_to_referent_set, DirectedGraph};
+#[allow(deprecated)]
+pub use dominator::Dominator;
+#[allow(deprecated)]
+pub use edge::Edge;
+#[allow(deprecated)]
+pub use edge_set::EdgeSet;
+#[allow(deprecated)]
+pub use graph_iterator::{ConcurrentModificationError, GraphIterator};
+#[allow(deprecated)]
+pub use key_indexable_set::KeyIndexableSet;
+#[allow(deprecated)]
+pub use keyed_object::KeyedObject;
+#[allow(deprecated)]
+pub use keyed_object_factory::KeyedObjectFactory;
+#[allow(deprecated)]
 pub use path::Path;
+#[allow(deprecated)]
+pub use simple_weighted_digraph::SimpleWeightedDigraph;
+#[allow(deprecated)]
+pub use vertex::Vertex;
+#[allow(deprecated)]
+pub use vertex_set::{VertexSet, VertexSetIterator};
+#[allow(deprecated)]
+pub use weighted_digraph::WeightedDigraph;

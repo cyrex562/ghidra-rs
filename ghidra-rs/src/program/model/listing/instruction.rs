@@ -9,7 +9,8 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::pcode::PcodeOp;
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{FlowOverride, InstructionContext};
+use crate::program::seam_stubs::InstructionContext;
+use crate::program::model::listing::FlowOverride;
 use crate::program::util::CodeUnitInsertionException;
 
 /// Port of `InstructionPrototype.INVALID_DEPTH_CHANGE` (2^24).
@@ -197,7 +198,7 @@ pub trait Instruction: CodeUnit + ProcessorContext {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::program::model::lang::register::Register;
     use crate::program::model::lang::ProcessorContextView;
@@ -206,15 +207,31 @@ mod tests {
     use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, RegisterValue};
+    use crate::program::model::lang::register_value::RegisterValue;
+use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
 
     struct MockInstruction {
         address: Address,
+        max_address: Address,
         flow_override: FlowOverride,
         length_override: Option<i32>,
     }
 
-    impl MemBuffer for MockInstruction {}
+    impl MemBuffer for MockInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            self.address.clone()
+        }
+    }
     impl PropertySet for MockInstruction {}
 
     impl ProcessorContextView for MockInstruction {
@@ -234,7 +251,7 @@ mod tests {
             None
         }
 
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
             None
         }
 
@@ -250,7 +267,7 @@ mod tests {
 
         fn set_register_value(
             &mut self,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
@@ -282,7 +299,7 @@ mod tests {
         }
 
         fn get_max_address(&self) -> Address {
-            self.address.clone()
+            self.max_address.clone()
         }
 
         fn get_mnemonic_string(&self) -> String {
@@ -571,10 +588,23 @@ mod tests {
         Address::new(space, offset)
     }
 
+    /// Builds a minimal [`Instruction`] trait object spanning `[min, max]`, for use by other
+    /// modules' smoke tests that need a concrete `Instruction` without re-implementing the whole
+    /// trait (which pulls in `CodeUnit` and `ProcessorContext`/`ProcessorContextView`).
+    pub(crate) fn mock_instruction(min: Address, max: Address) -> Arc<dyn Instruction> {
+        Arc::new(MockInstruction {
+            address: min,
+            max_address: max,
+            flow_override: FlowOverride::None,
+            length_override: None,
+        })
+    }
+
     #[test]
     fn usable_as_trait_object() {
         let mut instr: Box<dyn Instruction> = Box::new(MockInstruction {
             address: mock_address(0x400000),
+            max_address: mock_address(0x400000),
             flow_override: FlowOverride::None,
             length_override: None,
         });

@@ -1,4 +1,24 @@
+pub mod alloc;
+pub mod analysis;
+pub mod decode;
 pub mod gen;
+pub mod jit_compiler;
+pub mod jit_bytes_pcode_executor_state;
+pub mod jit_bytes_pcode_executor_state_piece;
+pub mod jit_configuration;
 pub mod jit_jvm_type_utils;
+pub mod jit_pcode_emulator;
+pub mod jit_pcode_thread;
+pub mod op;
+pub mod var;
 
+pub use alloc::VarHandler;
+pub use jit_bytes_pcode_executor_state::JitBytesPcodeExecutorState;
+pub use jit_bytes_pcode_executor_state_piece::{
+    JitBytesPcodeExecutorStatePiece, JitBytesPcodeExecutorStateSpace,
+};
+pub use jit_compiler::JitCompiler;
+pub use jit_configuration::{JitConfiguration, Opt};
 pub use jit_jvm_type_utils::{JavaType, WildcardBound};
+pub use op::{JitBoolBinOp, JitCallOtherOpIf};
+pub use var::JitVar;

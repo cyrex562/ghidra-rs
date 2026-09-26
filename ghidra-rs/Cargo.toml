@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# In-workspace derive macros (StructureMapped for golang structmapping; syn/quote approved 2026-09-25)
+ghidra-rs-macros = { path = "../ghidra-rs-macros" }
+
 # UI
 egui = "0.28"
 eframe = "0.28"
@@ -20,6 +23,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
 sha1 = "0.10"
+md-5 = "0.10"  # HashUtilities legacy MD5 password-hash verification
 hmac = "0.12"
 rayon = "1.10"
 dashmap = "6.0"
@@ -34,10 +38,21 @@ pulldown-cmark = "0.12"     # MarkdownToHtml (CommonMark -> HTML)
 rsa = { version = "0.9", features = ["sha1", "sha2"] }   # SSH RSA signing / keygen
 dsa = "0.6"                 # SSHSignatureCallback DSA signing
 ssh-key = { version = "0.6", features = ["rsa", "dsa", "std"] }  # OpenSSH/PEM key format
+aes = "0.8"                  # SSHKeyManager legacy PEM key decryption (AES-CBC)
 tokio = { version = "1.37", features = ["full"] }
 native-tls = "0.2"
 regex = "1.10"
 libc = "0.2"
+slotmap = "1.0"              # arena + typed ID pattern (see OWNERSHIP_MIGRATION.md)
+quick-xml = "0.39"           # SAX layer under util/xml pull parsers (sax_parser.rs)
+prost = "0.14"               # protobuf messages for Trace RMI / ISF (generated code in debug/rmi/proto, debug/dbg/isf/protocol)
+num-bigint = "0.4"           # java.math.BigInteger for BigFloat / FloatFormat (pcode/floatformat)
+num-traits = "0.2"           # Zero/One/Signed/ToPrimitive traits used with num-bigint (already in the tree transitively)
+z3 = { version = "0.21", optional = true }  # real Z3 solver behind the SymZ3 Z3Context seam; needs libz3 (feature `z3`)
+
+[features]
+# Off by default: the default build/test must not need libz3. See feature/symz3/z3_solver_context.rs.
+z3 = ["dep:z3"]
 
 [dev-dependencies]
 tempfile = "3.10"

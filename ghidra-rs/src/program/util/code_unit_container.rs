@@ -71,10 +71,18 @@ impl fmt::Debug for CodeUnitContainer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::listing::{CodeUnit as _, MNEMONIC};
-    use crate::program::model::address::Address;
+    use crate::program::model::listing::CodeUnit as _;
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
+
+    fn addr(offset: i64) -> Address {
+        Address::new(
+            AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1),
+            offset,
+        )
+    }
 
     struct MockCodeUnit {
         mnemonic: String,
@@ -99,8 +107,17 @@ mod tests {
     }
 
     impl MemBuffer for MockCodeUnit {
-        fn get_bytes(&self, _offset: i32, _length: i32) -> Result<Vec<u8>, crate::program::model::mem::MemoryAccessException> {
-            Ok(vec![])
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> Address {
+            self.address.clone()
         }
     }
 
@@ -215,50 +232,62 @@ mod tests {
             None
         }
 
-        fn add_external_operand_reference(
+        fn get_references_from(&self) -> Vec<Arc<dyn crate::program::model::symbol::Reference>> {
+            vec![]
+        }
+
+        fn get_reference_iterator_to(
+            &self,
+        ) -> Box<dyn crate::program::model::symbol::ReferenceIterator> {
+            unimplemented!()
+        }
+
+        fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
+            unimplemented!()
+        }
+
+        fn remove_external_reference(&mut self, _op_index: i32) {}
+
+        fn set_primary_memory_reference(
             &mut self,
-            _index: i32,
-            _lib_name: &str,
-            _ext_label: &str,
-            _ext_addr: Option<Address>,
-            _ref_type: crate::program::model::symbol::RefType,
+            _reference: Arc<dyn crate::program::model::symbol::Reference>,
+        ) {
+        }
+
+        fn set_stack_reference(
+            &mut self,
+            _op_index: i32,
+            _offset: i32,
             _source_type: crate::program::model::symbol::SourceType,
-        ) {}
+            _ref_type: crate::program::model::symbol::RefType,
+        ) {
+        }
 
-        fn remove_external_operand_reference(&mut self, _index: i32, _lib_name: &str, _label: &str) {}
-
-        fn get_fallthrough_address(&self) -> Option<Address> {
-            None
+        fn set_register_reference(
+            &mut self,
+            _op_index: i32,
+            _reg: &crate::program::model::lang::register::Register,
+            _source_type: crate::program::model::symbol::SourceType,
+            _ref_type: crate::program::model::symbol::RefType,
+        ) {
         }
 
         fn get_num_operands(&self) -> i32 {
             self.num_operands
         }
 
-        fn get_operand_representation(&self, _index: i32) -> String {
-            String::new()
-        }
-
-        fn get_default_operand_representation(&self, _index: i32) -> String {
-            String::new()
-        }
-
-        fn get_operand_reftype(&self, _index: i32) -> crate::program::model::symbol::RefType {
-            crate::program::model::symbol::RefType::Flow
-        }
-
-        fn as_instruction(&self) -> Option<&dyn crate::program::model::listing::Instruction> {
+        fn get_address(&self, _op_index: i32) -> Option<Address> {
             None
         }
 
-        fn as_defined_data(&self) -> Option<&dyn crate::program::model::listing::Data> {
+        fn get_scalar(&self, _op_index: i32) -> Option<crate::program::model::scalar::Scalar> {
             None
         }
     }
 
     #[test]
     fn construction_caches_mnemonic_and_arity() {
-        let addr = Address::new_default_space(0x1000);
+        let addr = addr(0x1000);
         let code_unit = MockCodeUnit::new("MOV", 2, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -268,7 +297,7 @@ mod tests {
 
     #[test]
     fn get_code_unit_returns_reference() {
-        let addr = Address::new_default_space(0x2000);
+        let addr = addr(0x2000);
         let code_unit = MockCodeUnit::new("JMP", 1, addr.clone());
         let container = CodeUnitContainer::new(code_unit.clone());
 
@@ -277,7 +306,7 @@ mod tests {
 
     #[test]
     fn display_includes_mnemonic_and_address() {
-        let addr = Address::new_default_space(0x3000);
+        let addr = addr(0x3000);
         let code_unit = MockCodeUnit::new("ADD", 3, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -288,7 +317,7 @@ mod tests {
 
     #[test]
     fn zero_operands() {
-        let addr = Address::new_default_space(0x4000);
+        let addr = addr(0x4000);
         let code_unit = MockCodeUnit::new("NOP", 0, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -297,7 +326,7 @@ mod tests {
 
     #[test]
     fn multiple_operands() {
-        let addr = Address::new_default_space(0x5000);
+        let addr = addr(0x5000);
         let code_unit = MockCodeUnit::new("IMUL", 3, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -306,7 +335,7 @@ mod tests {
 
     #[test]
     fn different_mnemonics() {
-        let addr = Address::new_default_space(0x6000);
+        let addr = addr(0x6000);
         let code_unit = MockCodeUnit::new("PUSH", 1, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -315,7 +344,7 @@ mod tests {
 
     #[test]
     fn debug_display() {
-        let addr = Address::new_default_space(0x7000);
+        let addr = addr(0x7000);
         let code_unit = MockCodeUnit::new("XOR", 2, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 

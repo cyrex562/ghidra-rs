@@ -107,7 +107,7 @@ impl AddressMapImpl {
     pub fn key_ranges_for_set(&mut self, set: &dyn AddressSetView) -> Vec<KeyRange> {
         let mut key_ranges = Vec::new();
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             self.add_key_ranges(&mut key_ranges, range.min_address(), range.max_address());
         }
         key_ranges

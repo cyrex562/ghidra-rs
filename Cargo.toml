@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "ghidra-rs",
+    "ghidra-rs-macros",
 ]
 resolver = "2"

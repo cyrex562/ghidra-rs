@@ -2,9 +2,9 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
-use super::g_binary_reader::ByteProvider;
+use super::g_binary_reader::GByteStore;
 
-/// File-backed [`ByteProvider`] that supports random-access reads and writes.
+/// File-backed [`GByteStore`] that supports random-access reads and writes.
 ///
 /// Mirrors `mobiledevices.dmg.ghidra.GByteProvider` from the original Ghidra source.
 /// The underlying [`std::fs::File`] plays the role of `GRandomAccessFile` —
@@ -84,7 +84,7 @@ impl GByteProvider {
     }
 }
 
-impl ByteProvider for GByteProvider {
+impl GByteStore for GByteProvider {
     fn length(&mut self) -> io::Result<u64> {
         Ok(self.file.metadata()?.len())
     }

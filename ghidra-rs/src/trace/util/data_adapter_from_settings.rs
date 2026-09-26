@@ -111,13 +111,14 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::mem::MemoryAccessException;
-    use crate::program::model::symbol::{RefType, ReferenceIterator, SourceType, Symbol};
+    use crate::program::model::symbol::{Reference, RefType, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
     use crate::program::model::listing::program::Program;
     use crate::docking::settings::settings::Settings;
     use crate::program::model::lang::register::Register;
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, Reference};
+    use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
     use std::sync::Arc;
 
     fn create_test_address_space() -> Arc<AddressSpace> {
@@ -128,18 +129,19 @@ mod tests {
         space.address(offset)
     }
 
+    // Holds a count rather than the definitions themselves: `get_settings_definitions` builds a
+    // fresh `MockSettingsDefinition` per entry anyway, and `dyn SettingsDefinition` is neither
+    // `Send` nor `Sync`, which `DataType` requires.
     struct MockDataType {
-        settings_defs: Vec<Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>>,
+        settings_def_count: usize,
     }
 
     impl DataType for MockDataType {
         fn get_settings_definitions(
             &self,
         ) -> Vec<Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>> {
-            // Clone the definitions for testing
-            self.settings_defs
-                .iter()
-                .map(|def| Box::new(MockSettingsDefinition) as Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>)
+            (0..self.settings_def_count)
+                .map(|_| Box::new(MockSettingsDefinition) as Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>)
                 .collect()
         }
     }
@@ -160,63 +162,36 @@ mod tests {
     }
 
     impl MemBuffer for MockData {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.address.clone()
         }
-
-        fn get_bytes(
-            &self,
-            _start: i32,
-            _end: i32,
-        ) -> Result<Vec<u8>, MemoryAccessException> {
-            Ok(vec![])
-        }
-
-        fn get_byte(&self, _offset: i32) -> Result<u8, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_short(&self, _offset: i32) -> Result<u16, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_int(&self, _offset: i32) -> Result<u32, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_long(&self, _offset: i32) -> Result<u64, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_var_length(&self) -> i32 {
-            1
-        }
     }
 
-    impl PropertySet for MockData {
-        fn get_property(&self, _property_name: &str) -> Option<Box<dyn Any>> {
-            None
-        }
-
-        fn set_property(&mut self, _property_name: &str, _property_value: Box<dyn Any>) {}
-
-        fn delete_property(&mut self, _property_name: &str) {}
-    }
+    impl PropertySet for MockData {}
 
     impl Settings for MockData {
-        fn get_value(&self, key: &str) -> Box<dyn Any> {
+        fn get_value(&self, key: &str) -> Option<Box<dyn Any>> {
             if key == "mutability" {
                 if self.constant {
-                    Box::new(Some(CONSTANT as i64))
+                    Some(Box::new(CONSTANT as i64))
                 } else if self.writable {
-                    Box::new(Some(WRITABLE as i64))
+                    Some(Box::new(WRITABLE as i64))
                 } else if self.volatile {
-                    Box::new(Some(VOLATILE as i64))
+                    Some(Box::new(VOLATILE as i64))
                 } else {
-                    Box::new(None::<i64>)
+                    None
                 }
             } else {
-                Box::new(None::<i64>)
+                None
             }
         }
 
@@ -224,26 +199,6 @@ mod tests {
 
         fn get_names(&self) -> Vec<String> {
             vec![]
-        }
-
-        fn copy_settings(&mut self, _src: &dyn Settings) {}
-
-        fn clear(&mut self) {}
-
-        fn get_default_value(&self, _key: &str) -> Box<dyn Any> {
-            Box::new(None::<i32>)
-        }
-
-        fn contains(&self, _key: &str) -> bool {
-            false
-        }
-
-        fn to_string(&self) -> String {
-            String::new()
-        }
-
-        fn is_immutable(&self) -> bool {
-            false
         }
 
         fn get_long(&self, key: &str) -> Option<i64> {
@@ -458,15 +413,20 @@ mod tests {
 
         fn get_base_data_type(&self) -> Box<dyn DataType> {
             Box::new(MockDataType {
-                settings_defs: vec![Box::new(MockSettingsDefinition)],
+                settings_def_count: 1,
             })
         }
 
-        fn get_value_references(&self) -> Vec<Box<dyn Reference>> {
+        fn get_value_references(&self) -> Vec<Box<dyn crate::program::seam_stubs::Reference>> {
             vec![]
         }
 
-        fn add_value_reference(&mut self, _ref_addr: Address, _ref_type: Box<dyn RefType>) {}
+        fn add_value_reference(
+            &mut self,
+            _ref_addr: Address,
+            _ref_type: Box<dyn crate::program::seam_stubs::RefType>,
+        ) {
+        }
 
         fn remove_value_reference(&mut self, _ref_addr: Address) {}
 
@@ -587,7 +547,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(data.is_constant());
+        assert!(DataAdapterFromSettings::is_constant(&data));
     }
 
     #[test]
@@ -600,7 +560,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(!data.is_constant());
+        assert!(!DataAdapterFromSettings::is_constant(&data));
     }
 
     #[test]
@@ -613,7 +573,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(data.is_writable());
+        assert!(DataAdapterFromSettings::is_writable(&data));
     }
 
     #[test]
@@ -626,7 +586,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(!data.is_writable());
+        assert!(!DataAdapterFromSettings::is_writable(&data));
     }
 
     #[test]
@@ -639,7 +599,7 @@ mod tests {
             volatile: true,
         };
 
-        assert!(data.is_volatile());
+        assert!(DataAdapterFromSettings::is_volatile(&data));
     }
 
     #[test]
@@ -652,7 +612,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(!data.is_volatile());
+        assert!(!DataAdapterFromSettings::is_volatile(&data));
     }
 
     #[test]

@@ -1,0 +1,13 @@
+pub mod debugger_platform_plugin_event;
+pub mod trace_activated_plugin_event;
+pub mod trace_closed_plugin_event;
+pub mod trace_inactive_coordinates_plugin_event;
+pub mod trace_location_plugin_event;
+pub mod trace_opened_plugin_event;
+
+pub use debugger_platform_plugin_event::DebuggerPlatformPluginEvent;
+pub use trace_activated_plugin_event::TraceActivatedPluginEvent;
+pub use trace_closed_plugin_event::TraceClosedPluginEvent;
+pub use trace_inactive_coordinates_plugin_event::TraceInactiveCoordinatesPluginEvent;
+pub use trace_location_plugin_event::TraceLocationPluginEvent;
+pub use trace_opened_plugin_event::TraceOpenedPluginEvent;

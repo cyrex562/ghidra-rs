@@ -33,6 +33,24 @@ pub enum TraceExecutionState {
     Terminated,
 }
 
+impl TraceExecutionState {
+    /// Get the state with the given name, or `None` if there is no such state.
+    ///
+    /// Mirrors the implicit `TraceExecutionState.valueOf(String)` of the Java enum, which is how
+    /// the state is decoded from an object's `_state` attribute. The Java
+    /// `IllegalArgumentException` for an unknown name becomes a `None`.
+    pub fn value_of(name: &str) -> Option<TraceExecutionState> {
+        match name {
+            "INACTIVE" => Some(TraceExecutionState::Inactive),
+            "ALIVE" => Some(TraceExecutionState::Alive),
+            "STOPPED" => Some(TraceExecutionState::Stopped),
+            "RUNNING" => Some(TraceExecutionState::Running),
+            "TERMINATED" => Some(TraceExecutionState::Terminated),
+            _ => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::TraceExecutionState;

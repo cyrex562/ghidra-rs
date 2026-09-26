@@ -1,0 +1,1278 @@
+"""Type-level frontier for the ownership migration -- the work-list Phase 3 actually needs.
+
+OWNERSHIP_DEBT.tsv ranks FILES, but an ownership decision is never about a file: it's about a
+TYPE. Proofing the remediation harness showed why that matters. Three files parked in a row
+(Trace -> DebuggerStaticMappingService -> DebuggerTraceManagerService), each on the same
+undecided convention for `Trace`. File-at-a-time remediation re-asks the same question once
+per file, pays an LLM call for each, and parks every time.
+
+This script inverts the index: for every type reached through `dyn T` / `Rc<RefCell<T>>` /
+`Arc<Mutex<T>>` in a convention-blocked file, count how many distinct files depend on that
+decision. The result is a short queue -- ~20 verdicts cover well over half the blocked pile --
+where each entry is answered ONCE and unblocks everything downstream of it.
+
+Verdicts (col 1 of CONVENTION_QUEUE.tsv), per OWNERSHIP_MIGRATION.md's conventions:
+  TODO    undecided -- files depending on it stay blocked
+  ACCEPT  `dyn` is the RIGHT answer here (genuine open-ended extension point: a progress
+          monitor, plugin-provided service, loader, listener). Not debt. pattern_audit.py
+          stops counting it, so files whose only remaining smell is ACCEPTed types leave the
+          frontier with no LLM call and no park.
+  ARENA   shared/graph type -> arena + typed Copy ID (see group_tree.rs for the worked shape)
+  ENUM    closed hierarchy -> enum dispatch
+  ITER    Java iterator interface -> concrete Rust iterator implementing std::Iterator
+  GRAPH   AST/IR node set -> tagged arena graph (a `Kind` tag enum + arena + Copy ids), for
+          hierarchies a parser builds dynamically. Distinct from ENUM: the question is not
+          whether the set is closed -- both are -- but whether values are constructed statically
+          (ENUM) or built dynamically with operations accruing over time (GRAPH).
+  STRUCT  shouldn't be a trait at all (a trait with 0-2 implementers is usually just a type)
+  PARK    genuinely undecidable for now; keep it off the queue but don't keep re-asking
+
+WAIT-PORT and WAIT-STUB are not verdicts anyone makes: they mark rows whose answer is blocked
+on something the porter has not finished. WAIT-PORT waits on a Java class still TODO in
+PORT_MANIFEST.tsv; WAIT-STUB waits on a seam_stubs.rs placeholder being retired. The evidence
+needed to decide either does not exist yet, so asking a human is wasted -- but leaving them
+TODO made the queue claim 232 open decisions when only 40 were real. Both are re-derived on
+every run and go live once the thing they wait on lands, so neither can freeze a row the way
+a recorded decision would.
+
+SUGGEST-<VERDICT> is a PROPOSAL, not a decision: --suggest writes them from structural
+evidence, and nothing downstream acts on them -- pattern_audit.py honours a bare ACCEPT only,
+never SUGGEST-ACCEPT. Review, then promote in bulk with --promote.
+
+Hierarchies are sized from the JAVA sources, not from the port. Counting Rust implementers
+measures how far the port has got: `CodeUnit` showed three non-mock impls only because
+Instruction and Data are unported, and the proposer recommended "small closed set -> enum" off
+that number. Reading `extends`/`implements` out of orig_src gives the real shape, and one
+reading is worth calling out -- a count of ZERO means nothing in Java extends the type, so it is
+a concrete class and a Rust trait is simply the wrong shape. 14 types are in that state,
+`TokenPattern` (25 files) and `Lock` (19) among them.
+
+Usage:
+  python scripts/debt_clusters.py --out CONVENTION_QUEUE.tsv
+  python scripts/debt_clusters.py --top 20            # print the queue, don't write
+"""
+import argparse
+import csv
+import os
+import re
+import subprocess
+import sys
+from collections import defaultdict
+
+# Trait objects that are idiomatic Rust, not a Java interface translated too literally.
+# `Box<dyn Error>`, `&dyn Any`, `Box<dyn Fn(..)>` are correct Rust and must never be scored
+# as ownership debt or enqueued as convention decisions.
+IDIOMATIC = {
+    "Any", "Error", "Fn", "FnMut", "FnOnce", "Iterator", "DoubleEndedIterator",
+    "ExactSizeIterator", "Send", "Sync", "Display", "Debug", "Write", "Read", "Seek",
+    "BufRead", "Future", "Hash", "Ord", "PartialEq", "PartialOrd", "Eq", "Clone",
+    "ToString", "Deref", "DerefMut", "Drop", "Default", "From", "Into", "AsRef", "AsMut",
+}
+
+# Name shapes that mark a genuine open-ended extension point -- an interface whose whole
+# purpose is that callers/plugins supply their own implementation. `dyn` is the idiomatic
+# Rust answer for these, so they are ACCEPT candidates rather than arena candidates.
+# Above this many real implementers, "closed hierarchy -> enum" stops being credible.
+ENUM_MAX_VARIANTS = 8
+
+# Name shapes for AST/IR nodes -- hierarchies a parser or lowering pass builds dynamically. Above
+# ENUM_MAX_VARIANTS these are the tagged-arena-graph case rather than an undecidable one; see
+# OWNERSHIP_MIGRATION.md convention 4.
+AST_NODE_SUFFIXES = (
+    "Expression", "Equation", "Value", "Pattern", "Symbol", "Node", "Op", "Instruction",
+    "Statement", "Term", "Operand",
+)
+
+OPEN_EXTENSION_SUFFIXES = (
+    "Monitor", "Service", "Provider", "Listener", "Adapter", "Handler", "Callback",
+    "Factory", "Plugin", "Loader", "Visitor", "Filter", "Comparator", "Consumer",
+    "Supplier", "Predicate", "Analyzer", "Exporter", "Importer", "Formatter",
+)
+
+# Rust built-ins and std containers. `Rc<RefCell<Vec<Foo>>>` and `Arc<Mutex<bool>>` make the
+# cell regex capture the INNER container, not a domain type, so the queue was carrying rows for
+# Vec (leverage 31), bool, usize, HashMap, Box, String, Option and Self. None of those is a
+# convention decision; they were all being proposed PARK, which reads as "undecidable" when the
+# truth is "not a question".
+RUST_BUILTIN = {
+    "Vec", "Box", "Rc", "Arc", "HashMap", "HashSet", "BTreeMap", "BTreeSet", "VecDeque",
+    "Option", "Result", "Cow", "RefCell", "Mutex", "RwLock", "Cell", "String", "Self",
+    "Ordering", "PathBuf", "Path", "OsString", "OsStr", "Range", "RangeInclusive",
+}
+
+
+def is_domain_type(name):
+    """A Rust domain type name: UpperCamel and not a built-in or std container.
+
+    Lower-case names are primitives or captured fragments (`bool`, `usize`, and one row that
+    was literally `r`), never types this port decides a convention for.
+    """
+    return bool(name) and name[0].isupper() and name not in RUST_BUILTIN
+
+
+RE_DYN = re.compile(
+    r"\bdyn\s+(?:(?:crate|std|core|alloc|self|super)::)?"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Za-z_][A-Za-z0-9_]*)"
+)
+RE_CELL = re.compile(
+    r"\b(?:Rc\s*<\s*RefCell|Arc\s*<\s*(?:Mutex|RwLock))\s*<\s*(?:dyn\s+)?"
+    r"(?:(?:crate|std|core|alloc|self|super)::)?"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Za-z_][A-Za-z0-9_]*)"
+)
+RE_LINE_COMMENT = re.compile(r"//.*$", re.MULTILINE)
+
+# `java_class` disambiguates a shared basename. Ghidra ships the sleigh runtime
+# (app/plugin/processors/sleigh) and the pcodeCPort compiler (pcodeCPort/slgh*) as parallel
+# hierarchies, so PatternExpression, Pattern, Constructor, TripleSymbol, SymbolTable,
+# VarnodeTpl, ConstructState, OperandSymbol, DisjointPattern, ContextChange, SubtableSymbol and
+# ValueSymbol each name TWO unrelated Java types that the Rust tree already keeps apart. One row
+# per name could not carry two verdicts, so those twelve sat unanswerable. The key is
+# (type, java_class); it is blank for the unambiguous majority.
+QUEUE_COLS = ["verdict", "leverage", "occurrences", "fanin", "type", "java_class", "category",
+              "source", "note"]
+
+
+# Not a decision and not a proposal: a row whose answer is blocked on a Java class that is
+# still TODO in PORT_MANIFEST.tsv. These used to be emitted as TODO with an explanatory note,
+# which made the queue claim 232 open decisions when 97 of them were waiting on the porter,
+# not on a person.
+#
+# WAIT-PORT must never be sticky. Every other non-TODO verdict is treated as a hand decision
+# and kept verbatim; if this one were, a row would stay WAIT-PORT forever after its Java class
+# landed, and the evidence that finally became available would never be read. `_emit_row`
+# re-derives it unconditionally, unlike SUGGEST-*, which only resets under --resuggest.
+WAIT_PORT = "WAIT-PORT"
+
+# The same idea for the other blocked-on-the-port state: a trait declared in seam_stubs.rs is
+# a compile-time stand-in the harness created so callers could build before the real type
+# existed. Its ownership shape is decided when the stub is RETIRED (STUB_DEBT.tsv tracks
+# that), not now -- and unlike WAIT-PORT there is usually no Java class of the same name
+# coming, because these are JDK/Swing shims (Color, MouseEvent, JButton) or seam names the
+# port invented (GraphNavigatorSeam, KeyManagerFactoryLike).
+WAIT_STUB = "WAIT-STUB"
+
+_WAIT = (WAIT_PORT, WAIT_STUB)
+
+
+def is_derived_verdict(v):
+    """Verdicts the generator owns and may overwrite, as opposed to a human's answer."""
+    return str(v).startswith("SUGGEST-") or str(v) in _WAIT
+
+
+def _qkey(name, java_class):
+    return (name, java_class or "")
+
+
+def load_family_rules(path):
+    """suffix -> (verdict, note) from CONVENTION_FAMILIES.tsv. Families are how this queue
+    stays tractable: one rule decides a naming family at once (all *Iterator, all *Listener),
+    instead of asking the same question 22 or 39 times. Per-type verdicts always win."""
+    rules = []
+    if not path or not os.path.exists(path):
+        return rules
+    with open(path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            suffix = (r.get("suffix") or "").strip()
+            verdict = (r.get("verdict") or "").strip()
+            if suffix and verdict:
+                rules.append((suffix, verdict, r.get("note") or ""))
+    # longest suffix first, so a more specific family wins over a shorter one
+    rules.sort(key=lambda t: -len(t[0]))
+    return rules
+
+
+def apply_family(name, rules):
+    for suffix, verdict, note in rules:
+        if name.endswith(suffix) and name != suffix:
+            return verdict, f"[family:{suffix}] {note}"
+    return None
+
+
+RE_TRAIT_DECL = re.compile(r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:unsafe\s+)?trait\s+([A-Za-z_]\w*)", re.M)
+RE_TYPE_DECL = re.compile(r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:struct|enum)\s+([A-Za-z_]\w*)", re.M)
+RE_IMPL_FOR = re.compile(
+    r"^\s*impl(?:\s*<[^>]*>)?\s+(?:[\w:]*::)?([A-Za-z_]\w*)(?:\s*<[^>]*>)?\s+for\s+"
+    r"(?:&\s*)?(?:[\w:]*::)?([A-Za-z_]\w*)",
+    re.M,
+)
+
+# Test doubles are not evidence about a type's real implementer set: a trait implemented by
+# one real type and six mocks is not an open extension point.
+MOCK_PREFIXES = ("Mock", "Stub", "Fake", "Dummy", "Test", "Minimal")
+
+# A ported type whose doc names a JDK type of the SAME simple name is modelling that, not the
+# Ghidra class the name matches in orig_src. `Lock` is the case that surfaced it: the Rust trait
+# documents "Acquire/release contract of java.util.concurrent.locks.Lock", while orig_src holds
+# ghidra.util.Lock, an unrelated concrete class. An orig_src-only scan cannot see that collision,
+# so read the port's own doc comment for it.
+RE_JDK_REF = re.compile(r"java\.(?:util|lang|io|nio|net|time|math|security)[\w.]*\.(\w+)")
+
+
+RE_EXTENDS = re.compile(r"\b(?:class|interface)\s+\w+(?:<[^>]*>)?\s+extends\s+([\w.<>, ]+?)\s*(?:implements|\{)")
+RE_IMPLEMENTS = re.compile(r"\bimplements\s+([\w.<>, ]+?)\s*\{")
+
+
+RE_JAVA_DECL = re.compile(
+    r"^\s*public\s+(?:final\s+|abstract\s+|sealed\s+|static\s+)*(class|interface|enum|record)\s+(\w+)",
+    re.M,
+)
+
+
+def java_declarations(orig_src="orig_src"):
+    """Java type name -> what Java declares it AS (class/interface/enum/record).
+
+    The kind matters as much as the subtype count. "Nothing extends it" means one thing for a
+    `class` -- there is no hierarchy, so a Rust trait is the wrong shape -- and something else
+    entirely for an `interface`, where it may be an extension point, or its implementers may
+    simply not be ported yet. And a name with no Java file at all is something the port invented
+    (`MdMangLike`, `IteratorStl`, `RepositoryLike`), where the count says nothing.
+
+    Checking this split the 112 "zero-subtype" candidates into a solid batch and two that would
+    have been wrong to sweep.
+
+    Names declared by MORE THAN ONE Java file are recorded in `java_declarations.ambiguous`
+    and must not be answered from the name alone. `PatternExpression` is two unrelated classes
+    -- the sleigh runtime expression and the pcodeCPort compiler's AST node -- and so are
+    `Constructor` and `Processor`. This function used to keep whichever file the walk reached
+    first and silently drop the other, which is the bare-name pairing failure AGENTS.md records
+    ("Pairing by basename reported a design conflict that does not exist").
+    """
+    decls = {}
+    seen = set()
+    java_declarations.ambiguous = ambiguous = set()
+    if not os.path.isdir(orig_src):
+        return decls
+    for dirpath, _dirs, files in os.walk(orig_src):
+        for fn in files:
+            if not fn.endswith(".java"):
+                continue
+            name = fn[: -len(".java")]
+            if name in seen:
+                ambiguous.add(name)
+                continue
+            seen.add(name)
+            try:
+                with open(os.path.join(dirpath, fn), encoding="utf-8", errors="ignore") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            for kind, decl_name in RE_JAVA_DECL.findall(text):
+                if decl_name == name:
+                    decls[name] = kind
+                    break
+    return decls
+
+
+_IMPL_TABLE = None
+
+
+def _load_implementer_table():
+    """shape_rules' precomputed transitive/concrete implementer closure, or None."""
+    global _IMPL_TABLE
+    if _IMPL_TABLE is None:
+        try:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import shape_rules
+            _IMPL_TABLE = shape_rules.load_implementers() or {}
+        except Exception:
+            _IMPL_TABLE = {}
+    return _IMPL_TABLE
+
+
+def java_extension_points(orig_src="orig_src"):
+    """Names that reach an ExtensionPoint/Service/Plugin/... supertype in orig_src.
+
+    Structural evidence, as opposed to the name-suffix heuristic: 38 of the 42 types proposed
+    ACCEPT off a suffix alone were not extension points at all. `AddressFactory` ends in
+    "Factory" but its three implementers are DefaultAddressFactory and two subclasses of it --
+    a base+subclass chain, not an open set a plugin extends. Accepting it would have exempted
+    it from debt scoring on the strength of its name.
+    """
+    if orig_src != "orig_src":
+        return set()
+    return {n for n, e in (_load_implementer_table() or {}).items() if e["extension_point"]}
+
+
+def java_implementer_names(orig_src="orig_src"):
+    """{name: [concrete implementer class names]} -- what the family rules dispatch on.
+
+    Empty unless reading the real tree, for the same reason as java_subtype_counts: the
+    precomputed table describes orig_src and nothing else.
+    """
+    if orig_src != "orig_src":
+        return {}
+    return {n: e["concrete_implementers"] for n, e in (_load_implementer_table() or {}).items()}
+
+
+def java_subtype_counts(orig_src="orig_src"):
+    """Java class/interface name -> how many Java types extend or implement it.
+
+    This is the signal the proposer should have been using all along. Counting RUST implementers
+    measures how far the port has got, not the shape of the hierarchy: `CodeUnit` shows 3
+    non-mock impls today only because Instruction and Data are not ported, and `Settings` shows
+    8 mostly-empty ones. Recommending "small closed set -> enum" off those numbers is
+    recommending against the source.
+
+    Two readings matter especially:
+      * a count of ZERO means the Java type is a concrete class or a leaf interface -- there is
+        no hierarchy to dispatch over at all, so a trait in Rust is simply wrong (`Lock` and
+        `TokenPattern` are both this);
+      * a large count means an enum was never viable, whatever the port currently shows.
+
+    Superseded by IMPLEMENTERS.tsv where that exists. This function counts DIRECT subtypes of
+    any kind, which is wrong three ways and moved 23 proposals when corrected: it stops at
+    sub-interfaces (`CodeUnit`'s direct subtypes are the interfaces `Instruction`/`Data`, so
+    it read 2-3 where the truth is 20 concrete classes), it counts abstract bases as
+    implementations, and it counts test doubles. `MemBuffer` read as a closed set and has 27.
+    """
+    # Only when reading the real tree: IMPLEMENTERS.tsv describes THAT tree, so honouring it
+    # for a caller-supplied orig_src (tests, worktrees) would answer about the wrong sources.
+    if orig_src == "orig_src":
+        tbl = _load_implementer_table()
+        if tbl:
+            return defaultdict(int, {n: e["n_concrete"] for n, e in tbl.items()})
+    counts = defaultdict(int)
+    if not os.path.isdir(orig_src):
+        return counts
+    for dirpath, _dirs, files in os.walk(orig_src):
+        for fn in files:
+            if not fn.endswith(".java"):
+                continue
+            try:
+                with open(os.path.join(dirpath, fn), encoding="utf-8", errors="ignore") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            for rx in (RE_EXTENDS, RE_IMPLEMENTS):
+                for group in rx.findall(text):
+                    for name in group.split(","):
+                        name = name.strip().split("<")[0].split(".")[-1]
+                        if name:
+                            counts[name] += 1
+    return counts
+
+
+def load_unported_classes(manifest):
+    """Java class names still TODO in PORT_MANIFEST.tsv. A trait with no real implementers is
+    NOT evidence that it should be a concrete type when its Java implementers simply haven't
+    been ported yet -- that is the normal mid-port state, and 198 of these traits are literal
+    seam_stubs.rs placeholders waiting for their port. Without this check the proposer
+    confidently recommends collapsing traits whose implementations are still queued."""
+    unported = set()
+    if not manifest or not os.path.exists(manifest):
+        return unported
+    with open(manifest, encoding="utf-8") as f:
+        for line in f:
+            cols = line.rstrip("\n").split("\t")
+            if len(cols) >= 2 and cols[1] == "TODO":
+                cls = os.path.basename(cols[0])
+                if cls.endswith(".java"):
+                    unported.add(cls[: -len(".java")])
+    return unported
+
+
+def collect_declarations(root):
+    """Structural evidence for suggesting verdicts: where each name is declared and how many
+    implementers it has. A trait with many implementers is an open set; a trait with one or
+    none is usually a type that should never have been a trait."""
+    traits, types_, impls = defaultdict(int), defaultdict(int), defaultdict(int)
+    mock_impls, stub_decl, jdk_modeled = defaultdict(int), set(), set()
+    for dirpath, _dirs, files in os.walk(root):
+        for fn in files:
+            if not fn.endswith(".rs"):
+                continue
+            try:
+                with open(os.path.join(dirpath, fn), encoding="utf-8", errors="ignore") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            for n in RE_TRAIT_DECL.findall(text):
+                traits[n] += 1
+            for n in RE_TYPE_DECL.findall(text):
+                types_[n] += 1
+            for trait_name, impl_target in RE_IMPL_FOR.findall(text):
+                if impl_target.startswith(MOCK_PREFIXES):
+                    mock_impls[trait_name] += 1
+                else:
+                    impls[trait_name] += 1
+            if fn == "seam_stubs.rs":
+                for n in RE_TRAIT_DECL.findall(text):
+                    stub_decl.add(n)
+            declared = set(RE_TRAIT_DECL.findall(text)) | set(RE_TYPE_DECL.findall(text))
+            for jdk_name in RE_JDK_REF.findall(text):
+                if jdk_name in declared:
+                    jdk_modeled.add(jdk_name)
+    return traits, types_, impls, mock_impls, stub_decl, jdk_modeled
+
+
+# A "small closed set" is not one question but several, and they have different answers.
+# Decided 2026-08-09 after classifying the 214 undecided 2-3-implementer types by the
+# structural relationship between their implementers. See AGENTS.md, "Small closed sets".
+_FAM_STORAGE = re.compile(r"(DB$|^DB|InMemory|^Stored|^Pseudo)")
+_FAM_NULLOBJ = re.compile(r"^(Invalid|Empty|Null|No[A-Z])|Error$")
+_FAM_WRAPPER = re.compile(r"(Wrapper|Adapter|Proxy|Delegating)")
+
+
+def suggest_by_family(name, impl_names, impl_table=None):
+    """Refine "small closed set" by what the implementers actually are.
+
+    Returns (verdict, note) or None to fall through to the generic ENUM suggestion.
+    """
+    impls = list(impl_names or ())
+    if len(impls) < 2:
+        return None
+
+    # Base + subclass chain: one "implementer" is an ancestor of the others, which the
+    # implementer table shows directly -- the base's own concrete-implementer set contains
+    # its siblings. AddressFactory is the case: Program- and TraceAddressFactory both extend
+    # DefaultAddressFactory, so the three are a chain, not three alternatives. An enum would
+    # model a base/derived relationship as if the variants were siblings and duplicate the
+    # base behaviour across arms.
+    tbl = impl_table or _load_implementer_table()
+    if tbl:
+        others = set(impls)
+        for base in impls:
+            kids = set(tbl.get(base, {}).get("concrete_implementers", ())) & (others - {base})
+            if kids:
+                return "SUGGEST-STRUCT", (
+                    f"inheritance chain, not alternatives: {', '.join(sorted(kids))} "
+                    f"extend(s) {base}. Java subclassing for reuse has no Rust translation -- "
+                    f"port {base} as a concrete type and let the others embed it")
+    storage = [i for i in impls if _FAM_STORAGE.search(i)]
+    nullobj = [i for i in impls if _FAM_NULLOBJ.search(i)]
+    # A wrapper is named for what it DOES to the parent, so test the part of the implementer
+    # name that is not just the parent's own name. `ModuleDBAdapterV0` inherits "Adapter" from
+    # `ModuleDBAdapter` and is a schema-version subclass, not a wrapper -- it and nine other
+    # versioned DB adapter families were being ACCEPTed, which exempts them from debt scoring.
+    # `DomainFileProxy` minus `DomainFile` leaves "Proxy", which is real evidence.
+    wrapper = [i for i in impls if _FAM_WRAPPER.search(i.replace(name, ""))]
+
+    # The null-object pattern is "the real implementation, plus a stand-in for its absence".
+    # Requiring exactly ONE real implementer after removing the null objects is what makes it
+    # that pattern rather than "a hierarchy in which something happens to be called Invalid*":
+    # Archive has BuiltInArchive, FileArchive and three more alongside InvalidFileArchive, and
+    # an earlier draft told it to delete the placeholder and port "the concrete type", of which
+    # there were four.
+    real = [i for i in impls if i not in nullobj]
+    if nullobj and len(real) == 1:
+        return "SUGGEST-STRUCT", (
+            f"null-object pattern: {', '.join(nullobj)} exist(s) only to stand in for 'no "
+            f"{name}'. Rust spells that `Option<{name}>` -- port {', '.join(real)} as the "
+            f"concrete type and delete the placeholder variant")
+    if storage and len(storage) >= len(impls) - 1:
+        return "SUGGEST-ARENA", (
+            f"same domain concept with different storage backings ({', '.join(impls)}). Per "
+            f"OWNERSHIP_MIGRATION.md convention 3, the backing is where the object was read "
+            f"from, not what it is: one type, resolved as a Copy ID against a snapshot")
+    if wrapper:
+        return "SUGGEST-ACCEPT", (
+            f"{', '.join(wrapper)} wrap another implementation, so the wrapper genuinely has "
+            f"to hold something polymorphic -- `dyn` (or a generic parameter) is the right "
+            f"tool here, not an enum")
+    return None
+
+
+_RESOLVE_CACHE = {}
+_FACTS = None
+
+
+# Claims a promoted note makes, and what current evidence must show for it to still hold.
+_CLAIMS = (
+    ("single implementation", lambda k: k == 1),
+    ("one subclass", lambda k: k == 1),
+    ("one concrete", lambda k: k == 1),
+    ("nothing extends it", lambda k: k == 0),
+    ("small closed set", lambda k: 2 <= k <= ENUM_MAX_VARIANTS),
+    ("storage backings", lambda k: k >= 2),
+    ("inheritance chain", lambda k: k >= 2),
+)
+
+
+def validate_promotions(queue_path):
+    """Reset promoted rows whose stated reasoning no longer matches the implementer counts."""
+    if not os.path.exists(queue_path):
+        return 0
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        tbl = shape_rules.load_implementers() or {}
+    except Exception:
+        return 0
+    if not tbl:
+        return 0
+    with open(queue_path, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+    cols = list(rows[0].keys()) if rows else QUEUE_COLS
+    n = 0
+    for r in rows:
+        if (r.get("source") or "").strip() != "promoted":
+            continue
+        e = tbl.get((r.get("type") or "").strip())
+        if not e:
+            continue
+        note = r.get("note") or ""
+        for claim, holds in _CLAIMS:
+            if claim in note and not holds(e["n_concrete"]):
+                r["verdict"], r["source"] = "TODO", ""
+                r["note"] = (f"promotion reset: note claimed '{claim}' but there are now "
+                             f"{e['n_concrete']} concrete implementers")
+                n += 1
+                break
+    if n:
+        with open(queue_path, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=cols, delimiter="\t", lineterminator="\n")
+            w.writeheader()
+            w.writerows(rows)
+    return n
+
+
+def _java_kind(name):
+    """Java kind for a name, including NESTED declarations.
+
+    java_declarations() is built from filenames, so it has nothing for a type declared inside
+    another file -- Lifespan.LifeSet, TraceSchedule.TimeRadix, TraceObjectSchema.AttributeSchema.
+    shape_rules' index does carry them, and 49 rows sat unanswerable for want of just the kind.
+    """
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        e = shape_rules.lookup(name, _java_facts())
+        return e[0]["kind"] if e else None
+    except Exception:
+        return None
+
+
+def _java_alias(name):
+    """The Java simple name this Rust name refers to under the port's conventions, or None."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        e = shape_rules.lookup(name, _java_facts())
+        return e[0]["name"] if e and e[0].get("name") != name else (e[0]["name"] if e else None)
+    except Exception:
+        return None
+
+
+def _java_lookup(name):
+    """Java rel-path for a Rust type name via shape_rules' tolerant lookup, or None."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        e = shape_rules.lookup(name, _java_facts())
+        return e[0]["rel"] if e else None
+    except Exception:
+        return None
+
+
+def _java_facts():
+    """shape_rules' parsed Java index, built once.
+
+    build_index() walks 13,000 Java files and costs ~14s. Calling it per ambiguous name --
+    196 of them -- turned `--promote` into a 45-minute job.
+    """
+    global _FACTS
+    if _FACTS is None:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        _FACTS = shape_rules.build_index()[0]
+    return _FACTS
+
+
+def _resolve_ambiguous(name):
+    """{rust_path: java_rel} for each Rust declaration of `name`, or None if unplaceable."""
+    if name in _RESOLVE_CACHE:
+        return _RESOLVE_CACHE[name]
+    out = None
+    try:
+        facts = _java_facts()
+        paths = subprocess.run(
+            ["bash", "-c", f"grep -rlE --include='*.rs' "
+                           f"'^\\s*pub (trait|struct|enum) {name}\\b' ghidra-rs/src"],
+            capture_output=True, text=True).stdout.split()
+        import shape_rules
+        got = {}
+        for pth in paths:
+            e = shape_rules.resolve_by_path(name, pth, facts)
+            if e:
+                got[pth] = e["rel"]
+        out = got or None
+        if got:
+            out = {p: j for p, j in got.items()}
+            if len(set(got.values())) == 1:
+                out = {"*": next(iter(got.values()))}
+    except Exception:
+        out = None
+    _RESOLVE_CACHE[name] = out
+    return out
+
+
+def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl,
+                    java_subtypes=None, java_decls=None, jdk_modeled=frozenset(),
+                    java_impl_names=None, java_ext_points=None, java_impl_table=None,
+                    java_ambiguous=None):
+    """Propose a verdict from structural evidence. Deliberately conservative: anything the
+    evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
+    is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
+    open_name = name.endswith(OPEN_EXTENSION_SUFFIXES)
+    if not is_trait and not is_type:
+        return "SUGGEST-PARK", "not declared in the crate (external type or unresolved stub)"
+    if not is_trait:
+        # Already a concrete type, so it was captured by the Rc<RefCell<T>>/Arc<Mutex<T>> half
+        # of the scan, not by `dyn T`. That is a real question, but not THIS queue's question:
+        # the verdicts here (ACCEPT/ENUM/ITER/GRAPH/STRUCT) all answer "what should this trait
+        # become", and there is no trait. Saying nothing left 30 rows in the queue with an
+        # empty note, indistinguishable from rows nobody had got to yet.
+        return None, (
+            f"{name} is already a concrete type ({is_type} declaration(s)), not a trait -- it "
+            f"is here because a shared cell (Rc<RefCell<{name}>> / Arc<Mutex<{name}>>) reaches "
+            f"it. That is an ownership question (OWNERSHIP_MIGRATION.md conventions 1 and 3: "
+            f"arena + typed Copy ID, or snapshot+transaction for DB objects), not a trait "
+            f"convention, so no verdict in this queue answers it")
+    # ORDER MATTERS. The two Rust-side deferrals below ("only mocks", "seam_stubs placeholder")
+    # used to run FIRST and short-circuit, so 555 of 748 TODO rows were parked as "revisit once
+    # the port lands" without Java ever being asked -- and Java had a clear answer for 417 of
+    # them. Both deferrals reason from how far the port has got; this module's whole premise is
+    # that Java's hierarchy is the authority and the port's count measures progress, not shape.
+    # So: JDK-collision check (it invalidates the Java match itself), then Java, and only then
+    # fall back to Rust-side evidence for the names Java cannot speak to.
+    if name in jdk_modeled:
+        return None, (
+            f"this port models the JDK's {name}; the {name} in orig_src is an unrelated Ghidra "
+            f"class of the same simple name, so Java's shape here says nothing")
+
+    if name in (java_ambiguous or ()):
+        # A shared basename is not automatically unanswerable. Where the Rust tree already
+        # separates the two -- PatternExpression's runtime form at
+        # program/model/lang/sleigh/expression/ and the pcodeCPort AST node at
+        # decompiler/seam_stubs.rs -- placement says which is which, and a placeholder says so
+        # outright in its doc comment. Only a name whose Rust declarations disagree, or that
+        # cannot be placed at all, is a real question.
+        resolved = _resolve_ambiguous(name)
+        if resolved is None:
+            return None, (
+                f"{name} is declared by more than one Java file and its Rust declaration(s) "
+                f"cannot be placed against either -- resolve which one this port models")
+        if len(resolved) > 1:
+            pairs = "; ".join(f"{p} -> {j}" for p, j in sorted(resolved.items()))
+            return None, (
+                f"{name} is ONE queue row covering {len(resolved)} distinct Java classes that "
+                f"the Rust tree already separates ({pairs}). Split the row before deciding")
+        # single Java class after resolution: answerable like any other name
+        java_ambiguous = ()
+
+    if java_subtypes is not None:
+        # Resolve the port's renaming (acronym case, Like/Trait seam suffix, nested types)
+        # before concluding Java is silent -- 142 of 197 "invented abstraction" rows were
+        # really MDMang vs MdMang, FSRL vs Fsrl, or Lifespan.LifeSet.
+        lookup_name = name
+        if name not in java_subtypes and name not in (java_decls or {}):
+            alt = _java_alias(name)
+            if alt:
+                lookup_name = alt
+        j = java_subtypes.get(lookup_name, 0)
+        name_for_decl = lookup_name
+        if j == 0:
+            kind = (java_decls or {}).get(name_for_decl) or _java_kind(name)
+            if kind in ("class", "enum", "record"):
+                if name in unported:
+                    # The concrete class has not been ported, so the trait is very likely a
+                    # deliberate seam letting callers compile ahead of it -- exactly what
+                    # TokenPattern's own doc comment says. A concrete type is still the right END
+                    # state, but the work is to port the class, not to convert a trait, and
+                    # calling it debt would misdirect whoever picks it up.
+                    return WAIT_PORT, (
+                        f"Java declares {name} as a {kind} with no subtypes, so a concrete type is "
+                        f"the right end state -- but {name} is still TODO in PORT_MANIFEST.tsv, so "
+                        f"the trait is a seam awaiting that port, not a shape defect")
+                return "SUGGEST-STRUCT", (
+                    f"Java declares {name} as a {kind} and nothing extends it -- there is no "
+                    f"hierarchy to dispatch over, so a trait is the wrong shape "
+                    f"({n_impl} Rust impls notwithstanding)")
+            if kind == "interface":
+                return None, (
+                    f"Java declares {name} as an interface with no in-tree implementers -- either "
+                    f"an extension point (-> ACCEPT) or its implementers are unported; the count "
+                    f"cannot tell which")
+            resolved = _java_lookup(name)
+            if resolved:
+                return None, (
+                    f"no Java FILE named {name}, but the port's renaming resolves it to "
+                    f"{resolved} -- rerun once the index is rebuilt")
+            # Java has now been asked and had nothing to say, so consulting the Rust side does
+            # not violate the ordering rule above -- it is the fallback that rule provides for.
+            # "declared in seam_stubs.rs" is a strictly better account of the row than "an
+            # abstraction the port invented": the harness wrote it, and it is scheduled for
+            # deletion. 28 rows were reading as invented abstractions for want of this check.
+            # No n_impl guard here, unlike the placeholder check further down. Once Java has
+            # no type of this name at all, "declared in seam_stubs.rs" is decisive on its own,
+            # and an implementer count cannot argue with it: JdomElement's two "implementers"
+            # are NullJdomElement -- the stub's own null object, in seam_stubs.rs -- and a test
+            # mock. Requiring n_impl == 0 left four rows (AuthCallback, Class, DBIndexFieldCodec,
+            # JdomElement) labelled inventions on the strength of their own scaffolding.
+            if name in stub_decl:
+                return WAIT_STUB, (
+                    f"no Java type named {name}, and it is a seam_stubs.rs placeholder -- a "
+                    f"compile-time stand-in, not an abstraction anyone designed. Its shape is "
+                    f"decided when the stub is retired (STUB_DEBT.tsv), not here")
+            return None, (
+                f"no Java type named {name} -- an abstraction the port invented, so Java says "
+                f"nothing about its shape")
+        if name in (java_ext_points or ()):
+            return "SUGGEST-ACCEPT", (
+                f"reaches an extension-point supertype in orig_src -- open by design, so `dyn` "
+                f"is the right tool ({j} concrete implementers)")
+        if open_name and j > ENUM_MAX_VARIANTS:
+            return "SUGGEST-ACCEPT", (
+                f"{j} Java subtypes and an extension-point name -- open set")
+        # An extension-point-shaped NAME with few implementers is not evidence of an open set;
+        # fall through to the structural rules below.
+        if j == 1:
+            # An enum with one variant is not a closed set, it is a rename. Either way the
+            # answer is a concrete type, but say WHICH shape the Java source has: an interface
+            # with one implementation is the header-file idiom (dyn_rules P2), whereas a class
+            # with one subclass is inheritance-for-reuse, which Rust spells as composition.
+            only = ", ".join((java_impl_names or {}).get(name, ())) or "its single implementer"
+            kind = (java_decls or {}).get(name_for_decl)
+            if kind == "interface":
+                return "SUGGEST-STRUCT", (
+                    f"one concrete Java implementer ({only}) -- an interface naming a single "
+                    f"implementation, not a hierarchy; port it as that concrete type")
+            return "SUGGEST-STRUCT", (
+                f"Java declares {name} a {kind or 'type'} with one subclass ({only}) -- "
+                f"inheritance for reuse, not polymorphism; port {name} as a concrete type and "
+                f"let {only} embed it")
+        if j <= ENUM_MAX_VARIANTS:
+            fam = suggest_by_family(name, (java_impl_names or {}).get(name, ()),
+                                    impl_table=java_impl_table)
+            if fam:
+                return fam
+            return "SUGGEST-ENUM", f"small closed set: {j} Java subtypes"
+        if name.endswith(AST_NODE_SUFFIXES):
+            return "SUGGEST-GRAPH", (f"{j} Java subtypes with an AST/IR node name -- too many for "
+                                     f"an enum, but a tagged arena graph suits a node set this size")
+        return None, (f"{j} Java subtypes -- too many for an enum; needs a human call "
+                      f"(genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)")
+
+    # Java said nothing usable -- now the Rust-side evidence, for whatever it is worth.
+    if n_impl == 0 and name in stub_decl:
+        # A seam_stubs.rs placeholder: the descent harness created it so a caller could compile
+        # before the real type was ported. Says nothing about the right ownership shape.
+        return None, "seam_stubs.rs placeholder -- revisit after the real port lands"
+    if n_impl == 0 and mock_impls.get(name, 0) > 0:
+        # Only test doubles implement it. That is the port being unfinished, not a design
+        # signal: the real implementers are Java classes still in the queue.
+        return WAIT_PORT, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
+                           f"implementations are not ported yet; revisit then")
+    if n_impl <= 2 and name in unported:
+        # Mid-port state, not a design signal: the Java implementers are still queued.
+        return WAIT_PORT, (f"only {n_impl} real implementer(s), but {name} is still TODO in "
+                           f"PORT_MANIFEST.tsv -- revisit once the port lands")
+    if n_impl == 0:
+        return "SUGGEST-STRUCT", "declared a trait but nothing (non-mock) implements it -- not an extension point"
+    if n_impl <= 2:
+        return "SUGGEST-STRUCT", f"trait with only {n_impl} real implementer(s) -- usually just a concrete type"
+    if n_impl <= ENUM_MAX_VARIANTS:
+        if open_name:
+            return "SUGGEST-ACCEPT", f"{n_impl} implementers and an extension-point name -- open set"
+        return "SUGGEST-ENUM", f"small closed set: {n_impl} real implementers, all in-crate"
+    if name.endswith(AST_NODE_SUFFIXES):
+        return "SUGGEST-GRAPH", (f"{n_impl} implementers with an AST/IR node name -- too many for "
+                                 f"an enum, but a tagged arena graph handles a node set of this size")
+    # A large implementer set is evidence AGAINST a closed hierarchy, not for one: nobody
+    # wants a 94-variant enum. Either it is a genuine open set, or it is a graph type wanting
+    # an arena -- a call the evidence here cannot make, so say so instead of guessing.
+    if open_name:
+        return "SUGGEST-ACCEPT", f"{n_impl} implementers and an extension-point name -- open set"
+    return None, (f"{n_impl} real implementers -- too many for an enum; needs a human call "
+                  f"(genuine open set -> ACCEPT, or graph type -> ARENA)")
+
+
+def categorize(name):
+    """Best-effort first guess at what KIND of decision this type needs. A guess only --
+    the verdict column is set by a human or a reviewing agent, not by this heuristic."""
+    if name.endswith(OPEN_EXTENSION_SUFFIXES):
+        return "open-extension"
+    if name.startswith("Abstract") or name.endswith(("DataType", "Exception")):
+        return "closed-hierarchy?"
+    return "graph?"
+
+
+def load_blocked_rows(debt_path, max_fanin, dyn_threshold):
+    """The convention-blocked slice of OWNERSHIP_DEBT.tsv: rows the remediation harness
+    cannot act on until some type gets a verdict."""
+    blocked = []
+    with open(debt_path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            if r.get("status") != "TODO":
+                continue
+            try:
+                if int(r.get("fanin", 0)) > max_fanin:
+                    continue
+            except ValueError:
+                continue
+            sig = r.get("signals", "")
+            m = re.search(r"dyn=(\d+)", sig)
+            dyn = int(m.group(1)) if m else 0
+            if dyn >= dyn_threshold or "rc_refcell=" in sig or "arc_mutex=" in sig:
+                blocked.append(r)
+    return blocked
+
+
+# `use crate::program::seam_stubs::{RefType as StubRefType, Reference as StubReference};`
+# means `dyn StubRefType` IS `RefType`. Without resolving these the queue grows a phantom row
+# per alias -- StubRefType, StubReference, SchemaTrait, LangInstructionContext and friends,
+# none of them declared anywhere, all proposed PARK as "not declared in the crate" -- while the
+# real type is under-counted by exactly those occurrences.
+RE_USE_ALIAS = re.compile(r"\b([A-Za-z_]\w*)\s+as\s+([A-Za-z_]\w*)")
+RE_USE_STMT = re.compile(r"^\s*(?:pub\s+)?use\s+[^;]+;", re.M)
+
+
+def alias_map(text):
+    """{alias: real_name} from this file's `use` statements, grouped braces included."""
+    out = {}
+    for stmt in RE_USE_STMT.findall(text):
+        for real, alias in RE_USE_ALIAS.findall(stmt):
+            if real != alias:
+                out[alias] = real
+    return out
+
+
+def strip_test_module(text):
+    """Remove `#[cfg(test)]` items, brace-matched. Returns the production text.
+
+    An `Rc<RefCell<MockState>>` inside a test module is a test double's plumbing, not an
+    ownership decision anyone has to make. Three such doubles (MockState, MockAnimatorState,
+    MockDomainObject) were sitting in the queue as undecided types.
+
+    Truncating at the first `#[cfg(test)]` is NOT good enough, though it is the usual Rust
+    layout. trace_time_viewport.rs puts its test module at line 235 of 522, register.rs at
+    576 of 867, task_listener.rs at 14 of 47: cutting there discarded production code and
+    silently dropped 17 live rows, `Task` and `Occlusion` among them. So match the item's
+    braces and remove only that span.
+    """
+    out, i = [], 0
+    while True:
+        j = text.find("#[cfg(test)]", i)
+        if j < 0:
+            out.append(text[i:])
+            return "".join(out)
+        out.append(text[i:j])
+        # The attribute applies to the next item: a braced block, or something ended by `;`
+        # (`#[cfg(test)] use ..;`). Whichever comes first wins.
+        brace, semi = text.find("{", j), text.find(";", j)
+        if brace < 0 or (0 <= semi < brace):
+            i = len(text) if semi < 0 else semi + 1
+            continue
+        depth, k = 0, brace
+        while k < len(text):
+            if text[k] == "{":
+                depth += 1
+            elif text[k] == "}":
+                depth -= 1
+                if depth == 0:
+                    k += 1
+                    break
+            k += 1
+        i = k
+
+
+def types_in_file(path):
+    """Types reached via dyn / Rc<RefCell<>> / Arc<Mutex<>>, comments and the test module
+    stripped, idiomatic trait objects excluded. Returns {name: occurrence_count}."""
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+            text = fh.read()
+    except OSError:
+        return {}
+    # Comments FIRST: strip_test_module counts braces, and a `//` comment containing one
+    # derails the match and swallows the rest of the file. Stripping in the other order
+    # removed 274 types from the queue, AbstractIntegerDataType and Transaction among them.
+    text = strip_test_module(RE_LINE_COMMENT.sub("", text))
+    aliases = alias_map(text)
+    counts = defaultdict(int)
+    for rx in (RE_DYN, RE_CELL):
+        for name in rx.findall(text):
+            name = aliases.get(name, name)
+            if name not in IDIOMATIC and is_domain_type(name):
+                counts[name] += 1
+    return counts
+
+
+_AMBIG = None
+
+
+def ambiguous_basenames(orig_src="orig_src"):
+    """Basenames declared by more than one Java file."""
+    global _AMBIG
+    if _AMBIG is None:
+        seen, dup = set(), set()
+        for dirpath, _d, files in os.walk(orig_src):
+            for fn in files:
+                if not fn.endswith(".java"):
+                    continue
+                n = fn[:-5]
+                (dup if n in seen else seen).add(n)
+        _AMBIG = dup
+    return _AMBIG
+
+
+_SHAPES = None
+
+# scripts/shape_rules.py decides the Rust construct from ONE Java declaration, and SHAPES.tsv
+# is keyed by path -- exactly what a split row carries. So a shared basename that could not be
+# answered as one row becomes answerable per Java class.
+SHAPE_TO_VERDICT = {"struct": "STRUCT", "enum": "ENUM", "iterator": "ITER", "module": "STRUCT"}
+
+
+def shape_of_java(rel_path):
+    """(shape, rule) for a Java file from SHAPES.tsv, or None."""
+    global _SHAPES
+    if _SHAPES is None:
+        _SHAPES = {}
+        try:
+            with open("SHAPES.tsv", newline="", encoding="utf-8") as f:
+                for r in csv.DictReader(f, delimiter="\t"):
+                    _SHAPES[r["path"]] = (r["shape"], r["rule"])
+        except OSError:
+            pass
+    return _SHAPES.get(rel_path)
+
+
+def _emit_row(rows, name, java_class, leverage, occurrences, fanin, prior, rules, resuggest,
+               rederive=False):
+    """Append one queue row for (name, java_class)."""
+    prev = prior.get(_qkey(name, java_class))
+    # A SUGGEST-* row is a proposal, not a decision, so it must stay re-derivable: the
+    # generator's own evidence changed on 2026-08-09 (direct subtype counts -> transitive
+    # concrete closure) and 23 stale SUGGEST-ENUM proposals would otherwise have survived as
+    # frozen answers -- CodeUnit among them. --resuggest resets them; a promotion is untouched.
+    if prev and resuggest and str(prev[0]).startswith("SUGGEST-"):
+        prev = ("TODO", "", "")
+    # A WAIT-PORT row is a statement about PORT_MANIFEST, which changes every night. Drop it
+    # so it is re-derived and goes live the run after its Java class is ported -- but ONLY
+    # when this run can actually re-derive it. Only --suggest reads PORT_MANIFEST; clearing
+    # it on a plain regeneration silently reset all 100 rows to TODO, which is the very
+    # mislabelling this verdict exists to remove.
+    if prev and prev[0] in _WAIT and rederive:
+        prev = ("TODO", "", "")
+    if prev and prev[1] != "family" and prev[0] != "TODO":
+        verdict, source, note = prev                # hand-made decision: never recompute
+    else:
+        fam = apply_family(name, rules)
+        if fam:
+            verdict, note, source = fam[0], fam[1], "family"
+        elif prev:
+            verdict, source, note = prev
+        else:
+            verdict, source, note = "TODO", "", ""
+    rows.append({
+        "verdict": verdict, "leverage": leverage, "occurrences": occurrences,
+        "fanin": fanin, "type": name, "java_class": java_class,
+        "category": categorize(name), "source": source, "note": note,
+    })
+
+
+def load_prior_verdicts(path):
+    """type -> (verdict, source, note) from an existing queue, so regenerating never discards
+    decisions already made. Same lesson as pattern_audit.py's --preserve-status. Rows whose
+    source is 'family' are recomputed from the rules file; 'manual'/'seed' rows are kept
+    verbatim, so editing CONVENTION_FAMILIES.tsv can never silently overwrite a hand verdict."""
+    prior = {}
+    if not path or not os.path.exists(path):
+        return prior
+    with open(path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            name = (r.get("type") or "").strip()
+            if name:
+                prior[_qkey(name, (r.get("java_class") or "").strip())] = (
+                    (r.get("verdict") or "TODO").strip(),
+                    (r.get("source") or "manual").strip(),
+                    r.get("note") or "",
+                )
+    return prior
+
+
+DYN_DEBT = "DYN_DEBT.tsv"
+# Verdicts that mean "dyn_rules could not settle this" -- as opposed to `ok` (dyn is right),
+# `blocked` (decided, waiting on a build) and `fix` (decided, actionable).
+_UNSETTLED = ("investigate", "unknown")
+
+
+def load_undecided_dyn_types(path=DYN_DEBT):
+    """{type: (dyn_uses, n_sites)} for dyn types dyn_rules could not settle.
+
+    These need a convention decision and could not previously get one. The queue is built
+    from types reached through a convention-BLOCKED file, and pattern_audit exempts every
+    DYN_DEBT row whose verdict is not `fix` -- `investigate` among them -- so the files using
+    such a type drop off OWNERSHIP_DEBT, the type never reaches the queue, no verdict is ever
+    recorded, and dyn_rules re-derives `investigate` next run. 128 of the 148 unsettled types
+    were in that loop, LogicalBreakpoint (49 uses) and ObjectStorage (41) among them.
+
+    Feeding them in here breaks it without touching the frontier. Scoring them as debt would
+    have done it too, and done harm: their files would return to the porting queue and the
+    descent would park on the very convention that is undecided, which is the waste the
+    exemption exists to prevent.
+    """
+    out = {}
+    if not path or not os.path.exists(path):
+        return out
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f, delimiter="\t"):
+                if (r.get("verdict") or "").strip() not in _UNSETTLED:
+                    continue
+                name = (r.get("class") or "").strip()
+                if not name or not is_domain_type(name) or name in IDIOMATIC:
+                    continue
+                try:
+                    uses = int(r.get("dyn_uses") or 0)
+                except ValueError:
+                    uses = 0
+                sites = {s.split(":")[0] for s in (r.get("sample_sites") or "").split(",")
+                         if s.strip()}
+                out[name] = (uses, len(sites))
+    except OSError:
+        return {}
+    return out
+
+
+def load_seam_fanin(seam_path):
+    fanin = {}
+    if not seam_path or not os.path.exists(seam_path):
+        return fanin
+    with open(seam_path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        next(reader, None)
+        for row in reader:
+            if len(row) < 6:
+                continue
+            cls = os.path.basename(row[5])
+            if cls.endswith(".java"):
+                cls = cls[: -len(".java")]
+            try:
+                fanin[cls] = max(fanin.get(cls, 0), int(row[2]))
+            except ValueError:
+                continue
+    return fanin
+
+
+def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, families,
+                resuggest=False, rederive=False):
+    blocked = load_blocked_rows(debt, max_fanin, dyn_threshold)
+    fanin = load_seam_fanin(seam)
+    prior = load_prior_verdicts(out_path)
+
+    files_by_type = defaultdict(set)
+    occ_by_type = defaultdict(int)
+    for r in blocked:
+        full = os.path.join(os.path.dirname(src_root.rstrip("/")) or ".", r["path"])
+        if not os.path.exists(full):
+            full = os.path.join(src_root, os.path.relpath(r["path"], "src"))
+        for name, n in types_in_file(full).items():
+            files_by_type[name].add(r["path"])
+            occ_by_type[name] += n
+
+    # Types dyn_rules could not settle need a verdict whether or not a blocked file reaches
+    # them. Only ADD names: a type already found through a blocked file keeps its real file
+    # count, which is what leverage means and what the queue sorts on.
+    for name, (uses, n_sites) in load_undecided_dyn_types().items():
+        if name in files_by_type:
+            continue
+        files_by_type[name] = {f"(dyn debt: {n_sites} site(s))"} if n_sites else {"(dyn debt)"}
+        occ_by_type[name] = uses
+
+    rules = load_family_rules(families)
+    rows = []
+    # Compute this here rather than reading java_declarations.ambiguous: that attribute is only
+    # populated once java_declarations() has been called, which happens later under --suggest,
+    # so relying on it silently produced zero splits.
+    ambiguous_names = ambiguous_basenames()
+    for name, files in files_by_type.items():
+        # An ambiguous basename the Rust tree separates becomes one row per Java class, each
+        # answerable on its own. One row could not carry two verdicts, which is why twelve
+        # sleigh types sat unanswerable.
+        jclasses = [""]
+        if name in ambiguous_names:
+            variants = _resolve_ambiguous(name)
+            if variants and len(set(variants.values())) > 1:
+                jclasses = sorted(set(variants.values()))
+        for jc in jclasses:
+            _emit_row(rows, name, jc, len(files), occ_by_type[name], fanin.get(name, 0),
+                      prior, rules, resuggest, rederive)
+    # A DECISION outlives the frontier. Rows are built from types currently reached through a
+    # convention-blocked file, so a type stops being emitted the moment its files leave the
+    # frontier -- and its verdict goes with it. That silently dropped 96 decided rows (35
+    # STRUCT, 26 ACCEPT, 17 ENUM, 15 ARENA, ...) when pattern_audit's exemption shrank the
+    # frontier on 2026-08-10, and they would have been re-derived from scratch, possibly
+    # differently, if the type ever came back. Carry them, marked, with zeroed counts.
+    emitted = {_qkey(r["type"], r.get("java_class")) for r in rows}
+    carried = 0
+    for key, prev in sorted(prior.items()):
+        if key in emitted:
+            continue
+        name, jc = key
+        verdict, source, note = prev
+        if verdict == "TODO" or str(verdict).startswith("SUGGEST-"):
+            continue                      # only decisions are worth preserving
+        rows.append({
+            "verdict": verdict, "leverage": 0, "occurrences": 0,
+            "fanin": fanin.get(name, 0), "type": name, "java_class": jc,
+            "category": categorize(name),
+            "source": source or "decided",
+            "note": (note or "") + "  [no longer on the frontier; decision retained]",
+        })
+        carried += 1
+    if carried:
+        print(f"carried {carried} decided verdict(s) whose types left the frontier",
+              file=sys.stderr)
+
+    rows.sort(key=lambda r: (-r["leverage"], -r["occurrences"], r["type"]))
+    return rows, blocked
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Type-level convention frontier for Phase 3")
+    ap.add_argument("--debt", default="OWNERSHIP_DEBT.tsv")
+    ap.add_argument("--seam", default="SEAM.tsv")
+    ap.add_argument("--root", default="ghidra-rs/src")
+    ap.add_argument("--out", help="Write CONVENTION_QUEUE.tsv here (preserves existing verdicts)")
+    ap.add_argument("--families", default="CONVENTION_FAMILIES.tsv",
+                    help="Family rules: one verdict for a whole naming family (*Iterator, *Listener, ...)")
+    ap.add_argument("--top", type=int, default=25, help="Rows to print when not writing")
+    ap.add_argument("--max-fanin", type=int, default=500,
+                    help="Match remediate_ownership.sh's MAX_FANIN: rows above it are Phase 2")
+    ap.add_argument("--dyn-threshold", type=int, default=5)
+    ap.add_argument("--orig-src", default="orig_src",
+                    help="Java sources, read to size each hierarchy at its source rather than "
+                         "by how far the port has got")
+    ap.add_argument("--manifest", default="PORT_MANIFEST.tsv",
+                    help="Port status, so a trait with no implementers YET isn't mistaken for "
+                         "a trait that shouldn't exist")
+    ap.add_argument("--suggest", action="store_true",
+                    help="Fill undecided rows with SUGGEST-<VERDICT> proposals from structural "
+                         "evidence. Proposals are inert until --promote.")
+    ap.add_argument("--resuggest", action="store_true",
+                    help="Reset existing SUGGEST-* rows to TODO before suggesting, so proposals "
+                         "are re-derived from current evidence. Promoted verdicts are never "
+                         "touched. Needed whenever the generator's evidence changes -- it did on "
+                         "2026-08-09, when subtype counting moved from direct to the transitive "
+                         "concrete closure, and 23 stale SUGGEST-ENUM proposals were frozen.")
+    ap.add_argument(
+        "--validate", action="store_true",
+        help="Check every promoted row against CURRENT evidence and reset the ones whose "
+             "stated reasoning no longer holds. The index has changed under promotions three "
+             "times (direct->transitive subtype counts, test sourcesets excluded, nested "
+             "implementations counted); OpBehaviorOther was promoted STRUCT as "
+             "'one concrete implementer' and has 62. Run after any index rebuild.")
+    ap.add_argument("--promote", metavar="VERDICT",
+                    help="Promote SUGGEST-<VERDICT> rows to <VERDICT> (e.g. --promote ACCEPT), "
+                         "or ALL for every suggestion. This is the review gate.")
+    args = ap.parse_args()
+
+    if args.validate:
+        # --validate on its own used to crash: it reads args.out, which defaults to None.
+        n = validate_promotions(args.out or "CONVENTION_QUEUE.tsv")
+        print(f"reset {n} promoted verdict(s) whose evidence changed", file=sys.stderr)
+
+    rows, blocked = build_queue(
+        args.debt, args.seam, args.root, args.out, args.max_fanin, args.dyn_threshold,
+        args.families, resuggest=args.resuggest, rederive=bool(args.suggest),
+    )
+    if not rows:
+        print("no convention-blocked rows -- nothing to queue", file=sys.stderr)
+        return
+
+    if args.suggest:
+        traits, types_, impls, mock_impls, stub_decl, jdk_modeled = collect_declarations(args.root)
+        unported = load_unported_classes(args.manifest)
+        java_subtypes = java_subtype_counts(args.orig_src)
+        java_impl_names = java_implementer_names(args.orig_src)
+        java_ext_points = java_extension_points(args.orig_src)
+        java_decls = java_declarations(args.orig_src)
+        java_ambiguous = getattr(java_declarations, "ambiguous", set())
+        src = "IMPLEMENTERS.tsv (transitive, concrete-only)" if java_impl_names else args.orig_src
+        print(f"read {len(java_subtypes)} Java supertypes from {src} and "
+              f"{len(java_decls)} declarations from {args.orig_src}", file=sys.stderr)
+        n = waiting = 0
+        for r in rows:
+            if r["verdict"] != "TODO":
+                continue
+            jc = (r.get("java_class") or "").strip()
+            if jc:
+                # A split row names its Java class, so the shared basename that blocked
+                # suggest_verdict no longer applies -- ask shape_rules about that one file.
+                sh = shape_of_java(jc)
+                if sh and sh[0] in SHAPE_TO_VERDICT:
+                    r["verdict"] = "SUGGEST-" + SHAPE_TO_VERDICT[sh[0]]
+                    r["source"] = "suggest"
+                    r["note"] = (f"resolved to {jc}: shape_rules {sh[1]} says {sh[0]}")
+                    n += 1
+                elif sh:
+                    r["source"], r["note"] = "evidence", (
+                        f"resolved to {jc}: shape_rules {sh[1]} says {sh[0]} -- needs a human "
+                        f"(a trait's verdict depends on its implementer set, and a struct_trait "
+                        f"split is a port task rather than a convention)")
+                continue
+            v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
+                                     mock_impls, stub_decl, java_subtypes, java_decls,
+                                     jdk_modeled, java_impl_names, java_ext_points,
+                                     _load_implementer_table(), java_ambiguous)
+            if v in _WAIT:
+                # Derived, not proposed: there is nothing to promote and nobody to ask. The
+                # source marks it as the generator's own, so `_emit_row` may overwrite it.
+                r["verdict"], r["source"], r["note"] = v, "derived", why
+                waiting += 1
+            elif v:
+                r["verdict"], r["source"], r["note"] = v, "suggest", why
+                n += 1
+            elif why:
+                r["source"], r["note"] = "evidence", why
+        print(f"proposed {n} verdicts (inert until --promote)", file=sys.stderr)
+        if waiting:
+            print(f"{waiting} row(s) blocked on an unported class or a seam stub -> "
+                  f"{WAIT_PORT}/{WAIT_STUB} (re-derived every run; each goes live when the "
+                  f"thing it waits on lands)", file=sys.stderr)
+
+    if args.promote:
+        want = args.promote.strip().upper()
+        n = 0
+        for r in rows:
+            v = r["verdict"]
+            if v.startswith("SUGGEST-") and (want == "ALL" or v == f"SUGGEST-{want}"):
+                r["verdict"], r["source"] = v[len("SUGGEST-"):], "promoted"
+                n += 1
+        print(f"promoted {n} suggestion(s) matching {want}", file=sys.stderr)
+
+    # WAIT-PORT is neither: nobody decided it and nobody has to. Counting it as decided would
+    # overstate progress, counting it as TODO is what this verdict exists to stop.
+    decided = [r for r in rows if r["verdict"] not in ("TODO",) + _WAIT]
+    waiting_rows = [r for r in rows if r["verdict"] in _WAIT]
+    seen, cumulative = set(), []
+    for r in rows:
+        cumulative.append(r)
+
+    if args.out:
+        with open(args.out, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=QUEUE_COLS, delimiter="\t")
+            w.writeheader()
+            for r in rows:
+                w.writerow(r)
+        print(
+            f"wrote {len(rows)} type decisions to {args.out} "
+            f"({len(decided)} already decided, {len(waiting_rows)} awaiting a port, "
+            f"{len(rows) - len(decided) - len(waiting_rows)} TODO) "
+            f"covering {len(blocked)} blocked files",
+            file=sys.stderr,
+        )
+    else:
+        print(f"{len(blocked)} convention-blocked files depend on {len(rows)} type decisions\n")
+        print(f"{'verdict':<8}{'files':>6}{'occ':>7}{'fanin':>7}  {'type':<32}category")
+        for r in rows[: args.top]:
+            print(
+                f"{r['verdict']:<8}{r['leverage']:>6}{r['occurrences']:>7}{r['fanin']:>7}  "
+                f"{r['type']:<32}{r['category']}"
+            )
+
+
+if __name__ == "__main__":
+    main()

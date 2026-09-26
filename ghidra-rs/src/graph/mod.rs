@@ -1,17 +1,33 @@
 pub mod algo;
+pub mod block_flow_graph_type;
+pub mod call_graph_type;
+pub mod code_flow_graph_type;
 pub mod data;
+pub mod data_flow_graph_type;
 pub mod deg_shared_config;
 pub mod event;
+pub mod fcg_data;
 pub mod fcg_direction;
+pub mod fcg_level;
+pub mod fcg_vertex_expansion_listener;
+pub mod function_call_graph;
 pub mod function_edge;
 pub mod function_edge_cache;
+pub mod g_directed_graph;
 pub mod g_edge;
 pub mod g_edge_weight_metric;
+pub mod g_implicit_directed_graph;
 pub mod g_vertex;
 pub mod g_weighted_edge;
+pub mod graph_algorithms;
+pub mod graph_factory;
 pub mod graph_path;
 pub mod graph_path_set;
+pub mod graph_to_tree_algorithm;
 pub mod job;
+pub mod jung;
+pub mod program_graph_type;
+pub mod seam_stubs;
 pub mod viewer;
 pub mod visualization;
 
@@ -20,20 +36,38 @@ mod graph_mvc_test;
 #[cfg(test)]
 mod graph_path_test;
 
-pub use algo::{GraphAlgorithmStatusListener, SorterException, Status};
+pub use algo::{
+    FindPathsAlgorithm, GraphAlgorithmStatusListener, SorterException, Status,
+    TarjanStronglyConnectedAlgorthm,
+};
+pub use block_flow_graph_type::BlockFlowGraphType;
+pub use call_graph_type::CallGraphType;
+pub use code_flow_graph_type::CodeFlowGraphType;
+pub use data_flow_graph_type::DataFlowGraphType;
 pub use deg_shared_config::DegSharedConfig;
 pub use event::VisualGraphChangeListener;
+pub use fcg_data::FcgData;
 pub use fcg_direction::FcgDirection;
+pub use fcg_level::FcgLevel;
+pub use fcg_vertex_expansion_listener::FcgVertexExpansionListener;
+pub use function_call_graph::FunctionCallGraph;
 pub use function_edge::FunctionEdge;
 pub use function_edge_cache::FunctionEdgeCache;
+pub use g_directed_graph::GDirectedGraph;
 pub use g_edge::GEdge;
 pub use g_edge_weight_metric::{natural_metric, unit_metric, GEdgeWeightMetric, NaturalMetric, UnitMetric};
+pub use g_implicit_directed_graph::GImplicitDirectedGraph;
 pub use g_vertex::GVertex;
 pub use g_weighted_edge::GWeightedEdge;
+pub use graph_algorithms::{GraphAlgorithms, TimeoutMonitorError};
+pub use graph_factory::create_directed_graph;
 pub use graph_path::GraphPath;
 pub use graph_path_set::GraphPathSet;
+pub use graph_to_tree_algorithm::GraphToTreeAlgorithm;
 pub use job::{AbstractAnimator, Animator, AnimatorBehavior, TimingTarget};
-pub use viewer::{PathHighlightListener, VisualGraphContextMarker};
+pub use jung::jung_directed_graph::JungDirectedGraph;
+pub use program_graph_type::ProgramGraphType;
+pub use viewer::{GridPoint, GraphSatelliteListener, LayoutProviderExtensionPoint, PathHighlightListener, PathHighlightMode, VisualGraphContextMarker};
 pub use visualization::{
     Dimension, GhidraGraphCollapser, GraphSelectionView, GroupVertex, GroupableVertex,
     JgtTidierTreeLayoutAlgorithm,

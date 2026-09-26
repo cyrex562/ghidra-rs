@@ -53,8 +53,13 @@ impl DiffLinesValidator {
             );
         }
 
-        let lines = self.my_lines.into_iter().map(|entry| entry.line).collect();
-        DiffLines::with_validated_lines(self.input, lines)
+        // keep the placeholder flags: Java's later passes test `instanceof PlaceHolderLine`
+        let lines = self
+            .my_lines
+            .into_iter()
+            .map(|entry| (entry.line, entry.is_place_holder))
+            .collect();
+        DiffLines::with_flagged_lines(self.input, lines)
     }
 
     /// Creates a placeholder line paired with `opposite_line` and inserts it at `index`.

@@ -159,6 +159,15 @@ where
     }
 }
 
+/// The `TaskMonitor` handed to a [`QCallback`] while it processes one item pulled off a
+/// [`ConcurrentQ`], and the bookkeeping the queue uses to notice when that item finishes.
+///
+/// Port of `generic.concurrent.FutureTaskMonitor<I, R>`. Java's version `extends FutureTask<R>`
+/// purely to serve as the `Runnable`/`Future` the thread pool executes (`run()` calls
+/// `super.run()` then reports the outcome back to the queue); this crate's [`GThreadPool`]
+/// instead takes a plain closure (see the call site in
+/// [`QueueInner::fill_open_processing_slots`]), so there's no `Future` machinery to extend here --
+/// only the `TaskMonitor` half of the Java class is ported.
 struct FutureTaskMonitor<I, R> {
     inner: Arc<QueueInner<I, R>>,
     item: I,
@@ -168,6 +177,14 @@ struct FutureTaskMonitor<I, R> {
     progress: Mutex<i64>,
     max_progress: Mutex<i64>,
     indeterminate: Mutex<bool>,
+    /// Port of `FutureTaskMonitor.cancelledListener`. Java chains listeners together with a
+    /// private `ChainedCancelledListener` linked-list node; this crate's established idiom for
+    /// the same "possibly more than one `CancelledListener`" need (see
+    /// `TaskMonitorSplitter::SubTaskMonitor` in `util/task/task_monitor_splitter.rs`) is a plain
+    /// `Vec` with pointer-equality removal, which is simpler and behaviorally equivalent (every
+    /// registered listener is still notified, in registration order, exactly once per
+    /// [`cancel`](Self::cancel)).
+    listeners: Mutex<Vec<Box<dyn CancelledListener>>>,
 }
 
 impl<I, R> FutureTaskMonitor<I, R>
@@ -185,6 +202,7 @@ where
             progress: Mutex::new(0),
             max_progress: Mutex::new(0),
             indeterminate: Mutex::new(false),
+            listeners: Mutex::new(Vec::new()),
         }
     }
 }
@@ -271,17 +289,37 @@ where
         *self.progress.lock().unwrap()
     }
 
+    /// Port of `FutureTaskMonitor.cancel(boolean)`. Java's override always calls
+    /// `super.cancel(mayInterruptIfRunning)` (`FutureTask`'s real cancellation) and then notifies
+    /// `cancelledListener` if one is set; since this port has no `FutureTask` to cancel, only the
+    /// flag-plus-notification half applies.
     fn cancel(&self) {
-        let mut c = self.cancelled.lock().unwrap();
-        *c = true;
+        {
+            let mut c = self.cancelled.lock().unwrap();
+            *c = true;
+        }
+        // Copied into a local `Vec` (rather than notified while holding the lock) so a listener
+        // that itself calls back into this monitor can't deadlock on `listeners`.
+        let listeners = self.listeners.lock().unwrap();
+        for listener in listeners.iter() {
+            listener.cancelled();
+        }
     }
 
-    fn add_cancelled_listener(&self, _listener: Box<dyn CancelledListener>) {
-        // Implementation omitted for brevity
+    /// Port of `FutureTaskMonitor.addCancelledListener(CancelledListener)`.
+    fn add_cancelled_listener(&self, listener: Box<dyn CancelledListener>) {
+        self.listeners.lock().unwrap().push(listener);
     }
 
-    fn remove_cancelled_listener(&self, _listener: &dyn CancelledListener) {
-        // Implementation omitted for brevity
+    /// Port of `FutureTaskMonitor.removeCancelledListener(CancelledListener)`.
+    fn remove_cancelled_listener(&self, listener: &dyn CancelledListener) {
+        let mut listeners = self.listeners.lock().unwrap();
+        listeners.retain(|l| {
+            !std::ptr::eq(
+                l.as_ref() as *const dyn CancelledListener as *const (),
+                listener as *const dyn CancelledListener as *const (),
+            )
+        });
     }
 
     fn set_cancel_enabled(&self, _enabled: bool) {}
@@ -290,8 +328,12 @@ where
         true
     }
 
+    /// Port of `FutureTaskMonitor.clearCanceled()`, which always throws
+    /// `UnsupportedOperationException` ("once cancelled, always cancelled"). Matches this crate's
+    /// established idiom for a `TaskMonitor` method that Java declares unconditionally
+    /// unsupported (see `SubTaskMonitor::clear_cancelled` in `util/task/task_monitor_splitter.rs`).
     fn clear_cancelled(&self) {
-        // Unsupported operation in FutureTaskMonitor
+        unimplemented!("clear_cancelled is not supported on FutureTaskMonitor")
     }
 }
 
@@ -323,5 +365,99 @@ mod tests {
             .collect();
         values.sort();
         assert_eq!(values, vec![2, 4, 6]);
+    }
+
+    struct FlagListener {
+        flagged: Arc<std::sync::atomic::AtomicBool>,
+    }
+
+    impl CancelledListener for FlagListener {
+        fn cancelled(&self) {
+            self.flagged.store(true, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+
+    fn new_future_task_monitor() -> FutureTaskMonitor<i32, i32> {
+        let thread_pool = GThreadPool::get_shared_thread_pool("test_ftm");
+        let q = ConcurrentQ::new(Box::new(TestCallback), thread_pool, 2, true, false);
+        FutureTaskMonitor::new(q.inner, 99, 1)
+    }
+
+    #[test]
+    fn cancel_flips_is_cancelled_and_notifies_listeners() {
+        let monitor = new_future_task_monitor();
+        let flagged = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        monitor.add_cancelled_listener(Box::new(FlagListener {
+            flagged: flagged.clone(),
+        }));
+
+        assert!(!monitor.is_cancelled());
+        monitor.cancel();
+
+        assert!(monitor.is_cancelled());
+        assert!(flagged.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    #[test]
+    fn multiple_cancelled_listeners_are_all_notified() {
+        let monitor = new_future_task_monitor();
+        let flagged_a = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flagged_b = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        monitor.add_cancelled_listener(Box::new(FlagListener {
+            flagged: flagged_a.clone(),
+        }));
+        monitor.add_cancelled_listener(Box::new(FlagListener {
+            flagged: flagged_b.clone(),
+        }));
+
+        monitor.cancel();
+
+        assert!(flagged_a.load(std::sync::atomic::Ordering::SeqCst));
+        assert!(flagged_b.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    #[test]
+    fn remove_cancelled_listener_nonexistent_is_noop() {
+        let monitor = new_future_task_monitor();
+        let flagged = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        monitor.add_cancelled_listener(Box::new(FlagListener {
+            flagged: flagged.clone(),
+        }));
+
+        let other = FlagListener {
+            flagged: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        };
+        monitor.remove_cancelled_listener(&other);
+
+        monitor.cancel();
+        assert!(flagged.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    #[test]
+    #[should_panic(expected = "not supported")]
+    fn clear_cancelled_is_unsupported() {
+        let monitor = new_future_task_monitor();
+        monitor.clear_cancelled();
+    }
+
+    #[test]
+    fn progress_and_message_reporting_round_trip() {
+        let monitor = new_future_task_monitor();
+
+        monitor.initialize(100);
+        assert_eq!(monitor.get_maximum(), 100);
+        assert_eq!(monitor.get_progress(), 0);
+
+        monitor.set_progress(30);
+        assert_eq!(monitor.get_progress(), 30);
+
+        monitor.increment_progress(10);
+        assert_eq!(monitor.get_progress(), 40);
+
+        monitor.set_message("halfway");
+        assert_eq!(monitor.get_message(), "halfway");
+
+        monitor.set_indeterminate(true);
+        assert!(monitor.is_indeterminate());
     }
 }

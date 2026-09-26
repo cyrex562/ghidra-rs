@@ -125,7 +125,7 @@ mod tests {
 
         fn get_byte_provider(
             &self,
-        ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+        ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             panic!("not implemented for mock")
         }
 
@@ -174,7 +174,7 @@ mod tests {
     fn get_reads_byte() {
         let mut reader = MockReader::new(vec![0]);
         let result = CFragUsage::get(&mut reader);
-        assert_eq!(result, Ok(CFragUsage::KImportLibraryCFrag));
+        assert_eq!(result.unwrap(), CFragUsage::KImportLibraryCFrag);
         assert_eq!(reader.position, 1);
     }
 
@@ -198,7 +198,7 @@ mod tests {
         for (byte_val, expected) in &test_cases {
             let mut reader = MockReader::new(vec![*byte_val]);
             let result = CFragUsage::get(&mut reader);
-            assert_eq!(result, Ok(*expected));
+            assert_eq!(result.unwrap(), *expected);
         }
     }
 

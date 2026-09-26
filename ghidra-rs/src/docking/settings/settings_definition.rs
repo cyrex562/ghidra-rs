@@ -68,9 +68,16 @@ pub trait SettingsDefinition {
     /// [`TypeDef::has_same_type_def_settings`](crate::program::model::data::typedef::TypeDef::has_same_type_def_settings)
     /// to confirm two settings-definition arrays declare definitions of the same kind in the
     /// same order. Not part of the original Java interface.
+    ///
+    /// Defaults to comparing [`get_storage_key`](Self::get_storage_key): every concrete
+    /// `SettingsDefinition` singleton in this crate (`PointerTypeSettingsDefinition`,
+    /// `ComponentOffsetSettingsDefinition`, ...) uses a storage key unique to its own class, the
+    /// same name-based proxy for "same concrete implementation class" already established
+    /// elsewhere in this crate (see `DataTypeUtilities::is_same_kind_built_in_data_type`'s
+    /// identical fallback). Override this directly if a future implementor's storage key is not
+    /// unique to its class.
     fn is_same_kind(&self, other: &dyn SettingsDefinition) -> bool {
-        let _ = other;
-        false
+        self.get_storage_key() == other.get_storage_key()
     }
 
     /// Stands in for `instanceof TypeDefSettingsDefinition`. Not part of the original Java

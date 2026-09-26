@@ -131,7 +131,15 @@ mod tests {
         name: String,
     }
 
-    impl DomainObject for MockDomainObject {}
+    impl DomainObject for MockDomainObject {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+
+        fn set_name(&mut self, name: &str) {
+            self.name = name.to_string();
+        }
+    }
 
     struct MockDomainFile {
         object_class: Option<TypeId>,

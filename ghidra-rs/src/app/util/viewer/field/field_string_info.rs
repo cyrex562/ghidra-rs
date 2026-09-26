@@ -2,9 +2,14 @@
 /// along with the offset of that substring into the parent.
 ///
 /// Corresponds to Java `ghidra.app.util.viewer.field.FieldStringInfo`.
+///
+/// `offset` is `i32`, matching Java's `int` field, rather than `usize`: real callers (e.g.
+/// [`FunctionUtils`](crate::app::plugin::core::navigation::function_utils::FunctionUtils))
+/// construct this from `String.indexOf(...)`, which returns `-1` when the substring isn't found
+/// and is stored as-is, unchecked -- there is no sentinel-free `usize` value that preserves that.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldStringInfo {
-    offset: usize,
+    offset: i32,
     parent_string: String,
     field_string: String,
 }
@@ -15,11 +20,13 @@ impl FieldStringInfo {
     /// # Parameters
     /// - `parent_string`: the string that contains `field_string`
     /// - `field_string`: the substring that exists within `parent_string`
-    /// - `offset`: the byte offset of `field_string` within `parent_string`
+    /// - `offset`: the byte offset of `field_string` within `parent_string`; may be negative
+    ///   (e.g. `-1`), matching Java callers that pass a possibly-`-1` `String.indexOf` result
+    ///   through unchecked
     pub fn new(
         parent_string: impl Into<String>,
         field_string: impl Into<String>,
-        offset: usize,
+        offset: i32,
     ) -> Self {
         Self {
             parent_string: parent_string.into(),
@@ -29,7 +36,7 @@ impl FieldStringInfo {
     }
 
     /// Returns the offset of the field string into the parent string.
-    pub fn offset(&self) -> usize {
+    pub fn offset(&self) -> i32 {
         self.offset
     }
 
@@ -103,6 +110,14 @@ mod tests {
         let parent = "foo bar baz";
         let info = FieldStringInfo::new(parent, "baz", 8);
         assert_eq!(info.offset(), 8);
-        assert_eq!(&parent[info.offset()..], info.field_string());
+        assert_eq!(&parent[info.offset() as usize..], info.field_string());
+    }
+
+    #[test]
+    fn test_negative_offset_is_preserved() {
+        // Mirrors a Java caller passing an unchecked `String.indexOf(...)` result of `-1`
+        // (substring not found) straight through to the constructor.
+        let info = FieldStringInfo::new("parent", "missing", -1);
+        assert_eq!(info.offset(), -1);
     }
 }

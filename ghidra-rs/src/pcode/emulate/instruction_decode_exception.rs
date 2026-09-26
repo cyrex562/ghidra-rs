@@ -54,7 +54,7 @@ mod tests {
         #[allow(deprecated)]
         let exc = InstructionDecodeException::new("unknown opcode", addr);
 
-        assert_eq!(exc.message(), "Instruction decode failed (unknown opcode), PC=ram:00001000");
+        assert_eq!(exc.message(), "Instruction decode failed (unknown opcode), PC=ram:0x1000");
     }
 
     #[test]

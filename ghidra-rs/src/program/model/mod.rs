@@ -1,11 +1,14 @@
 pub mod address;
+pub mod block;
 pub mod correlate;
 pub mod data;
+pub mod gclass;
 pub mod lang;
 pub mod listing;
 pub mod mem;
 pub mod pcode;
 pub mod reloc;
 pub mod scalar;
+pub mod sourcemap;
 pub mod symbol;
 pub mod util;

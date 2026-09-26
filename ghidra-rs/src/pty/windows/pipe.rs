@@ -92,6 +92,18 @@ impl Pipe {
         &self.read_handle
     }
 
+    /// Consumes the pipe, handing ownership of its read and write ends to the caller.
+    ///
+    /// `ConPty` needs owned `Handle`s to move into the `Handle`-consuming
+    /// [`ConPtyParent`](super::ConPtyParent)/[`ConPtyChild`](super::ConPtyChild)
+    /// constructors -- each end of each pipe is handed to exactly one endpoint, mirroring how
+    /// Java's `ConPty` constructor hands `pipeToChild.getWriteHandle()` etc. to exactly one of
+    /// `ConPtyParent`/`ConPtyChild` each. `Pipe` has no `Drop` of its own (each `Handle` closes
+    /// itself), so consuming it this way does not risk a double-close.
+    pub fn into_handles(self) -> (Handle, Handle) {
+        (self.read_handle, self.write_handle)
+    }
+
     /// Returns a reference to the write end of the pipe.
     ///
     /// Mirrors `Pipe.getWriteHandle()`.

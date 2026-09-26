@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use super::IsfObject;
 
 /// Represents ISF Windows PE version metadata.
@@ -8,6 +10,7 @@ use super::IsfObject;
 /// from the `"PE Property[ProductVersion]"` entry in the metadata map, which
 /// is expected to hold a dot-separated string of the form
 /// `major.minor.revision.build`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct IsfWinPE {
     pub build: Option<i32>,
     pub major: Option<i32>,

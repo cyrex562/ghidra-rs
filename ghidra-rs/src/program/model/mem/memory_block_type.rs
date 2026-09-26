@@ -24,6 +24,15 @@ impl MemoryBlockType {
         }
     }
 
+    /// Returns the Java enum name for this block type.
+    pub const fn java_name(self) -> &'static str {
+        match self {
+            Self::Default => "DEFAULT",
+            Self::BitMapped => "BIT_MAPPED",
+            Self::ByteMapped => "BYTE_MAPPED",
+        }
+    }
+
     /// Returns true for bit-mapped and byte-mapped block types.
     pub const fn is_mapped(self) -> bool {
         matches!(self, Self::BitMapped | Self::ByteMapped)
@@ -88,5 +97,12 @@ mod tests {
         assert!(!MemoryBlockType::Default.is_mapped());
         assert!(MemoryBlockType::BitMapped.is_mapped());
         assert!(MemoryBlockType::ByteMapped.is_mapped());
+    }
+
+    #[test]
+    fn java_names_match_enum_names() {
+        assert_eq!(MemoryBlockType::Default.java_name(), "DEFAULT");
+        assert_eq!(MemoryBlockType::BitMapped.java_name(), "BIT_MAPPED");
+        assert_eq!(MemoryBlockType::ByteMapped.java_name(), "BYTE_MAPPED");
     }
 }

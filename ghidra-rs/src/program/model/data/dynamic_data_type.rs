@@ -1,7 +1,7 @@
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::dynamic::Dynamic;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Port of `ghidra.program.model.data.DynamicDataType`.
 ///
@@ -155,11 +155,24 @@ impl DataType for BytePlaceholderDataType {
 mod tests {
     use super::*;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::docking::settings::settings::Settings;
 
     struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {}
+    impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
 
     struct MockSettings;
     impl Settings for MockSettings {}
@@ -190,7 +203,7 @@ mod tests {
     impl BuiltInDataType for MockDynamicDataType {
         fn get_c_type_declaration(
             &self,
-            _data_organization: Option<&dyn DataOrganization>,
+            _data_organization: Option<&DataOrganizationImpl>,
         ) -> Option<String> {
             None
         }
@@ -246,7 +259,7 @@ mod tests {
         impl BuiltInDataType for EmptyDynamicDataType {
             fn get_c_type_declaration(
                 &self,
-                _data_organization: Option<&dyn DataOrganization>,
+                _data_organization: Option<&DataOrganizationImpl>,
             ) -> Option<String> {
                 None
             }

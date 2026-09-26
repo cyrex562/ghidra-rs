@@ -1,0 +1,3 @@
+pub mod db_trace_static_mapping_manager;
+
+pub use db_trace_static_mapping_manager::DBTraceStaticMappingManager;

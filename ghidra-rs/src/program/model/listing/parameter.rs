@@ -53,7 +53,7 @@ mod tests {
     use crate::program::model::listing::{Function, Program};
     use crate::program::model::pcode::Varnode;
     use crate::program::model::symbol::{SourceType, Symbol};
-    use crate::program::seam_stubs::VariableStorage;
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::util::exception::InvalidInputException;
 
     struct MockDataType;
@@ -61,8 +61,16 @@ mod tests {
     impl DataType for MockDataType {}
 
     macro_rules! impl_mock_variable {
-        ($ty:ty) => {
+        ($ty:ty, $is_param:expr, $is_auto:expr) => {
             impl Variable for $ty {
+                fn is_parameter(&self) -> bool {
+                    $is_param
+                }
+
+                fn is_auto_parameter(&self) -> bool {
+                    ($is_auto)(self)
+                }
+
                 fn get_data_type(&self) -> Box<dyn DataType> {
                     Box::new(MockDataType)
                 }
@@ -113,12 +121,13 @@ mod tests {
 
                 fn get_program(&self) -> Arc<dyn Program> {
                     struct MockProgram;
+                    impl crate::framework::model::DomainObject for MockProgram {}
                     impl Program for MockProgram {
-                        fn get_name(&self) -> &str {
-                            "mock"
+                        fn get_name(&self) -> String {
+                            "mock".to_string()
                         }
-                        fn get_language_id(&self) -> &str {
-                            "mock:LE:32:default"
+                        fn get_language_id(&self) -> String {
+                            "mock:LE:32:default".to_string()
                         }
                     }
                     Arc::new(MockProgram)
@@ -221,17 +230,7 @@ mod tests {
 
     struct MockVariable;
 
-    impl_mock_variable!(MockVariable);
-
-    impl Variable for MockVariable {
-        fn is_parameter(&self) -> bool {
-            false
-        }
-
-        fn is_auto_parameter(&self) -> bool {
-            false
-        }
-    }
+    impl_mock_variable!(MockVariable, false, |_v: &MockVariable| false);
 
     struct MockParameter {
         ordinal: i32,
@@ -239,17 +238,9 @@ mod tests {
         forced_indirect: bool,
     }
 
-    impl_mock_variable!(MockParameter);
-
-    impl Variable for MockParameter {
-        fn is_parameter(&self) -> bool {
-            true
-        }
-
-        fn is_auto_parameter(&self) -> bool {
-            self.auto_parameter_type.is_some()
-        }
-    }
+    impl_mock_variable!(MockParameter, true, |v: &MockParameter| v
+        .auto_parameter_type
+        .is_some());
 
     impl Parameter for MockParameter {
         fn get_ordinal(&self) -> i32 {
@@ -281,7 +272,7 @@ mod tests {
             forced_indirect: false,
         };
         assert_eq!(param.get_ordinal(), 0);
-        assert!(!param.is_auto_parameter());
+        assert!(!Parameter::is_auto_parameter(&param));
         assert_eq!(param.get_auto_parameter_type(), None);
         assert!(!param.is_forced_indirect());
     }
@@ -293,7 +284,7 @@ mod tests {
             auto_parameter_type: Some(AutoParameterType::ReturnStoragePtr),
             forced_indirect: true,
         };
-        assert!(param.is_auto_parameter());
+        assert!(Parameter::is_auto_parameter(&param));
         assert_eq!(
             param.get_auto_parameter_type(),
             Some(AutoParameterType::ReturnStoragePtr)

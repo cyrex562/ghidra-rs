@@ -1,6 +1,7 @@
 use crate::program::model::data::data_type::DataType;
 use crate::docking::settings::settings::Settings;
-use crate::program::seam_stubs::{MemBuffer, StringDataInstance, DEFAULT_CHARSET_NAME};
+use crate::program::model::data::string_data_instance::{StringDataInstance, DEFAULT_CHARSET_NAME};
+use crate::program::model::mem::MemBuffer;
 
 /// A character value to encode, standing in for the `Object value` parameter of
 /// `DataTypeWithCharset.encodeCharacterValue`, which Java accepts as either a `Character` or a
@@ -90,7 +91,20 @@ mod tests {
     impl Settings for MockSettings {}
 
     struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {}
+    impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
 
     struct MockStringDataInstance;
     impl StringDataInstance for MockStringDataInstance {

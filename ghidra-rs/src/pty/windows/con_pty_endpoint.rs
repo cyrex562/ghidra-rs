@@ -75,6 +75,21 @@ impl ConPtyEndpoint {
     pub fn pseudo_console_handle(&self) -> &PseudoConsoleHandle {
         &self.pseudo_console_handle
     }
+
+    /// Closes this endpoint's underlying handles. Mirrors the effect of Java's `ConPty.close()`
+    /// closing the same `Handle` objects it aliases into this endpoint (Rust has no such
+    /// aliasing, so `ConPty` calls this explicitly on each endpoint instead).
+    pub fn close_streams(&self) -> std::io::Result<()> {
+        self.input_stream
+            .lock()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "stream lock poisoned"))?
+            .close()?;
+        self.output_stream
+            .lock()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "stream lock poisoned"))?
+            .close();
+        Ok(())
+    }
 }
 
 impl PtyEndpoint for ConPtyEndpoint {

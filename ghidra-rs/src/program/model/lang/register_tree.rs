@@ -31,8 +31,8 @@ impl RegisterTree {
     /// Constructs a `RegisterTree` rooted at `reg`, recursively building children trees for
     /// each of `reg`'s child registers.
     pub fn new(reg: &RegisterRef) -> RegisterTreeRef {
-        let name = reg.borrow().name().to_string();
-        let register_children = reg.borrow().child_registers();
+        let name = reg.name().to_string();
+        let register_children = reg.child_registers();
 
         Rc::new_cyclic(|weak| {
             let children: Vec<RegisterTreeRef> = register_children
@@ -47,7 +47,7 @@ impl RegisterTree {
             RefCell::new(RegisterTree {
                 self_ref: weak.clone(),
                 name,
-                register: Some(Rc::clone(reg)),
+                register: Some(reg.clone()),
                 parent: None,
                 children,
             })
@@ -62,7 +62,7 @@ impl RegisterTree {
         Rc::new_cyclic(|weak| {
             let children: Vec<RegisterTreeRef> = regs
                 .iter()
-                .filter(|reg| reg.borrow().is_base_register())
+                .filter(|reg| reg.is_base_register())
                 .map(|reg| {
                     let child_tree = RegisterTree::new(reg);
                     child_tree.borrow_mut().parent = Some(weak.clone());
@@ -139,7 +139,6 @@ impl RegisterTree {
             .register
             .as_ref()
             .expect("register_path requires an associated register")
-            .borrow()
             .name()
             .to_string();
 
@@ -152,7 +151,7 @@ impl RegisterTree {
     /// Returns the `RegisterTree` for the given register if one exists in this `RegisterTree`.
     pub fn get_register_tree(&self, register: &RegisterRef) -> Option<RegisterTreeRef> {
         if let Some(this_register) = &self.register {
-            if Rc::ptr_eq(this_register, register) {
+            if crate::program::model::lang::Register::same(this_register, register) {
                 return self.self_ref.upgrade();
             }
         }
@@ -164,9 +163,14 @@ impl RegisterTree {
         None
     }
 
-    /// Removes the register from the children.
-    pub fn remove(&self, reg: &RegisterRef) {
-        let Some(tree) = self.get_register_tree(reg) else {
+    /// Removes the register's subtree from its parent within `this` tree.
+    ///
+    /// Takes the tree by shared `Rc` rather than `&self` so that no borrow of any node is
+    /// held across the mutation. This matters when the subtree's parent is the root node
+    /// itself: a `&self` method would still hold a shared borrow of that node while trying
+    /// to `borrow_mut()` it to edit its children, panicking with "already borrowed".
+    pub fn remove(this: &RegisterTreeRef, reg: &RegisterRef) {
+        let Some(tree) = this.borrow().get_register_tree(reg) else {
             return;
         };
         let Some(parent) = tree.borrow().parent() else {
@@ -224,17 +228,18 @@ mod tests {
         let space = register_space();
         let eax = Register::new("EAX", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let ax = Register::new("AX", "", space.address(0x0), 2, false, Register::TYPE_NONE);
-        eax.borrow_mut().set_child_registers(vec![Rc::clone(&ax)]);
+        let [eax, ax]: [Register; 2] =
+            crate::program::model::lang::register::test_support::linked(&[&eax, &ax], &[(0, &[1])]).try_into().unwrap();
 
         let tree = RegisterTree::new(&eax);
         let tree = tree.borrow();
         assert_eq!(tree.name(), "EAX");
-        assert!(Rc::ptr_eq(tree.register().as_ref().unwrap(), &eax));
+        assert!(crate::program::model::lang::Register::same(tree.register().as_ref().unwrap(), &eax));
 
         let components = tree.get_components();
         assert_eq!(components.len(), 1);
         assert_eq!(components[0].borrow().name(), "AX");
-        assert!(Rc::ptr_eq(
+        assert!(crate::program::model::lang::Register::same(
             components[0].borrow().register().as_ref().unwrap(),
             &ax
         ));
@@ -248,9 +253,10 @@ mod tests {
         let space = register_space();
         let eax = Register::new("EAX", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let ax = Register::new("AX", "", space.address(0x0), 2, false, Register::TYPE_NONE);
-        eax.borrow_mut().set_child_registers(vec![Rc::clone(&ax)]);
+        let [eax, ax]: [Register; 2] =
+            crate::program::model::lang::register::test_support::linked(&[&eax, &ax], &[(0, &[1])]).try_into().unwrap();
 
-        let tree = RegisterTree::with_registers("root", &[Rc::clone(&eax), Rc::clone(&ax)]);
+        let tree = RegisterTree::with_registers("root", &[eax.clone(), ax.clone()]);
         let tree = tree.borrow();
         assert_eq!(tree.name(), "root");
         assert!(tree.register().is_none());
@@ -277,7 +283,7 @@ mod tests {
         let eax = Register::new("EAX", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let ebx = Register::new("EBX", "", space.address(0x4), 4, false, Register::TYPE_NONE);
 
-        let root = RegisterTree::with_registers("root", &[Rc::clone(&eax)]);
+        let root = RegisterTree::with_registers("root", &[eax.clone()]);
         let ebx_tree = RegisterTree::new(&ebx);
         root.borrow_mut().add(Rc::clone(&ebx_tree));
 
@@ -292,8 +298,8 @@ mod tests {
         let eax = Register::new("EAX", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let ax = Register::new("AX", "", space.address(0x0), 2, false, Register::TYPE_NONE);
         let al = Register::new("AL", "", space.address(0x0), 1, false, Register::TYPE_NONE);
-        ax.borrow_mut().set_child_registers(vec![Rc::clone(&al)]);
-        eax.borrow_mut().set_child_registers(vec![Rc::clone(&ax)]);
+        let [eax, ax, al]: [Register; 3] =
+            crate::program::model::lang::register::test_support::linked(&[&eax, &ax, &al], &[(1, &[2]), (0, &[1])]).try_into().unwrap();
 
         let tree = RegisterTree::new(&eax);
         let tree = tree.borrow();
@@ -331,12 +337,13 @@ mod tests {
         let space = register_space();
         let eax = Register::new("EAX", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let ax = Register::new("AX", "", space.address(0x0), 2, false, Register::TYPE_NONE);
-        eax.borrow_mut().set_child_registers(vec![Rc::clone(&ax)]);
+        let [eax, ax]: [Register; 2] =
+            crate::program::model::lang::register::test_support::linked(&[&eax, &ax], &[(0, &[1])]).try_into().unwrap();
 
         let tree = RegisterTree::new(&eax);
         assert_eq!(tree.borrow().get_components().len(), 1);
 
-        tree.borrow().remove(&ax);
+        RegisterTree::remove(&tree, &ax);
 
         assert_eq!(tree.borrow().get_components().len(), 0);
         assert!(tree.borrow().get_register_tree(&ax).is_none());
@@ -348,7 +355,7 @@ mod tests {
         let eax = Register::new("EAX", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let tree = RegisterTree::new(&eax);
 
-        tree.borrow().remove(&eax);
+        RegisterTree::remove(&tree, &eax);
         assert!(tree.borrow().get_register_tree(&eax).is_some());
     }
 

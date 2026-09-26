@@ -93,13 +93,15 @@ mod tests {
 
 	#[test]
 	fn region_returns_empty_addresses() {
+		use crate::framework::model::DomainObject;
 		struct TestProgram;
+		impl DomainObject for TestProgram {}
 		impl Program for TestProgram {
-			fn get_name(&self) -> &str {
-				"test"
+			fn get_name(&self) -> String {
+				"test".to_string()
 			}
-			fn get_language_id(&self) -> &str {
-				"x86"
+			fn get_language_id(&self) -> String {
+				"x86".to_string()
 			}
 		}
 

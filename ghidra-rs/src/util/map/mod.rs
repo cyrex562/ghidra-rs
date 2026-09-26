@@ -1,7 +1,22 @@
 use thiserror::Error;
 
+pub mod int_value_map;
+pub mod long_iterator_impl;
+pub mod object_storage_adapter;
+pub mod object_value_map;
+pub mod value_map;
+pub mod value_storage_page;
 pub mod value_storage_page_index;
 
+pub use int_value_map::IntValueMap;
+pub use long_iterator_impl::LongIteratorImpl;
+pub use object_storage_adapter::ObjectStorageAdapter;
+pub use object_value_map::ObjectValueMap;
+pub use value_map::{
+    clamp_num_page_bits, compute_page_mask, compute_page_size, ValueMap, ValueMapIter,
+    DEFAULT_NUMBER_PAGE_BITS, MAX_NUMBER_PAGE_BITS, MIN_NUMBER_PAGE_BITS,
+};
+pub use value_storage_page::ValueStoragePage;
 pub use value_storage_page_index::ValueStoragePageIndex;
 
 /// Exception thrown when a PropertyPage does not support a requested data type.

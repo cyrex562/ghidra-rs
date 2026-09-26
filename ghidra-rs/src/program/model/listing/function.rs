@@ -7,7 +7,9 @@ use crate::program::model::address::{Address, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};
 use crate::program::model::symbol::{ExternalLocation, Namespace, NamespaceType, SourceType};
-use crate::program::seam_stubs::{PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+use crate::program::model::lang::prototype_model::PrototypeModel;
+use crate::program::seam_stubs::{StackFrame, VariableFilter};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::util::task::TaskMonitor;
 
@@ -392,7 +394,7 @@ pub trait Function: Namespace {
     fn set_custom_variable_storage(&mut self, has_custom_variable_storage: bool);
 
     /// Gets the calling convention prototype model for this function, or `None`.
-    fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>>;
+    fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>>;
 
     /// Determine if this signature has an unknown or unrecognized calling convention name.
     fn has_unknown_calling_convention_name(&self) -> bool {
@@ -507,12 +509,13 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)
@@ -604,7 +607,7 @@ mod tests {
                     false
                 }
 
-                fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+                fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
                     None
                 }
 
@@ -842,7 +845,7 @@ mod tests {
 
         fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
 
-        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
             None
         }
 

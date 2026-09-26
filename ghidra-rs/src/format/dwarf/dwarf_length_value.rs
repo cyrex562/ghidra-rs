@@ -95,11 +95,11 @@ mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -131,7 +131,7 @@ mod tests {
     /// Minimal [`BinaryReader`] impl backed by an in-memory [`VecProvider`], used only by
     /// these tests.
     struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         little_endian: bool,
         current_index: u64,
     }
@@ -173,7 +173,7 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
@@ -222,7 +222,10 @@ mod tests {
 
     #[test]
     fn zero_length_with_no_trailing_data_is_invalid() {
-        let mut r = MockReader::new(vec![0x00, 0x00, 0x00, 0x00], true);
+        // A zero length followed by non-zero (non-padding) data is not trailing
+        // padding, so `read` must reject it with the "Invalid DWARF length 0" error
+        // rather than treating it as an all-zeros-to-EOF pad.
+        let mut r = MockReader::new(vec![0x00, 0x00, 0x00, 0x00, 0x01], true);
         let err = DWARFLengthValue::read(&mut r, 4).unwrap_err();
         assert!(err.to_string().contains("Invalid DWARF length 0"));
     }

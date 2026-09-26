@@ -95,7 +95,7 @@ mod tests {
         let ctx = MockDataTypeProviderContext::new();
         let result = ctx.get_data_type_component(-1);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "IndexOutOfBoundsException: offset must not be negative");
+        assert_eq!(result.err().unwrap(), "IndexOutOfBoundsException: offset must not be negative");
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use crate::program::model::address::{Address, AddressRange, AddressRangeIterator, AddressSetView};
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Interface to define a processor register context over the address space.
 ///
@@ -13,11 +13,11 @@ pub trait ProgramContext {
 
     /// Modify register value to eliminate non-flowing bits, returning a value suitable for
     /// flowing.
-    fn get_flow_value(&self, value: Box<dyn RegisterValue>) -> Box<dyn RegisterValue>;
+    fn get_flow_value(&self, value: RegisterValue) -> RegisterValue;
 
     /// Modify register value to only include non-flowing bits, returning `None` if no bits
     /// remain.
-    fn get_non_flow_value(&self, value: Box<dyn RegisterValue>) -> Option<Box<dyn RegisterValue>>;
+    fn get_non_flow_value(&self, value: RegisterValue) -> Option<RegisterValue>;
 
     /// Get a Register object given the name of a register, or `None` if no register has that
     /// name.
@@ -42,7 +42,7 @@ pub trait ProgramContext {
         &self,
         register: &Register,
         address: &Address,
-    ) -> Option<Box<dyn RegisterValue>>;
+    ) -> Option<RegisterValue>;
 
     /// Sets the register context over the given range to the given value.
     ///
@@ -53,7 +53,7 @@ pub trait ProgramContext {
         &mut self,
         start: &Address,
         end: &Address,
-        value: Box<dyn RegisterValue>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException>;
 
     /// Returns the (non-default) value assigned to a register at a given address, or possibly
@@ -62,7 +62,7 @@ pub trait ProgramContext {
         &self,
         register: &Register,
         address: &Address,
-    ) -> Option<Box<dyn RegisterValue>>;
+    ) -> Option<RegisterValue>;
 
     /// Associates a value with a register over a given address range (inclusive of `end`). Any
     /// previous values will be overwritten. A `value` of `None` will effectively clear any
@@ -149,47 +149,27 @@ pub trait ProgramContext {
         &self,
         register: &Register,
         address: &Address,
-    ) -> Option<Box<dyn RegisterValue>>;
+    ) -> Option<RegisterValue>;
 
     /// Returns the base context register.
     fn get_base_context_register(&self) -> RegisterRef;
 
     /// Get the current default disassembly context to be used when initiating disassembly.
-    fn get_default_disassembly_context(&self) -> Box<dyn RegisterValue>;
+    fn get_default_disassembly_context(&self) -> RegisterValue;
 
     /// Set the initial disassembly context to be used when initiating disassembly.
-    fn set_default_disassembly_context(&mut self, value: Box<dyn RegisterValue>);
+    fn set_default_disassembly_context(&mut self, value: RegisterValue);
 
     /// Get the disassembly context for a specified address. This context is formed from the
     /// default disassembly context and the context register value stored at the specified
     /// address. Those bits specified by the stored context value take precedence.
-    fn get_disassembly_context(&self, address: &Address) -> Box<dyn RegisterValue>;
+    fn get_disassembly_context(&self, address: &Address) -> RegisterValue;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType, EmptyAddressRangeIterator};
-
-    struct MockRegisterValue;
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            mock_register()
-        }
-
-        fn get_register_value(&self, _register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue)
-        }
-
-        fn has_any_value(&self) -> bool {
-            false
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-    }
-
     struct MockProgramContext;
 
     impl ProgramContext for MockProgramContext {
@@ -197,14 +177,14 @@ mod tests {
             false
         }
 
-        fn get_flow_value(&self, value: Box<dyn RegisterValue>) -> Box<dyn RegisterValue> {
+        fn get_flow_value(&self, value: RegisterValue) -> RegisterValue {
             value
         }
 
         fn get_non_flow_value(
             &self,
-            _value: Box<dyn RegisterValue>,
-        ) -> Option<Box<dyn RegisterValue>> {
+            _value: RegisterValue,
+        ) -> Option<RegisterValue> {
             None
         }
 
@@ -228,15 +208,15 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
-            Some(Box::new(MockRegisterValue))
+        ) -> Option<RegisterValue> {
+            Some(RegisterValue::new(mock_register()))
         }
 
         fn set_register_value(
             &mut self,
             _start: &Address,
             _end: &Address,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
@@ -245,7 +225,7 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
 
@@ -329,7 +309,7 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
 
@@ -337,14 +317,14 @@ mod tests {
             panic!("no base context register in mock")
         }
 
-        fn get_default_disassembly_context(&self) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue)
+        fn get_default_disassembly_context(&self) -> RegisterValue {
+            RegisterValue::new(mock_register())
         }
 
-        fn set_default_disassembly_context(&mut self, _value: Box<dyn RegisterValue>) {}
+        fn set_default_disassembly_context(&mut self, _value: RegisterValue) {}
 
-        fn get_disassembly_context(&self, _address: &Address) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue)
+        fn get_disassembly_context(&self, _address: &Address) -> RegisterValue {
+            RegisterValue::new(mock_register())
         }
     }
 
@@ -358,7 +338,7 @@ mod tests {
         let mut ctx: Box<dyn ProgramContext> = Box::new(MockProgramContext);
 
         let reg_ref = mock_register();
-        let reg = reg_ref.borrow();
+        let reg = reg_ref;
 
         assert!(!ctx.has_non_flowing_context());
         assert!(ctx.get_registers().is_empty());
@@ -366,7 +346,7 @@ mod tests {
 
         let addr = mock_address(0x100);
         assert!(ctx
-            .set_register_value(&addr, &addr, Box::new(MockRegisterValue))
+            .set_register_value(&addr, &addr, RegisterValue::new(mock_register()))
             .is_ok());
         assert!(ctx.get_register_value(&reg, &addr).is_some());
     }

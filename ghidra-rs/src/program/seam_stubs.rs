@@ -3,106 +3,1058 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
-use crate::program::model::address::Address;
+use crate::docking::settings::settings::Settings;
+use crate::docking::settings::settings_definition::SettingsDefinition;
+use crate::program::model::address::{Address, AddressRange, AddressSetView, AddressSpace};
+use crate::program::model::data::category_path::CategoryPath;
+use crate::program::model::data::composite::Composite;
+use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_component::DataTypeComponent;
+use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::model::lang::instruction_prototype::InstructionPrototype;
+use crate::program::model::data::enum_::Enum;
+use crate::program::model::data::structure::Structure;
+use crate::program::model::data::union::Union;
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
+use crate::program::model::lang::endian::Endian;
+use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::model::lang::register::{Register, RegisterRef};
+use crate::program::model::lang::register::RegisterRef;
+use crate::program::model::listing::variable_storage::VariableStorage;
+use crate::program::model::listing::{Function, FunctionTag, Program};
+use crate::program::model::mem::MemoryAccessException;
+use crate::program::model::pcode::block_map::BlockMap;
+use crate::program::model::pcode::decoder::Decoder;
+use crate::program::model::pcode::decoder_exception::DecoderException;
+use crate::program::model::pcode::encoder::Encoder;
+use crate::program::model::pcode::function_prototype::FunctionPrototype;
+use crate::program::model::pcode::global_symbol_map::GlobalSymbolMap;
+use crate::program::model::pcode::high_function::HighFunction;
+use crate::program::model::pcode::high_variable::HighVariable;
+use crate::program::model::pcode::list_linked::LinkedIter;
+use crate::program::model::pcode::Varnode;
+use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
+use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
+use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
+use crate::program::model::symbol::{Namespace, NamespaceType, SetParentNamespaceError, Symbol};
+use crate::program::util::language_translator::LanguageTranslator;
+use crate::util::exception::CancelledException;
+use std::any::Any;
 use std::fmt;
-use std::sync::Arc;
+use std::io;
+use std::sync::{Arc, Mutex};
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
 
-/// Placeholder for `ghidra.app.merge.DataTypeManagerOwner`, referenced by
-/// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)
-/// before the real interface is ported.
-pub trait DataTypeManagerOwner {
-    /// Gets the associated data type manager.
-    fn get_data_type_manager(&self) -> Box<dyn DataTypeManager>;
-}
+/// Minimal, purely in-memory [`VariableStorage`] backed by an explicit varnode list. Used as the
+/// default result of [`VariableStorage::with_varnodes`], mirroring
+/// `new VariableStorage(ProgramArchitecture, Varnode...)`. Not a port of any specific Java class.
+#[derive(Debug, Clone, Default)]
+pub struct VarnodeListStorage(pub Vec<Varnode>);
 
-/// Placeholder for `ghidra.program.model.listing.VariableStorage`, referenced by
-/// [`Variable`](crate::program::model::listing::variable::Variable)
-/// before the real class is ported.
-pub trait VariableStorage {}
-
-/// Placeholder for `ghidra.program.model.data.PointerTypedefBuilder`, referenced by
-/// [`Pointer`](crate::program::model::data::pointer::Pointer)
-/// before the real class is ported.
-pub trait PointerTypedefBuilder {}
-
-/// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
-/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset),
-/// [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable),
-/// [`Array`](crate::program::model::data::array::Array), and
-/// [`Label`](crate::app::plugin::processors::generic::label::Label)
-/// before the real interface is ported.
-pub trait MemBuffer {
-    /// Stands in for `MemBuffer.getAddress()`.
-    fn get_address(&self) -> Address;
-
-    /// Stands in for `MemBuffer.isInitializedMemory()`.
-    fn is_initialized_memory(&self) -> bool {
-        false
+impl VariableStorage for VarnodeListStorage {
+    fn get_first_varnode(&self) -> Option<Varnode> {
+        self.0.first().cloned()
     }
 
-    /// Stands in for `buf.getMemory().getAllInitializedAddressSet().contains(buf.getAddress())`,
-    /// used by [`Array::get_array_value`](crate::program::model::data::array::Array::get_array_value)
-    /// until `Memory`'s address-set queries and `MemBuffer.getAddress()` are ported.
-    fn is_at_initialized_memory_address(&self) -> bool {
-        false
+    fn get_varnodes(&self) -> Vec<Varnode> {
+        self.0.clone()
     }
 }
 
-/// Placeholder for `ghidra.program.model.data.StringDataInstance`, referenced by
-/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
-/// and [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable)
-/// before the real class is ported.
+/// Trivial placeholder implementing [`VariableStorage`], used as a default return value by stub
+/// traits/methods (e.g. [`HighSymbol::get_storage`], [`FunctionPrototype::get_return_storage`])
+/// whose real Java counterparts always return concrete storage; also stands in for
+/// `VariableStorage.UNASSIGNED_STORAGE`. Not a port of any specific Java class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PlaceholderVariableStorage;
+
+impl VariableStorage for PlaceholderVariableStorage {}
+
+/// Formerly the placeholder for `ghidra.program.model.pcode.SymbolEntry`, referenced by
+/// [`HighSymbol::get_first_whole_map`](crate::program::model::pcode::high_symbol::HighSymbol::get_first_whole_map)
+/// before that class was ported. `SymbolEntry` has since been ported for real (see
+/// [`symbol_entry::SymbolEntry`](crate::program::model::pcode::symbol_entry::SymbolEntry), with
+/// concrete implementors [`MappedEntry`](crate::program::model::pcode::mapped_entry::MappedEntry)/
+/// [`MappedDataEntry`](crate::program::model::pcode::mapped_data_entry::MappedDataEntry)), and
+/// `get_first_whole_map` now returns that real trait instead of this marker. This placeholder is
+/// kept only because nothing else in this file references it and removing an unrelated public
+/// item was judged out of scope for that change; new code should use the real trait.
+pub trait SymbolEntry: Send + Sync {}
+
+/// Minimal [`VariableStorage`] backing [`DynamicEntry::get_storage`] and
+/// [`HighFunctionDBUtil::write_union_facet`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_union_facet):
+/// reports itself as hash-addressed storage keyed by `hash`, mirroring how real hash-space
+/// storage encodes its dynamic hash. Not a port of any specific Java class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HashVariableStorage(pub i64);
+
+impl VariableStorage for HashVariableStorage {
+    fn is_hash_storage(&self) -> bool {
+        true
+    }
+}
+
+/// Rust-ergonomics helper letting multiple independent `Box<dyn DataType>` handles share one
+/// underlying value, since `dyn DataType` has no `Clone` bound. Not a port of any specific Java
+/// class; used where Java code reuses the same `DataType` object reference across several calls
+/// (e.g. assigning the same data type to every variable in a merge set).
 ///
-/// Models just the instance methods that `DataTypeWithCharset`'s and `ArrayStringable`'s default
-/// methods delegate to once a `StringDataInstance` has been built for a given data
-/// type/settings/buffer/length.
-pub trait StringDataInstance {
-    /// Encode a normalized character value (one code point, as one or two UTF-16 style chars)
-    /// as replacement bytes.
-    fn encode_replacement_from_char_value(&self, value: &[char]) -> Result<Vec<u8>, String>;
+/// Forwards every `&self`-receiver [`DataType`] method (including the `instanceof`-standin
+/// downcasts like [`DataType::as_pointer`]/[`DataType::as_typedef`]) so that a handle obtained via
+/// [`share_data_type`] behaves indistinguishably from the real wrapped value for any caller that
+/// only ever borrows it. Methods consuming `self: Box<Self>` (the `into_*` downcast family) are
+/// not forwarded, since this wrapper only ever holds a shared `Arc`, never unique ownership of the
+/// underlying value.
+struct SharedDataType(Arc<dyn DataType>);
 
-    /// Encode a single-character string representation as replacement bytes.
-    fn encode_replacement_from_char_representation(&self, repr: &str) -> Result<Vec<u8>, String>;
+impl DataType for SharedDataType {
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
 
-    /// Stands in for `StringDataInstance.getStringValue()`.
-    fn get_string_value(&self) -> Option<String> {
+    fn get_length(&self) -> i32 {
+        self.0.get_length()
+    }
+
+    fn is_void_type(&self) -> bool {
+        self.0.is_void_type()
+    }
+
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        self.0.is_equivalent(dt)
+    }
+
+    fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.clone_data_type(dtm)
+    }
+
+    fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.copy_data_type(dtm)
+    }
+
+    fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
+        self.0.get_category_path()
+    }
+
+    fn get_display_name(&self) -> String {
+        self.0.get_display_name()
+    }
+
+    fn get_description(&self) -> String {
+        self.0.get_description()
+    }
+
+    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
+        self.0.get_mnemonic(settings)
+    }
+
+    fn has_language_dependant_length(&self) -> bool {
+        self.0.has_language_dependant_length()
+    }
+
+    fn is_zero_length(&self) -> bool {
+        self.0.is_zero_length()
+    }
+
+    fn get_aligned_length(&self) -> i32 {
+        self.0.get_aligned_length()
+    }
+
+    fn is_default_data_type(&self) -> bool {
+        self.0.is_default_data_type()
+    }
+
+    fn is_deleted(&self) -> bool {
+        self.0.is_deleted()
+    }
+
+    fn depends_on(&self, dt: &dyn DataType) -> bool {
+        self.0.depends_on(dt)
+    }
+
+    fn get_data_type_manager(&self) -> Option<Box<dyn DataTypeManager>> {
+        self.0.get_data_type_manager()
+    }
+
+    fn get_default_settings(&self) -> Box<dyn Settings> {
+        self.0.get_default_settings()
+    }
+
+    fn get_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
+        self.0.get_settings_definitions()
+    }
+
+    fn get_type_def_settings_definitions(
+        &self,
+    ) -> Vec<Box<dyn crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition>>
+    {
+        self.0.get_type_def_settings_definitions()
+    }
+
+    fn is_pointer(&self) -> bool {
+        self.0.is_pointer()
+    }
+
+    fn as_pointer(&self) -> Option<&dyn crate::program::model::data::pointer::Pointer> {
+        self.0.as_pointer()
+    }
+
+    fn is_typedef(&self) -> bool {
+        self.0.is_typedef()
+    }
+
+    fn as_typedef(&self) -> Option<&dyn crate::program::model::data::typedef::TypeDef> {
+        self.0.as_typedef()
+    }
+
+    fn typedef_base_data_type(&self) -> Option<Box<dyn DataType>> {
+        self.0.typedef_base_data_type()
+    }
+
+    fn is_array(&self) -> bool {
+        self.0.is_array()
+    }
+
+    fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
+        self.0.as_array()
+    }
+
+    fn into_array(self: Box<Self>) -> Option<Box<dyn crate::program::model::data::array::Array>> {
+        if self.0.as_array().is_some() {
+            Some(Box::new(SharedArray(self.0)))
+        } else {
+            None
+        }
+    }
+
+    fn into_composite(self: Box<Self>) -> Option<Box<dyn Composite>> {
+        if self.0.as_composite().is_some() {
+            Some(Box::new(SharedComposite(self.0)))
+        } else {
+            None
+        }
+    }
+
+    fn is_structure(&self) -> bool {
+        self.0.is_structure()
+    }
+
+    fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
+        self.0.as_structure()
+    }
+
+    fn is_union(&self) -> bool {
+        self.0.is_union()
+    }
+
+    fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+        self.0.as_union()
+    }
+
+    fn as_composite(&self) -> Option<&dyn crate::program::model::data::composite::Composite> {
+        self.0.as_composite()
+    }
+
+    fn as_enum(&self) -> Option<&dyn crate::program::model::data::enum_::Enum> {
+        self.0.as_enum()
+    }
+
+    fn as_function_definition(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::function_definition::FunctionDefinition> {
+        self.0.as_function_definition()
+    }
+
+    fn as_built_in_data_type(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::built_in_data_type::BuiltInDataType> {
+        self.0.as_built_in_data_type()
+    }
+
+    fn as_built_in(&self) -> Option<&dyn crate::program::model::data::built_in::BuiltIn> {
+        self.0.as_built_in()
+    }
+
+    fn is_integer_type(&self) -> bool {
+        self.0.is_integer_type()
+    }
+
+    fn is_signed_integer_type(&self) -> bool {
+        self.0.is_signed_integer_type()
+    }
+
+    fn get_alignment(&self) -> i32 {
+        self.0.get_alignment()
+    }
+
+    // The three overrides below were found missing (like the three above) while porting
+    // `StructureDataType`'s `dataType*Changed`/`dataTypeReplaced`/`replace` bitfield-handling
+    // paths: `DataTypeComponentImpl::get_data_type()` hands back a `share_data_type`-wrapped
+    // handle, so any caller trying to downcast a *bitfield* component's data type after going
+    // through that handle (e.g. via `as_bit_field_data_type()`) would otherwise silently see
+    // `None` even when the underlying shared value really is a `BitFieldDataType`. A strict
+    // completeness fix, not a behavior change, for this shared crate-wide utility. (`as_bit_field`
+    // was itself once left unforwarded on the theory that no call site reached it through a
+    // `SharedDataType` handle -- `StructureDataType`'s `compare_component_to_bit_offset` helper
+    // proved that wrong: `structure_data_type_replace`'s bit-field overlap consolidation calls it
+    // against a second bit-field component's `get_data_type()`-returned handle while binary
+    // searching `insertBitFieldAt`'s own bit-offset ordering, panicking without this forward.)
+    fn is_bit_field_type(&self) -> bool {
+        self.0.is_bit_field_type()
+    }
+
+    fn as_bit_field_data_type(&self) -> Option<&crate::program::model::data::bit_field_data_type::BitFieldDataType> {
+        self.0.as_bit_field_data_type()
+    }
+
+    fn as_bit_field(&self) -> Option<&dyn crate::program::seam_stubs::BitFieldDataType> {
+        self.0.as_bit_field()
+    }
+}
+
+/// Hands back a fresh `Box<dyn DataType>` sharing `data_type`'s underlying value. See
+/// [`SharedDataType`].
+pub fn share_data_type(data_type: &Arc<dyn DataType>) -> Box<dyn DataType> {
+    Box::new(SharedDataType(data_type.clone()))
+}
+
+/// Backs [`SharedDataType::into_array`]'s consuming downcast: wraps the same `Arc<dyn DataType>`
+/// as [`SharedDataType`] but additionally implements
+/// [`Array`](crate::program::model::data::array::Array) by re-deriving the
+/// [`DataType::as_array`] downcast on every call, since an `Arc<dyn DataType>` already confirmed
+/// to implement `Array` cannot itself be reinterpreted as an `Arc<dyn Array>` without knowing the
+/// concrete type (no supertrait-upcasting equivalent exists for sibling trait objects sharing a
+/// common subject).
+struct SharedArray(Arc<dyn DataType>);
+
+impl DataType for SharedArray {
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
+    fn get_length(&self) -> i32 {
+        self.0.get_length()
+    }
+    fn is_void_type(&self) -> bool {
+        self.0.is_void_type()
+    }
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        self.0.is_equivalent(dt)
+    }
+    fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.clone_data_type(dtm)
+    }
+    fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.copy_data_type(dtm)
+    }
+    fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
+        self.0.get_category_path()
+    }
+    fn get_display_name(&self) -> String {
+        self.0.get_display_name()
+    }
+    fn get_description(&self) -> String {
+        self.0.get_description()
+    }
+    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
+        self.0.get_mnemonic(settings)
+    }
+    fn has_language_dependant_length(&self) -> bool {
+        self.0.has_language_dependant_length()
+    }
+    fn is_zero_length(&self) -> bool {
+        self.0.is_zero_length()
+    }
+    fn get_aligned_length(&self) -> i32 {
+        self.0.get_aligned_length()
+    }
+    fn is_default_data_type(&self) -> bool {
+        self.0.is_default_data_type()
+    }
+    fn is_deleted(&self) -> bool {
+        self.0.is_deleted()
+    }
+    fn depends_on(&self, dt: &dyn DataType) -> bool {
+        self.0.depends_on(dt)
+    }
+    fn get_data_type_manager(&self) -> Option<Box<dyn DataTypeManager>> {
+        self.0.get_data_type_manager()
+    }
+    fn get_default_settings(&self) -> Box<dyn Settings> {
+        self.0.get_default_settings()
+    }
+    fn is_array(&self) -> bool {
+        true
+    }
+    fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
+        self.0.as_array()
+    }
+}
+
+impl crate::program::model::data::array::Array for SharedArray {
+    fn get_num_elements(&self) -> i32 {
+        self.0.as_array().expect("SharedArray always wraps a real Array").get_num_elements()
+    }
+    fn get_element_length(&self) -> i32 {
+        self.0.as_array().expect("SharedArray always wraps a real Array").get_element_length()
+    }
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        self.0.as_array().expect("SharedArray always wraps a real Array").get_data_type()
+    }
+}
+
+/// Backs [`SharedDataType::into_composite`]'s consuming downcast: the same pattern
+/// [`SharedArray`] uses for `into_array`, wrapping the shared `Arc<dyn DataType>` and
+/// re-deriving the [`DataType::as_composite`] downcast on every [`Composite`] method call.
+///
+/// Added for [`DataTypeWriter`](crate::program::model::data::data_type_writer::DataTypeWriter)'s
+/// `doWrite` port: `DataTypeComponentImpl::get_data_type()` hands back a `share_data_type`-wrapped
+/// handle for every composite field, so without this, `into_composite()` on a component whose
+/// field type is itself a `Structure`/`Union` (an embedded-by-value nested composite -- the most
+/// common case this whole writer exists to handle) would silently return `None` even though
+/// [`DataType::as_composite`] on the same handle correctly returns `Some`.
+///
+/// [`get_universal_id`](DataType::get_universal_id) is forwarded (unlike on [`SharedDataType`]/
+/// [`SharedArray`], which do not yet forward it) because `DataTypeWriter`'s private
+/// `CompositeNode` wrapper -- the node type in its dependency graph -- computes both its
+/// `Eq`/`Hash` (via `get_universal_id`) and its `Ord` (via `get_path_name`, itself built from
+/// [`DataType::get_category_path`]/[`DataType::get_name`]) directly from the wrapped
+/// `Composite`'s `DataType` methods; without this forward, every `SharedComposite` would compare
+/// equal to every other (all sharing the same default `UniversalID`), collapsing the dependency
+/// graph.
+struct SharedComposite(Arc<dyn DataType>);
+
+impl DataType for SharedComposite {
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
+    fn get_length(&self) -> i32 {
+        self.0.get_length()
+    }
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        self.0.is_equivalent(dt)
+    }
+    fn get_category_path(&self) -> CategoryPath {
+        self.0.get_category_path()
+    }
+    fn get_display_name(&self) -> String {
+        self.0.get_display_name()
+    }
+    fn get_description(&self) -> String {
+        self.0.get_description()
+    }
+    fn get_universal_id(&self) -> crate::util::UniversalID {
+        self.0.get_universal_id()
+    }
+    fn is_structure(&self) -> bool {
+        self.0.is_structure()
+    }
+    fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
+        self.0.as_structure()
+    }
+    fn is_union(&self) -> bool {
+        self.0.is_union()
+    }
+    fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+        self.0.as_union()
+    }
+    fn as_composite(&self) -> Option<&dyn Composite> {
+        self.0.as_composite()
+    }
+}
+
+impl Composite for SharedComposite {
+    fn get_num_components(&self) -> i32 {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_num_components()
+    }
+    fn get_num_defined_components(&self) -> i32 {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_num_defined_components()
+    }
+    fn get_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_components()
+    }
+    fn get_defined_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
+        self.0.as_composite().expect("SharedComposite always wraps a real Composite").get_defined_components()
+    }
+}
+
+/// Rust-ergonomics helper letting multiple independent `Box<dyn VariableStorage>` handles share
+/// one underlying value, since `dyn VariableStorage` has no `Clone` bound. Not a port of any
+/// specific Java class. See [`SharedDataType`] for the `DataType` analogue.
+struct SharedVariableStorage(Arc<dyn VariableStorage>);
+
+impl VariableStorage for SharedVariableStorage {
+    fn is_hash_storage(&self) -> bool {
+        self.0.is_hash_storage()
+    }
+
+    fn is_memory_storage(&self) -> bool {
+        self.0.is_memory_storage()
+    }
+
+    fn get_first_varnode(&self) -> Option<Varnode> {
+        self.0.get_first_varnode()
+    }
+
+    fn intersects(&self, other: &dyn VariableStorage) -> bool {
+        self.0.intersects(other)
+    }
+
+    fn storage_equals(&self, other: &dyn VariableStorage) -> bool {
+        self.0.storage_equals(other)
+    }
+}
+
+/// Hands back a fresh `Box<dyn VariableStorage>` sharing `storage`'s underlying value. See
+/// [`SharedVariableStorage`].
+pub fn share_variable_storage(storage: &Arc<dyn VariableStorage>) -> Box<dyn VariableStorage> {
+    Box::new(SharedVariableStorage(storage.clone()))
+}
+
+/// Trivial fixed-length placeholder implementing [`DataType`], used as a default return value by
+/// stub traits (e.g. [`HighSymbol::get_data_type`]) whose real Java counterparts always return a
+/// concrete data type. Not a port of any specific Java class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PlaceholderDataType;
+
+impl DataType for PlaceholderDataType {}
+
+/// Stands in for `Undefined.getUndefinedDataType(int)`, referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real `Undefined1..8DataType` family is ported. Represents an opaque fixed-length
+/// "undefined" data type of the requested length.
+pub fn undefined_data_type(length: i32) -> Box<dyn DataType> {
+    struct UndefinedDataTypePlaceholder(i32);
+
+    impl DataType for UndefinedDataTypePlaceholder {
+        fn get_name(&self) -> String {
+            format!("undefined{}", self.0)
+        }
+
+        fn get_length(&self) -> i32 {
+            self.0
+        }
+
+        fn is_undefined_type(&self) -> bool {
+            true
+        }
+    }
+
+    Box::new(UndefinedDataTypePlaceholder(length))
+}
+
+/// Placeholder for `ghidra.program.model.lang.VariableUtilities`'s static `resizeStorage`,
+/// referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class (and its storage-resizing algorithm) is ported. Returns `storage`
+/// unchanged, mirroring an implementation that could not find room to grow/shrink.
+pub fn resize_storage(
+    storage: Box<dyn VariableStorage>,
+    data_type: &dyn DataType,
+    align: bool,
+    function: &dyn Function,
+) -> Box<dyn VariableStorage> {
+    let _ = (data_type, align, function);
+    storage
+}
+
+/// Placeholder for `ghidra.program.model.pcode.DynamicEntry`, referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class (and the `DynamicHash` algorithm backing its static `build` factory) are
+/// ported. Computes a placeholder hash directly from the representative varnode's address/space
+/// rather than running the real `DynamicHash` algorithm, which is out of scope for this
+/// placeholder; this keeps the value stable and specific to a given varnode without needing the
+/// real hashing scheme.
+#[derive(Debug, Clone)]
+pub struct DynamicEntry {
+    hash: i64,
+    pc_address: Option<Address>,
+}
+
+impl DynamicEntry {
+    /// Stands in for the static `DynamicEntry.build(Varnode)`.
+    pub fn build(representative: &Varnode) -> Self {
+        DynamicEntry {
+            hash: representative.get_offset() ^ ((representative.get_space_id() as i64) << 32),
+            pc_address: Some(representative.get_address().clone()),
+        }
+    }
+
+    /// Stands in for `DynamicEntry.getStorage()`.
+    pub fn get_storage(&self) -> Box<dyn VariableStorage> {
+        Box::new(HashVariableStorage(self.hash))
+    }
+
+    /// Stands in for `DynamicEntry.getPCAdress()`.
+    pub fn get_pc_address(&self) -> Option<Address> {
+        self.pc_address.clone()
+    }
+
+    /// Stands in for `DynamicEntry.getHash()`.
+    #[allow(dead_code)]
+    pub fn get_hash(&self) -> i64 {
+        self.hash
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.UnionFacetSymbol`, referenced by
+/// [`HighFunctionDBUtil::write_union_facet`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_union_facet)
+/// before the real class is ported. Exposes only the static naming/type-check helpers that method
+/// needs; the real class's DB persistence is handled directly by `write_union_facet` via the
+/// [`DatabaseVariableImpl`] stub.
+pub mod union_facet_symbol {
+    use super::{Address, DataType};
+
+    /// Stands in for `UnionFacetSymbol.BASENAME`.
+    pub const BASENAME: &str = "unionfacet";
+
+    /// Stands in for `UnionFacetSymbol.isUnionType(DataType)`.
+    pub fn is_union_type(dt: &dyn DataType) -> bool {
+        dt.is_union()
+    }
+
+    /// Stands in for `UnionFacetSymbol.buildSymbolName(int, Address, boolean)`.
+    pub fn build_symbol_name(field_num: i32, addr: &Address, is_addr: bool) -> String {
+        if is_addr {
+            format!("{BASENAME}_{addr}")
+        } else {
+            format!("{BASENAME}_{field_num}")
+        }
+    }
+}
+
+/// Placeholder covering three unported, DB-backed Java classes referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil):
+/// `ghidra.program.database.function.ParameterDB`'s construction helper `ParameterImpl`, and
+/// `ReturnParameterImpl`/`LocalVariableImpl`. All three are simple, not-yet-persisted
+/// `Variable` value holders passed into `Function.updateFunction`/`addLocalVariable`, so one
+/// struct covers their shared shape (name, first-use offset, data type, storage, owning
+/// program).
+pub struct DatabaseVariableImpl {
+    name: Option<String>,
+    first_use_offset: i32,
+    data_type: Arc<dyn DataType>,
+    storage: Arc<dyn VariableStorage>,
+    program: Arc<dyn crate::program::model::listing::Program>,
+    comment: Option<String>,
+}
+
+impl DatabaseVariableImpl {
+    /// Constructs a new, not-yet-persisted variable value. `name` of `None` mirrors the Java
+    /// constructors' default-name behavior (`new ParameterImpl(name, ...)` /
+    /// `new LocalVariableImpl(null, ...)`).
+    pub fn new(
+        name: Option<String>,
+        first_use_offset: i32,
+        data_type: Box<dyn DataType>,
+        storage: Box<dyn VariableStorage>,
+        program: Arc<dyn crate::program::model::listing::Program>,
+    ) -> Self {
+        DatabaseVariableImpl {
+            name,
+            first_use_offset,
+            data_type: Arc::from(data_type),
+            storage: Arc::from(storage),
+            program,
+            comment: None,
+        }
+    }
+}
+
+impl crate::program::model::listing::Variable for DatabaseVariableImpl {
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        share_data_type(&self.data_type)
+    }
+
+    fn set_data_type_with_storage(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        storage: Box<dyn VariableStorage>,
+        _force: bool,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::util::exception::InvalidInputException> {
+        self.data_type = Arc::from(data_type);
+        self.storage = Arc::from(storage);
+        Ok(())
+    }
+
+    fn set_data_type(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::util::exception::InvalidInputException> {
+        self.data_type = Arc::from(data_type);
+        Ok(())
+    }
+
+    fn set_data_type_aligned(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        _align_stack: bool,
+        _force: bool,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::util::exception::InvalidInputException> {
+        self.data_type = Arc::from(data_type);
+        Ok(())
+    }
+
+    fn get_name(&self) -> Option<String> {
+        self.name.clone()
+    }
+
+    fn get_length(&self) -> i32 {
+        self.data_type.get_length()
+    }
+
+    fn is_valid(&self) -> bool {
+        true
+    }
+
+    fn get_function(&self) -> Option<Box<dyn Function>> {
+        None
+    }
+
+    fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
+        self.program.clone()
+    }
+
+    fn get_source(&self) -> crate::program::model::symbol::SourceType {
+        crate::program::model::symbol::SourceType::UserDefined
+    }
+
+    fn set_name(
+        &mut self,
+        name: &str,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::program::model::listing::variable::SetVariableNameError> {
+        self.name = Some(name.to_string());
+        Ok(())
+    }
+
+    fn get_comment(&self) -> Option<String> {
+        self.comment.clone()
+    }
+
+    fn set_comment(&mut self, comment: Option<String>) {
+        self.comment = comment;
+    }
+
+    fn get_variable_storage(&self) -> Option<Box<dyn VariableStorage>> {
+        Some(share_variable_storage(&self.storage))
+    }
+
+    fn get_first_storage_varnode(&self) -> Option<Varnode> {
+        self.storage.get_first_varnode()
+    }
+
+    fn get_last_storage_varnode(&self) -> Option<Varnode> {
+        self.storage.get_first_varnode()
+    }
+
+    fn is_stack_variable(&self) -> bool {
+        false
+    }
+
+    fn has_stack_storage(&self) -> bool {
+        false
+    }
+
+    fn is_register_variable(&self) -> bool {
+        false
+    }
+
+    fn get_register(&self) -> Option<RegisterRef> {
+        None
+    }
+
+    fn get_registers(&self) -> Option<Vec<RegisterRef>> {
+        None
+    }
+
+    fn get_min_address(&self) -> Option<Address> {
+        self.storage
+            .get_first_varnode()
+            .map(|vn| vn.get_address().clone())
+    }
+
+    fn get_stack_offset(
+        &self,
+    ) -> Result<i32, crate::program::model::listing::variable::UnsupportedOperationError> {
+        Err(crate::program::model::listing::variable::UnsupportedOperationError(
+            "not a simple stack variable".to_string(),
+        ))
+    }
+
+    fn is_memory_variable(&self) -> bool {
+        self.storage.is_memory_storage()
+    }
+
+    fn is_unique_variable(&self) -> bool {
+        self.storage.is_hash_storage()
+    }
+
+    fn is_compound_variable(&self) -> bool {
+        false
+    }
+
+    fn has_assigned_storage(&self) -> bool {
+        true
+    }
+
+    fn get_first_use_offset(&self) -> i32 {
+        self.first_use_offset
+    }
+
+    fn get_symbol(&self) -> Option<Arc<dyn crate::program::model::symbol::Symbol>> {
+        None
+    }
+
+    fn is_equivalent(&self, variable: &dyn crate::program::model::listing::Variable) -> bool {
+        self.get_name() == variable.get_name() && self.get_length() == variable.get_length()
+    }
+
+    fn compare_to(&self, other: &dyn crate::program::model::listing::Variable) -> std::cmp::Ordering {
+        self.get_name().cmp(&other.get_name())
+    }
+}
+
+/// Placeholder for `ghidra.program.database.ProjectDataTypeManager`, referenced by
+/// [`DataTypeArchiveDB::get_data_type_manager`](crate::program::database::data_type_archive_db::DataTypeArchiveDB::get_data_type_manager)
+/// before the real class is ported. Extends the now-ported
+/// [`StandAloneDataTypeManager`](crate::program::model::data::stand_alone_data_type_manager::StandAloneDataTypeManager)
+/// per the Java class hierarchy (`ProjectDataTypeManager extends StandAloneDataTypeManager`);
+/// `DataTypeArchiveDB` only ever returns this type opaquely, so no members are needed yet.
+pub trait ProjectDataTypeManager:
+    crate::program::model::data::stand_alone_data_type_manager::StandAloneDataTypeManager
+{
+}
+
+/// Placeholder for `ghidra.program.database.DataTypeArchiveDBChangeSet`, referenced by
+/// [`DataTypeArchiveDB::get_changes`](crate::program::database::data_type_archive_db::DataTypeArchiveDB::get_changes)
+/// (narrowing
+/// [`DataTypeArchive::get_changes`](crate::program::model::listing::data_type_archive::DataTypeArchive::get_changes)'s
+/// return type) before the real class is ported. Combines the two already-ported traits its Java
+/// counterpart implements (`DataTypeArchiveChangeSet`, `DomainObjectDBChangeSet`); no additional
+/// members are needed since `DataTypeArchiveDB` only ever returns this type opaquely.
+pub trait DataTypeArchiveDbChangeSet:
+    crate::program::model::listing::data_type_archive_change_set::DataTypeArchiveChangeSet
+    + crate::framework::data::domain_object_db_change_set::DomainObjectDBChangeSet
+{
+}
+
+/// Placeholder for `ghidra.program.model.data.MetaDataType`, referenced by
+/// [`NoisyStructureBuilder::add_data_type`](crate::program::model::data::noisy_structure_builder::NoisyStructureBuilder::add_data_type)
+/// via its static `getMostSpecificDataType(DataType, DataType)` helper, used to decide which of
+/// two datatypes occupying the same offset/length should win. Not yet ported; only the one
+/// comparison `NoisyStructureBuilder` needs is modeled here (as a boolean outcome rather than the
+/// real method's `DataType`-typed return, since the caller only ever tests `result == candidate`).
+pub trait MetaDataType {
+    /// Returns `true` if `candidate` should replace `existing` as the more specific dataType.
+    /// Stands in for `MetaDataType.getMostSpecificDataType(existing, candidate) == candidate`.
+    fn is_more_specific(&self, existing: &dyn DataType, candidate: &dyn DataType) -> bool;
+}
+
+/// Placeholder for `ghidra.program.model.data.PointerType`, referenced by
+/// [`PointerTypedefBuilder`](crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder)
+/// before the real enum is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PointerType {
+    /// Normal absolute pointer offset.
+    #[default]
+    Default,
+    /// Pointer offset relative to program image base.
+    ImageBaseRelative,
+    /// Pointer offset relative to pointer storage address.
+    Relative,
+    /// Pointer offset corresponds to file offset within an associated file.
+    FileOffset,
+}
+
+/// Placeholder for `ghidra.program.model.data.PointerTypeSettingsDefinition`, referenced by
+/// [`PointerDataType`](crate::program::model::data::pointer_data_type::PointerDataType) before
+/// the real class is ported. Stores/reads a [`PointerType`] value as an integer setting; only the
+/// `getType` accessor `PointerDataType.getAddressValue` calls is modeled precisely (the settings
+/// definition's `TypeDefSettingsDefinition::get_attribute_specification` is left returning `None`
+/// rather than encoding the pointer type into a generated typedef name, since nothing in
+/// `PointerDataType` reads that specification back).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PointerTypeSettingsDefinition;
+
+impl PointerTypeSettingsDefinition {
+    /// The singleton instance of this settings definition.
+    pub const DEF: PointerTypeSettingsDefinition = PointerTypeSettingsDefinition;
+
+    const SETTING_NAME: &'static str = "ptr_type";
+
+    /// Stands in for `PointerTypeSettingsDefinition.getType(Settings)`.
+    pub fn get_type(&self, settings: &dyn Settings) -> PointerType {
+        match settings.get_long(Self::SETTING_NAME) {
+            Some(1) => PointerType::ImageBaseRelative,
+            Some(2) => PointerType::Relative,
+            Some(3) => PointerType::FileOffset,
+            _ => PointerType::Default,
+        }
+    }
+}
+
+impl SettingsDefinition for PointerTypeSettingsDefinition {
+    fn get_name(&self) -> String {
+        "Pointer Type".to_string()
+    }
+
+    fn get_storage_key(&self) -> String {
+        Self::SETTING_NAME.to_string()
+    }
+}
+
+impl TypeDefSettingsDefinition for PointerTypeSettingsDefinition {
+    fn get_attribute_specification(&self, _settings: &dyn Settings) -> Option<String> {
         None
     }
 }
 
-/// Placeholder for `ghidra.program.model.data.StringDataInstance.DEFAULT_CHARSET_NAME`.
-pub const DEFAULT_CHARSET_NAME: &str = "US-ASCII";
 
-/// Placeholder for `ghidra.program.model.listing.CommentType`, referenced by
-/// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit)
-/// before the real enum is ported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CommentType {
-    Eol,
-    Pre,
-    Post,
-    Plate,
-    Repeatable,
+/// Placeholder for `ghidra.program.model.mem.DumbMemBufferImpl`, referenced by
+/// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities) before the real
+/// class (a `MemoryBufferImpl` subclass adding a small internal read-ahead cache) is ported. This
+/// placeholder skips the caching and simply reads straight through to the backing
+/// [`Memory`](crate::program::model::mem::Memory) on every call, which is behaviorally equivalent
+/// (just slower) since `MemoryBufferImpl`'s cache is a pure performance optimization.
+pub struct DumbMemBufferImpl {
+    memory: Option<Arc<dyn crate::program::model::mem::Memory>>,
+    address: Address,
 }
 
-impl CommentType {
-    /// Get the comment type which corresponds to the specified ordinal value. Stands in for
-    /// `CommentType.valueOf(int)`.
-    pub fn from_ordinal(ordinal: i32) -> Option<Self> {
-        match ordinal {
-            0 => Some(CommentType::Eol),
-            1 => Some(CommentType::Pre),
-            2 => Some(CommentType::Post),
-            3 => Some(CommentType::Plate),
-            4 => Some(CommentType::Repeatable),
-            _ => None,
+impl DumbMemBufferImpl {
+    /// Stands in for the `DumbMemBufferImpl(Memory, Address)` constructor.
+    pub fn new(memory: Option<Arc<dyn crate::program::model::mem::Memory>>, address: Address) -> Self {
+        DumbMemBufferImpl { memory, address }
+    }
+}
+
+impl crate::program::model::mem::MemBuffer for DumbMemBufferImpl {
+    fn get_address(&self) -> Address {
+        self.address.clone()
+    }
+
+    fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
+        let memory = self.memory.as_ref().ok_or_else(MemoryAccessException::default)?;
+        let addr = self
+            .address
+            .add(offset as i64)
+            .map_err(|_| MemoryAccessException::default())?;
+        memory.get_byte(&addr)
+    }
+
+    fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
+        let Some(memory) = self.memory.as_ref() else {
+            return 0;
+        };
+        let Ok(addr) = self.address.add(offset as i64) else {
+            return 0;
+        };
+        memory.get_bytes(&addr, buffer)
+    }
+
+    fn is_big_endian(&self) -> bool {
+        self.memory.as_ref().map(|m| m.is_big_endian()).unwrap_or(false)
+    }
+
+    fn get_memory(&self) -> Option<Arc<dyn crate::program::model::mem::Memory>> {
+        self.memory.clone()
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.DataTypeInstance`, referenced by
+/// [`CountedDynamicDataType`](crate::program::model::data::counted_dynamic_data_type::CountedDynamicDataType)
+/// before the real class (which computes an instance's true length by consulting `Dynamic`/
+/// `FactoryDataType` machinery against a `MemBuffer`) is ported. This placeholder only supports
+/// fixed-length data types: it reports `None` (mirroring the real factory's `null` return for a
+/// data type whose length could not be determined) for any `data_type` reporting a negative
+/// length, and otherwise reports that length directly without consulting `buf`.
+pub struct DataTypeInstance {
+    data_type: Arc<dyn DataType>,
+    length: i32,
+}
+
+impl DataTypeInstance {
+    /// Stands in for `DataTypeInstance.getDataType()`.
+    pub fn get_data_type(&self) -> Arc<dyn DataType> {
+        self.data_type.clone()
+    }
+
+    /// Stands in for `DataTypeInstance.getLength()`.
+    pub fn get_length(&self) -> i32 {
+        self.length
+    }
+}
+
+/// Stands in for the static factory `DataTypeInstance.getDataTypeInstance(DataType, MemBuffer,
+/// boolean)`. See [`DataTypeInstance`].
+pub fn get_data_type_instance(
+    data_type: Arc<dyn DataType>,
+    buf: &dyn crate::program::model::mem::MemBuffer,
+    use_alignment: bool,
+) -> Option<DataTypeInstance> {
+    let _ = (buf, use_alignment);
+    let length = data_type.get_length();
+    if length < 0 {
+        return None;
+    }
+    Some(DataTypeInstance { data_type, length })
+}
+
+/// Placeholder for `ghidra.program.model.data.ReadOnlyDataTypeComponent`, referenced by
+/// [`CountedDynamicDataType`](crate::program::model::data::counted_dynamic_data_type::CountedDynamicDataType)
+/// before the real class is ported. Only the fields that class's `getAllComponents` populates
+/// (data type, length, ordinal, offset, field name) are modeled; the real class's `parent`
+/// constructor argument is omitted since capturing an owned handle back to the `&self` producing
+/// it is not expressible through the [`DataTypeComponent`] trait object, so
+/// [`get_parent`](DataTypeComponent::get_parent) falls back to that trait's default. The real
+/// class's `comment` argument is always passed as `""` by its only caller, so it is omitted too;
+/// [`get_comment`](DataTypeComponent::get_comment) falls back to that trait's default (`None`).
+pub struct ReadOnlyDataTypeComponent {
+    data_type: Arc<dyn DataType>,
+    length: i32,
+    ordinal: i32,
+    offset: i32,
+    field_name: String,
+}
+
+impl ReadOnlyDataTypeComponent {
+    /// Constructs a new read-only component, mirroring the subset of
+    /// `ReadOnlyDataTypeComponent`'s constructor arguments modeled here. See the struct docs for
+    /// which Java constructor arguments are omitted.
+    pub fn new(data_type: Arc<dyn DataType>, length: i32, ordinal: i32, offset: i32, field_name: String) -> Self {
+        ReadOnlyDataTypeComponent {
+            data_type,
+            length,
+            ordinal,
+            offset,
+            field_name,
         }
+    }
+}
+
+impl crate::program::model::data::data_type_component::DataTypeComponent for ReadOnlyDataTypeComponent {
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        share_data_type(&self.data_type)
+    }
+
+    fn get_ordinal(&self) -> i32 {
+        self.ordinal
+    }
+
+    fn get_offset(&self) -> i32 {
+        self.offset
+    }
+
+    fn get_length(&self) -> i32 {
+        self.length
+    }
+
+    fn get_field_name(&self) -> Option<String> {
+        Some(self.field_name.clone())
     }
 }
 
@@ -119,12 +1071,18 @@ pub trait Reference {}
 /// Placeholder for `ghidra.program.model.data.GenericCallingConvention`, referenced by
 /// [`FunctionDefinition`](crate::program::model::data::function_definition::FunctionDefinition)
 /// before the real enum is ported.
-pub trait GenericCallingConvention {}
-
-/// Placeholder for `ghidra.program.model.lang.PrototypeModel`, referenced by
-/// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
-/// before the real class is ported.
-pub trait PrototypeModel {}
+///
+/// Grown (see `STUBS.tsv`) with a defaulted
+/// [`get_declaration_name`](Self::get_declaration_name) so pre-existing bare `impl
+/// GenericCallingConvention for Foo {}` blocks keep compiling; needed by
+/// [`FunctionDefinitionDataType`](crate::program::model::data::function_definition_data_type::FunctionDefinitionDataType)'s
+/// port of the deprecated `FunctionDefinitionDataType.setGenericCallingConvention`.
+pub trait GenericCallingConvention {
+    /// Stands in for `GenericCallingConvention.getDeclarationName()`.
+    fn get_declaration_name(&self) -> String {
+        String::new()
+    }
+}
 
 /// Placeholder for `db.Transaction`, referenced by
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
@@ -155,56 +1113,17 @@ impl GroupPath {
 
 pub use crate::program::model::listing::stack_frame::StackFrame;
 
-/// Placeholder for `ghidra.program.model.listing.VariableFilter`, referenced by
-/// [`Function`](crate::program::model::listing::function::Function)
-/// before the real interface is ported.
-pub trait VariableFilter {}
+// `VariableFilter` is ported; this was a placeholder standing in for it. Re-exported so
+// every importer converges on one type instead of two same-named ones.
+pub use crate::program::model::listing::variable_filter::VariableFilter;
 
-/// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
-/// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext) (which
-/// only ever passes this type through) and by
-/// [`ProcessorContextView`](crate::program::model::lang::processor_context_view::ProcessorContextView)
-/// and its `dump_context_value` helper, before the real class is ported.
-pub trait RegisterValue {
-    /// The base register this value is associated with.
-    fn get_register(&self) -> RegisterRef;
+// `InstructionErrorType` is ported; this was a placeholder standing in for it. Re-exported so
+// every importer converges on one type instead of two same-named ones.
+pub use crate::program::model::lang::instruction_error::InstructionErrorType;
 
-    /// The value associated with a child register of [`RegisterValue::get_register`]'s base
-    /// register.
-    fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue>;
-
-    /// True if this value (or mask) has any bits set.
-    fn has_any_value(&self) -> bool;
-
-    /// The unsigned value of this register value, ignoring any mask bits.
-    fn get_unsigned_value_ignore_mask(&self) -> u128;
-}
-
-/// Placeholder for `ghidra.program.model.lang.ParserContext`, referenced by
-/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
-/// before the real interface is ported.
-pub trait ParserContext {
-    /// Stands in for `ParserContext.getPrototype()`.
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype>;
-}
-
-/// Placeholder for `ghidra.program.model.lang.Mask`, referenced by
-/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
-/// before the real interface is ported. `InstructionPrototype` only ever returns this type
-/// opaquely, so no members are needed yet.
-pub trait Mask {}
-
-/// Placeholder for `ghidra.program.model.pcode.PcodeOverride`, referenced by
-/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
-/// before the real interface is ported. `InstructionPrototype` only ever passes this type
-/// through, so no members are needed yet.
-pub trait PcodeOverride {}
-
-/// Placeholder for `ghidra.program.model.pcode.PatchEncoder`, referenced by
-/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
-/// before the real interface is ported. `InstructionPrototype` only ever passes this type
-/// through, so no members are needed yet.
-pub trait PatchEncoder {}
+// `Mask` is ported; this was a placeholder standing in for it. Re-exported so
+// every importer converges on one type instead of two same-named ones.
+pub use crate::program::model::lang::mask::Mask;
 
 /// Placeholder for `ghidra.program.model.lang.InstructionContext`, referenced by
 /// [`Instruction`](crate::program::model::listing::instruction::Instruction)
@@ -212,39 +1131,17 @@ pub trait PatchEncoder {}
 /// `get_instruction_context`), so no members are needed yet.
 pub trait InstructionContext {}
 
-/// Placeholder for `ghidra.program.model.listing.FlowOverride`, referenced by
-/// [`Instruction`](crate::program::model::listing::instruction::Instruction)
-/// before the real enum is ported. `Instruction` only gets/sets this value, so the static
-/// `FlowOverride.getModifiedFlowType`/`getFlowOverride` helper logic is omitted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum FlowOverride {
-    #[default]
-    None,
-    Branch,
-    Call,
-    CallReturn,
-    Return,
-}
-
-/// Placeholder for `ghidra.program.model.listing.CodeUnitIterator`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported. `Listing` only ever returns this type (never calls
-/// `hasNext`/`next` on it itself), so no members are needed yet.
-pub trait CodeUnitIterator {}
-
-/// Placeholder for `ghidra.program.model.listing.InstructionIterator`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported. `Listing` only ever returns this type, so no members are
-/// needed yet.
-pub trait InstructionIterator {}
-
-/// Placeholder for `ghidra.program.model.listing.DataIterator`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported. `Listing` only ever returns this type, so no members are
-/// needed yet.
-pub trait DataIterator {}
-
+// The listing iterators are ported. These were placeholders declared here while they were
+// not, and they outlived their purpose: `Listing` and `CodeManager` kept importing the empty
+// local traits, so `Box<dyn CodeUnitIterator>` in those files and `Box<dyn CodeUnitIterator>`
+// in `module_manager.rs` were two unrelated types with the same name. That compiles and
+// silently cannot interoperate -- 54 importers across these three were wired to placeholders
+// with no members (see STUB_DEBT.tsv / scripts/stub_audit.py). Re-export the real traits, as
+// `FunctionIterator` already did, so every importer converges on one type.
+pub use crate::program::model::listing::code_unit_iterator::CodeUnitIterator;
+pub use crate::program::model::listing::data_iterator::DataIterator;
 pub use crate::program::model::listing::function_iterator::FunctionIterator;
+pub use crate::program::model::listing::instruction_iterator::InstructionIterator;
 
 /// Placeholder for `ghidra.program.model.listing.InstructionSet`, referenced by
 /// [`Listing::add_instructions`](crate::program::model::listing::listing::Listing::add_instructions)
@@ -264,54 +1161,51 @@ pub trait CommentHistory {}
 /// needed yet.
 pub trait CodeUnitComments {}
 
-/// Placeholder for `ghidra.program.model.lang.Language`, referenced by
-/// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)
-/// before the real interface is ported. Only the accessor needed by
-/// `ProgramArchitecture::get_language_compiler_spec_pair`'s default implementation is provided.
-pub trait Language {
-    /// Stands in for `Language.getLanguageID()`.
-    fn get_language_id(&self) -> LanguageID;
-}
-
-/// Placeholder for `ghidra.program.model.lang.CompilerSpec`, referenced by
-/// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)
-/// before the real interface is ported. Only the accessor needed by
-/// `ProgramArchitecture::get_language_compiler_spec_pair`'s default implementation is provided.
-pub trait CompilerSpec {
-    /// Stands in for `CompilerSpec.getCompilerSpecID()`.
-    fn get_compiler_spec_id(&self) -> CompilerSpecID;
-}
-
-/// Placeholder for `ghidra.program.model.lang.CompilerSpecID`, referenced by
-/// [`CompilerSpec`] and [`LanguageCompilerSpecPair`], before the real class is ported.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct CompilerSpecID(String);
-
-impl CompilerSpecID {
-    /// Stands in for `CompilerSpecID.DEFAULT_ID`.
-    pub const DEFAULT_ID: &'static str = "default";
-
-    /// Creates a new compiler spec ID, defaulting to [`Self::DEFAULT_ID`] when `id` is `None`.
-    pub fn new(id: Option<&str>) -> Self {
-        CompilerSpecID(id.unwrap_or(Self::DEFAULT_ID).to_string())
-    }
-
-    /// Returns the compiler spec ID as a string.
-    pub fn get_id_as_string(&self) -> &str {
-        &self.0
+/// Placeholder for `ghidra.program.model.lang.Processor`, referenced by
+/// [`Language`](crate::program::model::lang::language::Language) and
+/// [`LanguageDescription`](crate::program::model::lang::language_description::LanguageDescription)
+/// before the real class is ported.
+///
+/// Grown (with a default, so pre-existing bare `impl Processor for Foo {}` blocks keep compiling)
+/// to also expose the processor name, which
+/// [`ProgramArchitectureTranslator`](crate::program::model::data::program_architecture_translator::ProgramArchitectureTranslator)
+/// needs to reproduce `Processor.equals`/`toString`'s name-based comparison when checking that two
+/// languages share the same processor.
+pub trait Processor {
+    /// Stands in for `Processor.toString()`, which returns the processor's name and backs its
+    /// `equals`/`hashCode`.
+    fn name(&self) -> String {
+        String::new()
     }
 }
 
-impl fmt::Display for CompilerSpecID {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
-    }
-}
+/// Placeholder for `ghidra.program.model.lang.AddressLabelInfo`, referenced by
+/// [`Language`](crate::program::model::lang::language::Language)
+/// before the real class is ported. `Language` only ever returns this type opaquely, so no
+/// members are needed yet.
+///
+/// A real, concrete port now exists at
+/// [`crate::program::model::lang::address_label_info::AddressLabelInfo`] (a distinct type from
+/// this marker trait, kept independent since rewiring `Language::get_default_symbols`'s return
+/// type would ripple through every `Language` implementor/mock in the crate -- out of scope for
+/// that port).
+pub trait AddressLabelInfo {}
 
 /// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecPair`, referenced by
 /// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)'s
 /// `get_language_compiler_spec_pair` default method, before the real class is ported.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Derives `Hash` (both fields already do) so that
+/// [`QueryResult`](crate::app::seam_stubs::QueryResult) -- which hashes/compares only by this
+/// pair, mirroring `QueryResult.hashCode`/`equals` -- can be stored in a `HashSet`, matching
+/// Java's `Set<QueryResult>`.
+///
+/// A real, full-fidelity port now exists at
+/// [`crate::program::model::lang::language_compiler_spec_pair::LanguageCompilerSpecPair`] (with
+/// `getLanguage`/`getCompilerSpec`/`getLanguageDescription`/`getCompilerSpecDescription`,
+/// `compareTo`, and the two-`String` constructor); it is kept as an independent type since
+/// rewiring this placeholder's ~18 existing call sites is out of scope for that port.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LanguageCompilerSpecPair {
     language_id: LanguageID,
     compiler_spec_id: CompilerSpecID,
@@ -334,6 +1228,1711 @@ impl LanguageCompilerSpecPair {
     /// Get the compiler spec ID.
     pub fn get_compiler_spec_id(&self) -> &CompilerSpecID {
         &self.compiler_spec_id
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.LanguageNotFoundException`, referenced by
+/// [`LanguageProvider`](crate::program::model::lang::language_provider::LanguageProvider)
+/// before the real exception class is ported. Carries only the formatted message; the real
+/// port should retain the `LanguageID`/`Throwable` cause fields from the Java constructors.
+///
+/// A real, full-fidelity port (all seven Java constructor overloads, plus the `LanguageID`/
+/// `Throwable` cause chain this placeholder's doc comment called out as missing) now exists at
+/// [`crate::program::model::lang::language_not_found_exception::LanguageNotFoundException`],
+/// with a `From<LanguageNotFoundException>` impl for bridging a value of *this* placeholder type
+/// into it. It is kept as an independent type since rewiring this placeholder's ~20 existing
+/// call sites is out of scope for that port.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LanguageNotFoundException(pub String);
+
+impl fmt::Display for LanguageNotFoundException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for LanguageNotFoundException {}
+
+/// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecQuery`, referenced by
+/// [`LanguageService`](crate::program::model::lang::language_service::LanguageService)
+/// before the real class is ported. A `None` field mirrors a `null` Java field, meaning
+/// "don't care" for that criterion.
+pub struct LanguageCompilerSpecQuery {
+    pub processor: Option<Box<dyn Processor>>,
+    pub endian: Option<Endian>,
+    pub size: Option<i32>,
+    pub variant: Option<String>,
+    pub compiler_spec_id: Option<CompilerSpecID>,
+}
+
+impl LanguageCompilerSpecQuery {
+    /// Constructs a new `LanguageCompilerSpecQuery`.
+    pub fn new(
+        processor: Option<Box<dyn Processor>>,
+        endian: Option<Endian>,
+        size: Option<i32>,
+        variant: Option<String>,
+        compiler_spec_id: Option<CompilerSpecID>,
+    ) -> Self {
+        LanguageCompilerSpecQuery {
+            processor,
+            endian,
+            size,
+            variant,
+            compiler_spec_id,
+        }
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.ExternalLanguageCompilerSpecQuery`, referenced by
+/// [`LanguageService`](crate::program::model::lang::language_service::LanguageService)
+/// before the real class is ported. Analog to [`LanguageCompilerSpecQuery`], for querying
+/// external languages (e.g. IDA-Pro's "metapc").
+pub struct ExternalLanguageCompilerSpecQuery {
+    pub external_processor_name: Option<String>,
+    pub external_tool: Option<String>,
+    pub endian: Option<Endian>,
+    pub size: Option<i32>,
+    pub compiler_spec_id: Option<CompilerSpecID>,
+}
+
+impl ExternalLanguageCompilerSpecQuery {
+    /// Constructs a new `ExternalLanguageCompilerSpecQuery`.
+    pub fn new(
+        external_processor_name: Option<String>,
+        external_tool: Option<String>,
+        endian: Option<Endian>,
+        size: Option<i32>,
+        compiler_spec_id: Option<CompilerSpecID>,
+    ) -> Self {
+        ExternalLanguageCompilerSpecQuery {
+            external_processor_name,
+            external_tool,
+            endian,
+            size,
+            compiler_spec_id,
+        }
+    }
+}
+
+/// Real port of `ghidra.program.model.lang.PrototypePieces`; lives in its own module,
+/// [`prototype_pieces`](crate::program::model::lang::prototype_pieces), re-exported here so
+/// existing `use crate::program::seam_stubs::PrototypePieces` call sites (the `protorules`
+/// cluster, `ParamList`/`ParamListStandard`/`ParamListStandardOut`) keep compiling unchanged,
+/// following this crate's precedent for graduating a seam-stub type in place (see e.g.
+/// `DataTypePath`/`Mask`/`StackFrame` below).
+pub use crate::program::model::lang::prototype_pieces::PrototypePieces;
+
+/// Real port of `ghidra.program.model.lang.ParameterPieces`; lives in its own module,
+/// [`parameter_pieces`](crate::program::model::lang::parameter_pieces), re-exported here so
+/// existing `use crate::program::seam_stubs::ParameterPieces` call sites (the `protorules`
+/// cluster, `ParamEntry`, `ParamList`/`ParamListStandard`/`ParamListStandardOut`) keep
+/// compiling unchanged, following this crate's precedent for graduating a seam-stub type in
+/// place (see e.g. `DataTypePath`/`Mask`/`StackFrame` below).
+pub use crate::program::model::lang::parameter_pieces::ParameterPieces;
+
+/// Placeholder for `ghidra.program.model.data.VoidDataType`'s static `isVoidDataType` helper,
+/// referenced by
+/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
+/// before the real class is ported. The Java method also unwraps a `TypeDef` to its base type
+/// before testing; that step is omitted here since it needs supertrait downcasting this crate
+/// does not rely on elsewhere; any real `VoidDataType` port should override
+/// [`DataType::is_void_type`](crate::program::model::data::data_type::DataType::is_void_type) so
+/// this check keeps working unchanged.
+pub fn is_void_data_type(dt: Option<&dyn DataType>) -> bool {
+    dt.is_some_and(DataType::is_void_type)
+}
+
+/// Placeholder for `ghidra.program.database.mem.ByteMappingScheme`, referenced by
+/// [`MemoryBlockSourceInfo`](crate::program::model::mem::memory_block_source_info::MemoryBlockSourceInfo)
+/// before the real class is ported. `MemoryBlockSourceInfo` only ever returns this type opaquely,
+/// so no members are needed yet.
+pub trait ByteMappingScheme {}
+
+/// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF8`, referenced by
+/// [`StringUTF8DataType`](crate::program::model::data::string_utf8_data_type::StringUTF8DataType)
+/// before the real class is ported.
+pub const CHARSET_UTF8: &str = "UTF-8";
+
+/// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF16`, referenced by
+/// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)
+/// before the real class is ported.
+pub const CHARSET_UTF16: &str = "UTF-16";
+
+/// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF32`, referenced by
+/// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)
+/// before the real class is ported.
+pub const CHARSET_UTF32: &str = "UTF-32";
+
+/// Placeholder for `ghidra.program.database.ProgramOverlayAddressSpace`, referenced by
+/// [`ProgramAddressFactory`](crate::program::database::program_address_factory::ProgramAddressFactory)
+/// before the real class is ported. Only the accessors that `ProgramAddressFactory` calls
+/// directly are modeled: its ordered key and (display) name, used to detect a stale overlay
+/// condition, and the ability to invalidate its cached defined region.
+pub trait ProgramOverlayAddressSpace {
+    /// Stands in for `ProgramOverlayAddressSpace.getOrderedKey()` (inherited from
+    /// `OverlayAddressSpace`). This is the unique, DB-stable key used internally to identify the
+    /// overlay space, which may drift from [`ProgramOverlayAddressSpace::get_name`] after a
+    /// rename.
+    fn get_ordered_key(&self) -> &str;
+
+    /// Stands in for `ProgramOverlayAddressSpace.getName()`, the current display name of the
+    /// overlay space.
+    fn get_name(&self) -> &str;
+
+    /// Stands in for `ProgramOverlayAddressSpace.invalidate()`, which clears the cached defined
+    /// address set so it will be recomputed via `OverlayRegionSupplier` on next access.
+    fn invalidate(&self);
+}
+
+/// A [`CodeBlockReferenceIterator`] with no elements, used as the default
+/// [`CodeBlock::get_sources`](crate::program::model::block::code_block::CodeBlock::get_sources)
+/// result. Not a port of any specific Java class.
+pub struct EmptyCodeBlockReferenceIterator;
+
+impl CodeBlockReferenceIterator for EmptyCodeBlockReferenceIterator {
+    fn has_next(&mut self) -> Result<bool, CancelledException> {
+        Ok(false)
+    }
+
+    fn next(&mut self) -> Result<Box<dyn crate::program::model::block::code_block_reference::CodeBlockReference>, CancelledException> {
+        panic!("EmptyCodeBlockReferenceIterator::next called after has_next returned false")
+    }
+}
+
+/// Placeholder for `ghidra.program.model.symbol.FlowType`, referenced by
+/// [`CodeBlockReference`](crate::program::model::block::code_block_reference::CodeBlockReference)
+/// and
+/// [`SubroutineDestReferenceIterator`](crate::program::model::block::subroutine_dest_reference_iterator)
+/// before the real enum is ported. All members default to `false` so pre-existing bare
+/// `impl FlowType for Foo {}` blocks keep compiling.
+///
+/// Grown (see `STUBS.tsv`) with `is_indirect`, needed by
+/// [`crate::util::undefined_function::UndefinedFunction`]'s `getEntryBlock` port to skip
+/// indirect-flow source edges while walking a code block's sources back to a function entry
+/// point.
+pub trait FlowType {
+    /// Stands in for `FlowType.isCall()`.
+    fn is_call(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `FlowType.isJump()`.
+    fn is_jump(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `FlowType.isFallthrough()`.
+    fn is_fallthrough(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `FlowType.isIndirect()`.
+    fn is_indirect(&self) -> bool {
+        false
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.SignedDWordDataType`, referenced by
+/// [`DWordDataType`](crate::program::model::data::dword_data_type::DWordDataType)
+/// before the real class is ported. `DWordDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait SignedDWordDataType {}
+
+/// Placeholder for `ghidra.program.model.data.SignedByteDataType`, referenced by
+/// [`ByteDataType`](crate::program::model::data::byte_data_type::ByteDataType)
+/// before the real class is ported. `ByteDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait SignedByteDataType {}
+
+/// Placeholder for `ghidra.program.model.data.SignedQWordDataType`, referenced by
+/// [`QWordDataType`](crate::program::model::data::qword_data_type::QWordDataType)
+/// before the real class is ported. `QWordDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait SignedQWordDataType {}
+
+/// Placeholder for `ghidra.program.model.data.SignedWordDataType`, referenced by
+/// [`WordDataType`](crate::program::model::data::word_data_type::WordDataType)
+/// before the real class is ported. `WordDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait SignedWordDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedIntegerDataType`, referenced by
+/// [`IntegerDataType`](crate::program::model::data::integer_data_type::IntegerDataType)
+/// before the real class is ported. `IntegerDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedIntegerDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedShortDataType`, referenced by
+/// [`ShortDataType`](crate::program::model::data::short_data_type::ShortDataType)
+/// before the real class is ported. `ShortDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedShortDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UInt16TDataType`, referenced by
+/// [`Int16TDataType`](crate::program::model::data::int16_t_data_type::Int16TDataType)
+/// before the real class is ported. `Int16TDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UInt16TDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UInt64TDataType`, referenced by
+/// [`Int64TDataType`](crate::program::model::data::int64_t_data_type::Int64TDataType)
+/// before the real class is ported. `Int64TDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UInt64TDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UInt32TDataType`, referenced by
+/// [`Int32TDataType`](crate::program::model::data::int32_t_data_type::Int32TDataType)
+/// before the real class is ported. `Int32TDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UInt32TDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedPointerSizedIntegerDataType`, referenced by
+/// [`PointerSizedIntegerDataType`](crate::program::model::data::pointer_sized_integer_data_type::PointerSizedIntegerDataType)
+/// before the real class is ported. `PointerSizedIntegerDataType` only ever returns this type
+/// opaquely (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedPointerSizedIntegerDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedInteger16DataType`, referenced by
+/// [`Integer16DataType`](crate::program::model::data::integer16_data_type::Integer16DataType)
+/// before the real class is ported. `Integer16DataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedInteger16DataType {}
+
+/// Placeholder for `ghidra.program.model.data.UInt8TDataType`, referenced by
+/// [`Int8TDataType`](crate::program::model::data::int8_t_data_type::Int8TDataType)
+/// before the real class is ported. `Int8TDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UInt8TDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedInteger3DataType`, referenced by
+/// [`Integer3DataType`](crate::program::model::data::integer3_data_type::Integer3DataType)
+/// before the real class is ported. `Integer3DataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedInteger3DataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedInteger5DataType`, referenced by
+/// [`Integer5DataType`](crate::program::model::data::integer5_data_type::Integer5DataType)
+/// before the real class is ported. `Integer5DataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedInteger5DataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedInteger6DataType`, referenced by
+/// [`Integer6DataType`](crate::program::model::data::integer6_data_type::Integer6DataType)
+/// before the real class is ported. `Integer6DataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedInteger6DataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedInteger7DataType`, referenced by
+/// [`Integer7DataType`](crate::program::model::data::integer7_data_type::Integer7DataType)
+/// before the real class is ported. `Integer7DataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedInteger7DataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedLongDataType`, referenced by
+/// [`LongDataType`](crate::program::model::data::long_data_type::LongDataType) before the real
+/// class is ported. `LongDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedLongDataType {}
+
+/// Placeholder for `ghidra.program.model.data.UnsignedLongLongDataType`, referenced by
+/// [`LongLongDataType`](crate::program::model::data::long_long_data_type::LongLongDataType)
+/// before the real class is ported. `LongLongDataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedLongLongDataType {}
+
+/// Real port of `ghidra.program.model.pcode.PcodeBlock`; lives in its own module,
+/// [`pcode_block`](crate::program::model::pcode::pcode_block), re-exported here (along with the
+/// `PCODE_BLOCK_*` type-tag constants and the `typeToName`/`nameToType` helpers that used to live
+/// alongside the placeholder) so existing `use crate::program::seam_stubs::{PcodeBlock, ...}`
+/// call sites (`BlockGraph`, `BlockMap`, `PcodeBlockBasic`, and their test mocks) keep compiling
+/// unchanged, following this crate's precedent for graduating a seam-stub type in place (see e.g.
+/// `DataTypePath`/`Mask`/`StackFrame`/`PrototypePieces` above).
+pub use crate::program::model::pcode::pcode_block::{
+    pcode_block_name_to_type, pcode_block_type_to_name, BlockEdge, PcodeBlock, PCODE_BLOCK_BASIC,
+    PCODE_BLOCK_CONDITION, PCODE_BLOCK_COPY, PCODE_BLOCK_DOWHILE, PCODE_BLOCK_GOTO,
+    PCODE_BLOCK_GRAPH, PCODE_BLOCK_IFELSE, PCODE_BLOCK_IFGOTO, PCODE_BLOCK_INFLOOP,
+    PCODE_BLOCK_LIST, PCODE_BLOCK_MULTIGOTO, PCODE_BLOCK_PLAIN, PCODE_BLOCK_PROPERIF,
+    PCODE_BLOCK_SWITCH, PCODE_BLOCK_WHILEDO,
+};
+
+/// Real port of `ghidra.program.model.pcode.BlockCopy`; lives in its own module,
+/// [`block_copy`](crate::program::model::pcode::block_copy), re-exported here so existing `use
+/// crate::program::seam_stubs::BlockCopy` call sites (`BlockGraph` and its test mocks) keep
+/// compiling unchanged, following this crate's precedent for graduating a seam-stub type in place
+/// (see `PcodeBlock` above).
+pub use crate::program::model::pcode::block_copy::BlockCopy;
+
+/// Real port of `ghidra.program.model.pcode.BlockGoto`; lives in its own module,
+/// [`block_goto`](crate::program::model::pcode::block_goto), re-exported here so existing `use
+/// crate::program::seam_stubs::BlockGoto` call sites (`BlockMap` and its test mocks) keep
+/// compiling, modulo the `set_goto_target` signature change documented on the real trait.
+pub use crate::program::model::pcode::block_goto::BlockGoto;
+
+/// Real port of `ghidra.program.model.pcode.BlockIfGoto`; lives in its own module,
+/// [`block_if_goto`](crate::program::model::pcode::block_if_goto), re-exported here for the same
+/// reason as [`BlockGoto`] above.
+pub use crate::program::model::pcode::block_if_goto::BlockIfGoto;
+
+/// Real port of `ghidra.program.model.pcode.BlockMultiGoto`; lives in its own module,
+/// [`block_multi_goto`](crate::program::model::pcode::block_multi_goto), re-exported here for the
+/// same reason as [`BlockGoto`] above.
+pub use crate::program::model::pcode::block_multi_goto::BlockMultiGoto;
+
+/// Placeholder for `ghidra.program.model.pcode.HighSymbol`, referenced by
+/// [`GlobalSymbolMap`](crate::program::model::pcode::global_symbol_map::GlobalSymbolMap) and
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class is ported. `GlobalSymbolMap` only ever reads the id used to key its
+/// lookup maps and reconcile its next-available synthetic id counter (`insertSymbol`'s use of
+/// `HighSymbol.getId()`/`HighSymbol.ID_BASE`). The remaining accessors were added for
+/// `HighFunctionDBUtil`, all defaulted so `GlobalSymbolMap`'s existing bare impls keep compiling;
+/// `get_high_function` is left required since there is no sensible placeholder `HighFunction` to
+/// hand back.
+pub trait HighSymbol: Send + Sync {
+    /// Stands in for `HighSymbol.getId()`.
+    fn get_id(&self) -> i64;
+
+    /// Stands in for `HighSymbol.getHighFunction()`.
+    fn get_high_function(&self) -> Arc<dyn HighFunction>;
+
+    /// Stands in for `HighSymbol.getName()`.
+    fn get_name(&self) -> String {
+        String::new()
+    }
+
+    /// Stands in for `HighSymbol.getDataType()`.
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        Box::new(PlaceholderDataType)
+    }
+
+    /// Stands in for `HighSymbol.getSize()`.
+    fn get_size(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `HighSymbol.getStorage()`.
+    fn get_storage(&self) -> Box<dyn VariableStorage> {
+        Box::new(PlaceholderVariableStorage)
+    }
+
+    /// Stands in for `HighSymbol.getPCAddress()`.
+    fn get_pc_address(&self) -> Option<Address> {
+        None
+    }
+
+    /// Stands in for `HighSymbol.getHighVariable()`.
+    fn get_high_variable(&self) -> Option<Box<dyn HighVariable>> {
+        None
+    }
+
+    /// Stands in for `HighSymbol.isParameter()`.
+    fn is_parameter(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `HighSymbol.isGlobal()`.
+    fn is_global(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `((HighParam) highSymbol.getHighVariable()).getSlot()`, narrowed onto
+    /// `HighSymbol` itself as `HighSymbol.getCategoryIndex()` (the parameter slot a `HighSymbol`
+    /// occupies), since the real `HighParam` downcast is not modeled separately here.
+    fn get_category_index(&self) -> i32 {
+        0
+    }
+
+    /// Simplified stand-in for `symbol.getFirstWholeMap() instanceof DynamicEntry ?
+    /// ((DynamicEntry) symbol.getFirstWholeMap()).getHash() : null`, used by
+    /// `HighFunctionDBUtil`'s private `isValidUniqueVariable` helper. The real `SymbolEntry`/
+    /// `DynamicEntry` class hierarchy is not modeled separately here; implementors backed by a
+    /// dynamic (hash-addressed) entry are expected to override this to return that entry's hash.
+    fn get_dynamic_hash(&self) -> Option<i64> {
+        None
+    }
+
+    /// Stands in for `HighSymbol.decode(Decoder)`, used by
+    /// [`HighCodeSymbol::decode`](crate::program::model::pcode::high_code_symbol::HighCodeSymbol::decode)'s
+    /// default body. The real method decodes header attributes, resolves the datatype, and builds
+    /// the mapping entry list from the stream; that logic belongs to `HighSymbol` itself, which is
+    /// not yet ported, so this defaults to a no-op that consumes nothing from the stream.
+    fn decode(&mut self, decoder: &dyn Decoder) -> Result<(), DecoderException> {
+        let _ = decoder;
+        Ok(())
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.LocalSymbolMap`, referenced by
+/// [`HighFunction`](crate::program::model::pcode::high_function::HighFunction) before the real
+/// class is ported. Exposes only the parameter accessors
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// needs; `get_param_symbol` is left required since there is no sensible placeholder `HighSymbol`
+/// to hand back.
+///
+/// Grown (with a default, so pre-existing bare `impl LocalSymbolMap for Foo {}` blocks keep
+/// compiling) with [`find_local`](Self::find_local) for
+/// [`HighFunction::get_mapped_symbol`](crate::program::model::pcode::high_function::HighFunction::get_mapped_symbol).
+pub trait LocalSymbolMap: Send + Sync {
+    /// Stands in for `LocalSymbolMap.getNumParams()`.
+    fn get_num_params(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `LocalSymbolMap.getParamSymbol(int)`.
+    fn get_param_symbol(&self, index: i32) -> Arc<dyn HighSymbol>;
+
+    /// Stands in for `LocalSymbolMap.getSymbols()`. Modeled as a `Vec` snapshot rather than an
+    /// `Iterator<HighSymbol>`, since the current callers collect it eagerly regardless.
+    fn get_symbols(&self) -> Vec<Arc<dyn HighSymbol>> {
+        Vec::new()
+    }
+
+    /// Stands in for `LocalSymbolMap.getSymbol(long)`, used by
+    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
+    /// Defaults to `None`, mirroring a symbol reference id with no matching local symbol.
+    fn get_symbol(&self, id: i64) -> Option<Arc<dyn HighSymbol>> {
+        let _ = id;
+        None
+    }
+
+    /// Stands in for `LocalSymbolMap.findLocal(Address, Address)`. Defaults to `None`, mirroring
+    /// an address with no matching local variable mapping.
+    fn find_local(&self, addr: &Address, pcaddr: &Address) -> Option<Arc<dyn HighSymbol>> {
+        let _ = (addr, pcaddr);
+        None
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.JumpTable`, referenced by
+/// [`HighFunction`](crate::program::model::pcode::high_function::HighFunction) before the real
+/// class is ported. `HighFunction` only ever returns this type opaquely (via
+/// `get_jump_tables`), so no members are needed yet.
+pub trait JumpTable: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.data.DataTypeSymbol`, referenced by
+/// [`HighFunctionDBUtil::write_override`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_override)
+/// and
+/// [`HighFunctionDBUtil::read_override`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::read_override)
+/// before the real class is ported.
+pub trait DataTypeSymbol: Send + Sync {
+    /// Stands in for `DataTypeSymbol.getDataType()`.
+    fn get_data_type(&self) -> Box<dyn DataType>;
+}
+
+/// Stands in for the static `DataTypeSymbol.readSymbol(String, Symbol)`. Always returns `None`
+/// (mirroring no override symbol found) until the real DB-backed lookup is ported.
+pub fn read_data_type_symbol(
+    category: &str,
+    sym: &dyn crate::program::model::symbol::Symbol,
+) -> Option<Box<dyn DataTypeSymbol>> {
+    let _ = (category, sym);
+    None
+}
+
+/// Stands in for constructing a `FunctionDefinitionDataType` from a [`FunctionSignature`] and
+/// persisting it via `new DataTypeSymbol(fsig, "prt", AUTO_CAT).writeSymbol(...)`. Always
+/// succeeds as a no-op until the real `DataTypeSymbol`/`FunctionDefinitionDataType` classes are
+/// ported.
+pub fn write_data_type_symbol_override(
+    namespace: &dyn crate::program::model::symbol::Namespace,
+    callsite: Address,
+    sig: &dyn crate::program::model::listing::FunctionSignature,
+) {
+    let _ = (namespace, callsite, sig);
+}
+
+/// Placeholder for `ghidra.program.model.pcode.PcodeOpAST`, referenced by
+/// [`PcodeBlockBasic`](crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic) (which
+/// downcasts each `PcodeOp` it stores to this subtype on every insert/remove, to set/read the
+/// op's parent block and its cursor position within the block's op list) before the real class is
+/// ported. Exposes only the members `PcodeBlockBasic`'s insertion/removal logic touches.
+pub trait PcodeOpAst {
+    /// Stands in for the protected `PcodeOpAST.setParent(PcodeBlockBasic)`.
+    fn set_parent(&self, parent: Option<Arc<dyn PcodeBlockBasic>>);
+
+    /// Stands in for the protected `PcodeOpAST.setBasicIter(Iterator<PcodeOp>)`.
+    fn set_basic_iter(&self, iter: LinkedIter);
+
+    /// Stands in for the protected `PcodeOpAST.getBasicIter()`.
+    fn get_basic_iter(&self) -> LinkedIter;
+}
+
+/// Placeholder for `ghidra.program.model.util.DataTypeInfo`, referenced (as a superclass) by
+/// [`CompositeDataTypeElementInfo`](crate::program::model::util::composite_data_type_element_info::CompositeDataTypeElementInfo)
+/// before the real class is ported. Exposes only the three getters that superclass provides.
+/// The Java `dataTypeHandle` field is `Object`, used purely for display and identity comparison
+/// (`Object.equals`/`toString`); it is represented here as `Arc<dyn Display + Send + Sync>`,
+/// matching the repo's convention (see
+/// [`verts_to_referent_set`](crate::util::graph::directed_graph::verts_to_referent_set)) of
+/// standing in for `Object.equals`/`hashCode` with the value's `Display` form.
+pub trait DataTypeInfoLike {
+    /// Stands in for `DataTypeInfo.getDataTypeHandle()`.
+    fn get_data_type_handle(&self) -> Arc<dyn fmt::Display + Send + Sync>;
+
+    /// Stands in for `DataTypeInfo.getDataTypeLength()`.
+    fn get_data_type_length(&self) -> i32;
+
+    /// Stands in for `DataTypeInfo.getDataTypeAlignment()`.
+    fn get_data_type_alignment(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.program.database.map.AddressKeyIterator`, referenced by
+/// [`PropertyMapDB`](crate::program::database::properties::property_map_db::PropertyMapDB)'s
+/// `getAddressKeyIterator` overloads before the real class is ported. Models the `DBLongIterator`
+/// surface `AddressKeyIterator` implements (`hasNext`/`hasPrevious`/`next`/`previous`),
+/// translating Java's `NoSuchElementException` from `next`/`previous` into `None` returns; the
+/// `delete()` member of `DBLongIterator` is omitted since no current caller needs it.
+pub trait AddressKeyIteratorLike {
+    /// Stands in for `DBLongIterator.hasNext()`.
+    fn has_next(&mut self) -> bool;
+
+    /// Stands in for `DBLongIterator.hasPrevious()`.
+    fn has_previous(&mut self) -> bool;
+
+    /// Stands in for `DBLongIterator.next()`, returning `None` rather than throwing
+    /// `NoSuchElementException`.
+    fn next(&mut self) -> Option<i64>;
+
+    /// Stands in for `DBLongIterator.previous()`, returning `None` rather than throwing
+    /// `NoSuchElementException`.
+    fn previous(&mut self) -> Option<i64>;
+}
+
+/// Placeholder for `ghidra.program.util.AddressCorrelationRange`, referenced by
+/// [`AddressCorrelation`](crate::program::util::address_correlation::AddressCorrelation)'s
+/// `getCorrelatedDestinationRange` before the real class is ported. Models the three accessors
+/// the Java class exposes (`getMinAddress`/`getRange`/`getCorrelatorName`).
+pub trait AddressCorrelationRangeLike: Send + Sync {
+    /// Stands in for `AddressCorrelationRange.getMinAddress()`.
+    fn min_address(&self) -> Address;
+
+    /// Stands in for `AddressCorrelationRange.getRange()`.
+    fn range(&self) -> AddressRange;
+
+    /// Stands in for `AddressCorrelationRange.getCorrelatorName()`.
+    fn correlator_name(&self) -> String;
+}
+
+/// Placeholder for `ghidra.program.util.OffsetFieldType`, referenced by
+/// [`OffsetFieldLocation`](crate::program::util::offset_field_location::OffsetFieldLocation)
+/// before the real enum is ported. All four variants are mirrored since
+/// `OffsetFieldLocation::get_type` returns this value opaquely to callers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum OffsetFieldType {
+    File,
+    Function,
+    ImageBase,
+    MemoryBlock,
+}
+
+/// Placeholder for `ghidra.program.util.VarnodeContext`, referenced by
+/// [`SymbolicPropogator`](crate::program::util::symbolic_propogator::SymbolicPropogator)
+/// before the real class is ported. `SymbolicPropogator`'s trait methods only ever pass this type
+/// through opaquely (as the varnode-level register/memory state accumulated while flowing
+/// constants), so no members are needed yet.
+pub trait VarnodeContext {}
+
+/// Placeholder for the `ghidra.program.util.OldLanguageFactory` singleton, referenced by
+/// [`LanguageVersionException::check`](crate::program::model::lang::language_version_exception::check)
+/// before the real factory is ported. The Java method reaches through
+/// `OldLanguageFactory.getOldLanguageFactory().getOldLanguage(id, version)`; only that single
+/// lookup is exposed here, taken as a parameter instead of a static singleton getter.
+pub trait OldLanguageFactory {
+    /// Returns the old-language stub matching `language_id` at `language_version`, or `None` if
+    /// no such stub exists to facilitate an upgrade translation.
+    fn get_old_language(
+        &self,
+        language_id: &LanguageID,
+        language_version: i32,
+    ) -> Option<Arc<dyn Language>>;
+}
+
+/// Placeholder for the `ghidra.program.util.LanguageTranslatorFactory` singleton, referenced by
+/// [`LanguageVersionException::check`](crate::program::model::lang::language_version_exception::check)
+/// and
+/// [`LanguageVersionException::check_for_language_change`](crate::program::model::lang::language_version_exception::check_for_language_change)
+/// before the real factory is ported. Java overloads `getLanguageTranslator` on parameter types
+/// (`Language, Language` vs. `LanguageID, int`); Rust gives each overload its own method name.
+pub trait LanguageTranslatorFactory {
+    /// Returns a translator that upgrades `old_language` to `new_language`, or `None` if no such
+    /// translator is registered.
+    fn get_language_translator_for_languages(
+        &self,
+        old_language: &Arc<dyn Language>,
+        new_language: &Arc<dyn Language>,
+    ) -> Option<Arc<dyn LanguageTranslator>>;
+
+    /// Returns a translator that upgrades the language identified by `language_id` from
+    /// `language_version`, or `None` if no such translator is registered.
+    fn get_language_translator_for_version(
+        &self,
+        language_id: &LanguageID,
+        language_version: i32,
+    ) -> Option<Arc<dyn LanguageTranslator>>;
+}
+
+/// Placeholder for `ghidra.program.model.pcode.ParamMeasure`, referenced by
+/// [`HighParamID`](crate::program::model::pcode::high_param_id::HighParamID)
+/// before the real class is ported. Exposes only `isEmpty`/`getVarnode`/`getDataType`/`getRank`,
+/// the members `HighParamID` itself calls. Defaults mirror a freshly constructed (not yet
+/// decoded) `ParamMeasure`, whose fields are all `null` until `ParamMeasure.decode` runs.
+pub trait ParamMeasure {
+    /// Stands in for `ParamMeasure.isEmpty()`.
+    fn is_empty(&self) -> bool {
+        true
+    }
+
+    /// Stands in for `ParamMeasure.getVarnode()`.
+    fn get_varnode(&self) -> Option<Varnode> {
+        None
+    }
+
+    /// Stands in for `ParamMeasure.getDataType()`.
+    fn get_data_type(&self) -> Option<Box<dyn DataType>> {
+        None
+    }
+
+    /// Stands in for `ParamMeasure.getRank()`.
+    fn get_rank(&self) -> Option<i32> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.program.database.symbol.LibrarySymbol`, referenced by
+/// [`LibraryDb`](crate::program::database::symbol::library_db::LibraryDb) before the real class
+/// (a `SymbolDB` subclass) is ported. Exposes only the members `LibraryDB` calls on its `symbol`
+/// field: viewing itself as a plain [`Symbol`] (`as_symbol`, mirroring
+/// [`Namespace::as_library`](crate::program::model::symbol::Namespace::as_library) since Rust
+/// trait objects cannot be upcast to an unrelated trait object without extra machinery), the
+/// `Symbol`/`SymbolDB` accessors `LibraryDB` reads directly (`getName()`, `getID()`,
+/// `getParentNamespace()`, `SymbolDB.getName(boolean)`), and the `LibrarySymbol`-specific
+/// `setNamespace`/`getExternalLibraryPath`/`setExternalLibraryPath` members.
+pub trait LibrarySymbol: Send + Sync {
+    /// Stands in for treating this `LibrarySymbol` as a plain `Symbol`, used by
+    /// `LibraryDB.getSymbol()`.
+    fn as_symbol(&self) -> Arc<dyn Symbol>;
+
+    /// Stands in for `Symbol.getName()` (inherited from `SymbolDB`), used by
+    /// `LibraryDB.getName()`.
+    fn get_name(&self) -> String;
+
+    /// Stands in for `Symbol.getID()` (inherited from `SymbolDB`), used by `LibraryDB.getID()`.
+    fn get_id(&self) -> i64;
+
+    /// Stands in for `Symbol.getParentNamespace()` (inherited from `SymbolDB`), used by
+    /// `LibraryDB.getParentNamespace()`.
+    fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>>;
+
+    /// Stands in for `SymbolDB.getName(boolean)`, used by `LibraryDB.getName(boolean)`.
+    fn get_name_with_path(&self, include_namespace_path: bool) -> String;
+
+    /// Stands in for `Symbol.setNamespace(Namespace)`, used by
+    /// `LibraryDB.setParentNamespace(Namespace)`. Takes `&self` (rather than `&mut self`) since
+    /// real `SymbolDB`-backed symbols mutate their underlying database record through interior
+    /// locking shared across every handle to the same row, not exclusive Rust ownership.
+    fn set_namespace(
+        &self,
+        parent_namespace: Arc<dyn Namespace>,
+    ) -> Result<(), SetParentNamespaceError>;
+
+    /// Stands in for `LibrarySymbol.getExternalLibraryPath()`, used by
+    /// `LibraryDB.getAssociatedProgramPath()`.
+    fn get_external_library_path(&self) -> Option<String>;
+
+    /// Stands in for `LibrarySymbol.setExternalLibraryPath(String)`, used by
+    /// `LibraryDB.setAssociatedProgramPath(String)`.
+    fn set_external_library_path(
+        &self,
+        library_path: Option<&str>,
+    ) -> Result<(), crate::util::exception::InvalidInputException>;
+}
+
+/// Placeholder for `ghidra.program.database.symbol.NamespaceManager`, referenced by
+/// [`LibraryDb`](crate::program::database::symbol::library_db::LibraryDb) before the real class
+/// is ported. Exposes only `getAddressSet(Namespace)`, the sole member `LibraryDB.getBody()`
+/// calls. Not to be confused with
+/// [`NamespaceManagerDB`](crate::program::database::symbol::namespace_manager::NamespaceManagerDB),
+/// an unrelated address-range-to-namespace-id table helper already in this crate.
+pub trait NamespaceManager: Send + Sync {
+    /// Stands in for `NamespaceManager.getAddressSet(Namespace)`.
+    fn get_address_set(&self, namespace: &dyn Namespace) -> Box<dyn AddressSetView>;
+}
+
+/// Default body implementors of [`LibraryDb::get_body`](crate::program::database::symbol::library_db::LibraryDb::get_body)
+/// and [`NamespaceDb::get_body`](crate::program::database::symbol::namespace_db::NamespaceDb::get_body)
+/// may use, mirroring `NamespaceManager.getAddressSet(this)`. Takes `namespace` explicitly since
+/// a default method on `LibraryDb`/`NamespaceDb` itself cannot produce a `&dyn Namespace` view of
+/// its own `&self` (that requires `Self` to be a concrete, known type, which is only true once
+/// implemented on a concrete struct).
+pub fn get_body_via_namespace_manager(
+    namespace_manager: &dyn NamespaceManager,
+    namespace: &dyn Namespace,
+) -> Box<dyn AddressSetView> {
+    namespace_manager.get_address_set(namespace)
+}
+
+/// Placeholder for `ghidra.program.database.symbol.NamespaceSymbol`, referenced by
+/// [`NamespaceDb`](crate::program::database::symbol::namespace_db::NamespaceDb) before the real
+/// class (a `SymbolDB` subclass) is ported. Exposes only the members `NamespaceDB` calls on its
+/// `symbol` field: viewing itself as a plain [`Symbol`] (`as_symbol`, mirroring
+/// [`LibrarySymbol::as_symbol`] since Rust trait objects cannot be upcast to an unrelated trait
+/// object without extra machinery), the `Symbol`/`SymbolDB` accessors it reads directly
+/// (`getName()`, `getID()`, `getParentNamespace()`, `SymbolDB.getName(boolean)`,
+/// `isExternal()`), and `setNamespace`. Distinct from [`LibrarySymbol`] (which additionally
+/// exposes the external-library-path accessors that only `LibrarySymbol` has); the two
+/// placeholders otherwise mirror each other.
+pub trait NamespaceSymbol: Send + Sync {
+    /// Stands in for treating this `NamespaceSymbol` as a plain `Symbol`, used by
+    /// `NamespaceDB.getSymbol()`.
+    fn as_symbol(&self) -> Arc<dyn Symbol>;
+
+    /// Stands in for `Symbol.getName()` (inherited from `SymbolDB`), used by
+    /// `NamespaceDB.getName()`.
+    fn get_name(&self) -> String;
+
+    /// Stands in for `Symbol.getID()` (inherited from `SymbolDB`), used by `NamespaceDB.getID()`.
+    fn get_id(&self) -> i64;
+
+    /// Stands in for `Symbol.getParentNamespace()` (inherited from `SymbolDB`), used by
+    /// `NamespaceDB.getParentNamespace()`.
+    fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>>;
+
+    /// Stands in for `SymbolDB.getName(boolean)`, used by `NamespaceDB.getName(boolean)`.
+    fn get_name_with_path(&self, include_namespace_path: bool) -> String;
+
+    /// Stands in for `Symbol.setNamespace(Namespace)`, used by
+    /// `NamespaceDB.setParentNamespace(Namespace)`. Takes `&self` (rather than `&mut self`) since
+    /// real `SymbolDB`-backed symbols mutate their underlying database record through interior
+    /// locking shared across every handle to the same row, not exclusive Rust ownership.
+    fn set_namespace(
+        &self,
+        parent_namespace: Arc<dyn Namespace>,
+    ) -> Result<(), SetParentNamespaceError>;
+
+    /// Stands in for `Symbol.isExternal()` (inherited from `SymbolDB`), used by
+    /// `NamespaceDB.isExternal()`.
+    fn is_external(&self) -> bool;
+}
+
+/// Placeholder for the subset of `ghidra.program.database.ProgramDB`'s API that
+/// [`PrototypeManager`](crate::program::database::code::PrototypeManager) needs from its owning
+/// program, before the real `ProgramDB` port (currently a bare struct implementing only
+/// [`crate::program::model::listing::Program`]) exposes these members.
+pub trait PrototypeManagerProgram {
+    /// Stands in for `ProgramDB.getLanguage()`.
+    fn get_language(&self) -> Arc<dyn Language>;
+
+    /// Stands in for `Program.getProgramContext()`, narrowed to a non-`mut` shared handle since
+    /// `PrototypeManager` only ever reads from it.
+    fn get_program_context(
+        &self,
+    ) -> Option<Arc<dyn crate::program::model::listing::ProgramContext>>;
+
+    /// Stands in for `ProgramDB.isLanguageUpgradePending()`.
+    fn is_language_upgrade_pending(&self) -> bool;
+
+    /// Stands in for `ProgramDB.dbError(IOException)`.
+    fn db_error(&self, err: &io::Error);
+}
+
+/// Placeholder for the subset of `ghidra.program.database.ProgramDB`'s API that
+/// [`FunctionTagManagerDb`](crate::program::database::function::FunctionTagManagerDb) needs from
+/// its owning program, before the real `ProgramDB` port (currently a bare struct implementing
+/// only [`crate::program::model::listing::Program`]) exposes these members: reporting an IO
+/// error, firing `ChangeManager` notifications for a tag being created/edited/deleted, and
+/// invalidating cached function tags (folding in `ProgramDB.getFunctionManager()
+/// .functionTagsChanged()`, since `FunctionManagerDB` is not yet ported either). All methods take
+/// `&self` (rather than `&mut self`), mirroring [`PrototypeManagerProgram`]'s and
+/// `NamespaceManager`'s `Symbol::set_namespace`, since a real `ProgramDB` mutates its change-event
+/// bookkeeping through interior locking, not exclusive Rust ownership.
+pub trait FunctionTagManagerProgram {
+    /// Stands in for `ProgramDB.dbError(IOException)`.
+    fn db_error(&self, err: &io::Error);
+
+    /// Stands in for `ProgramDB.tagCreated(FunctionTag, ProgramEvent)`, called with
+    /// `ProgramEvent.FUNCTION_TAG_CREATED`.
+    fn tag_created(&self, tag: &dyn FunctionTag);
+
+    /// Stands in for `ProgramDB.tagChanged(FunctionTag, ProgramEvent, Object, Object)`, called
+    /// with `ProgramEvent.FUNCTION_TAG_CHANGED` when a tag's name or comment is edited.
+    fn tag_changed(&self, tag: &dyn FunctionTag, old_value: &str, new_value: &str);
+
+    /// Stands in for `ProgramDB.tagChanged(FunctionTag, ProgramEvent, Object, Object)`, called
+    /// with `ProgramEvent.FUNCTION_TAG_DELETED` (Java passes `tag` as both the affected object and
+    /// the old value, and `null` as the new value).
+    fn tag_deleted(&self, tag: &dyn FunctionTag);
+
+    /// Stands in for `ProgramDB.getFunctionManager().functionTagsChanged()`.
+    fn function_tags_changed(&self);
+}
+
+/// Placeholder for the subset of `ghidra.program.database.ProgramDB`'s API that
+/// [`BookmarkDBManager`](crate::program::database::bookmark::BookmarkDBManager) needs from its
+/// owning program, before the real `ProgramDB` port exposes these members: reporting an I/O
+/// error, handing back the program itself and its property map manager (both needed only to
+/// construct an [`OldBookmarkManager`](crate::program::database::bookmark::OldBookmarkManager) on
+/// demand), and firing `ChangeManager` notifications for bookmark/bookmark-type add/change/remove
+/// events. Mirrors [`FunctionTagManagerProgram`]'s identical role for `FunctionTagManagerDB`. All
+/// methods take `&self`, for the same reason `FunctionTagManagerProgram` documents.
+pub trait BookmarkManagerProgram: Send + Sync {
+    /// Stands in for `ProgramDB.dbError(IOException)`.
+    fn db_error(&self, err: &io::Error);
+
+    /// Stands in for `BookmarkDBManager.program` itself, used only to construct an
+    /// `OldBookmarkManager` (which needs a `Program` for `OldBookmark::set_context`).
+    fn program(&self) -> Arc<dyn Program>;
+
+    /// Stands in for `ProgramDB.getUsrPropertyManager()`, used only to construct an
+    /// `OldBookmarkManager`.
+    fn property_map_manager(&self) -> Arc<Mutex<dyn crate::program::model::util::PropertyMapManager + Send>>;
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_ADDED, ...)`.
+    fn bookmark_added(&self, addr: &Address, bookmark_id: i64);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_CHANGED, ...)`.
+    fn bookmark_changed(&self, addr: &Address, bookmark_id: i64);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_REMOVED, ...)`.
+    fn bookmark_removed(&self, addr: &Address, bookmark_id: i64);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_TYPE_ADDED, ...)`.
+    fn bookmark_type_added(&self, type_id: i32, type_name: &str);
+
+    /// Stands in for `ProgramDB.setObjChanged(ProgramEvent.BOOKMARK_TYPE_REMOVED, ...)`.
+    fn bookmark_type_removed(&self, type_id: i32, type_name: &str);
+}
+
+/// Placeholder for `ghidra.program.database.symbol.VariableSymbolDB`, referenced by
+/// [`FunctionDb`](crate::program::database::function::FunctionDb) and
+/// [`VariableDb`](crate::program::database::function::VariableDb) before the real class is
+/// ported.
+///
+/// `VariableSymbolDB extends SymbolDB`. `FunctionDB` only ever passes instances of it opaquely
+/// through to (the not-yet-ported) `FunctionVariables`, so the base [`Symbol`] identity is enough
+/// for that caller. `VariableDb`, however, needs the small slice of `VariableSymbolDB`'s own real
+/// API that `VariableDB.java` calls directly (`getDataType`/`getVariableStorage`/
+/// `setStorageAndDataType`/`getFirstUseOffset`/`getOrdinal`/`setOrdinal`/`getSymbolComment`/
+/// `setSymbolComment`, plus a rename hook standing in for the inherited `SymbolDB.setName`), so
+/// those are added here too rather than growing a second placeholder trait.
+///
+/// The mutating members (`set_storage_and_data_type`/`set_ordinal`/`set_symbol_comment`/
+/// `rename`) take `&self` rather than `&mut self`, mirroring
+/// [`FunctionTagManagerProgram`]'s documented rationale: a real `VariableSymbolDB` mutates its
+/// backing `DBRecord` through interior locking, not exclusive Rust ownership, and [`VariableDb`]
+/// only ever holds this type behind a shared `Arc`.
+pub trait VariableSymbolDb: Symbol {
+    /// Stands in for `VariableSymbolDB.getDataType()` (inherited from `SymbolDB`/`MemorySymbol`'s
+    /// backing record).
+    fn variable_data_type(&self) -> Box<dyn DataType>;
+
+    /// Stands in for `VariableSymbolDB.getVariableStorage()`.
+    fn variable_storage(&self) -> Box<dyn VariableStorage>;
+
+    /// Stands in for `VariableSymbolDB.setStorageAndDataType(VariableStorage, DataType)`.
+    fn set_variable_storage_and_data_type(
+        &self,
+        storage: Box<dyn VariableStorage>,
+        data_type: Box<dyn DataType>,
+    );
+
+    /// Stands in for `VariableSymbolDB.getFirstUseOffset()`.
+    fn variable_first_use_offset(&self) -> i32;
+
+    /// Stands in for `VariableSymbolDB.setFirstUseOffset(int)`.
+    fn set_variable_first_use_offset(&self, first_use_offset: i32);
+
+    /// Stands in for `VariableSymbolDB.getOrdinal()`.
+    fn variable_ordinal(&self) -> i32;
+
+    /// Stands in for `VariableSymbolDB.setOrdinal(int)`.
+    fn set_variable_ordinal(&self, ordinal: i32);
+
+    /// Stands in for `VariableSymbolDB.getSymbolComment()`.
+    fn variable_symbol_comment(&self) -> Option<String>;
+
+    /// Stands in for `VariableSymbolDB.setSymbolComment(String)`.
+    fn set_variable_symbol_comment(&self, comment: Option<String>);
+
+    /// Stands in for the inherited `SymbolDB.setName(String, SourceType)`, exposed under a
+    /// dedicated name (rather than reusing [`Symbol::set_name`]) since that method takes `&mut
+    /// self`, which cannot be called through the shared `Arc<dyn VariableSymbolDb>` this trait is
+    /// always held behind.
+    fn rename(
+        &self,
+        name: &str,
+        source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::program::model::listing::variable::SetVariableNameError>;
+}
+
+/// Placeholder for `ghidra.app.merge.DomainObjectMergeManager`, referenced by
+/// [`GhidraProgramMultiUserMergeManagerFactory`](crate::program::database::ghidra_program_multi_user_merge_manager_factory::GhidraProgramMultiUserMergeManagerFactory)
+/// before the real class is ported. That factory only ever constructs and opaquely returns this
+/// type, so no domain members are needed yet; `as_any` is exposed purely so callers/tests can
+/// downcast to a concrete implementation, mirroring the `as_any` pattern used by other opaque
+/// placeholder return types in this crate (e.g.
+/// [`crate::program::database::references::ref_list::RefList::as_any`]).
+pub trait DomainObjectMergeManager {
+    /// Enables downcasting to a concrete merge manager implementation.
+    fn as_any(&self) -> &dyn Any;
+}
+
+/// Placeholder for `ghidra.program.database.oldfunction.OldFunctionMapDB`, referenced by
+/// [`OldFunctionManager`](crate::program::database::oldfunction::OldFunctionManager) before the
+/// real class is ported. `OldFunctionManager` only ever calls its `dispose()`/`getBody(long)`
+/// pair (from its own `dispose`/`get_function_body`), never anything else, so this placeholder
+/// exposes just that pair.
+pub trait OldFunctionMapDB {
+    /// Stands in for `OldFunctionMapDB.dispose()`.
+    fn dispose(&mut self);
+
+    /// Stands in for `OldFunctionMapDB.getBody(long)`.
+    fn get_body(&self, function_key: i64) -> Box<dyn AddressSetView>;
+}
+
+/// Placeholder for `ghidra.GhidraApplicationLayout`, referenced by
+/// [`DataTypeArchiveIdDumper`](crate::program::model::data::data_type_archive_id_dumper::DataTypeArchiveIdDumper)
+/// before the real class is ported. `DataTypeArchiveIdDumper.launch()` only ever receives this
+/// type and forwards it opaquely to `Application.initializeApplication`, never inspecting it, so
+/// this placeholder needs no members.
+pub trait GhidraApplicationLayout {}
+
+/// Placeholder for `ghidra.GhidraLaunchable`, referenced by
+/// [`DataTypeArchiveIdDumper`](crate::program::model::data::data_type_archive_id_dumper::DataTypeArchiveIdDumper)
+/// (`implements GhidraLaunchable`) before the real interface is ported. Mirrors the single
+/// `launch(GhidraApplicationLayout, String[])` method the Java interface declares; the checked
+/// `throws Exception` is narrowed to `io::Error` since `DataTypeArchiveIdDumper.launch()`'s body
+/// only ever throws `IOException`.
+pub trait GhidraLaunchable {
+    /// Stands in for `GhidraLaunchable.launch(GhidraApplicationLayout, String[])`.
+    fn launch(&mut self, layout: &dyn GhidraApplicationLayout, args: &[String]) -> io::Result<()>;
+}
+
+/// Seam trait standing in for `ghidra.program.model.data.AlignedComponentPacker`'s call surface,
+/// used by [`AlignedStructurePacker`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker)
+/// so its `pack_components` default method can drive any concrete packer implementation without
+/// depending on this crate's real
+/// [`aligned_component_packer::AlignedComponentPacker`](crate::program::model::data::aligned_component_packer::AlignedComponentPacker)
+/// port directly (avoiding a dependency-direction cycle between the two modules). Exposes the four
+/// members `AlignedStructurePacker.pack()` calls on its per-call packer instance, plus one
+/// Rust-specific addition ([`finalize_pending_updates`](Self::finalize_pending_updates)) that has
+/// no Java counterpart -- see its own doc comment for why.
+pub trait AlignedComponentPacker {
+    /// Stands in for `AlignedComponentPacker.addComponent(InternalDataTypeComponent, boolean)`.
+    fn add_component(
+        &mut self,
+        dtc: &mut dyn crate::program::model::data::internal_data_type_component::InternalDataTypeComponent,
+        is_last_component: bool,
+    );
+
+    /// Gives a packer a final chance to retroactively fix up an *earlier* component's
+    /// ordinal/offset/length, given mutable access to the full component list.
+    ///
+    /// Has no Java counterpart: Java's `AlignedComponentPacker` holds a live `lastComponent`
+    /// object reference across `addComponent` calls, so when a zero-length bitfield's true final
+    /// offset can only be determined once the *next* component is seen (its alignment may exceed
+    /// the zero-length bitfield's own), Java simply mutates that still-held reference in place
+    /// (`adjustZeroLengthBitField`). This trait's `add_component` only ever hands a packer the
+    /// *current* component per call (no lifetime parameter ties a stored reference across calls),
+    /// so a real, bitfield-aware implementation instead records the intended write internally and
+    /// flushes it here, once
+    /// [`AlignedStructurePacker::pack_components`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker::pack_components)
+    /// hands back the full slice after its main loop. Defaulted to a no-op so every
+    /// non-bitfield-aware packer (every implementor before this method was added) keeps compiling
+    /// unchanged.
+    fn finalize_pending_updates(
+        &mut self,
+        _components: &mut [Box<dyn crate::program::model::data::internal_data_type_component::InternalDataTypeComponent>],
+    ) {
+    }
+
+    /// Stands in for `AlignedComponentPacker.getDefaultAlignment()`.
+    fn get_default_alignment(&self) -> i32;
+
+    /// Stands in for `AlignedComponentPacker.getLength()`.
+    fn get_length(&self) -> i32;
+
+    /// Stands in for `AlignedComponentPacker.componentsChanged()`.
+    fn components_changed(&self) -> bool;
+}
+
+/// Placeholder for `ghidra.program.model.data.BitFieldDataType`, referenced by
+/// [`DataOrganizationImpl`](crate::program::model::data::data_organization_impl::DataOrganizationImpl)'s
+/// port of `DataOrganizationImpl.getAlignment(DataType)` (via
+/// [`DataType::as_bit_field`](crate::program::model::data::data_type::DataType::as_bit_field))
+/// before the real `BitFieldDataType` class -- which depends on the not-yet-ported bitfield
+/// allocation machinery -- is ported. Exposes only the one member that method calls on a
+/// bitfield's data type.
+pub trait BitFieldDataType {
+    /// Stands in for `BitFieldDataType.getBaseDataType()`.
+    fn get_base_data_type(&self) -> Box<dyn DataType>;
+
+    /// Stands in for `BitFieldDataType.getBitSize()` -- the effective width, in bits, of the
+    /// field. Grown (defaulted, so existing implementors keep compiling) for
+    /// [`IsfDataTypeWriter`](crate::program::model::data::isf::IsfDataTypeWriter), whose port of
+    /// `IsfDataTypeBitField` emits it as `bit_length`.
+    fn get_bit_size(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `BitFieldDataType.getBitOffset()` -- the field's least-significant-bit
+    /// offset within its storage unit. Grown alongside [`get_bit_size`](Self::get_bit_size).
+    fn get_bit_offset(&self) -> i32 {
+        0
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.AudioPlayer`, referenced by
+/// [`AIFFDataType`](crate::program::model::data::aiff_data_type::AIFFDataType) before the real
+/// class is ported. The real class also implements Swing-facing `Playable`/`LineListener` to
+/// play audio clips on click, which is well outside this crate's scope so far; this placeholder
+/// only exposes read-back of the raw sound bytes the real constructor (`AudioPlayer(byte[])`)
+/// stores, since that's the only member `AIFFDataType.getValue(...)` needs.
+pub trait AudioPlayer: std::any::Any {
+    /// Stands in for reading back the private `AudioPlayer.bytes` field.
+    fn get_bytes(&self) -> &[u8];
+}
+
+/// Minimal concrete stand-in for `ghidra.program.model.data.AudioPlayer`, used by
+/// [`AIFFDataType::aiff_value`](crate::program::model::data::aiff_data_type::AIFFDataType::aiff_value)
+/// to actually construct an [`AudioPlayer`] instance (the trait alone cannot be instantiated).
+pub struct AudioPlayerImpl {
+    bytes: Vec<u8>,
+}
+
+impl AudioPlayerImpl {
+    /// Stands in for the `AudioPlayer(byte[] bytes)` constructor.
+    pub fn new(bytes: Vec<u8>) -> Self {
+        AudioPlayerImpl { bytes }
+    }
+}
+
+impl AudioPlayer for AudioPlayerImpl {
+    fn get_bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+/// Indicator for controlling the display of block names on labels. Placeholder for the nested
+/// enum `ghidra.program.model.listing.CodeUnitFormatOptions.ShowBlockName`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real `CodeUnitFormatOptions` class is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ShowBlockName {
+    /// Never show the block name in an address, label, or operand representation.
+    #[default]
+    Never,
+    /// Always show the block name in address, label, or operand representations.
+    Always,
+    /// Show the block name in address, label, or operand representations which are not
+    /// contained within the current block.
+    NonLocal,
+}
+
+/// Indicator for controlling the display of name-spaces on labels. Placeholder for the nested
+/// enum `ghidra.program.model.listing.CodeUnitFormatOptions.ShowNamespace`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real `CodeUnitFormatOptions` class is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ShowNamespace {
+    /// Never show the namespace for a label reference.
+    #[default]
+    Never,
+    /// Always show the namespace for a label reference.
+    Always,
+    /// Show the namespace for a label reference if the label is in a different namespace from
+    /// the referenced location.
+    NonLocal,
+    /// Show the namespace for a label reference if the label is in the same namespace as the
+    /// reference location (i.e., local to function).
+    Local,
+}
+
+/// Placeholder for `ghidra.program.model.listing.CodeUnitFormatOptions`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real class is ported. Carries the same field set as the Java class; every field is public
+/// so `CodeUnitFormat` can read/set them directly the way the Java class's package-visible
+/// subclass access does.
+///
+/// [`CodeUnitFormatOptions::simplify_template`] stands in for
+/// `CodeUnitFormatOptions.simplifyTemplate(String)`, which normally delegates to a
+/// `TemplateSimplifier`; since that class is not yet ported, this returns `name` unchanged
+/// (equivalent to a simplifier that finds no template angle-brackets to collapse).
+#[derive(Debug, Clone)]
+pub struct CodeUnitFormatOptions {
+    pub show_block_name: ShowBlockName,
+    pub show_namespace: ShowNamespace,
+    pub local_prefix_override: Option<String>,
+    pub show_library_in_namespace: bool,
+    pub do_reg_variable_markup: bool,
+    pub do_stack_variable_markup: bool,
+    pub include_inferred_variable_markup: bool,
+    pub always_show_primary_reference: bool,
+    pub follow_referenced_pointers: bool,
+    pub include_scalar_reference_adjustment: bool,
+    pub show_data_mutability: bool,
+    pub show_offcut_info: bool,
+    pub display_options: crate::program::model::data::data_type_display_options::DefaultDataTypeDisplayOptions,
+}
+
+impl Default for CodeUnitFormatOptions {
+    fn default() -> Self {
+        CodeUnitFormatOptions {
+            show_block_name: ShowBlockName::Never,
+            show_namespace: ShowNamespace::Never,
+            local_prefix_override: None,
+            show_library_in_namespace: true,
+            do_reg_variable_markup: true,
+            do_stack_variable_markup: true,
+            include_inferred_variable_markup: false,
+            always_show_primary_reference: false,
+            follow_referenced_pointers: false,
+            include_scalar_reference_adjustment: false,
+            show_data_mutability: false,
+            show_offcut_info: true,
+            display_options: crate::program::model::data::data_type_display_options::DEFAULT,
+        }
+    }
+}
+
+impl CodeUnitFormatOptions {
+    /// Stands in for `new CodeUnitFormatOptions()`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Stands in for `new CodeUnitFormatOptions(ShowBlockName, ShowNamespace)`.
+    pub fn with_show_options(show_block_name: ShowBlockName, show_namespace: ShowNamespace) -> Self {
+        CodeUnitFormatOptions { show_block_name, show_namespace, ..Self::default() }
+    }
+
+    /// Stands in for `CodeUnitFormatOptions.simplifyTemplate(String)`. See the struct docs for
+    /// why this is currently an identity function.
+    pub fn simplify_template(&self, name: &str) -> String {
+        name.to_string()
+    }
+}
+
+/// Placeholder for `FoundString.DefinedState`, a Java enum.
+/// Generated stub: only the shape needed by FoundString.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FoundStringDefinedState {
+    NotDefined,
+    Defined,
+    PartiallyDefined,
+    Conflicts,
+}
+
+/// Placeholder for the unported Java type `FoundString`, referenced by `FoundStringCallback`.
+/// Java FoundString is a concrete class, so this is ported as a trait boundary for the callback
+/// pattern. Replace with the real port when available.
+pub trait FoundString: Send + Sync {
+    fn get_length(&self) -> i32;
+    fn get_address(&self) -> Address;
+    fn get_end_address(&self) -> Address;
+    fn is_undefined(&self) -> bool;
+    fn is_defined(&self) -> bool;
+    fn is_partially_defined(&self) -> bool;
+    fn conflicts(&self) -> bool;
+    fn get_string(&self, memory: &dyn crate::program::model::mem::Memory) -> String;
+    fn get_data_instance(&self, memory: &dyn crate::program::model::mem::Memory) -> Box<dyn crate::program::model::data::string_data_instance::StringDataInstance>;
+    fn set_defined_state(&self, new_state: FoundStringDefinedState);
+    fn get_defined_state(&self) -> FoundStringDefinedState;
+    fn is_pascall(&self) -> bool;
+    fn get_data_type(&self) -> Box<dyn DataType>;
+    fn set_address(&self, address: Address);
+    fn set_length(&self, length: i32);
+    fn hash_code(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn compare_to(&self, other: &dyn FoundString) -> i32;
+    fn get_string_length(&self, mem: &dyn crate::program::model::mem::Memory) -> i32;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.NamespaceUtils`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real class is ported. Only the one static helper that class needs is modeled here; unlike
+/// most placeholders in this file this is a real, faithful port of that helper's algorithm (a
+/// stateless walk up the namespace hierarchy), not a stubbed-out default.
+pub mod namespace_utils {
+    use super::{Arc, Namespace, NamespaceType};
+
+    /// Stands in for the static `NamespaceUtils.getNamespacePathWithoutLibrary(Namespace)`.
+    pub fn get_namespace_path_without_library(namespace: Option<Arc<dyn Namespace>>) -> String {
+        let mut result = String::new();
+        let mut ns = namespace;
+        while let Some(n) = ns {
+            if n.is_global() || n.get_type() == NamespaceType::Library {
+                break;
+            }
+            result = format!("{}{}{}", n.get_name(), crate::program::model::symbol::DELIMITER, result);
+            ns = n.get_parent_namespace();
+        }
+        result
+    }
+}
+
+/// Placeholder for `ghidra.app.util.viewer.field.CommentUtils`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real class (and the comment-annotation parsing framework it depends on) is ported.
+pub mod comment_utils {
+    /// Stands in for the static `CommentUtils.getDisplayString(String, Program)`, which resolves
+    /// inline `{@...}` annotations (e.g. symbol/address references) embedded in a comment into
+    /// their display form. Annotation parsing is not yet ported, so this returns `comment`
+    /// unchanged (equivalent to a comment containing no annotations).
+    pub fn get_display_string(comment: &str, _program: &dyn crate::program::model::listing::Program) -> String {
+        comment.to_string()
+    }
+}
+
+/// Placeholder for `ghidra.program.database.DBStringMapAdapter`, a string-keyed, string-valued
+/// table in a program database. Referenced by `DataOrganizationImpl.save`/`restore` and
+/// `BitFieldPackingImpl.save`/`restore` before the real (DB-table-backed) class is ported. The
+/// storage primitives are required; `getInt`/`getBoolean` are provided exactly as Java derives
+/// them from the stored string.
+pub trait DbStringMapAdapter {
+    /// Stands in for `DBStringMapAdapter.put(String, String)`.
+    fn put(&mut self, key: &str, value: &str) -> io::Result<()>;
+
+    /// Stands in for `DBStringMapAdapter.get(String)`: the stored value, or `None`.
+    fn get(&self, key: &str) -> io::Result<Option<String>>;
+
+    /// Stands in for `DBStringMapAdapter.keySet()`.
+    fn key_set(&self) -> io::Result<Vec<String>>;
+
+    /// Stands in for `DBStringMapAdapter.delete(String)`.
+    fn delete(&mut self, key: &str) -> io::Result<()>;
+
+    /// Port of `DBStringMapAdapter.getInt(String, int)`: the stored value parsed as an `int`, or
+    /// `default_value` if absent or unparsable.
+    fn get_int(&self, key: &str, default_value: i32) -> io::Result<i32> {
+        Ok(self.get(key)?.and_then(|v| v.parse::<i32>().ok()).unwrap_or(default_value))
+    }
+
+    /// Port of `DBStringMapAdapter.getBoolean(String, boolean)`: `Boolean.valueOf` of the stored
+    /// value (true only for a case-insensitive "true"), or `default_value` if absent.
+    fn get_boolean(&self, key: &str, default_value: bool) -> io::Result<bool> {
+        Ok(self.get(key)?.map_or(default_value, |v| v.eq_ignore_ascii_case("true")))
+    }
+}
+
+/// Placeholder for `ghidra.program.database.SpecExtension`, referenced by
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
+/// is ported. Java's version is a concrete class, so this is a plain struct carrying the one
+/// static the plugin calls; the real port also parses, validates and installs compiler-spec
+/// extension documents on a program.
+pub struct SpecExtension;
+
+impl SpecExtension {
+    /// Stands in for the static `SpecExtension.registerOptions(Program)`, which installs the
+    /// program's "Specification Extensions" options (one option per installed extension) so they
+    /// show up in the program's options tree. Registering program options is not ported yet, so
+    /// this is a no-op -- equivalent to a program whose extension options are already registered.
+    pub fn register_options(_program: &dyn crate::program::model::listing::Program) {}
+
+    /// Port of the static `SpecExtension.isValidFormalName(String)`: a formal name (of a
+    /// prototype model or injection) is non-empty and uses only letters, digits, `_`, `.` and
+    /// `-`. Needed by `PrototypeModel.restoreXml`.
+    pub fn is_valid_formal_name(formal_name: &str) -> bool {
+        !formal_name.is_empty()
+            && formal_name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.' || c == '-')
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.Type`, referenced by
+/// [`BundleStatus`](crate::app::seam_stubs::BundleStatus) before the real class is ported.
+/// `Type` is just a marker interface in Java, so no methods are defined here.
+pub trait Type: Send + Sync {}
+
+/// Result of [`IsfUtilities::get_base_data_type`].
+///
+/// Java's `IsfUtilities.getBaseDataType(DataType)` peels array/pointer/bitfield wrappers off a
+/// type and returns whatever is left -- possibly the very type it was handed, possibly `null`
+/// (an untyped pointer). Rust cannot return a borrow and an owned `Box` from one arm, so the
+/// three outcomes are spelled out here instead of collapsing `null` and "already a base type"
+/// into a single `None`, which callers must tell apart: the former renders as ISF `void`.
+pub enum IsfBaseDataType<'a> {
+    /// `dt` wraps nothing; it is its own base type.
+    Same(&'a dyn DataType),
+    /// `dt` was a wrapper; this is what it unwrapped to, or `None` where Java returned `null`.
+    Unwrapped(Option<Box<dyn DataType>>),
+}
+
+/// Placeholder for `ghidra.program.database.data.DataTypeUtilities`, referenced by
+/// [`IsfDataTypeWriter`](crate::program::model::data::isf::IsfDataTypeWriter). A port of that
+/// class exists at `program/database/data/data_type_utilities.rs` but is not yet wired into its
+/// module -- it imports merger placeholders that do not exist -- so this carries the one static
+/// the writer calls until that port lands.
+pub struct DataTypeUtilities;
+
+impl DataTypeUtilities {
+    /// Stands in for the static `DataTypeUtilities.isConflictDataType(DataType)`: whether `dt`
+    /// carries a name Ghidra minted to break a name collision.
+    ///
+    /// Java matches `<base>.conflict` optionally followed by a counter, after stripping pointer
+    /// and array decorations; this tests for the `.conflict` marker itself, which is what
+    /// produces the decorated and undecorated forms alike.
+    pub fn is_conflict_data_type(dt: &dyn DataType) -> bool {
+        dt.get_name().contains(".conflict")
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.ISF.IsfUtilities`, referenced by
+/// [`IsfDataTypeWriter`](crate::program::model::data::isf::IsfDataTypeWriter) before the real
+/// class is ported. Java's version is a concrete class of statics, so this is a plain unit
+/// struct carrying only the statics that writer calls.
+///
+/// The three `instanceof`-driven statics ([`get_kind`](Self::get_kind),
+/// [`get_built_in_kind`](Self::get_built_in_kind), [`is_base_data_type`](Self::is_base_data_type))
+/// key off the `is_*`/`as_*` predicates [`DataType`] exposes rather than off Ghidra's concrete
+/// data-type classes, which are not all ported; see each method for where that approximation
+/// shows.
+pub struct IsfUtilities;
+
+impl IsfUtilities {
+    /// Stands in for the static `IsfUtilities.getBaseDataType(DataType)`: peel array, pointer
+    /// and bitfield wrappers until something else is reached.
+    pub fn get_base_data_type(dt: &dyn DataType) -> IsfBaseDataType<'_> {
+        let mut current = match Self::unwrap_once(dt) {
+            None => return IsfBaseDataType::Same(dt),
+            Some(next) => next,
+        };
+        loop {
+            let next = match current.as_deref().and_then(Self::unwrap_once) {
+                None => return IsfBaseDataType::Unwrapped(current),
+                Some(next) => next,
+            };
+            current = next;
+        }
+    }
+
+    /// One step of [`get_base_data_type`](Self::get_base_data_type): `None` when `dt` is not a
+    /// wrapper, `Some(target)` when it is (with `target` itself `None` for e.g. an untyped
+    /// pointer, matching Java's `null`).
+    fn unwrap_once(dt: &dyn DataType) -> Option<Option<Box<dyn DataType>>> {
+        if let Some(array) = dt.as_array() {
+            return Some(Some(array.get_data_type()));
+        }
+        if let Some(pointer) = dt.as_pointer() {
+            return Some(pointer.get_data_type());
+        }
+        if let Some(bit_field) = dt.as_bit_field() {
+            return Some(Some(bit_field.get_base_data_type()));
+        }
+        None
+    }
+
+    /// Stands in for the static `IsfUtilities.getLength(DataType)`.
+    pub fn get_length(dt: &dyn DataType) -> i32 {
+        dt.get_length()
+    }
+
+    /// Stands in for the static `IsfUtilities.getEndianness(DataType)`.
+    pub fn get_endianness(dt: &dyn DataType) -> String {
+        if dt.get_data_organization().is_big_endian() {
+            "big".to_string()
+        } else {
+            "little".to_string()
+        }
+    }
+
+    /// Stands in for the static `IsfUtilities.isBaseDataType(DataType)`.
+    ///
+    /// Java tests `AbstractIntegerDataType`, `AbstractFloatDataType`, `AbstractComplexDataType`,
+    /// `AbstractStringDataType`, `Pointer`, `VoidDataType` and `Undefined`. Complex and string
+    /// types have no [`DataType`] predicate of their own yet, so they are the two Java would
+    /// accept and this does not.
+    pub fn is_base_data_type(dt: &dyn DataType) -> bool {
+        dt.is_integer_type()
+            || dt.is_floating_point()
+            || dt.is_pointer()
+            || dt.is_void_type()
+            || dt.is_undefined_type()
+    }
+
+    /// Approximates `dt instanceof BuiltInDataType`, which [`DataType`] cannot yet answer
+    /// directly (there is no `as_built_in` downcast). Every type
+    /// [`is_base_data_type`](Self::is_base_data_type) accepts is a built-in, as are the boolean
+    /// and wide-char built-ins; a built-in outside that set reads here as not-built-in.
+    pub fn is_built_in_data_type(dt: &dyn DataType) -> bool {
+        Self::is_base_data_type(dt) || dt.is_boolean_type() || dt.is_wide_char_type()
+    }
+
+    /// Stands in for the static `IsfUtilities.getKind(DataType)`.
+    ///
+    /// The order of the tests is Java's, which matters: `BuiltInDataType` is checked ahead of
+    /// `Pointer`, so a pointer -- a built-in in Ghidra -- reports `"base"`, not `"pointer"`.
+    pub fn get_kind(dt: &dyn DataType) -> String {
+        let kind = if dt.is_array() {
+            "array"
+        } else if dt.is_structure() {
+            "struct"
+        } else if dt.is_union() {
+            "union"
+        } else if Self::is_built_in_data_type(dt) {
+            "base"
+        } else if dt.is_pointer() {
+            "pointer"
+        } else if dt.as_enum().is_some() {
+            "enum"
+        } else if dt.is_typedef() {
+            "typedef"
+        } else if dt.is_function_definition_type() {
+            "function"
+        } else if dt.is_bit_field_type() {
+            "bitfield"
+        } else if dt.is_default_data_type() {
+            "base"
+        } else {
+            "UNKNOWN"
+        };
+        kind.to_string()
+    }
+
+    /// Stands in for the static `IsfUtilities.getBuiltInKind(BuiltInDataType)`.
+    ///
+    /// Java returns the type's own name for integers, then `"float"`, `"complex"`, `"char"`
+    /// (strings), `"pointer"`, `"void"` (void and undefined), falling back to `"char"`. Complex
+    /// and string types have no [`DataType`] predicate yet, so both land on the `"char"`
+    /// fallback -- which is already what Java returns for strings.
+    pub fn get_built_in_kind(dt: &dyn DataType) -> String {
+        if dt.is_integer_type() {
+            return dt.get_name();
+        }
+        if dt.is_floating_point() {
+            return "float".to_string();
+        }
+        if dt.is_pointer() {
+            return "pointer".to_string();
+        }
+        if dt.is_void_type() || dt.is_undefined_type() {
+            return "void".to_string();
+        }
+        "char".to_string()
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.InjectPayloadCallother`, referenced by
+/// [`InjectPayloadJava`](crate::app::util::pcode_inject::inject_payload_java::InjectPayloadJava)
+/// before the real class is ported. Java's version is a class (not an interface), so this is a
+/// plain struct rather than a `dyn`-dispatched trait. It's the parent class for
+/// `InjectPayloadJava`, so subclasses inherit its behavior.
+pub struct InjectPayloadCallother {
+    /// The source name for this inject payload (from Java constructor: `sourceName`)
+    pub source_name: String,
+}
+
+impl InjectPayloadCallother {
+    /// Creates a new InjectPayloadCallother with the given source name.
+    pub fn new(source_name: String) -> Self {
+        InjectPayloadCallother { source_name }
+    }
+
+    /// Returns the source name for this inject payload.
+    pub fn get_source_name(&self) -> &str {
+        &self.source_name
+    }
+}
+
+/// Placeholder for `ghidra.program.database.data.merge.DataTypeMerger<T>`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real per-kind merge algorithms (`StructureMerger`, `UnionMerger`, `EnumMerger`) are
+/// ported. Object-safe trait standing in for the Java generic abstract base class; [`merge`]
+/// stands in for the real `merge()` template method, whose actual field-by-field merge logic is
+/// out of scope for this placeholder and belongs to those still-unported classes.
+///
+/// [`merge`]: DataTypeMerger::merge
+pub trait DataTypeMerger {
+    /// Stands in for `DataTypeMerger.merge()`. This placeholder always fails since the real
+    /// per-kind merge algorithm has not yet been ported.
+    fn merge(&self) -> Result<Box<dyn DataType>, String> {
+        Err("DataTypeMerger seam stub: real per-kind merge algorithm not yet ported".to_string())
+    }
+
+    /// Stands in for `DataTypeMerger.getWarnings()`.
+    fn get_warnings(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Stands in for `DataTypeMerger.hasWarnings()`.
+    fn has_warnings(&self) -> bool {
+        false
+    }
+}
+
+/// Placeholder for `ghidra.program.database.data.merge.StructureMerger`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real class is ported. Retains only the operand names, for diagnostics; see
+/// [`DataTypeMerger`] for why the real merge algorithm is unimplemented here.
+pub struct StructureMergerPlaceholder {
+    struct1_name: String,
+    struct2_name: String,
+}
+
+impl StructureMergerPlaceholder {
+    /// Stands in for `new StructureMerger(Structure, Structure)`.
+    pub fn new(struct1: &dyn Structure, struct2: &dyn Structure) -> Self {
+        StructureMergerPlaceholder {
+            struct1_name: struct1.get_name(),
+            struct2_name: struct2.get_name(),
+        }
+    }
+
+    /// Name of the first operand supplied to the constructor.
+    pub fn struct1_name(&self) -> &str {
+        &self.struct1_name
+    }
+
+    /// Name of the second operand supplied to the constructor.
+    pub fn struct2_name(&self) -> &str {
+        &self.struct2_name
+    }
+}
+
+impl DataTypeMerger for StructureMergerPlaceholder {}
+
+/// Placeholder for `ghidra.program.database.data.merge.UnionMerger`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real class is ported. See [`StructureMergerPlaceholder`] for the pattern.
+pub struct UnionMergerPlaceholder {
+    union1_name: String,
+    union2_name: String,
+}
+
+impl UnionMergerPlaceholder {
+    /// Stands in for `new UnionMerger(Union, Union)`.
+    pub fn new(union1: &dyn Union, union2: &dyn Union) -> Self {
+        UnionMergerPlaceholder {
+            union1_name: union1.get_name(),
+            union2_name: union2.get_name(),
+        }
+    }
+
+    /// Name of the first operand supplied to the constructor.
+    pub fn union1_name(&self) -> &str {
+        &self.union1_name
+    }
+
+    /// Name of the second operand supplied to the constructor.
+    pub fn union2_name(&self) -> &str {
+        &self.union2_name
+    }
+}
+
+impl DataTypeMerger for UnionMergerPlaceholder {}
+
+/// Placeholder for `ghidra.program.database.data.merge.EnumMerger`, referenced by
+/// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
+/// before the real class is ported. See [`StructureMergerPlaceholder`] for the pattern.
+pub struct EnumMergerPlaceholder {
+    enum1_name: String,
+    enum2_name: String,
+}
+
+impl EnumMergerPlaceholder {
+    /// Stands in for `new EnumMerger(Enum, Enum)`.
+    pub fn new(enum1: &dyn Enum, enum2: &dyn Enum) -> Self {
+        EnumMergerPlaceholder {
+            enum1_name: enum1.get_name(),
+            enum2_name: enum2.get_name(),
+        }
+    }
+
+    /// Name of the first operand supplied to the constructor.
+    pub fn enum1_name(&self) -> &str {
+        &self.enum1_name
+    }
+
+    /// Name of the second operand supplied to the constructor.
+    pub fn enum2_name(&self) -> &str {
+        &self.enum2_name
+    }
+}
+
+impl DataTypeMerger for EnumMergerPlaceholder {}
+
+/// Placeholder for `ghidra.program.model.data.TypedefDataType`, referenced by
+/// [`DataTypeUtilities::get_typedef_replacement`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_typedef_replacement)
+/// before the real class is ported. Wraps just enough state (category path, name, and referenced
+/// data type) to stand in as an opaque [`DataType`] for the replacement typedef the Java method
+/// constructs; once the real `TypedefDataType` lands this can be replaced with it directly.
+pub struct TypedefDataTypePlaceholder {
+    category_path: CategoryPath,
+    name: String,
+    data_type: Box<dyn DataType>,
+}
+
+impl TypedefDataTypePlaceholder {
+    /// Stands in for the 3-arg `new TypedefDataType(CategoryPath, String, DataType)` overload
+    /// used by `DataTypeUtilities` (which resolves the data type manager from `dataType` itself).
+    pub fn new(category_path: CategoryPath, name: String, data_type: Box<dyn DataType>) -> Self {
+        TypedefDataTypePlaceholder { category_path, name, data_type }
+    }
+
+    /// The wrapped referenced data type, mirroring `TypeDef.getDataType()`.
+    pub fn referenced_data_type(&self) -> &dyn DataType {
+        self.data_type.as_ref()
+    }
+}
+
+impl DataType for TypedefDataTypePlaceholder {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_category_path(&self) -> CategoryPath {
+        self.category_path.clone()
+    }
+
+    fn get_length(&self) -> i32 {
+        self.data_type.get_length()
+    }
+
+    fn is_typedef(&self) -> bool {
+        true
+    }
+}
+
+#[cfg(test)]
+mod share_data_type_tests {
+    use super::*;
+    use crate::program::model::data::pointer::Pointer;
+    use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
+
+    struct MockPointerTypedefBuilder;
+    impl PointerTypedefBuilder for MockPointerTypedefBuilder {}
+
+    struct MockPointer;
+    impl DataType for MockPointer {
+        fn get_name(&self) -> String {
+            "ptr".to_string()
+        }
+        fn is_pointer(&self) -> bool {
+            true
+        }
+        fn as_pointer(&self) -> Option<&dyn Pointer> {
+            Some(self)
+        }
+    }
+    impl Pointer for MockPointer {
+        fn get_data_type(&self) -> Option<Box<dyn DataType>> {
+            None
+        }
+        fn new_pointer(&self, data_type: Box<dyn DataType>) -> Box<dyn Pointer> {
+            let _ = data_type;
+            Box::new(MockPointer)
+        }
+        fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
+            Box::new(MockPointerTypedefBuilder)
+        }
+    }
+
+    #[test]
+    fn share_data_type_forwards_as_pointer_downcast() {
+        let arc: Arc<dyn DataType> = Arc::new(MockPointer);
+        let shared = share_data_type(&arc);
+        assert!(shared.is_pointer());
+        assert!(shared.as_pointer().is_some());
+        assert_eq!(shared.get_name(), "ptr");
     }
 }
 

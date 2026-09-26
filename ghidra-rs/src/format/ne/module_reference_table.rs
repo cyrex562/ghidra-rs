@@ -71,11 +71,11 @@ mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -105,9 +105,9 @@ mod tests {
     }
 
     struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         little_endian: bool,
-        current_index: u64,
+        current_index: Rc<RefCell<u64>>,
     }
 
     impl MockReader {
@@ -115,7 +115,7 @@ mod tests {
             MockReader {
                 provider: Rc::new(RefCell::new(VecProvider(data))),
                 little_endian: true,
-                current_index: 0,
+                current_index: Rc::new(RefCell::new(0)),
             }
         }
     }
@@ -128,11 +128,11 @@ mod tests {
             self.provider.borrow_mut().is_valid_index(index)
         }
         fn get_pointer_index(&self) -> u64 {
-            self.current_index
+            *self.current_index.borrow()
         }
         fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
+            let old = *self.current_index.borrow();
+            *self.current_index.borrow_mut() = index;
             old
         }
         fn is_little_endian(&self) -> bool {
@@ -147,14 +147,14 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
-                current_index: new_index,
+                current_index: Rc::new(RefCell::new(new_index)),
             })
         }
     }
@@ -176,8 +176,11 @@ mod tests {
         data.extend_from_slice(&[0i16, 4, 8, 12].iter().flat_map(|&x| x.to_le_bytes()).collect::<Vec<_>>());
         data.extend_from_slice(&[0u8; 20]);
 
-        let reader = Box::new(MockReader::new(data));
-        let import_table = ImportedNameTable::new(Box::new(MockReader::new(vec![])), 0);
+        let reader = Box::new(MockReader::new(data.clone()));
+        // Imported name table shares the same buffer; names begin right after the
+        // 8-byte offset table. Offset 0 lands on a zero-length entry, so the name
+        // loop terminates immediately, leaving only the offsets to verify.
+        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 8);
 
         let table = ModuleReferenceTable::new(reader, 0, 4, &import_table).unwrap();
         assert_eq!(table.offsets(), &[0, 4, 8, 12]);
@@ -211,11 +214,12 @@ mod tests {
 
         let mut reader = Box::new(MockReader::new(data.clone()));
         reader.set_pointer_index(100);
+        let index_handle = Rc::clone(&reader.current_index);
 
         let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 0);
         let _ = ModuleReferenceTable::new(reader, 0, 1, &import_table).unwrap();
 
-        let ptr = reader.get_pointer_index();
+        let ptr = *index_handle.borrow();
         assert_eq!(ptr, 100);
     }
 
@@ -229,7 +233,9 @@ mod tests {
         data.extend_from_slice(b"test");
 
         let reader = Box::new(MockReader::new(data.clone()));
-        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 50);
+        // Names begin right after the 2-byte offset table at index 52; offset 0
+        // therefore resolves against import-table base 52.
+        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 52);
 
         let table = ModuleReferenceTable::new(reader, 50, 1, &import_table).unwrap();
         assert_eq!(table.offsets(), &[0]);
@@ -254,7 +260,9 @@ mod tests {
     #[test]
     fn multiple_modules() {
         let mut data = Vec::new();
-        data.extend_from_slice(&[0i16, 5, 10].iter().flat_map(|&x| x.to_le_bytes()).collect::<Vec<_>>());
+        // Names are packed after the 6-byte offset table (base 6): "dll" at rel 0,
+        // "sys" at rel 4, "so" at rel 8.
+        data.extend_from_slice(&[0i16, 4, 8].iter().flat_map(|&x| x.to_le_bytes()).collect::<Vec<_>>());
 
         data.push(3);
         data.extend_from_slice(b"dll");
@@ -266,10 +274,10 @@ mod tests {
         data.extend_from_slice(b"so");
 
         let reader = Box::new(MockReader::new(data.clone()));
-        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 0);
+        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 6);
 
         let table = ModuleReferenceTable::new(reader, 0, 3, &import_table).unwrap();
-        assert_eq!(table.offsets(), &[0, 5, 10]);
+        assert_eq!(table.offsets(), &[0, 4, 8]);
         assert_eq!(table.names().len(), 3);
         assert_eq!(table.names()[0].name(), Some("dll"));
         assert_eq!(table.names()[1].name(), Some("sys"));

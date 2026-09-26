@@ -1,13 +1,14 @@
 use std::io;
 
+use super::fsrl::Fsrl;
+
 /// Represents a file in a [`GFileSystem`] filesystem.
 ///
 /// Only valid while the owning filesystem object is still open and not closed.
 ///
-/// The type parameters `FS` and `Fsrl` represent the filesystem and FSRL types
-/// respectively; they will be instantiated with the concrete Rust ports of `GFileSystem`
-/// and `FSRL` once those classes are ported.
-pub trait GFile<FS, Fsrl> {
+/// The type parameter `FS` is the owning filesystem (handle) type; the file's locator is the
+/// real [`Fsrl`].
+pub trait GFile<FS> {
     /// The filesystem that owns this file.
     fn get_filesystem(&self) -> &FS;
 
@@ -15,7 +16,7 @@ pub trait GFile<FS, Fsrl> {
     fn get_fsrl(&self) -> &Fsrl;
 
     /// The parent directory of this file, or `None` for the root.
-    fn get_parent_file(&self) -> Option<&dyn GFile<FS, Fsrl>>;
+    fn get_parent_file(&self) -> Option<&dyn GFile<FS>>;
 
     /// The path and filename of this file, relative to its owning filesystem.
     fn get_path(&self) -> &str;
@@ -33,7 +34,7 @@ pub trait GFile<FS, Fsrl> {
     ///
     /// # Errors
     /// Returns an error if this file is not a directory or if accessing the listing fails.
-    fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<FS, Fsrl>>>>;
+    fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<FS>>>>;
 }
 
 #[cfg(test)]
@@ -44,13 +45,13 @@ mod tests {
         pub name: &'static str,
     }
 
-    struct MockFsrl {
-        pub path: String,
+    fn mock_fsrl(path: &str) -> Fsrl {
+        Fsrl::from_string(&format!("file://{path}")).unwrap()
     }
 
     struct MockFile {
         fs: MockFs,
-        fsrl: MockFsrl,
+        fsrl: Fsrl,
         path: String,
         name: String,
         is_dir: bool,
@@ -62,7 +63,7 @@ mod tests {
         fn file(path: &str, name: &str, length: i64) -> Self {
             MockFile {
                 fs: MockFs { name: "testfs" },
-                fsrl: MockFsrl { path: path.to_owned() },
+                fsrl: mock_fsrl(path),
                 path: path.to_owned(),
                 name: name.to_owned(),
                 is_dir: false,
@@ -74,7 +75,7 @@ mod tests {
         fn dir(path: &str, name: &str) -> Self {
             MockFile {
                 fs: MockFs { name: "testfs" },
-                fsrl: MockFsrl { path: path.to_owned() },
+                fsrl: mock_fsrl(path),
                 path: path.to_owned(),
                 name: name.to_owned(),
                 is_dir: true,
@@ -84,16 +85,16 @@ mod tests {
         }
     }
 
-    impl GFile<MockFs, MockFsrl> for MockFile {
+    impl GFile<MockFs> for MockFile {
         fn get_filesystem(&self) -> &MockFs {
             &self.fs
         }
 
-        fn get_fsrl(&self) -> &MockFsrl {
+        fn get_fsrl(&self) -> &Fsrl {
             &self.fsrl
         }
 
-        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs, MockFsrl>> {
+        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs>> {
             None
         }
 
@@ -113,14 +114,14 @@ mod tests {
             self.length
         }
 
-        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFs, MockFsrl>>>> {
+        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFs>>>> {
             if !self.is_dir {
                 return Err(io::Error::new(io::ErrorKind::Other, "not a directory"));
             }
             Ok(self
                 .children
                 .iter()
-                .map(|c| -> Box<dyn GFile<MockFs, MockFsrl>> {
+                .map(|c| -> Box<dyn GFile<MockFs>> {
                     Box::new(MockFile::file(c.path.as_str(), c.name.as_str(), c.length))
                 })
                 .collect())
@@ -178,7 +179,7 @@ mod tests {
     #[test]
     fn get_fsrl_returns_associated_fsrl() {
         let f = MockFile::file("/a.txt", "a.txt", 0);
-        assert_eq!(f.get_fsrl().path, "/a.txt");
+        assert_eq!(f.get_fsrl().path(), Some("/a.txt"));
     }
 
     #[test]

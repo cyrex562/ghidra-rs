@@ -179,9 +179,26 @@ impl GoKind {
     }
 }
 
+/// Java `Enum.toString()`: the constant's name (`invalid`, `Bool`, `Int8`, ...).
+impl std::fmt::Display for GoKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Invalid => f.write_str("invalid"),
+            other => write!(f, "{other:?}"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{GoKind, DIRECT_IFACE, GC_PROG, KIND_MASK};
+
+    #[test]
+    fn display_is_the_java_constant_name() {
+        assert_eq!(GoKind::Invalid.to_string(), "invalid");
+        assert_eq!(GoKind::Int8.to_string(), "Int8");
+        assert_eq!(GoKind::UnsafePointer.to_string(), "UnsafePointer");
+    }
 
     #[test]
     fn constants_match_java() {

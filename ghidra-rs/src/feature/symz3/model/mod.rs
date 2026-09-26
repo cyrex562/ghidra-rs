@@ -1,5 +1,7 @@
 //! The Symbolic Value Z3 domain package.
 
+pub mod sym_value_z3;
+
 #[cfg(test)]
 mod tests {
     #[test]

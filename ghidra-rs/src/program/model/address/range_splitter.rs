@@ -48,12 +48,10 @@ impl AddressRangeSplitter {
     }
 }
 
-impl AddressRangeIterator for AddressRangeSplitter {
-    fn has_next(&self) -> bool {
-        self.remaining_range.is_some()
-    }
+impl Iterator for AddressRangeSplitter {
+    type Item = AddressRange;
 
-    fn next_range(&mut self) -> Option<AddressRange> {
+    fn next(&mut self) -> Option<Self::Item> {
         self.remaining_range.as_ref()?;
         if self.range_is_small_enough() {
             return self.remaining_range.take();
@@ -66,13 +64,7 @@ impl AddressRangeIterator for AddressRangeSplitter {
     }
 }
 
-impl Iterator for AddressRangeSplitter {
-    type Item = AddressRange;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_range()
-    }
-}
+impl AddressRangeIterator for AddressRangeSplitter {}
 
 /// Breaks an address range into fixed-size chunks in forward order.
 ///

@@ -1,5 +1,5 @@
 use crate::framework::model::DomainObject;
-use crate::program::seam_stubs::DataTypeManagerOwner;
+use crate::app::merge::DataTypeManagerOwner;
 
 /// Marker trait for a domain object that also owns a data type manager.
 ///
@@ -20,8 +20,9 @@ mod tests {
     impl DomainObject for MockDomainObject {}
 
     impl DataTypeManagerOwner for MockDomainObject {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
-            Box::new(MockDataTypeManager)
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
         }
     }
 

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::collections::HashSet;
 
 use thiserror::Error;
@@ -6,21 +7,21 @@ use crate::program::model::data::archive_type::ArchiveType;
 use crate::program::model::data::category::Category;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::composite::Composite;
-use crate::program::model::data::data_organization::DataOrganization;
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_conflict_handler::DataTypeConflictHandler;
 use crate::program::model::data::data_type_dependency_exception::DataTypeDependencyException;
 use crate::program::model::data::data_type_manager_change_listener::DataTypeManagerChangeListener;
 use crate::program::model::data::invalidated_listener::InvalidatedListener;
 use crate::program::model::data::pointer::Pointer;
+use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::data::structure::Structure;
 use crate::program::model::lang::ProgramArchitecture;
 use crate::program::database::map::AddressMap;
-use crate::program::seam_stubs::{
-    DataTypePath, PointerTypedefBuilder, PrototypeModel, Transaction,
-};
+use crate::program::model::lang::prototype_model::PrototypeModel;
+use crate::program::seam_stubs::{DataTypePath, Transaction};
 use crate::util::exception::{CancelledException, InvalidNameException};
 use crate::util::function::{ExceptionalCallback, ExceptionalSupplier};
 use crate::util::task::TaskMonitor;
@@ -265,6 +266,21 @@ pub trait DataTypeManager {
     /// Get the category that has the given path, or `None` if not defined.
     fn get_category_at_path(&self, path: &CategoryPath) -> Option<Box<dyn Category>> {
         let _ = path;
+        None
+    }
+
+    /// Stands in for `dtm instanceof ProgramBasedDataTypeManager ? (ProgramBasedDataTypeManager)
+    /// dtm : null`, used by
+    /// [`DataTypeUtilities`](crate::program::database::data::data_type_utilities::DataTypeUtilities)'s
+    /// namespace-qualified datatype search to recover the manager's preferred root namespace
+    /// category path via [`Program::get_preferred_root_namespace_category_path`]. Defaults to
+    /// `None`; a real `ProgramBasedDataTypeManager` implementor should override this to return
+    /// `Some(self)`.
+    fn as_program_based(
+        &self,
+    ) -> Option<
+        &dyn crate::program::model::data::program_based_data_type_manager::ProgramBasedDataTypeManager,
+    > {
         None
     }
 
@@ -547,7 +563,7 @@ pub trait DataTypeManager {
     ///
     /// No meaningful `DataOrganization` fallback is available yet since no concrete
     /// implementation has been ported; overriding implementations must supply their own.
-    fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+    fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         unimplemented!("DataTypeManager::get_data_organization has no default implementation yet")
     }
 
@@ -605,12 +621,12 @@ pub trait DataTypeManager {
 
     /// Get the default calling convention's prototype model in this data type manager, if
     /// known.
-    fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+    fn get_default_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
         None
     }
 
     /// Get the prototype model of the calling convention with the specified name.
-    fn get_calling_convention(&self, name: &str) -> Option<Box<dyn PrototypeModel>> {
+    fn get_calling_convention(&self, name: &str) -> Option<Arc<PrototypeModel>> {
         let _ = name;
         None
     }

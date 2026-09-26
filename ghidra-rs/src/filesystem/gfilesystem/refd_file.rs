@@ -1,152 +1,109 @@
-use super::g_file::GFile;
+//! Port of `ghidra.formats.gfilesystem.RefdFile`.
 
-/// A [`GFile`] along with a filesystem reference that keeps the filesystem pinned in memory.
+use super::file_system_ref::FileSystemRef;
+use super::file_system_ref_manager::FileSystemRefManagerError;
+use super::g_file_system::DynGFile;
+
+/// A [`GFile`](super::g_file::GFile) along with a [`FileSystemRef`] that keeps its filesystem
+/// pinned in memory.
 ///
-/// The caller is responsible for releasing this object (dropping it or calling
-/// [`RefdFile::close`]), which releases the filesystem reference.
+/// The caller is responsible for releasing this object ([`close`](RefdFile::close), or
+/// dropping it -- the ref releases itself on drop).
 ///
-/// This is the Rust equivalent of `ghidra.formats.gfilesystem.RefdFile`.  The type
-/// parameter `R` stands in for `FileSystemRef` until that class is ported; any owned
-/// type whose `Drop` impl releases the filesystem reference will satisfy the bound.
-pub struct RefdFile<R, FS, Fsrl> {
+/// Mirrors `ghidra.formats.gfilesystem.RefdFile`. The file is the type-erased
+/// [`DynGFile`] that [`FileSystemService`](super::file_system_service::FileSystemService)
+/// lookups produce.
+pub struct RefdFile {
     /// The filesystem reference that pins the owning filesystem open.
-    pub fs_ref: R,
+    pub fs_ref: FileSystemRef,
     /// The file inside the pinned filesystem.
-    pub file: Box<dyn GFile<FS, Fsrl>>,
+    pub file: DynGFile,
 }
 
-impl<R, FS, Fsrl> RefdFile<R, FS, Fsrl> {
-    /// Creates a `RefdFile`, taking ownership of `fs_ref`.
-    ///
-    /// Mirrors `RefdFile(FileSystemRef, GFile)` from the Java source.
-    pub fn new(fs_ref: R, file: Box<dyn GFile<FS, Fsrl>>) -> Self {
+impl RefdFile {
+    /// Creates a `RefdFile`, taking ownership of `fs_ref`. Mirrors
+    /// `RefdFile(FileSystemRef, GFile)`.
+    pub fn new(fs_ref: FileSystemRef, file: DynGFile) -> Self {
         RefdFile { fs_ref, file }
     }
 
-    /// Releases the filesystem reference by consuming this `RefdFile`.
+    /// Releases the filesystem reference. Mirrors `close()`.
     ///
-    /// Equivalent to Java's `Closeable.close()`: ownership of `fs_ref` is dropped here,
-    /// which triggers its cleanup and unpins the owning filesystem.
-    pub fn close(self) {
-        // Moving self out of scope drops fs_ref, releasing the filesystem reference.
+    /// # Errors
+    /// If the ref was already released.
+    pub fn close(mut self) -> Result<(), FileSystemRefManagerError> {
+        self.fs_ref.close()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::cell::Cell;
-    use std::io;
     use std::rc::Rc;
 
-    // ── Minimal GFile mock ────────────────────────────────────────────────────
+    use super::super::file_system_ref_manager::test_support::EmptyFs;
+    use super::super::fsrl::Fsrl;
+    use super::super::g_file::GFile;
+    use super::super::g_file_system::FsHandle;
+    use super::*;
 
-    struct MockFs;
-    struct MockFsrl;
-
-    struct MockFile {
-        name: &'static str,
+    #[test]
+    fn close_releases_the_ref() {
+        let fs: FsHandle = Rc::new(EmptyFs::new("empty"));
+        let fs_ref = fs.get_ref_manager().create(&fs).unwrap();
+        // A file handle only needs an FSRL here; `()` stands in for the owning fs handle.
+        let file = test_file(Fsrl::from_string("empty:///a.txt").unwrap());
+        let refd = RefdFile::new(fs_ref, Box::new(file));
+        assert_eq!(refd.file.get_name(), "a.txt");
+        assert_eq!(fs.get_ref_manager().ref_count(), 1);
+        refd.close().unwrap();
+        assert_eq!(fs.get_ref_manager().ref_count(), 0);
     }
 
-    impl GFile<MockFs, MockFsrl> for MockFile {
-        fn get_filesystem(&self) -> &MockFs {
-            &MockFs
+    #[test]
+    fn drop_releases_the_ref() {
+        let fs: FsHandle = Rc::new(EmptyFs::new("empty"));
+        {
+            let fs_ref = fs.get_ref_manager().create(&fs).unwrap();
+            let file = test_file(Fsrl::from_string("empty:///b").unwrap());
+            let _refd = RefdFile::new(fs_ref, Box::new(file));
         }
+        assert_eq!(fs.get_ref_manager().ref_count(), 0);
+    }
 
-        fn get_fsrl(&self) -> &MockFsrl {
-            &MockFsrl
+    /// A trivial file-handle type for building test files.
+    struct Unit;
+
+    struct F(Fsrl, String);
+
+    impl GFile<Unit> for F {
+        fn get_filesystem(&self) -> &Unit {
+            &Unit
         }
-
-        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs, MockFsrl>> {
+        fn get_fsrl(&self) -> &Fsrl {
+            &self.0
+        }
+        fn get_parent_file(&self) -> Option<&dyn GFile<Unit>> {
             None
         }
-
         fn get_path(&self) -> &str {
-            self.name
+            self.0.path().unwrap_or("")
         }
-
         fn get_name(&self) -> &str {
-            self.name
+            &self.1
         }
-
         fn is_directory(&self) -> bool {
             false
         }
-
         fn get_length(&self) -> i64 {
             0
         }
-
-        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFs, MockFsrl>>>> {
-            Err(io::Error::new(io::ErrorKind::Other, "not a directory"))
+        fn get_listing(&self) -> std::io::Result<Vec<Box<dyn GFile<Unit>>>> {
+            Ok(Vec::new())
         }
     }
 
-    // ── Drop-tracking filesystem ref mock ─────────────────────────────────────
-
-    struct MockRef {
-        closed: Rc<Cell<bool>>,
-    }
-
-    impl Drop for MockRef {
-        fn drop(&mut self) {
-            self.closed.set(true);
-        }
-    }
-
-    fn make_ref() -> (MockRef, Rc<Cell<bool>>) {
-        let flag = Rc::new(Cell::new(false));
-        let r = MockRef { closed: Rc::clone(&flag) };
-        (r, flag)
-    }
-
-    fn make_file(name: &'static str) -> Box<dyn GFile<MockFs, MockFsrl>> {
-        Box::new(MockFile { name })
-    }
-
-    // ── Tests ─────────────────────────────────────────────────────────────────
-
-    #[test]
-    fn new_stores_fs_ref_and_file() {
-        let (r, _flag) = make_ref();
-        let refd = RefdFile::new(r, make_file("foo.txt"));
-        assert_eq!(refd.file.get_name(), "foo.txt");
-    }
-
-    #[test]
-    fn fs_ref_is_publicly_accessible() {
-        let (r, flag) = make_ref();
-        let refd = RefdFile::new(r, make_file("bar.bin"));
-        // Access fs_ref directly (public field).
-        assert!(!refd.fs_ref.closed.get());
-        drop(refd);
-        assert!(flag.get(), "fs_ref should be released when RefdFile is dropped");
-    }
-
-    #[test]
-    fn close_releases_filesystem_ref() {
-        let (r, flag) = make_ref();
-        let refd = RefdFile::new(r, make_file("data.bin"));
-        assert!(!flag.get());
-        refd.close();
-        assert!(flag.get(), "fs_ref should be released after close()");
-    }
-
-    #[test]
-    fn drop_releases_filesystem_ref_without_explicit_close() {
-        let (r, flag) = make_ref();
-        {
-            let _refd = RefdFile::new(r, make_file("temp.bin"));
-            assert!(!flag.get());
-        }
-        assert!(flag.get(), "fs_ref should be released on drop");
-    }
-
-    #[test]
-    fn file_field_is_publicly_accessible() {
-        let (r, _flag) = make_ref();
-        let refd = RefdFile::new(r, make_file("readme.txt"));
-        assert_eq!(refd.file.get_name(), "readme.txt");
-        assert!(!refd.file.is_directory());
+    fn test_file(fsrl: Fsrl) -> Box<dyn GFile<Unit>> {
+        let name = fsrl.name().unwrap_or_default();
+        Box::new(F(fsrl, name))
     }
 }

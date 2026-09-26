@@ -148,7 +148,7 @@ mod tests {
             choices: vec!["bold".to_string(), "italic".to_string()],
         };
         let mut settings = MockSettings::new();
-        let dyn_def: &mut dyn EnumSettingsDefinition = &mut (&def as &dyn EnumSettingsDefinition) as *const _ as *mut _;
+        let _dyn_def: &dyn EnumSettingsDefinition = &def;
 
         def.set_choice(&mut settings, 1);
 
@@ -197,7 +197,7 @@ mod tests {
         def.set_choice(&mut settings1, 1);
         def.set_choice(&mut settings2, 1);
 
-        assert!(def.has_same_value(&settings1, &settings2));
+        assert!(EnumSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]
@@ -213,7 +213,7 @@ mod tests {
         def.set_choice(&mut settings1, 0);
         def.set_choice(&mut settings2, 1);
 
-        assert!(!def.has_same_value(&settings1, &settings2));
+        assert!(!EnumSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]
@@ -240,6 +240,6 @@ mod tests {
 
         def.set_choice(&mut settings2, 1);
 
-        assert!(def.has_same_value(&settings1, &settings2));
+        assert!(EnumSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 }

@@ -88,11 +88,11 @@ mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -122,7 +122,7 @@ mod tests {
     }
 
     struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
+        provider: Rc<RefCell<dyn GByteStore>>,
         little_endian: bool,
         current_index: u64,
     }
@@ -164,7 +164,7 @@ mod tests {
         fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
             self.provider.borrow_mut().read_bytes(index, n_elements)
         }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
         fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
@@ -226,7 +226,8 @@ mod tests {
 
         let mut r = MockReader::new(data);
         let _ = Omf51Fixup::new(&mut r, false).unwrap();
-        assert_eq!(r.get_pointer_index(), 6);
+        // 2 (ref_loc) + 1 (ref_type) + 1 (block_type) + 1 (small block_id) + 2 (offset) = 7
+        assert_eq!(r.get_pointer_index(), 7);
     }
 
     #[test]
@@ -241,7 +242,8 @@ mod tests {
 
         let mut r = MockReader::new(data);
         let _ = Omf51Fixup::new(&mut r, true).unwrap();
-        assert_eq!(r.get_pointer_index(), 7);
+        // 2 (ref_loc) + 1 (ref_type) + 1 (block_type) + 2 (large block_id) + 2 (offset) = 8
+        assert_eq!(r.get_pointer_index(), 8);
     }
 
     #[test]

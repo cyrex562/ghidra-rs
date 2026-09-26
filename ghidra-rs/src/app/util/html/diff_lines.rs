@@ -50,6 +50,19 @@ impl DiffLines {
         Self { input, lines }
     }
 
+    /// Creates a new `DiffLines` from lines paired with their placeholder flag, preserving
+    /// which lines are placeholders (Java keeps this via the lines' runtime type).
+    pub(crate) fn with_flagged_lines(
+        input: Rc<dyn DataTypeDiffInput>,
+        lines: Vec<(Box<dyn ValidatableLine>, bool)>,
+    ) -> Self {
+        let lines = lines
+            .into_iter()
+            .map(|(line, is_place_holder)| DiffEntry { line, is_place_holder })
+            .collect();
+        Self { input, lines }
+    }
+
     /// Returns the number of lines.
     pub fn len(&self) -> usize {
         self.lines.len()
@@ -71,6 +84,37 @@ impl DiffLines {
     /// Returns an iterator over the lines, in order.
     pub fn iter(&self) -> impl Iterator<Item = &dyn ValidatableLine> {
         self.lines.iter().map(|entry| entry.line.as_ref())
+    }
+
+    /// Returns a mutable reference to the line at `index`.
+    ///
+    /// # Panics
+    /// Panics if `index` is out of bounds.
+    pub(crate) fn get_mut(&mut self, index: usize) -> &mut dyn ValidatableLine {
+        self.lines[index].line.as_mut()
+    }
+
+    /// Returns `true` if the line at `index` is a placeholder line (Java's
+    /// `instanceof PlaceHolderLine`).
+    ///
+    /// # Panics
+    /// Panics if `index` is out of bounds.
+    pub(crate) fn is_place_holder(&self, index: usize) -> bool {
+        self.lines[index].is_place_holder
+    }
+
+    /// Appends a (non-placeholder) line.
+    pub(crate) fn add(&mut self, line: Box<dyn ValidatableLine>) {
+        self.lines.push(DiffEntry::line(line));
+    }
+
+    /// Removes and returns every line, paired with its placeholder flag, leaving this list
+    /// empty. Used to move lines into a re-laid-out clone (Java shares the line objects).
+    pub(crate) fn take_lines(&mut self) -> Vec<(Box<dyn ValidatableLine>, bool)> {
+        std::mem::take(&mut self.lines)
+            .into_iter()
+            .map(|entry| (entry.line, entry.is_place_holder))
+            .collect()
     }
 
     /// Removes leading placeholder lines, stopping at the first non-placeholder line.

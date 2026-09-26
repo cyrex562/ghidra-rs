@@ -28,7 +28,9 @@ pub trait ProgramChangeSet:
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSet, AddressSpace, AddressSpaceType};
+    use crate::program::model::address::{
+        Address, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
+    };
     use std::sync::Arc;
 
     struct SimpleProgramChangeSet {

@@ -77,7 +77,11 @@ mod tests {
     }
 
     struct MockPtyChild;
-    impl crate::pty::TermMode for MockPtyChild {}
+    impl crate::pty::TermMode for MockPtyChild {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+    }
 
     impl crate::pty::PtyEndpoint for MockPtyChild {
         fn get_output_stream(&self) -> io::Result<Box<dyn Write>> {

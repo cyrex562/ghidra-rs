@@ -1,19 +1,19 @@
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 
 /// Iterates through multiple address iterators simultaneously. `next()` returns
 /// the next address as determined from all the iterators.
 ///
 /// Mirrors Ghidra's `MultiAddressIterator`. Java allows `null` entries in the
-/// iterators array; that is modeled here with `Option<Box<dyn AddressIterator>>`.
+/// iterators array; that is modeled here with `Option<BoxedAddressIterator>`.
 pub struct MultiAddressIterator {
-    iters: Vec<Option<Box<dyn AddressIterator>>>,
+    iters: Vec<Option<BoxedAddressIterator>>,
     addrs: Vec<Option<Address>>,
     forward: bool,
 }
 
 impl MultiAddressIterator {
     /// Creates a multi address iterator for multiple forward address iterators.
-    pub fn new(iters: Vec<Option<Box<dyn AddressIterator>>>) -> Self {
+    pub fn new(iters: Vec<Option<BoxedAddressIterator>>) -> Self {
         let addrs = vec![None; iters.len()];
         Self {
             iters,
@@ -27,7 +27,7 @@ impl MultiAddressIterator {
     /// Note: all iterators must iterate in the same direction (forwards or
     /// backwards). `forward` indicates the direction of every iterator in
     /// `iters`.
-    pub fn new_with_direction(iters: Vec<Option<Box<dyn AddressIterator>>>, forward: bool) -> Self {
+    pub fn new_with_direction(iters: Vec<Option<BoxedAddressIterator>>, forward: bool) -> Self {
         let addrs = vec![None; iters.len()];
         Self {
             iters,
@@ -37,18 +37,25 @@ impl MultiAddressIterator {
     }
 
     /// Determines whether any of the original iterators has a next address.
-    pub fn has_next(&self) -> bool {
+    ///
+    /// Takes `&mut self` because a `std::Iterator` cannot be inspected without advancing it:
+    /// answering the question requires pulling one address from each iterator into this
+    /// type's existing per-iterator buffer. Java's `hasNext()` did the same buffering behind a
+    /// `&self`-shaped signature; making the mutation visible is the honest translation.
+    pub fn has_next(&mut self) -> bool {
+        self.fill_buffer();
+        self.addrs.iter().any(|a| a.is_some())
+    }
+
+    /// Pulls one address from every iterator that has no buffered address yet.
+    fn fill_buffer(&mut self) {
         for i in 0..self.iters.len() {
-            let has_pending = self.addrs[i].is_some();
-            let iter_has_next = match &self.iters[i] {
-                Some(iter) => iter.has_next(),
-                None => false,
-            };
-            if has_pending || iter_has_next {
-                return true;
+            if self.addrs[i].is_none() {
+                if let Some(iter) = &mut self.iters[i] {
+                    self.addrs[i] = iter.next();
+                }
             }
         }
-        false
     }
 
     /// Returns the next address. The next address could be from any one of
@@ -72,15 +79,7 @@ impl MultiAddressIterator {
         let len = self.iters.len();
 
         // Get a next value from each iterator.
-        for i in 0..len {
-            if self.addrs[i].is_none() {
-                if let Some(iter) = &mut self.iters[i] {
-                    if iter.has_next() {
-                        self.addrs[i] = iter.next_address();
-                    }
-                }
-            }
-        }
+        self.fill_buffer();
 
         // Find next address.
         let mut addr_next: Option<Address> = None;
@@ -133,9 +132,9 @@ mod tests {
         Address::new(space, offset)
     }
 
-    fn adapter(offsets: &[i64]) -> Option<Box<dyn AddressIterator>> {
+    fn adapter(offsets: &[i64]) -> Option<BoxedAddressIterator> {
         Some(Box::new(AddressIteratorAdapter::new(
-            offsets.iter().map(|o| addr(*o)).collect(),
+            offsets.iter().map(|o| addr(*o)).collect::<Vec<_>>().into_iter(),
         )))
     }
 
@@ -188,16 +187,14 @@ mod tests {
         let second = iter.next_addresses();
         assert_eq!(second, vec![Some(addr(0x2000)), None]);
 
-        assert!(!iter.has_next());
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
     fn treats_missing_iterators_as_empty() {
         let mut iter = MultiAddressIterator::new(vec![adapter(&[0x1000]), None]);
-
-        assert!(iter.has_next());
         assert_eq!(iter.next(), Some(addr(0x1000)));
-        assert!(!iter.has_next());
+        assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
     }
 
@@ -205,7 +202,7 @@ mod tests {
     fn empty_iterators_have_no_next_address() {
         let mut iter = MultiAddressIterator::new(vec![]);
 
-        assert!(!iter.has_next());
+        assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
     }
 }

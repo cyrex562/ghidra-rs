@@ -4,7 +4,13 @@ use std::path::Path;
 use crate::pty::{PtyEndpoint, PtySession};
 
 /// A terminal mode flag.
-pub trait TermMode: Send + Sync {}
+pub trait TermMode: Send + Sync {
+    /// Enables testing a `dyn TermMode` against a known concrete mode -- e.g. checking whether
+    /// a `&[Box<dyn TermMode>]` slice contains [`Echo::Off`], the way Java's
+    /// `mode.contains(Echo.OFF)` does, since Rust has no dynamic `Collection.contains` across a
+    /// trait-object element type.
+    fn as_any(&self) -> &dyn std::any::Any;
+}
 
 /// Echo mode for the pseudo-terminal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,7 +21,11 @@ pub enum Echo {
     Off,
 }
 
-impl TermMode for Echo {}
+impl TermMode for Echo {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 
 /// The child (UNIX "slave") end of a pseudo-terminal.
 pub trait PtyChild: PtyEndpoint {

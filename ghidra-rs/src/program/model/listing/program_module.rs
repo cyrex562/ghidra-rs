@@ -123,7 +123,13 @@ pub trait ProgramModule: Group {
 
     /// Returns the combined set of addresses from the set of all fragments which are
     /// descendants of this module.
-    fn get_address_set(&self) -> &dyn AddressSetView;
+    ///
+    /// Returns an owned handle rather than Java's `AddressSetView getAddressSet()`'s borrowed-like
+    /// return, because a real implementor recomputes this set fresh on every call (it is the
+    /// union of descendant fragments, which can change between calls) rather than owning a
+    /// persistent field a `&self` method could borrow from. An owned `Box` is the sound
+    /// equivalent of Java relying on garbage collection to reclaim a freshly built object.
+    fn get_address_set(&self) -> Box<dyn AddressSetView>;
 
     /// Returns an opaque token that changes identity when the module tree has been affected by
     /// an undo or redo affecting this module, standing in for the Java `Object` returned by
@@ -306,12 +312,9 @@ mod tests {
             None
         }
 
-        fn get_address_set(&self) -> &dyn AddressSetView {
+        fn get_address_set(&self) -> Box<dyn AddressSetView> {
             use crate::program::model::address::AddressSet;
-            // Leak a static empty set purely so the mock can hand back a `&dyn` reference; real
-            // implementations own their address set and can borrow from `self` directly.
-            static EMPTY: std::sync::OnceLock<AddressSet> = std::sync::OnceLock::new();
-            EMPTY.get_or_init(AddressSet::new)
+            Box::new(AddressSet::new())
         }
 
         fn get_version_tag(&self) -> Box<dyn Any> {

@@ -15,131 +15,6 @@ pub trait VoidPropertyMap: PropertyMap {
     fn add_void(&mut self, addr: &Address);
 }
 
-impl<T: VoidPropertyMap + ?Sized> PropertyMap for T {
-    fn get_name(&self) -> String {
-        <Self as PropertyMap>::get_name(self)
-    }
-
-    fn get_value_class(&self) -> Option<TypeId> {
-        Some(TypeId::of::<bool>())
-    }
-
-    fn clear(&mut self) {
-        <Self as PropertyMap>::clear(self);
-    }
-
-    fn intersects_range(&self, start: &Address, end: &Address) -> bool {
-        <Self as PropertyMap>::intersects_range(self, start, end)
-    }
-
-    fn intersects_set(&self, set: &dyn crate::program::model::address::AddressSetView) -> bool {
-        <Self as PropertyMap>::intersects_set(self, set)
-    }
-
-    fn remove_range(&mut self, start: &Address, end: &Address) -> bool {
-        <Self as PropertyMap>::remove_range(self, start, end)
-    }
-
-    fn remove(&mut self, addr: &Address) -> bool {
-        <Self as PropertyMap>::remove(self, addr)
-    }
-
-    fn has_property(&self, addr: &Address) -> bool {
-        <Self as PropertyMap>::has_property(self, addr)
-    }
-
-    fn add(&mut self, addr: &Address, value: Option<Box<dyn Any>>) {
-        match value {
-            None => {
-                self.remove(addr);
-            }
-            Some(v) => {
-                if let Ok(b) = v.downcast::<bool>() {
-                    if *b {
-                        self.add_void(addr);
-                    } else {
-                        self.remove(addr);
-                    }
-                } else {
-                    panic!("Boolean value required");
-                }
-            }
-        }
-    }
-
-    fn get(&self, addr: &Address) -> Option<Box<dyn Any>> {
-        <Self as PropertyMap>::get(self, addr)
-    }
-
-    fn get_next_property_address(&self, addr: &Address) -> Option<Address> {
-        <Self as PropertyMap>::get_next_property_address(self, addr)
-    }
-
-    fn get_previous_property_address(&self, addr: &Address) -> Option<Address> {
-        <Self as PropertyMap>::get_previous_property_address(self, addr)
-    }
-
-    fn get_first_property_address(&self) -> Option<Address> {
-        <Self as PropertyMap>::get_first_property_address(self)
-    }
-
-    fn get_last_property_address(&self) -> Option<Address> {
-        <Self as PropertyMap>::get_last_property_address(self)
-    }
-
-    fn get_size(&self) -> usize {
-        <Self as PropertyMap>::get_size(self)
-    }
-
-    fn get_property_iterator_range(
-        &self,
-        start: &Address,
-        end: &Address,
-    ) -> Box<dyn crate::program::model::address::AddressIterator> {
-        <Self as PropertyMap>::get_property_iterator_range(self, start, end)
-    }
-
-    fn get_property_iterator_range_ordered(
-        &self,
-        start: &Address,
-        end: &Address,
-        forward: bool,
-    ) -> Box<dyn crate::program::model::address::AddressIterator> {
-        <Self as PropertyMap>::get_property_iterator_range_ordered(self, start, end, forward)
-    }
-
-    fn get_property_iterator(&self) -> Box<dyn crate::program::model::address::AddressIterator> {
-        <Self as PropertyMap>::get_property_iterator(self)
-    }
-
-    fn get_property_iterator_set(
-        &self,
-        asv: &dyn crate::program::model::address::AddressSetView,
-    ) -> Box<dyn crate::program::model::address::AddressIterator> {
-        <Self as PropertyMap>::get_property_iterator_set(self, asv)
-    }
-
-    fn get_property_iterator_set_ordered(
-        &self,
-        asv: &dyn crate::program::model::address::AddressSetView,
-        forward: bool,
-    ) -> Box<dyn crate::program::model::address::AddressIterator> {
-        <Self as PropertyMap>::get_property_iterator_set_ordered(self, asv, forward)
-    }
-
-    fn get_property_iterator_from(
-        &self,
-        start: &Address,
-        forward: bool,
-    ) -> Box<dyn crate::program::model::address::AddressIterator> {
-        <Self as PropertyMap>::get_property_iterator_from(self, start, forward)
-    }
-
-    fn move_range(&mut self, start: &Address, end: &Address, new_start: &Address) {
-        <Self as PropertyMap>::move_range(self, start, end, new_start);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -245,7 +120,7 @@ mod tests {
             &self,
             start: &Address,
             end: &Address,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             self.get_property_iterator_range_ordered(start, end, true)
         }
 
@@ -254,7 +129,7 @@ mod tests {
             start: &Address,
             end: &Address,
             forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .properties
                 .keys()
@@ -267,7 +142,7 @@ mod tests {
             Box::new(AddressIteratorAdapter::from_vec(addrs))
         }
 
-        fn get_property_iterator(&self) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn get_property_iterator(&self) -> crate::program::model::address::BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(
                 self.properties.keys().cloned().collect(),
             ))
@@ -276,7 +151,7 @@ mod tests {
         fn get_property_iterator_set(
             &self,
             asv: &dyn crate::program::model::address::AddressSetView,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             self.get_property_iterator_set_ordered(asv, true)
         }
 
@@ -284,7 +159,7 @@ mod tests {
             &self,
             asv: &dyn crate::program::model::address::AddressSetView,
             forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .properties
                 .keys()
@@ -301,7 +176,7 @@ mod tests {
             &self,
             start: &Address,
             forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .properties
                 .keys()
@@ -332,7 +207,10 @@ mod tests {
         }
     }
 
-    impl VoidPropertyMap for MockVoidPropertyMap {
+    // `add_void` is provided as an inherent method rather than via the `VoidPropertyMap`
+    // trait: the mock supplies its own concrete `PropertyMap` implementation, and the
+    // blanket `impl<T: VoidPropertyMap> PropertyMap for T` would otherwise conflict with it.
+    impl MockVoidPropertyMap {
         fn add_void(&mut self, addr: &Address) {
             self.properties.insert(addr.clone(), true);
         }
@@ -421,7 +299,7 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(map.get(&addr(0x1000)), None);
+        assert!(map.get(&addr(0x1000)).is_none());
     }
 
     #[test]

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
 use serde_json::Value;
 
 use super::{IsfLinuxProgram, IsfObject};
@@ -10,6 +11,7 @@ use super::{IsfLinuxProgram, IsfObject};
 /// a single [`IsfLinuxProgram`] is serialized to JSON and appended to both
 /// the `symbols` and `types` arrays, matching the Java source behaviour where
 /// `gson.toJsonTree(pgm)` was added to each array.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct IsfLinuxOS {
     pub symbols: Vec<Value>,
     pub types: Vec<Value>,

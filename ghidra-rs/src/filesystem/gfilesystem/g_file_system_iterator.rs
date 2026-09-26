@@ -16,18 +16,18 @@ use super::g_file::GFile;
 /// Files within each directory are yielded in alphabetical (ascending) order;
 /// subdirectories are also processed in alphabetical order before sibling
 /// subdirectories that come later in the alphabet.
-pub struct GFileSystemIterator<FS, Fsrl> {
-    file_deque: VecDeque<Box<dyn GFile<FS, Fsrl>>>,
-    dir_deque: VecDeque<Box<dyn GFile<FS, Fsrl>>>,
-    filter: Box<dyn Fn(&dyn GFile<FS, Fsrl>) -> bool>,
+pub struct GFileSystemIterator<FS> {
+    file_deque: VecDeque<Box<dyn GFile<FS>>>,
+    dir_deque: VecDeque<Box<dyn GFile<FS>>>,
+    filter: Box<dyn Fn(&dyn GFile<FS>) -> bool>,
 }
 
-impl<FS: 'static, Fsrl: 'static> GFileSystemIterator<FS, Fsrl> {
+impl<FS: 'static> GFileSystemIterator<FS> {
     /// Creates an iterator over all files in `dir` in depth-first order.
     ///
     /// # Errors
     /// Returns an error if `dir` is not a directory.
-    pub fn new(dir: Box<dyn GFile<FS, Fsrl>>) -> io::Result<Self> {
+    pub fn new(dir: Box<dyn GFile<FS>>) -> io::Result<Self> {
         Self::with_filter(dir, |_| true)
     }
 
@@ -36,9 +36,9 @@ impl<FS: 'static, Fsrl: 'static> GFileSystemIterator<FS, Fsrl> {
     ///
     /// # Errors
     /// Returns an error if `dir` is not a directory.
-    pub fn with_filter<F>(dir: Box<dyn GFile<FS, Fsrl>>, filter: F) -> io::Result<Self>
+    pub fn with_filter<F>(dir: Box<dyn GFile<FS>>, filter: F) -> io::Result<Self>
     where
-        F: Fn(&dyn GFile<FS, Fsrl>) -> bool + 'static,
+        F: Fn(&dyn GFile<FS>) -> bool + 'static,
     {
         if !dir.is_directory() {
             return Err(io::Error::new(
@@ -88,8 +88,8 @@ impl<FS: 'static, Fsrl: 'static> GFileSystemIterator<FS, Fsrl> {
     }
 }
 
-impl<FS: 'static, Fsrl: 'static> Iterator for GFileSystemIterator<FS, Fsrl> {
-    type Item = io::Result<Box<dyn GFile<FS, Fsrl>>>;
+impl<FS: 'static> Iterator for GFileSystemIterator<FS> {
+    type Item = io::Result<Box<dyn GFile<FS>>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.queue_next_files() {
@@ -108,7 +108,6 @@ mod tests {
     // ── Mock types ────────────────────────────────────────────────────────────
 
     struct MockFs;
-    struct MockFsrl;
 
     struct MockFileData {
         name: String,
@@ -120,7 +119,7 @@ mod tests {
     struct MockFile {
         data: Arc<MockFileData>,
         fs: MockFs,
-        fsrl: MockFsrl,
+        fsrl: crate::filesystem::gfilesystem::fsrl::Fsrl,
     }
 
     impl MockFile {
@@ -128,7 +127,7 @@ mod tests {
             MockFile {
                 data,
                 fs: MockFs,
-                fsrl: MockFsrl,
+                fsrl: crate::filesystem::gfilesystem::fsrl::Fsrl::from_string("file:///mock").unwrap(),
             }
         }
 
@@ -159,21 +158,21 @@ mod tests {
             })
         }
 
-        fn boxed(data: Arc<MockFileData>) -> Box<dyn GFile<MockFs, MockFsrl>> {
+        fn boxed(data: Arc<MockFileData>) -> Box<dyn GFile<MockFs>> {
             Box::new(MockFile::new(data))
         }
     }
 
-    impl GFile<MockFs, MockFsrl> for MockFile {
+    impl GFile<MockFs> for MockFile {
         fn get_filesystem(&self) -> &MockFs {
             &self.fs
         }
 
-        fn get_fsrl(&self) -> &MockFsrl {
+        fn get_fsrl(&self) -> &crate::filesystem::gfilesystem::fsrl::Fsrl {
             &self.fsrl
         }
 
-        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs, MockFsrl>> {
+        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs>> {
             None
         }
 
@@ -193,7 +192,7 @@ mod tests {
             -1
         }
 
-        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFs, MockFsrl>>>> {
+        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFs>>>> {
             if self.data.fail_listing {
                 return Err(io::Error::new(io::ErrorKind::Other, "listing failed"));
             }
@@ -207,7 +206,7 @@ mod tests {
     }
 
     fn collect_names(
-        iter: GFileSystemIterator<MockFs, MockFsrl>,
+        iter: GFileSystemIterator<MockFs>,
     ) -> io::Result<Vec<String>> {
         iter.map(|r| r.map(|f| f.get_name().to_owned())).collect()
     }

@@ -1,4 +1,5 @@
 pub mod data_type_diff;
+pub mod data_type_diff_builder;
 pub mod data_type_diff_input;
 pub mod diff_lines;
 pub(crate) mod diff_lines_validator;

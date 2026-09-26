@@ -1,13 +1,13 @@
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
-/// A [`ByteProvider`] that guarantees `write_byte` and `write_bytes` are
+/// A [`GByteStore`] that guarantees `write_byte` and `write_bytes` are
 /// fully supported (i.e. will not return `ErrorKind::Unsupported`).
 ///
 /// Mirrors `ghidra.app.util.bin.MutableByteProvider` from the original Ghidra
 /// source. In Java the interface redeclared the write methods; in Rust they
-/// already live on [`ByteProvider`], so this trait is a pure marker that
+/// already live on [`GByteStore`], so this trait is a pure marker that
 /// distinguishes writable providers from read-only ones.
-pub trait MutableByteProvider: ByteProvider {}
+pub trait MutableByteProvider: GByteStore {}
 
 #[cfg(test)]
 mod tests {
@@ -24,7 +24,7 @@ mod tests {
         }
     }
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }

@@ -1,5 +1,23 @@
 /// Immutable information about a specific version of a versioned item.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+///
+/// Port of `ghidra.framework.store.Version`. The Java class implements `Serializable` via a
+/// custom `writeObject`/`readObject` pair that writes a leading format-version tag (`VERSION =
+/// 1`) followed by the four fields, and rejects deserializing a payload tagged with a newer
+/// format version than the reader understands. This port uses plain derived
+/// [`serde::Serialize`]/[`serde::Deserialize`] (matching the convention used for other
+/// `Serializable` ports, e.g.
+/// [`ServerInfo`](crate::framework::model::server_info::ServerInfo)) rather than replicating that
+/// hand-rolled wire format, since nothing in this codebase deserializes the Java form directly.
+///
+/// One field-level quirk *is* preserved by the constructor accepting any string for `comment`:
+/// Java's `writeObject` substitutes `""` for a `null` comment on write, but `readObject` does not
+/// re-apply that substitution on read (it calls `in.readUTF()` unconditionally), and the public
+/// getter (`getComment()`) never normalizes a `null` set via the constructor either. A `Version`
+/// constructed directly with a `null` comment and never serialized keeps returning `null` from
+/// `getComment()`. This port's `comment` is a plain (non-`Option`) `String`, so there is no `null`
+/// state to reproduce; `""` is used as the not-applicable/empty case, matching the *serialized*
+/// Java behavior.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ItemVersion {
     version: i32,
     create_time: i64,
@@ -8,7 +26,7 @@ pub struct ItemVersion {
 }
 
 impl ItemVersion {
-    /// Creates a new `ItemVersion`.
+    /// Creates a new `ItemVersion`. Port of `Version(int, long, String, String)`.
     ///
     /// - `version`: file version number
     /// - `create_time`: milliseconds since the Unix epoch when the version was created
@@ -28,22 +46,23 @@ impl ItemVersion {
         }
     }
 
-    /// Returns the version number.
+    /// Returns the version number. Port of `getVersion()`.
     pub fn version(&self) -> i32 {
         self.version
     }
 
-    /// Returns the time (milliseconds since Unix epoch) at which the version was created.
+    /// Returns the time (milliseconds since Unix epoch) at which the version was created. Port
+    /// of `getCreateTime()`.
     pub fn create_time(&self) -> i64 {
         self.create_time
     }
 
-    /// Returns the version comment.
+    /// Returns the version comment. Port of `getComment()`.
     pub fn comment(&self) -> &str {
         &self.comment
     }
 
-    /// Returns the name of the user who created this version.
+    /// Returns the name of the user who created this version. Port of `getUser()`.
     pub fn user(&self) -> &str {
         &self.user
     }
@@ -121,5 +140,16 @@ mod tests {
         let s = format!("{:?}", v);
         assert!(s.contains("ItemVersion"));
         assert!(s.contains("alice"));
+    }
+
+    /// Stands in for the round-trip that Java's custom `writeObject`/`readObject` performs,
+    /// using derived `serde` (de)serialization rather than the hand-rolled Java wire format (see
+    /// the type-level doc comment).
+    #[test]
+    fn test_serde_roundtrip() {
+        let v = make_version();
+        let json = serde_json::to_string(&v).expect("serialize");
+        let back: ItemVersion = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(v, back);
     }
 }

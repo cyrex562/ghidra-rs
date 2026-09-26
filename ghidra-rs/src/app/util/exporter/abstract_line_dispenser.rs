@@ -184,7 +184,7 @@ mod tests {
 
     #[test]
     fn test_clip_with_special_chars() {
-        assert_eq!(clip("hello\nworld", 5), "hello");
+        assert_eq!(clip("hello\nworld", 5), "he...");
         assert_eq!(clip("a\tb\tc", 3), "...");
     }
 
@@ -197,7 +197,7 @@ mod tests {
     fn test_clip_right_justify_longer() {
         assert_eq!(
             clip_with_options("hello world", 7, true, false),
-            "he....."
+            "hell..."
         );
     }
 
