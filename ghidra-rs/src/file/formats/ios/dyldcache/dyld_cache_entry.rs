@@ -4,8 +4,8 @@
 //! mapping's unclaimed region. Carries the entry's indexed path, cache split information,
 //! address range coverage, and associated cache mapping metadata.
 
-use crate::file::seam_stubs::DyldCacheMappingAndSlideInfo;
-use crate::file::seam_stubs::DyldCacheMappingInfo;
+use crate::format::macho::dyld::dyld_cache_mapping_and_slide_info::DyldCacheMappingAndSlideInfo;
+use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
 
 /// Mirrors `ghidra.file.formats.ios.dyldcache.DyldCacheEntry` (a Java record).
 ///
@@ -96,7 +96,7 @@ mod tests {
             "/System/Library/libSystem.B.dylib",
             0,
             vec![(0x1000, 0x5000), (0x8000, 0xa000)],
-            Some(DyldCacheMappingInfo::new(0x1000, 0x9000)),
+            Some(DyldCacheMappingInfo::new(0x1000, 0x9000, 0, 0, 0)),
             None,
             0,
         );
@@ -111,8 +111,8 @@ mod tests {
 
     #[test]
     fn test_dyld_cache_entry_with_all_fields() {
-        let mapping_info = DyldCacheMappingInfo::new(0x100000000, 0x200000);
-        let mapping_and_slide_info = DyldCacheMappingAndSlideInfo::new(0x100000000, 0x200000, 0x5);
+        let mapping_info = DyldCacheMappingInfo::new(0x100000000, 0x200000, 0, 0, 0);
+        let mapping_and_slide_info = DyldCacheMappingAndSlideInfo::new(0x100000000, 0x200000, 0, 0, 0, 0x5, 0, 0);
 
         let entry = DyldCacheEntry::new(
             "test_dylib",

@@ -452,117 +452,10 @@ impl ZipFileSystemBuiltin {
 
 // ─── DYLD cache seam, for `DyldCacheFileSystem` ───────────────────────────────
 
-/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheMappingInfo`, referenced by
-/// `DyldCacheFileSystem`.
-///
-/// Concrete stub: Java class, not interface. Only the address/size accessors THIS type needs
-/// are included; the real class additionally parses file offset and protection flags from a
-/// `dyld_cache_mapping_info` structure. Replace with the real port when available.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct DyldCacheMappingInfo {
-    address: i64,
-    size: i64,
-}
-
-impl DyldCacheMappingInfo {
-    pub fn new(address: i64, size: i64) -> Self {
-        DyldCacheMappingInfo { address, size }
-    }
-
-    /// Mirrors `getAddress()`.
-    pub fn address(&self) -> i64 {
-        self.address
-    }
-
-    /// Mirrors `getSize()`.
-    pub fn size(&self) -> i64 {
-        self.size
-    }
-
-    /// Mirrors `contains(long, boolean)`, restricted to the `isAddr = true` case (the only one
-    /// `DyldCacheUtils.getImageRecords` uses).
-    pub fn contains(&self, addr: i64) -> bool {
-        addr >= self.address && addr < self.address + self.size
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheMappingAndSlideInfo`,
-/// referenced by `DyldCacheFileSystem`.
-///
-/// Concrete stub: Java class, not interface. Only the address/size/flags surface THIS type
-/// needs is included, with the real `DYLD_CACHE_MAPPING_*`/`DYLD_CACHE_*_DATA` flag bit tests
-/// ported faithfully; the real class additionally parses file/slide-info offsets and
-/// protection flags. Replace with the real port when available.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct DyldCacheMappingAndSlideInfo {
-    address: i64,
-    size: i64,
-    flags: i64,
-}
-
-impl DyldCacheMappingAndSlideInfo {
-    pub const DYLD_CACHE_MAPPING_AUTH_DATA: i64 = 0x1;
-    pub const DYLD_CACHE_MAPPING_DIRTY_DATA: i64 = 0x2;
-    pub const DYLD_CACHE_MAPPING_CONST_DATA: i64 = 0x4;
-    pub const DYLD_CACHE_MAPPING_TEXT_STUBS: i64 = 0x8;
-    pub const DYLD_CACHE_DYNAMIC_CONFIG_DATA: i64 = 0x10;
-    pub const DYLD_CACHE_READ_ONLY_DATA: i64 = 0x20;
-    pub const DYLD_CACHE_MAPPING_CONST_TPRO_DATA: i64 = 0x40;
-
-    pub fn new(address: i64, size: i64, flags: i64) -> Self {
-        DyldCacheMappingAndSlideInfo { address, size, flags }
-    }
-
-    /// Mirrors `getAddress()`.
-    pub fn address(&self) -> i64 {
-        self.address
-    }
-
-    /// Mirrors `getSize()`.
-    pub fn size(&self) -> i64 {
-        self.size
-    }
-
-    /// Mirrors `getFlags()`.
-    pub fn flags(&self) -> i64 {
-        self.flags
-    }
-
-    /// Mirrors `isAuthData()`.
-    pub fn is_auth_data(&self) -> bool {
-        self.flags & Self::DYLD_CACHE_MAPPING_AUTH_DATA != 0
-    }
-
-    /// Mirrors `isDirtyData()`.
-    pub fn is_dirty_data(&self) -> bool {
-        self.flags & Self::DYLD_CACHE_MAPPING_DIRTY_DATA != 0
-    }
-
-    /// Mirrors `isConstData()`.
-    pub fn is_const_data(&self) -> bool {
-        self.flags & Self::DYLD_CACHE_MAPPING_CONST_DATA != 0
-    }
-
-    /// Mirrors `isTextStubs()`.
-    pub fn is_text_stubs(&self) -> bool {
-        self.flags & Self::DYLD_CACHE_MAPPING_TEXT_STUBS != 0
-    }
-
-    /// Mirrors `isConfigData()`.
-    pub fn is_config_data(&self) -> bool {
-        self.flags & Self::DYLD_CACHE_DYNAMIC_CONFIG_DATA != 0
-    }
-
-    /// Mirrors `isReadOnlyData()`.
-    pub fn is_read_only_data(&self) -> bool {
-        self.flags & Self::DYLD_CACHE_READ_ONLY_DATA != 0
-    }
-
-    /// Mirrors `isConstTproData()`.
-    pub fn is_const_tpro_data(&self) -> bool {
-        self.flags & Self::DYLD_CACHE_MAPPING_CONST_TPRO_DATA != 0
-    }
-}
+// `DyldCacheMappingInfo` / `DyldCacheMappingAndSlideInfo` were placeholders here; the real ports
+// live in `format::macho::dyld`.
+use crate::format::macho::dyld::dyld_cache_mapping_and_slide_info::DyldCacheMappingAndSlideInfo;
+use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.SegmentCommand`, referenced by
 /// `DyldCacheFileSystem::mount` and `MachoFileSetFileSystem`.
@@ -1122,7 +1015,7 @@ impl SplitDyldCache {
                     continue;
                 }
                 for h in &self.headers {
-                    if h.mapping_infos().iter().any(|m| m.contains(addr as i64)) {
+                    if h.mapping_infos().iter().any(|m| m.contains(addr as i64, true)) {
                         records.push(DyldCacheImageRecord {
                             image: Rc::clone(image),
                             split_cache_index: split_cache_index as i32,

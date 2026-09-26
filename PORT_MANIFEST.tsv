@@ -4074,7 +4074,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/OpcodeTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseOpcode.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldArchitecture.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldArchitecture.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheAccelerateInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheAcceleratorDof.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheAcceleratorInitializer.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
@@ -4085,8 +4085,8 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyl
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageTextInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingAndSlideInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingAndSlideInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheRangeEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo1.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo2.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 

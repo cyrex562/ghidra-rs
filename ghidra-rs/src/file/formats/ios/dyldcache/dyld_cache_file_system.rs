@@ -53,8 +53,9 @@ use std::rc::Rc;
 
 use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::file::seam_stubs::{
-    DyldCacheExtractor, DyldCacheMappingAndSlideInfo, SlideFixupMap, SplitDyldCache, SplitDyldCacheError,
+    DyldCacheExtractor, SlideFixupMap, SplitDyldCache, SplitDyldCacheError,
 };
+use crate::format::macho::dyld::dyld_cache_mapping_and_slide_info::DyldCacheMappingAndSlideInfo;
 use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::g_file::GFile;
@@ -381,8 +382,8 @@ impl DyldCacheFileSystem {
             for (j, mapping_info) in mapping_infos.iter().enumerate() {
                 let mapping_and_slide_info = mapping_and_slide_infos.get(j).copied();
                 let mapping_range = AddrRange::open_closed(
-                    mapping_info.address(),
-                    mapping_info.address() + mapping_info.size(),
+                    mapping_info.get_address(),
+                    mapping_info.get_address() + mapping_info.get_size(),
                 );
                 let mut reduced_range_set = AddrRangeSet::new();
                 reduced_range_set.add(mapping_range);
@@ -482,7 +483,7 @@ impl DyldCacheFileSystem {
         let mut files = Vec::new();
         for entry in self.range_map.values() {
             if let Some(info) = entry.mapping_and_slide_info.as_ref() {
-                if flags & info.flags() != 0 {
+                if flags & info.get_flags() != 0 {
                     if let Some(file) = self.lookup(&entry.path) {
                         files.push(file);
                     }
@@ -745,28 +746,24 @@ mod tests {
 
     #[test]
     fn get_component_name_matches_java_flag_precedence() {
-        use crate::file::seam_stubs::DyldCacheMappingAndSlideInfo as Info;
+        use crate::format::macho::dyld::dyld_cache_mapping_and_slide_info::DyldCacheMappingAndSlideInfo as Info;
         assert_eq!(
-            component_name(Some(&Info::new(0, 0, Info::DYLD_CACHE_MAPPING_DIRTY_DATA))),
+            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_DIRTY_DATA, 0, 0))),
             "DATA_DIRTY"
         );
         assert_eq!(
-            component_name(Some(&Info::new(0, 0, Info::DYLD_CACHE_MAPPING_CONST_DATA))),
+            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_CONST_DATA, 0, 0))),
             "DATA_CONST"
         );
         assert_eq!(
-            component_name(Some(&Info::new(
-                0,
-                0,
-                Info::DYLD_CACHE_MAPPING_CONST_DATA | Info::DYLD_CACHE_MAPPING_AUTH_DATA
-            ))),
+            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_CONST_DATA | Info::DYLD_CACHE_MAPPING_AUTH_DATA, 0, 0))),
             "AUTH_CONST"
         );
         assert_eq!(
-            component_name(Some(&Info::new(0, 0, Info::DYLD_CACHE_MAPPING_AUTH_DATA))),
+            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_AUTH_DATA, 0, 0))),
             "AUTH"
         );
-        assert_eq!(component_name(Some(&Info::new(0, 0, 0))), "DYLD");
+        assert_eq!(component_name(Some(&Info::new(0, 0, 0, 0, 0, 0, 0, 0))), "DYLD");
     }
 
     #[test]

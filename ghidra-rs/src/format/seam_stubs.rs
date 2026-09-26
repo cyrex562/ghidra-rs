@@ -5580,3 +5580,33 @@ pub trait LongNamesMember: Send + Sync {
         offset: i64,
     ) -> std::io::Result<String>;
 }
+
+/// Placeholder for `ghidra.app.util.bin.StructConverter.DWORD` (`DWordDataType.dataType`), the
+/// builtin 4-byte unsigned datatype used as a structure component by the Mach-O dyld
+/// `toDataType()` ports. `DWordDataType` has no concrete Rust struct yet (it is a trait with only
+/// test implementors), so only its name and length are modeled.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct DWordPlaceholderDataType;
+
+impl DataType for DWordPlaceholderDataType {
+    fn get_name(&self) -> String {
+        "dword".to_string()
+    }
+    fn get_length(&self) -> i32 {
+        4
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.StructConverter.QWORD` (`QWordDataType.dataType`); see
+/// [`DWordPlaceholderDataType`].
+#[derive(Debug, Clone, Copy, Default)]
+pub struct QWordPlaceholderDataType;
+
+impl DataType for QWordPlaceholderDataType {
+    fn get_name(&self) -> String {
+        "qword".to_string()
+    }
+    fn get_length(&self) -> i32 {
+        8
+    }
+}

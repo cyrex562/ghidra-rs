@@ -1174,7 +1174,7 @@ TODO	struct	18	15	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/b
 TODO	struct	18	16	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/UnsupportedLoadCommand.java
 TODO	struct	18	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/UuidCommand.java
 TODO	struct	18	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/VersionMinCommand.java
-TODO	struct	19	9	22	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldArchitecture.java
+DONE	struct	19	9	22	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldArchitecture.java
 TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheAcceleratorDof.java
 TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheAcceleratorInitializer.java
 TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageInfoExtra.java
@@ -1184,8 +1184,8 @@ TODO	struct	19	8	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	19	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageTextInfo.java
 TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsEntry.java
 TODO	struct	19	6	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsInfo.java
-TODO	struct	19	8	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingAndSlideInfo.java
-TODO	struct	19	16	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingInfo.java
+DONE	struct	19	8	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingAndSlideInfo.java
+DONE	struct	19	16	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingInfo.java
 TODO	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo1.java
 TODO	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo2.java
 TODO	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo3.java

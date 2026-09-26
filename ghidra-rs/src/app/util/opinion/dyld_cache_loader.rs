@@ -47,7 +47,7 @@ use std::io;
 use std::rc::Rc;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::app::seam_stubs::{dyld_cache_utils, memory_block_utils, new_boolean, option_utils, DyldArchitecture, DyldCacheHeader, LoadSpec, Option, QueryResult};
+use crate::app::seam_stubs::{dyld_cache_utils, memory_block_utils, new_boolean, option_utils, DyldCacheHeader, LoadSpec, Option, QueryResult};
 use crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder;
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
 use crate::app::util::opinion::loader::COMMAND_LINE_ARG_PREFIX;
@@ -344,6 +344,7 @@ impl DyldCacheLoader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::format::macho::dyld::dyld_architecture::DyldArchitecture;
     use crate::framework::application_properties::ApplicationProperties;
     use crate::framework::platform::Platform;
     use crate::framework::seam_stubs::ApplicationLayoutLike;

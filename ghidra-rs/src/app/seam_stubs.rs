@@ -2659,51 +2659,8 @@ impl DecompileDebugByteManager {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldArchitecture`, referenced by
-/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
-/// ported. Java's version is a concrete class (not an interface) holding a small fixed table of
-/// named `dyld_v1*` signature constants; only the two members `DyldCacheLoader` actually calls --
-/// looking an architecture up by its raw signature string, and reading back its processor name --
-/// are modeled. `cpuType`/`cpuSubType`/`endianness`/`is64bit` are dropped since no in-repo caller
-/// reads them yet.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DyldArchitecture {
-    signature: &'static str,
-    processor: &'static str,
-}
-
-impl DyldArchitecture {
-    /// Port of `DyldArchitecture.DYLD_V1_SIGNATURE_LEN`.
-    pub const DYLD_V1_SIGNATURE_LEN: usize = 0x10;
-
-    // @formatter:off -- exact signature spacing matters (compared after only leading/trailing
-    // `trim()`), so these are copied verbatim from `DyldArchitecture.ARCHITECTURES`.
-    const ARCHITECTURES: &'static [DyldArchitecture] = &[
-        DyldArchitecture { signature: "dyld_v1    i386", processor: "i386" },
-        DyldArchitecture { signature: "dyld_v1  x86_64", processor: "x86_64" },
-        DyldArchitecture { signature: "dyld_v1 x86_64h", processor: "x86_64" },
-        DyldArchitecture { signature: "dyld_v1     ppc", processor: "rosetta" },
-        DyldArchitecture { signature: "dyld_v1   armv6", processor: "armv6" },
-        DyldArchitecture { signature: "dyld_v1   armv7", processor: "arm7" },
-        DyldArchitecture { signature: "dyld_v1  armv7f", processor: "arm7" },
-        DyldArchitecture { signature: "dyld_v1  armv7s", processor: "arm7" },
-        DyldArchitecture { signature: "dyld_v1  armv7k", processor: "arm7" },
-        DyldArchitecture { signature: "dyld_v1   arm64", processor: "AARCH64" },
-        DyldArchitecture { signature: "dyld_v1  arm64e", processor: "AARCH64" },
-        DyldArchitecture { signature: "dyld_v1arm64_32", processor: "ARM64_32" },
-    ];
-    // @formatter:on
-
-    /// Port of `DyldArchitecture.getArchitecture(String)`.
-    pub fn get_architecture(signature: &str) -> StdOption<DyldArchitecture> {
-        Self::ARCHITECTURES.iter().find(|a| a.signature == signature).copied()
-    }
-
-    /// Port of `DyldArchitecture.getProcessor()`.
-    pub fn get_processor(&self) -> &'static str {
-        self.processor
-    }
-}
+// `DyldArchitecture` was a placeholder here; the real port lives in `format::macho::dyld`.
+use crate::format::macho::dyld::dyld_architecture::DyldArchitecture;
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheHeader`, referenced by
 /// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real (over
@@ -2801,63 +2758,8 @@ impl DyldCacheHeader {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheMappingInfo`, referenced by
-/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
-/// which turns each mapping into a memory block. Concrete Java class; only the six accessors that
-/// builder reads are modeled (the protection words are exposed solely through
-/// `isRead`/`isWrite`/`isExecute`, which is all it asks for).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct DyldCacheMappingInfo {
-    address: i64,
-    size: i64,
-    file_offset: i64,
-    read: bool,
-    write: bool,
-    execute: bool,
-}
-
-impl DyldCacheMappingInfo {
-    pub fn new(
-        address: i64,
-        size: i64,
-        file_offset: i64,
-        read: bool,
-        write: bool,
-        execute: bool,
-    ) -> Self {
-        DyldCacheMappingInfo { address, size, file_offset, read, write, execute }
-    }
-
-    /// `DyldCacheMappingInfo.getAddress()`.
-    pub fn get_address(&self) -> i64 {
-        self.address
-    }
-
-    /// `DyldCacheMappingInfo.getSize()`.
-    pub fn get_size(&self) -> i64 {
-        self.size
-    }
-
-    /// `DyldCacheMappingInfo.getFileOffset()`.
-    pub fn get_file_offset(&self) -> i64 {
-        self.file_offset
-    }
-
-    /// `DyldCacheMappingInfo.isRead()`.
-    pub fn is_read(&self) -> bool {
-        self.read
-    }
-
-    /// `DyldCacheMappingInfo.isWrite()`.
-    pub fn is_write(&self) -> bool {
-        self.write
-    }
-
-    /// `DyldCacheMappingInfo.isExecute()`.
-    pub fn is_execute(&self) -> bool {
-        self.execute
-    }
-}
+// `DyldCacheMappingInfo` was a placeholder here; the real port lives in `format::macho::dyld`.
+use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheLocalSymbolsInfo`, referenced
 /// by [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),

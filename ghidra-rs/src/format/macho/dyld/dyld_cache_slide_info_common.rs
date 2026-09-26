@@ -6,7 +6,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::app::seam_stubs::{DyldCacheMappingInfo};
+use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
@@ -479,7 +479,7 @@ mod tests {
     fn base_new_reads_version() {
         let data = 3i32.to_le_bytes().to_vec();
         let mut reader = MockReader::new(data, true);
-        let mapping_info = DyldCacheMappingInfo::new(0x1000, 0x2000, 0, true, true, false);
+        let mapping_info = DyldCacheMappingInfo::new(0x1000, 0x2000, 0, 3, 3);
         let base = DyldCacheSlideInfoCommonBase::new(&mut reader, mapping_info).expect("should parse");
         assert_eq!(base.version, 3);
         assert_eq!(base.slide_info_offset, 0);
@@ -512,7 +512,7 @@ mod tests {
     #[test]
     fn parse_slide_info_zero_offset_returns_none_without_reading() {
         let mut reader = MockReader::new(Vec::new(), true);
-        let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, false, false, false);
+        let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, 0, 0);
         let log = MessageLog::new();
         let result = parse_slide_info(&mut reader, 0, &mapping_info, &log, &NoopMonitor);
         assert!(result.is_none());
@@ -526,7 +526,7 @@ mod tests {
         let mut data = vec![0u8; 0x100];
         data.extend_from_slice(&2i32.to_le_bytes());
         let mut reader = MockReader::new(data, true);
-        let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, false, false, false);
+        let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, 0, 0);
         let log = MessageLog::new();
         let result = parse_slide_info(&mut reader, 0x100, &mapping_info, &log, &NoopMonitor);
         assert!(result.is_none());
@@ -730,7 +730,7 @@ mod tests {
     #[test]
     fn fixup_slide_pointers_writes_pointer_value_into_memory() {
         let mut program = mock_program(16, false);
-        let mapping_info = DyldCacheMappingInfo::new(0, 16, 0, true, true, false);
+        let mapping_info = DyldCacheMappingInfo::new(0, 16, 0, 3, 3);
         let info = FixedFixupsSlideInfo {
             base: DyldCacheSlideInfoCommonBase { version: 2, slide_info_offset: 0, mapping_info },
             fixups: vec![DyldFixup::new(0, Some(0x1122_3344_5566_7788u64 as i64), 8, None, None)],
@@ -748,7 +748,7 @@ mod tests {
     #[test]
     fn fixup_slide_pointers_skips_unsupported_fixups() {
         let mut program = mock_program(16, false);
-        let mapping_info = DyldCacheMappingInfo::new(0, 16, 0, true, true, false);
+        let mapping_info = DyldCacheMappingInfo::new(0, 16, 0, 3, 3);
         let info = FixedFixupsSlideInfo {
             base: DyldCacheSlideInfoCommonBase { version: 2, slide_info_offset: 0, mapping_info },
             fixups: vec![DyldFixup::new(0, None, 8, None, None)],
@@ -766,7 +766,7 @@ mod tests {
     #[test]
     fn fixup_slide_pointers_adds_relocation_when_requested() {
         let mut program = mock_program(16, false);
-        let mapping_info = DyldCacheMappingInfo::new(0, 16, 0, true, true, false);
+        let mapping_info = DyldCacheMappingInfo::new(0, 16, 0, 3, 3);
         let info = FixedFixupsSlideInfo {
             base: DyldCacheSlideInfoCommonBase { version: 3, slide_info_offset: 0, mapping_info },
             fixups: vec![DyldFixup::new(4, Some(0xAABB_CCDDu32 as i64), 4, None, None)],
