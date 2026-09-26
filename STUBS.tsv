@@ -30,7 +30,6 @@ ts	stub_class	referenced_by
 2026-07-07T00:00:00Z	MouseEvent	ActionContext
 2026-07-07T00:00:00Z	Component	ActionContext
 2026-07-07T00:00:00Z	InjectContext	InjectPayload
-2026-07-07T01:00:00Z	OptionType	Options
 2026-07-07T01:00:00Z	PropertyEditor	Options
 2026-07-07T01:00:00Z	OptionsEditor	Options
 2026-07-07T01:00:00Z	HelpLocation	Options
@@ -1077,7 +1076,6 @@ ts	stub_class	referenced_by
 2026-08-18T04:31:27+00:00	StoredAnalyzerTimes	AutoAnalysisPlugin
 2026-08-18T04:31:27+00:00	MultiLineMessageDialog	AutoAnalysisPlugin
 2026-08-18T04:31:27+00:00	ghidra_program_utilities	AutoAnalysisPlugin
-2026-08-18T04:31:27+00:00	CustomOptionType	AutoAnalysisPlugin
 2026-08-18T04:33:06.687666+00:00	VisualGraph	LayoutProviderExtensionPoint
 2026-08-18T04:33:06.688003+00:00	VisualEdge	LayoutProviderExtensionPoint
 2026-08-18T04:33:06.688253+00:00	VisualVertex	LayoutProviderExtensionPoint

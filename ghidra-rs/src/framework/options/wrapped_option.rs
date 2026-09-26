@@ -2,7 +2,8 @@
 
 use std::any::Any;
 
-use crate::framework::seam_stubs::{OptionType, SaveState};
+use crate::framework::options::option_type::OptionType;
+use crate::framework::seam_stubs::SaveState;
 
 /// Wrapper for an object that represents a property value and is saved as a set of primitives.
 ///
@@ -21,7 +22,7 @@ pub trait WrappedOption {
     fn write_state(&self, save_state: &mut dyn SaveState);
 
     /// Returns the option type for this wrapped option.
-    fn get_option_type(&self) -> Box<dyn OptionType>;
+    fn get_option_type(&self) -> OptionType;
 }
 
 #[cfg(test)]
@@ -125,13 +126,21 @@ mod tests {
 
         fn put_doubles(&mut self, _name: &str, _value: Option<&[f64]>) {}
 
-        fn get_strings(&self, _name: &str, default_value: Option<&[String]>) -> Option<Vec<String>> {
+        fn get_strings(
+            &self,
+            _name: &str,
+            default_value: Option<&[String]>,
+        ) -> Option<Vec<String>> {
             default_value.map(|v| v.to_vec())
         }
 
         fn put_strings(&mut self, _name: &str, _value: Option<&[String]>) {}
 
-        fn get_file(&self, _name: &str, default_value: Option<&std::path::Path>) -> Option<PathBuf> {
+        fn get_file(
+            &self,
+            _name: &str,
+            default_value: Option<&std::path::Path>,
+        ) -> Option<PathBuf> {
             default_value.map(|p| p.to_path_buf())
         }
 
@@ -143,9 +152,6 @@ mod tests {
 
         fn put_enum_name(&mut self, _name: &str, _value: Option<&str>) {}
     }
-
-    struct StubOptionType;
-    impl OptionType for StubOptionType {}
 
     struct TestWrappedOption {
         value: i32,
@@ -162,8 +168,8 @@ mod tests {
 
         fn write_state(&self, _save_state: &mut dyn SaveState) {}
 
-        fn get_option_type(&self) -> Box<dyn OptionType> {
-            Box::new(StubOptionType)
+        fn get_option_type(&self) -> OptionType {
+            OptionType::IntType
         }
     }
 
@@ -186,8 +192,6 @@ mod tests {
 
         option.write_state(&mut mut_save_state);
 
-        let _opt_type = option.get_option_type();
-        // Verify the option type is actually returned
-        assert!(true, "get_option_type should return an OptionType");
+        assert_eq!(option.get_option_type(), OptionType::IntType);
     }
 }

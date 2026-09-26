@@ -1,8 +1,9 @@
 use std::any::Any;
 
 use crate::framework::options::custom_option::CustomOption;
+use crate::framework::options::option_type::OptionType;
 use crate::framework::seam_stubs::{
-    ActionTrigger, Color, Font, HelpLocation, KeyStroke, OptionType, OptionsEditor, PropertyEditor,
+    ActionTrigger, Color, Font, HelpLocation, KeyStroke, OptionsEditor, PropertyEditor,
 };
 use crate::util::function::Supplier;
 
@@ -49,10 +50,11 @@ pub trait Options {
         option_name.to_string()
     }
 
-    /// Returns the [`OptionType`] of the given option.
-    fn get_type(&self, option_name: &str) -> Box<dyn OptionType> {
+    /// Returns the [`OptionType`] of the given option ([`OptionType::NoType`] if it does not
+    /// exist).
+    fn get_type(&self, option_name: &str) -> OptionType {
         let _ = option_name;
-        Box::new(UnknownOptionType)
+        OptionType::NoType
     }
 
     /// Get the property editor for the option with the given name. Note: in the original Java API
@@ -117,7 +119,7 @@ pub trait Options {
     fn register_option_with_type(
         &mut self,
         option_name: &str,
-        option_type: Box<dyn OptionType>,
+        option_type: OptionType,
         default_value: Option<Box<dyn Any>>,
         help: Option<Box<dyn HelpLocation>>,
         description: &str,
@@ -132,7 +134,7 @@ pub trait Options {
     fn register_option_with_editor(
         &mut self,
         option_name: &str,
-        option_type: Box<dyn OptionType>,
+        option_type: OptionType,
         default_value: Option<Box<dyn Any>>,
         help: Option<Box<dyn HelpLocation>>,
         description: &str,
@@ -252,11 +254,7 @@ pub trait Options {
     /// Get the file path for the given option name.
     ///
     /// Stands in for `Options.getFile`, using `PathBuf` in place of `java.io.File`.
-    fn get_file(
-        &self,
-        option_name: &str,
-        default_value: std::path::PathBuf,
-    ) -> std::path::PathBuf {
+    fn get_file(&self, option_name: &str, default_value: std::path::PathBuf) -> std::path::PathBuf {
         let _ = option_name;
         default_value
     }
@@ -486,10 +484,6 @@ pub trait Options {
         None
     }
 }
-
-/// Trivial fallback [`OptionType`] used by [`Options::get_type`]'s default implementation.
-struct UnknownOptionType;
-impl OptionType for UnknownOptionType {}
 
 /// Trivial fallback [`Options`] (with no properties of its own) used by [`Options::get_options`]'s
 /// default implementation.

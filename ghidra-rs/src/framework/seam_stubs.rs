@@ -117,7 +117,11 @@ pub trait GModuleLike {
     /// Accumulates all files within the module's search roots (including its `data` directory)
     /// that end with the given extension, mirroring
     /// `GModule.accumulateDataFilesByExtension(List, String)`.
-    fn accumulate_data_files_by_extension(&self, accumulator: &mut Vec<ResourceFile>, extension: &str);
+    fn accumulate_data_files_by_extension(
+        &self,
+        accumulator: &mut Vec<ResourceFile>,
+        extension: &str,
+    );
 
     /// Finds the first file with the given module-relative path across the module's search roots,
     /// mirroring `GModule.findModuleFile(String)`.
@@ -125,7 +129,11 @@ pub trait GModuleLike {
 
     /// Accumulates every existing directory with the given module-relative path across the
     /// module's search roots, mirroring `GModule.collectExistingModuleDirs(List, String)`.
-    fn collect_existing_module_dirs(&self, accumulator: &mut Vec<ResourceFile>, relative_path: &str);
+    fn collect_existing_module_dirs(
+        &self,
+        accumulator: &mut Vec<ResourceFile>,
+        relative_path: &str,
+    );
 }
 
 /// Placeholder for `ghidra.framework.Application`, referenced by
@@ -266,23 +274,6 @@ pub enum LinkStatus {
     /// The specified file is not a link-file.
     NonLink,
 }
-
-/// Placeholder for `ghidra.framework.options.OptionType`, referenced by
-/// [`Options`](crate::framework::options::Options) before the real (Java `enum`) type is ported.
-/// `Options` only ever passes this type through as an opaque value, so no members are needed yet.
-pub trait OptionType {}
-
-/// The `OptionType.CUSTOM_TYPE` enum constant, as a concrete [`OptionType`].
-///
-/// Grown in for
-/// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin), whose
-/// `programActivated` registers `StoredAnalyzerTimes` under it. Java reaches the constant off the
-/// enum itself; with the enum modeled as an opaque trait, each constant the crate needs becomes a
-/// unit struct implementing it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CustomOptionType;
-
-impl OptionType for CustomOptionType {}
 
 /// Placeholder for `java.beans.PropertyEditor`, referenced by
 /// [`Options`](crate::framework::options::Options) before a Rust equivalent exists. `Options`
@@ -570,12 +561,7 @@ pub trait PluginTool {
     /// [`DecompilerProvider`](crate::app::seam_stubs::DecompilerProvider) stub -- live in
     /// `crate::app`, so callers pass the same `Arc<dyn Any>` handle the service registry uses (see
     /// [`DecompilerProvider::as_any_arc`](crate::app::seam_stubs::DecompilerProvider::as_any_arc)).
-    fn show_component_provider(
-        &self,
-        _provider: Arc<dyn Any + Send + Sync>,
-        _visible: bool,
-    ) {
-    }
+    fn show_component_provider(&self, _provider: Arc<dyn Any + Send + Sync>, _visible: bool) {}
 
     /// Removes a component provider from the tool, mirroring
     /// `PluginTool.removeComponentProvider(ComponentProvider)`; see
@@ -1364,7 +1350,11 @@ pub struct WorkspaceImpl {
 impl WorkspaceImpl {
     /// Creates an empty, inactive workspace with the given name.
     pub fn new(name: impl Into<String>) -> Self {
-        Self { name: name.into(), tools: Vec::new(), active: false }
+        Self {
+            name: name.into(),
+            tools: Vec::new(),
+            active: false,
+        }
     }
 
     /// The workspace name.
@@ -1521,8 +1511,11 @@ impl ToolConnectionImpl {
     /// Creates the connection between `producer` and `consumer`, seeding the event list with the
     /// events they have in common.
     pub fn new(producer: Arc<dyn PluginTool>, consumer: Arc<dyn PluginTool>) -> Self {
-        let connection =
-            Self { producer, consumer, state: Rc::new(RefCell::new(ToolConnectionState::default())) };
+        let connection = Self {
+            producer,
+            consumer,
+            state: Rc::new(RefCell::new(ToolConnectionState::default())),
+        };
         connection.update_event_list();
         connection
     }
@@ -1542,8 +1535,11 @@ impl ToolConnectionImpl {
     /// produces and what the consumer consumes, dropping any connection made for an event that no
     /// longer applies. Mirrors `ToolConnectionImpl.updateEventList()`.
     pub fn update_event_list(&self) {
-        let consumed: BTreeSet<String> =
-            self.consumer.get_consumed_tool_event_names().into_iter().collect();
+        let consumed: BTreeSet<String> = self
+            .consumer
+            .get_consumed_tool_event_names()
+            .into_iter()
+            .collect();
         let events: Vec<String> = self
             .producer
             .get_tool_event_names()
@@ -1857,10 +1853,13 @@ impl crate::framework::model::ToolChest for ToolChestImpl {
         &self,
         tool_name: &str,
     ) -> Option<Box<dyn crate::framework::model::ToolTemplate>> {
-        self.tool_names.iter().find(|name| *name == tool_name).map(|name| {
-            Box::new(NamedToolTemplate { name: name.clone() })
-                as Box<dyn crate::framework::model::ToolTemplate>
-        })
+        self.tool_names
+            .iter()
+            .find(|name| *name == tool_name)
+            .map(|name| {
+                Box::new(NamedToolTemplate { name: name.clone() })
+                    as Box<dyn crate::framework::model::ToolTemplate>
+            })
     }
 
     fn get_tool_templates(&self) -> Vec<Box<dyn crate::framework::model::ToolTemplate>> {

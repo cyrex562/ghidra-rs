@@ -62,14 +62,12 @@ use crate::app::seam_stubs::{
     StoredAnalyzerTimes, Task,
 };
 use crate::app::services::Analyzer;
-use crate::framework::options::Options;
+use crate::framework::options::{OptionType, Options};
 use crate::framework::plugintool::util::{
     PluginDescription, PluginEventListener, PluginStatus, ServiceListener,
 };
 use crate::framework::plugintool::{Plugin, PluginEvent};
-use crate::framework::seam_stubs::{
-    CustomOptionType, HelpLocation, PluginPackageLike, PluginTool,
-};
+use crate::framework::seam_stubs::{HelpLocation, PluginPackageLike, PluginTool};
 use crate::program::model::listing::{Program, ANALYSIS_PROPERTIES};
 use crate::util::classfinder::ExtensionPoint;
 
@@ -574,7 +572,10 @@ impl AutoAnalysisPlugin {
     ///
     /// Java builds `new AnalyzeAllOpenProgramsTask(this)` and hands it to a `TaskLauncher`; neither
     /// class is ported, so the task comes from `new_task` and is returned rather than launched.
-    pub fn analyze_all_callback(&self, new_task: &mut dyn FnMut() -> Arc<dyn Task>) -> Arc<dyn Task> {
+    pub fn analyze_all_callback(
+        &self,
+        new_task: &mut dyn FnMut() -> Arc<dyn Task>,
+    ) -> Arc<dyn Task> {
         new_task()
     }
 
@@ -678,7 +679,7 @@ impl AutoAnalysisPlugin {
         let mut options = program.get_options(StoredAnalyzerTimes::OPTIONS_LIST);
         options.register_option_with_editor(
             StoredAnalyzerTimes::OPTION_NAME,
-            Box::new(CustomOptionType),
+            OptionType::CustomType,
             None,
             None,
             "Cumulative analysis task times",
@@ -813,7 +814,11 @@ impl Plugin for AutoAnalysisPlugin {
             .unwrap_or_default()
     }
 
-    fn register_service_provided(&self, interface_class: &str, service: Arc<dyn Any + Send + Sync>) {
+    fn register_service_provided(
+        &self,
+        interface_class: &str,
+        service: Arc<dyn Any + Send + Sync>,
+    ) {
         self.services_provided
             .lock()
             .unwrap()
@@ -1102,7 +1107,7 @@ mod tests {
         fn register_option_with_editor(
             &mut self,
             option_name: &str,
-            _option_type: Box<dyn crate::framework::seam_stubs::OptionType>,
+            _option_type: crate::framework::options::OptionType,
             default_value: Option<Box<dyn Any>>,
             _help: Option<Box<dyn HelpLocation>>,
             _description: &str,
@@ -1870,10 +1875,7 @@ mod tests {
 
         assert_eq!(request.analyzer_name, "Stack");
         assert_eq!(request.priority, 100);
-        assert!(matches!(
-            request.scope,
-            OneShotAnalysisScope::Selection(_)
-        ));
+        assert!(matches!(request.scope, OneShotAnalysisScope::Selection(_)));
         // Java re-reads the analyzer's own options subtree under "Analyzers".
         assert_eq!(*reconfigured.lock().unwrap(), vec!["Stack".to_string()]);
     }
