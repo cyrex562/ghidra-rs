@@ -61,7 +61,7 @@ use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::model::listing::instruction::{Instruction, OperandValue};
 use crate::program::model::listing::instruction_pcode_override::InstructionPcodeOverrideImpl;
 use crate::program::model::listing::instruction_record::{
-    InstructionRecord, InstructionSnapshot, InstructionView, ParserContextBridge, SharedPrototype,
+    InstructionRecord, InstructionSnapshot, InstructionView, SharedPrototype,
 };
 use crate::program::model::listing::program::Program;
 use crate::program::model::listing::{CommentType, ContextChangeException};
@@ -275,7 +275,7 @@ impl<C: ProcessorContextView> InstructionSnapshot for PseudoInstruction<C> {
             .prototype()
             .get_pseudo_parser_context(address, &self.unit, &self.context)
         {
-            Ok(context) => Ok(Box::new(ParserContextBridge(context))),
+            Ok(context) => Ok(context),
             Err(GetPseudoParserContextError::InsufficientBytes(_)) => Err(UnknownContextException::with_message(
                 format!(
                     "Insufficient bytes when generating pseudo-ParserContext for instruction at: {address}"

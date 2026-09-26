@@ -17,7 +17,6 @@ use crate::program::model::data::structure::Structure;
 use crate::program::model::data::union::Union;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::endian::Endian;
-use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
@@ -1161,19 +1160,6 @@ pub trait RegisterValue {
     /// which is what lets a value with a partial mask cross a `Box<dyn RegisterValue>` boundary
     /// without losing which bits are known; a test double without a byte form returns `None`.
     fn exact_bytes(&self) -> Option<Vec<u8>> {
-        None
-    }
-}
-
-/// Placeholder for `ghidra.program.model.lang.ParserContext`, referenced by
-/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
-/// before the real interface is ported.
-pub trait ParserContext {
-    /// Stands in for `ParserContext.getPrototype()`.
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype>;
-
-    /// Mirrors [`crate::program::model::lang::parser_context::ParserContext::as_any`].
-    fn as_any(&self) -> Option<&dyn std::any::Any> {
         None
     }
 }

@@ -1289,7 +1289,7 @@ impl InstructionPrototype for SleighInstructionPrototype {
         &self,
         buf: &dyn MemBuffer,
         processor_context: &dyn ProcessorContextView,
-    ) -> Result<Box<dyn crate::program::seam_stubs::ParserContext>, MemoryAccessException> {
+    ) -> Result<Box<dyn crate::program::model::lang::parser_context::ParserContext>, MemoryAccessException> {
         let words = read_context_words(&self.inner.language, processor_context);
         let ctx = self
             .new_parser_context(snapshot_mem_buffer(buf, 0)?, words)
@@ -1304,7 +1304,7 @@ impl InstructionPrototype for SleighInstructionPrototype {
         address: &Address,
         buffer: &dyn MemBuffer,
         processor_context: &dyn ProcessorContextView,
-    ) -> Result<Box<dyn crate::program::seam_stubs::ParserContext>, GetPseudoParserContextError> {
+    ) -> Result<Box<dyn crate::program::model::lang::parser_context::ParserContext>, GetPseudoParserContextError> {
         let words = read_context_words(&self.inner.language, processor_context);
         let offset = address.subtract(&buffer.get_address()) as i32;
         let nearbymem = snapshot_mem_buffer(buffer, offset)?;
@@ -2421,19 +2421,6 @@ pub(crate) mod decode_tests {
             .into_shared()
     }
 
-    /// Mirrors `InstructionDB`'s bridge from the prototype's parser context to the one an
-    /// instruction context hands out.
-    struct Bridge(Box<dyn crate::program::seam_stubs::ParserContext>);
-
-    impl LangParserContext for Bridge {
-        fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
-            self.0.get_prototype()
-        }
-        fn as_any(&self) -> Option<&dyn std::any::Any> {
-            self.0.as_any()
-        }
-    }
-
     /// An instruction parsed at an address, as an instruction context; the instructions at the
     /// following addresses of the same bytes (delay slots) are parsed on request.
     struct Parsed {
@@ -2455,7 +2442,7 @@ pub(crate) mod decode_tests {
             &self.mem
         }
         fn get_parser_context(&self) -> Result<Box<dyn LangParserContext>, MemoryAccessException> {
-            Ok(Box::new(Bridge(self.proto.get_parser_context(&self.mem, &self.processor)?)))
+            self.proto.get_parser_context(&self.mem, &self.processor)
         }
         fn get_parser_context_at(
             &self,
@@ -2476,7 +2463,7 @@ pub(crate) mod decode_tests {
                 .lang
                 .parse(&mem, &mut processor, true)
                 .map_err(|_| other())?;
-            Ok(Box::new(Bridge(proto.get_parser_context(&mem, &processor)?)))
+            Ok(proto.get_parser_context(&mem, &processor)?)
         }
     }
 

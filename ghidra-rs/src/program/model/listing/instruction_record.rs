@@ -288,22 +288,6 @@ pub trait InstructionSnapshot {
     ) -> Result<Box<dyn ParserContext>, InstructionContextError>;
 }
 
-/// Adapts the prototype's parser context (`program::seam_stubs::ParserContext`) to the one an
-/// [`InstructionContext`] hands out, forwarding `as_any` so the prototype's cast back to its own
-/// context type still works. Needed while the crate carries both same-named `ParserContext`
-/// traits; see `InstructionDB`'s identical bridge.
-pub struct ParserContextBridge(pub Box<dyn crate::program::seam_stubs::ParserContext>);
-
-impl ParserContext for ParserContextBridge {
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
-        self.0.get_prototype()
-    }
-
-    fn as_any(&self) -> Option<&dyn std::any::Any> {
-        self.0.as_any()
-    }
-}
-
 /// A record resolved against a snapshot: the queries every instruction backing answers the same
 /// way.
 ///
@@ -557,11 +541,9 @@ impl<S: InstructionSnapshot + ?Sized> InstructionContext for InstructionView<'_,
 
     /// The prototype's parser context over this view's bytes and context.
     fn get_parser_context(&self) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
-        let context = self
-            .record
+        self.record
             .prototype
-            .get_parser_context(self.snapshot.mem_buffer(), self.snapshot.processor_context())?;
-        Ok(Box::new(ParserContextBridge(context)))
+            .get_parser_context(self.snapshot.mem_buffer(), self.snapshot.processor_context())
     }
 
     /// This instruction's own parser context at its address; any other address is the

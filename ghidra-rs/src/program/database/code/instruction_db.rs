@@ -76,9 +76,7 @@ use crate::program::model::symbol::{
     ExternalReference, Reference, ReferenceIterator, RefType, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{
-    InstructionContext as SeamInstructionContext, ParserContext as SeamParserContext, RegisterValue,
-};
+use crate::program::seam_stubs::{InstructionContext as SeamInstructionContext, RegisterValue};
 use crate::program::model::listing::FlowOverride;
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::NoValueException;
@@ -102,33 +100,6 @@ const LENGTH_OVERRIDE_SET_MASK: u8 = 0x70;
 const LENGTH_OVERRIDE_CLEAR_MASK: u8 = !LENGTH_OVERRIDE_SET_MASK;
 /// Stands in for `InstructionDB.LENGTH_OVERRIDE_SHIFT`.
 const LENGTH_OVERRIDE_SHIFT: u32 = 4;
-
-/// Bridges the [`SeamParserContext`] an [`InstructionPrototype`] returns onto the
-/// [`LangParserContext`] the [`LangInstructionContext`] trait requires.
-///
-/// The crate currently carries two same-named `ParserContext` traits with identical single
-/// methods -- the real port at `program::model::lang::parser_context` and an older placeholder in
-/// `program::seam_stubs` -- and `InstructionPrototype::get_parser_context` is declared against the
-/// placeholder while `InstructionContext::get_parser_context` is declared against the port. This
-/// wrapper forwards the one method between them.
-///
-/// NOTE: Java documents that the returned `ParserContext` "may be cast to the prototype's
-/// implementation without checking". Wrapping defeats such a cast; nothing in the ported traits
-/// performs one (neither trait exposes an `Any` downcast), but it is a real divergence that
-/// disappears once the duplicate placeholder trait is removed.
-struct ParserContextBridge(Box<dyn SeamParserContext>);
-
-impl LangParserContext for ParserContextBridge {
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
-        self.0.get_prototype()
-    }
-
-    /// Forwards the wrapped context, so the prototype's cast to its own context type works
-    /// through the bridge.
-    fn as_any(&self) -> Option<&dyn std::any::Any> {
-        self.0.as_any()
-    }
-}
 
 /// Database implementation for an [`Instruction`].
 ///
@@ -1355,12 +1326,10 @@ impl LangInstructionContext for InstructionDB {
     ///
     /// Java memoizes the result in its `parserContext` field (cleared on refresh). The ported
     /// signature returns an owned `Box<dyn ParserContext>`, which cannot be handed out repeatedly
-    /// from a cache, so the context is rebuilt per call -- the same value, recomputed. See
-    /// [`ParserContextBridge`] for why the result needs wrapping.
+    /// from a cache, so the context is rebuilt per call -- the same value, recomputed.
     fn get_parser_context(&self) -> Result<Box<dyn LangParserContext>, MemoryAccessException> {
         // NOTE: It is assumed this is invoked and used within a locked block
-        let parser_context = self.proto.get_parser_context(self, self)?;
-        Ok(Box::new(ParserContextBridge(parser_context)))
+        self.proto.get_parser_context(self, self)
     }
 
     /// Port of `InstructionDB.getParserContext(Address)`.
@@ -1801,7 +1770,7 @@ mod tests {
             &self,
             _buf: &dyn MemBuffer,
             _processor_context: &dyn ProcessorContextView,
-        ) -> Result<Box<dyn SeamParserContext>, MemoryAccessException> {
+        ) -> Result<Box<dyn LangParserContext>, MemoryAccessException> {
             unimplemented!("{UNEXERCISED}")
         }
 
@@ -1811,7 +1780,7 @@ mod tests {
             _buffer: &dyn MemBuffer,
             _processor_context: &dyn ProcessorContextView,
         ) -> Result<
-            Box<dyn SeamParserContext>,
+            Box<dyn LangParserContext>,
             crate::program::model::lang::instruction_prototype::GetPseudoParserContextError,
         > {
             unimplemented!("{UNEXERCISED}")

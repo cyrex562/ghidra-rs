@@ -30,7 +30,7 @@ mod tests {
             &self,
             _buf: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn crate::program::model::lang::ProcessorContextView,
-        ) -> Result<Box<dyn crate::program::seam_stubs::ParserContext>, crate::program::model::mem::MemoryAccessException>
+        ) -> Result<Box<dyn crate::program::model::lang::parser_context::ParserContext>, crate::program::model::mem::MemoryAccessException>
         {
             unimplemented!()
         }
@@ -40,7 +40,7 @@ mod tests {
             _address: &crate::program::model::address::Address,
             _buffer: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn crate::program::model::lang::ProcessorContextView,
-        ) -> Result<Box<dyn crate::program::seam_stubs::ParserContext>, crate::program::model::lang::instruction_prototype::GetPseudoParserContextError>
+        ) -> Result<Box<dyn crate::program::model::lang::parser_context::ParserContext>, crate::program::model::lang::instruction_prototype::GetPseudoParserContextError>
         {
             unimplemented!()
         }

@@ -34,7 +34,6 @@ use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::{OpCode, PatchEncoder, PcodeOp, PcodeOverride, SequenceNumber};
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{ParserContext as ParserContextStub};
 use crate::program::model::mem::MemBuffer;
 
 /// The public behavior of `ghidra.program.model.lang.InvalidPrototype` that isn't already covered
@@ -95,7 +94,7 @@ impl InstructionPrototype for DefaultInvalidPrototype {
         &self,
         _buf: &dyn MemBuffer,
         _processor_context: &dyn ProcessorContextView,
-    ) -> Result<Box<dyn ParserContextStub>, MemoryAccessException> {
+    ) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
         Ok(Box::new(self.clone()))
     }
 
@@ -104,7 +103,7 @@ impl InstructionPrototype for DefaultInvalidPrototype {
         _address: &Address,
         _buffer: &dyn MemBuffer,
         _processor_context: &dyn ProcessorContextView,
-    ) -> Result<Box<dyn ParserContextStub>, GetPseudoParserContextError> {
+    ) -> Result<Box<dyn ParserContext>, GetPseudoParserContextError> {
         Err(GetPseudoParserContextError::UnknownInstruction(
             UnknownInstructionException::with_message(
                 "InvalidPrototype has no pseudo parser context",
@@ -269,12 +268,6 @@ impl InstructionPrototype for DefaultInvalidPrototype {
 
     fn get_language(&self) -> Arc<dyn Language> {
         self.language.clone()
-    }
-}
-
-impl ParserContextStub for DefaultInvalidPrototype {
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
-        Arc::new(self.clone())
     }
 }
 
@@ -584,7 +577,7 @@ mod tests {
         let language: Arc<dyn Language> = Arc::new(MockLanguage);
         let proto = DefaultInvalidPrototype::new(language);
 
-        let parser_context: Box<dyn ParserContextStub> =
+        let parser_context: Box<dyn ParserContext> =
             InstructionPrototype::get_parser_context(&proto, &StubBuf, &StubCtx).unwrap();
         let round_tripped = parser_context.get_prototype();
         assert_eq!(round_tripped.get_mnemonic(&MockContext {

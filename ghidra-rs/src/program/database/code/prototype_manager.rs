@@ -216,7 +216,7 @@ mod tests {
             _buf: &dyn MemBuffer,
             _processor_context: &dyn ProcessorContextView,
         ) -> Result<
-            Box<dyn crate::program::seam_stubs::ParserContext>,
+            Box<dyn crate::program::model::lang::parser_context::ParserContext>,
             crate::program::model::mem::MemoryAccessException,
         > {
             unimplemented!("not exercised by this test")
@@ -228,7 +228,7 @@ mod tests {
             _buffer: &dyn MemBuffer,
             _processor_context: &dyn ProcessorContextView,
         ) -> Result<
-            Box<dyn crate::program::seam_stubs::ParserContext>,
+            Box<dyn crate::program::model::lang::parser_context::ParserContext>,
             crate::program::model::lang::instruction_prototype::GetPseudoParserContextError,
         > {
             unimplemented!("not exercised by this test")

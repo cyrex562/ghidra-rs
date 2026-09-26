@@ -396,7 +396,7 @@ mod tests {
     use crate::program::model::pcode::{PatchEncoder, PcodeOp, PcodeOverride};
     use crate::program::model::scalar::Scalar;
     use crate::program::model::symbol::RefType;
-    use crate::program::seam_stubs::ParserContext as SeamParserContext;
+    use crate::program::model::lang::parser_context::ParserContext;
 
     /// A minimal `InstructionPrototype`: a 2-operand, fall-through instruction of a fixed length.
     /// `get_language` is never exercised by these tests (they never reach length-override or
@@ -411,7 +411,7 @@ mod tests {
             &self,
             _buf: &dyn MemBuffer,
             _processor_context: &dyn ProcessorContextView,
-        ) -> Result<Box<dyn SeamParserContext>, MemoryAccessException> {
+        ) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
             unimplemented!("not exercised by these tests")
         }
 
@@ -420,7 +420,7 @@ mod tests {
             _address: &Address,
             _buffer: &dyn MemBuffer,
             _processor_context: &dyn ProcessorContextView,
-        ) -> Result<Box<dyn SeamParserContext>, GetPseudoParserContextError> {
+        ) -> Result<Box<dyn ParserContext>, GetPseudoParserContextError> {
             unimplemented!("not exercised by these tests")
         }
 

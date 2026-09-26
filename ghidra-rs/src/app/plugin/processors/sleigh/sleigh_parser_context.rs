@@ -643,16 +643,6 @@ impl ParserContext for SleighParserContext {
     }
 }
 
-impl crate::program::seam_stubs::ParserContext for SleighParserContext {
-    fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
-        ParserContext::get_prototype(self)
-    }
-
-    fn as_any(&self) -> Option<&dyn Any> {
-        Some(self)
-    }
-}
-
 /// Reads the packed context words of `ctx` for `language` (Java's
 /// `prototype.getContextCache().getContext(processorContext, context)`).
 pub fn read_context_words(
