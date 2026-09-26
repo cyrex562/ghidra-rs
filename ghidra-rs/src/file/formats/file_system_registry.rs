@@ -10,11 +10,14 @@ use std::rc::Rc;
 use crate::filesystem::gfilesystem::abstract_single_payload_file_system::SinglePayloadFileSystem;
 use crate::filesystem::gfilesystem::factory::file_system_factory_mgr::FileSystemFactoryMgr;
 
+use super::cpio::cpio_file_system::CpioFileSystem;
+use super::cpio::cpio_file_system_factory::CpioFileSystemFactory;
 use super::gzip::g_zip_file_system::GZipFileSystem;
 use super::gzip::g_zip_file_system_factory::GZipFileSystemFactory;
 
 /// Registers every filesystem in `crate::file::formats` that has a ported factory.
 pub fn register_file_system_factories(mgr: &mut FileSystemFactoryMgr) {
+    mgr.register::<CpioFileSystem>(&CpioFileSystem::INFO, Rc::new(CpioFileSystemFactory));
     mgr.register::<GZipFileSystem>(&GZipFileSystem::INFO, Rc::new(GZipFileSystemFactory));
 }
 
@@ -66,6 +69,83 @@ mod tests {
         assert_eq!(mgr.get_file_system_type::<GZipFileSystem>().as_deref(), Some("gzip"));
         let names = mgr.get_all_filesystem_names();
         assert!(names.contains(&"GZIP".to_string()));
+        assert_eq!(mgr.get_file_system_type::<CpioFileSystem>().as_deref(), Some("cpio"));
+        assert!(names.contains(&"CPIO".to_string()));
+    }
+
+    fn cpio_archive_bytes() -> Vec<u8> {
+        use crate::file::formats::cpio::cpio_archive::test_archives::newc_archive;
+        use crate::file::formats::cpio::cpio_archive::{C_ISDIR, C_ISLNK, C_ISREG};
+        newc_archive(&[
+            ("bin", C_ISDIR | 0o755, b""),
+            ("bin/busybox", C_ISREG | 0o755, PAYLOAD),
+            ("bin/sh", C_ISLNK | 0o777, b"busybox"),
+            ("etc/motd", C_ISREG | 0o644, b"welcome\n"),
+        ])
+    }
+
+    #[test]
+    fn cpio_member_by_fsrl_string_reads_through_the_service() {
+        let dir = tempfile::tempdir().unwrap();
+        let archive = dir.path().join("initrd.cpio");
+        std::fs::write(&archive, cpio_archive_bytes()).unwrap();
+        let svc = service(dir.path());
+
+        let fsrl = Fsrl::from_string(&format!("file://{}|cpio:///bin/busybox", archive.display())).unwrap();
+        let bp = svc.get_byte_provider(&fsrl, false, &DummyMonitor).unwrap();
+        assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), PAYLOAD);
+        let got = bp.get_fsrl().unwrap();
+        assert_eq!(got.path(), Some("/bin/busybox"));
+        assert!(got.md5().is_some());
+        drop(bp);
+
+        // Symlinks resolve through the mounted filesystem.
+        let sh = Fsrl::from_string(&format!("file://{}|cpio:///bin/sh", archive.display())).unwrap();
+        let refd = svc.get_refd_file(&sh, &DummyMonitor).unwrap();
+        let fs = std::rc::Rc::clone(refd.fs_ref.get_filesystem());
+        assert_eq!(fs.get_type(), "cpio");
+        assert_eq!(fs.get_description(), "CPIO");
+        let bp = fs.get_byte_provider(&*refd.file, &DummyMonitor).unwrap().unwrap();
+        assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), PAYLOAD);
+        drop(bp);
+        assert_eq!(svc.get_mounted_filesystems().len(), 1);
+
+        // Listing through the erased view.
+        let root = fs.lookup(None).unwrap().unwrap();
+        let names: Vec<String> =
+            fs.get_listing(Some(&*root)).unwrap().iter().map(|f| f.get_name().to_string()).collect();
+        assert_eq!(names, ["bin", "etc"]);
+
+        refd.close().unwrap();
+        svc.close_unused_file_systems();
+        assert!(fs.is_closed());
+        assert!(fs.get_ref_manager().is_closed());
+        assert!(svc.get_mounted_filesystems().is_empty());
+    }
+
+    #[test]
+    fn cpio_container_is_probed_and_directories_have_no_bytes() {
+        let dir = tempfile::tempdir().unwrap();
+        let archive = dir.path().join("root.cpio");
+        std::fs::write(&archive, cpio_archive_bytes()).unwrap();
+        let svc = service(dir.path());
+        let container = svc.get_local_fsrl(&archive);
+        assert!(svc.is_file_filesystem_container(&container, &DummyMonitor).unwrap());
+        let fs_ref = svc
+            .probe_file_for_filesystem(&container, &DummyMonitor, None, PRIORITY_LOWEST)
+            .unwrap()
+            .expect("cpio recognized");
+        let fs = std::rc::Rc::clone(fs_ref.get_filesystem());
+        // root + bin + busybox + sh + etc (auto-created) + motd
+        assert_eq!(fs.get_file_count(), 6);
+        let motd = fs.lookup(Some("/etc/motd")).unwrap().unwrap();
+        let bp = fs.get_byte_provider(&*motd, &DummyMonitor).unwrap().unwrap();
+        assert_eq!(bp.read_bytes(0, 8).unwrap(), b"welcome\n");
+        let bin = fs.lookup(Some("/bin")).unwrap().unwrap();
+        assert!(fs.get_byte_provider(&*bin, &DummyMonitor).is_err(), "not a regular file");
+        drop(bp);
+        svc.release_file_system_immediate(Some(fs_ref));
+        assert!(fs.is_closed());
     }
 
     #[test]

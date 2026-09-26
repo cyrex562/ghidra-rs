@@ -52,6 +52,30 @@ const MAGIC_NEW_CRC: &[u8] = b"070702";
 const MAGIC_OLD_ASCII: &[u8] = b"070707";
 const MAGIC_OLD_BINARY: u64 = 0o070707;
 
+/// Checks if `signature` (of which the first `length` bytes are valid) is the start of a cpio
+/// archive: the binary magic in either byte order, or an ASCII `07070[127]` magic.
+///
+/// Mirrors commons-compress `CpioArchiveInputStream.matches(byte[], int)`.
+pub fn matches(signature: &[u8], length: usize) -> bool {
+    if length < 6 || signature.len() < 6 {
+        return false;
+    }
+    // Check binary values
+    if signature[0] == 0x71 && signature[1] == 0xc7 {
+        return true;
+    }
+    if signature[1] == 0x71 && signature[0] == 0xc7 {
+        return true;
+    }
+    // Check Ascii (String) values
+    // 3037 3037 30nn
+    if signature[..5] != *b"07070" {
+        return false;
+    }
+    // Check last byte
+    matches!(signature[5], b'1' | b'2' | b'7')
+}
+
 /// One member of a cpio archive. Mirrors commons-compress `CpioArchiveEntry`.
 ///
 /// Equality compares names only, as `CpioArchiveEntry.equals` does.
@@ -592,6 +616,23 @@ mod tests {
             out.push((e, data));
         }
         Ok(out)
+    }
+
+    #[test]
+    fn matches_signatures_like_commons_compress() {
+        assert!(matches(b"070701xx", 8));
+        assert!(matches(b"070702", 6));
+        assert!(matches(b"070707", 6));
+        assert!(!matches(b"070703", 6));
+        assert!(!matches(b"07070", 5), "too short");
+        assert!(!matches(b"070701", 5), "length limits the check");
+        // Binary magic 0o070707 == 0x71C7, either byte order.
+        assert!(matches(&[0x71, 0xc7, 0, 0, 0, 0], 6));
+        assert!(matches(&[0xc7, 0x71, 0, 0, 0, 0], 6));
+        assert!(matches(&newc_archive(&[("a", C_ISREG, b"x")]), 6));
+        assert!(matches(&binary_member("a", C_ISREG, b"x", true), 6));
+        assert!(matches(&binary_member("a", C_ISREG, b"x", false), 6));
+        assert!(!matches(b"PK\x03\x04\0\0", 6));
     }
 
     #[test]

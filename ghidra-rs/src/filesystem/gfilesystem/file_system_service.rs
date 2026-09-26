@@ -93,7 +93,17 @@ fn io_err(msg: String) -> GFileSystemError {
 /// Provides methods for dealing with GFilesystem files and filesystems. See the module docs.
 ///
 /// Mirrors `ghidra.formats.gfilesystem.FileSystemService`.
+///
+/// The service's state is shared (`Rc`) so that filesystems it mounts can keep a
+/// [`WeakFileSystemService`] handle to it, standing in for the `fsService` field Java
+/// filesystems hold (e.g. `AbstractFileSystem.fsService`). The handle is weak because the
+/// service's instance cache owns those filesystems.
 pub struct FileSystemService {
+    inner: Rc<ServiceState>,
+}
+
+/// The shared state behind a [`FileSystemService`] and its [`WeakFileSystemService`] handles.
+struct ServiceState {
     local_fs: Rc<LocalFileSystem>,
     fs_factory_mgr: FileSystemFactoryMgr,
     cache_fsrl: FsrlRoot,
@@ -102,7 +112,38 @@ pub struct FileSystemService {
     file_cache_name_index: FileCacheNameIndex,
 }
 
+/// A non-owning handle to a [`FileSystemService`], held by filesystems that need the service
+/// after they are created (Java's `fsService` field).
+#[derive(Clone)]
+pub struct WeakFileSystemService(std::rc::Weak<ServiceState>);
+
+impl WeakFileSystemService {
+    /// The service, if it is still alive.
+    pub fn upgrade(&self) -> Option<FileSystemService> {
+        self.0.upgrade().map(|inner| FileSystemService { inner })
+    }
+
+    /// The service, or an [`io::Error`] if it has been dropped.
+    ///
+    /// # Errors
+    /// If the service no longer exists.
+    pub fn get(&self) -> io::Result<FileSystemService> {
+        self.upgrade().ok_or_else(|| io::Error::other("FileSystemService has been disposed"))
+    }
+}
+
+impl std::fmt::Debug for WeakFileSystemService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("WeakFileSystemService")
+    }
+}
+
 impl FileSystemService {
+    /// A weak handle to this service, for filesystems that need it after creation.
+    pub fn downgrade(&self) -> WeakFileSystemService {
+        WeakFileSystemService(Rc::downgrade(&self.inner))
+    }
+
     /// Creates a service that caches files under `fscache_dir` and mounts the filesystems
     /// registered in `fs_factory_mgr`. Mirrors `FileSystemService(File)`.
     ///
@@ -115,35 +156,37 @@ impl FileSystemService {
         let local_fs = Rc::new(LocalFileSystem::make_global_root_fs());
         let local_handle: FsHandle = local_fs.clone();
         Ok(FileSystemService {
-            fs_instance_manager: FileSystemInstanceManager::new(local_handle),
-            local_fs,
-            fs_factory_mgr,
-            cache_fsrl: FsrlRoot::make_root("cache"),
-            file_cache,
-            file_cache_name_index: FileCacheNameIndex::new(),
+            inner: Rc::new(ServiceState {
+                fs_instance_manager: FileSystemInstanceManager::new(local_handle),
+                local_fs,
+                fs_factory_mgr,
+                cache_fsrl: FsrlRoot::make_root("cache"),
+                file_cache,
+                file_cache_name_index: FileCacheNameIndex::new(),
+            }),
         })
     }
 
     /// The registry of filesystem factories this service mounts with.
     pub fn get_factory_mgr(&self) -> &FileSystemFactoryMgr {
-        &self.fs_factory_mgr
+        &self.inner.fs_factory_mgr
     }
 
     /// Forcefully closes all open filesystems and clears caches. Mirrors `clear()`.
     pub fn clear(&self) {
-        self.fs_instance_manager.clear();
-        self.file_cache_name_index.clear();
+        self.inner.fs_instance_manager.clear();
+        self.inner.file_cache_name_index.clear();
     }
 
     /// Closes unused filesystems. Mirrors `closeUnusedFileSystems()`.
     pub fn close_unused_file_systems(&self) {
-        self.fs_instance_manager.close_all_unused();
+        self.inner.fs_instance_manager.close_all_unused();
     }
 
     /// Evicts filesystems that have been unused for a while. This is the work Java's service
     /// schedules on a ten-second timer (see the module docs).
     pub fn perform_cache_maint(&self) {
-        self.fs_instance_manager.cache_maint();
+        self.inner.fs_instance_manager.cache_maint();
     }
 
     /// Releases `fs_ref`, and if no other references remain, removes its filesystem from the
@@ -151,31 +194,31 @@ impl FileSystemService {
     pub fn release_file_system_immediate(&self, fs_ref: Option<FileSystemRef>) {
         if let Some(fs_ref) = fs_ref {
             if !fs_ref.is_closed() {
-                self.fs_instance_manager.release_immediate(fs_ref);
+                self.inner.fs_instance_manager.release_immediate(fs_ref);
             }
         }
     }
 
     /// The local filesystem. Mirrors `getLocalFS()`.
     pub fn get_local_fs(&self) -> &LocalFileSystem {
-        &self.local_fs
+        &self.inner.local_fs
     }
 
     /// Returns `true` if `fsrl` is a path on the local computer's filesystem (not a file
     /// embedded in a container). Mirrors `isLocal(FSRL)`.
     pub fn is_local(&self, fsrl: &Fsrl) -> bool {
-        self.local_fs.is_same_fs(fsrl)
+        self.inner.local_fs.is_same_fs(fsrl)
     }
 
     /// The FSRL of a file on the local filesystem. Mirrors `getLocalFSRL(File)`.
     pub fn get_local_fsrl(&self, f: &Path) -> Fsrl {
-        self.local_fs.get_local_fsrl(f)
+        self.inner.local_fs.get_local_fsrl(f)
     }
 
     /// Returns `true` if a filesystem is mounted at the container `fsrl`. Mirrors
     /// `isFilesystemMountedAt(FSRL)`.
     pub fn is_filesystem_mounted_at(&self, fsrl: &Fsrl) -> bool {
-        self.fs_instance_manager.is_filesystem_mounted_at(fsrl)
+        self.inner.fs_instance_manager.is_filesystem_mounted_at(fsrl)
     }
 
     /// The file `fsrl` points to, with a ref pinning its filesystem that the caller must
@@ -206,21 +249,21 @@ impl FileSystemService {
         fs_fsrl: &FsrlRoot,
         monitor: &dyn TaskMonitor,
     ) -> Result<FileSystemRef, GFileSystemError> {
-        if let Some(r) = self.fs_instance_manager.get_ref(fs_fsrl) {
+        if let Some(r) = self.inner.fs_instance_manager.get_ref(fs_fsrl) {
             return Ok(r);
         }
         let Some(container) = fs_fsrl.container() else {
             return Err(io_err(format!("Bad FSRL {fs_fsrl}")));
         };
         let container_byte_provider = self.get_byte_provider(container, true, monitor)?;
-        let fs = self.fs_factory_mgr.mount_file_system(
+        let fs = self.inner.fs_factory_mgr.mount_file_system(
             fs_fsrl.protocol(),
             container_byte_provider,
             self,
             monitor,
         )?;
         let r = fs.get_ref_manager().create(&fs).map_err(io::Error::other)?;
-        self.fs_instance_manager.add(&fs).map_err(io::Error::other)?;
+        self.inner.fs_instance_manager.add(&fs).map_err(io::Error::other)?;
         Ok(r)
     }
 
@@ -237,7 +280,7 @@ impl FileSystemService {
         fully_qualified_fsrl: bool,
         monitor: &dyn TaskMonitor,
     ) -> Result<Box<dyn ByteProvider>, GFileSystemError> {
-        if let Some(fce) = self.file_cache.get_file_cache_entry(fsrl.md5()) {
+        if let Some(fce) = self.inner.file_cache.get_file_cache_entry(fsrl.md5()) {
             return Ok(fce.as_byte_provider(fsrl)?);
         }
 
@@ -248,7 +291,7 @@ impl FileSystemService {
         if file.get_fsrl().md5().is_some() {
             fsrl = file.get_fsrl().clone();
             // try again to fetch cached file now that we have an md5
-            if let Some(fce) = self.file_cache.get_file_cache_entry(fsrl.md5()) {
+            if let Some(fce) = self.inner.file_cache.get_file_cache_entry(fsrl.md5()) {
                 return Ok(fce.as_byte_provider(&fsrl)?);
             }
         }
@@ -286,8 +329,8 @@ impl FileSystemService {
         // The name index is queried and updated in separate steps; a race only means the
         // derived file may be produced twice (same as Java).
         let container_md5 = Self::assert_fully_qualified_fsrl(container_fsrl)?;
-        let derived_md5 = self.file_cache_name_index.get(container_md5, derived_name)?;
-        if let Some(fce) = self.file_cache.get_file_cache_entry(derived_md5.as_deref()) {
+        let derived_md5 = self.inner.file_cache_name_index.get(container_md5, derived_name)?;
+        if let Some(fce) = self.inner.file_cache.get_file_cache_entry(derived_md5.as_deref()) {
             return Ok(fce);
         }
         monitor.set_message(&format!(
@@ -297,12 +340,12 @@ impl FileSystemService {
         if size_hint > 0 {
             monitor.initialize(size_hint);
         }
-        let mut builder = self.file_cache.create_cache_entry_builder(size_hint)?;
+        let mut builder = self.inner.file_cache.create_cache_entry_builder(size_hint)?;
         let filled = fill(&mut builder);
         // Java's try-with-resources closes (== finishes) the builder even on error.
         let fce = builder.finish()?;
         filled?;
-        self.file_cache_name_index.add(container_md5, derived_name, fce.get_md5())?;
+        self.inner.file_cache_name_index.add(container_md5, derived_name, fce.get_md5())?;
         Ok(fce)
     }
 
@@ -363,7 +406,7 @@ impl FileSystemService {
     }
 
     fn create_cached_file_fsrl(&self, md5: &str) -> Fsrl {
-        self.cache_fsrl.with_path_md5(Some(&format!("/{md5}")), Some(md5))
+        self.inner.cache_fsrl.with_path_md5(Some(&format!("/{md5}")), Some(md5))
     }
 
     /// A builder the caller writes bytes to; [`finish`](FileCacheEntryBuilder::finish) yields
@@ -372,7 +415,7 @@ impl FileSystemService {
     /// # Errors
     /// If there is not enough free space, or the temp file cannot be created.
     pub fn create_temp_file(&self, size_hint: i64) -> io::Result<FileCacheEntryBuilder<'_>> {
-        self.file_cache.create_cache_entry_builder(size_hint)
+        self.inner.file_cache.create_cache_entry_builder(size_hint)
     }
 
     /// A [`ByteProvider`] over `temp_file_cache_entry` with a decorative `tmp://` FSRL named
@@ -430,7 +473,7 @@ impl FileSystemService {
     /// `releaseFileCache(FSRL)`.
     pub fn release_file_cache(&self, fsrl: &Fsrl) {
         if let Some(md5) = fsrl.md5() {
-            self.file_cache.release_file_cache_entry(md5);
+            self.inner.file_cache.release_file_cache_entry(md5);
         }
     }
 
@@ -445,7 +488,7 @@ impl FileSystemService {
         fsrl: &Fsrl,
         monitor: &dyn TaskMonitor,
     ) -> Result<Box<dyn ByteProvider>, GFileSystemError> {
-        let fce = self.file_cache.give_file(file, monitor)?;
+        let fce = self.inner.file_cache.give_file(file, monitor)?;
         Ok(fce.as_byte_provider(fsrl)?)
     }
 
@@ -461,8 +504,8 @@ impl FileSystemService {
         _monitor: &dyn TaskMonitor,
     ) -> Result<bool, GFileSystemError> {
         let container_md5 = Self::assert_fully_qualified_fsrl(container_fsrl)?;
-        let derived_md5 = self.file_cache_name_index.get(container_md5, derived_name)?;
-        Ok(derived_md5.is_some_and(|md5| self.file_cache.has_entry(&md5)))
+        let derived_md5 = self.inner.file_cache_name_index.get(container_md5, derived_name)?;
+        Ok(derived_md5.is_some_and(|md5| self.inner.file_cache.has_entry(&md5)))
     }
 
     /// Returns `true` if the container file probably holds a supported filesystem. Mirrors
@@ -476,7 +519,7 @@ impl FileSystemService {
         monitor: &dyn TaskMonitor,
     ) -> Result<bool, GFileSystemError> {
         let mut byte_provider = self.get_byte_provider(container_fsrl, false, monitor)?;
-        let result = self.fs_factory_mgr.test(&*byte_provider, self, monitor);
+        let result = self.inner.fs_factory_mgr.test(&*byte_provider, self, monitor);
         let _ = byte_provider.close();
         result
     }
@@ -495,12 +538,12 @@ impl FileSystemService {
         conflict_resolver: Option<&dyn FileSystemProbeConflictResolver>,
         priority_filter: i32,
     ) -> Result<Option<FileSystemRef>, GFileSystemError> {
-        if let Some(r) = self.fs_instance_manager.get_filesystem_ref_mounted_at(container_fsrl) {
+        if let Some(r) = self.inner.fs_instance_manager.get_filesystem_ref_mounted_at(container_fsrl) {
             return Ok(Some(r));
         }
         let result = (|| {
             let byte_provider = self.get_byte_provider(container_fsrl, true, monitor)?;
-            let Some(fs) = self.fs_factory_mgr.probe(
+            let Some(fs) = self.inner.fs_factory_mgr.probe(
                 byte_provider,
                 self,
                 conflict_resolver,
@@ -511,13 +554,13 @@ impl FileSystemService {
                 return Ok(None);
             };
             if let Some(container) = fs.get_fsrl().container() {
-                if let Some(existing) = self.fs_instance_manager.get_filesystem_ref_mounted_at(container) {
+                if let Some(existing) = self.inner.fs_instance_manager.get_filesystem_ref_mounted_at(container) {
                     // Someone mounted the same container meanwhile: use theirs.
                     fs.close()?;
                     return Ok(Some(existing));
                 }
             }
-            self.fs_instance_manager.add(&fs).map_err(io::Error::other)?;
+            self.inner.fs_instance_manager.add(&fs).map_err(io::Error::other)?;
             Ok(Some(fs.get_ref_manager().create(&fs).map_err(io::Error::other)?))
         })();
         if let Err(GFileSystemError::Io(e)) = &result {
@@ -552,7 +595,7 @@ impl FileSystemService {
         container_fsrl: &Fsrl,
         monitor: &dyn TaskMonitor,
     ) -> Result<Option<Rc<FS>>, GFileSystemError> {
-        let Some(fs_type) = self.fs_factory_mgr.get_file_system_type::<FS>() else {
+        let Some(fs_type) = self.inner.fs_factory_mgr.get_file_system_type::<FS>() else {
             Msg::error(
                 "FileSystemService",
                 &format!(
@@ -563,7 +606,7 @@ impl FileSystemService {
             return Ok(None);
         };
         let byte_provider = self.get_byte_provider(container_fsrl, true, monitor)?;
-        let fs = self.fs_factory_mgr.mount_file_system(&fs_type, byte_provider, self, monitor)?;
+        let fs = self.inner.fs_factory_mgr.mount_file_system(&fs_type, byte_provider, self, monitor)?;
         let fs_for_close = Rc::clone(&fs);
         match fs.into_any_rc().downcast::<FS>() {
             Ok(typed) => Ok(Some(typed)),
@@ -590,7 +633,7 @@ impl FileSystemService {
         monitor: &dyn TaskMonitor,
     ) -> Result<Option<FsHandle>, GFileSystemError> {
         let byte_provider = self.get_byte_provider(container_fsrl, true, monitor)?;
-        self.fs_factory_mgr.probe(byte_provider, self, None, PRIORITY_LOWEST, monitor)
+        self.inner.fs_factory_mgr.probe(byte_provider, self, None, PRIORITY_LOWEST, monitor)
     }
 
     /// A copy of `fsrl` that carries an MD5 (except for files without data streams, e.g.
@@ -645,7 +688,7 @@ impl FileSystemService {
 
         let path = fsrl.path().unwrap_or("").to_string();
         let mut md5 = match container_fsrl.as_ref().and_then(Fsrl::md5) {
-            Some(cmd5) => self.file_cache_name_index.get(cmd5, &path)?,
+            Some(cmd5) => self.inner.file_cache_name_index.get(cmd5, &path)?,
             None => None,
         };
         if md5.is_none() {
@@ -660,26 +703,26 @@ impl FileSystemService {
             md5 = Some(computed?);
         }
         if let (Some(cmd5), true) = (container_fsrl.as_ref().and_then(Fsrl::md5), fs.is_static()) {
-            self.file_cache_name_index.add(cmd5, &path, md5.as_deref().unwrap_or(""))?;
+            self.inner.file_cache_name_index.add(cmd5, &path, md5.as_deref().unwrap_or(""))?;
         }
         Ok(fsrl.with_md5(md5.as_deref()))
     }
 
     /// The descriptions of all registered filesystems. Mirrors `getAllFilesystemNames()`.
     pub fn get_all_filesystem_names(&self) -> Vec<String> {
-        self.fs_factory_mgr.get_all_filesystem_names()
+        self.inner.fs_factory_mgr.get_all_filesystem_names()
     }
 
     /// The FSRL roots of all currently mounted filesystems. Mirrors
     /// `getMountedFilesystems()`.
     pub fn get_mounted_filesystems(&self) -> Vec<FsrlRoot> {
-        self.fs_instance_manager.get_mounted_filesystems()
+        self.inner.fs_instance_manager.get_mounted_filesystems()
     }
 
     /// A new ref to the already-mounted filesystem `fs_fsrl`, or `None`. Mirrors
     /// `getMountedFilesystem(FSRLRoot)`.
     pub fn get_mounted_filesystem(&self, fs_fsrl: &FsrlRoot) -> Option<FileSystemRef> {
-        self.fs_instance_manager.get_ref(fs_fsrl)
+        self.inner.fs_instance_manager.get_ref(fs_fsrl)
     }
 }
 

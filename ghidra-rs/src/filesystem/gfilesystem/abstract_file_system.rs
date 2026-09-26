@@ -9,12 +9,15 @@
 //! [`AbstractSinglePayloadFileSystemBase`](super::abstract_single_payload_file_system::AbstractSinglePayloadFileSystemBase),
 //! as a shared-state struct, [`AbstractFileSystemBase`], that each concrete filesystem embeds.
 //!
-//! Two Java fields are not modeled, following that same precedent:
-//! - `refManager`: this port has no concrete `FileSystemRefManager` yet (see
-//!   [`super::file_system_ref_manager`]); subclasses only call `refManager.onClose()`, which
-//!   notifies listeners.
-//! - `fsService`: there is no concrete `FileSystemService` yet (see
-//!   [`super::file_system_service`]); a subclass that needs one holds it itself.
+//! The Java fields map as follows:
+//! - `refManager`: a [`FileSystemRefManager`] owned by the base; the embedding filesystem
+//!   calls [`FileSystemRefManager::on_close`] (with itself as the filesystem) when it closes.
+//! - `fsService`: a [`WeakFileSystemService`] handle. The service's instance cache owns the
+//!   mounted filesystems, so the back-reference is weak; it fails only once the service is
+//!   gone.
+//! - `fsIndex`: a [`FileSystemIndexHelper`] whose [`clear`](FileSystemIndexHelper::clear) takes
+//!   `&self`, so a shared filesystem can close through `&self`
+//!   ([`GFileSystem::close`](super::g_file_system::GFileSystem::close)).
 //!
 //! Java's `GFileImpl` keeps a back-reference to its owning filesystem, so `GFile.getListing()`
 //! can call `fs.getListing(this)`. The files handed out here instead carry an
@@ -30,6 +33,8 @@ use std::io;
 use std::rc::Rc;
 
 use super::file_system_index_helper::{FileSystemIndexHelper, NameComparator};
+use super::file_system_ref_manager::FileSystemRefManager;
+use super::file_system_service::{FileSystemService, WeakFileSystemService};
 use super::fsrl::Fsrl;
 use super::fsrl_root::FsrlRoot;
 use super::g_file::GFile;
@@ -102,20 +107,38 @@ pub type AbstractFsIndex<M> = FileSystemIndexHelper<AbstractFsHandle, M>;
 ///
 /// Mirrors `ghidra.formats.gfilesystem.AbstractFileSystem<METADATATYPE>`.
 pub struct AbstractFileSystemBase<M> {
+    fs_service: WeakFileSystemService,
     fs_fsrl: FsrlRoot,
     fs_index: AbstractFsIndex<M>,
+    ref_manager: FileSystemRefManager,
     filename_comparator: Option<fn(&str, &str) -> Ordering>,
 }
 
 impl<M> AbstractFileSystemBase<M> {
-    /// Initializes the fields for the filesystem `fs_fsrl`, creating an empty index.
+    /// Initializes the fields for the filesystem `fs_fsrl`, creating an empty index and ref
+    /// manager, and keeping a (weak) handle to `fs_service`.
     ///
-    /// Mirrors `AbstractFileSystem(FSRLRoot, FileSystemService)`; see the module docs for the
-    /// service parameter.
-    pub fn new(fs_fsrl: FsrlRoot) -> Self {
+    /// Mirrors `AbstractFileSystem(FSRLRoot, FileSystemService)`.
+    pub fn new(fs_fsrl: FsrlRoot, fs_service: &FileSystemService) -> Self {
         let handle = AbstractFsHandle(Rc::new(fs_fsrl.clone()));
         let fs_index = FileSystemIndexHelper::from_fsrl_root(handle, &fs_fsrl);
-        AbstractFileSystemBase { fs_fsrl, fs_index, filename_comparator: None }
+        AbstractFileSystemBase {
+            fs_service: fs_service.downgrade(),
+            fs_fsrl,
+            fs_index,
+            ref_manager: FileSystemRefManager::new(),
+            filename_comparator: None,
+        }
+    }
+
+    /// The service this filesystem was created by (Java's protected `fsService`).
+    pub fn fs_service(&self) -> &WeakFileSystemService {
+        &self.fs_service
+    }
+
+    /// The filesystem's ref manager. Mirrors `getRefManager()`.
+    pub fn get_ref_manager(&self) -> &FileSystemRefManager {
+        &self.ref_manager
     }
 
     /// Sets the comparator [`lookup`](Self::lookup) uses to match file names.
@@ -213,11 +236,37 @@ impl<M> fmt::Display for AbstractFileSystemBase<M> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::filesystem::gfilesystem::factory::file_system_factory_mgr::FileSystemFactoryMgr as FactoryMgr;
     use crate::filesystem::gfilesystem::file_system_index_helper::copy_file;
 
     fn fs() -> AbstractFileSystemBase<u32> {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = FileSystemService::new(dir.path(), FactoryMgr::new()).unwrap();
         let root = Fsrl::from_string("file:///tmp/libfoo.a").unwrap().make_nested("coff");
-        AbstractFileSystemBase::new(root)
+        AbstractFileSystemBase::new(root, &svc)
+    }
+
+    #[test]
+    fn service_handle_is_weak_and_ref_manager_is_live() {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = FileSystemService::new(dir.path(), FactoryMgr::new()).unwrap();
+        let root = Fsrl::from_string("file:///tmp/x.a").unwrap().make_nested("coff");
+        let fs: AbstractFileSystemBase<u32> = AbstractFileSystemBase::new(root, &svc);
+        assert!(fs.fs_service().upgrade().is_some());
+        assert!(!fs.get_ref_manager().is_closed());
+        drop(svc);
+        assert!(fs.fs_service().upgrade().is_none());
+        assert!(fs.fs_service().get().is_err());
+    }
+
+    #[test]
+    fn index_clears_through_shared_ref() {
+        let mut fs = fs();
+        fs.fs_index_mut().store_file("a", -1, false, 1, 1);
+        let shared = &fs;
+        shared.fs_index().clear();
+        assert_eq!(shared.get_file_count(), 0);
+        assert!(shared.lookup(Some("/a")).is_none());
     }
 
     #[test]

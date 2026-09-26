@@ -17,6 +17,7 @@
 //! file locators are the real [`Fsrl`]. Java's `synchronized` methods become `&self` /
 //! `&mut self` borrows.
 
+use std::cell::Cell;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
@@ -101,6 +102,10 @@ pub struct FileSystemIndexHelper<FS, M> {
     file_to_entry: HashMap<FileKey, usize>,
     file_index_to_entry: HashMap<i64, usize>,
     directory_to_listing: HashMap<FileKey, DirListing>,
+    /// Set by [`clear`](Self::clear), which takes `&self` so a shared filesystem can close its
+    /// index. While set, the index behaves as if its maps were empty; the storage itself is
+    /// released by the next mutation (or when the index is dropped).
+    cleared: Cell<bool>,
 }
 
 impl<FS, M> FileSystemIndexHelper<FS, M>
@@ -134,6 +139,7 @@ where
             file_to_entry: HashMap::new(),
             file_index_to_entry: HashMap::new(),
             directory_to_listing: HashMap::new(),
+            cleared: Cell::new(false),
         };
         helper.file_to_entry.insert(root_key.clone(), ROOT);
         helper.directory_to_listing.insert(root_key, DirListing::default());
@@ -147,22 +153,43 @@ where
 
     /// Removes all file info from this index (the root directory object itself is kept, but
     /// is no longer indexed). Mirrors `clear()`.
-    pub fn clear(&mut self) {
-        self.file_to_entry.clear();
-        self.directory_to_listing.clear();
-        self.file_index_to_entry.clear();
-        self.files.truncate(1);
+    ///
+    /// Takes `&self` (Java's method is `synchronized`) so a filesystem shared through
+    /// [`FsHandle`](super::g_file_system::FsHandle)s can clear its index from
+    /// [`GFileSystem::close`](super::g_file_system::GFileSystem::close). The index reads as empty
+    /// from then on; storing new files first discards the old ones.
+    pub fn clear(&self) {
+        self.cleared.set(true);
+    }
+
+    /// `true` once [`clear`](Self::clear)ed (and not since refilled).
+    pub fn is_cleared(&self) -> bool {
+        self.cleared.get()
+    }
+
+    /// Physically discards the contents of a [`clear`](Self::clear)ed index before a
+    /// mutation, so the index then behaves exactly like Java's emptied maps.
+    fn purge_if_cleared(&mut self) {
+        if self.cleared.replace(false) {
+            self.file_to_entry.clear();
+            self.directory_to_listing.clear();
+            self.file_index_to_entry.clear();
+            self.files.truncate(1);
+        }
     }
 
     /// Number of files in this index, including the root directory and any directories that
     /// were auto-created. Mirrors `getFileCount()`.
     pub fn get_file_count(&self) -> i32 {
+        if self.cleared.get() {
+            return 0;
+        }
         self.file_to_entry.len() as i32
     }
 
     /// The indexed entry for `file`, if `file` belongs to this filesystem and is indexed.
     fn entry_of(&self, file: &dyn GFile<FS>) -> Option<usize> {
-        if file.get_filesystem() != &self.filesystem {
+        if file.get_filesystem() != &self.filesystem || self.cleared.get() {
             return None;
         }
         self.file_to_entry.get(&key_of(file)).copied()
@@ -194,6 +221,7 @@ where
     /// # Errors
     /// If `file` is not in this index.
     pub fn set_metadata(&mut self, file: &dyn GFile<FS>, metadata: M) -> io::Result<()> {
+        self.purge_if_cleared();
         let idx = self.get_file_data(Some(file))?;
         self.files[idx].metadata = Some(metadata);
         Ok(())
@@ -202,6 +230,9 @@ where
     /// The file stored with the filesystem-specific index `file_index`, or `None`.
     /// Mirrors `getFileByIndex(long)`.
     pub fn get_file_by_index(&self, file_index: i64) -> Option<&GFileImpl<FS>> {
+        if self.cleared.get() {
+            return None;
+        }
         self.file_index_to_entry.get(&file_index).map(|&i| &self.files[i].file)
     }
 
@@ -211,6 +242,9 @@ where
         &self,
         directory: Option<&dyn GFile<FS>>,
     ) -> Vec<&GFileImpl<FS>> {
+        if self.cleared.get() {
+            return Vec::new();
+        }
         let key = match directory {
             None => key_of(&self.files[ROOT].file),
             Some(d) if d.get_filesystem() == &self.filesystem => key_of(d),
@@ -289,6 +323,9 @@ where
         filename: &str,
         name_comp: NameComparator<'_>,
     ) -> Option<usize> {
+        if self.cleared.get() {
+            return None;
+        }
         let dir = self.directory_to_listing.get(dir_key)?;
         let Some(cmp) = name_comp else {
             return dir.by_name.get(filename).copied();
@@ -399,6 +436,7 @@ where
         length: i64,
         metadata: impl Into<Option<M>>,
     ) -> &GFileImpl<FS> {
+        self.purge_if_cleared();
         let nameparts = split_path(Some(path));
         let Some(lastpart) = nameparts.last() else {
             return &self.files[ROOT].file;
@@ -431,6 +469,7 @@ where
         length: i64,
         metadata: impl Into<Option<M>>,
     ) -> &GFileImpl<FS> {
+        self.purge_if_cleared();
         let parent_copy = copy_file(parent.unwrap_or(&self.files[ROOT].file));
         let idx = self.do_store_file(
             filename,
@@ -457,6 +496,7 @@ where
         length: i64,
         metadata: impl Into<Option<M>>,
     ) -> &GFileImpl<FS> {
+        self.purge_if_cleared();
         let nameparts = split_path(Some(path));
         let Some(lastpart) = nameparts.last() else {
             Msg::warn(
@@ -494,6 +534,7 @@ where
         length: i64,
         metadata: impl Into<Option<M>>,
     ) -> &GFileImpl<FS> {
+        self.purge_if_cleared();
         let length = symlink_length(length, symlink_path);
         let parent_copy = copy_file(parent.unwrap_or(&self.files[ROOT].file));
         let idx = self.do_store_file(
@@ -585,6 +626,7 @@ where
 
     /// Replaces the FSRL of a file already in the index. Mirrors `updateFSRL(GFile, FSRL)`.
     pub fn update_fsrl(&mut self, file: &dyn GFile<FS>, new_fsrl: Fsrl) {
+        self.purge_if_cleared();
         let parent = file
             .get_parent_file()
             .map(|p| Box::new(copy_file(p)) as Box<dyn GFile<FS>>);
@@ -845,6 +887,28 @@ mod tests {
         assert!(h.lookup("a/b").is_none());
         assert!(h.get_file_by_index(2).is_none());
         assert_eq!(h.get_root_dir().get_path(), "/");
+    }
+
+    #[test]
+    fn clear_through_shared_ref_then_refill_matches_java_emptied_maps() {
+        let mut h = helper();
+        h.store_file("a/b", 7, false, 1, "meta".to_owned());
+        let b = copy_file(h.lookup("a/b").unwrap());
+        {
+            let shared: &Helper = &h;
+            shared.clear();
+            assert!(shared.is_cleared());
+            assert!(shared.get_metadata(&b).is_none());
+            assert!(shared.resolve_symlinks(&b).is_err(), "Unknown file after clear");
+            // Java: lookup(null) still answers the (unindexed) root directory.
+            assert_eq!(shared.lookup_with(None, None, None).unwrap().get_path(), "/");
+        }
+        // Java's clear() also dropped the root from the maps, so a refill counts only new files.
+        h.store_file("c", -1, false, 1, None);
+        assert!(!h.is_cleared());
+        assert_eq!(h.get_file_count(), 1);
+        assert!(h.lookup("a/b").is_none());
+        assert_eq!(names(h.get_listing(None)), ["c"]);
     }
 
     #[test]
