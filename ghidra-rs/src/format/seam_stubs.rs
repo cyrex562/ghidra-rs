@@ -4197,88 +4197,6 @@ pub trait DebugInfoProviderRegistry: Send + Sync {
     fn create(&self, name: &str, context: &dyn std::any::Any) -> Option<Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider>>;
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.MarkupSession`,
-/// referenced by `FieldMarkupFunction` before the real class is ported.
-pub trait MarkupSession: Send + Sync {
-    fn get_program(&self) -> Box<dyn crate::program::model::listing::Program>;
-    fn get_mapping_context(&self) -> Box<dyn std::any::Any>;
-    fn get_markedup_addresses(&self) -> Box<dyn std::any::Any>;
-    fn markup(&self, obj: &dyn std::any::Any, nested: bool) -> std::io::Result<()>;
-    fn markup_address(
-        &self,
-        addr: Address,
-        dt: &dyn crate::program::model::data::data_type::DataType,
-    ) -> std::io::Result<()>;
-    fn markup_address_if_undefined(
-        &self,
-        addr: Address,
-        dt: &dyn crate::program::model::data::data_type::DataType,
-    ) -> std::io::Result<()>;
-    fn label_structure(&self, obj: &dyn std::any::Any, symbol_name: &str, namespace_name: &str) -> std::io::Result<()>;
-    fn label_address(&self, addr: Address, symbol_name: &str) -> std::io::Result<()>;
-    /// Mirrors the `MarkupSession.labelAddress(Address, String, String)` overload; Rust traits
-    /// have no overloading, so the namespace-qualified form gets its own name.
-    fn label_address_in_namespace(
-        &self,
-        addr: Address,
-        symbol_name: &str,
-        namespace_name: &str,
-    ) -> std::io::Result<()>;
-    fn append_comment(
-        &self,
-        field_context: &dyn std::any::Any,
-        comment_type: &dyn std::any::Any,
-        prefix: &str,
-        comment: &str,
-        sep: &str,
-    ) -> std::io::Result<()>;
-    fn markup_structure(&self, structure_context: &dyn std::any::Any, nested: bool) -> std::io::Result<()>;
-    fn markup_array_element_references(
-        &self,
-        array_addr: Address,
-        element_size: i32,
-        target_addrs: Vec<Address>,
-    ) -> std::io::Result<()>;
-    fn create_function_if_missing(
-        &self,
-        name: &str,
-        ns: &dyn std::any::Any,
-        addr: Address,
-    ) -> Box<dyn std::any::Any>;
-    fn add_reference(&self, field_context: &dyn std::any::Any, ref_dest: Address);
-    fn log_warning_at(&self, addr: Address, msg: &str);
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.StructureMappingInfo`,
-/// referenced by `StructureContext` (and, through it, by `StructureMarkup`) before the real
-/// class is ported.
-pub trait StructureMappingInfo<T>: Send + Sync {
-    fn structure_name(&self) -> String;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.StructureContext`,
-/// referenced by `FieldOutputFunction` before the real class is ported.
-pub trait StructureContext<T>: Send + Sync {
-    fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<T>>;
-    fn get_data_type_mapper(&self) -> Box<dyn std::any::Any>;
-    fn get_containing_field_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
-    fn get_structure_address(&self) -> Address;
-    fn get_field_address(&self, field_offset: i64) -> Address;
-    fn get_field_location(&self, field_offset: i64) -> i64;
-    fn get_structure_start(&self) -> i64;
-    fn get_structure_end(&self) -> i64;
-    fn get_structure_length(&self) -> i32;
-    fn get_structure_instance(&self) -> &T;
-    fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
-    fn get_field_reader(
-        &self,
-        field_offset: i64,
-    ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
-    fn create_field_context(&self, fmi: &dyn std::any::Any, include_reader: bool) -> Box<dyn std::any::Any>;
-    fn get_structure_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::structure::Structure>>;
-    fn to_string(&self) -> String;
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoMethod`, referenced by
 /// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType)
 /// before the real class is ported.
@@ -4310,7 +4228,7 @@ pub trait GoSlice: Send + Sync {
         &self,
         element_size: i32,
         target_addrs: Vec<Address>,
-        session: &dyn MarkupSession,
+        session: &mut crate::format::golang::structmapping::MarkupSession<'_>,
     ) -> std::io::Result<()>;
     /// Mirrors the `GoSlice.markupArray(String, String, DataType, boolean, MarkupSession)`
     /// overload (the `Class<?>`-based overload isn't needed by any current caller).
@@ -4320,7 +4238,7 @@ pub trait GoSlice: Send + Sync {
         namespace_name: &str,
         element_type: Option<&dyn crate::program::model::data::data_type::DataType>,
         ptr: bool,
-        session: &dyn MarkupSession,
+        session: &mut crate::format::golang::structmapping::MarkupSession<'_>,
     ) -> std::io::Result<()>;
     /// Mirrors `GoSlice.getArrayAddress()`.
     fn get_array_address(&self) -> Address;
@@ -4469,7 +4387,7 @@ pub trait GoPcValueEvaluator: Send + Sync {
     /// Mirrors `GoPcValueEvaluator.evalAll(long)`.
     fn eval_all(&mut self, target_pc: i64) -> std::io::Result<Vec<i32>>;
     /// Mirrors `GoPcValueEvaluator.markup(MarkupSession)`.
-    fn markup(&mut self, session: &dyn MarkupSession) -> std::io::Result<()>;
+    fn markup(&mut self, session: &mut crate::format::golang::structmapping::MarkupSession<'_>) -> std::io::Result<()>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoTypeFlag`, referenced by

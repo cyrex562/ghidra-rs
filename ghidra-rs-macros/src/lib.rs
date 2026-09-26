@@ -37,6 +37,7 @@
 //! | `#[eol_comment]` / `#[eol_comment(method)]` | `@EOLComment` |
 //! | `#[plate_comment]` / `#[plate_comment(method)]` | `@PlateComment` on a field |
 //! | `#[context_field]` | `@ContextField` |
+//! | `#[initial_value(expr)]` | a Java field initializer (`long cuOffset = -1;`); other fields start at `Default` |
 //!
 //! Java's `@FieldMapping` without an explicit `fieldName` searches for the Java field name; a
 //! Rust field `ptr_to_this` is searched for as `ptrToThis` (lower camel case), which is what the
@@ -64,7 +65,8 @@ use syn::{
         markup_reference,
         eol_comment,
         plate_comment,
-        context_field
+        context_field,
+        initial_value
     )
 )]
 pub fn derive_structure_mapped(input: TokenStream) -> TokenStream {
@@ -116,6 +118,7 @@ struct FieldAttrs {
     eol_comment: Option<Option<Ident>>,
     plate_comment: Option<Option<Ident>>,
     context_field: bool,
+    initial_value: Option<Expr>,
 }
 
 /// Java primitive widths the structure mapper knows how to read (`ReflectionHelper.NUM_CLASSES`).
@@ -405,6 +408,9 @@ fn parse_field_attrs(field: &syn::Field) -> syn::Result<FieldAttrs> {
         else if path.is_ident("context_field") {
             fa.context_field = true;
         }
+        else if path.is_ident("initial_value") {
+            fa.initial_value = Some(attr.parse_args()?);
+        }
     }
     Ok(fa)
 }
@@ -446,6 +452,9 @@ fn expand(input: &DeriveInput) -> syn::Result<TokenStream2> {
             else {
                 ctor_fields.push(quote!(#fident: __mapper.get_context_value::<#fty>(#name::__SM_TYPE_NAME, stringify!(#fident))?));
             }
+        }
+        else if let Some(init) = &fa.initial_value {
+            ctor_fields.push(quote!(#fident: #init));
         }
         else {
             ctor_fields.push(quote!(#fident: ::core::default::Default::default()));

@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use super::method_info::MethodInfo;
-use crate::format::golang::structmapping::structure_markup::StructureMarkup;
-use crate::format::seam_stubs::{GoIMethod, GoInterfaceType, GoRttiMapper, GoSlice, GoType, MarkupSession, StructureContext};
+use crate::format::golang::structmapping::{MarkupSession, StructureContext, StructureMapped, StructureMarkup};
+use crate::format::seam_stubs::{GoIMethod, GoInterfaceType, GoRttiMapper, GoSlice, GoType};
 use crate::program::model::address::Address;
 use crate::util::msg::Msg;
 
@@ -19,30 +21,35 @@ pub struct GoIMethodInfo {
 /// Represents a mapping between a Go interface and a type that implements the methods of
 /// the interface.
 ///
-/// Mirrors Ghidra's `runtime.itab` / `internal/abi.ITab` structure (Java `GoItab`).
+/// Mirrors Ghidra's `runtime.itab` / `internal/abi.ITab` structure (Java `GoItab`), read by the
+/// structure mapper. Its plate comment is its [`Display`](std::fmt::Display) text, as Java's
+/// type-level `@PlateComment` renders `toString()`.
+///
+/// Java also marks up `getInterfaceType()`/`getType()` (`@Markup`, and `@MarkupReference`s from
+/// `inter`/`_type`); both return `GoType`s, which are still `seam_stubs` placeholders with no
+/// structure address, so those hooks are attached when `GoType` is ported as a structure mapped
+/// type.
+#[derive(StructureMapped)]
+#[structure_mapping(structure_name = ["runtime.itab", "internal/abi.ITab"], structure_markup, plate_comment)]
 pub struct GoItab {
     /// `@ContextField` injected Go binary context (Java field `programContext`).
-    program_context: Box<dyn GoRttiMapper>,
+    #[context_field]
+    program_context: Arc<dyn GoRttiMapper>,
     /// `@ContextField` injected structure-read context (Java field `context`).
-    context: Box<dyn StructureContext<GoItab>>,
+    #[context_field]
+    context: StructureContext<GoItab>,
     /// Offset of the `runtime.interfacetype` structure this itab implements (Java field `inter`).
+    #[field_mapping(field_name = ["inter", "Inter"])]
     pub inter: i64,
     /// Offset of the `runtime._type` structure that implements the interface (Java field `_type`).
+    #[field_mapping(field_name = ["_type", "Type"])]
     pub type_off: i64,
     /// Inline varlen array, specced as `uintptr[1]`, treated as a single value (Java field `fun`).
+    #[field_mapping]
     pub fun: i64,
 }
 
 impl GoItab {
-    pub fn new(
-        program_context: Box<dyn GoRttiMapper>,
-        context: Box<dyn StructureContext<GoItab>>,
-        inter: i64,
-        type_off: i64,
-        fun: i64,
-    ) -> Self {
-        Self { program_context, context, inter, type_off, fun }
-    }
 
     /// Returns the interface implemented by the specified type.
     ///
@@ -148,11 +155,7 @@ fn placeholder_go_imethod() -> Box<dyn GoIMethod> {
     Box::new(Empty)
 }
 
-impl StructureMarkup<GoItab> for GoItab {
-    fn structure_context(&self) -> &dyn StructureContext<GoItab> {
-        self.context.as_ref()
-    }
-
+impl StructureMarkup for GoItab {
     fn structure_name(&self) -> std::io::Result<Option<String>> {
         let type_symbol = self.get_type()?.get_symbol_name().as_string();
         let iface_name = self
@@ -171,9 +174,9 @@ impl StructureMarkup<GoItab> for GoItab {
         Ok(Some(self.get_type()?.get_structure_namespace()?))
     }
 
-    fn additional_markup(&self, session: &dyn MarkupSession) -> Result<(), Box<dyn std::error::Error>> {
-        // TODO: would be nice if we could override the base structure data type used to markup
-        // ourself, and use a specialized itab (as created by GoInterfaceType).
+    fn additional_markup(&self, session: &mut MarkupSession<'_>) -> std::io::Result<()> {
+        // Java notes that it would be nice to override the base structure data type used to
+        // mark up the itab itself with the specialized itab that GoInterfaceType creates.
         let fun_slice = self.get_fun_slice()?;
         let ptr_size = self.program_context.get_ptr_size();
         let func_addrs: Vec<Address> = fun_slice
@@ -224,11 +227,10 @@ impl std::fmt::Display for GoItab {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::{GoSymbolName, GoTypeManager, StructureMappingInfo};
+    use crate::format::golang::rtti::test_support::{go_mapper, read_at, Image};
+    use crate::format::seam_stubs::{GoSymbolName, GoTypeManager};
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::structure::Structure;
-    use std::any::Any;
     use std::collections::HashSet;
 
     fn test_address(offset: i64) -> Address {
@@ -319,7 +321,7 @@ mod tests {
             &self,
             _element_size: i32,
             _target_addrs: Vec<Address>,
-            _session: &dyn MarkupSession,
+            _session: &mut MarkupSession<'_>,
         ) -> std::io::Result<()> {
             Ok(())
         }
@@ -330,7 +332,7 @@ mod tests {
             _namespace_name: &str,
             _element_type: Option<&dyn DataType>,
             _ptr: bool,
-            _session: &dyn MarkupSession,
+            _session: &mut MarkupSession<'_>,
         ) -> std::io::Result<()> {
             Ok(())
         }
@@ -555,81 +557,6 @@ mod tests {
         }
     }
 
-    struct MockStructureContext {
-        structure_end: i64,
-    }
-
-    impl StructureContext<GoItab> for MockStructureContext {
-        fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<GoItab>> {
-            struct Info;
-            impl StructureMappingInfo<GoItab> for Info {
-                fn structure_name(&self) -> String {
-                    "runtime.itab".to_string()
-                }
-            }
-            Box::new(Info)
-        }
-
-        fn get_data_type_mapper(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_containing_field_data_type(&self) -> Box<dyn DataType> {
-            unimplemented!()
-        }
-
-        fn get_structure_address(&self) -> Address {
-            test_address(0x9000)
-        }
-
-        fn get_field_address(&self, _field_offset: i64) -> Address {
-            unimplemented!()
-        }
-
-        fn get_field_location(&self, _field_offset: i64) -> i64 {
-            unimplemented!()
-        }
-
-        fn get_structure_start(&self) -> i64 {
-            0x9000
-        }
-
-        fn get_structure_end(&self) -> i64 {
-            self.structure_end
-        }
-
-        fn get_structure_length(&self) -> i32 {
-            unimplemented!()
-        }
-
-        fn get_structure_instance(&self) -> &GoItab {
-            unimplemented!()
-        }
-
-        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn get_field_reader(
-            &self,
-            _field_offset: i64,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn create_field_context(&self, _fmi: &dyn Any, _include_reader: bool) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_structure_data_type(&self) -> std::io::Result<Box<dyn Structure>> {
-            unimplemented!()
-        }
-
-        fn to_string(&self) -> String {
-            "MockStructureContext".to_string()
-        }
-    }
-
     fn iface_type(methods_slice_len: i64, method_names: Vec<&str>) -> MockGoType {
         MockGoType {
             name: "MyIface".to_string(),
@@ -643,20 +570,42 @@ mod tests {
         MockGoType { name: "MyStruct".to_string(), is_iface: false, methods_slice_len: 0, method_names: vec![] }
     }
 
+    /// A `runtime.itab` read at 0x8ff0 (32 bytes, so it ends at 0x9010): `inter` 0x10,
+    /// `_type` 0x20.
     fn make_itab(inter_type: Option<MockGoType>, fun_addrs: Vec<i64>, loaded_addrs: HashSet<i64>) -> GoItab {
-        GoItab::new(
-            Box::new(MockGoRttiMapper {
-                inter_type,
-                type_type: impl_type(),
-                ptr_size: 8,
-                fun_addrs,
-                loaded_addrs,
-            }),
-            Box::new(MockStructureContext { structure_end: 0x9010 }),
-            0x10,
-            0x20,
-            0,
-        )
+        let rtti = MockGoRttiMapper { inter_type, type_type: impl_type(), ptr_size: 8, fun_addrs, loaded_addrs };
+        let mapper = go_mapper(Arc::new(rtti));
+        let mut image = Image::default();
+        image.put(0x8ff0, 8, 0x10).put(0x8ff8, 8, 0x20).put(0x9000, 8, 0).put(0x9008, 8, 0x4000);
+        read_at(&mapper, &image, 0x8ff0)
+    }
+
+    #[test]
+    fn reads_the_itab_fields() {
+        let itab = make_itab(None, Vec::new(), HashSet::new());
+        assert_eq!((itab.inter, itab.type_off, itab.fun), (0x10, 0x20, 0x4000));
+        assert_eq!(itab.context.get_structure_start(), 0x8ff0);
+        assert_eq!(itab.context.get_structure_end(), 0x9010);
+        let d = GoItab::descriptor();
+        assert!(d.plate_comment.is_some());
+        assert!(d.structure_markup.is_some());
+        let names: Vec<&str> = d.fields.iter().map(|f| f.search_name).collect();
+        assert_eq!(names, ["inter", "_type", "fun"]);
+    }
+
+    #[test]
+    fn plate_comment_is_the_display_text() {
+        let itab = make_itab(Some(iface_type(0, vec!["Foo"])), Vec::new(), HashSet::new());
+        let text = (GoItab::descriptor().plate_comment.unwrap())(&itab).unwrap().unwrap();
+        assert_eq!(text, itab.to_string());
+    }
+
+    #[test]
+    fn fun_slice_starts_at_the_last_pointer_of_the_structure() {
+        let itab = make_itab(Some(iface_type(2, vec![])), Vec::new(), HashSet::new());
+        // structure_end (0x9010) - ptr_size (8)
+        assert_eq!(itab.context.get_structure_end() - itab.program_context.get_ptr_size() as i64, 0x9008);
+        assert_eq!(itab.get_fun_slice().unwrap().get_len(), 2);
     }
 
     #[test]

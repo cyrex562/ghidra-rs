@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use super::go_base_type::GoBaseType;
 use crate::app::util::viewer::field::address_annotated_string_handler::AddressAnnotatedStringHandler;
-use crate::format::golang::structmapping::structure_markup::StructureMarkup;
-use crate::format::golang::structmapping::structure_verifier::StructureVerifier;
-use crate::format::seam_stubs::{GoRttiMapper, GoSymbolName, GoType, MarkupSession, StructureContext};
+use crate::format::golang::structmapping::{StructureContext, StructureMapped, StructureMarkup, StructureVerifier};
+use crate::format::seam_stubs::{GoRttiMapper, GoSymbolName, GoType};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
@@ -16,14 +17,33 @@ use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
 /// `GoTypeManager::getGenericSliceDT`) for the layout of an actual slice variable in memory,
 /// as opposed to this RTTI type-descriptor.
 ///
-/// See [`GoArrayType`](super::go_array_type::GoArrayType)'s module docs for why the fields
-/// `GoType` contributes are held here directly rather than inherited, and for the same
-/// documented simplification of `GoType`'s uncommon-type fallback behavior.
+/// See [`GoArrayType`](super::go_array_type::GoArrayType)'s docs for why the fields `GoType`
+/// contributes are declared here directly rather than inherited, for the same documented
+/// simplification of `GoType`'s uncommon-type behavior, and for the `GoType`-returning markup
+/// hooks (`getElement()`) that are attached once `GoType` is ported.
+#[derive(StructureMapped)]
+#[structure_mapping(
+    structure_name = ["runtime.slicetype", "internal/abi.SliceType"],
+    verifier,
+    structure_markup
+)]
 pub struct GoSliceType {
-    program_context: Box<dyn GoRttiMapper>,
-    context: Box<dyn StructureContext<GoSliceType>>,
-    typ: GoBaseType,
+    /// `@ContextField` injected Go binary context (Java field `programContext`, inherited from
+    /// `GoType`).
+    #[context_field]
+    program_context: Arc<dyn GoRttiMapper>,
+    /// `@ContextField` injected structure-read context (Java field `context`, inherited from
+    /// `GoType`).
+    #[context_field]
+    context: StructureContext<GoSliceType>,
+    /// `@FieldMapping` shared type header (Java field `typ`, inherited from `GoType`). Always
+    /// `Some` once read: it is a mandatory mapped field.
+    #[field_mapping(field_name = ["typ", "Type"])]
+    #[markup]
+    #[field_output]
+    typ: Option<GoBaseType>,
     /// Pointer to the element type (Java field `elem`).
+    #[field_mapping]
     elem: i64,
 }
 
@@ -61,13 +81,9 @@ fn io_err(e: impl std::fmt::Display) -> std::io::Error {
 }
 
 impl GoSliceType {
-    pub fn new(
-        program_context: Box<dyn GoRttiMapper>,
-        context: Box<dyn StructureContext<GoSliceType>>,
-        typ: GoBaseType,
-        elem: i64,
-    ) -> Self {
-        Self { program_context, context, typ, elem }
+    /// The `typ` base type header (`GoType.getBaseType()`).
+    fn typ(&self) -> &GoBaseType {
+        self.typ.as_ref().expect("GoSliceType.typ is a mandatory mapped field")
     }
 
     /// Returns a reference to the element's type.
@@ -79,8 +95,7 @@ impl GoSliceType {
 
     /// Port of `GoType.getName()`, which `GoSliceType` inherits unchanged (`typ.getName()`).
     fn base_name(&self) -> String {
-        let fallback_name = self.context.get_mapping_info().structure_name();
-        self.typ.name_at(self.program_context.as_ref(), self.context.get_structure_start(), &fallback_name)
+        self.typ().get_name()
     }
 
     /// Converts this Go RTTI slice type structure into a Ghidra data type.
@@ -165,7 +180,7 @@ impl GoSliceType {
     /// Port of `GoSliceType.isValidSize()`.
     fn is_valid_size(&self) -> bool {
         let ptr_size = self.program_context.get_ptr_size() as i64;
-        self.typ.get_size() == ptr_size * 3 && self.typ.get_ptr_bytes() == ptr_size
+        self.typ().get_size() == ptr_size * 3 && self.typ().get_ptr_bytes() == ptr_size
     }
 }
 
@@ -208,7 +223,7 @@ impl GoType for GoSliceType {
     }
 
     fn get_base_type(&self) -> GoBaseType {
-        self.typ
+        self.typ().clone()
     }
 
     fn get_package_path_string(&self) -> String {
@@ -218,13 +233,14 @@ impl GoType for GoSliceType {
 
 impl StructureVerifier for GoSliceType {
     fn is_valid(&self) -> bool {
-        self.typ.is_valid(self.program_context.as_ref()) && self.is_valid_size()
+        self.typ().is_valid() && self.is_valid_size()
     }
 }
 
-impl StructureMarkup<GoSliceType> for GoSliceType {
-    fn structure_context(&self) -> &dyn StructureContext<GoSliceType> {
-        self.context.as_ref()
+impl StructureMarkup for GoSliceType {
+    /// `GoType.getStructureLabel()`: `"<fully qualified name>___<kind>_type"`.
+    fn structure_label(&self) -> std::io::Result<Option<String>> {
+        Ok(Some(format!("{}___{}_type", self.get_symbol_name().as_string(), self.typ().get_kind())))
     }
 
     fn structure_name(&self) -> std::io::Result<Option<String>> {
@@ -239,13 +255,12 @@ impl StructureMarkup<GoSliceType> for GoSliceType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::{GoTypeManager, StructureMappingInfo};
+    use crate::format::golang::rtti::test_support::{base_type, go_mapper, read_at, try_read_at, Image};
+    use crate::format::seam_stubs::GoTypeManager;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
     use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl;
-    use std::any::Any;
     use std::collections::HashSet;
-    use std::sync::Arc;
 
     fn test_address(offset: i64) -> Address {
         let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
@@ -255,7 +270,7 @@ mod tests {
     #[derive(Clone)]
     struct MockGoType {
         name: String,
-        base_type: GoBaseType,
+        size: i64,
         structure_namespace: String,
         discover_marker: i64,
     }
@@ -274,7 +289,7 @@ mod tests {
             Ok(discovered_types.insert(self.discover_marker))
         }
         fn get_base_type(&self) -> GoBaseType {
-            self.base_type
+            base_type(self.size, 0, 0, 2)
         }
         fn get_package_path_string(&self) -> String {
             String::new()
@@ -527,112 +542,64 @@ mod tests {
         }
     }
 
-    struct MockStructureContext {
-        structure_start: i64,
+    fn element_type(name: &str, size: i64, namespace: &str) -> MockGoType {
+        MockGoType { name: name.to_string(), size, structure_namespace: namespace.to_string(), discover_marker: 1 }
     }
 
-    impl StructureContext<GoSliceType> for MockStructureContext {
-        fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<GoSliceType>> {
-            struct Info;
-            impl StructureMappingInfo<GoSliceType> for Info {
-                fn structure_name(&self) -> String {
-                    "runtime.slicetype".to_string()
-                }
-            }
-            Box::new(Info)
-        }
-        fn get_data_type_mapper(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-        fn get_containing_field_data_type(&self) -> Box<dyn DataType> {
-            unimplemented!()
-        }
-        fn get_structure_address(&self) -> Address {
-            test_address(self.structure_start)
-        }
-        fn get_field_address(&self, _field_offset: i64) -> Address {
-            unimplemented!()
-        }
-        fn get_field_location(&self, _field_offset: i64) -> i64 {
-            unimplemented!()
-        }
-        fn get_structure_start(&self) -> i64 {
-            self.structure_start
-        }
-        fn get_structure_end(&self) -> i64 {
-            unimplemented!()
-        }
-        fn get_structure_length(&self) -> i32 {
-            unimplemented!()
-        }
-        fn get_structure_instance(&self) -> &GoSliceType {
-            unimplemented!()
-        }
-        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-        fn get_field_reader(&self, _field_offset: i64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-        fn create_field_context(&self, _fmi: &dyn Any, _include_reader: bool) -> Box<dyn Any> {
-            unimplemented!()
-        }
-        fn get_structure_data_type(&self) -> std::io::Result<Box<dyn Structure>> {
-            unimplemented!()
-        }
-        fn to_string(&self) -> String {
-            "MockStructureContext".to_string()
-        }
+    /// A `runtime.slicetype` image at 0x9000: `typ` (kind Slice, name at `str` 0x8 when named),
+    /// `elem` 0x100.
+    fn image(size: i64, ptrdata: i64, named: bool) -> Image {
+        let mut image = Image::default();
+        image.put_base_type(0x9000, size, ptrdata, 0, 23, if named { 0x8 } else { 0 }, 0).put(0x9000 + 48, 8, 0x100);
+        image
     }
 
-    fn element_type(name: &str, size: i64) -> MockGoType {
-        MockGoType {
-            name: name.to_string(),
-            base_type: GoBaseType::new(size, 0, 0, 0, 0, 0),
-            structure_namespace: String::new(),
-            discover_marker: 1,
-        }
+    fn mapper_for(element: MockGoType, ptr_size: i32, resolved_name: Option<&str>) -> crate::format::golang::structmapping::DataTypeMapper {
+        go_mapper(Arc::new(MockGoRttiMapper { element, ptr_size, resolved_name: resolved_name.map(str::to_string) }))
     }
 
     fn make_slice(ptr_size: i32) -> GoSliceType {
-        GoSliceType::new(
-            Box::new(MockGoRttiMapper { element: element_type("int", 8), ptr_size, resolved_name: None }),
-            Box::new(MockStructureContext { structure_start: 0x9000 }),
-            GoBaseType::new((ptr_size as i64) * 3, ptr_size as i64, 0, 23, 0, 0),
-            0x100,
-        )
+        let mapper = mapper_for(element_type("int", 8, ""), ptr_size, None);
+        read_at(&mapper, &image(ptr_size as i64 * 3, ptr_size as i64, false), 0x9000)
+    }
+
+    #[test]
+    fn reads_the_slice_type_and_its_nested_base_type() {
+        let slice = make_slice(8);
+        assert_eq!(slice.elem, 0x100);
+        assert_eq!(slice.context.get_structure_start(), 0x9000);
+        assert_eq!(slice.context.get_structure_length(), 56);
+        assert_eq!(slice.get_base_type().get_size(), 24);
+        assert_eq!(slice.get_base_type().get_kind(), super::super::go_kind::GoKind::Slice);
     }
 
     #[test]
     fn get_element_resolves_via_elem_offset() {
-        let slice = make_slice(8);
-        assert_eq!(slice.get_element().unwrap().get_name(), "int");
+        assert_eq!(make_slice(8).get_element().unwrap().get_name(), "int");
     }
 
     #[test]
     fn is_valid_true_for_wellformed_slice_header() {
-        let slice = make_slice(8);
-        assert!(slice.is_valid());
+        assert!(make_slice(8).is_valid());
+        assert!(make_slice(4).is_valid());
     }
 
     #[test]
-    fn is_valid_false_when_size_is_not_three_pointers() {
-        let mut slice = make_slice(8);
-        slice.typ = GoBaseType::new(16, 8, 0, 23, 0, 0);
-        assert!(!slice.is_valid());
+    fn verifier_rejects_a_size_that_is_not_three_pointers() {
+        let mapper = mapper_for(element_type("int", 8, ""), 8, None);
+        let err = try_read_at::<GoSliceType>(&mapper, &image(16, 8, false), 0x9000).err().unwrap();
+        assert_eq!(err.to_string(), "Invalid data for struct @0x9000");
     }
 
     #[test]
-    fn is_valid_false_when_ptr_bytes_mismatch() {
-        let mut slice = make_slice(8);
-        slice.typ = GoBaseType::new(24, 4, 0, 23, 0, 0);
-        assert!(!slice.is_valid());
+    fn verifier_rejects_a_ptr_bytes_mismatch() {
+        let mapper = mapper_for(element_type("int", 8, ""), 8, None);
+        assert!(try_read_at::<GoSliceType>(&mapper, &image(24, 4, false), 0x9000).is_err());
     }
 
     #[test]
     fn recover_data_type_builds_structure_with_element_pointer_and_len() {
-        let slice = make_slice(8);
-        let dt = slice.recover_data_type().unwrap();
+        let dt = make_slice(8).recover_data_type().unwrap();
         // Overall length matches the generic slice layout (ptr + int = 16 bytes for ptr_size=8).
         assert_eq!(dt.get_length(), 16);
     }
@@ -648,35 +615,22 @@ mod tests {
     #[test]
     fn discover_go_types_false_when_already_discovered() {
         let slice = make_slice(8);
-        let mut discovered = HashSet::new();
-        discovered.insert(0x9000);
+        let mut discovered = HashSet::from([0x9000]);
         assert!(!slice.discover_go_types(&mut discovered).unwrap());
     }
 
     #[test]
-    fn get_structure_namespace_falls_back_to_element() {
-        let slice = GoSliceType::new(
-            Box::new(MockGoRttiMapper {
-                element: MockGoType {
-                    name: "int".to_string(),
-                    base_type: GoBaseType::new(8, 0, 0, 0, 0, 0),
-                    structure_namespace: "mypkg".to_string(),
-                    discover_marker: 1,
-                },
-                ptr_size: 8,
-                resolved_name: None,
-            }),
-            Box::new(MockStructureContext { structure_start: 0x9000 }),
-            GoBaseType::new(24, 8, 0, 23, 0, 0),
-            0x100,
-        );
+    fn structure_markup_names_namespace_and_label() {
+        let mapper = mapper_for(element_type("int", 8, "mypkg"), 8, Some("main.Ints"));
+        let slice: GoSliceType = read_at(&mapper, &image(24, 8, true), 0x9000);
         assert_eq!(slice.get_structure_namespace().unwrap(), "mypkg");
+        assert_eq!(slice.structure_name().unwrap().as_deref(), Some("main.Ints"));
+        assert_eq!(slice.structure_label().unwrap().as_deref(), Some("main.Ints___Slice_type"));
     }
 
     #[test]
     fn type_decl_string_includes_brackets_and_element_name() {
-        let slice = make_slice(8);
-        let decl = slice.type_decl_string().unwrap();
+        let decl = make_slice(8).type_decl_string().unwrap();
         assert!(decl.starts_with("type "));
         assert!(decl.contains("[]"));
         assert!(decl.contains("int"));

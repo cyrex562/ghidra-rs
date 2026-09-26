@@ -844,7 +844,6 @@ ts	stub_class	referenced_by
 2026-08-15T09:52:00.000000+00:00	DWARFCompilationUnit	DIEAggregate
 2026-08-15T09:52:00.000000+00:00	DWARFRangeList	DIEAggregate
 2026-08-16T01:09:18Z	StringDataItem	StringIDItem
-2026-08-16T01:15:17Z	StructureMappingInfo	StructureMarkup
 2026-08-16T01:22:34.308788+00:00	GoMethod	GoUncommonType
 2026-08-16T01:22:34.308788+00:00	GoName	GoUncommonType
 2026-08-16T01:22:34.308788+00:00	GoSlice	GoUncommonType

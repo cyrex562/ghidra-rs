@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use super::go_kind::GoKind;
-use crate::format::seam_stubs::{GoName, GoRttiMapper, GoType, GoTypeFlag, StructureContext};
+use crate::format::golang::structmapping::{StructureContext, StructureMapped, StructureVerifier};
+use crate::format::seam_stubs::{GoName, GoRttiMapper, GoType, GoTypeFlag};
 
 /// Represents the fundamental Go rtti type information.
 ///
@@ -9,22 +12,44 @@ use crate::format::seam_stubs::{GoName, GoRttiMapper, GoType, GoTypeFlag, Struct
 /// Additionally, there can be a `GoUncommonType` structure immediately after this type, if the
 /// uncommon bit is set in `tflag`.
 ///
-/// Mirrors Ghidra's `runtime._type` / `internal/abi.Type` structure (Java `GoBaseType`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// Mirrors Ghidra's `runtime._type` / `internal/abi.Type` structure (Java `GoBaseType`), read by
+/// the structure mapper (`#[derive(StructureMapped)]`).
+///
+/// Java also marks up `getGoName()`/`getPtrToThis()` (`@Markup`) and places references from the
+/// `str`/`ptrToThis` fields to them (`@MarkupReference`). Both return `GoName`/`GoType`, which
+/// are still `seam_stubs` placeholders with no structure address; those four markup hooks are
+/// attached when those classes are ported as structure mapped types.
+#[derive(StructureMapped, Clone)]
+#[structure_mapping(structure_name = ["runtime._type", "internal/abi.Type"], verifier)]
 pub struct GoBaseType {
+    /// `@ContextField` (Java field `context`).
+    #[context_field]
+    context: StructureContext<GoBaseType>,
+    /// `@ContextField` injected Go binary context (Java field `programContext`).
+    #[context_field]
+    program_context: Arc<dyn GoRttiMapper>,
+    #[field_mapping(field_name = ["size", "Size_"], signedness = Unsigned)]
     size: i64,
+    #[field_mapping(field_name = ["ptrdata", "PtrBytes"])]
     ptrdata: i64,
+    #[field_mapping]
+    #[eol_comment(flags_comment)]
     tflag: i32,
+    #[field_mapping(field_name = ["kind", "Kind_"])]
+    #[eol_comment(kind_comment)]
     kind: i32,
     /// Offset relative to the containing moduledata's type base addr (Java field `str`).
+    #[field_mapping(field_name = "str")]
     str_off: i64,
     /// Offset relative to the containing moduledata's type base addr (Java field `ptrToThis`).
+    #[field_mapping(field_name = "ptrToThis")]
     ptr_to_this_off: i64,
 }
 
 impl GoBaseType {
-    pub fn new(size: i64, ptrdata: i64, tflag: i32, kind: i32, str_off: i64, ptr_to_this_off: i64) -> Self {
-        GoBaseType { size, ptrdata, tflag, kind, str_off, ptr_to_this_off }
+    /// Returns the structure context this type was read with.
+    pub fn get_structure_context(&self) -> &StructureContext<GoBaseType> {
+        &self.context
     }
 
     /// Returns the size of the type being defined by this structure.
@@ -43,8 +68,24 @@ impl GoBaseType {
     }
 
     /// Returns the [`GoTypeFlag`]s assigned to this type definition.
-    pub fn get_flags(&self, program_context: &dyn GoRttiMapper) -> Vec<GoTypeFlag> {
-        GoTypeFlag::parse_flags(self.tflag, program_context.get_go_ver())
+    pub fn get_flags(&self) -> Vec<GoTypeFlag> {
+        GoTypeFlag::parse_flags(self.tflag, self.program_context.get_go_ver())
+    }
+
+    /// The `@EOLComment("flags")` text: Java's `EnumSet.toString()` of [`get_flags`](Self::get_flags)
+    /// (`[Uncommon, Named]`); an empty set adds no comment.
+    fn flags_comment(&self) -> Option<String> {
+        let flags = self.get_flags();
+        if flags.is_empty() {
+            return None;
+        }
+        let names: Vec<String> = flags.iter().map(|f| format!("{f:?}")).collect();
+        Some(format!("[{}]", names.join(", ")))
+    }
+
+    /// The `@EOLComment` text of `kind`: `getKind().toString()`.
+    fn kind_comment(&self) -> String {
+        self.get_kind().to_string()
     }
 
     /// Returns the raw flag value.
@@ -54,47 +95,25 @@ impl GoBaseType {
 
     /// Returns true if this type definition's flags indicate there is a following
     /// `GoUncommonType` structure.
-    pub fn has_uncommon_type(&self, program_context: &dyn GoRttiMapper) -> bool {
-        GoTypeFlag::Uncommon.is_set(self.tflag, program_context.get_go_ver())
+    pub fn has_uncommon_type(&self) -> bool {
+        GoTypeFlag::Uncommon.is_set(self.tflag, self.program_context.get_go_ver())
     }
 
     /// Returns the name of this type, as a [`GoName`].
-    pub fn get_go_name(
-        &self,
-        program_context: &dyn GoRttiMapper,
-        context: &dyn StructureContext<GoBaseType>,
-    ) -> std::io::Result<Option<Box<dyn GoName>>> {
-        program_context.resolve_name_off(context.get_structure_start(), self.str_off)
+    pub fn get_go_name(&self) -> std::io::Result<Option<Box<dyn GoName>>> {
+        self.program_context.resolve_name_off(self.context.get_structure_start(), self.str_off)
     }
 
-    /// Returns the name of this type.
-    pub fn get_name(
-        &self,
-        program_context: &dyn GoRttiMapper,
-        context: &dyn StructureContext<GoBaseType>,
-    ) -> String {
-        let fallback_name = context.get_mapping_info().structure_name();
-        let fallback_start = context.get_structure_start();
-        self.name_at(program_context, fallback_start, &fallback_name)
-    }
-
-    /// Returns the name of this type, given the raw structure-start offset and a fallback name
-    /// directly rather than a `&dyn StructureContext<GoBaseType>`.
-    ///
-    /// `GoType` subclasses (e.g. `GoArrayType`, `GoSliceType`) embed a `GoBaseType` value but
-    /// hold a `StructureContext<Self>`, not a `StructureContext<GoBaseType>` -- Rust's trait
-    /// objects don't let one substitute for the other the way Java's shared `context` field
-    /// (declared once, on the `GoType` base class, as `StructureContext<GoType>`) does. This is
-    /// the same computation as [`get_name`](Self::get_name), taking the two primitives that
-    /// method actually pulls out of its context argument.
-    pub fn name_at(&self, program_context: &dyn GoRttiMapper, structure_start: i64, fallback_name: &str) -> String {
-        let s = program_context.get_safe_name(
-            &|| program_context.resolve_name_off(structure_start, self.str_off),
-            fallback_name,
-            structure_start,
+    /// Returns the name of this type (`getSafeName(this::getGoName, this, "")`), without the
+    /// leading `*` that the `ExtraStar` flag says the stored name carries.
+    pub fn get_name(&self) -> String {
+        let s = self.program_context.get_safe_name(
+            &|| self.get_go_name(),
+            self.context.get_mapping_info().get_structure_name(),
+            self.context.get_structure_start(),
             "",
         );
-        if GoTypeFlag::ExtraStar.is_set(self.tflag, program_context.get_go_ver()) && s.starts_with('*') {
+        if GoTypeFlag::ExtraStar.is_set(self.tflag, self.program_context.get_go_ver()) && s.starts_with('*') {
             s[1..].to_string()
         }
         else {
@@ -103,28 +122,19 @@ impl GoBaseType {
     }
 
     /// Returns a reference to the [`GoType`] that represents a pointer to this type.
-    pub fn get_ptr_to_this(
-        &self,
-        program_context: &dyn GoRttiMapper,
-        context: &dyn StructureContext<GoBaseType>,
-    ) -> std::io::Result<Box<dyn GoType>> {
-        program_context
+    pub fn get_ptr_to_this(&self) -> std::io::Result<Box<dyn GoType>> {
+        self.program_context
             .get_go_types()
-            .resolve_type_off(context.get_structure_start(), self.ptr_to_this_off)
+            .resolve_type_off(self.context.get_structure_start(), self.ptr_to_this_off)
     }
+}
 
-    /// Mirrors the Java `StructureVerifier.isValid()` implementation. Not exposed as an
-    /// implementation of the [`StructureVerifier`](crate::format::golang::structmapping::structure_verifier::StructureVerifier)
-    /// trait: that trait's `is_valid(&self)` takes no arguments, but this check depends on the
-    /// `@ContextField`-injected `GoRttiMapper` (for the binary's Go version), which -- following
-    /// the same convention [`GoUncommonType`](super::go_uncommon_type::GoUncommonType) uses for
-    /// its own `@ContextField`s -- is threaded through as a parameter rather than stored on the
-    /// struct.
-    pub fn is_valid(&self, program_context: &dyn GoRttiMapper) -> bool {
+impl StructureVerifier for GoBaseType {
+    fn is_valid(&self) -> bool {
         0 <= self.ptrdata
             && self.ptrdata <= self.size
             && self.get_kind() != GoKind::Invalid
-            && GoTypeFlag::is_valid(self.tflag, program_context.get_go_ver())
+            && GoTypeFlag::is_valid(self.tflag, self.program_context.get_go_ver())
     }
 }
 
@@ -132,11 +142,9 @@ impl GoBaseType {
 mod tests {
     use super::*;
     use crate::format::golang::go_ver::GoVer;
-    use crate::format::seam_stubs::{GoTypeManager, StructureMappingInfo};
+    use crate::format::golang::rtti::test_support::{go_mapper, try_read_at, Image};
+    use crate::format::seam_stubs::GoTypeManager;
     use crate::program::model::address::Address;
-    use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::structure::Structure;
-    use std::any::Any;
 
     struct MockGoName {
         name: String,
@@ -356,180 +364,128 @@ mod tests {
         }
     }
 
-    struct MockStructureContext {
-        structure_start: i64,
+    fn mapper(go_ver: GoVer, resolved_name: Option<&str>) -> Arc<dyn GoRttiMapper> {
+        Arc::new(MockGoRttiMapper {
+            go_ver,
+            resolved_name: resolved_name.map(str::to_string),
+            types_resolved: true,
+        })
     }
 
-    impl StructureContext<GoBaseType> for MockStructureContext {
-        fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<GoBaseType>> {
-            struct Info;
-            impl StructureMappingInfo<GoBaseType> for Info {
-                fn structure_name(&self) -> String {
-                    "runtime._type".to_string()
-                }
-            }
-            Box::new(Info)
-        }
+    /// Reads a `runtime._type` at 0x100 of an image.
+    fn read(
+        rtti: Arc<dyn GoRttiMapper>,
+        size: i64,
+        ptrdata: i64,
+        tflag: i64,
+        kind: i64,
+        str_off: i64,
+        ptr_to_this: i64,
+    ) -> std::io::Result<GoBaseType> {
+        let mapper = go_mapper(rtti);
+        let mut image = Image::default();
+        image.put_base_type(0x100, size, ptrdata, tflag, kind, str_off, ptr_to_this);
+        try_read_at(&mapper, &image, 0x100)
+    }
 
-        fn get_data_type_mapper(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_containing_field_data_type(&self) -> Box<dyn DataType> {
-            unimplemented!()
-        }
-
-        fn get_structure_address(&self) -> Address {
-            unimplemented!()
-        }
-
-        fn get_field_address(&self, _field_offset: i64) -> Address {
-            unimplemented!()
-        }
-
-        fn get_field_location(&self, _field_offset: i64) -> i64 {
-            unimplemented!()
-        }
-
-        fn get_structure_start(&self) -> i64 {
-            self.structure_start
-        }
-
-        fn get_structure_end(&self) -> i64 {
-            unimplemented!()
-        }
-
-        fn get_structure_length(&self) -> i32 {
-            unimplemented!()
-        }
-
-        fn get_structure_instance(&self) -> &GoBaseType {
-            unimplemented!()
-        }
-
-        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn get_field_reader(
-            &self,
-            _field_offset: i64,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn create_field_context(&self, _fmi: &dyn Any, _include_reader: bool) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_structure_data_type(&self) -> std::io::Result<Box<dyn Structure>> {
-            unimplemented!()
-        }
-
-        fn to_string(&self) -> String {
-            "MockStructureContext".to_string()
-        }
+    fn v121() -> GoVer {
+        GoVer::new(1, 21, 0)
     }
 
     #[test]
-    fn get_size_and_ptr_bytes_return_raw_fields() {
-        let bt = GoBaseType::new(24, 8, 0, 25, 0x10, 0x20);
+    fn reads_the_runtime_type_fields() {
+        let bt = read(mapper(v121(), None), 24, 8, 0, 25, 0x10, 0x20).unwrap();
         assert_eq!(bt.get_size(), 24);
         assert_eq!(bt.get_ptr_bytes(), 8);
+        assert_eq!(bt.get_kind(), GoKind::Struct);
+        assert_eq!(bt.str_off, 0x10);
+        assert_eq!(bt.ptr_to_this_off, 0x20);
+        let ctx = bt.get_structure_context();
+        assert_eq!(ctx.get_structure_start(), 0x100);
+        assert_eq!(ctx.get_structure_length(), 48);
+        assert_eq!(ctx.get_mapping_info().get_structure_name(), "runtime._type");
     }
 
     #[test]
-    fn get_kind_parses_kind_byte() {
-        let bt = GoBaseType::new(0, 0, 0, 25, 0, 0);
-        assert_eq!(bt.get_kind(), GoKind::Struct);
+    fn get_kind_parses_kind_byte_with_flag_bits() {
+        // DIRECT_IFACE (1 << 5) | Pointer (22)
+        let bt = read(mapper(v121(), None), 8, 8, 0, 0x20 | 22, 0, 0).unwrap();
+        assert_eq!(bt.get_kind(), GoKind::Pointer);
+        assert_eq!(bt.kind_comment(), "Pointer");
     }
 
     #[test]
     fn has_uncommon_type_reflects_uncommon_bit() {
-        let ver = GoVer::new(1, 21, 0);
-        let with_flag = GoBaseType::new(0, 0, 0b1, 0, 0, 0);
-        let without_flag = GoBaseType::new(0, 0, 0b10, 0, 0, 0);
-        let mapper = MockGoRttiMapper { go_ver: ver, resolved_name: None, types_resolved: true };
-        assert!(with_flag.has_uncommon_type(&mapper));
-        assert!(!without_flag.has_uncommon_type(&mapper));
+        let with_flag = read(mapper(v121(), None), 0, 0, 0b1, 25, 0, 0).unwrap();
+        let without_flag = read(mapper(v121(), None), 0, 0, 0b10, 25, 0, 0).unwrap();
+        assert!(with_flag.has_uncommon_type());
+        assert!(!without_flag.has_uncommon_type());
     }
 
     #[test]
     fn get_flags_parses_all_set_bits() {
         // Uncommon (1) | Named (4)
-        let bt = GoBaseType::new(0, 0, 0b101, 0, 0, 0);
-        let mapper = MockGoRttiMapper { go_ver: GoVer::new(1, 21, 0), resolved_name: None, types_resolved: true };
-        let flags = bt.get_flags(&mapper);
-        assert_eq!(flags, vec![GoTypeFlag::Uncommon, GoTypeFlag::Named]);
+        let bt = read(mapper(v121(), None), 0, 0, 0b101, 25, 0, 0).unwrap();
+        assert_eq!(bt.get_flags(), vec![GoTypeFlag::Uncommon, GoTypeFlag::Named]);
+        assert_eq!(bt.flags_comment().as_deref(), Some("[Uncommon, Named]"));
+        let none = read(mapper(v121(), None), 0, 0, 0, 25, 0, 0).unwrap();
+        assert_eq!(none.flags_comment(), None, "an empty flag set adds no comment");
     }
 
     #[test]
     fn get_name_strips_leading_star_when_extra_star_flag_set() {
         // ExtraStar bit (1 << 1) set
-        let bt = GoBaseType::new(0, 0, 0b10, 0, 0x8, 0);
-        let mapper = MockGoRttiMapper {
-            go_ver: GoVer::new(1, 21, 0),
-            resolved_name: Some("*mytype".to_string()),
-            types_resolved: true,
-        };
-        let context = MockStructureContext { structure_start: 0x1000 };
-        assert_eq!(bt.get_name(&mapper, &context), "mytype");
+        let bt = read(mapper(v121(), Some("*mytype")), 0, 0, 0b10, 25, 0x8, 0).unwrap();
+        assert_eq!(bt.get_name(), "mytype");
     }
 
     #[test]
     fn get_name_keeps_star_when_extra_star_flag_not_set() {
-        let bt = GoBaseType::new(0, 0, 0, 0, 0x8, 0);
-        let mapper = MockGoRttiMapper {
-            go_ver: GoVer::new(1, 21, 0),
-            resolved_name: Some("*mytype".to_string()),
-            types_resolved: true,
-        };
-        let context = MockStructureContext { structure_start: 0x1000 };
-        assert_eq!(bt.get_name(&mapper, &context), "*mytype");
+        let bt = read(mapper(v121(), Some("*mytype")), 0, 0, 0, 25, 0x8, 0).unwrap();
+        assert_eq!(bt.get_name(), "*mytype");
     }
 
     #[test]
     fn get_name_falls_back_to_default_when_offset_zero() {
-        let bt = GoBaseType::new(0, 0, 0, 0, 0, 0);
-        let mapper = MockGoRttiMapper { go_ver: GoVer::new(1, 21, 0), resolved_name: None, types_resolved: true };
-        let context = MockStructureContext { structure_start: 0x1000 };
-        assert_eq!(bt.get_name(&mapper, &context), "");
+        let bt = read(mapper(v121(), None), 0, 0, 0, 25, 0, 0).unwrap();
+        assert_eq!(bt.get_name(), "");
     }
 
     #[test]
     fn get_ptr_to_this_resolves_via_go_type_manager() {
-        let bt = GoBaseType::new(0, 0, 0, 0, 0, 0x30);
-        let mapper = MockGoRttiMapper { go_ver: GoVer::new(1, 21, 0), resolved_name: None, types_resolved: true };
-        let context = MockStructureContext { structure_start: 0x1000 };
-        assert!(bt.get_ptr_to_this(&mapper, &context).is_ok());
+        let bt = read(mapper(v121(), None), 0, 0, 0, 25, 0, 0x30).unwrap();
+        assert!(bt.get_ptr_to_this().is_ok());
+        let bt = read(mapper(v121(), None), 0, 0, 0, 25, 0, 0).unwrap();
+        assert!(bt.get_ptr_to_this().is_err());
     }
 
     #[test]
     fn is_valid_true_for_well_formed_type() {
-        let bt = GoBaseType::new(16, 8, 0, 25, 0, 0);
-        let mapper = MockGoRttiMapper { go_ver: GoVer::new(1, 21, 0), resolved_name: None, types_resolved: true };
-        assert!(bt.is_valid(&mapper));
+        assert!(read(mapper(v121(), None), 16, 8, 0, 25, 0, 0).unwrap().is_valid());
     }
 
     #[test]
-    fn is_valid_false_when_ptrdata_exceeds_size() {
-        let bt = GoBaseType::new(4, 8, 0, 25, 0, 0);
-        let mapper = MockGoRttiMapper { go_ver: GoVer::new(1, 21, 0), resolved_name: None, types_resolved: true };
-        assert!(!bt.is_valid(&mapper));
-    }
-
-    #[test]
-    fn is_valid_false_for_invalid_kind() {
-        let bt = GoBaseType::new(16, 8, 0, 0, 0, 0);
-        let mapper = MockGoRttiMapper { go_ver: GoVer::new(1, 21, 0), resolved_name: None, types_resolved: true };
-        assert!(!bt.is_valid(&mapper));
-    }
-
-    #[test]
-    fn is_valid_false_for_unrecognized_tflag_bits() {
+    fn invalid_types_are_rejected_by_the_structure_verifier() {
+        // ptrdata exceeds size
+        let err = read(mapper(v121(), None), 4, 8, 0, 25, 0, 0).err().unwrap();
+        assert_eq!(err.to_string(), "Invalid data for struct @0x100");
+        // invalid kind
+        assert!(read(mapper(v121(), None), 16, 8, 0, 0, 0, 0).is_err());
         // bit 6 (1 << 6) isn't defined by any GoTypeFlag variant.
-        let bt = GoBaseType::new(16, 8, 1 << 6, 25, 0, 0);
-        let mapper = MockGoRttiMapper { go_ver: GoVer::new(1, 21, 0), resolved_name: None, types_resolved: true };
-        assert!(!bt.is_valid(&mapper));
+        assert!(read(mapper(v121(), None), 16, 8, 1 << 6, 25, 0, 0).is_err());
+        // DirectIFace (1 << 5) is a valid flag only from Go 1.24
+        assert!(read(mapper(v121(), None), 16, 8, 1 << 5, 25, 0, 0).is_err());
+        assert!(read(mapper(GoVer::new(1, 24, 0), None), 16, 8, 1 << 5, 25, 0, 0).is_ok());
+    }
+
+    #[test]
+    fn descriptor_carries_the_java_annotations() {
+        let d = GoBaseType::descriptor();
+        assert_eq!(d.structure_names, &["runtime._type", "internal/abi.Type"]);
+        assert!(d.is_valid.is_some());
+        let names: Vec<&str> = d.fields.iter().map(|f| f.search_name).collect();
+        assert_eq!(names, ["size", "ptrdata", "tflag", "kind", "str", "ptrToThis"]);
+        assert!(d.fields[2].eol_comment.is_some());
+        assert!(d.fields[3].eol_comment.is_some());
     }
 }

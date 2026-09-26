@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use super::go_base_type::GoBaseType;
 use crate::app::util::viewer::field::address_annotated_string_handler::AddressAnnotatedStringHandler;
-use crate::format::golang::structmapping::structure_markup::StructureMarkup;
-use crate::format::golang::structmapping::structure_verifier::StructureVerifier;
-use crate::format::seam_stubs::{GoRttiMapper, GoSymbolName, GoType, MarkupSession, StructureContext};
+use crate::format::golang::structmapping::{StructureContext, StructureMapped, StructureMarkup, StructureVerifier};
+use crate::format::seam_stubs::{GoRttiMapper, GoSymbolName, GoType};
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::typedef_data_type::TypedefDataType;
@@ -10,47 +11,57 @@ use crate::program::model::data::typedef_data_type::TypedefDataType;
 /// `GoType` structure that defines an array.
 ///
 /// Mirrors Ghidra's `runtime.arraytype` / `internal/abi.ArrayType` structure (Java
-/// `GoArrayType`, which `extends GoType`).
+/// `GoArrayType`, which `extends GoType`), read by the structure mapper.
 ///
 /// `GoType` itself is an abstract base class that is not yet ported (see `PORT_ORDER.tsv`), so
-/// the fields it contributes (`programContext`, `context`, `typ`) are held here directly instead
-/// of being inherited, following the same `Box<dyn GoRttiMapper>` / `Box<dyn StructureContext<Self>>`
-/// convention [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) uses. A handful of
-/// `GoType`'s base-class behaviors that `GoArrayType` relies on via `super.*()` calls
-/// (`getPackagePathString`'s uncommon-type fallback, and `discoverGoTypes`' uncommon-type method
-/// traversal) are simplified to skip the uncommon-type branch entirely, since resolving a
-/// `GoUncommonType` at an arbitrary offset needs the generic `DataTypeMapper.readStructure<T>`
-/// mechanism, which is part of the still-parked `structmapping` cluster (see
-/// `DESCENT_PARKED.tsv`). Both fallbacks only matter for types that carry their own method set,
-/// which is rare for a plain array/slice type; the element/slice-type fallback paths this class
-/// itself implements are unaffected and fully faithful.
+/// the fields it contributes (`programContext`, `context`, `typ`) are declared here directly
+/// instead of being inherited. A handful of `GoType`'s base-class behaviors that `GoArrayType`
+/// relies on via `super.*()` calls (`getPackagePathString`'s uncommon-type fallback,
+/// `discoverGoTypes`' uncommon-type method traversal, `additionalMarkup`'s method-table markup,
+/// and the type-level `@PlateComment` built from `toString()`) are left out, since they need the
+/// unported `GoType`/`GoTypeManager`/`GoMethod` classes. Both fallbacks only matter for types
+/// that carry their own method set, which is rare for a plain array/slice type; the
+/// element/slice-type paths this class itself implements are unaffected and fully faithful.
+///
+/// Java's `@Markup`/`@MarkupReference` on `getElement()`/`getSliceType()` return `GoType`, a
+/// `seam_stubs` placeholder with no structure address; those hooks are attached when `GoType` is
+/// ported as a structure mapped type.
+#[derive(StructureMapped)]
+#[structure_mapping(
+    structure_name = ["runtime.arraytype", "internal/abi.ArrayType"],
+    verifier,
+    structure_markup
+)]
 pub struct GoArrayType {
     /// `@ContextField` injected Go binary context (Java field `programContext`, inherited from
     /// `GoType`).
-    program_context: Box<dyn GoRttiMapper>,
+    #[context_field]
+    program_context: Arc<dyn GoRttiMapper>,
     /// `@ContextField` injected structure-read context (Java field `context`, inherited from
     /// `GoType`).
-    context: Box<dyn StructureContext<GoArrayType>>,
-    /// `@FieldMapping` shared type header (Java field `typ`, inherited from `GoType`).
-    typ: GoBaseType,
+    #[context_field]
+    context: StructureContext<GoArrayType>,
+    /// `@FieldMapping` shared type header (Java field `typ`, inherited from `GoType`). Always
+    /// `Some` once read: it is a mandatory mapped field.
+    #[field_mapping(field_name = ["typ", "Type"])]
+    #[markup]
+    #[field_output]
+    typ: Option<GoBaseType>,
     /// Pointer to the element type (Java field `elem`).
+    #[field_mapping]
     elem: i64,
     /// Pointer to the slice-of-this-array type (Java field `slice`).
+    #[field_mapping]
     slice: i64,
     /// Number of elements in the array (Java field `len`).
+    #[field_mapping]
     len: i64,
 }
 
 impl GoArrayType {
-    pub fn new(
-        program_context: Box<dyn GoRttiMapper>,
-        context: Box<dyn StructureContext<GoArrayType>>,
-        typ: GoBaseType,
-        elem: i64,
-        slice: i64,
-        len: i64,
-    ) -> Self {
-        Self { program_context, context, typ, elem, slice, len }
+    /// The `typ` base type header (`GoType.getBaseType()`).
+    fn typ(&self) -> &GoBaseType {
+        self.typ.as_ref().expect("GoArrayType.typ is a mandatory mapped field")
     }
 
     /// Returns a reference to the [`GoType`] of the elements of this array.
@@ -69,8 +80,7 @@ impl GoArrayType {
 
     /// Port of `GoType.getName()`, which `GoArrayType` inherits unchanged (`typ.getName()`).
     fn base_name(&self) -> String {
-        let fallback_name = self.context.get_mapping_info().structure_name();
-        self.typ.name_at(self.program_context.as_ref(), self.context.get_structure_start(), &fallback_name)
+        self.typ().get_name()
     }
 
     /// `len >= 0 && len <= Integer.MAX_VALUE`.
@@ -179,7 +189,7 @@ impl GoType for GoArrayType {
     }
 
     fn get_base_type(&self) -> GoBaseType {
-        self.typ
+        self.typ().clone()
     }
 
     fn get_package_path_string(&self) -> String {
@@ -191,17 +201,18 @@ impl StructureVerifier for GoArrayType {
     fn is_valid(&self) -> bool {
         match self.get_element() {
             Ok(element_type) => {
-                self.typ.is_valid(self.program_context.as_ref())
-                    && self.typ.get_size() == element_type.get_base_type().get_size() * self.len
+                self.typ().is_valid()
+                    && self.typ().get_size() == element_type.get_base_type().get_size() * self.len
             }
             Err(_) => false,
         }
     }
 }
 
-impl StructureMarkup<GoArrayType> for GoArrayType {
-    fn structure_context(&self) -> &dyn StructureContext<GoArrayType> {
-        self.context.as_ref()
+impl StructureMarkup for GoArrayType {
+    /// `GoType.getStructureLabel()`: `"<fully qualified name>___<kind>_type"`.
+    fn structure_label(&self) -> std::io::Result<Option<String>> {
+        Ok(Some(format!("{}___{}_type", self.get_symbol_name().as_string(), self.typ().get_kind())))
     }
 
     fn structure_name(&self) -> std::io::Result<Option<String>> {
@@ -216,11 +227,12 @@ impl StructureMarkup<GoArrayType> for GoArrayType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::{GoTypeManager, StructureMappingInfo};
+    use crate::format::golang::go_ver::GoVer;
+    use crate::format::golang::rtti::test_support::{base_type, go_mapper, read_at, try_read_at, Image};
+    use crate::format::seam_stubs::{GoName, GoTypeManager};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::data::category_path::CategoryPath;
     use crate::program::model::data::structure::Structure;
-    use std::any::Any;
     use std::collections::HashSet;
 
     fn test_address(offset: i64) -> Address {
@@ -231,7 +243,7 @@ mod tests {
     #[derive(Clone)]
     struct MockGoType {
         name: String,
-        base_type: GoBaseType,
+        size: i64,
         structure_namespace: String,
         discover_marker: i64,
     }
@@ -242,7 +254,7 @@ mod tests {
         }
 
         fn get_symbol_name(&self) -> Box<dyn GoSymbolName> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_structure_namespace(&self) -> std::io::Result<String> {
@@ -254,7 +266,7 @@ mod tests {
         }
 
         fn get_base_type(&self) -> GoBaseType {
-            self.base_type
+            base_type(self.size, 0, 0, 2)
         }
 
         fn get_package_path_string(&self) -> String {
@@ -265,28 +277,24 @@ mod tests {
     struct MockGoTypeManager {
         element: MockGoType,
         slice: MockGoType,
-        cached: Option<()>,
+        cached: bool,
     }
 
     impl GoTypeManager for MockGoTypeManager {
         fn resolve_type_off(&self, _ptr_in_module: i64, _off: i64) -> std::io::Result<Box<dyn GoType>> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_type(&self, offset: i64) -> std::io::Result<Box<dyn GoType>> {
-            if offset == 0x100 {
-                Ok(Box::new(self.element.clone()))
-            }
-            else if offset == 0x200 {
-                Ok(Box::new(self.slice.clone()))
-            }
-            else {
-                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "no type at offset"))
+            match offset {
+                0x100 => Ok(Box::new(self.element.clone())),
+                0x200 => Ok(Box::new(self.slice.clone())),
+                _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "no type at offset")),
             }
         }
 
         fn get_data_type(&self, _type_name: &str) -> std::io::Result<Box<dyn DataType>> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_data_type_for_type(&self, typ: &dyn GoType) -> std::io::Result<Box<dyn DataType>> {
@@ -307,51 +315,45 @@ mod tests {
         }
 
         fn get_cached_data_type(&self, _typ: &dyn GoType) -> std::io::Result<Option<Box<dyn DataType>>> {
-            Ok(self.cached.map(|_| {
-                struct Cached;
-                impl DataType for Cached {
-                    fn get_name(&self) -> String {
-                        "cached".to_string()
-                    }
+            struct Cached;
+            impl DataType for Cached {
+                fn get_name(&self) -> String {
+                    "cached".to_string()
                 }
-                Box::new(Cached) as Box<dyn DataType>
-            }))
+            }
+            Ok(self.cached.then(|| Box::new(Cached) as Box<dyn DataType>))
         }
 
         fn get_dtm(&self) -> Box<dyn crate::program::model::data::data_type_manager::DataTypeManager> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_generic_slice_dt(&self) -> Box<dyn Structure> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn cache_recovered_data_type(&self, _typ: &dyn GoType, _dt: Box<dyn DataType>) {}
 
         fn get_cp(&self, _typ: &dyn GoType) -> CategoryPath {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_type_name(&self, _typ: &dyn GoType) -> std::io::Result<String> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
     }
 
     struct MockGoRttiMapper {
         element: MockGoType,
         slice: MockGoType,
-        cached: Option<()>,
+        cached: bool,
         resolved_name: Option<String>,
     }
 
     impl GoRttiMapper for MockGoRttiMapper {
-        fn resolve_name_off(
-            &self,
-            _ptr_in_module: i64,
-            off: i64,
-        ) -> std::io::Result<Option<Box<dyn crate::format::seam_stubs::GoName>>> {
+        fn resolve_name_off(&self, _ptr_in_module: i64, off: i64) -> std::io::Result<Option<Box<dyn GoName>>> {
             struct N(String);
-            impl crate::format::seam_stubs::GoName for N {
+            impl GoName for N {
                 fn get_name(&self) -> String {
                     self.0.clone()
                 }
@@ -359,24 +361,24 @@ mod tests {
             if off == 0 {
                 return Ok(None);
             }
-            Ok(self.resolved_name.clone().map(|n| Box::new(N(n)) as Box<dyn crate::format::seam_stubs::GoName>))
+            Ok(self.resolved_name.clone().map(|n| Box::new(N(n)) as Box<dyn GoName>))
         }
 
         fn new_slice(&self, _array: i64, _len: i64, _cap: i64) -> Box<dyn crate::format::seam_stubs::GoSlice> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn go_method_structure_length(&self) -> i32 {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
-        fn get_go_ver(&self) -> crate::format::golang::go_ver::GoVer {
-            crate::format::golang::go_ver::GoVer::new(1, 21, 0)
+        fn get_go_ver(&self) -> GoVer {
+            GoVer::new(1, 21, 0)
         }
 
         fn get_safe_name(
             &self,
-            supplier: &dyn Fn() -> std::io::Result<Option<Box<dyn crate::format::seam_stubs::GoName>>>,
+            supplier: &dyn Fn() -> std::io::Result<Option<Box<dyn GoName>>>,
             _fallback_structure_name: &str,
             _fallback_structure_start: i64,
             default_value: &str,
@@ -400,44 +402,44 @@ mod tests {
         }
 
         fn is_loaded_and_initialized(&self, _addr: Address) -> bool {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_data_address(&self, _offset: i64) -> Address {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_reader(&self, _position: i64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn find_containing_module_by_func_data(
             &self,
             _offset: i64,
         ) -> Option<Box<dyn crate::format::seam_stubs::GoModuledata>> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
-        fn parse_symbol_name(&self, _s: &str) -> Box<dyn crate::format::seam_stubs::GoSymbolName> {
-            unimplemented!()
+        fn parse_symbol_name(&self, _s: &str) -> Box<dyn GoSymbolName> {
+            unimplemented!("unused by GoArrayType")
         }
 
         fn get_function_at(
             &self,
             _addr: &Address,
-        ) -> Option<std::sync::Arc<dyn crate::program::model::listing::function::Function>> {
-            unimplemented!()
+        ) -> Option<Arc<dyn crate::program::model::listing::function::Function>> {
+            unimplemented!("unused by GoArrayType")
         }
 
         fn new_array_data_type(&self, _element_type: &dyn DataType, _num_elements: i32) -> Box<dyn DataType> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn add_source_file(
             &self,
             _source_file: &crate::program::database::sourcemap::SourceFile,
         ) -> Result<(), Box<dyn std::error::Error>> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
 
         fn add_source_map_entry(
@@ -447,180 +449,114 @@ mod tests {
             _base_addr: &Address,
             _length: i64,
         ) -> Result<(), Box<dyn std::error::Error>> {
-            unimplemented!()
+            unimplemented!("unused by GoArrayType")
         }
     }
 
-    struct MockStructureContext {
-        structure_start: i64,
-    }
-
-    impl StructureContext<GoArrayType> for MockStructureContext {
-        fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<GoArrayType>> {
-            struct Info;
-            impl StructureMappingInfo<GoArrayType> for Info {
-                fn structure_name(&self) -> String {
-                    "runtime.arraytype".to_string()
-                }
-            }
-            Box::new(Info)
-        }
-
-        fn get_data_type_mapper(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_containing_field_data_type(&self) -> Box<dyn DataType> {
-            unimplemented!()
-        }
-
-        fn get_structure_address(&self) -> Address {
-            test_address(self.structure_start)
-        }
-
-        fn get_field_address(&self, _field_offset: i64) -> Address {
-            unimplemented!()
-        }
-
-        fn get_field_location(&self, _field_offset: i64) -> i64 {
-            unimplemented!()
-        }
-
-        fn get_structure_start(&self) -> i64 {
-            self.structure_start
-        }
-
-        fn get_structure_end(&self) -> i64 {
-            unimplemented!()
-        }
-
-        fn get_structure_length(&self) -> i32 {
-            unimplemented!()
-        }
-
-        fn get_structure_instance(&self) -> &GoArrayType {
-            unimplemented!()
-        }
-
-        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn get_field_reader(&self, _field_offset: i64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn create_field_context(&self, _fmi: &dyn Any, _include_reader: bool) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_structure_data_type(&self) -> std::io::Result<Box<dyn Structure>> {
-            unimplemented!()
-        }
-
-        fn to_string(&self) -> String {
-            "MockStructureContext".to_string()
-        }
-    }
-
-    fn element_type(name: &str, size: i64) -> MockGoType {
-        MockGoType {
-            name: name.to_string(),
-            base_type: GoBaseType::new(size, 0, 0, 0, 0, 0),
-            structure_namespace: String::new(),
-            discover_marker: 1,
-        }
+    fn element_type(name: &str, size: i64, namespace: &str) -> MockGoType {
+        MockGoType { name: name.to_string(), size, structure_namespace: namespace.to_string(), discover_marker: 1 }
     }
 
     fn slice_type() -> MockGoType {
-        MockGoType {
-            name: "[]int".to_string(),
-            base_type: GoBaseType::new(24, 8, 0, 23, 0, 0),
-            structure_namespace: String::new(),
-            discover_marker: 2,
-        }
+        MockGoType { name: "[]int".to_string(), size: 24, structure_namespace: String::new(), discover_marker: 2 }
     }
 
-    fn make_array(len: i64, elem_size: i64, cached: Option<()>) -> GoArrayType {
-        GoArrayType::new(
-            Box::new(MockGoRttiMapper {
-                element: element_type("int", elem_size),
-                slice: slice_type(),
-                cached,
-                resolved_name: None,
-            }),
-            Box::new(MockStructureContext { structure_start: 0x9000 }),
-            GoBaseType::new(elem_size * len, 0, 0, 17, 0, 0),
-            0x100,
-            0x200,
-            len,
-        )
+    fn rtti(element: MockGoType, cached: bool, resolved_name: Option<&str>) -> Arc<dyn GoRttiMapper> {
+        Arc::new(MockGoRttiMapper {
+            element,
+            slice: slice_type(),
+            cached,
+            resolved_name: resolved_name.map(str::to_string),
+        })
+    }
+
+    /// A `runtime.arraytype` image at 0x9000: `typ` (kind Array, name at `str` 0x8 when named),
+    /// `elem` 0x100, `slice` 0x200, `len`.
+    fn image(typ_size: i64, len: i64, named: bool) -> Image {
+        let mut image = Image::default();
+        image
+            .put_base_type(0x9000, typ_size, 0, 0, 17, if named { 0x8 } else { 0 }, 0)
+            .put(0x9000 + 48, 8, 0x100)
+            .put(0x9000 + 56, 8, 0x200)
+            .put(0x9000 + 64, 8, len);
+        image
+    }
+
+    fn make_array(len: i64, elem_size: i64, cached: bool) -> GoArrayType {
+        let mapper = go_mapper(rtti(element_type("int", elem_size, ""), cached, None));
+        read_at(&mapper, &image(elem_size * len, len, false), 0x9000)
+    }
+
+    #[test]
+    fn reads_the_array_type_and_its_nested_base_type() {
+        let arr = make_array(3, 4, false);
+        assert_eq!((arr.elem, arr.slice, arr.len), (0x100, 0x200, 3));
+        assert_eq!(arr.context.get_structure_start(), 0x9000);
+        assert_eq!(arr.context.get_structure_length(), 72);
+        let typ = arr.get_base_type();
+        assert_eq!(typ.get_size(), 12);
+        assert_eq!(typ.get_kind(), super::super::go_kind::GoKind::Array);
+        // the nested base type has its own context, at the start of the array type
+        assert_eq!(typ.get_structure_context().get_structure_start(), 0x9000);
+        assert_eq!(typ.get_structure_context().get_containing_field_data_type().unwrap().get_name(), "runtime._type");
     }
 
     #[test]
     fn is_valid_length_true_for_nonnegative_len() {
-        let arr = make_array(5, 4, None);
-        assert!(arr.is_valid_length());
+        assert!(make_array(5, 4, false).is_valid_length());
     }
 
     #[test]
     fn is_valid_length_false_for_negative_len() {
-        let arr = make_array(-1, 4, None);
-        assert!(!arr.is_valid_length());
+        // typ.size (4 * -1) no longer matches, so read without the verifier's opinion mattering:
+        // a negative size also fails GoBaseType's ptrdata <= size check
+        let mapper = go_mapper(rtti(element_type("int", 4, ""), false, None));
+        let err = try_read_at::<GoArrayType>(&mapper, &image(-4, -1, false), 0x9000).err().unwrap();
+        assert_eq!(err.to_string(), "Invalid data for struct @0x9000");
     }
 
     #[test]
     fn get_element_resolves_via_elem_offset() {
-        let arr = make_array(3, 4, None);
-        assert_eq!(arr.get_element().unwrap().get_name(), "int");
+        assert_eq!(make_array(3, 4, false).get_element().unwrap().get_name(), "int");
     }
 
     #[test]
     fn get_slice_type_resolves_via_slice_offset() {
-        let arr = make_array(3, 4, None);
-        assert_eq!(arr.get_slice_type().unwrap().get_name(), "[]int");
+        assert_eq!(make_array(3, 4, false).get_slice_type().unwrap().get_name(), "[]int");
     }
 
     #[test]
     fn recover_data_type_builds_array_for_valid_length() {
-        let arr = make_array(3, 4, None);
-        let dt = arr.recover_data_type().unwrap();
-        // ArrayDataType's default name is derived from its element type and count.
+        let dt = make_array(3, 4, false).recover_data_type().unwrap();
         assert!(dt.get_name().contains("int"));
+        assert_eq!(dt.get_length(), 12);
     }
 
     #[test]
     fn recover_data_type_returns_cached_when_present() {
-        let arr = make_array(3, 4, Some(()));
-        let dt = arr.recover_data_type().unwrap();
-        assert_eq!(dt.get_name(), "cached");
+        assert_eq!(make_array(3, 4, true).recover_data_type().unwrap().get_name(), "cached");
     }
 
     #[test]
     fn recover_data_type_builds_typedef_for_invalid_length() {
-        let arr = make_array(-1, 4, None);
+        // len > Integer.MAX_VALUE: the element size is 0 so typ.size still matches
+        let mapper = go_mapper(rtti(element_type("int", 0, ""), false, None));
+        let len = i32::MAX as i64 + 1;
+        let arr: GoArrayType = read_at(&mapper, &image(0, len, false), 0x9000);
         let dt = arr.recover_data_type().unwrap();
-        assert!(dt.get_name().starts_with(".invalid_arraysize_-1_int"));
+        assert_eq!(dt.get_name(), format!(".invalid_arraysize_{len}_int"));
     }
 
     #[test]
-    fn is_valid_true_when_size_matches_element_times_len() {
-        // typ.size == elem.size * len (4 * 3 = 12)
-        let mut arr = make_array(3, 4, None);
-        arr.typ = GoBaseType::new(12, 0, 0, 17, 0, 0);
-        assert!(arr.is_valid());
-    }
-
-    #[test]
-    fn is_valid_false_when_size_mismatches() {
-        let mut arr = make_array(3, 4, None);
-        arr.typ = GoBaseType::new(999, 0, 0, 17, 0, 0);
-        assert!(!arr.is_valid());
+    fn verifier_rejects_a_size_mismatch() {
+        let mapper = go_mapper(rtti(element_type("int", 4, ""), false, None));
+        assert!(try_read_at::<GoArrayType>(&mapper, &image(12, 3, false), 0x9000).is_ok());
+        assert!(try_read_at::<GoArrayType>(&mapper, &image(999, 3, false), 0x9000).is_err());
     }
 
     #[test]
     fn discover_go_types_marks_self_element_and_slice() {
-        let arr = make_array(3, 4, None);
+        let arr = make_array(3, 4, false);
         let mut discovered = HashSet::new();
         assert!(arr.discover_go_types(&mut discovered).unwrap());
         assert_eq!(discovered, HashSet::from([0x9000, 1, 2]));
@@ -628,39 +564,25 @@ mod tests {
 
     #[test]
     fn discover_go_types_false_when_already_discovered() {
-        let arr = make_array(3, 4, None);
-        let mut discovered = HashSet::new();
-        discovered.insert(0x9000);
+        let arr = make_array(3, 4, false);
+        let mut discovered = HashSet::from([0x9000]);
         assert!(!arr.discover_go_types(&mut discovered).unwrap());
     }
 
     #[test]
-    fn get_structure_namespace_falls_back_to_element_when_own_package_path_empty() {
-        let arr = GoArrayType::new(
-            Box::new(MockGoRttiMapper {
-                element: MockGoType {
-                    name: "int".to_string(),
-                    base_type: GoBaseType::new(4, 0, 0, 0, 0, 0),
-                    structure_namespace: "mypkg".to_string(),
-                    discover_marker: 1,
-                },
-                slice: slice_type(),
-                cached: None,
-                resolved_name: None,
-            }),
-            Box::new(MockStructureContext { structure_start: 0x9000 }),
-            GoBaseType::new(12, 0, 0, 17, 0, 0),
-            0x100,
-            0x200,
-            3,
-        );
+    fn structure_markup_names_namespace_and_label() {
+        let mapper = go_mapper(rtti(element_type("int", 4, "mypkg"), false, Some("main.Arr")));
+        let arr: GoArrayType = read_at(&mapper, &image(12, 3, true), 0x9000);
         assert_eq!(arr.get_structure_namespace().unwrap(), "mypkg");
+        assert_eq!(arr.structure_name().unwrap().as_deref(), Some("main.Arr"));
+        assert_eq!(arr.structure_namespace().unwrap().as_deref(), Some("mypkg"));
+        assert_eq!(arr.structure_label().unwrap().as_deref(), Some("main.Arr___Array_type"));
+        assert!(GoArrayType::descriptor().structure_markup.is_some());
     }
 
     #[test]
     fn type_decl_string_includes_len_and_element_name() {
-        let arr = make_array(3, 4, None);
-        let decl = arr.type_decl_string().unwrap();
+        let decl = make_array(3, 4, false).type_decl_string().unwrap();
         assert!(decl.starts_with("type "));
         assert!(decl.contains("[3]"));
         assert!(decl.contains("int"));

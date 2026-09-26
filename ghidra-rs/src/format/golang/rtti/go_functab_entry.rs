@@ -1,31 +1,45 @@
+use std::sync::Arc;
+
 use crate::format::golang::rtti::go_func_data::GoFuncData;
-use crate::format::seam_stubs::{GoModuledata, GoRttiMapper, StructureContext};
+use crate::format::golang::structmapping::{StructureContext, StructureMapped};
+use crate::format::seam_stubs::{GoModuledata, GoRttiMapper};
 use crate::program::model::address::Address;
 
 /// A structure that Go generates that maps between a function's entry point and the location of
 /// the function's [`GoFuncData`] structure.
 ///
-/// Mirrors Ghidra's `runtime.functab` structure mapping (Java `GoFunctabEntry`).
+/// Mirrors Ghidra's `runtime.functab` structure mapping (Java `GoFunctabEntry`), read by the
+/// structure mapper.
 ///
 /// `entryoff`, `entry`, and `funcoff` are `pub` rather than hidden behind getter/setter pairs
 /// because Java populates them by reflection during structure deserialization, following the same
-/// precedent as [`GoFuncData`]; [`set_entryoff`] and [`set_entry`] remain methods because Java's
-/// deserializer calls them for their side effect of computing
+/// precedent as [`GoFuncData`]; [`set_entryoff`] and [`set_entry`] remain methods because the
+/// deserializer calls them (`setter = ..`) for their side effect of computing
 /// [`func_address`](Self::get_func_address).
 ///
 /// [`set_entryoff`]: Self::set_entryoff
 /// [`set_entry`]: Self::set_entry
+#[derive(StructureMapped)]
+#[structure_mapping(structure_name = "runtime.functab", markup = get_func_data)]
 pub struct GoFunctabEntry {
     /// `@ContextField` injected Go binary context (Java field `programContext`).
-    program_context: Box<dyn GoRttiMapper>,
+    #[context_field]
+    program_context: Arc<dyn GoRttiMapper>,
     /// `@ContextField` injected structure-read context (Java field `context`).
-    context: Box<dyn StructureContext<GoFunctabEntry>>,
+    #[context_field]
+    context: StructureContext<GoFunctabEntry>,
     /// Relative offset of the function; present in Go 1.18+ (Java field `entryoff`).
+    #[field_mapping(present_when = "1.18+", setter = set_entryoff)]
+    #[markup_reference(get_func_address)]
     pub entryoff: i64,
     /// Absolute location of the function; present up to Go 1.17 (Java field `entry`).
+    #[field_mapping(present_when = "-1.17", setter = set_entry)]
+    #[markup_reference(get_func_address)]
     pub entry: i64,
     /// Offset into the pclntable where the function's [`GoFuncData`] starts (Java field
     /// `funcoff`).
+    #[field_mapping]
+    #[markup_reference(get_func_data)]
     pub funcoff: i64,
 
     /// Set when `entryoff` or `entry` are set (Java field `funcAddress`).
@@ -33,14 +47,9 @@ pub struct GoFunctabEntry {
 }
 
 impl GoFunctabEntry {
-    /// Creates an instance with every mapped field at its Java default. Deserialization then
-    /// fills the fields in, calling [`set_entryoff`](Self::set_entryoff) or
-    /// [`set_entry`](Self::set_entry) for the entry point.
-    pub fn new(
-        program_context: Box<dyn GoRttiMapper>,
-        context: Box<dyn StructureContext<GoFunctabEntry>>,
-    ) -> Self {
-        Self { program_context, context, entryoff: 0, entry: 0, funcoff: 0, func_address: None }
+    /// Returns the structure context this entry was read with.
+    pub fn get_structure_context(&self) -> &StructureContext<GoFunctabEntry> {
+        &self.context
     }
 
     /// Sets the function's entry point using a relative offset.
@@ -108,23 +117,20 @@ impl GoFunctabEntry {
 mod tests {
     use super::*;
     use crate::app::util::bin::binary_reader::BinaryReader;
-    use crate::format::seam_stubs::{
-        GoName, GoPcValueEvaluator, GoSlice, GoSymbolName, GoTypeManager, StructureMappingInfo,
-    };
+    use crate::format::golang::rtti::test_support::{go_mapper, read_at, Image};
+    use crate::format::seam_stubs::{GoName, GoPcValueEvaluator, GoSlice, GoSymbolName, GoTypeManager};
     use crate::program::database::sourcemap::SourceFile;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::structure::Structure;
     use crate::program::model::listing::function::Function;
-    use std::sync::Arc;
 
     fn test_address(offset: i64) -> Address {
         let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         space.address(offset)
     }
 
-    /// A moduledata stub whose `getFuncDataInstance` builds a fresh [`GoFuncData`] with its
-    /// address seeded via `set_entry`, mirroring the (possibly obfuscated) address a real
+    /// A moduledata double whose `getFuncDataInstance` reads a fresh [`GoFuncData`] and seeds its
+    /// address via `set_entry`, mirroring the (possibly obfuscated) address a real
     /// `runtime._func` structure would carry.
     #[derive(Default, Clone)]
     struct MockModuledata {
@@ -161,70 +167,15 @@ mod tests {
         ) -> std::io::Result<Box<dyn GoPcValueEvaluator>> {
             unimplemented!()
         }
-        fn get_func_data_instance(&self, _offset: i64) -> std::io::Result<GoFuncData> {
-            let mut func_data = GoFuncData::new(
-                Box::new(MockGoRttiMapper::default()),
-                Box::new(MockFuncDataContext),
-            );
+        fn get_func_data_instance(&self, offset: i64) -> std::io::Result<GoFuncData> {
+            let mapper = go_mapper(Arc::new(MockGoRttiMapper::default()));
+            let mut image = Image::default();
+            image.put(offset + 43, 1, 0);
+            let mut func_data: GoFuncData = read_at(&mapper, &image, offset);
             if let Some(entry) = self.func_data_entry {
                 func_data.set_entry(entry);
             }
             Ok(func_data)
-        }
-    }
-
-    /// Never exercised: [`GoFuncData::new`] only stores this context, it never calls into it.
-    struct MockFuncDataContext;
-
-    impl StructureContext<GoFuncData> for MockFuncDataContext {
-        fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<GoFuncData>> {
-            unimplemented!()
-        }
-        fn get_data_type_mapper(&self) -> Box<dyn std::any::Any> {
-            unimplemented!()
-        }
-        fn get_containing_field_data_type(&self) -> Box<dyn DataType> {
-            unimplemented!()
-        }
-        fn get_structure_address(&self) -> Address {
-            unimplemented!()
-        }
-        fn get_field_address(&self, _field_offset: i64) -> Address {
-            unimplemented!()
-        }
-        fn get_field_location(&self, _field_offset: i64) -> i64 {
-            unimplemented!()
-        }
-        fn get_structure_start(&self) -> i64 {
-            unimplemented!()
-        }
-        fn get_structure_end(&self) -> i64 {
-            unimplemented!()
-        }
-        fn get_structure_length(&self) -> i32 {
-            unimplemented!()
-        }
-        fn get_structure_instance(&self) -> &GoFuncData {
-            unimplemented!()
-        }
-        fn get_reader(&self) -> Box<dyn BinaryReader> {
-            unimplemented!()
-        }
-        fn get_field_reader(&self, _field_offset: i64) -> Box<dyn BinaryReader> {
-            unimplemented!()
-        }
-        fn create_field_context(
-            &self,
-            _fmi: &dyn std::any::Any,
-            _include_reader: bool,
-        ) -> Box<dyn std::any::Any> {
-            unimplemented!()
-        }
-        fn get_structure_data_type(&self) -> std::io::Result<Box<dyn Structure>> {
-            unimplemented!()
-        }
-        fn to_string(&self) -> String {
-            unimplemented!()
         }
     }
 
@@ -307,65 +258,37 @@ mod tests {
         }
     }
 
-    #[derive(Default)]
-    struct MockFunctabContext {
-        structure_start: i64,
-    }
-
-    impl StructureContext<GoFunctabEntry> for MockFunctabContext {
-        fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<GoFunctabEntry>> {
-            unimplemented!()
-        }
-        fn get_data_type_mapper(&self) -> Box<dyn std::any::Any> {
-            unimplemented!()
-        }
-        fn get_containing_field_data_type(&self) -> Box<dyn DataType> {
-            unimplemented!()
-        }
-        fn get_structure_address(&self) -> Address {
-            unimplemented!()
-        }
-        fn get_field_address(&self, _field_offset: i64) -> Address {
-            unimplemented!()
-        }
-        fn get_field_location(&self, _field_offset: i64) -> i64 {
-            unimplemented!()
-        }
-        fn get_structure_start(&self) -> i64 {
-            self.structure_start
-        }
-        fn get_structure_end(&self) -> i64 {
-            unimplemented!()
-        }
-        fn get_structure_length(&self) -> i32 {
-            unimplemented!()
-        }
-        fn get_structure_instance(&self) -> &GoFunctabEntry {
-            unimplemented!()
-        }
-        fn get_reader(&self) -> Box<dyn BinaryReader> {
-            unimplemented!()
-        }
-        fn get_field_reader(&self, _field_offset: i64) -> Box<dyn BinaryReader> {
-            unimplemented!()
-        }
-        fn create_field_context(
-            &self,
-            _fmi: &dyn std::any::Any,
-            _include_reader: bool,
-        ) -> Box<dyn std::any::Any> {
-            unimplemented!()
-        }
-        fn get_structure_data_type(&self) -> std::io::Result<Box<dyn Structure>> {
-            unimplemented!()
-        }
-        fn to_string(&self) -> String {
-            unimplemented!()
-        }
-    }
-
+    /// A `runtime.functab` read at 0x2000 with `entryoff` 0 and `funcoff` 0.
     fn entry(mapper: MockGoRttiMapper) -> GoFunctabEntry {
-        GoFunctabEntry::new(Box::new(mapper), Box::new(MockFunctabContext::default()))
+        read_entry(mapper, 0, 0)
+    }
+
+    fn read_entry(mapper: MockGoRttiMapper, entryoff: i64, funcoff: i64) -> GoFunctabEntry {
+        let dtm = go_mapper(Arc::new(mapper));
+        let mut image = Image::default();
+        image.put(0x2000, 4, entryoff).put(0x2004, 4, funcoff);
+        read_at(&dtm, &image, 0x2000)
+    }
+
+    #[test]
+    fn reads_the_functab_through_the_entryoff_setter() {
+        let mapper = MockGoRttiMapper {
+            moduledata: Some(MockModuledata { text_offset: 0x4000, func_data_entry: Some(0x4120) }),
+            loaded: true,
+        };
+        let e = read_entry(mapper, 0x120, 0x30);
+        assert_eq!((e.entryoff, e.entry, e.funcoff), (0x120, 0, 0x30));
+        assert_eq!(e.get_func_address(), Some(&test_address(0x4120)));
+        assert_eq!(e.get_structure_context().get_structure_start(), 0x2000);
+        assert_eq!(e.get_structure_context().get_structure_length(), 8);
+
+        let d = GoFunctabEntry::descriptor();
+        assert_eq!(d.markup_getters.len(), 1, "@Markup getFuncData");
+        let reference = |n: &str| (d.fields.iter().find(|f| f.name == n).unwrap().markup_reference.unwrap())(&e);
+        assert_eq!(reference("entryoff").unwrap(), Some(test_address(0x4120)));
+        // funcoff references the GoFuncData structure, read at the funcoff offset
+        let func_data_addr = reference("funcoff").unwrap().unwrap();
+        assert_eq!(func_data_addr.offset(), 0x30);
     }
 
     #[test]

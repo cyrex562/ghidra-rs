@@ -1,327 +1,172 @@
-use crate::format::seam_stubs::{MarkupSession, StructureContext};
+//! Port of `ghidra.app.util.bin.format.golang.structmapping.StructureMarkup`.
 
-/// Optional interface that structure mapped classes can implement that allows them to
-/// control how their class is marked up.
-///
-/// This is the Rust equivalent of the Java `StructureMarkup<T>` interface from
-/// `ghidra.app.util.bin.format.golang.structmapping`.
-///
-/// In Java only `getStructureContext()` is abstract; the remaining methods have default
-/// implementations that this trait mirrors.
-pub trait StructureMarkup<T> {
-    /// Returns the structure context that describes how `self` was read from a program.
-    fn structure_context(&self) -> &dyn StructureContext<T>;
+use std::io;
 
-    /// Returns the name of the instance, typically retrieved from data found inside the
-    /// instance.
+use super::markup_session::MarkupSession;
+use super::structure_context::StructureContext;
+use super::structure_mapped::{MarkupItem, StructureMapped};
+
+/// Optional interface that structure mapped types can implement that allows them to control how
+/// their instances are marked up.
+///
+/// Port of the Java `StructureMarkup<T>` interface. A type opts in with
+/// `#[structure_mapping(.., structure_markup)]`, which makes the derived descriptor call these
+/// methods from [`MarkupSession::markup_structure`].
+///
+/// Java's only abstract method, `getStructureContext()`, is the instance's own
+/// `#[context_field]` [`StructureContext`], which [`StructureMapped::structure_context`] already
+/// returns; [`get_structure_context`](Self::get_structure_context) reaches it from there, so
+/// implementors override only the defaults they need.
+pub trait StructureMarkup: StructureMapped {
+    /// `getStructureContext()`: the context that describes how `self` was read from a program.
     ///
-    /// Returns `Ok(None)` if this instance does not have a name.
-    fn structure_name(&self) -> std::io::Result<Option<String>> {
+    /// # Errors
+    /// When the type declares no `StructureContext` context field.
+    fn get_structure_context(&self) -> io::Result<&StructureContext<Self>> {
+        StructureMapped::structure_context(self).ok_or_else(|| {
+            io::Error::other(format!("No StructureContext for {}", Self::descriptor().type_name))
+        })
+    }
+
+    /// `getStructureName()`: the name of the instance, typically retrieved from data found
+    /// inside the instance; `None` if this instance does not have a name.
+    fn structure_name(&self) -> io::Result<Option<String>> {
         Ok(None)
     }
 
-    /// Returns a string that can be used to place a label on the instance.
+    /// `getStructureLabel()`: a string that can be used to place a label on the instance.
     ///
-    /// The default implementation queries [`structure_name`](Self::structure_name); if it
-    /// provides a value, this produces a string that looks like
-    /// `"name___mappingstructname"`, where `mappingstructname` is the structure name from
-    /// the structure context's mapping info.
-    ///
-    /// Returns `Ok(None)` if there is not a valid label for the instance.
-    fn structure_label(&self) -> std::io::Result<Option<String>> {
+    /// The default queries [`structure_name`](Self::structure_name); if it provides a value, the
+    /// label looks like `"name___mappingstructname"`, where `mappingstructname` is the structure
+    /// name from the structure context's mapping info. `None` if there is no valid label.
+    fn structure_label(&self) -> io::Result<Option<String>> {
         match self.structure_name()? {
             Some(name) => {
-                let mapping_name = self.structure_context().get_mapping_info().structure_name();
-                Ok(Some(format!("{}___{}", name, mapping_name)))
+                let ctx = self.get_structure_context()?;
+                Ok(Some(format!("{}___{}", name, ctx.get_mapping_info().get_structure_name())))
             }
             None => Ok(None),
         }
     }
 
-    /// Returns the namespace that any labels should be placed in.
-    ///
-    /// Returns `Ok(None)` if there is no specific namespace for this instance.
-    fn structure_namespace(&self) -> std::io::Result<Option<String>> {
+    /// `getStructureNamespace()`: the namespace that any labels should be placed in; `None` if
+    /// there is no specific namespace for this instance.
+    fn structure_namespace(&self) -> io::Result<Option<String>> {
         Ok(None)
     }
 
-    /// Called to allow the implementor to perform custom markup of itself.
+    /// `additionalMarkup(MarkupSession)`: called to allow the implementor to perform custom
+    /// markup of itself.
     ///
     /// # Errors
-    ///
-    /// Returns an error if the markup operation fails or is cancelled.
-    fn additional_markup(&self, _session: &dyn MarkupSession) -> Result<(), Box<dyn std::error::Error>> {
+    /// If the markup fails or the session's monitor is cancelled.
+    fn additional_markup(&self, _session: &mut MarkupSession<'_>) -> io::Result<()> {
         Ok(())
     }
 
-    /// Returns a list of items that should be recursively marked up.
-    fn external_instances_to_markup(&self) -> std::io::Result<Vec<Box<dyn std::any::Any>>> {
+    /// `getExternalInstancesToMarkup()`: items that should be recursively marked up.
+    fn external_instances_to_markup(&self) -> io::Result<Vec<Box<dyn MarkupItem + '_>>> {
         Ok(Vec::new())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
-    use crate::format::seam_stubs::StructureMappingInfo;
-    use crate::program::model::address::Address;
-    use std::any::Any;
+    use crate::format::golang::structmapping::test_support::{byte_reader, simple, structure, test_mapper, TagContext};
+    use crate::format::golang::structmapping::{DataTypeMapper, StructureMapped};
+    use crate::program::model::data::data_type::DataType;
 
-    struct TestType;
-
-    struct MockStructureMappingInfo {
-        name: String,
+    #[derive(StructureMapped)]
+    #[structure_mapping(structure_name = "GoThing", structure_markup)]
+    struct NamedThing {
+        #[context_field]
+        context: StructureContext<NamedThing>,
+        #[field_mapping]
+        id: u8,
     }
 
-    impl StructureMappingInfo<TestType> for MockStructureMappingInfo {
-        fn structure_name(&self) -> String {
-            self.name.clone()
-        }
-    }
-
-    struct MockStructureContext {
-        mapping_name: String,
-    }
-
-    impl StructureContext<TestType> for MockStructureContext {
-        fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<TestType>> {
-            Box::new(MockStructureMappingInfo { name: self.mapping_name.clone() })
+    impl StructureMarkup for NamedThing {
+        fn structure_name(&self) -> io::Result<Option<String>> {
+            Ok((self.id != 0).then(|| format!("thing{}", self.id)))
         }
 
-        fn get_data_type_mapper(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_containing_field_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType> {
-            unimplemented!()
-        }
-
-        fn get_structure_address(&self) -> Address {
-            unimplemented!()
-        }
-
-        fn get_field_address(&self, _field_offset: i64) -> Address {
-            unimplemented!()
-        }
-
-        fn get_field_location(&self, _field_offset: i64) -> i64 {
-            0
-        }
-
-        fn get_structure_start(&self) -> i64 {
-            0
-        }
-
-        fn get_structure_end(&self) -> i64 {
-            1000
-        }
-
-        fn get_structure_length(&self) -> i32 {
-            1000
-        }
-
-        fn get_structure_instance(&self) -> &TestType {
-            unimplemented!()
-        }
-
-        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn get_field_reader(
-            &self,
-            _field_offset: i64,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
-            unimplemented!()
-        }
-
-        fn create_field_context(&self, _fmi: &dyn Any, _include_reader: bool) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_structure_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::structure::Structure>> {
-            unimplemented!()
-        }
-
-        fn to_string(&self) -> String {
-            "MockStructureContext".to_string()
+        fn structure_namespace(&self) -> io::Result<Option<String>> {
+            Ok(Some("pkg".to_string()))
         }
     }
 
-    struct NamedGoType {
-        name: Option<String>,
-        context: MockStructureContext,
+    #[derive(StructureMapped)]
+    #[structure_mapping(structure_name = "GoThing", structure_markup)]
+    struct DefaultThing {
+        #[context_field]
+        context: StructureContext<DefaultThing>,
+        #[field_mapping]
+        id: u8,
     }
 
-    impl StructureMarkup<TestType> for NamedGoType {
-        fn structure_context(&self) -> &dyn StructureContext<TestType> {
-            &self.context
-        }
+    impl StructureMarkup for DefaultThing {}
 
-        fn structure_name(&self) -> std::io::Result<Option<String>> {
-            Ok(self.name.clone())
+    #[derive(StructureMapped)]
+    #[structure_mapping(structure_name = "GoThing", structure_markup)]
+    struct NoContextThing {
+        #[field_mapping]
+        id: u8,
+    }
+
+    impl StructureMarkup for NoContextThing {
+        fn structure_name(&self) -> io::Result<Option<String>> {
+            Ok(Some("x".to_string()))
         }
     }
 
-    struct DefaultGoType {
-        context: MockStructureContext,
-    }
-
-    impl StructureMarkup<TestType> for DefaultGoType {
-        fn structure_context(&self) -> &dyn StructureContext<TestType> {
-            &self.context
-        }
+    fn mapper() -> DataTypeMapper {
+        let mut mapper = test_mapper(vec![Arc::new(|| {
+            Box::new(structure("GoThing", vec![("id", simple("byte", 1))])) as Box<dyn DataType>
+        })]);
+        let ctx = TagContext(vec![]);
+        mapper.register_structure::<NamedThing>(&ctx).unwrap();
+        mapper.register_structure::<DefaultThing>(&ctx).unwrap();
+        mapper.register_structure::<NoContextThing>(&ctx).unwrap();
+        mapper
     }
 
     #[test]
-    fn default_structure_name_is_none() {
-        let t = DefaultGoType { context: MockStructureContext { mapping_name: "GoType".to_string() } };
+    fn defaults_have_no_name_label_namespace_or_external_instances() {
+        let mapper = mapper();
+        let t: DefaultThing = mapper.read_structure(byte_reader(vec![5], true).as_mut()).unwrap();
         assert_eq!(t.structure_name().unwrap(), None);
-    }
-
-    #[test]
-    fn default_structure_label_is_none_when_name_is_none() {
-        let t = DefaultGoType { context: MockStructureContext { mapping_name: "GoType".to_string() } };
         assert_eq!(t.structure_label().unwrap(), None);
+        assert_eq!(t.structure_namespace().unwrap(), None);
+        assert!(t.external_instances_to_markup().unwrap().is_empty());
+        assert_eq!(t.get_structure_context().unwrap().get_structure_start(), 0);
     }
 
     #[test]
     fn structure_label_combines_name_and_mapping_structure_name() {
-        let t = NamedGoType {
-            name: Some("runtime.foo".to_string()),
-            context: MockStructureContext { mapping_name: "GoType".to_string() },
-        };
-        assert_eq!(t.structure_label().unwrap().as_deref(), Some("runtime.foo___GoType"));
+        let mapper = mapper();
+        let t: NamedThing = mapper.read_structure(byte_reader(vec![7], true).as_mut()).unwrap();
+        assert_eq!(t.structure_label().unwrap().as_deref(), Some("thing7___GoThing"));
+        let t: NamedThing = mapper.read_structure(byte_reader(vec![0], true).as_mut()).unwrap();
+        assert_eq!(t.structure_label().unwrap(), None, "no name, no label");
     }
 
     #[test]
-    fn default_structure_namespace_is_none() {
-        let t = DefaultGoType { context: MockStructureContext { mapping_name: "GoType".to_string() } };
-        assert_eq!(t.structure_namespace().unwrap(), None);
+    fn label_without_a_structure_context_is_an_error() {
+        let mapper = mapper();
+        let t: NoContextThing = mapper.read_structure(byte_reader(vec![1], true).as_mut()).unwrap();
+        let err = t.structure_label().unwrap_err();
+        assert_eq!(err.to_string(), "No StructureContext for NoContextThing");
     }
 
     #[test]
-    fn default_external_instances_to_markup_is_empty() {
-        let t = DefaultGoType { context: MockStructureContext { mapping_name: "GoType".to_string() } };
-        assert!(t.external_instances_to_markup().unwrap().is_empty());
-    }
-
-    struct RecordingMarkupSession {
-        called: std::sync::Mutex<bool>,
-    }
-
-    impl MarkupSession for RecordingMarkupSession {
-        fn get_program(&self) -> Box<dyn crate::program::model::listing::Program> {
-            unimplemented!()
-        }
-
-        fn get_mapping_context(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_markedup_addresses(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn markup(&self, _obj: &dyn Any, _nested: bool) -> std::io::Result<()> {
-            *self.called.lock().unwrap() = true;
-            Ok(())
-        }
-
-        fn markup_address(
-            &self,
-            _addr: Address,
-            _dt: &dyn crate::program::model::data::data_type::DataType,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn markup_address_if_undefined(
-            &self,
-            _addr: Address,
-            _dt: &dyn crate::program::model::data::data_type::DataType,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn label_structure(&self, _obj: &dyn Any, _symbol_name: &str, _namespace_name: &str) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn label_address(&self, _addr: Address, _symbol_name: &str) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn label_address_in_namespace(
-            &self,
-            _addr: Address,
-            _symbol_name: &str,
-            _namespace_name: &str,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn append_comment(
-            &self,
-            _field_context: &dyn Any,
-            _comment_type: &dyn Any,
-            _prefix: &str,
-            _comment: &str,
-            _sep: &str,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn markup_structure(&self, _structure_context: &dyn Any, _nested: bool) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn markup_array_element_references(
-            &self,
-            _array_addr: Address,
-            _element_size: i32,
-            _target_addrs: Vec<Address>,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn create_function_if_missing(&self, _name: &str, _ns: &dyn Any, _addr: Address) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn add_reference(&self, _field_context: &dyn Any, _ref_dest: Address) {}
-
-        fn log_warning_at(&self, _addr: Address, _msg: &str) {}
-    }
-
-    #[test]
-    fn default_additional_markup_is_a_no_op() {
-        let t = DefaultGoType { context: MockStructureContext { mapping_name: "GoType".to_string() } };
-        let session = RecordingMarkupSession { called: std::sync::Mutex::new(false) };
-        assert!(t.additional_markup(&session).is_ok());
-        assert!(!*session.called.lock().unwrap());
-    }
-
-    struct MarkingUpGoType {
-        context: MockStructureContext,
-    }
-
-    impl StructureMarkup<TestType> for MarkingUpGoType {
-        fn structure_context(&self) -> &dyn StructureContext<TestType> {
-            &self.context
-        }
-
-        fn additional_markup(&self, session: &dyn MarkupSession) -> Result<(), Box<dyn std::error::Error>> {
-            session.markup(&0i32 as &dyn Any, false)?;
-            Ok(())
-        }
-    }
-
-    #[test]
-    fn overridden_additional_markup_calls_session() {
-        let t = MarkingUpGoType { context: MockStructureContext { mapping_name: "GoType".to_string() } };
-        let session = RecordingMarkupSession { called: std::sync::Mutex::new(false) };
-        assert!(t.additional_markup(&session).is_ok());
-        assert!(*session.called.lock().unwrap());
+    fn derive_wires_the_hooks_into_the_descriptor() {
+        let mapper = mapper();
+        let t: NamedThing = mapper.read_structure(byte_reader(vec![3], true).as_mut()).unwrap();
+        let hooks = NamedThing::descriptor().structure_markup.as_ref().unwrap();
+        assert_eq!((hooks.structure_label)(&t).unwrap().as_deref(), Some("thing3___GoThing"));
+        assert_eq!((hooks.structure_namespace)(&t).unwrap().as_deref(), Some("pkg"));
     }
 }
