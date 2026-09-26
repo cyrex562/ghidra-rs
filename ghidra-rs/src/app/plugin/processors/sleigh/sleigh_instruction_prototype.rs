@@ -1898,6 +1898,11 @@ pub(crate) mod decode_tests {
     const ADD_SRC_OP: u64 = 17;
     const BZ_REG_OP: u64 = 18;
     const BZ_REL_OP: u64 = 19;
+    // Only in the context variant (see `context_language`).
+    const CONTEXTREG: u64 = 20;
+    const TMODE: u64 = 21;
+    /// `TMode`'s bit within the (single) context word: the most significant.
+    const TMODE_MASK: u64 = 0x8000_0000;
 
     fn encoding_space(name: &str, ty: AddressSpaceType, index: i32) -> Arc<AddressSpace> {
         AddressSpace::new(name, if ty == AddressSpaceType::Constant { 64 } else { 32 }, 1, ty, index)
@@ -2096,6 +2101,16 @@ pub(crate) mod decode_tests {
     }
 
     fn sla() -> Vec<u8> {
+        sla_for(false)
+    }
+
+    /// The module's language; with `context`, also a 4-byte `contextreg` at register:0x40 holding
+    /// the non-flowing context variable `TMode` (its top bit), and one more instruction:
+    ///
+    /// ```text
+    /// setm rel          is op=8 ; rel [ TMode=1; globalset(rel, TMode); ] { }   (line 100)
+    /// ```
+    fn sla_for(context: bool) -> Vec<u8> {
         let ram = encoding_space("ram", AddressSpaceType::Ram, RAM);
         let register = encoding_space("register", AddressSpaceType::Register, REGISTER);
         let constant = encoding_space("constant", AddressSpaceType::Constant, CONSTANT);
@@ -2120,7 +2135,7 @@ pub(crate) mod decode_tests {
 
         e.open_element(ELEM_SYMBOL_TABLE).unwrap();
         e.write_signed_integer(ATTRIB_SCOPESIZE, 1).unwrap();
-        e.write_signed_integer(ATTRIB_SYMBOLSIZE, 20).unwrap();
+        e.write_signed_integer(ATTRIB_SYMBOLSIZE, if context { 22 } else { 20 }).unwrap();
         e.open_element(ELEM_SCOPE).unwrap();
         e.write_unsigned_integer(ATTRIB_ID, 0).unwrap();
         e.write_unsigned_integer(ATTRIB_PARENT, 0).unwrap();
@@ -2148,9 +2163,31 @@ pub(crate) mod decode_tests {
         head(&mut e, ELEM_OPERAND_SYM_HEAD, "asrc", ADD_SRC_OP);
         head(&mut e, ELEM_OPERAND_SYM_HEAD, "breg", BZ_REG_OP);
         head(&mut e, ELEM_OPERAND_SYM_HEAD, "btarget", BZ_REL_OP);
+        if context {
+            head(&mut e, ELEM_VARNODE_SYM_HEAD, "contextreg", CONTEXTREG);
+            head(&mut e, ELEM_CONTEXT_SYM_HEAD, "TMode", TMODE);
+        }
 
         varnode(&mut e, R0, REGISTER, 0, 4);
         varnode(&mut e, R1, REGISTER, 4, 4);
+        if context {
+            varnode(&mut e, CONTEXTREG, REGISTER, 0x40, 4);
+            e.open_element(ELEM_CONTEXT_SYM).unwrap();
+            e.write_unsigned_integer(ATTRIB_ID, TMODE).unwrap();
+            e.write_unsigned_integer(ATTRIB_VARNODE, CONTEXTREG).unwrap();
+            e.write_signed_integer(ATTRIB_LOW, 0).unwrap();
+            e.write_signed_integer(ATTRIB_HIGH, 0).unwrap();
+            e.write_bool(ATTRIB_FLOW, false).unwrap();
+            e.open_element(ELEM_CONTEXTFIELD).unwrap();
+            e.write_bool(ATTRIB_SIGNBIT, false).unwrap();
+            e.write_signed_integer(ATTRIB_STARTBIT, 0).unwrap();
+            e.write_signed_integer(ATTRIB_ENDBIT, 0).unwrap();
+            e.write_signed_integer(ATTRIB_STARTBYTE, 0).unwrap();
+            e.write_signed_integer(ATTRIB_ENDBYTE, 0).unwrap();
+            e.write_signed_integer(ATTRIB_SHIFT, 7).unwrap();
+            e.close_element(ELEM_CONTEXTFIELD).unwrap();
+            e.close_element(ELEM_CONTEXT_SYM).unwrap();
+        }
 
         // reg: attach variables [ r0 r1 ] to the low nibble of byte 0
         e.open_element(ELEM_VARLIST_SYM).unwrap();
@@ -2209,7 +2246,7 @@ pub(crate) mod decode_tests {
         // instruction table
         e.open_element(ELEM_SUBTABLE_SYM).unwrap();
         e.write_unsigned_integer(ATTRIB_ID, INSTRUCTION).unwrap();
-        e.write_signed_integer(ATTRIB_NUMCT, 7).unwrap();
+        e.write_signed_integer(ATTRIB_NUMCT, if context { 8 } else { 7 }).unwrap();
         // mov reg, imm8 { reg = imm8; }
         let mov = templ(
             None,
@@ -2349,18 +2386,62 @@ pub(crate) mod decode_tests {
             &[Piece::Text("bz"), Piece::Text(" "), Piece::Op(0), Piece::Text(","), Piece::Op(1)],
             &bz,
         );
-        decision(
-            &mut e,
-            &[
-                (0, 0xf000_0000, 0x1000_0000),
-                (1, 0xf000_0000, 0x2000_0000),
-                (2, 0xf000_0000, 0x3000_0000),
-                (3, 0xf000_0000, 0x4000_0000),
-                (4, 0xf000_0000, 0x5000_0000),
-                (5, 0xf000_0000, 0x6000_0000),
-                (6, 0xf000_0000, 0x7000_0000),
-            ],
-        );
+        let mut pairs = vec![
+            (0, 0xf000_0000, 0x1000_0000),
+            (1, 0xf000_0000, 0x2000_0000),
+            (2, 0xf000_0000, 0x3000_0000),
+            (3, 0xf000_0000, 0x4000_0000),
+            (4, 0xf000_0000, 0x5000_0000),
+            (5, 0xf000_0000, 0x6000_0000),
+            (6, 0xf000_0000, 0x7000_0000),
+        ];
+        if context {
+            // setm rel [ TMode=1; globalset(rel, TMode); ] { }
+            e.open_element(ELEM_CONSTRUCTOR).unwrap();
+            e.write_unsigned_integer(ATTRIB_PARENT, INSTRUCTION).unwrap();
+            e.write_signed_integer(ATTRIB_FIRST, 1).unwrap();
+            e.write_signed_integer(ATTRIB_LENGTH, 2).unwrap();
+            e.write_signed_integer(ATTRIB_SOURCE, 0).unwrap();
+            e.write_signed_integer(ATTRIB_LINE, 100).unwrap();
+            e.open_element(ELEM_OPER).unwrap();
+            e.write_unsigned_integer(ATTRIB_ID, REL_OP).unwrap();
+            e.close_element(ELEM_OPER).unwrap();
+            for piece in [Piece::Text("setm"), Piece::Text(" "), Piece::Op(0)] {
+                match piece {
+                    Piece::Text(t) => {
+                        e.open_element(ELEM_PRINT).unwrap();
+                        e.write_string(ATTRIB_PIECE, t).unwrap();
+                        e.close_element(ELEM_PRINT).unwrap();
+                    }
+                    Piece::Op(i) => {
+                        e.open_element(ELEM_OPPRINT).unwrap();
+                        e.write_signed_integer(ATTRIB_ID, i).unwrap();
+                        e.close_element(ELEM_OPPRINT).unwrap();
+                    }
+                }
+            }
+            e.open_element(ELEM_CONTEXT_OP).unwrap();
+            e.write_signed_integer(ATTRIB_I, 0).unwrap();
+            e.write_signed_integer(ATTRIB_SHIFT, 31).unwrap();
+            e.write_unsigned_integer(ATTRIB_MASK, TMODE_MASK).unwrap();
+            e.open_element(ELEM_INTB).unwrap();
+            e.write_signed_integer(ATTRIB_VAL, 1).unwrap();
+            e.close_element(ELEM_INTB).unwrap();
+            e.close_element(ELEM_CONTEXT_OP).unwrap();
+            e.open_element(ELEM_COMMIT).unwrap();
+            e.write_unsigned_integer(ATTRIB_ID, REL_OP).unwrap();
+            e.write_signed_integer(ATTRIB_NUMBER, 0).unwrap();
+            e.write_unsigned_integer(ATTRIB_MASK, TMODE_MASK).unwrap();
+            e.close_element(ELEM_COMMIT).unwrap();
+            let setm = templ(
+                None,
+                vec![op(OpCode::CpuiMultiequal, None, vec![VarnodeTpl::with_fields(real(0), real(0), real(0))])],
+            );
+            setm.encode(&mut e, -1).unwrap();
+            e.close_element(ELEM_CONSTRUCTOR).unwrap();
+            pairs.push((7, 0xf000_0000, 0x8000_0000));
+        }
+        decision(&mut e, &pairs);
         e.close_element(ELEM_SUBTABLE_SYM).unwrap();
 
         // rel table: export *[ram]:4 reloc
@@ -2417,6 +2498,15 @@ pub(crate) mod decode_tests {
     pub(crate) fn language() -> Arc<SleighLanguage> {
         let decoder = PackedDecode::new(Arc::new(DefaultAddressFactory::new(vec![])), sla());
         SleighLanguage::decode(&decoder, "toy:BE:32:default".to_string())
+            .unwrap()
+            .into_shared()
+    }
+
+    /// The module's language with a context register and the `setm` instruction; see
+    /// [`sla_for`].
+    pub(crate) fn context_language() -> Arc<SleighLanguage> {
+        let decoder = PackedDecode::new(Arc::new(DefaultAddressFactory::new(vec![])), sla_for(true));
+        SleighLanguage::decode(&decoder, "toy:BE:32:context".to_string())
             .unwrap()
             .into_shared()
     }

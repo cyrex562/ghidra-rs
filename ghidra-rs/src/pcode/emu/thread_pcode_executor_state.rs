@@ -250,6 +250,12 @@ impl<S> SharedPcodeExecutorState<S> {
         Self { state: Arc::new(Mutex::new(state)) }
     }
 
+    /// A handle on a state already shared through the given lock, e.g. a thread's multiplexed
+    /// state as its executor holds it.
+    pub fn from_shared(state: Arc<Mutex<S>>) -> Self {
+        Self { state }
+    }
+
     /// Lock the shared state for direct access.
     pub fn lock(&self) -> MutexGuard<'_, S> {
         self.state.lock().expect("shared state lock poisoned")

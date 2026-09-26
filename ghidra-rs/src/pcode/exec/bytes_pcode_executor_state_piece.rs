@@ -22,7 +22,7 @@ use crate::pcode::exec::abstract_bytes_pcode_executor_state_piece::{
 use crate::pcode::exec::abstract_long_offset_pcode_executor_state_piece::{
     AbstractLongOffsetPcodeExecutorStatePiece, AbstractLongOffsetPcodeExecutorStatePieceBase,
 };
-use crate::pcode::exec::bytes_pcode_executor_state_space::BytesPcodeExecutorStateSpace;
+use crate::pcode::exec::bytes_pcode_executor_state_space::{BytesPcodeExecutorStateSpace, BytesSpaceHooks};
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason};
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
@@ -40,6 +40,9 @@ where
 {
     long_base: AbstractLongOffsetPcodeExecutorStatePieceBase<Vec<u8>, Vec<u8>, CB>,
     bytes_base: AbstractBytesPcodeExecutorStatePieceBase,
+    /// The overrides every space this piece creates carries: what a Java subclass's `newSpace`
+    /// override expresses by creating a space subclass. See [`BytesSpaceHooks`].
+    space_hooks: Option<Arc<dyn BytesSpaceHooks>>,
 }
 
 impl<CB> BytesPcodeExecutorStatePiece<CB>
@@ -50,9 +53,23 @@ where
     ///
     /// Port of `BytesPcodeExecutorStatePiece(Language, PcodeStateCallbacks)`.
     pub fn new(language: Arc<dyn Language>, cb: Arc<CB>) -> Self {
+        Self::with_space_hooks(language, cb, None)
+    }
+
+    /// Construct a state for the given language whose spaces carry the given hooks.
+    ///
+    /// Stands for a Java subclass of `AbstractBytesPcodeExecutorStatePiece` whose `newSpace`
+    /// creates a `BytesPcodeExecutorStateSpace` subclass (e.g. `AdaptedEmulator`'s); see
+    /// [`BytesSpaceHooks`]. `None` is this class itself.
+    pub fn with_space_hooks(
+        language: Arc<dyn Language>,
+        cb: Arc<CB>,
+        space_hooks: Option<Arc<dyn BytesSpaceHooks>>,
+    ) -> Self {
         Self {
             long_base: new_long_offset_base_for_language(language, cb),
             bytes_base: AbstractBytesPcodeExecutorStatePieceBase::new(),
+            space_hooks,
         }
     }
 
@@ -61,7 +78,11 @@ where
     /// Port of `fork(PcodeStateCallbacks)`: a new piece for the same language whose every
     /// existing space is a fork of this one's, so writes to either do not affect the other.
     pub fn fork(&self, cb: Arc<CB>) -> Self {
-        let mut result = Self::new(Arc::clone(self.long_base.language()), cb);
+        let mut result = Self::with_space_hooks(
+            Arc::clone(self.long_base.language()),
+            cb,
+            self.space_hooks.clone(),
+        );
         result.bytes_base = self.bytes_base.fork();
         result
     }
@@ -129,7 +150,11 @@ where
     }
 
     fn new_space(&self, space: &Arc<AddressSpace>) -> BytesPcodeExecutorStateSpace {
-        BytesPcodeExecutorStateSpace::new(Arc::clone(self.long_base.language()), Arc::clone(space))
+        BytesPcodeExecutorStateSpace::with_hooks(
+            Arc::clone(self.long_base.language()),
+            Arc::clone(space),
+            self.space_hooks.clone(),
+        )
     }
 }
 

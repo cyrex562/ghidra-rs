@@ -182,23 +182,28 @@ impl<'d> DecoderExecutor<'d> {
     ///
     /// Port of `DecoderExecutor.setInstruction(PseudoInstruction)`.
     ///
-    /// # Panics
-    ///
-    /// When the language has a context register *and* a non-error instruction was decoded: that
-    /// arm builds the flow context and then runs Java's `processContextChanges()`, which is not
-    /// ported yet. Languages without a context register take the other arm and work.
     pub fn set_instruction(&mut self, instruction: Option<Arc<dyn PseudoInstruction>>) {
         let is_decode_error =
             instruction.as_deref().is_some_and(|i| i.decode_error_message().is_some());
         self.instruction = instruction;
-        if self.at.rv_ctx.is_none() || self.instruction.is_none() || is_decode_error {
-            self.flow = self.at.rv_ctx.clone();
+        let Some(rv_ctx) = self.at.rv_ctx.clone() else {
+            self.flow = None;
+            return;
+        };
+        if self.instruction.is_none() || is_decode_error {
+            self.flow = Some(rv_ctx);
             return;
         }
-        let _ = (self.decoder.contextreg(), self.decoder.default_context());
-        unimplemented!(
-            "DecoderExecutor::set_instruction: the flow context needs processContextChanges, not yet ported"
-        )
+        let contextreg = self.decoder.contextreg().clone();
+        let mut flow = RegisterValue::with_value(contextreg.clone(), 0);
+        if let Some(default_context) = self.decoder.default_context() {
+            if let Some(default_value) = default_context.get_default_value(&contextreg, &self.at.address) {
+                flow = flow.combine_values(&default_value);
+            }
+            flow = flow.combine_values(&default_context.get_flow_value(rv_ctx));
+        }
+        self.flow = Some(flow);
+        self.process_context_changes();
     }
 
     /// Decode the instruction this executor is meant to interpret.
@@ -227,16 +232,22 @@ impl<'d> DecoderExecutor<'d> {
     ///
     /// # Panics
     ///
-    /// Always: this needs `PseudoInstruction.getParserContext()` and
-    /// `SleighParserContext.applyCommits`, and the `PseudoInstruction` placeholder carries no
-    /// parser context. Only [`set_instruction`](Self::set_instruction)'s already-panicking arm
-    /// calls it.
-    #[allow(dead_code)] // Its one caller is the arm of `set_instruction` that panics first.
+    /// If the instruction's bytes cannot be re-read or a commit's address cannot be computed, as
+    /// Java throws `AssertionError`.
     fn process_context_changes(&mut self) {
-        unimplemented!(
-            "DecoderExecutor::process_context_changes needs PseudoInstruction::get_parser_context, \
-             not yet ported"
-        )
+        use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
+        use crate::pcode::emu::default_pcode_thread::RegisterValueFromBytes;
+        let instruction = self.instruction.clone().expect("called with an instruction");
+        let Some(parser_ctx) = instruction.get_parser_context() else {
+            return;
+        };
+        let parser_ctx = parser_ctx
+            .as_any()
+            .and_then(|any| any.downcast_ref::<SleighParserContext>())
+            .expect("a decoded instruction's parser context is a SleighParserContext");
+        parser_ctx
+            .apply_commits(self, &RegisterValueFromBytes)
+            .unwrap_or_else(|e| panic!("{e}"));
     }
 
     /// Interpret the given program with the passage decoder's userop library.
@@ -1225,6 +1236,47 @@ mod tests {
         // Other targets see the plain flow context; the commit is not consumed.
         assert_eq!(executor.take_target_context(&ram(0x3000)).bi_ctx, 0x0010);
         assert_eq!(executor.take_target_context(&ram(0x2000)).bi_ctx, 0x0210);
+    }
+
+    /// Java: setting a decoded instruction computes the flow context (non-flowing bits reset) and
+    /// applies the instruction's `globalset` commits (`processContextChanges`), which then shape
+    /// the context at the committed target only. The fixture's `setm rel` commits the non-flowing
+    /// `TMode` (the context word's top bit) at `rel`.
+    #[test]
+    fn set_instruction_applies_the_instructions_globalset_commits() {
+        use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
+        use crate::pcode::emu::sleigh_instruction_decoder::SleighInstructionDecoder;
+        use crate::pcode::exec::bytes_pcode_executor_state::BytesPcodeExecutorState;
+        use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
+        use crate::pcode::exec::pcode_state_callbacks::NONE;
+        use crate::program::model::listing::program_context::ProgramContext;
+        use crate::program::util::program_context_impl::ProgramContextImpl;
+
+        let language = decode_tests::context_language();
+        let lang: Arc<dyn Language> = Arc::clone(&language) as Arc<dyn Language>;
+        let ram_space = lang.get_default_space();
+        let contextreg = lang.get_context_base_register().unwrap();
+        let mut state = BytesPcodeExecutorState::new(Arc::clone(&lang), Arc::new(NONE));
+        // 0x1000: setm 0x1006
+        state.set_var(&ram_space, 0x1000, 2, false, &vec![0x80, 0x04]);
+        let mut sleigh = SleighInstructionDecoder::<Vec<u8>, _>::new(Arc::clone(&language), state);
+        let input = LangRegisterValue::with_value(contextreg.clone(), 0x8000_0000);
+        let instruction: Arc<dyn PseudoInstruction> =
+            Arc::from(sleigh.decode_instruction(&ram_space.address(0x1000), Some(&input)).unwrap());
+
+        let mut default_context = ProgramContextImpl::new(Arc::clone(&lang));
+        lang.apply_context_settings(&mut default_context);
+        let default_context: Arc<dyn ProgramContext> = Arc::new(default_context);
+        let decoder: Arc<Mutex<dyn InstructionDecoder>> = Arc::new(Mutex::new(UnusedDecoder));
+        let userops: Arc<dyn PcodeUseropLibrary<Vec<u8>>> =
+            Arc::new(MockUseropLibrary { userops: UseropMap::new() });
+        let decoder = JitPassageDecoder::new(JitPcodeThread::new(decoder, Some(default_context), userops));
+        let at = AddrCtx::new(Some(input), ram_space.address(0x1000));
+        let mut executor = DecoderExecutor::with_instruction(&decoder, at, Some(instruction));
+
+        // The input's TMode does not flow; the commit places it at the target alone.
+        assert_eq!(executor.take_target_context(&ram_space.address(0x1006)).bi_ctx, 0x8000_0000);
+        assert_eq!(executor.take_target_context(&ram_space.address(0x1002)).bi_ctx, 0);
     }
 
     /// Java: with no decoded instruction, `getAdvancedAddress` warns and returns the current

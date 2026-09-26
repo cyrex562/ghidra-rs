@@ -36,8 +36,11 @@ use std::sync::{Arc, OnceLock};
 use crate::pcode::emu::abstract_pcode_machine::{
     AbstractPcodeMachine, AbstractPcodeMachineBase, AbstractPcodeMachineThreads, ThreadList,
 };
+#[allow(unused_imports)]
 use crate::pcode::emu::bytes_pcode_thread::{BytesPcodeThread, BytesState};
-use crate::pcode::emu::default_pcode_thread::PcodeEmulationLibrary;
+use crate::pcode::emu::default_pcode_thread::{DefaultPcodeThread, PcodeEmulationLibrary, ThreadHooks};
+#[allow(deprecated)]
+use crate::pcode::emu::modified_pcode_thread::ModifiedThreadHooks;
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 use crate::pcode::emu::pcode_machine::{
     AccessKind, ErasedPcodeMachine, PcodeMachine, PcodeMachineThreads, SwiMode,
@@ -104,17 +107,70 @@ impl<S: 'static> ThreadDecoding<S> {
     }
 }
 
+/// The factory methods a [`PcodeEmulator`] "subclass" overrides: Java's `createSharedState()`,
+/// `createLocalState(PcodeThread)`, and the part of `createThread(String)` a subclass adds to
+/// `BytesPcodeThread` (its [`ThreadHooks`]).
+///
+/// `S` is the concrete bytes state the machine creates for its memory and for each thread's
+/// registers, and `H` the overrides its threads carry. [`BytesEmulatorParts`] is `PcodeEmulator`'s
+/// own behavior; a Java subclass such as `AdaptedEmulator.AdaptedPcodeEmulator` supplies its own.
+pub trait PcodeEmulatorParts<S, H>: Send + Sync {
+    /// Port of `createSharedState()`: the machine's memory.
+    fn create_shared_state(&self, language: Arc<dyn Language>) -> S;
+
+    /// Port of `createLocalState(PcodeThread<byte[]>)`: a thread's registers.
+    fn create_local_state(&self, language: Arc<dyn Language>) -> S;
+
+    /// The overrides of the thread class `createThread(String)` instantiates.
+    fn create_thread_hooks(&self) -> H;
+}
+
+/// [`PcodeEmulator`]'s own factory methods: `new BytesPcodeExecutorState(language, scb)` for both
+/// states (with no state callbacks; see the module docs) and plain `BytesPcodeThread`s.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct BytesEmulatorParts;
+
+#[allow(deprecated)]
+impl PcodeEmulatorParts<BytesState, ModifiedThreadHooks> for BytesEmulatorParts {
+    fn create_shared_state(&self, language: Arc<dyn Language>) -> BytesState {
+        BytesPcodeExecutorState::new(language, Arc::new(NONE))
+    }
+
+    fn create_local_state(&self, language: Arc<dyn Language>) -> BytesState {
+        BytesPcodeExecutorState::new(language, Arc::new(NONE))
+    }
+
+    fn create_thread_hooks(&self) -> ModifiedThreadHooks {
+        ModifiedThreadHooks::new(None)
+    }
+}
+
+/// The thread type of a [`PcodeEmulator`] over state `S` whose threads carry overrides `H`:
+/// [`BytesPcodeThread`] for the defaults.
+pub type EmulatorThread<S = BytesState, H = ModifiedThreadHooks> =
+    DefaultPcodeThread<Vec<u8>, SharedPcodeExecutorState<S>, S, H>;
+
 /// A p-code machine which executes on concrete bytes and incorporates per-architecture state
 /// modifiers.
 ///
 /// More complex use cases likely benefit by extending this or one of its super types. See the
 /// module docs for the deviations forced by not-yet-ported dependencies.
-pub struct PcodeEmulator {
+///
+/// `S` is the concrete state type of the machine's memory and its threads' registers, and `H` the
+/// overrides its threads carry; both default to Java's `PcodeEmulator` itself. A Java subclass
+/// overriding `createSharedState`/`createLocalState`/`createThread` supplies them through
+/// [`PcodeEmulatorParts`].
+pub struct PcodeEmulator<S = BytesState, H = ModifiedThreadHooks>
+where
+    S: PcodeExecutorState<Vec<u8>> + 'static,
+    H: ThreadHooks<Vec<u8>, SharedPcodeExecutorState<S>, S>,
+{
     base: AbstractPcodeMachineBase<Vec<u8>>,
-    threads: ThreadList<BytesPcodeThread>,
+    threads: ThreadList<EmulatorThread<S, H>>,
     /// The machine's shared state as its threads hold it; set when the shared state is created.
-    shared_memory: OnceLock<SharedPcodeExecutorState<BytesState>>,
-    thread_decoding: ThreadDecoding,
+    shared_memory: OnceLock<SharedPcodeExecutorState<S>>,
+    thread_decoding: ThreadDecoding<S>,
+    parts: Arc<dyn PcodeEmulatorParts<S, H>>,
 }
 
 impl PcodeEmulator {
@@ -137,9 +193,36 @@ impl PcodeEmulator {
         cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>,
         thread_decoding: ThreadDecoding,
     ) -> Self {
+        Self::with_parts(language, cb, thread_decoding, Arc::new(BytesEmulatorParts))
+    }
+
+    /// Construct a new concrete emulator with no emulation callbacks.
+    ///
+    /// Port of `PcodeEmulator(Language)`, which is `this(language, PcodeEmulationCallbacks.none())`.
+    pub fn with_language(language: Arc<SleighLanguage>) -> Self {
+        Self::new(language, no_pcode_emulation_callbacks())
+    }
+}
+
+impl<S, H> PcodeEmulator<S, H>
+where
+    S: PcodeExecutorState<Vec<u8>> + 'static,
+    H: ThreadHooks<Vec<u8>, SharedPcodeExecutorState<S>, S>,
+{
+    /// Construct a new concrete emulator whose states and threads come from `parts`: a Java
+    /// subclass of `PcodeEmulator` overriding its factory methods.
+    ///
+    /// Port of `PcodeEmulator(Language, PcodeEmulationCallbacks<byte[]>)` as a subclass invokes
+    /// it; see the module docs on [`ThreadDecoding`].
+    pub fn with_parts(
+        language: Arc<SleighLanguage>,
+        cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>,
+        thread_decoding: ThreadDecoding<S>,
+        parts: Arc<dyn PcodeEmulatorParts<S, H>>,
+    ) -> Self {
         let arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>> =
             Arc::new(BytesPcodeArithmetic::for_sleigh_language(&language));
-        Self::with_arithmetic(language, cb, arithmetic, thread_decoding)
+        Self::with_arithmetic(language, cb, arithmetic, thread_decoding, parts)
     }
 
     /// The constructor body, given the product of `createArithmetic()`.
@@ -147,7 +230,8 @@ impl PcodeEmulator {
         language: Arc<SleighLanguage>,
         cb: Arc<dyn PcodeEmulationCallbacks<Vec<u8>>>,
         arithmetic: Arc<dyn PcodeArithmetic<Vec<u8>>>,
-        thread_decoding: ThreadDecoding,
+        thread_decoding: ThreadDecoding<S>,
+        parts: Arc<dyn PcodeEmulatorParts<S, H>>,
     ) -> Self {
         let library =
             AbstractPcodeMachineBase::create_userop_library(&language, arithmetic.as_ref(), "", &[]);
@@ -161,6 +245,7 @@ impl PcodeEmulator {
             threads: ThreadList::new(),
             shared_memory: OnceLock::new(),
             thread_decoding,
+            parts,
         };
         AbstractPcodeMachineBase::notify_emulator_created(&emulator);
         emulator
@@ -171,17 +256,26 @@ impl PcodeEmulator {
         Arc::clone(self.base.language()) as Arc<dyn Language>
     }
 
-    /// Construct a new concrete emulator with no emulation callbacks.
-    ///
-    /// Port of `PcodeEmulator(Language)`, which is `this(language, PcodeEmulationCallbacks.none())`.
-    pub fn with_language(language: Arc<SleighLanguage>) -> Self {
-        Self::new(language, no_pcode_emulation_callbacks())
+    /// The machine's memory as its threads hold it, creating it if needed. Java reaches the same
+    /// object through `getSharedState()`.
+    pub fn shared_memory(&mut self) -> SharedPcodeExecutorState<S> {
+        AbstractPcodeMachineBase::get_shared_state(self);
+        self.shared_memory.get().expect("the shared state was just created").clone()
     }
 }
 
-impl ErasedPcodeMachine for PcodeEmulator {}
+impl<S, H> ErasedPcodeMachine for PcodeEmulator<S, H>
+where
+    S: PcodeExecutorState<Vec<u8>> + 'static,
+    H: ThreadHooks<Vec<u8>, SharedPcodeExecutorState<S>, S>,
+{
+}
 
-impl AbstractPcodeMachine<Vec<u8>> for PcodeEmulator {
+impl<S, H> AbstractPcodeMachine<Vec<u8>> for PcodeEmulator<S, H>
+where
+    S: PcodeExecutorState<Vec<u8>> + 'static,
+    H: ThreadHooks<Vec<u8>, SharedPcodeExecutorState<S>, S>,
+{
     fn base(&self) -> &AbstractPcodeMachineBase<Vec<u8>> {
         &self.base
     }
@@ -193,17 +287,16 @@ impl AbstractPcodeMachine<Vec<u8>> for PcodeEmulator {
     /// Port of the overridden `createSharedState()`. The machine keeps the handle its threads
     /// will share.
     fn create_shared_state(&self) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
-        let memory = SharedPcodeExecutorState::new(BytesPcodeExecutorState::new(
-            self.language_dyn(),
-            Arc::new(NONE),
-        ));
-        let memory = self.shared_memory.get_or_init(|| memory).clone();
+        let memory = self
+            .shared_memory
+            .get_or_init(|| SharedPcodeExecutorState::new(self.parts.create_shared_state(self.language_dyn())))
+            .clone();
         Box::new(memory)
     }
 
     /// Port of the overridden `createLocalState(PcodeThread<byte[]>)`.
     fn create_local_state(&self, _thread: &dyn ErasedPcodeThread) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
-        Box::new(BytesPcodeExecutorState::new(self.language_dyn(), Arc::new(NONE)))
+        Box::new(self.parts.create_local_state(self.language_dyn()))
     }
 
     /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
@@ -212,65 +305,72 @@ impl AbstractPcodeMachine<Vec<u8>> for PcodeEmulator {
     }
 }
 
-impl AbstractPcodeMachineThreads<Vec<u8>> for PcodeEmulator {
+impl<S, H> AbstractPcodeMachineThreads<Vec<u8>> for PcodeEmulator<S, H>
+where
+    S: PcodeExecutorState<Vec<u8>> + 'static,
+    H: ThreadHooks<Vec<u8>, SharedPcodeExecutorState<S>, S>,
+{
     /// Port of the overridden `createThread(String)`: `new BytesPcodeThread(name, this)`, whose
     /// constructor reads the machine's shared state, creating it if this is the first thread.
     ///
     /// # Panics
     ///
     /// If the language the threads bind to has no program counter, as Java's constructor throws.
-    fn create_thread(&mut self, name: &str) -> BytesPcodeThread {
+    fn create_thread(&mut self, name: &str) -> EmulatorThread<S, H> {
         let decoding = self.thread_decoding.clone();
-        AbstractPcodeMachineBase::get_shared_state(self);
-        let shared = self
-            .shared_memory
-            .get()
-            .expect("the shared state was just created")
-            .clone();
+        let shared = self.shared_memory();
         // Java: `machine.createLocalState(this)`.
-        let local = BytesPcodeExecutorState::new(self.language_dyn(), Arc::new(NONE));
+        let local = self.parts.create_local_state(self.language_dyn());
         let decoder = (decoding.decoder)(&decoding.exec_language, &shared);
-        BytesPcodeThread::new_bytes(
+        DefaultPcodeThread::new(
             name,
             Arc::clone(self.base.shared()),
             decoding.exec_language,
             shared,
             local,
             decoder,
-            None,
+            self.parts.create_thread_hooks(),
         )
     }
 
-    fn threads(&self) -> &ThreadList<BytesPcodeThread> {
+    fn threads(&self) -> &ThreadList<EmulatorThread<S, H>> {
         &self.threads
     }
 
-    fn threads_mut(&mut self) -> &mut ThreadList<BytesPcodeThread> {
+    fn threads_mut(&mut self) -> &mut ThreadList<EmulatorThread<S, H>> {
         &mut self.threads
     }
 }
 
-impl PcodeMachineThreads<Vec<u8>> for PcodeEmulator {
-    type Thread = BytesPcodeThread;
+impl<S, H> PcodeMachineThreads<Vec<u8>> for PcodeEmulator<S, H>
+where
+    S: PcodeExecutorState<Vec<u8>> + 'static,
+    H: ThreadHooks<Vec<u8>, SharedPcodeExecutorState<S>, S>,
+{
+    type Thread = EmulatorThread<S, H>;
 
-    fn new_thread(&mut self) -> &mut BytesPcodeThread {
+    fn new_thread(&mut self) -> &mut EmulatorThread<S, H> {
         AbstractPcodeMachineBase::new_thread(self)
     }
 
-    fn new_thread_named(&mut self, name: &str) -> &mut BytesPcodeThread {
+    fn new_thread_named(&mut self, name: &str) -> &mut EmulatorThread<S, H> {
         AbstractPcodeMachineBase::new_thread_named(self, name)
     }
 
-    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<&mut BytesPcodeThread> {
+    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<&mut EmulatorThread<S, H>> {
         AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
     }
 
-    fn get_all_threads(&self) -> Vec<&BytesPcodeThread> {
+    fn get_all_threads(&self) -> Vec<&EmulatorThread<S, H>> {
         self.threads.all()
     }
 }
 
-impl PcodeMachine<Vec<u8>> for PcodeEmulator {
+impl<S, H> PcodeMachine<Vec<u8>> for PcodeEmulator<S, H>
+where
+    S: PcodeExecutorState<Vec<u8>> + 'static,
+    H: ThreadHooks<Vec<u8>, SharedPcodeExecutorState<S>, S>,
+{
     fn get_language(&self) -> &SleighLanguage {
         self.base.get_language()
     }
@@ -424,6 +524,7 @@ mod tests {
             no_pcode_emulation_callbacks(),
             Arc::new(StubArithmetic),
             thread_decoding(language, register_space()),
+            Arc::new(BytesEmulatorParts),
         )
     }
 

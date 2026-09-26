@@ -296,7 +296,7 @@ impl SleighPcodeUseropDefinition for OverloadedSleighPcodeUseropDefinition {
 /// (its prototype is a behaviour-carrying `InvalidPrototype` subclass; see `OWNERSHIP_MIGRATION.md`,
 /// "Instruction/CodeUnit arena").
 ///
-/// Grown (see `STUBS.tsv`) with the two members
+/// Grown (see `STUBS.tsv`) with the three members
 /// [`DecoderExecutor`](crate::pcode::emu::jit::decode::decoder_executor::DecoderExecutor) reads off
 /// a decoded instruction. Both are defaulted so pre-existing bare
 /// `impl PseudoInstruction for Foo {}` blocks keep compiling.
@@ -316,13 +316,32 @@ pub trait PseudoInstruction: Send + Sync {
     fn decode_error_message(&self) -> Option<&str> {
         None
     }
+
+    /// Stands in for `PseudoInstruction.getParserContext()`, which `DecoderExecutor` casts to
+    /// `SleighParserContext` to apply the instruction's `globalset` commits. `None` for an
+    /// instruction with no parser context (a `DecodeErrorInstruction`, for which Java never asks).
+    ///
+    /// # Panics
+    ///
+    /// If the instruction's bytes cannot be re-read, as Java throws `AssertionError`.
+    fn get_parser_context(&self) -> Option<Box<dyn crate::program::model::lang::parser_context::ParserContext>> {
+        None
+    }
 }
 
 /// A real pseudo instruction is a decoded instruction the emulator can hold. It is never a
 /// `DecodeErrorInstruction`, so it reports no decode error.
-impl<C: Send + Sync> PseudoInstruction for crate::app::util::pseudo_instruction::PseudoInstruction<C> {
+impl<C> PseudoInstruction for crate::app::util::pseudo_instruction::PseudoInstruction<C>
+where
+    C: crate::program::model::lang::processor_context_view::ProcessorContextView + Send + Sync,
+{
     fn get_max_address(&self) -> Address {
         self.code_unit().max_address().clone()
+    }
+
+    fn get_parser_context(&self) -> Option<Box<dyn crate::program::model::lang::parser_context::ParserContext>> {
+        use crate::program::model::lang::instruction_context::InstructionContext;
+        Some(InstructionContext::get_parser_context(self).unwrap_or_else(|e| panic!("{e:?}")))
     }
 }
 

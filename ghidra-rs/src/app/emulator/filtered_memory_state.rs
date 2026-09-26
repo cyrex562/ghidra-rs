@@ -1,6 +1,6 @@
 //! Port of `ghidra.app.emulator.FilteredMemoryState`.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::app::emulator::memory_access_filter::{
     MemoryAccessFilterCallbacks, MemoryAccessFilterChain, MemoryAccessFilterId,
@@ -48,7 +48,9 @@ use crate::program::model::pcode::Varnode;
 #[deprecated(since = "12.1", note = "scheduled for removal in a future release")]
 pub struct FilteredMemoryState {
     base: DefaultMemoryState,
-    chain: MemoryAccessFilterChain,
+    /// Shared so that an emulator whose states run the chain themselves (`AdaptedEmulator`'s
+    /// memory and register states) can hold it too; see [`shared_chain`](Self::shared_chain).
+    chain: Arc<Mutex<MemoryAccessFilterChain>>,
     /// Guards against re-entrant filtering when a filter's own callback would otherwise trigger
     /// another `get_chunk`/`set_chunk` on this same state. Mirrors the private `filterEnabled`
     /// field (`used to prevent filtering filter queries`).
@@ -65,7 +67,7 @@ impl FilteredMemoryState {
     pub fn new(lang: Box<dyn Language>) -> Self {
         FilteredMemoryState {
             base: DefaultMemoryState::new(lang),
-            chain: MemoryAccessFilterChain::new(),
+            chain: Arc::new(Mutex::new(MemoryAccessFilterChain::new())),
             filter_enabled: true,
             is_executing: false,
         }
@@ -83,14 +85,35 @@ impl FilteredMemoryState {
     /// Stands in for the combined effect of `MemoryAccessFilter.addFilter(Emulator)` and
     /// `FilteredMemoryState.setFilter(MemoryAccessFilter)`; see the struct's own docs.
     pub fn add_filter(&mut self, callbacks: Box<dyn MemoryAccessFilterCallbacks>) -> MemoryAccessFilterId {
-        self.chain.add_filter(callbacks)
+        self.chain_mut().add_filter(callbacks)
+    }
+
+    /// Set whether a filter only runs while the emulator is executing (it does by default).
+    ///
+    /// Stands in for `MemoryAccessFilter.setFilterOnExecutionOnly(boolean)`.
+    pub fn set_filter_on_execution_only(&mut self, id: MemoryAccessFilterId, filter_on_execution_only: bool) {
+        self.chain_mut().set_filter_on_execution_only(id, filter_on_execution_only);
+    }
+
+    /// The filter chain, shared with whatever else runs it.
+    ///
+    /// Java's `AdaptedEmulator.AdaptedFilteredMemoryState` only records the chain's head, and the
+    /// emulator's own memory and register states run the chain on every access. Two states and
+    /// this one cannot all own the chain, so they share it: the filters stay registered here, and
+    /// every holder of this handle sees the same chain.
+    pub fn shared_chain(&self) -> Arc<Mutex<MemoryAccessFilterChain>> {
+        Arc::clone(&self.chain)
+    }
+
+    fn chain_mut(&self) -> std::sync::MutexGuard<'_, MemoryAccessFilterChain> {
+        self.chain.lock().expect("filter chain lock poisoned")
     }
 
     /// Unregister a previously-added filter.
     ///
     /// Stands in for `MemoryAccessFilter.dispose()`.
     pub fn dispose_filter(&mut self, id: MemoryAccessFilterId) {
-        self.chain.dispose(id);
+        self.chain_mut().dispose(id);
     }
 }
 
@@ -121,7 +144,7 @@ impl AbstractMemoryState for FilteredMemoryState {
             AbstractMemoryState::get_chunk(&mut self.base, res, spc, off, size, stop_on_uninitialized)?;
         if self.filter_enabled {
             self.filter_enabled = false;
-            self.chain.filter_read(self.is_executing, spc, off, read_len, res);
+            self.chain_mut().filter_read(self.is_executing, spc, off, read_len, res);
             self.filter_enabled = true;
         }
         Ok(read_len)
@@ -149,7 +172,7 @@ impl AbstractMemoryState for FilteredMemoryState {
         if self.filter_enabled {
             self.filter_enabled = false;
             let mut buf = val.to_vec();
-            self.chain.filter_write(self.is_executing, spc, off, size, &mut buf);
+            self.chain_mut().filter_write(self.is_executing, spc, off, size, &mut buf);
             self.filter_enabled = true;
         }
         Ok(())

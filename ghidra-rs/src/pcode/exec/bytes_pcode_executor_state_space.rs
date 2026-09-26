@@ -21,6 +21,45 @@ use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
 use crate::util::msg::Msg;
 
+/// The protected extension points of `BytesPcodeExecutorStateSpace` that a Java subclass
+/// overrides to react to reads of uninitialized bytes.
+///
+/// Java's `AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeExecutorStateSpace>` lets a
+/// piece create its own subclass of the space (`newSpace`) overriding `warnUninit`; here the space
+/// is one concrete type carrying an optional hooks object instead, installed by the piece that
+/// creates it (see
+/// [`BytesPcodeExecutorStatePiece::with_space_hooks`](crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece::with_space_hooks)).
+/// A space without hooks behaves exactly as Java's base class. Each hook receives the space at
+/// call time, so it can write the bytes it supplies straight into it
+/// ([`put_data`](BytesPcodeExecutorStateSpace::put_data), Java's `bytes.putData`).
+pub trait BytesSpaceHooks {
+    /// A read is about to touch the given uninitialized addresses: supply what can be supplied,
+    /// writing it into `space`, and return what remains uninitialized.
+    ///
+    /// This is the concrete-addressing `PcodeStateCallbacks.readUninitialized` of a callbacks
+    /// object that writes into the piece it is handed (Java's `bytesPiece.setVarInternal`). The
+    /// callbacks here receive the piece immutably, so a callbacks object that must fill the space
+    /// is installed as this hook instead; it runs right after the piece's own callbacks, at the
+    /// same point in [`read`](BytesPcodeExecutorStateSpace::read). The default supplies nothing.
+    fn read_uninitialized(
+        &self,
+        _space: &BytesPcodeExecutorStateSpace,
+        uninitialized: &AddressSet,
+        _reason: Reason,
+    ) -> AddressSet {
+        uninitialized.clone()
+    }
+
+    /// Port of an override of the protected `warnUninit(AddressSetView)`: a data read
+    /// ([`Reason::ExecuteRead`]) is about to return the given uninitialized addresses.
+    ///
+    /// The default is the base class's behavior, a logged warning
+    /// ([`warn_uninit_default`](BytesPcodeExecutorStateSpace::warn_uninit_default)).
+    fn warn_uninit(&self, space: &BytesPcodeExecutorStateSpace, uninitialized: &AddressSet) {
+        space.warn_uninit_default(uninitialized);
+    }
+}
+
 /// A p-code executor state space for storing and retrieving bytes as arrays.
 ///
 /// Cheap to [`Clone`]: the clone shares the same backing bytes as the original, mirroring Java's
@@ -32,6 +71,8 @@ pub struct BytesPcodeExecutorStateSpace {
     language: Arc<dyn Language>,
     space: Arc<AddressSpace>,
     bytes: SemisparseByteArray,
+    /// The overrides of the Java subclass this space stands for, if any. See [`BytesSpaceHooks`].
+    hooks: Option<Arc<dyn BytesSpaceHooks>>,
 }
 
 impl BytesPcodeExecutorStateSpace {
@@ -43,8 +84,29 @@ impl BytesPcodeExecutorStateSpace {
         Self::with_bytes(language, space, SemisparseByteArray::new())
     }
 
+    /// Construct an internal space for the given address space, overriding its protected
+    /// extension points with `hooks`. See [`BytesSpaceHooks`].
+    pub fn with_hooks(
+        language: Arc<dyn Language>,
+        space: Arc<AddressSpace>,
+        hooks: Option<Arc<dyn BytesSpaceHooks>>,
+    ) -> Self {
+        Self { language, space, bytes: SemisparseByteArray::new(), hooks }
+    }
+
     fn with_bytes(language: Arc<dyn Language>, space: Arc<AddressSpace>, bytes: SemisparseByteArray) -> Self {
-        Self { language, space, bytes }
+        Self { language, space, bytes, hooks: None }
+    }
+
+    /// The address space this internal space stores.
+    pub fn get_address_space(&self) -> &Arc<AddressSpace> {
+        &self.space
+    }
+
+    /// Write raw bytes at the given offset, without notifying any callbacks. Java's
+    /// `bytes.putData(offset, data, 0, data.length)`, as a subclass reaches its protected field.
+    pub fn put_data(&self, offset: i64, data: &[u8]) {
+        self.bytes.put_data(offset as u64, data);
     }
 
     /// The shared bytes handle backing this space, for callers that need to read live data
@@ -61,7 +123,10 @@ impl BytesPcodeExecutorStateSpace {
     /// Port of `BytesPcodeExecutorStateSpace.fork(AbstractBytesPcodeExecutorStatePiece)`: an
     /// independent copy sharing this space's language and address space but with its own bytes.
     pub fn fork(&self) -> Self {
-        Self::with_bytes(Arc::clone(&self.language), Arc::clone(&self.space), self.bytes.fork())
+        let mut forked =
+            Self::with_bytes(Arc::clone(&self.language), Arc::clone(&self.space), self.bytes.fork());
+        forked.hooks = self.hooks.clone();
+        forked
     }
 
     /// Write a value at the given offset.
@@ -163,8 +228,17 @@ impl BytesPcodeExecutorStateSpace {
         }
     }
 
-    /// Port of `warnUninit(AddressSetView)`.
+    /// Port of `warnUninit(AddressSetView)`, dispatching to the space's hooks, if any.
     fn warn_uninit(&self, uninitialized: &AddressSet) {
+        match &self.hooks {
+            Some(hooks) => hooks.warn_uninit(self, uninitialized),
+            None => self.warn_uninit_default(uninitialized),
+        }
+    }
+
+    /// The base class's `warnUninit(AddressSetView)`: log a warning naming the addresses (and any
+    /// registers they belong to).
+    pub fn warn_uninit_default(&self, uninitialized: &AddressSet) {
         self.warn_address_set("Emulator read from uninitialized state", uninitialized);
     }
 
@@ -208,7 +282,12 @@ impl BytesPcodeExecutorStateSpace {
         if uninitialized.is_empty() {
             return self.read_bytes(offset, size, reason);
         }
-        let uninitialized = cb.read_uninitialized(piece, &uninitialized, reason);
+        let mut uninitialized = cb.read_uninitialized(piece, &uninitialized, reason);
+        if let Some(hooks) = &self.hooks {
+            if !uninitialized.is_empty() {
+                uninitialized = hooks.read_uninitialized(self, &uninitialized, reason);
+            }
+        }
         if uninitialized.is_empty() {
             return self.read_bytes(offset, size, reason);
         }

@@ -56,10 +56,10 @@
 //! * **Context.** The decode context is the real [`RegisterValue`], seeded from a real
 //!   [`ProgramContextImpl`] over the language's context settings, and re-read from the state by
 //!   [`ThreadCore::re_initialize`]. Advancing it after an instruction
-//!   ([`DefaultPcodeThread::advance_after_finished`]) additionally needs Java's
-//!   `getContextAfterCommits` (the decoded instruction's parser-context commits), which is not
-//!   ported yet, so that path panics for a language with a context register. A language without
-//!   one -- Java's `Register.NO_CONTEXT`, rendered here as `None` -- is fully supported.
+//!   ([`DefaultPcodeThread::advance_after_finished`]) combines the language default, the flow
+//!   value, and the decoded instruction's `globalset` commits ([`get_context_after_commits`]). A
+//!   language without a context register -- Java's `Register.NO_CONTEXT`, rendered here as
+//!   `None` -- has no context at all.
 //! * **Exceptions.** Java throws from `stepInstruction`, `executeInstruction`, and friends;
 //!   [`PcodeThread`]'s documented Rust rendering is to panic, so a `PcodeExecutionException`
 //!   escaping the executor is recorded into [`get_frame`](PcodeThread::get_frame) (as Java does)
@@ -102,6 +102,8 @@ use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::Instruction;
 use crate::program::model::pcode::PcodeOp;
+use crate::program::model::lang::disassembler_context_adapter::DisassemblerContextAdapter;
+use crate::util::Msg;
 
 /// A userop library exporting some methods for emulated thread control.
 ///
@@ -1133,11 +1135,23 @@ where
                 counter.add_wrap(self.core.decoder.get_last_length_with_delays() as i64);
             self.core.write_counter(&advanced);
         }
-        if self.core.contextreg.is_some() {
-            // Java combines the language default, the flow value, and the context committed while
-            // decoding (`getContextAfterCommits`, which reads the decoded instruction's parser
-            // context commits), then writes the result. The commit read is not ported yet.
-            unimplemented!("advancing the decode context needs getContextAfterCommits");
+        if let Some(contextreg) = self.core.contextreg.clone() {
+            let counter = self.core.counter.clone();
+            let default_context =
+                self.core.default_context.as_ref().expect("a context register implies a default context");
+            let mut ctx = RegisterValue::with_value(contextreg.clone(), 0);
+            if let Some(default_value) =
+                DefaultProgramContext::get_default_value(default_context, &contextreg, &counter)
+            {
+                ctx = ctx.combine_values(&default_value);
+            }
+            if let Some(context) = self.core.context.clone() {
+                ctx = ctx.combine_values(&ProgramContext::get_flow_value(default_context, context));
+            }
+            if let Some(committed) = get_context_after_commits(instruction.as_ref(), counter.offset()) {
+                ctx = ctx.combine_values(&committed);
+            }
+            self.core.write_context(Some(&ctx));
         }
         self.hooks.post_execute_instruction(&mut self.core);
         cb.after_execute_instruction(&*self, instruction.as_ref());
@@ -1178,6 +1192,126 @@ where
         let message = e.message().to_string();
         self.core.frame = e.into_frame().map(|frame| *frame);
         panic!("{message}");
+    }
+}
+
+/// Port of the static `getContextAfterCommits(Instruction, long)`: the context the decoded
+/// instruction's constructors committed (`globalset`) at the given counter.
+///
+/// Java casts the instruction to `PseudoInstruction` and applies the commits of its cached
+/// `SleighParserContext` to a `DisassemblerContextAdapter` collecting the processor-context values
+/// placed at the counter (or at the instruction itself). Here the parser context is rebuilt from the
+/// instruction's prototype, bytes, and input context, which re-applies the same constructor context
+/// changes and so records the same commits. Returns `None` for a language without a context
+/// register, or an instruction whose prototype is not Sleigh's (neither has commits to apply).
+///
+/// # Panics
+///
+/// If the instruction's bytes cannot be re-read, as Java throws `AssertionError`.
+pub fn get_context_after_commits(instruction: &dyn Instruction, counter: i64) -> Option<RegisterValue> {
+    use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
+    use crate::program::model::mem::MemBuffer;
+    use crate::program::model::lang::processor_context_view::ProcessorContextView;
+
+    let prototype = instruction.get_prototype();
+    let contextreg = prototype.get_language().get_context_base_register()?;
+    let buf: &dyn MemBuffer = instruction;
+    let view: &dyn ProcessorContextView = instruction;
+    let parser_ctx = prototype
+        .get_parser_context(buf, view)
+        .unwrap_or_else(|e| panic!("{e:?}"));
+    let parser_ctx = parser_ctx.as_any()?.downcast_ref::<SleighParserContext>()?;
+    let mut collector = CommitCollector {
+        ctx_val: RegisterValue::new(contextreg),
+        counter,
+        instruction_address: instruction.get_min_address(),
+    };
+    parser_ctx
+        .apply_commits(&mut collector, &RegisterValueFromBytes)
+        .unwrap_or_else(|e| panic!("{e}"));
+    Some(collector.ctx_val)
+}
+
+/// Builds the `RegisterValue`s context commits produce: Java's `new RegisterValue(register, bytes)`.
+pub(crate) struct RegisterValueFromBytes;
+
+impl crate::app::seam_stubs::RegisterValueBuilder for RegisterValueFromBytes {
+    fn build_register_value(&self, register: RegisterRef, bytes: Vec<u8>) -> RegisterValue {
+        RegisterValue::from_bytes(register, &bytes)
+    }
+}
+
+/// The anonymous `DisassemblerContextAdapter` of `getContextAfterCommits`: it keeps only the
+/// processor-context values committed at the counter (or the instruction's own address).
+struct CommitCollector {
+    ctx_val: RegisterValue,
+    counter: i64,
+    instruction_address: Address,
+}
+
+impl crate::program::model::lang::processor_context_view::ProcessorContextView for CommitCollector {
+    fn get_base_context_register(&self) -> Option<RegisterRef> {
+        <Self as DisassemblerContextAdapter>::get_base_context_register(self)
+    }
+    fn get_registers(&self) -> Vec<RegisterRef> {
+        <Self as DisassemblerContextAdapter>::get_registers(self)
+    }
+    fn get_register(&self, name: &str) -> Option<RegisterRef> {
+        <Self as DisassemblerContextAdapter>::get_register(self, name)
+    }
+    fn get_value(&self, register: &crate::program::model::lang::register::Register, signed: bool) -> Option<i128> {
+        <Self as DisassemblerContextAdapter>::get_value(self, register, signed)
+    }
+    fn get_register_value(&self, register: &crate::program::model::lang::register::Register) -> Option<RegisterValue> {
+        <Self as DisassemblerContextAdapter>::get_register_value(self, register)
+    }
+    fn has_value(&self, register: &crate::program::model::lang::register::Register) -> bool {
+        <Self as DisassemblerContextAdapter>::has_value(self, register)
+    }
+}
+
+impl crate::program::model::lang::processor_context::ProcessorContext for CommitCollector {
+    fn set_value(
+        &mut self,
+        register: &crate::program::model::lang::register::Register,
+        value: i128,
+    ) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
+        <Self as DisassemblerContextAdapter>::set_value(self, register, value)
+    }
+    fn set_register_value(
+        &mut self,
+        value: RegisterValue,
+    ) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
+        <Self as DisassemblerContextAdapter>::set_register_value(self, value)
+    }
+    fn clear_register(
+        &mut self,
+        register: &crate::program::model::lang::register::Register,
+    ) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
+        <Self as DisassemblerContextAdapter>::clear_register(self, register)
+    }
+}
+
+impl crate::program::model::lang::disassembler_context::DisassemblerContext for CommitCollector {
+    fn set_future_register_value(&mut self, address: Address, value: RegisterValue) {
+        <Self as DisassemblerContextAdapter>::set_future_register_value(self, address, value)
+    }
+    fn set_future_register_value_for_flow(&mut self, from_addr: Address, to_addr: Address, value: RegisterValue) {
+        <Self as DisassemblerContextAdapter>::set_future_register_value_for_flow(self, from_addr, to_addr, value)
+    }
+}
+
+impl DisassemblerContextAdapter for CommitCollector {
+    fn set_future_register_value(&mut self, address: Address, value: RegisterValue) {
+        let register = value.register();
+        if !register.is_processor_context() {
+            return;
+        }
+        if address.offset() != self.counter && address != self.instruction_address {
+            Msg::warn("DefaultPcodeThread", &"Context applied somewhere other than the counter.");
+            return;
+        }
+        self.ctx_val = self.ctx_val.assign(&register, &value);
     }
 }
 

@@ -65,8 +65,9 @@ pub trait Emulator {
     /// Get the address of the last instruction executed (or the instruction currently being
     /// executed).
     ///
-    /// Corresponds to `Emulator.getLastExecuteAddress()`.
-    fn get_last_execute_address(&self) -> Address;
+    /// Corresponds to `Emulator.getLastExecuteAddress()`; `None` (Java's `null`) before any
+    /// instruction has executed.
+    fn get_last_execute_address(&self) -> Option<Address>;
 
     /// Get the value of the program counter, i.e., offset in code space.
     ///
@@ -141,8 +142,9 @@ pub trait Emulator {
     /// was parsed/executed. The context value returned will feed into the next instruction to be
     /// parsed with its non-flowing bits cleared and any future context state merged in.
     ///
-    /// Corresponds to `Emulator.getContextRegisterValue()`.
-    fn get_context_register_value(&self) -> RegisterValue;
+    /// Corresponds to `Emulator.getContextRegisterValue()`; `None` (Java's `null`) when the
+    /// language has no context register.
+    fn get_context_register_value(&self) -> Option<RegisterValue>;
 
     /// Get the breakpoint table.
     ///
@@ -372,8 +374,8 @@ mod tests {
             self.execute_address.clone()
         }
 
-        fn get_last_execute_address(&self) -> Address {
-            self.last_execute_address.clone()
+        fn get_last_execute_address(&self) -> Option<Address> {
+            Some(self.last_execute_address.clone())
         }
 
         fn get_pc(&self) -> i64 {
@@ -419,8 +421,8 @@ mod tests {
             self.context = Some(reg_value.register());
         }
 
-        fn get_context_register_value(&self) -> RegisterValue {
-            RegisterValue::with_value(self.context.clone().expect("context register value not set"), 0)
+        fn get_context_register_value(&self) -> Option<RegisterValue> {
+            self.context.clone().map(|register| RegisterValue::with_value(register, 0))
         }
 
         fn get_break_table(&self) -> &BreakTableCallBack {
@@ -475,7 +477,7 @@ mod tests {
         let mut emu = test_emulator();
         emu.set_execute_address(0x1000);
         emu.set_execute_address(0x1004);
-        assert_eq!(emu.get_last_execute_address().offset(), 0x1000);
+        assert_eq!(emu.get_last_execute_address().unwrap().offset(), 0x1000);
         assert_eq!(emu.get_execute_address().offset(), 0x1004);
     }
 
@@ -521,7 +523,7 @@ mod tests {
         let mut emu = test_emulator();
         emu.set_context_register_value(&RegisterValue::with_value(register.clone(), 0));
         assert_eq!(
-            emu.get_context_register_value().register().name(),
+            emu.get_context_register_value().unwrap().register().name(),
             "ctx"
         );
     }
