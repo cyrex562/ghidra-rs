@@ -38,7 +38,7 @@ mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressRange, AddressSetView, AddressSpaceType};
     use crate::program::model::lang::{Language, Register};
-    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
     use crate::trace::model::guest::trace_platform::TracePlatform;
@@ -62,14 +62,14 @@ mod tests {
             _language: &dyn Language,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
 
         fn set_value(
             &mut self,
             _language: &dyn Language,
-            _value: &dyn RegisterValue,
+            _value: &RegisterValue,
             _lifespan: Lifespan,
             _range: &AddressRange,
         ) {
@@ -90,7 +90,7 @@ mod tests {
             _register: &Register,
             _snap: i64,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
 
@@ -100,7 +100,7 @@ mod tests {
             _register: &Register,
             _snap: i64,
             _address: &Address,
-        ) -> Option<(Box<dyn TraceAddressSnapRange>, Box<dyn RegisterValue>)> {
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, RegisterValue)> {
             None
         }
 
@@ -110,7 +110,7 @@ mod tests {
             _register: &Register,
             _snap: i64,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
 
@@ -160,13 +160,13 @@ mod tests {
             _language: &dyn Language,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
         fn set_value(
             &mut self,
             _language: &dyn Language,
-            _value: &dyn RegisterValue,
+            _value: &RegisterValue,
             _lifespan: Lifespan,
             _range: &AddressRange,
         ) {
@@ -185,7 +185,7 @@ mod tests {
             _register: &Register,
             _snap: i64,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
         fn get_entry(
@@ -194,7 +194,7 @@ mod tests {
             _register: &Register,
             _snap: i64,
             _address: &Address,
-        ) -> Option<(Box<dyn TraceAddressSnapRange>, Box<dyn RegisterValue>)> {
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, RegisterValue)> {
             None
         }
         fn get_value_with_default(
@@ -203,7 +203,7 @@ mod tests {
             _register: &Register,
             _snap: i64,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
         fn get_register_value_address_ranges_within(

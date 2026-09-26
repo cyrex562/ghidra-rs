@@ -11,7 +11,7 @@ use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::pcode::{OpCode, PcodeOp};
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// The number of bytes needed to encode the size (in bytes) of any value.
 pub const SIZEOF_SIZEOF: i32 = 8;
@@ -234,11 +234,11 @@ pub trait PcodeArithmetic<T> {
     }
 
     /// Convert the given constant concrete register value to type `T`.
-    fn from_const_register_value(&self, value: &dyn RegisterValue) -> T {
-        let register = value.get_register();
+    fn from_const_register_value(&self, value: &RegisterValue) -> T {
+        let register = value.register();
         let reg = register;
         self.from_const_big_int(
-            value.get_unsigned_value_ignore_mask() as i128,
+            value.unsigned_value_ignore_mask() as i128,
             reg.num_bytes(),
             reg.is_processor_context(),
         )

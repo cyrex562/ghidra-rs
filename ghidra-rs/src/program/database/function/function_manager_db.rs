@@ -539,8 +539,8 @@ mod tests {
         }
         fn get_new_register_value(
             &self,
-            _old_value: &dyn crate::program::seam_stubs::RegisterValue,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+            _old_value: &crate::program::model::lang::register_value::RegisterValue,
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn is_value_translation_required(

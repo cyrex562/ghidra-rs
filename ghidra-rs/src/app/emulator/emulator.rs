@@ -10,7 +10,7 @@ use crate::pcode::emulate::instruction_decode_exception::InstructionDecodeExcept
 use crate::pcode::error::lowlevel_error::LowlevelError;
 use crate::pcode::memstate::memory_state::MemoryState;
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -133,7 +133,7 @@ pub trait Emulator {
     /// the initial context state.
     ///
     /// Corresponds to `Emulator.setContextRegisterValue(RegisterValue)`.
-    fn set_context_register_value(&mut self, reg_value: &dyn RegisterValue);
+    fn set_context_register_value(&mut self, reg_value: &RegisterValue);
 
     /// Returns the current context register value.
     ///
@@ -142,7 +142,7 @@ pub trait Emulator {
     /// parsed with its non-flowing bits cleared and any future context state merged in.
     ///
     /// Corresponds to `Emulator.getContextRegisterValue()`.
-    fn get_context_register_value(&self) -> Box<dyn RegisterValue>;
+    fn get_context_register_value(&self) -> RegisterValue;
 
     /// Get the breakpoint table.
     ///
@@ -339,31 +339,6 @@ mod tests {
         SleighLanguage::decode(&decoder, "test".to_string()).unwrap()
     }
 
-    struct TestRegisterValue {
-        register: RegisterRef,
-    }
-
-    impl RegisterValue for TestRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-        fn get_register_value(&self, _register: &crate::program::model::lang::register::Register) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn has_any_value(&self) -> bool {
-            true
-        }
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-        fn has_value(&self) -> bool {
-            true
-        }
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by these tests")
-        }
-    }
-
     fn ram_space() -> Arc<AddressSpace> {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
     }
@@ -440,14 +415,12 @@ mod tests {
             &mut self.filtered_mem_state
         }
 
-        fn set_context_register_value(&mut self, reg_value: &dyn RegisterValue) {
-            self.context = Some(reg_value.get_register());
+        fn set_context_register_value(&mut self, reg_value: &RegisterValue) {
+            self.context = Some(reg_value.register());
         }
 
-        fn get_context_register_value(&self) -> Box<dyn RegisterValue> {
-            Box::new(TestRegisterValue {
-                register: self.context.clone().expect("context register value not set"),
-            })
+        fn get_context_register_value(&self) -> RegisterValue {
+            RegisterValue::with_value(self.context.clone().expect("context register value not set"), 0)
         }
 
         fn get_break_table(&self) -> &BreakTableCallBack {
@@ -546,9 +519,9 @@ mod tests {
             0,
         );
         let mut emu = test_emulator();
-        emu.set_context_register_value(&TestRegisterValue { register: register.clone() });
+        emu.set_context_register_value(&RegisterValue::with_value(register.clone(), 0));
         assert_eq!(
-            emu.get_context_register_value().get_register().name(),
+            emu.get_context_register_value().register().name(),
             "ctx"
         );
     }

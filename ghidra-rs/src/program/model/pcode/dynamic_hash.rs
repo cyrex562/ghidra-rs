@@ -290,7 +290,8 @@ mod tests {
     use crate::program::model::pcode::{PcodeOp, SequenceNumber, Varnode};
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, RefType, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{InstructionContext, RegisterValue};
+    use crate::program::seam_stubs::InstructionContext;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
@@ -480,7 +481,7 @@ use crate::program::model::listing::CommentType;
         fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
             None
         }
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
             None
         }
         fn has_value(&self, _register: &Register) -> bool {
@@ -492,7 +493,7 @@ use crate::program::model::listing::CommentType;
         fn set_value(&mut self, _register: &Register, _value: i128) -> Result<(), ContextChangeException> {
             Ok(())
         }
-        fn set_register_value(&mut self, _value: Box<dyn RegisterValue>) -> Result<(), ContextChangeException> {
+        fn set_register_value(&mut self, _value: RegisterValue) -> Result<(), ContextChangeException> {
             Ok(())
         }
         fn clear_register(&mut self, _register: &Register) -> Result<(), ContextChangeException> {

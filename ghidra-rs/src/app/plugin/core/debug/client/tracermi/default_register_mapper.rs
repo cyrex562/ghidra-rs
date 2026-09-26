@@ -1,9 +1,8 @@
 //! Port of `ghidra.app.plugin.core.debug.client.tracermi.DefaultRegisterMapper`.
 
 use crate::app::plugin::core::debug::client::tracermi::register_mapper::RegisterMapper;
-use crate::program::model::lang::register_value::RegisterValue as ConcreteRegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::lang::LanguageID;
-use crate::program::seam_stubs::RegisterValue;
 
 /// A no-op [`RegisterMapper`]: names and values pass through unchanged.
 ///
@@ -30,24 +29,15 @@ impl RegisterMapper for DefaultRegisterMapper {
         name.to_string()
     }
 
-    /// Port of `mapValue(String, RegisterValue)`, which returns `rv` unchanged.
-    ///
-    /// The trait signature takes `rv` by shared reference and must hand back an owned
-    /// `Box<dyn RegisterValue>`, so returning the *exact same* Java object reference isn't
-    /// representable directly. [`ConcreteRegisterValue::from_trait_object`] is this crate's
-    /// established way to materialize an owned, behaviorally-equivalent `RegisterValue` from an
-    /// arbitrary `&dyn RegisterValue` (see that method's own docs for the two cases it
-    /// reconstructs exactly); using it here reproduces "return rv unchanged" as closely as the
-    /// trait boundary allows.
-    fn map_value(&self, _name: &str, rv: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-        Box::new(ConcreteRegisterValue::from_trait_object(rv))
+    /// Port of `mapValue(String, RegisterValue)`, which returns `rv` unchanged (an equal copy;
+    /// Java's values are immutable, so sharing and copying are indistinguishable).
+    fn map_value(&self, _name: &str, rv: &RegisterValue) -> RegisterValue {
+        rv.clone()
     }
 
-    /// Port of `mapValueBack(String, RegisterValue)`, which returns `rv` unchanged. See
-    /// [`map_value`](Self::map_value) for why this goes through
-    /// [`ConcreteRegisterValue::from_trait_object`].
-    fn map_value_back(&self, _name: &str, rv: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-        Box::new(ConcreteRegisterValue::from_trait_object(rv))
+    /// Port of `mapValueBack(String, RegisterValue)`, which returns `rv` unchanged.
+    fn map_value_back(&self, _name: &str, rv: &RegisterValue) -> RegisterValue {
+        rv.clone()
     }
 }
 
@@ -83,33 +73,33 @@ mod tests {
     fn map_value_returns_an_equivalent_value() {
         let mapper = DefaultRegisterMapper::new(language_id());
         let reg = register("eax");
-        let rv = ConcreteRegisterValue::with_value(reg, 0x1234);
+        let rv = RegisterValue::with_value(reg, 0x1234);
 
         let mapped = mapper.map_value("eax", &rv);
 
-        assert_eq!(mapped.get_register().name(), "eax");
+        assert_eq!(mapped.register().name(), "eax");
         assert!(mapped.has_value());
-        assert_eq!(mapped.get_unsigned_value_ignore_mask(), 0x1234);
+        assert_eq!(mapped.unsigned_value_ignore_mask(), 0x1234);
     }
 
     #[test]
     fn map_value_back_returns_an_equivalent_value() {
         let mapper = DefaultRegisterMapper::new(language_id());
         let reg = register("ebx");
-        let rv = ConcreteRegisterValue::with_value(reg, 0xabcd);
+        let rv = RegisterValue::with_value(reg, 0xabcd);
 
         let mapped = mapper.map_value_back("ebx", &rv);
 
-        assert_eq!(mapped.get_register().name(), "ebx");
+        assert_eq!(mapped.register().name(), "ebx");
         assert!(mapped.has_value());
-        assert_eq!(mapped.get_unsigned_value_ignore_mask(), 0xabcd);
+        assert_eq!(mapped.unsigned_value_ignore_mask(), 0xabcd);
     }
 
     #[test]
     fn map_value_of_an_unset_register_stays_unset() {
         let mapper = DefaultRegisterMapper::new(language_id());
         let reg = register("ecx");
-        let rv = ConcreteRegisterValue::new(reg);
+        let rv = RegisterValue::new(reg);
 
         let mapped = mapper.map_value("ecx", &rv);
 

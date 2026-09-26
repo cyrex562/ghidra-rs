@@ -11,12 +11,7 @@
 //! essentially all of its value get/set logic to it.
 //!
 //! Operates on this crate's concrete
-//! [`RegisterValue`](crate::program::model::lang::register_value::RegisterValue) throughout
-//! (rather than the object-safe `Box<dyn RegisterValueTrait>` seam), since every real caller
-//! within this port already has (or can cheaply obtain, via
-//! [`RegisterValue::from_trait_object`](crate::program::model::lang::register_value::RegisterValue::from_trait_object))
-//! a concrete value by the time it reaches this store; keeping the store itself concrete avoids
-//! re-deriving byte<->value conversions the concrete type already owns.
+//! [`RegisterValue`](crate::program::model::lang::register_value::RegisterValue) throughout.
 
 use crate::program::model::address::{Address, AddressRange, AddressRangeIterator};
 use crate::program::model::lang::register::RegisterRef;

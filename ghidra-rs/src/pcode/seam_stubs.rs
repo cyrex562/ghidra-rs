@@ -478,7 +478,7 @@ pub use crate::pcode::exec::injection_error_pcode_execution_exception::Injection
 /// [`DefaultProgramContext`] deals in, while this module's [`RegisterValue`] is what the emulator
 /// deals in -- and neither stub can be constructed, so the reads panic until the real class lands.
 pub struct ProgramContextImpl {
-    defaults: Vec<(Box<dyn crate::program::seam_stubs::RegisterValue>, Address, Address)>,
+    defaults: Vec<(crate::program::model::lang::register_value::RegisterValue, Address, Address)>,
 }
 
 impl ProgramContextImpl {
@@ -488,7 +488,7 @@ impl ProgramContextImpl {
     }
 
     /// The context settings received so far, i.e. what `Language.applyContextSettings` recorded.
-    pub fn defaults(&self) -> &[(Box<dyn crate::program::seam_stubs::RegisterValue>, Address, Address)] {
+    pub fn defaults(&self) -> &[(crate::program::model::lang::register_value::RegisterValue, Address, Address)] {
         &self.defaults
     }
 
@@ -525,7 +525,7 @@ impl Default for ProgramContextImpl {
 impl DefaultProgramContext for ProgramContextImpl {
     fn set_default_value(
         &mut self,
-        register_value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+        register_value: crate::program::model::lang::register_value::RegisterValue,
         start: &Address,
         end: &Address,
     ) {
@@ -536,7 +536,7 @@ impl DefaultProgramContext for ProgramContextImpl {
         &self,
         _register: &crate::program::model::lang::register::Register,
         _address: &Address,
-    ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+    ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
         unimplemented!("ProgramContextImpl not yet ported")
     }
 }

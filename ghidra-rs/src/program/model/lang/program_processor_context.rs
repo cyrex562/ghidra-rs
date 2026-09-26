@@ -10,7 +10,7 @@ use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::listing::program_context::ProgramContext;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Implementation for the program processor context interface.
 ///
@@ -51,7 +51,7 @@ impl ProcessorContextView for ProgramProcessorContext {
         self.context.get_value(register, &self.addr, signed)
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         self.context.get_register_value(register, &self.addr)
     }
 
@@ -76,7 +76,7 @@ impl ProcessorContext for ProgramProcessorContext {
 
     fn set_register_value(
         &mut self,
-        value: Box<dyn RegisterValueTrait>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         let addr = self.addr.clone();
         self.context.set_register_value(&addr, &addr, value)
@@ -130,7 +130,7 @@ mod tests {
             &mut backing,
             &addr(&space, 0x1000),
             &addr(&space, 0x2000),
-            Box::new(RegisterValue::with_value(eax.clone(), 0xABCD_1234)),
+            RegisterValue::with_value(eax.clone(), 0xABCD_1234),
         )
         .unwrap();
 
@@ -151,7 +151,7 @@ mod tests {
             &mut backing,
             &addr(&space, 0x1000),
             &addr(&space, 0x2000),
-            Box::new(RegisterValue::with_value(eax.clone(), 0x42)),
+            RegisterValue::with_value(eax.clone(), 0x42),
         )
         .unwrap();
 
@@ -226,7 +226,7 @@ mod tests {
         let eax = lang.get_register_by_name("eax").unwrap();
 
         let mut ctx = ProgramProcessorContext::new(Box::new(backing), addr(&space, 0x1000));
-        ctx.set_register_value(Box::new(RegisterValue::with_value(eax.clone(), 0x1357)))
+        ctx.set_register_value(RegisterValue::with_value(eax.clone(), 0x1357))
             .unwrap();
         assert_eq!(ctx.get_value(&eax, false), Some(0x1357));
 
@@ -294,13 +294,13 @@ mod tests {
         fn has_non_flowing_context(&self) -> bool {
             unimplemented!("not exercised by these tests")
         }
-        fn get_flow_value(&self, _value: Box<dyn RegisterValueTrait>) -> Box<dyn RegisterValueTrait> {
+        fn get_flow_value(&self, _value: RegisterValue) -> RegisterValue {
             unimplemented!("not exercised by these tests")
         }
         fn get_non_flow_value(
             &self,
-            _value: Box<dyn RegisterValueTrait>,
-        ) -> Option<Box<dyn RegisterValueTrait>> {
+            _value: RegisterValue,
+        ) -> Option<RegisterValue> {
             unimplemented!("not exercised by these tests")
         }
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
@@ -319,14 +319,14 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValueTrait>> {
+        ) -> Option<RegisterValue> {
             unimplemented!("not exercised by these tests")
         }
         fn set_register_value(
             &mut self,
             _start: &Address,
             _end: &Address,
-            _value: Box<dyn RegisterValueTrait>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             unimplemented!("not exercised by these tests")
         }
@@ -334,7 +334,7 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValueTrait>> {
+        ) -> Option<RegisterValue> {
             unimplemented!("not exercised by these tests")
         }
         fn set_value(
@@ -411,7 +411,7 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValueTrait>> {
+        ) -> Option<RegisterValue> {
             unimplemented!("not exercised by these tests")
         }
         fn get_base_context_register(&self) -> RegisterRef {
@@ -419,13 +419,13 @@ mod tests {
                 .get_context_base_register()
                 .expect("test language must define a context base register")
         }
-        fn get_default_disassembly_context(&self) -> Box<dyn RegisterValueTrait> {
+        fn get_default_disassembly_context(&self) -> RegisterValue {
             unimplemented!("not exercised by these tests")
         }
-        fn set_default_disassembly_context(&mut self, _value: Box<dyn RegisterValueTrait>) {
+        fn set_default_disassembly_context(&mut self, _value: RegisterValue) {
             unimplemented!("not exercised by these tests")
         }
-        fn get_disassembly_context(&self, _address: &Address) -> Box<dyn RegisterValueTrait> {
+        fn get_disassembly_context(&self, _address: &Address) -> RegisterValue {
             unimplemented!("not exercised by these tests")
         }
     }

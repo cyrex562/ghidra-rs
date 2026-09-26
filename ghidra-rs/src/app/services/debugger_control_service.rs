@@ -15,7 +15,7 @@ use crate::app::seam_stubs::ControlMode;
 use crate::debug::api::tracemgr::DebuggerCoordinates;
 use crate::program::model::address::Address;
 use crate::program::model::lang::Register;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::trace::Trace;
 
@@ -69,11 +69,11 @@ pub trait StateEditor {
     fn set_variable(&self, address: &Address, data: &[u8]) -> StateEditFuture;
 
     /// Sets the value of a register.
-    fn set_register(&self, value: &dyn RegisterValue) -> StateEditFuture {
-        let register_ref = value.get_register();
+    fn set_register(&self, value: &RegisterValue) -> StateEditFuture {
+        let register_ref = value.register();
         let register = register_ref;
         let bytes = unsigned_value_to_bytes(
-            value.get_unsigned_value_ignore_mask(),
+            value.unsigned_value_ignore_mask(),
             register.num_bytes(),
             register.is_big_endian(),
         );

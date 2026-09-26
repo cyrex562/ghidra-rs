@@ -51,7 +51,7 @@ use crate::app::plugin::processors::sleigh::sleigh_debug_logger::{
 };
 use crate::program::model::lang::Register;
 use crate::program::model::listing::{Instruction, OperandValue};
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::FlowOverride;
 use crate::util::string_utilities::StringUtilities;
 
@@ -166,7 +166,7 @@ pub trait InstructionUtils: Instruction {
             _ => return format!("{indent}[Instruction context not defined]"),
         };
         let value = self.get_register_value(&context_reg);
-        get_formatted_register_value_bits(value.as_deref(), indent)
+        get_formatted_register_value_bits(value.as_ref(), indent)
     }
 
     /// Format instruction input or result objects.
@@ -198,19 +198,19 @@ impl<T: Instruction + ?Sized> InstructionUtils for T {}
 /// (see the module docs).
 ///
 /// Port of `InstructionUtils.getFormattedRegisterValueBits(RegisterValue, String)`.
-pub fn get_formatted_register_value_bits(value: Option<&dyn RegisterValue>, indent: &str) -> String {
+pub fn get_formatted_register_value_bits(value: Option<&RegisterValue>, indent: &str) -> String {
     let value = match value {
         Some(value) if value.has_any_value() => value,
         _ => return format!("{indent}[Instruction context has not been set]"),
     };
 
-    let base_reg = value.get_register();
+    let base_reg = value.register();
     let base_reg_ref = base_reg;
     if !base_reg_ref.has_children() {
         return format!(
             "{indent}{} == 0x{:x}",
             base_reg_ref.name(),
-            value.get_unsigned_value_ignore_mask()
+            value.unsigned_value_ignore_mask()
         );
     }
 
@@ -230,7 +230,7 @@ pub fn get_formatted_register_value_bits(value: Option<&dyn RegisterValue>, inde
             continue;
         }
         let pad = padded_len - reg.name().len();
-        let actual = child_value.get_unsigned_value_ignore_mask();
+        let actual = child_value.unsigned_value_ignore_mask();
         let msb = base_reg_size - reg.least_significant_bit_in_base_register() - 1;
         let lsb = msb - reg.bit_length() + 1;
 
@@ -327,42 +327,6 @@ mod tests {
         AddressSpace::new("register", 32, 1, AddressSpaceType::Register, 0)
     }
 
-    struct MockRegisterValue {
-        register: RegisterRef,
-        has_value: bool,
-        value: u128,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-                has_value: self.has_value,
-                value: self.value,
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            self.has_value
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            self.value
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     #[test]
     fn get_formatted_register_value_bits_reports_unset_context() {
         assert_eq!(
@@ -375,11 +339,7 @@ mod tests {
     fn get_formatted_register_value_bits_formats_register_without_children() {
         let space = register_space();
         let pc = Register::new("PC", "", space.address(0x0), 4, false, Register::TYPE_NONE);
-        let value = MockRegisterValue {
-            register: pc.clone(),
-            has_value: true,
-            value: 0x1000,
-        };
+        let value = RegisterValue::with_value(pc.clone(), 0x1000);
         assert_eq!(
             get_formatted_register_value_bits(Some(&value), ">"),
             ">PC == 0x1000"
@@ -403,11 +363,7 @@ mod tests {
         let [base, field]: [Register; 2] =
             crate::program::model::lang::register::test_support::linked(&[&base, &field], &[(0, &[1])]).try_into().unwrap();
 
-        let value = MockRegisterValue {
-            register: base.clone(),
-            has_value: true,
-            value: 0x2A,
-        };
+        let value = RegisterValue::with_value(base.clone(), 0x2A);
         assert_eq!(
             get_formatted_register_value_bits(Some(&value), "  "),
             "  FIELD(24,31) == 0x2a"

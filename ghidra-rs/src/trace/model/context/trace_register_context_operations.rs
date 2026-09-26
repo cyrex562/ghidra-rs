@@ -1,6 +1,6 @@
 use crate::program::model::address::{Address, AddressRange, AddressSetView};
 use crate::program::model::lang::{Language, Register};
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::model::guest::trace_platform::TracePlatform;
@@ -17,13 +17,13 @@ pub trait TraceRegisterContextOperations {
         language: &dyn Language,
         register: &Register,
         address: &Address,
-    ) -> Option<Box<dyn RegisterValue>>;
+    ) -> Option<RegisterValue>;
 
     /// Sets the register value over the given lifespan and address range.
     fn set_value(
         &mut self,
         language: &dyn Language,
-        value: &dyn RegisterValue,
+        value: &RegisterValue,
         lifespan: Lifespan,
         range: &AddressRange,
     );
@@ -45,7 +45,7 @@ pub trait TraceRegisterContextOperations {
         register: &Register,
         snap: i64,
         address: &Address,
-    ) -> Option<Box<dyn RegisterValue>>;
+    ) -> Option<RegisterValue>;
 
     /// Gets the address-range/value pair recording the register value at the given snap and
     /// address, or `None` if there is no such entry.
@@ -55,7 +55,7 @@ pub trait TraceRegisterContextOperations {
         register: &Register,
         snap: i64,
         address: &Address,
-    ) -> Option<(Box<dyn TraceAddressSnapRange>, Box<dyn RegisterValue>)>;
+    ) -> Option<(Box<dyn TraceAddressSnapRange>, RegisterValue)>;
 
     /// Gets the register value at the given snap and address on the given platform, falling
     /// back to the language-defined default if no value is recorded.
@@ -65,7 +65,7 @@ pub trait TraceRegisterContextOperations {
         register: &Register,
         snap: i64,
         address: &Address,
-    ) -> Option<Box<dyn RegisterValue>>;
+    ) -> Option<RegisterValue>;
 
     /// Gets the addresses within `within` where the register has a recorded value at the given
     /// snap.
@@ -339,40 +339,6 @@ mod tests {
         }
     }
 
-    struct MockRegisterValue {
-        register: RegisterRef,
-        value: u128,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-                value: self.value,
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            true
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            self.value
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     struct MockPlatform;
 
     impl TracePlatform for MockPlatform {}
@@ -391,20 +357,20 @@ mod tests {
             _language: &dyn Language,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
 
         fn set_value(
             &mut self,
             _language: &dyn Language,
-            value: &dyn RegisterValue,
+            value: &RegisterValue,
             lifespan: Lifespan,
             range: &AddressRange,
         ) {
             self.entries.borrow_mut().insert(
                 lifespan.lmin(),
-                (range.clone(), value.get_unsigned_value_ignore_mask()),
+                (range.clone(), value.unsigned_value_ignore_mask()),
             );
         }
 
@@ -424,16 +390,13 @@ mod tests {
             register: &Register,
             snap: i64,
             address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             let entries = self.entries.borrow();
             let (range, value) = entries.get(&snap)?;
             if !range.contains(address) {
                 return None;
             }
-            Some(Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-                value: *value,
-            }))
+            Some(RegisterValue::with_value(Register::from_register(register), *value))
         }
 
         fn get_entry(
@@ -442,7 +405,7 @@ mod tests {
             register: &Register,
             snap: i64,
             address: &Address,
-        ) -> Option<(Box<dyn TraceAddressSnapRange>, Box<dyn RegisterValue>)> {
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, RegisterValue)> {
             let entries = self.entries.borrow();
             let (range, value) = entries.get(&snap)?;
             if !range.contains(address) {
@@ -452,10 +415,7 @@ mod tests {
                 range: range.clone(),
                 lifespan: Lifespan::span(snap, snap),
             });
-            let reg_value: Box<dyn RegisterValue> = Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-                value: *value,
-            });
+            let reg_value: RegisterValue = RegisterValue::with_value(Register::from_register(register), *value);
             Some((snap_range, reg_value))
         }
 
@@ -465,7 +425,7 @@ mod tests {
             register: &Register,
             snap: i64,
             address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             self.get_value(&MockLanguage { registers: Vec::new() }, register, snap, address)
         }
 
@@ -582,19 +542,19 @@ mod tests {
 
         assert!(!ops.has_register_value(&language, &register, 0));
 
-        let value = MockRegisterValue { register: register.clone(), value: 0x2a };
+        let value = RegisterValue::with_value(register.clone(), 0x2a);
         ops.set_value(&language, &value, lifespan, &range);
 
         assert!(ops.has_register_value(&language, &register, 0));
         assert!(ops.has_register_value_in_address_range(&language, &register, 0, &range));
 
         let got = ops.get_value(&language, &register, 0, &addr).unwrap();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0x2a);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0x2a);
 
         let got_default = ops
             .get_value_with_default(&platform, &register, 0, &addr)
             .unwrap();
-        assert_eq!(got_default.get_unsigned_value_ignore_mask(), 0x2a);
+        assert_eq!(got_default.unsigned_value_ignore_mask(), 0x2a);
 
         let ranges = ops.get_register_value_address_ranges(&language, &register, 0);
         assert!(ranges.contains(&addr));
@@ -602,7 +562,7 @@ mod tests {
         let (entry_range, entry_value) =
             ops.get_entry(&language, &register, 0, &addr).unwrap();
         assert_eq!(entry_range.get_range(), range);
-        assert_eq!(entry_value.get_unsigned_value_ignore_mask(), 0x2a);
+        assert_eq!(entry_value.unsigned_value_ignore_mask(), 0x2a);
 
         ops.remove_value(&language, &register, lifespan, &range);
         assert!(!ops.has_register_value(&language, &register, 0));

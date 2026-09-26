@@ -2,7 +2,7 @@ use crate::program::model::address::Address;
 use crate::program::model::lang::disassembler_context::DisassemblerContext;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Provides default "unsupported operation" implementations for every method inherited from
 /// [`DisassemblerContext`] (and, transitively, `ProcessorContext`/`ProcessorContextView`), so
@@ -37,7 +37,7 @@ pub trait DisassemblerContextAdapter: DisassemblerContext {
     }
 
     /// Port of `getRegisterValue(Register)`; unsupported unless overridden.
-    fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+    fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
         unimplemented!("DisassemblerContextAdapter::get_register_value")
     }
 
@@ -64,7 +64,7 @@ pub trait DisassemblerContextAdapter: DisassemblerContext {
     /// Never returns `Ok`; panics unless overridden.
     fn set_register_value(
         &mut self,
-        _value: Box<dyn RegisterValue>,
+        _value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         unimplemented!("DisassemblerContextAdapter::set_register_value")
     }
@@ -78,7 +78,7 @@ pub trait DisassemblerContextAdapter: DisassemblerContext {
     }
 
     /// Port of `setFutureRegisterValue(Address, RegisterValue)`; unsupported unless overridden.
-    fn set_future_register_value(&mut self, _address: Address, _value: Box<dyn RegisterValue>) {
+    fn set_future_register_value(&mut self, _address: Address, _value: RegisterValue) {
         unimplemented!("DisassemblerContextAdapter::set_future_register_value")
     }
 
@@ -88,7 +88,7 @@ pub trait DisassemblerContextAdapter: DisassemblerContext {
         &mut self,
         _from_addr: Address,
         _to_addr: Address,
-        _value: Box<dyn RegisterValue>,
+        _value: RegisterValue,
     ) {
         unimplemented!("DisassemblerContextAdapter::set_future_register_value_for_flow")
     }
@@ -100,39 +100,6 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::lang::processor_context::ProcessorContext;
     use crate::program::model::lang::processor_context_view::ProcessorContextView;
-
-    struct MockRegisterValue {
-        register: RegisterRef,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            true
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     /// Minimal `DisassemblerContext` whose only job is to prove
     /// `DisassemblerContextAdapter` compiles as a supertrait and is object-safe. It never calls
     /// its own `DisassemblerContext` methods from the adapter's defaults (Rust can't wire that up
@@ -162,7 +129,7 @@ mod tests {
             None
         }
 
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
             None
         }
 
@@ -182,7 +149,7 @@ mod tests {
 
         fn set_register_value(
             &mut self,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
@@ -193,14 +160,14 @@ mod tests {
     }
 
     impl DisassemblerContext for MockContext {
-        fn set_future_register_value(&mut self, _address: Address, _value: Box<dyn RegisterValue>) {
+        fn set_future_register_value(&mut self, _address: Address, _value: RegisterValue) {
         }
 
         fn set_future_register_value_for_flow(
             &mut self,
             _from_addr: Address,
             _to_addr: Address,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) {
         }
     }

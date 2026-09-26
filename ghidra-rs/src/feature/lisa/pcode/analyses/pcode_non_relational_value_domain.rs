@@ -1,6 +1,6 @@
 use crate::feature::lisa::pcode::locations::inst_location::InstLocation;
 use crate::program::model::listing::Program;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Placeholder for `it.unive.lisa.program.cfg.ProgramPoint`, narrowed to exactly what
 /// [`PcodeNonRelationalValueDomain::get_value_at_program_point`] needs: the [`InstLocation`] it
@@ -49,7 +49,7 @@ pub trait ProgramPoint {
 pub trait PcodeNonRelationalValueDomain<T> {
     /// Computes this domain's value for a given register value (which may be absent, mirroring
     /// Java's nullable `RegisterValue rv`). Mirrors `getValue(RegisterValue)`.
-    fn get_value(&self, rv: Option<&dyn RegisterValue>) -> Option<T>;
+    fn get_value(&self, rv: Option<&RegisterValue>) -> Option<T>;
 
     /// Computes this domain's value at a given program point, by resolving the point's
     /// assignment target (if any) back to a register and reading its value at the containing
@@ -81,7 +81,7 @@ pub trait PcodeNonRelationalValueDomain<T> {
                         if let Some(context) = program.get_program_context() {
                             let register = register_ref;
                             if let Some(rv) = context.get_register_value(&register, &entry_point) {
-                                return self.get_value(Some(rv.as_ref()));
+                                return self.get_value(Some(&rv));
                             }
                         }
                     }
@@ -106,39 +106,14 @@ mod tests {
     #[derive(Clone, PartialEq, Eq, Debug)]
     struct TaggedValue(String);
 
-    struct MockRegisterValue {
-        register: RegisterRef,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-        fn get_register_value(&self, _register: &Register) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn has_any_value(&self) -> bool {
-            true
-        }
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-        fn has_value(&self) -> bool {
-            true
-        }
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     /// A domain whose value is just a tag of whatever `RegisterValue` (or lack thereof) it was
     /// given -- enough to prove both `get_value` and `get_value_at_program_point`'s fallback
     /// path, without a real interval/sign/etc. lattice.
     struct TaggingDomain;
 
     impl PcodeNonRelationalValueDomain<TaggedValue> for TaggingDomain {
-        fn get_value(&self, rv: Option<&dyn RegisterValue>) -> Option<TaggedValue> {
-            rv.map(|rv| TaggedValue(rv.get_register().name().to_string()))
+        fn get_value(&self, rv: Option<&RegisterValue>) -> Option<TaggedValue> {
+            rv.map(|rv| TaggedValue(rv.register().name().to_string()))
         }
     }
 
@@ -185,7 +160,7 @@ mod tests {
     #[test]
     fn get_value_tags_the_register_name() {
         let domain = TaggingDomain;
-        let rv = MockRegisterValue { register: register_ref("eax") };
+        let rv = RegisterValue::with_value(register_ref("eax"), 0);
         assert_eq!(domain.get_value(Some(&rv)), Some(TaggedValue("eax".to_string())));
     }
 

@@ -78,7 +78,6 @@ use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::listing::instruction_record::SharedPrototype;
 use crate::program::model::listing::program_context::ProgramContext;
 use crate::program::model::mem::{MemBuffer, Memory, MemoryAccessException, WrappedMemBuffer};
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
 use crate::program::util::abstract_program_context::AbstractProgramContext;
 use crate::program::util::program_context_impl::ProgramContextImpl;
 use crate::util::task::TaskMonitor;
@@ -377,7 +376,7 @@ impl Disassembler {
                 base,
                 &start_addr,
             )
-            .map(|v| RegisterValue::from_trait_object(v.as_ref()))
+            .map(|v| v)
             .filter(RegisterValue::has_any_value);
             if register_value == default_value {
                 // copy specified defaultContextValue to addr if context is language default
@@ -869,7 +868,7 @@ impl DisassemblerProgramContext {
 
     /// The language default for `register`; none for a register the language does not have
     /// (Java's `NO_CONTEXT`), which has no default store.
-    fn language_default(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn language_default(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         self.base.get_register(register.name())?;
         ProgramContext::get_default_value(self.default_language_context.as_ref(), register, address)
     }
@@ -880,11 +879,11 @@ impl ProgramContext for DisassemblerProgramContext {
         self.base.has_non_flowing_context()
     }
 
-    fn get_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Box<dyn RegisterValueTrait> {
+    fn get_flow_value(&self, value: RegisterValue) -> RegisterValue {
         self.base.get_flow_value(value)
     }
 
-    fn get_non_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_flow_value(&self, value: RegisterValue) -> Option<RegisterValue> {
         self.base.get_non_flow_value(value)
     }
 
@@ -905,9 +904,9 @@ impl ProgramContext for DisassemblerProgramContext {
     }
 
     /// The register is assumed to be the context register during disassembly.
-    fn get_register_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         match self.temporary_context_map.get_object(address) {
-            Some(value) => Some(Box::new(value)),
+            Some(value) => Some(value),
             None => self.language_default(register, address),
         }
     }
@@ -916,16 +915,16 @@ impl ProgramContext for DisassemblerProgramContext {
         &mut self,
         _start: &Address,
         _end: &Address,
-        _value: Box<dyn RegisterValueTrait>,
+        _value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         unsupported()
     }
 
     /// The register is assumed to be the context register during disassembly.
-    fn get_non_default_value(&self, _register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_default_value(&self, _register: &Register, address: &Address) -> Option<RegisterValue> {
         self.temporary_context_map
             .get_object(address)
-            .map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
+            
     }
 
     fn set_value(
@@ -986,7 +985,7 @@ impl ProgramContext for DisassemblerProgramContext {
     }
 
     /// The register is assumed to be the context register during disassembly.
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         self.language_default(register, address)
     }
 
@@ -994,24 +993,24 @@ impl ProgramContext for DisassemblerProgramContext {
         self.base.get_base_context_register()
     }
 
-    fn get_default_disassembly_context(&self) -> Box<dyn RegisterValueTrait> {
+    fn get_default_disassembly_context(&self) -> RegisterValue {
         self.base.get_default_disassembly_context()
     }
 
-    fn set_default_disassembly_context(&mut self, value: Box<dyn RegisterValueTrait>) {
+    fn set_default_disassembly_context(&mut self, value: RegisterValue) {
         self.base.set_default_disassembly_context(value);
     }
 
     /// Java returns `null` without a context register; the empty value of `NO_CONTEXT` stands in
     /// for it, which every caller treats the same (a value without any bits is no value).
-    fn get_disassembly_context(&self, address: &Address) -> Box<dyn RegisterValueTrait> {
+    fn get_disassembly_context(&self, address: &Address) -> RegisterValue {
         if let Some(value) = self.temporary_context_map.get_object(address) {
-            return Box::new(value);
+            return value;
         }
         self.base_context_register
             .as_ref()
             .and_then(|base| self.language_default(base, address))
-            .unwrap_or_else(|| Box::new(RegisterValue::new(self.base.get_base_context_register())))
+            .unwrap_or_else(|| RegisterValue::new(self.base.get_base_context_register()))
     }
 }
 
@@ -1064,8 +1063,8 @@ impl ProcessorContextView for DisassemblerInstructionContext {
         self.context_register_value(register)?.unsigned_value().map(|v| v as i128)
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValueTrait>> {
-        self.context_register_value(register).map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
+        self.context_register_value(register)
     }
 
     /// Java dereferences `getRegisterValue(register)`, which is `null` for anything but a context
@@ -1084,7 +1083,7 @@ impl ProcessorContext for DisassemblerInstructionContext {
         panic!("UnsupportedOperationException: an instruction's context is immutable")
     }
 
-    fn set_register_value(&mut self, _value: Box<dyn RegisterValueTrait>) -> Result<(), ContextChangeException> {
+    fn set_register_value(&mut self, _value: RegisterValue) -> Result<(), ContextChangeException> {
         panic!("UnsupportedOperationException: an instruction's context is immutable")
     }
 

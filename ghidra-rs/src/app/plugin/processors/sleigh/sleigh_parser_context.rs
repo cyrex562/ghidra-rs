@@ -509,7 +509,7 @@ impl SleighParserContext {
     pub fn get_context_register_value(
         &self,
         builder: &dyn RegisterValueBuilder,
-    ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+    ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
         use crate::program::model::lang::language::Language;
         let base = self.language.as_ref()?.get_context_base_register()?;
         let ctx_byte_len = base.minimum_byte_size().max(0) as usize;

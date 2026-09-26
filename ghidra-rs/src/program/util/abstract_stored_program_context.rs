@@ -51,7 +51,6 @@ use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::program_context::ProgramContext;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
 use crate::program::util::abstract_program_context::AbstractProgramContext;
 use crate::program::util::register_value_store::RegisterValueStore;
 use crate::program::util::RangeMapAdapter;
@@ -259,15 +258,15 @@ impl AbstractStoredProgramContext {
         set
     }
 
-    fn get_default_value_impl(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value_impl(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         let reg = self.resolve(register);
         let space = address.space();
         if space.space_type() == AddressSpaceType::Unknown {
-            return Some(Box::new(RegisterValue::new(reg)));
+            return Some(RegisterValue::new(reg));
         }
         // NOTE: overlay-space redirection not implemented; see this module's doc comment.
         self.get_register_value_internal(&reg, address, &self.default_register_value_map)
-            .map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
+            
     }
 }
 
@@ -276,11 +275,11 @@ impl ProgramContext for AbstractStoredProgramContext {
         self.base.has_non_flowing_context()
     }
 
-    fn get_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Box<dyn RegisterValueTrait> {
+    fn get_flow_value(&self, value: RegisterValue) -> RegisterValue {
         self.base.get_flow_value(value)
     }
 
-    fn get_non_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_flow_value(&self, value: RegisterValue) -> Option<RegisterValue> {
         self.base.get_non_flow_value(value)
     }
 
@@ -301,17 +300,17 @@ impl ProgramContext for AbstractStoredProgramContext {
 
     fn get_value(&self, register: &Register, address: &Address, signed: bool) -> Option<i128> {
         let boxed = ProgramContext::get_register_value(self, register, address)?;
-        let concrete = RegisterValue::from_trait_object(boxed.as_ref());
+        let concrete = boxed;
         if signed { concrete.signed_value() } else { concrete.unsigned_value().map(|v| v as i128) }
     }
 
-    fn get_register_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         let reg = self.resolve(register);
         let register_value = self.get_register_value_internal(&reg, address, &self.register_value_map);
 
         if let Some(rv) = &register_value {
             if rv.has_value() {
-                return Some(Box::new(rv.clone()));
+                return Some(rv.clone());
             }
         }
 
@@ -321,18 +320,18 @@ impl ProgramContext for AbstractStoredProgramContext {
                 Some(rv) => drv.combine_values(rv),
                 None => drv,
             };
-            return Some(Box::new(combined));
+            return Some(combined);
         }
-        register_value.map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
+        register_value
     }
 
     fn set_register_value(
         &mut self,
         start: &Address,
         end: &Address,
-        value: Box<dyn RegisterValueTrait>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
-        let concrete = RegisterValue::from_trait_object(value.as_ref());
+        let concrete = value;
         let base_register = concrete.register().get_base_register();
         let key = self.ensure_register_value_store(&base_register);
         self.register_value_map.get(&key).expect("just ensured").borrow_mut().set_value(start, end, &concrete);
@@ -346,10 +345,10 @@ impl ProgramContext for AbstractStoredProgramContext {
         Ok(())
     }
 
-    fn get_non_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         let reg = self.resolve(register);
         self.get_register_value_internal(&reg, address, &self.register_value_map)
-            .map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
+            
     }
 
     fn set_value(
@@ -365,7 +364,7 @@ impl ProgramContext for AbstractStoredProgramContext {
         };
         let reg = self.resolve(register);
         let rv = RegisterValue::with_value(reg, value as u128);
-        ProgramContext::set_register_value(self, start, end, Box::new(rv))
+        ProgramContext::set_register_value(self, start, end, rv)
     }
 
     fn get_register_value_address_ranges(&self, register: &Register) -> Box<dyn AddressRangeIterator> {
@@ -440,7 +439,7 @@ impl ProgramContext for AbstractStoredProgramContext {
         true
     }
 
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         self.get_default_value_impl(register, address)
     }
 
@@ -448,15 +447,15 @@ impl ProgramContext for AbstractStoredProgramContext {
         self.base.get_base_context_register()
     }
 
-    fn get_default_disassembly_context(&self) -> Box<dyn RegisterValueTrait> {
+    fn get_default_disassembly_context(&self) -> RegisterValue {
         self.base.get_default_disassembly_context()
     }
 
-    fn set_default_disassembly_context(&mut self, value: Box<dyn RegisterValueTrait>) {
+    fn set_default_disassembly_context(&mut self, value: RegisterValue) {
         self.base.set_default_disassembly_context(value);
     }
 
-    fn get_disassembly_context(&self, address: &Address) -> Box<dyn RegisterValueTrait> {
+    fn get_disassembly_context(&self, address: &Address) -> RegisterValue {
         let base_reg = self.base.get_base_context_register();
         let default_value = self.get_register_value_internal(&base_reg, address, &self.default_register_value_map);
         let current_value = self.get_register_value_internal(&base_reg, address, &self.register_value_map);
@@ -469,7 +468,7 @@ impl ProgramContext for AbstractStoredProgramContext {
             Some(cv) => default_value.combine_values(&cv),
             None => default_value,
         };
-        Box::new(result)
+        result
     }
 }
 
@@ -487,9 +486,9 @@ impl AbstractStoredProgramContext {
 }
 
 impl DefaultProgramContext for AbstractStoredProgramContext {
-    fn set_default_value(&mut self, register_value: Box<dyn RegisterValueTrait>, start: &Address, end: &Address) {
+    fn set_default_value(&mut self, register_value: RegisterValue, start: &Address, end: &Address) {
         assert!(start.same_address_space(end), "start and end address must be within the same address space");
-        let concrete = RegisterValue::from_trait_object(register_value.as_ref());
+        let concrete = register_value;
         let base_register = concrete.register().get_base_register();
         let key = base_register.name().to_string();
         if !self.default_register_value_map.contains_key(&key) {
@@ -501,7 +500,7 @@ impl DefaultProgramContext for AbstractStoredProgramContext {
         self.invalidate_read_cache();
     }
 
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         self.get_default_value_impl(register, address)
     }
 }
@@ -957,11 +956,11 @@ mod tests {
         let eax = ctx.get_register("eax").unwrap();
 
         let value = RegisterValue::with_value(eax.clone(), 0x1234_5678);
-        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1000), &addr(&space, 0x2000), Box::new(value))
+        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1000), &addr(&space, 0x2000), value)
             .expect("set should succeed");
 
         let got = ProgramContext::get_register_value(&ctx, &eax, &addr(&space, 0x1500)).unwrap();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0x1234_5678);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0x1234_5678);
         assert!(ProgramContext::get_register_value(&ctx, &eax, &addr(&space, 0x5000)).is_none());
     }
 
@@ -973,20 +972,20 @@ mod tests {
         let al = ctx.get_register("al").unwrap();
 
         let full = RegisterValue::with_value(eax.clone(), 0x1111_1111);
-        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1000), &addr(&space, 0x2000), Box::new(full)).unwrap();
+        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1000), &addr(&space, 0x2000), full).unwrap();
 
         let al_val = RegisterValue::with_value(al.clone(), 0xAB);
-        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1500), &addr(&space, 0x1600), Box::new(al_val)).unwrap();
+        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1500), &addr(&space, 0x1600), al_val).unwrap();
 
         let before = ProgramContext::get_register_value(&ctx, &eax, &addr(&space, 0x1000)).unwrap();
-        assert_eq!(before.get_unsigned_value_ignore_mask(), 0x1111_1111);
+        assert_eq!(before.unsigned_value_ignore_mask(), 0x1111_1111);
 
         let inside = ProgramContext::get_register_value(&ctx, &eax, &addr(&space, 0x1550)).unwrap();
-        assert_eq!(inside.get_unsigned_value_ignore_mask(), 0x1111_11AB);
+        assert_eq!(inside.unsigned_value_ignore_mask(), 0x1111_11AB);
 
         // Sub-register decomposition: querying `al` directly over the narrower range.
         let al_only = ProgramContext::get_register_value(&ctx, &al, &addr(&space, 0x1550)).unwrap();
-        assert_eq!(al_only.get_unsigned_value_ignore_mask(), 0xAB);
+        assert_eq!(al_only.unsigned_value_ignore_mask(), 0xAB);
     }
 
     #[test]
@@ -996,20 +995,20 @@ mod tests {
         let r0 = ctx.get_register("r0").unwrap();
 
         let default_val = RegisterValue::with_value(r0.clone(), 0x42);
-        DefaultProgramContext::set_default_value(&mut ctx, Box::new(default_val), &addr(&space, 0x0), &addr(&space, 0xFFFF));
+        DefaultProgramContext::set_default_value(&mut ctx, default_val, &addr(&space, 0x0), &addr(&space, 0xFFFF));
 
         let got = ProgramContext::get_register_value(&ctx, &r0, &addr(&space, 0x100)).unwrap();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0x42);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0x42);
 
         // An explicit value takes precedence over the default.
         let explicit = RegisterValue::with_value(r0.clone(), 0x99);
-        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x100), &addr(&space, 0x200), Box::new(explicit)).unwrap();
+        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x100), &addr(&space, 0x200), explicit).unwrap();
         let got2 = ProgramContext::get_register_value(&ctx, &r0, &addr(&space, 0x150)).unwrap();
-        assert_eq!(got2.get_unsigned_value_ignore_mask(), 0x99);
+        assert_eq!(got2.unsigned_value_ignore_mask(), 0x99);
 
         // Outside the explicit range, the default still applies.
         let got3 = ProgramContext::get_register_value(&ctx, &r0, &addr(&space, 0x9000)).unwrap();
-        assert_eq!(got3.get_unsigned_value_ignore_mask(), 0x42);
+        assert_eq!(got3.unsigned_value_ignore_mask(), 0x42);
     }
 
     #[test]
@@ -1019,7 +1018,7 @@ mod tests {
         let r0 = ctx.get_register("r0").unwrap();
 
         let value = RegisterValue::with_value(r0.clone(), 7);
-        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1000), &addr(&space, 0x2000), Box::new(value)).unwrap();
+        ProgramContext::set_register_value(&mut ctx, &addr(&space, 0x1000), &addr(&space, 0x2000), value).unwrap();
         ProgramContext::remove(&mut ctx, &addr(&space, 0x1000), &addr(&space, 0x2000), &r0).unwrap();
 
         assert!(ProgramContext::get_register_value(&ctx, &r0, &addr(&space, 0x1500)).is_none());
@@ -1038,12 +1037,12 @@ mod tests {
             &mut ctx,
             &addr(&space, 0x1000),
             &addr(&space, 0x1010),
-            Box::new(RegisterValue::with_value(eax, 1)),
+            RegisterValue::with_value(eax, 1),
         )
         .unwrap();
         DefaultProgramContext::set_default_value(
             &mut ctx,
-            Box::new(RegisterValue::with_value(r0, 1)),
+            RegisterValue::with_value(r0, 1),
             &addr(&space, 0x0),
             &addr(&space, 0xFFFF),
         );
@@ -1063,7 +1062,7 @@ mod tests {
             &mut ctx,
             &addr(&space, 0x1000),
             &addr(&space, 0x1010),
-            Box::new(RegisterValue::with_value(r0.clone(), 0xFFFF_FFFF)),
+            RegisterValue::with_value(r0.clone(), 0xFFFF_FFFF),
         )
         .unwrap();
 
@@ -1094,7 +1093,7 @@ mod tests {
             &mut ctx,
             &addr(&space, 0x1000),
             &addr(&space, 0x1010),
-            Box::new(RegisterValue::with_value(r0.clone(), 5)),
+            RegisterValue::with_value(r0.clone(), 5),
         )
         .unwrap();
 
@@ -1122,7 +1121,7 @@ mod tests {
             &mut ctx,
             &addr(&space, 0x1000),
             &addr(&space, 0x1010),
-            Box::new(RegisterValue::with_value(al, 0xAB)),
+            RegisterValue::with_value(al, 0xAB),
         )
         .unwrap();
 
@@ -1143,7 +1142,7 @@ mod tests {
             &mut ctx,
             &addr(&space, 0x1000),
             &addr(&space, 0x100f),
-            Box::new(RegisterValue::with_value(r0.clone(), 77)),
+            RegisterValue::with_value(r0.clone(), 77),
         )
         .unwrap();
 
@@ -1152,7 +1151,7 @@ mod tests {
 
         assert!(ProgramContext::get_register_value(&ctx, &r0, &addr(&space, 0x1000)).is_none());
         let got = ProgramContext::get_register_value(&ctx, &r0, &addr(&space, 0x5000)).unwrap();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 77);
+        assert_eq!(got.unsigned_value_ignore_mask(), 77);
     }
 
     /// Sanity check that `create_range_map_adapter` is genuinely used to construct a
@@ -1193,12 +1192,12 @@ mod tests {
             &mut ctx,
             &addr(&ram, 0x1000),
             &addr(&ram, 0x1010),
-            Box::new(RegisterValue::with_value(r0.clone(), 0xABCD)),
+            RegisterValue::with_value(r0.clone(), 0xABCD),
         )
         .unwrap();
 
         let got = ProgramContext::get_register_value(&ctx, &r0, &addr(&ram, 0x1005)).unwrap();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0xABCD);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0xABCD);
     }
 
     #[test]

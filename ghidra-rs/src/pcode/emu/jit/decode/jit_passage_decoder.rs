@@ -258,14 +258,14 @@ mod tests {
         }
         fn get_flow_value(
             &self,
-            value: Box<dyn crate::program::seam_stubs::RegisterValue>,
-        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+            value: crate::program::model::lang::register_value::RegisterValue,
+        ) -> crate::program::model::lang::register_value::RegisterValue {
             value
         }
         fn get_non_flow_value(
             &self,
-            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+            _value: crate::program::model::lang::register_value::RegisterValue,
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn get_register(&self, _name: &str) -> Option<RegisterRef> {
@@ -289,14 +289,14 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn set_register_value(
             &mut self,
             _start: &Address,
             _end: &Address,
-            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+            _value: crate::program::model::lang::register_value::RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
@@ -304,7 +304,7 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn set_value(
@@ -377,24 +377,24 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn get_base_context_register(&self) -> RegisterRef {
             self.base_context_register.clone()
         }
-        fn get_default_disassembly_context(&self) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+        fn get_default_disassembly_context(&self) -> crate::program::model::lang::register_value::RegisterValue {
             unimplemented!("not exercised by this smoke test")
         }
         fn set_default_disassembly_context(
             &mut self,
-            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+            _value: crate::program::model::lang::register_value::RegisterValue,
         ) {
         }
         fn get_disassembly_context(
             &self,
             _address: &Address,
-        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+        ) -> crate::program::model::lang::register_value::RegisterValue {
             unimplemented!("not exercised by this smoke test")
         }
     }

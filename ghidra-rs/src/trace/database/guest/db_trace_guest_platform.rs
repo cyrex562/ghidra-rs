@@ -227,7 +227,7 @@ impl TraceRegisterUtils for StaticTraceRegisterUtils {
     fn buffer_for_value(
         &self,
         _register: &Register,
-        _value: &dyn crate::program::seam_stubs::RegisterValue,
+        _value: &crate::program::model::lang::register_value::RegisterValue,
     ) -> Vec<u8> {
         unimplemented!("TraceRegisterUtils::bufferForValue is not reachable from a guest platform")
     }
@@ -236,7 +236,7 @@ impl TraceRegisterUtils for StaticTraceRegisterUtils {
         &self,
         _buf: &[u8],
         _register: &Register,
-    ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+    ) -> crate::program::model::lang::register_value::RegisterValue {
         unimplemented!("TraceRegisterUtils::finishBuffer is not reachable from a guest platform")
     }
 }

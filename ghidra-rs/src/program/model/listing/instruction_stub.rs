@@ -15,7 +15,8 @@ use crate::program::model::symbol::{
     ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{InstructionContext, RegisterValue};
+use crate::program::seam_stubs::InstructionContext;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
@@ -340,7 +341,7 @@ pub trait InstructionStub {
     }
 
     /// Stands in for `InstructionStub.getRegisterValue(Register)`.
-    fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+    fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
         unimplemented!("InstructionStub::get_register_value")
     }
 
@@ -359,7 +360,7 @@ pub trait InstructionStub {
     /// Stands in for `InstructionStub.setRegisterValue(RegisterValue)`.
     fn set_register_value(
         &mut self,
-        _value: Box<dyn RegisterValue>,
+        _value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         unimplemented!("InstructionStub::set_register_value")
     }
@@ -753,7 +754,7 @@ impl<T: InstructionStub + Send + Sync> ProcessorContextView for T {
     fn get_value(&self, register: &Register, signed: bool) -> Option<i128> {
         InstructionStub::get_value(self, register, signed)
     }
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValue>> {
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         InstructionStub::get_register_value(self, register)
     }
     fn has_value(&self, register: &Register) -> bool {
@@ -767,7 +768,7 @@ impl<T: InstructionStub + Send + Sync> ProcessorContext for T {
     }
     fn set_register_value(
         &mut self,
-        value: Box<dyn RegisterValue>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         InstructionStub::set_register_value(self, value)
     }

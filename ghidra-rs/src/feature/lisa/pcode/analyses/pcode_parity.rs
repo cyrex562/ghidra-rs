@@ -7,7 +7,7 @@ use crate::feature::lisa::pcode::analyses::pcode_non_relational_value_domain::Pc
 use crate::feature::lisa::pcode::analyses::pcode_upper_bounds::AsIdentifier;
 use crate::feature::lisa::pcode::expressions::pcode_binary_expression::PcodeBinaryExpressionOperator;
 use crate::program::model::pcode::OpCode;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::util::Msg;
 
 /// Stand-in for LiSA's `it.unive.lisa.util.representation.StructuredRepresentation`, narrowed to
@@ -344,10 +344,10 @@ impl PcodeNonRelationalValueDomain<PcodeParity> for PcodeParity {
     /// return `false` on it even when it is value-equal to [`PcodeParity::EVEN`]/
     /// [`PcodeParity::ODD`] (see `get_value_of_even_register_is_not_identically_even` below for a
     /// dedicated regression test).
-    fn get_value(&self, rv: Option<&dyn RegisterValue>) -> Option<PcodeParity> {
+    fn get_value(&self, rv: Option<&RegisterValue>) -> Option<PcodeParity> {
         if let Some(rv) = rv {
             if rv.has_value() {
-                let val = rv.get_unsigned_value_ignore_mask();
+                let val = rv.unsigned_value_ignore_mask();
                 return Some(Self::with_parity(if val % 2 == 0 { 3 } else { 2 }));
             }
         }
@@ -596,32 +596,28 @@ mod tests {
 
     // ── get_value ─────────────────────────────────────────────────────────────
 
-    struct MockRegisterValue {
-        value: u128,
-        has_value: bool,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> crate::program::model::lang::register::RegisterRef {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn get_register_value(
-            &self,
-            _register: &crate::program::model::lang::register::Register,
-        ) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn has_any_value(&self) -> bool {
-            true
-        }
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            self.value
-        }
-        fn has_value(&self) -> bool {
-            self.has_value
-        }
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
+    /// A real register value over a 4-byte test register: fully known (`value`) when `has_value`,
+    /// otherwise carrying no known bits.
+    fn register_value(value: u128, has_value: bool) -> RegisterValue {
+        let space = crate::program::model::address::AddressSpace::new(
+            "register",
+            32,
+            1,
+            crate::program::model::address::AddressSpaceType::Register,
+            0,
+        );
+        let register = crate::program::model::lang::register::Register::new(
+            "r0",
+            "",
+            crate::program::model::address::Address::new(space, 0),
+            4,
+            false,
+            0,
+        );
+        if has_value {
+            RegisterValue::with_value(register, value)
+        } else {
+            RegisterValue::new(register)
         }
     }
 
@@ -634,23 +630,23 @@ mod tests {
     #[test]
     fn get_value_without_a_value_is_top() {
         let d = PcodeParity::TOP;
-        let rv = MockRegisterValue { value: 4, has_value: false };
-        assert_eq!(PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)), Some(PcodeParity::TOP));
+        let rv = register_value(4, false);
+        assert_eq!(PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)), Some(PcodeParity::TOP));
     }
 
     #[test]
     fn get_value_of_even_register_is_value_equal_to_even() {
         let d = PcodeParity::TOP;
-        let rv = MockRegisterValue { value: 4, has_value: true };
-        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)).unwrap();
+        let rv = register_value(4, true);
+        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)).unwrap();
         assert_eq!(result, PcodeParity::EVEN);
     }
 
     #[test]
     fn get_value_of_odd_register_is_value_equal_to_odd() {
         let d = PcodeParity::TOP;
-        let rv = MockRegisterValue { value: 7, has_value: true };
-        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)).unwrap();
+        let rv = register_value(7, true);
+        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)).unwrap();
         assert_eq!(result, PcodeParity::ODD);
     }
 
@@ -658,8 +654,8 @@ mod tests {
     fn get_value_of_even_register_is_not_identically_even() {
         // Preserved quirk: see PcodeParity::get_value's own docs.
         let d = PcodeParity::TOP;
-        let rv = MockRegisterValue { value: 4, has_value: true };
-        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)).unwrap();
+        let rv = register_value(4, true);
+        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)).unwrap();
         assert!(!result.is_even());
     }
 

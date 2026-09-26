@@ -80,11 +80,7 @@ impl RangeMapAdapter for InMemoryRangeMapAdapter {
     /// The remaining branch -- re-encoding every stored range's raw bytes by round-tripping them
     /// through a `RegisterValue` (`new RegisterValue(mapReg, oldBytes)`, then
     /// `translator.getNewRegisterValue(...)`, then `RegisterValue.toBytes()`) -- is not
-    /// implemented. This crate has no concrete `RegisterValue`: only the object-safe seam trait
-    /// `crate::program::seam_stubs::RegisterValue` exists, and it exposes neither a
-    /// bytes-constructor nor a `to_bytes()`/serialization method, so there is no way to build the
-    /// `RegisterValue` this translation needs or get bytes back out of the translated result.
-    /// Rather than guess at a serialization format, this leaves previously stored values
+    /// implemented. This leaves previously stored values
     /// untouched (and un-translated) in that case; callers that hit this branch on a real
     /// language upgrade would see stale register-context bytes.
     fn set_language(
@@ -131,7 +127,7 @@ mod tests {
     use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
     use crate::program::model::lang::language::Language;
     use crate::program::model::lang::language_id::LanguageID;
-    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::util::task::DummyMonitor;
     use std::sync::Arc;
 
@@ -196,7 +192,7 @@ mod tests {
         fn get_new_context_register(&self) -> Option<RegisterRef> {
             None
         }
-        fn get_new_register_value(&self, _old_value: &dyn RegisterValue) -> Option<Box<dyn RegisterValue>> {
+        fn get_new_register_value(&self, _old_value: &RegisterValue) -> Option<RegisterValue> {
             None
         }
         fn is_value_translation_required(&self, _old_reg: &RegisterRef) -> bool {

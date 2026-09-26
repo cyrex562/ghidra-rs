@@ -31,7 +31,7 @@ use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::mem::mem_buffer::MemBuffer;
 use crate::program::model::pcode::Varnode;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Reasons for reading state.
 ///
@@ -384,7 +384,7 @@ pub trait PcodeExecutorStatePiece<A, T> {
     /// **NOTE:** The register from the given value does not have to match the given register, but
     /// their *sizes* should at least match. This permits simpler moving of values from one
     /// register to another. If the sizes do not match, the behavior is undefined.
-    fn set_register_value(&mut self, register: &RegisterRef, value: &dyn RegisterValue) {
+    fn set_register_value(&mut self, register: &RegisterRef, value: &RegisterValue) {
         let val = self.get_arithmetic().from_const_register_value(value);
         self.set_var_register(register, &val);
     }
@@ -394,8 +394,8 @@ pub trait PcodeExecutorStatePiece<A, T> {
     ///
     /// Port of `setRegisterValue(RegisterValue)`; Java overloads on arity, so this carries the
     /// `_of` suffix.
-    fn set_register_value_of(&mut self, value: &dyn RegisterValue) {
-        let register = value.get_register();
+    fn set_register_value_of(&mut self, value: &RegisterValue) {
+        let register = value.register();
         self.set_register_value(&register, value);
     }
 

@@ -15,7 +15,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::{Language, Register};
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::symbol::Namespace;
-use crate::program::seam_stubs::RegisterValue as ProgramRegisterValue;
+use crate::program::model::lang::register_value::RegisterValue as ProgramRegisterValue;
 use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
 use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
 use crate::trace::model::lifespan::Lifespan;
@@ -978,22 +978,19 @@ pub trait TraceRegisterUtils: Send + Sync {
     /// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
     /// `setValue` default.
     ///
-    /// Required rather than defaulted: the real computation reads `value`'s raw mask/value byte
-    /// array (`RegisterValue.toBytes()`), which the
-    /// [`RegisterValue`](crate::program::seam_stubs::RegisterValue) placeholder does not yet
-    /// expose.
-    fn buffer_for_value(&self, register: &Register, value: &dyn ProgramRegisterValue) -> Vec<u8>;
+    /// Required rather than defaulted, as when this seam was cut the register value exposed no
+    /// raw mask/value bytes (`RegisterValue.toBytes()`); the real
+    /// [`ProgramRegisterValue::to_bytes`] now does.
+    fn buffer_for_value(&self, register: &Register, value: &ProgramRegisterValue) -> Vec<u8>;
 
     /// Reconstruct a register value from a buffer previously filled via [`Self::prepare_buffer`].
     /// Mirrors the static `TraceRegisterUtils.finishBuffer(ByteBuffer, Register)`, used by
     /// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
     /// `getValue`/`getViewValue` defaults.
     ///
-    /// Required rather than defaulted: constructing a `RegisterValue` from raw bytes has no
-    /// implementation to call through to on the
-    /// [`RegisterValue`](crate::program::seam_stubs::RegisterValue) placeholder trait (it can only
-    /// be built by a concrete type).
-    fn finish_buffer(&self, buf: &[u8], register: &Register) -> Box<dyn ProgramRegisterValue>;
+    /// Required rather than defaulted, as when this seam was cut no register value could be
+    /// built from raw bytes; the real [`ProgramRegisterValue::with_value`] now can.
+    fn finish_buffer(&self, buf: &[u8], register: &Register) -> ProgramRegisterValue;
 }
 
 /// Placeholder for the nested `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.TraceAddressSnapRangeQuery`,
@@ -1669,7 +1666,7 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
     fn set_value(
         &self,
         language: &dyn Language,
-        value: &dyn ProgramRegisterValue,
+        value: &ProgramRegisterValue,
         lifespan: Lifespan,
         range: &AddressRange,
     );
@@ -1690,7 +1687,7 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
         register: &Register,
         snap: i64,
         address: &Address,
-    ) -> Option<Box<dyn ProgramRegisterValue>>;
+    ) -> Option<ProgramRegisterValue>;
 
     /// Mirrors `getEntry(Language, Register, long, Address)`.
     fn get_entry(
@@ -1699,7 +1696,7 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
         register: &Register,
         snap: i64,
         address: &Address,
-    ) -> Option<(Box<dyn TraceAddressSnapRange>, Box<dyn ProgramRegisterValue>)>;
+    ) -> Option<(Box<dyn TraceAddressSnapRange>, ProgramRegisterValue)>;
 
     /// Mirrors the package-private `getValueWithDefault(Language, Register, long, Address
     /// hostAddress, Address langAddress)` helper, called by
@@ -1713,7 +1710,7 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
         snap: i64,
         host_address: &Address,
         guest_address: &Address,
-    ) -> Option<Box<dyn ProgramRegisterValue>>;
+    ) -> Option<ProgramRegisterValue>;
 
     /// Mirrors `getRegisterValueAddressRanges(Language, Register, long, AddressRange)`.
     fn get_register_value_address_ranges_within(

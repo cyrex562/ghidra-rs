@@ -55,7 +55,7 @@ use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::program_context::ProgramContext;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::util::abstract_stored_program_context::AbstractStoredProgramContext;
 use crate::program::util::RangeMapAdapter;
 use crate::util::exception::CancelledException;
@@ -264,10 +264,10 @@ impl ProgramRegisterContextDB {
         &mut self,
         start: &Address,
         end: &Address,
-        value: Box<dyn RegisterValueTrait>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         let _guard = self.lock.write();
-        let reg = value.get_register();
+        let reg = value.register();
         self.check_context_write(&reg, start, end)?;
         let restore = !self.changing;
         self.changing = true;
@@ -420,11 +420,11 @@ mod tests {
         let space = ram_space();
         let r0 = ctx.context.get_register("r0").unwrap();
 
-        ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), Box::new(RegisterValue::with_value(r0.clone(), 0xCAFE)))
+        ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), RegisterValue::with_value(r0.clone(), 0xCAFE))
             .expect("set should succeed");
 
         let got = ProgramContext::get_register_value(&ctx.context, &r0, &addr(&space, 0x1005)).unwrap();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0xCAFE);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0xCAFE);
     }
 
     #[test]
@@ -441,7 +441,7 @@ mod tests {
         let result = ctx.set_register_value(
             &addr(&space, 0x1000),
             &addr(&space, 0x1010),
-            Box::new(RegisterValue::with_value(context_reg, 1)),
+            RegisterValue::with_value(context_reg, 1),
         );
         assert!(result.is_err());
     }
@@ -457,7 +457,7 @@ mod tests {
         ctx.set_program(Rc::new(RefCell::new(RecordingHost { reject: true, notified: Vec::new() })));
 
         let result =
-            ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), Box::new(RegisterValue::with_value(r0, 1)));
+            ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), RegisterValue::with_value(r0, 1));
         assert!(result.is_ok());
     }
 
@@ -470,7 +470,7 @@ mod tests {
         let host = Rc::new(RefCell::new(RecordingHost { reject: false, notified: Vec::new() }));
         ctx.set_program(host.clone());
 
-        ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), Box::new(RegisterValue::with_value(r0, 1)))
+        ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), RegisterValue::with_value(r0, 1))
             .unwrap();
 
         assert_eq!(host.borrow().notified.len(), 1);
@@ -483,7 +483,7 @@ mod tests {
         let space = ram_space();
         let r0 = ctx.context.get_register("r0").unwrap();
 
-        ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), Box::new(RegisterValue::with_value(r0.clone(), 1)))
+        ctx.set_register_value(&addr(&space, 0x1000), &addr(&space, 0x1010), RegisterValue::with_value(r0.clone(), 1))
             .unwrap();
         ctx.remove(&addr(&space, 0x1000), &addr(&space, 0x1010), &r0).unwrap();
 

@@ -23,10 +23,8 @@ use crate::program::model::lang::register::{Register, RegisterRef};
 /// `app::util::pseudo_disassembler`.
 ///
 /// Java also constructs the outgoing `RegisterValue` directly
-/// (`new RegisterValue(contextBaseRegister, bytes)`); since the real `RegisterValue` class isn't
-/// ported yet (only the read-only [`program::seam_stubs::RegisterValue`](crate::program::seam_stubs::RegisterValue)
-/// placeholder trait exists), building one is delegated to a [`RegisterValueBuilder`] the caller
-/// supplies.
+/// (`new RegisterValue(contextBaseRegister, bytes)`); here building one is delegated to a
+/// [`RegisterValueBuilder`] the caller supplies.
 pub trait ContextCache {
     /// Port of `ContextCache.registerVariable(Register)`.
     fn register_variable(&mut self, register: &Register);
@@ -116,7 +114,7 @@ impl ContextCache for DefaultContextCache {
             buf.fill(0);
             return;
         };
-        let context_value = context_reg_value.get_unsigned_value_ignore_mask();
+        let context_value = context_reg_value.unsigned_value_ignore_mask();
         let words = self.get_words(context_value);
         for (slot, word) in buf.iter_mut().zip(words.iter()) {
             *slot = *word;
@@ -190,42 +188,8 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::lang::processor_context::ProcessorContext;
     use crate::program::model::listing::context_change_exception::ContextChangeException;
-    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use std::cell::RefCell;
-
-    struct MockRegisterValue {
-        register: RegisterRef,
-        unsigned_value: u128,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-                unsigned_value: self.unsigned_value,
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            true
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            self.unsigned_value
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
 
     struct MockDisassemblerContext {
         base_register: RegisterRef,
@@ -254,13 +218,9 @@ mod tests {
             None
         }
 
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
-            self.value.map(|unsigned_value| {
-                Box::new(MockRegisterValue {
-                    register: self.base_register.clone(),
-                    unsigned_value,
-                }) as Box<dyn RegisterValue>
-            })
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
+            self.value
+                .map(|unsigned_value| RegisterValue::with_value(self.base_register.clone(), unsigned_value))
         }
 
         fn has_value(&self, _register: &Register) -> bool {
@@ -279,7 +239,7 @@ mod tests {
 
         fn set_register_value(
             &mut self,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
@@ -290,9 +250,9 @@ mod tests {
     }
 
     impl DisassemblerContext for MockDisassemblerContext {
-        fn set_future_register_value(&mut self, address: Address, value: Box<dyn RegisterValue>) {
+        fn set_future_register_value(&mut self, address: Address, value: RegisterValue) {
             let bytes = value
-                .get_unsigned_value_ignore_mask()
+                .unsigned_value_ignore_mask()
                 .to_be_bytes()
                 .to_vec();
             self.future_values.borrow_mut().push((address, bytes));
@@ -302,7 +262,7 @@ mod tests {
             &mut self,
             _from_addr: Address,
             _to_addr: Address,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) {
         }
     }
@@ -319,7 +279,7 @@ mod tests {
             &self,
             register: RegisterRef,
             bytes: Vec<u8>,
-        ) -> Box<dyn RegisterValue> {
+        ) -> RegisterValue {
             self.built
                 .borrow_mut()
                 .push((register.clone(), bytes.clone()));
@@ -327,10 +287,7 @@ mod tests {
             for b in &bytes {
                 unsigned_value = (unsigned_value << 8) | (*b as u128);
             }
-            Box::new(MockRegisterValue {
-                register,
-                unsigned_value,
-            })
+            RegisterValue::with_value(register, unsigned_value)
         }
     }
 

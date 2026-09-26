@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Maps register names and values between two naming/encoding conventions (e.g. a target's
 /// native register set and Ghidra's).
@@ -12,10 +12,10 @@ pub trait RegisterMapper: Send + Sync {
     fn map_name_back(&self, name: &str) -> String;
 
     /// Maps a register value forward, mirroring `mapValue(String, RegisterValue)`.
-    fn map_value(&self, name: &str, rv: &dyn RegisterValue) -> Box<dyn RegisterValue>;
+    fn map_value(&self, name: &str, rv: &RegisterValue) -> RegisterValue;
 
     /// Maps a register value back, mirroring `mapValueBack(String, RegisterValue)`.
-    fn map_value_back(&self, name: &str, rv: &dyn RegisterValue) -> Box<dyn RegisterValue>;
+    fn map_value_back(&self, name: &str, rv: &RegisterValue) -> RegisterValue;
 }
 
 #[cfg(test)]
@@ -23,34 +23,6 @@ mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::{Register, RegisterRef};
-
-    /// A minimal [`RegisterValue`] that just remembers the register it was constructed with, so
-    /// tests can distinguish which value round-tripped through the mapper.
-    struct FixedRegisterValue {
-        register: RegisterRef,
-    }
-
-    impl RegisterValue for FixedRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-        fn get_register_value(&self, _register: &Register) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn has_any_value(&self) -> bool {
-            true
-        }
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-        fn has_value(&self) -> bool {
-            true
-        }
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     fn register_ref(name: &str) -> RegisterRef {
         let space = AddressSpace::new("register", 32, 1, AddressSpaceType::Register, 0);
         let address = Address::new(space, 0);
@@ -71,12 +43,12 @@ mod tests {
             name.strip_prefix("r_").unwrap_or(name).to_string()
         }
 
-        fn map_value(&self, name: &str, _rv: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            Box::new(FixedRegisterValue { register: register_ref(&self.map_name(name)) })
+        fn map_value(&self, name: &str, _rv: &RegisterValue) -> RegisterValue {
+            RegisterValue::with_value(register_ref(&self.map_name(name)), 0)
         }
 
-        fn map_value_back(&self, name: &str, _rv: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            Box::new(FixedRegisterValue { register: register_ref(&self.map_name_back(name)) })
+        fn map_value_back(&self, name: &str, _rv: &RegisterValue) -> RegisterValue {
+            RegisterValue::with_value(register_ref(&self.map_name_back(name)), 0)
         }
     }
 
@@ -100,17 +72,17 @@ mod tests {
     #[test]
     fn map_value_uses_mapped_name() {
         let mapper = PrefixMapper;
-        let rv = FixedRegisterValue { register: register_ref("eax") };
+        let rv = RegisterValue::with_value(register_ref("eax"), 0);
         let mapped = mapper.map_value("eax", &rv);
-        assert_eq!(mapped.get_register().name(), "r_eax");
+        assert_eq!(mapped.register().name(), "r_eax");
     }
 
     #[test]
     fn map_value_back_uses_unmapped_name() {
         let mapper = PrefixMapper;
-        let rv = FixedRegisterValue { register: register_ref("r_eax") };
+        let rv = RegisterValue::with_value(register_ref("r_eax"), 0);
         let mapped = mapper.map_value_back("r_eax", &rv);
-        assert_eq!(mapped.get_register().name(), "eax");
+        assert_eq!(mapped.register().name(), "eax");
     }
 
     #[test]

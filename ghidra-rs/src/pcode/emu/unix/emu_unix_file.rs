@@ -90,7 +90,7 @@ mod tests {
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::register::RegisterRef;
     use crate::program::model::pcode::{OpCode, PcodeOp};
-    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_arithmetic::Purpose;
     use std::sync::Arc;
@@ -239,7 +239,7 @@ mod tests {
         fn from_const_big_int_default(&self, value: i128, _size: i32) -> i64 {
             value as i64
         }
-        fn from_const_register_value(&self, _value: &dyn RegisterValue) -> i64 {
+        fn from_const_register_value(&self, _value: &RegisterValue) -> i64 {
             0
         }
         fn from_const_address(&self, _address: &Address) -> i64 {

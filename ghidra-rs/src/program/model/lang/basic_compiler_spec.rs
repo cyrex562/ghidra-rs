@@ -1039,7 +1039,7 @@ impl CompilerSpec for BasicCompilerSpec {
     fn apply_context_settings(&self, ctx: &mut dyn DefaultProgramContext) {
         for cs in &self.ctxsetting {
             let register_value = RegisterValue::with_value(cs.get_register().clone(), cs.get_value());
-            ctx.set_default_value(Box::new(register_value), cs.get_start_address(), cs.get_end_address());
+            ctx.set_default_value(register_value, cs.get_start_address(), cs.get_end_address());
         }
     }
 

@@ -246,7 +246,7 @@ mod tests {
     use crate::framework::model::DomainObject;
     use crate::program::model::address::{AddressRangeIterator, AddressSpace, AddressSpaceType, EmptyAddressRangeIterator};
     use crate::program::model::lang::register::Register;
-    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::util::task::DummyMonitor;
 
     fn space() -> Arc<AddressSpace> {
@@ -281,10 +281,10 @@ mod tests {
         fn has_non_flowing_context(&self) -> bool {
             false
         }
-        fn get_flow_value(&self, value: Box<dyn RegisterValue>) -> Box<dyn RegisterValue> {
+        fn get_flow_value(&self, value: RegisterValue) -> RegisterValue {
             value
         }
-        fn get_non_flow_value(&self, _value: Box<dyn RegisterValue>) -> Option<Box<dyn RegisterValue>> {
+        fn get_non_flow_value(&self, _value: RegisterValue) -> Option<RegisterValue> {
             None
         }
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
@@ -299,18 +299,18 @@ mod tests {
         fn get_value(&self, _register: &Register, _address: &Address, _signed: bool) -> Option<i128> {
             None
         }
-        fn get_register_value(&self, _register: &Register, _address: &Address) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register, _address: &Address) -> Option<RegisterValue> {
             None
         }
         fn set_register_value(
             &mut self,
             _start: &Address,
             _end: &Address,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
-        fn get_non_default_value(&self, _register: &Register, _address: &Address) -> Option<Box<dyn RegisterValue>> {
+        fn get_non_default_value(&self, _register: &Register, _address: &Address) -> Option<RegisterValue> {
             None
         }
         fn set_value(
@@ -360,17 +360,17 @@ mod tests {
         fn has_value_over_range(&self, _reg: &Register, _value: i128, _addr_set: &dyn AddressSetView) -> bool {
             false
         }
-        fn get_default_value(&self, _register: &Register, _address: &Address) -> Option<Box<dyn RegisterValue>> {
+        fn get_default_value(&self, _register: &Register, _address: &Address) -> Option<RegisterValue> {
             None
         }
         fn get_base_context_register(&self) -> RegisterRef {
             panic!("no base context register in mock")
         }
-        fn get_default_disassembly_context(&self) -> Box<dyn RegisterValue> {
+        fn get_default_disassembly_context(&self) -> RegisterValue {
             unimplemented!("not exercised by this smoke test")
         }
-        fn set_default_disassembly_context(&mut self, _value: Box<dyn RegisterValue>) {}
-        fn get_disassembly_context(&self, _address: &Address) -> Box<dyn RegisterValue> {
+        fn set_default_disassembly_context(&mut self, _value: RegisterValue) {}
+        fn get_disassembly_context(&self, _address: &Address) -> RegisterValue {
             unimplemented!("not exercised by this smoke test")
         }
     }

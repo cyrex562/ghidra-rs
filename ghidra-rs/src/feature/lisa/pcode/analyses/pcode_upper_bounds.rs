@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::feature::lisa::pcode::analyses::pcode_non_relational_value_domain::PcodeNonRelationalValueDomain;
 use crate::feature::lisa::pcode::expressions::pcode_binary_expression::PcodeBinaryExpressionOperator;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Stand-in for the runtime `instanceof Identifier` pattern match `assumeBinaryExpression`
 /// performs on its (LiSA-typed, unported) `ValueExpression left`/`right` parameters: `left
@@ -403,7 +403,7 @@ impl<'a, Id: Clone + Eq + Hash> IntoIterator for &'a PcodeUpperBounds<Id> {
 
 impl<Id: Clone + Eq + Hash> PcodeNonRelationalValueDomain<PcodeUpperBounds<Id>> for PcodeUpperBounds<Id> {
     /// Java: `public PcodeUpperBounds getValue(RegisterValue rv)`, `return top();`.
-    fn get_value(&self, rv: Option<&dyn RegisterValue>) -> Option<PcodeUpperBounds<Id>> {
+    fn get_value(&self, rv: Option<&RegisterValue>) -> Option<PcodeUpperBounds<Id>> {
         let _ = rv;
         Some(Self::top())
     }

@@ -50,7 +50,7 @@ use std::sync::Arc;
 
 use crate::program::model::address::{AddressRange, AddressSpace};
 use crate::program::model::lang::Register;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
@@ -161,18 +161,18 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
         &mut self,
         platform: &dyn TracePlatform,
         snap: i64,
-        value: &dyn RegisterValue,
+        value: &RegisterValue,
     ) -> i32 {
         if !value.has_any_value() {
             return 0;
         }
         let lock = self.write_lock();
         let _hold = LockHold::lock(lock.as_ref());
-        let register_cell = value.get_register();
+        let register_cell = value.register();
         let register = register_cell;
         let range = platform.get_conventional_register_range(&self.get_space(), &register);
         let combined;
-        let effective: &dyn RegisterValue = if !value.has_value()
+        let effective: &RegisterValue = if !value.has_value()
             || !self.trace_register_utils().is_byte_bound(&register)
         {
             // Don't try to inline to keep range. Base register may have different range.
@@ -182,7 +182,7 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
             // instead pass the original register to buffer_for_value below.
             let old = self.get_value_on_platform(platform, snap, &base);
             combined = old.combine_values(value);
-            combined.as_ref()
+            &combined
         } else {
             value
         };
@@ -199,7 +199,7 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
         platform: &dyn TracePlatform,
         snap: i64,
         register: &Register,
-    ) -> Box<dyn RegisterValue> {
+    ) -> RegisterValue {
         let mut buf = self.trace_register_utils().prepare_buffer(register);
         let range = platform.get_conventional_register_range(&self.get_space(), register);
         self.get_bytes(snap, range.min_address(), &mut buf);
@@ -213,7 +213,7 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
         platform: &dyn TracePlatform,
         snap: i64,
         register: &Register,
-    ) -> Box<dyn RegisterValue> {
+    ) -> RegisterValue {
         let mut buf = self.trace_register_utils().prepare_buffer(register);
         let range = platform.get_conventional_register_range(&self.get_space(), register);
         self.get_view_bytes(snap, range.min_address(), &mut buf);
@@ -281,7 +281,7 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
     ///
     /// Note that the trace database tracks state with byte, not bit, precision: assigning even a
     /// single bit marks the whole byte [`TraceMemoryState::Known`].
-    fn set_value(&mut self, snap: i64, value: &dyn RegisterValue) -> i32 {
+    fn set_value(&mut self, snap: i64, value: &RegisterValue) -> i32 {
         let platform = self.get_trace().get_platform_manager().get_host_platform();
         self.set_value_on_platform(platform.as_ref(), snap, value)
     }
@@ -298,14 +298,14 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
 
     /// Get the most-recent value of a given host-platform register at the given time. Mirrors
     /// `getValue(long, Register)`.
-    fn get_value(&self, snap: i64, register: &Register) -> Box<dyn RegisterValue> {
+    fn get_value(&self, snap: i64, register: &Register) -> RegisterValue {
         let platform = self.get_trace().get_platform_manager().get_host_platform();
         self.get_value_on_platform(platform.as_ref(), snap, register)
     }
 
     /// Get the most-recent value of a given host-platform register at the given time, following
     /// schedule forks. Mirrors `getViewValue(long, Register)`.
-    fn get_view_value(&self, snap: i64, register: &Register) -> Box<dyn RegisterValue> {
+    fn get_view_value(&self, snap: i64, register: &Register) -> RegisterValue {
         let platform = self.get_trace().get_platform_manager().get_host_platform();
         self.get_view_value_on_platform(platform.as_ref(), snap, register)
     }
@@ -445,45 +445,8 @@ mod tests {
         fn unlock(&self) {}
     }
 
-    struct MockRegisterValue {
-        register: RegisterRef,
-        bytes: Vec<u8>,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-                bytes: self.bytes.clone(),
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            true
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            let mut padded = [0u8; 16];
-            let start = 16 - self.bytes.len();
-            padded[start..].copy_from_slice(&self.bytes);
-            u128::from_be_bytes(padded)
-        }
-
-        fn has_value(&self) -> bool {
-            true
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test: our register is always byte-bound")
-        }
-    }
-
-    /// Ignores the value it's handed and always reports the same fixed byte pattern, since the
-    /// `RegisterValue` placeholder doesn't yet expose raw bytes to convert. Sufficient to prove
+    /// Ignores the value it's handed and always reports the same fixed byte pattern. Sufficient to
+    /// prove
     /// `InternalTraceMemoryOperations`'s orchestration (range computation, buffer prep/finish,
     /// delegation to `put_bytes`/`get_bytes`) end to end.
     struct MockTraceRegisterUtils;
@@ -514,17 +477,16 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn buffer_for_value(&self, register: &Register, _value: &dyn RegisterValue) -> Vec<u8> {
+        fn buffer_for_value(&self, register: &Register, _value: &RegisterValue) -> Vec<u8> {
             let mut bytes = vec![0xDEu8, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03, 0x04];
             bytes.truncate(register.num_bytes() as usize);
             bytes
         }
 
-        fn finish_buffer(&self, buf: &[u8], register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-                bytes: buf.to_vec(),
-            })
+        fn finish_buffer(&self, buf: &[u8], register: &Register) -> RegisterValue {
+            // The buffer is big-endian, as `buffer_for_value` above produces it.
+            let value = buf.iter().fold(0u128, |acc, b| (acc << 8) | u128::from(*b));
+            RegisterValue::with_value(Register::from_register(register), value)
         }
     }
 
@@ -753,10 +715,7 @@ mod tests {
             TraceMemoryState::Unknown
         );
 
-        let value = MockRegisterValue {
-            register: register.clone(),
-            bytes: Vec::new(),
-        };
+        let value = RegisterValue::with_value(register.clone(), 0);
         mem.set_value_on_platform(&platform, 0, &value);
 
         assert_eq!(
@@ -771,10 +730,7 @@ mod tests {
         let space = mem.space.clone();
         let platform = MockPlatform;
         let register = r0(&space);
-        let value = MockRegisterValue {
-            register: register.clone(),
-            bytes: Vec::new(),
-        };
+        let value = RegisterValue::with_value(register.clone(), 0);
 
         let written = mem.set_value_on_platform(&platform, 0, &value);
 
@@ -788,15 +744,12 @@ mod tests {
         let space = mem.space.clone();
         let platform = MockPlatform;
         let register = r0(&space);
-        let value = MockRegisterValue {
-            register: register.clone(),
-            bytes: Vec::new(),
-        };
+        let value = RegisterValue::with_value(register.clone(), 0);
         mem.set_value_on_platform(&platform, 0, &value);
 
         let got = mem.get_value_on_platform(&platform, 0, &register);
 
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0xDEADBEEFu128);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0xDEADBEEFu128);
     }
 
     #[test]
@@ -820,10 +773,7 @@ mod tests {
         let space = mem.space.clone();
         let platform = MockPlatform;
         let register = r0(&space);
-        let value = MockRegisterValue {
-            register: register.clone(),
-            bytes: Vec::new(),
-        };
+        let value = RegisterValue::with_value(register.clone(), 0);
         mem.set_value_on_platform(&platform, 0, &value);
         assert_eq!(
             mem.get_state_on_platform(&platform, 0, &register),

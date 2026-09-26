@@ -798,8 +798,8 @@ mod tests {
     use crate::program::model::listing::{ContextChangeException, DefaultProgramContext};
     use crate::program::seam_stubs::{
         AddressLabelInfo, Processor, RefType as DataRefType, Reference as DataReference,
-        RegisterValue,
     };
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::listing::data::Data;
@@ -1315,13 +1315,13 @@ mod tests {
         fn get_registers(&self) -> Vec<RegisterRef> { unimplemented!() }
         fn get_register(&self, _name: &str) -> Option<RegisterRef> { unimplemented!() }
         fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> { unimplemented!() }
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> { unimplemented!() }
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> { unimplemented!() }
         fn has_value(&self, _register: &Register) -> bool { unimplemented!() }
     }
 
     impl ProcessorContext for MockCodeUnit {
         fn set_value(&mut self, _register: &Register, _value: i128) -> Result<(), ContextChangeException> { unimplemented!() }
-        fn set_register_value(&mut self, _value: Box<dyn RegisterValue>) -> Result<(), ContextChangeException> { unimplemented!() }
+        fn set_register_value(&mut self, _value: RegisterValue) -> Result<(), ContextChangeException> { unimplemented!() }
         fn clear_register(&mut self, _register: &Register) -> Result<(), ContextChangeException> { unimplemented!() }
     }
 

@@ -1,6 +1,6 @@
 use crate::program::model::address::Address;
 use crate::program::model::lang::processor_context::ProcessorContext;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Extends [`ProcessorContext`] with the ability to save register values that will take effect
 /// at a future address, for use during disassembly flow analysis.
@@ -18,7 +18,7 @@ pub trait DisassemblerContext: ProcessorContext {
     /// If the register value is the value for the processor context register and a previously
     /// saved value does not exist, the user-saved values in the stored context of the program
     /// will be used as the existing value.
-    fn set_future_register_value(&mut self, address: Address, value: Box<dyn RegisterValue>);
+    fn set_future_register_value(&mut self, address: Address, value: RegisterValue);
 
     /// Combines `value` with any previously saved future register value at `from_addr`/
     /// `to_addr`, or any value stored in the program if there is no previously saved future
@@ -36,7 +36,7 @@ pub trait DisassemblerContext: ProcessorContext {
         &mut self,
         from_addr: Address,
         to_addr: Address,
-        value: Box<dyn RegisterValue>,
+        value: RegisterValue,
     );
 }
 
@@ -49,39 +49,6 @@ mod tests {
     use crate::program::model::listing::context_change_exception::ContextChangeException;
     use std::cell::RefCell;
     use std::collections::HashMap;
-
-    struct MockRegisterValue {
-        register: RegisterRef,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            true
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     struct MockDisassemblerContext {
         base_register: RegisterRef,
         values: RefCell<HashMap<String, i128>>,
@@ -109,11 +76,9 @@ mod tests {
             self.values.borrow().get(register.name()).copied()
         }
 
-        fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
             if self.has_value(register) {
-                Some(Box::new(MockRegisterValue {
-                    register: self.base_register.clone(),
-                }))
+                Some(RegisterValue::with_value(self.base_register.clone(), 0))
             } else {
                 None
             }
@@ -138,9 +103,9 @@ mod tests {
 
         fn set_register_value(
             &mut self,
-            value: Box<dyn RegisterValue>,
+            value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
-            let register = value.get_register();
+            let register = value.register();
             let name = register.name().to_string();
             self.values.borrow_mut().insert(name, 1);
             Ok(())
@@ -153,7 +118,7 @@ mod tests {
     }
 
     impl DisassemblerContext for MockDisassemblerContext {
-        fn set_future_register_value(&mut self, address: Address, _value: Box<dyn RegisterValue>) {
+        fn set_future_register_value(&mut self, address: Address, _value: RegisterValue) {
             self.future_values.borrow_mut().push((address, None));
         }
 
@@ -161,7 +126,7 @@ mod tests {
             &mut self,
             from_addr: Address,
             to_addr: Address,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) {
             self.future_values
                 .borrow_mut()
@@ -197,16 +162,12 @@ mod tests {
 
         ctx.set_future_register_value(
             mock_address(0x100),
-            Box::new(MockRegisterValue {
-                register: base_register.clone(),
-            }),
+            RegisterValue::with_value(base_register.clone(), 0),
         );
         ctx.set_future_register_value_for_flow(
             mock_address(0x200),
             mock_address(0x204),
-            Box::new(MockRegisterValue {
-                register: base_register,
-            }),
+            RegisterValue::with_value(base_register, 0),
         );
 
         assert_eq!(ctx.get_registers().len(), 1);

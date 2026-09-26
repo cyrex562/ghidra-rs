@@ -1,17 +1,7 @@
 //! Port of `ghidra.program.model.lang.RegisterValue`.
 //!
-//! This is a real, byte-exact concrete implementation of the
-//! [`RegisterValueTrait`](crate::program::seam_stubs::RegisterValue) seam that dozens of already-ported
-//! files depend on as `Box<dyn RegisterValue>`. Before this file, no concrete implementer of that
-//! trait existed anywhere in this crate outside of test-only mocks and a couple of narrowly scoped
-//! placeholders (e.g. `app::util::pseudo_disassembler::LowBitCodeModeValue`, whose own doc comment
-//! says a real `RegisterValue` "would replace this"). That absence is exactly the blocker called
-//! out in `database_range_map_adapter.rs` / `in_memory_range_map_adapter.rs`'s `set_language` TODOs:
-//! "This crate has no concrete `RegisterValue`". Porting the register-context chain
-//! (`AbstractProgramContext`, `AbstractStoredProgramContext`, `ProgramRegisterContextDB`,
-//! `OldProgramContextDB`) for real -- with real set/get, real sub-register composition, real
-//! flowing/non-flowing context masking -- is not possible without it, so this type is ported here
-//! as the necessary foundation.
+//! The crate's single register-value type: every processor-context, program-context, trace and
+//! emulator API passes these by value (`RegisterValue`, `Option<RegisterValue>`) or reference.
 //!
 //! ## Storage format
 //!
@@ -23,33 +13,9 @@
 //! manual per-byte bit masking -- behaviorally identical, since both approaches just extract/set
 //! the `[start_bit, end_bit]` window (relative to the base register's LSB) of a big-endian byte
 //! string, but far simpler to read and verify. Registers whose base is wider than 16 bytes (128
-//! bits) cannot be represented by this port: the [`RegisterValueTrait::get_unsigned_value_ignore_mask`]
-//! seam method this crate already committed to returns `u128`, so that ceiling was already in
-//! effect everywhere else `Box<dyn RegisterValue>` is used, not a new limitation introduced here.
-//!
-//! ## The one genuine remaining gap: converting an arbitrary foreign `&dyn RegisterValueTrait`
-//!
-//! [`RegisterValue::from_trait_object`] builds one of *these* concrete values out of an opaque
-//! `&dyn RegisterValueTrait` (needed at every `ProgramContext` trait-method boundary, since those
-//! signatures take/return `Box<dyn RegisterValueTrait>` from/to arbitrary callers). It can do this
-//! exactly in the two cases Java callers overwhelmingly hit in practice:
-//! - `value.has_value()` is true (the entire register's bits are known) -- reconstructed exactly
-//!   via [`RegisterValue::with_value`].
-//! - `!value.has_any_value()` (no bits known at all) -- reconstructed exactly as the zero/empty
-//!   value.
-//!
-//! A value with a genuinely *partial* mask (some but not all bits of its own register known, e.g.
-//! the result of `clearBitValues` on a context register with only some non-flowing fields defined)
-//! cannot be reconstructed this way: the seam trait exposes only a single `has_value()` bool and a
-//! magnitude, not a per-bit mask, so there is no way to recover which specific bits were on. This
-//! mirrors the identical, already-documented gap in `DatabaseRangeMapAdapter::set_language` /
-//! `InMemoryRangeMapAdapter::set_language`. See [`RegisterValue::from_trait_object`] for exactly
-//! where this bites and how it degrades (never a panic; treated as "no value" for the un-recoverable
-//! bits, matching those two files' documented precedent of leaving the un-reconstructable case as a
-//! safe no-op rather than guessing).
+//! bits) cannot be represented by this port (Java's `BigInteger` accessors become `u128`/`i128`).
 
-use crate::program::model::lang::register::{Register, RegisterRef};
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
+use crate::program::model::lang::register::RegisterRef;
 
 /// A register value that keeps track of which bits are actually set (via an associated mask).
 ///
@@ -184,24 +150,6 @@ impl RegisterValue {
         Self { register, bytes: adjusted, start_bit, end_bit }
     }
 
-    /// Best-effort conversion from an arbitrary `&dyn RegisterValueTrait` into this concrete,
-    /// byte-exact representation. See the module docs for exactly which cases this reconstructs
-    /// exactly and which it approximates.
-    pub fn from_trait_object(value: &dyn RegisterValueTrait) -> Self {
-        let register = value.get_register();
-        if let Some(bytes) = value.exact_bytes() {
-            // A real value: its mask and value bytes cross the trait boundary intact.
-            return Self::from_bytes(register, &bytes);
-        }
-        if value.has_value() {
-            Self::with_value(register, value.get_unsigned_value_ignore_mask())
-        } else {
-            // Real for `!value.has_any_value()`; approximated (treated as no value) for a
-            // genuinely partial foreign mask -- see module docs.
-            Self::new(register)
-        }
-    }
-
     fn check_base_register(&self, other: &RegisterRef) {
         let self_base = self.register.get_base_register();
         let other_base = other.get_base_register();
@@ -215,8 +163,7 @@ impl RegisterValue {
 
     /// Returns the register used in this register value object.
     ///
-    /// Port of `RegisterValue.getRegister()`. Note: unlike the trait method of (nearly) the same
-    /// name, this returns a [`RegisterRef`] directly rather than boxing through the trait.
+    /// Port of `RegisterValue.getRegister()`.
     pub fn register(&self) -> RegisterRef {
         self.register.clone()
     }
@@ -270,7 +217,7 @@ impl RegisterValue {
     }
 
     /// Clears the value bits corresponding to the "on" bits in the given mask (a base-register-
-    /// sized byte mask, e.g. from [`Register::base_mask`]).
+    /// sized byte mask, e.g. from [`RegisterRef::base_mask`]).
     ///
     /// Port of `RegisterValue.clearBitValues(byte[])`.
     pub fn clear_bit_values(&self, mask: &[u8]) -> RegisterValue {
@@ -393,44 +340,6 @@ fn reg_eq(a: &RegisterRef, b: &RegisterRef) -> bool {
     same_register(a, b)
 }
 
-impl RegisterValueTrait for RegisterValue {
-    fn get_register(&self) -> RegisterRef {
-        self.register.clone()
-    }
-
-    fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValueTrait> {
-        // `register: &Register` (not a `RegisterRef`) here is the seam trait's existing shape;
-        // find the equivalent `RegisterRef` by walking from our own register up to its base and
-        // back down, matching by name (see `reg_eq`'s doc comment for why name-equality is the
-        // right analog of Java's reference equality in this port).
-        let base = self.register.get_base_register();
-        let target = find_by_name(&base, register.name())
-            .unwrap_or_else(|| panic!("register '{}' not reachable from base '{}'", register.name(), base.name()));
-        Box::new(RegisterValue::get_register_value(self, &target))
-    }
-
-    fn has_any_value(&self) -> bool {
-        RegisterValue::has_any_value(self)
-    }
-
-    fn get_unsigned_value_ignore_mask(&self) -> u128 {
-        RegisterValue::unsigned_value_ignore_mask(self)
-    }
-
-    fn has_value(&self) -> bool {
-        RegisterValue::has_value(self)
-    }
-
-    fn combine_values(&self, other: &dyn RegisterValueTrait) -> Box<dyn RegisterValueTrait> {
-        let other_concrete = RegisterValue::from_trait_object(other);
-        Box::new(RegisterValue::combine_values(self, &other_concrete))
-    }
-
-    fn exact_bytes(&self) -> Option<Vec<u8>> {
-        Some(self.bytes.clone())
-    }
-}
-
 /// Port of `RegisterValue.equals(Object)`: the same register (Java's `==` on `Register`, whose
 /// analog here is [`same_register`]) and the same mask/value bytes.
 impl PartialEq for RegisterValue {
@@ -441,22 +350,11 @@ impl PartialEq for RegisterValue {
 
 impl Eq for RegisterValue {}
 
-fn find_by_name(reg: &RegisterRef, name: &str) -> Option<RegisterRef> {
-    if reg.name() == name {
-        return Some(reg.clone());
-    }
-    for child in reg.child_registers() {
-        if let Some(found) = find_by_name(&child, name) {
-            return Some(found);
-        }
-    }
-    None
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+    use crate::program::model::lang::register::Register;
     use std::sync::Arc;
 
     fn space() -> Arc<AddressSpace> {
@@ -597,45 +495,19 @@ mod tests {
         assert_eq!(as_eax.unsigned_value_ignore_mask(), 0x7F);
     }
 
+    /// A partially-known value (only `al` of `eax`) is not equal to the fully-known value with
+    /// the same value bits: equality is Java's -- same register, same mask/value bytes.
     #[test]
-    fn trait_object_round_trip_for_full_value() {
-        let reg = base_register("r0", 4);
-        let value = RegisterValue::with_value(reg, 0xCAFEBABEu128);
-        let boxed: Box<dyn RegisterValueTrait> = Box::new(value);
-
-        assert!(boxed.has_value());
-        assert_eq!(boxed.get_unsigned_value_ignore_mask(), 0xCAFEBABE);
-
-        let reconstructed = RegisterValue::from_trait_object(boxed.as_ref());
-        assert_eq!(reconstructed.unsigned_value(), Some(0xCAFEBABE));
-    }
-
-    /// A partially-known value (only `al` of `eax`) keeps its exact mask across a trait-object
-    /// boundary, and equality is Java's: same register, same bytes.
-    #[test]
-    fn trait_object_round_trip_keeps_a_partial_mask() {
+    fn equality_compares_the_mask_as_well_as_the_value() {
         let mut reg = base_register("eax", 4);
         let al = child_register(&mut reg, "al", 0, 1);
         let partial = RegisterValue::with_value(al, 0x7F).get_register_value(&reg);
         assert!(partial.has_any_value() && !partial.has_value());
 
-        let boxed: Box<dyn RegisterValueTrait> = Box::new(partial.clone());
-        let reconstructed = RegisterValue::from_trait_object(boxed.as_ref());
-        assert_eq!(reconstructed, partial);
-        assert!(!reconstructed.has_value());
-        assert_eq!(reconstructed.base_value_mask(), partial.base_value_mask());
-        assert_ne!(reconstructed, RegisterValue::with_value(reg, 0x7F));
-    }
-
-    #[test]
-    fn trait_object_round_trip_for_empty_value() {
-        let reg = base_register("r0", 4);
-        let value = RegisterValue::new(reg);
-        let boxed: Box<dyn RegisterValueTrait> = Box::new(value);
-
-        assert!(!boxed.has_any_value());
-        let reconstructed = RegisterValue::from_trait_object(boxed.as_ref());
-        assert!(!reconstructed.has_any_value());
+        let copy = RegisterValue::from_bytes(reg.clone(), &partial.to_bytes());
+        assert_eq!(copy, partial);
+        assert_eq!(copy.base_value_mask(), partial.base_value_mask());
+        assert_ne!(copy, RegisterValue::with_value(reg, 0x7F));
     }
 
     #[test]

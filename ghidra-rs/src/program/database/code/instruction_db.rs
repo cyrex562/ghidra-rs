@@ -76,7 +76,8 @@ use crate::program::model::symbol::{
     ExternalReference, Reference, ReferenceIterator, RefType, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{InstructionContext as SeamInstructionContext, RegisterValue};
+use crate::program::seam_stubs::InstructionContext as SeamInstructionContext;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::FlowOverride;
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::NoValueException;
@@ -902,7 +903,7 @@ impl ProcessorContextView for InstructionDB {
         self.base.get_register_bigint_value(register, signed)
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValue>> {
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         self.base.get_register_value(register)
     }
 
@@ -918,7 +919,7 @@ impl ProcessorContext for InstructionDB {
 
     fn set_register_value(
         &mut self,
-        value: Box<dyn RegisterValue>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         self.base.set_register_value(value)
     }

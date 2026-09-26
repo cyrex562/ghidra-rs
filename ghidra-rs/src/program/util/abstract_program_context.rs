@@ -15,7 +15,6 @@ use std::sync::Arc;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::lang::register_value::RegisterValue;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
 
 /// Shared, real logic for a processor register context over an address space.
 ///
@@ -101,23 +100,23 @@ impl AbstractProgramContext {
 
     /// Modify a register value to eliminate non-flowing bits, returning a value suitable for
     /// flowing.
-    pub fn get_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Box<dyn RegisterValueTrait> {
-        if !self.has_non_flowing_context || !value.get_register().is_processor_context() {
+    pub fn get_flow_value(&self, value: RegisterValue) -> RegisterValue {
+        if !self.has_non_flowing_context || !value.register().is_processor_context() {
             return value;
         }
-        let concrete = RegisterValue::from_trait_object(value.as_ref());
-        Box::new(concrete.clear_bit_values(&self.non_flowing_context_register_mask))
+        let concrete = value;
+        concrete.clear_bit_values(&self.non_flowing_context_register_mask)
     }
 
     /// Modify a register value to only include non-flowing bits, returning `None` if the value
     /// does not correspond to a context register or no non-flowing context fields have been
     /// defined.
-    pub fn get_non_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Option<Box<dyn RegisterValueTrait>> {
-        if !self.has_non_flowing_context || !value.get_register().is_processor_context() {
+    pub fn get_non_flow_value(&self, value: RegisterValue) -> Option<RegisterValue> {
+        if !self.has_non_flowing_context || !value.register().is_processor_context() {
             return None;
         }
-        let concrete = RegisterValue::from_trait_object(value.as_ref());
-        Some(Box::new(concrete.clear_bit_values(&self.flowing_context_register_mask)))
+        let concrete = value;
+        Some(concrete.clear_bit_values(&self.flowing_context_register_mask))
     }
 
     /// Gets the registers for this context that are used for processor context states.
@@ -147,13 +146,13 @@ impl AbstractProgramContext {
     }
 
     /// Get the current default disassembly context to be used when initiating disassembly.
-    pub fn get_default_disassembly_context(&self) -> Box<dyn RegisterValueTrait> {
-        Box::new(self.default_disassembly_context.clone())
+    pub fn get_default_disassembly_context(&self) -> RegisterValue {
+        self.default_disassembly_context.clone()
     }
 
     /// Set the initial disassembly context to be used when initiating disassembly.
-    pub fn set_default_disassembly_context(&mut self, value: Box<dyn RegisterValueTrait>) {
-        self.default_disassembly_context = RegisterValue::from_trait_object(value.as_ref());
+    pub fn set_default_disassembly_context(&mut self, value: RegisterValue) {
+        self.default_disassembly_context = value;
     }
 
     /// Non-boxed accessor for the current default disassembly context, for use by composing
@@ -563,10 +562,10 @@ mod tests {
         let mut ctx = test_context();
         let base_reg = ctx.get_base_context_register();
         let value = RegisterValue::with_value(base_reg, 0xAB);
-        ctx.set_default_disassembly_context(Box::new(value));
+        ctx.set_default_disassembly_context(value);
 
         let got = ctx.get_default_disassembly_context();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0xAB);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0xAB);
     }
 
     #[test]
@@ -577,10 +576,10 @@ mod tests {
         // (byte offset 1, little-endian byte numbering -> bits [8,15]).
         let value = RegisterValue::with_value(base_reg, 0xFFFF_FFFF);
 
-        let flow_value = ctx.get_flow_value(Box::new(value));
+        let flow_value = ctx.get_flow_value(value);
         // Flowing value: the non-flowing field's bits (8-15) are cleared; everything else (which
         // this language treats as flowing, including bits with no explicit child) is preserved.
-        assert_eq!(flow_value.get_unsigned_value_ignore_mask(), 0xFFFF_00FF);
+        assert_eq!(flow_value.unsigned_value_ignore_mask(), 0xFFFF_00FF);
     }
 
     #[test]
@@ -589,9 +588,9 @@ mod tests {
         let base_reg = ctx.get_base_context_register();
         let value = RegisterValue::with_value(base_reg, 0xFFFF_FFFF);
 
-        let non_flow_value = ctx.get_non_flow_value(Box::new(value)).expect("non-flowing context is defined");
+        let non_flow_value = ctx.get_non_flow_value(value).expect("non-flowing context is defined");
         // Non-flowing value: only the non-flowing field's bits (8-15) survive.
-        assert_eq!(non_flow_value.get_unsigned_value_ignore_mask(), 0x0000_FF00);
+        assert_eq!(non_flow_value.unsigned_value_ignore_mask(), 0x0000_FF00);
     }
 
     #[test]
@@ -599,8 +598,8 @@ mod tests {
         let ctx = test_context();
         let r0 = ctx.get_register("r0").unwrap();
         let value = RegisterValue::with_value(r0, 42);
-        let flow_value = ctx.get_flow_value(Box::new(value));
-        assert_eq!(flow_value.get_unsigned_value_ignore_mask(), 42);
+        let flow_value = ctx.get_flow_value(value);
+        assert_eq!(flow_value.unsigned_value_ignore_mask(), 42);
     }
 
     #[test]

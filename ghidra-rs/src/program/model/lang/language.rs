@@ -613,7 +613,7 @@ mod tests {
     use crate::program::model::lang::processor_context_view::ProcessorContextView;
     use crate::program::model::lang::register::Register;
     use crate::program::model::listing::context_change_exception::ContextChangeException;
-    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use std::collections::HashSet;
 
     struct MockProcessor;
@@ -807,44 +807,16 @@ mod tests {
         Register::new("r0", "General purpose register 0", Address::new(space, 0), 4, false, 0)
     }
 
-    struct MockRegisterValue {
-        register: RegisterRef,
-    }
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-            })
-        }
-        fn has_any_value(&self) -> bool {
-            false
-        }
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     struct MockDefaultProgramContext;
     impl DefaultProgramContext for MockDefaultProgramContext {
         fn set_default_value(
             &mut self,
-            _register_value: Box<dyn RegisterValue>,
+            _register_value: RegisterValue,
             _start: &Address,
             _end: &Address,
         ) {
         }
-        fn get_default_value(&self, _register: &Register, _address: &Address) -> Option<Box<dyn RegisterValue>> {
+        fn get_default_value(&self, _register: &Register, _address: &Address) -> Option<RegisterValue> {
             None
         }
     }
@@ -865,7 +837,7 @@ mod tests {
         fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
             None
         }
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
             None
         }
         fn has_value(&self, _register: &Register) -> bool {
@@ -876,7 +848,7 @@ mod tests {
         fn set_value(&mut self, _register: &Register, _value: i128) -> Result<(), ContextChangeException> {
             Ok(())
         }
-        fn set_register_value(&mut self, _value: Box<dyn RegisterValue>) -> Result<(), ContextChangeException> {
+        fn set_register_value(&mut self, _value: RegisterValue) -> Result<(), ContextChangeException> {
             Ok(())
         }
         fn clear_register(&mut self, _register: &Register) -> Result<(), ContextChangeException> {

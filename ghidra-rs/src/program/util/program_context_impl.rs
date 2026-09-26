@@ -22,7 +22,7 @@ use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::program_context::ProgramContext;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::util::abstract_stored_program_context::AbstractStoredProgramContext;
 use crate::program::util::RangeMapAdapter;
 
@@ -67,11 +67,11 @@ impl ProgramContext for ProgramContextImpl {
         self.stored.has_non_flowing_context()
     }
 
-    fn get_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Box<dyn RegisterValueTrait> {
+    fn get_flow_value(&self, value: RegisterValue) -> RegisterValue {
         self.stored.get_flow_value(value)
     }
 
-    fn get_non_flow_value(&self, value: Box<dyn RegisterValueTrait>) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_flow_value(&self, value: RegisterValue) -> Option<RegisterValue> {
         self.stored.get_non_flow_value(value)
     }
 
@@ -91,7 +91,7 @@ impl ProgramContext for ProgramContextImpl {
         ProgramContext::get_value(&self.stored, register, address, signed)
     }
 
-    fn get_register_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         ProgramContext::get_register_value(&self.stored, register, address)
     }
 
@@ -99,12 +99,12 @@ impl ProgramContext for ProgramContextImpl {
         &mut self,
         start: &Address,
         end: &Address,
-        value: Box<dyn RegisterValueTrait>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         ProgramContext::set_register_value(&mut self.stored, start, end, value)
     }
 
-    fn get_non_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         self.stored.get_non_default_value(register, address)
     }
 
@@ -164,7 +164,7 @@ impl ProgramContext for ProgramContextImpl {
         self.stored.has_value_over_range(reg, value, addr_set)
     }
 
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         ProgramContext::get_default_value(&self.stored, register, address)
     }
 
@@ -172,25 +172,25 @@ impl ProgramContext for ProgramContextImpl {
         ProgramContext::get_base_context_register(&self.stored)
     }
 
-    fn get_default_disassembly_context(&self) -> Box<dyn RegisterValueTrait> {
+    fn get_default_disassembly_context(&self) -> RegisterValue {
         ProgramContext::get_default_disassembly_context(&self.stored)
     }
 
-    fn set_default_disassembly_context(&mut self, value: Box<dyn RegisterValueTrait>) {
+    fn set_default_disassembly_context(&mut self, value: RegisterValue) {
         ProgramContext::set_default_disassembly_context(&mut self.stored, value)
     }
 
-    fn get_disassembly_context(&self, address: &Address) -> Box<dyn RegisterValueTrait> {
+    fn get_disassembly_context(&self, address: &Address) -> RegisterValue {
         self.stored.get_disassembly_context(address)
     }
 }
 
 impl DefaultProgramContext for ProgramContextImpl {
-    fn set_default_value(&mut self, register_value: Box<dyn RegisterValueTrait>, start: &Address, end: &Address) {
+    fn set_default_value(&mut self, register_value: RegisterValue, start: &Address, end: &Address) {
         self.stored.set_default_value(register_value, start, end)
     }
 
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         DefaultProgramContext::get_default_value(&self.stored, register, address)
     }
 }
@@ -228,14 +228,14 @@ mod tests {
         let eax = ProgramContext::get_register(&ctx, "eax").unwrap();
 
         ctx.set_default_value(
-            Box::new(RegisterValue::with_value(eax.clone(), 7)),
+            RegisterValue::with_value(eax.clone(), 7),
             &ram.address(0),
             &ram.address(0xffff),
         );
         assert_eq!(ProgramContext::get_value(&ctx, &eax, &ram.address(0x10), false), Some(7));
         assert!(ctx.get_non_default_value(&eax, &ram.address(0x10)).is_none());
         let default = ProgramContext::get_default_value(&ctx, &eax, &ram.address(0x10)).unwrap();
-        assert_eq!(default.get_unsigned_value_ignore_mask(), 7);
+        assert_eq!(default.unsigned_value_ignore_mask(), 7);
     }
 
     #[test]
@@ -245,18 +245,18 @@ mod tests {
         let contextreg = ctx.get_base_context_register();
         assert_eq!(contextreg.name(), "contextreg");
 
-        ctx.set_default_disassembly_context(Box::new(RegisterValue::with_value(contextreg.clone(), 3)));
-        let at = RegisterValue::from_trait_object(ctx.get_disassembly_context(&ram.address(0x40)).as_ref());
+        ctx.set_default_disassembly_context(RegisterValue::with_value(contextreg.clone(), 3));
+        let at = ctx.get_disassembly_context(&ram.address(0x40));
         assert_eq!(at.unsigned_value(), Some(3));
 
         ProgramContext::set_register_value(
             &mut ctx,
             &ram.address(0x40),
             &ram.address(0x4f),
-            Box::new(RegisterValue::with_value(contextreg.clone(), 5)),
+            RegisterValue::with_value(contextreg.clone(), 5),
         )
         .unwrap();
-        let at = RegisterValue::from_trait_object(ctx.get_disassembly_context(&ram.address(0x40)).as_ref());
+        let at = ctx.get_disassembly_context(&ram.address(0x40));
         assert_eq!(at.unsigned_value(), Some(5));
     }
 }

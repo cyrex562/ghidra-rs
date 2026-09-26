@@ -1872,7 +1872,7 @@ mod language_tests {
             fn get_value(&self, _r: &Register, _s: bool) -> Option<i128> {
                 None
             }
-            fn get_register_value(&self, _r: &Register) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+            fn get_register_value(&self, _r: &Register) -> Option<crate::program::model::lang::register_value::RegisterValue> {
                 None
             }
             fn has_value(&self, _r: &Register) -> bool {
@@ -1883,7 +1883,7 @@ mod language_tests {
             fn set_value(&mut self, _r: &Register, _v: i128) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
                 Ok(())
             }
-            fn set_register_value(&mut self, _v: Box<dyn crate::program::seam_stubs::RegisterValue>) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
+            fn set_register_value(&mut self, _v: crate::program::model::lang::register_value::RegisterValue) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
                 Ok(())
             }
             fn clear_register(&mut self, _r: &Register) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException> {
@@ -1983,36 +1983,10 @@ mod language_tests {
             &self,
             register: RegisterRef,
             bytes: Vec<u8>,
-        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+        ) -> crate::program::model::lang::register_value::RegisterValue {
             assert_eq!(register.name(), "contextreg");
             *self.0.borrow_mut() = bytes;
-            Box::new(NoValue)
-        }
-    }
-
-    struct NoValue;
-
-    impl crate::program::seam_stubs::RegisterValue for NoValue {
-        fn get_register(&self) -> RegisterRef {
-            unreachable!("only construction is under test")
-        }
-        fn get_register_value(&self, _register: &Register) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
-            Box::new(NoValue)
-        }
-        fn has_any_value(&self) -> bool {
-            false
-        }
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-        fn has_value(&self) -> bool {
-            false
-        }
-        fn combine_values(
-            &self,
-            _other: &dyn crate::program::seam_stubs::RegisterValue,
-        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
-            Box::new(NoValue)
+            crate::program::model::lang::register_value::RegisterValue::new(register)
         }
     }
 
@@ -2061,7 +2035,7 @@ mod language_tests {
         fn get_register_value(
             &self,
             _register: &Register,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn has_value(&self, _register: &Register) -> bool {
@@ -2080,7 +2054,7 @@ mod language_tests {
         }
         fn set_register_value(
             &mut self,
-            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+            _value: crate::program::model::lang::register_value::RegisterValue,
         ) -> Result<(), crate::program::model::listing::context_change_exception::ContextChangeException>
         {
             Ok(())
@@ -2100,7 +2074,7 @@ mod language_tests {
         fn set_future_register_value(
             &mut self,
             address: Address,
-            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+            _value: crate::program::model::lang::register_value::RegisterValue,
         ) {
             self.future.push(address);
         }
@@ -2108,7 +2082,7 @@ mod language_tests {
             &mut self,
             _from_addr: Address,
             _to_addr: Address,
-            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+            _value: crate::program::model::lang::register_value::RegisterValue,
         ) {
         }
     }

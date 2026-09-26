@@ -44,11 +44,11 @@ use crate::app::util::pseudo_flow_processor::PseudoFlowProcessor;
 use crate::program::model::address::{Address, AddressSet};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::lang::{
-    DisassemblerContext, InsufficientBytesException, ProcessorContextView, Register, RegisterRef,
+    DisassemblerContext, InsufficientBytesException, ProcessorContextView,
     UnknownContextException, UnknownInstructionException,
 };
 use crate::program::model::listing::Program;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::util::Msg;
 
 /// Name of the register used by processors that use the lower bit of addresses to switch into an
@@ -298,45 +298,6 @@ impl DataType for PointerSizedDataType {
     }
 }
 
-/// Minimal stand-in for `new RegisterValue(register, BigInteger.ONE)`, used by the free functions
-/// below to build the low-bit-code-mode context value. A full port of
-/// `ghidra.program.model.lang.RegisterValue` (currently only a placeholder trait, see
-/// [`RegisterValue`]) would replace this.
-struct LowBitCodeModeValue {
-    register: RegisterRef,
-}
-
-impl RegisterValue for LowBitCodeModeValue {
-    fn get_register(&self) -> RegisterRef {
-        self.register.clone()
-    }
-
-    fn get_register_value(&self, _register: &Register) -> Box<dyn RegisterValue> {
-        Box::new(LowBitCodeModeValue {
-            register: self.register.clone(),
-        })
-    }
-
-    fn has_any_value(&self) -> bool {
-        true
-    }
-
-    fn get_unsigned_value_ignore_mask(&self) -> u128 {
-        1
-    }
-
-    fn has_value(&self) -> bool {
-        // Constructed as `new RegisterValue(register, BigInteger.ONE)`, whose mask is always full.
-        true
-    }
-
-    fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-        Box::new(LowBitCodeModeValue {
-            register: self.register.clone(),
-        })
-    }
-}
-
 /// Get an address that can be used for disassembly. Useful for some processors where pointers to
 /// code have 1 added to them for different modes such as Thumb mode for ARM.
 ///
@@ -361,12 +322,10 @@ pub fn get_normalized_disassembly_address(program: &dyn Program, addr: Address) 
 pub fn get_target_context_register_value_for_disassembly(
     program: &dyn Program,
     addr: &Address,
-) -> Option<Box<dyn RegisterValue>> {
+) -> Option<RegisterValue> {
     let low_bit_code_mode = program.get_register(LOW_BIT_CODE_MODE_REGISTER_NAME)?;
     if addr.offset() & 1 == 1 {
-        Some(Box::new(LowBitCodeModeValue {
-            register: low_bit_code_mode,
-        }))
+        Some(RegisterValue::with_value(low_bit_code_mode, 1))
     } else {
         None
     }
@@ -438,9 +397,7 @@ pub fn set_target_context_for_disassembly_with_context(
     let new_addr = Address::new(addr.space().clone(), addr.offset() & !0x1);
     proc_context.set_future_register_value(
         new_addr.clone(),
-        Box::new(LowBitCodeModeValue {
-            register: low_bit_code_mode,
-        }),
+        RegisterValue::with_value(low_bit_code_mode, 1),
     );
     new_addr
 }
@@ -448,6 +405,7 @@ pub fn set_target_context_for_disassembly_with_context(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::model::lang::{Register, RegisterRef};
     use crate::program::model::address::{AddressRange, AddressRangeIterator, AddressSetView, AddressSpace, AddressSpaceType};
     use crate::program::model::listing::context_change_exception::ContextChangeException;
     use crate::program::model::listing::ProgramContext;
@@ -674,13 +632,13 @@ mod tests {
         fn has_non_flowing_context(&self) -> bool {
             false
         }
-        fn get_flow_value(&self, value: Box<dyn RegisterValue>) -> Box<dyn RegisterValue> {
+        fn get_flow_value(&self, value: RegisterValue) -> RegisterValue {
             value
         }
         fn get_non_flow_value(
             &self,
-            _value: Box<dyn RegisterValue>,
-        ) -> Option<Box<dyn RegisterValue>> {
+            _value: RegisterValue,
+        ) -> Option<RegisterValue> {
             None
         }
         fn get_register(&self, _name: &str) -> Option<RegisterRef> {
@@ -699,14 +657,14 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
         fn set_register_value(
             &mut self,
             _start: &Address,
             _end: &Address,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
@@ -714,7 +672,7 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
         fn set_value(
@@ -793,22 +751,18 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
+        ) -> Option<RegisterValue> {
             None
         }
         fn get_base_context_register(&self) -> RegisterRef {
             panic!("no base context register in mock")
         }
-        fn get_default_disassembly_context(&self) -> Box<dyn RegisterValue> {
-            Box::new(LowBitCodeModeValue {
-                register: mock_register("context"),
-            })
+        fn get_default_disassembly_context(&self) -> RegisterValue {
+            RegisterValue::with_value(mock_register("context"), 1)
         }
-        fn set_default_disassembly_context(&mut self, _value: Box<dyn RegisterValue>) {}
-        fn get_disassembly_context(&self, _address: &Address) -> Box<dyn RegisterValue> {
-            Box::new(LowBitCodeModeValue {
-                register: mock_register("context"),
-            })
+        fn set_default_disassembly_context(&mut self, _value: RegisterValue) {}
+        fn get_disassembly_context(&self, _address: &Address) -> RegisterValue {
+            RegisterValue::with_value(mock_register("context"), 1)
         }
     }
 
@@ -861,7 +815,7 @@ mod tests {
 
         let odd = get_target_context_register_value_for_disassembly(&program, &mock_address(0x1001));
         assert!(odd.is_some());
-        assert_eq!(odd.unwrap().get_unsigned_value_ignore_mask(), 1);
+        assert_eq!(odd.unwrap().unsigned_value_ignore_mask(), 1);
 
         let even = get_target_context_register_value_for_disassembly(&program, &mock_address(0x1000));
         assert!(even.is_none());
@@ -911,7 +865,7 @@ mod tests {
         fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
             None
         }
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
             None
         }
         fn has_value(&self, _register: &Register) -> bool {
@@ -925,7 +879,7 @@ mod tests {
         }
         fn set_register_value(
             &mut self,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }
@@ -935,14 +889,14 @@ mod tests {
     }
 
     impl DisassemblerContext for MockDisassemblerContext {
-        fn set_future_register_value(&mut self, address: Address, _value: Box<dyn RegisterValue>) {
+        fn set_future_register_value(&mut self, address: Address, _value: RegisterValue) {
             self.future_values.borrow_mut().push(address);
         }
         fn set_future_register_value_for_flow(
             &mut self,
             from_addr: Address,
             _to_addr: Address,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) {
             self.future_values.borrow_mut().push(from_addr);
         }

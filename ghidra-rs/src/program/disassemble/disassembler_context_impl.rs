@@ -27,9 +27,7 @@
 //! # Values
 //!
 //! Java passes `RegisterValue`s by reference and uses `null` for "no value"; here they are the
-//! concrete [`RegisterValue`], with `None` for `null`. The [`ProgramContext`] trait speaks
-//! `Box<dyn RegisterValue>`; values cross it exactly (see
-//! [`RegisterValue::from_trait_object`]).
+//! concrete [`RegisterValue`], with `None` for `null`, as the [`ProgramContext`] trait does.
 
 use std::collections::HashMap;
 
@@ -41,14 +39,13 @@ use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::listing::program_context::ProgramContext;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
 
 /// Register state keyed by base register.
 type RegisterStateMap = HashMap<Register, RegisterValue>;
 
 /// Converts a value that crossed the [`ProgramContext`] trait boundary back to the concrete type.
-fn concrete(value: Box<dyn RegisterValueTrait>) -> RegisterValue {
-    RegisterValue::from_trait_object(value.as_ref())
+fn concrete(value: RegisterValue) -> RegisterValue {
+    value
 }
 
 /// Port of the private `combineRegisterValues`: combines two values; if `new_value_precedence`,
@@ -137,11 +134,11 @@ impl<P: ProgramContext> DisassemblerContextImpl<P> {
     }
 
     fn flow_value(&self, value: Option<&RegisterValue>) -> Option<RegisterValue> {
-        value.map(|v| concrete(self.program_context.get_flow_value(Box::new(v.clone()))))
+        value.map(|v| concrete(self.program_context.get_flow_value(v.clone())))
     }
 
     fn non_flow_value(&self, value: Option<RegisterValue>) -> Option<RegisterValue> {
-        value.and_then(|v| self.program_context.get_non_flow_value(Box::new(v)).map(concrete))
+        value.and_then(|v| self.program_context.get_non_flow_value(v).map(concrete))
     }
 
     fn default_context_value(&self, address: &Address) -> Option<RegisterValue> {
@@ -708,7 +705,7 @@ impl<P: ProgramContext> DisassemblerContextImpl<P> {
             }
             // we should never be writing the context register, so a ContextChangeException is
             // not expected
-            let _ = self.program_context.set_register_value(start, end, Box::new(value.clone()));
+            let _ = self.program_context.set_register_value(start, end, value.clone());
         }
     }
 
@@ -926,9 +923,9 @@ impl<P: ProgramContext> ProcessorContextView for DisassemblerContextImpl<P> {
         DisassemblerContextImpl::get_value(self, register, signed)
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         DisassemblerContextImpl::get_register_value(self, register)
-            .map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
+            
     }
 
     /// Port of `hasValue(Register)`: whether the value is fully known.
@@ -943,7 +940,7 @@ impl<P: ProgramContext> ProcessorContext for DisassemblerContextImpl<P> {
         Ok(())
     }
 
-    fn set_register_value(&mut self, value: Box<dyn RegisterValueTrait>) -> Result<(), ContextChangeException> {
+    fn set_register_value(&mut self, value: RegisterValue) -> Result<(), ContextChangeException> {
         self.set_register_value_now(concrete(value));
         Ok(())
     }
@@ -955,7 +952,7 @@ impl<P: ProgramContext> ProcessorContext for DisassemblerContextImpl<P> {
 }
 
 impl<P: ProgramContext> DisassemblerContext for DisassemblerContextImpl<P> {
-    fn set_future_register_value(&mut self, address: Address, value: Box<dyn RegisterValueTrait>) {
+    fn set_future_register_value(&mut self, address: Address, value: RegisterValue) {
         self.set_future_register_value_at(&address, Some(concrete(value)));
     }
 
@@ -963,7 +960,7 @@ impl<P: ProgramContext> DisassemblerContext for DisassemblerContextImpl<P> {
         &mut self,
         from_addr: Address,
         to_addr: Address,
-        value: Box<dyn RegisterValueTrait>,
+        value: RegisterValue,
     ) {
         self.set_future_register_value_from(Some(&from_addr), &to_addr, Some(concrete(value)));
     }
@@ -1062,7 +1059,7 @@ mod tests {
         let (a1000, a1002, a10ff, a1100) = (f.at(0x1000), f.at(0x1002), f.at(0x10ff), f.at(0x1100));
         let stored = RegisterValue::with_value(f.mode.clone(), 2)
             .combine_values(&RegisterValue::with_value(f.phase.clone(), 3));
-        ProgramContext::set_register_value(f.ctx.program_context_mut(), &a1000, &a10ff, Box::new(stored))
+        ProgramContext::set_register_value(f.ctx.program_context_mut(), &a1000, &a10ff, stored)
             .unwrap();
 
         f.ctx.flow_start(&a1000);
@@ -1118,7 +1115,7 @@ mod tests {
         let (start, end) = (f.at(0), f.at(0xffff));
         f.ctx
             .program_context_mut()
-            .set_default_value(Box::new(RegisterValue::with_value(f.mode.clone(), 1)), &start, &end);
+            .set_default_value(RegisterValue::with_value(f.mode.clone(), 1), &start, &end);
 
         let a5000 = f.at(0x5000);
         f.ctx.flow_start(&a5000);
@@ -1189,7 +1186,7 @@ mod tests {
         ProcessorContext::set_value(&mut f.ctx, &f.eax.clone(), 0x55).unwrap();
         assert_eq!(ProcessorContextView::get_value(&f.ctx, &f.eax, false), Some(0x55));
         let boxed = ProcessorContextView::get_register_value(&f.ctx, &f.eax).unwrap();
-        assert_eq!(boxed.get_unsigned_value_ignore_mask(), 0x55);
+        assert_eq!(boxed.unsigned_value_ignore_mask(), 0x55);
         ProcessorContext::clear_register(&mut f.ctx, &f.eax.clone()).unwrap();
         assert!(!ProcessorContextView::has_value(&f.ctx, &f.eax));
         f.ctx.flow_end(None);
@@ -1198,7 +1195,7 @@ mod tests {
         DisassemblerContext::set_future_register_value(
             &mut f.ctx,
             a2000.clone(),
-            Box::new(RegisterValue::with_value(f.mode.clone(), 6)),
+            RegisterValue::with_value(f.mode.clone(), 6),
         );
         f.ctx.flow_start(&a2000);
         assert_eq!(f.ctx.get_value(&f.mode, false), Some(6));

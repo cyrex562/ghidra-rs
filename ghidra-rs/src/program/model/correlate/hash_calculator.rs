@@ -28,7 +28,8 @@ pub(crate) mod tests {
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::symbol::RefType;
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{InstructionContext, RegisterValue};
+    use crate::program::seam_stubs::InstructionContext;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
@@ -80,7 +81,7 @@ use crate::program::model::listing::CommentType;
             None
         }
 
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
             None
         }
 
@@ -96,7 +97,7 @@ use crate::program::model::listing::CommentType;
 
         fn set_register_value(
             &mut self,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }

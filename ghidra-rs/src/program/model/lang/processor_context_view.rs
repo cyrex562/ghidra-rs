@@ -1,5 +1,5 @@
 use crate::program::model::lang::register::{Register, RegisterRef};
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Defines the interface for an object containing the state of all processor registers relative
 /// to a specific address.
@@ -22,7 +22,7 @@ pub trait ProcessorContextView {
     fn get_value(&self, register: &Register, signed: bool) -> Option<i128>;
 
     /// Get the [`RegisterValue`] for the given register, or `None` if no value exists.
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValue>>;
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue>;
 
     /// Returns true if a value is defined for the given register.
     fn has_value(&self, register: &Register) -> bool;
@@ -31,22 +31,22 @@ pub trait ProcessorContextView {
 /// Formats `value` and the values of its child registers as a human-readable string.
 ///
 /// Port of `ProcessorContextView.dumpContextValue(RegisterValue, String)`.
-pub fn dump_context_value(value: &dyn RegisterValue, indent: Option<&str>) -> String {
+pub fn dump_context_value(value: &RegisterValue, indent: Option<&str>) -> String {
     let mut buf = String::new();
     dump_context_value_into(value, indent, &mut buf);
     buf
 }
 
 /// Port of `ProcessorContextView.dumpContextValue(RegisterValue, String, StringBuilder)`.
-pub fn dump_context_value_into(value: &dyn RegisterValue, indent: Option<&str>, buf: &mut String) {
+pub fn dump_context_value_into(value: &RegisterValue, indent: Option<&str>, buf: &mut String) {
     let indent = indent.unwrap_or("");
-    let base_reg = value.get_register();
+    let base_reg = value.register();
     let base_reg_size = base_reg.minimum_byte_size() * 8;
     for child_reg in base_reg.child_registers() {
         let reg = child_reg;
         let child_value = value.get_register_value(&reg);
         if child_value.has_any_value() {
-            let v = child_value.get_unsigned_value_ignore_mask();
+            let v = child_value.unsigned_value_ignore_mask();
             let msb = base_reg_size - reg.least_significant_bit_in_base_register() - 1;
             let lsb = msb - reg.bit_length() + 1;
             if !buf.is_empty() {
@@ -59,7 +59,7 @@ pub fn dump_context_value_into(value: &dyn RegisterValue, indent: Option<&str>, 
             ));
             if reg.has_children() {
                 let child_indent = format!("{indent}   ");
-                dump_context_value_into(&*child_value, Some(&child_indent), buf);
+                dump_context_value_into(&child_value, Some(&child_indent), buf);
             }
         }
     }
@@ -69,39 +69,6 @@ pub fn dump_context_value_into(value: &dyn RegisterValue, indent: Option<&str>, 
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-
-    struct MockRegisterValue {
-        register: RegisterRef,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            self.register.clone()
-        }
-
-        fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue {
-                register: Register::from_register(register),
-            })
-        }
-
-        fn has_any_value(&self) -> bool {
-            false
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     struct MockProcessorContextView {
         base_register: RegisterRef,
     }
@@ -127,10 +94,8 @@ mod tests {
             None
         }
 
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
-            Some(Box::new(MockRegisterValue {
-                register: self.base_register.clone(),
-            }))
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
+            Some(RegisterValue::new(self.base_register.clone()))
         }
 
         fn has_value(&self, _register: &Register) -> bool {
@@ -165,9 +130,23 @@ mod tests {
 
     #[test]
     fn dump_context_value_handles_no_children() {
-        let value = MockRegisterValue {
-            register: mock_register(),
-        };
+        let value = RegisterValue::new(mock_register());
         assert_eq!(dump_context_value(&value, None), "");
+    }
+
+    #[test]
+    fn dump_context_value_lists_child_fields_that_have_values() {
+        let space = AddressSpace::new("register", 32, 1, AddressSpaceType::Register, 1);
+        let base = Register::new("CTX", "", Address::new(space.clone(), 0), 4, false, 0);
+        let field = Register::with_bit_range("FIELD", "", Address::new(space, 0), 1, 0, 8, false, 0);
+        let [base, _field]: [Register; 2] =
+            crate::program::model::lang::register::test_support::linked(&[&base, &field], &[(0, &[1])])
+                .try_into()
+                .unwrap();
+        // Java: indent + name + "(" + lsb + "," + msb + ") = 0x" + hex, bits counted from the MSB.
+        let value = RegisterValue::with_value(base.clone(), 0x2A);
+        assert_eq!(dump_context_value(&value, Some("  ")), "  FIELD(24,31) = 0x2a");
+        // A child with no known bits is skipped.
+        assert_eq!(dump_context_value(&RegisterValue::new(base), None), "");
     }
 }

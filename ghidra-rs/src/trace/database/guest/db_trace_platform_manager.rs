@@ -154,7 +154,8 @@ mod tests {
     use crate::program::model::lang::{ProgramArchitecture, Register};
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::mem::MemBuffer;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor, RegisterValue};
+    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
     use crate::trace::model::symbol::trace_label_symbol::TraceLabelSymbol;
     use crate::trace::model::trace::Trace;
@@ -351,10 +352,10 @@ mod tests {
         ) -> Option<Arc<AddressSpace>> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn buffer_for_value(&self, _register: &Register, _value: &dyn RegisterValue) -> Vec<u8> {
+        fn buffer_for_value(&self, _register: &Register, _value: &RegisterValue) -> Vec<u8> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn finish_buffer(&self, _buf: &[u8], _register: &Register) -> Box<dyn RegisterValue> {
+        fn finish_buffer(&self, _buf: &[u8], _register: &Register) -> RegisterValue {
             unimplemented!("not exercised by this smoke test")
         }
     }

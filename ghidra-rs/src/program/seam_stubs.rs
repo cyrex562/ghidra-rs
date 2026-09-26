@@ -19,7 +19,7 @@ use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::model::lang::register::{Register, RegisterRef};
+use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::program::model::listing::{Function, FunctionTag, Program};
 use crate::program::model::mem::MemoryAccessException;
@@ -1120,49 +1120,6 @@ pub use crate::program::model::listing::variable_filter::VariableFilter;
 // `InstructionErrorType` is ported; this was a placeholder standing in for it. Re-exported so
 // every importer converges on one type instead of two same-named ones.
 pub use crate::program::model::lang::instruction_error::InstructionErrorType;
-
-/// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
-/// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext) (which
-/// only ever passes this type through) and by
-/// [`ProcessorContextView`](crate::program::model::lang::processor_context_view::ProcessorContextView)
-/// and its `dump_context_value` helper, before the real class is ported.
-///
-/// Grown to add
-/// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
-/// `setValue` default needs: whether the value's mask actually covers any bits (as opposed to
-/// merely being non-zero, see [`RegisterValue::has_any_value`]), and combining a fresh value onto
-/// an existing one.
-pub trait RegisterValue {
-    /// The base register this value is associated with.
-    fn get_register(&self) -> RegisterRef;
-
-    /// The value associated with a child register of [`RegisterValue::get_register`]'s base
-    /// register.
-    fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue>;
-
-    /// True if this value (or mask) has any bits set.
-    fn has_any_value(&self) -> bool;
-
-    /// The unsigned value of this register value, ignoring any mask bits.
-    fn get_unsigned_value_ignore_mask(&self) -> u128;
-
-    /// True if this value's mask has any bits set (as opposed to only ever recording an
-    /// unmasked/unknown value). Mirrors `RegisterValue.hasValue()`.
-    fn has_value(&self) -> bool;
-
-    /// Combines `other`'s masked bits onto this value, preferring `other` wherever both specify a
-    /// bit. Mirrors `RegisterValue.combineValues(RegisterValue)`.
-    fn combine_values(&self, other: &dyn RegisterValue) -> Box<dyn RegisterValue>;
-
-    /// Stands in for `RegisterValue.toBytes()`: the base register's mask bytes followed by its
-    /// value bytes, when this value carries them. The real
-    /// [`RegisterValue`](crate::program::model::lang::register_value::RegisterValue) always does,
-    /// which is what lets a value with a partial mask cross a `Box<dyn RegisterValue>` boundary
-    /// without losing which bits are known; a test double without a byte form returns `None`.
-    fn exact_bytes(&self) -> Option<Vec<u8>> {
-        None
-    }
-}
 
 // `Mask` is ported; this was a placeholder standing in for it. Re-exported so
 // every importer converges on one type instead of two same-named ones.

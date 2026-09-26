@@ -52,7 +52,7 @@ use crate::program::model::symbol::{
 use crate::program::model::listing::Variable;
 use crate::program::model::util::property_map_manager::PropertyMapManager;
 use crate::program::model::util::PropertyMap;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::util::{
     IntPropertyMap, LongPropertyMap, ObjectPropertyMap, StringPropertyMap, VoidPropertyMap,
 };
@@ -1014,14 +1014,14 @@ impl ProgramContext for TestProgramContext {
         unimplemented!("{UNEXERCISED}")
     }
 
-    fn get_flow_value(&self, _value: Box<dyn RegisterValue>) -> Box<dyn RegisterValue> {
+    fn get_flow_value(&self, _value: RegisterValue) -> RegisterValue {
         unimplemented!("{UNEXERCISED}")
     }
 
     fn get_non_flow_value(
         &self,
-        _value: Box<dyn RegisterValue>,
-    ) -> Option<Box<dyn RegisterValue>> {
+        _value: RegisterValue,
+    ) -> Option<RegisterValue> {
         unimplemented!("{UNEXERCISED}")
     }
 
@@ -1045,7 +1045,7 @@ impl ProgramContext for TestProgramContext {
         &self,
         _register: &Register,
         _address: &Address,
-    ) -> Option<Box<dyn RegisterValue>> {
+    ) -> Option<RegisterValue> {
         None
     }
 
@@ -1053,7 +1053,7 @@ impl ProgramContext for TestProgramContext {
         &mut self,
         _start: &Address,
         _end: &Address,
-        _value: Box<dyn RegisterValue>,
+        _value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         unimplemented!("{UNEXERCISED}")
     }
@@ -1062,7 +1062,7 @@ impl ProgramContext for TestProgramContext {
         &self,
         _register: &Register,
         _address: &Address,
-    ) -> Option<Box<dyn RegisterValue>> {
+    ) -> Option<RegisterValue> {
         unimplemented!("{UNEXERCISED}")
     }
 
@@ -1146,7 +1146,7 @@ impl ProgramContext for TestProgramContext {
         &self,
         _register: &Register,
         _address: &Address,
-    ) -> Option<Box<dyn RegisterValue>> {
+    ) -> Option<RegisterValue> {
         unimplemented!("{UNEXERCISED}")
     }
 
@@ -1154,15 +1154,15 @@ impl ProgramContext for TestProgramContext {
         unimplemented!("{UNEXERCISED}")
     }
 
-    fn get_default_disassembly_context(&self) -> Box<dyn RegisterValue> {
+    fn get_default_disassembly_context(&self) -> RegisterValue {
         unimplemented!("{UNEXERCISED}")
     }
 
-    fn set_default_disassembly_context(&mut self, _value: Box<dyn RegisterValue>) {
+    fn set_default_disassembly_context(&mut self, _value: RegisterValue) {
         unimplemented!("{UNEXERCISED}")
     }
 
-    fn get_disassembly_context(&self, _address: &Address) -> Box<dyn RegisterValue> {
+    fn get_disassembly_context(&self, _address: &Address) -> RegisterValue {
         unimplemented!("{UNEXERCISED}")
     }
 }

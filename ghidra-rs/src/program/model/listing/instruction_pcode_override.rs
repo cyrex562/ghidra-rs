@@ -317,7 +317,7 @@ use crate::program::model::mem::MemBuffer;
         fn set_value(&mut self, _register: &crate::program::model::lang::register::Register, _value: i128) -> Result<(), crate::program::model::listing::ContextChangeException> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn set_register_value(&mut self, _value: Box<dyn crate::program::seam_stubs::RegisterValue>) -> Result<(), crate::program::model::listing::ContextChangeException> {
+        fn set_register_value(&mut self, _value: crate::program::model::lang::register_value::RegisterValue) -> Result<(), crate::program::model::listing::ContextChangeException> {
             unimplemented!("not exercised by this smoke test")
         }
         fn clear_register(&mut self, _register: &crate::program::model::lang::register::Register) -> Result<(), crate::program::model::listing::ContextChangeException> {
@@ -340,7 +340,7 @@ use crate::program::model::mem::MemBuffer;
         fn get_value(&self, _register: &crate::program::model::lang::register::Register, _signed: bool) -> Option<i128> {
             None
         }
-        fn get_register_value(&self, _register: &crate::program::model::lang::register::Register) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        fn get_register_value(&self, _register: &crate::program::model::lang::register::Register) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn has_value(&self, _register: &crate::program::model::lang::register::Register) -> bool {

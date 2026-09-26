@@ -600,7 +600,7 @@ mod tests {
         fn buffer_for_value(
             &self,
             _register: &Register,
-            _value: &dyn crate::program::seam_stubs::RegisterValue,
+            _value: &crate::program::model::lang::register_value::RegisterValue,
         ) -> Vec<u8> {
             unimplemented!("not exercised by this smoke test")
         }
@@ -609,7 +609,7 @@ mod tests {
             &self,
             _buf: &[u8],
             _register: &Register,
-        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+        ) -> crate::program::model::lang::register_value::RegisterValue {
             unimplemented!("not exercised by this smoke test")
         }
     }

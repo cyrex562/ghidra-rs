@@ -354,7 +354,7 @@ mod tests {
         fn get_register_value(
             &self,
             _register: &crate::program::model::lang::register::Register,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
         fn has_value(&self, _register: &crate::program::model::lang::register::Register) -> bool {
@@ -371,7 +371,7 @@ mod tests {
         }
         fn set_register_value(
             &mut self,
-            _value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+            _value: crate::program::model::lang::register_value::RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }

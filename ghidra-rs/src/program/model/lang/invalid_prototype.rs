@@ -634,7 +634,7 @@ mod tests {
         fn get_register_value(
             &self,
             _register: &crate::program::model::lang::register::Register,
-        ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        ) -> Option<crate::program::model::lang::register_value::RegisterValue> {
             None
         }
 

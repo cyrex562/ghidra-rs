@@ -24,7 +24,7 @@ mod tests {
     use crate::program::model::lang::language_id::LanguageID;
     use crate::program::model::lang::register::RegisterRef;
     use crate::program::model::listing::Program;
-    use crate::program::seam_stubs::RegisterValue;
+    use crate::program::model::lang::register_value::RegisterValue;
     use crate::util::task::TaskMonitor;
     use std::sync::Arc;
 
@@ -88,7 +88,7 @@ mod tests {
             None
         }
 
-        fn get_new_register_value(&self, _old_value: &dyn RegisterValue) -> Option<Box<dyn RegisterValue>> {
+        fn get_new_register_value(&self, _old_value: &RegisterValue) -> Option<RegisterValue> {
             None
         }
 

@@ -48,7 +48,7 @@ use crate::program::model::mem::{Memory, MemoryAccessException};
 use crate::program::model::symbol::{
     ExternalReference, Reference, ReferenceIterator, RefType, SourceType, Symbol,
 };
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::util::exception::NoValueException;
 use crate::util::lock::ReentrantLock;
 use crate::util::saveable::Saveable;
@@ -839,7 +839,7 @@ impl CodeUnitDbBase {
     }
 
     /// Stands in for `CodeUnitDB.getRegisterValue(Register)`.
-    pub fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValue>> {
+    pub fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         let address = self.address();
         self.owner
             .get_program_context()
@@ -876,7 +876,7 @@ impl CodeUnitDbBase {
     /// Stands in for `CodeUnitDB.setRegisterValue(RegisterValue)`.
     pub fn set_register_value(
         &self,
-        value: Box<dyn RegisterValue>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         let address = self.address();
         self.owner
@@ -940,7 +940,7 @@ mod tests {
         SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{RegisterValue};
+    use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use std::sync::Arc;
@@ -1140,7 +1140,7 @@ use crate::program::model::listing::CommentType;
         fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
             None
         }
-        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+        fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
             None
         }
         fn has_value(&self, _register: &Register) -> bool {
@@ -1158,7 +1158,7 @@ use crate::program::model::listing::CommentType;
         }
         fn set_register_value(
             &mut self,
-            _value: Box<dyn RegisterValue>,
+            _value: RegisterValue,
         ) -> Result<(), ContextChangeException> {
             Ok(())
         }

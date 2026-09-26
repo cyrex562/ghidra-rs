@@ -50,7 +50,7 @@ use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::pcode::{OpCode, PcodeOp};
-use crate::program::seam_stubs::RegisterValue as LangRegisterValue;
+use crate::program::model::lang::register_value::RegisterValue as LangRegisterValue;
 use crate::util::Msg;
 
 /// The name of the address space of Java's `Address.NO_ADDRESS`. Duplicated from
@@ -94,7 +94,7 @@ pub struct DecoderExecutor<'d> {
     /// [`flow`](Self::flow) uses: they arrive through [`DisassemblerContext`], which speaks the
     /// former. The two are placeholders for the same unported Java class, and combining across them
     /// is what blocks [`take_target_context`](Self::take_target_context)'s second arm.
-    fut_ctx: HashMap<Address, Box<dyn LangRegisterValue>>,
+    fut_ctx: HashMap<Address, LangRegisterValue>,
 
     /// Every op interpreted during this step, in order. Port of `DecoderExecutor.opsForThisStep`.
     pub(crate) ops_for_this_step: Vec<PcodeOp>,
@@ -831,7 +831,7 @@ impl ProcessorContextView for DecoderExecutor<'_> {
         <Self as DisassemblerContextAdapter>::get_value(self, register, signed)
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn LangRegisterValue>> {
+    fn get_register_value(&self, register: &Register) -> Option<LangRegisterValue> {
         <Self as DisassemblerContextAdapter>::get_register_value(self, register)
     }
 
@@ -851,7 +851,7 @@ impl ProcessorContext for DecoderExecutor<'_> {
 
     fn set_register_value(
         &mut self,
-        value: Box<dyn LangRegisterValue>,
+        value: LangRegisterValue,
     ) -> Result<(), ContextChangeException> {
         <Self as DisassemblerContextAdapter>::set_register_value(self, value)
     }
@@ -862,7 +862,7 @@ impl ProcessorContext for DecoderExecutor<'_> {
 }
 
 impl DisassemblerContext for DecoderExecutor<'_> {
-    fn set_future_register_value(&mut self, address: Address, value: Box<dyn LangRegisterValue>) {
+    fn set_future_register_value(&mut self, address: Address, value: LangRegisterValue) {
         <Self as DisassemblerContextAdapter>::set_future_register_value(self, address, value)
     }
 
@@ -870,7 +870,7 @@ impl DisassemblerContext for DecoderExecutor<'_> {
         &mut self,
         from_addr: Address,
         to_addr: Address,
-        value: Box<dyn LangRegisterValue>,
+        value: LangRegisterValue,
     ) {
         <Self as DisassemblerContextAdapter>::set_future_register_value_for_flow(
             self, from_addr, to_addr, value,
@@ -883,14 +883,14 @@ impl DisassemblerContextAdapter for DecoderExecutor<'_> {
     /// not the processor context.
     ///
     /// Port of `DecoderExecutor.setFutureRegisterValue(Address, RegisterValue)`.
-    fn set_future_register_value(&mut self, address: Address, value: Box<dyn LangRegisterValue>) {
-        if !value.get_register().is_processor_context() {
+    fn set_future_register_value(&mut self, address: Address, value: LangRegisterValue) {
+        if !value.register().is_processor_context() {
             return;
         }
         // Java: `futCtx.compute(address, (a, v) -> v == null ? value : v.combineValues(value))`.
         match self.fut_ctx.remove(&address) {
             Some(existing) => {
-                let combined = existing.combine_values(value.as_ref());
+                let combined = existing.combine_values(&value);
                 self.fut_ctx.insert(address, combined);
             }
             None => {

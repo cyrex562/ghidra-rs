@@ -67,7 +67,7 @@ use crate::program::model::lang::processor_context::ProcessorContext;
 use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::model::listing::data::Data;
 use crate::program::model::listing::program::Program;
@@ -749,7 +749,7 @@ impl ProcessorContextView for DataComponent {
         self.base().base().get_register_bigint_value(register, signed)
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValue>> {
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         self.base().base().get_register_value(register)
     }
 
@@ -765,7 +765,7 @@ impl ProcessorContext for DataComponent {
 
     fn set_register_value(
         &mut self,
-        value: Box<dyn RegisterValue>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         self.base().base().set_register_value(value)
     }

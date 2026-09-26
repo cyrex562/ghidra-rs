@@ -11,7 +11,7 @@ use crate::program::model::lang::processor_context::ProcessorContext;
 use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::context_change_exception::ContextChangeException;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Read only processor context. Any sets to the processor context are ignored.
 ///
@@ -46,7 +46,7 @@ impl ProcessorContextView for ReadOnlyProcessorContext {
         self.context.get_value(register, signed)
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         self.context.get_register_value(register)
     }
 
@@ -69,7 +69,7 @@ impl ProcessorContext for ReadOnlyProcessorContext {
     /// Port of `setRegisterValue(RegisterValue)`: a genuine no-op.
     fn set_register_value(
         &mut self,
-        _value: Box<dyn RegisterValueTrait>,
+        _value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         Ok(())
     }
@@ -132,8 +132,8 @@ mod tests {
         let eax = lang.get_register_by_name("eax").unwrap();
 
         let mut ro = wrap_backing(backing);
-        let rv: Box<dyn RegisterValueTrait> =
-            Box::new(RegisterValue::with_value(eax.clone(), 12345));
+        let rv: RegisterValue =
+            RegisterValue::with_value(eax.clone(), 12345);
         let result = ro.set_register_value(rv);
 
         assert!(result.is_ok());

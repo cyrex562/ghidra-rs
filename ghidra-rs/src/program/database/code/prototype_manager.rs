@@ -17,7 +17,8 @@ use std::io;
 use std::sync::Arc;
 
 use crate::program::model::lang::{InstructionPrototype, Language, ProcessorContextView, Register};
-use crate::program::seam_stubs::{PrototypeManagerProgram, RegisterValue};
+use crate::program::seam_stubs::PrototypeManagerProgram;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::mem::MemBuffer;
 use crate::util::exception::NoValueException;
 
@@ -90,7 +91,7 @@ pub trait PrototypeManager {
         &self,
         prototype: &dyn InstructionPrototype,
         base_context_reg: &Register,
-    ) -> Result<Option<Box<dyn RegisterValue>>, NoValueException>;
+    ) -> Result<Option<RegisterValue>, NoValueException>;
 }
 
 #[cfg(test)]
@@ -192,7 +193,7 @@ mod tests {
             &self,
             prototype: &dyn InstructionPrototype,
             _base_context_reg: &Register,
-        ) -> Result<Option<Box<dyn RegisterValue>>, NoValueException> {
+        ) -> Result<Option<RegisterValue>, NoValueException> {
             for stored in self.by_id.borrow().values() {
                 if std::ptr::eq(
                     stored.prototype.as_ref() as *const dyn InstructionPrototype as *const (),
@@ -458,7 +459,7 @@ mod tests {
             fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
                 None
             }
-            fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+            fn get_register_value(&self, _register: &Register) -> Option<RegisterValue> {
                 None
             }
             fn has_value(&self, _register: &Register) -> bool {

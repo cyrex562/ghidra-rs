@@ -8,7 +8,7 @@ use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::listing::Program;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::util::task::TaskMonitor;
 
 /// Translation capabilities used by `Program::set_language` when converting a program from one
@@ -88,7 +88,7 @@ pub trait LanguageTranslator {
     /// The new register value, or `None` if the register is not mapped.
     ///
     /// See [`LanguageTranslator::is_value_translation_required`].
-    fn get_new_register_value(&self, old_value: &dyn RegisterValue) -> Option<Box<dyn RegisterValue>>;
+    fn get_new_register_value(&self, old_value: &RegisterValue) -> Option<RegisterValue>;
 
     /// Returns `true` if register value translation is required for the program context.
     fn is_value_translation_required(&self, old_reg: &RegisterRef) -> bool;
@@ -205,7 +205,7 @@ mod tests {
             None
         }
 
-        fn get_new_register_value(&self, _old_value: &dyn RegisterValue) -> Option<Box<dyn RegisterValue>> {
+        fn get_new_register_value(&self, _old_value: &RegisterValue) -> Option<RegisterValue> {
             None
         }
 

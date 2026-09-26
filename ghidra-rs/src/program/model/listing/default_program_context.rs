@@ -1,6 +1,6 @@
 use crate::program::model::address::Address;
 use crate::program::model::lang::register::Register;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 
 /// Interface for associating default register values with address ranges.
 ///
@@ -8,11 +8,11 @@ use crate::program::seam_stubs::RegisterValue;
 pub trait DefaultProgramContext {
     /// Associates a default value with the given register over the given range (inclusive of
     /// `end`).
-    fn set_default_value(&mut self, register_value: Box<dyn RegisterValue>, start: &Address, end: &Address);
+    fn set_default_value(&mut self, register_value: RegisterValue, start: &Address, end: &Address);
 
     /// Returns the default value of a register at a given address, or `None` if no default
     /// value has been assigned.
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValue>>;
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue>;
 }
 
 #[cfg(test)]
@@ -20,34 +20,6 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::lang::register::RegisterRef;
-
-    struct MockRegisterValue;
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> RegisterRef {
-            mock_register()
-        }
-
-        fn get_register_value(&self, _register: &Register) -> Box<dyn RegisterValue> {
-            Box::new(MockRegisterValue)
-        }
-
-        fn has_any_value(&self) -> bool {
-            false
-        }
-
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            0
-        }
-
-        fn has_value(&self) -> bool {
-            self.has_any_value()
-        }
-
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-    }
-
     struct MockDefaultProgramContext {
         last_set: Option<(Address, Address)>,
     }
@@ -55,7 +27,7 @@ mod tests {
     impl DefaultProgramContext for MockDefaultProgramContext {
         fn set_default_value(
             &mut self,
-            _register_value: Box<dyn RegisterValue>,
+            _register_value: RegisterValue,
             start: &Address,
             end: &Address,
         ) {
@@ -66,8 +38,8 @@ mod tests {
             &self,
             _register: &Register,
             _address: &Address,
-        ) -> Option<Box<dyn RegisterValue>> {
-            Some(Box::new(MockRegisterValue))
+        ) -> Option<RegisterValue> {
+            Some(RegisterValue::new(mock_register()))
         }
     }
 
@@ -98,7 +70,7 @@ mod tests {
         let start = mock_address(0x100);
         let end = mock_address(0x200);
 
-        ctx.set_default_value(Box::new(MockRegisterValue), &start, &end);
+        ctx.set_default_value(RegisterValue::new(mock_register()), &start, &end);
         assert!(ctx.get_default_value(&reg, &start).is_some());
     }
 }

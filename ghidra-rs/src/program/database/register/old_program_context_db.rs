@@ -52,7 +52,6 @@ use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::context_change_exception::ContextChangeException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::program_context::ProgramContext;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
 use crate::program::util::register_value_store::RegisterValueStore;
 use crate::program::util::RangeMapAdapter;
 use crate::util::lock::ReentrantLock;
@@ -350,11 +349,11 @@ impl ProgramContext for OldProgramContextDB {
         panic!("OldProgramContextDB.hasNonFlowingContext: unsupported (read-only legacy context)");
     }
 
-    fn get_flow_value(&self, _value: Box<dyn RegisterValueTrait>) -> Box<dyn RegisterValueTrait> {
+    fn get_flow_value(&self, _value: RegisterValue) -> RegisterValue {
         panic!("OldProgramContextDB.getFlowValue: unsupported (read-only legacy context)");
     }
 
-    fn get_non_flow_value(&self, _value: Box<dyn RegisterValueTrait>) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_flow_value(&self, _value: RegisterValue) -> Option<RegisterValue> {
         panic!("OldProgramContextDB.getNonFlowValue: unsupported (read-only legacy context)");
     }
 
@@ -387,21 +386,21 @@ impl ProgramContext for OldProgramContextDB {
         panic!("OldProgramContextDB.getValue: unsupported (read-only legacy context)");
     }
 
-    fn get_register_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         let reg = self.resolve(register);
-        Some(Box::new(self.get_register_value_concrete(&reg, address)))
+        Some(self.get_register_value_concrete(&reg, address))
     }
 
     fn set_register_value(
         &mut self,
         _start: &Address,
         _end: &Address,
-        _value: Box<dyn RegisterValueTrait>,
+        _value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
         panic!("OldProgramContextDB.setRegisterValue: unsupported (read-only legacy context)");
     }
 
-    fn get_non_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_non_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         ProgramContext::get_register_value(self, register, address)
     }
 
@@ -483,34 +482,34 @@ impl ProgramContext for OldProgramContextDB {
         panic!("OldProgramContextDB.hasValueOverRange: unsupported (read-only legacy context)");
     }
 
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         let reg = self.resolve(register);
         let key = reg.get_base_register().name().to_string();
         let store = self.default_register_value_map.get(&key)?;
-        store.borrow().get_value(&reg, address).map(|v| Box::new(v) as Box<dyn RegisterValueTrait>)
+        store.borrow().get_value(&reg, address)
     }
 
     fn get_base_context_register(&self) -> RegisterRef {
         self.base_context_register.clone()
     }
 
-    fn get_default_disassembly_context(&self) -> Box<dyn RegisterValueTrait> {
-        Box::new(self.default_disassembly_context.clone())
+    fn get_default_disassembly_context(&self) -> RegisterValue {
+        self.default_disassembly_context.clone()
     }
 
-    fn set_default_disassembly_context(&mut self, value: Box<dyn RegisterValueTrait>) {
-        self.default_disassembly_context = RegisterValue::from_trait_object(value.as_ref());
+    fn set_default_disassembly_context(&mut self, value: RegisterValue) {
+        self.default_disassembly_context = value;
     }
 
-    fn get_disassembly_context(&self, _address: &Address) -> Box<dyn RegisterValueTrait> {
+    fn get_disassembly_context(&self, _address: &Address) -> RegisterValue {
         // Port of `OldProgramContextDB.getDisassemblyContext`: always just the default.
         self.get_default_disassembly_context()
     }
 }
 
 impl DefaultProgramContext for OldProgramContextDB {
-    fn set_default_value(&mut self, register_value: Box<dyn RegisterValueTrait>, start: &Address, end: &Address) {
-        let concrete = RegisterValue::from_trait_object(register_value.as_ref());
+    fn set_default_value(&mut self, register_value: RegisterValue, start: &Address, end: &Address) {
+        let concrete = register_value;
         let base_register = concrete.register().get_base_register();
         let key = base_register.name().to_string();
         if !self.default_register_value_map.contains_key(&key) {
@@ -521,7 +520,7 @@ impl DefaultProgramContext for OldProgramContextDB {
         self.default_register_value_map.get(&key).expect("just ensured").borrow_mut().set_value(start, end, &concrete);
     }
 
-    fn get_default_value(&self, register: &Register, address: &Address) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_default_value(&self, register: &Register, address: &Address) -> Option<RegisterValue> {
         ProgramContext::get_default_value(self, register, address)
     }
 }
@@ -573,13 +572,13 @@ mod tests {
 
         DefaultProgramContext::set_default_value(
             &mut ctx,
-            Box::new(RegisterValue::with_value(r0.clone(), 0x77)),
+            RegisterValue::with_value(r0.clone(), 0x77),
             &addr(&space, 0x0),
             &addr(&space, 0xFFFF),
         );
 
         let got = ProgramContext::get_default_value(&ctx, &r0, &addr(&space, 0x1000)).unwrap();
-        assert_eq!(got.get_unsigned_value_ignore_mask(), 0x77);
+        assert_eq!(got.unsigned_value_ignore_mask(), 0x77);
     }
 
     #[test]
@@ -600,7 +599,7 @@ mod tests {
             &mut ctx,
             &addr(&space, 0x1000),
             &addr(&space, 0x1010),
-            Box::new(RegisterValue::with_value(r0, 1)),
+            RegisterValue::with_value(r0, 1),
         );
     }
 

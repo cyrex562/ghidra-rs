@@ -15,7 +15,6 @@ use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::listing::context_change_exception::ContextChangeException;
-use crate::program::seam_stubs::RegisterValue as RegisterValueTrait;
 
 /// An implementation of processor context which contains the state of all processor registers.
 ///
@@ -85,12 +84,12 @@ impl ProcessorContextView for ProcessorContextImpl {
         self.language.get_registers()
     }
 
-    fn get_register_value(&self, register: &Register) -> Option<Box<dyn RegisterValueTrait>> {
+    fn get_register_value(&self, register: &Register) -> Option<RegisterValue> {
         let reg = self.resolve(register);
         let base = reg.get_base_register();
         let key = base.name().to_string();
         let bytes = self.values.get(&key)?;
-        Some(Box::new(RegisterValue::from_bytes(reg, bytes)))
+        Some(RegisterValue::from_bytes(reg, bytes))
     }
 
     fn get_value(&self, register: &Register, signed: bool) -> Option<i128> {
@@ -123,21 +122,14 @@ impl ProcessorContext for ProcessorContextImpl {
         // `AbstractStoredProgramContext::set_value`'s identical cast, proven by its
         // `set_value_with_negative_i128_round_trips_via_two_s_complement` test).
         let rv = RegisterValue::with_value(reg, value as u128);
-        self.set_register_value(Box::new(rv))
+        self.set_register_value(rv)
     }
 
     fn set_register_value(
         &mut self,
-        value: Box<dyn RegisterValueTrait>,
+        value: RegisterValue,
     ) -> Result<(), ContextChangeException> {
-        // `Box<dyn RegisterValueTrait>` cannot be downcast to the concrete `RegisterValue` in
-        // general (the seam trait carries no `Any` bound); reconstruct it via
-        // `from_trait_object`, the same documented approximation and established precedent as
-        // `AbstractStoredProgramContext::set_register_value` (a genuinely partial foreign mask
-        // degrades to "no value" -- see `register_value.rs`'s module docs). Every real caller in
-        // this crate constructs `RegisterValue` values with either a full mask (`with_value`) or
-        // no mask at all, so this is exact in practice.
-        let concrete = RegisterValue::from_trait_object(value.as_ref());
+        let concrete = value;
         let base_register = concrete.register().get_base_register();
         let key = base_register.name().to_string();
 
@@ -256,7 +248,7 @@ mod tests {
         // The raw combined bits are nonetheless present when read back ignoring the mask.
         let combined = ctx.get_register_value(&eax).unwrap();
         assert!(combined.has_any_value());
-        assert_eq!(combined.get_unsigned_value_ignore_mask(), 0x2211);
+        assert_eq!(combined.unsigned_value_ignore_mask(), 0x2211);
     }
 
     #[test]

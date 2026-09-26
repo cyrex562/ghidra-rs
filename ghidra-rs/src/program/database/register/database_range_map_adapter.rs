@@ -197,10 +197,8 @@ impl RangeMapAdapter for DatabaseRangeMapAdapter {
     ///
     /// 1. **Per-range value translation**: Java rebuilds every stored range by decoding its bytes
     ///    into a `RegisterValue`, translating it via `LanguageTranslator.getNewRegisterValue`,
-    ///    and re-encoding the result via `RegisterValue.toBytes()`. This crate has no concrete
-    ///    `RegisterValue` -- only the object-safe seam trait `crate::program::seam_stubs::RegisterValue`,
-    ///    which exposes neither a bytes constructor nor a serialization method (see the identical
-    ///    blocker on [`InMemoryRangeMapAdapter::set_language`](super::in_memory_range_map_adapter::InMemoryRangeMapAdapter)).
+    ///    and re-encoding the result via `RegisterValue.toBytes()` (see the identical gap on
+    ///    [`InMemoryRangeMapAdapter::set_language`](super::in_memory_range_map_adapter::InMemoryRangeMapAdapter)).
     /// 2. **In-place table rename**: Java renames the live database table to
     ///    `NAME_PREFIX + newBaseRegister.getName()` via `AddressRangeMapDB.setName`. This crate's
     ///    [`Table`](crate::framework::db::Table)/[`DBHandle`] expose no rename operation.

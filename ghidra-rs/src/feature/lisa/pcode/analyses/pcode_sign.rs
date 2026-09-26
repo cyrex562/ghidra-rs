@@ -8,7 +8,7 @@ use crate::feature::lisa::pcode::analyses::pcode_upper_bounds::AsIdentifier;
 use crate::feature::lisa::pcode::analyses::satisfiability::Satisfiability;
 use crate::feature::lisa::pcode::expressions::pcode_binary_expression::PcodeBinaryExpressionOperator;
 use crate::program::model::pcode::OpCode;
-use crate::program::seam_stubs::RegisterValue;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::util::Msg;
 
 /// Stand-in for LiSA's `it.unive.lisa.util.representation.StructuredRepresentation`, narrowed to
@@ -543,10 +543,10 @@ impl PcodeNonRelationalValueDomain<PcodeSign> for PcodeSign {
     ///    named constants) for a truncated value that reads negative. Every nonzero result of this
     ///    method is therefore either indistinguishable-by-value from [`PcodeSign::BOTTOM`], or an
     ///    orphan sign byte that is neither top, bottom, nor any of the three ordinary signs.
-    fn get_value(&self, rv: Option<&dyn RegisterValue>) -> Option<PcodeSign> {
+    fn get_value(&self, rv: Option<&RegisterValue>) -> Option<PcodeSign> {
         if let Some(rv) = rv {
             if rv.has_value() {
-                let val = rv.get_unsigned_value_ignore_mask();
+                let val = rv.unsigned_value_ignore_mask();
                 // Java: `BigInteger.longValue()` -- low 64 bits, reinterpreted as signed.
                 let truncated = (val & 0xFFFF_FFFF_FFFF_FFFFu128) as u64 as i64;
                 if truncated == 0 {
@@ -857,32 +857,29 @@ mod tests {
 
     // ── get_value ─────────────────────────────────────────────────────────────
 
-    struct MockRegisterValue {
-        value: u128,
-        has_value: bool,
-    }
-
-    impl RegisterValue for MockRegisterValue {
-        fn get_register(&self) -> crate::program::model::lang::register::RegisterRef {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn get_register_value(
-            &self,
-            _register: &crate::program::model::lang::register::Register,
-        ) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
-        }
-        fn has_any_value(&self) -> bool {
-            true
-        }
-        fn get_unsigned_value_ignore_mask(&self) -> u128 {
-            self.value
-        }
-        fn has_value(&self) -> bool {
-            self.has_value
-        }
-        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
-            unimplemented!("not exercised by this smoke test")
+    /// A real register value over a 16-byte test register (wide enough for the 128-bit values
+    /// below): fully known (`value`) when `has_value`,
+    /// otherwise carrying no known bits.
+    fn register_value(value: u128, has_value: bool) -> RegisterValue {
+        let space = crate::program::model::address::AddressSpace::new(
+            "register",
+            32,
+            1,
+            crate::program::model::address::AddressSpaceType::Register,
+            0,
+        );
+        let register = crate::program::model::lang::register::Register::new(
+            "r0",
+            "",
+            crate::program::model::address::Address::new(space, 0),
+            16,
+            false,
+            0,
+        );
+        if has_value {
+            RegisterValue::with_value(register, value)
+        } else {
+            RegisterValue::new(register)
         }
     }
 
@@ -895,9 +892,9 @@ mod tests {
     #[test]
     fn get_value_without_a_value_is_top() {
         let d = PcodeSign::TOP;
-        let rv = MockRegisterValue { value: 5, has_value: false };
+        let rv = register_value(5, false);
         assert_eq!(
-            PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)),
+            PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)),
             Some(PcodeSign::TOP)
         );
     }
@@ -906,8 +903,8 @@ mod tests {
     fn get_value_of_zero_register_is_value_equal_to_top_not_zero() {
         // Preserved quirk: see PcodeSign::get_value's own docs.
         let d = PcodeSign::TOP;
-        let rv = MockRegisterValue { value: 0, has_value: true };
-        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)).unwrap();
+        let rv = register_value(0, true);
+        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)).unwrap();
         assert_eq!(result, PcodeSign::TOP);
         assert!(result.is_top());
         assert!(!result.is_zero());
@@ -917,8 +914,8 @@ mod tests {
     fn get_value_of_positive_register_is_value_equal_to_bottom_not_pos() {
         // Preserved quirk: see PcodeSign::get_value's own docs.
         let d = PcodeSign::TOP;
-        let rv = MockRegisterValue { value: 5, has_value: true };
-        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)).unwrap();
+        let rv = register_value(5, true);
+        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)).unwrap();
         assert_eq!(result, PcodeSign::BOTTOM);
         assert!(result.is_bottom());
         assert!(!result.is_positive());
@@ -929,8 +926,8 @@ mod tests {
         // A value whose low 64 bits are all zero (here, exactly 2^64) is treated as zero, even
         // though the true unsigned value is not -- Java's `BigInteger.longValue()` truncation.
         let d = PcodeSign::TOP;
-        let rv = MockRegisterValue { value: 1u128 << 64, has_value: true };
-        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)).unwrap();
+        let rv = register_value(1u128 << 64, true);
+        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)).unwrap();
         assert_eq!(result, PcodeSign::TOP);
     }
 
@@ -938,8 +935,8 @@ mod tests {
     fn get_value_truncation_can_read_as_negative() {
         // Low 64 bits all-ones (u64::MAX) reinterpret as -1 when truncated to a signed long.
         let d = PcodeSign::TOP;
-        let rv = MockRegisterValue { value: u64::MAX as u128, has_value: true };
-        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv as &dyn RegisterValue)).unwrap();
+        let rv = register_value(u64::MAX as u128, true);
+        let result = PcodeNonRelationalValueDomain::get_value(&d, Some(&rv)).unwrap();
         // sign byte -1: matches none of the five named constants.
         assert_ne!(result, PcodeSign::TOP);
         assert_ne!(result, PcodeSign::BOTTOM);
