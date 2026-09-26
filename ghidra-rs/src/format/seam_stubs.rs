@@ -4197,14 +4197,6 @@ pub trait DebugInfoProviderRegistry: Send + Sync {
     fn create(&self, name: &str, context: &dyn std::any::Any) -> Option<Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider>>;
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.FieldContext`,
-/// referenced by `FieldMarkupFunction` before the real class is ported.
-pub trait FieldContext<T>: Send + Sync {
-    fn get_structure_instance(&self) -> &T;
-    fn get_address(&self) -> Address;
-    fn get_value(&self, expected_type: &dyn std::any::Any) -> std::io::Result<Box<dyn std::any::Any>>;
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.MarkupSession`,
 /// referenced by `FieldMarkupFunction` before the real class is ported.
 pub trait MarkupSession: Send + Sync {
@@ -4255,17 +4247,6 @@ pub trait MarkupSession: Send + Sync {
     ) -> Box<dyn std::any::Any>;
     fn add_reference(&self, field_context: &dyn std::any::Any, ref_dest: Address);
     fn log_warning_at(&self, addr: Address, msg: &str);
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.FieldOutputInfo`,
-/// referenced by `FieldOutputFunction` before the real class is ported.
-pub trait FieldOutputInfo<T>: Send + Sync {
-    fn get_field(&self) -> Box<dyn std::any::Any>;
-    fn get_ordinal(&self) -> i32;
-    fn is_variable_length(&self) -> bool;
-    fn get_output_func(&self) -> Option<Box<dyn std::any::Any>>;
-    fn get_value(&self, struct_instance: &T, expected_type: &dyn std::any::Any) -> std::io::Result<Box<dyn std::any::Any>>;
-    fn set_output_func_class(&self, func_class: &dyn std::any::Any, getter_name: Option<&str>);
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.StructureMappingInfo`,

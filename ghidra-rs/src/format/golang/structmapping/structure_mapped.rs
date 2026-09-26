@@ -603,7 +603,7 @@ pub fn nested_structure_data_type_of<X: StructureMapped>(
 pub mod __private {
     pub use super::{
         nested_structure_data_type_of, AfterReadFn, ArrayLenFn, CommentGetterFn, CommentValue,
-        FieldAssignFn, FieldDescriptor, FieldMappingAttr, FieldOutputAttr, FieldReadFn,
+        FieldAssignFn, FieldDescriptor, FieldMappingAttr, FieldOutputAttr, FieldOutputFn, FieldReadFn,
         FieldValue, FieldValueKind, IntoIoResult, IntoOutputDataType, MarkupGetterFn, MarkupTarget,
         NestedDataTypeFn, NestedStructure, OutputDataType, OutputGetterFn, PrimitiveKind,
         ReadStructureFn, ReferenceGetterFn, ReferenceTarget, StructureMapped,

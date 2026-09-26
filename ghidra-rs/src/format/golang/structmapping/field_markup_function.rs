@@ -1,208 +1,93 @@
-use crate::format::seam_stubs::{FieldContext, MarkupSession};
-use crate::program::model::address::Address;
+use std::io;
+
+use super::field_context::FieldContext;
+use super::markup_session::MarkupSession;
+use super::structure_mapped::StructureMapped;
 
 /// A function that decorates a field in a structure mapped class.
 ///
 /// This is the Rust equivalent of the Java `FieldMarkupFunction<T>` functional interface
-/// from `ghidra.app.util.bin.format.golang.structmapping`.
-///
-/// In Java the interface declares a single method:
+/// from `ghidra.app.util.bin.format.golang.structmapping`:
 /// ```java
 /// void markupField(FieldContext<T> fieldContext, MarkupSession markupSession)
 ///     throws IOException, CancelledException;
 /// ```
-/// In Rust this is expressed as a trait with a generic type parameter.
-pub trait FieldMarkupFunction<T> {
+/// Any matching closure or `fn` is a `FieldMarkupFunction`.
+pub trait FieldMarkupFunction<T: StructureMapped> {
     /// Decorates the specified field.
-    ///
-    /// # Arguments
-    ///
-    /// * `field_context` - information about the field being decorated
-    /// * `markup_session` - state and methods to assist marking up the program
     ///
     /// # Errors
     ///
     /// Returns an error if the markup operation fails or is cancelled.
-    fn markup_field(&self, field_context: &dyn FieldContext<T>, markup_session: &dyn MarkupSession) -> Result<(), Box<dyn std::error::Error>>;
+    fn markup_field(&self, field_context: &FieldContext<'_, T>, markup_session: &mut MarkupSession<'_>) -> io::Result<()>;
+}
+
+impl<T, F> FieldMarkupFunction<T> for F
+where
+    T: StructureMapped,
+    F: Fn(&FieldContext<'_, T>, &mut MarkupSession<'_>) -> io::Result<()>,
+{
+    fn markup_field(&self, field_context: &FieldContext<'_, T>, markup_session: &mut MarkupSession<'_>) -> io::Result<()> {
+        self(field_context, markup_session)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::{FieldContext, MarkupSession};
-    use std::any::Any;
-
-    struct TestType {
-        value: i32,
-    }
-
-    struct MockFieldContext {
-        test_value: i32,
-    }
-
-    impl FieldContext<TestType> for MockFieldContext {
-        fn get_structure_instance(&self) -> &TestType {
-            unimplemented!()
-        }
-
-        fn get_address(&self) -> Address {
-            unimplemented!()
-        }
-
-        fn get_value(&self, _expected_type: &dyn Any) -> std::io::Result<Box<dyn Any>> {
-            Ok(Box::new(self.test_value))
-        }
-    }
-
-    struct MockMarkupSession {
-        called: std::sync::Arc<std::sync::Mutex<bool>>,
-    }
-
-    impl MarkupSession for MockMarkupSession {
-        fn get_program(&self) -> Box<dyn crate::program::model::listing::Program> {
-            unimplemented!()
-        }
-
-        fn get_mapping_context(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn get_markedup_addresses(&self) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn markup(&self, _obj: &dyn Any, _nested: bool) -> std::io::Result<()> {
-            *self.called.lock().unwrap() = true;
-            Ok(())
-        }
-
-        fn markup_address(
-            &self,
-            _addr: Address,
-            _dt: &dyn crate::program::model::data::data_type::DataType,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn markup_address_if_undefined(
-            &self,
-            _addr: Address,
-            _dt: &dyn crate::program::model::data::data_type::DataType,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn label_structure(&self, _obj: &dyn Any, _symbol_name: &str, _namespace_name: &str) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn label_address(&self, _addr: Address, _symbol_name: &str) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn label_address_in_namespace(
-            &self,
-            _addr: Address,
-            _symbol_name: &str,
-            _namespace_name: &str,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn append_comment(
-            &self,
-            _field_context: &dyn Any,
-            _comment_type: &dyn Any,
-            _prefix: &str,
-            _comment: &str,
-            _sep: &str,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn markup_structure(&self, _structure_context: &dyn Any, _nested: bool) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn markup_array_element_references(
-            &self,
-            _array_addr: Address,
-            _element_size: i32,
-            _target_addrs: Vec<Address>,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn create_function_if_missing(
-            &self,
-            _name: &str,
-            _ns: &dyn Any,
-            _addr: Address,
-        ) -> Box<dyn Any> {
-            unimplemented!()
-        }
-
-        fn add_reference(&self, _field_context: &dyn Any, _ref_dest: Address) {
-        }
-
-        fn log_warning_at(&self, _addr: Address, _msg: &str) {
-        }
-    }
+    use crate::format::golang::structmapping::mapping_tests::{read_test_functab, TestFunctab};
+    use crate::format::golang::structmapping::StructureMapped as _;
+    use crate::util::task::DummyMonitor;
 
     struct NoOpMarkupFunction;
 
-    impl FieldMarkupFunction<TestType> for NoOpMarkupFunction {
-        fn markup_field(&self, _field_context: &dyn FieldContext<TestType>, _markup_session: &dyn MarkupSession) -> Result<(), Box<dyn std::error::Error>> {
+    impl FieldMarkupFunction<TestFunctab> for NoOpMarkupFunction {
+        fn markup_field(&self, _field_context: &FieldContext<'_, TestFunctab>, _markup_session: &mut MarkupSession<'_>) -> io::Result<()> {
             Ok(())
         }
+    }
+
+    fn with_field_context(f: impl FnOnce(&FieldContext<'_, TestFunctab>, &mut MarkupSession<'_>)) {
+        let (mapper, ft) = read_test_functab();
+        let monitor = DummyMonitor;
+        let mut session = mapper.create_markup_session(&monitor);
+        let ctx = ft.structure_context().unwrap();
+        let fmi = ctx.get_mapping_info().get_field_info("funcoff").unwrap();
+        let field_ctx = ctx.create_field_context(&ft, fmi, None).unwrap();
+        f(&field_ctx, &mut session);
     }
 
     #[test]
     fn markup_function_no_op_succeeds() {
-        let func = NoOpMarkupFunction;
-        let field_ctx = MockFieldContext { test_value: 42 };
-        let markup_session = MockMarkupSession { called: std::sync::Arc::new(std::sync::Mutex::new(false)) };
-
-        let result = func.markup_field(&field_ctx, &markup_session);
-        assert!(result.is_ok());
-    }
-
-    struct FailingMarkupFunction;
-
-    impl FieldMarkupFunction<TestType> for FailingMarkupFunction {
-        fn markup_field(&self, _field_context: &dyn FieldContext<TestType>, _markup_session: &dyn MarkupSession) -> Result<(), Box<dyn std::error::Error>> {
-            Err("markup failed".into())
-        }
+        with_field_context(|fc, session| {
+            assert!(NoOpMarkupFunction.markup_field(fc, session).is_ok());
+            // the field context locates the field: structure at 4, funcOff at +8
+            assert_eq!(fc.get_address().offset(), 12);
+            assert_eq!(fc.get_structure_instance().funcoff, 0xffff_fffe);
+        });
     }
 
     #[test]
     fn markup_function_error_propagates() {
-        let func = FailingMarkupFunction;
-        let field_ctx = MockFieldContext { test_value: 42 };
-        let markup_session = MockMarkupSession { called: std::sync::Arc::new(std::sync::Mutex::new(false)) };
-
-        let result = func.markup_field(&field_ctx, &markup_session);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("markup failed"));
-    }
-
-    struct CallMarkupFunction;
-
-    impl FieldMarkupFunction<TestType> for CallMarkupFunction {
-        fn markup_field(&self, _field_context: &dyn FieldContext<TestType>, markup_session: &dyn MarkupSession) -> Result<(), Box<dyn std::error::Error>> {
-            markup_session.markup(&0 as &dyn Any, false)?;
-            Ok(())
-        }
+        with_field_context(|fc, session| {
+            let failing = |_: &FieldContext<'_, TestFunctab>, _: &mut MarkupSession<'_>| -> io::Result<()> {
+                Err(io::Error::other("markup failed"))
+            };
+            let err = failing.markup_field(fc, session).unwrap_err();
+            assert!(err.to_string().contains("markup failed"));
+        });
     }
 
     #[test]
     fn markup_function_calls_session_method() {
-        let func = CallMarkupFunction;
-        let field_ctx = MockFieldContext { test_value: 42 };
-        let markup_session = MockMarkupSession { called: std::sync::Arc::new(std::sync::Mutex::new(false)) };
-
-        let result = func.markup_field(&field_ctx, &markup_session);
-        assert!(result.is_ok());
-        assert!(*markup_session.called.lock().unwrap());
+        with_field_context(|fc, session| {
+            let adding_ref = |fc: &FieldContext<'_, TestFunctab>, s: &mut MarkupSession<'_>| {
+                let dest = fc.get_address();
+                s.add_reference(fc, dest)
+            };
+            // reached the session: the test program has no reference manager
+            let err = adding_ref.markup_field(fc, session).unwrap_err();
+            assert_eq!(err.to_string(), "Program has no reference manager");
+        });
     }
 }

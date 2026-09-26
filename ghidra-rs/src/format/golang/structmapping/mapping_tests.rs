@@ -37,7 +37,7 @@ impl super::StructureVerifier for TestInner {
     after_read = after_read,
     markup = get_nested
 )]
-struct TestFunctab {
+pub(crate) struct TestFunctab {
     #[context_field]
     context: StructureContext<TestFunctab>,
     #[context_field]
@@ -47,7 +47,7 @@ struct TestFunctab {
     entryoff: i64,
     #[field_mapping(field_name = ["funcOff", "funcoff"], signedness = Unsigned)]
     #[eol_comment]
-    funcoff: u32,
+    pub(crate) funcoff: u32,
     #[field_mapping]
     ptr_to_this: i32,
     #[field_mapping(length = 2, signedness = Unsigned)]
@@ -116,6 +116,15 @@ fn functab_bytes() -> Vec<u8> {
     b.push(0x07); // nested.value
     b.extend_from_slice(&[0xBB; 3]);
     b
+}
+
+/// A mapper with `TestFunctab` registered, and an instance read from [`functab_bytes`] at 4.
+pub(crate) fn read_test_functab() -> (DataTypeMapper, TestFunctab) {
+    let mapper = functab_mapper(vec!["1.18+"]);
+    let mut reader = byte_reader(functab_bytes(), true);
+    reader.set_pointer_index(4);
+    let ft = mapper.read_structure(reader.as_mut()).unwrap();
+    (mapper, ft)
 }
 
 fn functab_mapper(tags: Vec<&'static str>) -> DataTypeMapper {

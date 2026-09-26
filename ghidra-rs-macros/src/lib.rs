@@ -409,13 +409,6 @@ fn parse_field_attrs(field: &syn::Field) -> syn::Result<FieldAttrs> {
     Ok(fa)
 }
 
-fn opt_tokens<T: quote::ToTokens>(o: &Option<T>) -> TokenStream2 {
-    match o {
-        Some(v) => quote!(::core::option::Option::Some(#v)),
-        None => quote!(::core::option::Option::None),
-    }
-}
-
 fn expand(input: &DeriveInput) -> syn::Result<TokenStream2> {
     let name = &input.ident;
     if !input.generics.params.is_empty() {
@@ -503,7 +496,10 @@ fn expand(input: &DeriveInput) -> syn::Result<TokenStream2> {
                     Some(i) if i == "Unspecified" => quote!(__sm::Signedness::Unspecified),
                     Some(i) => return Err(syn::Error::new(i.span(), "expected Signed, Unsigned or Unspecified")),
                 };
-                let rf = opt_tokens(&fm.read_func);
+                let rf = match &fm.read_func {
+                    Some(f) => quote!(::core::option::Option::Some(#f as __sm::FieldReadFn<#name>)),
+                    None => quote!(::core::option::Option::None),
+                };
                 (
                     quote!(::core::option::Option::Some(__sm::FieldMappingAttr {
                         field_names: &[#(#names),*],
@@ -620,7 +616,10 @@ fn expand(input: &DeriveInput) -> syn::Result<TokenStream2> {
                     )),
                     None => quote!(::core::option::Option::None),
                 };
-                let output_func = opt_tokens(&fo.output_func);
+                let output_func = match &fo.output_func {
+                    Some(f) => quote!(::core::option::Option::Some(#f as __sm::FieldOutputFn<#name>)),
+                    None => quote!(::core::option::Option::None),
+                };
                 quote!(::core::option::Option::Some(__sm::FieldOutputAttr {
                     ordinal: #ordinal,
                     offset: #offset,
