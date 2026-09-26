@@ -882,13 +882,18 @@ mod tests {
                 let db = Arc::clone(&db);
                 let stop = Arc::clone(&stop);
                 thread::spawn(move || {
+                    // Take at least one snapshot before checking `stop`: under load the
+                    // writer can finish all its transactions before this thread first runs.
                     let mut seen = 0usize;
-                    while !stop.load(Ordering::SeqCst) {
+                    loop {
                         let snap = db.snapshot();
                         for (id, data) in snap.iter() {
                             assert_eq!(snap.by_name(data.name()), Some(id));
                         }
                         seen += 1;
+                        if stop.load(Ordering::SeqCst) {
+                            break;
+                        }
                     }
                     seen
                 })
