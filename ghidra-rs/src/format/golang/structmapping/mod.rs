@@ -1,21 +1,34 @@
 pub mod after_structure_read;
 pub mod context_field;
+pub mod data_type_mapper;
 pub mod data_type_mapper_context;
 pub mod eol_comment;
+pub mod field_context;
 pub mod field_mapping;
+pub mod field_mapping_info;
 pub mod field_markup_function;
 pub mod field_output;
 pub mod field_output_function;
+pub mod field_output_info;
 pub mod field_read_function;
 pub mod markup;
 pub mod markup_reference;
+pub mod markup_session;
 pub mod plate_comment;
+pub mod reflection_helper;
 pub mod signedness;
+pub mod structure_context;
+pub mod structure_mapped;
 pub mod structure_mapping;
+pub mod structure_mapping_info;
 pub mod structure_markup;
 pub mod structure_markup_function;
 pub mod structure_reader;
 pub mod structure_verifier;
+#[cfg(test)]
+mod mapping_tests;
+#[cfg(test)]
+pub(crate) mod test_support;
 
 pub use after_structure_read::AfterStructureRead;
 pub use context_field::ContextField;
@@ -35,3 +48,13 @@ pub use structure_markup::StructureMarkup;
 pub use structure_markup_function::StructureMarkupFunction;
 pub use structure_reader::StructureReader;
 pub use structure_verifier::StructureVerifier;
+pub use data_type_mapper::DataTypeMapper;
+pub use field_context::FieldContext;
+pub use field_mapping_info::FieldMappingInfo;
+pub use field_output_info::FieldOutputInfo;
+pub use markup_session::MarkupSession;
+pub use structure_context::StructureContext;
+pub use structure_mapped::StructureMapped;
+pub use structure_mapping_info::StructureMappingInfo;
+/// `#[derive(StructureMapped)]`: see the `ghidra-rs-macros` crate docs for its attributes.
+pub use ghidra_rs_macros::StructureMapped;

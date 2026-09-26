@@ -36,14 +36,14 @@ pub struct ItemWithAddress<T> {
 /// (only test mocks exist so far), so [`read_item_from_block`] constructs this minimal one --
 /// mirroring the `GByteStore`-backed constructor of the original `BinaryReader.java` class --
 /// to actually read an item out of a memory section.
-struct ProviderBinaryReader {
+pub(crate) struct ProviderBinaryReader {
     provider: Rc<RefCell<dyn GByteStore>>,
     is_little_endian: bool,
     current_index: u64,
 }
 
 impl ProviderBinaryReader {
-    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
+    pub(crate) fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         ProviderBinaryReader { provider, is_little_endian, current_index: 0 }
     }
 }

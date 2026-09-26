@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# In-workspace derive macros (StructureMapped for golang structmapping; syn/quote approved 2026-09-25)
+ghidra-rs-macros = { path = "../ghidra-rs-macros" }
+
 # UI
 egui = "0.28"
 eframe = "0.28"

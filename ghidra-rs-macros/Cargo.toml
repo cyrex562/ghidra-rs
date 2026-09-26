@@ -1,0 +1,13 @@
+[package]
+name = "ghidra-rs-macros"
+version = "0.1.0"
+edition = "2021"
+description = "Derive macros for ghidra-rs (replaces Java reflection-driven structure mapping)"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"
