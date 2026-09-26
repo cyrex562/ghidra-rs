@@ -799,7 +799,7 @@ impl<T: 'static> PcodeExecutor<T> {
         let op_def = library.get_userops().get(&op_name).cloned();
         if let Some(op_def) = op_def {
             op_def.execute_raw(self, library, op);
-            return Ok(());
+            return hooks.after_userop(self, op, frame, &op_name, library);
         }
         hooks.on_missing_userop_def(self, op, frame, &op_name, library)
     }
@@ -939,6 +939,21 @@ pub trait PcodeExecutorHooks<T: 'static> {
         _executor: &PcodeExecutor<T>,
         _op: &PcodeOp,
         _frame: &PcodeFrame,
+    ) -> Result<(), LowlevelError> {
+        Ok(())
+    }
+
+    /// Called after a userop definition from the library ran without error. An error fails the
+    /// op as if the userop had thrown it. This is where a thread services what a userop asked of
+    /// it (Java's userops call into the thread directly; see
+    /// [`ThreadRequest`](crate::pcode::emu::default_pcode_thread::ThreadRequest)).
+    fn after_userop(
+        &mut self,
+        _executor: &PcodeExecutor<T>,
+        _op: &PcodeOp,
+        _frame: &PcodeFrame,
+        _op_name: &str,
+        _library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<(), LowlevelError> {
         Ok(())
     }

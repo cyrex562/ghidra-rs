@@ -803,4 +803,130 @@ mod tests {
         thread.override_counter(&ram.address(0x1000));
         thread.step_instruction();
     }
+
+    /// The Sleigh fixture machine with this program loaded, and one thread at 0x1000:
+    ///
+    /// ```text
+    /// 0x1000: 11 2a   mov r1, 0x2a
+    /// 0x1002: 10 07   mov r0, 7
+    /// ```
+    fn injectable() -> (PcodeEmulator, Arc<crate::program::model::address::AddressSpace>, Arc<crate::program::model::address::AddressSpace>) {
+        use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
+        use crate::program::model::address::AddressFactory;
+
+        let language = decode_tests::language();
+        let register = language.get_address_factory().get_address_space_by_name("register").unwrap();
+        let ram = Language::get_default_space(language.as_ref());
+        let mut emulator = PcodeEmulator::with_thread_decoding(
+            Arc::clone(&language),
+            no_pcode_emulation_callbacks(),
+            thread_decoding(Arc::clone(&language), Arc::clone(&register)),
+        );
+        emulator.get_shared_state_mut().set_var(&ram, 0x1000, 4, false, &vec![0x11, 0x2a, 0x10, 0x07]);
+        emulator.new_thread().override_counter(&ram.address(0x1000));
+        (emulator, ram, register)
+    }
+
+    fn reg(thread: &BytesPcodeThread, register: &Arc<crate::program::model::address::AddressSpace>, offset: i64) -> Vec<u8> {
+        use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
+        thread.get_state().get_var(register, offset, 4, false, Reason::Inspect)
+    }
+
+    fn only_thread(emulator: &mut PcodeEmulator) -> &mut BytesPcodeThread {
+        let name = emulator.get_all_threads()[0].get_name().to_string();
+        emulator.get_thread(&name, false).unwrap()
+    }
+
+    #[test]
+    fn an_inject_runs_before_the_instruction_it_executes() {
+        let (mut emulator, ram, register) = injectable();
+        let thread = only_thread(&mut emulator);
+        // r1 = 1 runs first; the instruction then overwrites r1; r0 = r1 sees the instruction's 0x2a.
+        thread.inject(&ram.address(0x1000), "r1 = 1; r0 = r1 + 1; emu_exec_decoded(); r0 = r0 + r1;");
+        thread.step_instruction();
+        assert_eq!(vec![0, 0, 0, 0x2a], reg(thread, &register, 4));
+        assert_eq!(vec![0, 0, 0, 0x2c], reg(thread, &register, 0));
+        // The executed instruction fell through, and the inject's frame is gone.
+        assert_eq!(0x1002, thread.get_counter().offset());
+        assert!(thread.get_frame().is_none());
+        assert!(thread.get_instruction().is_none());
+
+        // No inject at 0x1002: the instruction there executes normally.
+        thread.step_instruction();
+        assert_eq!(vec![0, 0, 0, 7], reg(thread, &register, 0));
+    }
+
+    #[test]
+    fn an_inject_steps_op_by_op_through_the_executed_instruction() {
+        let (mut emulator, ram, register) = injectable();
+        let thread = only_thread(&mut emulator);
+        thread.inject(&ram.address(0x1000), "r0 = 5; emu_exec_decoded();");
+        thread.step_pcode_op(); // begin the inject
+        assert!(thread.get_frame().is_some());
+        thread.step_pcode_op(); // r0 = 5
+        assert_eq!(vec![0, 0, 0, 5], reg(thread, &register, 0));
+        thread.step_pcode_op(); // emu_exec_decoded: the whole instruction, then back to the inject
+        assert_eq!(vec![0, 0, 0, 0x2a], reg(thread, &register, 4));
+        assert_eq!(0x1002, thread.get_counter().offset());
+        assert!(thread.get_frame().is_some_and(|f| f.is_finished()));
+        thread.step_pcode_op(); // the finished inject resolves; the counter stays where it went
+        assert!(thread.get_frame().is_none());
+        assert_eq!(0x1002, thread.get_counter().offset());
+    }
+
+    #[test]
+    fn an_inject_may_skip_the_instruction() {
+        let (mut emulator, ram, register) = injectable();
+        let thread = only_thread(&mut emulator);
+        thread.inject(&ram.address(0x1000), "r0 = 9; emu_skip_decoded();");
+        thread.step_instruction();
+        assert_eq!(vec![0, 0, 0, 9], reg(thread, &register, 0));
+        assert_eq!(vec![0, 0, 0, 0], reg(thread, &register, 4), "the instruction did not execute");
+        assert_eq!(0x1002, thread.get_counter().offset());
+    }
+
+    #[test]
+    fn an_inject_that_neither_executes_nor_skips_stays_put() {
+        let (mut emulator, ram, register) = injectable();
+        let thread = only_thread(&mut emulator);
+        thread.inject(&ram.address(0x1000), "r0 = r0 + 1;");
+        thread.step_instruction();
+        thread.step_instruction();
+        assert_eq!(vec![0, 0, 0, 2], reg(thread, &register, 0));
+        assert_eq!(0x1000, thread.get_counter().offset());
+    }
+
+    /// Java's `addBreakpoint`: `emu_swi()` interrupts with the inject's frame recorded, so the
+    /// thread resumes by finishing the inject, which executes the instruction.
+    #[test]
+    fn a_breakpoint_interrupts_and_resumes_into_the_instruction() {
+        use crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException;
+        use std::panic::{self, AssertUnwindSafe};
+
+        let (mut emulator, ram, register) = injectable();
+        emulator.add_breakpoint(&ram.address(0x1000), "1:1");
+        let thread = only_thread(&mut emulator);
+        let hit = panic::catch_unwind(AssertUnwindSafe(|| thread.step_instruction()));
+        let message = hit.expect_err("the breakpoint interrupts");
+        let message = message.downcast_ref::<String>().cloned().unwrap_or_default();
+        assert_eq!(InterruptPcodeExecutionException::MESSAGE, message);
+        assert_eq!(0x1000, thread.get_counter().offset());
+        assert!(thread.get_frame().is_some(), "the inject's frame is recorded, as in Java");
+        assert_eq!(vec![0, 0, 0, 0], reg(thread, &register, 4));
+
+        thread.finish_instruction();
+        assert_eq!(vec![0, 0, 0, 0x2a], reg(thread, &register, 4));
+        assert_eq!(0x1002, thread.get_counter().offset());
+        assert!(thread.get_frame().is_none());
+    }
+
+    #[test]
+    fn suspension_set_through_the_core_is_the_executors() {
+        let (mut emulator, _ram, _register) = injectable();
+        let thread = only_thread(&mut emulator);
+        thread.core().set_suspended(true);
+        assert!(thread.is_suspended());
+        thread.set_suspended(false);
+        assert!(!thread.core().is_suspended());
+    }
 }

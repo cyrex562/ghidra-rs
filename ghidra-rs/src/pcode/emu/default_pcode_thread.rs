@@ -67,6 +67,7 @@
 
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::pcode::emu::abstract_pcode_machine::PcodeMachineShared;
@@ -111,14 +112,17 @@ use crate::util::Msg;
 ///
 /// Java binds one of these to each thread and calls back into it. A Rust userop callback is an
 /// `Fn` stored *inside* the library, which is in turn owned by the thread, so it cannot capture
-/// that thread; this library binds to the machine instead. The two userops that only need the
-/// machine -- `emu_swi` and `emu_injection_err` -- are therefore faithful, while the two that drive
-/// the owning thread -- `emu_exec_decoded` and `emu_skip_decoded` -- are declared (so Sleigh
-/// compiled against this library still links, which is all the machine's *stub* library ever needs)
-/// but panic if actually executed.
+/// that thread. The two userops that only need the machine -- `emu_swi` and `emu_injection_err` --
+/// act on the machine directly. The two that drive the owning thread -- `emu_exec_decoded` and
+/// `emu_skip_decoded` -- post a [`ThreadRequest`] to the thread's [`ThreadRequests`], which the
+/// thread services as soon as the userop returns, before the next p-code op, exactly where Java's
+/// call into the thread would have run. A library bound to no thread (the machine's *stub* library,
+/// which only ever needs to declare the userops so Sleigh compiled against it links) panics if one
+/// of those two is actually executed, as Java's would dereferencing its `null` thread.
 pub struct PcodeEmulationLibrary<T: 'static> {
     base: AnnotatedPcodeUseropLibraryBase<T>,
     machine: Option<Arc<PcodeMachineShared<T>>>,
+    thread: Option<Arc<ThreadRequests>>,
 }
 
 impl<T: 'static> PcodeEmulationLibrary<T> {
@@ -128,7 +132,18 @@ impl<T: 'static> PcodeEmulationLibrary<T> {
     /// thread -- see the struct docs. `None` is Java's `new PcodeEmulationLibrary<>(null)`, i.e.
     /// the declaration-only library a machine uses as its thread stub library.
     pub fn new(machine: Option<Arc<PcodeMachineShared<T>>>) -> Self {
-        let mut library = Self { base: AnnotatedPcodeUseropLibraryBase::new(), machine };
+        Self::bound(machine, None)
+    }
+
+    /// Construct the library of one thread: `requests` is that thread's
+    /// [`ThreadCore::thread_requests`], through which `emu_exec_decoded` and `emu_skip_decoded`
+    /// drive it. Port of `PcodeEmulationLibrary(DefaultPcodeThread<T>)` for a real thread.
+    pub fn for_thread(machine: Arc<PcodeMachineShared<T>>, requests: Arc<ThreadRequests>) -> Self {
+        Self::bound(Some(machine), Some(requests))
+    }
+
+    fn bound(machine: Option<Arc<PcodeMachineShared<T>>>, thread: Option<Arc<ThreadRequests>>) -> Self {
+        let mut library = Self { base: AnnotatedPcodeUseropLibraryBase::new(), machine, thread };
         library.init();
         library
     }
@@ -154,6 +169,10 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
 
     fn collect_definitions(&self) -> Vec<AnnotatedPcodeUseropDefinition<T>> {
         let swi_machine = self.machine.clone();
+        let exec_thread = self.thread.clone();
+        let skip_thread = self.thread.clone();
+        let swi_thread = self.thread.clone();
+        let err_thread = self.thread.clone();
         vec![
             // Execute the actual machine instruction at the current program counter. Because
             // "injects" override the machine instruction, injects which need to defer to the
@@ -163,11 +182,12 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
                 PcodeUserop::default(),
                 UseropInputs::Fixed(vec![]),
                 UseropValueKind::Void,
-                Box::new(|_ctx, _args| {
-                    unimplemented!(
-                        "emu_exec_decoded must drive the thread that owns this library; \
-                         see PcodeEmulationLibrary's docs"
-                    )
+                Box::new(move |_ctx, _args| {
+                    exec_thread
+                        .as_ref()
+                        .expect("emu_exec_decoded invoked on a library bound to no thread")
+                        .post(ThreadRequest::ExecDecoded);
+                    None
                 }),
             ),
             // Advance the program counter beyond the current machine instruction, without
@@ -179,11 +199,12 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
                 PcodeUserop::default(),
                 UseropInputs::Fixed(vec![]),
                 UseropValueKind::Void,
-                Box::new(|_ctx, _args| {
-                    unimplemented!(
-                        "emu_skip_decoded must drive the thread that owns this library; \
-                         see PcodeEmulationLibrary's docs"
-                    )
+                Box::new(move |_ctx, _args| {
+                    skip_thread
+                        .as_ref()
+                        .expect("emu_skip_decoded invoked on a library bound to no thread")
+                        .post(ThreadRequest::SkipDecoded);
+                    None
                 }),
             ),
             // Interrupt execution. To implement out-of-band breakpoints, inject an invocation of
@@ -198,7 +219,7 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
                         .as_ref()
                         .expect("emu_swi invoked on a library bound to no machine");
                     if let Err(e) = machine.swi() {
-                        panic!("{}", e.message());
+                        raise(swi_thread.as_deref(), e.message());
                     }
                     None
                 }),
@@ -211,11 +232,69 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
                 PcodeUserop { functional: true, ..PcodeUserop::default() },
                 UseropInputs::Fixed(vec![]),
                 UseropValueKind::Void,
-                Box::new(|_ctx, _args| {
-                    panic!("{}", InjectionErrorPcodeExecutionException::new_without_frame().message())
+                Box::new(move |_ctx, _args| {
+                    let e = InjectionErrorPcodeExecutionException::new_without_frame();
+                    raise(err_thread.as_deref(), e.message());
+                    None
                 }),
             ),
         ]
+    }
+}
+
+/// Throw `message` out of a userop: through the thread, which fails the op with it (so the frame
+/// is recorded, as Java records it for any exception escaping an op), or, for a library bound to no
+/// thread, as a panic.
+fn raise(thread: Option<&ThreadRequests>, message: &str) {
+    match thread {
+        Some(thread) => thread.post(ThreadRequest::Raise(message.to_string())),
+        None => panic!("{message}"),
+    }
+}
+
+/// Something a userop asked of the thread executing it.
+///
+/// Java's userops that control a thread call its methods directly (`thread.executeInstruction()`).
+/// A Rust userop cannot reach the thread that owns its library (see [`PcodeEmulationLibrary`]), so
+/// it posts one of these to the thread's [`ThreadRequests`] instead; the thread services it as
+/// soon as the userop returns, before the next op, and an error from servicing fails the userop's
+/// op as the Java call would have thrown out of it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ThreadRequest {
+    /// `emu_exec_decoded()`: execute the decoded machine instruction at the counter, as
+    /// `thread.dropInstruction(); thread.executeInstruction();` with the frame restored after.
+    ExecDecoded,
+    /// `emu_skip_decoded()`: advance the counter past the machine instruction without executing
+    /// it, as `thread.dropInstruction(); thread.skipInstruction();` with the frame restored after.
+    SkipDecoded,
+    /// Fail the userop's op with this message: the userop threw. `emu_swi` and
+    /// `emu_injection_err` raise their interrupts this way, so the thread records its frame and
+    /// can resume after them, as in Java.
+    Raise(String),
+    /// A request for the thread's [`ThreadHooks`], by name, serviced by
+    /// [`ThreadHooks::on_thread_request`]: what a userop of a subclass's library does when Java's
+    /// body reaches into the subclass (e.g. `AdaptedEmulator`'s `__addr_cb`).
+    Hooks(String),
+}
+
+/// The requests posted by the userops of one thread's libraries; see [`ThreadRequest`].
+///
+/// Shared (by `Arc`) between the thread and the userop callbacks, which are `'static` closures
+/// stored in libraries the thread owns.
+#[derive(Debug, Default)]
+pub struct ThreadRequests {
+    pending: Mutex<Vec<ThreadRequest>>,
+}
+
+impl ThreadRequests {
+    /// Ask the thread to act once the current userop returns.
+    pub fn post(&self, request: ThreadRequest) {
+        self.pending.lock().expect("thread requests poisoned").push(request);
+    }
+
+    /// Take every pending request, in the order posted.
+    pub fn take(&self) -> Vec<ThreadRequest> {
+        std::mem::take(&mut *self.pending.lock().expect("thread requests poisoned"))
     }
 }
 
@@ -235,10 +314,11 @@ impl<T: 'static> AnnotatedPcodeUseropLibrary<T> for PcodeEmulationLibrary<T> {
 /// subclass does its work and calls `super`. Its `before_*` points run ahead of the thread
 /// executor's and its `after_*` points behind them; see [`with_extension`](Self::with_extension).
 pub struct PcodeThreadExecutor<T: 'static> {
-    /// Java declares this `volatile`, for a thread suspending another that is stepping.
-    /// [`PcodeThread::set_suspended`] takes `&mut self`, so exclusive access is already required to
-    /// write it and a plain `bool` suffices.
-    suspended: bool,
+    /// Java declares this `volatile`, for a thread suspending another that is stepping -- or a
+    /// userop or breakpoint suspending its own thread mid-step. The flag is shared with the owning
+    /// thread's [`ThreadCore`] (see [`ThreadCore::set_suspended`]), which is how the latter reaches
+    /// it while the executor is busy.
+    suspended: Arc<AtomicBool>,
     executor: PcodeExecutor<T>,
     /// The executor "subclass", if any. `()` is Java's plain `PcodeThreadExecutor`.
     extension: Box<dyn PcodeExecutorHooks<T>>,
@@ -256,7 +336,7 @@ impl<T: 'static> PcodeThreadExecutor<T> {
         state: Arc<Mutex<dyn PcodeExecutorState<T>>>,
     ) -> Self {
         Self {
-            suspended: false,
+            suspended: Arc::new(AtomicBool::new(false)),
             executor: PcodeExecutor::new(language, arithmetic, state, Reason::ExecuteRead),
             extension: Box::new(()),
         }
@@ -292,12 +372,12 @@ impl<T: 'static> PcodeThreadExecutor<T> {
 
     /// Whether this executor is refusing to step.
     pub fn is_suspended(&self) -> bool {
-        self.suspended
+        self.suspended.load(Ordering::SeqCst)
     }
 
     /// Set whether this executor refuses to step.
     pub fn set_suspended(&mut self, suspended: bool) {
-        self.suspended = suspended;
+        self.suspended.store(suspended, Ordering::SeqCst);
     }
 }
 
@@ -377,6 +457,17 @@ where
         false
     }
 
+    /// Service a [`ThreadRequest::Hooks`] request, posted by a userop of a library these hooks
+    /// installed (see [`create_userop_library`](Self::create_userop_library)). An error fails the
+    /// userop's op. The base thread installs no such userops, so the default refuses the request.
+    fn on_thread_request(
+        &mut self,
+        _thread: &mut ThreadCore<T, S, L>,
+        request: &str,
+    ) -> Result<(), LowlevelError> {
+        Err(LowlevelError::with_message(format!("No thread hooks service the request '{request}'")))
+    }
+
     /// Port of `overrideCounter(Address)`: set the counter and write the pc register of the
     /// thread's state. Java's base implementation is [`ThreadCore::write_counter`].
     ///
@@ -426,6 +517,14 @@ where
     frame: Option<PcodeFrame>,
     default_context: Option<ProgramContextImpl>,
     injects: HashMap<Address, Arc<PcodeProgram>>,
+    /// The executor's suspension flag, shared with it; see [`PcodeThreadExecutor`].
+    suspended: Arc<AtomicBool>,
+    /// What this thread's userops asked of it; see [`ThreadRequest`].
+    requests: Arc<ThreadRequests>,
+    /// The frame of an instruction executed by `emu_exec_decoded` that failed. Java records it as
+    /// the thread's frame on the way out (`frame = e.getFrame()` in `executeInstruction`), where
+    /// the enclosing inject's handler must not overwrite it; see [`ThreadCore::settle_frame`].
+    nested_frame: Option<PcodeFrame>,
 }
 
 impl<T: 'static, S, L> ThreadCore<T, S, L>
@@ -436,6 +535,32 @@ where
     /// Get the name of this thread. Port of `getName()`.
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+
+    /// Whether the thread's executor is refusing to step. Port of `isSuspended()`, reachable while
+    /// the executor is mid-step.
+    pub fn is_suspended(&self) -> bool {
+        self.suspended.load(Ordering::SeqCst)
+    }
+
+    /// Set whether the thread's executor refuses to step. Port of `setSuspended(boolean)`,
+    /// reachable while the executor is mid-step (e.g. from a breakpoint), when Java's `volatile`
+    /// write is seen by the executor's very next op.
+    pub fn set_suspended(&self, suspended: bool) {
+        self.suspended.store(suspended, Ordering::SeqCst);
+    }
+
+    /// The channel through which the userops of this thread's libraries drive it. A hooks type
+    /// installing a library of its own (see [`ThreadHooks::create_userop_library`]) gives it this
+    /// to post [`ThreadRequest::Hooks`] requests.
+    pub fn thread_requests(&self) -> &Arc<ThreadRequests> {
+        &self.requests
+    }
+
+    /// Settle the frame after a failed step: the frame of a failed nested instruction (see
+    /// `nested_frame`) wins over `frame`, the one the failing call itself was running.
+    fn settle_frame(&mut self, frame: Option<PcodeFrame>) {
+        self.frame = self.nested_frame.take().or(frame);
     }
 
     /// The machine this thread executes within, as its threads share it. Port of the `machine`
@@ -769,8 +894,6 @@ where
     core: &'a mut ThreadCore<T, S, L>,
     hooks: &'a mut H,
     extension: &'a mut dyn PcodeExecutorHooks<T>,
-    /// The executor's own suspension flag, which cannot change while it is stepping.
-    suspended: bool,
 }
 
 /// Carry an interrupt out of an executor hook, which reports errors as [`LowlevelError`]s.
@@ -791,7 +914,7 @@ where
         frame: &PcodeFrame,
     ) -> Result<(), LowlevelError> {
         self.extension.before_step_op(executor, op, frame)?;
-        if self.suspended || self.core.machine.is_suspended() {
+        if self.core.is_suspended() || self.core.machine.is_suspended() {
             // Java: `throw new SuspendedPcodeExecutionException(frame, null)`.
             return Err(LowlevelError::with_message(
                 SuspendedPcodeExecutionException::new(frame.clone()).message().to_string(),
@@ -884,6 +1007,27 @@ where
         self.extension.before_conditional_branch(executor, op, frame)
     }
 
+    /// Service what the userop asked of this thread (see [`ThreadRequest`]), then the extension's
+    /// own advice.
+    fn after_userop(
+        &mut self,
+        executor: &PcodeExecutor<T>,
+        op: &PcodeOp,
+        frame: &PcodeFrame,
+        op_name: &str,
+        library: &dyn PcodeUseropLibrary<T>,
+    ) -> Result<(), LowlevelError> {
+        for request in self.core.requests.take() {
+            match request {
+                ThreadRequest::ExecDecoded => self.exec_decoded(executor, library)?,
+                ThreadRequest::SkipDecoded => self.skip_decoded(),
+                ThreadRequest::Raise(message) => return Err(LowlevelError::with_message(message)),
+                ThreadRequest::Hooks(name) => self.hooks.on_thread_request(self.core, &name)?,
+            }
+        }
+        self.extension.after_userop(executor, op, frame, op_name, library)
+    }
+
     fn on_missing_userop_def(
         &mut self,
         executor: &PcodeExecutor<T>,
@@ -900,6 +1044,58 @@ where
             return Ok(());
         }
         self.extension.on_missing_userop_def(executor, op, frame, op_name, library)
+    }
+}
+
+impl<T: 'static, S, L, H> ThreadExecutorBridge<'_, T, S, L, H>
+where
+    S: PcodeExecutorState<T> + 'static,
+    L: PcodeExecutorState<T> + 'static,
+    H: ThreadHooks<T, S, L>,
+{
+    /// The body of `PcodeEmulationLibrary.emu_exec_decoded()`: set the current frame aside,
+    /// execute the decoded instruction at the counter (Java's `executeInstruction()`, run through
+    /// this same bridge), then restore the frame. As in Java, the frame is restored only on
+    /// success; a failure leaves the instruction's own frame to be recorded (see
+    /// [`ThreadCore::settle_frame`]).
+    fn exec_decoded(
+        &mut self,
+        executor: &PcodeExecutor<T>,
+        library: &dyn PcodeUseropLibrary<T>,
+    ) -> Result<(), LowlevelError> {
+        let saved = self.core.frame.take();
+        let cb = Arc::clone(self.core.machine.callbacks());
+        let counter = self.core.counter.clone();
+        cb.before_decode_instruction(&*self.core, &counter, self.core.context.as_ref());
+        self.core.decode_instruction(&counter);
+        let instruction = self.core.require_instruction();
+        let ins_prog = PcodeProgram::from_instruction(instruction.as_ref());
+        self.hooks.pre_execute_instruction(self.core);
+        cb.before_execute_instruction(&*self.core, instruction.as_ref(), &ins_prog);
+        match executor.execute_hooked(&ins_prog, library, self) {
+            Ok(frame) => self.core.frame = Some(frame),
+            Err(e) => {
+                let message = e.message().to_string();
+                self.core.nested_frame = e.into_frame().map(|frame| *frame);
+                return Err(LowlevelError::with_message(message));
+            }
+        }
+        advance_after_finished(self.core, self.hooks);
+        self.core.frame = saved;
+        Ok(())
+    }
+
+    /// The body of `PcodeEmulationLibrary.emu_skip_decoded()`: set the current frame aside, skip
+    /// the decoded instruction at the counter (Java's `skipInstruction()`), then restore the frame.
+    fn skip_decoded(&mut self) {
+        let saved = self.core.frame.take();
+        let cb = Arc::clone(self.core.machine.callbacks());
+        let counter = self.core.counter.clone();
+        cb.before_decode_instruction(&*self.core, &counter, self.core.context.as_ref());
+        self.core.decode_instruction(&counter);
+        let advanced = counter.add_wrap(self.core.decoder.get_last_length_with_delays() as i64);
+        self.hooks.override_counter(self.core, &advanced);
+        self.core.frame = saved;
     }
 }
 
@@ -988,13 +1184,18 @@ where
             frame: None,
             default_context,
             injects: HashMap::new(),
+            suspended: Arc::new(AtomicBool::new(false)),
+            requests: Arc::new(ThreadRequests::default()),
+            nested_frame: None,
         };
 
         // Java's default `createUseropLibrary()`.
-        let base_library = PcodeEmulationLibrary::new(Some(Arc::clone(&core.machine)))
-            .compose(core.machine.get_userop_library());
+        let base_library =
+            PcodeEmulationLibrary::for_thread(Arc::clone(&core.machine), Arc::clone(&core.requests))
+                .compose(core.machine.get_userop_library());
         let library = hooks.create_userop_library(&core, base_library);
-        let executor = hooks.create_executor(&core);
+        let mut executor = hooks.create_executor(&core);
+        executor.suspended = Arc::clone(&core.suspended);
 
         let mut thread = Self { core, executor, library, hooks };
         thread.core.re_initialize();
@@ -1122,41 +1323,7 @@ where
     /// Port of `advanceAfterFinished()`: resolve a finished instruction, advancing the program
     /// counter if necessary.
     pub fn advance_after_finished(&mut self) {
-        let cb = Arc::clone(self.core.machine.callbacks());
-        let counter = self.core.counter.clone();
-        let Some(instruction) = self.core.instruction.clone() else {
-            // The frame resulted from an inject.
-            cb.after_execute_inject(&*self, &counter);
-            self.core.frame = None;
-            return;
-        };
-        if self.core.frame.as_ref().is_some_and(PcodeFrame::is_fall_through) {
-            let advanced =
-                counter.add_wrap(self.core.decoder.get_last_length_with_delays() as i64);
-            self.core.write_counter(&advanced);
-        }
-        if let Some(contextreg) = self.core.contextreg.clone() {
-            let counter = self.core.counter.clone();
-            let default_context =
-                self.core.default_context.as_ref().expect("a context register implies a default context");
-            let mut ctx = RegisterValue::with_value(contextreg.clone(), 0);
-            if let Some(default_value) =
-                DefaultProgramContext::get_default_value(default_context, &contextreg, &counter)
-            {
-                ctx = ctx.combine_values(&default_value);
-            }
-            if let Some(context) = self.core.context.clone() {
-                ctx = ctx.combine_values(&ProgramContext::get_flow_value(default_context, context));
-            }
-            if let Some(committed) = get_context_after_commits(instruction.as_ref(), counter.offset()) {
-                ctx = ctx.combine_values(&committed);
-            }
-            self.core.write_context(Some(&ctx));
-        }
-        self.hooks.post_execute_instruction(&mut self.core);
-        cb.after_execute_instruction(&*self, instruction.as_ref());
-        self.core.frame = None;
-        self.core.instruction = None;
+        advance_after_finished(&mut self.core, &mut self.hooks);
     }
 
     /// Run `f` against the executor, with this thread's executor overrides bridged in. This is
@@ -1170,12 +1337,7 @@ where
         ) -> R,
     ) -> R {
         let Self { core, executor, library, hooks } = self;
-        let mut bridge = ThreadExecutorBridge {
-            core,
-            hooks,
-            extension: executor.extension.as_mut(),
-            suspended: executor.suspended,
-        };
+        let mut bridge = ThreadExecutorBridge { core, hooks, extension: executor.extension.as_mut() };
         f(&executor.executor, library.as_ref(), &mut bridge)
     }
 
@@ -1190,9 +1352,55 @@ where
     /// Record the frame of a failed execution as Java does (`frame = e.getFrame()`), then rethrow.
     fn record_and_rethrow(&mut self, e: PcodeExecutionException) -> ! {
         let message = e.message().to_string();
-        self.core.frame = e.into_frame().map(|frame| *frame);
+        self.core.settle_frame(e.into_frame().map(|frame| *frame));
         panic!("{message}");
     }
+}
+
+/// Port of `advanceAfterFinished()` over a thread's disjoint parts, so the thread and a nested
+/// `emu_exec_decoded` (which runs while the executor is busy) share it. The core stands for the
+/// thread in the callbacks, as it does in every callback fired mid-step.
+fn advance_after_finished<T: 'static, S, L, H>(core: &mut ThreadCore<T, S, L>, hooks: &mut H)
+where
+    S: PcodeExecutorState<T> + 'static,
+    L: PcodeExecutorState<T> + 'static,
+    H: ThreadHooks<T, S, L>,
+{
+    let cb = Arc::clone(core.machine.callbacks());
+    let counter = core.counter.clone();
+    let Some(instruction) = core.instruction.clone() else {
+        // The frame resulted from an inject.
+        cb.after_execute_inject(&*core, &counter);
+        core.frame = None;
+        return;
+    };
+    if core.frame.as_ref().is_some_and(PcodeFrame::is_fall_through) {
+        let advanced =
+            counter.add_wrap(core.decoder.get_last_length_with_delays() as i64);
+        core.write_counter(&advanced);
+    }
+    if let Some(contextreg) = core.contextreg.clone() {
+        let counter = core.counter.clone();
+        let default_context =
+            core.default_context.as_ref().expect("a context register implies a default context");
+        let mut ctx = RegisterValue::with_value(contextreg.clone(), 0);
+        if let Some(default_value) =
+            DefaultProgramContext::get_default_value(default_context, &contextreg, &counter)
+        {
+            ctx = ctx.combine_values(&default_value);
+        }
+        if let Some(context) = core.context.clone() {
+            ctx = ctx.combine_values(&ProgramContext::get_flow_value(default_context, context));
+        }
+        if let Some(committed) = get_context_after_commits(instruction.as_ref(), counter.offset()) {
+            ctx = ctx.combine_values(&committed);
+        }
+        core.write_context(Some(&ctx));
+    }
+    hooks.post_execute_instruction(core);
+    cb.after_execute_instruction(&*core, instruction.as_ref());
+    core.frame = None;
+    core.instruction = None;
 }
 
 /// Port of the static `getContextAfterCommits(Instruction, long)`: the context the decoded
@@ -1430,9 +1638,12 @@ where
         }
         let result =
             self.with_executor(|executor, library, hooks| executor.step_hooked(&mut frame, library, hooks));
-        self.core.frame = Some(frame);
-        if let Err(e) = result {
-            panic!("{}", e.message());
+        match result {
+            Ok(()) => self.core.frame = Some(frame),
+            Err(e) => {
+                self.core.settle_frame(Some(frame));
+                panic!("{}", e.message());
+            }
         }
     }
 
@@ -1486,9 +1697,12 @@ where
         let mut frame = self.core.frame.take().expect("frame present per assert");
         let result = self
             .with_executor(|executor, library, hooks| executor.finish_hooked(&mut frame, library, hooks));
-        self.core.frame = Some(frame);
-        if let Err(e) = result {
-            panic!("{}", e.message());
+        match result {
+            Ok(()) => self.core.frame = Some(frame),
+            Err(e) => {
+                self.core.settle_frame(Some(frame));
+                panic!("{}", e.message());
+            }
         }
         self.advance_after_finished();
     }
