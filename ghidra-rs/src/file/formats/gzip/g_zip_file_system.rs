@@ -2,7 +2,8 @@
 //!
 //! A pseudo-filesystem that contains a single file: the decompressed contents of a gzip
 //! container. The decompression and header-attribute extraction happen in
-//! `GZipFileSystemFactory` (not yet ported); this type only presents the result.
+//! [`GZipFileSystemFactory`](super::g_zip_file_system_factory::GZipFileSystemFactory); this type
+//! only presents the result.
 
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
@@ -66,7 +67,8 @@ impl GZipFileSystem {
 }
 
 impl SinglePayloadFileSystem for GZipFileSystem {
-    const INFO: FileSystemInfo = FileSystemInfo::with(Self::FS_TYPE, Self::DESCRIPTION, Self::PRIORITY);
+    const INFO: FileSystemInfo =
+        FileSystemInfo::with(Self::FS_TYPE, Self::DESCRIPTION, Self::PRIORITY);
 
     fn base(&self) -> &AbstractSinglePayloadFileSystemBase {
         &self.base
@@ -123,22 +125,35 @@ mod tests {
         dec.read_to_end(&mut payload).unwrap();
         let header = dec.header().unwrap();
         let name = String::from_utf8(header.filename().unwrap().to_vec()).unwrap();
-        let comment = header.comment().map(|c| String::from_utf8_lossy(c).into_owned());
+        let comment = header
+            .comment()
+            .map(|c| String::from_utf8_lossy(c).into_owned());
         let mtime = header.mtime() as i64;
 
         let mut attrs = FileAttributes::of([
             (FileAttributeType::NameAttr, Some(name.clone().into())),
-            (FileAttributeType::CompressedSizeAttr, Some((container_bytes.len() as i64).into())),
+            (
+                FileAttributeType::CompressedSizeAttr,
+                Some((container_bytes.len() as i64).into()),
+            ),
             (
                 FileAttributeType::ModifiedDateAttr,
                 (mtime != 0).then(|| FileAttributeValue::Date(mtime * 1000)),
             ),
             (FileAttributeType::CommentAttr, comment.map(Into::into)),
         ]);
-        attrs.add(FileAttributeType::SizeAttr, Some((payload.len() as i64).into()));
+        attrs.add(
+            FileAttributeType::SizeAttr,
+            Some((payload.len() as i64).into()),
+        );
 
         let provider = MemProvider::new(payload, None);
-        GZipFileSystem::new(container_fsrl.make_nested(GZipFileSystem::FS_TYPE), Rc::new(provider), &name, attrs)
+        GZipFileSystem::new(
+            container_fsrl.make_nested(GZipFileSystem::FS_TYPE),
+            Rc::new(provider),
+            &name,
+            attrs,
+        )
     }
 
     #[test]
@@ -159,7 +174,10 @@ mod tests {
         assert_eq!(f.get_name(), "fox.txt");
         assert_eq!(f.get_path(), "/fox.txt");
         assert_eq!(f.get_length(), PAYLOAD.len() as i64);
-        assert_eq!(f.get_fsrl().to_string(), "file:///tmp/fox.txt.gz|gzip:///fox.txt");
+        assert_eq!(
+            f.get_fsrl().to_string(),
+            "file:///tmp/fox.txt.gz|gzip:///fox.txt"
+        );
         assert_eq!(fs.get_file_count(), 1);
     }
 
@@ -180,8 +198,14 @@ mod tests {
         let monitor = DummyMonitor;
         let f = fs.get_payload_file().unwrap();
         let attrs = fs.get_file_attributes(f, &monitor);
-        assert_eq!(attrs.get_str(FileAttributeType::CommentAttr, ""), "a comment");
-        assert_eq!(attrs.get_long(FileAttributeType::SizeAttr, -1), PAYLOAD.len() as i64);
+        assert_eq!(
+            attrs.get_str(FileAttributeType::CommentAttr, ""),
+            "a comment"
+        );
+        assert_eq!(
+            attrs.get_long(FileAttributeType::SizeAttr, -1),
+            PAYLOAD.len() as i64
+        );
         assert_eq!(
             attrs.get_long(FileAttributeType::CompressedSizeAttr, -1),
             container.len() as i64

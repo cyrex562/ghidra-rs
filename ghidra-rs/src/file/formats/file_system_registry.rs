@@ -16,12 +16,21 @@ use super::cpio::cpio_file_system::CpioFileSystem;
 use super::cpio::cpio_file_system_factory::CpioFileSystemFactory;
 use super::gzip::g_zip_file_system::GZipFileSystem;
 use super::gzip::g_zip_file_system_factory::GZipFileSystemFactory;
+use super::sparseimage::sparse_image_file_system::SparseImageFileSystem;
+use super::sparseimage::sparse_image_file_system_factory::SparseImageFileSystemFactory;
 
 /// Registers every filesystem in `crate::file::formats` that has a ported factory.
 pub fn register_file_system_factories(mgr: &mut FileSystemFactoryMgr) {
-    mgr.register::<CompLzssFileSystem>(&CompLzssFileSystem::INFO, Rc::new(CompLzssFileSystemFactory));
+    mgr.register::<CompLzssFileSystem>(
+        &CompLzssFileSystem::INFO,
+        Rc::new(CompLzssFileSystemFactory),
+    );
     mgr.register::<CpioFileSystem>(&CpioFileSystem::INFO, Rc::new(CpioFileSystemFactory));
     mgr.register::<GZipFileSystem>(&GZipFileSystem::INFO, Rc::new(GZipFileSystemFactory));
+    mgr.register::<SparseImageFileSystem>(
+        &SparseImageFileSystem::INFO,
+        Rc::new(SparseImageFileSystemFactory),
+    );
 }
 
 /// A [`FileSystemFactoryMgr`] with every ported filesystem registered.
@@ -45,6 +54,7 @@ mod tests {
     use crate::app::util::bin::byte_provider::ByteProvider;
     use crate::filesystem::gfilesystem::annotations::file_system_info::PRIORITY_LOWEST;
     use crate::filesystem::gfilesystem::file_system_service::FileSystemService;
+    use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
     use crate::filesystem::gfilesystem::fsrl::Fsrl;
     use crate::filesystem::gfilesystem::g_file_system::{AnyGFileSystem, GFileSystemError};
     use crate::util::task::DummyMonitor;
@@ -69,10 +79,16 @@ mod tests {
     #[test]
     fn registry_lists_ported_filesystems() {
         let mgr = default_factory_mgr();
-        assert_eq!(mgr.get_file_system_type::<GZipFileSystem>().as_deref(), Some("gzip"));
+        assert_eq!(
+            mgr.get_file_system_type::<GZipFileSystem>().as_deref(),
+            Some("gzip")
+        );
         let names = mgr.get_all_filesystem_names();
         assert!(names.contains(&"GZIP".to_string()));
-        assert_eq!(mgr.get_file_system_type::<CpioFileSystem>().as_deref(), Some("cpio"));
+        assert_eq!(
+            mgr.get_file_system_type::<CpioFileSystem>().as_deref(),
+            Some("cpio")
+        );
         assert!(names.contains(&"CPIO".to_string()));
     }
 
@@ -81,7 +97,8 @@ mod tests {
     fn lzss_container_bytes(payload: &[u8]) -> Vec<u8> {
         use crate::file::formats::lzss::lzss_constants::PADDING_LENGTH;
         let mut compressed = Vec::new();
-        crate::file::formats::lzss::lzss_codec::compress(&mut compressed, &mut &payload[..]).unwrap();
+        crate::file::formats::lzss::lzss_codec::compress(&mut compressed, &mut &payload[..])
+            .unwrap();
         let mut b = Vec::new();
         b.extend_from_slice(b"lzsscomp");
         b.extend_from_slice(&0u32.to_be_bytes());
@@ -100,8 +117,11 @@ mod tests {
         std::fs::write(&container, lzss_container_bytes(&payload)).unwrap();
         let svc = service(dir.path());
 
-        let fsrl =
-            Fsrl::from_string(&format!("file://{}|lzss:///lzss_decompressed", container.display())).unwrap();
+        let fsrl = Fsrl::from_string(&format!(
+            "file://{}|lzss:///lzss_decompressed",
+            container.display()
+        ))
+        .unwrap();
         let bp = svc.get_byte_provider(&fsrl, false, &DummyMonitor).unwrap();
         assert_eq!(bp.length(), payload.len() as u64);
         assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), payload);
@@ -119,7 +139,13 @@ mod tests {
         let listing = fs.get_listing(None).unwrap();
         assert_eq!(listing.len(), 1);
         assert_eq!(listing[0].get_name(), "lzss_decompressed");
-        assert!(svc.has_derived_file(&svc.get_fully_qualified_fsrl(&local, &DummyMonitor).unwrap(), "decompressed lzss", &DummyMonitor).unwrap());
+        assert!(svc
+            .has_derived_file(
+                &svc.get_fully_qualified_fsrl(&local, &DummyMonitor).unwrap(),
+                "decompressed lzss",
+                &DummyMonitor
+            )
+            .unwrap());
         svc.release_file_system_immediate(Some(fs_ref));
         assert!(fs.is_closed());
     }
@@ -133,7 +159,83 @@ mod tests {
         std::fs::write(&container, bytes).unwrap();
         let svc = service(dir.path());
         let local = svc.get_local_fsrl(&container);
-        assert!(!svc.is_file_filesystem_container(&local, &DummyMonitor).unwrap());
+        assert!(!svc
+            .is_file_filesystem_container(&local, &DummyMonitor)
+            .unwrap());
+    }
+
+    /// A little sparse image: 1 raw block, 2 fill blocks, 1 don't-care block (block size 8),
+    /// and the raw image it expands to.
+    fn simg_bytes() -> (Vec<u8>, Vec<u8>) {
+        use crate::file::formats::sparseimage::{
+            CHUNK_TYPE_DONT_CARE, CHUNK_TYPE_FILL, CHUNK_TYPE_RAW,
+        };
+        const BLK: u32 = 8;
+        let mut b = Vec::new();
+        b.extend_from_slice(&0xED26_FF3Au32.to_le_bytes());
+        for v in [1u16, 0, 28, 12] {
+            b.extend_from_slice(&v.to_le_bytes());
+        }
+        for v in [BLK, 4, 3, 0] {
+            b.extend_from_slice(&v.to_le_bytes());
+        }
+        let mut chunk = |ty: u16, blocks: u32, body: &[u8]| {
+            b.extend_from_slice(&ty.to_le_bytes());
+            b.extend_from_slice(&0u16.to_le_bytes());
+            b.extend_from_slice(&blocks.to_le_bytes());
+            b.extend_from_slice(&(12 + body.len() as u32).to_le_bytes());
+            b.extend_from_slice(body);
+        };
+        chunk(CHUNK_TYPE_RAW, 1, b"RAWBLOCK");
+        chunk(CHUNK_TYPE_FILL, 2, &0x4433_2211u32.to_le_bytes());
+        chunk(CHUNK_TYPE_DONT_CARE, 1, &[]);
+        let mut expected = b"RAWBLOCK".to_vec();
+        // Java writes the little-endian-read fill int most-significant byte first.
+        expected.extend([0x44, 0x33, 0x22, 0x11].repeat(4));
+        expected.extend([0u8; BLK as usize]);
+        (b, expected)
+    }
+
+    #[test]
+    fn simg_payload_by_fsrl_string_is_expanded_through_the_service() {
+        let dir = tempfile::tempdir().unwrap();
+        let container = dir.path().join("system.img");
+        let (bytes, expected) = simg_bytes();
+        std::fs::write(&container, &bytes).unwrap();
+        let svc = service(dir.path());
+
+        let fsrl = Fsrl::from_string(&format!(
+            "file://{}|simg:///system.img.raw",
+            container.display()
+        ))
+        .unwrap();
+        let bp = svc.get_byte_provider(&fsrl, false, &DummyMonitor).unwrap();
+        assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), expected);
+        drop(bp);
+
+        let fs_ref = svc
+            .probe_file_for_filesystem(
+                &svc.get_local_fsrl(&container),
+                &DummyMonitor,
+                None,
+                PRIORITY_LOWEST,
+            )
+            .unwrap()
+            .expect("simg recognized");
+        let fs = std::rc::Rc::clone(fs_ref.get_filesystem());
+        assert_eq!(fs.get_type(), "simg");
+        let payload = fs.lookup(Some("/system.img.raw")).unwrap().unwrap();
+        let attrs = fs.get_file_attributes(&*payload, &DummyMonitor).unwrap();
+        assert_eq!(
+            attrs.get_long(FileAttributeType::SizeAttr, -1),
+            expected.len() as i64
+        );
+        assert_eq!(
+            attrs.get_long(FileAttributeType::CompressedSizeAttr, -1),
+            bytes.len() as i64
+        );
+        svc.release_file_system_immediate(Some(fs_ref));
+        assert!(fs.is_closed());
     }
 
     fn cpio_archive_bytes() -> Vec<u8> {
@@ -154,7 +256,8 @@ mod tests {
         std::fs::write(&archive, cpio_archive_bytes()).unwrap();
         let svc = service(dir.path());
 
-        let fsrl = Fsrl::from_string(&format!("file://{}|cpio:///bin/busybox", archive.display())).unwrap();
+        let fsrl = Fsrl::from_string(&format!("file://{}|cpio:///bin/busybox", archive.display()))
+            .unwrap();
         let bp = svc.get_byte_provider(&fsrl, false, &DummyMonitor).unwrap();
         assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), PAYLOAD);
         let got = bp.get_fsrl().unwrap();
@@ -163,20 +266,28 @@ mod tests {
         drop(bp);
 
         // Symlinks resolve through the mounted filesystem.
-        let sh = Fsrl::from_string(&format!("file://{}|cpio:///bin/sh", archive.display())).unwrap();
+        let sh =
+            Fsrl::from_string(&format!("file://{}|cpio:///bin/sh", archive.display())).unwrap();
         let refd = svc.get_refd_file(&sh, &DummyMonitor).unwrap();
         let fs = std::rc::Rc::clone(refd.fs_ref.get_filesystem());
         assert_eq!(fs.get_type(), "cpio");
         assert_eq!(fs.get_description(), "CPIO");
-        let bp = fs.get_byte_provider(&*refd.file, &DummyMonitor).unwrap().unwrap();
+        let bp = fs
+            .get_byte_provider(&*refd.file, &DummyMonitor)
+            .unwrap()
+            .unwrap();
         assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), PAYLOAD);
         drop(bp);
         assert_eq!(svc.get_mounted_filesystems().len(), 1);
 
         // Listing through the erased view.
         let root = fs.lookup(None).unwrap().unwrap();
-        let names: Vec<String> =
-            fs.get_listing(Some(&*root)).unwrap().iter().map(|f| f.get_name().to_string()).collect();
+        let names: Vec<String> = fs
+            .get_listing(Some(&*root))
+            .unwrap()
+            .iter()
+            .map(|f| f.get_name().to_string())
+            .collect();
         assert_eq!(names, ["bin", "etc"]);
 
         refd.close().unwrap();
@@ -193,7 +304,9 @@ mod tests {
         std::fs::write(&archive, cpio_archive_bytes()).unwrap();
         let svc = service(dir.path());
         let container = svc.get_local_fsrl(&archive);
-        assert!(svc.is_file_filesystem_container(&container, &DummyMonitor).unwrap());
+        assert!(svc
+            .is_file_filesystem_container(&container, &DummyMonitor)
+            .unwrap());
         let fs_ref = svc
             .probe_file_for_filesystem(&container, &DummyMonitor, None, PRIORITY_LOWEST)
             .unwrap()
@@ -202,10 +315,16 @@ mod tests {
         // root + bin + busybox + sh + etc (auto-created) + motd
         assert_eq!(fs.get_file_count(), 6);
         let motd = fs.lookup(Some("/etc/motd")).unwrap().unwrap();
-        let bp = fs.get_byte_provider(&*motd, &DummyMonitor).unwrap().unwrap();
+        let bp = fs
+            .get_byte_provider(&*motd, &DummyMonitor)
+            .unwrap()
+            .unwrap();
         assert_eq!(bp.read_bytes(0, 8).unwrap(), b"welcome\n");
         let bin = fs.lookup(Some("/bin")).unwrap().unwrap();
-        assert!(fs.get_byte_provider(&*bin, &DummyMonitor).is_err(), "not a regular file");
+        assert!(
+            fs.get_byte_provider(&*bin, &DummyMonitor).is_err(),
+            "not a regular file"
+        );
         drop(bp);
         svc.release_file_system_immediate(Some(fs_ref));
         assert!(fs.is_closed());
@@ -217,7 +336,8 @@ mod tests {
         let gz = dir.path().join("x.gz");
         write_gzip(&gz, Some("hello.txt"), PAYLOAD);
         let svc = service(dir.path());
-        let fsrl = Fsrl::from_string(&format!("file://{}|gzip:///hello.txt", gz.display())).unwrap();
+        let fsrl =
+            Fsrl::from_string(&format!("file://{}|gzip:///hello.txt", gz.display())).unwrap();
         let bp = svc.get_byte_provider(&fsrl, false, &DummyMonitor).unwrap();
         assert_eq!(bp.read_bytes(0, bp.length()).unwrap(), PAYLOAD);
         // The returned FSRL is fully qualified with the payload's MD5.
@@ -241,7 +361,9 @@ mod tests {
         write_gzip(&gz, None, PAYLOAD);
         let svc = service(dir.path());
         let container = svc.get_local_fsrl(&gz);
-        assert!(svc.is_file_filesystem_container(&container, &DummyMonitor).unwrap());
+        assert!(svc
+            .is_file_filesystem_container(&container, &DummyMonitor)
+            .unwrap());
 
         let fs_ref = svc
             .probe_file_for_filesystem(&container, &DummyMonitor, None, PRIORITY_LOWEST)
@@ -256,7 +378,10 @@ mod tests {
         assert_eq!(listing.len(), 1);
         assert_eq!(listing[0].get_name(), "archive");
         assert_eq!(listing[0].get_length(), PAYLOAD.len() as i64);
-        let bp = fs.get_byte_provider(&*listing[0], &DummyMonitor).unwrap().unwrap();
+        let bp = fs
+            .get_byte_provider(&*listing[0], &DummyMonitor)
+            .unwrap()
+            .unwrap();
         assert_eq!(bp.read_bytes(0, PAYLOAD.len() as u64).unwrap(), PAYLOAD);
         drop(bp);
 
@@ -284,7 +409,10 @@ mod tests {
         write_gzip(&gz, Some("y.bin"), PAYLOAD);
         let svc = service(dir.path());
         let refd = svc
-            .get_refd_file(&Fsrl::from_string(&format!("file://{}|gzip:///y.bin", gz.display())).unwrap(), &DummyMonitor)
+            .get_refd_file(
+                &Fsrl::from_string(&format!("file://{}|gzip:///y.bin", gz.display())).unwrap(),
+                &DummyMonitor,
+            )
             .unwrap();
         assert_eq!(refd.file.get_name(), "y.bin");
         let fs = std::rc::Rc::clone(refd.fs_ref.get_filesystem());
@@ -299,28 +427,52 @@ mod tests {
     fn derived_provider_reuses_md5_keyed_cache_entry() {
         let dir = tempfile::tempdir().unwrap();
         let svc = service(dir.path());
-        let container = Fsrl::from_string("file:///c.bin?MD5=0123456789abcdef0123456789abcdef").unwrap();
+        let container =
+            Fsrl::from_string("file:///c.bin?MD5=0123456789abcdef0123456789abcdef").unwrap();
         let calls = Cell::new(0);
         let mut producer = || -> Result<Box<dyn Read>, GFileSystemError> {
             calls.set(calls.get() + 1);
             Ok(Box::new(std::io::Cursor::new(b"derived bytes".to_vec())))
         };
         let a = svc
-            .get_derived_byte_provider(&container, None, "derived", -1, &mut producer, &DummyMonitor)
+            .get_derived_byte_provider(
+                &container,
+                None,
+                "derived",
+                -1,
+                &mut producer,
+                &DummyMonitor,
+            )
             .unwrap();
         let b = svc
-            .get_derived_byte_provider(&container, None, "derived", -1, &mut producer, &DummyMonitor)
+            .get_derived_byte_provider(
+                &container,
+                None,
+                "derived",
+                -1,
+                &mut producer,
+                &DummyMonitor,
+            )
             .unwrap();
         assert_eq!(calls.get(), 1, "second request served from the cache");
         assert_eq!(a.get_fsrl(), b.get_fsrl());
         let md5 = a.get_fsrl().unwrap().md5().unwrap().to_string();
-        assert_eq!(a.get_fsrl().unwrap().to_string(), format!("cache:///{md5}?MD5={md5}"));
+        assert_eq!(
+            a.get_fsrl().unwrap().to_string(),
+            format!("cache:///{md5}?MD5={md5}")
+        );
         assert_eq!(b.read_bytes(0, 13).unwrap(), b"derived bytes");
-        assert!(svc.has_derived_file(&container, "derived", &DummyMonitor).unwrap());
-        assert!(!svc.has_derived_file(&container, "other", &DummyMonitor).unwrap());
+        assert!(svc
+            .has_derived_file(&container, "derived", &DummyMonitor)
+            .unwrap());
+        assert!(!svc
+            .has_derived_file(&container, "other", &DummyMonitor)
+            .unwrap());
         // A container FSRL without an MD5 is rejected.
         let bad = Fsrl::from_string("file:///c.bin").unwrap();
-        assert!(svc.get_derived_byte_provider(&bad, None, "d", -1, &mut producer, &DummyMonitor).is_err());
+        assert!(svc
+            .get_derived_byte_provider(&bad, None, "d", -1, &mut producer, &DummyMonitor)
+            .is_err());
 
         // The push flavor shares the cache.
         let mut pusher = |os: &mut dyn Write| -> Result<(), GFileSystemError> {
@@ -329,7 +481,14 @@ mod tests {
         };
         let derived_fsrl = Fsrl::from_string("file:///c.bin|x:///p").unwrap();
         let p = svc
-            .get_derived_byte_provider_push(&container, Some(&derived_fsrl), "pushed", 6, &mut pusher, &DummyMonitor)
+            .get_derived_byte_provider_push(
+                &container,
+                Some(&derived_fsrl),
+                "pushed",
+                6,
+                &mut pusher,
+                &DummyMonitor,
+            )
             .unwrap();
         assert_eq!(p.read_bytes(0, 6).unwrap(), b"pushed");
         assert_eq!(p.get_fsrl().unwrap().path(), Some("/p"));
@@ -345,7 +504,10 @@ mod tests {
         let fsrl = Fsrl::from_string(&format!("file://{}|gzip:///z.txt", gz.display())).unwrap();
         let fq = svc.get_fully_qualified_fsrl(&fsrl, &DummyMonitor).unwrap();
         assert!(fq.md5().is_some());
-        assert!(fq.fs().container().unwrap().md5().is_some(), "container re-homed to its fully qualified FSRL");
+        assert!(
+            fq.fs().container().unwrap().md5().is_some(),
+            "container re-homed to its fully qualified FSRL"
+        );
         svc.clear();
         assert!(svc.get_mounted_filesystems().is_empty());
         // With the MD5 known, the bytes come straight from the file cache.
@@ -366,9 +528,15 @@ mod tests {
             .unwrap()
             .unwrap();
         let payload = fs.get_payload_file().unwrap();
-        assert_eq!(crate::filesystem::gfilesystem::g_file::GFile::get_name(payload), "s.txt");
+        assert_eq!(
+            crate::filesystem::gfilesystem::g_file::GFile::get_name(payload),
+            "s.txt"
+        );
         assert!(svc.get_mounted_filesystems().is_empty());
-        let opened = svc.open_file_system_container(&container, &DummyMonitor).unwrap().unwrap();
+        let opened = svc
+            .open_file_system_container(&container, &DummyMonitor)
+            .unwrap()
+            .unwrap();
         assert_eq!(opened.get_description(), "GZIP");
         opened.close().unwrap();
         // Not a registered type: None.
@@ -388,13 +556,17 @@ mod tests {
         std::fs::write(&f, b"just text").unwrap();
         let svc = service(dir.path());
         let container = svc.get_local_fsrl(&f);
-        assert!(!svc.is_file_filesystem_container(&container, &DummyMonitor).unwrap());
+        assert!(!svc
+            .is_file_filesystem_container(&container, &DummyMonitor)
+            .unwrap());
         assert!(svc
             .probe_file_for_filesystem(&container, &DummyMonitor, None, PRIORITY_LOWEST)
             .unwrap()
             .is_none());
         // Local files come back through the root filesystem with a hashed FSRL.
-        let bp = svc.get_byte_provider(&container, true, &DummyMonitor).unwrap();
+        let bp = svc
+            .get_byte_provider(&container, true, &DummyMonitor)
+            .unwrap();
         assert_eq!(bp.read_bytes(0, 9).unwrap(), b"just text");
         assert_eq!(svc.get_file_if_available(&*bp), Some(f.clone()));
         assert!(bp.get_fsrl().unwrap().md5().is_some());
@@ -411,13 +583,18 @@ mod tests {
         b.write_all(b"temp!").unwrap();
         let fce = b.finish().unwrap();
         let named = svc.get_named_temp_file(&fce, "n.bin").unwrap();
-        assert_eq!(named.get_fsrl().unwrap().to_string(), format!("tmp:///n.bin?MD5={}", fce.get_md5()));
+        assert_eq!(
+            named.get_fsrl().unwrap().to_string(),
+            format!("tmp:///n.bin?MD5={}", fce.get_md5())
+        );
         assert_eq!(named.read_bytes(0, 5).unwrap(), b"temp!");
 
         let plain = dir.path().join("give.txt");
         std::fs::write(&plain, b"given").unwrap();
         let fsrl = svc.get_local_fsrl(&plain);
-        let pushed = svc.push_file_to_cache(&plain, &fsrl, &DummyMonitor).unwrap();
+        let pushed = svc
+            .push_file_to_cache(&plain, &fsrl, &DummyMonitor)
+            .unwrap();
         assert!(!plain.exists());
         assert_eq!(pushed.read_bytes(0, 5).unwrap(), b"given");
         svc.release_file_cache(pushed.get_fsrl().unwrap());

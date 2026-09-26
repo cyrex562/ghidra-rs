@@ -3453,7 +3453,7 @@ TODO	struct	0	2	25	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 DONE	struct	0	2	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseHeader.java
 DONE	struct	3	1	91	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/ChunkHeader.java
 DONE	struct	2	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageDecompressor.java
-TODO	struct	1	1	27	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageFileSystemFactory.java
+DONE	struct	1	1	27	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageFileSystemFactory.java
 TODO	struct	0	2	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashFragmentTable.java
 TODO	struct	1	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashExtendedDirectoryInode.java
 TODO	struct	1	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashExtendedFileInode.java
