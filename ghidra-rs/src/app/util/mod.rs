@@ -1,4 +1,5 @@
 pub mod address_factory_service;
+pub mod bean;
 pub mod bin;
 pub mod clipboard_type;
 pub mod comment_types;

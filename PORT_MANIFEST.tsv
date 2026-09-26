@@ -2831,8 +2831,8 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/Reve
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/SetStackDepthChangeAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/SharedReturnAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/SharedReturnJumpAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/StackDepthChangeEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/StackDepthChangeListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/StackDepthChangeEvent.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core function 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/StackDepthChangeListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/StackDepthFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/StackVariableAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/ThunkReferenceAddressDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function 
@@ -3638,7 +3638,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/XReferenceUtil.java	
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/XReferenceUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/FixedBitSizeValueField.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bean 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SelectLanguagePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bean 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SelectLanguagePanelListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bean 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SelectLanguagePanelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bean 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SetEquateDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bean 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SetEquateTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bean 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/BinaryReader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
