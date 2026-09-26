@@ -20,7 +20,6 @@ use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::dwarf::dwarf_range::DWARFRange;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::golang::go_ver::GoVer;
-use crate::format::golang::go_ver_range::GoVerRange;
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
 use crate::format::pe::rich::ms_product_type::MsProductType;
 use crate::format::unixaout::unix_aout_symbol::UnixAoutSymbol;
@@ -4388,79 +4387,6 @@ pub trait GoPcValueEvaluator: Send + Sync {
     fn eval_all(&mut self, target_pc: i64) -> std::io::Result<Vec<i32>>;
     /// Mirrors `GoPcValueEvaluator.markup(MarkupSession)`.
     fn markup(&mut self, session: &mut crate::format::golang::structmapping::MarkupSession<'_>) -> std::io::Result<()>;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoTypeFlag`, referenced by
-/// [`GoBaseType`](crate::format::golang::rtti::types::go_base_type::GoBaseType) before the real
-/// class is ported. `GoTypeFlag` is a concrete Java enum (not an interface), so it is modeled
-/// here as a concrete enum. Its only real dependencies ([`GoVer`] and [`GoVerRange`]) are already
-/// ported, so this mirrors the Java enum's logic 1:1 rather than being a bare shape hint.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum GoTypeFlag {
-    Uncommon,
-    ExtraStar,
-    Named,
-    RegularMemory,
-    UnrolledBitmap,
-    GCMaskOnDemand,
-    DirectIFace,
-}
-
-impl GoTypeFlag {
-    const ALL: [GoTypeFlag; 7] = [
-        GoTypeFlag::Uncommon,
-        GoTypeFlag::ExtraStar,
-        GoTypeFlag::Named,
-        GoTypeFlag::RegularMemory,
-        GoTypeFlag::UnrolledBitmap,
-        GoTypeFlag::GCMaskOnDemand,
-        GoTypeFlag::DirectIFace,
-    ];
-
-    /// Mirrors `GoTypeFlag.getValue()`.
-    pub fn value(self) -> i32 {
-        match self {
-            GoTypeFlag::Uncommon => 1 << 0,
-            GoTypeFlag::ExtraStar => 1 << 1,
-            GoTypeFlag::Named => 1 << 2,
-            GoTypeFlag::RegularMemory => 1 << 3,
-            GoTypeFlag::UnrolledBitmap => 1 << 4,
-            GoTypeFlag::GCMaskOnDemand => 1 << 4,
-            GoTypeFlag::DirectIFace => 1 << 5,
-        }
-    }
-
-    fn valid_versions(self) -> GoVerRange {
-        match self {
-            GoTypeFlag::Uncommon
-            | GoTypeFlag::ExtraStar
-            | GoTypeFlag::Named
-            | GoTypeFlag::RegularMemory => GoVerRange::ALL,
-            GoTypeFlag::UnrolledBitmap => GoVerRange::parse("1.22-1.23"),
-            GoTypeFlag::GCMaskOnDemand | GoTypeFlag::DirectIFace => GoVerRange::parse("1.24-"),
-        }
-    }
-
-    /// Mirrors `GoTypeFlag.isSet(int, GoVer)`.
-    pub fn is_set(self, i: i32, ver: GoVer) -> bool {
-        self.valid_versions().contains(ver) && (i & self.value()) != 0
-    }
-
-    /// Mirrors `GoTypeFlag.isValid(int, GoVer)`.
-    pub fn is_valid(b: i32, ver: GoVer) -> bool {
-        let mut remaining = b;
-        for flag in Self::ALL {
-            if flag.valid_versions().contains(ver) {
-                remaining &= !flag.value();
-            }
-        }
-        remaining == 0
-    }
-
-    /// Mirrors `GoTypeFlag.parseFlags(int, GoVer)`.
-    pub fn parse_flags(b: i32, ver: GoVer) -> Vec<GoTypeFlag> {
-        Self::ALL.into_iter().filter(|flag| flag.is_set(b, ver)).collect()
-    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoType`, referenced by

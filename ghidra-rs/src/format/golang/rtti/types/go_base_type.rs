@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use super::go_kind::GoKind;
 use crate::format::golang::structmapping::{StructureContext, StructureMapped, StructureVerifier};
-use crate::format::seam_stubs::{GoName, GoRttiMapper, GoType, GoTypeFlag};
+use super::go_type_flag::GoTypeFlag;
+use crate::format::seam_stubs::{GoName, GoRttiMapper, GoType};
 
 /// Represents the fundamental Go rtti type information.
 ///

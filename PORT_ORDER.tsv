@@ -1513,7 +1513,7 @@ TODO	struct	21	5	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	21	5	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoPointerType.java
 TODO	struct	22	5	13	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoStructField.java
 TODO	struct	19	4	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoTypeBridge.java
-TODO	struct	19	5	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoTypeFlag.java
+DONE	struct	19	5	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoTypeFlag.java
 TODO	struct	17	3	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/LongNamesMember.java
 TODO	struct	16	2	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/FirstLinkerMember.java
 TODO	struct	16	2	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/SecondLinkerMember.java
