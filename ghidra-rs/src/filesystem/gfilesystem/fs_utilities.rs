@@ -180,6 +180,181 @@ pub fn get_extension(path: &str, ext_level: usize) -> Option<&str> {
     None
 }
 
+/// Best-effort sanitizing of an untrusted string that will be used to create a file on the
+/// user's local filesystem. Mirrors `FSUtilities.getSafeFilename(String)`.
+pub fn get_safe_filename(untrusted_filename: &str) -> String {
+    let replaced: String = untrusted_filename
+        .chars()
+        .map(|c| if matches!(c, '/' | '\\' | ':' | '|') { '_' } else { c })
+        .collect();
+    let trimmed = replaced.trim_matches(|c: char| c <= ' ');
+    match trimmed {
+        "" => "empty_filename".to_string(),
+        "." => "dot".to_string(),
+        ".." => "dotdot".to_string(),
+        other => escape_encode(other),
+    }
+}
+
+/// Copies `is` to `os` while updating `monitor`, returning the number of bytes copied.
+///
+/// Mirrors `FSUtilities.streamCopy(InputStream, OutputStream, TaskMonitor)`: progress is set
+/// to the running total and cancellation is checked after every buffer.
+pub fn stream_copy(
+    is: &mut dyn std::io::Read,
+    os: &mut dyn std::io::Write,
+    monitor: &dyn crate::util::task::TaskMonitor,
+) -> Result<u64, super::g_file_system::GFileSystemError> {
+    let mut buffer = vec![0u8; IO_BUFFER_SIZE];
+    let mut total: u64 = 0;
+    loop {
+        let n = is.read(&mut buffer)?;
+        if n == 0 {
+            break;
+        }
+        os.write_all(&buffer[..n])?;
+        total += n as u64;
+        monitor.set_progress(total as i64);
+        monitor.check_cancelled()?;
+    }
+    os.flush()?;
+    Ok(total)
+}
+
+/// `FileUtilities.IO_BUFFER_SIZE`.
+const IO_BUFFER_SIZE: usize = 32 * 1024;
+
+/// Copies the contents of `provider` to `dest_file`, returning the number of bytes copied.
+/// Mirrors `FSUtilities.copyByteProviderToFile(ByteProvider, File, TaskMonitor)`.
+pub fn copy_byte_provider_to_file(
+    provider: &dyn crate::app::util::bin::byte_provider::ByteProvider,
+    dest_file: &std::path::Path,
+    monitor: &dyn crate::util::task::TaskMonitor,
+) -> Result<u64, super::g_file_system::GFileSystemError> {
+    let mut is = provider.get_input_stream(0)?;
+    let mut fos = std::fs::File::create(dest_file)?;
+    stream_copy(&mut is, &mut fos, monitor)
+}
+
+/// The lowercase hex MD5 of everything `is` produces. Mirrors
+/// `FSUtilities.getMD5(InputStream, String, long, TaskMonitor)`.
+pub fn get_md5_of_stream(
+    is: &mut dyn std::io::Read,
+    name: &str,
+    expected_length: i64,
+    monitor: &dyn crate::util::task::TaskMonitor,
+) -> Result<String, super::g_file_system::GFileSystemError> {
+    use md5::{Digest, Md5};
+    monitor.initialize(expected_length);
+    monitor.set_message(&format!("Hashing {name}"));
+    let buf_size = expected_length.clamp(1024, 1024 * 1024) as usize;
+    let mut buf = vec![0u8; buf_size];
+    let mut digest = Md5::new();
+    loop {
+        let n = is.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        digest.update(&buf[..n]);
+        monitor.increment_progress(n as i64);
+        monitor.check_cancelled()?;
+    }
+    Ok(hex_lower(&digest.finalize()))
+}
+
+/// The MD5 of a provider's contents. Mirrors `FSUtilities.getMD5(ByteProvider, TaskMonitor)`.
+pub fn get_md5(
+    provider: &dyn crate::app::util::bin::byte_provider::ByteProvider,
+    monitor: &dyn crate::util::task::TaskMonitor,
+) -> Result<String, super::g_file_system::GFileSystemError> {
+    let mut is = provider.get_input_stream(0)?;
+    let name = provider.get_name().unwrap_or_default();
+    get_md5_of_stream(&mut is, &name, provider.length() as i64, monitor)
+}
+
+/// The MD5 of a local file. Mirrors `FSUtilities.getFileMD5(File, TaskMonitor)`.
+pub fn get_file_md5(
+    f: &std::path::Path,
+    monitor: &dyn crate::util::task::TaskMonitor,
+) -> Result<String, super::g_file_system::GFileSystemError> {
+    let mut fis = std::fs::File::open(f)?;
+    let len = fis.metadata()?.len() as i64;
+    let name = f.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    get_md5_of_stream(&mut fis, &name, len, monitor)
+}
+
+/// Lowercase hex of `bytes` (Java's `NumericUtilities.convertBytesToString`).
+pub fn hex_lower(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Returns `true` if `f` is a symbolic link. Mirrors `FSUtilities.isSymlink(File)`.
+pub fn is_symlink(f: &std::path::Path) -> bool {
+    std::fs::symlink_metadata(f).map(|m| m.file_type().is_symlink()).unwrap_or(false)
+}
+
+/// The destination of a symlink, or `None` if not a symlink or on error. Mirrors
+/// `FSUtilities.readSymlink(File)`.
+pub fn read_symlink(f: &std::path::Path) -> Option<String> {
+    std::fs::read_link(f).ok().map(|p| p.to_string_lossy().into_owned())
+}
+
+/// The [`FileType`](super::fileinfo::file_type::FileType) of a local file. Mirrors
+/// `FSUtilities.getFileType(File)`.
+pub fn get_file_type(f: &std::path::Path) -> super::fileinfo::file_type::FileType {
+    use super::fileinfo::file_type::FileType;
+    if is_symlink(f) {
+        return FileType::SymbolicLink;
+    }
+    match std::fs::metadata(f) {
+        Ok(m) if m.is_dir() => FileType::Directory,
+        Ok(m) if m.is_file() => FileType::File,
+        _ => FileType::Unknown,
+    }
+}
+
+#[cfg(test)]
+mod service_support_tests {
+    use super::*;
+    use crate::util::task::DummyMonitor;
+
+    #[test]
+    fn safe_filename_matches_java() {
+        assert_eq!(get_safe_filename("a/b\\c:d|e"), "a_b_c_d_e");
+        assert_eq!(get_safe_filename("  "), "empty_filename");
+        assert_eq!(get_safe_filename("."), "dot");
+        assert_eq!(get_safe_filename(".."), "dotdot");
+        assert_eq!(get_safe_filename("x%y"), "x%25y");
+    }
+
+    #[test]
+    fn md5_of_stream_matches_known_digest() {
+        let mut data: &[u8] = b"hello";
+        let md5 = get_md5_of_stream(&mut data, "h", 5, &DummyMonitor).unwrap();
+        assert_eq!(md5, "5d41402abc4b2a76b9719d911017c592");
+    }
+
+    #[test]
+    fn stream_copy_copies_all_bytes() {
+        let src = vec![7u8; 100_000];
+        let mut out = Vec::new();
+        let n = stream_copy(&mut src.as_slice(), &mut out, &DummyMonitor).unwrap();
+        assert_eq!(n, 100_000);
+        assert_eq!(out, src);
+    }
+
+    #[test]
+    fn file_type_and_md5_of_local_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join("x.txt");
+        std::fs::write(&f, b"hello").unwrap();
+        assert_eq!(get_file_type(&f), super::super::fileinfo::file_type::FileType::File);
+        assert_eq!(get_file_type(dir.path()), super::super::fileinfo::file_type::FileType::Directory);
+        assert!(!is_symlink(&f));
+        assert_eq!(get_file_md5(&f, &DummyMonitor).unwrap(), "5d41402abc4b2a76b9719d911017c592");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

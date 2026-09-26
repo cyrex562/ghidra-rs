@@ -1,176 +1,154 @@
-use crate::filesystem::seam_stubs::GFileSystemLike;
+//! Port of `ghidra.formats.gfilesystem.FileSystemRef`.
+//!
+//! A handle to a filesystem that pins it (tells its
+//! [`FileSystemRefManager`](super::file_system_ref_manager::FileSystemRefManager) someone is
+//! still using it). Refs are created by the ref manager and must be closed when no longer
+//! needed.
+//!
+//! Java's `finalize()` only *warns* if a ref is garbage-collected while still open. Rust has
+//! deterministic destruction, so a ref that is dropped unclosed is closed (released from its
+//! manager) instead -- the RAII reading of Java's `Closeable`.
 
-/// A handle to a [`GFileSystem`](super::g_file_system::GFileSystem) which allows tracking the
-/// current users of the filesystem, mirroring `ghidra.formats.gfilesystem.FileSystemRef`.
-///
-/// Instances must be [`close`](FileSystemRef::close)d when not needed anymore, and should not
-/// be shared across threads.
-///
-/// This is a cycle cut-point: Java's `FileSystemRef` is created by and closes back through a
-/// `FileSystemRefManager`, which in turn hands out refs for a `GFileSystem`, which owns the
-/// `FileSystemRefManager` -- a three-way cycle. Rust can't express that with concrete structs,
-/// so `FileSystemRef` becomes a trait, exactly like
-/// [`FileSystemRefManager`](super::file_system_ref_manager::FileSystemRefManager) already did
-/// for its own side of the cycle.
-///
-/// `Fs` is bounded only by the minimal [`GFileSystemLike`] marker (see
-/// `crate::filesystem::seam_stubs`) -- this trait's contract never calls a method on the
-/// filesystem it points to, it only hands the reference back to callers via
-/// [`get_filesystem`](FileSystemRef::get_filesystem). Implementors are free to hold their own
-/// concrete handle to a ref manager (e.g. an `Rc<RefCell<...>>`) to actually implement
-/// [`dup`](FileSystemRef::dup)/[`close`](FileSystemRef::close); the trait only declares the
-/// public shape, matching how the Java class's `dup()`/`close()` bodies reach into a
-/// `FileSystemRefManager` that this trait does not itself need to know about.
-///
-/// [`dup`](FileSystemRef::dup) returns `Box<dyn FileSystemRef<Fs>>` rather than `Self`, keeping
-/// this trait object-safe.
-///
-/// Java's `finalize()` (which warns via `Msg.warn` if a ref was garbage-collected while still
-/// open) and `toString()` (which delegates to the filesystem's FSRL) have no port here: both
-/// require a live `FSRL`/`Msg` collaborator tied to a *specific* implementation's fields, not a
-/// generic contract over `Fs`, and Rust has no GC-finalizer equivalent to trigger the warning
-/// non-deterministically in the first place. Implementors that want the same "warn if dropped
-/// unclosed" behavior can do so in their own `Drop` impl using
-/// [`crate::util::msg::Msg::warn`].
-pub trait FileSystemRef<Fs>
-where
-    Fs: GFileSystemLike,
-{
-    /// Creates a duplicate ref pointing at the same filesystem.
-    fn dup(&self) -> Box<dyn FileSystemRef<Fs>>;
+use std::fmt;
 
-    /// The filesystem this ref points to.
-    fn get_filesystem(&self) -> &Fs;
+use super::file_system_ref_manager::FileSystemRefManagerError;
+use super::g_file_system::FsHandle;
 
-    /// Closes this reference, releasing it from the owning ref manager.
-    fn close(&mut self);
+/// The identity of one [`FileSystemRef`] within its filesystem's ref manager (Java compares
+/// the ref objects themselves with `==`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FileSystemRefId(pub(super) u64);
 
-    /// Returns `true` if this ref was [`close`](FileSystemRef::close)d.
-    fn is_closed(&self) -> bool;
+/// A handle to a filesystem which allows tracking the current users of the filesystem.
+///
+/// Mirrors `ghidra.formats.gfilesystem.FileSystemRef`.
+pub struct FileSystemRef {
+    fs: FsHandle,
+    id: FileSystemRefId,
+    ref_closed: bool,
+}
+
+impl FileSystemRef {
+    /// Only [`FileSystemRefManager::create`](super::file_system_ref_manager::FileSystemRefManager::create)
+    /// creates refs (Java's constructor is package-private).
+    pub(super) fn new(fs: FsHandle, id: FileSystemRefId) -> Self {
+        FileSystemRef { fs, id, ref_closed: false }
+    }
+
+    /// Creates a duplicate ref to the same filesystem. Mirrors `dup()`.
+    ///
+    /// # Errors
+    /// If the filesystem has been closed.
+    pub fn dup(&self) -> Result<FileSystemRef, FileSystemRefManagerError> {
+        self.fs.get_ref_manager().create(&self.fs)
+    }
+
+    /// The filesystem this ref points to. Mirrors `getFilesystem()`.
+    pub fn get_filesystem(&self) -> &FsHandle {
+        &self.fs
+    }
+
+    /// This ref's identity within its ref manager.
+    pub fn id(&self) -> FileSystemRefId {
+        self.id
+    }
+
+    /// Closes this reference, releasing it from the filesystem's ref manager. Mirrors
+    /// `close()`.
+    ///
+    /// # Errors
+    /// [`FileSystemRefManagerError::UnknownRef`] if the manager no longer knows this ref (it was
+    /// already closed, or the filesystem was closed underneath it) -- Java's
+    /// `IllegalArgumentException`. The ref is marked closed either way.
+    pub fn close(&mut self) -> Result<(), FileSystemRefManagerError> {
+        let result = self.fs.get_ref_manager().release(&*self.fs, self.id);
+        self.ref_closed = true;
+        result
+    }
+
+    /// Returns `true` if this ref was [`close`](FileSystemRef::close)d. Mirrors `isClosed()`.
+    pub fn is_closed(&self) -> bool {
+        self.ref_closed
+    }
+}
+
+impl Drop for FileSystemRef {
+    fn drop(&mut self) {
+        if !self.ref_closed && !self.fs.get_ref_manager().is_closed() {
+            let _ = self.close();
+        }
+    }
+}
+
+/// Mirrors `toString()`: the filesystem's FSRL.
+impl fmt::Display for FileSystemRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.fs.get_fsrl())
+    }
+}
+
+impl fmt::Debug for FileSystemRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "FileSystemRef({}, {:?}, closed={})", self.fs.get_fsrl(), self.id, self.ref_closed)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::cell::Cell;
     use std::rc::Rc;
 
-    // ── Mock seam types ─────────────────────────────────────────────────────
+    use super::super::file_system_ref_manager::test_support::EmptyFs;
+    use super::*;
 
-    struct MockFs {
-        name: &'static str,
-    }
-    impl GFileSystemLike for MockFs {}
-
-    // ── Mock FileSystemRef ─────────────────────────────────────────────────
-    //
-    // Simulates a real implementation's private link back to a ref manager (here, just a
-    // shared open-ref counter) instead of routing through `Fs`, exercising the decoupling
-    // documented on the trait: `dup`/`close` do real bookkeeping without `Fs` exposing any
-    // manager-shaped methods.
-
-    struct MockRef {
-        fs: Rc<MockFs>,
-        open_refs: Rc<Cell<usize>>,
-        closed: bool,
-    }
-
-    impl MockRef {
-        fn new(fs: Rc<MockFs>, open_refs: Rc<Cell<usize>>) -> Self {
-            open_refs.set(open_refs.get() + 1);
-            MockRef { fs, open_refs, closed: false }
-        }
-    }
-
-    impl FileSystemRef<MockFs> for MockRef {
-        fn dup(&self) -> Box<dyn FileSystemRef<MockFs>> {
-            Box::new(MockRef::new(self.fs.clone(), self.open_refs.clone()))
-        }
-
-        fn get_filesystem(&self) -> &MockFs {
-            &self.fs
-        }
-
-        fn close(&mut self) {
-            if !self.closed {
-                self.open_refs.set(self.open_refs.get() - 1);
-                self.closed = true;
-            }
-        }
-
-        fn is_closed(&self) -> bool {
-            self.closed
-        }
-    }
-
-    fn setup() -> (Rc<MockFs>, Rc<Cell<usize>>) {
-        (Rc::new(MockFs { name: "mockfs" }), Rc::new(Cell::new(0)))
-    }
-
-    // ── Tests ───────────────────────────────────────────────────────────────
-
-    #[test]
-    fn get_filesystem_returns_owning_fs() {
-        let (fs, counter) = setup();
-        let r = MockRef::new(fs.clone(), counter);
-        assert_eq!(r.get_filesystem().name, "mockfs");
+    fn fs() -> FsHandle {
+        Rc::new(EmptyFs::new("empty"))
     }
 
     #[test]
-    fn new_ref_starts_open() {
-        let (fs, counter) = setup();
-        let r = MockRef::new(fs, counter.clone());
+    fn new_ref_is_open_and_points_at_fs() {
+        let fs = fs();
+        let r = fs.get_ref_manager().create(&fs).unwrap();
         assert!(!r.is_closed());
-        assert_eq!(counter.get(), 1);
+        assert!(Rc::ptr_eq(r.get_filesystem(), &fs));
+        assert_eq!(r.to_string(), "empty://");
     }
 
     #[test]
-    fn dup_creates_independent_ref_sharing_open_count() {
-        let (fs, counter) = setup();
-        let r1 = MockRef::new(fs, counter.clone());
-        let r2 = r1.dup();
-        assert_eq!(counter.get(), 2);
-        assert!(!r2.is_closed());
-    }
-
-    #[test]
-    fn close_marks_closed_and_decrements_open_count() {
-        let (fs, counter) = setup();
-        let mut r = MockRef::new(fs, counter.clone());
-        r.close();
-        assert!(r.is_closed());
-        assert_eq!(counter.get(), 0);
-    }
-
-    #[test]
-    fn close_is_idempotent() {
-        let (fs, counter) = setup();
-        let mut r = MockRef::new(fs, counter.clone());
-        r.close();
-        r.close();
-        assert_eq!(counter.get(), 0);
-    }
-
-    #[test]
-    fn closing_one_dup_does_not_close_the_other() {
-        let (fs, counter) = setup();
-        let mut r1 = MockRef::new(fs, counter.clone());
-        let mut r2 = r1.dup();
-        r1.close();
+    fn dup_is_independent() {
+        let fs = fs();
+        let mut r1 = fs.get_ref_manager().create(&fs).unwrap();
+        let r2 = r1.dup().unwrap();
+        r1.close().unwrap();
         assert!(r1.is_closed());
         assert!(!r2.is_closed());
-        assert_eq!(counter.get(), 1);
-        r2.close();
-        assert_eq!(counter.get(), 0);
+        assert_eq!(fs.get_ref_manager().ref_count(), 1);
     }
 
     #[test]
-    fn boxed_dyn_file_system_ref_is_accepted() {
-        let (fs, counter) = setup();
-        let mut boxed: Box<dyn FileSystemRef<MockFs>> = Box::new(MockRef::new(fs, counter.clone()));
-        assert!(!boxed.is_closed());
-        boxed.close();
-        assert!(boxed.is_closed());
-        assert_eq!(counter.get(), 0);
+    fn double_close_is_unknown_ref() {
+        let fs = fs();
+        let mut r = fs.get_ref_manager().create(&fs).unwrap();
+        r.close().unwrap();
+        assert!(matches!(r.close(), Err(FileSystemRefManagerError::UnknownRef(_))));
+    }
+
+    #[test]
+    fn dropping_an_open_ref_releases_it() {
+        let fs = fs();
+        {
+            let _r = fs.get_ref_manager().create(&fs).unwrap();
+            assert_eq!(fs.get_ref_manager().ref_count(), 1);
+        }
+        assert_eq!(fs.get_ref_manager().ref_count(), 0);
+    }
+
+    #[test]
+    fn dup_after_fs_close_fails() {
+        let fs = fs();
+        let r = fs.get_ref_manager().create(&fs).unwrap();
+        fs.close().unwrap();
+        assert!(matches!(r.dup(), Err(FileSystemRefManagerError::FileSystemAlreadyClosed(_))));
+        // Dropping the ref after the manager closed must not panic.
+        drop(r);
     }
 }

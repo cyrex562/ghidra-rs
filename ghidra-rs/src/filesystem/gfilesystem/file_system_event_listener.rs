@@ -4,7 +4,7 @@
 /// The two type parameters `FS` and `RM` represent the filesystem and ref-manager types
 /// respectively; they will be instantiated with the concrete Rust ports of `GFileSystem`
 /// and `FileSystemRefManager` once those classes are ported.
-pub trait FileSystemEventListener<FS, RM> {
+pub trait FileSystemEventListener<FS: ?Sized, RM: ?Sized> {
     /// Called by a GFileSystem before any destructive changes are made to the filesystem
     /// instance during [`close`](GFileSystem::close).
     ///
@@ -35,7 +35,7 @@ mod tests {
         pub ref_change_calls: std::cell::Cell<usize>,
     }
 
-    impl<FS, RM> FileSystemEventListener<FS, RM> for Recorder {
+    impl<FS: ?Sized, RM: ?Sized> FileSystemEventListener<FS, RM> for Recorder {
         fn on_filesystem_close(&self, _fs: &FS) {
             self.close_calls.set(self.close_calls.get() + 1);
         }

@@ -1,10 +1,36 @@
+//! Port of `ghidra.formats.gfilesystem.FileSystemRefManager`.
+//!
+//! Every filesystem owns one manager; it hands out [`FileSystemRef`]s that pin the filesystem,
+//! tracks which of them are still open, and broadcasts ref changes and the filesystem's close
+//! to [`FileSystemEventListener`]s.
+//!
+//! Ownership (CONVENTION_QUEUE verdict for this type: ARENA): Java's manager keeps a
+//! back-reference to its filesystem and a list of the ref *objects* it created, compared by
+//! identity. Here the manager is the store of ref *IDs* ([`FileSystemRefId`], a `Copy` token
+//! each [`FileSystemRef`] carries) and the filesystem is passed in at call time
+//! ([`create`](FileSystemRefManager::create) / [`release`](FileSystemRefManager::release) /
+//! [`on_close`](FileSystemRefManager::on_close)) instead of being stored, so there is no
+//! filesystem <-> manager reference cycle.
+//!
+//! Filesystems are shared through `&self` (see [`GFileSystem`](super::g_file_system::GFileSystem)),
+//! so the manager's bookkeeping sits behind private [`RefCell`]s. Borrows are never held
+//! while listeners run -- Java likewise invokes listeners outside its `synchronized` blocks --
+//! so a listener may call back into the manager.
+
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use thiserror::Error;
 
-use crate::filesystem::seam_stubs::{FileSystemRefLike, GFileSystemLike};
+use crate::util::msg::Msg;
 
 use super::file_system_event_listener::FileSystemEventListener;
+use super::file_system_ref::{FileSystemRef, FileSystemRefId};
+use super::g_file_system::{AnyGFileSystem, FsHandle};
+
+/// A listener for a filesystem's ref-change and close events.
+pub type FsEventListener = dyn FileSystemEventListener<dyn AnyGFileSystem, FileSystemRefManager>;
 
 /// Failure mode shared by [`FileSystemRefManager`] operations that mirror Java methods that
 /// throw `IllegalArgumentException`.
@@ -14,313 +40,360 @@ pub enum FileSystemRefManagerError {
     /// was called.
     #[error("File system already closed: {0}")]
     FileSystemAlreadyClosed(String),
-
     /// [`release`](FileSystemRefManager::release) was called with a ref this manager did not
-    /// hand out.
+    /// hand out (or had already released).
     #[error("Tried to remove unknown reference to {0}")]
     UnknownRef(String),
-
     /// [`on_close`](FileSystemRefManager::on_close) was called on a manager that was already
     /// closed.
     #[error("FileSystemRefManager already closed!")]
     AlreadyClosed,
 }
 
-/// A helper that manages creating and releasing filesystem references and broadcasting events
-/// to [`FileSystemEventListener`] listeners, mirroring
-/// `ghidra.formats.gfilesystem.FileSystemRefManager`.
-///
-/// This is a cycle cut-point: `GFileSystem` owns a `FileSystemRefManager` (via
-/// `getRefManager()`), `FileSystemRefManager` hands out refs that point back at the owning
-/// `GFileSystem`, and `FileSystemRef` (also unported) closes the loop by calling back into the
-/// manager that created it via `getFilesystem().getRefManager()`. Rust can't express that
-/// cycle with concrete structs, so this becomes a trait; `Fs` (the filesystem) and `Ref` (the
-/// ref returned by [`create`](FileSystemRefManager::create)) are free type parameters here
-/// rather than concrete ported types, exactly like
-/// [`GFileSystem`](super::g_file_system::GFileSystem) decouples its own
-/// `FS`/`Fsrl`/`FsrlRoot`/`RefManager` parameters instead of tying them to `Self`.
-///
-/// `Ref` is bounded by [`FileSystemRefLike`], a minimal seam standing in for the unported
-/// `FileSystemRef` -- this manager never calls a method on the refs it hands out, only
-/// compares their identity (matching Java's `==` comparisons in `release`/`canClose`), so the
-/// seam requires nothing but [`PartialEq`].
-///
-/// `Rm` is the type listeners see as "the ref manager" in
-/// [`FileSystemEventListener::on_filesystem_ref_change`]. Like `Fs`, it is intentionally a
-/// free parameter rather than `Self` -- tying either to `Self` would make this trait
-/// dyn-incompatible, the same reasoning documented on `FileSystemEventListener` itself.
-///
-/// Java's listeners are weakly referenced and auto-removed once nothing else holds them; this
-/// port uses strong [`Rc`] references instead and leaves eviction to
-/// [`remove_listener`](FileSystemRefManager::remove_listener), since Rust has no automatic
-/// weak-listener bookkeeping equivalent to Java's `ListenerSet`.
-pub trait FileSystemRefManager<Fs, Ref, Rm>
-where
-    Fs: GFileSystemLike,
-    Ref: FileSystemRefLike,
-{
-    /// Adds a listener that will be called when the owning filesystem is
-    /// [`on_close`](FileSystemRefManager::on_close)d or when refs change.
-    fn add_listener(&mut self, listener: Rc<dyn FileSystemEventListener<Fs, Rm>>);
+fn current_time_millis() -> i64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0)
+}
 
-    /// Removes a previously added listener.
-    fn remove_listener(&mut self, listener: &Rc<dyn FileSystemEventListener<Fs, Rm>>);
+/// Creates and releases [`FileSystemRef`]s to one filesystem and broadcasts events to
+/// [`FileSystemEventListener`]s.
+///
+/// Mirrors `ghidra.formats.gfilesystem.FileSystemRefManager`.
+pub struct FileSystemRefManager {
+    /// Open refs, most recent last; `None` once [`on_close`](Self::on_close)d (Java nulls both
+    /// its `fs` and `refs` fields).
+    refs: RefCell<Option<Vec<FileSystemRefId>>>,
+    next_id: Cell<u64>,
+    listeners: RefCell<Vec<Rc<FsEventListener>>>,
+    last_used_ts: Cell<i64>,
+}
 
-    /// Creates a new ref pointing at the owning filesystem, broadcasting
-    /// `on_filesystem_ref_change` to listeners.
+impl Default for FileSystemRefManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl FileSystemRefManager {
+    /// Creates a new manager. Mirrors `FileSystemRefManager(GFileSystem)`; the filesystem is
+    /// supplied to each operation instead of being stored (see the module docs).
+    pub fn new() -> Self {
+        let mgr = FileSystemRefManager {
+            refs: RefCell::new(Some(Vec::new())),
+            next_id: Cell::new(0),
+            listeners: RefCell::new(Vec::new()),
+            last_used_ts: Cell::new(0),
+        };
+        mgr.touch();
+        mgr
+    }
+
+    fn touch(&self) {
+        self.last_used_ts.set(current_time_millis());
+    }
+
+    /// Adds a listener that will be called when the filesystem is closed or when refs change.
     ///
-    /// Returns [`FileSystemRefManagerError::FileSystemAlreadyClosed`] if the owning filesystem
-    /// is already closed, matching Java's `IllegalArgumentException`.
-    fn create(&mut self) -> Result<Ref, FileSystemRefManagerError>;
+    /// Java's `ListenerSet` here is created with strong references, and so is this list.
+    pub fn add_listener(&self, listener: Rc<FsEventListener>) {
+        self.listeners.borrow_mut().push(listener);
+    }
+
+    /// Removes a previously added listener (compared by identity).
+    pub fn remove_listener(&self, listener: &Rc<FsEventListener>) {
+        self.listeners.borrow_mut().retain(|l| !Rc::ptr_eq(l, listener));
+    }
+
+    fn snapshot_listeners(&self) -> Vec<Rc<FsEventListener>> {
+        self.listeners.borrow().clone()
+    }
+
+    fn broadcast_ref_change(&self, fs: &(dyn AnyGFileSystem + 'static)) {
+        for l in self.snapshot_listeners() {
+            l.on_filesystem_ref_change(fs, self);
+        }
+    }
+
+    /// Creates a new [`FileSystemRef`] pinning `fs` (which must be the filesystem that owns this
+    /// manager), broadcasting `on_filesystem_ref_change` to listeners.
+    ///
+    /// # Errors
+    /// [`FileSystemRefManagerError::FileSystemAlreadyClosed`] if `fs` is closed, matching Java's
+    /// `IllegalArgumentException`.
+    pub fn create(&self, fs: &FsHandle) -> Result<FileSystemRef, FileSystemRefManagerError> {
+        if fs.is_closed() {
+            return Err(FileSystemRefManagerError::FileSystemAlreadyClosed(fs.to_string()));
+        }
+        let id = FileSystemRefId(self.next_id.get());
+        {
+            let mut refs = self.refs.borrow_mut();
+            let Some(refs) = refs.as_mut() else {
+                return Err(FileSystemRefManagerError::FileSystemAlreadyClosed(fs.to_string()));
+            };
+            self.next_id.set(id.0 + 1);
+            refs.push(id);
+        }
+        self.touch();
+        self.broadcast_ref_change(&**fs);
+        Ok(FileSystemRef::new(Rc::clone(fs), id))
+    }
 
     /// Releases a previously created ref, broadcasting `on_filesystem_ref_change` to
-    /// listeners.
+    /// listeners. `fs` is the filesystem that owns this manager.
     ///
-    /// Returns [`FileSystemRefManagerError::UnknownRef`] if `r` was not handed out by this
-    /// manager, matching Java's `IllegalArgumentException`.
-    fn release(&mut self, r: Ref) -> Result<(), FileSystemRefManagerError>;
+    /// # Errors
+    /// [`FileSystemRefManagerError::UnknownRef`] if `id` is not an open ref of this manager.
+    pub fn release(
+        &self,
+        fs: &(dyn AnyGFileSystem + 'static),
+        id: FileSystemRefId,
+    ) -> Result<(), FileSystemRefManagerError> {
+        let found = {
+            let mut refs = self.refs.borrow_mut();
+            // Search backwards: the most recently added ref is the most likely to be removed.
+            match refs.as_mut().and_then(|r| r.iter().rposition(|tmp| *tmp == id).map(|i| (r, i))) {
+                Some((r, i)) => {
+                    r.remove(i);
+                    true
+                }
+                None => false,
+            }
+        };
+        if !found {
+            return Err(FileSystemRefManagerError::UnknownRef(fs.to_string()));
+        }
+        self.touch();
+        self.broadcast_ref_change(fs);
+        Ok(())
+    }
 
-    /// Returns `true` if the only ref pinning the owning filesystem is `callers_ref`.
-    fn can_close(&self, callers_ref: &Ref) -> bool;
+    /// Returns `true` if the only ref pinning the filesystem is `callers_ref`.
+    pub fn can_close(&self, callers_ref: &FileSystemRef) -> bool {
+        match self.refs.borrow().as_ref() {
+            Some(refs) => refs.len() == 1 && refs[0] == callers_ref.id(),
+            None => false,
+        }
+    }
 
-    /// Called before any destructive changes are made to the owning filesystem, to gracefully
-    /// shut down this manager and broadcast `on_filesystem_close` to listeners.
+    /// The number of currently open refs.
+    pub fn ref_count(&self) -> usize {
+        self.refs.borrow().as_ref().map_or(0, Vec::len)
+    }
+
+    /// Called by the filesystem `fs` before it makes any destructive changes during its close,
+    /// to shut this manager down and broadcast `on_filesystem_close` to listeners.
     ///
-    /// Returns [`FileSystemRefManagerError::AlreadyClosed`] if this manager was already closed.
-    fn on_close(&mut self) -> Result<(), FileSystemRefManagerError>;
+    /// # Errors
+    /// [`FileSystemRefManagerError::AlreadyClosed`] if this manager was already closed.
+    pub fn on_close(&self, fs: &(dyn AnyGFileSystem + 'static)) -> Result<(), FileSystemRefManagerError> {
+        {
+            let mut refs = self.refs.borrow_mut();
+            let Some(open) = refs.as_ref() else {
+                return Err(FileSystemRefManagerError::AlreadyClosed);
+            };
+            if !open.is_empty() {
+                Msg::warn(
+                    "FileSystemRefManager",
+                    &format!("Closing filesystem even though it has active handles open: {fs}"),
+                );
+            }
+            *refs = None;
+        }
+        for l in self.snapshot_listeners() {
+            l.on_filesystem_close(fs);
+        }
+        Ok(())
+    }
 
-    /// The timestamp (implementor-defined units, mirroring `System.currentTimeMillis()`) this
-    /// manager was last touched by a ref change.
-    fn get_last_used_timestamp(&self) -> i64;
+    /// Returns `true` once [`on_close`](Self::on_close) has run.
+    pub fn is_closed(&self) -> bool {
+        self.refs.borrow().is_none()
+    }
+
+    /// The time (milliseconds since the epoch, like `System.currentTimeMillis()`) this manager
+    /// was last touched by a ref change.
+    pub fn get_last_used_timestamp(&self) -> i64 {
+        self.last_used_ts.get()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_last_used_timestamp_for_test(&self, ts: i64) {
+        self.last_used_ts.set(ts);
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod test_support {
+    //! A minimal real [`GFileSystem`] used by the ref-manager, ref and service tests.
+
+    use std::cell::Cell;
+    use std::io;
+
+    use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
+    use crate::app::util::bin::byte_provider::ByteProvider;
+    use crate::filesystem::gfilesystem::fileinfo::file_attributes::FileAttributes;
+    use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
+    use crate::filesystem::gfilesystem::g_file::GFile;
+    use crate::filesystem::gfilesystem::g_file_system::{GFileSystem, GFileSystemError};
+    use crate::util::task::TaskMonitor;
+
+    use super::FileSystemRefManager;
+
+    /// An empty filesystem whose close notifies its ref manager, as real ones do.
+    pub struct EmptyFs {
+        pub fsrl: FsrlRoot,
+        pub ref_manager: FileSystemRefManager,
+        pub closed: Cell<bool>,
+    }
+
+    impl EmptyFs {
+        pub fn new(protocol: &str) -> Self {
+            EmptyFs {
+                fsrl: FsrlRoot::make_root(protocol),
+                ref_manager: FileSystemRefManager::new(),
+                closed: Cell::new(false),
+            }
+        }
+    }
+
+    impl GFileSystem for EmptyFs {
+        type Fs = ();
+        fn get_name(&self) -> String {
+            "empty".into()
+        }
+        fn get_type(&self) -> String {
+            "empty".into()
+        }
+        fn get_description(&self) -> String {
+            "Empty".into()
+        }
+        fn get_fsrl(&self) -> &FsrlRoot {
+            &self.fsrl
+        }
+        fn is_closed(&self) -> bool {
+            self.closed.get()
+        }
+        fn get_ref_manager(&self) -> &FileSystemRefManager {
+            &self.ref_manager
+        }
+        fn lookup(&self, _path: Option<&str>) -> io::Result<Option<Box<dyn GFile<()>>>> {
+            Ok(None)
+        }
+        fn get_byte_provider(
+            &self,
+            _file: &dyn GFile<()>,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Option<Box<dyn ByteProvider>>, GFileSystemError> {
+            Ok(Some(Box::new(ByteArrayProvider::new(Vec::new()))))
+        }
+        fn get_listing(&self, _d: Option<&dyn GFile<()>>) -> io::Result<Vec<Box<dyn GFile<()>>>> {
+            Ok(Vec::new())
+        }
+        fn get_file_attributes(&self, _f: &dyn GFile<()>, _m: &dyn TaskMonitor) -> FileAttributes {
+            FileAttributes::new()
+        }
+        fn close(&self) -> io::Result<()> {
+            let _ = self.ref_manager.on_close(self);
+            self.closed.set(true);
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
+
+    use super::test_support::EmptyFs;
     use super::*;
-    use std::cell::{Cell, RefCell};
-
-    // ── Mock seam types ─────────────────────────────────────────────────────
-
-    struct MockFs {
-        closed: Cell<bool>,
-        name: &'static str,
-    }
-    impl GFileSystemLike for MockFs {}
-
-    #[derive(Debug, Clone, PartialEq, Eq)]
-    struct MockRef(u32);
-    impl FileSystemRefLike for MockRef {}
+    use crate::filesystem::gfilesystem::g_file_system::GFileSystem;
 
     struct Recorder {
         close_calls: Cell<usize>,
         ref_change_calls: Cell<usize>,
     }
 
-    impl FileSystemEventListener<MockFs, MockRefManager> for Recorder {
-        fn on_filesystem_close(&self, _fs: &MockFs) {
+    impl FileSystemEventListener<dyn AnyGFileSystem, FileSystemRefManager> for Recorder {
+        fn on_filesystem_close(&self, _fs: &dyn AnyGFileSystem) {
             self.close_calls.set(self.close_calls.get() + 1);
         }
-
-        fn on_filesystem_ref_change(&self, _fs: &MockFs, _ref_manager: &MockRefManager) {
+        fn on_filesystem_ref_change(&self, _fs: &dyn AnyGFileSystem, _rm: &FileSystemRefManager) {
             self.ref_change_calls.set(self.ref_change_calls.get() + 1);
         }
     }
 
-    // ── Mock FileSystemRefManager ─────────────────────────────────────────────
-    //
-    // Exercises the real Java behavior: identity-based ref bookkeeping, broadcasting to
-    // listeners, and the two IllegalArgumentException-equivalent error paths.
-
-    struct MockRefManager {
-        fs: Rc<MockFs>,
-        refs: RefCell<Option<Vec<MockRef>>>,
-        listeners: RefCell<Vec<Rc<dyn FileSystemEventListener<MockFs, MockRefManager>>>>,
-        next_id: Cell<u32>,
-        last_used: Cell<i64>,
-    }
-
-    impl MockRefManager {
-        fn new(fs: Rc<MockFs>) -> Self {
-            let mgr = MockRefManager {
-                fs,
-                refs: RefCell::new(Some(Vec::new())),
-                listeners: RefCell::new(Vec::new()),
-                next_id: Cell::new(0),
-                last_used: Cell::new(0),
-            };
-            mgr.touch();
-            mgr
-        }
-
-        fn touch(&self) {
-            self.last_used.set(self.last_used.get() + 1);
-        }
-
-        fn broadcast_ref_change(&self) {
-            for l in self.listeners.borrow().iter() {
-                l.on_filesystem_ref_change(&self.fs, self);
-            }
-        }
-    }
-
-    impl FileSystemRefManager<MockFs, MockRef, MockRefManager> for MockRefManager {
-        fn add_listener(&mut self, listener: Rc<dyn FileSystemEventListener<MockFs, MockRefManager>>) {
-            self.listeners.borrow_mut().push(listener);
-        }
-
-        fn remove_listener(&mut self, listener: &Rc<dyn FileSystemEventListener<MockFs, MockRefManager>>) {
-            self.listeners.borrow_mut().retain(|l| !Rc::ptr_eq(l, listener));
-        }
-
-        fn create(&mut self) -> Result<MockRef, FileSystemRefManagerError> {
-            if self.fs.closed.get() {
-                return Err(FileSystemRefManagerError::FileSystemAlreadyClosed(
-                    self.fs.name.to_string(),
-                ));
-            }
-            let r = MockRef(self.next_id.get());
-            self.next_id.set(self.next_id.get() + 1);
-            self.refs
-                .borrow_mut()
-                .as_mut()
-                .expect("manager not yet closed")
-                .push(r.clone());
-            self.touch();
-            self.broadcast_ref_change();
-            Ok(r)
-        }
-
-        fn release(&mut self, r: MockRef) -> Result<(), FileSystemRefManagerError> {
-            let found = {
-                let mut refs = self.refs.borrow_mut();
-                let refs = refs.as_mut().expect("manager not yet closed");
-                match refs.iter().rposition(|tmp| *tmp == r) {
-                    Some(i) => {
-                        refs.remove(i);
-                        true
-                    }
-                    None => false,
-                }
-            };
-            if !found {
-                return Err(FileSystemRefManagerError::UnknownRef(self.fs.name.to_string()));
-            }
-            self.touch();
-            self.broadcast_ref_change();
-            Ok(())
-        }
-
-        fn can_close(&self, callers_ref: &MockRef) -> bool {
-            let refs = self.refs.borrow();
-            let refs = refs.as_ref().expect("manager not yet closed");
-            refs.len() == 1 && refs[0] == *callers_ref
-        }
-
-        fn on_close(&mut self) -> Result<(), FileSystemRefManagerError> {
-            if self.refs.borrow().is_none() {
-                return Err(FileSystemRefManagerError::AlreadyClosed);
-            }
-            *self.refs.borrow_mut() = None;
-            for l in self.listeners.borrow().iter() {
-                l.on_filesystem_close(&self.fs);
-            }
-            Ok(())
-        }
-
-        fn get_last_used_timestamp(&self) -> i64 {
-            self.last_used.get()
-        }
-    }
-
-    fn mgr() -> (Rc<MockFs>, MockRefManager) {
-        let fs = Rc::new(MockFs { closed: Cell::new(false), name: "mockfs" });
-        let m = MockRefManager::new(fs.clone());
-        (fs, m)
+    fn fs() -> FsHandle {
+        Rc::new(EmptyFs::new("empty"))
     }
 
     fn recorder() -> Rc<Recorder> {
         Rc::new(Recorder { close_calls: Cell::new(0), ref_change_calls: Cell::new(0) })
     }
 
-    // ── Tests ───────────────────────────────────────────────────────────────
-
     #[test]
-    fn create_returns_distinct_refs_and_bumps_timestamp() {
-        let (_fs, mut m) = mgr();
-        let before = m.get_last_used_timestamp();
-        let r1 = m.create().unwrap();
-        let r2 = m.create().unwrap();
-        assert_ne!(r1, r2);
-        assert!(m.get_last_used_timestamp() > before);
+    fn create_returns_distinct_refs_and_can_close_tracks_sole_ref() {
+        let fs = fs();
+        let mut r1 = fs.get_ref_manager().create(&fs).unwrap();
+        assert!(fs.get_ref_manager().can_close(&r1));
+        let mut r2 = r1.dup().unwrap();
+        assert_ne!(r1.id(), r2.id());
+        assert_eq!(fs.get_ref_manager().ref_count(), 2);
+        assert!(!fs.get_ref_manager().can_close(&r1));
+        r2.close().unwrap();
+        assert!(fs.get_ref_manager().can_close(&r1));
+        r1.close().unwrap();
+        assert_eq!(fs.get_ref_manager().ref_count(), 0);
     }
 
     #[test]
     fn create_fails_when_filesystem_already_closed() {
-        let (fs, mut m) = mgr();
-        fs.closed.set(true);
-        let err = m.create().unwrap_err();
-        assert_eq!(err, FileSystemRefManagerError::FileSystemAlreadyClosed("mockfs".to_string()));
+        let fs = fs();
+        fs.close().unwrap();
+        let err = fs.get_ref_manager().create(&fs).unwrap_err();
+        assert_eq!(err, FileSystemRefManagerError::FileSystemAlreadyClosed("empty://".into()));
     }
 
     #[test]
-    fn can_close_true_only_when_sole_ref_matches() {
-        let (_fs, mut m) = mgr();
-        let r1 = m.create().unwrap();
-        assert!(m.can_close(&r1));
-
-        let r2 = m.create().unwrap();
-        assert!(!m.can_close(&r1));
-        assert!(!m.can_close(&r2));
-
-        m.release(r2).unwrap();
-        assert!(m.can_close(&r1));
+    fn release_of_unknown_ref_errors() {
+        let fs = fs();
+        let mut r = fs.get_ref_manager().create(&fs).unwrap();
+        let id = r.id();
+        r.close().unwrap();
+        let err = fs.get_ref_manager().release(&*fs, id).unwrap_err();
+        assert_eq!(err, FileSystemRefManagerError::UnknownRef("empty://".into()));
     }
 
     #[test]
-    fn release_removes_ref_and_errors_on_unknown_ref() {
-        let (_fs, mut m) = mgr();
-        let r1 = m.create().unwrap();
-        m.release(r1.clone()).unwrap();
-
-        // Releasing the same ref again is now "unknown".
-        let err = m.release(r1).unwrap_err();
-        assert_eq!(err, FileSystemRefManagerError::UnknownRef("mockfs".to_string()));
-    }
-
-    #[test]
-    fn add_and_remove_listener_gate_ref_change_broadcasts() {
-        let (_fs, mut m) = mgr();
+    fn listeners_see_ref_changes_until_removed_and_close_once() {
+        let fs = fs();
         let rec = recorder();
-        let listener: Rc<dyn FileSystemEventListener<MockFs, MockRefManager>> = rec.clone();
-        m.add_listener(listener.clone());
-
-        let r1 = m.create().unwrap();
+        let l: Rc<FsEventListener> = rec.clone();
+        fs.get_ref_manager().add_listener(l.clone());
+        let mut r = fs.get_ref_manager().create(&fs).unwrap();
         assert_eq!(rec.ref_change_calls.get(), 1);
-
-        m.remove_listener(&listener);
-        m.release(r1).unwrap();
-        assert_eq!(rec.ref_change_calls.get(), 1, "listener removed, should not fire again");
-    }
-
-    #[test]
-    fn on_close_broadcasts_and_rejects_double_close() {
-        let (_fs, mut m) = mgr();
-        let rec = recorder();
-        let listener: Rc<dyn FileSystemEventListener<MockFs, MockRefManager>> = rec.clone();
-        m.add_listener(listener);
-
-        m.on_close().unwrap();
+        r.close().unwrap();
+        assert_eq!(rec.ref_change_calls.get(), 2);
+        fs.close().unwrap();
         assert_eq!(rec.close_calls.get(), 1);
-
-        let err = m.on_close().unwrap_err();
-        assert_eq!(err, FileSystemRefManagerError::AlreadyClosed);
+        assert!(fs.get_ref_manager().is_closed());
+        assert_eq!(
+            fs.get_ref_manager().on_close(&*fs).unwrap_err(),
+            FileSystemRefManagerError::AlreadyClosed
+        );
+        fs.get_ref_manager().remove_listener(&l);
+        assert_eq!(fs.get_ref_manager().listeners.borrow().len(), 0);
     }
 
     #[test]
-    fn boxed_dyn_ref_manager_is_accepted() {
-        let (_fs, m) = mgr();
-        let mut boxed: Box<dyn FileSystemRefManager<MockFs, MockRef, MockRefManager>> = Box::new(m);
-        let r = boxed.create().unwrap();
-        assert!(boxed.can_close(&r));
+    fn touch_updates_last_used_timestamp() {
+        let fs = fs();
+        fs.get_ref_manager().set_last_used_timestamp_for_test(5);
+        let _r = fs.get_ref_manager().create(&fs).unwrap();
+        assert!(fs.get_ref_manager().get_last_used_timestamp() > 5);
+    }
+
+    #[test]
+    fn typed_access_through_trait() {
+        let e = EmptyFs::new("empty");
+        assert_eq!(GFileSystem::get_ref_manager(&e).ref_count(), 0);
     }
 }

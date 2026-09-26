@@ -6,6 +6,7 @@ pub mod cancellable_iterator;
 pub mod task_monitor_splitter;
 pub mod issue_listener;
 pub mod task_listener;
+pub mod unknown_progress_wrapping_task_monitor;
 
 pub use monitored_runnable::MonitoredRunnable;
 pub use swing_runnable::SwingRunnable;

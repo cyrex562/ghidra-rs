@@ -3643,14 +3643,14 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SetEquateDialog
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SetEquateTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bean 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/BinaryReader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteArrayConverter.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteArrayProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteArrayProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderPaddedInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderWrapper.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/EmptyByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FaultTolerantInputStream.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileBytesProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/GhidraRandomAccessFile.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/InputStreamByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
@@ -3660,7 +3660,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MemBufferBytePro
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MemoryByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MemoryMutableByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MutableByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedFileByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedFileByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedOutputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/RandomAccessByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
@@ -5094,11 +5094,11 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractS
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRL.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRLRoot.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSUtilities.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileCache.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileCache.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileCacheNameIndex.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemEventListener.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemIndexHelper.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemInstanceManager.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemInstanceManager.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemProbeConflictResolver.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRef.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRefManager.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
@@ -5111,8 +5111,8 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSyst
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemIterator.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemProgramProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GIconProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/LocalFileSystem.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/LocalFileSystem.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdFile.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/SingleFileSystemIndexHelper.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
@@ -5127,7 +5127,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/Pa
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PasswordProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PopupGUIPasswordProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemFactoryDependencyException.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemFactoryMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemFactoryMgr.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemInfoRec.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemBaseFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactory.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
@@ -7269,7 +7269,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/Mult
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ext4/NewExt4Analyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ext4 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipFileSystem.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipFileSystemFactory.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/gzip/GZipUtil.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats gzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ExtractedMacho.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/apple8900/Apple8900Analyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios apple8900 
@@ -7432,7 +7432,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YA
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2ObjectType.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats yaffs2 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystem.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemBuiltin.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemFactory.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zlib/ZLIB.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats zlib 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/ZstdCliToolWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zstd 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/ZstdFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zstd 
@@ -12352,7 +12352,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/SwingRunnable.java	
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/SwingUpdateManager.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util task 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/Task.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util task 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/TaskListener.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util task
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/UnknownProgressWrappingTaskMonitor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util task 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/UnknownProgressWrappingTaskMonitor.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util task 
 orig_src/Ghidra/Framework/Gui/src/main/java/gui/event/MouseBinding.java	TODO	orig_src Ghidra Framework Gui src main java gui event 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/IconProvider.java	TODO	orig_src Ghidra Framework Gui src main java resources 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/Icons.java	TODO	orig_src Ghidra Framework Gui src main java resources 

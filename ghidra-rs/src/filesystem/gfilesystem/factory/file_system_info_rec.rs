@@ -1,152 +1,173 @@
-use std::cmp::Ordering;
+//! Port of `ghidra.formats.gfilesystem.factory.FileSystemInfoRec`.
 
-use crate::filesystem::seam_stubs::GFileSystemLike;
+use std::any::{type_name, TypeId};
+use std::cmp::Ordering;
+use std::fmt;
+use std::rc::Rc;
+
+use crate::filesystem::gfilesystem::annotations::file_system_info::FileSystemInfo;
+use crate::filesystem::gfilesystem::g_file_system::GFileSystem;
+use crate::util::msg::Msg;
 
 use super::g_file_system_factory::GFileSystemFactory;
 
-/// Holds information read from a `FileSystemInfo` annotation.
+/// Holds information read from a filesystem's [`FileSystemInfo`] metadata, plus its factory.
 ///
-/// This is the Rust equivalent of `ghidra.formats.gfilesystem.factory.FileSystemInfoRec`.
-///
-/// The Java class is materialized by reflecting on a `FileSystemInfo` annotation attached to
-/// a `GFileSystem` implementation class (`FileSystemInfoRec.fromClass`): it reads the
-/// annotation's `type`/`description`/`priority`/`factory` elements, instantiates the factory
-/// via its no-arg constructor, and records the `Class<? extends GFileSystem>` it came from.
-/// Rust has no annotations or reflection, so there is no equivalent of `fromClass` here --
-/// whatever registry assembles filesystem metadata (the eventual port of
-/// `FileSystemFactoryMgr`) is responsible for constructing instances of this trait directly,
-/// the same way [`FileSystemInfo`](crate::filesystem::gfilesystem::annotations::file_system_info::FileSystemInfo)
-/// already stands in for the annotation itself.
-///
-/// `fsClass.getName()` (used only for logging/identification in the Java code, never
-/// reflected on further) is represented here as [`get_fs_class_name`](Self::get_fs_class_name)
-/// rather than pulling in a `Class<?>`-style seam.
-pub trait FileSystemInfoRec<FSTYPE: GFileSystemLike> {
-    /// Filesystem 'type', ie. "file", or "zip", etc.
-    fn get_type(&self) -> &str;
-
-    /// Filesystem description, ie. "XYZ Vendor Filesystem Type 1".
-    fn get_description(&self) -> &str;
-
-    /// Filesystem relative priority. Higher numeric values are considered before lower
-    /// values.
-    fn get_priority(&self) -> i32;
-
-    /// The name of the `GFileSystem` implementation class this record describes.
-    fn get_fs_class_name(&self) -> &str;
-
-    /// The [`GFileSystemFactory`] instance that will create new filesystem instances when
-    /// needed.
-    fn get_factory(&self) -> &dyn GFileSystemFactory<FSTYPE>;
+/// Mirrors `ghidra.formats.gfilesystem.factory.FileSystemInfoRec`. Java's `Class<? extends
+/// GFileSystem>` becomes the filesystem's [`TypeId`] (used by
+/// [`FileSystemFactoryMgr::get_file_system_type`](super::file_system_factory_mgr::FileSystemFactoryMgr::get_file_system_type))
+/// plus its type name (used where Java logs `getFSClass().getName()`).
+#[derive(Clone)]
+pub struct FileSystemInfoRec {
+    fs_type: String,
+    description: String,
+    priority: i32,
+    fs_class: TypeId,
+    fs_class_name: &'static str,
+    factory: Rc<dyn GFileSystemFactory>,
 }
 
-/// Orders [`FileSystemInfoRec`]s by [`FileSystemInfoRec::get_priority`], with the highest
-/// priority elements sorted to the beginning of the list.
-///
-/// This is the Rust equivalent of the static `FileSystemInfoRec.BY_PRIORITY` `Comparator`.
-pub fn by_priority<FSTYPE: GFileSystemLike>(
-    a: &dyn FileSystemInfoRec<FSTYPE>,
-    b: &dyn FileSystemInfoRec<FSTYPE>,
-) -> Ordering {
-    b.get_priority().cmp(&a.get_priority())
+/// `[a-z0-9]+`, Java's `FSTYPE_VALID_REGEX`.
+fn is_valid_fs_type(s: &str) -> bool {
+    !s.is_empty() && s.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+}
+
+impl FileSystemInfoRec {
+    /// Creates a record directly. Mirrors the private Java constructor.
+    pub fn new(
+        fs_type: &str,
+        description: &str,
+        priority: i32,
+        fs_class: TypeId,
+        fs_class_name: &'static str,
+        factory: Rc<dyn GFileSystemFactory>,
+    ) -> Self {
+        FileSystemInfoRec {
+            fs_type: fs_type.to_string(),
+            description: description.to_string(),
+            priority,
+            fs_class,
+            fs_class_name,
+            factory,
+        }
+    }
+
+    /// Builds a record for the filesystem type `FS` from its metadata and factory, or `None`
+    /// (after logging an error) if the type string is not `[a-z0-9]+`.
+    ///
+    /// Mirrors `fromClass(Class)`, with the annotation and factory instance supplied by the
+    /// caller instead of found by reflection.
+    pub fn from_class<FS: GFileSystem>(
+        info: &FileSystemInfo,
+        factory: Rc<dyn GFileSystemFactory>,
+    ) -> Option<Self> {
+        if !is_valid_fs_type(info.fs_type) {
+            Msg::error(
+                "FileSystemInfoRec",
+                &format!(
+                    "Bad GFileSystem type specified for {}: {}, skipping.",
+                    type_name::<FS>(),
+                    info.fs_type
+                ),
+            );
+            return None;
+        }
+        Some(Self::new(
+            info.fs_type,
+            info.description,
+            info.priority,
+            TypeId::of::<FS>(),
+            type_name::<FS>(),
+            factory,
+        ))
+    }
+
+    /// Filesystem 'type', ie. "file", or "zip", etc. Mirrors `getType()`.
+    pub fn get_type(&self) -> &str {
+        &self.fs_type
+    }
+
+    /// Filesystem description. Mirrors `getDescription()`.
+    pub fn get_description(&self) -> &str {
+        &self.description
+    }
+
+    /// Filesystem relative priority; higher values are considered first. Mirrors
+    /// `getPriority()`.
+    pub fn get_priority(&self) -> i32 {
+        self.priority
+    }
+
+    /// The filesystem implementation type. Mirrors `getFSClass()`.
+    pub fn get_fs_class(&self) -> TypeId {
+        self.fs_class
+    }
+
+    /// The filesystem implementation type's name (Java's `getFSClass().getName()`).
+    pub fn get_fs_class_name(&self) -> &str {
+        self.fs_class_name
+    }
+
+    /// The factory that creates instances of this filesystem. Mirrors `getFactory()`.
+    pub fn get_factory(&self) -> &dyn GFileSystemFactory {
+        &*self.factory
+    }
+}
+
+impl fmt::Debug for FileSystemInfoRec {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FileSystemInfoRec")
+            .field("type", &self.fs_type)
+            .field("description", &self.description)
+            .field("priority", &self.priority)
+            .field("class", &self.fs_class_name)
+            .finish()
+    }
+}
+
+/// Sorts records by descending priority. Mirrors `FileSystemInfoRec.BY_PRIORITY`.
+pub fn by_priority(a: &FileSystemInfoRec, b: &FileSystemInfoRec) -> Ordering {
+    b.priority.cmp(&a.priority)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    struct DummyFileSystem;
-    impl GFileSystemLike for DummyFileSystem {}
+    use crate::filesystem::gfilesystem::annotations::file_system_info::{
+        PRIORITY_HIGH, PRIORITY_LOW,
+    };
+    use crate::filesystem::gfilesystem::file_system_ref_manager::test_support::EmptyFs;
 
     struct DummyFactory;
-    impl GFileSystemFactory<DummyFileSystem> for DummyFactory {}
-
-    struct MockRec {
-        fs_type: &'static str,
-        description: &'static str,
-        priority: i32,
-        fs_class_name: &'static str,
-        factory: DummyFactory,
-    }
-
-    impl FileSystemInfoRec<DummyFileSystem> for MockRec {
-        fn get_type(&self) -> &str {
-            self.fs_type
-        }
-
-        fn get_description(&self) -> &str {
-            self.description
-        }
-
-        fn get_priority(&self) -> i32 {
-            self.priority
-        }
-
-        fn get_fs_class_name(&self) -> &str {
-            self.fs_class_name
-        }
-
-        fn get_factory(&self) -> &dyn GFileSystemFactory<DummyFileSystem> {
-            &self.factory
-        }
-    }
+    impl GFileSystemFactory for DummyFactory {}
 
     #[test]
-    fn accessors_return_constructed_values() {
-        let rec = MockRec {
-            fs_type: "zip",
-            description: "Zip filesystem",
-            priority: 5,
-            fs_class_name: "ghidra.ZipGFileSystem",
-            factory: DummyFactory,
-        };
+    fn from_class_reads_metadata() {
+        let info = FileSystemInfo::with("zip", "Zip", PRIORITY_HIGH);
+        let rec = FileSystemInfoRec::from_class::<EmptyFs>(&info, Rc::new(DummyFactory)).unwrap();
         assert_eq!(rec.get_type(), "zip");
-        assert_eq!(rec.get_description(), "Zip filesystem");
-        assert_eq!(rec.get_priority(), 5);
-        assert_eq!(rec.get_fs_class_name(), "ghidra.ZipGFileSystem");
-        let _factory = rec.get_factory();
+        assert_eq!(rec.get_description(), "Zip");
+        assert_eq!(rec.get_priority(), PRIORITY_HIGH);
+        assert_eq!(rec.get_fs_class(), TypeId::of::<EmptyFs>());
+        assert!(rec.get_fs_class_name().ends_with("EmptyFs"));
     }
 
     #[test]
-    fn by_priority_sorts_highest_first() {
-        let low = MockRec {
-            fs_type: "low",
-            description: "",
-            priority: -10,
-            fs_class_name: "Low",
-            factory: DummyFactory,
-        };
-        let high = MockRec {
-            fs_type: "high",
-            description: "",
-            priority: 10,
-            fs_class_name: "High",
-            factory: DummyFactory,
-        };
-        let default_rec = MockRec {
-            fs_type: "def",
-            description: "",
-            priority: 0,
-            fs_class_name: "Default",
-            factory: DummyFactory,
-        };
-
-        let mut recs: Vec<&dyn FileSystemInfoRec<DummyFileSystem>> = vec![&low, &high, &default_rec];
-        recs.sort_by(|a, b| by_priority::<DummyFileSystem>(*a, *b));
-
-        let types: Vec<&str> = recs.iter().map(|r| r.get_type()).collect();
-        assert_eq!(types, vec!["high", "def", "low"]);
+    fn from_class_rejects_bad_type_strings() {
+        for bad in ["", "Zip", "a-b", "a b"] {
+            let info = FileSystemInfo::new(bad);
+            assert!(FileSystemInfoRec::from_class::<EmptyFs>(&info, Rc::new(DummyFactory)).is_none());
+        }
     }
 
     #[test]
-    fn boxed_dyn_file_system_info_rec_is_accepted() {
-        let rec: Box<dyn FileSystemInfoRec<DummyFileSystem>> = Box::new(MockRec {
-            fs_type: "myfs",
-            description: "desc",
-            priority: 0,
-            fs_class_name: "MyFs",
-            factory: DummyFactory,
-        });
-        assert_eq!(rec.get_type(), "myfs");
+    fn by_priority_sorts_descending() {
+        let f: Rc<dyn GFileSystemFactory> = Rc::new(DummyFactory);
+        let lo = FileSystemInfoRec::from_class::<EmptyFs>(&FileSystemInfo::with("lo", "", PRIORITY_LOW), f.clone()).unwrap();
+        let hi = FileSystemInfoRec::from_class::<EmptyFs>(&FileSystemInfo::with("hi", "", PRIORITY_HIGH), f).unwrap();
+        let mut v = vec![lo, hi];
+        v.sort_by(by_priority);
+        assert_eq!(v[0].get_type(), "hi");
+        assert_eq!(v[1].get_type(), "lo");
     }
 }

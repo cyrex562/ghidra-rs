@@ -1,105 +1,32 @@
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
+//! Port of `ghidra.formats.gfilesystem.factory.GFileSystemFactoryByteProvider`.
+
+use crate::app::util::bin::byte_provider::ByteProvider;
+use crate::filesystem::gfilesystem::file_system_service::FileSystemService;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
-use crate::filesystem::seam_stubs::{FileSystemServiceLike, GFileSystemLike};
+use crate::filesystem::gfilesystem::g_file_system::{FsHandle, GFileSystemError};
 use crate::util::task::TaskMonitor;
 
 use super::g_file_system_factory::GFileSystemFactory;
 
-/// A [`GFileSystemFactory`] for filesystem implementations that use a [`GByteStore`].
+/// A [`GFileSystemFactory`] that creates filesystem instances from a [`ByteProvider`].
 ///
-/// This is the Rust equivalent of
-/// `ghidra.formats.gfilesystem.factory.GFileSystemFactoryByteProvider`.
-///
-/// The Java method returns the base `GFileSystem` type rather than `FSTYPE` (despite the
-/// generic bound), so `create` here returns `Box<dyn GFileSystemLike>` -- the same
-/// placeholder seam already used by [`GFileSystemFactory`]'s `FSTYPE` bound -- rather than
-/// pulling in the real, four-parameter `GFileSystem` trait and its generic explosion.
-pub trait GFileSystemFactoryByteProvider<FSTYPE: GFileSystemLike>:
-    GFileSystemFactory<FSTYPE>
-{
-    /// Constructs a new filesystem instance that handles the specified file.
+/// Mirrors `ghidra.formats.gfilesystem.factory.GFileSystemFactoryByteProvider<FSTYPE>`; the
+/// created filesystem is returned as a shared, type-erased [`FsHandle`] (see
+/// [`GFileSystemFactory`] for why `FSTYPE` is not carried).
+pub trait GFileSystemFactoryByteProvider: GFileSystemFactory {
+    /// Constructs a new filesystem instance using `byte_provider`, which the new filesystem
+    /// (or this method, on error) becomes responsible for closing.
     ///
-    /// `byte_provider` contains the contents of the file being probed; this method is
-    /// responsible for closing it. `monitor` should be polled to see if the user has
-    /// requested to cancel the operation, and updated with progress information.
+    /// `target_fsrl` is the FSRL of the filesystem being created; `fs_service` is the service
+    /// requesting it.
+    ///
+    /// # Errors
+    /// On I/O errors, unrecognized contents, or cancellation.
     fn create(
         &self,
         target_fsrl: &FsrlRoot,
-        byte_provider: Box<dyn GByteStore>,
-        fs_service: &dyn FileSystemServiceLike,
+        byte_provider: Box<dyn ByteProvider>,
+        fs_service: &FileSystemService,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn GFileSystemLike>, GFileSystemError>;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io;
-
-    struct DummyFileSystem;
-    impl GFileSystemLike for DummyFileSystem {}
-
-    struct DummyFsService;
-    impl FileSystemServiceLike for DummyFsService {}
-
-    struct RecordingByteProvider;
-
-    impl GByteStore for RecordingByteProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(0)
-        }
-        fn is_valid_index(&mut self, _index: u64) -> bool {
-            false
-        }
-        fn read_byte(&mut self, _index: u64) -> io::Result<u8> {
-            Err(io::Error::new(io::ErrorKind::UnexpectedEof, "empty"))
-        }
-        fn read_bytes(&mut self, _index: u64, _length: usize) -> io::Result<Vec<u8>> {
-            Ok(Vec::new())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Other, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Other, "read-only"))
-        }
-    }
-
-    struct MockFactory;
-
-    impl GFileSystemFactory<DummyFileSystem> for MockFactory {}
-
-    impl GFileSystemFactoryByteProvider<DummyFileSystem> for MockFactory {
-        fn create(
-            &self,
-            _target_fsrl: &FsrlRoot,
-            mut byte_provider: Box<dyn GByteStore>,
-            _fs_service: &dyn FileSystemServiceLike,
-            _monitor: &dyn TaskMonitor,
-        ) -> Result<Box<dyn GFileSystemLike>, GFileSystemError> {
-            // Exercise the byte provider (Java requires implementors to close it) before
-            // handing back the constructed filesystem.
-            let _ = byte_provider.length()?;
-            Ok(Box::new(DummyFileSystem))
-        }
-    }
-
-    #[test]
-    fn create_reads_byte_provider_and_returns_filesystem() {
-        let factory = MockFactory;
-        let bp: Box<dyn GByteStore> = Box::new(RecordingByteProvider);
-        let monitor = crate::util::task::DummyMonitor;
-        let result = factory.create(&FsrlRoot::make_root("file"), bp, &DummyFsService, &monitor);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn boxed_dyn_factory_is_accepted() {
-        let factory: Box<dyn GFileSystemFactoryByteProvider<DummyFileSystem>> = Box::new(MockFactory);
-        let bp: Box<dyn GByteStore> = Box::new(RecordingByteProvider);
-        let monitor = crate::util::task::DummyMonitor;
-        let fs = factory.create(&FsrlRoot::make_root("file"), bp, &DummyFsService, &monitor).unwrap();
-        let _: Box<dyn GFileSystemLike> = fs;
-    }
+    ) -> Result<FsHandle, GFileSystemError>;
 }

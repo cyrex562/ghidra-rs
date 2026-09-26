@@ -186,7 +186,7 @@ fn medium_date_utc(millis: i64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::file::seam_stubs::ByteArrayProvider;
+    use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
     use crate::format::xcoff::x_coff_file_header_magic::{MAGIC_XCOFF32, MAGIC_XCOFF64};
 
     fn provider(bytes: Vec<u8>) -> Rc<RefCell<dyn GByteStore>> {

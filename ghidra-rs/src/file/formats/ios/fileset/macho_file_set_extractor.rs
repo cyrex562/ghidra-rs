@@ -20,7 +20,8 @@ use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
 
-use crate::file::seam_stubs::{ByteArrayProvider, ExtractedMacho, MachHeader, SegmentCommand};
+use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
+use crate::file::seam_stubs::{ExtractedMacho, MachHeader, SegmentCommand};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::mach_constants::MH_MAGIC_64;
 use crate::format::macho::mach_exception::MachException;

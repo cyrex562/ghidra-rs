@@ -159,26 +159,49 @@ impl SingleFileSystemIndexHelper {
     }
 
     /// Clears the data held by this object. Mirrors `clear()`.
-    pub fn clear(&mut self) {
-        self.payload_file = None;
+    ///
+    /// Takes `&self` so a shared filesystem can close its index: the payload file stays
+    /// allocated but is no longer reachable through this index once cleared.
+    pub fn clear(&self) {
         self.handle.0.closed.set(true);
+    }
+
+    /// A fresh, owned copy of `file` (the root directory or the payload file of this index).
+    ///
+    /// [`GFile`]s here own their parent chain and are not `Clone`; filesystems that must hand
+    /// out owned files (as [`GFileSystem`](super::g_file_system::GFileSystem) lookups do) use
+    /// this to rebuild an equal one.
+    pub fn to_owned_file(&self, file: &SinglePayloadGFile) -> SinglePayloadGFile {
+        if same_file(&self.root_dir, file) {
+            self.handle.root_file()
+        } else {
+            self.handle.payload_file()
+        }
+    }
+
+    fn live_payload(&self) -> Option<&SinglePayloadGFile> {
+        if self.handle.0.closed.get() {
+            None
+        } else {
+            self.payload_file.as_ref()
+        }
     }
 
     /// `true` if `file` is the payload file. Mirrors `isPayloadFile(GFile)`; always `false`
     /// once [`clear`](Self::clear)ed.
     pub fn is_payload_file(&self, file: &dyn GFile<SinglePayloadFsHandle>) -> bool {
-        self.payload_file.as_ref().is_some_and(|p| same_file(p, file))
+        self.live_payload().is_some_and(|p| same_file(p, file))
     }
 
     /// `true` if this object has been [`clear`](Self::clear)ed. Mirrors `isClosed()`.
     pub fn is_closed(&self) -> bool {
-        self.payload_file.is_none()
+        self.live_payload().is_none()
     }
 
     /// The payload file, i.e. the main file of this filesystem; `None` once cleared.
     /// Mirrors `getPayloadFile()`.
     pub fn get_payload_file(&self) -> Option<&SinglePayloadGFile> {
-        self.payload_file.as_ref()
+        self.live_payload()
     }
 
     /// The root directory's FSRL. Mirrors `getRootDirFSRL()`.
@@ -208,7 +231,7 @@ impl SingleFileSystemIndexHelper {
         directory: Option<&dyn GFile<SinglePayloadFsHandle>>,
     ) -> io::Result<Vec<&SinglePayloadGFile>> {
         let is_root = self.handle.listing_of(directory)?;
-        Ok(match (&self.payload_file, is_root) {
+        Ok(match (self.live_payload(), is_root) {
             (Some(p), true) => vec![p],
             _ => Vec::new(),
         })
@@ -242,7 +265,7 @@ impl SingleFileSystemIndexHelper {
             None | Some("/") => return Some(&self.root_dir),
             Some(p) => p,
         };
-        let payload = self.payload_file.as_ref()?;
+        let payload = self.live_payload()?;
         let cmp = |a: &str, b: &str| match name_comp {
             Some(f) => f(a, b),
             None => a.cmp(b),

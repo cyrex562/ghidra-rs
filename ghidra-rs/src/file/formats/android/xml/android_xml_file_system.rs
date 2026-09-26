@@ -28,7 +28,8 @@ use std::io;
 use crate::file::formats::android::xml::android_xml_convertor::{
     AndroidXmlConvertor, ANDROID_BINARY_XML_MAGIC,
 };
-use crate::file::seam_stubs::{AXmlParseError, AXmlResourceParser, AndroidXmlEvent, ByteArrayProvider};
+use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
+use crate::file::seam_stubs::{AXmlParseError, AXmlResourceParser, AndroidXmlEvent};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;

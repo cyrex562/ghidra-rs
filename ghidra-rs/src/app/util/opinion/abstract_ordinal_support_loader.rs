@@ -64,7 +64,7 @@ use crate::app::seam_stubs::{new_boolean, option_utils, LibrarySymbolTable, Opti
 use crate::app::util::opinion::library_lookup_table::{self, file_name_of, CreateFileError};
 use crate::app::util::opinion::loader::{COMMAND_LINE_ARG_PREFIX, OPTIONS_PROJECT_SAVE_STATE_KEY};
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
-use crate::filesystem::seam_stubs::LocalFileSystemLike;
+use crate::filesystem::gfilesystem::local_file_system::LocalFileSystem;
 use crate::framework::application::Application;
 use crate::framework::options::Options;
 use crate::program::model::listing::{Program, PROGRAM_INFO};
@@ -136,7 +136,7 @@ pub trait AbstractOrdinalSupportLoader {
         lib_fsrl: &Fsrl,
         size: i32,
         app: &dyn Application,
-        local_fs: &dyn LocalFileSystemLike,
+        local_fs: &LocalFileSystem,
         options: &[Box<dyn Option>],
         log: &MessageLog,
         monitor: &dyn TaskMonitor,
@@ -234,7 +234,7 @@ fn should_perform_ordinal_lookup(options: &[Box<dyn Option>]) -> bool {
 
 /// `getLocalFile(FSRL)`: if `fsrl` is from a local filesystem, its corresponding local file.
 fn get_local_file(
-    local_fs: &dyn LocalFileSystemLike,
+    local_fs: &LocalFileSystem,
     fsrl: &Fsrl,
 ) -> std::option::Option<std::path::PathBuf> {
     local_fs.get_local_file(fsrl).ok()

@@ -6,6 +6,7 @@ pub mod cpio;
 pub mod cramfs;
 pub mod dtb;
 pub mod dump;
+pub mod file_system_registry;
 pub mod ext4;
 pub mod gzip;
 pub mod ios;

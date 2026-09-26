@@ -20,12 +20,15 @@ pub trait GFileHashProvider<FS> {
     /// * `required` - if `true`, the hash will always be returned, even if it has to be
     ///   calculated. If `false`, the hash is only returned if easily available.
     /// * `monitor` - monitor for cancellation
+    ///
+    /// Returns `Ok(None)` when no hash is available (Java returns `null`), e.g. for a
+    /// non-`required` query that would need computing, or for a path that is not a file.
     fn get_md5_hash(
         &self,
         file: &dyn GFile<FS>,
         required: bool,
         monitor: &dyn TaskMonitor,
-    ) -> Result<String, GFileSystemError>;
+    ) -> Result<Option<String>, GFileSystemError>;
 }
 
 #[cfg(test)]
@@ -80,13 +83,13 @@ mod tests {
             file: &dyn GFile<MockFs>,
             required: bool,
             monitor: &dyn TaskMonitor,
-        ) -> Result<String, GFileSystemError> {
+        ) -> Result<Option<String>, GFileSystemError> {
             monitor.check_cancelled()?;
             if !required {
-                return Ok(String::new());
+                return Ok(None);
             }
             self.computed.store(true, Ordering::SeqCst);
-            Ok(format!("md5:{}", file.get_name()))
+            Ok(Some(format!("md5:{}", file.get_name())))
         }
     }
 
@@ -142,7 +145,7 @@ mod tests {
 
         let hash = provider.get_md5_hash(&file, true, &monitor).unwrap();
 
-        assert_eq!(hash, "md5:a.txt");
+        assert_eq!(hash.as_deref(), Some("md5:a.txt"));
         assert!(provider.computed.load(Ordering::SeqCst));
     }
 
@@ -154,7 +157,7 @@ mod tests {
 
         let hash = provider.get_md5_hash(&file, false, &monitor).unwrap();
 
-        assert_eq!(hash, "");
+        assert_eq!(hash, None);
         assert!(!provider.computed.load(Ordering::SeqCst));
     }
 
@@ -179,6 +182,6 @@ mod tests {
 
         let hash = provider.get_md5_hash(&file, true, &monitor).unwrap();
 
-        assert_eq!(hash, "md5:d.txt");
+        assert_eq!(hash.as_deref(), Some("md5:d.txt"));
     }
 }

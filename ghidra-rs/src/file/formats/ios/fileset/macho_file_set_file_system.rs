@@ -226,7 +226,7 @@ impl MachoFileSetFileSystem {
 
         self.header = Some(header);
         self.fixed_up_provider =
-            Some(Rc::new(RefCell::new(crate::file::seam_stubs::ByteArrayProvider::new(bytes))));
+            Some(Rc::new(RefCell::new(crate::app::util::bin::byte_array_provider::ByteArrayProvider::new(bytes))));
         Ok(())
     }
 

@@ -1,45 +1,41 @@
-use crate::filesystem::gfilesystem::factory::g_file_system_factory::GFileSystemFactory;
-use crate::filesystem::seam_stubs::GFileSystemLike;
+//! Port of the `ghidra.formats.gfilesystem.annotations.FileSystemInfo` annotation.
+//!
+//! Java attaches `@FileSystemInfo(type, description, priority, factory)` to each `GFileSystem`
+//! class and discovers it by reflection. Per the recorded R4 decision (annotation types become
+//! a plain metadata struct), each filesystem exposes a `const` [`FileSystemInfo`] and is
+//! registered together with its factory in
+//! [`FileSystemFactoryMgr`](crate::filesystem::gfilesystem::factory::file_system_factory_mgr::FileSystemFactoryMgr);
+//! the annotation's `factory` element becomes the factory instance supplied at registration.
 
-/// Default relative probing priority.
+/// Default priority.
 pub const PRIORITY_DEFAULT: i32 = 0;
-/// A higher-than-default relative probing priority.
+/// High priority.
 pub const PRIORITY_HIGH: i32 = 10;
-/// A lower-than-default relative probing priority.
+/// Low priority.
 pub const PRIORITY_LOW: i32 = -10;
-/// The lowest possible relative probing priority.
+/// Lowest priority.
 pub const PRIORITY_LOWEST: i32 = i32::MIN;
 
-/// Specifies the info needed of a `GFileSystem` implementation.
-///
-/// This is the Rust equivalent of `ghidra.formats.gfilesystem.annotations.FileSystemInfo`,
-/// a Java annotation used to attach static metadata to `GFileSystem` implementation classes.
-/// Rust has no annotation mechanism, so this port becomes a trait that a filesystem
-/// implementation (or a metadata descriptor for one) implements to expose that same
-/// information at runtime.
-///
-/// `FSTYPE` mirrors the annotation's `Class<? extends GFileSystemFactory<?>>` element by
-/// parameterizing the associated [`GFileSystemFactory`] the same way
-/// [`GFileSystemFactory`](crate::filesystem::gfilesystem::factory::g_file_system_factory::GFileSystemFactory)
-/// itself is parameterized, keeping this trait object-safe.
-pub trait FileSystemInfo<FSTYPE: GFileSystemLike> {
-    /// The 'type' of this filesystem, a short 1 word, lowercase string used in FSRLs to
-    /// reference this filesystem, "[a-z0-9]+" only.
-    fn fs_type(&self) -> &str;
+/// The metadata Java's `@FileSystemInfo` annotation carries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FileSystemInfo {
+    /// The 'type' of this filesystem, a short (`[a-z0-9]+`) string. Mirrors `type()`.
+    pub fs_type: &'static str,
+    /// A longer description of this filesystem type. Mirrors `description()` (default `""`).
+    pub description: &'static str,
+    /// Probe priority, higher first. Mirrors `priority()` (default [`PRIORITY_DEFAULT`]).
+    pub priority: i32,
+}
 
-    /// A longer description of this filesystem. Defaults to an empty string if not set.
-    fn description(&self) -> &str {
-        ""
+impl FileSystemInfo {
+    /// Info with the annotation's defaults for `description` and `priority`.
+    pub const fn new(fs_type: &'static str) -> Self {
+        FileSystemInfo { fs_type, description: "", priority: PRIORITY_DEFAULT }
     }
 
-    /// The [`GFileSystemFactory`] responsible for probing and creating instances of this
-    /// filesystem.
-    fn factory(&self) -> Box<dyn GFileSystemFactory<FSTYPE>>;
-
-    /// The relative priority of this filesystem during probing. Higher numeric values are
-    /// considered before lower values. Defaults to [`PRIORITY_DEFAULT`].
-    fn priority(&self) -> i32 {
-        PRIORITY_DEFAULT
+    /// Info with every element specified.
+    pub const fn with(fs_type: &'static str, description: &'static str, priority: i32) -> Self {
+        FileSystemInfo { fs_type, description, priority }
     }
 }
 
@@ -47,63 +43,21 @@ pub trait FileSystemInfo<FSTYPE: GFileSystemLike> {
 mod tests {
     use super::*;
 
-    struct DummyFileSystem;
-    impl GFileSystemLike for DummyFileSystem {}
-
-    struct DummyFactory;
-    impl GFileSystemFactory<DummyFileSystem> for DummyFactory {}
-
-    struct MyFsInfo;
-    impl FileSystemInfo<DummyFileSystem> for MyFsInfo {
-        fn fs_type(&self) -> &str {
-            "myfs"
-        }
-
-        fn factory(&self) -> Box<dyn GFileSystemFactory<DummyFileSystem>> {
-            Box::new(DummyFactory)
-        }
-    }
-
-    struct HighPriorityFsInfo;
-    impl FileSystemInfo<DummyFileSystem> for HighPriorityFsInfo {
-        fn fs_type(&self) -> &str {
-            "hp"
-        }
-
-        fn description(&self) -> &str {
-            "high priority fs"
-        }
-
-        fn factory(&self) -> Box<dyn GFileSystemFactory<DummyFileSystem>> {
-            Box::new(DummyFactory)
-        }
-
-        fn priority(&self) -> i32 {
-            PRIORITY_HIGH
-        }
+    #[test]
+    fn defaults_match_annotation_defaults() {
+        const INFO: FileSystemInfo = FileSystemInfo::new("myfs");
+        assert_eq!(INFO.fs_type, "myfs");
+        assert_eq!(INFO.description, "");
+        assert_eq!(INFO.priority, PRIORITY_DEFAULT);
     }
 
     #[test]
-    fn defaults_apply_when_not_overridden() {
-        let info = MyFsInfo;
-        assert_eq!(info.fs_type(), "myfs");
-        assert_eq!(info.description(), "");
-        assert_eq!(info.priority(), PRIORITY_DEFAULT);
-        let _factory = info.factory();
-    }
-
-    #[test]
-    fn overrides_are_honored() {
-        let info = HighPriorityFsInfo;
-        assert_eq!(info.fs_type(), "hp");
-        assert_eq!(info.description(), "high priority fs");
-        assert_eq!(info.priority(), PRIORITY_HIGH);
-    }
-
-    #[test]
-    fn boxed_dyn_file_system_info_is_accepted() {
-        let info: Box<dyn FileSystemInfo<DummyFileSystem>> = Box::new(MyFsInfo);
-        assert_eq!(info.fs_type(), "myfs");
-        assert_eq!(info.priority(), PRIORITY_DEFAULT);
+    fn priority_constants_match_java() {
+        assert_eq!(PRIORITY_DEFAULT, 0);
+        assert_eq!(PRIORITY_HIGH, 10);
+        assert_eq!(PRIORITY_LOW, -10);
+        assert_eq!(PRIORITY_LOWEST, i32::MIN);
+        let hp = FileSystemInfo::with("hp", "high priority fs", PRIORITY_HIGH);
+        assert_eq!(hp.priority, 10);
     }
 }

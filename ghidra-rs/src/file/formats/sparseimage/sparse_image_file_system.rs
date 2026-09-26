@@ -8,7 +8,10 @@ use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 use crate::app::util::bin::byte_provider::ByteProvider;
-use crate::filesystem::gfilesystem::abstract_single_payload_file_system::AbstractSinglePayloadFileSystemBase;
+use crate::filesystem::gfilesystem::abstract_single_payload_file_system::{
+    AbstractSinglePayloadFileSystemBase, SinglePayloadFileSystem,
+};
+use crate::filesystem::gfilesystem::annotations::file_system_info::FileSystemInfo;
 use crate::filesystem::gfilesystem::annotations::file_system_info::PRIORITY_DEFAULT;
 use crate::filesystem::gfilesystem::fileinfo::file_attributes::FileAttributes;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
@@ -57,6 +60,14 @@ impl SparseImageFileSystem {
     /// The filesystem description. Mirrors the annotation-derived `getDescription()`.
     pub fn get_description(&self) -> &'static str {
         Self::DESCRIPTION
+    }
+}
+
+impl SinglePayloadFileSystem for SparseImageFileSystem {
+    const INFO: FileSystemInfo = FileSystemInfo::with(Self::FS_TYPE, Self::DESCRIPTION, Self::PRIORITY);
+
+    fn base(&self) -> &AbstractSinglePayloadFileSystemBase {
+        &self.base
     }
 }
 

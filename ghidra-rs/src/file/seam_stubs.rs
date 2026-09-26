@@ -12,6 +12,7 @@ use std::rc::Rc;
 use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5DigestChecksumAlgorithm;
 use crate::program::model::data::data_type::DataType;
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::dex_header::DexHeader;
 use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnum;
@@ -19,7 +20,9 @@ use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
-use crate::filesystem::seam_stubs::{FileSystemServiceLike, GFileSystemLike};
+use crate::filesystem::gfilesystem::file_system_service::FileSystemService;
+use crate::filesystem::gfilesystem::g_file_system::FsHandle;
+use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
@@ -362,61 +365,6 @@ pub mod android_typed_value {
     pub const COMPLEX_UNIT_MASK: i32 = 0xf;
 }
 
-/// Placeholder for the unported Java type `ByteArrayProvider`, referenced by
-/// `AndroidXmlFileSystem::get_byte_provider`.
-/// Concrete stub: Java class, not interface. Wraps an in-memory byte array as a
-/// [`GByteStore`]; only the members THIS type needs are included.
-pub struct ByteArrayProvider {
-    bytes: Vec<u8>,
-}
-
-impl ByteArrayProvider {
-    pub fn new(bytes: Vec<u8>) -> Self {
-        ByteArrayProvider { bytes }
-    }
-}
-
-impl GByteStore for ByteArrayProvider {
-    fn length(&mut self) -> io::Result<u64> {
-        Ok(self.bytes.len() as u64)
-    }
-
-    fn is_valid_index(&mut self, index: u64) -> bool {
-        (index as usize) < self.bytes.len()
-    }
-
-    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-        self.bytes.get(index as usize).copied().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::UnexpectedEof, "index out of bounds")
-        })
-    }
-
-    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-        let start = index as usize;
-        let end = start + length;
-        if end > self.bytes.len() {
-            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "index out of bounds"));
-        }
-        Ok(self.bytes[start..end].to_vec())
-    }
-
-    fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "ByteArrayProvider is read-only"))
-    }
-
-    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "ByteArrayProvider is read-only"))
-    }
-
-    fn get_fsrl(&self) -> Option<&Fsrl> {
-        None
-    }
-
-    fn get_file(&self) -> Option<PathBuf> {
-        None
-    }
-}
-
 /// Placeholder for the unported Java type `ghidra.formats.gfilesystem.FileCache.FileCacheEntry`,
 /// referenced by `SevenZipFileSystem::get_byte_provider`.
 ///
@@ -526,12 +474,11 @@ impl SevenZipFileSystemFactory {
 /// this type (see `crate::file::formats::sevenzip::seven_zip_file_system`).
 pub struct ZipFileSystem;
 
-impl GFileSystemLike for ZipFileSystem {}
 
 impl ZipFileSystem {
     /// Mirrors `ZipFileSystem(FSRLRoot, FileSystemService)`. The real port stores both
     /// (as `SevenZipFileSystemBase` already does); this stub has nowhere to put them yet.
-    pub fn new(_fsrl: &FsrlRoot, _fs_service: &dyn FileSystemServiceLike) -> Self {
+    pub fn new(_fsrl: &FsrlRoot, _fs_service: &FileSystemService) -> Self {
         ZipFileSystem
     }
 
@@ -540,9 +487,9 @@ impl ZipFileSystem {
     /// which this stub does not construct.
     pub fn mount(
         &mut self,
-        _byte_provider: Box<dyn GByteStore>,
+        _byte_provider: Box<dyn ByteProvider>,
         _monitor: &dyn TaskMonitor,
-    ) -> io::Result<()> {
+    ) -> io::Result<FsHandle> {
         Err(io::Error::new(io::ErrorKind::Unsupported, "ZipFileSystem.mount not yet ported"))
     }
 
@@ -560,14 +507,13 @@ impl ZipFileSystem {
 /// file attributes via `java.util.zip.ZipFile`.
 pub struct ZipFileSystemBuiltin;
 
-impl GFileSystemLike for ZipFileSystemBuiltin {}
 
 impl ZipFileSystemBuiltin {
     /// Mirrors `ZipFileSystemBuiltin.TEMPFILE_PREFIX`.
     pub const TEMPFILE_PREFIX: &'static str = "ghidra_tmp_zipfile";
 
     /// Mirrors `ZipFileSystemBuiltin(FSRLRoot, FileSystemService)`.
-    pub fn new(_fsrl: &FsrlRoot, _fs_service: &dyn FileSystemServiceLike) -> Self {
+    pub fn new(_fsrl: &FsrlRoot, _fs_service: &FileSystemService) -> Self {
         ZipFileSystemBuiltin
     }
 
@@ -578,7 +524,7 @@ impl ZipFileSystemBuiltin {
         _f: &Path,
         _delete_file_when_done: bool,
         _monitor: &dyn TaskMonitor,
-    ) -> io::Result<()> {
+    ) -> io::Result<FsHandle> {
         Err(io::Error::new(io::ErrorKind::Unsupported, "ZipFileSystemBuiltin.mount not yet ported"))
     }
 
