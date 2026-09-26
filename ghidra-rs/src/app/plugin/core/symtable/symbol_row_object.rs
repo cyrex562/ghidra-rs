@@ -41,26 +41,27 @@ impl SymbolRowObject {
     /// Get the symbol associated with this row object. If the symbol no longer exists,
     /// `None` is returned.
     ///
-    /// Requires unique ownership of the underlying program in order to obtain its symbol
-    /// table; returns `None` if the program is currently shared elsewhere.
-    pub fn get_symbol(&mut self) -> Option<Arc<dyn Symbol>> {
-        Arc::get_mut(&mut self.program)?
-            .get_symbol_table()?
-            .get_symbol(self.id)
-            .ok()
-            .flatten()
+    /// Also `None` if the program has no symbol table or the lookup fails.
+    pub fn get_symbol(&self) -> Option<Arc<dyn Symbol>> {
+        let symbol = self.program.get_symbol_table()?.get_symbol(self.id).ok().flatten();
+        symbol
     }
 
     /// Display string for this row object: the symbol's name, or `"<DELETED>"` if the symbol
     /// no longer exists.
     ///
-    /// Named method rather than a `Display` impl because symbol lookup requires `&mut self`
-    /// (see [`Self::get_symbol`]).
-    pub fn to_display_string(&mut self) -> String {
+    /// Port of `toString()`; see also the `Display` impl.
+    pub fn to_display_string(&self) -> String {
         match self.get_symbol() {
             Some(s) => s.get_name().to_string(),
             None => "<DELETED>".to_string(),
         }
+    }
+}
+
+impl fmt::Display for SymbolRowObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.to_display_string())
     }
 }
 
@@ -225,7 +226,7 @@ mod tests {
     #[test]
     fn test_get_symbol_found() {
         let program = mock_program(vec![(42, "foo")]);
-        let mut row = SymbolRowObject::with_id(program, 42);
+        let row = SymbolRowObject::with_id(program, 42);
         let symbol = row.get_symbol().expect("symbol should be found");
         assert_eq!(symbol.get_id(), 42);
         assert_eq!(symbol.get_name(), "foo");
@@ -234,18 +235,18 @@ mod tests {
     #[test]
     fn test_get_symbol_deleted_returns_none() {
         let program = mock_program(vec![]);
-        let mut row = SymbolRowObject::with_id(program, 99);
+        let row = SymbolRowObject::with_id(program, 99);
         assert!(row.get_symbol().is_none());
     }
 
     #[test]
     fn test_to_display_string_found_and_deleted() {
         let program = mock_program(vec![(1, "bar")]);
-        let mut row = SymbolRowObject::with_id(program, 1);
+        let row = SymbolRowObject::with_id(program, 1);
         assert_eq!(row.to_display_string(), "bar");
 
         let program = mock_program(vec![]);
-        let mut row = SymbolRowObject::with_id(program, 2);
+        let row = SymbolRowObject::with_id(program, 2);
         assert_eq!(row.to_display_string(), "<DELETED>");
     }
 

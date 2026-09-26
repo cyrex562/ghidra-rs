@@ -1,6 +1,6 @@
 //! Port of `ghidra.app.plugin.core.symtable.SymbolRowObjectToProgramLocationTableRowMapper`.
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::app::plugin::core::symtable::SymbolRowObject;
 use crate::framework::plugintool::service_provider::ServiceProvider;
@@ -21,8 +21,7 @@ use crate::util::table::ProgramLocationTableRowMapper;
 ///
 /// See
 /// [`SymbolRowObjectToAddressTableRowMapper`](crate::app::plugin::core::symtable::symbol_row_object_to_address_table_row_mapper::SymbolRowObjectToAddressTableRowMapper)'s
-/// own doc comment for why `ROW_TYPE` is `Arc<Mutex<SymbolRowObject>>` rather than a bare
-/// `SymbolRowObject`, and why `EXPECTED_ROW_TYPE` is wrapped in `Option` (Java's `map` can return
+/// own doc comment for why `EXPECTED_ROW_TYPE` is wrapped in `Option` (Java's `map` can return
 /// `null` when the row's symbol has been deleted or no longer exists, and -- unlike that sibling
 /// mapper's `Address` -- [`Symbol::get_program_location`] can itself report `None`).
 ///
@@ -30,17 +29,16 @@ use crate::util::table::ProgramLocationTableRowMapper;
 /// Ghidra's `ClassSearcher` extension-point discovery to find them.
 pub struct SymbolRowObjectToProgramLocationTableRowMapper;
 
-impl TableRowMapper<Arc<Mutex<SymbolRowObject>>, Option<Box<dyn ProgramLocation>>>
+impl TableRowMapper<SymbolRowObject, Option<Box<dyn ProgramLocation>>>
     for SymbolRowObjectToProgramLocationTableRowMapper
 {
     fn map(
         &self,
-        row_object: &Arc<Mutex<SymbolRowObject>>,
+        row_object: &SymbolRowObject,
         _data: &dyn Program,
         _service_provider: &dyn ServiceProvider,
     ) -> Option<Box<dyn ProgramLocation>> {
-        let mut row = row_object.lock().expect("SymbolRowObject mutex poisoned");
-        let symbol = row.get_symbol()?;
+        let symbol = row_object.get_symbol()?;
         if symbol.is_deleted() {
             return None;
         }
@@ -48,7 +46,7 @@ impl TableRowMapper<Arc<Mutex<SymbolRowObject>>, Option<Box<dyn ProgramLocation>
     }
 }
 
-impl ProgramLocationTableRowMapper<Arc<Mutex<SymbolRowObject>>, Option<Box<dyn ProgramLocation>>>
+impl ProgramLocationTableRowMapper<SymbolRowObject, Option<Box<dyn ProgramLocation>>>
     for SymbolRowObjectToProgramLocationTableRowMapper
 {
 }
@@ -171,7 +169,7 @@ mod tests {
         let symbol: Arc<dyn Symbol> =
             Arc::new(MockSymbol { id: 1, address: ram_address(0x4000), deleted: false, program: owning_program });
         let program = row_program(vec![(1, symbol)]);
-        let row_object = Arc::new(Mutex::new(SymbolRowObject::with_id(program, 1)));
+        let row_object = SymbolRowObject::with_id(program, 1);
 
         let mapper = SymbolRowObjectToProgramLocationTableRowMapper;
         let data_program = MockProgram;
@@ -185,7 +183,7 @@ mod tests {
     #[test]
     fn map_returns_none_when_the_symbol_no_longer_exists() {
         let program = row_program(vec![]);
-        let row_object = Arc::new(Mutex::new(SymbolRowObject::with_id(program, 99)));
+        let row_object = SymbolRowObject::with_id(program, 99);
 
         let mapper = SymbolRowObjectToProgramLocationTableRowMapper;
         let data_program = MockProgram;
@@ -200,7 +198,7 @@ mod tests {
         let symbol: Arc<dyn Symbol> =
             Arc::new(MockSymbol { id: 2, address: ram_address(0x8000), deleted: true, program: owning_program });
         let program = row_program(vec![(2, symbol)]);
-        let row_object = Arc::new(Mutex::new(SymbolRowObject::with_id(program, 2)));
+        let row_object = SymbolRowObject::with_id(program, 2);
 
         let mapper = SymbolRowObjectToProgramLocationTableRowMapper;
         let data_program = MockProgram;

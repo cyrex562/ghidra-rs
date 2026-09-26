@@ -323,7 +323,7 @@ impl DemangledObjectBase {
     ///
     /// Mirrors `isAlreadyDemangled(Program, Address)`. Returns `false` when this object has no
     /// name yet, where Java would throw a `NullPointerException` out of `ensureNameLength`.
-    pub fn is_already_demangled(&self, program: &mut dyn Program, address: &Address) -> bool {
+    pub fn is_already_demangled(&self, program: &dyn Program, address: &Address) -> bool {
         let Some(symbol_name) = self.name.as_deref().map(ensure_name_length) else {
             return false;
         };
@@ -368,7 +368,7 @@ impl DemangledObjectBase {
         addr: &Address,
         set_primary: bool,
         function_namespace_permitted: bool,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
     ) -> Result<Option<Arc<dyn Symbol>>, InvalidInputException> {
         let symbol_name = match symbol_name.or(self.name.as_deref()) {
             Some(name) => ensure_name_length(name),
@@ -407,7 +407,7 @@ impl DemangledObjectBase {
     /// `demangledNamespace` argument is always this object's own namespace.
     fn update_external_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         external_addr: &Address,
         symbol_name: &str,
     ) -> Option<Arc<dyn Symbol>> {
@@ -454,7 +454,7 @@ impl DemangledObjectBase {
     /// Mirrors the static `createNamespace(Program, Demangled, Namespace, boolean)`. Returns
     /// `None` only when no parent was supplied and the program has no global namespace.
     pub fn create_namespace(
-        program: &mut dyn Program,
+        program: &dyn Program,
         type_namespace: Option<&dyn Demangled>,
         parent_namespace: Option<Arc<dyn Namespace>>,
         function_permitted: bool,
@@ -564,7 +564,7 @@ fn is_permitted_namespace_type(symbol_type: SymbolType, function_permitted: bool
 /// failure to promote is not propagated -- the command reports it through `getStatusMsg()`, which
 /// this call site never reads -- so the current primary symbol is returned either way.
 fn set_label_primary(
-    prog: &mut dyn Program,
+    prog: &dyn Program,
     addr: &Address,
     symbol_name: &str,
     namespace: Option<Arc<dyn Namespace>>,
@@ -670,7 +670,7 @@ pub trait DemangledObject: Demangled {
     /// skipped (reported as applied), and a symbol that did not demangle is an error.
     fn apply_plate_comment_only(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: &Address,
     ) -> Result<bool, DemangledException> {
         if !self.base().demangled_name_successfully() {

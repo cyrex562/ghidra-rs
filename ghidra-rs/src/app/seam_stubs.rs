@@ -854,7 +854,7 @@ pub mod elf_program_builder {
     /// placeholder always panics until it lands.
     pub fn load_elf(
         elf: &dyn ElfHeader,
-        program: &mut dyn Program,
+        program: &dyn Program,
         options: &[Box<dyn Option>],
         log: &MessageLog,
         monitor: &dyn TaskMonitor,
@@ -963,7 +963,7 @@ pub mod abstract_pe_debug_loader {
     /// them.
     pub fn process_debug(
         parser: std::option::Option<&DebugDirectoryParser>,
-        program: &mut dyn Program,
+        program: &dyn Program,
         options: &[Box<dyn Option>],
         monitor: &dyn TaskMonitor,
     ) {
@@ -1792,7 +1792,7 @@ pub trait DisassembleCommand: Send + Sync {
     /// Grown for
     /// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)'s
     /// port of `disassembleIfNeeded`.
-    fn apply_to(&self, program: &mut dyn Program) -> bool {
+    fn apply_to(&self, program: &dyn Program) -> bool {
         let _ = program;
         false
     }
@@ -2606,7 +2606,7 @@ pub struct DecompileDebugDataTypeManager;
 
 impl DecompileDebugDataTypeManager {
     /// Port of `DecompileDebugDataTypeManager(TaskMonitor, Program)`.
-    pub fn new(monitor: &dyn TaskMonitor, prog: &mut dyn Program) -> Self {
+    pub fn new(monitor: &dyn TaskMonitor, prog: &dyn Program) -> Self {
         let _ = (monitor, prog);
         DecompileDebugDataTypeManager
     }
@@ -2634,7 +2634,7 @@ pub struct DecompileDebugFunctionManager;
 impl DecompileDebugFunctionManager {
     /// Port of `DecompileDebugFunctionManager(Program, TaskMonitor, DecompileDebugDataTypeManager)`.
     pub fn new(
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         monitor: &dyn TaskMonitor,
         data_type_manager: &mut DecompileDebugDataTypeManager,
     ) -> Self {
@@ -2664,7 +2664,7 @@ pub struct DecompileDebugByteManager;
 
 impl DecompileDebugByteManager {
     /// Port of `DecompileDebugByteManager(TaskMonitor, Program, String)`.
-    pub fn new(monitor: &dyn TaskMonitor, prog: &mut dyn Program, program_name: &str) -> Self {
+    pub fn new(monitor: &dyn TaskMonitor, prog: &dyn Program, program_name: &str) -> Self {
         let _ = (monitor, prog, program_name);
         DecompileDebugByteManager
     }
@@ -2808,7 +2808,7 @@ impl DyldCacheHeader {
     /// As for [`parse_from_memory`](Self::parse_from_memory), the placeholder marks nothing up.
     pub fn markup(
         &self,
-        program: &mut dyn crate::program::model::listing::Program,
+        program: &dyn crate::program::model::listing::Program,
         markup_local_symbols: bool,
         space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
         monitor: &dyn crate::util::task::TaskMonitor,
@@ -2958,7 +2958,7 @@ pub mod memory_block_utils {
     /// them to the program's file-bytes database, which needs far more infrastructure than this
     /// placeholder models.
     pub fn create_file_bytes(
-        program: &mut dyn Program,
+        program: &dyn Program,
         provider: &Rc<RefCell<dyn GByteStore>>,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<Arc<dyn FileBytes>> {
@@ -2974,7 +2974,7 @@ pub mod memory_block_utils {
     /// body creates a database-backed block over a file-bytes range.
     #[allow(clippy::too_many_arguments)]
     pub fn create_initialized_block(
-        program: &mut dyn Program,
+        program: &dyn Program,
         is_overlay: bool,
         name: &str,
         start: &Address,
@@ -2999,7 +2999,7 @@ pub mod memory_block_utils {
     /// created. Not yet implemented, as for [`create_initialized_block`].
     #[allow(clippy::too_many_arguments)]
     pub fn create_uninitialized_block(
-        program: &mut dyn Program,
+        program: &dyn Program,
         is_overlay: bool,
         name: &str,
         start: &Address,
@@ -3172,7 +3172,7 @@ impl LibObjcDylib {
     /// data types and the selector/class/protocol tables to program memory.
     pub fn markup(
         &self,
-        program: &mut dyn crate::program::model::listing::Program,
+        program: &dyn crate::program::model::listing::Program,
     ) -> std::io::Result<()> {
         let _ = program;
         unimplemented!("LibObjcDylib::markup placeholder not overridden")
@@ -3200,7 +3200,7 @@ pub mod macho_program_builder {
 
     /// `MachoProgramBuilder.markupHeaders(MachHeader, Address)`.
     pub fn markup_headers(
-        program: &mut dyn Program,
+        program: &dyn Program,
         header: &dyn MachHeader,
         header_addr: &Address,
         log: &MessageLog,
@@ -3213,7 +3213,7 @@ pub mod macho_program_builder {
     /// `MachoProgramBuilder.processMemoryBlocks(MachHeader, String source, boolean processSections,
     /// boolean allowZeroAddr)`.
     pub fn process_memory_blocks(
-        program: &mut dyn Program,
+        program: &dyn Program,
         header: &dyn MachHeader,
         source: &str,
         process_sections: bool,
@@ -3228,7 +3228,7 @@ pub mod macho_program_builder {
     /// `MachoProgramBuilder.processExports(MachHeader)`, which reports whether it created any
     /// exports.
     pub fn process_exports(
-        program: &mut dyn Program,
+        program: &dyn Program,
         header: &dyn MachHeader,
         log: &MessageLog,
         monitor: &dyn TaskMonitor,
@@ -3239,7 +3239,7 @@ pub mod macho_program_builder {
 
     /// `MachoProgramBuilder.processSymbolTables(MachHeader, boolean processExports)`.
     pub fn process_symbol_tables(
-        program: &mut dyn Program,
+        program: &dyn Program,
         header: &dyn MachHeader,
         process_exports: bool,
         log: &MessageLog,
@@ -3251,7 +3251,7 @@ pub mod macho_program_builder {
 
     /// `MachoProgramBuilder.markupLoadCommandData(MachHeader, String source)`.
     pub fn markup_load_command_data(
-        program: &mut dyn Program,
+        program: &dyn Program,
         header: &dyn MachHeader,
         source: &str,
         log: &MessageLog,
@@ -3265,7 +3265,7 @@ pub mod macho_program_builder {
     /// stands in for the `null` Java returns when the function could not be created (it logs and
     /// swallows the reason).
     pub fn create_one_byte_function(
-        program: &mut dyn Program,
+        program: &dyn Program,
         name: &str,
         address: &Address,
     ) -> Option<Arc<dyn Function>> {
@@ -3687,7 +3687,7 @@ pub mod abstract_program_loader {
     /// takes the whole `ImporterSettings` record but reads only its log and monitor, so those two
     /// are passed directly. Not yet implemented (see the module docs).
     pub fn create_default_memory_blocks(
-        program: &mut dyn Program,
+        program: &dyn Program,
         log: &MessageLog,
         monitor: &dyn TaskMonitor,
     ) {
@@ -5371,7 +5371,7 @@ impl CreateArrayCmd {
         CreateArrayCmd
     }
 
-    pub fn apply_to(&self, program: &mut dyn Program) -> bool {
+    pub fn apply_to(&self, program: &dyn Program) -> bool {
         let _ = program;
         true
     }
@@ -5402,7 +5402,7 @@ impl SetCommentCmd {
         SetCommentCmd
     }
 
-    pub fn apply_to(&self, program: &mut dyn Program) -> bool {
+    pub fn apply_to(&self, program: &dyn Program) -> bool {
         let _ = program;
         true
     }
@@ -6574,7 +6574,7 @@ pub struct AbstractProgramLoader;
 impl AbstractProgramLoader {
     /// Port of `AbstractProgramLoader.markAsFunction(Program, Loader, Address)`, minus the
     /// actual function creation.
-    pub fn mark_as_function(_program: &mut dyn Program, _address: &Address) {
+    pub fn mark_as_function(_program: &dyn Program, _address: &Address) {
         // No-op until AbstractProgramLoader (and the Listing/FunctionManager mutation it needs)
         // is ported.
     }

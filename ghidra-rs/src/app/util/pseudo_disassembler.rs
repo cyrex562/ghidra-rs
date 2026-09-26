@@ -344,7 +344,7 @@ pub fn has_low_bit_code_mode_in_addr_values(program: &dyn Program) -> bool {
 /// mode, check the low bit and change the instruction state at the address.
 ///
 /// Port of `PseudoDisassembler.setTargetContextForDisassembly(Program, Address)`.
-pub fn set_target_context_for_disassembly(program: &mut dyn Program, addr: Address) -> Address {
+pub fn set_target_context_for_disassembly(program: &dyn Program, addr: Address) -> Address {
     if !addr.is_memory_address() {
         Msg::error(
             "PseudoDisassembler",

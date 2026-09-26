@@ -216,11 +216,8 @@ impl SymbolTableSarifMgr {
             return Ok(());
         }
 
-        let Some(program_mut) = Arc::get_mut(&mut self.program) else {
-            return Ok(());
-        };
         let created = DefaultSymbolUtilities.create_preferred_label_or_function_symbol(
-            program_mut,
+            self.program.as_ref(),
             &addr,
             Some(scope),
             name,

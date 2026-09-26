@@ -1819,7 +1819,7 @@ pub trait MachoProgramBuilder: Send + Sync {
     /// `MachoProgramBuilder.createOneByteFunction(Program, String, Address)`.
     fn create_one_byte_function(
         &self,
-        program: &mut dyn crate::program::model::listing::Program,
+        program: &dyn crate::program::model::listing::Program,
         name: &str,
         address: &crate::program::model::address::Address,
     ) -> Option<Box<dyn crate::program::model::listing::Function>>;
@@ -1827,7 +1827,7 @@ pub trait MachoProgramBuilder: Send + Sync {
     /// `MachoProgramBuilder.fixupExternalLibrary(Program, List<String>, int, String)`.
     fn fixup_external_library(
         &self,
-        program: &mut dyn crate::program::model::listing::Program,
+        program: &dyn crate::program::model::listing::Program,
         library_paths: &[String],
         library_ordinal: i32,
         symbol: &str,
@@ -1841,7 +1841,7 @@ pub trait MemoryBlockUtils: Send + Sync {
     /// `MemoryBlockUtils.addExternalBlock(Program, long, MessageLog)`.
     fn add_external_block(
         &self,
-        program: &mut dyn crate::program::model::listing::Program,
+        program: &dyn crate::program::model::listing::Program,
         size: i64,
         log: &MessageLog,
     ) -> std::io::Result<crate::program::model::address::Address>;
@@ -1986,7 +1986,7 @@ impl DyldChainedFixupHeader {
     /// this placeholder doesn't have a `Program` handle to drive, this is a documented no-op.
     pub fn markup(
         &self,
-        _program: &mut dyn crate::program::model::listing::Program,
+        _program: &dyn crate::program::model::listing::Program,
         _address: &crate::program::model::address::Address,
         _header: &dyn MachHeader,
         _monitor: &dyn crate::util::task::TaskMonitor,
@@ -4777,7 +4777,7 @@ impl DebugDirectoryEntry {
         let major_version = reader.read_short(index + 8)?;
         let minor_version = reader.read_short(index + 10)?;
         let r#type = reader.read_int(index + 12)?;
-        let mut size_of_data = reader.read_int(index + 16)?;
+        let size_of_data = reader.read_int(index + 16)?;
         let address_of_raw_data = reader.read_int(index + 20)?;
         let pointer_to_raw_data = reader.read_int(index + 24)?;
 

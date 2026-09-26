@@ -248,7 +248,7 @@ fn get_local_file(
 /// Panics if `program` has no language, mirroring Java's uncaught `NullPointerException` out of
 /// `program.getLanguage().getLanguageDescription()`.
 fn apply_library_symbols(
-    program: &mut dyn Program,
+    program: &dyn Program,
     app: &dyn Application,
     log: &MessageLog,
     monitor: &dyn TaskMonitor,
@@ -360,7 +360,7 @@ fn apply_library_symbols(
 /// # Panics
 /// Panics if `program` has no language, as [`apply_library_symbols`] does.
 fn apply_imports(
-    program: &mut dyn Program,
+    program: &dyn Program,
     app: &dyn Application,
     log: &MessageLog,
     monitor: &dyn TaskMonitor,

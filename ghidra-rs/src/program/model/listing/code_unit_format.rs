@@ -198,16 +198,11 @@ impl CodeUnitFormat for DefaultCodeUnitFormat {
 // Private helpers (free functions; not part of the trait's public API surface)
 //==================================================================================================
 
-/// Attempts to gain exclusive access to `cu`'s program and runs `f` against it. Returns `None` if
-/// exclusive access could not be obtained (another `Arc<dyn Program>` handle is outstanding).
-/// Mirrors the `Arc::get_mut(&mut program)` idiom already established elsewhere in this crate
-/// (see `data_utilities.rs`) for reaching `Program`'s `&mut self` manager accessors.
-fn with_program_mut<T>(cu: &dyn CodeUnit, f: impl for<'r> FnOnce(&'r mut dyn Program) -> Option<T>) -> Option<T> {
-    let mut program = cu.get_program();
-    match Arc::get_mut(&mut program) {
-        Some(p) => f(p),
-        None => None,
-    }
+/// Runs `f` against `cu`'s program (Java's `cu.getProgram()`), whose manager accessors hand out
+/// their handles from a shared reference.
+fn with_program<T>(cu: &dyn CodeUnit, f: impl FnOnce(&dyn Program) -> Option<T>) -> Option<T> {
+    let program = cu.get_program();
+    f(program.as_ref())
 }
 
 fn operand_value_to_element(value: OperandValue) -> OperandRepresentationElement {
@@ -312,14 +307,14 @@ fn get_operand_representation_list_impl(
     let mut reg_index_map = build_register_index_map(&representation_list);
 
     let address = instr.get_min_address();
-    let func = with_program_mut(cu, |p| {
+    let func = with_program(cu, |p| {
         p.get_function_manager().and_then(|fm| fm.get_function_containing(&address))
     });
 
     let mut primary_ref = cu.get_primary_reference(op_index);
     let mut referenced_variable: Option<Arc<dyn Variable>> = None;
     if let (Some(pref), Some(_)) = (primary_ref.as_ref(), func.as_ref()) {
-        referenced_variable = with_program_mut(cu, |p| {
+        referenced_variable = with_program(cu, |p| {
             p.get_reference_manager().and_then(|rm| rm.get_referenced_variable(pref.as_ref()))
         })
         .map(Arc::<dyn Variable>::from);
@@ -626,7 +621,7 @@ fn perform_register_markup(
             if reference.operand_index() == crate::program::model::symbol::MNEMONIC
                 && reference.reference_type().is_write()
             {
-                let rv = with_program_mut(instr, |p| {
+                let rv = with_program(instr, |p| {
                     p.get_reference_manager().and_then(|rm| rm.get_referenced_variable(reference.as_ref()))
                 })
                 .map(Arc::<dyn Variable>::from);
@@ -657,7 +652,7 @@ fn perform_register_markup(
                 let r = reg;
                 (r.address().clone(), r.minimum_byte_size())
             };
-            let reg_var = with_program_mut(instr, |p| {
+            let reg_var = with_program(instr, |p| {
                 p.get_function_manager().and_then(|fm| {
                     fm.get_referenced_variable(&instr.get_min_address(), &reg_addr, reg_size, is_read_flag)
                 })
@@ -671,7 +666,7 @@ fn perform_register_markup(
                     && !has_register_write_reference(instr, reg)
                     && operand_is_only_reg
                 {
-                    let reg_write_var = with_program_mut(instr, |p| {
+                    let reg_write_var = with_program(instr, |p| {
                         p.get_function_manager().and_then(|fm| {
                             fm.get_referenced_variable(&instr.get_min_address(), &reg_addr, reg_size, false)
                         })
@@ -857,7 +852,7 @@ fn perform_scalar_markup(
         if equates.is_none() {
             let addr = instr.get_min_address();
             equates = Some(
-                with_program_mut(instr, |p| {
+                with_program(instr, |p| {
                     p.get_equate_table().map(|t| {
                         t.equates_at_operand(&addr, op_index as i16)
                             .into_iter()
@@ -948,7 +943,7 @@ fn markup_scalar_with_implied_register_variable(
         let reg = associated_register;
         (reg.address().clone(), reg.minimum_byte_size())
     };
-    let reg_var = with_program_mut(instr, |p| {
+    let reg_var = with_program(instr, |p| {
         p.get_function_manager()
             .and_then(|fm| fm.get_referenced_variable(&instr.get_min_address(), &reg_addr, reg_size, true))
     })
@@ -1186,7 +1181,7 @@ fn get_reference_representation_string_impl(
 ) -> Option<String> {
     let min_addr = from_code_unit.get_min_address();
     let to_addr = reference.to_address();
-    let ref_var = with_program_mut(from_code_unit, |p| {
+    let ref_var = with_program(from_code_unit, |p| {
         p.get_function_manager().and_then(|fm| fm.get_referenced_variable(&min_addr, &to_addr, 0, false))
     })
     .map(Arc::<dyn Variable>::from);
@@ -1278,7 +1273,7 @@ fn get_memory_reference_label(
         }
     }
 
-    let to_symbol = with_program_mut(from_code_unit, |p| {
+    let to_symbol = with_program(from_code_unit, |p| {
         p.get_symbol_table().and_then(|st| st.get_symbol_for_reference(reference).ok().flatten())
     });
 
@@ -1315,13 +1310,13 @@ fn get_extended_pointer_reference_markup(
     let to_address = reference.to_address();
 
     let has_defined_data =
-        with_program_mut(cu, |p| p.get_listing().and_then(|l| l.get_defined_data_at(&to_address))).is_some();
+        with_program(cu, |p| p.get_listing().and_then(|l| l.get_defined_data_at(&to_address))).is_some();
     if !has_defined_data {
         return None;
     }
 
     let references_from =
-        with_program_mut(cu, |p| p.get_reference_manager().map(|rm| rm.get_references_from(to_address.clone())))
+        with_program(cu, |p| p.get_reference_manager().map(|rm| rm.get_references_from(to_address.clone())))
             .unwrap_or_default();
     if references_from.len() != 1 || references_from[0].reference_type() != RefType::Data {
         return None;
@@ -1329,7 +1324,7 @@ fn get_extended_pointer_reference_markup(
     let target_ref = references_from[0].as_ref();
 
     let symbol =
-        with_program_mut(cu, |p| p.get_symbol_table().and_then(|st| st.get_symbol_for_reference(target_ref).ok().flatten()));
+        with_program(cu, |p| p.get_symbol_table().and_then(|st| st.get_symbol_for_reference(target_ref).ok().flatten()));
     if let Some(symbol) = symbol {
         if !symbol.is_dynamic() {
             let result = get_symbol_label_string(options, cu, symbol.as_ref(), &reference.from_address());
@@ -1365,7 +1360,7 @@ fn add_namespace(
     }
 
     let to_namespace =
-        with_program_mut(cu, |p| p.get_symbol_table().and_then(|st| st.get_namespace(markup_address).ok().flatten()));
+        with_program(cu, |p| p.get_symbol_table().and_then(|st| st.get_namespace(markup_address).ok().flatten()));
     let is_local = to_namespace.map(|ns| ns.get_id() == parent_namespace.get_id()).unwrap_or(false);
     if is_local && options.show_namespace == ShowNamespace::NonLocal {
         return name.to_string();
@@ -1399,7 +1394,7 @@ fn get_symbol_label_string(
 ) -> String {
     let symbol_address = symbol.get_address();
     if symbol_address.is_memory_address() {
-        let cu_at = with_program_mut(ctx_cu, |p| p.get_listing().and_then(|l| l.get_code_unit_containing(&symbol_address)));
+        let cu_at = with_program(ctx_cu, |p| p.get_listing().and_then(|l| l.get_code_unit_containing(&symbol_address)));
         if let Some(cu_at) = cu_at.as_deref() {
             if is_offcut(&symbol_address, Some(cu_at)) {
                 return get_offcut_label_string_impl(options, &symbol_address, cu_at, Some(markup_address), symbol);
@@ -1439,7 +1434,7 @@ fn is_offcut(address: &Address, cu: Option<&dyn CodeUnit>) -> bool {
 
 fn get_offcut_data_string(options: &CodeUnitFormatOptions, offcut_address: &Address, data: &dyn Data) -> String {
     let offcut_symbol =
-        with_program_mut(data, |p| p.get_symbol_table().and_then(|st| st.get_primary_symbol(offcut_address).ok().flatten()));
+        with_program(data, |p| p.get_symbol_table().and_then(|st| st.get_primary_symbol(offcut_address).ok().flatten()));
     let Some(offcut_symbol) = offcut_symbol else {
         return offcut_address.to_string();
     };
@@ -1480,7 +1475,7 @@ fn get_offcut_label_string_for_instruction(
     let decorate = false;
     let simplify = true;
     if symbol.is_dynamic() {
-        let containing_symbol = with_program_mut(instruction, |p| {
+        let containing_symbol = with_program(instruction, |p| {
             p.get_symbol_table().and_then(|st| st.get_primary_symbol(&instruction_address).ok().flatten())
         });
         if let Some(containing_symbol) = containing_symbol {
@@ -1596,7 +1591,7 @@ fn get_data_value_representation_impl(options: &CodeUnitFormatOptions, data: &dy
     if let Some(scalar) = data_value.as_ref().and_then(|v| v.downcast_ref::<Scalar>()) {
         let min_addr = data.get_min_address();
         let value = scalar.get_value();
-        let equate_name = with_program_mut(data, |p| {
+        let equate_name = with_program(data, |p| {
             p.get_equate_table().and_then(|t| t.equate_at_value(&min_addr, 0, value).map(|e| e.display_name()))
         });
         if let Some(name) = equate_name {

@@ -14,10 +14,7 @@
 //! `super.getMutability()`) have real bodies here.
 //!
 //! [`decode`](SymbolEntry::decode)'s Data lookup (`symbol.getProgram().getListing().getDataAt(...)`)
-//! needs mutable `Program`/`Listing` access the same way
-//! [`MappedEntry::get_mutability_of_address`](crate::program::model::pcode::mapped_entry::MappedEntry::get_mutability_of_address)
-//! needs it for its reference-manager scan -- see that method's docs for the `Arc::get_mut`
-//! degrade pattern reused here. Unlike that method, this port's tests do not exercise the
+//! goes through the program's listing handle. This port's tests do not exercise the
 //! "listing found" happy path with a dedicated mock: `Listing` is an exceptionally large trait
 //! (~70 required methods covering every code-unit/instruction/data query), so building a
 //! from-scratch mock implementor purely to return one `Data` value from `get_data_at` was judged
@@ -96,10 +93,9 @@ impl SymbolEntry for MappedDataEntry {
         self.mapped.decode(decoder, pcode_factory)?;
         let min_addr = self.mapped.get_storage().and_then(|s| s.get_min_address());
         self.data = min_addr.and_then(|addr| {
-            let mut program = self.mapped.get_high_symbol().get_program();
-            // See the module docs: mutable `Listing` access is only reachable when `program`
-            // happens to be the only live `Arc<dyn Program>` handle.
-            Arc::get_mut(&mut program).and_then(|p| p.get_listing()).and_then(|l| l.get_data_at(&addr))
+            let program = self.mapped.get_high_symbol().get_program();
+            let data = program.get_listing().and_then(|l| l.get_data_at(&addr));
+            data
         });
         Ok(())
     }

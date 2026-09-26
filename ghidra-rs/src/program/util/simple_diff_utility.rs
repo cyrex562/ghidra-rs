@@ -70,9 +70,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// Port of `SimpleDiffUtility.getCompatibleVariableStorage(Program, VariableStorage, Program)`.
     fn get_compatible_variable_storage(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         storage: Option<Arc<dyn VariableStorage>>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
     ) -> Option<Arc<dyn VariableStorage>> {
         let storage = storage?;
         if storage.size() == 0 || storage.is_hash_storage() {
@@ -92,9 +92,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// Port of `SimpleDiffUtility.getCompatibleVarnode(Program, Varnode, Program)`.
     fn get_compatible_varnode(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         varnode: Option<&Varnode>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
     ) -> Option<Varnode> {
         let varnode = varnode?;
         if varnode.is_constant() {
@@ -244,9 +244,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// method's final `IllegalArgumentException`).
     fn get_compatible_address(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         addr: &Address,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
     ) -> Option<Address> {
         use crate::program::model::address::AddressSpaceType;
 
@@ -310,7 +310,7 @@ pub trait SimpleDiffUtility: Send + Sync {
     fn get_compatible_address_space(
         &self,
         addr_space: &AddressSpace,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
     ) -> Option<Arc<AddressSpace>> {
         let other_space = other_program
             .get_address_factory()?
@@ -332,9 +332,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// `AssertException` ("Got unexpected SymbolType").
     fn get_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol: Option<Arc<dyn Symbol>>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
     ) -> Option<Arc<dyn Symbol>> {
         let symbol = symbol?;
         let symbol_type = symbol.get_symbol_type();
@@ -374,9 +374,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// Set<Long>)`. See the module docs for why `allow_inferred_match` currently has no effect.
     fn get_matching_external_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol: Option<Arc<dyn Symbol>>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
         allow_inferred_match: bool,
         other_restricted_symbol_ids: Option<&HashSet<i64>>,
     ) -> Option<Arc<dyn Symbol>> {
@@ -489,9 +489,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// boolean)`.
     fn get_matching_external_location(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         external_location: Option<Arc<dyn ExternalLocation>>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
         allow_inferred_match: bool,
     ) -> Option<Arc<dyn ExternalLocation>> {
         let external_location = external_location?;
@@ -513,9 +513,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// explicitly (see the module docs).
     fn get_variable_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol: Arc<dyn Symbol>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
     ) -> Option<Arc<dyn Symbol>> {
         let other_parent = self.get_symbol(program, symbol.get_parent_symbol(), other_program)?;
         let other_namespace = other_parent.as_namespace()?;
@@ -526,9 +526,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// overload. Not part of Java's public API; see the module docs.
     fn get_variable_symbol_in_namespace(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         var_sym: Arc<dyn Symbol>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
         other_namespace: Arc<dyn Namespace>,
     ) -> Option<Arc<dyn Symbol>> {
         let other_function_symbol = other_namespace.as_function()?.get_symbol();
@@ -591,9 +591,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// Not part of Java's public API; see the module docs.
     fn get_other_function_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol: Arc<dyn Symbol>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
         other_namespace: Arc<dyn Namespace>,
     ) -> Option<Arc<dyn Symbol>> {
         if symbol.is_external() {
@@ -615,9 +615,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// Not part of Java's public API; see the module docs.
     fn get_other_code_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol: Arc<dyn Symbol>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
         other_namespace: Arc<dyn Namespace>,
     ) -> Option<Arc<dyn Symbol>> {
         if symbol.is_external() {
@@ -651,9 +651,9 @@ pub trait SimpleDiffUtility: Send + Sync {
     /// Namespace)`. Not part of Java's public API; see the module docs.
     fn get_other_external_location_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol: Arc<dyn Symbol>,
-        other_program: &mut dyn Program,
+        other_program: &dyn Program,
         other_namespace: Arc<dyn Namespace>,
     ) -> Option<Arc<dyn Symbol>> {
         let external = program.get_external_manager()?.get_external_location(symbol.clone())?;

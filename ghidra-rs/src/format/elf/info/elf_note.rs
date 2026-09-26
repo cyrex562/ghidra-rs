@@ -199,7 +199,7 @@ fn markup_elf_note(
     program_info_key: &str,
     note_value_string: &str,
     structure: Option<StructureDataType>,
-    program: &mut dyn Program,
+    program: &dyn Program,
     address: &Address,
 ) {
     let mut options = program.get_options(PROGRAM_INFO);
@@ -458,7 +458,7 @@ impl ElfNoteBase {
     /// Port of `ElfNote.markupProgram(Program, Address)`'s default (non-overridden) behavior.
     /// Named distinctly from [`ElfInfoItem::markup_program`] (which delegates to this) to avoid
     /// the self-referential-default ambiguity documented throughout this crate.
-    pub fn elf_note_markup_program(&self, program: &mut dyn Program, address: &Address) {
+    pub fn elf_note_markup_program(&self, program: &dyn Program, address: &Address) {
         markup_elf_note(
             &self.program_info_key(),
             &self.note_value_string(),

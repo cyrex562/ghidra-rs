@@ -16,14 +16,6 @@
 //!   trait, so [`get_base_offset`](PowerPcElfRelocationContext::get_base_offset) always logs the
 //!   non-absolute form of the "Using ..." message rather than Java's `"Using absolute ..."`
 //!   variant.
-//! * Java mutates the shared `Program` directly (`program.getProgramContext().setValue(...)`,
-//!   `program.getSymbolTable().createLabel(...)`). This port's `Program` is held behind
-//!   `Arc<dyn Program>`, whose mutable accessors require unique ownership; mirroring the
-//!   `Arc::get_mut` best-effort idiom already used elsewhere in this crate (e.g.
-//!   [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities),
-//!   [`SymbolUtilities::create_preferred_label_or_function_symbol`](crate::program::model::symbol::symbol_utilities::SymbolUtilities::create_preferred_label_or_function_symbol)),
-//!   both operations silently no-op when the `Program` handle is not uniquely owned rather than
-//!   Java's unconditional mutation.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -111,9 +103,6 @@ impl PowerPcElfRelocationContext {
     }
 
     /// Apply register context to all memory blocks which have execute permission.
-    ///
-    /// See the module documentation for why this is best-effort: it silently does nothing if the
-    /// underlying `Program` handle is not uniquely owned.
     fn set_register_context(&self, reg_name: &str, value: i64) {
         let program = self.base.get_program();
         let Some(reg) = program.get_register(reg_name) else {
@@ -123,10 +112,6 @@ impl PowerPcElfRelocationContext {
             return;
         };
 
-        let mut program = program.clone();
-        let Some(program) = Arc::get_mut(&mut program) else {
-            return;
-        };
         let Some(mut context) = program.get_program_context() else {
             return;
         };
@@ -148,13 +133,11 @@ impl PowerPcElfRelocationContext {
         let log = self.base.get_log();
         let program = self.base.get_program();
 
-        let mut program_clone = program.clone();
-        let base_symbol = Arc::get_mut(&mut program_clone).and_then(|program| {
-            let log = log.clone();
-            DefaultSymbolUtilities.get_label_or_function_symbol(program, symbol_name, &mut |msg| {
-                log.append_msg(&msg);
-            })
-        });
+        let base_symbol = DefaultSymbolUtilities.get_label_or_function_symbol(
+            program.as_ref(),
+            symbol_name,
+            &mut |msg| log.append_msg(&msg),
+        );
 
         if let Some(base_symbol) = base_symbol {
             let base_offset = base_symbol.get_address().offset() as i32;
@@ -198,11 +181,8 @@ impl PowerPcElfRelocationContext {
             base_addr = base_addr.add_wrap((range / 2) & !0x0f_i64);
         }
 
-        let mut program_clone = program.clone();
-        if let Some(program) = Arc::get_mut(&mut program_clone) {
-            if let Some(mut symbol_table) = program.get_symbol_table() {
-                let _ = symbol_table.create_label(&base_addr, symbol_name, SourceType::Analysis);
-            }
+        if let Some(mut symbol_table) = program.get_symbol_table() {
+            let _ = symbol_table.create_label(&base_addr, symbol_name, SourceType::Analysis);
         }
 
         let base_offset = base_addr.offset() as i32;

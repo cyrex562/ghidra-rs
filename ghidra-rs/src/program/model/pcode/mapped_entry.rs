@@ -10,11 +10,7 @@
 //! `MappedEntry.decode(Decoder)`/`encode(Encoder)`, modulo `decode`'s extra `pcode_factory`
 //! parameter (see the [`symbol_entry`](crate::program::model::pcode::symbol_entry) module docs for
 //! why). [`get_mutability_of_address`](MappedEntry::get_mutability_of_address) ports the public
-//! static `MappedEntry.getMutabilityOfAddress(Address, Program)`; see its own docs for how it
-//! degrades when it cannot obtain mutable `Program` access to check reference write-ness (the same
-//! `Arc::get_mut` pattern already used by
-//! [`DataUtilities::get_data_at_location`](crate::program::model::data::data_utilities) and
-//! documented on `code_unit_format::with_program_mut`).
+//! static `MappedEntry.getMutabilityOfAddress(Address, Program)`.
 //!
 //! [`get_storage`](SymbolEntry::get_storage)/[`get_size`](SymbolEntry::get_size)/
 //! [`get_mutability`](SymbolEntry::get_mutability) dereference the `storage` field the way the
@@ -69,15 +65,9 @@ impl MappedEntry {
     /// underlying mutability setting of an Address based on the Program configuration and the
     /// `MemoryBlock`. Ignores any overrides of Data at the address.
     ///
-    /// Java calls `program.getReferenceManager()` unconditionally to scan for write references to
-    /// a read-only block; this crate's [`Program::get_reference_manager`] requires `&mut self`,
-    /// unreachable generically through the shared `Arc<dyn Program>` handed back by
-    /// `HighSymbol::get_program()` unless `program` happens to be the only live handle to that
-    /// `Program` (checked via `Arc::get_mut`, the same degrade already used elsewhere in this
-    /// crate -- see the module docs). When it is not, this treats the address as if the reference
-    /// scan found no write reference (the same outcome as an empty `getReferencesTo` iterator),
-    /// which is the closest honest fallback available without mutable `Program` access.
-    pub fn get_mutability_of_address(addr: Option<&Address>, mut program: Arc<dyn Program>) -> i32 {
+    /// Like Java, a read-only block is `CONSTANT` unless one of the first 100 references to `addr`
+    /// is a write. A program without a reference manager is treated as having no references.
+    pub fn get_mutability_of_address(addr: Option<&Address>, program: Arc<dyn Program>) -> i32 {
         let Some(addr) = addr else {
             return NORMAL;
         };
@@ -96,8 +86,8 @@ impl MappedEntry {
             return VOLATILE;
         }
         if !block.is_write() {
-            let found_write_reference = Arc::get_mut(&mut program)
-                .and_then(|p| p.get_reference_manager())
+            let found_write_reference = program
+                .get_reference_manager()
                 .map(|rm| {
                     rm.get_references_to(addr.clone())
                         .take(100)
@@ -1137,8 +1127,7 @@ mod tests {
         let reference_manager = MockReferenceManager {
             references_to: vec![Arc::new(MockReference { ref_type: RefType::Read })],
         };
-        // A fresh Arc has refcount 1, so `Arc::get_mut` succeeds here: this exercises the "real"
-        // reference-scanning path (not the degrade path) and matches Java exactly.
+        // Only a read reference: the reference scan finds no write, as in Java.
         let program = program_with(None, Some(memory), Some(reference_manager));
         assert_eq!(MappedEntry::get_mutability_of_address(Some(&addr), program), CONSTANT);
     }
@@ -1156,7 +1145,7 @@ mod tests {
     }
 
     #[test]
-    fn mutability_of_address_degrades_to_constant_when_program_arc_is_shared() {
+    fn mutability_of_address_sees_write_reference_when_program_arc_is_shared() {
         let addr = ram_space().address(0x10);
         let block: Arc<dyn MemoryBlock> = Arc::new(MockMemoryBlock { write: false, volatile: false });
         let memory: Arc<dyn Memory> = Arc::new(MockMemory { block: Some(block) });
@@ -1164,10 +1153,11 @@ mod tests {
             references_to: vec![Arc::new(MockReference { ref_type: RefType::Write })],
         };
         let program = program_with(None, Some(memory), Some(reference_manager));
-        // A second live clone means `Arc::get_mut` fails inside `get_mutability_of_address`, even
-        // though a write reference genuinely exists -- the documented degrade path.
+        // Java always consults the reference manager. The port used to reach it through
+        // `Arc::get_mut` and answered CONSTANT whenever a second handle existed; the shared
+        // accessor now finds the write reference regardless.
         let _extra_handle = program.clone();
-        assert_eq!(MappedEntry::get_mutability_of_address(Some(&addr), program), CONSTANT);
+        assert_eq!(MappedEntry::get_mutability_of_address(Some(&addr), program), NORMAL);
     }
 
     #[test]

@@ -69,7 +69,7 @@ pub trait PcodeNonRelationalValueDomain<T> {
     /// are equivalent (neither read has a side effect the other depends on), and checking the
     /// assignment first lets a non-assignment program point skip `location()`/`function()`
     /// entirely.
-    fn get_value_at_program_point(&self, pp: &dyn ProgramPoint, program: &mut dyn Program) -> Option<T> {
+    fn get_value_at_program_point(&self, pp: &dyn ProgramPoint, program: &dyn Program) -> Option<T> {
         if let Some(left) = pp.assignment_left() {
             let function = pp.location().function();
             if let Some(register_space) =

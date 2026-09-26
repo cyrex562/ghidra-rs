@@ -1,6 +1,5 @@
 //! Port of `ghidra.app.plugin.core.symtable.SymbolRowObjectToAddressTableRowMapper`.
 
-use std::sync::Mutex;
 
 use crate::app::plugin::core::symtable::SymbolRowObject;
 use crate::framework::plugintool::service_provider::ServiceProvider;
@@ -20,16 +19,6 @@ use crate::util::table::ProgramLocationTableRowMapper;
 /// the Java `extends` becomes implementing [`TableRowMapper`] plus a blanket, field-less impl of
 /// [`ProgramLocationTableRowMapper`] to pick up its default methods.
 ///
-/// # `ROW_TYPE` is `Arc<Mutex<SymbolRowObject>>`, not `SymbolRowObject`
-///
-/// [`SymbolRowObject::get_symbol`] needs `&mut self` (it recovers unique access to the row's own
-/// `Arc<dyn Program>` via `Arc::get_mut` in order to reach `Program::get_symbol_table`, which
-/// itself requires `&mut self` -- see that method's doc comment). [`TableRowMapper::map`],
-/// however, only hands `map` a `&ROW_TYPE`. Wrapping the row object in `Arc<Mutex<..>>` (rather
-/// than changing the shared [`TableRowMapper`] signature, which every other row-mapper port also
-/// implements against a plain shared reference) reconciles the two: `map` locks the mutex to get
-/// the `&mut SymbolRowObject` `get_symbol` needs.
-///
 /// # `Option<Address>` in place of a nullable `Address`
 ///
 /// Unlike this crate's other row-mapper ports, Java's `map` here can return `null` (when the row
@@ -40,20 +29,18 @@ use crate::util::table::ProgramLocationTableRowMapper;
 /// Ghidra's `ClassSearcher` extension-point discovery to find them.
 pub struct SymbolRowObjectToAddressTableRowMapper;
 
-impl TableRowMapper<std::sync::Arc<Mutex<SymbolRowObject>>, Option<Address>>
+impl TableRowMapper<SymbolRowObject, Option<Address>>
     for SymbolRowObjectToAddressTableRowMapper
 {
     fn map(
         &self,
-        row_object: &std::sync::Arc<Mutex<SymbolRowObject>>,
+        row_object: &SymbolRowObject,
         _data: &dyn Program,
         _service_provider: &dyn ServiceProvider,
     ) -> Option<Address> {
-        // Java: `if (rowObject == null) { return null; }`. `row_object` here is a `&Arc<..>`,
-        // which (unlike a Java reference) can never itself be null, so that guard has no Rust
-        // counterpart -- the mutex lock below is the first point of possible failure instead.
-        let mut row = row_object.lock().expect("SymbolRowObject mutex poisoned");
-        let symbol = row.get_symbol()?;
+        // Java: `if (rowObject == null) { return null; }`. A Rust reference is never null, so
+        // that guard has no counterpart.
+        let symbol = row_object.get_symbol()?;
         if symbol.is_deleted() {
             return None;
         }
@@ -61,7 +48,7 @@ impl TableRowMapper<std::sync::Arc<Mutex<SymbolRowObject>>, Option<Address>>
     }
 }
 
-impl ProgramLocationTableRowMapper<std::sync::Arc<Mutex<SymbolRowObject>>, Option<Address>>
+impl ProgramLocationTableRowMapper<SymbolRowObject, Option<Address>>
     for SymbolRowObjectToAddressTableRowMapper
 {
 }
@@ -176,7 +163,7 @@ mod tests {
     fn map_returns_the_symbols_address() {
         let symbol: Arc<dyn Symbol> = Arc::new(MockSymbol { id: 1, address: ram_address(0x4000), deleted: false });
         let program = row_program(vec![(1, symbol)]);
-        let row_object = Arc::new(Mutex::new(SymbolRowObject::with_id(program, 1)));
+        let row_object = SymbolRowObject::with_id(program, 1);
 
         let mapper = SymbolRowObjectToAddressTableRowMapper;
         let data_program = MockProgram;
@@ -190,7 +177,7 @@ mod tests {
     #[test]
     fn map_returns_none_when_the_symbol_no_longer_exists() {
         let program = row_program(vec![]);
-        let row_object = Arc::new(Mutex::new(SymbolRowObject::with_id(program, 99)));
+        let row_object = SymbolRowObject::with_id(program, 99);
 
         let mapper = SymbolRowObjectToAddressTableRowMapper;
         let data_program = MockProgram;
@@ -203,7 +190,7 @@ mod tests {
     fn map_returns_none_when_the_symbol_is_deleted() {
         let symbol: Arc<dyn Symbol> = Arc::new(MockSymbol { id: 2, address: ram_address(0x8000), deleted: true });
         let program = row_program(vec![(2, symbol)]);
-        let row_object = Arc::new(Mutex::new(SymbolRowObject::with_id(program, 2)));
+        let row_object = SymbolRowObject::with_id(program, 2);
 
         let mapper = SymbolRowObjectToAddressTableRowMapper;
         let data_program = MockProgram;

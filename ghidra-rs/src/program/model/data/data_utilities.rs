@@ -140,7 +140,7 @@ pub trait DataUtilities {
     /// Returns [`CodeUnitInsertionException`] if data creation failed.
     fn create_data(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         addr: &Address,
         new_type: Box<dyn DataType>,
         length: i32,
@@ -157,7 +157,7 @@ pub trait DataUtilities {
     /// Returns [`CodeUnitInsertionException`] if data creation failed.
     fn create_data_with_stack_pointers(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         addr: &Address,
         new_type: Box<dyn DataType>,
         length: i32,
@@ -323,8 +323,8 @@ pub trait DataUtilities {
     ///
     /// `loc` provides the address and subcomponent within the data at the address.
     fn get_data_at_location(&self, loc: &dyn ProgramLocation) -> Option<Box<dyn Data>> {
-        let mut program = loc.get_program();
-        let listing = Arc::get_mut(&mut program)?.get_listing()?;
+        let program = loc.get_program();
+        let listing = program.get_listing()?;
         let data_containing = listing.get_data_containing(&loc.get_address())?;
         let path = loc.get_component_path().unwrap_or(&[]);
         data_containing.get_component_by_path(path)
@@ -335,7 +335,7 @@ pub trait DataUtilities {
     /// This will return `Some` if and only if there is data that starts at the given address.
     fn get_data_at_address(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: Option<&Address>,
     ) -> Option<Arc<dyn Data>> {
         let address = address?;
@@ -352,7 +352,7 @@ pub trait DataUtilities {
     /// undefined location.
     fn get_max_address_of_undefined_range(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         addr: &Address,
     ) -> Option<Address> {
         let data = program.get_listing()?.get_data_containing(addr)?;
@@ -393,7 +393,7 @@ pub trait DataUtilities {
     /// Determine if the specified `addr` corresponds to an undefined data location, where both
     /// undefined code units and defined data which has an Undefined data type is considered to
     /// be undefined.
-    fn is_undefined_data(&self, program: &mut dyn Program, addr: &Address) -> bool {
+    fn is_undefined_data(&self, program: &dyn Program, addr: &Address) -> bool {
         match program.get_listing().and_then(|l| l.get_data_at(addr)) {
             Some(data) => is_undefined_ref(data.get_data_type().as_ref()),
             None => false,
@@ -404,7 +404,7 @@ pub trait DataUtilities {
     /// more than `max_addr`, and that is not a sized undefined data type.
     fn get_next_non_undefined_data_after(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         addr: &Address,
         max_addr: &Address,
     ) -> Option<Arc<dyn Data>> {
@@ -441,7 +441,7 @@ pub trait DataUtilities {
     /// accessor yet.
     fn find_first_conflicting_address(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         addr: &Address,
         length: i32,
         ignore_undefined_data: bool,
@@ -472,7 +472,7 @@ pub trait DataUtilities {
     /// memory block as `start_address`, otherwise `false` is returned.
     fn is_undefined_range(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         start_address: &Address,
         end_address: &Address,
     ) -> bool {
@@ -636,7 +636,7 @@ fn get_data(
 /// separately, avoiding a borrow that would otherwise outlive `new_type` being moved into the
 /// `DataTypeInstance` factory calls below.
 fn get_dt_instance(
-    program: &mut dyn Program,
+    program: &dyn Program,
     addr: &Address,
     new_type: Box<dyn DataType>,
     length: i32,
@@ -733,7 +733,7 @@ fn get_external_pointer_reference(
 /// Port of the private `DataUtilities.checkEnoughSpace(Program, Address, int, DataTypeInstance,
 /// ClearDataMode)`.
 fn check_enough_space(
-    program: &mut dyn Program,
+    program: &dyn Program,
     addr: &Address,
     existing_data_len: i32,
     dti: &dyn DataTypeInstance,

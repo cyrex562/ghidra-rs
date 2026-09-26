@@ -240,7 +240,7 @@ impl ElfLoader {
     pub fn load(
         &self,
         elf: &dyn ElfHeader,
-        program: &mut dyn Program,
+        program: &dyn Program,
         options: &[Box<dyn Option>],
         log: &MessageLog,
         monitor: &dyn TaskMonitor,

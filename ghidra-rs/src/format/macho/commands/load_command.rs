@@ -112,7 +112,7 @@ pub trait LoadCommand: StructConverter + Send + Sync {
     /// the given address based on this load command's name.
     fn markup_plate_comment(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: Option<&Address>,
         source: Option<&str>,
         additional_description: Option<&str>,

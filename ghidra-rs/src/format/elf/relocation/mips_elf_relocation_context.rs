@@ -44,13 +44,9 @@
 //!   a block this crate hands back as an `Arc`, and `PointerDataType` is a trait with no
 //!   constructible default (see
 //!   [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities) for the same
-//!   limitation), so the artificial flag and the pointer markup are skipped. As in the
-//!   [`PowerPC` context](crate::format::elf::relocation::power_pc_elf_relocation_context), program
-//!   mutation is best-effort through `Arc::get_mut` and silently no-ops when the `Program` handle
-//!   is not uniquely owned.
+//!   limitation), so the artificial flag and the pointer markup are skipped.
 //! * **`getAdjustedGPValue`/`getGP0Value`.** `Symbol` lookup goes through
-//!   [`SymbolUtilities::get_label_or_function_symbol`], which needs `&mut Program`; same
-//!   best-effort `Arc::get_mut` idiom.
+//!   [`SymbolUtilities::get_label_or_function_symbol`].
 //! * **`getSectionGotName`.** Java dereferences `getSectionToBeRelocated()` unconditionally. The
 //!   ported seam answers `None` for a dynamic relocation table (and when no table is being
 //!   processed), in which case the block name is just `%got`.
@@ -424,9 +420,8 @@ impl MipsElfRelocationContext {
             &LittleEndianDataConverter
         };
 
-        // See the module docs: program mutation is best-effort through `Arc::get_mut`.
-        let mut program = self.base.get_program().clone();
-        let Some(mut memory) = Arc::get_mut(&mut program).and_then(|p| p.get_memory_mut()) else {
+        let program = self.base.get_program();
+        let Some(mut memory) = program.get_memory_mut() else {
             log.append_msg(&format!("Failed to create {block_name} block"));
             return;
         };
@@ -473,13 +468,12 @@ impl MipsElfRelocationContext {
     /// The offset of the named label-or-function symbol, or -1 if it is not defined.
     fn gp_symbol_offset(&self, symbol_name: &str) -> i64 {
         let log = self.base.get_log();
-        let mut program = self.base.get_program().clone();
-        let symbol = Arc::get_mut(&mut program).and_then(|program| {
-            let log = log.clone();
-            DefaultSymbolUtilities.get_label_or_function_symbol(program, symbol_name, &mut |err| {
-                log.append_msg(&format!("MIPS_ELF> {err}"));
-            })
-        });
+        let program = self.base.get_program();
+        let symbol = DefaultSymbolUtilities.get_label_or_function_symbol(
+            program.as_ref(),
+            symbol_name,
+            &mut |err| log.append_msg(&format!("MIPS_ELF> {err}")),
+        );
         symbol.map_or(-1, |symbol| symbol.get_address().offset())
     }
 

@@ -235,7 +235,7 @@ impl JavaLoader {
     /// `catch` blocks.
     pub fn load(
         &mut self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         provider: &Rc<RefCell<dyn GByteStore>>,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
@@ -253,7 +253,7 @@ impl JavaLoader {
     fn do_load(
         &mut self,
         provider: &Rc<RefCell<dyn GByteStore>>,
-        program: &mut dyn Program,
+        program: &dyn Program,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), DoLoadError> {
         let address_factory = program.get_address_factory().ok_or_else(|| {
@@ -289,7 +289,7 @@ impl JavaLoader {
     }
 
     /// `JavaLoader.createMethodLookupMemoryBlock(Program, TaskMonitor)`.
-    fn create_method_lookup_memory_block(program: &mut dyn Program, monitor: &dyn TaskMonitor) {
+    fn create_method_lookup_memory_block(program: &dyn Program, monitor: &dyn TaskMonitor) {
         let address = Self::to_addr(program, JavaClassUtil::LOOKUP_ADDRESS);
         let Some(mut memory) = program.get_memory_mut() else { return };
         match memory.create_initialized_block(
@@ -312,7 +312,7 @@ impl JavaLoader {
     /// `JavaLoader.createMethodMemoryBlocks(Program, GByteStore, ClassFileJava, TaskMonitor)`.
     fn create_method_memory_blocks(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         provider: &Rc<RefCell<dyn GByteStore>>,
         reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
         class_file: &ClassFileJava,
@@ -430,7 +430,7 @@ impl JavaLoader {
     }
 
     /// `JavaLoader.setAlignmentInfo(Program, AddressSet)`.
-    fn set_alignment_info(&self, program: &mut dyn Program, set: &AddressSet) {
+    fn set_alignment_info(&self, program: &dyn Program, set: &AddressSet) {
         use crate::program::model::address::AddressSetView;
 
         let Some(register_ref) = self.alignment_reg.as_ref() else { return };

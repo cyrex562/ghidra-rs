@@ -260,7 +260,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
     /// table entry are still applied faithfully.
     fn fixup_slide_pointers(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         markup: bool,
         add_relocations: bool,
         log: &MessageLog,

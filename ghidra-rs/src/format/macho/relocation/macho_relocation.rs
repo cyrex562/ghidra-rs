@@ -234,7 +234,7 @@ impl<'p> MachoRelocation<'p> {
     /// ... else ...` chain in both constructors.
     fn resolve_target(
         macho_header: &dyn MachHeader,
-        program: &mut dyn Program,
+        program: &dyn Program,
         space: &Arc<AddressSpace>,
         relocation_info: &RelocationInfo,
     ) -> (Option<Address>, Option<Arc<dyn Symbol>>, Option<Section>) {
@@ -253,7 +253,7 @@ impl<'p> MachoRelocation<'p> {
     /// Java: `findTargetSymbol(RelocationInfo)`.
     fn find_target_symbol(
         macho_header: &dyn MachHeader,
-        program: &mut dyn Program,
+        program: &dyn Program,
         space: &Arc<AddressSpace>,
         relocation_info: &RelocationInfo,
     ) -> Option<Arc<dyn Symbol>> {

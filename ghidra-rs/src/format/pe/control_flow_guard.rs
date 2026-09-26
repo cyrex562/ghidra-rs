@@ -48,7 +48,7 @@ pub const GUARD_CFG_TABLE_ENTRY_NAME: &str = "GuardCfgTableEntry";
 /// value is passed directly here instead, which is behaviorally identical.
 pub fn markup(
     lcd: &LoadConfigDirectory,
-    program: &mut dyn Program,
+    program: &dyn Program,
     log: &MessageLog,
     nt_header: &dyn NTHeader,
 ) {
@@ -107,7 +107,7 @@ pub fn markup(
 /// DataType>` in this port (not a concrete, further-mutable `StructureDataTypeImpl`), so instead
 /// of downcasting, a fresh structure is built every call. Functionally equivalent (the two would
 /// be `isEquivalent`), just without the caching.
-fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &mut dyn Program, log: &MessageLog) {
+fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &dyn Program, log: &MessageLog) {
     const IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_MASK: i32 = 0xf000_0000u32 as i32;
     const IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_SHIFT: i32 = 28;
 
@@ -165,7 +165,7 @@ fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &mut dyn Progra
 }
 
 /// Port of the private `ControlFlowGuard.createCfgFunctions(Program, Data, MessageLog)`.
-fn create_cfg_functions(program: &mut dyn Program, table_data: Option<&dyn Data>, log: &MessageLog) {
+fn create_cfg_functions(program: &dyn Program, table_data: Option<&dyn Data>, log: &MessageLog) {
     let Some(table_data) = table_data else {
         log.append_msg("Couldn't find Control Flow Guard tables.");
         return;
@@ -208,7 +208,7 @@ fn get_function_addresses_from_table(table: &dyn Data) -> Vec<Address> {
 
 /// Port of the private `ControlFlowGuard.markupCfgAddressTakenIatEntryTable(LoadConfigDirectory,
 /// Program, MessageLog)`.
-fn markup_cfg_address_taken_iat_entry_table(lcd: &LoadConfigDirectory, program: &mut dyn Program, log: &MessageLog) {
+fn markup_cfg_address_taken_iat_entry_table(lcd: &LoadConfigDirectory, program: &dyn Program, log: &MessageLog) {
     let table_pointer = lcd.get_guard_address_iat_table_table_pointer();
     let function_count = lcd.get_guard_address_iat_table_count();
     if table_pointer == 0 || function_count <= 0 {
@@ -249,7 +249,7 @@ fn markup_cfg_function(
     label: &str,
     description: &str,
     function_pointer: i64,
-    program: &mut dyn Program,
+    program: &dyn Program,
     nt_header: &dyn NTHeader,
     log: &MessageLog,
 ) {

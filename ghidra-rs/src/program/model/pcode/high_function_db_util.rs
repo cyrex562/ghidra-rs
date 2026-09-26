@@ -163,7 +163,7 @@ pub trait HighFunctionDBUtil {
 
     /// If there is a call to a function at `addr`, and the function takes variable arguments,
     /// returns the index of the first variable argument. Returns -1 otherwise.
-    fn get_first_var_arg(&self, program: &mut dyn Program, addr: Address) -> i32 {
+    fn get_first_var_arg(&self, program: &dyn Program, addr: Address) -> i32 {
         get_first_var_arg_impl(program, addr)
     }
 
@@ -1122,7 +1122,7 @@ fn read_override_impl(sym: &dyn Symbol) -> Option<Box<dyn DataTypeSymbol>> {
     seam_stubs::read_data_type_symbol(AUTO_CAT, sym)
 }
 
-fn get_first_var_arg_impl(program: &mut dyn Program, addr: Address) -> i32 {
+fn get_first_var_arg_impl(program: &dyn Program, addr: Address) -> i32 {
     let Some(reference_manager) = program.get_reference_manager() else {
         return -1;
     };

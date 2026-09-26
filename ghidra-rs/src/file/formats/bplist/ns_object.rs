@@ -92,7 +92,7 @@ pub trait NsObject: StructConverter + fmt::Display {
     fn markup(
         &self,
         object_data: &mut dyn Data,
-        program: &mut dyn Program,
+        program: &dyn Program,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException> {
         let _ = (object_data, program, monitor);

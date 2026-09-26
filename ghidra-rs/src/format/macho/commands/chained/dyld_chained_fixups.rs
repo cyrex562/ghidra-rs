@@ -179,7 +179,7 @@ pub fn get_chained_fixups(
 #[allow(clippy::too_many_arguments)]
 pub fn fixup_chained_pointers(
     fixups: &[DyldFixup],
-    program: &mut dyn Program,
+    program: &dyn Program,
     imagebase: &Address,
     library_paths: &[String],
     log: &MessageLog,

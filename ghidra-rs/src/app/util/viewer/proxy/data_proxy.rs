@@ -20,15 +20,14 @@ use super::proxy_obj::{ProxyObj, ProxyObjBase};
 /// Java's `getObject()` mutates the `data` field, but [`ProxyObj::get_object`] takes `&self`
 /// (matching every other implementor of that trait in this crate -- see
 /// [`CodeUnitProxy`](super::code_unit_proxy::CodeUnitProxy)'s analogous doc comment), so the
-/// cached `data` -- and the `program` handle needed to refresh it -- are held behind [`RefCell`]
-/// for interior mutability. The cached value is [`Arc<dyn Data>`] rather than `Box<dyn Data>` so
+/// cached `data` is held behind [`RefCell`] for interior mutability. The cached value is [`Arc<dyn Data>`] rather than `Box<dyn Data>` so
 /// [`Self::get_object`] can hand back a cheap clone of it from a shared borrow, the same reason
 /// [`CodeUnitProxy`](super::code_unit_proxy::CodeUnitProxy) uses `Arc<dyn CodeUnit>`; a
 /// `Box<dyn Data>` component fetched via [`Data::get_component_by_path`] is converted into an
 /// `Arc` with `Arc::from`.
 pub struct DataProxy {
     base: ProxyObjBase,
-    program: RefCell<Arc<dyn Program>>,
+    program: Arc<dyn Program>,
     data: RefCell<Option<Arc<dyn Data>>>,
     addr: Address,
     path: Vec<i32>,
@@ -46,7 +45,7 @@ impl DataProxy {
         let path = data.get_component_path();
         Self {
             base: ProxyObjBase::new(model),
-            program: RefCell::new(program),
+            program,
             data: RefCell::new(Some(data)),
             addr,
             path,
@@ -81,9 +80,9 @@ impl ProxyObj<Arc<dyn Data>> for DataProxy {
             let _ = data.get_min_address();
             return Some(data);
         }
-        let mut program = self.program.borrow_mut();
-        let top = Arc::get_mut(&mut program)
-            .and_then(|p| p.get_listing())
+        let top = self
+            .program
+            .get_listing()
             .and_then(|listing| listing.get_data_containing(&self.addr));
         let component: Option<Arc<dyn Data>> =
             top.and_then(|t| t.get_component_by_path(&self.path)).map(Arc::from);

@@ -246,7 +246,7 @@ impl DecompileDebugFormatManager {
     fn read_subtrees<P: XmlPullParser>(
         &mut self,
         parser: &mut P,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         monitor: &dyn TaskMonitor,
         program_name: &str,
         log: &mut XmlMessageLog,
@@ -345,7 +345,7 @@ impl DecompileDebugFormatManager {
         &mut self,
         parser: &mut P,
         monitor: &dyn TaskMonitor,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         data_type_manager: &mut DecompileDebugDataTypeManager,
         program_name: &str,
         log: &mut XmlMessageLog,
@@ -433,7 +433,7 @@ impl DecompileDebugFormatManager {
         namespace: Option<Arc<dyn Namespace>>,
         parser: &mut P,
         monitor: &dyn TaskMonitor,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         data_type_manager: &mut DecompileDebugDataTypeManager,
         program_name: &str,
         log: &mut XmlMessageLog,
@@ -508,7 +508,7 @@ impl DecompileDebugFormatManager {
     fn handle_binary_image_elements<P: XmlPullParser>(
         parser: &mut P,
         monitor: &dyn TaskMonitor,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         program_name: &str,
         log: &mut XmlMessageLog,
     ) {
@@ -536,7 +536,7 @@ impl DecompileDebugFormatManager {
     ///
     /// Port of `parseLabelSymbol`.
     fn parse_label_symbol<P: XmlPullParser>(
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         parser: &mut P,
         log: &mut XmlMessageLog,
     ) -> Result<(), XmlException> {
@@ -600,7 +600,7 @@ impl DecompileDebugFormatManager {
     /// logs every failure it can produce, so nothing here reports one either.
     #[allow(clippy::too_many_arguments)]
     fn parse_symbol<P: XmlPullParser>(
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         parser: &mut P,
         data_type_manager: &mut DecompileDebugDataTypeManager,
         namespace: Option<Arc<dyn Namespace>>,
@@ -700,7 +700,7 @@ impl DecompileDebugFormatManager {
     /// Back a data symbol with a zero-filled block when its range is not already mapped, the
     /// memory half of [`parse_symbol`](Self::parse_symbol).
     fn create_symbol_memory(
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         symbol_addr: &Address,
         size: i64,
         read_only: bool,
@@ -761,7 +761,7 @@ impl DecompileDebugFormatManager {
     fn parse_comments<P: XmlPullParser>(
         parser: &mut P,
         monitor: &dyn TaskMonitor,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         log: &mut XmlMessageLog,
     ) -> Result<(), XmlException> {
         while peek_start_named(parser, "comment").is_some() && !monitor.is_cancelled() {
@@ -780,7 +780,7 @@ impl DecompileDebugFormatManager {
     /// Port of `parseAndAddComment`.
     fn parse_and_add_comment<P: XmlPullParser>(
         parser: &mut P,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         log: &mut XmlMessageLog,
     ) -> Result<(), XmlException> {
         let comment_element = parser.start(&["comment"])?;
@@ -826,7 +826,7 @@ impl DecompileDebugFormatManager {
         decoded_type: CommentType,
         comment_addr: &Address,
         comment_text: &str,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
     ) {
         let Some(mut listing) = prog.get_listing() else {
             return;
@@ -874,7 +874,7 @@ impl DecompileDebugFormatManager {
     fn parse_strings<P: XmlPullParser>(
         parser: &mut P,
         monitor: &dyn TaskMonitor,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         log: &mut XmlMessageLog,
     ) -> Result<(), XmlException> {
         while peek_start_named(parser, "string").is_some() && !monitor.is_cancelled() {
@@ -888,7 +888,7 @@ impl DecompileDebugFormatManager {
     /// Port of `parseAndAddStrings`. Java also takes the `TaskMonitor`, which it never uses.
     fn parse_and_add_strings<P: XmlPullParser>(
         parser: &mut P,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         log: &mut XmlMessageLog,
     ) -> Result<(), XmlException> {
         let string_element = parser.start(&["string"])?;
@@ -941,7 +941,7 @@ impl DecompileDebugFormatManager {
     fn parse_context_points<P: XmlPullParser>(
         parser: &mut P,
         monitor: &dyn TaskMonitor,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         log: &mut XmlMessageLog,
     ) -> Result<(), XmlException> {
         while peek_start_named(parser, "context_pointset").is_some() {
@@ -994,7 +994,7 @@ impl DecompileDebugFormatManager {
     /// the `i128` this crate's [`ProgramContext`](crate::program::model::listing::ProgramContext)
     /// carries.
     fn set_context_value(
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         reg_name: &str,
         reg_val: Option<i128>,
         addr: &Address,

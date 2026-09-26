@@ -155,7 +155,7 @@ impl GccExceptionAnalyzer {
     /// Port of `handleStandardSections(Program, TaskMonitor, MessageLog)`.
     fn handle_standard_sections(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         monitor: &dyn TaskMonitor,
         log: &mut MessageLog,
     ) -> Result<(), CancelledException> {
@@ -209,7 +209,7 @@ impl GccExceptionAnalyzer {
     /// `processCallSiteRecord(Program, AddressSet, RegionDescriptor, LSDACallSiteRecord)`.
     fn process_call_site_record(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         eh_protected: &mut AddressSet,
         region: &RegionDescriptor,
         cs: &seam_stubs::LSDACallSiteRecord,
@@ -280,7 +280,7 @@ impl GccExceptionAnalyzer {
 
     /// Port of `disassembleIfNeeded(Program, Address)`: `true` when this call disassembled the
     /// address, `false` when it was already code or could not be disassembled.
-    fn disassemble_if_needed(program: &mut dyn Program, address: &Address) -> bool {
+    fn disassemble_if_needed(program: &dyn Program, address: &Address) -> bool {
         if !Self::should_disassemble() {
             return false;
         }
@@ -324,7 +324,7 @@ impl GccExceptionAnalyzer {
     }
 
     /// Port of `markStartOfTry(Program, AddressRange, Address)`.
-    fn mark_start_of_try(program: &mut dyn Program, call_site: &AddressRange, lp_addr: &Address) {
+    fn mark_start_of_try(program: &dyn Program, call_site: &AddressRange, lp_addr: &Address) {
         let cs_min_addr = call_site.min_address().clone();
         let cs_max_addr = call_site.max_address().clone();
         let start_try_comment = Self::start_of_try_comment(&cs_min_addr, &cs_max_addr, lp_addr);
@@ -341,7 +341,7 @@ impl GccExceptionAnalyzer {
     }
 
     /// Port of `markEndOfTry(Program, AddressRange)`.
-    fn mark_end_of_try(program: &mut dyn Program, call_site: &AddressRange) {
+    fn mark_end_of_try(program: &dyn Program, call_site: &AddressRange) {
         let cs_min_addr = call_site.min_address().clone();
         let cs_max_addr = call_site.max_address().clone();
         let comment_addr = program
@@ -367,7 +367,7 @@ impl GccExceptionAnalyzer {
 
     /// Port of `markStartOfCatch(Program, Address, Address, List<TypeInfo>)`.
     fn mark_start_of_catch(
-        program: &mut dyn Program,
+        program: &dyn Program,
         cs_addr: &Address,
         lp_addr: &Address,
         type_infos: &[TypeInfo],
@@ -393,7 +393,7 @@ impl GccExceptionAnalyzer {
     /// The "leave an existing comment alone if it already says this, otherwise merge" step the
     /// three `markStartOf`/`markEndOf` methods share verbatim in the Java.
     fn merge_comment_into(
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: Address,
         comment_type: CommentType,
         existing_comment: Option<String>,
@@ -420,7 +420,7 @@ impl GccExceptionAnalyzer {
     }
 
     /// Port of `markEndOfCatch(Program, AddressRange, Address)`.
-    fn mark_end_of_catch(program: &mut dyn Program, call_site: &AddressRange, lp_addr: &Address) {
+    fn mark_end_of_catch(program: &dyn Program, call_site: &AddressRange, lp_addr: &Address) {
         let _ = (program, call_site, lp_addr);
 
         // TODO Need to figure out way to indicate this that won't get wiped out by other analysis.
@@ -453,7 +453,7 @@ impl GccExceptionAnalyzer {
 
     /// Port of `handleDebugFrameSection(Program, TaskMonitor, MessageLog)`.
     fn handle_debug_frame_section(
-        program: &mut dyn Program,
+        program: &dyn Program,
         monitor: &dyn TaskMonitor,
         log: &mut MessageLog,
     ) {

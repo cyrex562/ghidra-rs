@@ -14,11 +14,8 @@
 //! [`UndefinedFunction`] was ported as a dependency-cycle cut-point trait with no concrete
 //! implementor (see that module's docs), so [`SyntheticUndefinedFunction`] provides the minimal
 //! one this port's `findFunctionUsingIsolatedBlockModel` fallback needs to actually call
-//! `new UndefinedFunction(program, entry)`. Its `getFunctionManager().getFunctionAt(entry)`
-//! re-check is not reproduced: that call needs `&mut dyn Program`, reachable only via
-//! `Arc::get_mut` (see [`with_program_mut`]), which can never succeed once `self.program` is a
-//! live field for the whole `&self` call -- so this port goes straight to synthesizing the
-//! undefined function, same as Java's own fallback when no function is found.
+//! `new UndefinedFunction(program, entry)`, after the same `getFunctionManager().getFunctionAt(entry)`
+//! re-check Java makes.
 
 use std::sync::{Arc, Mutex};
 
@@ -41,21 +38,6 @@ use crate::util::task::swing_runnable::SwingRunnable;
 use crate::util::task::{MonitoredRunnable, TaskMonitor};
 use crate::util::undefined_function::UndefinedFunction;
 
-/// Attempts `f` against `program` via `Arc::get_mut`, mirroring the `Arc::get_mut(&mut program)`
-/// idiom already established elsewhere in this crate (see `code_unit_format.rs`) for reaching
-/// `Program`'s `&mut self` manager accessors. Returns `None` (rather than the manager result) if
-/// exclusive access could not be obtained, e.g. because another `Arc<dyn Program>` handle -- such
-/// as the caller's own copy -- is outstanding.
-fn with_program_mut<T>(
-    program: &mut Arc<dyn Program>,
-    f: impl FnOnce(&mut dyn Program) -> Option<T>,
-) -> Option<T> {
-    match Arc::get_mut(program) {
-        Some(p) => f(p),
-        None => None,
-    }
-}
-
 /// Builds and, once built, holds the [`FGData`] for one function's graph.
 ///
 /// Port of `ghidra.app.plugin.core.functiongraph.mvc.FunctionGraphRunnable`.
@@ -72,14 +54,14 @@ impl FunctionGraphRunnable {
     /// Port of `FunctionGraphRunnable(FGController, Program, ProgramLocation)`.
     pub fn new(
         controller: Arc<dyn FGController>,
-        mut program: Arc<dyn Program>,
+        program: Arc<dyn Program>,
         location: Arc<dyn ProgramLocation + Send + Sync>,
     ) -> Self {
         let model = controller.get_model();
         let address = location.get_address();
-        let function = with_program_mut(&mut program, |p| {
-            p.get_function_manager().and_then(|fm| fm.get_function_containing(&address))
-        });
+        let function = program
+            .get_function_manager()
+            .and_then(|fm| fm.get_function_containing(&address));
 
         FunctionGraphRunnable {
             controller,
@@ -126,6 +108,10 @@ impl FunctionGraphRunnable {
         let code_block =
             block_model.get_first_code_block_containing(address, monitor).ok().flatten()?;
         let entry = code_block.get_first_start_address();
+        let existing = self.program.get_function_manager().and_then(|fm| fm.get_function_at(&entry));
+        if existing.is_some() {
+            return existing;
+        }
 
         let mut undefined_function = SyntheticUndefinedFunction::new(self.program.clone(), entry);
         Function::set_body(&mut undefined_function, &*code_block).ok()?;

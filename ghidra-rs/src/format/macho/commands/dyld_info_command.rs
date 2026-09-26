@@ -198,30 +198,30 @@ impl DyldInfoCommand {
         &self.export_trie
     }
 
-    fn markup_rebase_info(&self, program: &mut dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_rebase_info(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
         let addr = self.file_offset_to_address(program, header, self.rebase_off as i64, self.rebase_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("rebase"));
         // See this module's own docs: the opcode-table markup loop is not performed.
     }
 
-    fn markup_bindings(&self, program: &mut dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_bindings(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
         let addr = self.file_offset_to_address(program, header, self.bind_off as i64, self.bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("bind"));
     }
 
-    fn markup_weak_bindings(&self, program: &mut dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_weak_bindings(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
         let addr =
             self.file_offset_to_address(program, header, self.weak_bind_off as i64, self.weak_bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("weak bind"));
     }
 
-    fn markup_lazy_bindings(&self, program: &mut dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_lazy_bindings(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
         let addr =
             self.file_offset_to_address(program, header, self.lazy_bind_off as i64, self.lazy_bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("lazy bind"));
     }
 
-    fn markup_export_info(&self, program: &mut dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_export_info(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
         let Some(addr) =
             self.file_offset_to_address(program, header, self.export_off as i64, self.export_size as i64)
         else {

@@ -296,7 +296,7 @@ pub trait SymbolUtilities {
 
     /// Creates a name for a dynamic symbol at `addr` within `program`, consulting the code unit
     /// (if any) containing that address the way Java's `Program`-taking overload does.
-    fn get_dynamic_name_for_program(&self, program: &mut dyn Program, addr: &Address) -> Option<String> {
+    fn get_dynamic_name_for_program(&self, program: &dyn Program, addr: &Address) -> Option<String> {
         if !addr.is_memory_address() {
             return None;
         }
@@ -393,7 +393,7 @@ pub trait SymbolUtilities {
     /// Address, int)`. Takes `code_unit` directly rather than an `Instruction`; see module docs.
     fn get_dynamic_instruction_name(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         code_unit: &dyn CodeUnit,
         address: &Address,
         ref_level: i8,
@@ -683,7 +683,7 @@ pub trait SymbolUtilities {
     /// Returns display text suitable for describing in the GUI the [`SymbolType`] of the given
     /// symbol. Stands in for `SymbolUtilities.getSymbolTypeDisplayName(Symbol)`; `program` is
     /// taken explicitly (see module docs) in place of `symbol.getProgram()`.
-    fn get_symbol_type_display_name(&self, program: &mut dyn Program, symbol: &dyn Symbol) -> Option<String> {
+    fn get_symbol_type_display_name(&self, program: &dyn Program, symbol: &dyn Symbol) -> Option<String> {
         let sym_type = symbol.get_symbol_type();
         if sym_type == SymbolType::Label {
             if symbol.is_external() {
@@ -724,7 +724,7 @@ pub trait SymbolUtilities {
 
     /// Returns the global symbol with the given name if and only if it is the only global symbol
     /// with that name. Stands in for `SymbolUtilities.getUniqueSymbol(Program, String)`.
-    fn get_unique_symbol(&self, program: &mut dyn Program, name: &str) -> Option<Arc<dyn Symbol>> {
+    fn get_unique_symbol(&self, program: &dyn Program, name: &str) -> Option<Arc<dyn Symbol>> {
         self.get_unique_symbol_in_namespace(program, name, None)
     }
 
@@ -733,7 +733,7 @@ pub trait SymbolUtilities {
     /// `SymbolUtilities.getUniqueSymbol(Program, String, Namespace)`.
     fn get_unique_symbol_in_namespace(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         name: &str,
         namespace: Option<&dyn Namespace>,
     ) -> Option<Arc<dyn Symbol>> {
@@ -756,7 +756,7 @@ pub trait SymbolUtilities {
     /// `SymbolUtilities.getExpectedLabelOrFunctionSymbol(Program, String, Consumer<String>)`.
     fn get_expected_label_or_function_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol_name: &str,
         error_consumer: &mut dyn FnMut(String),
     ) -> Option<Arc<dyn Symbol>> {
@@ -780,7 +780,7 @@ pub trait SymbolUtilities {
     /// `SymbolUtilities.getLabelOrFunctionSymbol(Program, String, Consumer<String>)`.
     fn get_label_or_function_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         symbol_name: &str,
         error_consumer: &mut dyn FnMut(String),
     ) -> Option<Arc<dyn Symbol>> {
@@ -802,7 +802,7 @@ pub trait SymbolUtilities {
     /// namespace-handling simplifications this port makes.
     fn create_preferred_label_or_function_symbol(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: &Address,
         namespace: Option<Arc<dyn Namespace>>,
         name: &str,

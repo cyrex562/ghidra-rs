@@ -117,7 +117,7 @@ impl DbgLoader {
     /// [`abstract_pe_debug_loader::process_debug`] does and does not model.
     pub fn load(
         &self,
-        prog: &mut dyn Program,
+        prog: &dyn Program,
         provider: &Rc<RefCell<dyn GByteStore>>,
         options: &[Box<dyn LoaderOption>],
         monitor: &dyn TaskMonitor,

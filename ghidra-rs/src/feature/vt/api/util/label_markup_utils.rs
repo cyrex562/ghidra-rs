@@ -23,7 +23,7 @@ use crate::program::model::symbol::{Symbol, SymbolType};
 /// Symbols are snapshotted into a list *before* any are removed (mirroring Java's `Symbol[]
 /// symbols = symbolTable.getSymbols(address)`), so removing one symbol never disturbs iteration
 /// over the rest.
-pub fn remove_all_labels(destination_program: &mut dyn Program, address: &Address) {
+pub fn remove_all_labels(destination_program: &dyn Program, address: &Address) {
     let Some(mut symbol_table) = destination_program.get_symbol_table() else {
         return;
     };

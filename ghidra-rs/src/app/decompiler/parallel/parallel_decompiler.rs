@@ -20,7 +20,7 @@ pub const THREAD_POOL_NAME: &str = "Parallel Decompiler";
 /// `addresses`.
 pub fn decompile_functions_in_address_set<R>(
     callback: Box<dyn QCallback<Arc<dyn Function>, R>>,
-    program: &mut dyn Program,
+    program: &dyn Program,
     addresses: &dyn AddressSetView,
     monitor: &dyn TaskMonitor,
 ) -> anyhow::Result<Vec<R>>
@@ -60,7 +60,7 @@ where
 /// here.
 pub fn decompile_functions_streaming<R>(
     callback: Box<dyn QCallback<Arc<dyn Function>, R>>,
-    program: &mut dyn Program,
+    program: &dyn Program,
     functions: impl Iterator<Item = Arc<dyn Function>>,
     mut results_consumer: impl FnMut(R),
     monitor: &dyn TaskMonitor,

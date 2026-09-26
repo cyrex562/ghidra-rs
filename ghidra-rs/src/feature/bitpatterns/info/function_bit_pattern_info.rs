@@ -70,7 +70,7 @@ impl FunctionBitPatternInfo {
     /// this port walks them in ascending address order so that `return_bytes`/`return_inst` are
     /// reproducible.
     pub fn gather(
-        program: &mut dyn Program,
+        program: &dyn Program,
         func: &dyn Function,
         body: &dyn AddressSetView,
         params: &DataGatheringParams,
@@ -452,7 +452,7 @@ fn operands_csv(instruction: &dyn Instruction) -> String {
 /// Java: `recordContextRegisterInfo`. Registers that the program does not know about keep a
 /// `None` value (Java logs and continues).
 fn record_context_register_info(
-    program: &mut dyn Program,
+    program: &dyn Program,
     func: &dyn Function,
     context_regs: &[String],
 ) -> Vec<ContextRegisterInfo> {

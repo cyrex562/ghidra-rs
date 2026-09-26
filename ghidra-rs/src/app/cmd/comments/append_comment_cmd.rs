@@ -34,7 +34,7 @@ impl AppendCommentCmd {
     }
 
     /// Port of the private `AppendCommentCmd.getCodeUnit(Program)`.
-    fn get_code_unit(&self, program: &mut dyn Program) -> Option<Arc<dyn CodeUnit>> {
+    fn get_code_unit(&self, program: &dyn Program) -> Option<Arc<dyn CodeUnit>> {
         let listing = program.get_listing()?;
         let cu = listing.get_code_unit_containing(&self.address)?;
         let cu_addr = cu.get_min_address();

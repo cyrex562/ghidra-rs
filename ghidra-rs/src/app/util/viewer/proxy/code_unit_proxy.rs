@@ -17,11 +17,11 @@ use super::proxy_obj::{ProxyObj, ProxyObjBase};
 /// field rather than inheriting.
 ///
 /// Java's `getObject()` mutates the `cu` field, but [`ProxyObj::get_object`] takes `&self`
-/// (matching every other implementor of that trait in this crate), so the cached `cu` -- and the
-/// `program` handle needed to refresh it -- are held behind [`RefCell`] for interior mutability.
+/// (matching every other implementor of that trait in this crate), so the cached `cu` is held
+/// behind [`RefCell`] for interior mutability.
 pub struct CodeUnitProxy {
     base: ProxyObjBase,
-    program: RefCell<Arc<dyn Program>>,
+    program: Arc<dyn Program>,
     cu: RefCell<Option<Arc<dyn CodeUnit>>>,
     addr: Address,
 }
@@ -37,7 +37,7 @@ impl CodeUnitProxy {
         let addr = cu.get_min_address();
         Self {
             base: ProxyObjBase::new(model),
-            program: RefCell::new(program),
+            program,
             cu: RefCell::new(Some(cu)),
             addr,
         }
@@ -68,9 +68,9 @@ impl ProxyObj<Arc<dyn CodeUnit>> for CodeUnitProxy {
             let _ = cu.get_min_address();
             return Some(cu);
         }
-        let mut program = self.program.borrow_mut();
-        let fresh = Arc::get_mut(&mut program)
-            .and_then(|p| p.get_listing())
+        let fresh = self
+            .program
+            .get_listing()
             .and_then(|listing| listing.get_code_unit_at(&self.addr));
         *self.cu.borrow_mut() = fresh.clone();
         fresh

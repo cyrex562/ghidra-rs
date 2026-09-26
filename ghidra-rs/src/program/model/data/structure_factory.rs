@@ -43,7 +43,7 @@ pub trait StructureFactory {
     /// See [`create_structure_data_type_named`](Self::create_structure_data_type_named).
     fn create_structure_data_type(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: &Address,
         data_length: i32,
     ) -> Result<Box<dyn Structure>, String> {
@@ -67,7 +67,7 @@ pub trait StructureFactory {
     /// * there are no data components to add to the structure
     fn create_structure_data_type_named(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: &Address,
         data_length: i32,
         structure_name: &str,
@@ -123,7 +123,7 @@ pub trait StructureFactory {
     /// [`create_structure_data_type_in_structure_named`](Self::create_structure_data_type_in_structure_named).
     fn create_structure_data_type_in_structure(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: &Address,
         from_path: &[i32],
         to_path: &[i32],
@@ -148,7 +148,7 @@ pub trait StructureFactory {
     /// * the parent data type is not a structure
     fn create_structure_data_type_in_structure_named(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         address: &Address,
         from_path: &[i32],
         to_path: &[i32],

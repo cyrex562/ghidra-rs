@@ -30,7 +30,7 @@ impl DeletedSymbolRowObject {
 
     /// Get the symbol associated with this row object. Always returns `None` since
     /// the symbol has been deleted.
-    pub fn get_symbol(&mut self) -> Option<Arc<dyn Symbol>> {
+    pub fn get_symbol(&self) -> Option<Arc<dyn Symbol>> {
         None
     }
 
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn test_get_symbol_always_none() {
         let program = mock_program();
-        let mut row = DeletedSymbolRowObject::new(program, 99);
+        let row = DeletedSymbolRowObject::new(program, 99);
         assert!(row.get_symbol().is_none());
     }
 

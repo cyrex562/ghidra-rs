@@ -144,7 +144,7 @@ impl DefLoader {
     /// `provider`'s bytes fails.
     pub fn load(
         &self,
-        program: &mut dyn Program,
+        program: &dyn Program,
         provider: &Rc<RefCell<dyn GByteStore>>,
         log: &MessageLog,
     ) -> io::Result<()> {
