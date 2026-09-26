@@ -8,18 +8,18 @@ use super::g_file::GFile;
 /// This is the Rust equivalent of `ghidra.formats.gfilesystem.RefdFile`.  The type
 /// parameter `R` stands in for `FileSystemRef` until that class is ported; any owned
 /// type whose `Drop` impl releases the filesystem reference will satisfy the bound.
-pub struct RefdFile<R, FS, Fsrl> {
+pub struct RefdFile<R, FS> {
     /// The filesystem reference that pins the owning filesystem open.
     pub fs_ref: R,
     /// The file inside the pinned filesystem.
-    pub file: Box<dyn GFile<FS, Fsrl>>,
+    pub file: Box<dyn GFile<FS>>,
 }
 
-impl<R, FS, Fsrl> RefdFile<R, FS, Fsrl> {
+impl<R, FS> RefdFile<R, FS> {
     /// Creates a `RefdFile`, taking ownership of `fs_ref`.
     ///
     /// Mirrors `RefdFile(FileSystemRef, GFile)` from the Java source.
-    pub fn new(fs_ref: R, file: Box<dyn GFile<FS, Fsrl>>) -> Self {
+    pub fn new(fs_ref: R, file: Box<dyn GFile<FS>>) -> Self {
         RefdFile { fs_ref, file }
     }
 
@@ -42,22 +42,21 @@ mod tests {
     // ── Minimal GFile mock ────────────────────────────────────────────────────
 
     struct MockFs;
-    struct MockFsrl;
-
     struct MockFile {
         name: &'static str,
+        fsrl: crate::filesystem::gfilesystem::fsrl::Fsrl,
     }
 
-    impl GFile<MockFs, MockFsrl> for MockFile {
+    impl GFile<MockFs> for MockFile {
         fn get_filesystem(&self) -> &MockFs {
             &MockFs
         }
 
-        fn get_fsrl(&self) -> &MockFsrl {
-            &MockFsrl
+        fn get_fsrl(&self) -> &crate::filesystem::gfilesystem::fsrl::Fsrl {
+            &self.fsrl
         }
 
-        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs, MockFsrl>> {
+        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs>> {
             None
         }
 
@@ -77,7 +76,7 @@ mod tests {
             0
         }
 
-        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFs, MockFsrl>>>> {
+        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFs>>>> {
             Err(io::Error::new(io::ErrorKind::Other, "not a directory"))
         }
     }
@@ -100,8 +99,8 @@ mod tests {
         (r, flag)
     }
 
-    fn make_file(name: &'static str) -> Box<dyn GFile<MockFs, MockFsrl>> {
-        Box::new(MockFile { name })
+    fn make_file(name: &'static str) -> Box<dyn GFile<MockFs>> {
+        Box::new(MockFile { name, fsrl: crate::filesystem::gfilesystem::fsrl::Fsrl::from_string("file:///mock").unwrap() })
     }
 
     // ── Tests ─────────────────────────────────────────────────────────────────

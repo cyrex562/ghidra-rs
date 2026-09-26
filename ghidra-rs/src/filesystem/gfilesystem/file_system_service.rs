@@ -5,11 +5,13 @@ use crate::filesystem::gfilesystem::annotations::file_system_info::PRIORITY_LOWE
 use crate::filesystem::gfilesystem::crypto::crypto_session::CryptoSession;
 use crate::filesystem::gfilesystem::file_system_probe_conflict_resolver::FileSystemProbeConflictResolver;
 use crate::filesystem::gfilesystem::file_system_ref::FileSystemRef;
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::filesystem::gfilesystem::refd_file::RefdFile;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::seam_stubs::{
-    FileCacheEntryBuilderLike, FileCacheEntryLike, FsrlLike, GFileSystemLike,
+    FileCacheEntryBuilderLike, FileCacheEntryLike, GFileSystemLike,
     LocalFileSystemLike,
 };
 use crate::util::task::TaskMonitor;
@@ -48,19 +50,17 @@ pub trait DerivedStreamPushProducer {
 /// concrete struct could resolve. As a trait, `FileSystemService` never calls a method on any
 /// of its own type parameters (each is either forwarded to the caller or used only as an
 /// opaque lookup key, exactly as the Java implementation's callers experience it through this
-/// public API), so `Fs`, `Fsrl` and `FsrlRoot` need only their existing minimal marker seams.
+/// public API), so `Fs` needs only its existing minimal marker seam.
 ///
 /// `Fs` is the concrete filesystem type (as used by [`FileSystemRef`] and
-/// [`FileSystemProbeConflictResolver`]), `Fsrl` stands in for `FSRL`, and `FsrlRoot` stands in
-/// for `FSRLRoot`.
+/// [`FileSystemProbeConflictResolver`]); locators are the real [`Fsrl`] / [`FsrlRoot`].
 ///
 /// Not ported: the static `getInstance()`/`isInitialized()` singleton accessors. Java's
 /// process-wide singleton pattern has no equivalent on a trait -- implementors that want a
 /// shared instance can expose their own constructor plus a `OnceLock`/`Arc` at the call site.
-pub trait FileSystemService<Fs, Fsrl, FsrlRoot>
+pub trait FileSystemService<Fs>
 where
     Fs: GFileSystemLike,
-    Fsrl: FsrlLike,
 {
     /// Forcefully closes all open filesystems and clears caches.
     fn clear(&mut self);
@@ -90,7 +90,7 @@ where
         &mut self,
         fsrl: &Fsrl,
         monitor: &dyn TaskMonitor,
-    ) -> Result<RefdFile<Box<dyn FileSystemRef<Fs>>, Fs, Fsrl>, GFileSystemError>;
+    ) -> Result<RefdFile<Box<dyn FileSystemRef<Fs>>, Fs>, GFileSystemError>;
 
     /// Returns a filesystem instance for the requested FSRLRoot, either from an already loaded
     /// instance in the global fscache, or by instantiating the requested filesystem from its
@@ -261,7 +261,7 @@ where
 
     /// Returns a new crypto session the caller can use to query for passwords. The caller is
     /// responsible for closing the instance when done.
-    fn new_crypto_session(&mut self) -> Box<dyn CryptoSession<Fsrl>>;
+    fn new_crypto_session(&mut self) -> Box<dyn CryptoSession>;
 }
 
 #[cfg(test)]
@@ -278,14 +278,9 @@ mod tests {
     }
     impl GFileSystemLike for MockFs {}
 
-    #[derive(Clone)]
-    struct MockFsrl {
-        path: String,
-        md5: Option<String>,
+    fn fsrl(fsrl_str: &str) -> Fsrl {
+        Fsrl::from_string(fsrl_str).unwrap()
     }
-    impl FsrlLike for MockFsrl {}
-
-    struct MockFsrlRoot(String);
 
     struct MockLocalFs;
     impl LocalFileSystemLike for MockLocalFs {}
@@ -364,7 +359,7 @@ mod tests {
 
     struct MockService {
         local_fs: MockLocalFs,
-        mounted: RefCell<HashMap<String, Rc<MockFs>>>,
+        mounted: RefCell<HashMap<FsrlRoot, Rc<MockFs>>>,
         derived_cache: RefCell<HashMap<(String, String), Vec<u8>>>,
         crypto_sessions_opened: Cell<u32>,
     }
@@ -380,7 +375,7 @@ mod tests {
         }
     }
 
-    impl FileSystemService<MockFs, MockFsrl, MockFsrlRoot> for MockService {
+    impl FileSystemService<MockFs> for MockService {
         fn clear(&mut self) {
             self.mounted.borrow_mut().clear();
         }
@@ -393,35 +388,37 @@ mod tests {
             &self.local_fs
         }
 
-        fn is_local(&self, fsrl: &MockFsrl) -> bool {
-            !fsrl.path.starts_with("archive:")
+        fn is_local(&self, fsrl: &Fsrl) -> bool {
+            // Java: `local.isSupportedFileSystemType(fsrl.getFS())` -- a bare `file://` root.
+            let fs = fsrl.fs();
+            fs.protocol() == "file" && !fs.has_container()
         }
 
-        fn get_local_fsrl(&self, f: &Path) -> MockFsrl {
-            MockFsrl { path: f.to_string_lossy().into_owned(), md5: None }
+        fn get_local_fsrl(&self, f: &Path) -> Fsrl {
+            fsrl(&format!("file://{}", f.to_string_lossy()))
         }
 
-        fn is_filesystem_mounted_at(&self, fsrl: &MockFsrlRoot) -> bool {
-            self.mounted.borrow().contains_key(&fsrl.0)
+        fn is_filesystem_mounted_at(&self, fsrl: &FsrlRoot) -> bool {
+            self.mounted.borrow().contains_key(fsrl)
         }
 
         fn get_refd_file(
             &mut self,
-            _fsrl: &MockFsrl,
+            _fsrl: &Fsrl,
             _monitor: &dyn TaskMonitor,
-        ) -> Result<RefdFile<Box<dyn FileSystemRef<MockFs>>, MockFs, MockFsrl>, GFileSystemError> {
+        ) -> Result<RefdFile<Box<dyn FileSystemRef<MockFs>>, MockFs>, GFileSystemError> {
             unimplemented!("not exercised by this smoke test")
         }
 
         fn get_filesystem(
             &mut self,
-            fs_fsrl: &MockFsrlRoot,
+            fs_fsrl: &FsrlRoot,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn FileSystemRef<MockFs>>, GFileSystemError> {
             let fs = self
                 .mounted
                 .borrow_mut()
-                .entry(fs_fsrl.0.clone())
+                .entry(fs_fsrl.clone())
                 .or_insert_with(|| Rc::new(MockFs { name: "mockfs" }))
                 .clone();
             Ok(Box::new(MockRef { fs, closed: false }))
@@ -429,7 +426,7 @@ mod tests {
 
         fn get_byte_provider(
             &mut self,
-            _fsrl: &MockFsrl,
+            _fsrl: &Fsrl,
             _fully_qualified_fsrl: bool,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn GByteStore>, GFileSystemError> {
@@ -438,14 +435,14 @@ mod tests {
 
         fn get_derived_byte_provider(
             &mut self,
-            container_fsrl: &MockFsrl,
-            _derived_fsrl: Option<&MockFsrl>,
+            container_fsrl: &Fsrl,
+            _derived_fsrl: Option<&Fsrl>,
             derived_name: &str,
             _size_hint: i64,
             producer: &mut dyn DerivedStreamProducer,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn GByteStore>, GFileSystemError> {
-            let container_md5 = container_fsrl.md5.clone().unwrap_or_default();
+            let container_md5 = container_fsrl.md5().unwrap_or_default().to_owned();
             let key = (container_md5, derived_name.to_string());
             let bytes = {
                 let mut cache = self.derived_cache.borrow_mut();
@@ -462,8 +459,8 @@ mod tests {
 
         fn get_derived_byte_provider_push(
             &mut self,
-            _container_fsrl: &MockFsrl,
-            _derived_fsrl: Option<&MockFsrl>,
+            _container_fsrl: &Fsrl,
+            _derived_fsrl: Option<&Fsrl>,
             _derived_name: &str,
             _size_hint: i64,
             pusher: &mut dyn DerivedStreamPushProducer,
@@ -502,12 +499,12 @@ mod tests {
             Ok(PathBuf::from("/tmp/mock"))
         }
 
-        fn release_file_cache(&mut self, _fsrl: &MockFsrl) {}
+        fn release_file_cache(&mut self, _fsrl: &Fsrl) {}
 
         fn push_file_to_cache(
             &mut self,
             _file: &Path,
-            _fsrl: &MockFsrl,
+            _fsrl: &Fsrl,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn GByteStore>, GFileSystemError> {
             Ok(Box::new(VecByteProvider(Vec::new())))
@@ -515,11 +512,11 @@ mod tests {
 
         fn has_derived_file(
             &self,
-            container_fsrl: &MockFsrl,
+            container_fsrl: &Fsrl,
             derived_name: &str,
             _monitor: &dyn TaskMonitor,
         ) -> Result<bool, GFileSystemError> {
-            let container_md5 = container_fsrl.md5.clone().unwrap_or_default();
+            let container_md5 = container_fsrl.md5().unwrap_or_default().to_owned();
             Ok(self
                 .derived_cache
                 .borrow()
@@ -528,7 +525,7 @@ mod tests {
 
         fn is_file_filesystem_container(
             &mut self,
-            _container_fsrl: &MockFsrl,
+            _container_fsrl: &Fsrl,
             _monitor: &dyn TaskMonitor,
         ) -> Result<bool, GFileSystemError> {
             Ok(false)
@@ -536,7 +533,7 @@ mod tests {
 
         fn probe_file_for_filesystem(
             &mut self,
-            _container_fsrl: &MockFsrl,
+            _container_fsrl: &Fsrl,
             _monitor: &dyn TaskMonitor,
             _conflict_resolver: Option<&dyn FileSystemProbeConflictResolver<MockFs>>,
             _priority_filter: i32,
@@ -546,7 +543,7 @@ mod tests {
 
         fn mount_specific_file_system(
             &mut self,
-            _container_fsrl: &MockFsrl,
+            _container_fsrl: &Fsrl,
             _fs_type: &str,
             _monitor: &dyn TaskMonitor,
         ) -> Result<MockFs, GFileSystemError> {
@@ -555,7 +552,7 @@ mod tests {
 
         fn open_file_system_container(
             &mut self,
-            _container_fsrl: &MockFsrl,
+            _container_fsrl: &Fsrl,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn GFileSystemLike>, GFileSystemError> {
             Ok(Box::new(MockFs { name: "opened" }))
@@ -563,33 +560,32 @@ mod tests {
 
         fn get_fully_qualified_fsrl(
             &mut self,
-            fsrl: &MockFsrl,
+            fsrl: &Fsrl,
             _monitor: &dyn TaskMonitor,
-        ) -> Result<MockFsrl, GFileSystemError> {
-            let mut result = fsrl.clone();
-            if result.md5.is_none() {
-                result.md5 = Some(format!("md5:{}", result.path));
+        ) -> Result<Fsrl, GFileSystemError> {
+            if fsrl.md5().is_some() {
+                return Ok(fsrl.clone());
             }
-            Ok(result)
+            Ok(fsrl.with_md5(Some(&format!("md5:{}", fsrl.path().unwrap_or_default()))))
         }
 
         fn get_all_filesystem_names(&self) -> Vec<String> {
             vec!["zip".to_string(), "tar".to_string()]
         }
 
-        fn get_mounted_filesystems(&self) -> Vec<MockFsrlRoot> {
-            self.mounted.borrow().keys().cloned().map(MockFsrlRoot).collect()
+        fn get_mounted_filesystems(&self) -> Vec<FsrlRoot> {
+            self.mounted.borrow().keys().cloned().collect()
         }
 
-        fn get_mounted_filesystem(&self, fs_fsrl: &MockFsrlRoot) -> Option<Box<dyn FileSystemRef<MockFs>>> {
-            self.mounted.borrow().get(&fs_fsrl.0).map(|fs| {
+        fn get_mounted_filesystem(&self, fs_fsrl: &FsrlRoot) -> Option<Box<dyn FileSystemRef<MockFs>>> {
+            self.mounted.borrow().get(fs_fsrl).map(|fs| {
                 let boxed: Box<dyn FileSystemRef<MockFs>> =
                     Box::new(MockRef { fs: fs.clone(), closed: false });
                 boxed
             })
         }
 
-        fn new_crypto_session(&mut self) -> Box<dyn CryptoSession<MockFsrl>> {
+        fn new_crypto_session(&mut self) -> Box<dyn CryptoSession> {
             self.crypto_sessions_opened.set(self.crypto_sessions_opened.get() + 1);
             unimplemented!("not exercised by this smoke test")
         }
@@ -600,15 +596,15 @@ mod tests {
     #[test]
     fn is_local_distinguishes_local_from_archive_paths() {
         let service = MockService::new();
-        assert!(service.is_local(&MockFsrl { path: "/tmp/a".to_string(), md5: None }));
-        assert!(!service.is_local(&MockFsrl { path: "archive:/tmp/a.zip!/b".to_string(), md5: None }));
+        assert!(service.is_local(&fsrl("file:///tmp/a")));
+        assert!(!service.is_local(&fsrl("file:///tmp/a.zip|zip:///b")));
     }
 
     #[test]
     fn get_filesystem_caches_the_same_ref_by_fsrl_root() {
         let mut service = MockService::new();
         let monitor = crate::util::task::DummyMonitor;
-        let root = MockFsrlRoot("archive:/tmp/a.zip".to_string());
+        let root = fsrl("file:///tmp/a.zip").make_nested("zip");
 
         assert!(!service.is_filesystem_mounted_at(&root));
         let ref1 = service.get_filesystem(&root, &monitor).unwrap();
@@ -621,7 +617,7 @@ mod tests {
     fn get_derived_byte_provider_only_invokes_producer_once() {
         let mut service = MockService::new();
         let monitor = crate::util::task::DummyMonitor;
-        let container = MockFsrl { path: "/tmp/a.zip".to_string(), md5: Some("abc123".to_string()) };
+        let container = fsrl("file:///tmp/a.zip?MD5=abc123");
 
         assert!(!service.has_derived_file(&container, "inner.bin", &monitor).unwrap());
 
@@ -645,23 +641,23 @@ mod tests {
     fn get_fully_qualified_fsrl_fills_in_missing_md5() {
         let mut service = MockService::new();
         let monitor = crate::util::task::DummyMonitor;
-        let fsrl = MockFsrl { path: "/tmp/a".to_string(), md5: None };
+        let fsrl = fsrl("file:///tmp/a");
         let qualified = service.get_fully_qualified_fsrl(&fsrl, &monitor).unwrap();
-        assert_eq!(qualified.md5.as_deref(), Some("md5:/tmp/a"));
+        assert_eq!(qualified.md5(), Some("md5:/tmp/a"));
     }
 
     #[test]
     fn probe_file_for_filesystem_default_forwards_lowest_priority() {
         let mut service = MockService::new();
         let monitor = crate::util::task::DummyMonitor;
-        let fsrl = MockFsrl { path: "/tmp/a".to_string(), md5: None };
+        let fsrl = fsrl("file:///tmp/a");
         let result = service.probe_file_for_filesystem_default(&fsrl, &monitor, None).unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn boxed_dyn_file_system_service_is_accepted() {
-        let mut service: Box<dyn FileSystemService<MockFs, MockFsrl, MockFsrlRoot>> =
+        let mut service: Box<dyn FileSystemService<MockFs>> =
             Box::new(MockService::new());
         let names = service.get_all_filesystem_names();
         assert_eq!(names, vec!["zip".to_string(), "tar".to_string()]);

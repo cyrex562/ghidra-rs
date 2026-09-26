@@ -1,4 +1,5 @@
 use super::g_file_system_probe::GFileSystemProbe;
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
 
 /// Maximum that any [`GFileSystemProbeBytesOnly`] is allowed to specify as its
 /// [`GFileSystemProbeBytesOnly::bytes_required`].
@@ -10,14 +11,9 @@ pub const MAX_BYTES_REQUIRED: usize = 64 * 1024;
 /// Filesystem probes of this type are given precedence when possible since they tend to be
 /// simpler and quicker.
 ///
-/// `Fsrl` is the same free type parameter used elsewhere in this crate (e.g.
-/// [`crate::filesystem::gfilesystem::g_file::GFile`]) to stand in for the concrete `FSRL`
-/// type once `FSRL.java` is ported. No implementation of `probeStartBytes` in the original
-/// codebase calls a method on `containerFSRL`, so `Fsrl` carries no trait bound here.
-///
 /// This is the Rust equivalent of
 /// `ghidra.formats.gfilesystem.factory.GFileSystemProbeBytesOnly`.
-pub trait GFileSystemProbeBytesOnly<Fsrl>: GFileSystemProbe {
+pub trait GFileSystemProbeBytesOnly: GFileSystemProbe {
     /// The minimum number of bytes needed to be supplied to [`Self::probe_start_bytes`].
     fn bytes_required(&self) -> usize;
 
@@ -37,20 +33,20 @@ pub trait GFileSystemProbeBytesOnly<Fsrl>: GFileSystemProbe {
 mod tests {
     use super::*;
 
-    struct MockFsrl {
-        name: String,
+    fn fsrl(fsrl_str: &str) -> Fsrl {
+        Fsrl::from_string(fsrl_str).unwrap()
     }
 
     /// Recognizes the gzip magic bytes at offset 0, mirroring a typical
     /// `GFileSystemProbeBytesOnly` implementation (e.g. `GZipFileSystemFactory`).
     struct GzipMagicProbe;
     impl GFileSystemProbe for GzipMagicProbe {}
-    impl GFileSystemProbeBytesOnly<MockFsrl> for GzipMagicProbe {
+    impl GFileSystemProbeBytesOnly for GzipMagicProbe {
         fn bytes_required(&self) -> usize {
             2
         }
 
-        fn probe_start_bytes(&self, _container_fsrl: &MockFsrl, start_bytes: &[u8]) -> bool {
+        fn probe_start_bytes(&self, _container_fsrl: &Fsrl, start_bytes: &[u8]) -> bool {
             start_bytes.len() >= 2 && start_bytes[0] == 0x1f && start_bytes[1] == 0x8b
         }
     }
@@ -58,7 +54,7 @@ mod tests {
     #[test]
     fn probe_matches_expected_magic_bytes() {
         let probe = GzipMagicProbe;
-        let fsrl = MockFsrl { name: "archive.gz".to_owned() };
+        let fsrl = fsrl("file:///tmp/archive.gz");
 
         assert_eq!(probe.bytes_required(), 2);
         assert!(probe.probe_start_bytes(&fsrl, &[0x1f, 0x8b, 0x08, 0x00]));
@@ -67,7 +63,7 @@ mod tests {
     #[test]
     fn probe_rejects_mismatched_bytes() {
         let probe = GzipMagicProbe;
-        let fsrl = MockFsrl { name: "archive.tar".to_owned() };
+        let fsrl = fsrl("file:///tmp/archive.tar");
 
         assert!(!probe.probe_start_bytes(&fsrl, &[0x50, 0x4b, 0x03, 0x04]));
     }
@@ -75,15 +71,15 @@ mod tests {
     #[test]
     fn probe_rejects_short_byte_slice() {
         let probe = GzipMagicProbe;
-        let fsrl = MockFsrl { name: "empty".to_owned() };
+        let fsrl = fsrl("file:///tmp/empty");
 
         assert!(!probe.probe_start_bytes(&fsrl, &[0x1f]));
     }
 
     #[test]
     fn boxed_dyn_probe_is_accepted() {
-        let probe: Box<dyn GFileSystemProbeBytesOnly<MockFsrl>> = Box::new(GzipMagicProbe);
-        let fsrl = MockFsrl { name: "archive.gz".to_owned() };
+        let probe: Box<dyn GFileSystemProbeBytesOnly> = Box::new(GzipMagicProbe);
+        let fsrl = fsrl("file:///tmp/archive.gz");
 
         assert!(probe.probe_start_bytes(&fsrl, &[0x1f, 0x8b]));
     }

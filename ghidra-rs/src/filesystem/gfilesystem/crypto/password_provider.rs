@@ -1,5 +1,5 @@
 use crate::filesystem::gfilesystem::crypto::crypto_provider::{CryptoProvider, Session};
-use crate::filesystem::seam_stubs::FsrlLike;
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::framework::generic::auth::password::Password;
 
 /// Instances of this trait provide passwords to decrypt files.
@@ -12,7 +12,7 @@ use crate::framework::generic::auth::password::Password;
 /// of the values can test and validate each one to find the correct value. Conversely, it would
 /// not be appropriate to use this to get a password for a login service that may lock the
 /// requester out after a small number of failed attempts.
-pub trait PasswordProvider<Fsrl: FsrlLike, CP, S: Session<CP>>: CryptoProvider {
+pub trait PasswordProvider<CP, S: Session<CP>>: CryptoProvider {
     /// Returns a sequence of passwords (ordered by quality) that may apply to the specified
     /// file.
     ///
@@ -32,11 +32,6 @@ mod tests {
     use super::*;
     use std::any::Any;
     use std::collections::HashMap;
-
-    struct MockFsrl {
-        path: String,
-    }
-    impl FsrlLike for MockFsrl {}
 
     struct MockProviders {
         id: u32,
@@ -89,10 +84,10 @@ mod tests {
     }
     impl CryptoProvider for FixedPasswordProvider {}
 
-    impl PasswordProvider<MockFsrl, MockProviders, MockSession> for FixedPasswordProvider {
+    impl PasswordProvider<MockProviders, MockSession> for FixedPasswordProvider {
         fn get_passwords_for<'a>(
             &'a self,
-            _fsrl: &'a MockFsrl,
+            _fsrl: &'a Fsrl,
             _prompt: &str,
             _session: &mut MockSession,
         ) -> Box<dyn Iterator<Item = Password> + 'a> {
@@ -102,11 +97,11 @@ mod tests {
 
     #[test]
     fn object_safety_via_boxed_dyn() {
-        let provider: Box<dyn PasswordProvider<MockFsrl, MockProviders, MockSession>> =
+        let provider: Box<dyn PasswordProvider<MockProviders, MockSession>> =
             Box::new(FixedPasswordProvider {
                 candidates: vec![Password::copy_of(&['a'])],
             });
-        let fsrl = MockFsrl { path: "/archive/secret.zip".to_string() };
+        let fsrl = Fsrl::from_string("file:///archive/secret.zip").unwrap();
         let mut session = MockSession::new(MockProviders { id: 1 });
 
         let found: Vec<Password> = provider
@@ -123,7 +118,7 @@ mod tests {
                 Password::copy_of(&"worst".chars().collect::<Vec<_>>()),
             ],
         };
-        let fsrl = MockFsrl { path: "/a.zip".to_string() };
+        let fsrl = Fsrl::from_string("file:///a.zip").unwrap();
         let mut session = MockSession::new(MockProviders { id: 1 });
 
         let found: Vec<Password> = provider
@@ -141,7 +136,7 @@ mod tests {
     #[test]
     fn no_candidates_yields_empty_iterator() {
         let provider = FixedPasswordProvider { candidates: vec![] };
-        let fsrl = MockFsrl { path: "/a.zip".to_string() };
+        let fsrl = Fsrl::from_string("file:///a.zip").unwrap();
         let mut session = MockSession::new(MockProviders { id: 1 });
 
         let found: Vec<Password> = provider

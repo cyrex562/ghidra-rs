@@ -9,10 +9,10 @@ use crate::util::task::TaskMonitor;
 /// Rust port of `LocalFileSystem`) implement both `GFileSystem` and this trait; callers probe
 /// for support with a downcast rather than Java's `instanceof`.
 ///
-/// `FS` and `Fsrl` are the same free type parameters used by [`GFile`] -- the concrete
-/// filesystem and FSRL types -- kept as trait-level generics (rather than tied to `Self`) so
-/// this trait stays object-safe.
-pub trait GFileHashProvider<FS, Fsrl> {
+/// `FS` is the same free type parameter used by [`GFile`] -- the concrete filesystem (handle)
+/// type -- kept as a trait-level generic (rather than tied to `Self`) so this trait stays
+/// object-safe.
+pub trait GFileHashProvider<FS> {
     /// Returns the MD5 hash of the specified file.
     ///
     /// # Arguments
@@ -22,7 +22,7 @@ pub trait GFileHashProvider<FS, Fsrl> {
     /// * `monitor` - monitor for cancellation
     fn get_md5_hash(
         &self,
-        file: &dyn GFile<FS, Fsrl>,
+        file: &dyn GFile<FS>,
         required: bool,
         monitor: &dyn TaskMonitor,
     ) -> Result<String, GFileSystemError>;
@@ -35,21 +35,20 @@ mod tests {
     use std::sync::atomic::{AtomicBool, Ordering};
 
     struct MockFs;
-    struct MockFsrl;
 
     struct MockFile {
         path: String,
         name: String,
     }
 
-    impl GFile<MockFs, MockFsrl> for MockFile {
+    impl GFile<MockFs> for MockFile {
         fn get_filesystem(&self) -> &MockFs {
             unimplemented!()
         }
-        fn get_fsrl(&self) -> &MockFsrl {
+        fn get_fsrl(&self) -> &crate::filesystem::gfilesystem::fsrl::Fsrl {
             unimplemented!()
         }
-        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs, MockFsrl>> {
+        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs>> {
             None
         }
         fn get_path(&self) -> &str {
@@ -64,7 +63,7 @@ mod tests {
         fn get_length(&self) -> i64 {
             42
         }
-        fn get_listing(&self) -> std::io::Result<Vec<Box<dyn GFile<MockFs, MockFsrl>>>> {
+        fn get_listing(&self) -> std::io::Result<Vec<Box<dyn GFile<MockFs>>>> {
             Ok(vec![])
         }
     }
@@ -75,10 +74,10 @@ mod tests {
         computed: AtomicBool,
     }
 
-    impl GFileHashProvider<MockFs, MockFsrl> for LazyHashProvider {
+    impl GFileHashProvider<MockFs> for LazyHashProvider {
         fn get_md5_hash(
             &self,
-            file: &dyn GFile<MockFs, MockFsrl>,
+            file: &dyn GFile<MockFs>,
             required: bool,
             monitor: &dyn TaskMonitor,
         ) -> Result<String, GFileSystemError> {
@@ -173,7 +172,7 @@ mod tests {
 
     #[test]
     fn hash_provider_as_trait_object() {
-        let provider: Box<dyn GFileHashProvider<MockFs, MockFsrl>> =
+        let provider: Box<dyn GFileHashProvider<MockFs>> =
             Box::new(LazyHashProvider { computed: AtomicBool::new(false) });
         let file = MockFile { path: "/d.txt".into(), name: "d.txt".into() };
         let monitor = DummyMonitor { cancelled: false };

@@ -59,9 +59,9 @@ use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeVal
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::file_system_index_helper::FileSystemIndexHelper;
-use crate::filesystem::gfilesystem::g_file_impl::{
-    FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
-};
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
+use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, GFileImpl, HasFsrlRoot};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::mach_exception::MachException;
 use crate::util::exception::CancelledException;
@@ -70,99 +70,41 @@ use crate::util::task::TaskMonitor;
 /// Mirrors `DyldCacheFileSystem.DYLD_CACHE_FSTYPE`.
 pub const DYLD_CACHE_FSTYPE: &str = "dyldcachev1";
 
-// ─── FSRL stand-ins ───────────────────────────────────────────────────────────
-//
-// Mirrors the same narrow substitution `SevenZipFileSystem` makes for `FSRL`/`FSRLRoot`: the
-// ported `Fsrl`/`FsrlRootLike` seams have no implementer yet, so this filesystem parameterizes
-// `GFileImpl`/`FileSystemIndexHelper` with small concrete stand-ins instead.
-
-/// Stand-in for `ghidra.formats.gfilesystem.FSRL`, used to parameterize [`GFileImpl`] and the
-/// index. See [`crate::file::formats::sevenzip::seven_zip_file_system::SzFsrl`] for the sibling
-/// substitution this mirrors.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct DyldFsrl {
-    path: String,
-}
-
-impl DyldFsrl {
-    /// Creates an FSRL for `path`.
-    pub fn new(path: impl Into<String>) -> Self {
-        DyldFsrl { path: path.into() }
-    }
-}
-
-impl GFileFsrlLike for DyldFsrl {
-    fn fsrl_name(&self) -> String {
-        base_name_of(&self.path).to_string()
-    }
-
-    fn fsrl_path(&self) -> String {
-        self.path.clone()
-    }
-
-    fn append_path(&self, segment: &str) -> Self {
-        let path = if self.path.ends_with('/') {
-            format!("{}{}", self.path, segment)
-        } else {
-            format!("{}/{}", self.path, segment)
-        };
-        DyldFsrl { path }
-    }
-}
-
-impl crate::filesystem::seam_stubs::FsrlLike for DyldFsrl {}
-
-/// Stand-in for `ghidra.formats.gfilesystem.FSRLRoot`, this filesystem's own `fsFSRL`.
-///
-/// Only `getContainer().getName()` is exercised by this class (`getName()`, the container
-/// file's name).
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct DyldFsrlRoot {
-    container_name: String,
-}
-
-impl DyldFsrlRoot {
-    /// Creates a root whose container file is named `container_name`.
-    pub fn new(container_name: impl Into<String>) -> Self {
-        DyldFsrlRoot { container_name: container_name.into() }
-    }
-
-    /// Mirrors `FSRLRoot.getContainer().getName()`.
-    pub fn name(&self) -> &str {
-        &self.container_name
-    }
-}
+// ─── Filesystem handle ─────────────────────────────────────────────────────────
 
 /// Filesystem handle stored inside each [`GFileImpl`] this filesystem hands out.
+///
+/// Stands in for the Java `GFileImpl.fileSystem` back-reference: it carries the owning
+/// filesystem's [`FsrlRoot`], from which child FSRLs are derived.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct DyldFsHandle {
-    root: DyldFsrl,
+    root: FsrlRoot,
 }
 
 impl DyldFsHandle {
-    /// Creates a handle rooted at `root`.
-    pub fn new(root: DyldFsrl) -> Self {
+    /// Creates a handle for the filesystem whose FSRL root is `root`.
+    pub fn new(root: FsrlRoot) -> Self {
         DyldFsHandle { root }
     }
 }
 
-impl HasFsrlRoot<DyldFsrl> for DyldFsHandle {
-    fn root_fsrl(&self) -> &DyldFsrl {
-        &self.root
+impl HasFsrlRoot for DyldFsHandle {
+    fn root_fsrl(&self) -> &Fsrl {
+        self.root.as_fsrl()
     }
 }
 
-impl FsGetListing<DyldFsHandle, DyldFsrl> for DyldFsHandle {
+impl FsGetListing<DyldFsHandle> for DyldFsHandle {
     fn fs_get_listing(
         &self,
-        _file: &dyn GFile<DyldFsHandle, DyldFsrl>,
-    ) -> io::Result<Vec<Box<dyn GFile<DyldFsHandle, DyldFsrl>>>> {
+        _file: &dyn GFile<DyldFsHandle>,
+    ) -> io::Result<Vec<Box<dyn GFile<DyldFsHandle>>>> {
         Ok(vec![])
     }
 }
 
 /// The concrete [`GFile`] type this filesystem indexes.
-pub type DyldGFile = GFileImpl<DyldFsHandle, DyldFsrl>;
+pub type DyldGFile = GFileImpl<DyldFsHandle>;
 
 // ─── Guava `Range`/`RangeSet`/`RangeMap` stand-ins ─────────────────────────────
 
@@ -315,7 +257,7 @@ impl AddrRangeMap {
 /// Mirrors `ghidra.file.formats.ios.dyldcache.DyldCacheFileSystem`.
 pub struct DyldCacheFileSystem {
     /// Mirrors the inherited `AbstractFileSystem.fsFSRL`.
-    fs_fsrl: DyldFsrlRoot,
+    fs_fsrl: FsrlRoot,
     /// Mirrors `provider`. `None` once [`close`](Self::close) has run, matching Java's
     /// `provider == null` after close.
     provider: Option<Rc<RefCell<dyn GByteStore>>>,
@@ -332,16 +274,15 @@ pub struct DyldCacheFileSystem {
     /// `crate::filesystem::gfilesystem::file_system_ref_manager`'s docs), and nothing in this
     /// class other than `close()`'s `refManager.onClose()` -- itself a no-op absent listeners --
     /// touches it.
-    fs_index: FileSystemIndexHelper<DyldFsHandle, DyldFsrl, Rc<DyldCacheEntry>>,
+    fs_index: FileSystemIndexHelper<DyldFsHandle, Rc<DyldCacheEntry>>,
 }
 
 impl DyldCacheFileSystem {
     /// Creates a new [`DyldCacheFileSystem`].
     ///
     /// Mirrors `DyldCacheFileSystem(FSRLRoot, GByteStore)`.
-    pub fn new(fs_fsrl: DyldFsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
-        let root = DyldFsrl::new("/");
-        let fs_index = FileSystemIndexHelper::new(DyldFsHandle::new(root.clone()), root);
+    pub fn new(fs_fsrl: FsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
+        let fs_index = FileSystemIndexHelper::from_fsrl_root(DyldFsHandle::new(fs_fsrl.clone()), &fs_fsrl);
         DyldCacheFileSystem {
             fs_fsrl,
             provider: Some(provider),
@@ -354,13 +295,13 @@ impl DyldCacheFileSystem {
     }
 
     /// Mirrors the inherited `AbstractFileSystem.getFSRL()`.
-    pub fn get_fsrl(&self) -> &DyldFsrlRoot {
+    pub fn get_fsrl(&self) -> &FsrlRoot {
         &self.fs_fsrl
     }
 
-    /// Mirrors the inherited `AbstractFileSystem.getName()`.
-    pub fn get_name(&self) -> &str {
-        self.fs_fsrl.name()
+    /// Mirrors the inherited `AbstractFileSystem.getName()`: the container file's name.
+    pub fn get_name(&self) -> String {
+        self.fs_fsrl.container().and_then(Fsrl::name).unwrap_or_default()
     }
 
     /// Mirrors the inherited `AbstractFileSystem.getRootDir()`.
@@ -592,12 +533,10 @@ impl DyldCacheFileSystem {
     /// `AbstractFileSystem.lookup(String)` this class's `getFiles` calls.
     fn lookup(&self, path: &str) -> Option<DyldGFile> {
         let file = self.fs_index.lookup(path)?;
-        let root = self.fs_index.get_root_dir();
-        let handle = DyldFsHandle::new(DyldFsrl::new(root.get_path()));
         Some(GFileImpl::from_fsrl(
-            handle,
+            file.get_filesystem().clone(),
             None,
-            DyldFsrl::new(file.get_path()),
+            file.get_fsrl().clone(),
             file.is_directory(),
             file.get_length(),
         ))
@@ -654,11 +593,6 @@ fn format_range_set(range_set: &[(i64, i64)]) -> String {
         .map(|(start, end)| format!("(0x{:x}, 0x{:x}]", start - 1, end - 1))
         .collect();
     format!("[{}]", parts.join(", "))
-}
-
-fn base_name_of(path: &str) -> &str {
-    let start = path.rfind(['/', '\\']).map(|i| i + 1).unwrap_or(0);
-    &path[start..]
 }
 
 fn closed_error() -> io::Error {
@@ -755,6 +689,10 @@ mod tests {
         }
     }
 
+    fn fs_root() -> FsrlRoot {
+        Fsrl::from_string("file:///System/dyld_shared_cache").unwrap().make_nested(DYLD_CACHE_FSTYPE)
+    }
+
     fn dyld_v1_provider() -> Rc<RefCell<dyn GByteStore>> {
         // "dyld_v1  x86_64" is one of `DyldArchitecture::ARCHITECTURES`'s real signatures
         // (from the Java source), padded to the fixed magic length the header reads.
@@ -770,9 +708,10 @@ mod tests {
 
     #[test]
     fn new_filesystem_is_open_with_empty_root() {
-        let fs = DyldCacheFileSystem::new(DyldFsrlRoot::new("dyld_shared_cache"), dyld_v1_provider());
+        let fs = DyldCacheFileSystem::new(fs_root(), dyld_v1_provider());
         assert!(!fs.is_closed());
         assert_eq!(fs.get_name(), "dyld_shared_cache");
+        assert_eq!(fs.get_root_dir().get_fsrl().to_string(), "file:///System/dyld_shared_cache|dyldcachev1:///");
         assert_eq!(fs.get_file_count(), 1); // just the synthetic root dir
     }
 
@@ -780,7 +719,7 @@ mod tests {
     fn mount_of_stubbed_dependencies_succeeds_with_zero_files() {
         // With `MachHeader::parse_segments`/`DyldCacheHeader::mapping_infos` always empty (see
         // the module docs), a real cache mounts successfully but indexes nothing yet.
-        let mut fs = DyldCacheFileSystem::new(DyldFsrlRoot::new("dyld_shared_cache"), dyld_v1_provider());
+        let mut fs = DyldCacheFileSystem::new(fs_root(), dyld_v1_provider());
         let monitor = crate::util::task::DummyMonitor;
         fs.mount(&monitor).expect("mount should succeed against the stubbed dependencies");
         assert_eq!(fs.get_file_count(), 1);
@@ -790,7 +729,7 @@ mod tests {
 
     #[test]
     fn close_resets_to_closed_state() {
-        let mut fs = DyldCacheFileSystem::new(DyldFsrlRoot::new("dyld_shared_cache"), dyld_v1_provider());
+        let mut fs = DyldCacheFileSystem::new(fs_root(), dyld_v1_provider());
         let monitor = crate::util::task::DummyMonitor;
         fs.mount(&monitor).expect("mount should succeed");
         fs.close();

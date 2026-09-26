@@ -14,10 +14,10 @@ use crate::util::task::TaskMonitor;
 /// implement both `GFileSystem` and this trait; callers probe for support with a downcast
 /// rather than Java's `instanceof`.
 ///
-/// `FS` and `Fsrl` are the same free type parameters used by [`GFile`] -- the concrete
-/// filesystem and FSRL types -- kept as trait-level generics (rather than tied to `Self`) so
-/// this trait stays object-safe.
-pub trait GFileSystemProgramProvider<FS, Fsrl> {
+/// `FS` is the same free type parameter used by [`GFile`] -- the concrete filesystem (handle)
+/// type -- kept as a trait-level generic (rather than tied to `Self`) so this trait stays
+/// object-safe.
+pub trait GFileSystemProgramProvider<FS> {
     /// NOTE: only override this method if you cannot provide an input stream to the internal
     /// files of this filesystem. Be sure to register the given consumer on the program.
     ///
@@ -34,7 +34,7 @@ pub trait GFileSystemProgramProvider<FS, Fsrl> {
     /// Returns an error if the file cannot be converted into a program.
     fn get_program(
         &self,
-        file: &dyn GFile<FS, Fsrl>,
+        file: &dyn GFile<FS>,
         language_service: &dyn LanguageService,
         monitor: &dyn TaskMonitor,
         consumer: DomainObjectConsumer,
@@ -48,7 +48,7 @@ pub trait GFileSystemProgramProvider<FS, Fsrl> {
     ///
     /// Returns `true` if calls to [`get_program`](Self::get_program) will be able to convert
     /// the file into a program.
-    fn can_provide_program(&self, file: &dyn GFile<FS, Fsrl>) -> bool;
+    fn can_provide_program(&self, file: &dyn GFile<FS>) -> bool;
 }
 
 #[cfg(test)]
@@ -79,21 +79,20 @@ mod tests {
     }
 
     struct MockFs;
-    struct MockFsrl;
 
     struct MockFile {
         path: String,
         name: String,
     }
 
-    impl GFile<MockFs, MockFsrl> for MockFile {
+    impl GFile<MockFs> for MockFile {
         fn get_filesystem(&self) -> &MockFs {
             unimplemented!()
         }
-        fn get_fsrl(&self) -> &MockFsrl {
+        fn get_fsrl(&self) -> &crate::filesystem::gfilesystem::fsrl::Fsrl {
             unimplemented!()
         }
-        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs, MockFsrl>> {
+        fn get_parent_file(&self) -> Option<&dyn GFile<MockFs>> {
             None
         }
         fn get_path(&self) -> &str {
@@ -108,7 +107,7 @@ mod tests {
         fn get_length(&self) -> i64 {
             42
         }
-        fn get_listing(&self) -> std::io::Result<Vec<Box<dyn GFile<MockFs, MockFsrl>>>> {
+        fn get_listing(&self) -> std::io::Result<Vec<Box<dyn GFile<MockFs>>>> {
             Ok(vec![])
         }
     }
@@ -161,10 +160,10 @@ mod tests {
     /// that supports importing some but not all of its contents directly.
     struct BinOnlyProvider;
 
-    impl GFileSystemProgramProvider<MockFs, MockFsrl> for BinOnlyProvider {
+    impl GFileSystemProgramProvider<MockFs> for BinOnlyProvider {
         fn get_program(
             &self,
-            file: &dyn GFile<MockFs, MockFsrl>,
+            file: &dyn GFile<MockFs>,
             _language_service: &dyn LanguageService,
             monitor: &dyn TaskMonitor,
             _consumer: DomainObjectConsumer,
@@ -176,7 +175,7 @@ mod tests {
             Ok(Arc::new(MockProgram { name: file.get_name().to_string() }))
         }
 
-        fn can_provide_program(&self, file: &dyn GFile<MockFs, MockFsrl>) -> bool {
+        fn can_provide_program(&self, file: &dyn GFile<MockFs>) -> bool {
             file.get_name().ends_with(".bin")
         }
     }
@@ -289,7 +288,7 @@ mod tests {
 
     #[test]
     fn provider_as_trait_object() {
-        let provider: Box<dyn GFileSystemProgramProvider<MockFs, MockFsrl>> = Box::new(BinOnlyProvider);
+        let provider: Box<dyn GFileSystemProgramProvider<MockFs>> = Box::new(BinOnlyProvider);
         let file = MockFile { path: "/z.bin".into(), name: "z.bin".into() };
 
         assert!(provider.can_provide_program(&file));

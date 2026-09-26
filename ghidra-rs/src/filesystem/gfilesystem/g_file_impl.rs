@@ -2,58 +2,28 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::io;
 
+use super::fsrl::Fsrl;
 use super::g_file::GFile;
 
 const SEPARATOR: char = '/';
 
-/// Operations [`GFileImpl`] requires from an FSRL type.
-///
-/// Implemented by the real [`Fsrl`](super::fsrl::Fsrl) (below) and by filesystem-local key
-/// types that have not yet moved onto it.
-pub trait FsrlLike: Sized + Clone {
-    /// The name component (last path segment) of this FSRL.
-    fn fsrl_name(&self) -> String;
-
-    /// The full path encoded by this FSRL.
-    fn fsrl_path(&self) -> String;
-
-    /// Return a new FSRL formed by appending `segment` to this FSRL's path.
-    fn append_path(&self, segment: &str) -> Self;
-}
-
-/// The real `FSRL`: name/path mirror `getName()`/`getPath()` (empty for a path-less FSRL),
-/// and appending delegates to `FSRL.appendPath`.
-impl FsrlLike for super::fsrl::Fsrl {
-    fn fsrl_name(&self) -> String {
-        self.name().unwrap_or_default()
-    }
-
-    fn fsrl_path(&self) -> String {
-        self.path().unwrap_or_default().to_owned()
-    }
-
-    fn append_path(&self, segment: &str) -> Self {
-        super::fsrl::Fsrl::append_path(self, segment)
-    }
-}
-
 /// Operation required from a filesystem type to derive an FSRL for files where no
 /// explicit FSRL is provided.
 ///
-/// This trait will be implemented by the concrete `GFileSystem` type once
-/// `GFileSystem.java` is ported.
-pub trait HasFsrlRoot<Fsrl: FsrlLike> {
+/// Implemented by the filesystem handle types that own [`GFileImpl`]s (Java reads
+/// `fileSystem.getFSRL()` directly; the handle types here are not `GFileSystem`s themselves).
+pub trait HasFsrlRoot {
     /// The root FSRL of this filesystem.
     fn root_fsrl(&self) -> &Fsrl;
 }
 
 /// Allows [`GFileImpl`] to delegate [`GFile::get_listing`] to its owning filesystem,
 /// matching the Java default `GFile.getListing()` behaviour.
-pub trait FsGetListing<FS, Fsrl> {
+pub trait FsGetListing<FS> {
     fn fs_get_listing(
         &self,
-        file: &dyn GFile<FS, Fsrl>,
-    ) -> io::Result<Vec<Box<dyn GFile<FS, Fsrl>>>>;
+        file: &dyn GFile<FS>,
+    ) -> io::Result<Vec<Box<dyn GFile<FS>>>>;
 }
 
 /// Concrete implementation of [`GFile`] for use within a [`GFileSystem`].
@@ -62,9 +32,9 @@ pub trait FsGetListing<FS, Fsrl> {
 /// factory methods — [`from_fsrl`](GFileImpl::from_fsrl),
 /// [`from_filename`](GFileImpl::from_filename), and
 /// [`from_path_string`](GFileImpl::from_path_string) — to construct instances.
-pub struct GFileImpl<FS, Fsrl> {
+pub struct GFileImpl<FS> {
     filesystem: FS,
-    parent_file: Option<Box<dyn GFile<FS, Fsrl>>>,
+    parent_file: Option<Box<dyn GFile<FS>>>,
     is_directory: bool,
     length: i64,
     fsrl: Fsrl,
@@ -74,16 +44,17 @@ pub struct GFileImpl<FS, Fsrl> {
 
 // ─── Private constructor ──────────────────────────────────────────────────────
 
-impl<FS, Fsrl: FsrlLike> GFileImpl<FS, Fsrl> {
+impl<FS> GFileImpl<FS> {
     fn new_impl(
         filesystem: FS,
-        parent_file: Option<Box<dyn GFile<FS, Fsrl>>>,
+        parent_file: Option<Box<dyn GFile<FS>>>,
         is_directory: bool,
         length: i64,
         fsrl: Fsrl,
     ) -> Self {
-        let name = fsrl.fsrl_name();
-        let path = fsrl.fsrl_path();
+        // Java: `name = fsrl.getName(); path = fsrl.getPath();` (empty for a path-less FSRL).
+        let name = fsrl.name().unwrap_or_default();
+        let path = fsrl.path().unwrap_or_default().to_owned();
         GFileImpl {
             filesystem,
             parent_file,
@@ -98,10 +69,9 @@ impl<FS, Fsrl: FsrlLike> GFileImpl<FS, Fsrl> {
 
 // ─── Public factory methods ───────────────────────────────────────────────────
 
-impl<FS, Fsrl> GFileImpl<FS, Fsrl>
+impl<FS> GFileImpl<FS>
 where
-    FS: Clone + HasFsrlRoot<Fsrl> + FsGetListing<FS, Fsrl> + 'static,
-    Fsrl: FsrlLike + 'static,
+    FS: Clone + HasFsrlRoot + FsGetListing<FS> + 'static,
 {
     /// Creates a `GFileImpl` from a forward-slash-separated path string starting at the
     /// root of `filesystem`.
@@ -124,7 +94,7 @@ where
     /// Intermediate parent directories embedded in `path` are created automatically.
     pub fn from_path_string_with_parent(
         filesystem: FS,
-        parent: Option<Box<dyn GFile<FS, Fsrl>>>,
+        parent: Option<Box<dyn GFile<FS>>>,
         path: &str,
         fsrl: Option<Fsrl>,
         is_directory: bool,
@@ -148,7 +118,7 @@ where
         }
 
         let n = parts.len();
-        let mut cur_parent: Option<Box<dyn GFile<FS, Fsrl>>> = parent;
+        let mut cur_parent: Option<Box<dyn GFile<FS>>> = parent;
 
         for i in 0..n.saturating_sub(1) {
             if parts[i].is_empty() {
@@ -177,7 +147,7 @@ where
     /// If `fsrl` is `None`, one is derived from the parent's FSRL (or the filesystem root).
     pub fn from_filename(
         filesystem: FS,
-        parent: Option<Box<dyn GFile<FS, Fsrl>>>,
+        parent: Option<Box<dyn GFile<FS>>>,
         filename: &str,
         is_directory: bool,
         length: i64,
@@ -193,7 +163,7 @@ where
     /// Creates a `GFileImpl` directly from an already-constructed `fsrl`.
     pub fn from_fsrl(
         filesystem: FS,
-        parent: Option<Box<dyn GFile<FS, Fsrl>>>,
+        parent: Option<Box<dyn GFile<FS>>>,
         fsrl: Fsrl,
         is_directory: bool,
         length: i64,
@@ -205,7 +175,7 @@ where
     /// root FSRL when there is no parent.
     fn fsrl_from_parent(
         fs: &FS,
-        parent: Option<&dyn GFile<FS, Fsrl>>,
+        parent: Option<&dyn GFile<FS>>,
         path: &str,
     ) -> Fsrl {
         match parent {
@@ -217,7 +187,7 @@ where
 
 // ─── Mutable accessor ─────────────────────────────────────────────────────────
 
-impl<FS, Fsrl> GFileImpl<FS, Fsrl> {
+impl<FS> GFileImpl<FS> {
     /// Updates the stored file length.
     pub fn set_length(&mut self, length: i64) {
         self.length = length;
@@ -226,9 +196,9 @@ impl<FS, Fsrl> GFileImpl<FS, Fsrl> {
 
 // ─── GFile trait implementation ───────────────────────────────────────────────
 
-impl<FS, Fsrl> GFile<FS, Fsrl> for GFileImpl<FS, Fsrl>
+impl<FS> GFile<FS> for GFileImpl<FS>
 where
-    FS: FsGetListing<FS, Fsrl>,
+    FS: FsGetListing<FS>,
 {
     fn get_filesystem(&self) -> &FS {
         &self.filesystem
@@ -238,7 +208,7 @@ where
         &self.fsrl
     }
 
-    fn get_parent_file(&self) -> Option<&dyn GFile<FS, Fsrl>> {
+    fn get_parent_file(&self) -> Option<&dyn GFile<FS>> {
         self.parent_file.as_deref()
     }
 
@@ -258,14 +228,14 @@ where
         self.length
     }
 
-    fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<FS, Fsrl>>>> {
+    fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<FS>>>> {
         self.filesystem.fs_get_listing(self)
     }
 }
 
 // ─── Debug ────────────────────────────────────────────────────────────────────
 
-impl<FS, Fsrl> fmt::Debug for GFileImpl<FS, Fsrl> {
+impl<FS> fmt::Debug for GFileImpl<FS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("GFileImpl")
             .field("path", &self.path)
@@ -278,7 +248,7 @@ impl<FS, Fsrl> fmt::Debug for GFileImpl<FS, Fsrl> {
 
 // ─── Display (matches Java GFileImpl.toString → getPath()) ────────────────────
 
-impl<FS, Fsrl> fmt::Display for GFileImpl<FS, Fsrl> {
+impl<FS> fmt::Display for GFileImpl<FS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.path)
     }
@@ -286,7 +256,7 @@ impl<FS, Fsrl> fmt::Display for GFileImpl<FS, Fsrl> {
 
 // ─── Equality and hashing (parallel to Java GFileImpl.equals / hashCode) ──────
 
-impl<FS: PartialEq, Fsrl> PartialEq for GFileImpl<FS, Fsrl> {
+impl<FS: PartialEq> PartialEq for GFileImpl<FS> {
     fn eq(&self, other: &Self) -> bool {
         self.filesystem == other.filesystem
             && self.path == other.path
@@ -294,9 +264,9 @@ impl<FS: PartialEq, Fsrl> PartialEq for GFileImpl<FS, Fsrl> {
     }
 }
 
-impl<FS: Eq, Fsrl> Eq for GFileImpl<FS, Fsrl> {}
+impl<FS: Eq> Eq for GFileImpl<FS> {}
 
-impl<FS: Hash, Fsrl> Hash for GFileImpl<FS, Fsrl> {
+impl<FS: Hash> Hash for GFileImpl<FS> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.filesystem.hash(state);
         self.path.hash(state);
@@ -309,85 +279,59 @@ impl<FS: Hash, Fsrl> Hash for GFileImpl<FS, Fsrl> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::fsrl_root::FsrlRoot;
     use std::collections::hash_map::DefaultHasher;
-
-    // ── Mock FSRL ──────────────────────────────────────────────────────────────
-
-    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-    struct MockFsrl(String);
-
-    impl FsrlLike for MockFsrl {
-        fn fsrl_name(&self) -> String {
-            self.0
-                .rsplit('/')
-                .next()
-                .unwrap_or(self.0.as_str())
-                .to_owned()
-        }
-
-        fn fsrl_path(&self) -> String {
-            self.0.clone()
-        }
-
-        fn append_path(&self, segment: &str) -> Self {
-            if self.0.ends_with('/') {
-                MockFsrl(format!("{}{}", self.0, segment))
-            } else {
-                MockFsrl(format!("{}/{}", self.0, segment))
-            }
-        }
-    }
 
     // ── Mock filesystem ────────────────────────────────────────────────────────
 
     #[derive(Clone, Debug, PartialEq, Eq, Hash)]
     struct MockFs {
-        root: MockFsrl,
+        root: Fsrl,
         name: &'static str,
     }
 
     impl MockFs {
         fn new(name: &'static str) -> Self {
             MockFs {
-                root: MockFsrl(format!("mock://{}", name)),
+                root: FsrlRoot::make_root("mock").into_fsrl(),
                 name,
             }
         }
     }
 
-    impl HasFsrlRoot<MockFsrl> for MockFs {
-        fn root_fsrl(&self) -> &MockFsrl {
+    impl HasFsrlRoot for MockFs {
+        fn root_fsrl(&self) -> &Fsrl {
             &self.root
         }
     }
 
-    impl FsGetListing<MockFs, MockFsrl> for MockFs {
+    impl FsGetListing<MockFs> for MockFs {
         fn fs_get_listing(
             &self,
-            _file: &dyn GFile<MockFs, MockFsrl>,
-        ) -> io::Result<Vec<Box<dyn GFile<MockFs, MockFsrl>>>> {
+            _file: &dyn GFile<MockFs>,
+        ) -> io::Result<Vec<Box<dyn GFile<MockFs>>>> {
             Ok(vec![])
         }
     }
 
-    type TestFile = GFileImpl<MockFs, MockFsrl>;
+    type TestFile = GFileImpl<MockFs>;
 
     fn fs() -> MockFs {
         MockFs::new("testfs")
     }
 
-    fn make_fsrl(path: &str) -> MockFsrl {
-        MockFsrl(path.to_owned())
+    fn make_fsrl(fsrl_str: &str) -> Fsrl {
+        Fsrl::from_string(fsrl_str).unwrap()
     }
 
     // ── from_fsrl ──────────────────────────────────────────────────────────────
 
     #[test]
     fn from_fsrl_stores_fields() {
-        let fsrl = make_fsrl("mock://fs/dir/file.txt");
+        let fsrl = make_fsrl("mock:///dir/file.txt");
         let f = TestFile::from_fsrl(fs(), None, fsrl.clone(), false, 42);
         assert_eq!(f.get_name(), "file.txt");
-        assert_eq!(f.get_path(), "mock://fs/dir/file.txt");
+        assert_eq!(f.get_path(), "/dir/file.txt");
         assert!(!f.is_directory());
         assert_eq!(f.get_length(), 42);
         assert!(f.get_parent_file().is_none());
@@ -395,7 +339,7 @@ mod tests {
 
     #[test]
     fn from_fsrl_directory() {
-        let fsrl = make_fsrl("mock://fs/mydir");
+        let fsrl = make_fsrl("mock:///mydir");
         let d = TestFile::from_fsrl(fs(), None, fsrl, true, -1);
         assert!(d.is_directory());
         assert_eq!(d.get_length(), -1);
@@ -407,24 +351,24 @@ mod tests {
     fn from_filename_no_parent_derives_fsrl_from_root() {
         let f = TestFile::from_filename(fs(), None, "readme.txt", false, 100, None);
         assert_eq!(f.get_name(), "readme.txt");
-        assert_eq!(f.get_path(), "mock://testfs/readme.txt");
+        assert_eq!(f.get_path(), "/readme.txt");
     }
 
     #[test]
     fn from_filename_with_explicit_fsrl_ignores_filename_for_path() {
-        let explicit = make_fsrl("mock://custom/path/readme.txt");
+        let explicit = make_fsrl("mock:///custom/path/readme.txt");
         let f = TestFile::from_filename(fs(), None, "readme.txt", false, 10, Some(explicit));
-        assert_eq!(f.get_path(), "mock://custom/path/readme.txt");
+        assert_eq!(f.get_path(), "/custom/path/readme.txt");
     }
 
     #[test]
     fn from_filename_with_parent_derives_fsrl_from_parent() {
-        let parent_fsrl = make_fsrl("mock://testfs/dir");
-        let parent: Box<dyn GFile<MockFs, MockFsrl>> =
+        let parent_fsrl = make_fsrl("mock:///dir");
+        let parent: Box<dyn GFile<MockFs>> =
             Box::new(TestFile::from_fsrl(fs(), None, parent_fsrl, true, -1));
 
         let f = TestFile::from_filename(fs(), Some(parent), "child.bin", false, 5, None);
-        assert_eq!(f.get_path(), "mock://testfs/dir/child.bin");
+        assert_eq!(f.get_path(), "/dir/child.bin");
         assert_eq!(f.get_name(), "child.bin");
         assert!(f.get_parent_file().is_some());
     }
@@ -478,10 +422,10 @@ mod tests {
 
     #[test]
     fn explicit_fsrl_skips_derivation() {
-        let explicit = make_fsrl("explicit://path/to/file");
+        let explicit = make_fsrl("explicit:///path/to/file");
         let f =
             TestFile::from_path_string(fs(), "a/b/file", Some(explicit), false, 0);
-        assert_eq!(f.get_path(), "explicit://path/to/file");
+        assert_eq!(f.get_path(), "/path/to/file");
     }
 
     #[test]
@@ -509,8 +453,8 @@ mod tests {
 
     #[test]
     fn from_path_string_with_parent_starts_from_parent() {
-        let parent_fsrl = make_fsrl("mock://testfs/base");
-        let parent: Box<dyn GFile<MockFs, MockFsrl>> =
+        let parent_fsrl = make_fsrl("mock:///base");
+        let parent: Box<dyn GFile<MockFs>> =
             Box::new(TestFile::from_fsrl(fs(), None, parent_fsrl, true, -1));
 
         let f = TestFile::from_path_string_with_parent(
@@ -532,7 +476,7 @@ mod tests {
 
     #[test]
     fn set_length_updates_stored_value() {
-        let mut f = TestFile::from_fsrl(fs(), None, make_fsrl("mock://f"), false, 10);
+        let mut f = TestFile::from_fsrl(fs(), None, make_fsrl("mock:///f"), false, 10);
         assert_eq!(f.get_length(), 10);
         f.set_length(999);
         assert_eq!(f.get_length(), 999);
@@ -542,16 +486,16 @@ mod tests {
 
     #[test]
     fn display_returns_path() {
-        let fsrl = make_fsrl("mock://testfs/a/b.txt");
+        let fsrl = make_fsrl("mock:///a/b.txt");
         let f = TestFile::from_fsrl(fs(), None, fsrl, false, 0);
-        assert_eq!(f.to_string(), "mock://testfs/a/b.txt");
+        assert_eq!(f.to_string(), "/a/b.txt");
     }
 
     // ── PartialEq / Eq ─────────────────────────────────────────────────────────
 
     #[test]
     fn equal_files_same_fs_path_and_type() {
-        let fsrl = make_fsrl("mock://testfs/x.txt");
+        let fsrl = make_fsrl("mock:///x.txt");
         let a = TestFile::from_fsrl(fs(), None, fsrl.clone(), false, 1);
         let b = TestFile::from_fsrl(fs(), None, fsrl, false, 999); // length ignored
         assert_eq!(a, b);
@@ -559,14 +503,14 @@ mod tests {
 
     #[test]
     fn different_path_not_equal() {
-        let a = TestFile::from_fsrl(fs(), None, make_fsrl("mock://testfs/a"), false, 0);
-        let b = TestFile::from_fsrl(fs(), None, make_fsrl("mock://testfs/b"), false, 0);
+        let a = TestFile::from_fsrl(fs(), None, make_fsrl("mock:///a"), false, 0);
+        let b = TestFile::from_fsrl(fs(), None, make_fsrl("mock:///b"), false, 0);
         assert_ne!(a, b);
     }
 
     #[test]
     fn different_is_directory_not_equal() {
-        let fsrl = make_fsrl("mock://testfs/x");
+        let fsrl = make_fsrl("mock:///x");
         let file = TestFile::from_fsrl(fs(), None, fsrl.clone(), false, 0);
         let dir = TestFile::from_fsrl(fs(), None, fsrl, true, 0);
         assert_ne!(file, dir);
@@ -574,7 +518,7 @@ mod tests {
 
     #[test]
     fn different_filesystem_not_equal() {
-        let fsrl = make_fsrl("mock://fs1/x.txt");
+        let fsrl = make_fsrl("mock:///x.txt");
         let a = TestFile::from_fsrl(MockFs::new("fs1"), None, fsrl.clone(), false, 0);
         let b = TestFile::from_fsrl(MockFs::new("fs2"), None, fsrl, false, 0);
         assert_ne!(a, b);
@@ -590,7 +534,7 @@ mod tests {
 
     #[test]
     fn equal_files_have_same_hash() {
-        let fsrl = make_fsrl("mock://testfs/f.bin");
+        let fsrl = make_fsrl("mock:///f.bin");
         let a = TestFile::from_fsrl(fs(), None, fsrl.clone(), false, 1);
         let b = TestFile::from_fsrl(fs(), None, fsrl, false, 2);
         assert_eq!(hash_of(&a), hash_of(&b));
@@ -598,8 +542,8 @@ mod tests {
 
     #[test]
     fn different_paths_typically_different_hash() {
-        let a = TestFile::from_fsrl(fs(), None, make_fsrl("mock://testfs/a"), false, 0);
-        let b = TestFile::from_fsrl(fs(), None, make_fsrl("mock://testfs/b"), false, 0);
+        let a = TestFile::from_fsrl(fs(), None, make_fsrl("mock:///a"), false, 0);
+        let b = TestFile::from_fsrl(fs(), None, make_fsrl("mock:///b"), false, 0);
         assert_ne!(hash_of(&a), hash_of(&b));
     }
 
@@ -607,7 +551,7 @@ mod tests {
 
     #[test]
     fn get_listing_delegates_to_filesystem() {
-        let d = TestFile::from_fsrl(fs(), None, make_fsrl("mock://testfs/dir"), true, -1);
+        let d = TestFile::from_fsrl(fs(), None, make_fsrl("mock:///dir"), true, -1);
         let listing = d.get_listing().expect("listing should succeed");
         assert!(listing.is_empty(), "mock fs returns empty listing");
     }
@@ -616,7 +560,7 @@ mod tests {
 
     #[test]
     fn get_filesystem_returns_stored_fs() {
-        let f = TestFile::from_fsrl(fs(), None, make_fsrl("mock://testfs/f"), false, 0);
+        let f = TestFile::from_fsrl(fs(), None, make_fsrl("mock:///f"), false, 0);
         assert_eq!(f.get_filesystem().name, "testfs");
     }
 
@@ -624,7 +568,7 @@ mod tests {
 
     #[test]
     fn get_fsrl_returns_stored_fsrl() {
-        let fsrl = make_fsrl("mock://testfs/x.txt");
+        let fsrl = make_fsrl("mock:///x.txt");
         let f = TestFile::from_fsrl(fs(), None, fsrl.clone(), false, 0);
         assert_eq!(*f.get_fsrl(), fsrl);
     }

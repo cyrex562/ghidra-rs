@@ -63,52 +63,6 @@ pub trait SelectFromListDialogLike<FSTYPE: GFileSystemLike> {
     ) -> Option<&'a dyn FileSystemInfoRec<FSTYPE>>;
 }
 
-/// Placeholder for `ghidra.formats.gfilesystem.FSRL`, needed by
-/// [`crate::filesystem::gfilesystem::crypto::crypto_session::CryptoSession`].
-///
-/// `CryptoSession` only ever passes the `FSRL` through as an opaque lookup/cache key -- it
-/// never calls a method on it -- so this is an empty marker trait until the real `FSRL` is
-/// ported.
-pub trait FsrlLike {}
-
-/// Placeholder for `ghidra.formats.gfilesystem.FSRL`, needed by
-/// [`crate::filesystem::gfilesystem::crypto::cached_password_provider::CachedPasswordProvider`].
-///
-/// Unlike [`FsrlLike`]'s opaque-key usage elsewhere, `CachedPasswordProvider` actually calls
-/// `toString()`, `toPrettyString()`, `getName()` and `getMD5()` on the `FSRL` to index cached
-/// passwords under multiple aliases. Rather than widen `FsrlLike` (and break its existing
-/// empty-impl callers), this extends it with just the four accessors this type needs.
-pub trait CachedFsrlLike: FsrlLike {
-    /// Mirrors `FSRL.toString()`.
-    fn fsrl_string(&self) -> String;
-    /// Mirrors `FSRL.toPrettyString()`.
-    fn fsrl_pretty_string(&self) -> String;
-    /// Mirrors `FSRL.getName()`.
-    fn fsrl_name(&self) -> String;
-    /// Mirrors `FSRL.getMD5()`.
-    fn fsrl_md5(&self) -> Option<String>;
-}
-
-/// The real [`Fsrl`] is usable wherever the opaque [`FsrlLike`] key seam is still threaded as a
-/// generic parameter.
-impl FsrlLike for Fsrl {}
-
-/// The real [`Fsrl`] supplies the accessors [`CachedFsrlLike`] models.
-impl CachedFsrlLike for Fsrl {
-    fn fsrl_string(&self) -> String {
-        self.to_string()
-    }
-    fn fsrl_pretty_string(&self) -> String {
-        self.to_pretty_string()
-    }
-    fn fsrl_name(&self) -> String {
-        self.name().unwrap_or_default()
-    }
-    fn fsrl_md5(&self) -> Option<String> {
-        self.md5().map(str::to_owned)
-    }
-}
-
 /// Placeholder for `ghidra.formats.gfilesystem.LocalFileSystem` (distinct from the unrelated,
 /// already-ported `ghidra.framework.store.local.LocalFileSystem`), needed by
 /// [`crate::filesystem::gfilesystem::file_system_service::FileSystemService::get_local_fs`].

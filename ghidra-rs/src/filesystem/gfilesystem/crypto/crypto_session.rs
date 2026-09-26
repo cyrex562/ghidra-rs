@@ -1,4 +1,4 @@
-use crate::filesystem::seam_stubs::FsrlLike;
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::framework::generic::auth::password::Password;
 
 /// Provides the caller with the ability to perform crypto querying operations
@@ -11,7 +11,7 @@ use crate::framework::generic::auth::password::Password;
 /// suggestion that the instance should not be used for any further nested sessions.
 ///
 /// See `CryptoProviders::new_session()` (ported separately).
-pub trait CryptoSession<Fsrl: FsrlLike> {
+pub trait CryptoSession {
     /// Returns a sequence of passwords (sorted by quality) that may apply to
     /// the specified file.
     ///
@@ -39,11 +39,6 @@ pub trait CryptoSession<Fsrl: FsrlLike> {
 mod tests {
     use super::*;
 
-    struct MockFsrl {
-        path: String,
-    }
-    impl FsrlLike for MockFsrl {}
-
     struct MockCryptoSession {
         known_good: Vec<(String, Password)>,
         closed: bool,
@@ -55,22 +50,22 @@ mod tests {
         }
     }
 
-    impl CryptoSession<MockFsrl> for MockCryptoSession {
+    impl CryptoSession for MockCryptoSession {
         fn get_passwords_for<'a>(
             &'a self,
-            fsrl: &'a MockFsrl,
+            fsrl: &'a Fsrl,
             _prompt: &str,
         ) -> Box<dyn Iterator<Item = Password> + 'a> {
             Box::new(
                 self.known_good
                     .iter()
-                    .filter(move |(path, _)| path == &fsrl.path)
+                    .filter(move |(path, _)| Some(path.as_str()) == fsrl.path())
                     .map(|(_, pw)| pw.clone()),
             )
         }
 
-        fn add_successful_password(&mut self, fsrl: &MockFsrl, password: Password) {
-            self.known_good.push((fsrl.path.clone(), password));
+        fn add_successful_password(&mut self, fsrl: &Fsrl, password: Password) {
+            self.known_good.push((fsrl.path().unwrap_or_default().to_owned(), password));
         }
 
         fn is_closed(&self) -> bool {
@@ -84,14 +79,14 @@ mod tests {
 
     #[test]
     fn object_safety_via_boxed_dyn() {
-        let session: Box<dyn CryptoSession<MockFsrl>> = Box::new(MockCryptoSession::new());
+        let session: Box<dyn CryptoSession> = Box::new(MockCryptoSession::new());
         assert!(!session.is_closed());
     }
 
     #[test]
     fn add_then_retrieve_successful_password() {
         let mut session = MockCryptoSession::new();
-        let fsrl = MockFsrl { path: "/archive/secret.zip".to_string() };
+        let fsrl = Fsrl::from_string("file:///archive/secret.zip").unwrap();
         let pw = Password::copy_of(&"hunter2".chars().collect::<Vec<_>>());
 
         session.add_successful_password(&fsrl, pw.clone());
@@ -103,8 +98,8 @@ mod tests {
     #[test]
     fn passwords_scoped_to_matching_fsrl() {
         let mut session = MockCryptoSession::new();
-        let a = MockFsrl { path: "/a.zip".to_string() };
-        let b = MockFsrl { path: "/b.zip".to_string() };
+        let a = Fsrl::from_string("file:///a.zip").unwrap();
+        let b = Fsrl::from_string("file:///b.zip").unwrap();
         session.add_successful_password(&a, Password::copy_of(&['x']));
 
         let found: Vec<Password> = session.get_passwords_for(&b, "unlock").collect();

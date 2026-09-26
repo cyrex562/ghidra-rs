@@ -24,7 +24,7 @@ use super::g_file::GFile;
 use super::g_file_impl::{FsGetListing, GFileImpl, HasFsrlRoot};
 
 /// The concrete [`GFile`] type a [`SingleFileSystemIndexHelper`] hands out.
-pub type SinglePayloadGFile = GFileImpl<SinglePayloadFsHandle, Fsrl>;
+pub type SinglePayloadGFile = GFileImpl<SinglePayloadFsHandle>;
 
 struct HandleState {
     fs_fsrl: FsrlRoot,
@@ -57,7 +57,7 @@ impl SinglePayloadFsHandle {
         )
     }
 
-    fn is_root(&self, file: &dyn GFile<SinglePayloadFsHandle, Fsrl>) -> bool {
+    fn is_root(&self, file: &dyn GFile<SinglePayloadFsHandle>) -> bool {
         file.get_filesystem() == self
             && file.is_directory()
             && Some(file.get_path()) == self.0.root_fsrl.path()
@@ -65,7 +65,7 @@ impl SinglePayloadFsHandle {
 
     fn listing_of(
         &self,
-        directory: Option<&dyn GFile<SinglePayloadFsHandle, Fsrl>>,
+        directory: Option<&dyn GFile<SinglePayloadFsHandle>>,
     ) -> io::Result<bool> {
         if self.0.closed.get() {
             return Err(io::Error::other("Invalid state, index already closed"));
@@ -94,17 +94,17 @@ impl fmt::Debug for SinglePayloadFsHandle {
     }
 }
 
-impl HasFsrlRoot<Fsrl> for SinglePayloadFsHandle {
+impl HasFsrlRoot for SinglePayloadFsHandle {
     fn root_fsrl(&self) -> &Fsrl {
         self.0.fs_fsrl.as_fsrl()
     }
 }
 
-impl FsGetListing<SinglePayloadFsHandle, Fsrl> for SinglePayloadFsHandle {
+impl FsGetListing<SinglePayloadFsHandle> for SinglePayloadFsHandle {
     fn fs_get_listing(
         &self,
-        file: &dyn GFile<SinglePayloadFsHandle, Fsrl>,
-    ) -> io::Result<Vec<Box<dyn GFile<SinglePayloadFsHandle, Fsrl>>>> {
+        file: &dyn GFile<SinglePayloadFsHandle>,
+    ) -> io::Result<Vec<Box<dyn GFile<SinglePayloadFsHandle>>>> {
         Ok(if self.listing_of(Some(file))? {
             vec![Box::new(self.payload_file())]
         } else {
@@ -115,7 +115,7 @@ impl FsGetListing<SinglePayloadFsHandle, Fsrl> for SinglePayloadFsHandle {
 
 /// `GFileImpl.equals` for a file this helper created versus an arbitrary [`GFile`]: same
 /// owning filesystem, same path, same directory flag.
-fn same_file(a: &SinglePayloadGFile, b: &dyn GFile<SinglePayloadFsHandle, Fsrl>) -> bool {
+fn same_file(a: &SinglePayloadGFile, b: &dyn GFile<SinglePayloadFsHandle>) -> bool {
     a.get_filesystem() == b.get_filesystem()
         && a.get_path() == b.get_path()
         && a.is_directory() == b.is_directory()
@@ -166,7 +166,7 @@ impl SingleFileSystemIndexHelper {
 
     /// `true` if `file` is the payload file. Mirrors `isPayloadFile(GFile)`; always `false`
     /// once [`clear`](Self::clear)ed.
-    pub fn is_payload_file(&self, file: &dyn GFile<SinglePayloadFsHandle, Fsrl>) -> bool {
+    pub fn is_payload_file(&self, file: &dyn GFile<SinglePayloadFsHandle>) -> bool {
         self.payload_file.as_ref().is_some_and(|p| same_file(p, file))
     }
 
@@ -205,7 +205,7 @@ impl SingleFileSystemIndexHelper {
     /// If this index has already been cleared.
     pub fn get_listing(
         &self,
-        directory: Option<&dyn GFile<SinglePayloadFsHandle, Fsrl>>,
+        directory: Option<&dyn GFile<SinglePayloadFsHandle>>,
     ) -> io::Result<Vec<&SinglePayloadGFile>> {
         let is_root = self.handle.listing_of(directory)?;
         Ok(match (&self.payload_file, is_root) {
@@ -231,7 +231,7 @@ impl SingleFileSystemIndexHelper {
     /// Mirrors `lookup(GFile, String, Comparator<String>)`.
     pub fn lookup_with(
         &self,
-        base_dir: Option<&dyn GFile<SinglePayloadFsHandle, Fsrl>>,
+        base_dir: Option<&dyn GFile<SinglePayloadFsHandle>>,
         path: Option<&str>,
         name_comp: Option<&dyn Fn(&str, &str) -> Ordering>,
     ) -> Option<&SinglePayloadGFile> {
@@ -264,7 +264,7 @@ impl SingleFileSystemIndexHelper {
     /// [`FileAttributes::empty`]. Mirrors `getFileAttributes(GFile)`.
     pub fn get_file_attributes(
         &self,
-        file: &dyn GFile<SinglePayloadFsHandle, Fsrl>,
+        file: &dyn GFile<SinglePayloadFsHandle>,
     ) -> &FileAttributes {
         match &self.payload_attrs {
             Some(attrs) if self.is_payload_file(file) => attrs,

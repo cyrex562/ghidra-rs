@@ -70,18 +70,18 @@ impl fmt::Debug for AbstractFsHandle {
     }
 }
 
-impl HasFsrlRoot<Fsrl> for AbstractFsHandle {
+impl HasFsrlRoot for AbstractFsHandle {
     fn root_fsrl(&self) -> &Fsrl {
         self.0.as_fsrl()
     }
 }
 
-impl FsGetListing<AbstractFsHandle, Fsrl> for AbstractFsHandle {
+impl FsGetListing<AbstractFsHandle> for AbstractFsHandle {
     /// Always an [`io::ErrorKind::Unsupported`] error; see the module docs.
     fn fs_get_listing(
         &self,
-        file: &dyn GFile<AbstractFsHandle, Fsrl>,
-    ) -> io::Result<Vec<Box<dyn GFile<AbstractFsHandle, Fsrl>>>> {
+        file: &dyn GFile<AbstractFsHandle>,
+    ) -> io::Result<Vec<Box<dyn GFile<AbstractFsHandle>>>> {
         Err(io::Error::new(
             io::ErrorKind::Unsupported,
             format!(
@@ -93,10 +93,10 @@ impl FsGetListing<AbstractFsHandle, Fsrl> for AbstractFsHandle {
 }
 
 /// The concrete [`GFile`] type an [`AbstractFileSystemBase`] hands out.
-pub type AbstractFsGFile = GFileImpl<AbstractFsHandle, Fsrl>;
+pub type AbstractFsGFile = GFileImpl<AbstractFsHandle>;
 
 /// The index type an [`AbstractFileSystemBase`] keeps, with per-file metadata `M`.
-pub type AbstractFsIndex<M> = FileSystemIndexHelper<AbstractFsHandle, Fsrl, M>;
+pub type AbstractFsIndex<M> = FileSystemIndexHelper<AbstractFsHandle, M>;
 
 /// Shared state and behaviour of a container filesystem.
 ///
@@ -180,7 +180,7 @@ impl<M> AbstractFileSystemBase<M> {
     /// `getListing(GFile)`.
     pub fn get_listing(
         &self,
-        directory: Option<&dyn GFile<AbstractFsHandle, Fsrl>>,
+        directory: Option<&dyn GFile<AbstractFsHandle>>,
     ) -> Vec<&AbstractFsGFile> {
         self.fs_index.get_listing(directory)
     }
@@ -197,7 +197,7 @@ impl<M> AbstractFileSystemBase<M> {
     /// If `file` is unknown or symlinks are nested too deeply.
     pub fn resolve_symlinks(
         &self,
-        file: &dyn GFile<AbstractFsHandle, Fsrl>,
+        file: &dyn GFile<AbstractFsHandle>,
     ) -> io::Result<Option<&AbstractFsGFile>> {
         self.fs_index.resolve_symlinks(file)
     }

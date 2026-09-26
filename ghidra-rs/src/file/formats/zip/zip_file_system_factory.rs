@@ -37,6 +37,7 @@ use crate::filesystem::gfilesystem::factory::g_file_system_probe::GFileSystemPro
 use crate::filesystem::gfilesystem::factory::g_file_system_probe_bytes_only::GFileSystemProbeBytesOnly;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
 use crate::filesystem::seam_stubs::{FileSystemServiceLike, GFileSystemLike};
 use crate::util::task::TaskMonitor;
@@ -74,10 +75,8 @@ impl ZipFileSystemFactory {
 impl GFileSystemFactory<ZipFileSystem> for ZipFileSystemFactory {}
 impl GFileSystemProbe for ZipFileSystemFactory {}
 
-// `probe_start_bytes` never calls a method on `container_fsrl` (same as the Java override, and
-// as already noted for `SevenZipFileSystemFactory`), so this factory handles every `Fsrl`
-// instantiation identically.
-impl<Fsrl> GFileSystemProbeBytesOnly<Fsrl> for ZipFileSystemFactory {
+// `probe_start_bytes` never reads `container_fsrl` (same as the Java override).
+impl GFileSystemProbeBytesOnly for ZipFileSystemFactory {
     fn bytes_required(&self) -> usize {
         START_BYTES_REQUIRED
     }
@@ -227,7 +226,6 @@ mod tests {
         }
     }
 
-    struct DummyFsrlRoot;
     struct DummyFsService;
     impl FileSystemServiceLike for DummyFsService {}
 
@@ -238,21 +236,21 @@ mod tests {
     fn bytes_required_matches_java_constant() {
         let factory = ZipFileSystemFactory;
         let required: usize =
-            GFileSystemProbeBytesOnly::<DummyFsrlRoot>::bytes_required(&factory);
+            GFileSystemProbeBytesOnly::bytes_required(&factory);
         assert_eq!(required, 2);
     }
 
     #[test]
     fn probe_start_bytes_recognizes_pk_magic() {
         let factory = ZipFileSystemFactory;
-        let fsrl = DummyFsrlRoot;
+        let fsrl = Fsrl::from_string("file:///tmp/a.zip").unwrap();
         assert!(factory.probe_start_bytes(&fsrl, b"PK\x03\x04"));
     }
 
     #[test]
     fn probe_start_bytes_rejects_non_pk_magic() {
         let factory = ZipFileSystemFactory;
-        let fsrl = DummyFsrlRoot;
+        let fsrl = Fsrl::from_string("file:///tmp/a.zip").unwrap();
         // gzip magic, not zip
         assert!(!factory.probe_start_bytes(&fsrl, &[0x1f, 0x8b, 0x08, 0x00]));
     }

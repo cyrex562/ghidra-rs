@@ -10,9 +10,9 @@
 //! it), so this ports directly to a `struct` + `impl`, mirroring
 //! [`DyldCacheFileSystem`](super::super::dyldcache::dyld_cache_file_system::DyldCacheFileSystem)
 //! -- the sibling filesystem in this same `ios` package. `AbstractFileSystem`'s inherited state
-//! (`fsFSRL`, `fsIndex`) is inlined as fields, and its own narrow `FSRL`/`FSRLRoot` stand-ins are
-//! defined locally below, for the same reason `DyldCacheFileSystem` defines its own: the ported
-//! `Fsrl`/`FsrlRootLike` seams have no implementer yet.
+//! (`fsFSRL`, `fsIndex`) is inlined as fields; `fsFSRL` is the real
+//! [`FsrlRoot`](crate::filesystem::gfilesystem::fsrl_root::FsrlRoot) and indexed files carry real
+//! [`Fsrl`](crate::filesystem::gfilesystem::fsrl::Fsrl)s.
 //!
 //! # Unported dependencies
 //!
@@ -48,9 +48,9 @@ use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeVal
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::file_system_index_helper::FileSystemIndexHelper;
-use crate::filesystem::gfilesystem::g_file_impl::{
-    FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
-};
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
+use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, GFileImpl, HasFsrlRoot};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::commands::chained::dyld_chained_fixups::ChainedFixupError;
 use crate::format::macho::commands::segment_names;
@@ -61,98 +61,41 @@ use crate::util::task::TaskMonitor;
 /// Mirrors `MachoFileSetFileSystem.MACHO_FILESET_FSTYPE`.
 pub const MACHO_FILESET_FSTYPE: &str = "machofileset";
 
-// ─── FSRL stand-ins ───────────────────────────────────────────────────────────
-//
-// Mirrors the same narrow substitution `DyldCacheFileSystem`/`SevenZipFileSystem` make for
-// `FSRL`/`FSRLRoot`: the ported `Fsrl`/`FsrlRootLike` seams have no implementer yet, so this
-// filesystem parameterizes `GFileImpl`/`FileSystemIndexHelper` with small concrete stand-ins.
-
-/// Stand-in for `ghidra.formats.gfilesystem.FSRL`, used to parameterize [`GFileImpl`] and the
-/// index. See
-/// [`DyldCacheFileSystem`'s `DyldFsrl`](super::super::dyldcache::dyld_cache_file_system) for the
-/// sibling substitution this mirrors.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct MfsFsrl {
-    path: String,
-}
-
-impl MfsFsrl {
-    /// Creates an FSRL for `path`.
-    pub fn new(path: impl Into<String>) -> Self {
-        MfsFsrl { path: path.into() }
-    }
-}
-
-impl GFileFsrlLike for MfsFsrl {
-    fn fsrl_name(&self) -> String {
-        base_name_of(&self.path).to_string()
-    }
-
-    fn fsrl_path(&self) -> String {
-        self.path.clone()
-    }
-
-    fn append_path(&self, segment: &str) -> Self {
-        let path = if self.path.ends_with('/') {
-            format!("{}{}", self.path, segment)
-        } else {
-            format!("{}/{}", self.path, segment)
-        };
-        MfsFsrl { path }
-    }
-}
-
-/// Stand-in for `ghidra.formats.gfilesystem.FSRLRoot`, this filesystem's own `fsFSRL`.
-///
-/// Only `getContainer().getName()` is exercised by this class (via the inherited
-/// `AbstractFileSystem.getName()`).
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct MfsFsrlRoot {
-    container_name: String,
-}
-
-impl MfsFsrlRoot {
-    /// Creates a root whose container file is named `container_name`.
-    pub fn new(container_name: impl Into<String>) -> Self {
-        MfsFsrlRoot { container_name: container_name.into() }
-    }
-
-    /// Mirrors `FSRLRoot.getContainer().getName()`.
-    pub fn name(&self) -> &str {
-        &self.container_name
-    }
-}
+// ─── Filesystem handle ─────────────────────────────────────────────────────────
 
 /// Filesystem handle stored inside each [`GFileImpl`] this filesystem hands out.
+///
+/// Stands in for the Java `GFileImpl.fileSystem` back-reference: it carries the owning
+/// filesystem's [`FsrlRoot`], from which child FSRLs are derived.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MfsHandle {
-    root: MfsFsrl,
+    root: FsrlRoot,
 }
 
 impl MfsHandle {
-    /// Creates a handle rooted at `root`.
-    pub fn new(root: MfsFsrl) -> Self {
+    /// Creates a handle for the filesystem whose FSRL root is `root`.
+    pub fn new(root: FsrlRoot) -> Self {
         MfsHandle { root }
     }
 }
 
-impl HasFsrlRoot<MfsFsrl> for MfsHandle {
-    fn root_fsrl(&self) -> &MfsFsrl {
-        &self.root
+impl HasFsrlRoot for MfsHandle {
+    fn root_fsrl(&self) -> &Fsrl {
+        self.root.as_fsrl()
     }
 }
 
-impl FsGetListing<MfsHandle, MfsFsrl> for MfsHandle {
+impl FsGetListing<MfsHandle> for MfsHandle {
     fn fs_get_listing(
         &self,
-        _file: &dyn GFile<MfsHandle, MfsFsrl>,
-    ) -> io::Result<Vec<Box<dyn GFile<MfsHandle, MfsFsrl>>>> {
+        _file: &dyn GFile<MfsHandle>,
+    ) -> io::Result<Vec<Box<dyn GFile<MfsHandle>>>> {
         Ok(vec![])
     }
 }
 
 /// The concrete [`GFile`] type this filesystem indexes.
-pub type MfsGFile = GFileImpl<MfsHandle, MfsFsrl>;
+pub type MfsGFile = GFileImpl<MfsHandle>;
 
 // ─── MachoFileSetFileSystem ─────────────────────────────────────────────────
 
@@ -161,7 +104,7 @@ pub type MfsGFile = GFileImpl<MfsHandle, MfsFsrl>;
 /// Mirrors `ghidra.file.formats.ios.fileset.MachoFileSetFileSystem`.
 pub struct MachoFileSetFileSystem {
     /// Mirrors the inherited `AbstractFileSystem.fsFSRL`.
-    fs_fsrl: MfsFsrlRoot,
+    fs_fsrl: FsrlRoot,
     /// Mirrors `provider`. `None` once [`close`](Self::close) has run, matching Java's
     /// `provider == null` after close.
     provider: Option<Rc<RefCell<dyn GByteStore>>>,
@@ -176,16 +119,15 @@ pub struct MachoFileSetFileSystem {
     /// `crate::filesystem::gfilesystem::file_system_ref_manager`'s docs), and nothing in this
     /// class other than `close()`'s `refManager.onClose()` -- itself a no-op absent listeners --
     /// touches it.
-    fs_index: FileSystemIndexHelper<MfsHandle, MfsFsrl, Rc<MachoFileSetEntry>>,
+    fs_index: FileSystemIndexHelper<MfsHandle, Rc<MachoFileSetEntry>>,
 }
 
 impl MachoFileSetFileSystem {
     /// Creates a new [`MachoFileSetFileSystem`].
     ///
     /// Mirrors `MachoFileSetFileSystem(FSRLRoot, GByteStore)`.
-    pub fn new(fs_fsrl: MfsFsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
-        let root = MfsFsrl::new("/");
-        let fs_index = FileSystemIndexHelper::new(MfsHandle::new(root.clone()), root);
+    pub fn new(fs_fsrl: FsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
+        let fs_index = FileSystemIndexHelper::from_fsrl_root(MfsHandle::new(fs_fsrl.clone()), &fs_fsrl);
         MachoFileSetFileSystem {
             fs_fsrl,
             provider: Some(provider),
@@ -197,13 +139,13 @@ impl MachoFileSetFileSystem {
     }
 
     /// Mirrors the inherited `AbstractFileSystem.getFSRL()`.
-    pub fn get_fsrl(&self) -> &MfsFsrlRoot {
+    pub fn get_fsrl(&self) -> &FsrlRoot {
         &self.fs_fsrl
     }
 
-    /// Mirrors the inherited `AbstractFileSystem.getName()`.
-    pub fn get_name(&self) -> &str {
-        self.fs_fsrl.name()
+    /// Mirrors the inherited `AbstractFileSystem.getName()`: the container file's name.
+    pub fn get_name(&self) -> String {
+        self.fs_fsrl.container().and_then(Fsrl::name).unwrap_or_default()
     }
 
     /// Mirrors the inherited `AbstractFileSystem.getRootDir()`.
@@ -298,7 +240,7 @@ impl MachoFileSetFileSystem {
             return Ok(None);
         };
         let fixed_up = self.fixed_up_provider.clone().ok_or_else(not_mounted_error)?;
-        let fsrl_path = file.get_fsrl().fsrl_path();
+        let fsrl_path = file.get_fsrl().path().unwrap_or_default().to_owned();
 
         if entry.is_branch_segment() {
             let segment_name = format!("__{}", entry.id());
@@ -364,11 +306,6 @@ impl MachoFileSetFileSystem {
         self.fs_index.clear();
         self.entry_segment_map.clear();
     }
-}
-
-fn base_name_of(path: &str) -> &str {
-    let start = path.rfind(['/', '\\']).map(|i| i + 1).unwrap_or(0);
-    &path[start..]
 }
 
 fn closed_error() -> io::Error {
@@ -482,6 +419,10 @@ mod tests {
         }
     }
 
+    fn fs_root() -> FsrlRoot {
+        Fsrl::from_string("file:///tmp/kernelcache.fileset").unwrap().make_nested(MACHO_FILESET_FSTYPE)
+    }
+
     fn macho_provider() -> Rc<RefCell<dyn GByteStore>> {
         // MH_MAGIC_64, big-endian on-disk bytes, padded to a plausible header length.
         let mut bytes: Vec<u8> = vec![0xfe, 0xed, 0xfa, 0xcf];
@@ -496,9 +437,10 @@ mod tests {
 
     #[test]
     fn new_filesystem_is_open_with_empty_root() {
-        let fs = MachoFileSetFileSystem::new(MfsFsrlRoot::new("kernelcache.fileset"), macho_provider());
+        let fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
         assert!(!fs.is_closed());
         assert_eq!(fs.get_name(), "kernelcache.fileset");
+        assert_eq!(fs.get_root_dir().get_fsrl().to_string(), "file:///tmp/kernelcache.fileset|machofileset:///");
         assert_eq!(fs.get_file_count(), 1); // just the synthetic root dir
     }
 
@@ -507,7 +449,7 @@ mod tests {
         // Mirrors Java's `throw new MachException(SegmentNames.SEG_TEXT + " not found!")`,
         // wrapped into an IOException -- reachable here because segment parsing is not yet
         // ported (see the module docs), so `__TEXT` is never found.
-        let mut fs = MachoFileSetFileSystem::new(MfsFsrlRoot::new("kernelcache.fileset"), macho_provider());
+        let mut fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
         let monitor = crate::util::task::DummyMonitor;
         let err = fs.mount(&monitor).expect_err("mount should fail without a __TEXT segment");
         match err {
@@ -518,7 +460,7 @@ mod tests {
 
     #[test]
     fn close_resets_to_closed_state() {
-        let mut fs = MachoFileSetFileSystem::new(MfsFsrlRoot::new("kernelcache.fileset"), macho_provider());
+        let mut fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
         fs.close();
         assert!(fs.is_closed());
         assert!(fs.get_macho_file_set_provider().is_none());
@@ -527,10 +469,9 @@ mod tests {
 
     #[test]
     fn get_byte_provider_before_mount_reports_not_mounted() {
-        let mut fs = MachoFileSetFileSystem::new(MfsFsrlRoot::new("kernelcache.fileset"), macho_provider());
-        let root_path = fs.get_root_dir().get_path().to_string();
-        let handle = MfsHandle::new(MfsFsrl::new(root_path));
-        let file = GFileImpl::from_fsrl(handle, None, MfsFsrl::new("/entry"), false, -1);
+        let mut fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
+        let handle = MfsHandle::new(fs.get_fsrl().clone());
+        let file = GFileImpl::from_fsrl(handle, None, fs.get_fsrl().with_path("/entry"), false, -1);
         let monitor = crate::util::task::DummyMonitor;
         let err = fs.get_byte_provider(&file, &monitor);
         // No metadata is indexed for an unrecognized path, so this reports `Ok(None)` --

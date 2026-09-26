@@ -13,9 +13,8 @@
 //! indices, keyed by `(path, is_directory)`; a queried [`GFile`] only resolves if its owning
 //! filesystem equals this index's filesystem, preserving Java's `GFileImpl.equals` semantics.
 //!
-//! The index is generic over the filesystem handle `FS` and FSRL type `Fsrl` that its files
-//! carry (see [`GFileImpl`]); the real [`Fsrl`](super::fsrl::Fsrl) is used via
-//! [`FileSystemIndexHelper::from_fsrl_root`]. Java's `synchronized` methods become `&self` /
+//! The index is generic over the filesystem handle `FS` its files carry (see [`GFileImpl`]);
+//! file locators are the real [`Fsrl`]. Java's `synchronized` methods become `&self` /
 //! `&mut self` borrows.
 
 use std::cmp::Ordering;
@@ -29,7 +28,7 @@ use super::fs_utilities::split_path;
 use super::fsrl::Fsrl;
 use super::fsrl_root::FsrlRoot;
 use super::g_file::GFile;
-use super::g_file_impl::{FsGetListing, FsrlLike, GFileImpl, HasFsrlRoot};
+use super::g_file_impl::{FsGetListing, GFileImpl, HasFsrlRoot};
 
 /// Mirrors `FileSystemIndexHelper.MAX_SYMLINK_RECURSE_DEPTH`.
 const MAX_SYMLINK_RECURSE_DEPTH: usize = 10;
@@ -45,8 +44,8 @@ pub type NameComparator<'a> = Option<&'a dyn Fn(&str, &str) -> Ordering>;
 type FileKey = (String, bool);
 
 /// Mirrors the nested `FileSystemIndexHelper.FileData` class.
-struct FileData<FS, Fsrl, M> {
-    file: GFileImpl<FS, Fsrl>,
+struct FileData<FS, M> {
+    file: GFileImpl<FS>,
     metadata: Option<M>,
     file_index: i64,
     symlink_path: Option<String>,
@@ -68,21 +67,20 @@ impl DirListing {
     }
 }
 
-fn key_of<FS, Fsrl>(file: &dyn GFile<FS, Fsrl>) -> FileKey {
+fn key_of<FS>(file: &dyn GFile<FS>) -> FileKey {
     (file.get_path().to_owned(), file.is_directory())
 }
 
 /// Deep-copies `file` (and its parent chain) into an owned [`GFileImpl`] that compares equal
 /// to it, standing in for Java sharing the same `GFile` reference (e.g. to keep a file while
 /// the index that handed it out is mutated).
-pub fn copy_file<FS, Fsrl>(file: &dyn GFile<FS, Fsrl>) -> GFileImpl<FS, Fsrl>
+pub fn copy_file<FS>(file: &dyn GFile<FS>) -> GFileImpl<FS>
 where
-    FS: Clone + HasFsrlRoot<Fsrl> + FsGetListing<FS, Fsrl> + 'static,
-    Fsrl: FsrlLike + 'static,
+    FS: Clone + HasFsrlRoot + FsGetListing<FS> + 'static,
 {
     let parent = file
         .get_parent_file()
-        .map(|p| Box::new(copy_file(p)) as Box<dyn GFile<FS, Fsrl>>);
+        .map(|p| Box::new(copy_file(p)) as Box<dyn GFile<FS>>);
     GFileImpl::from_fsrl(
         file.get_filesystem().clone(),
         parent,
@@ -95,19 +93,19 @@ where
 /// Tracks the [`GFileImpl`]s of a container filesystem and the native metadata (`M`) of each.
 ///
 /// Mirrors `ghidra.formats.gfilesystem.FileSystemIndexHelper<METADATATYPE>`.
-pub struct FileSystemIndexHelper<FS, Fsrl, M> {
+pub struct FileSystemIndexHelper<FS, M> {
     filesystem: FS,
     /// Arena of every file ever stored; index [`ROOT`] is the root directory. Entries are
     /// never removed individually (only by [`clear`](Self::clear)).
-    files: Vec<FileData<FS, Fsrl, M>>,
+    files: Vec<FileData<FS, M>>,
     file_to_entry: HashMap<FileKey, usize>,
     file_index_to_entry: HashMap<i64, usize>,
     directory_to_listing: HashMap<FileKey, DirListing>,
 }
 
-impl<FS, M> FileSystemIndexHelper<FS, Fsrl, M>
+impl<FS, M> FileSystemIndexHelper<FS, M>
 where
-    FS: Clone + PartialEq + HasFsrlRoot<Fsrl> + FsGetListing<FS, Fsrl> + 'static,
+    FS: Clone + PartialEq + HasFsrlRoot + FsGetListing<FS> + 'static,
 {
     /// Creates an index for the filesystem `fs` whose FSRL root is `fs_fsrl`; the root
     /// directory is `fs_fsrl.withPath("/")`.
@@ -118,16 +116,15 @@ where
     }
 }
 
-impl<FS, Fsrl, M> FileSystemIndexHelper<FS, Fsrl, M>
+impl<FS, M> FileSystemIndexHelper<FS, M>
 where
-    FS: Clone + PartialEq + HasFsrlRoot<Fsrl> + FsGetListing<FS, Fsrl> + 'static,
-    Fsrl: FsrlLike + 'static,
+    FS: Clone + PartialEq + HasFsrlRoot + FsGetListing<FS> + 'static,
 {
     /// Creates an index for `filesystem`, auto-creating a root directory with the FSRL
     /// `root_dir_fsrl` (Java passes `fsFSRL.withPath("/")`).
     ///
     /// Mirrors `FileSystemIndexHelper(GFileSystem, FSRLRoot)`; see also
-    /// [`from_fsrl_root`](Self::from_fsrl_root) for the real FSRL type.
+    /// [`from_fsrl_root`](Self::from_fsrl_root), which derives `root_dir_fsrl` from the root.
     pub fn new(filesystem: FS, root_dir_fsrl: Fsrl) -> Self {
         let root_file = GFileImpl::from_fsrl(filesystem.clone(), None, root_dir_fsrl, true, -1);
         let root_key = key_of(&root_file);
@@ -144,7 +141,7 @@ where
     }
 
     /// The root directory. Mirrors `getRootDir()`.
-    pub fn get_root_dir(&self) -> &GFileImpl<FS, Fsrl> {
+    pub fn get_root_dir(&self) -> &GFileImpl<FS> {
         &self.files[ROOT].file
     }
 
@@ -164,7 +161,7 @@ where
     }
 
     /// The indexed entry for `file`, if `file` belongs to this filesystem and is indexed.
-    fn entry_of(&self, file: &dyn GFile<FS, Fsrl>) -> Option<usize> {
+    fn entry_of(&self, file: &dyn GFile<FS>) -> Option<usize> {
         if file.get_filesystem() != &self.filesystem {
             return None;
         }
@@ -172,7 +169,7 @@ where
     }
 
     /// Mirrors the private `getFileData(GFile)`: `None` is the root directory.
-    fn get_file_data(&self, file: Option<&dyn GFile<FS, Fsrl>>) -> io::Result<usize> {
+    fn get_file_data(&self, file: Option<&dyn GFile<FS>>) -> io::Result<usize> {
         match file {
             None => Ok(ROOT),
             Some(f) => self
@@ -188,7 +185,7 @@ where
 
     /// The metadata associated with `file`, or `None` if not found (or none was stored).
     /// Mirrors `getMetadata(GFile)`.
-    pub fn get_metadata(&self, file: &dyn GFile<FS, Fsrl>) -> Option<&M> {
+    pub fn get_metadata(&self, file: &dyn GFile<FS>) -> Option<&M> {
         self.entry_of(file).and_then(|i| self.files[i].metadata.as_ref())
     }
 
@@ -196,7 +193,7 @@ where
     ///
     /// # Errors
     /// If `file` is not in this index.
-    pub fn set_metadata(&mut self, file: &dyn GFile<FS, Fsrl>, metadata: M) -> io::Result<()> {
+    pub fn set_metadata(&mut self, file: &dyn GFile<FS>, metadata: M) -> io::Result<()> {
         let idx = self.get_file_data(Some(file))?;
         self.files[idx].metadata = Some(metadata);
         Ok(())
@@ -204,7 +201,7 @@ where
 
     /// The file stored with the filesystem-specific index `file_index`, or `None`.
     /// Mirrors `getFileByIndex(long)`.
-    pub fn get_file_by_index(&self, file_index: i64) -> Option<&GFileImpl<FS, Fsrl>> {
+    pub fn get_file_by_index(&self, file_index: i64) -> Option<&GFileImpl<FS>> {
         self.file_index_to_entry.get(&file_index).map(|&i| &self.files[i].file)
     }
 
@@ -212,8 +209,8 @@ where
     /// insertion order; empty if unknown. Mirrors `getListing(GFile)`.
     pub fn get_listing(
         &self,
-        directory: Option<&dyn GFile<FS, Fsrl>>,
-    ) -> Vec<&GFileImpl<FS, Fsrl>> {
+        directory: Option<&dyn GFile<FS>>,
+    ) -> Vec<&GFileImpl<FS>> {
         let key = match directory {
             None => key_of(&self.files[ROOT].file),
             Some(d) if d.get_filesystem() == &self.filesystem => key_of(d),
@@ -226,7 +223,7 @@ where
     }
 
     /// The file at `path` (exact name matching), or `None`. Mirrors `lookup(String)`.
-    pub fn lookup(&self, path: &str) -> Option<&GFileImpl<FS, Fsrl>> {
+    pub fn lookup(&self, path: &str) -> Option<&GFileImpl<FS>> {
         self.lookup_with(None, Some(path), None)
     }
 
@@ -236,10 +233,10 @@ where
     /// Mirrors `lookup(GFile, String, Comparator<String>)`.
     pub fn lookup_with(
         &self,
-        base_dir: Option<&dyn GFile<FS, Fsrl>>,
+        base_dir: Option<&dyn GFile<FS>>,
         path: Option<&str>,
         name_comp: NameComparator<'_>,
-    ) -> Option<&GFileImpl<FS, Fsrl>> {
+    ) -> Option<&GFileImpl<FS>> {
         // Java: an unknown base dir throws IOException, which is swallowed into null.
         let base = self.get_file_data(base_dir).ok()?;
         let parts = split_path(path);
@@ -366,8 +363,8 @@ where
     /// If `file` is not in this index, or symlinks are nested too deeply.
     pub fn resolve_symlinks(
         &self,
-        file: &dyn GFile<FS, Fsrl>,
-    ) -> io::Result<Option<&GFileImpl<FS, Fsrl>>> {
+        file: &dyn GFile<FS>,
+    ) -> io::Result<Option<&GFileImpl<FS>>> {
         let mut fd = Some(self.get_file_data(Some(file))?);
         if let Some(target) = fd.and_then(|i| self.files[i].symlink_path.as_deref()) {
             let parent = self.get_parent_file_data(fd.unwrap_or(ROOT));
@@ -378,7 +375,7 @@ where
 
     /// The symlink destination of `file` (`None` means the root directory), or `None` if it is
     /// not a symlink or not indexed. Mirrors `getSymlinkPath(GFile)`.
-    pub fn get_symlink_path(&self, file: Option<&dyn GFile<FS, Fsrl>>) -> Option<&str> {
+    pub fn get_symlink_path(&self, file: Option<&dyn GFile<FS>>) -> Option<&str> {
         let idx = match file {
             None => Some(ROOT),
             Some(f) => self.entry_of(f),
@@ -401,7 +398,7 @@ where
         is_directory: bool,
         length: i64,
         metadata: impl Into<Option<M>>,
-    ) -> &GFileImpl<FS, Fsrl> {
+    ) -> &GFileImpl<FS> {
         let nameparts = split_path(Some(path));
         let Some(lastpart) = nameparts.last() else {
             return &self.files[ROOT].file;
@@ -428,12 +425,12 @@ where
     pub fn store_file_with_parent(
         &mut self,
         filename: &str,
-        parent: Option<&dyn GFile<FS, Fsrl>>,
+        parent: Option<&dyn GFile<FS>>,
         file_index: i64,
         is_directory: bool,
         length: i64,
         metadata: impl Into<Option<M>>,
-    ) -> &GFileImpl<FS, Fsrl> {
+    ) -> &GFileImpl<FS> {
         let parent_copy = copy_file(parent.unwrap_or(&self.files[ROOT].file));
         let idx = self.do_store_file(
             filename,
@@ -459,7 +456,7 @@ where
         symlink_path: &str,
         length: i64,
         metadata: impl Into<Option<M>>,
-    ) -> &GFileImpl<FS, Fsrl> {
+    ) -> &GFileImpl<FS> {
         let nameparts = split_path(Some(path));
         let Some(lastpart) = nameparts.last() else {
             Msg::warn(
@@ -491,12 +488,12 @@ where
     pub fn store_symlink_with_parent(
         &mut self,
         filename: &str,
-        parent: Option<&dyn GFile<FS, Fsrl>>,
+        parent: Option<&dyn GFile<FS>>,
         file_index: i64,
         symlink_path: &str,
         length: i64,
         metadata: impl Into<Option<M>>,
-    ) -> &GFileImpl<FS, Fsrl> {
+    ) -> &GFileImpl<FS> {
         let length = symlink_length(length, symlink_path);
         let parent_copy = copy_file(parent.unwrap_or(&self.files[ROOT].file));
         let idx = self.do_store_file(
@@ -534,7 +531,7 @@ where
     fn do_store_file(
         &mut self,
         filename: &str,
-        parent: GFileImpl<FS, Fsrl>,
+        parent: GFileImpl<FS>,
         file_index: i64,
         is_directory: bool,
         length: i64,
@@ -577,20 +574,20 @@ where
     /// Mirrors the protected `createNewFile(GFile, String, boolean, long, METADATATYPE)`.
     fn create_new_file(
         &self,
-        parent: GFileImpl<FS, Fsrl>,
+        parent: GFileImpl<FS>,
         name: &str,
         is_directory: bool,
         size: i64,
-    ) -> GFileImpl<FS, Fsrl> {
+    ) -> GFileImpl<FS> {
         let fsrl = parent.get_fsrl().append_path(name);
         GFileImpl::from_fsrl(self.filesystem.clone(), Some(Box::new(parent)), fsrl, is_directory, size)
     }
 
     /// Replaces the FSRL of a file already in the index. Mirrors `updateFSRL(GFile, FSRL)`.
-    pub fn update_fsrl(&mut self, file: &dyn GFile<FS, Fsrl>, new_fsrl: Fsrl) {
+    pub fn update_fsrl(&mut self, file: &dyn GFile<FS>, new_fsrl: Fsrl) {
         let parent = file
             .get_parent_file()
-            .map(|p| Box::new(copy_file(p)) as Box<dyn GFile<FS, Fsrl>>);
+            .map(|p| Box::new(copy_file(p)) as Box<dyn GFile<FS>>);
         let new_file = GFileImpl::from_fsrl(
             self.filesystem.clone(),
             parent,
@@ -626,7 +623,7 @@ fn symlink_length(length: i64, symlink_path: &str) -> i64 {
     if length != 0 { length } else { symlink_path.encode_utf16().count() as i64 }
 }
 
-impl<FS: fmt::Debug, Fsrl, M> fmt::Display for FileSystemIndexHelper<FS, Fsrl, M> {
+impl<FS: fmt::Debug, M> fmt::Display for FileSystemIndexHelper<FS, M> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "FileSystemIndexHelper for {:?}", self.filesystem)
     }
@@ -647,22 +644,22 @@ mod tests {
         }
     }
 
-    impl HasFsrlRoot<Fsrl> for TestFs {
+    impl HasFsrlRoot for TestFs {
         fn root_fsrl(&self) -> &Fsrl {
             self.0.as_fsrl()
         }
     }
 
-    impl FsGetListing<TestFs, Fsrl> for TestFs {
+    impl FsGetListing<TestFs> for TestFs {
         fn fs_get_listing(
             &self,
-            _file: &dyn GFile<TestFs, Fsrl>,
-        ) -> io::Result<Vec<Box<dyn GFile<TestFs, Fsrl>>>> {
+            _file: &dyn GFile<TestFs>,
+        ) -> io::Result<Vec<Box<dyn GFile<TestFs>>>> {
             Ok(Vec::new())
         }
     }
 
-    type Helper = FileSystemIndexHelper<TestFs, Fsrl, String>;
+    type Helper = FileSystemIndexHelper<TestFs, String>;
 
     fn fs_root() -> FsrlRoot {
         Fsrl::from_string("file:///tmp/a.zip").unwrap().make_nested("zip")
@@ -673,7 +670,7 @@ mod tests {
         Helper::from_fsrl_root(TestFs(Rc::new(root.clone())), &root)
     }
 
-    fn names(files: Vec<&GFileImpl<TestFs, Fsrl>>) -> Vec<String> {
+    fn names(files: Vec<&GFileImpl<TestFs>>) -> Vec<String> {
         files.iter().map(|f| f.get_name().to_owned()).collect()
     }
 

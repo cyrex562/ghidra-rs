@@ -20,8 +20,8 @@
 //! that always fails, preserving this crate's prior behavior here. The lone file this filesystem
 //! exposes is represented with the already-ported
 //! [`GFileImpl`](crate::filesystem::gfilesystem::g_file_impl::GFileImpl), parameterized over a
-//! small local FS/FSRL pair ([`XmlFsMarker`]/[`XmlFsrl`]) since no concrete `FSRL` type exists
-//! in the crate yet either.
+//! small local filesystem handle ([`XmlFsMarker`]) carrying this filesystem's real
+//! [`FsrlRoot`].
 
 use std::io;
 
@@ -31,7 +31,9 @@ use crate::file::formats::android::xml::android_xml_convertor::{
 use crate::file::seam_stubs::{AXmlParseError, AXmlResourceParser, AndroidXmlEvent, ByteArrayProvider};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::filesystem::gfilesystem::g_file::GFile;
-use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, FsrlLike, GFileImpl, HasFsrlRoot};
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
+use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, GFileImpl, HasFsrlRoot};
 use crate::util::task::TaskMonitor;
 
 /// Placeholder [`AXmlResourceParser`] used until a real binary-XML parser is ported (see that
@@ -91,47 +93,24 @@ impl AXmlResourceParser for UnimplementedAXmlResourceParser {
     fn close(&mut self) {}
 }
 
-/// Minimal stand-in FSRL used to parameterize [`GFileImpl`] for this filesystem's single file,
-/// until a concrete `FSRL` type is ported.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct XmlFsrl(String);
-
-impl FsrlLike for XmlFsrl {
-    fn fsrl_name(&self) -> String {
-        self.0.rsplit('/').next().unwrap_or(self.0.as_str()).to_string()
-    }
-
-    fn fsrl_path(&self) -> String {
-        self.0.clone()
-    }
-
-    fn append_path(&self, segment: &str) -> Self {
-        if self.0.ends_with('/') {
-            XmlFsrl(format!("{}{}", self.0, segment))
-        } else {
-            XmlFsrl(format!("{}/{}", self.0, segment))
-        }
-    }
-}
-
 /// Minimal stand-in FS marker used to parameterize [`GFileImpl`] for this filesystem's single
 /// file, until a concrete `GFileSystem` implementer type is threaded through generically.
 #[derive(Clone, Debug)]
 pub struct XmlFsMarker {
-    root: XmlFsrl,
+    root: FsrlRoot,
 }
 
-impl HasFsrlRoot<XmlFsrl> for XmlFsMarker {
-    fn root_fsrl(&self) -> &XmlFsrl {
-        &self.root
+impl HasFsrlRoot for XmlFsMarker {
+    fn root_fsrl(&self) -> &Fsrl {
+        self.root.as_fsrl()
     }
 }
 
-impl FsGetListing<XmlFsMarker, XmlFsrl> for XmlFsMarker {
+impl FsGetListing<XmlFsMarker> for XmlFsMarker {
     fn fs_get_listing(
         &self,
-        _file: &dyn GFile<XmlFsMarker, XmlFsrl>,
-    ) -> io::Result<Vec<Box<dyn GFile<XmlFsMarker, XmlFsrl>>>> {
+        _file: &dyn GFile<XmlFsMarker>,
+    ) -> io::Result<Vec<Box<dyn GFile<XmlFsMarker>>>> {
         Ok(vec![])
     }
 }
@@ -143,6 +122,8 @@ impl FsGetListing<XmlFsMarker, XmlFsrl> for XmlFsMarker {
 /// `AndroidXmlConvertor`).
 pub struct AndroidXmlFileSystem {
     file_system_name: String,
+    /// This filesystem's FSRL root (Java `GFileSystemBase.fsFSRL`).
+    fs_fsrl: FsrlRoot,
     provider: Box<dyn GByteStore>,
     /// Text rendering of the binary XML payload, produced by [`open`](Self::open). `None`
     /// until `open` has been called, matching Java's `payloadFile == null` prior to `open()`.
@@ -172,13 +153,27 @@ impl AndroidXmlFileSystem {
         Ok(AndroidXmlConvertor::convert(&bytes, &mut out, &mut parser, monitor).is_ok())
     }
 
-    /// Mirrors the `AndroidXmlFileSystem(String, GByteStore)` constructor.
-    pub fn new(file_system_name: impl Into<String>, provider: Box<dyn GByteStore>) -> Self {
+    /// Mirrors the `AndroidXmlFileSystem(String, GByteStore)` constructor followed by the
+    /// `GFileSystemBase.setFSRL(FSRLRoot)` call its factory always makes before use -- folded
+    /// into construction here so the FSRL root is never absent.
+    pub fn new(
+        file_system_name: impl Into<String>,
+        fs_fsrl: FsrlRoot,
+        provider: Box<dyn GByteStore>,
+    ) -> Self {
         AndroidXmlFileSystem {
             file_system_name: file_system_name.into(),
+            fs_fsrl,
             provider,
             payload_bytes: None,
         }
+    }
+
+    /// This filesystem's FSRL root.
+    ///
+    /// Mirrors `GFileSystemBase.getFSRL`.
+    pub fn get_fsrl(&self) -> &FsrlRoot {
+        &self.fs_fsrl
     }
 
     /// This filesystem's volume name.
@@ -191,13 +186,13 @@ impl AndroidXmlFileSystem {
     /// Returns a freshly-constructed [`GFileImpl`] each call rather than aliasing a stored
     /// field -- equivalent here since `GFileImpl` equality is structural and this filesystem
     /// only ever has the one file.
-    pub fn get_payload_file(&self) -> Option<GFileImpl<XmlFsMarker, XmlFsrl>> {
+    pub fn get_payload_file(&self) -> Option<GFileImpl<XmlFsMarker>> {
         self.payload_file()
     }
 
-    fn payload_file(&self) -> Option<GFileImpl<XmlFsMarker, XmlFsrl>> {
+    fn payload_file(&self) -> Option<GFileImpl<XmlFsMarker>> {
         let len = self.payload_bytes.as_ref()?.len() as i64;
-        let marker = XmlFsMarker { root: XmlFsrl("/".to_string()) };
+        let marker = XmlFsMarker { root: self.fs_fsrl.clone() };
         Some(GFileImpl::from_filename(marker, None, "XML", false, len, None))
     }
 
@@ -227,7 +222,7 @@ impl AndroidXmlFileSystem {
     /// Mirrors `AndroidXmlFileSystem.getByteProvider`.
     pub fn get_byte_provider(
         &self,
-        _file: &GFileImpl<XmlFsMarker, XmlFsrl>,
+        _file: &GFileImpl<XmlFsMarker>,
         _monitor: &dyn TaskMonitor,
     ) -> io::Result<Box<dyn GByteStore>> {
         let bytes = self
@@ -240,8 +235,8 @@ impl AndroidXmlFileSystem {
     /// Mirrors `AndroidXmlFileSystem.getListing`.
     pub fn get_listing(
         &self,
-        _directory: Option<&GFileImpl<XmlFsMarker, XmlFsrl>>,
-    ) -> io::Result<Vec<GFileImpl<XmlFsMarker, XmlFsrl>>> {
+        _directory: Option<&GFileImpl<XmlFsMarker>>,
+    ) -> io::Result<Vec<GFileImpl<XmlFsMarker>>> {
         Ok(self.payload_file().into_iter().collect())
     }
 }
@@ -250,6 +245,10 @@ impl AndroidXmlFileSystem {
 mod tests {
     use super::*;
     use crate::util::task::DummyMonitor;
+
+    fn fs_root() -> FsrlRoot {
+        Fsrl::from_string("file:///tmp/AndroidManifest.xml").unwrap().make_nested("androidxml")
+    }
 
     struct VecByteProvider(Vec<u8>);
 
@@ -304,7 +303,7 @@ mod tests {
     #[test]
     fn new_stores_name_and_no_payload_yet() {
         let provider = Box::new(VecByteProvider(vec![0x03, 0x00, 0x08, 0x00]));
-        let fs = AndroidXmlFileSystem::new("androidxml", provider);
+        let fs = AndroidXmlFileSystem::new("androidxml", fs_root(), provider);
         assert_eq!(fs.name(), "androidxml");
         assert!(fs.get_payload_file().is_none());
     }
@@ -312,9 +311,9 @@ mod tests {
     #[test]
     fn get_byte_provider_errors_before_open() {
         let provider = Box::new(VecByteProvider(vec![0x03, 0x00, 0x08, 0x00]));
-        let fs = AndroidXmlFileSystem::new("androidxml", provider);
+        let fs = AndroidXmlFileSystem::new("androidxml", fs_root(), provider);
         let payload = GFileImpl::from_filename(
-            XmlFsMarker { root: XmlFsrl("/".to_string()) },
+            XmlFsMarker { root: fs_root() },
             None,
             "XML",
             false,
@@ -327,7 +326,22 @@ mod tests {
     #[test]
     fn get_listing_empty_before_open() {
         let provider = Box::new(VecByteProvider(vec![0x03, 0x00, 0x08, 0x00]));
-        let fs = AndroidXmlFileSystem::new("androidxml", provider);
+        let fs = AndroidXmlFileSystem::new("androidxml", fs_root(), provider);
         assert!(fs.get_listing(None).unwrap().is_empty());
+    }
+
+    #[test]
+    fn payload_file_fsrl_is_under_fs_root() {
+        let provider = Box::new(VecByteProvider(vec![0x03, 0x00, 0x08, 0x00]));
+        let mut fs = AndroidXmlFileSystem::new("androidxml", fs_root(), provider);
+        fs.open(&DummyMonitor).unwrap();
+        let payload = fs.get_payload_file().expect("payload after open");
+        // Java: GFileImpl.fromFilename(this, root, "XML", ...) -> root.getFSRL().appendPath("XML")
+        assert_eq!(
+            payload.get_fsrl().to_string(),
+            "file:///tmp/AndroidManifest.xml|androidxml:///XML"
+        );
+        assert_eq!(payload.get_path(), "/XML");
+        assert_eq!(fs.get_fsrl(), &fs_root());
     }
 }

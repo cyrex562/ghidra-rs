@@ -143,7 +143,7 @@ impl AbstractSinglePayloadFileSystemBase {
     /// provider and carries `file`'s FSRL.
     pub fn get_byte_provider(
         &self,
-        file: &dyn GFile<SinglePayloadFsHandle, Fsrl>,
+        file: &dyn GFile<SinglePayloadFsHandle>,
         _monitor: &dyn TaskMonitor,
     ) -> Option<SinglePayloadByteProvider> {
         if !self.fs_index.is_payload_file(file) {
@@ -159,7 +159,7 @@ impl AbstractSinglePayloadFileSystemBase {
     /// If the filesystem has been closed.
     pub fn get_listing(
         &self,
-        directory: Option<&dyn GFile<SinglePayloadFsHandle, Fsrl>>,
+        directory: Option<&dyn GFile<SinglePayloadFsHandle>>,
     ) -> io::Result<Vec<&SinglePayloadGFile>> {
         self.fs_index.get_listing(directory)
     }
@@ -168,7 +168,7 @@ impl AbstractSinglePayloadFileSystemBase {
     /// `getFileAttributes(GFile, TaskMonitor)`.
     pub fn get_file_attributes(
         &self,
-        file: &dyn GFile<SinglePayloadFsHandle, Fsrl>,
+        file: &dyn GFile<SinglePayloadFsHandle>,
         _monitor: &dyn TaskMonitor,
     ) -> &FileAttributes {
         self.fs_index.get_file_attributes(file)

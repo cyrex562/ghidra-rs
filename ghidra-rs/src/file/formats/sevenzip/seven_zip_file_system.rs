@@ -50,8 +50,10 @@ use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttribute
 use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::file_system_index_helper::{copy_file, FileSystemIndexHelper};
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
 use crate::filesystem::gfilesystem::g_file_impl::{
-    FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
+    FsGetListing, GFileImpl, HasFsrlRoot,
 };
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::util::exception::{CancelledException, CryptoException};
@@ -312,119 +314,44 @@ pub trait InArchive {
     fn close(&mut self) -> SzResult<()>;
 }
 
-// ─── FSRL stand-ins ───────────────────────────────────────────────────────────
-
-/// Stand-in for `ghidra.formats.gfilesystem.FSRL`, used to parameterize [`GFileImpl`] and the
-/// index until a concrete `FSRL` type is ported (the ported
-/// [`Fsrl`](crate::filesystem::gfilesystem::fsrl::Fsrl) is a trait with no implementer yet).
-///
-/// Mirrors the three `FSRL` operations this filesystem actually performs: reading the name,
-/// reading the MD5, and deriving a copy with an MD5 attached.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SzFsrl {
-    path: String,
-    md5: Option<String>,
-}
-
-impl SzFsrl {
-    /// Creates an FSRL for `path` with no MD5 recorded.
-    pub fn new(path: impl Into<String>) -> Self {
-        SzFsrl { path: path.into(), md5: None }
-    }
-
-    /// Mirrors `FSRL.getMD5()`.
-    pub fn md5(&self) -> Option<&str> {
-        self.md5.as_deref()
-    }
-
-    /// Mirrors `FSRL.withMD5(String)`.
-    pub fn with_md5(&self, md5: impl Into<String>) -> Self {
-        SzFsrl { path: self.path.clone(), md5: Some(md5.into()) }
-    }
-
-    /// Mirrors `FSRL.getName()`.
-    pub fn name(&self) -> &str {
-        base_name_of(&self.path)
-    }
-}
-
-impl GFileFsrlLike for SzFsrl {
-    fn fsrl_name(&self) -> String {
-        self.name().to_string()
-    }
-
-    fn fsrl_path(&self) -> String {
-        self.path.clone()
-    }
-
-    fn append_path(&self, segment: &str) -> Self {
-        let path = if self.path.ends_with('/') {
-            format!("{}{}", self.path, segment)
-        } else {
-            format!("{}/{}", self.path, segment)
-        };
-        SzFsrl { path, md5: None }
-    }
-}
-
-/// Marker `FsrlLike` impl so an [`SzFsrl`] can be used as a [`CryptoSession`] lookup key.
-impl crate::filesystem::seam_stubs::FsrlLike for SzFsrl {}
-
-/// Stand-in for `ghidra.formats.gfilesystem.FSRLRoot`, this filesystem's own `fsFSRL`.
-///
-/// Only `getContainer()` is exercised by this class (to name the archive being opened).
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SzFsrlRoot {
-    container: SzFsrl,
-}
-
-impl SzFsrlRoot {
-    /// Creates a root whose container is the archive at `container`.
-    pub fn new(container: SzFsrl) -> Self {
-        SzFsrlRoot { container }
-    }
-
-    /// Mirrors `FSRLRoot.getContainer()`.
-    pub fn get_container(&self) -> &SzFsrl {
-        &self.container
-    }
-}
+// ─── Filesystem handle ─────────────────────────────────────────────────────────
 
 /// Filesystem handle stored inside each [`GFileImpl`] this filesystem hands out.
 ///
 /// The Java `GFileImpl` holds a back-reference to the owning `GFileSystem`; storing the real
 /// [`SevenZipFileSystemBase`] there would make every file alias the filesystem it lives in, so
-/// this carries only what `GFileImpl` needs from it: the root FSRL, and a listing hook.
-/// Listing is served from [`SevenZipFileSystemBase`] itself, so the hook is inert here.
+/// this carries only what `GFileImpl` needs from it: the filesystem's [`FsrlRoot`], and a
+/// listing hook. Listing is served from [`SevenZipFileSystemBase`] itself, so the hook is inert
+/// here.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SzFsHandle {
-    root: SzFsrl,
+    root: FsrlRoot,
 }
 
 impl SzFsHandle {
-    /// Creates a handle rooted at `root`.
-    pub fn new(root: SzFsrl) -> Self {
+    /// Creates a handle for the filesystem whose FSRL root is `root`.
+    pub fn new(root: FsrlRoot) -> Self {
         SzFsHandle { root }
     }
 }
 
-impl HasFsrlRoot<SzFsrl> for SzFsHandle {
-    fn root_fsrl(&self) -> &SzFsrl {
-        &self.root
+impl HasFsrlRoot for SzFsHandle {
+    fn root_fsrl(&self) -> &Fsrl {
+        self.root.as_fsrl()
     }
 }
 
-impl FsGetListing<SzFsHandle, SzFsrl> for SzFsHandle {
+impl FsGetListing<SzFsHandle> for SzFsHandle {
     fn fs_get_listing(
         &self,
-        _file: &dyn GFile<SzFsHandle, SzFsrl>,
-    ) -> io::Result<Vec<Box<dyn GFile<SzFsHandle, SzFsrl>>>> {
+        _file: &dyn GFile<SzFsHandle>,
+    ) -> io::Result<Vec<Box<dyn GFile<SzFsHandle>>>> {
         Ok(vec![])
     }
 }
 
 /// The concrete [`GFile`] type this filesystem indexes.
-pub type SzGFile = GFileImpl<SzFsHandle, SzFsrl>;
+pub type SzGFile = GFileImpl<SzFsHandle>;
 
 // ─── FileSystemService seam ───────────────────────────────────────────────────
 
@@ -437,7 +364,7 @@ pub type SzGFile = GFileImpl<SzFsHandle, SzFsrl>;
 /// favour of the real service once `FileCache` lands.
 pub trait SevenZipFsService {
     /// Mirrors `FileSystemService.newCryptoSession()`.
-    fn new_crypto_session(&self) -> Box<dyn CryptoSession<SzFsrl>>;
+    fn new_crypto_session(&self) -> Box<dyn CryptoSession>;
 
     /// Mirrors `FileSystemService.createTempFile(long)`.
     fn create_temp_file(&self, size_hint: i64) -> io::Result<FileCacheEntryBuilder>;
@@ -480,11 +407,11 @@ pub const PRIORITY_HIGH: i32 = 10;
 /// [`SevenZipFileSystem`] trait.
 pub struct SevenZipFileSystemBase<S: SevenZipFsService> {
     /// Mirrors the inherited `AbstractFileSystem.fsFSRL`.
-    fs_fsrl: SzFsrlRoot,
+    fs_fsrl: FsrlRoot,
     /// Mirrors the inherited `AbstractFileSystem.fsService`.
     fs_service: S,
     /// Mirrors the inherited `AbstractFileSystem.fsIndex`.
-    fs_index: FileSystemIndexHelper<SzFsHandle, SzFsrl, Rc<dyn ArchiveItem>>,
+    fs_index: FileSystemIndexHelper<SzFsHandle, Rc<dyn ArchiveItem>>,
     /// Per-embedded-file passwords, keyed by archive item index.
     passwords: HashMap<i32, String>,
     archive: Option<Box<dyn InArchive>>,
@@ -509,9 +436,8 @@ impl<S: SevenZipFsService> SevenZipFileSystem for SevenZipFileSystemBase<S> {
 
 impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
     /// Mirrors `SevenZipFileSystem(FSRLRoot, FileSystemService)`.
-    pub fn new(fsrl: SzFsrlRoot, fs_service: S) -> Self {
-        let root = SzFsrl::new("/");
-        let fs_index = FileSystemIndexHelper::new(SzFsHandle::new(root.clone()), root);
+    pub fn new(fsrl: FsrlRoot, fs_service: S) -> Self {
+        let fs_index = FileSystemIndexHelper::from_fsrl_root(SzFsHandle::new(fsrl.clone()), &fsrl);
         SevenZipFileSystemBase {
             fs_fsrl: fsrl,
             fs_service,
@@ -525,13 +451,13 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
     }
 
     /// Mirrors the inherited `AbstractFileSystem.getFSRL()`.
-    pub fn get_fsrl(&self) -> &SzFsrlRoot {
+    pub fn get_fsrl(&self) -> &FsrlRoot {
         &self.fs_fsrl
     }
 
     /// Mirrors the inherited `AbstractFileSystem.getName()`, the container file's name.
-    pub fn get_name(&self) -> &str {
-        self.fs_fsrl.get_container().name()
+    pub fn get_name(&self) -> String {
+        self.fs_fsrl.container().and_then(Fsrl::name).unwrap_or_default()
     }
 
     /// Mirrors the inherited `AbstractFileSystem.getRootDir()`.
@@ -571,7 +497,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
             io::ErrorKind::InvalidData,
             format!(
                 "Failed to open archive: {}: {cause}",
-                self.fs_fsrl.get_container().name()
+                self.fs_fsrl
             ),
         )
     }
@@ -629,7 +555,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
         if self.items.len() == 1 && item_path.trim().is_empty() {
             // special case when there is a single unnamed file.
             // use the name of the 7zip file itself, minus the extension
-            item_path = strip_extension(self.fs_fsrl.get_container().name()).to_string();
+            item_path = strip_extension(&self.get_name()).to_string();
         }
         if item_path.is_empty() {
             item_path = "<blank>".to_string();
@@ -641,18 +567,20 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
     fn get_password_for_file(
         &mut self,
         file_name: &str,
-        file_fsrl: &SzFsrl,
+        file_fsrl: &Fsrl,
         encrypted_item: &dyn ArchiveItem,
         monitor: &dyn TaskMonitor,
     ) -> Option<String> {
-        let container_fsrl = self.fs_fsrl.get_container().clone();
+        // Java: `fsFSRL.getContainer()` -- a mounted 7-Zip filesystem always has one.
+        let container_fsrl = Fsrl::convert_root_to_container(self.fs_fsrl.as_fsrl());
+        let container_name = container_fsrl.name().unwrap_or_default();
         let item_index = encrypted_item.item_index();
         if !self.passwords.contains_key(&item_index) {
             let mut crypto_session = self.fs_service.new_crypto_session();
             let prompt = if self.passwords.is_empty() {
-                container_fsrl.name().to_string()
+                container_name.clone()
             } else {
-                format!("{} in {}", file_name, container_fsrl.name())
+                format!("{} in {}", file_name, container_name)
             };
             let candidates: Vec<_> = crypto_session
                 .get_passwords_for(&container_fsrl, &prompt)
@@ -670,7 +598,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
                             ORIGINATOR,
                             &format!(
                                 "Error when testing password for {}: {e}",
-                                file_fsrl.fsrl_path()
+                                file_fsrl
                             ),
                         );
                         return None;
@@ -698,7 +626,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
                         ORIGINATOR,
                         &format!(
                             "Error when testing password for {}: {e}",
-                            file_fsrl.fsrl_path()
+                            file_fsrl
                         ),
                     );
                     return None;
@@ -783,7 +711,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
                 &format!(
                     "Unable to find password for {} file(s) in {}",
                     no_password_found_list.len(),
-                    self.fs_fsrl.get_container().name()
+                    self.get_name()
                 ),
             );
         }
@@ -930,6 +858,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
             }
         }
 
+        let container_name = self.get_name();
         let mut sz_callback = SZExtractCallback::new(
             monitor,
             item_index,
@@ -937,7 +866,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
             &self.items,
             &self.passwords,
             &self.fs_service,
-            self.fs_fsrl.get_container().name(),
+            &container_name,
         );
         {
             let archive = self.archive.as_ref().ok_or_else(|| {
@@ -954,7 +883,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
         for (file_index, md5) in md5_updates {
             if let Some(g_file) = self.fs_index.get_file_by_index(file_index as i64) {
                 if g_file.get_fsrl().md5().is_none() {
-                    let new_fsrl = g_file.get_fsrl().with_md5(md5);
+                    let new_fsrl = g_file.get_fsrl().with_md5(Some(&md5));
                     // `get_file_by_index` borrows the index; detach a copy to mutate it.
                     let target = copy_file(g_file);
                     self.fs_index.update_fsrl(&target, new_fsrl);
@@ -971,7 +900,7 @@ impl<S: SevenZipFsService> SevenZipFileSystemBase<S> {
         }) else {
             return Err(GetByteProviderError::Io(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Unable to extract {}", file.get_fsrl().fsrl_path()),
+                format!("Unable to extract {}", file.get_fsrl()),
             )));
         };
         Ok(Some(
@@ -1584,10 +1513,10 @@ mod tests {
         accepted: Rc<RefCell<Vec<String>>>,
     }
 
-    impl CryptoSession<SzFsrl> for FakeCryptoSession {
+    impl CryptoSession for FakeCryptoSession {
         fn get_passwords_for<'a>(
             &'a self,
-            _fsrl: &'a SzFsrl,
+            _fsrl: &'a Fsrl,
             _prompt: &str,
         ) -> Box<dyn Iterator<Item = Password> + 'a> {
             Box::new(
@@ -1597,7 +1526,7 @@ mod tests {
             )
         }
 
-        fn add_successful_password(&mut self, _fsrl: &SzFsrl, password: Password) {
+        fn add_successful_password(&mut self, _fsrl: &Fsrl, password: Password) {
             let chars: String = password.get_password_chars().unwrap_or(&[]).iter().collect();
             self.accepted.borrow_mut().push(chars);
         }
@@ -1624,7 +1553,7 @@ mod tests {
     }
 
     impl SevenZipFsService for FakeService {
-        fn new_crypto_session(&self) -> Box<dyn CryptoSession<SzFsrl>> {
+        fn new_crypto_session(&self) -> Box<dyn CryptoSession> {
             Box::new(FakeCryptoSession {
                 passwords: self.passwords.clone(),
                 accepted: Rc::clone(&self.accepted),
@@ -1647,9 +1576,13 @@ mod tests {
         }
     }
 
+    fn fs_root(container: &str) -> FsrlRoot {
+        Fsrl::from_string(&format!("file://{container}")).unwrap().make_nested("7zip")
+    }
+
     fn fs_for(container: &str) -> SevenZipFileSystemBase<FakeService> {
         SevenZipFileSystemBase::new(
-            SzFsrlRoot::new(SzFsrl::new(container)),
+            fs_root(container),
             FakeService::new(&[]),
         )
     }
@@ -1885,7 +1818,7 @@ mod tests {
         let stranger = GFileImpl::from_fsrl(
             root.get_filesystem().clone(),
             None,
-            SzFsrl::new("/not/in/the/archive"),
+            fs.get_fsrl().with_path("/not/in/the/archive"),
             false,
             -1,
         );
@@ -1899,7 +1832,7 @@ mod tests {
         let service = FakeService::new(&["wrong", "s3cret"]);
         let accepted = Rc::clone(&service.accepted);
         let mut fs =
-            SevenZipFileSystemBase::new(SzFsrlRoot::new(SzFsrl::new("/tmp/locked.zip")), service);
+            SevenZipFileSystemBase::new(fs_root("/tmp/locked.zip"), service);
 
         let archive = FakeArchive::new(
             ArchiveFormat::Zip,
@@ -1928,7 +1861,7 @@ mod tests {
     #[test]
     fn encrypted_entry_without_a_password_fails_with_crypto_error() {
         let mut fs = SevenZipFileSystemBase::new(
-            SzFsrlRoot::new(SzFsrl::new("/tmp/locked.zip")),
+            fs_root("/tmp/locked.zip"),
             FakeService::new(&["nope"]),
         );
         let archive = FakeArchive::new(

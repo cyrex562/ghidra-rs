@@ -24,7 +24,6 @@ use crate::filesystem::gfilesystem::file_system_index_helper::copy_file;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
-use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
 use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::util::task::TaskMonitor;
@@ -142,7 +141,7 @@ impl CpioFileSystem {
     /// auto-created directory). Mirrors `getFileType(GFile, TaskMonitor)`.
     pub fn get_file_type(
         &self,
-        file: &dyn GFile<AbstractFsHandle, Fsrl>,
+        file: &dyn GFile<AbstractFsHandle>,
         _monitor: &dyn TaskMonitor,
     ) -> FileType {
         self.base.fs_index().get_metadata(file).map_or(FileType::Unknown, Self::entry_file_type)
@@ -154,7 +153,7 @@ impl CpioFileSystem {
     /// Mirrors `getFileAttributes(GFile, TaskMonitor)`.
     pub fn get_file_attributes(
         &self,
-        file: &dyn GFile<AbstractFsHandle, Fsrl>,
+        file: &dyn GFile<AbstractFsHandle>,
         _monitor: &dyn TaskMonitor,
     ) -> FileAttributes {
         let mut result = FileAttributes::new();
@@ -199,7 +198,7 @@ impl CpioFileSystem {
     /// again, or reading the archive fails.
     pub fn get_byte_provider(
         &self,
-        file: &dyn GFile<AbstractFsHandle, Fsrl>,
+        file: &dyn GFile<AbstractFsHandle>,
         _monitor: &dyn TaskMonitor,
     ) -> io::Result<Option<CpioByteProvider>> {
         let index = self.base.fs_index();
@@ -251,6 +250,7 @@ mod tests {
     use crate::file::formats::cpio::cpio_archive::test_archives::newc_archive;
     use crate::file::formats::cpio::cpio_archive::{C_ISDIR, C_ISFIFO, C_ISLNK, C_ISREG};
     use crate::filesystem::gfilesystem::abstract_single_payload_file_system::test_support::MemProvider;
+    use crate::filesystem::gfilesystem::fsrl::Fsrl;
     use crate::util::task::DummyMonitor;
 
     fn open(bytes: Vec<u8>) -> io::Result<CpioFileSystem> {

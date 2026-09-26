@@ -11,6 +11,7 @@ use crate::util::task::TaskMonitor;
 use super::fileinfo::file_attribute_type::FileAttributeType;
 use super::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
 use super::fileinfo::file_type::FileType;
+use super::fsrl_root::FsrlRoot;
 use super::g_file::GFile;
 use super::g_file_system_iterator::GFileSystemIterator;
 
@@ -30,16 +31,15 @@ pub enum GFileSystemError {
 /// represented here by the [`FileSystemRefManagerLike`] seam (see
 /// `crate::filesystem::seam_stubs`) until a concrete ref manager lands.
 ///
-/// `FS` and `Fsrl` are the same kind of type parameters used by [`GFile`] -- `FS` will be
-/// instantiated with the concrete implementing filesystem type and `Fsrl` with the ported
-/// `FSRL` type. `FS` is intentionally NOT tied to `Self`: like
+/// `FS` is the same type parameter used by [`GFile`] -- it is instantiated with the concrete
+/// implementing filesystem (handle) type; locators are the real [`Fsrl`](super::fsrl::Fsrl) / [`FsrlRoot`].
+/// `FS` is intentionally NOT tied to `Self`: like
 /// [`FileSystemEventListener`](super::file_system_event_listener::FileSystemEventListener) and
 /// [`FsGetListing`](super::g_file_impl::FsGetListing), coupling it to `Self` instead of a free
 /// generic parameter would make this trait dyn-incompatible.
-pub trait GFileSystem<FS, Fsrl, FsrlRoot, RefManager>
+pub trait GFileSystem<FS, RefManager>
 where
     FS: 'static,
-    Fsrl: 'static,
     RefManager: FileSystemRefManagerLike,
 {
     /// File system volume name -- typically the name of the container file or an internally
@@ -81,7 +81,7 @@ where
     /// Retrieves a file by its full path and filename, using this filesystem's default name
     /// comparison logic. `None` or `"/"` retrieves the root directory. Returns `Ok(None)` if not
     /// found.
-    fn lookup(&self, path: Option<&str>) -> io::Result<Option<Box<dyn GFile<FS, Fsrl>>>>;
+    fn lookup(&self, path: Option<&str>) -> io::Result<Option<Box<dyn GFile<FS>>>>;
 
     /// Retrieves a file using the specified name comparison logic. `None` requests the
     /// filesystem's native comparison logic.
@@ -93,19 +93,19 @@ where
         &self,
         path: Option<&str>,
         _name_comp: Option<&dyn Fn(&str, &str) -> Ordering>,
-    ) -> io::Result<Option<Box<dyn GFile<FS, Fsrl>>>> {
+    ) -> io::Result<Option<Box<dyn GFile<FS>>>> {
         self.lookup(path)
     }
 
     /// The file system's root directory, or `None` if the lookup fails.
-    fn get_root_dir(&self) -> Option<Box<dyn GFile<FS, Fsrl>>> {
+    fn get_root_dir(&self) -> Option<Box<dyn GFile<FS>>> {
         self.lookup(None).ok().flatten()
     }
 
     /// A [`GByteStore`] over the contents of `file`, or `None` if the file has no data.
     fn get_byte_provider(
         &self,
-        file: &dyn GFile<FS, Fsrl>,
+        file: &dyn GFile<FS>,
         monitor: &dyn TaskMonitor,
     ) -> Result<Option<Box<dyn GByteStore>>, GFileSystemError>;
 
@@ -116,7 +116,7 @@ where
     /// this reads the provider's full contents eagerly instead of returning a lazy reader.
     fn get_input_stream(
         &self,
-        file: &dyn GFile<FS, Fsrl>,
+        file: &dyn GFile<FS>,
         monitor: &dyn TaskMonitor,
     ) -> Result<Option<Vec<u8>>, GFileSystemError> {
         let Some(mut bp) = self.get_byte_provider(file, monitor)? else {
@@ -130,14 +130,14 @@ where
     /// Files residing in `directory` (`None` means the filesystem root).
     fn get_listing(
         &self,
-        directory: Option<&dyn GFile<FS, Fsrl>>,
-    ) -> io::Result<Vec<Box<dyn GFile<FS, Fsrl>>>>;
+        directory: Option<&dyn GFile<FS>>,
+    ) -> io::Result<Vec<Box<dyn GFile<FS>>>>;
 
     /// Attribute values for `file`. Implementors are not required to add FSRL, NAME, or PATH
     /// values unless non-standard.
     fn get_file_attributes(
         &self,
-        file: &dyn GFile<FS, Fsrl>,
+        file: &dyn GFile<FS>,
         monitor: &dyn TaskMonitor,
     ) -> FileAttributes;
 
@@ -148,13 +148,13 @@ where
     /// and "invalid symlink destination" are indistinguishable at this default level).
     fn resolve_symlinks(
         &self,
-        _file: &dyn GFile<FS, Fsrl>,
-    ) -> io::Result<Option<Box<dyn GFile<FS, Fsrl>>>> {
+        _file: &dyn GFile<FS>,
+    ) -> io::Result<Option<Box<dyn GFile<FS>>>> {
         Ok(None)
     }
 
     /// The [`FileType`] of `file`.
-    fn get_file_type(&self, file: &dyn GFile<FS, Fsrl>, monitor: &dyn TaskMonitor) -> FileType {
+    fn get_file_type(&self, file: &dyn GFile<FS>, monitor: &dyn TaskMonitor) -> FileType {
         match self.get_file_attributes(file, monitor).get(FileAttributeType::FileTypeAttr) {
             Some(FileAttributeValue::FileType(t)) => *t,
             _ => {
@@ -171,7 +171,7 @@ where
     fn close(&mut self) -> io::Result<()>;
 
     /// Iterates depth-first over all files in this filesystem, starting at the root.
-    fn files(&self) -> io::Result<GFileSystemIterator<FS, Fsrl>> {
+    fn files(&self) -> io::Result<GFileSystemIterator<FS>> {
         self.files_with(None, None)
     }
 
@@ -179,9 +179,9 @@ where
     /// (defaulting to the root) and optionally filtering leaf files with `filter`.
     fn files_with(
         &self,
-        dir: Option<Box<dyn GFile<FS, Fsrl>>>,
-        filter: Option<Box<dyn Fn(&dyn GFile<FS, Fsrl>) -> bool>>,
-    ) -> io::Result<GFileSystemIterator<FS, Fsrl>> {
+        dir: Option<Box<dyn GFile<FS>>>,
+        filter: Option<Box<dyn Fn(&dyn GFile<FS>) -> bool>>,
+    ) -> io::Result<GFileSystemIterator<FS>> {
         let dir = match dir {
             Some(d) => d,
             None => self
@@ -198,11 +198,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::fsrl::Fsrl;
     use std::cell::Cell;
 
     // ── Mock seam types ─────────────────────────────────────────────────────
-
-    struct MockFsrlRoot;
 
     struct MockRefManager;
     impl FileSystemRefManagerLike for MockRefManager {}
@@ -215,9 +214,6 @@ mod tests {
     struct MockFsMarker;
 
     #[derive(Clone)]
-    struct MockFsrl(String);
-
-    #[derive(Clone)]
     struct MockNodeData {
         path: String,
         name: String,
@@ -228,7 +224,7 @@ mod tests {
 
     struct MockFile {
         node: MockNodeData,
-        fsrl: MockFsrl,
+        fsrl: Fsrl,
         // Shared with the owning `MockFileSystem` so `GFile::get_listing` (used internally by
         // `GFileSystemIterator`) can find children without a back-reference to the filesystem.
         all_nodes: std::rc::Rc<Vec<MockNodeData>>,
@@ -236,21 +232,21 @@ mod tests {
 
     impl MockFile {
         fn new(node: MockNodeData, all_nodes: std::rc::Rc<Vec<MockNodeData>>) -> Self {
-            let fsrl = MockFsrl(node.path.clone());
+            let fsrl = FsrlRoot::make_root("mock").with_path_md5(Some(&node.path), None);
             MockFile { node, fsrl, all_nodes }
         }
     }
 
-    impl GFile<MockFsMarker, MockFsrl> for MockFile {
+    impl GFile<MockFsMarker> for MockFile {
         fn get_filesystem(&self) -> &MockFsMarker {
             &MockFsMarker
         }
 
-        fn get_fsrl(&self) -> &MockFsrl {
+        fn get_fsrl(&self) -> &Fsrl {
             &self.fsrl
         }
 
-        fn get_parent_file(&self) -> Option<&dyn GFile<MockFsMarker, MockFsrl>> {
+        fn get_parent_file(&self) -> Option<&dyn GFile<MockFsMarker>> {
             None
         }
 
@@ -274,12 +270,12 @@ mod tests {
             }
         }
 
-        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFsMarker, MockFsrl>>>> {
+        fn get_listing(&self) -> io::Result<Vec<Box<dyn GFile<MockFsMarker>>>> {
             Ok(self
                 .all_nodes
                 .iter()
                 .filter(|n| n.parent.as_deref() == Some(self.node.path.as_str()))
-                .map(|n| -> Box<dyn GFile<MockFsMarker, MockFsrl>> {
+                .map(|n| -> Box<dyn GFile<MockFsMarker>> {
                     Box::new(MockFile::new(n.clone(), self.all_nodes.clone()))
                 })
                 .collect())
@@ -328,12 +324,12 @@ mod tests {
 
     struct MockFileSystem {
         closed: Cell<bool>,
-        fsrl_root: MockFsrlRoot,
+        fsrl_root: FsrlRoot,
         ref_manager: MockRefManager,
         nodes: std::rc::Rc<Vec<MockNodeData>>,
     }
 
-    impl GFileSystem<MockFsMarker, MockFsrl, MockFsrlRoot, MockRefManager> for MockFileSystem {
+    impl GFileSystem<MockFsMarker, MockRefManager> for MockFileSystem {
         fn get_name(&self) -> &str {
             "mockfs"
         }
@@ -346,7 +342,7 @@ mod tests {
             "Mock filesystem".to_string()
         }
 
-        fn get_fsrl(&self) -> &MockFsrlRoot {
+        fn get_fsrl(&self) -> &FsrlRoot {
             &self.fsrl_root
         }
 
@@ -361,10 +357,10 @@ mod tests {
         fn lookup(
             &self,
             path: Option<&str>,
-        ) -> io::Result<Option<Box<dyn GFile<MockFsMarker, MockFsrl>>>> {
+        ) -> io::Result<Option<Box<dyn GFile<MockFsMarker>>>> {
             let key = path.unwrap_or("/");
             Ok(self.nodes.iter().find(|n| n.path == key).map(|n| {
-                let boxed: Box<dyn GFile<MockFsMarker, MockFsrl>> =
+                let boxed: Box<dyn GFile<MockFsMarker>> =
                     Box::new(MockFile::new(n.clone(), self.nodes.clone()));
                 boxed
             }))
@@ -372,7 +368,7 @@ mod tests {
 
         fn get_byte_provider(
             &self,
-            file: &dyn GFile<MockFsMarker, MockFsrl>,
+            file: &dyn GFile<MockFsMarker>,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Option<Box<dyn GByteStore>>, GFileSystemError> {
             let node = self.nodes.iter().find(|n| n.path == file.get_path());
@@ -384,8 +380,8 @@ mod tests {
 
         fn get_listing(
             &self,
-            directory: Option<&dyn GFile<MockFsMarker, MockFsrl>>,
-        ) -> io::Result<Vec<Box<dyn GFile<MockFsMarker, MockFsrl>>>> {
+            directory: Option<&dyn GFile<MockFsMarker>>,
+        ) -> io::Result<Vec<Box<dyn GFile<MockFsMarker>>>> {
             let parent_path = directory
                 .map(|d| d.get_path().to_string())
                 .unwrap_or_else(|| "/".to_string());
@@ -393,7 +389,7 @@ mod tests {
                 .nodes
                 .iter()
                 .filter(|n| n.parent.as_deref() == Some(parent_path.as_str()))
-                .map(|n| -> Box<dyn GFile<MockFsMarker, MockFsrl>> {
+                .map(|n| -> Box<dyn GFile<MockFsMarker>> {
                     Box::new(MockFile::new(n.clone(), self.nodes.clone()))
                 })
                 .collect())
@@ -401,7 +397,7 @@ mod tests {
 
         fn get_file_attributes(
             &self,
-            file: &dyn GFile<MockFsMarker, MockFsrl>,
+            file: &dyn GFile<MockFsMarker>,
             _monitor: &dyn TaskMonitor,
         ) -> FileAttributes {
             // "/sub/b.txt" records an explicit FILE_TYPE_ATTR that overrides the
@@ -435,7 +431,7 @@ mod tests {
     fn mockfs() -> MockFileSystem {
         MockFileSystem {
             closed: Cell::new(false),
-            fsrl_root: MockFsrlRoot,
+            fsrl_root: FsrlRoot::make_root("mock"),
             ref_manager: MockRefManager,
             nodes: std::rc::Rc::new(vec![
                 node("/", "", true, None, b""),
@@ -580,7 +576,7 @@ mod tests {
     #[test]
     fn files_with_filter_excludes_non_matching_leaves() {
         let fs = mockfs();
-        let filter: Box<dyn Fn(&dyn GFile<MockFsMarker, MockFsrl>) -> bool> =
+        let filter: Box<dyn Fn(&dyn GFile<MockFsMarker>) -> bool> =
             Box::new(|f| f.get_name() == "b.txt");
         let names: Vec<String> = fs
             .files_with(None, Some(filter))
@@ -600,7 +596,7 @@ mod tests {
 
     #[test]
     fn boxed_dyn_g_file_system_is_accepted() {
-        let fs: Box<dyn GFileSystem<MockFsMarker, MockFsrl, MockFsrlRoot, MockRefManager>> =
+        let fs: Box<dyn GFileSystem<MockFsMarker, MockRefManager>> =
             Box::new(mockfs());
         assert_eq!(fs.get_name(), "mockfs");
         assert_eq!(fs.get_type(), "mock");

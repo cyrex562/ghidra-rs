@@ -1,6 +1,6 @@
 use crate::filesystem::gfilesystem::crypto::crypto_provider::Session;
 use crate::filesystem::gfilesystem::crypto::password_provider::PasswordProvider;
-use crate::filesystem::seam_stubs::CachedFsrlLike;
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::framework::generic::auth::password::Password;
 
 /// Caches passwords used to unlock a file.
@@ -12,8 +12,8 @@ use crate::framework::generic::auth::password::Password;
 ///
 /// The Java doc notes instances are threadsafe (methods are `synchronized`); that guarantee is
 /// left to implementors here rather than baked into the trait signature.
-pub trait CachedPasswordProvider<Fsrl: CachedFsrlLike, CP, S: Session<CP>>:
-    PasswordProvider<Fsrl, CP, S>
+pub trait CachedPasswordProvider<CP, S: Session<CP>>:
+    PasswordProvider<CP, S>
 {
     /// Adds a password / file combo to the cache.
     ///
@@ -32,32 +32,8 @@ pub trait CachedPasswordProvider<Fsrl: CachedFsrlLike, CP, S: Session<CP>>:
 mod tests {
     use super::*;
     use crate::filesystem::gfilesystem::crypto::crypto_provider::CryptoProvider;
-    use crate::filesystem::seam_stubs::FsrlLike;
     use std::any::Any;
     use std::collections::{HashMap, HashSet};
-
-    #[derive(Clone)]
-    struct MockFsrl {
-        full: String,
-        pretty: String,
-        name: String,
-        md5: Option<String>,
-    }
-    impl FsrlLike for MockFsrl {}
-    impl CachedFsrlLike for MockFsrl {
-        fn fsrl_string(&self) -> String {
-            self.full.clone()
-        }
-        fn fsrl_pretty_string(&self) -> String {
-            self.pretty.clone()
-        }
-        fn fsrl_name(&self) -> String {
-            self.name.clone()
-        }
-        fn fsrl_md5(&self) -> Option<String> {
-            self.md5.clone()
-        }
-    }
 
     struct MockProviders;
 
@@ -125,24 +101,24 @@ mod tests {
             }
         }
 
-        fn alias_keys(fsrl: &MockFsrl) -> Vec<String> {
-            let mut keys = vec![fsrl.fsrl_string()];
-            let pretty = fsrl.fsrl_pretty_string();
+        fn alias_keys(fsrl: &Fsrl) -> Vec<String> {
+            let mut keys = vec![fsrl.to_string()];
+            let pretty = fsrl.to_pretty_string();
             if pretty != keys[0] {
                 keys.push(pretty);
             }
-            keys.push(fsrl.fsrl_name());
-            if let Some(md5) = fsrl.fsrl_md5() {
-                keys.push(md5);
+            keys.push(fsrl.name().unwrap_or_default());
+            if let Some(md5) = fsrl.md5() {
+                keys.push(md5.to_owned());
             }
             keys
         }
     }
 
-    impl PasswordProvider<MockFsrl, MockProviders, MockSession> for MockCachedPasswordProvider {
+    impl PasswordProvider<MockProviders, MockSession> for MockCachedPasswordProvider {
         fn get_passwords_for<'a>(
             &'a self,
-            fsrl: &'a MockFsrl,
+            fsrl: &'a Fsrl,
             _prompt: &str,
             _session: &mut MockSession,
         ) -> Box<dyn Iterator<Item = Password> + 'a> {
@@ -162,8 +138,8 @@ mod tests {
         }
     }
 
-    impl CachedPasswordProvider<MockFsrl, MockProviders, MockSession> for MockCachedPasswordProvider {
-        fn add_password(&mut self, fsrl: &MockFsrl, password: &Password) {
+    impl CachedPasswordProvider<MockProviders, MockSession> for MockCachedPasswordProvider {
+        fn add_password(&mut self, fsrl: &Fsrl, password: &Password) {
             let id = self.next_id;
             self.next_id += 1;
             self.records.push(CryptoRec { id, value: password.clone() });
@@ -197,18 +173,13 @@ mod tests {
         }
     }
 
-    fn fsrl(full: &str, pretty: &str, name: &str, md5: Option<&str>) -> MockFsrl {
-        MockFsrl {
-            full: full.to_string(),
-            pretty: pretty.to_string(),
-            name: name.to_string(),
-            md5: md5.map(str::to_string),
-        }
+    fn fsrl(fsrl_str: &str) -> Fsrl {
+        Fsrl::from_string(fsrl_str).unwrap()
     }
 
     #[test]
     fn object_safety_via_boxed_dyn() {
-        let provider: Box<dyn CachedPasswordProvider<MockFsrl, MockProviders, MockSession>> =
+        let provider: Box<dyn CachedPasswordProvider<MockProviders, MockSession>> =
             Box::new(MockCachedPasswordProvider::new());
         assert_eq!(provider.get_count(), 0);
     }
@@ -216,7 +187,7 @@ mod tests {
     #[test]
     fn added_password_is_retrievable_by_full_fsrl() {
         let mut provider = MockCachedPasswordProvider::new();
-        let f = fsrl("archive:/a.zip!secret.bin", "a.zip!secret.bin", "secret.bin", None);
+        let f = fsrl("file:///a.zip|zip:///secret.bin");
         let pw = Password::copy_of(&"hunter2".chars().collect::<Vec<_>>());
 
         provider.add_password(&f, &pw);
@@ -231,14 +202,14 @@ mod tests {
     #[test]
     fn added_password_is_retrievable_by_plain_name_alone() {
         let mut provider = MockCachedPasswordProvider::new();
-        let f = fsrl("archive:/a.zip!secret.bin", "a.zip!secret.bin", "secret.bin", None);
+        let f = fsrl("file:///a.zip|zip:///secret.bin");
         let pw = Password::copy_of(&"hunter2".chars().collect::<Vec<_>>());
         provider.add_password(&f, &pw);
 
         // A lookup that only shares the plain filename should still find it, mirroring the
         // Java implementation's multi-alias indexing.
         let lookup_only_by_name =
-            fsrl("different:/path!secret.bin", "different/path!secret.bin", "secret.bin", None);
+            fsrl("file:///different/path.zip|zip:///secret.bin");
         let mut session = MockSession::new();
         let found: Vec<Password> = provider
             .get_passwords_for(&lookup_only_by_name, "unlock", &mut session)
@@ -249,12 +220,12 @@ mod tests {
     #[test]
     fn added_password_is_retrievable_by_md5() {
         let mut provider = MockCachedPasswordProvider::new();
-        let f = fsrl("archive:/a.zip!secret.bin", "a.zip!secret.bin", "secret.bin", Some("deadbeef"));
+        let f = fsrl("file:///a.zip|zip:///secret.bin?MD5=deadbeef");
         let pw = Password::copy_of(&['x']);
         provider.add_password(&f, &pw);
 
         let lookup_by_md5 =
-            fsrl("other:/path!other.bin", "other/path!other.bin", "other.bin", Some("deadbeef"));
+            fsrl("file:///other/path.zip|zip:///other.bin?MD5=deadbeef");
         let mut session = MockSession::new();
         let found: Vec<Password> =
             provider.get_passwords_for(&lookup_by_md5, "unlock", &mut session).collect();
@@ -264,7 +235,7 @@ mod tests {
     #[test]
     fn duplicate_password_for_same_fsrl_does_not_increase_count() {
         let mut provider = MockCachedPasswordProvider::new();
-        let f = fsrl("archive:/a.zip!secret.bin", "a.zip!secret.bin", "secret.bin", None);
+        let f = fsrl("file:///a.zip|zip:///secret.bin");
         let pw = Password::copy_of(&['x']);
 
         provider.add_password(&f, &pw);
@@ -280,7 +251,7 @@ mod tests {
     #[test]
     fn clear_cache_removes_everything() {
         let mut provider = MockCachedPasswordProvider::new();
-        let f = fsrl("archive:/a.zip!secret.bin", "a.zip!secret.bin", "secret.bin", None);
+        let f = fsrl("file:///a.zip|zip:///secret.bin");
         provider.add_password(&f, &Password::copy_of(&['x']));
         assert_eq!(provider.get_count(), 1);
 
@@ -296,7 +267,7 @@ mod tests {
     #[test]
     fn lookup_for_unknown_fsrl_yields_empty_iterator() {
         let provider = MockCachedPasswordProvider::new();
-        let f = fsrl("archive:/never-added.bin", "never-added.bin", "never-added.bin", None);
+        let f = fsrl("file:///never-added.bin");
         let mut session = MockSession::new();
         let found: Vec<Password> =
             provider.get_passwords_for(&f, "unlock", &mut session).collect();
