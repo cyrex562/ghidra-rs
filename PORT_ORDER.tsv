@@ -216,7 +216,7 @@ PARK	trait	0	3	22	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 DONE	trait	0	3	1	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/FGLayoutFinder.java
 PARK	trait	0	3	14	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/DefaultGraphDisplayProvider.java
 DONE	trait	0	3	1	script	Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/interpreter/PyGhidraConsole.java
-PARK	trait	0	3	75	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/AdaptedEmulator.java
+DONE	trait	0	3	75	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/AdaptedEmulator.java
 DONE	trait	0	3	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/VisualGraphSatelliteActionContext.java
 DONE	trait	0	3	27	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/VarnodeTemplate.java
 PARK	trait	0	2	2	filesystem	GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgFileReader.java

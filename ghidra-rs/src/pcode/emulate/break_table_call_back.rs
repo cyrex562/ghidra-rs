@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use crate::pcode::emulate::break_callback::BreakCallBack;
+use crate::pcode::emulate::break_callback::{BreakCallBack, BreakContext};
 use crate::pcode::emulate::break_table::BreakTable;
 use crate::pcode::error::lowlevel_error::LowlevelError;
 use crate::pcode::pcoderaw::PcodeOpRaw;
@@ -145,17 +145,17 @@ impl BreakTable for BreakTableCallBack {
     /// given op. If one is found, its `pcode_callback` method is invoked.
     ///
     /// Port of `doPcodeOpBreak(PcodeOpRaw)`.
-    fn do_pcode_op_break(&self, curop: &PcodeOpRaw) -> bool {
+    fn do_pcode_op_break(&self, curop: &PcodeOpRaw, context: &mut dyn BreakContext) -> bool {
         let val = curop
             .get_input(0)
             .expect("pcode op has no input 0")
             .get_offset();
         match self.pcode_callback.get(&val) {
-            Some(callback) => callback.pcode_callback(curop),
+            Some(callback) => callback.pcode_callback(curop, context),
             None => self
                 .default_pcode_callback
                 .as_ref()
-                .is_some_and(|cb| cb.pcode_callback(curop)),
+                .is_some_and(|cb| cb.pcode_callback(curop, context)),
         }
     }
 
@@ -163,10 +163,10 @@ impl BreakTable for BreakTableCallBack {
     /// given address. If one is found, its `address_callback` method is invoked.
     ///
     /// Port of `doAddressBreak(Address)`.
-    fn do_address_break(&self, addr: &Address) -> bool {
+    fn do_address_break(&self, addr: &Address, context: &mut dyn BreakContext) -> bool {
         self.address_callback
             .get(addr)
-            .is_some_and(|cb| cb.address_callback(addr))
+            .is_some_and(|cb| cb.address_callback(addr, context))
     }
 }
 
@@ -191,6 +191,7 @@ fn user_defined_op_name(language: &SleighLanguage, index: usize) -> Option<&str>
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType, DefaultAddressFactory};
+    use crate::pcode::emulate::break_callback::HaltFlag;
     use crate::program::model::pcode::{PackedDecode, Varnode};
 
     /// Builds a minimal, valid [`SleighLanguage`] (one `ram` space, no symbols) purely so a
@@ -316,7 +317,7 @@ mod tests {
         let table = BreakTableCallBack::new(Arc::new(minimal_sleigh_language()));
         let addr = Address::new(ram_space(), 0x1000);
 
-        assert!(!table.do_address_break(&addr));
+        assert!(!table.do_address_break(&addr, &mut HaltFlag::default()));
     }
 
     #[test]
@@ -328,7 +329,7 @@ mod tests {
 
         // BreakCallBack's base `address_callback` always returns false (it exists to be
         // overridden), so this exercises the found-in-map path rather than the fallback.
-        assert!(!table.do_address_break(&addr));
+        assert!(!table.do_address_break(&addr, &mut HaltFlag::default()));
     }
 
     #[test]
@@ -340,7 +341,7 @@ mod tests {
         table.pcode_callback.insert(5, BreakCallBack::new());
 
         let op = callother_op(Varnode::new(Address::new(ram_space(), 5), 8));
-        assert!(!table.do_pcode_op_break(&op));
+        assert!(!table.do_pcode_op_break(&op, &mut HaltFlag::default()));
     }
 
     #[test]
@@ -353,7 +354,7 @@ mod tests {
             .unwrap();
 
         let op = callother_op(Varnode::new(Address::new(ram_space(), 999), 8));
-        assert!(!table.do_pcode_op_break(&op));
+        assert!(!table.do_pcode_op_break(&op, &mut HaltFlag::default()));
     }
 
     #[test]
@@ -362,6 +363,49 @@ mod tests {
         let table = BreakTableCallBack::new(Arc::new(minimal_sleigh_language()));
 
         let op = callother_op(Varnode::new(Address::new(ram_space(), 999), 8));
-        assert!(!table.do_pcode_op_break(&op));
+        assert!(!table.do_pcode_op_break(&op, &mut HaltFlag::default()));
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn do_address_break_runs_the_registered_override() {
+        let mut table = BreakTableCallBack::new(Arc::new(minimal_sleigh_language()));
+        let addr = Address::new(ram_space(), 0x1000);
+        table.register_address_callback(
+            addr.clone(),
+            BreakCallBack::new().with_address_callback(|_addr, emu| {
+                emu.set_halt(true);
+                true
+            }),
+        );
+        let mut halt = HaltFlag::default();
+        assert!(!table.do_address_break(&Address::new(ram_space(), 0x1002), &mut halt));
+        assert!(!halt.get_halt(), "no breakpoint at another address");
+        assert!(table.do_address_break(&addr, &mut halt));
+        assert!(halt.get_halt());
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn do_pcode_op_break_prefers_the_userop_breakpoint_over_the_default() {
+        let mut table = BreakTableCallBack::new(Arc::new(minimal_sleigh_language()));
+        table.pcode_callback.insert(5, BreakCallBack::new().with_pcode_callback(|_op, _emu| true));
+        table
+            .register_pcode_callback(
+                BreakTableCallBack::DEFAULT_NAME,
+                BreakCallBack::new().with_pcode_callback(|_op, emu| {
+                    emu.set_halt(true);
+                    true
+                }),
+            )
+            .unwrap();
+
+        let mut halt = HaltFlag::default();
+        let op5 = callother_op(Varnode::new(Address::new(ram_space(), 5), 8));
+        assert!(table.do_pcode_op_break(&op5, &mut halt));
+        assert!(!halt.get_halt(), "userop 5 has its own breakpoint");
+        let other = callother_op(Varnode::new(Address::new(ram_space(), 999), 8));
+        assert!(table.do_pcode_op_break(&other, &mut halt));
+        assert!(halt.get_halt(), "the default breakpoint handled userop 999");
     }
 }

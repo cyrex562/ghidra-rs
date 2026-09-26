@@ -32,15 +32,16 @@
 //!   no downcast, so the Sleigh language is given alongside the configuration, whose language (one
 //!   declaring the program counter) the threads bind to; see
 //!   [`ThreadDecoding`](crate::pcode::emu::pcode_emulator::ThreadDecoding).
-//! * **Address breakpoints.** Java's `AdaptedBreakTableCallback.registerAddressCallback` injects
-//!   `__addr_cb(); emu_exec_decoded();` at the address, and its `AdaptedPcodeUseropLibrary`
-//!   exports `__addr_cb`, which runs the break table's address callback and interrupts if the
-//!   callback halted the emulator. Compiling that inject needs `SleighProgramCompiler`, which is
-//!   not ported, and this crate's `BreakCallBack` is a behaviorless struct that cannot halt an
-//!   emulator, so neither the inject nor the userop is ported: the break table is exposed read-only
-//!   through [`Emulator::get_break_table`] and for p-code op breaks through
-//!   [`break_table_mut`](AdaptedEmulator::break_table_mut), which the missing-userop hook consults
-//!   exactly as Java's `onMissingUseropDef` override does.
+//! * **Address breakpoints.** Java's `AdaptedBreakTableCallback` (the emulator's break table)
+//!   overrides `registerAddressCallback` to inject `__addr_cb(); emu_exec_decoded();` at the
+//!   address, and its `AdaptedPcodeUseropLibrary` exports `__addr_cb`, which runs the break table's
+//!   address callback and interrupts if the callback halted the emulator. Here the table is
+//!   reached for registration through [`AdaptedEmulator::break_table_mut`], a handle
+//!   ([`AdaptedBreakTableCallback`]) doing the same. The inject is the *thread's*, where Java's is
+//!   the machine's: the emulator has exactly one thread, which consults its own injects first, so
+//!   the effect is identical, and the thread's library -- which `__addr_cb` must be in to compile
+//!   -- is the one that can reach the thread (see [`AdaptedPcodeUseropLibrary`]). Breakpoints are
+//!   handed the thread as their [`BreakContext`]: halting one suspends the thread.
 //! * **Exceptions.** Java catches the `RuntimeException` escaping a step into `lastError`. A thread
 //!   step here panics with the exception's message (see
 //!   [`default_pcode_thread`](crate::pcode::emu::default_pcode_thread)'s module docs), so the
@@ -65,7 +66,7 @@ use crate::app::emulator::memory::MemoryLoadImage;
 use crate::app::emulator::memory_access_filter::{
     MemoryAccessFilterCallbacks, MemoryAccessFilterChain, MemoryAccessFilterId,
 };
-use crate::pcode::emu::default_pcode_thread::{ThreadCore, ThreadHooks};
+use crate::pcode::emu::default_pcode_thread::{ThreadCore, ThreadHooks, ThreadRequest, ThreadRequests};
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 #[allow(deprecated)]
 use crate::pcode::emu::modified_pcode_thread::ModifiedThreadHooks;
@@ -77,13 +78,20 @@ use crate::pcode::emu::thread_pcode_executor_state::SharedPcodeExecutorState;
 #[allow(deprecated)]
 use crate::pcode::emulate::break_table::BreakTable;
 #[allow(deprecated)]
+use crate::pcode::emulate::break_callback::{BreakCallBack, BreakContext};
+#[allow(deprecated)]
 use crate::pcode::emulate::break_table_call_back::BreakTableCallBack;
 use crate::pcode::emulate::emulate_execution_state::EmulateExecutionState;
 use crate::pcode::error::lowlevel_error::LowlevelError;
 use crate::pcode::exec::bytes_pcode_executor_state::BytesPcodeExecutorState;
 use crate::pcode::exec::bytes_pcode_executor_state_piece::BytesPcodeExecutorStatePiece;
 use crate::pcode::exec::bytes_pcode_executor_state_space::{BytesPcodeExecutorStateSpace, BytesSpaceHooks};
+use crate::pcode::exec::annotated_pcode_userop_library::{
+    AnnotatedPcodeUseropDefinition, AnnotatedPcodeUseropLibrary, AnnotatedPcodeUseropLibraryBase, PcodeUserop,
+    UseropInputs, UseropValueKind,
+};
 use crate::pcode::exec::interrupt_pcode_execution_exception::InterruptPcodeExecutionException;
+use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap};
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::{
@@ -364,6 +372,81 @@ impl InstructionDecoder for AdaptedDecoder {
     }
 }
 
+/// The core of the emulator's thread, as its hooks receive it.
+type AdaptedThreadCore =
+    ThreadCore<Vec<u8>, SharedPcodeExecutorState<AdaptedBytesPcodeExecutorState>, AdaptedBytesPcodeExecutorState>;
+
+/// The name of the userop an address breakpoint's inject calls.
+const ADDR_CB: &str = "__addr_cb";
+
+/// The Sleigh injected at an address breakpoint: Java's text block
+/// `__addr_cb();\nemu_exec_decoded();\n`.
+const ADDR_CB_INJECT: &str = "__addr_cb();\nemu_exec_decoded();\n";
+
+/// Port of `AdaptedEmulator.AdaptedPcodeUseropLibrary`: exports `__addr_cb`, the userop an
+/// address breakpoint's inject calls.
+///
+/// Java's `__addr_cb()` runs `adaptedBreakTable.doAddressBreak(thread.getCounter())` and then
+/// throws an `InterruptPcodeExecutionException` if the thread is suspended. It needs the break
+/// table and the thread, neither of which a userop callback can reach, so it asks the thread's
+/// hooks to run exactly that ([`ThreadRequest::Hooks`]); see
+/// [`AdaptedThreadHooks`]' `on_thread_request`.
+pub struct AdaptedPcodeUseropLibrary {
+    base: AnnotatedPcodeUseropLibraryBase<Vec<u8>>,
+    thread: Arc<ThreadRequests>,
+}
+
+impl AdaptedPcodeUseropLibrary {
+    /// The library of the thread whose requests are `thread`.
+    pub fn new(thread: Arc<ThreadRequests>) -> Self {
+        let mut library = Self { base: AnnotatedPcodeUseropLibraryBase::new(), thread };
+        library.init();
+        library
+    }
+}
+
+impl ErasedPcodeUseropLibrary for AdaptedPcodeUseropLibrary {}
+
+impl PcodeUseropLibrary<Vec<u8>> for AdaptedPcodeUseropLibrary {
+    fn get_userops(&self) -> &UseropMap<Vec<u8>> {
+        self.base.get_userops()
+    }
+}
+
+impl AnnotatedPcodeUseropLibrary<Vec<u8>> for AdaptedPcodeUseropLibrary {
+    fn base_mut(&mut self) -> &mut AnnotatedPcodeUseropLibraryBase<Vec<u8>> {
+        &mut self.base
+    }
+
+    fn collect_definitions(&self) -> Vec<AnnotatedPcodeUseropDefinition<Vec<u8>>> {
+        let thread = Arc::clone(&self.thread);
+        vec![AnnotatedPcodeUseropDefinition::new(
+            ADDR_CB,
+            PcodeUserop::default(),
+            UseropInputs::Fixed(vec![]),
+            UseropValueKind::Void,
+            Box::new(move |_ctx, _args| {
+                thread.post(ThreadRequest::Hooks(ADDR_CB.to_string()));
+                None
+            }),
+        )]
+    }
+}
+
+/// The thread, as a breakpoint sees the emulator: halting suspends it, as Java's
+/// `AdaptedEmulator.setHalt` does.
+struct ThreadHalt<'a>(&'a AdaptedThreadCore);
+
+impl BreakContext for ThreadHalt<'_> {
+    fn set_halt(&mut self, halt: bool) {
+        self.0.set_suspended(halt);
+    }
+
+    fn get_halt(&self) -> bool {
+        self.0.is_suspended()
+    }
+}
+
 /// The overrides of `AdaptedEmulator.AdaptedPcodeThread extends BytesPcodeThread`.
 ///
 /// It holds its parent's hooks ([`ModifiedThreadHooks`], `BytesPcodeThread`'s) and calls them
@@ -403,9 +486,29 @@ impl ThreadHooks<Vec<u8>, SharedPcodeExecutorState<AdaptedBytesPcodeExecutorStat
     fn create_userop_library(
         &mut self,
         thread: &ThreadCore<Vec<u8>, SharedPcodeExecutorState<AdaptedBytesPcodeExecutorState>, AdaptedBytesPcodeExecutorState>,
-        library: Box<dyn crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary<Vec<u8>>>,
-    ) -> Box<dyn crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary<Vec<u8>>> {
-        self.inner.create_userop_library(thread, library)
+        library: Box<dyn PcodeUseropLibrary<Vec<u8>>>,
+    ) -> Box<dyn PcodeUseropLibrary<Vec<u8>>> {
+        let library = self.inner.create_userop_library(thread, library);
+        // Java: `new AdaptedPcodeUseropLibrary().compose(super.createUseropLibrary())`.
+        AdaptedPcodeUseropLibrary::new(Arc::clone(thread.thread_requests())).compose(library.as_ref())
+    }
+
+    /// Port of `AdaptedPcodeUseropLibrary.__addr_cb()`: run the address breakpoint at the counter,
+    /// and interrupt if it halted the emulator.
+    fn on_thread_request(&mut self, thread: &mut AdaptedThreadCore, request: &str) -> Result<(), LowlevelError> {
+        if request != ADDR_CB {
+            return self.inner.on_thread_request(thread, request);
+        }
+        if let Some(break_table) = &self.break_table {
+            break_table.do_address_break(&thread.get_counter(), &mut ThreadHalt(thread));
+        }
+        if thread.is_suspended() {
+            // The emulator must be halted in order to "break." Just halting the thread
+            // (suspending) causes a SuspendedPcodeExecutionException, which the emulator treats
+            // as an error; the interrupt is what it treats as a breakpoint.
+            return Err(LowlevelError::with_message(InterruptPcodeExecutionException::MESSAGE));
+        }
+        Ok(())
     }
 
     /// Port of the overridden `preExecuteInstruction()`: record the instruction's address.
@@ -438,7 +541,7 @@ impl ThreadHooks<Vec<u8>, SharedPcodeExecutorState<AdaptedBytesPcodeExecutorStat
         let Some(break_table) = &self.break_table else {
             return false;
         };
-        break_table.do_pcode_op_break(&PcodeOpRaw::new(op))
+        break_table.do_pcode_op_break(&PcodeOpRaw::new(op), &mut ThreadHalt(thread))
     }
 
     fn override_counter(
@@ -618,9 +721,13 @@ impl AdaptedEmulator {
         &mut self.emu
     }
 
-    /// The break table, for registering p-code op breakpoints. Java hands out the same object
-    /// through `getBreakTable()`.
-    pub fn break_table_mut(&mut self) -> &mut BreakTableCallBack {
+    /// The break table, for registering breakpoints: Java's `AdaptedBreakTableCallback`, which it
+    /// hands out through `getBreakTable()`. See [`AdaptedBreakTableCallback`].
+    pub fn break_table_mut(&mut self) -> AdaptedBreakTableCallback<'_> {
+        AdaptedBreakTableCallback { emulator: self }
+    }
+
+    fn table_mut(&mut self) -> &mut BreakTableCallBack {
         self.break_table.as_mut().expect("the break table is only lent out while stepping")
     }
 
@@ -646,6 +753,54 @@ impl AdaptedEmulator {
                 LastError::Fault(message)
             }
         });
+    }
+}
+
+/// The emulator's break table, for registering breakpoints.
+///
+/// Port of `AdaptedEmulator.AdaptedBreakTableCallback extends BreakTableCallBack`: registering an
+/// address breakpoint also injects `__addr_cb(); emu_exec_decoded();` at the address, and
+/// unregistering one clears the inject. Java's subclass reaches the emulator through its enclosing
+/// instance; this handle borrows it.
+#[allow(deprecated)]
+pub struct AdaptedBreakTableCallback<'a> {
+    emulator: &'a mut AdaptedEmulator,
+}
+
+#[allow(deprecated)]
+impl AdaptedBreakTableCallback<'_> {
+    /// The table itself.
+    pub fn table(&self) -> &BreakTableCallBack {
+        self.emulator.get_break_table()
+    }
+
+    /// See [`BreakTableCallBack::register_pcode_callback`].
+    ///
+    /// # Errors
+    /// If `name` is neither [`BreakTableCallBack::DEFAULT_NAME`] nor a userop of the language.
+    pub fn register_pcode_callback(&mut self, name: &str, func: BreakCallBack) -> Result<(), LowlevelError> {
+        self.emulator.table_mut().register_pcode_callback(name, func)
+    }
+
+    /// See [`BreakTableCallBack::unregister_pcode_callback`].
+    ///
+    /// # Errors
+    /// If `name` is neither [`BreakTableCallBack::DEFAULT_NAME`] nor a userop of the language.
+    pub fn unregister_pcode_callback(&mut self, name: &str) -> Result<(), LowlevelError> {
+        self.emulator.table_mut().unregister_pcode_callback(name)
+    }
+
+    /// Port of the overridden `registerAddressCallback(Address, BreakCallBack)`: register the
+    /// breakpoint, and inject its invocation ahead of the instruction at `addr`.
+    pub fn register_address_callback(&mut self, addr: Address, func: BreakCallBack) {
+        self.emulator.table_mut().register_address_callback(addr.clone(), func);
+        self.emulator.thread_mut().inject(&addr, ADDR_CB_INJECT);
+    }
+
+    /// Port of the overridden `unregisterAddressCallback(Address)`.
+    pub fn unregister_address_callback(&mut self, addr: &Address) {
+        self.emulator.thread_mut().clear_inject(addr);
+        self.emulator.table_mut().unregister_address_callback(addr);
     }
 }
 
@@ -1105,5 +1260,115 @@ mod tests {
         step(&mut emu);
         assert_eq!(vec![0, 0, 0, 8], reg(&emu, 4));
         assert_eq!(0, tmode(&emu));
+    }
+
+    /// ```text
+    /// 0x1000: mov r1, 0x2a ; 0x1002: mov r0, 7 ; 0x1004: mov r1, 8
+    /// ```
+    fn breakpoint_program(emu: &mut AdaptedEmulator) {
+        write(emu, 0x1000, &[0x11, 0x2a, 0x10, 0x07, 0x11, 0x08]);
+        emu.set_execute_address(0x1000);
+    }
+
+    /// `EmulatorHelper`'s address breakpoint: halt the emulator, replacing the instruction.
+    fn halting_breakpoint() -> BreakCallBack {
+        BreakCallBack::new().with_address_callback(|_addr, emu| {
+            emu.set_halt(true);
+            true
+        })
+    }
+
+    #[test]
+    fn an_address_breakpoint_halts_before_its_instruction_and_resumes_into_it() {
+        let sleigh = decode_tests::language();
+        let mut emu = AdaptedEmulator::new(&config(&sleigh), sleigh);
+        breakpoint_program(&mut emu);
+        let at = ram(&emu).address(0x1002);
+        emu.break_table_mut().register_address_callback(at.clone(), halting_breakpoint());
+
+        step(&mut emu);
+        assert_eq!(0x1002, emu.get_pc());
+        assert!(!emu.is_at_breakpoint());
+
+        // Stepping onto the breakpoint runs __addr_cb, which halts: a BREAKPOINT, not a fault, with
+        // the instruction not yet executed and the PC at the break address.
+        step(&mut emu);
+        assert_eq!(EmulateExecutionState::Breakpoint, emu.get_emulate_execution_state());
+        assert!(emu.is_at_breakpoint());
+        assert!(emu.get_halt());
+        assert_eq!(0x1002, emu.get_pc());
+        assert_eq!(at, emu.get_execute_address());
+        assert_eq!(vec![0, 0, 0, 0], reg(&emu, 0));
+
+        // A client un-halts to continue (EmulatorHelper.run does); the step finishes the inject,
+        // whose emu_exec_decoded() executes the instruction.
+        emu.set_halt(false);
+        step(&mut emu);
+        assert_eq!(EmulateExecutionState::Stopped, emu.get_emulate_execution_state());
+        assert!(!emu.is_at_breakpoint());
+        assert_eq!(vec![0, 0, 0, 7], reg(&emu, 0));
+        assert_eq!(0x1004, emu.get_pc());
+        assert_eq!(0x1002, emu.get_last_execute_address().unwrap().offset());
+
+        step(&mut emu);
+        assert_eq!(vec![0, 0, 0, 8], reg(&emu, 4));
+        assert_eq!(0x1006, emu.get_pc());
+    }
+
+    #[test]
+    fn staying_halted_after_a_breakpoint_faults_the_next_step() {
+        let sleigh = decode_tests::language();
+        let mut emu = AdaptedEmulator::new(&config(&sleigh), sleigh);
+        breakpoint_program(&mut emu);
+        let at = ram(&emu).address(0x1000);
+        emu.break_table_mut().register_address_callback(at, halting_breakpoint());
+        step(&mut emu);
+        assert!(emu.is_at_breakpoint());
+        // Java: the thread is still suspended, so finishing the inject throws
+        // SuspendedPcodeExecutionException, which is not an interrupt.
+        step(&mut emu);
+        assert_eq!(EmulateExecutionState::Fault, emu.get_emulate_execution_state());
+        assert_eq!(vec![0, 0, 0, 0], reg(&emu, 4));
+    }
+
+    #[test]
+    fn a_breakpoint_that_does_not_halt_lets_the_instruction_execute() {
+        use std::sync::atomic::AtomicUsize;
+
+        let sleigh = decode_tests::language();
+        let mut emu = AdaptedEmulator::new(&config(&sleigh), sleigh);
+        breakpoint_program(&mut emu);
+        let hits = Arc::new(AtomicUsize::new(0));
+        let seen = Arc::clone(&hits);
+        let at = ram(&emu).address(0x1000);
+        emu.break_table_mut().register_address_callback(
+            at.clone(),
+            BreakCallBack::new().with_address_callback(move |addr, _emu| {
+                assert_eq!(0x1000, addr.offset());
+                seen.fetch_add(1, Ordering::SeqCst);
+                false
+            }),
+        );
+        step(&mut emu);
+        assert_eq!(1, hits.load(Ordering::SeqCst));
+        assert!(!emu.is_at_breakpoint());
+        assert_eq!(vec![0, 0, 0, 0x2a], reg(&emu, 4));
+        assert_eq!(0x1002, emu.get_pc());
+    }
+
+    #[test]
+    fn an_unregistered_breakpoint_neither_calls_back_nor_injects() {
+        let sleigh = decode_tests::language();
+        let mut emu = AdaptedEmulator::new(&config(&sleigh), sleigh);
+        breakpoint_program(&mut emu);
+        let at = ram(&emu).address(0x1000);
+        let mut table = emu.break_table_mut();
+        table.register_address_callback(at.clone(), halting_breakpoint());
+        table.unregister_address_callback(&at);
+        assert!(!table.table().do_address_break(&at, &mut crate::pcode::emulate::HaltFlag::default()));
+        assert!(emu.thread().get_inject(&at).is_none());
+        step(&mut emu);
+        assert!(!emu.is_at_breakpoint());
+        assert_eq!(vec![0, 0, 0, 0x2a], reg(&emu, 4));
     }
 }

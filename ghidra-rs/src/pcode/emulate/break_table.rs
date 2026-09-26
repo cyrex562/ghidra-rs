@@ -1,3 +1,4 @@
+use crate::pcode::emulate::break_callback::BreakContext;
 use crate::pcode::pcoderaw::PcodeOpRaw;
 use crate::pcode::seam_stubs::Emulate;
 use crate::program::model::address::Address;
@@ -30,10 +31,11 @@ pub trait BreakTable: Send + Sync {
 	///
 	/// # Arguments
 	/// * `curop` - the instance of a pcode op to test for breakpoints
+	/// * `context` - the emulator, handed to the breakpoint (see [`BreakContext`])
 	///
 	/// # Returns
 	/// true if the action of the pcode op is performed by the breakpoint
-	fn do_pcode_op_break(&self, curop: &PcodeOpRaw) -> bool;
+	fn do_pcode_op_break(&self, curop: &PcodeOpRaw, context: &mut dyn BreakContext) -> bool;
 
 	/// Invoke any breakpoints associated with this machine address.
 	///
@@ -43,10 +45,11 @@ pub trait BreakTable: Send + Sync {
 	///
 	/// # Arguments
 	/// * `addr` - address to test for breakpoints
+	/// * `context` - the emulator, handed to the breakpoint (see [`BreakContext`])
 	///
 	/// # Returns
 	/// true if the machine instruction has been replaced by a breakpoint
-	fn do_address_break(&self, addr: &Address) -> bool;
+	fn do_address_break(&self, addr: &Address, context: &mut dyn BreakContext) -> bool;
 }
 
 #[cfg(test)]
@@ -85,11 +88,11 @@ mod tests {
 			emu.dispose();
 		}
 
-		fn do_pcode_op_break(&self, _curop: &PcodeOpRaw) -> bool {
+		fn do_pcode_op_break(&self, _curop: &PcodeOpRaw, _context: &mut dyn BreakContext) -> bool {
 			false
 		}
 
-		fn do_address_break(&self, _addr: &Address) -> bool {
+		fn do_address_break(&self, _addr: &Address, _context: &mut dyn BreakContext) -> bool {
 			false
 		}
 	}
@@ -108,7 +111,7 @@ mod tests {
 	fn test_break_table_do_pcode_op_break_returns_false() {
 		let table = TestBreakTable::new();
 		let op = sample_op();
-		assert!(!table.do_pcode_op_break(&op));
+		assert!(!table.do_pcode_op_break(&op, &mut crate::pcode::emulate::HaltFlag::default()));
 	}
 
 	#[test]

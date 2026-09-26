@@ -6,7 +6,7 @@ pub mod emulate_instruction_state_modifier;
 pub mod instruction_decode_exception;
 pub mod unimplemented_instruction_exception;
 
-pub use break_callback::BreakCallBack;
+pub use break_callback::{BreakCallBack, BreakContext, HaltFlag};
 pub use break_table::BreakTable;
 pub use break_table_call_back::BreakTableCallBack;
 pub use emulate_instruction_state_modifier::{
