@@ -1180,7 +1180,7 @@ TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageInfoExtra.java
 TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheRangeEntry.java
 TODO	struct	19	7	79	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheAccelerateInfo.java
-TODO	struct	19	8	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageInfo.java
+DONE	struct	19	8	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageInfo.java
 TODO	struct	19	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageTextInfo.java
 TODO	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsEntry.java
 TODO	struct	19	6	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsInfo.java
