@@ -440,18 +440,6 @@ pub trait GoToOverrideService: Send + Sync {}
 /// members are needed yet.
 pub trait TreePath {}
 
-/// Placeholder for `ghidra.app.util.bin.GByteStore`, referenced by
-/// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
-/// `Loader`'s default `get_preferred_file_name` only ever calls `getFSRL()`/`getName()`, so no
-/// other members are needed yet.
-pub trait ByteProviderLike {
-    /// Stands in for `GByteStore.getFSRL()`.
-    fn get_fsrl(&self) -> StdOption<crate::filesystem::gfilesystem::fsrl::Fsrl>;
-
-    /// Stands in for `GByteStore.getName()`.
-    fn get_name(&self) -> StdOption<String>;
-}
-
 /// Placeholder for `ghidra.app.util.AbstractOptionBuilder`, referenced by
 /// [`Option`](crate::app::seam_stubs::Option) before the real class is ported. Java's version is
 /// generic over the option's value type (`AbstractOptionBuilder<ValueType, OptionType>`); since a

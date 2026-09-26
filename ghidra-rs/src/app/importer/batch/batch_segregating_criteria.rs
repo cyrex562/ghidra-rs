@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
-use crate::app::seam_stubs::ByteProviderLike;
+use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::opinion::load_spec::LoadSpec;
 use crate::app::util::opinion::loader::Loader;
 
@@ -32,7 +32,7 @@ impl BatchSegregatingCriteria {
     pub fn new<'a>(
         loader: &dyn Loader,
         load_specs: impl IntoIterator<Item = &'a LoadSpec>,
-        provider: &dyn ByteProviderLike,
+        provider: &dyn ByteProvider,
     ) -> Self {
         Self {
             group_load_specs: load_specs.into_iter().map(BatchGroupLoadSpec::new).collect(),
@@ -91,7 +91,8 @@ fn get_extension(filename: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::importer::batch::test_support::{provider, spec, NamedLoader, Provider};
+    use crate::app::importer::batch::test_support::{provider, spec, NamedLoader};
+    use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
 
     #[test]
     fn extension_matches_commons_io() {
@@ -130,7 +131,7 @@ mod tests {
     #[test]
     fn no_preferred_and_no_name() {
         let specs = vec![spec("Raw", None, false)];
-        let c = BatchSegregatingCriteria::new(&NamedLoader("Raw Binary"), &specs, &Provider { fsrl: None, name: None });
+        let c = BatchSegregatingCriteria::new(&NamedLoader("Raw Binary"), &specs, &ByteArrayProvider::new(Vec::new()));
         assert_eq!(c.get_file_ext(), None);
         assert!(c.get_first_preferred_load_spec().is_none());
         assert_eq!(c.to_string(), "[ext: , loader: Raw Binary, load specs: [none]]");

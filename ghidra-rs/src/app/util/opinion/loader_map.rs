@@ -147,7 +147,8 @@ impl fmt::Display for LoaderMap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::seam_stubs::{ByteProviderLike, LoadResultsLike, LoadSpecLike, OptionLike};
+    use crate::app::seam_stubs::{LoadResultsLike, LoadSpecLike, OptionLike};
+    use crate::app::util::bin::byte_provider::ByteProvider;
     use crate::app::util::importer::message_log::MessageLog;
     use crate::app::util::opinion::loader::{ImporterSettings, LoadError, LoadIntoError};
     use crate::app::util::opinion::loader_tier::LoaderTier;
@@ -175,7 +176,7 @@ mod tests {
     impl Loader for MockLoader {
         fn find_supported_load_specs(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
         ) -> io::Result<Vec<Box<dyn LoadSpecLike>>> {
             Ok(vec![])
         }
@@ -194,7 +195,7 @@ mod tests {
 
         fn get_default_options(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
             _load_spec: &dyn LoadSpecLike,
             _domain_object: &dyn DomainObject,
             _load_into_program: bool,
@@ -205,7 +206,7 @@ mod tests {
 
         fn validate_options(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
             _load_spec: &dyn LoadSpecLike,
             _options: &[Box<dyn OptionLike>],
             _program: Option<&dyn Program>,

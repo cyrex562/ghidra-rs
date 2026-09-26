@@ -16,8 +16,8 @@
 //!   reason.
 //! * `findSupportedLoadSpecs(GByteStore)` and `getDefaultOptions(GByteStore, ...)` take the
 //!   real, already-ported [`GByteStore`] trait (`crate::filesystem::ghidra::g_binary_reader`)
-//!   directly, rather than the narrower `ByteProviderLike` marker the (not-implemented-here)
-//!   `Loader` trait uses for the same Java type.
+//!   directly, rather than the [`ByteProvider`](crate::app::util::bin::byte_provider::ByteProvider)
+//!   the (not-implemented-here) `Loader` trait uses for the same Java type.
 //! * `QueryOpinionService.query`'s static `languageService`/database singletons were already
 //!   dropped when that class was ported (see its module docs); [`find_supported_load_specs`]
 //!   threads the equivalent `&dyn Application`/`&dyn LanguageService` through explicitly, the same
@@ -29,10 +29,9 @@
 //!   loader makes can currently distinguish the two.
 //! * `load(Program, ImporterSettings)` takes its `ImporterSettings` fields directly as separate
 //!   parameters instead of the already-ported `Loader::ImporterSettings` struct: that struct's
-//!   `provider` field is typed as the narrower `ByteProviderLike` marker and its `options` field
-//!   as `Vec<Box<dyn OptionLike>>` (an opaque marker with no accessors), neither of which this
-//!   method's body can work with (it needs real byte access and `Option::get_name`/`get_value` to
-//!   read option values back out).
+//!   `options` field is `Vec<Box<dyn OptionLike>>` (an opaque marker with no accessors), which
+//!   this method's body cannot work with (it needs `Option::get_name`/`get_value` to read option
+//!   values back out).
 //! * `DyldCacheProgramBuilder.buildProgram`/`MemoryBlockUtils.createFileBytes` -- the two calls
 //!   `load` makes -- are far larger unported subsystems (the former alone drives memory-block,
 //!   symbol, export, and load-command-markup processing for the whole cache); both are stubbed as

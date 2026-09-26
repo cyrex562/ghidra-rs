@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use crate::app::seam_stubs::ByteProviderLike;
+use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::opinion::load_spec::LoadSpec;
 use crate::app::util::opinion::loader::Loader;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
@@ -29,7 +29,7 @@ impl BatchLoadConfig {
     /// # Panics
     /// Panics if `load_specs` is empty (Java throws `NoSuchElementException`).
     fn new(
-        provider: &dyn ByteProviderLike,
+        provider: &dyn ByteProvider,
         load_specs: Vec<LoadSpec>,
         fsrl: Fsrl,
         uasi: UserAddedSourceInfoId,
@@ -105,7 +105,7 @@ impl BatchGroup {
     /// Panics if `load_specs` is empty.
     pub fn add(
         &mut self,
-        provider: &dyn ByteProviderLike,
+        provider: &dyn ByteProvider,
         load_specs: Vec<LoadSpec>,
         fsrl: Fsrl,
         uasi: UserAddedSourceInfoId,

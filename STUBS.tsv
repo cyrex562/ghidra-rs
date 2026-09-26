@@ -189,7 +189,6 @@ ts	stub_class	referenced_by
 2026-07-22T06:21:33Z	VoidDataType.isVoidDataType	ParamListStandardOut
 2026-07-22T06:38:48Z	FileAttributeTypeLike	FileAttribute
 2026-07-22T12:00:00Z	SelectFromListDialogLike	FileSystemProbeConflictResolver
-2026-07-22T00:00:00Z	ByteProviderLike	Loader
 2026-07-22T00:00:00Z	OptionLike	Loader
 2026-07-22T00:00:00Z	LoadSpecLike	Loader
 2026-07-22T00:00:00Z	LoadResultsLike	Loader

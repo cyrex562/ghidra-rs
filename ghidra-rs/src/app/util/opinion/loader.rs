@@ -15,7 +15,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::app::seam_stubs::{ByteProviderLike, LoadResultsLike, LoadSpecLike, OptionLike};
+use crate::app::seam_stubs::{LoadResultsLike, LoadSpecLike, OptionLike};
+use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::opinion::load_exception::LoadException;
 use crate::app::util::opinion::loader_tier::LoaderTier;
 use crate::framework::model::{DomainObject, Project};
@@ -65,7 +66,7 @@ pub fn set_logging_disabled(disabled: bool) {
 /// (see [`DomainObjectChangeRecord`](crate::framework::model::DomainObjectChangeRecord)).
 pub struct ImporterSettings<'a> {
     /// The bytes to load.
-    pub provider: &'a dyn ByteProviderLike,
+    pub provider: &'a dyn ByteProvider,
     /// The name for the primary `Loaded` domain object. Path information that appears at the
     /// beginning of the name will be appended to `project_root_path` during saving.
     pub import_name: String,
@@ -145,7 +146,7 @@ pub enum LoadIntoError {
 /// An interface that all loaders must implement. A particular loader implementation should be
 /// designed to identify one and only one file format.
 pub trait Loader: ExtensionPoint {
-    /// If this loader supports loading the given [`ByteProviderLike`], returns all supported
+    /// If this loader supports loading the given [`ByteProvider`], returns all supported
     /// [`LoadSpecLike`]s. If this loader cannot support loading the given provider, an empty
     /// collection is returned.
     ///
@@ -153,7 +154,7 @@ pub trait Loader: ExtensionPoint {
     /// Returns `Err` if there was an IO-related issue finding the load specs.
     fn find_supported_load_specs(
         &self,
-        provider: &dyn ByteProviderLike,
+        provider: &dyn ByteProvider,
     ) -> io::Result<Vec<Box<dyn LoadSpecLike>>>;
 
     /// Loads bytes in a particular format as one or more new [`LoadResultsLike`]. Note that when
@@ -179,7 +180,7 @@ pub trait Loader: ExtensionPoint {
     /// Gets the default loader options.
     fn get_default_options(
         &self,
-        provider: &dyn ByteProviderLike,
+        provider: &dyn ByteProvider,
         load_spec: &dyn LoadSpecLike,
         domain_object: &dyn DomainObject,
         load_into_program: bool,
@@ -191,7 +192,7 @@ pub trait Loader: ExtensionPoint {
     /// if this is a load-into, or `None` for a fresh import.
     fn validate_options(
         &self,
-        provider: &dyn ByteProviderLike,
+        provider: &dyn ByteProvider,
         load_spec: &dyn LoadSpecLike,
         options: &[Box<dyn OptionLike>],
         program: Option<&dyn Program>,
@@ -216,8 +217,8 @@ pub trait Loader: ExtensionPoint {
     }
 
     /// The preferred file name to use when loading. The default behavior is to return the
-    /// (cleaned up) name of the given [`ByteProviderLike`].
-    fn get_preferred_file_name(&self, provider: &dyn ByteProviderLike) -> Option<String> {
+    /// (cleaned up) name of the given [`ByteProvider`].
+    fn get_preferred_file_name(&self, provider: &dyn ByteProvider) -> Option<String> {
         let name = match provider.get_fsrl() {
             Some(fsrl) => fsrl.name(),
             None => provider.get_name(),
@@ -291,22 +292,15 @@ fn collapse_path_separators(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
     use crate::filesystem::gfilesystem::fsrl::Fsrl;
     use crate::util::task::DummyMonitor;
     use std::cmp::Ordering;
 
-    struct MockProvider {
-        name: Option<String>,
-    }
+    const ELF_MAGIC: &[u8] = b"\x7fELF";
 
-    impl ByteProviderLike for MockProvider {
-        fn get_fsrl(&self) -> Option<Fsrl> {
-            None
-        }
-
-        fn get_name(&self) -> Option<String> {
-            self.name.clone()
-        }
+    fn named(name: &str, bytes: &[u8]) -> ByteArrayProvider {
+        ByteArrayProvider::with_name(name, bytes.to_vec())
     }
 
     struct MockLoadSpec;
@@ -342,9 +336,9 @@ mod tests {
     impl Loader for MockLoader {
         fn find_supported_load_specs(
             &self,
-            provider: &dyn ByteProviderLike,
+            provider: &dyn ByteProvider,
         ) -> io::Result<Vec<Box<dyn LoadSpecLike>>> {
-            if provider.get_name().as_deref() == Some("match.bin") {
+            if provider.length() >= 4 && provider.read_bytes(0, 4)? == ELF_MAGIC {
                 Ok(vec![Box::new(MockLoadSpec)])
             } else {
                 Ok(vec![])
@@ -368,7 +362,7 @@ mod tests {
 
         fn get_default_options(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
             _load_spec: &dyn LoadSpecLike,
             _domain_object: &dyn DomainObject,
             _load_into_program: bool,
@@ -379,7 +373,7 @@ mod tests {
 
         fn validate_options(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
             _load_spec: &dyn LoadSpecLike,
             _options: &[Box<dyn OptionLike>],
             _program: Option<&dyn Program>,
@@ -410,16 +404,14 @@ mod tests {
             name: "Mock",
         });
 
-        let matching = MockProvider {
-            name: Some("match.bin".to_string()),
-        };
+        let matching = named("match.bin", b"\x7fELF\x01\x01");
         let specs = loader.find_supported_load_specs(&matching).unwrap();
         assert_eq!(specs.len(), 1);
 
-        let other = MockProvider {
-            name: Some("other.bin".to_string()),
-        };
+        let other = named("match.bin", b"MZ\x90\x00");
         assert!(loader.find_supported_load_specs(&other).unwrap().is_empty());
+        let short = named("match.bin", b"\x7f");
+        assert!(loader.find_supported_load_specs(&short).unwrap().is_empty());
 
         let domain_object = MockDomainObject;
         let load_spec = MockLoadSpec;
@@ -438,9 +430,7 @@ mod tests {
             priority: 0,
             name: "Mock",
         };
-        let provider = MockProvider {
-            name: Some("C:weird\\path||name".to_string()),
-        };
+        let provider = named("C:weird\\path||name", ELF_MAGIC);
         assert_eq!(
             loader.get_preferred_file_name(&provider),
             Some("C/weird/path/name".to_string())
@@ -454,8 +444,21 @@ mod tests {
             priority: 0,
             name: "Mock",
         };
-        let provider = MockProvider { name: None };
+        let provider = ByteArrayProvider::new(ELF_MAGIC.to_vec());
         assert_eq!(loader.get_preferred_file_name(&provider), None);
+    }
+
+    #[test]
+    fn default_get_preferred_file_name_prefers_the_fsrl_name() {
+        let loader = MockLoader {
+            tier: LoaderTier::GenericTargetLoader,
+            priority: 0,
+            name: "Mock",
+        };
+        let fsrl = Fsrl::from_string("file:///dir/sub/a.so").unwrap();
+        let provider = ByteArrayProvider::with_fsrl(ELF_MAGIC.to_vec(), Some(fsrl));
+        assert_eq!(loader.get_preferred_file_name(&provider), Some("a.so".to_string()));
+        assert_eq!(loader.find_supported_load_specs(&provider).unwrap().len(), 1);
     }
 
     #[test]
@@ -529,9 +532,7 @@ mod tests {
 
     #[test]
     fn importer_settings_splits_import_name() {
-        let provider = MockProvider {
-            name: Some("ignored".to_string()),
-        };
+        let provider = named("ignored", &[]);
         let load_spec = MockLoadSpec;
         let mut log = MessageLog::new();
         let monitor = DummyMonitor;
@@ -553,7 +554,7 @@ mod tests {
 
     #[test]
     fn importer_settings_with_no_path_has_empty_path_only() {
-        let provider = MockProvider { name: None };
+        let provider = ByteArrayProvider::new(Vec::new());
         let load_spec = MockLoadSpec;
         let mut log = MessageLog::new();
         let monitor = DummyMonitor;

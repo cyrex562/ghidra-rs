@@ -38,9 +38,8 @@
 //!   [`DyldCacheLoader`](crate::app::util::opinion::dyld_cache_loader::DyldCacheLoader)'s identical
 //!   substitution (see that module's docs for why the two are indistinguishable today).
 //! * `load(Program, ImporterSettings)` takes its `ImporterSettings` fields directly as separate
-//!   parameters instead of the already-ported `Loader::ImporterSettings` struct, whose `provider`
-//!   field is typed as the narrower `ByteProviderLike` marker (no real byte access) and whose
-//!   `log` field this method also needs to read back independently of `provider`. This mirrors
+//!   parameters instead of the already-ported `Loader::ImporterSettings` struct, whose `log` field
+//!   this method needs to read back independently of `provider`. This mirrors
 //!   [`DyldCacheLoader::load`]'s identical substitution.
 //! * `SymbolUtilities.getLabelOrFunctionSymbol`/`SymbolTable.createLabel`/`Symbol.setPrimary` are
 //!   ported as [`DefaultSymbolUtilities::get_label_or_function_symbol`],

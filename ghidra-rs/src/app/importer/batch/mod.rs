@@ -12,12 +12,14 @@ pub use batch_segregating_criteria::BatchSegregatingCriteria;
 pub use user_added_source_info::{UserAddedSourceInfo, UserAddedSourceInfoId};
 
 /// Shared test doubles for the batch model: a [`Loader`](crate::app::util::opinion::loader::Loader)
-/// that only has a name, and a byte provider that only has a name/FSRL.
+/// that only has a name, and a real byte provider built from an FSRL.
 #[cfg(test)]
 pub(crate) mod test_support {
     use std::io;
 
-    use crate::app::seam_stubs::{ByteProviderLike, LoadResultsLike, LoadSpecLike, OptionLike};
+    use crate::app::seam_stubs::{LoadResultsLike, LoadSpecLike, OptionLike};
+    use crate::app::util::bin::byte_provider::ByteProvider;
+    use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
     use crate::app::util::opinion::load_spec::LoadSpec;
     use crate::app::util::opinion::loader::{ImporterSettings, LoadError, LoadIntoError, Loader};
     use crate::app::util::opinion::loader_tier::LoaderTier;
@@ -32,7 +34,7 @@ pub(crate) mod test_support {
     impl Loader for NamedLoader {
         fn find_supported_load_specs(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
         ) -> io::Result<Vec<Box<dyn LoadSpecLike>>> {
             Ok(vec![])
         }
@@ -51,7 +53,7 @@ pub(crate) mod test_support {
 
         fn get_default_options(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
             _load_spec: &dyn LoadSpecLike,
             _domain_object: &dyn DomainObject,
             _load_into_program: bool,
@@ -62,7 +64,7 @@ pub(crate) mod test_support {
 
         fn validate_options(
             &self,
-            _provider: &dyn ByteProviderLike,
+            _provider: &dyn ByteProvider,
             _load_spec: &dyn LoadSpecLike,
             _options: &[Box<dyn OptionLike>],
             _program: Option<&dyn Program>,
@@ -85,23 +87,9 @@ pub(crate) mod test_support {
 
     impl ExtensionPoint for NamedLoader {}
 
-    pub struct Provider {
-        pub fsrl: Option<Fsrl>,
-        pub name: Option<String>,
-    }
-
-    impl ByteProviderLike for Provider {
-        fn get_fsrl(&self) -> Option<Fsrl> {
-            self.fsrl.clone()
-        }
-
-        fn get_name(&self) -> Option<String> {
-            self.name.clone()
-        }
-    }
-
-    pub fn provider(fsrl: &str) -> Provider {
-        Provider { fsrl: Some(Fsrl::from_string(fsrl).unwrap()), name: None }
+    /// An empty [`ByteArrayProvider`] whose identity is the given FSRL.
+    pub fn provider(fsrl: &str) -> ByteArrayProvider {
+        ByteArrayProvider::with_fsrl(Vec::new(), Some(Fsrl::from_string(fsrl).unwrap()))
     }
 
     pub fn spec(loader: &'static str, lcs: Option<(&str, &str)>, preferred: bool) -> LoadSpec {
