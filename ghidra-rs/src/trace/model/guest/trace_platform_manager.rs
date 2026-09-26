@@ -66,7 +66,7 @@ mod tests {
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::pcode::Encoder;
-    use crate::program::seam_stubs::PcodeInjectLibrary;
+    use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
     use std::cell::Cell;
     use std::collections::HashSet;
     use std::sync::Arc;
@@ -128,7 +128,7 @@ mod tests {
         fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
             unimplemented!("not exercised by this smoke test")
         }
         fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {

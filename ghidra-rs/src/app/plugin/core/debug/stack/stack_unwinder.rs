@@ -732,7 +732,8 @@ mod tests {
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::mem::mem_buffer::MemBuffer;
     use crate::program::model::pcode::Encoder;
-    use crate::program::seam_stubs::{AddressLabelInfo, PcodeInjectLibrary, Processor};
+    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 
     /// The register file shared by the test language and compiler spec.
     fn test_registers(register_space: &Arc<AddressSpace>) -> Vec<RegisterRef> {
@@ -1056,7 +1057,7 @@ mod tests {
         ) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
             unimplemented!("not exercised by these tests")
         }
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
             unimplemented!("not exercised by these tests")
         }
         fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {

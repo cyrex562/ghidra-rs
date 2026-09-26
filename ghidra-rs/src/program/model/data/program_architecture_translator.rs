@@ -118,7 +118,8 @@ mod tests {
     use crate::program::model::pcode::Encoder;
     use crate::program::model::lang::prototype_model::PrototypeModel;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery, AddressLabelInfo, PcodeInjectLibrary, Processor, RegisterValue};
+    use crate::program::seam_stubs::{ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery, AddressLabelInfo, Processor, RegisterValue};
+    use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 use crate::program::model::mem::MemBuffer;
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::language_description::LanguageDescription;
@@ -421,7 +422,7 @@ use crate::program::model::mem::MemBuffer;
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
             unimplemented!("not exercised by this smoke test")
         }
 

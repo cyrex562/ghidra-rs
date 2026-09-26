@@ -638,7 +638,7 @@ mod tests {
         fn get_data_organization(&self) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
             unimplemented!("not exercised by these tests")
         }
-        fn get_pcode_inject_library(&self) -> Box<dyn crate::program::seam_stubs::PcodeInjectLibrary> {
+        fn get_pcode_inject_library(&self) -> &crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary {
             unimplemented!("not exercised by these tests")
         }
         fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {

@@ -130,8 +130,9 @@ impl AllocatedInjectPayload {
 pub struct PcodeInjectLibrary {
     /// The language. Weak because the language owns (caches) the compiler spec that owns this
     /// library; the language must outlive every use of the library (see
-    /// [`WeakLanguage`](crate::program::model::lang::language::WeakLanguage)).
-    language: Weak<SleighLanguage>,
+    /// [`WeakLanguage`](crate::program::model::lang::language::WeakLanguage)). `None` mirrors a
+    /// Java library constructed with a `null` language (see [`Self::without_language`]).
+    language: Option<Weak<SleighLanguage>>,
     /// Current base address for new temporary registers.
     unique_base: u64,
     /// Map of names to registered call-fixups.
@@ -158,8 +159,28 @@ impl PcodeInjectLibrary {
     pub fn new(language: &Arc<SleighLanguage>) -> Self {
         let unique_base = UniqueLayout::Inject.get_offset(Some(language));
         PcodeInjectLibrary {
-            language: Arc::downgrade(language),
+            language: Some(Arc::downgrade(language)),
             unique_base,
+            call_fixup_map: BTreeMap::new(),
+            call_other_fixup_map: BTreeMap::new(),
+            call_other_override: None,
+            call_mech_fixup_map: BTreeMap::new(),
+            exe_pcode_map: BTreeMap::new(),
+            program_payload: None,
+        }
+    }
+
+    /// Constructs an empty library with no language.
+    ///
+    /// Port of `PcodeInjectLibrary(SleighLanguage)` called with `null`: the unique base is the
+    /// absolute [`UniqueLayout::Inject`] offset (Java's `UniqueLayout.getOffset(null)`), and
+    /// [`build_inject_context`](Self::build_inject_context) yields a context without a language.
+    /// Operations that need the language (parsing or user-op lookup) panic, where Java would
+    /// throw a `NullPointerException`.
+    pub fn without_language() -> Self {
+        PcodeInjectLibrary {
+            language: None,
+            unique_base: UniqueLayout::Inject.get_offset(None),
             call_fixup_map: BTreeMap::new(),
             call_other_fixup_map: BTreeMap::new(),
             call_other_override: None,
@@ -286,22 +307,33 @@ impl PcodeInjectLibrary {
             .collect()
     }
 
-    /// The language.
+    /// The language, or `None` for a library built [`without_language`](Self::without_language).
     ///
     /// # Panics
     /// If the language has been dropped while this library is still in use.
-    fn language(&self) -> Arc<SleighLanguage> {
-        self.language
-            .upgrade()
-            .expect("language dropped while its p-code inject library is still in use")
+    fn language_opt(&self) -> Option<Arc<SleighLanguage>> {
+        self.language.as_ref().map(|weak| {
+            weak.upgrade()
+                .expect("language dropped while its p-code inject library is still in use")
+        })
     }
 
-    /// Builds a fresh [`InjectContext`] carrying this library's language.
+    /// The language.
+    ///
+    /// # Panics
+    /// If the language has been dropped while this library is still in use, or the library has no
+    /// language (Java's `NullPointerException`).
+    fn language(&self) -> Arc<SleighLanguage> {
+        self.language_opt().expect("p-code inject library has no language")
+    }
+
+    /// Builds a fresh [`InjectContext`] carrying this library's language (none for a library
+    /// built [`without_language`](Self::without_language), as Java copies a `null` language).
     ///
     /// Port of `buildInjectContext()`.
     pub fn build_inject_context(&self) -> InjectContext {
         let mut res = InjectContext::new();
-        res.language = Some(self.language());
+        res.language = self.language_opt();
         res
     }
 
@@ -679,9 +711,8 @@ impl PcodeInjectLibrary {
     }
 }
 
-/// A registered payload handed out through the
-/// [`seam_stubs::PcodeInjectLibrary`](crate::program::seam_stubs::PcodeInjectLibrary) view, which
-/// returns owned `Box<dyn InjectPayload>`s. The payload is shared with the library (Java hands out
+/// A registered payload handed out by [`PcodeInjectLibrary::get_payload_owned`], which returns
+/// owned `Box<dyn InjectPayload>`s. The payload is shared with the library (Java hands out
 /// the same object); every query delegates to it.
 struct SharedInjectPayload(Arc<dyn InjectPayloadSleigh>);
 
@@ -740,11 +771,14 @@ impl InjectPayload for SharedInjectPayload {
     }
 }
 
-/// The library as seen through the
-/// [`CompilerSpec::get_pcode_inject_library`](crate::program::model::lang::compiler_spec::CompilerSpec::get_pcode_inject_library)
-/// seam.
-impl crate::program::seam_stubs::PcodeInjectLibrary for PcodeInjectLibrary {
-    fn get_payload(&self, inject_type: i32, name: &str) -> Option<Box<dyn InjectPayload>> {
+impl PcodeInjectLibrary {
+    /// Looks up a registered payload by type and name, returning an owned handle that shares the
+    /// registered payload (Java hands out the same object).
+    ///
+    /// Same lookup as [`get_payload`](Self::get_payload), for callers that must keep the payload
+    /// beyond the borrow of this library (e.g. `PcodeOverride.getCallFixup`, which reaches the
+    /// library through a temporary compiler-spec handle).
+    pub fn get_payload_owned(&self, inject_type: i32, name: &str) -> Option<Box<dyn InjectPayload>> {
         let payload = match inject_type {
             CALLFIXUP_TYPE => self.call_fixup_map.get(name).cloned(),
             CALLOTHERFIXUP_TYPE => self.call_other_fixup_map.get(name).cloned().flatten(),
@@ -753,10 +787,6 @@ impl crate::program::seam_stubs::PcodeInjectLibrary for PcodeInjectLibrary {
             _ => None,
         }?;
         Some(Box::new(SharedInjectPayload(payload)))
-    }
-
-    fn build_inject_context(&self) -> InjectContext {
-        PcodeInjectLibrary::build_inject_context(self)
     }
 }
 
@@ -1381,6 +1411,17 @@ mod tests {
         let lib = library();
         let ctx = lib.build_inject_context();
         assert!(ctx.language.is_some());
+    }
+
+    #[test]
+    fn library_without_language_matches_java_null_language() {
+        let lib = PcodeInjectLibrary::without_language();
+        // Java: UniqueLayout.INJECT.getOffset(null) is the raw (non-relative) offset.
+        assert_eq!(lib.get_unique_base(), 0x200);
+        assert!(lib.build_inject_context().language.is_none());
+        assert!(lib.get_payload(CALLFIXUP_TYPE, Some("anything")).is_none());
+        assert!(lib.get_payload_owned(CALLFIXUP_TYPE, "anything").is_none());
+        assert!(lib.get_call_fixup_names().is_empty());
     }
 
     // --- encode_compiler_spec ---

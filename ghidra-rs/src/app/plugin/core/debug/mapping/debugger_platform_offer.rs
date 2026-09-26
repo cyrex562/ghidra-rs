@@ -102,12 +102,11 @@ mod tests {
     use crate::program::model::pcode::Encoder;
     use crate::program::seam_stubs::{
         AddressLabelInfo, ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair,
-        LanguageCompilerSpecQuery, LanguageNotFoundException, PcodeInjectLibrary, Processor,
+        LanguageCompilerSpecQuery, LanguageNotFoundException, Processor,
     };
+    use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 
 
-    struct MockPcodeInjectLibrary;
-    impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
 
     struct MockCompilerSpecDescription {
         id: CompilerSpecID,
@@ -194,8 +193,9 @@ mod tests {
         ) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
-            Box::new(MockPcodeInjectLibrary)
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
+            static EMPTY: std::sync::OnceLock<PcodeInjectLibrary> = std::sync::OnceLock::new();
+            EMPTY.get_or_init(PcodeInjectLibrary::without_language)
         }
         fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {
             Arc::new(PrototypeModel::new())

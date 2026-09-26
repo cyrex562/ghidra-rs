@@ -100,7 +100,7 @@ mod tests {
     use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::pcode::Encoder;
     use crate::program::model::address::{Address, AddressSetView};
-    use crate::program::seam_stubs::PcodeInjectLibrary;
+    use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
     use crate::util::task::CancelledListener;
     use std::collections::HashSet;
     use std::sync::{Arc, Mutex};
@@ -189,7 +189,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
             unimplemented!("not exercised by this smoke test")
         }
 

@@ -50,7 +50,6 @@ use crate::program::model::pcode::{
     ELEM_INFERPTRBOUNDS, ELEM_NOHIGHPTR, ELEM_PREFERSPLIT, ELEM_PROPERTIES, ELEM_PROPERTY, ELEM_RANGE,
     ELEM_READONLY, ELEM_RETURNADDRESS, ELEM_SPACEBASE, ELEM_STACKPOINTER, ELEM_VARNODE,
 };
-use crate::program::seam_stubs::PcodeInjectLibrary as PcodeInjectLibraryView;
 use crate::util::xml::spec_xml_utils::{decode_boolean, decode_int, decode_long};
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -1088,8 +1087,8 @@ impl CompilerSpec for BasicCompilerSpec {
         self.data_organization.clone()
     }
 
-    fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibraryView> {
-        Box::new(self.pcode_inject.clone())
+    fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
+        &self.pcode_inject
     }
 
     /// # Panics
@@ -1486,8 +1485,10 @@ mod tests {
         // (0x1000 + 0x200).
         assert_eq!(library.get_unique_base(), 0x1400);
         let view = spec.get_pcode_inject_library();
-        assert!(view.get_payload(CALLOTHERFIXUP_TYPE, "syscall").is_some_and(|p| p.get_name() == "syscall"));
-        assert!(view.get_payload(CALLMECHANISM_TYPE, "syscall").is_none());
+        assert!(std::ptr::eq(view, spec.pcode_inject_library()), "the spec hands out its own library");
+        assert!(view.get_payload(CALLOTHERFIXUP_TYPE, Some("syscall")).is_some_and(|p| p.get_name() == "syscall"));
+        assert!(view.get_payload(CALLMECHANISM_TYPE, Some("syscall")).is_none());
+        assert!(view.get_payload_owned(CALLOTHERFIXUP_TYPE, "syscall").is_some_and(|p| p.get_name() == "syscall"));
     }
 
     #[test]

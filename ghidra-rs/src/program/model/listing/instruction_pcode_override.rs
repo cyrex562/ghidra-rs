@@ -152,7 +152,7 @@ impl PcodeOverride for InstructionPcodeOverrideImpl<'_> {
         let fixup = program
             .get_compiler_spec()?
             .get_pcode_inject_library()
-            .get_payload(CALLFIXUP_TYPE, &fixup_name);
+            .get_payload_owned(CALLFIXUP_TYPE, &fixup_name);
         if fixup.is_none() {
             Msg::warn(
                 "InstructionPcodeOverride",

@@ -1262,43 +1262,6 @@ pub trait Processor {
 /// that port).
 pub trait AddressLabelInfo {}
 
-/// Placeholder for `ghidra.program.model.lang.PcodeInjectLibrary`, referenced by
-/// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
-/// before the real class is ported.
-///
-/// Grown (see `STUBS.tsv`) to add
-/// [`get_payload`](Self::get_payload), needed by
-/// [`InstructionPcodeOverrideImpl`](crate::program::model::listing::instruction_pcode_override::InstructionPcodeOverrideImpl)'s
-/// `getCallFixup` port, with a `None` default so pre-existing bare `impl PcodeInjectLibrary for
-/// Foo {}` blocks keep compiling. Grown again to add
-/// [`build_inject_context`](Self::build_inject_context), needed by
-/// [`PcodeProgram::from_inject`](crate::pcode::exec::pcode_program::PcodeProgram::from_inject),
-/// with a panicking default -- there is no concrete `InjectContext` implementor yet for a default
-/// method to construct, matching how a library with no real payloads (the `get_payload` default)
-/// couldn't build one anyway.
-pub trait PcodeInjectLibrary {
-    /// Stands in for `PcodeInjectLibrary.getPayload(int, String)`. Defaults to `None`, mirroring
-    /// a library with no registered payloads.
-    fn get_payload(
-        &self,
-        inject_type: i32,
-        name: &str,
-    ) -> Option<Box<dyn crate::program::model::lang::InjectPayload>> {
-        let _ = (inject_type, name);
-        None
-    }
-
-    /// Stands in for `PcodeInjectLibrary.buildInjectContext()`. Used to return a boxed placeholder
-    /// trait object; now that
-    /// [`InjectContext`](crate::program::model::lang::inject_context::InjectContext) is a real,
-    /// concrete value type, this returns it by value instead. The default body still panics only
-    /// because `PcodeInjectLibrary` itself remains a stub with no real state to build a context
-    /// from.
-    fn build_inject_context(&self) -> crate::program::model::lang::inject_context::InjectContext {
-        unimplemented!("PcodeInjectLibrary::build_inject_context not yet ported")
-    }
-}
-
 /// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecPair`, referenced by
 /// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)'s
 /// `get_language_compiler_spec_pair` default method, before the real class is ported.

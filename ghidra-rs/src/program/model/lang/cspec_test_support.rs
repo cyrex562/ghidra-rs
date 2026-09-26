@@ -25,7 +25,7 @@ use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::parameter::Parameter;
 use crate::program::model::pcode::Encoder;
-use crate::program::seam_stubs::PcodeInjectLibrary;
+use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 use crate::util::xml::non_threaded_xml_pull_parser_impl::NonThreadedXmlPullParserImpl;
 use crate::util::xml::xml_pull_parser_factory::create_from_str;
 
@@ -367,7 +367,7 @@ impl CompilerSpec for TestCompilerSpec {
     fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         unimplemented!("not needed to restore compiler-spec XML")
     }
-    fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+    fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
         unimplemented!("not needed to restore compiler-spec XML")
     }
     fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {

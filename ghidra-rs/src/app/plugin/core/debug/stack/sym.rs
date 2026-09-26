@@ -233,7 +233,7 @@ mod tests {
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::pcode::Encoder;
-    use crate::program::seam_stubs::PcodeInjectLibrary;
+    use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
     use std::collections::HashSet;
 
     struct TestCompilerSpec {
@@ -335,7 +335,7 @@ mod tests {
         ) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
             unimplemented!()
         }
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
             unimplemented!()
         }
         fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {

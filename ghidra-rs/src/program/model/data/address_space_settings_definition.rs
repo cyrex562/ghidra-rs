@@ -132,7 +132,7 @@ mod tests {
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::pcode::Encoder;
     use crate::program::model::lang::prototype_model::PrototypeModel;
-    use crate::program::seam_stubs::PcodeInjectLibrary;
+    use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
     use std::cell::RefCell;
     use std::collections::{HashMap, HashSet};
     use std::sync::Arc;
@@ -428,8 +428,6 @@ mod tests {
         }
     }
 
-    struct MockPcodeInjectLibrary;
-    impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
 
 
     struct MockCompilerSpec;
@@ -508,8 +506,9 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
-            Box::new(MockPcodeInjectLibrary)
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
+            static EMPTY: std::sync::OnceLock<PcodeInjectLibrary> = std::sync::OnceLock::new();
+            EMPTY.get_or_init(PcodeInjectLibrary::without_language)
         }
 
         fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {

@@ -12,7 +12,7 @@ use crate::program::model::listing::default_program_context::DefaultProgramConte
 use crate::program::model::listing::parameter::Parameter;
 use crate::program::model::pcode::Encoder;
 use crate::program::model::lang::prototype_model::PrototypeModel;
-use crate::program::seam_stubs::PcodeInjectLibrary;
+use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 
 /// Stands in for `CompilerSpec.CALLING_CONVENTION_unknown`.
 pub const CALLING_CONVENTION_UNKNOWN: &str = "unknown";
@@ -142,7 +142,7 @@ pub trait CompilerSpec {
     fn get_data_organization(&self) -> Arc<DataOrganizationImpl>;
 
     /// The p-code inject library associated with this compiler spec.
-    fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary>;
+    fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary;
 
     /// Get the `PrototypeModel` which corresponds to the given calling convention name. If no
     /// match is found the default prototype model is returned.
@@ -255,7 +255,7 @@ impl<C: CompilerSpec + ?Sized> CompilerSpec for Arc<C> {
     fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
         (**self).get_data_organization()
     }
-    fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+    fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
         (**self).get_pcode_inject_library()
     }
     fn match_convention(&self, convention_name: &str) -> Arc<PrototypeModel> {
@@ -560,8 +560,6 @@ mod tests {
         }
     }
 
-    struct MockPcodeInjectLibrary;
-    impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
 
 
     struct MockEncoder;
@@ -733,8 +731,9 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
-            Box::new(MockPcodeInjectLibrary)
+        fn get_pcode_inject_library(&self) -> &PcodeInjectLibrary {
+            static EMPTY: std::sync::OnceLock<PcodeInjectLibrary> = std::sync::OnceLock::new();
+            EMPTY.get_or_init(PcodeInjectLibrary::without_language)
         }
 
         fn match_convention(&self, _convention_name: &str) -> Arc<PrototypeModel> {

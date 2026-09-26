@@ -122,7 +122,7 @@ impl PcodeProgram {
             program.get_compiler_spec().expect("program has no compiler spec");
         let library = compiler_spec.get_pcode_inject_library();
         let ctx = library.build_inject_context();
-        let payload = library.get_payload(inject_type, name).ok_or_else(|| {
+        let payload = library.get_payload(inject_type, Some(name)).ok_or_else(|| {
             InjectPayloadError::NotFound(NotFoundException::with_message(format!(
                 "no such inject payload: {name}"
             )))
