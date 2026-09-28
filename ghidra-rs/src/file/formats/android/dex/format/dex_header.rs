@@ -39,14 +39,16 @@ use crate::file::formats::android::dex::format::prototypes_id_item::PrototypesID
 use crate::file::formats::android::dex::format::string_id_item::StringIDItem;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::array_data_type::ArrayDataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::sarif::seam_stubs::StructureDataType;
 use std::sync::Arc;
 
 /// Minimal stand-in for `ghidra.app.util.bin.StructConverter.UTF8`
 /// (`StringUTF8DataType.dataType`), used with an explicit override length for the combined
-/// `magic`+`version` header field. See
-/// [`crate::format::elf::info::elf_note`]'s `DWordPlaceholderDataType` for the identical situation
-/// with a different leaf type.
+/// `magic`+`version` header field. The string data types are not ported yet (only the name and
+/// override length are observable here).
 struct Utf8PlaceholderDataType;
 
 impl DataType for Utf8PlaceholderDataType {
@@ -55,33 +57,6 @@ impl DataType for Utf8PlaceholderDataType {
     }
     fn get_length(&self) -> i32 {
         -1
-    }
-}
-
-/// Minimal stand-in for `ghidra.app.util.bin.StructConverter.DWORD` (`DWordDataType.dataType`).
-struct DWordPlaceholderDataType;
-
-impl DataType for DWordPlaceholderDataType {
-    fn get_name(&self) -> String {
-        "dword".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        4
-    }
-}
-
-/// Minimal stand-in for `new ArrayDataType(BYTE, 20, BYTE.getLength())`, used for the `signature`
-/// field.
-struct ByteArrayPlaceholderDataType {
-    length: i32,
-}
-
-impl DataType for ByteArrayPlaceholderDataType {
-    fn get_name(&self) -> String {
-        format!("byte[{}]", self.length.max(0))
-    }
-    fn get_length(&self) -> i32 {
-        self.length
     }
 }
 
@@ -436,14 +411,17 @@ impl DexHeader {
         let mut structure = StructureDataType::new(cp, "header_item", 0);
 
         structure.add(Arc::new(Utf8PlaceholderDataType), 8, Some("magic".to_string()), None);
-        structure.add(Arc::new(DWordPlaceholderDataType), 4, Some("checksum".to_string()), Some("adler-32".to_string()));
+        structure.add(DWordDataType::data_type(), 4, Some("checksum".to_string()), Some("adler-32".to_string()));
 
         let comment = format!(
             "SHA1:{}",
             crate::util::seam_stubs::NumericUtilities::convert_bytes_to_string(&self.signature, "")
         );
         structure.add(
-            Arc::new(ByteArrayPlaceholderDataType { length: 20 }),
+            Arc::new(
+                ArrayDataType::with_element_length(Box::new(ByteDataType::new(None)), 20, 1)
+                    .expect("byte is a fixed-length, non-factory element type"),
+            ),
             20,
             Some("signature".to_string()),
             Some(comment),
@@ -471,7 +449,7 @@ impl DexHeader {
             ("dataSize", ()),
             ("dataOffset", ()),
         ] {
-            structure.add(Arc::new(DWordPlaceholderDataType), 4, Some(field_name.to_string()), None);
+            structure.add(DWordDataType::data_type(), 4, Some(field_name.to_string()), None);
         }
 
         structure

@@ -1,5 +1,7 @@
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 
 /// An OMF index that is either 1 or 2 bytes.
 ///
@@ -34,38 +36,10 @@ impl OmfIndex {
 impl StructConverter for OmfIndex {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         if self.length == 2 {
-            Ok(Box::new(WordPlaceholderDataType))
+            Ok(Box::new(WordDataType::new(None)))
         } else {
-            Ok(Box::new(BytePlaceholderDataType))
+            Ok(Box::new(ByteDataType::new(None)))
         }
-    }
-}
-
-/// Minimal stand-in for `ghidra.program.model.data.WordDataType.dataType`, used until
-/// `WordDataType` is ported.
-struct WordPlaceholderDataType;
-
-impl DataType for WordPlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        2
-    }
-
-    fn get_name(&self) -> String {
-        "word".to_string()
-    }
-}
-
-/// Minimal stand-in for `ghidra.program.model.data.ByteDataType.dataType`, used until
-/// `ByteDataType` is ported.
-struct BytePlaceholderDataType;
-
-impl DataType for BytePlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        1
-    }
-
-    fn get_name(&self) -> String {
-        "byte".to_string()
     }
 }
 
@@ -105,13 +79,13 @@ mod tests {
 
     #[test]
     fn byte_placeholder_has_correct_length() {
-        let byte_dt = BytePlaceholderDataType;
+        let byte_dt = ByteDataType::new(None);
         assert_eq!(byte_dt.get_length(), 1);
     }
 
     #[test]
     fn word_placeholder_has_correct_length() {
-        let word_dt = WordPlaceholderDataType;
+        let word_dt = WordDataType::new(None);
         assert_eq!(word_dt.get_length(), 2);
     }
 

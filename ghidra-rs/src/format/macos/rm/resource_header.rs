@@ -7,7 +7,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry::{Entry, EntryBase};
 use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
 use crate::format::macos::asd::entry_descriptor_id::ENTRY_RESOURCE_FORK;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::format::macos::rm::resource_map::ResourceMap;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
@@ -127,7 +127,7 @@ impl StructConverter for ResourceHeader {
         for field in
             ["resourceDataOffset", "resourceMapOffset", "resourceDataLength", "resourceMapLength"]
         {
-            s.add_with_name(PrimitiveDt::DWORD.boxed(), Some(field.to_string()), None)?;
+            s.add_with_name(Box::new(DWordDataType::new(None)), Some(field.to_string()), None)?;
         }
         Ok(Box::new(s))
     }

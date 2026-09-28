@@ -11,7 +11,9 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::coff::coff_file_header::CoffBinaryReader;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::qword_data_type::QWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
@@ -152,15 +154,15 @@ impl StructConverter for XCoffFileHeader {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let mut s = StructureDataTypeImpl::new("XCoffFileHeader", 0);
         for (dt, name) in [
-            (PrimitiveDt::WORD, "f_magic"),
-            (PrimitiveDt::WORD, "f_nscns"),
-            (PrimitiveDt::DWORD, "f_timdat"),
-            (PrimitiveDt::QWORD, "f_symptr"),
-            (PrimitiveDt::DWORD, "f_nsyms"),
-            (PrimitiveDt::WORD, "f_opthdr"),
-            (PrimitiveDt::WORD, "f_flags"),
+            (Box::new(WordDataType::new(None)) as Box<dyn DataType>, "f_magic"),
+            (Box::new(WordDataType::new(None)) as Box<dyn DataType>, "f_nscns"),
+            (Box::new(DWordDataType::new(None)) as Box<dyn DataType>, "f_timdat"),
+            (Box::new(QWordDataType::new(None)) as Box<dyn DataType>, "f_symptr"),
+            (Box::new(DWordDataType::new(None)) as Box<dyn DataType>, "f_nsyms"),
+            (Box::new(WordDataType::new(None)) as Box<dyn DataType>, "f_opthdr"),
+            (Box::new(WordDataType::new(None)) as Box<dyn DataType>, "f_flags"),
         ] {
-            s.add_with_name(dt.boxed(), Some(name.to_string()), None)?;
+            s.add_with_name(dt, Some(name.to_string()), None)?;
         }
         Ok(Box::new(s))
     }

@@ -49,24 +49,11 @@ use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::program::model::data::built_in::BuiltIn;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::dynamic::Dynamic;
 use crate::program::model::data::leb128::Leb128;
 use crate::program::model::mem::{MemBuffer, MemBufferInputStream};
 use crate::program::model::scalar::scalar::Scalar;
-
-/// Minimal stand-in for `ghidra.program.model.data.ByteDataType.dataType`, used by
-/// [`AbstractLeb128DataType::leb128_replacement_base_type`]. Mirrors
-/// [`AlignmentDataType`](super::alignment_data_type)'s own `BytePlaceholderDataType`.
-struct BytePlaceholderDataType;
-
-impl DataType for BytePlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn get_name(&self) -> String {
-        "byte".to_string()
-    }
-}
 
 /// An abstract base for a LEB128 variable length integer data type.
 ///
@@ -152,7 +139,7 @@ pub trait AbstractLeb128DataType: BuiltIn + Dynamic {
     /// [`AlignmentDataType::alignment_replacement_base_type`](super::alignment_data_type::AlignmentDataType::alignment_replacement_base_type)
     /// for why this returns a minimal stand-in rather than a real `ByteDataType` instance.
     fn leb128_replacement_base_type(&self) -> Box<dyn DataType> {
-        Box::new(BytePlaceholderDataType)
+        Box::new(ByteDataType::new(None))
     }
 
     /// Port of `AbstractLeb128DataType.canSpecifyLength()`, which overrides the default

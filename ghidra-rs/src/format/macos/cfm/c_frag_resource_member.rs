@@ -11,6 +11,9 @@ use crate::format::macos::cfm::c_frag_usage2_union::CFragUsage2Union;
 use crate::format::macos::cfm::c_frag_where1_union::CFragWhere1Union;
 use crate::format::macos::cfm::c_frag_where2_union::CFragWhere2Union;
 use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
@@ -205,27 +208,27 @@ impl StructConverter for CFragResourceMember {
         let name = |s: &str| Some(s.to_string());
         let mut s = StructureDataTypeImpl::new("CFragResourceMember", 0);
         s.add_with_length_and_name(PrimitiveDt::STRING.boxed(), 4, name("architecture"), None)?;
-        s.add_with_name(PrimitiveDt::WORD.boxed(), name("reservedA"), None)?;
-        s.add_with_name(PrimitiveDt::BYTE.boxed(), name("reservedB"), None)?;
-        s.add_with_name(PrimitiveDt::BYTE.boxed(), name("updateLevel"), None)?;
-        s.add_with_name(PrimitiveDt::DWORD.boxed(), name("currentVersion"), None)?;
-        s.add_with_name(PrimitiveDt::DWORD.boxed(), name("oldDefVersion"), None)?;
+        s.add_with_name(Box::new(WordDataType::new(None)), name("reservedA"), None)?;
+        s.add_with_name(Box::new(ByteDataType::new(None)), name("reservedB"), None)?;
+        s.add_with_name(Box::new(ByteDataType::new(None)), name("updateLevel"), None)?;
+        s.add_with_name(Box::new(DWordDataType::new(None)), name("currentVersion"), None)?;
+        s.add_with_name(Box::new(DWordDataType::new(None)), name("oldDefVersion"), None)?;
         s.add_with_name(
-            PrimitiveDt::DWORD.boxed(),
+            Box::new(DWordDataType::new(None)),
             name("usage"),
             Some(java_constant_name(self.usage)),
         )?;
         s.add_with_name(
-            PrimitiveDt::DWORD.boxed(),
+            Box::new(DWordDataType::new(None)),
             name("where"),
             Some(java_constant_name(self.where_)),
         )?;
-        s.add_with_name(PrimitiveDt::DWORD.boxed(), name("offset"), None)?;
-        s.add_with_name(PrimitiveDt::DWORD.boxed(), name("length"), None)?;
-        s.add_with_name(PrimitiveDt::BYTE.boxed(), name("reservedC"), None)?;
-        s.add_with_name(PrimitiveDt::BYTE.boxed(), name("reservedD"), None)?;
-        s.add_with_name(PrimitiveDt::DWORD.boxed(), name("extensionCount"), None)?;
-        s.add_with_name(PrimitiveDt::DWORD.boxed(), name("memberSize"), None)?;
+        s.add_with_name(Box::new(DWordDataType::new(None)), name("offset"), None)?;
+        s.add_with_name(Box::new(DWordDataType::new(None)), name("length"), None)?;
+        s.add_with_name(Box::new(ByteDataType::new(None)), name("reservedC"), None)?;
+        s.add_with_name(Box::new(ByteDataType::new(None)), name("reservedD"), None)?;
+        s.add_with_name(Box::new(DWordDataType::new(None)), name("extensionCount"), None)?;
+        s.add_with_name(Box::new(DWordDataType::new(None)), name("memberSize"), None)?;
         s.add_with_length_and_name(
             PrimitiveDt::PASCAL_STRING255.boxed(),
             self.name.len() as i32 + 1,

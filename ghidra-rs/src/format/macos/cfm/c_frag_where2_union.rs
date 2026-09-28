@@ -4,7 +4,7 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
@@ -36,7 +36,7 @@ impl StructConverter for CFragWhere2Union {
     /// `reserved` component.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let mut s = StructureDataTypeImpl::new("CFragWhere2Union", 0);
-        s.add_with_name(PrimitiveDt::WORD.boxed(), Some("reserved".to_string()), None)?;
+        s.add_with_name(Box::new(WordDataType::new(None)), Some("reserved".to_string()), None)?;
         Ok(Box::new(s))
     }
 }

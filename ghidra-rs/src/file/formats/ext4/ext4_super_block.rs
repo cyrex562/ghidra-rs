@@ -16,7 +16,10 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::ext4::ext4_constants;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::qword_data_type::QWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
@@ -491,12 +494,12 @@ impl StructConverter for Ext4SuperBlock {
         let mut structure = StructureDataTypeImpl::new("ext4_super_block", 0);
         for &(name, kind) in FIELDS {
             let dt: Box<dyn DataType> = match kind {
-                FieldKind::Byte => PrimitiveDt::BYTE.boxed(),
-                FieldKind::Word => PrimitiveDt::WORD.boxed(),
-                FieldKind::Dword => PrimitiveDt::DWORD.boxed(),
-                FieldKind::Qword => PrimitiveDt::QWORD.boxed(),
-                FieldKind::Bytes(n) => Box::new(array_of(PrimitiveDt::BYTE, n)?),
-                FieldKind::Dwords(n) => Box::new(array_of(PrimitiveDt::DWORD, n)?),
+                FieldKind::Byte => Box::new(ByteDataType::new(None)),
+                FieldKind::Word => Box::new(WordDataType::new(None)),
+                FieldKind::Dword => Box::new(DWordDataType::new(None)),
+                FieldKind::Qword => Box::new(QWordDataType::new(None)),
+                FieldKind::Bytes(n) => Box::new(array_of(Box::new(ByteDataType::new(None)), n)?),
+                FieldKind::Dwords(n) => Box::new(array_of(Box::new(DWordDataType::new(None)), n)?),
             };
             structure.add_with_name(dt, Some(name.to_string()), None)?;
         }
@@ -505,9 +508,9 @@ impl StructConverter for Ext4SuperBlock {
 }
 
 /// `new ArrayDataType(element, n, element.getLength())`.
-fn array_of(element: PrimitiveDt, n: i32) -> Result<ArrayDataType, ToDataTypeError> {
+fn array_of(element: Box<dyn DataType>, n: i32) -> Result<ArrayDataType, ToDataTypeError> {
     let element_length = element.get_length();
-    ArrayDataType::with_element_length(element.boxed(), n, element_length)
+    ArrayDataType::with_element_length(element, n, element_length)
         .map_err(|e| ToDataTypeError::Io(io::Error::new(io::ErrorKind::InvalidInput, e)))
 }
 

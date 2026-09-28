@@ -21,38 +21,10 @@ use crate::file::formats::android::dex::format::seam_stubs::{EncodedAnnotation, 
 use crate::file::formats::android::dex::format::value_formats::ValueFormats;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::array_data_type::ArrayDataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::sarif::seam_stubs::StructureDataType;
 use std::sync::Arc;
-
-/// Minimal stand-in for `ghidra.app.util.bin.StructConverter.BYTE` (`ByteDataType.dataType`),
-/// used for the leading `valueType` field of [`EncodedValue::to_data_type`]. See
-/// [`crate::format::elf::info::elf_note`]'s `DWordPlaceholderDataType` for the identical situation
-/// with a different leaf type.
-struct BytePlaceholderDataType;
-
-impl DataType for BytePlaceholderDataType {
-    fn get_name(&self) -> String {
-        "byte".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-}
-
-/// Minimal stand-in for `new ArrayDataType(BYTE, length, BYTE.getLength())`, used for the fixed
-/// primitive-value payload field of [`EncodedValue::to_data_type`].
-struct ByteArrayPlaceholderDataType {
-    length: i32,
-}
-
-impl DataType for ByteArrayPlaceholderDataType {
-    fn get_name(&self) -> String {
-        format!("byte[{}]", self.length.max(0))
-    }
-    fn get_length(&self) -> i32 {
-        self.length
-    }
-}
 
 /// Represents a single `encoded_value` item in the DEX format.
 ///
@@ -163,7 +135,7 @@ impl StructConverter for EncodedValue {
         let mut name = format!("encoded_value_0x{:x}", self.value);
         let cp = CategoryPath::parse("/dex/encoded_value").expect("valid category path");
         let mut structure = StructureDataType::new(cp, &name, 0);
-        structure.add(Arc::new(BytePlaceholderDataType), 1, Some("valueType".to_string()), None);
+        structure.add(ByteDataType::data_type(), 1, Some("valueType".to_string()), None);
 
         match self.value_type {
             ValueFormats::VALUE_BYTE
@@ -180,7 +152,10 @@ impl StructConverter for EncodedValue {
             | ValueFormats::VALUE_ENUM => {
                 let length = (self.value_args & 0xff) as i32 + 1;
                 structure.add(
-                    Arc::new(ByteArrayPlaceholderDataType { length }),
+                    Arc::new(
+                ArrayDataType::with_element_length(Box::new(ByteDataType::new(None)), length, 1)
+                    .expect("byte is a fixed-length, non-factory element type"),
+            ),
                     length,
                     Some("value".to_string()),
                     None,

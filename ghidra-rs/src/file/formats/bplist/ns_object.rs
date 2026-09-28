@@ -1,7 +1,8 @@
 use std::fmt;
 
 use crate::app::util::bin::struct_converter::StructConverter;
-use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::structure::Structure;
 use crate::program::model::listing::{Data, Program};
 use crate::util::big_endian_data_converter;
@@ -43,39 +44,39 @@ pub trait NsObject: StructConverter + fmt::Display {
     fn add_header(&self, structure: &mut dyn Structure, size: i32) -> Result<(), String> {
         if size < 0xf {
             structure.add_with_name(
-                Box::new(BytePlaceholderDataType),
+                Box::new(ByteDataType::new(None)),
                 Some("objectDescriptor".to_string()),
                 None,
             )?;
         } else if size < 0xff {
             structure.add_with_name(
-                Box::new(BytePlaceholderDataType),
+                Box::new(ByteDataType::new(None)),
                 Some("objectDescriptor".to_string()),
                 None,
             )?;
             structure.add_with_name(
-                Box::new(BytePlaceholderDataType),
+                Box::new(ByteDataType::new(None)),
                 Some("indicator".to_string()),
                 None,
             )?;
             structure.add_with_name(
-                Box::new(BytePlaceholderDataType),
+                Box::new(ByteDataType::new(None)),
                 Some("length".to_string()),
                 None,
             )?;
         } else if size < 0xffff {
             structure.add_with_name(
-                Box::new(BytePlaceholderDataType),
+                Box::new(ByteDataType::new(None)),
                 Some("objectDescriptor".to_string()),
                 None,
             )?;
             structure.add_with_name(
-                Box::new(BytePlaceholderDataType),
+                Box::new(ByteDataType::new(None)),
                 Some("indicator".to_string()),
                 None,
             )?;
             structure.add_with_name(
-                Box::new(WordPlaceholderDataType),
+                Box::new(WordDataType::new(None)),
                 Some("length".to_string()),
                 None,
             )?;
@@ -131,39 +132,12 @@ fn big_integer_long_value(bytes: &[u8]) -> i64 {
     i64::from_be_bytes(buf)
 }
 
-/// Minimal stand-in for `ghidra.program.model.data.ByteDataType.dataType`, used until
-/// `ByteDataType` is ported.
-struct BytePlaceholderDataType;
-
-impl DataType for BytePlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        1
-    }
-
-    fn get_name(&self) -> String {
-        "byte".to_string()
-    }
-}
-
-/// Minimal stand-in for `ghidra.program.model.data.WordDataType.dataType`, used until
-/// `WordDataType` is ported.
-struct WordPlaceholderDataType;
-
-impl DataType for WordPlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        2
-    }
-
-    fn get_name(&self) -> String {
-        "word".to_string()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::app::util::bin::struct_converter::ToDataTypeError;
     use crate::program::model::data::composite::Composite;
+    use crate::program::model::data::data_type::DataType;
 
     struct MockDataTypeComponent;
     impl crate::program::model::data::data_type_component::DataTypeComponent for MockDataTypeComponent {}
@@ -193,7 +167,7 @@ mod tests {
 
     impl StructConverter for MockObject {
         fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-            Ok(Box::new(BytePlaceholderDataType))
+            Ok(Box::new(ByteDataType::new(None)))
         }
     }
 

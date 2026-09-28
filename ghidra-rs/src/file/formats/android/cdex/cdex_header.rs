@@ -12,7 +12,6 @@
 //! parameter instead; this type supplies its own.
 
 use std::io;
-use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
@@ -20,20 +19,7 @@ use crate::file::formats::android::cdex::cdex_constants::CDexConstants;
 use crate::file::formats::android::dex::format::dex_header::DexHeader;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
-
-/// Minimal stand-in for `ghidra.app.util.bin.StructConverter.DWORD` (`DWordDataType.dataType`).
-/// Mirrors the identical placeholder in `dex_header.rs`; kept local rather than shared since
-/// neither is part of that module's public surface.
-struct DWordPlaceholderDataType;
-
-impl DataType for DWordPlaceholderDataType {
-    fn get_name(&self) -> String {
-        "dword".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        4
-    }
-}
+use crate::program::model::data::dword_data_type::DWordDataType;
 
 /// CDEX header: extends the DEX header with additional compact-dex-only members.
 ///
@@ -168,7 +154,7 @@ impl StructConverter for CDexHeader {
             "owned_data_begin_",
             "owned_data_end_",
         ] {
-            structure.add(Arc::new(DWordPlaceholderDataType), 4, Some(field_name.to_string()), None);
+            structure.add(DWordDataType::data_type(), 4, Some(field_name.to_string()), None);
         }
 
         Ok(Box::new(structure))

@@ -5,7 +5,7 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry_factory;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::format::macos::rm::resource_header::ResourceHeader;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
@@ -82,7 +82,7 @@ impl StructConverter for EntryDescriptor {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let mut s = StructureDataTypeImpl::new("EntryDescriptor", 0);
         for field in ["entryID", "offset", "length"] {
-            s.add_with_name(PrimitiveDt::DWORD.boxed(), Some(field.to_string()), None)?;
+            s.add_with_name(Box::new(DWordDataType::new(None)), Some(field.to_string()), None)?;
         }
         Ok(Box::new(s))
     }

@@ -4,7 +4,8 @@ use std::io;
 
 use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
@@ -100,11 +101,12 @@ impl StructConverter for LzssCompressionHeader {
         let mut structure = StructureDataTypeImpl::new("LzssCompressionHeader", 0);
         for name in ["signature", "compressionType", "checksum", "decompressedLength", "compressedLength"] {
             structure
-                .add_with_name(PrimitiveDt::DWORD.boxed(), Some(name.to_string()), None)
+                .add_with_name(Box::new(DWordDataType::new(None)), Some(name.to_string()), None)
                 .map_err(invalid)?;
         }
-        let byte = PrimitiveDt::BYTE;
-        let padding = ArrayDataType::with_element_length(byte.boxed(), self.padding.len() as i32, byte.get_length())
+        let byte = ByteDataType::new(None);
+        let byte_length = byte.get_length();
+        let padding = ArrayDataType::with_element_length(Box::new(byte), self.padding.len() as i32, byte_length)
             .map_err(invalid)?;
         structure
             .add_with_name(Box::new(padding), Some("padding".to_string()), None)

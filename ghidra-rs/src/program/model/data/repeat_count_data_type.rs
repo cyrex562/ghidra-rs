@@ -41,11 +41,8 @@
 //!   [`repeat_count_all_components`](RepeatCountDataType::repeat_count_all_components) only ever
 //!   has `&self` (a bare `&dyn RepeatCountDataType`) to work with -- there is no way to conjure an
 //!   `Arc` pointing at "myself" from a plain borrow, so this stand-in remains.
-//! - `new WordDataType()` (for the leading "Size" component's data type) has no concrete
-//!   constructible counterpart yet (`WordDataType` is a trait with only `Mock*` test
-//!   implementors, per this crate's established convention for such leaf types), so a minimal
-//!   local [`WordPlaceholderDataType`] stands in, mirroring
-//!   [`DynamicDataType`]'s own `BytePlaceholderDataType` precedent for the identical situation.
+//! - `new WordDataType()` (for the leading "Size" component's data type) is the real
+//!   [`WordDataType`].
 //!
 //! `getValue`/`getRepresentation`/`getMnemonic` share a name with an already-provided default
 //! method on [`DataType`], so -- mirroring every other `BuiltIn`-derived cut-point trait in this
@@ -62,25 +59,12 @@ use std::sync::Arc;
 use crate::docking::settings::settings::Settings;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_instance::get_data_type_instance;
 use crate::program::model::data::dynamic_data_type::DynamicDataType;
 use crate::program::model::mem::{MemBuffer, MemoryAccessException};
 use crate::program::seam_stubs::share_data_type;
-
-/// Minimal stand-in for `ghidra.program.model.data.WordDataType.dataType`, used for the leading
-/// "Size" component's data type until a concrete `WordDataType` singleton is ported. Mirrors
-/// [`DynamicDataType`]'s own `BytePlaceholderDataType` precedent.
-struct WordPlaceholderDataType;
-
-impl DataType for WordPlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        2
-    }
-    fn get_name(&self) -> String {
-        "word".to_string()
-    }
-}
 
 /// Private stand-in for `ghidra.program.model.data.ReadOnlyDataTypeComponent`, used by
 /// [`RepeatCountDataType::repeat_count_all_components`]. See the module docs for why the real
@@ -173,7 +157,7 @@ pub trait RepeatCountDataType: DynamicDataType {
         let n = b0 * 16 + b1 + 1;
 
         let size_component = RepeatCountComponent {
-            data_type: Arc::new(WordPlaceholderDataType),
+            data_type: WordDataType::data_type(),
             length: 2,
             ordinal: 0,
             offset: 0,

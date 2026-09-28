@@ -46,13 +46,9 @@
 //! anything the crate can do yet), matching the same drop already established for
 //! `AndroidElfRelocationData`/`AndroidElfRelocationGroup`.
 //!
-//! `createNoteStructure`'s three field types (`DWordDataType`, `StringDataType.dataType`, `new
-//! ArrayDataType(BYTE, ...)`) are each still trait-only cut points in this crate (no general
-//! concrete singleton exists yet, only `Mock*` test types) -- mirroring the crate's own
-//! `BytePlaceholderDataType`/`WordPlaceholderDataType`/`FallbackStringUtf8DataType` precedent for
-//! this exact situation, minimal private stand-ins ([`DWordPlaceholderDataType`],
-//! [`StringPlaceholderDataType`], [`ByteArrayPlaceholderDataType`]) are used instead of a full
-//! port of any of those general-purpose singletons.
+//! `createNoteStructure`'s field types are the real `DWordDataType` and `ArrayDataType` of
+//! `ByteDataType`, except `StringDataType.dataType`: the string data types are not ported yet, so
+//! the `name` field uses the minimal private [`StringPlaceholderDataType`] (name and length only).
 
 use std::cell::RefCell;
 use std::io;
@@ -64,9 +60,12 @@ use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::elf::info::elf_info_item::{read_item_from_section, ElfInfoItem};
 use crate::framework::options::Options;
 use crate::program::model::address::Address;
+use crate::program::model::data::array_data_type::ArrayDataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::listing::{Program, PROGRAM_INFO};
 use crate::sarif::seam_stubs::StructureDataType;
 use crate::util::msg::Msg;
@@ -76,20 +75,6 @@ use crate::util::seam_stubs::NumericUtilities;
 const MAX_SANE_NAME_LEN: u32 = 1024;
 /// Port of `ElfNote.MAX_SANE_DESC_LEN`.
 const MAX_SANE_DESC_LEN: u32 = 1024 * 1024;
-
-/// Minimal stand-in for `ghidra.program.model.data.DWordDataType.dataType`, used for the
-/// `namesz`/`descsz`/`type` fields of [`create_note_structure`]. See the module docs for why the
-/// real (trait-only) `DWordDataType` cut point cannot be constructed generically yet.
-struct DWordPlaceholderDataType;
-
-impl DataType for DWordPlaceholderDataType {
-    fn get_name(&self) -> String {
-        "dword".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        4
-    }
-}
 
 /// Minimal stand-in for `ghidra.program.model.data.StringDataType.dataType`, used for the `name`
 /// field of [`create_note_structure`]. See the module docs for why the real (trait-only)
@@ -102,23 +87,6 @@ impl DataType for StringPlaceholderDataType {
     }
     fn get_length(&self) -> i32 {
         -1
-    }
-}
-
-/// Minimal stand-in for `new ArrayDataType(BYTE, noteDescLen, BYTE.getLength(), dtm)`, used for
-/// the `description` field of [`create_note_structure`]. See the module docs for why the real
-/// `ArrayDataType` element type (`ByteDataType`, itself a trait-only cut point) cannot be
-/// constructed generically yet.
-struct ByteArrayPlaceholderDataType {
-    length: i32,
-}
-
-impl DataType for ByteArrayPlaceholderDataType {
-    fn get_name(&self) -> String {
-        format!("byte[{}]", self.length.max(0))
-    }
-    fn get_length(&self) -> i32 {
-        self.length
     }
 }
 
@@ -156,19 +124,19 @@ fn create_note_structure(
 
     let mut result = StructureDataType::new(cp, &name, 0);
     result.add(
-        Arc::new(DWordPlaceholderDataType),
+        DWordDataType::data_type(),
         4,
         Some("namesz".to_string()),
         Some("Length of name field".to_string()),
     );
     result.add(
-        Arc::new(DWordPlaceholderDataType),
+        DWordDataType::data_type(),
         4,
         Some("descsz".to_string()),
         Some("Length of description field".to_string()),
     );
     result.add(
-        Arc::new(DWordPlaceholderDataType),
+        DWordDataType::data_type(),
         4,
         Some("type".to_string()),
         Some("Vendor specific type".to_string()),
@@ -183,7 +151,10 @@ fn create_note_structure(
     }
     if note_desc_len > 0 {
         result.add(
-            Arc::new(ByteArrayPlaceholderDataType { length: note_desc_len }),
+            Arc::new(
+                ArrayDataType::with_element_length(Box::new(ByteDataType::new(None)), note_desc_len, 1)
+                    .expect("byte is a fixed-length, non-factory element type"),
+            ),
             note_desc_len,
             Some("description".to_string()),
             Some("Blob value".to_string()),

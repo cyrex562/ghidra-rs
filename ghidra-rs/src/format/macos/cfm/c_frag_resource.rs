@@ -5,7 +5,7 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_resource_member::CFragResourceMember;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
@@ -111,7 +111,7 @@ impl StructConverter for CFragResource {
             "reservedF",
             "memberCount",
         ] {
-            s.add_with_name(PrimitiveDt::DWORD.boxed(), Some(field.to_string()), None)?;
+            s.add_with_name(Box::new(DWordDataType::new(None)), Some(field.to_string()), None)?;
         }
         Ok(Box::new(s))
     }

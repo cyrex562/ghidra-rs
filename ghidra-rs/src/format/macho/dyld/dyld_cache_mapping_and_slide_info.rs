@@ -1,13 +1,13 @@
 //! Port of `ghidra.app.util.bin.format.macho.dyld.DyldCacheMappingAndSlideInfo`.
 
 use std::io;
-use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::segment_constants::{PROTECTION_R, PROTECTION_W, PROTECTION_X};
 use crate::format::macho::mach_constants::DATA_TYPE_CATEGORY;
-use crate::format::seam_stubs::{DWordPlaceholderDataType, QWordPlaceholderDataType};
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::qword_data_type::QWordDataType;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::sarif::seam_stubs::StructureDataType;
@@ -185,10 +185,10 @@ impl DyldCacheMappingAndSlideInfo {
         let cp = CategoryPath::parse(DATA_TYPE_CATEGORY).expect("valid Mach-O category path");
         let mut s = StructureDataType::new(cp, "dyld_cache_mapping_and_slide_info", 0);
         for name in ["address", "size", "fileOffset", "slideInfoFileOffset", "slideInfoFileSize", "flags"] {
-            s.add(Arc::new(QWordPlaceholderDataType), 8, Some(name.to_string()), Some(String::new()));
+            s.add(QWordDataType::data_type(), 8, Some(name.to_string()), Some(String::new()));
         }
         for name in ["maxProt", "initProt"] {
-            s.add(Arc::new(DWordPlaceholderDataType), 4, Some(name.to_string()), Some(String::new()));
+            s.add(DWordDataType::data_type(), 4, Some(name.to_string()), Some(String::new()));
         }
         s
     }

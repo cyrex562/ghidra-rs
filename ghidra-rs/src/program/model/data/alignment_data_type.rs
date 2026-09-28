@@ -40,6 +40,7 @@ use std::any::{Any, TypeId};
 use crate::docking::settings::settings::Settings;
 use crate::program::model::data::built_in::BuiltIn;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::dynamic::Dynamic;
 use crate::program::model::mem::MemBuffer;
@@ -47,20 +48,6 @@ use crate::program::model::mem::MemBuffer;
 /// Maximum number of repeating bytes [`AlignmentDataType::alignment_compute_length`] will count,
 /// standing in for the private `AlignmentDataType.MAX_LENGTH` constant.
 pub const ALIGNMENT_MAX_LENGTH: i32 = 1024;
-
-/// Minimal stand-in for `ghidra.program.model.data.ByteDataType.dataType`, used by
-/// [`AlignmentDataType::alignment_replacement_base_type`]. Mirrors
-/// [`AIFFDataType`](super::aiff_data_type)'s own `BytePlaceholderDataType`.
-struct BytePlaceholderDataType;
-
-impl DataType for BytePlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn get_name(&self) -> String {
-        "byte".to_string()
-    }
-}
 
 /// Consumes alignment/repeating bytes -- a dynamically-sized run of identical byte values.
 ///
@@ -159,7 +146,7 @@ pub trait AlignmentDataType: BuiltIn + Dynamic {
     /// [`AIFFDataType::aiff_replacement_base_type`](super::aiff_data_type::AIFFDataType::aiff_replacement_base_type)
     /// for why this returns a minimal stand-in rather than a real `ByteDataType` instance.
     fn alignment_replacement_base_type(&self) -> Box<dyn DataType> {
-        Box::new(BytePlaceholderDataType)
+        Box::new(ByteDataType::new(None))
     }
 
     /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its

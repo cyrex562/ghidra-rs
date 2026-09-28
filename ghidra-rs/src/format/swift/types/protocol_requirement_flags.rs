@@ -9,9 +9,11 @@ use crate::format::swift::swift_type_metadata_structure::{
 };
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::boolean_data_type::BooleanDataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
 
-use super::method_descriptor_flags::{add_bit_field, BoolDt, DWordDt};
+use super::method_descriptor_flags::add_bit_field;
 use super::protocol_requirement_kind::ProtocolRequirementKind;
 
 /// Swift `ProtocolRequirementFlags` structure.
@@ -96,10 +98,10 @@ impl StructConverter for ProtocolRequirementFlags {
         );
         struct_.set_packing_enabled(true);
         add_bit_field(&mut struct_, kind.to_data_type()?, 4, "kind")?;
-        add_bit_field(&mut struct_, Box::new(BoolDt), 1, "IsInstance")?;
-        add_bit_field(&mut struct_, Box::new(BoolDt), 1, "IsAsync")?;
-        add_bit_field(&mut struct_, Box::new(DWordDt), 10, "reserved")?;
-        add_bit_field(&mut struct_, Box::new(DWordDt), 16, "ExtraDescriminator")?;
+        add_bit_field(&mut struct_, Box::new(BooleanDataType::new(None)), 1, "IsInstance")?;
+        add_bit_field(&mut struct_, Box::new(BooleanDataType::new(None)), 1, "IsAsync")?;
+        add_bit_field(&mut struct_, Box::new(DWordDataType::new(None)), 10, "reserved")?;
+        add_bit_field(&mut struct_, Box::new(DWordDataType::new(None)), 16, "ExtraDescriminator")?;
         Ok(Box::new(struct_))
     }
 }

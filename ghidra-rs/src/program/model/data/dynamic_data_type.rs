@@ -1,4 +1,5 @@
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::dynamic::Dynamic;
 use crate::program::model::mem::MemBuffer;
@@ -126,7 +127,7 @@ pub trait DynamicDataType: Dynamic {
     /// which returns `ByteDataType.dataType`. `ByteDataType` is not yet ported, so this returns a
     /// minimal stand-in with the same 1-byte length.
     fn default_replacement_base_type(&self) -> Box<dyn DataType> {
-        Box::new(BytePlaceholderDataType)
+        Box::new(ByteDataType::new(None))
     }
 
     /// Clears any cached per-buffer component computation.
@@ -135,20 +136,6 @@ pub trait DynamicDataType: Dynamic {
     /// documentation), so the default implementation is a no-op. A concrete implementation that
     /// reintroduces caching should override this to actually clear it.
     fn invalidate_cache(&mut self) {}
-}
-
-/// Minimal stand-in for `ghidra.program.model.data.ByteDataType.dataType`, used by
-/// [`DynamicDataType::default_replacement_base_type`] until `ByteDataType` is ported.
-struct BytePlaceholderDataType;
-
-impl DataType for BytePlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        1
-    }
-
-    fn get_name(&self) -> String {
-        "byte".to_string()
-    }
 }
 
 #[cfg(test)]

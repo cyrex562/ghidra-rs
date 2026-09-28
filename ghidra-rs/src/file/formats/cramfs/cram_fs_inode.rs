@@ -5,26 +5,12 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
 
 use super::cram_fs_constants::{CRAMFS_NAMELEN_WIDTH, CRAMFS_SIZE_WIDTH, CRAMFS_UID_WIDTH};
 
-/// Stand-in for `StructConverter.DWORD` (`DWordDataType.dataType`), whose concrete singleton this
-/// crate has not ported yet (see `struct_converter.rs`). Mirrors the identical local stand-ins in
-/// `dex_header.rs`/`cdex_header.rs`; only its name and 4-byte length are observable here.
-struct DWordDt;
-
-impl DataType for DWordDt {
-    fn get_name(&self) -> String {
-        "dword".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        4
-    }
-}
-
-/// Stand-in for `StructConverter.STRING` (`StringDataType.dataType`); see [`DWordDt`]. The
+/// Stand-in for `StructConverter.STRING` (`StringDataType.dataType`), which is not ported yet. The
 /// component length is supplied explicitly at the `add` call, matching Java's
 /// `add(DataType, length, name, comment)` overload.
 struct StringDt;
@@ -105,9 +91,9 @@ impl CramFsInode {
         let length = self.namelen * 4;
 
         let mut strukt = StructureDataTypeImpl::new(format!("cramfs_inode_{length}"), 0);
-        strukt.add_with_name(Box::new(DWordDt), Some("modeUID".to_string()), None)?;
-        strukt.add_with_name(Box::new(DWordDt), Some("sizeGID".to_string()), None)?;
-        strukt.add_with_name(Box::new(DWordDt), Some("namelenOffset".to_string()), None)?;
+        strukt.add_with_name(Box::new(DWordDataType::new(None)), Some("modeUID".to_string()), None)?;
+        strukt.add_with_name(Box::new(DWordDataType::new(None)), Some("sizeGID".to_string()), None)?;
+        strukt.add_with_name(Box::new(DWordDataType::new(None)), Some("namelenOffset".to_string()), None)?;
 
         if self.namelen > 0 {
             strukt.add_with_length_and_name(

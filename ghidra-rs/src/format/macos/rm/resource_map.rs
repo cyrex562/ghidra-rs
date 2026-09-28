@@ -6,7 +6,8 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry::Entry;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::format::macos::rm::reference_list_entry::ReferenceListEntry;
 use crate::format::macos::rm::resource_header::ResourceHeader;
 use crate::format::macos::rm::resource_type::ResourceType;
@@ -181,7 +182,7 @@ impl StructConverter for ResourceMap {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let mut s = StructureDataTypeImpl::new("ResourceMap", 0);
         s.add_with_name(self.copy.to_data_type()?, Some("copy".to_string()), None)?;
-        s.add_with_name(PrimitiveDt::DWORD.boxed(), Some("handleToNextResourceMap".to_string()), None)?;
+        s.add_with_name(Box::new(DWordDataType::new(None)), Some("handleToNextResourceMap".to_string()), None)?;
         for field in [
             "fileReferenceNumber",
             "resourceForkAttributes",
@@ -189,7 +190,7 @@ impl StructConverter for ResourceMap {
             "resourceNameListOffset",
             "numberOfTypes",
         ] {
-            s.add_with_name(PrimitiveDt::WORD.boxed(), Some(field.to_string()), None)?;
+            s.add_with_name(Box::new(WordDataType::new(None)), Some(field.to_string()), None)?;
         }
         Ok(Box::new(s))
     }

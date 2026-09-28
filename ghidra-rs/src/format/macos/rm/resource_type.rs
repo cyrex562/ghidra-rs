@@ -9,6 +9,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_resource::CFragResource;
 use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::format::macos::rm::reference_list_entry::ReferenceListEntry;
 use crate::format::macos::rm::resource_header::ResourceHeader;
 use crate::format::macos::rm::resource_map::ResourceMap;
@@ -139,10 +141,10 @@ impl StructConverter for ResourceType {
         if self.is_ascii() {
             s.add_with_length_and_name(PrimitiveDt::STRING.boxed(), 4, Some("type".to_string()), None)?;
         } else {
-            s.add_with_name(PrimitiveDt::DWORD.boxed(), Some("type".to_string()), None)?;
+            s.add_with_name(Box::new(DWordDataType::new(None)), Some("type".to_string()), None)?;
         }
-        s.add_with_name(PrimitiveDt::WORD.boxed(), Some("numberOfResources".to_string()), None)?;
-        s.add_with_name(PrimitiveDt::WORD.boxed(), Some("offsetToReferenceList".to_string()), None)?;
+        s.add_with_name(Box::new(WordDataType::new(None)), Some("numberOfResources".to_string()), None)?;
+        s.add_with_name(Box::new(WordDataType::new(None)), Some("offsetToReferenceList".to_string()), None)?;
         Ok(Box::new(s))
     }
 }

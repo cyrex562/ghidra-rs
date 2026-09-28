@@ -4,7 +4,8 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
@@ -42,16 +43,16 @@ impl ChunkHeader {
 impl StructConverter for ChunkHeader {
     /// Mirrors `toDataType()`: a `chunk_header` structure of the fields above.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        const FIELDS: [(&str, PrimitiveDt); 4] = [
-            ("chunk_type", PrimitiveDt::WORD),
-            ("reserved1", PrimitiveDt::WORD),
-            ("chunk_sz", PrimitiveDt::DWORD),
-            ("total_sz", PrimitiveDt::DWORD),
+        let fields: [(&str, Box<dyn DataType>); 4] = [
+            ("chunk_type", Box::new(WordDataType::new(None))),
+            ("reserved1", Box::new(WordDataType::new(None))),
+            ("chunk_sz", Box::new(DWordDataType::new(None))),
+            ("total_sz", Box::new(DWordDataType::new(None))),
         ];
         let mut structure = StructureDataTypeImpl::new("chunk_header", 0);
-        for (name, dt) in FIELDS {
+        for (name, dt) in fields {
             structure
-                .add_with_name(dt.boxed(), Some(name.to_string()), None)
+                .add_with_name(dt, Some(name.to_string()), None)
                 .map_err(|e| ToDataTypeError::Io(io::Error::new(io::ErrorKind::InvalidInput, e)))?;
         }
         Ok(Box::new(structure))

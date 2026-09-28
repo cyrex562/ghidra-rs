@@ -1,5 +1,7 @@
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 
 /// An OMF value that is either 2 or 4 bytes.
 ///
@@ -34,38 +36,10 @@ impl Omf2or4 {
 impl StructConverter for Omf2or4 {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         if self.length == 2 {
-            Ok(Box::new(WordPlaceholderDataType))
+            Ok(Box::new(WordDataType::new(None)))
         } else {
-            Ok(Box::new(DwordPlaceholderDataType))
+            Ok(Box::new(DWordDataType::new(None)))
         }
-    }
-}
-
-/// Minimal stand-in for `ghidra.program.model.data.WordDataType.dataType`, used until
-/// `WordDataType` is ported.
-struct WordPlaceholderDataType;
-
-impl DataType for WordPlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        2
-    }
-
-    fn get_name(&self) -> String {
-        "word".to_string()
-    }
-}
-
-/// Minimal stand-in for `ghidra.program.model.data.DwordDataType.dataType`, used until
-/// `DwordDataType` is ported.
-struct DwordPlaceholderDataType;
-
-impl DataType for DwordPlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        4
-    }
-
-    fn get_name(&self) -> String {
-        "dword".to_string()
     }
 }
 
@@ -105,13 +79,13 @@ mod tests {
 
     #[test]
     fn word_placeholder_has_correct_length() {
-        let word_dt = WordPlaceholderDataType;
+        let word_dt = WordDataType::new(None);
         assert_eq!(word_dt.get_length(), 2);
     }
 
     #[test]
     fn dword_placeholder_has_correct_length() {
-        let dword_dt = DwordPlaceholderDataType;
+        let dword_dt = DWordDataType::new(None);
         assert_eq!(dword_dt.get_length(), 4);
     }
 

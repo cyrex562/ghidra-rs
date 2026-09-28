@@ -9,48 +9,11 @@ use crate::format::swift::swift_type_metadata_structure::{
 };
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::boolean_data_type::BooleanDataType;
+use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
 
 use super::method_descriptor_kind::MethodDescriptorKind;
-
-/// Stand-in for `StructConverter.BOOL` (`BooleanDataType.dataType`), whose concrete singleton this
-/// crate has not ported yet (see `struct_converter.rs`; same approach as the local `DWordDt`
-/// stand-ins in `cram_fs_inode.rs`/`dex_header.rs`). Java's `BooleanDataType` extends
-/// `AbstractUnsignedIntegerDataType`, so it is an unsigned 1-byte integer type -- the property the
-/// bitfield base-type check observes.
-pub(super) struct BoolDt;
-
-impl DataType for BoolDt {
-    fn get_name(&self) -> String {
-        "bool".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        1
-    }
-
-    fn is_integer_type(&self) -> bool {
-        true
-    }
-}
-
-/// Stand-in for `StructConverter.DWORD` (`DWordDataType.dataType`); see [`BoolDt`]. An unsigned
-/// 4-byte integer type.
-pub(super) struct DWordDt;
-
-impl DataType for DWordDt {
-    fn get_name(&self) -> String {
-        "dword".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        4
-    }
-
-    fn is_integer_type(&self) -> bool {
-        true
-    }
-}
 
 /// Adds a bitfield to `struct_`, mapping Java's `InvalidDataTypeException` to the
 /// `IOException` that `toDataType()` rethrows it as.
@@ -144,11 +107,11 @@ impl StructConverter for MethodDescriptorFlags {
         );
         struct_.set_packing_enabled(true);
         add_bit_field(&mut struct_, MethodDescriptorKind::VALUES[0].to_data_type()?, 4, "kind")?;
-        add_bit_field(&mut struct_, Box::new(BoolDt), 1, "IsInstance")?;
-        add_bit_field(&mut struct_, Box::new(BoolDt), 1, "IsDynamic")?;
-        add_bit_field(&mut struct_, Box::new(BoolDt), 1, "IsAsync")?;
-        add_bit_field(&mut struct_, Box::new(DWordDt), 9, "reserved")?;
-        add_bit_field(&mut struct_, Box::new(DWordDt), 16, "ExtraDescriminator")?;
+        add_bit_field(&mut struct_, Box::new(BooleanDataType::new(None)), 1, "IsInstance")?;
+        add_bit_field(&mut struct_, Box::new(BooleanDataType::new(None)), 1, "IsDynamic")?;
+        add_bit_field(&mut struct_, Box::new(BooleanDataType::new(None)), 1, "IsAsync")?;
+        add_bit_field(&mut struct_, Box::new(DWordDataType::new(None)), 9, "reserved")?;
+        add_bit_field(&mut struct_, Box::new(DWordDataType::new(None)), 16, "ExtraDescriminator")?;
         Ok(Box::new(struct_))
     }
 }

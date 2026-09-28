@@ -41,6 +41,7 @@ use std::any::{Any, TypeId};
 use crate::docking::settings::settings::Settings;
 use crate::program::model::data::built_in::BuiltIn;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::dynamic::Dynamic;
@@ -193,21 +194,7 @@ pub trait AIFFDataType: BuiltIn + Dynamic {
     /// length, mirroring
     /// [`DynamicDataType::default_replacement_base_type`](super::dynamic_data_type::DynamicDataType::default_replacement_base_type).
     fn aiff_replacement_base_type(&self) -> Box<dyn DataType> {
-        Box::new(BytePlaceholderDataType)
-    }
-}
-
-/// Minimal stand-in for `ghidra.program.model.data.ByteDataType.dataType`, used by
-/// [`AIFFDataType::aiff_replacement_base_type`].
-struct BytePlaceholderDataType;
-
-impl DataType for BytePlaceholderDataType {
-    fn get_length(&self) -> i32 {
-        1
-    }
-
-    fn get_name(&self) -> String {
-        "byte".to_string()
+        Box::new(ByteDataType::new(None))
     }
 }
 

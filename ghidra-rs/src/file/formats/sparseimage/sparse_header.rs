@@ -4,7 +4,8 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
@@ -58,21 +59,21 @@ impl SparseHeader {
 impl StructConverter for SparseHeader {
     /// Mirrors `toDataType()`: a `sparse_header` structure of the fields above.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        const FIELDS: [(&str, PrimitiveDt); 9] = [
-            ("magic", PrimitiveDt::DWORD),
-            ("major_version", PrimitiveDt::WORD),
-            ("minor_version", PrimitiveDt::WORD),
-            ("file_hdr_sz", PrimitiveDt::WORD),
-            ("chunk_hdr_sz", PrimitiveDt::WORD),
-            ("blk_sz", PrimitiveDt::DWORD),
-            ("total_blks", PrimitiveDt::DWORD),
-            ("total_chunks", PrimitiveDt::DWORD),
-            ("image_checksum", PrimitiveDt::DWORD),
+        let fields: [(&str, Box<dyn DataType>); 9] = [
+            ("magic", Box::new(DWordDataType::new(None))),
+            ("major_version", Box::new(WordDataType::new(None))),
+            ("minor_version", Box::new(WordDataType::new(None))),
+            ("file_hdr_sz", Box::new(WordDataType::new(None))),
+            ("chunk_hdr_sz", Box::new(WordDataType::new(None))),
+            ("blk_sz", Box::new(DWordDataType::new(None))),
+            ("total_blks", Box::new(DWordDataType::new(None))),
+            ("total_chunks", Box::new(DWordDataType::new(None))),
+            ("image_checksum", Box::new(DWordDataType::new(None))),
         ];
         let mut structure = StructureDataTypeImpl::new("sparse_header", 0);
-        for (name, dt) in FIELDS {
+        for (name, dt) in fields {
             structure
-                .add_with_name(dt.boxed(), Some(name.to_string()), None)
+                .add_with_name(dt, Some(name.to_string()), None)
                 .map_err(|e| ToDataTypeError::Io(io::Error::new(io::ErrorKind::InvalidInput, e)))?;
         }
         Ok(Box::new(structure))
