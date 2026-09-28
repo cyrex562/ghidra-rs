@@ -10,8 +10,6 @@ pub mod mach_exception;
 pub mod mach_header_file_types;
 pub mod mach_header_flags;
 pub mod obsolete_exception;
-pub mod relocation_info;
 pub mod section_attributes;
 pub mod section_names;
 pub mod section_types;
-pub(crate) mod struct_builder;
