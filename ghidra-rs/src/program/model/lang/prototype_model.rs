@@ -15,6 +15,8 @@
 use std::fmt;
 use std::sync::Arc;
 
+use crate::program::model::data::undefined1_data_type::Undefined1DataType;
+use crate::program::model::data::void_data_type::VoidDataType;
 use crate::program::model::address::{Address, AddressSet, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -348,19 +350,19 @@ impl PrototypeModel {
     ) -> Option<Box<dyn VariableStorage>> {
         let dt_manager = program.get_data_type_manager()?;
         let mut arr: Vec<Arc<dyn DataType>> = Vec::with_capacity(arg_index + 2);
-        arr.push(Arc::new(VoidStandIn)); // Assume the return type is void
+        arr.push(VoidDataType::data_type()); // Assume the return type is void
         for i in 0..arg_index {
             match params.and_then(|p| p.get(i)) {
                 // Copy in current types if we have them
                 Some(param) => arr.push(Arc::from(param.get_data_type())),
                 // Otherwise assume 1-byte (integer) type
-                None => arr.push(Arc::new(Undefined1StandIn)),
+                None => arr.push(Undefined1DataType::data_type()),
             }
         }
         match data_type {
             Some(dt) => arr.push(Arc::from(dt.clone_data_type(dt_manager.as_ref()))),
             // Java passes `null`, which the storage computation treats as `DataType.DEFAULT`
-            None => arr.push(Arc::new(Undefined1StandIn)),
+            None => arr.push(Undefined1DataType::data_type()),
         }
         self.get_storage_locations(program, &arr, false, false).pop()
     }
@@ -767,29 +769,6 @@ fn param_lists_equivalent(a: &Option<Arc<ParamList>>, b: &Option<Arc<ParamList>>
 /// class and size are all parameter assignment looks at.
 struct UndefinedPointee;
 impl DataType for UndefinedPointee {}
-
-/// Stand-in for the unported `VoidDataType.dataType` singleton: the void return type the
-/// deprecated argument-location queries assume.
-struct VoidStandIn;
-impl DataType for VoidStandIn {
-    fn get_name(&self) -> String {
-        "void".to_string()
-    }
-    fn is_void_type(&self) -> bool {
-        true
-    }
-}
-
-/// Stand-in for the unported `Undefined1DataType.dataType` singleton: a one-byte integer.
-struct Undefined1StandIn;
-impl DataType for Undefined1StandIn {
-    fn get_name(&self) -> String {
-        "undefined1".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-}
 
 /// Port of the private `PrototypeModel.encodeVarnodes`.
 fn encode_varnodes(encoder: &mut dyn Encoder, varnodes: &[Varnode]) -> std::io::Result<()> {

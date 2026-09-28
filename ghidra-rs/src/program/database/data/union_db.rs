@@ -95,6 +95,7 @@ use std::collections::HashSet;
 use std::io;
 use std::sync::{Arc, Mutex};
 
+use crate::program::model::data::undefined1_data_type::Undefined1DataType;
 use crate::program::model::data::bit_field_packing::BitFieldPacking;
 use crate::docking::settings::settings::Settings;
 use crate::framework::db::DBRecord;
@@ -164,23 +165,6 @@ impl DataType for BadDataTypeStandIn {
     }
 }
 
-/// Local stand-in for `Undefined1DataType.dataType`, matching `union_data_type.rs`'s
-/// `Undefined1StandIn`.
-struct Undefined1StandIn;
-impl DataType for Undefined1StandIn {
-    fn get_name(&self) -> String {
-        "undefined1".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn is_undefined_type(&self) -> bool {
-        true
-    }
-}
-fn undefined1_stand_in() -> Box<dyn DataType> {
-    Box::new(Undefined1StandIn)
-}
 
 /// Stand-in for `SettingsImpl.NO_SETTINGS`, matching `CompositeDB.doGetDefaultSettings()`.
 struct NoSettings;
@@ -439,7 +423,7 @@ impl UnionDb {
     /// `Undefined1DataType.dataType` substitution (always taken for `this instanceof Union`).
     fn validate_data_type_union(&self, data_type: Box<dyn DataType>) -> Result<Box<dyn DataType>, String> {
         let dynamic_can_specify_length = data_type.as_dynamic().map(|d| d.can_specify_length()).unwrap_or(false);
-        self.validate_data_type(data_type, undefined1_stand_in(), dynamic_can_specify_length)
+        self.validate_data_type(data_type, Box::new(Undefined1DataType::new(None)), dynamic_can_specify_length)
     }
 
     /// Port of the private `UnionDB.doAdd(DataType, int, String, String, boolean)`.
@@ -1710,7 +1694,7 @@ impl DataType for UnionDb {
         let owner_handle = UnionDbOwnerHandle(self.owner.clone());
         let replacement_dt: Box<dyn DataType> = (|| -> Result<Box<dyn DataType>, String> {
             let candidate: Box<dyn DataType> = if new_dt.is_default_data_type() {
-                undefined1_stand_in()
+                Box::new(Undefined1DataType::new(None))
             } else if let Some(dynamic) = new_dt.as_dynamic() {
                 if !dynamic.can_specify_length() {
                     return Err("not a specifiable-length dynamic type".to_string());
@@ -1724,7 +1708,7 @@ impl DataType for UnionDb {
             Utils.check_ancestry(self, candidate.as_ref()).map_err(|e| e.to_string())?;
             Ok(candidate)
         })()
-        .unwrap_or_else(|_| undefined1_stand_in());
+        .unwrap_or_else(|_| Box::new(Undefined1DataType::new(None)));
 
         let old_path = old_dt.get_data_type_path();
         let is_dynamic_new = new_dt.as_dynamic().map(|d| d.can_specify_length()).unwrap_or(false);

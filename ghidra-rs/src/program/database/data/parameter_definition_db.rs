@@ -73,6 +73,7 @@
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
+use crate::program::model::data::default_data_type::DefaultDataType;
 use crate::program::database::data::data_type_manager_db::DataTypeManagerDb;
 use crate::program::database::data::function_definition_db::FunctionDefinitionDb;
 use crate::program::database::data::function_parameter_adapter::{
@@ -95,24 +96,6 @@ use crate::program::model::symbol::symbol_utilities::SymbolUtilities;
 struct Utils;
 impl ModelDataTypeUtilities for Utils {}
 impl SymbolUtilities for Utils {}
-
-/// Stands in for `DataType.DEFAULT`, returned by [`ParameterDefinitionDb::get_data_type`] when
-/// the parameter's referenced-type id no longer resolves to anything in the owning manager.
-/// Mirrors the identical `DefaultDataTypeStandIn`/`MissingDataType` stand-ins in
-/// `data_type_component_db.rs`/`typedef_db.rs`.
-#[derive(Debug, Clone, Copy)]
-struct DefaultDataTypeStandIn;
-impl DataType for DefaultDataTypeStandIn {
-    fn get_name(&self) -> String {
-        "undefined".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn is_default_data_type(&self) -> bool {
-        true
-    }
-}
 
 /// Database implementation for a Parameter.
 ///
@@ -259,7 +242,7 @@ impl ParameterDefinitionDb {
     fn get_data_type_impl(&self) -> Box<dyn DataType> {
         let id = self.record.get_long(PARAMETER_DT_ID_COL).unwrap_or(-1);
         let resolved = self.data_mgr.lock().unwrap().get_data_type_by_id(id);
-        resolved.unwrap_or_else(|| Box::new(DefaultDataTypeStandIn))
+        resolved.unwrap_or_else(|| DefaultDataType::boxed())
     }
 }
 

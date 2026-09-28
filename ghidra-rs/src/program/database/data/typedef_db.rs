@@ -118,10 +118,8 @@
 //!   instead materialize a fresh in-memory `TypedefDataType` directly from this typedef's own
 //!   state. Per-instance type-def-setting overrides are not carried over (the same
 //!   `DataTypeSettingsDB` gap noted above means there is nothing local to copy yet).
-//! - **`DataType.DEFAULT`** (the `DefaultDataType` singleton `getDataType()` falls back to when
-//!   its referenced-type id no longer resolves) has no ported singleton to reuse yet (see
-//!   `default_data_type.rs`'s module docs: only the trait exists, no concrete instance).MissingDataType`,
-//!   a minimal private stand-in, is used instead.
+//! - **`DataType.DEFAULT`** (what `getDataType()` falls back to when its referenced-type id no
+//!   longer resolves) is [`DefaultDataType`].
 //! - **`updatePath`** is ported as a real, working method
 //!   ([`TypedefDb::update_path`]) but is not currently reachable from anywhere in this crate:
 //!   `DataTypeManagerDB`'s propagation of a datatype's path change to its dependents is not yet
@@ -130,6 +128,7 @@
 use std::io;
 use std::sync::{Arc, Mutex};
 
+use crate::program::model::data::default_data_type::DefaultDataType;
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::framework::db::{DBRecord, Field};
@@ -168,20 +167,6 @@ use crate::util::UniversalID;
 struct Utils;
 impl DataTypeUtilities for Utils {}
 impl crate::program::model::data::data_utilities::DataUtilities for Utils {}
-
-/// Minimal stand-in for the not-yet-ported `DataType.DEFAULT` singleton. See the module docs.
-struct MissingDataType;
-impl DataType for MissingDataType {
-    fn get_name(&self) -> String {
-        "undefined".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn is_default_data_type(&self) -> bool {
-        true
-    }
-}
 
 /// Owned forwarding wrapper letting [`TypedefDb::owning_data_type_manager`] hand back the
 /// trait-mandated `Arc<dyn DataTypeManagerDb>` from this struct's `Arc<Mutex<...>>` storage,
@@ -429,7 +414,7 @@ impl TypedefDb {
             self as *const Self as *const (),
             new_dt.as_ref() as *const dyn DataType as *const (),
         ) {
-            new_dt = Box::new(MissingDataType);
+            new_dt = DefaultDataType::boxed();
         }
         let resolved = self.owner.lock().unwrap().resolve(new_dt, &DefaultHandlerImpl);
         let resolved_id = self.owner.lock().unwrap().get_resolved_id(resolved.as_ref());
@@ -1002,7 +987,7 @@ impl TypeDef for TypedefDb {
             .lock()
             .unwrap()
             .get_data_type_by_id(id)
-            .unwrap_or_else(|| Box::new(MissingDataType))
+            .unwrap_or_else(|| DefaultDataType::boxed())
     }
 
     fn get_base_data_type(&self) -> Box<dyn DataType> {

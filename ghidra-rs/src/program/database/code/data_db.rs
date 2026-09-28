@@ -58,6 +58,7 @@ use std::any::{Any, TypeId};
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::{Arc, RwLock};
 
+use crate::program::model::data::default_data_type::DefaultDataType;
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::framework::db::DBRecord;
@@ -149,87 +150,6 @@ pub trait DataDb: Data + DbObject {
 }
 
 // ===========================================================================================
-// `DataType.DEFAULT`.
-// ===========================================================================================
-
-/// Stands in for the `DefaultDataType.dataType` singleton that Java's `DataType.DEFAULT` names.
-///
-/// The ported [`DefaultDataType`](crate::program::model::data::default_data_type::DefaultDataType)
-/// is a *trait* (it was selected as a cycle cut-point and so declares no singleton), and nothing
-/// in the crate implements it outside test modules. `DataDB`'s constructor and its
-/// `hasBeenDeleted` "still undefined?" branch both need a concrete instance, so this supplies the
-/// smallest possible one, delegating every behavioural method to that trait's ported bodies
-/// rather than reimplementing them.
-#[derive(Clone, Default)]
-struct DefaultDataTypeInstance;
-
-impl DataType for DefaultDataTypeInstance {
-    fn get_name(&self) -> String {
-        "undefined".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        // Port of `DefaultDataType.getLength()`.
-        1
-    }
-
-    fn get_mnemonic(&self, _settings: &dyn Settings) -> String {
-        // Port of `DefaultDataType.getMnemonic(Settings)`.
-        "??".to_string()
-    }
-
-    fn get_description(&self) -> String {
-        // Port of `DefaultDataType.getDescription()`.
-        "Undefined Byte".to_string()
-    }
-
-    fn get_representation(
-        &self,
-        buf: &dyn MemBuffer,
-        _settings: &dyn Settings,
-        _length: i32,
-    ) -> String {
-        // Port of `DefaultDataType.getRepresentation(MemBuffer, Settings, int)`.
-        match buf.get_byte(0) {
-            Ok(byte) => {
-                let b = u32::from(byte);
-                let mut rep = format!("{b:X}h");
-                if rep.len() == 2 {
-                    rep = format!("0{rep}");
-                }
-                if b > 31 && b < 128 {
-                    rep.push_str("    ");
-                    rep.push(b as u8 as char);
-                }
-                rep
-            }
-            Err(_) => "??".to_string(),
-        }
-    }
-
-    fn get_value(
-        &self,
-        buf: &dyn MemBuffer,
-        _settings: &dyn Settings,
-        _length: i32,
-    ) -> Option<Box<dyn Any>> {
-        // Port of `DefaultDataType.getValue(MemBuffer, Settings, int)`, which yields a Scalar.
-        buf.get_byte(0)
-            .ok()
-            .map(|byte| Box::new(Scalar::new(8, i64::from(byte))) as Box<dyn Any>)
-    }
-
-    fn get_value_class(&self, _settings: &dyn Settings) -> Option<TypeId> {
-        // Port of `DefaultDataType.getValueClass(Settings)`, which is `Scalar.class`.
-        Some(TypeId::of::<Scalar>())
-    }
-
-    fn is_default_data_type(&self) -> bool {
-        true
-    }
-}
-
-// ===========================================================================================
 // The concrete `DataDB`.
 // ===========================================================================================
 
@@ -279,7 +199,7 @@ impl DataDB {
         let initial_length = data_type.as_ref().map_or(1, |dt| dt.get_length());
         let base = CodeUnitDbBase::new(owner, cache_key, address, addr, initial_length);
         let data_type: Arc<dyn DataType> =
-            data_type.unwrap_or_else(|| Arc::new(DefaultDataTypeInstance));
+            data_type.unwrap_or_else(|| DefaultDataType::data_type());
         let base_data_type = shared_base_data_type(&data_type);
         // Java: `dataMgr = program.getDataTypeManager();` -- see the module docs for why the
         // ported `Program` trait cannot supply one.
@@ -1233,7 +1153,6 @@ impl CodeUnit for DataDB {
         Some(self)
     }
 }
-
 
 // ===========================================================================================
 // ProcessorContext / ProcessorContextView -- inherited from `CodeUnitDB` in Java.

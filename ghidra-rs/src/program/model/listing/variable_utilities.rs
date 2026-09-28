@@ -10,6 +10,7 @@
 use std::cmp::Ordering;
 use std::sync::Arc;
 
+use crate::program::model::data::void_data_type::VoidDataType;
 use crate::program::model::address::Address;
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::composite::Composite;
@@ -139,7 +140,7 @@ pub trait VariableUtilities {
                 let base: Box<dyn DataType> =
                     match self.find_or_create_class_struct_for_function(function) {
                         Some(s) => Box::new(StructureAsDataType(s)),
-                        None => Box::new(FallbackVoidDataType),
+                        None => Box::new(VoidDataType::new(None)),
                     };
                 make_pointer(dt_mgr.as_deref(), base, Some(storage.size()))
             }
@@ -541,13 +542,13 @@ pub trait VariableUtilities {
         let dt_mgr = program.get_data_type_manager();
         let base: Box<dyn DataType> = match self.find_or_create_class_struct_for_function(function) {
             Some(s) => Box::new(StructureAsDataType(s)),
-            None => Box::new(FallbackVoidDataType),
+            None => Box::new(VoidDataType::new(None)),
         };
         let this_dt = make_pointer(dt_mgr.as_deref(), base, None);
         let this_len = this_dt.get_length();
 
         let data_types: Vec<Arc<dyn DataType>> = vec![
-            Arc::new(FallbackVoidDataType) as Arc<dyn DataType>,
+            VoidDataType::data_type(),
             Arc::new(FallbackPointerDataType(this_len)) as Arc<dyn DataType>,
         ];
         let storages = convention.get_storage_locations(
@@ -1272,25 +1273,6 @@ impl DataType for FallbackPointerDataType {
     }
 }
 
-/// Fallback `void` [`DataType`] used where `VoidDataType.dataType` would have been referenced in
-/// Java before the real `VoidDataType` class is ported (see `is_void_data_type` in
-/// `program::seam_stubs`). Not a port of any specific Java class.
-struct FallbackVoidDataType;
-
-impl DataType for FallbackVoidDataType {
-    fn get_name(&self) -> String {
-        "void".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        0
-    }
-
-    fn is_void_type(&self) -> bool {
-        true
-    }
-}
-
 /// Minimal [`Parameter`] implementation backing the deprecated
 /// [`VariableUtilities::get_this_parameter`], standing in for `new ParameterImpl("this", 0, ...)`.
 /// Not a port of any specific Java class.
@@ -1832,7 +1814,7 @@ mod tests {
     #[test]
     fn check_data_type_rejects_void_when_not_allowed() {
         let util = Impl;
-        let err = match util.check_data_type(Some(Box::new(FallbackVoidDataType)), false, -1, None) {
+        let err = match util.check_data_type(Some(Box::new(VoidDataType::new(None))), false, -1, None) {
             Err(e) => e,
             Ok(_) => panic!("expected an error"),
         };
@@ -1843,7 +1825,7 @@ mod tests {
     fn check_data_type_allows_void_when_permitted() {
         let util = Impl;
         let dt = util
-            .check_data_type(Some(Box::new(FallbackVoidDataType)), true, -1, None)
+            .check_data_type(Some(Box::new(VoidDataType::new(None))), true, -1, None)
             .unwrap();
         assert!(dt.is_void_type());
     }

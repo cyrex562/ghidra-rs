@@ -22,6 +22,7 @@
 
 use std::sync::Arc;
 
+use crate::program::model::data::default_data_type::DefaultDataType;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::lang::language::Language;
@@ -30,28 +31,6 @@ use crate::program::model::listing::variable_storage::{UnassignedStorage, Variab
 use crate::program::model::pcode::Varnode;
 use crate::program::model::data::void_data_type::is_void_data_type;
 use crate::program::seam_stubs::VarnodeListStorage;
-
-/// Stands in for `DataType.DEFAULT`, assigned by [`ParameterPieces::get_variable_storage`] when
-/// [`ParameterPieces::data_type`] is `None`, mirroring the identical `DefaultDataTypeStandIn`
-/// stand-ins used elsewhere in this crate (e.g.
-/// `program::database::data::parameter_definition_db`) in place of a global `DataType.DEFAULT`
-/// singleton, which this crate does not model.
-#[derive(Debug, Clone, Copy)]
-struct DefaultDataTypeStandIn;
-
-impl DataType for DefaultDataTypeStandIn {
-    fn get_name(&self) -> String {
-        "undefined".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        1
-    }
-
-    fn is_default_data_type(&self) -> bool {
-        true
-    }
-}
 
 /// Basic elements of a parameter: address, data-type, properties.
 ///
@@ -110,7 +89,7 @@ impl ParameterPieces {
     /// (InvalidInputException)` path.
     pub fn get_variable_storage(&mut self, _program: &dyn Program) -> Box<dyn VariableStorage> {
         if self.data_type.is_none() {
-            self.data_type = Some(Arc::new(DefaultDataTypeStandIn));
+            self.data_type = Some(DefaultDataType::data_type());
         }
         let data_type = self.data_type.as_ref().expect("just set above if it was None");
         if is_void_data_type(Some(data_type.as_ref())) {

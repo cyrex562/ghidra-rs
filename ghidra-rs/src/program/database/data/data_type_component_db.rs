@@ -78,6 +78,7 @@
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::{Arc, Mutex};
 
+use crate::program::model::data::default_data_type::DefaultDataType;
 use crate::docking::settings::settings::Settings;
 use crate::framework::db::DBRecord;
 use crate::program::database::data::component_db_adapter::{
@@ -99,24 +100,6 @@ use crate::program::seam_stubs::share_data_type;
 #[derive(Debug, Default, Clone, Copy)]
 struct Utils;
 impl ModelDataTypeUtilities for Utils {}
-
-/// Stand-in for `DataType.DEFAULT`, returned by [`DataTypeComponentDB::data_type`] when the
-/// component's referenced-type id is `-1` (an "undefined" component) or, for a non-record
-/// component, when no explicit data type was supplied at construction. Mirrors the identical
-/// `MissingDataType` stand-in in `typedef_db.rs`.
-#[derive(Debug, Clone, Copy)]
-struct DefaultDataTypeStandIn;
-impl DataType for DefaultDataTypeStandIn {
-    fn get_name(&self) -> String {
-        "undefined".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn is_default_data_type(&self) -> bool {
-        true
-    }
-}
 
 /// Stand-in for `BadDataType.dataType`, returned by [`DataTypeComponentDB::data_type`] when the
 /// component's referenced-type id no longer resolves to anything in the owning manager. Mirrors
@@ -276,11 +259,11 @@ impl DataTypeComponentDB {
             return share_data_type(dt);
         }
         let Some(record) = &self.record else {
-            return Box::new(DefaultDataTypeStandIn);
+            return DefaultDataType::boxed();
         };
         let id = record.lock().unwrap().get_long(COMPONENT_DT_ID_COL).unwrap_or(-1);
         if id == -1 {
-            return Box::new(DefaultDataTypeStandIn);
+            return DefaultDataType::boxed();
         }
         match self.data_mgr.lock().unwrap().get_data_type_by_id(id) {
             Some(dt) => dt,
