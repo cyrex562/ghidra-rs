@@ -573,7 +573,7 @@ pub fn is_empty_array(dt: &dyn DataType) -> bool {
 
 /// Port of `DWARFUtil.isVoid(DataType)`.
 pub fn is_void(dt: &dyn DataType) -> bool {
-    crate::program::seam_stubs::is_void_data_type(Some(dt))
+    crate::program::model::data::void_data_type::is_void_data_type(Some(dt))
 }
 
 /// Port of `DWARFUtil.isZeroByteDataType(DataType)`.

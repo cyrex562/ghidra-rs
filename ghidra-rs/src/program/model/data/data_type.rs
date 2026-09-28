@@ -517,11 +517,9 @@ pub trait DataType: Send + Sync {
         false
     }
 
-    /// Stands in for `instanceof VoidDataType`, used by the
-    /// [`is_void_data_type`](crate::program::seam_stubs::is_void_data_type) placeholder for
-    /// `VoidDataType.isVoidDataType`, since the real `VoidDataType` class is not yet ported; see
-    /// `STUBS.tsv`. Implementors representing the `void` type are expected to override this to
-    /// return `true`.
+    /// Stands in for `instanceof VoidDataType`, used by
+    /// [`is_void_data_type`](crate::program::model::data::void_data_type::is_void_data_type).
+    /// [`VoidDataType`](crate::program::model::data::void_data_type::VoidDataType) returns `true`.
     fn is_void_type(&self) -> bool {
         false
     }

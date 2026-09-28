@@ -114,7 +114,8 @@ use crate::program::model::listing::function_signature::{
     FunctionSignature, NORETURN_DISPLAY_STRING, VAR_ARGS_DISPLAY_STRING, VOID_PARAM_DISPLAY_STRING,
 };
 use crate::program::model::symbol::source_type::SourceType;
-use crate::program::seam_stubs::{share_data_type, undefined_data_type, GenericCallingConvention as GenericCallingConventionPlaceholder};
+use crate::program::model::data::default_data_type::DefaultDataType;
+use crate::program::seam_stubs::{share_data_type, GenericCallingConvention as GenericCallingConventionPlaceholder};
 use crate::program::model::mem::MemBuffer;
 use crate::util::exception::InvalidInputException;
 
@@ -435,7 +436,7 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
         let old_path = old_dt.get_data_type_path();
         let make_replacement = |dtm: &dyn DataTypeManager| -> Box<dyn DataType> {
             if is_self_reference {
-                undefined_data_type(1)
+                DefaultDataType::boxed()
             } else {
                 new_dt.clone_data_type(dtm)
             }
@@ -469,24 +470,17 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
         }
     }
 
-    /// Default body for [`DataType::data_type_deleted`]. `DataType.DEFAULT` (the Java field this
-    /// resets deleted fields to) is not ported yet; [`undefined_data_type`] stands in for it,
-    /// mirroring its use elsewhere in this crate (e.g.
-    /// [`VariableUtilities`](crate::program::model::listing::variable_utilities::VariableUtilities))
-    /// as the placeholder for an unresolvable datatype -- notably with a length of `1`, unlike
-    /// the zero-length [`PlaceholderDataType`](crate::program::seam_stubs::PlaceholderDataType),
-    /// since a zero/negative length would fail this trait's own
-    /// [`FunctionDefinitionDataType::function_definition_data_type_impl_set_return_type`]/
-    /// [`ParameterDefinition::set_data_type`] validation.
+    /// Default body for [`DataType::data_type_deleted`]: fields that referenced the deleted type
+    /// are reset to `DataType.DEFAULT` ([`DefaultDataType`]).
     fn function_definition_data_type_impl_data_type_deleted(&mut self, dt: &dyn DataType) {
         let deleted_path = dt.get_data_type_path();
         if self.stored_return_type().get_data_type_path() == deleted_path {
-            self.set_stored_return_type(undefined_data_type(1));
+            self.set_stored_return_type(DefaultDataType::boxed());
         }
         let mut params = self.stored_arguments();
         for param in params.iter_mut() {
             if param.get_data_type().get_data_type_path() == deleted_path {
-                let _ = param.set_data_type(undefined_data_type(1));
+                let _ = param.set_data_type(DefaultDataType::boxed());
             }
         }
         self.set_stored_arguments(params);
@@ -496,8 +490,7 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
     /// filler arguments (when `ordinal` is beyond the current argument list) via
     /// [`BasicParameterDefinition`], exactly mirroring the Java source's
     /// `Function.DEFAULT_PARAM_PREFIX`-named, `DataType.DEFAULT`-typed gap fill (see
-    /// [`FunctionDefinitionDataType::function_definition_data_type_impl_data_type_deleted`] for
-    /// why [`undefined_data_type`] stands in for `DataType.DEFAULT`).
+    /// [`FunctionDefinitionDataType::function_definition_data_type_impl_data_type_deleted`]).
     fn function_definition_data_type_impl_replace_argument(
         &mut self,
         ordinal: i32,
@@ -514,7 +507,7 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
                 params.push(Box::new(BasicParameterDefinition {
                     ordinal: i as i32,
                     name: Some(format!("{DEFAULT_PARAM_PREFIX}{}", i + 1)),
-                    data_type: Arc::from(undefined_data_type(1)),
+                    data_type: Arc::from(DefaultDataType::boxed()),
                     comment: comment.clone(),
                 }));
             }
@@ -1047,7 +1040,7 @@ mod tests {
         // Every `MockDataType` (any length) shares the same `get_data_type_path()` (they all
         // report the name "int"), which is how identity is approximated here -- so deleting any
         // one of them matches the return type and every parameter. The replacement
-        // (`undefined_data_type(1)`, standing in for `DataType.DEFAULT`) always has length 1.
+        // (`DataType.DEFAULT`, i.e. `DefaultDataType`) always has length 1.
         let deleted = MockDataType { length: 999 };
         def.function_definition_data_type_impl_data_type_deleted(&deleted);
         assert_eq!(def.get_return_type().get_length(), 1);

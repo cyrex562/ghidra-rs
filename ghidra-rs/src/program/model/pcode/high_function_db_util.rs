@@ -522,7 +522,7 @@ fn get_return_parameter(
             Box::new(seam_stubs::PlaceholderDataType)
         }
         Some(dt) if !use_data_types => {
-            let undefined = seam_stubs::undefined_data_type(dt.get_length());
+            let undefined = crate::program::model::data::undefined::new_undefined_data_type(dt.get_length());
             match program.get_data_type_manager() {
                 Some(dtm) => undefined.clone_data_type(dtm.as_ref()),
                 None => undefined,
@@ -552,7 +552,7 @@ fn get_parameters(high_function: &dyn HighFunction, use_data_types: bool) -> Vec
         let data_type: Box<dyn DataType> = if use_data_types {
             param.get_data_type()
         } else {
-            let undefined = seam_stubs::undefined_data_type(param.get_size());
+            let undefined = crate::program::model::data::undefined::new_undefined_data_type(param.get_size());
             match program.get_data_type_manager() {
                 Some(dtm) => undefined.clone_data_type(dtm.as_ref()),
                 None => undefined,
@@ -956,7 +956,7 @@ fn update_db_variable_impl(
             None => match &var_list {
                 Some(list) => list[0].get_data_type(),
                 None => {
-                    let undefined = seam_stubs::undefined_data_type(high_symbol.get_size());
+                    let undefined = crate::program::model::data::undefined::new_undefined_data_type(high_symbol.get_size());
                     match program.get_data_type_manager() {
                         Some(dtm) => undefined.clone_data_type(dtm.as_ref()),
                         None => undefined,

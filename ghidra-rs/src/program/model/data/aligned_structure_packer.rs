@@ -26,21 +26,16 @@
 //! [`get_aligned_offset`](crate::program::model::data::data_organization_impl::get_aligned_offset).
 //!
 //! Finally, `pack()` replaces any component whose data type is the `DataType.DEFAULT` sentinel
-//! with the `Undefined1DataType.dataType` singleton. Neither sentinel exists as a constructible
-//! value in the Rust crate (`DataType::DEFAULT` was omitted when `DataType` was ported, and
-//! `Undefined1DataType` was itself promoted to a trait with no singleton field -- see that
-//! module's docs), so the DEFAULT check is expressed via
-//! [`DataType::is_default_data_type`](crate::program::model::data::data_type::DataType::is_default_data_type)
-//! and the replacement reuses the existing
-//! [`seam_stubs::undefined_data_type(1)`](crate::program::seam_stubs::undefined_data_type) stand-in
-//! (already used elsewhere in the crate for exactly this "opaque undefined byte" role) rather than
-//! inventing a new placeholder for the same concept.
+//! (checked via
+//! [`DataType::is_default_data_type`](crate::program::model::data::data_type::DataType::is_default_data_type))
+//! with an [`Undefined1DataType`].
 
 use crate::program::model::data::alignment_type::AlignmentType;
 use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::internal_data_type_component::InternalDataTypeComponent;
 use crate::program::model::data::structure_internal::StructureInternal;
-use crate::program::seam_stubs::{self, AlignedComponentPacker};
+use crate::program::model::data::undefined1_data_type::Undefined1DataType;
+use crate::program::seam_stubs::AlignedComponentPacker;
 
 /// Port of `AlignedStructurePacker.StructurePackResult`.
 ///
@@ -110,7 +105,7 @@ pub trait AlignedStructurePacker {
         // Transform improper DEFAULT datatype use to an undefined byte.
         for component in components.iter_mut() {
             if component.get_data_type().is_default_data_type() {
-                component.set_data_type(seam_stubs::undefined_data_type(1));
+                component.set_data_type(Box::new(Undefined1DataType::new(None)));
                 components_changed = true;
             }
         }

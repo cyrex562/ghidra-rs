@@ -519,30 +519,6 @@ pub struct PlaceholderDataType;
 
 impl DataType for PlaceholderDataType {}
 
-/// Stands in for `Undefined.getUndefinedDataType(int)`, referenced by
-/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
-/// before the real `Undefined1..8DataType` family is ported. Represents an opaque fixed-length
-/// "undefined" data type of the requested length.
-pub fn undefined_data_type(length: i32) -> Box<dyn DataType> {
-    struct UndefinedDataTypePlaceholder(i32);
-
-    impl DataType for UndefinedDataTypePlaceholder {
-        fn get_name(&self) -> String {
-            format!("undefined{}", self.0)
-        }
-
-        fn get_length(&self) -> i32 {
-            self.0
-        }
-
-        fn is_undefined_type(&self) -> bool {
-            true
-        }
-    }
-
-    Box::new(UndefinedDataTypePlaceholder(length))
-}
-
 /// Placeholder for `ghidra.program.model.lang.VariableUtilities`'s static `resizeStorage`,
 /// referenced by
 /// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
@@ -1330,18 +1306,6 @@ pub use crate::program::model::lang::prototype_pieces::PrototypePieces;
 /// compiling unchanged, following this crate's precedent for graduating a seam-stub type in
 /// place (see e.g. `DataTypePath`/`Mask`/`StackFrame` below).
 pub use crate::program::model::lang::parameter_pieces::ParameterPieces;
-
-/// Placeholder for `ghidra.program.model.data.VoidDataType`'s static `isVoidDataType` helper,
-/// referenced by
-/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
-/// before the real class is ported. The Java method also unwraps a `TypeDef` to its base type
-/// before testing; that step is omitted here since it needs supertrait downcasting this crate
-/// does not rely on elsewhere; any real `VoidDataType` port should override
-/// [`DataType::is_void_type`](crate::program::model::data::data_type::DataType::is_void_type) so
-/// this check keeps working unchanged.
-pub fn is_void_data_type(dt: Option<&dyn DataType>) -> bool {
-    dt.is_some_and(DataType::is_void_type)
-}
 
 /// Placeholder for `ghidra.program.database.mem.ByteMappingScheme`, referenced by
 /// [`MemoryBlockSourceInfo`](crate::program::model::mem::memory_block_source_info::MemoryBlockSourceInfo)

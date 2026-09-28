@@ -146,13 +146,13 @@ pub trait VariableUtilities {
             Some(AutoParameterType::ReturnStoragePtr) => {
                 let base = match dt_mgr.as_deref() {
                     Some(mgr) => return_data_type.clone_data_type(mgr),
-                    None => crate::program::seam_stubs::undefined_data_type(
+                    None => crate::program::model::data::undefined::new_undefined_data_type(
                         return_data_type.get_length(),
                     ),
                 };
                 make_pointer(dt_mgr.as_deref(), base, Some(storage.size()))
             }
-            None => crate::program::seam_stubs::undefined_data_type(storage.size()),
+            None => crate::program::model::data::undefined::new_undefined_data_type(storage.size()),
         }
     }
 
@@ -255,7 +255,7 @@ pub trait VariableUtilities {
     ) -> Result<Box<dyn DataType>, InvalidInputException> {
         let mut dt: Box<dyn DataType> = match data_type {
             Some(dt) => dt,
-            None => crate::program::seam_stubs::undefined_data_type(default_size),
+            None => crate::program::model::data::undefined::new_undefined_data_type(default_size),
         };
 
         if dt.is_bit_field_type() {
@@ -294,7 +294,7 @@ pub trait VariableUtilities {
                 None => {
                     // Downcast unavailable for this implementor; fall back to a same-sized
                     // undefined type rather than losing the data type entirely.
-                    dt = crate::program::seam_stubs::undefined_data_type(default_size.max(1));
+                    dt = crate::program::model::data::undefined::new_undefined_data_type(default_size.max(1));
                 }
             }
         }

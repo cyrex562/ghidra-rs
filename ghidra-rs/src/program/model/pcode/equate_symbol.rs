@@ -25,17 +25,12 @@
 //! needed, unlike the siblings' `Program`/`ProgramArchitecture` injection, precisely because Java
 //! already hands this constructor a real `HighFunction` to walk through).
 //!
-//! # Deviation: `DataType.DEFAULT` stand-in
+//! # `DataType.DEFAULT` type
 //! Every constructor and `decode` sets `type = DataType.DEFAULT` and it is never anything else
 //! for this class, so no mutable `type` field is stored at all --
-//! [`HighSymbol::get_data_type`] always synthesizes a fresh value. `DataType.DEFAULT` itself (the
-//! `DefaultDataType` singleton) is not ported; this uses
-//! [`seam_stubs::undefined_data_type(1)`](crate::program::seam_stubs::undefined_data_type)
-//! (a 1-byte "undefined" datatype) rather than the crate's more common `PlaceholderDataType`
-//! (used by the sibling classes above), specifically because [`HighSymbol::get_size`] for this
-//! class is derived from `get_data_type().get_length()` (mirroring `DynamicEntry.getSize()`,
-//! see below) and `PlaceholderDataType::get_length()` defaults to `0`, which would silently make
-//! every `EquateSymbol` report a wrong (`DataType.DEFAULT.getLength()` is `1` in real Ghidra) size.
+//! [`HighSymbol::get_data_type`] always returns a handle on
+//! [`DefaultDataType`](crate::program::model::data::default_data_type::DefaultDataType), whose
+//! length (1) is what [`HighSymbol::get_size`] reports (mirroring `DynamicEntry.getSize()`).
 //!
 //! # Self-reference gap: no live `DynamicEntry`/`SymbolEntry`, and a faithfully-reproduced NPE
 //! Java's two real constructors build `new DynamicEntry(this, addr, hash)` and attach it via the
@@ -85,7 +80,8 @@ use crate::program::model::pcode::ids::{
     ATTRIB_MERGE, ATTRIB_NAME, ATTRIB_NAMELOCK, ATTRIB_READONLY, ATTRIB_THISPTR, ATTRIB_TYPELOCK,
     ATTRIB_VOLATILE, ELEM_EQUATESYMBOL, ELEM_VALUE,
 };
-use crate::program::seam_stubs::{undefined_data_type, HashVariableStorage};
+use crate::program::model::data::default_data_type::DefaultDataType;
+use crate::program::seam_stubs::HashVariableStorage;
 use crate::program::model::data::mutability_settings_definition::{CONSTANT, VOLATILE};
 
 fn decode_err(e: crate::program::model::pcode::decoder::DecoderError) -> DecoderException {
@@ -405,7 +401,7 @@ impl HighSymbol for EquateSymbol {
     }
 
     fn get_data_type(&self) -> Box<dyn DataType> {
-        undefined_data_type(1)
+        DefaultDataType::boxed()
     }
 
     fn get_storage(&self) -> Box<dyn VariableStorage> {

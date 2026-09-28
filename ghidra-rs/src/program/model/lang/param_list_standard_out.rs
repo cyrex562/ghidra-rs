@@ -7,7 +7,8 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::param_list_standard::ParamListStandard;
 use crate::program::model::lang::protorules::assign_action;
-use crate::program::seam_stubs::{is_void_data_type, ParameterPieces, PrototypePieces};
+use crate::program::model::data::void_data_type::is_void_data_type;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 

@@ -28,7 +28,8 @@ use crate::program::model::lang::language::Language;
 use crate::program::model::listing::program::Program;
 use crate::program::model::listing::variable_storage::{UnassignedStorage, VariableStorage, VoidStorage};
 use crate::program::model::pcode::Varnode;
-use crate::program::seam_stubs::{is_void_data_type, VarnodeListStorage};
+use crate::program::model::data::void_data_type::is_void_data_type;
+use crate::program::seam_stubs::VarnodeListStorage;
 
 /// Stands in for `DataType.DEFAULT`, assigned by [`ParameterPieces::get_variable_storage`] when
 /// [`ParameterPieces::data_type`] is `None`, mirroring the identical `DefaultDataTypeStandIn`

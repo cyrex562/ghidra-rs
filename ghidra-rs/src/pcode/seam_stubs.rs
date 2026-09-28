@@ -4615,8 +4615,9 @@ impl CmpExpr {
 }
 
 impl RVal for CmpExpr {
+    /// `BooleanDataType.dataType`.
     fn get_type(&self) -> Box<dyn DataType> {
-        unimplemented!("Java uses BooleanDataType.dataType, which is not ported yet")
+        Box::new(crate::program::model::data::boolean_data_type::BooleanDataType::new(None))
     }
 
     fn cast(&self, _type_: &dyn DataType) -> Box<dyn RVal> {

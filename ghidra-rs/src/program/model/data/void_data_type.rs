@@ -1,234 +1,162 @@
-use crate::docking::settings::settings::Settings;
-use crate::program::model::data::built_in::BuiltIn;
-use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+//! Port of `ghidra.program.model.data.VoidDataType`.
 
-/// Special dataType used only for function return types. Used to indicate that a function has no
-/// return value.
+use std::sync::Arc;
+
+use crate::docking::settings::settings::Settings;
+use crate::docking::settings::settings_definition::SettingsDefinition;
+use crate::program::model::data::built_in::{
+    built_in_data_type_methods, built_in_singleton, impl_built_in, same_class, BuiltInBase,
+};
+use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+use crate::program::model::mem::MemBuffer;
+
+/// Special datatype that represents the `void` type (no data, length 0).
 ///
-/// Port of `ghidra.program.model.data.VoidDataType`, promoted straight to a trait because it was
-/// selected as a dependency-cycle cut-point.
-///
-/// The Java class `extends BuiltIn`, already ported as a trait ([`BuiltIn`]), so this trait
-/// extends it directly.
-///
-/// `getLength()`, `getRepresentation(MemBuffer, Settings, int)`, and `getValue(MemBuffer,
-/// Settings, int)` are all overridden in Java, but each override is byte-for-byte identical to
-/// the [`DataType`](crate::program::model::data::data_type::DataType) default already in place
-/// (`0`, `""`, and `null`/`None` respectively) -- mirroring the precedent set by
-/// [`DataTypeImpl`](crate::program::model::data::data_type_impl::DataTypeImpl)'s own module docs
-/// for identical-to-default overrides -- so none of the three are re-declared here.
-///
-/// `getMnemonic(Settings)` and `getDescription()` override defaults with genuinely different
-/// (constant) values, so -- following the same ambiguous-redeclare restriction documented
-/// throughout this crate's other `Abstract*`/cut-point traits -- they are exposed here under
-/// distinct `void_*` names.
-///
-/// `isVoidDataType(DataType)` is not ported as a method on this trait: the already-ported
-/// [`is_void_data_type`](crate::program::seam_stubs::is_void_data_type) placeholder implements it
-/// generically via [`DataType::is_void_type`](crate::program::model::data::data_type::DataType::is_void_type),
-/// which a concrete `VoidDataType` implementation is expected to override to return `true` (see
-/// that method's own doc comment) -- no new plumbing is needed here.
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct) and the
-/// `ClassTranslator`-adjacent bits BuiltIn's constructor would otherwise wire up.
-pub trait VoidDataType: BuiltIn {
-    /// Port of `VoidDataType.getMnemonic(Settings)`, which overrides the default
-    /// `DataType.getMnemonic(Settings)`. Always `"void"`, regardless of `settings` or this
-    /// instance's name.
-    fn void_mnemonic(&self, settings: &dyn Settings) -> String {
-        let _ = settings;
+/// Port of `ghidra.program.model.data.VoidDataType`. Java's static `dataType` is
+/// [`VoidDataType::data_type`].
+#[derive(Debug, Clone)]
+pub struct VoidDataType {
+    base: BuiltInBase,
+}
+
+impl VoidDataType {
+    /// Creates a void datatype bound to `dtm`'s data organization (Java: `new VoidDataType(dtm)`;
+    /// `None` is the no-argument constructor).
+    pub fn new(dtm: Option<&dyn DataTypeManager>) -> Self {
+        Self { base: BuiltInBase::new(None, "void", dtm) }
+    }
+
+    /// Port of `VoidDataType.getCTypeDeclaration(DataOrganization)`: `null`, since `void` is a
+    /// standard C name and type.
+    fn c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
+        None
+    }
+
+    fn built_in_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
+        Vec::new()
+    }
+
+    fn decompiler_display_name(&self, _language: DecompilerLanguage) -> String {
+        self.base.name().to_string()
+    }
+}
+
+built_in_singleton!(VoidDataType);
+impl_built_in!(VoidDataType);
+
+impl std::fmt::Display for VoidDataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.base.name())
+    }
+}
+
+impl DataType for VoidDataType {
+    built_in_data_type_methods!();
+
+    fn get_mnemonic(&self, _settings: &dyn Settings) -> String {
         "void".to_string()
     }
 
-    /// Port of `VoidDataType.getDescription()`, which overrides the default
-    /// `DataType.getDescription()`.
-    fn void_description(&self) -> String {
+    fn get_length(&self) -> i32 {
+        0
+    }
+
+    fn get_description(&self) -> String {
         "void datatype".to_string()
     }
 
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
-    ///
-    /// Port of `VoidDataType.clone(DataTypeManager)`, which overrides
-    /// `BuiltIn.clone(DataTypeManager)`. Left as a required method (no default); see
-    /// [`ByteDataType::byte_clone`](super::byte_data_type::ByteDataType::byte_clone) for why.
-    fn void_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn VoidDataType>;
+    fn get_representation(&self, _buf: &dyn MemBuffer, _settings: &dyn Settings, _length: i32) -> String {
+        String::new()
+    }
 
-    /// Port of `VoidDataType.getCTypeDeclaration(DataOrganization)`, which overrides the abstract
-    /// `BuiltInDataType.getCTypeDeclaration(DataOrganization)`. Always `None`, matching the Java
-    /// original's comment that `void` is a standard C-primitive name and type. Exposed under a
-    /// distinct name since `BuiltInDataType::get_c_type_declaration` is a required (no-default)
-    /// method; a concrete `impl BuiltInDataType for ...` should delegate to this.
-    fn void_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-        let _ = data_organization;
+    fn get_value(&self, _buf: &dyn MemBuffer, _settings: &dyn Settings, _length: i32) -> Option<Box<dyn std::any::Any>> {
         None
     }
+
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        same_class(self, dt)
+    }
+
+    fn is_void_type(&self) -> bool {
+        true
+    }
+}
+
+/// Determine if the specified data type is `void`, looking through a typedef to its base type.
+///
+/// Port of the static `VoidDataType.isVoidDataType(DataType)`; `None` stands in for `null`.
+pub fn is_void_data_type(dt: Option<&dyn DataType>) -> bool {
+    let Some(dt) = dt else {
+        return false;
+    };
+    if dt.is_typedef() {
+        if let Some(base) = dt.typedef_base_data_type() {
+            return base.is_void_type();
+        }
+    }
+    dt.is_void_type()
+}
+
+/// The shared `void` datatype (Java: `DataType.VOID`).
+pub fn void() -> Arc<dyn DataType> {
+    VoidDataType::data_type()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
+    use crate::program::model::data::built_in::BuiltIn;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::category_path::{CategoryPath, ROOT};
-    use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::data_type_impl::DataTypeImpl;
-    use crate::program::model::data::source_archive::SourceArchive;
-    use crate::program::model::mem::MemBuffer;
-    use crate::util::UniversalID;
-    use std::sync::Weak;
+    use crate::program::model::data::byte_data_type::ByteDataType;
 
-    struct MockSettings;
-    impl Settings for MockSettings {}
-
-    struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {
-        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
-            unimplemented!("not exercised by these tests")
-        }
-        fn is_big_endian(&self) -> bool {
-            unimplemented!("not exercised by these tests")
-        }
-        fn get_address(&self) -> crate::program::model::address::Address {
-            crate::program::model::address::SpecialAddress::no_address()
-        }
+    #[test]
+    fn java_constants() {
+        let dt = VoidDataType::instance();
+        let s = LongSettings::default();
+        assert_eq!(dt.get_name(), "void");
+        assert_eq!(dt.get_path_name(), "/void");
+        assert_eq!(dt.get_length(), 0);
+        assert_eq!(dt.get_description(), "void datatype");
+        assert_eq!(dt.get_mnemonic(&s), "void");
+        assert_eq!(dt.get_representation(&buf(&[1], false), &s, 1), "");
+        assert!(dt.get_value(&buf(&[1], false), &s, 1).is_none());
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)), None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "void");
+        assert_eq!(dt.get_settings_definitions().len(), 1);
     }
 
-    struct MockVoidDataType {
-        dtm_tag: Option<&'static str>,
-        last_change_time: i64,
-        last_change_time_in_source_archive: i64,
-        parents: Vec<Weak<dyn DataType>>,
+    #[test]
+    fn is_void_data_type_accepts_void_and_rejects_others() {
+        assert!(is_void_data_type(Some(VoidDataType::instance().as_ref())));
+        assert!(is_void_data_type(Some(&VoidDataType::new(None))));
+        assert!(!is_void_data_type(Some(ByteDataType::instance().as_ref())));
+        assert!(!is_void_data_type(None));
     }
 
-    impl MockVoidDataType {
-        fn new() -> Self {
-            Self {
-                dtm_tag: None,
-                last_change_time: 0,
-                last_change_time_in_source_archive: 0,
-                parents: Vec::new(),
+    #[test]
+    fn is_void_data_type_looks_through_typedefs() {
+        struct VoidTypedef;
+        impl DataType for VoidTypedef {
+            fn is_typedef(&self) -> bool {
+                true
+            }
+            fn typedef_base_data_type(&self) -> Option<Box<dyn DataType>> {
+                Some(Box::new(VoidDataType::new(None)))
             }
         }
-    }
-
-    impl DataType for MockVoidDataType {
-        fn get_name(&self) -> String {
-            "void".to_string()
-        }
-        fn get_category_path(&self) -> CategoryPath {
-            ROOT.clone()
-        }
-        fn is_void_type(&self) -> bool {
-            true
-        }
-    }
-
-    impl DataTypeImpl for MockVoidDataType {
-        fn stored_default_settings(&self) -> Box<dyn Settings> {
-            Box::new(MockSettings)
-        }
-        fn set_stored_default_settings(&mut self, _settings: Box<dyn Settings>) {}
-        fn stored_source_archive(&self) -> Option<Box<dyn SourceArchive>> {
-            None
-        }
-        fn set_stored_source_archive(&mut self, _archive: Option<Box<dyn SourceArchive>>) {}
-        fn stored_universal_id(&self) -> UniversalID {
-            UniversalID::new(0)
-        }
-        fn stored_last_change_time(&self) -> i64 {
-            self.last_change_time
-        }
-        fn set_stored_last_change_time(&mut self, last_change_time: i64) {
-            self.last_change_time = last_change_time;
-        }
-        fn stored_last_change_time_in_source_archive(&self) -> i64 {
-            self.last_change_time_in_source_archive
-        }
-        fn set_stored_last_change_time_in_source_archive(&mut self, last_change_time: i64) {
-            self.last_change_time_in_source_archive = last_change_time;
-        }
-        fn stored_parent_refs(&self) -> Vec<Weak<dyn DataType>> {
-            self.parents.clone()
-        }
-        fn set_stored_parent_refs(&mut self, parents: Vec<Weak<dyn DataType>>) {
-            self.parents = parents;
-        }
-    }
-
-    impl BuiltInDataType for MockVoidDataType {
-        fn get_c_type_declaration(
-            &self,
-            data_organization: Option<&DataOrganizationImpl>,
-        ) -> Option<String> {
-            self.void_c_type_declaration(data_organization)
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-
-    impl BuiltIn for MockVoidDataType {
-        fn built_in_is_equivalent(&self, dt: &dyn DataType) -> bool {
-            dt.is_void_type()
-        }
-    }
-
-    impl VoidDataType for MockVoidDataType {
-        fn void_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn VoidDataType> {
-            match dtm {
-                None => Box::new(MockVoidDataType {
-                    dtm_tag: self.dtm_tag,
-                    ..MockVoidDataType::new()
-                }),
-                Some(_) => Box::new(MockVoidDataType {
-                    dtm_tag: Some("new-manager"),
-                    ..MockVoidDataType::new()
-                }),
-            }
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    #[test]
-    fn usable_as_trait_object() {
-        let dt = MockVoidDataType::new();
-        let dyn_dt: &dyn VoidDataType = &dt;
-        assert_eq!(dyn_dt.void_mnemonic(&MockSettings), "void");
-        assert_eq!(dyn_dt.void_description(), "void datatype");
-        assert_eq!(dyn_dt.void_c_type_declaration(None), None);
-        // Untouched DataType defaults still hold for the identical-to-default overrides.
-        assert_eq!(DataType::get_length(dyn_dt), 0);
-        assert_eq!(DataType::get_representation(dyn_dt, &MockMemBuffer, &MockSettings, -1), "");
-        assert!(DataType::get_value(dyn_dt, &MockMemBuffer, &MockSettings, -1).is_none());
+        assert!(is_void_data_type(Some(&VoidTypedef)));
     }
 
     #[test]
-    fn is_void_type_is_reachable_for_the_seam_stub_helper() {
-        let dt = MockVoidDataType::new();
-        assert!(crate::program::seam_stubs::is_void_data_type(Some(&dt as &dyn DataType)));
-    }
-
-    #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockVoidDataType {
-            dtm_tag: Some("mgr-a"),
-            ..MockVoidDataType::new()
-        };
-        let cloned = dt.void_clone(None);
-        assert_eq!(cloned.void_description(), dt.void_description());
-    }
-
-    #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockVoidDataType {
-            dtm_tag: Some("mgr-a"),
-            ..MockVoidDataType::new()
-        };
-        let cloned = dt.void_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.void_mnemonic(&MockSettings), "void");
+    fn singleton_and_equivalence() {
+        let a = void();
+        assert!(Arc::ptr_eq(&a, &VoidDataType::data_type()));
+        assert!(a.is_equivalent(&VoidDataType::new(None)));
+        assert!(!a.is_equivalent(ByteDataType::instance().as_ref()));
     }
 }
