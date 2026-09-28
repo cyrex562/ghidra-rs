@@ -1120,6 +1120,11 @@ impl Language for SleighLanguage {
     fn get_maximum_instruction_length(&self) -> Option<i32> {
         self.max_instruction_length
     }
+
+    /// A Sleigh language is always itself.
+    fn as_sleigh(&self) -> Option<&SleighLanguage> {
+        Some(self)
+    }
 }
 
 #[cfg(test)]

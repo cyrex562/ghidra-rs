@@ -14,7 +14,9 @@
 //!   `.sla`-only port: it does not implement [`Language`] and exposes none of those five. All five
 //!   *are* on [`Language`], so the executor binds to `Arc<dyn Language>`, which is also exactly
 //!   what [`PcodeFrame::new`] wants. Only `execute_sleigh` genuinely needs the Sleigh-specific
-//!   language (to compile against), which an `Arc<dyn Language>` cannot be turned back into.
+//!   language (to compile against); it recovers it through [`Language::as_sleigh`] and fails with
+//!   [`ExecuteSleighError::NotSleigh`] for any other language, a case Java's static typing rules
+//!   out.
 //! * **Op behavior dispatch.** Java asks `OpBehaviorFactory` for an `OpBehavior` and then switches
 //!   on its *class* to decide unary vs. binary vs. special. There is no factory in this crate's
 //!   [`opbehavior`](crate::pcode::opbehavior) module (the behaviors carry no per-op instances), so
@@ -43,7 +45,9 @@ use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_program::PcodeProgram;
-use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
+use crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmitBuildError;
+use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
+use crate::pcode::exec::sleigh_program_compiler::{self, SleighProgramCompileError};
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
@@ -93,6 +97,24 @@ pub fn op_behavior_kind(opcode: OpCode) -> OpBehaviorKind {
         // Java's factory has no entry for UNIMPLEMENTED, so `getOpBehavior` returns null.
         Unimplemented => OpBehaviorKind::Undefined,
     }
+}
+
+/// The ways [`PcodeExecutor::execute_sleigh`] can fail.
+#[derive(Debug, thiserror::Error)]
+pub enum ExecuteSleighError {
+    /// The executor's language is not a Sleigh language, so there is nothing to compile against.
+    /// Carries the language's id.
+    #[error("cannot compile Sleigh: language {0} is not a Sleigh language")]
+    NotSleigh(String),
+    /// The Sleigh source did not compile.
+    #[error(transparent)]
+    Compile(#[from] SleighProgramCompileError),
+    /// The compiled template could not be emitted as p-code.
+    #[error(transparent)]
+    Build(#[from] PcodeEmitBuildError),
+    /// Executing the compiled program failed.
+    #[error(transparent)]
+    Execution(#[from] PcodeExecutionException),
 }
 
 /// An executor of p-code programs.
@@ -171,14 +193,37 @@ impl<T: 'static> PcodeExecutor<T> {
 
     /// Compile and execute a block of Sleigh.
     ///
-    /// # Panics
+    /// Port of `executeSleigh(String)`: the source is compiled as program `"exec"` against the
+    /// executor's language with the nil userop library, then executed with the nil library.
     ///
-    /// Always: compiling needs the executor's `SleighLanguage`, and it binds an `Arc<dyn Language>`
-    /// (see the module docs). Callers holding the Sleigh language compile with
-    /// [`sleigh_program_compiler::compile_program`](crate::pcode::exec::sleigh_program_compiler::compile_program)
-    /// and [`execute`](Self::execute) the result, which is what Java's body does.
-    pub fn execute_sleigh(&self, _source: &str) -> PcodeFrame {
-        unimplemented!("PcodeExecutor::execute_sleigh needs the executor's SleighLanguage, which it does not hold")
+    /// Java returns nothing; the finished frame is returned here, as [`execute`](Self::execute)
+    /// returns it.
+    ///
+    /// The steps are those of
+    /// [`sleigh_program_compiler::compile_program`](crate::pcode::exec::sleigh_program_compiler::compile_program),
+    /// which takes an `&Arc<SleighLanguage>`; the executor only holds an `Arc<dyn Language>` (see
+    /// the module docs), so the program is bound to that same handle instead.
+    ///
+    /// # Errors
+    /// * [`ExecuteSleighError::NotSleigh`] if the executor's language is not a Sleigh language.
+    /// * [`ExecuteSleighError::Compile`] if the source does not compile.
+    /// * [`ExecuteSleighError::Build`] if the compiled template cannot be emitted as p-code (Java
+    ///   wraps this in an `AssertionError`).
+    /// * [`ExecuteSleighError::Execution`] if executing the program fails.
+    pub fn execute_sleigh(&self, source: &str) -> Result<PcodeFrame, ExecuteSleighError> {
+        let Some(sleigh) = self.language.as_sleigh() else {
+            return Err(ExecuteSleighError::NotSleigh(
+                self.language.get_language_id().get_id_as_string().to_string(),
+            ));
+        };
+        let library = nil::<T>();
+        let mut parser = sleigh_program_compiler::create_parser(sleigh)?;
+        let symbols = library.get_symbols(sleigh);
+        sleigh_program_compiler::add_parser_symbols(&mut parser, &symbols)?;
+        let template = sleigh_program_compiler::compile_template(&mut parser, "exec", source)?;
+        let ops = sleigh_program_compiler::build_ops(sleigh, &template)?;
+        let program = PcodeProgram::new(Arc::clone(&self.language), ops, symbols);
+        Ok(self.execute(&program, &library)?)
     }
 
     /// Begin execution of the given program, e.g., from an injection or a decoded instruction.
@@ -1781,5 +1826,81 @@ mod tests {
         assert_eq!(op_behavior_kind(OpCode::Load), OpBehaviorKind::Special);
         assert_eq!(op_behavior_kind(OpCode::PtrAdd), OpBehaviorKind::Special);
         assert_eq!(op_behavior_kind(OpCode::Unimplemented), OpBehaviorKind::Undefined);
+    }
+
+    /// An executor over the Sleigh decode fixture: big-endian 4-byte registers `r0` at
+    /// `register:0` and `r1` at `register:4`, with byte-array values.
+    fn sleigh_executor() -> (PcodeExecutor<Vec<u8>>, Arc<AddressSpace>) {
+        use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
+        use crate::pcode::exec::bytes_pcode_arithmetic::BytesPcodeArithmetic;
+        use crate::pcode::exec::bytes_pcode_executor_state::BytesPcodeExecutorState;
+        use crate::pcode::exec::pcode_state_callbacks::NONE;
+
+        let language = decode_tests::language();
+        let register =
+            language.get_address_factory().get_address_space_by_name("register").unwrap();
+        let dyn_language: Arc<dyn Language> = Arc::clone(&language) as Arc<dyn Language>;
+        let state = BytesPcodeExecutorState::new(Arc::clone(&dyn_language), Arc::new(NONE));
+        let state: Arc<Mutex<dyn PcodeExecutorState<Vec<u8>>>> = Arc::new(Mutex::new(state));
+        let arithmetic = Arc::new(BytesPcodeArithmetic::for_sleigh_language(&language));
+        let exec = PcodeExecutor::new(dyn_language, arithmetic, state, Reason::ExecuteRead);
+        (exec, register)
+    }
+
+    #[test]
+    fn language_as_sleigh_is_some_only_for_a_sleigh_language() {
+        use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
+        let sleigh = decode_tests::language();
+        let as_dyn: Arc<dyn Language> = Arc::clone(&sleigh) as Arc<dyn Language>;
+        // Through the trait object, and through the forwarding `Arc` impl.
+        assert!(std::ptr::eq(as_dyn.as_sleigh().unwrap(), &*sleigh));
+        assert!(std::ptr::eq(Language::as_sleigh(&as_dyn).unwrap(), &*sleigh));
+
+        let s = spaces();
+        assert!(MockLanguage::new(&s, true).as_sleigh().is_none());
+    }
+
+    #[test]
+    fn execute_sleigh_compiles_and_runs_against_a_sleigh_language() {
+        let (exec, register) = sleigh_executor();
+        exec.get_state().lock().unwrap().set_var(
+            &register,
+            4,
+            4,
+            false,
+            &0x10u32.to_be_bytes().to_vec(),
+        );
+
+        let frame = exec.execute_sleigh("r0 = r1 + 5; r1 = r1 * 2;").unwrap();
+        assert!(frame.is_finished());
+
+        let state = exec.get_state().lock().unwrap();
+        let r0 = state.get_var(&register, 0, 4, false, Reason::Inspect);
+        let r1 = state.get_var(&register, 4, 4, false, Reason::Inspect);
+        assert_eq!(u32::from_be_bytes(r0.try_into().unwrap()), 0x15);
+        assert_eq!(u32::from_be_bytes(r1.try_into().unwrap()), 0x20);
+    }
+
+    #[test]
+    fn execute_sleigh_reports_a_compile_error() {
+        let (exec, _) = sleigh_executor();
+        match exec.execute_sleigh("r0 = nosuchreg;") {
+            Err(ExecuteSleighError::Compile(_)) => {}
+            Err(other) => panic!("expected a compile error, got {other}"),
+            Ok(_) => panic!("expected a compile error"),
+        }
+    }
+
+    #[test]
+    fn execute_sleigh_refuses_a_non_sleigh_language() {
+        let s = spaces();
+        let exec = executor(&s);
+        match exec.execute_sleigh("r0 = 1;") {
+            Err(ExecuteSleighError::NotSleigh(id)) => {
+                assert_eq!(id, "x86:LE:32:default");
+            }
+            Err(other) => panic!("expected NotSleigh, got {other}"),
+            Ok(_) => panic!("expected NotSleigh"),
+        }
     }
 }

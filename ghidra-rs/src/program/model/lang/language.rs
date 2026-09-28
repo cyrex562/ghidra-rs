@@ -14,6 +14,7 @@ use crate::program::model::lang::language_description::LanguageDescription;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::processor_context::ProcessorContext;
 use crate::program::model::lang::register::RegisterRef;
+use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
@@ -233,6 +234,16 @@ pub trait Language {
     /// slots which may be needed when determining an `inst_next2` location for a given
     /// instruction.
     fn get_maximum_instruction_length(&self) -> Option<i32>;
+
+    /// This language as a [`SleighLanguage`], if it is one.
+    ///
+    /// Java code that needs the Sleigh-specific API (e.g. `PcodeExecutor.executeSleigh`, which
+    /// compiles Sleigh text against its language) declares its field as `SleighLanguage`. Rust
+    /// code that binds an `Arc<dyn Language>` recovers the Sleigh language through this hook
+    /// instead of downcasting. Only [`SleighLanguage`] overrides the default `None`.
+    fn as_sleigh(&self) -> Option<&SleighLanguage> {
+        None
+    }
 }
 
 /// A shared handle to a language is itself a language, forwarding every method to the language
@@ -399,6 +410,9 @@ impl<L: Language + ?Sized> Language for Arc<L> {
     fn get_maximum_instruction_length(&self) -> Option<i32> {
         (**self).get_maximum_instruction_length()
     }
+    fn as_sleigh(&self) -> Option<&SleighLanguage> {
+        (**self).as_sleigh()
+    }
 }
 
 /// A non-owning [`Language`] handle: a [`Weak`] reference that implements [`Language`] by
@@ -449,6 +463,9 @@ impl<L: ?Sized> Clone for WeakLanguage<L> {
     }
 }
 
+/// [`Language::as_sleigh`] keeps its default `None` here: the language is reached through a
+/// temporary upgrade on every call, so no borrow of it can outlive the call. Upgrade the handle
+/// with [`WeakLanguage::upgrade`] and ask the resulting `Arc` instead.
 impl<L: Language + ?Sized> Language for WeakLanguage<L> {
     fn get_language_id(&self) -> LanguageID {
         self.strong().get_language_id()
