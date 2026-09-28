@@ -93,14 +93,15 @@ mod tests {
     }
 
     /// A container as `CompLzssFileSystemFactory` accepts it: an `LzssCompressionHeader` whose
-    /// first two ints are `"lzss"`, `"comp"` (Java's probe order), then the LZSS stream.
+    /// first two ints are `"comp"`, `"lzss"` (Apple's order, which the probe checks), then the
+    /// LZSS stream.
     fn lzss_container_bytes(payload: &[u8]) -> Vec<u8> {
         use crate::file::formats::lzss::lzss_constants::PADDING_LENGTH;
         let mut compressed = Vec::new();
         crate::file::formats::lzss::lzss_codec::compress(&mut compressed, &mut &payload[..])
             .unwrap();
         let mut b = Vec::new();
-        b.extend_from_slice(b"lzsscomp");
+        b.extend_from_slice(b"complzss");
         b.extend_from_slice(&0u32.to_be_bytes());
         b.extend_from_slice(&(payload.len() as u32).to_be_bytes());
         b.extend_from_slice(&(compressed.len() as u32).to_be_bytes());
@@ -150,17 +151,23 @@ mod tests {
         assert!(fs.is_closed());
     }
 
+    /// The probe deliberately diverges from Java (see `LzssCompressionHeader::probe`): Apple's
+    /// `"comp"`,`"lzss"` order is recognized and Java's reversed order is not.
     #[test]
-    fn apple_comp_lzss_order_is_not_probed_like_java() {
+    fn apple_comp_lzss_order_is_probed_and_java_order_is_not() {
         let dir = tempfile::tempdir().unwrap();
-        let container = dir.path().join("apple.lzss");
+        let apple = dir.path().join("apple.lzss");
+        std::fs::write(&apple, lzss_container_bytes(PAYLOAD)).unwrap();
+        let java = dir.path().join("java.lzss");
         let mut bytes = lzss_container_bytes(PAYLOAD);
-        bytes[..8].copy_from_slice(b"complzss");
-        std::fs::write(&container, bytes).unwrap();
+        bytes[..8].copy_from_slice(b"lzsscomp");
+        std::fs::write(&java, bytes).unwrap();
         let svc = service(dir.path());
-        let local = svc.get_local_fsrl(&container);
+        assert!(svc
+            .is_file_filesystem_container(&svc.get_local_fsrl(&apple), &DummyMonitor)
+            .unwrap());
         assert!(!svc
-            .is_file_filesystem_container(&local, &DummyMonitor)
+            .is_file_filesystem_container(&svc.get_local_fsrl(&java), &DummyMonitor)
             .unwrap());
     }
 

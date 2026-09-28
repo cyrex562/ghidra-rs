@@ -116,7 +116,8 @@ mod tests {
         let f = CompLzssFileSystemFactory;
         let fsrl = Fsrl::from_string("file:///kernel.lzss").unwrap();
         assert_eq!(f.bytes_required(), 8);
-        assert!(f.probe_start_bytes(&fsrl, b"lzsscomp"));
+        assert!(f.probe_start_bytes(&fsrl, b"complzss"));
+        assert!(!f.probe_start_bytes(&fsrl, b"lzsscomp"), "Java's reversed order");
         assert!(!f.probe_start_bytes(&fsrl, b"\x1f\x8b\x08\0\0\0\0\0"));
         assert!(f.as_byte_provider_factory().is_some());
         assert!(f.as_probe_byte_provider().is_none());

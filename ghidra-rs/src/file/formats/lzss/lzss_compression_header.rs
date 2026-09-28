@@ -52,13 +52,17 @@ impl LzssCompressionHeader {
     pub const PROBE_BYTES_NEEDED: usize = 8;
 
     /// Returns `true` if `start_bytes` begin with the magic signature of an
-    /// `LzssCompressionHeader`.
+    /// `LzssCompressionHeader`: the first big-endian int must be [`SIGNATURE_COMPRESSION`]
+    /// (`"comp"`) and the second [`SIGNATURE_LZSS`] (`"lzss"`).
     ///
-    /// Mirrors `probe(byte[])` exactly: the first big-endian int must be
-    /// [`SIGNATURE_LZSS`] (`"lzss"`) and the second [`SIGNATURE_COMPRESSION`] (`"comp"`). Note
-    /// that this is the reverse of the `"comp"`,`"lzss"` order
-    /// [`LzssUtil::is_lzss`](super::lzss_util::LzssUtil::is_lzss) checks; the Java source
-    /// disagrees with itself here and this port keeps each side's behavior.
+    /// # Divergence from Java
+    ///
+    /// Java's `probe(byte[])` checks the reverse order (`"lzss"` then `"comp"`), which disagrees
+    /// both with Java's own `LzssUtil.isLzss` and with real Apple kernelcaches, whose
+    /// `compress_header` starts with `signature = 'comp'` followed by `compress_type = 'lzss'`.
+    /// Java's probe therefore never matches a real kernelcache. This port deliberately checks
+    /// Apple's order, matching [`LzssUtil::is_lzss`](super::lzss_util::LzssUtil::is_lzss);
+    /// input in Java's reversed order is rejected.
     pub fn probe(start_bytes: &[u8]) -> bool {
         if start_bytes.len() < Self::PROBE_BYTES_NEEDED {
             return false;
@@ -66,7 +70,7 @@ impl LzssCompressionHeader {
         let signature = i32::from_be_bytes([start_bytes[0], start_bytes[1], start_bytes[2], start_bytes[3]]);
         let compression_type =
             i32::from_be_bytes([start_bytes[4], start_bytes[5], start_bytes[6], start_bytes[7]]);
-        signature == SIGNATURE_LZSS as i32 && compression_type == SIGNATURE_COMPRESSION as i32
+        signature == SIGNATURE_COMPRESSION as i32 && compression_type == SIGNATURE_LZSS as i32
     }
 
     /// Reads the header from the start of `provider`.
@@ -117,8 +121,8 @@ mod tests {
 
     fn header_bytes() -> Vec<u8> {
         let mut b = Vec::new();
-        b.extend_from_slice(b"lzss");
         b.extend_from_slice(b"comp");
+        b.extend_from_slice(b"lzss");
         b.extend_from_slice(&0x0102_0304u32.to_be_bytes());
         b.extend_from_slice(&1000u32.to_be_bytes());
         b.extend_from_slice(&600u32.to_be_bytes());
@@ -127,11 +131,14 @@ mod tests {
     }
 
     #[test]
-    fn probe_matches_java_signature_order() {
-        assert!(LzssCompressionHeader::probe(b"lzsscomp"));
+    fn probe_matches_apple_signature_order() {
+        // A real kernelcache header: "comp" then "lzss".
+        assert!(LzssCompressionHeader::probe(b"complzss"));
         assert!(LzssCompressionHeader::probe(&header_bytes()));
-        assert!(!LzssCompressionHeader::probe(b"complzss"));
-        assert!(!LzssCompressionHeader::probe(b"lzssco"), "fewer than PROBE_BYTES_NEEDED");
+        // Java's reversed order is deliberately rejected (see `probe`'s docs).
+        assert!(!LzssCompressionHeader::probe(b"lzsscomp"));
+        assert!(!LzssCompressionHeader::probe(b"compcomp"));
+        assert!(!LzssCompressionHeader::probe(b"compls"), "fewer than PROBE_BYTES_NEEDED");
         assert_eq!(LzssCompressionHeader::PROBE_BYTES_NEEDED, 8);
     }
 
@@ -139,8 +146,8 @@ mod tests {
     fn reads_big_endian_fields_and_padding() {
         let p = ByteArrayProvider::new(header_bytes());
         let h = LzssCompressionHeader::new(&p).unwrap();
-        assert_eq!(h.signature, SIGNATURE_LZSS as i32);
-        assert_eq!(h.compression_type, SIGNATURE_COMPRESSION as i32);
+        assert_eq!(h.signature, SIGNATURE_COMPRESSION as i32);
+        assert_eq!(h.compression_type, SIGNATURE_LZSS as i32);
         assert_eq!(h.checksum, 0x0102_0304);
         assert_eq!(h.decompressed_length, 1000);
         assert_eq!(h.compressed_length, 600);
