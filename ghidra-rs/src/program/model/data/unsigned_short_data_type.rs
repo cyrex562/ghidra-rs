@@ -1,262 +1,151 @@
-//! Port of `ghidra.program.model.data.UnsignedShortDataType`, promoted to a trait because it was
-//! selected as a dependency-cycle cut-point. Structurally identical to
-//! [`UnsignedIntegerDataType`](super::unsigned_integer_data_type::UnsignedIntegerDataType) -- see
-//! that trait's module docs for the shared rationale (naming clashes with `DataType`/
-//! `AbstractIntegerDataType`, and the reproduced `BuiltIn.getCTypeDeclaration` formula) -- with
-//! `ShortDataType` standing in for `IntegerDataType` as the opposite-signedness sibling.
+//! Port of `ghidra.program.model.data.UnsignedShortDataType`.
 
-use crate::program::model::data::abstract_integer_data_type::C_UNSIGNED_SHORT;
-use crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType;
-use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
-use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
 use crate::program::model::data::short_data_type::ShortDataType;
 
-/// Basic implementation for an unsigned Short Integer dataType.
-///
-/// Port of `ghidra.program.model.data.UnsignedShortDataType`. See the module-level documentation
-/// for the naming conventions this mirrors from
-/// [`UnsignedIntegerDataType`](super::unsigned_integer_data_type::UnsignedIntegerDataType).
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait UnsignedShortDataType: AbstractUnsignedIntegerDataType {
-    /// Port of `UnsignedShortDataType.getLength()`, which overrides the default
-    /// `DataType.getLength()`.
-    fn unsigned_short_length(&self) -> i32 {
-        self.get_data_organization().get_short_size()
-    }
-
-    /// Port of `UnsignedShortDataType.hasLanguageDependantLength()`, which overrides the default
-    /// `DataType.hasLanguageDependantLength()`. Always `true`.
-    fn unsigned_short_has_language_dependant_length(&self) -> bool {
-        true
-    }
-
-    /// Port of `UnsignedShortDataType.getDescription()`, which overrides the default
-    /// `DataType.getDescription()`.
-    fn unsigned_short_description(&self) -> String {
-        "Unsigned Short Integer (compiler-specific size)".to_string()
-    }
-
-    /// Port of `UnsignedShortDataType.getCDeclaration()`, which overrides the default
-    /// `AbstractIntegerDataType.getCDeclaration()`.
-    fn unsigned_short_c_declaration(&self) -> String {
-        C_UNSIGNED_SHORT.to_string()
-    }
-
-    /// Port of `UnsignedShortDataType.getOppositeSignednessDataType()`, which overrides the
-    /// required `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required
-    /// method (no default); see
-    /// [`UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type`](super::unsigned_integer_data_type::UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type)
-    /// for why.
-    fn unsigned_short_opposite_signedness_data_type(&self) -> Box<dyn ShortDataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
+integer_data_type! {
+    /// Basic implementation for an unsigned Short Integer dataType.
     ///
-    /// Port of `UnsignedShortDataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractUnsignedIntegerDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a
-    /// required method (no default); see
-    /// [`ByteDataType::byte_clone`](super::byte_data_type::ByteDataType::byte_clone) for why.
-    fn unsigned_short_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedShortDataType>;
-
-    /// Port of `UnsignedShortDataType.getCTypeDeclaration(DataOrganization)`, which overrides the
-    /// abstract `BuiltInDataType.getCTypeDeclaration(DataOrganization)`. `data_organization` is
-    /// unused, matching the Java original. See
-    /// [`UnsignedIntegerDataType::unsigned_integer_c_type_declaration`](super::unsigned_integer_data_type::UnsignedIntegerDataType::unsigned_integer_c_type_declaration)
-    /// for why the `BuiltIn.getCTypeDeclaration(String, String, boolean)` helper's formula is
-    /// reproduced directly instead of stubbed.
-    fn unsigned_short_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-        let _ = data_organization;
-        Some(format!("typedef {}    {};", C_UNSIGNED_SHORT, self.get_name()))
+    /// Port of `ghidra.program.model.data.UnsignedShortDataType`.
+    UnsignedShortDataType {
+        name: "ushort",
+        sign: unsigned,
+        length: get_short_size,
+        description: "Unsigned Short Integer (compiler-specific size)",
+        assembly_mnemonic: default,
+        c_declaration: C_UNSIGNED_SHORT,
+        c_type_declaration: "unsigned short",
+        java_display_name: default,
+        opposite: ShortDataType,
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
-    use crate::docking::settings::settings::Settings;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings, Lp64Manager};
     use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
-    use crate::program::model::data::array_stringable::ArrayStringable;
+    use crate::program::model::data::built_in::BuiltIn;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::model::data::string_data_instance::StringDataInstance;
-    use crate::program::model::mem::MemBuffer;
-
-            /// A real [`DataOrganizationImpl`] configured as this test expects.
-    fn mock_data_organization(short_size: i32) -> DataOrganizationImpl {
-        let mut org = DataOrganizationImpl::get_default_organization(None);
-        org.set_big_endian(false);
-        org.set_pointer_size(8);
-        org.set_pointer_shift(0);
-        org.set_char_is_signed(true);
-        org.set_char_size(1);
-        org.set_wide_char_size(2);
-        org.set_short_size(short_size);
-        org.set_integer_size(4);
-        org.set_long_size(8);
-        org.set_long_long_size(8);
-        org.set_float_size(4);
-        org.set_double_size(8);
-        org.set_long_double_size(8);
-        org.set_absolute_max_alignment(0);
-        org.set_machine_alignment(8);
-        org.set_default_alignment(1);
-        org.set_default_pointer_alignment(8);
-        org.clear_size_alignment_map();
-        org
-    }
-
-    struct MockShortDataType;
-    impl DataType for MockShortDataType {
-        fn get_name(&self) -> String {
-            "short".to_string()
-        }
-    }
-    impl BuiltInDataType for MockShortDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-    impl ShortDataType for MockShortDataType {
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn crate::program::seam_stubs::UnsignedShortDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-        fn short_clone(&self, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn ShortDataType> {
-            Box::new(MockShortDataType)
-        }
-    }
-
-    struct MockUnsignedShortDataType {
-        short_size: i32,
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockUnsignedShortDataType {
-        fn get_name(&self) -> String {
-            "ushort".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.unsigned_short_length()
-        }
-        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
-            Arc::new(mock_data_organization(self.short_size))
-        }
-    }
-
-    impl BuiltInDataType for MockUnsignedShortDataType {
-        fn get_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            self.unsigned_short_c_type_declaration(data_organization)
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-
-    impl ArrayStringable for MockUnsignedShortDataType {
-        fn has_string_value(&self, _settings: &dyn Settings) -> bool {
-            false
-        }
-        fn string_data_instance(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _length: i32,
-        ) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
-        fn get_array_default_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-        ) -> Option<String> {
-            None
-        }
-        fn get_array_default_offcut_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-            _offcut_length: i32,
-        ) -> Option<String> {
-            None
-        }
-    }
-
-    impl AbstractIntegerDataType for MockUnsignedShortDataType {
-        fn is_signed(&self) -> bool {
-            self.unsigned_is_signed()
-        }
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn AbstractIntegerDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-    }
-
-    impl AbstractUnsignedIntegerDataType for MockUnsignedShortDataType {}
-
-    impl UnsignedShortDataType for MockUnsignedShortDataType {
-        fn unsigned_short_opposite_signedness_data_type(&self) -> Box<dyn ShortDataType> {
-            Box::new(MockShortDataType)
-        }
-
-        fn unsigned_short_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedShortDataType> {
-            match dtm {
-                None => Box::new(MockUnsignedShortDataType {
-                    short_size: self.short_size,
-                    dtm_tag: self.dtm_tag,
-                }),
-                Some(_) => Box::new(MockUnsignedShortDataType {
-                    short_size: self.short_size,
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    use crate::program::model::data::category_path::ROOT;
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockUnsignedShortDataType { short_size: 2, dtm_tag: None };
-        let dyn_dt: &dyn UnsignedShortDataType = &dt;
-        assert_eq!(dyn_dt.unsigned_short_length(), 2);
-        assert_eq!(DataType::get_length(dyn_dt), 2);
-        assert!(dyn_dt.unsigned_short_has_language_dependant_length());
-        assert_eq!(dyn_dt.unsigned_short_description(), "Unsigned Short Integer (compiler-specific size)");
-        assert_eq!(dyn_dt.unsigned_short_c_declaration(), "unsigned short");
-        assert!(!dt.is_signed());
+    fn java_constants() {
+        let dt = UnsignedShortDataType::instance();
+        assert_eq!(dt.get_name(), "ushort");
+        assert_eq!(dt.get_length(), 2);
+        assert_eq!(dt.get_description(), "Unsigned Short Integer (compiler-specific size)");
+        assert_eq!(dt.is_signed(), false);
+        assert!(dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "ushort");
+        assert_eq!(dt.get_c_declaration().as_deref(), Some("unsigned short"));
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("USHORT"));
+        assert_eq!(dt.get_path_name(), "/ushort");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn c_type_declaration_formats_typedef() {
-        let dt = MockUnsignedShortDataType { short_size: 2, dtm_tag: None };
-        assert_eq!(
-            dt.unsigned_short_c_type_declaration(None),
-            Some("typedef unsigned short    ushort;".to_string())
-        );
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = UnsignedShortDataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "ushort");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "ushort");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "ushort");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "unsigned short");
     }
 
     #[test]
-    fn opposite_signedness_returns_short_data_type() {
-        let dt = MockUnsignedShortDataType { short_size: 2, dtm_tag: None };
-        let _opposite = dt.unsigned_short_opposite_signedness_data_type();
+    fn c_type_declaration() {
+        let dt = UnsignedShortDataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef unsigned short    ushort;"));
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockUnsignedShortDataType { short_size: 2, dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_short_clone(None);
-        assert_eq!(cloned.unsigned_short_length(), 2);
+    fn decompiler_display_name() {
+        let dt = UnsignedShortDataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "ushort");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "ushort");
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockUnsignedShortDataType { short_size: 2, dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_short_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.unsigned_short_length(), 2);
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = UnsignedShortDataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 2).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), false);
+        assert_eq!(scalar.bit_length(), 16);
+        assert_eq!(scalar.get_big_integer(), 65535i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 2), "FFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 2), "65535");
+
+        let mut first_one = vec![0u8; 2];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 2).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 2).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 256i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 2).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 256i128);
+        assert!(dt.get_value(&buf(&first_one[..1], false), &s, 2).is_none());
+    }
+
+    #[test]
+    fn encode_value_checks_range() {
+        let dt = UnsignedShortDataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 2], false);
+        let mut one = vec![0u8; 2];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(65535i128), &b, &s, 2).unwrap().len(), 2);
+        assert!(dt.encode_value(&(65535i128 + 1), &b, &s, 2).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 2).is_ok(), false);
+        assert!(dt.encode_value(&1i64, &b, &s, 3).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 2).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 2).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 2).is_err());
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = UnsignedShortDataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "short");
+        assert_eq!(opposite.is_signed(), true);
+        assert!(dt.is_equivalent(UnsignedShortDataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(ShortDataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&UnsignedShortDataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = UnsignedShortDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &UnsignedShortDataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), false);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
+    }
+
+    #[test]
+    fn length_follows_the_manager_data_organization() {
+        let dt = UnsignedShortDataType::new(Some(&Lp64Manager));
+        assert_eq!(dt.get_length(), 2);
+        assert_eq!(dt.get_opposite_signedness_data_type().get_length(), 2);
+        let cloned = UnsignedShortDataType::instance().clone_data_type(&Lp64Manager);
+        assert_eq!(cloned.get_length(), 2);
+        assert_eq!(UnsignedShortDataType::instance().get_length(), 2);
     }
 }

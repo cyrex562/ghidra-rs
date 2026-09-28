@@ -1,228 +1,151 @@
-use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::seam_stubs::UnsignedLongDataType;
+//! Port of `ghidra.program.model.data.LongDataType`.
 
-/// Basic implementation for a Signed Long Integer dataType.
-///
-/// Port of `ghidra.program.model.data.LongDataType`, promoted straight to a trait because it was
-/// selected as a dependency-cycle cut-point (mirrors
-/// [`ShortDataType`](crate::program::model::data::short_data_type::ShortDataType), which
-/// documents the same set of design decisions in more detail).
-///
-/// The Java class `extends AbstractSignedIntegerDataType`, itself a subclass of
-/// `AbstractIntegerDataType`. Neither is yet ported, but every member `LongDataType` actually
-/// calls on them (`getDataOrganization()` from [`DataType`], the final
-/// `AbstractSignedIntegerDataType.isSigned()`, and the `C_SIGNED_LONG` constant) is already
-/// covered by an already-ported trait or reproducible here directly, so no `seam_stubs`
-/// placeholder is needed for either supertype.
-///
-/// Methods that only *override* an already-ported supertrait method with LongDataType-specific
-/// behavior (`getLength`, `hasLanguageDependantLength`, `getDescription`, `getCTypeDeclaration`)
-/// cannot be redeclared here without creating an ambiguous method name with [`DataType`]/
-/// [`BuiltInDataType`] (Rust does not allow a subtrait to "override" a supertrait's default
-/// method by re-declaring it). Instead, the real LongDataType-specific values for those overrides
-/// are exposed here under distinct `long_*` names; a future concrete implementation (once
-/// `AbstractSignedIntegerDataType`/`AbstractIntegerDataType` are ported) should implement
-/// `DataType`/`BuiltInDataType` directly and delegate to these helpers.
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct) and the
-/// `serialVersionUID` field (Java serialization has no Rust equivalent).
-pub trait LongDataType: DataType + BuiltInDataType {
-    /// Determine if this type is signed.
-    ///
-    /// Port of the `final` `AbstractSignedIntegerDataType.isSigned()`, which `LongDataType`
-    /// inherits unchanged.
-    fn is_signed(&self) -> bool {
-        true
-    }
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
+use crate::program::model::data::unsigned_long_data_type::UnsignedLongDataType;
 
-    /// The length of this data-type, in bytes.
+integer_data_type! {
+    /// Basic implementation for a Signed Long Integer dataType.
     ///
-    /// Port of `LongDataType.getLength()`, which overrides the abstract `DataType.getLength()`.
-    /// Exposed under a distinct name since [`DataType`] already declares `get_length`; see the
-    /// module docs for why it cannot be redeclared here.
-    fn long_length(&self) -> i32 {
-        self.get_data_organization().get_long_size()
-    }
-
-    /// Indicates if the length of this data-type is determined based upon the
-    /// `DataOrganization` obtained from the associated `DataTypeManager`.
-    ///
-    /// Port of `LongDataType.hasLanguageDependantLength()`, which overrides the abstract
-    /// `DataType.hasLanguageDependantLength()`. Exposed under a distinct name since [`DataType`]
-    /// already declares `has_language_dependant_length`; see the module docs for why it cannot be
-    /// redeclared here.
-    fn long_has_language_dependant_length(&self) -> bool {
-        true
-    }
-
-    /// A brief description of this data-type.
-    ///
-    /// Port of `LongDataType.getDescription()`, which overrides the abstract
-    /// `DataType.getDescription()`. Exposed under a distinct name since [`DataType`] already
-    /// declares `get_description`; see the module docs for why it cannot be redeclared here.
-    fn long_description(&self) -> String {
-        "Signed Long Integer (compiler-specific size)".to_string()
-    }
-
-    /// The C style data-type declaration for this data-type.
-    ///
-    /// Port of `LongDataType.getCDeclaration()`, which overrides
-    /// `AbstractIntegerDataType.getCDeclaration()`. That method is not part of any already-ported
-    /// trait, so it is exposed here directly with no naming conflict. Reproduces the
-    /// `C_SIGNED_LONG` constant from `AbstractIntegerDataType`.
-    fn get_c_declaration(&self) -> String {
-        "long".to_string()
-    }
-
-    /// Returns the data-type with the opposite signedness from this data-type (an unsigned long
-    /// type).
-    ///
-    /// Port of `LongDataType.getOppositeSignednessDataType()`, which overrides the abstract
-    /// `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required method (no
-    /// default) since the real implementation clones the `UnsignedLongDataType.dataType`
-    /// singleton, which is not ported yet (see [`UnsignedLongDataType`] placeholder).
-    fn get_opposite_signedness_data_type(&self) -> Box<dyn UnsignedLongDataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
-    ///
-    /// Port of `LongDataType.clone(DataTypeManager)`, which overrides
-    /// `BuiltIn.clone(DataTypeManager)`. Left as a required method (no default) since the real
-    /// implementation returns `self` when `dtm` already matches this instance's manager, which
-    /// requires manager-identity comparison a mock cannot provide generically.
-    fn long_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn LongDataType>;
-
-    /// The C style data-type declaration for this data-type, given a specific `DataOrganization`.
-    ///
-    /// Port of `LongDataType.getCTypeDeclaration(DataOrganization)`, which overrides the abstract
-    /// `BuiltInDataType.getCTypeDeclaration(DataOrganization)`. Exposed under a distinct name
-    /// since [`BuiltInDataType`] already declares `get_c_type_declaration`; see the module docs
-    /// for why it cannot be redeclared here. Always returns `None`, matching the Java original's
-    /// comment that `long` is a standard C-primitive name and type.
-    fn long_get_c_type_declaration(&self) -> Option<String> {
-        None
+    /// Port of `ghidra.program.model.data.LongDataType`.
+    LongDataType {
+        name: "long",
+        sign: signed,
+        length: get_long_size,
+        description: "Signed Long Integer (compiler-specific size)",
+        assembly_mnemonic: default,
+        c_declaration: C_SIGNED_LONG,
+        c_type_declaration: none,
+        java_display_name: default,
+        opposite: UnsignedLongDataType,
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings, Lp64Manager};
+    use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
+    use crate::program::model::data::built_in::BuiltIn;
+    use crate::program::model::data::built_in_data_type::BuiltInDataType;
+    use crate::program::model::data::category_path::ROOT;
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
-            /// A real [`DataOrganizationImpl`] configured as this test expects.
-    fn mock_data_organization(long_size: i32) -> DataOrganizationImpl {
-        let mut org = DataOrganizationImpl::get_default_organization(None);
-        org.set_big_endian(false);
-        org.set_pointer_size(8);
-        org.set_pointer_shift(0);
-        org.set_char_is_signed(true);
-        org.set_char_size(1);
-        org.set_wide_char_size(2);
-        org.set_short_size(2);
-        org.set_integer_size(4);
-        org.set_long_size(long_size);
-        org.set_long_long_size(8);
-        org.set_float_size(4);
-        org.set_double_size(8);
-        org.set_long_double_size(8);
-        org.set_absolute_max_alignment(0);
-        org.set_machine_alignment(8);
-        org.set_default_alignment(1);
-        org.set_default_pointer_alignment(8);
-        org.clear_size_alignment_map();
-        org
-    }
-
-    struct MockUnsignedLongDataType;
-    impl UnsignedLongDataType for MockUnsignedLongDataType {}
-
-    struct MockLongDataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockLongDataType {
-        fn get_name(&self) -> String {
-            "long".to_string()
-        }
-        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
-            Arc::new(mock_data_organization(8))
-        }
-    }
-
-    impl BuiltInDataType for MockLongDataType {
-        fn get_c_type_declaration(
-            &self,
-            _data_organization: Option<&DataOrganizationImpl>,
-        ) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
-    }
-
-    impl LongDataType for MockLongDataType {
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn UnsignedLongDataType> {
-            Box::new(MockUnsignedLongDataType)
-        }
-
-        fn long_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn LongDataType> {
-            // Mirrors `LongDataType.clone(DataTypeManager)`: return an equivalent instance tied
-            // to the requested manager (`None` here stands in for "already matches").
-            match dtm {
-                None => Box::new(MockLongDataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockLongDataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
+    #[test]
+    fn java_constants() {
+        let dt = LongDataType::instance();
+        assert_eq!(dt.get_name(), "long");
+        assert_eq!(dt.get_length(), 4);
+        assert_eq!(dt.get_description(), "Signed Long Integer (compiler-specific size)");
+        assert_eq!(dt.is_signed(), true);
+        assert!(dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "long");
+        assert_eq!(dt.get_c_declaration().as_deref(), Some("long"));
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("LONG"));
+        assert_eq!(dt.get_path_name(), "/long");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockLongDataType { dtm_tag: None };
-        let dyn_dt: &dyn LongDataType = &dt;
-        assert!(dyn_dt.is_signed());
-        assert!(dyn_dt.long_has_language_dependant_length());
-        assert_eq!(dyn_dt.long_description(), "Signed Long Integer (compiler-specific size)");
-        assert_eq!(dyn_dt.get_c_declaration(), "long");
-        assert_eq!(dyn_dt.long_get_c_type_declaration(), None);
-        // The DataType supertrait's own get_name is independently reachable and untouched.
-        assert_eq!(DataType::get_name(dyn_dt), "long");
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = LongDataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "long");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "long");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "long");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "long");
     }
 
     #[test]
-    fn long_length_delegates_to_data_organization() {
-        let dt = MockLongDataType { dtm_tag: None };
-        assert_eq!(dt.long_length(), 8);
+    fn c_type_declaration() {
+        let dt = LongDataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), None);
     }
 
     #[test]
-    fn opposite_signedness_returns_distinct_placeholder() {
-        let dt = MockLongDataType { dtm_tag: Some("a") };
-        let _opposite = dt.get_opposite_signedness_data_type();
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockLongDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.long_clone(None);
-        assert_eq!(cloned.long_description(), dt.long_description());
-        assert_eq!(cloned.get_c_declaration(), "long");
+    fn decompiler_display_name() {
+        let dt = LongDataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "long");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "long");
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockLongDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.long_clone(Some(Box::new(MockDataTypeManager)));
-        // Mirrors the real `clone(DataTypeManager)` returning a distinct instance bound to the
-        // requested manager when it differs from the current one, while remaining a fully
-        // functional LongDataType.
-        assert_eq!(cloned.get_c_declaration(), "long");
-        assert_eq!(cloned.long_length(), 8);
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = LongDataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255, 255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 4).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), true);
+        assert_eq!(scalar.bit_length(), 32);
+        assert_eq!(scalar.get_big_integer(), -1i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 4), "FFFFFFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 4), "-1");
+
+        let mut first_one = vec![0u8; 4];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 4).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 4).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 16777216i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 4).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 16777216i128);
+        assert!(dt.get_value(&buf(&first_one[..3], false), &s, 4).is_none());
+    }
+
+    #[test]
+    fn encode_value_checks_range() {
+        let dt = LongDataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 4], false);
+        let mut one = vec![0u8; 4];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(2147483647i128), &b, &s, 4).unwrap().len(), 4);
+        assert!(dt.encode_value(&(2147483647i128 + 1), &b, &s, 4).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 4).is_ok(), true);
+        assert!(dt.encode_value(&1i64, &b, &s, 5).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 4).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 4).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 4).is_err());
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = LongDataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "ulong");
+        assert_eq!(opposite.is_signed(), false);
+        assert!(dt.is_equivalent(LongDataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(UnsignedLongDataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&LongDataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = LongDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &LongDataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), true);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
+    }
+
+    #[test]
+    fn length_follows_the_manager_data_organization() {
+        let dt = LongDataType::new(Some(&Lp64Manager));
+        assert_eq!(dt.get_length(), 8);
+        assert_eq!(dt.get_opposite_signedness_data_type().get_length(), 8);
+        let cloned = LongDataType::instance().clone_data_type(&Lp64Manager);
+        assert_eq!(cloned.get_length(), 8);
+        assert_eq!(LongDataType::instance().get_length(), 4);
     }
 }

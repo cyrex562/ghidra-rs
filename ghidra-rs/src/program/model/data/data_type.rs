@@ -491,6 +491,16 @@ pub trait DataType: Send + Sync {
         false
     }
 
+    /// Stands in for Java's `getClass()`: the Rust `TypeId` of the concrete type behind this
+    /// datatype, or `None` if the implementor does not expose one.
+    ///
+    /// Used by the built-in datatypes' ports of `BuiltIn.isEquivalent(DataType)` /
+    /// `AbstractIntegerDataType.isEquivalent(DataType)` (`getClass() == dt.getClass()`). Concrete
+    /// built-ins return `Some(TypeId::of::<Self>())`.
+    fn runtime_class(&self) -> Option<TypeId> {
+        None
+    }
+
     /// Stands in for `instanceof ghidra.program.model.data.DefaultDataType`, used by
     /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Implementors of
     /// [`DefaultDataType`](crate::program::model::data::default_data_type::DefaultDataType) are

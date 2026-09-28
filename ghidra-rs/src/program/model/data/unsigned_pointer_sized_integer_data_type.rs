@@ -1,325 +1,151 @@
-//! Port of `ghidra.program.model.data.UnsignedPointerSizedIntegerDataType`, promoted to a trait
-//! because it was selected as a dependency-cycle cut-point.
-//!
-//! The Java class `extends AbstractUnsignedIntegerDataType`, already ported as a trait
-//! ([`AbstractUnsignedIntegerDataType`]), so this trait extends it directly. Structurally similar
-//! to [`UnsignedLongDataType`](super::unsigned_long_data_type::UnsignedLongDataType) -- see that
-//! trait's module docs for the shared rationale (`getLength`/`hasLanguageDependantLength`/
-//! `getDescription`/`getCTypeDeclaration` overriding already-provided defaults, `getCDeclaration`
-//! overriding the reached-transitively default `AbstractIntegerDataType.getCDeclaration()`,
-//! `getOppositeSignednessDataType` overriding the required no-default
-//! `AbstractIntegerDataType.getOppositeSignednessDataType()`, all five therefore exposed under
-//! distinct `unsigned_pointer_sized_integer_*` names) -- except `getOppositeSignednessDataType()`
-//! clones `PointerSizedIntegerDataType.dataType`, an already-ported trait
-//! ([`PointerSizedIntegerDataType`](crate::program::model::data::pointer_sized_integer_data_type::PointerSizedIntegerDataType))
-//! with no seam-stub placeholder needed, so this trait's
-//! `unsigned_pointer_sized_integer_opposite_signedness_data_type` returns
-//! `Box<dyn PointerSizedIntegerDataType>` directly.
-//!
-//! Unlike `UnsignedLongDataType`/`UnsignedLongLongDataType` (whose `getCDeclaration()` always
-//! returns a fixed non-null string), `UnsignedPointerSizedIntegerDataType.getCDeclaration()`
-//! unconditionally returns `null` -- mirroring the signed
-//! [`PointerSizedIntegerDataType::get_c_declaration`](crate::program::model::data::pointer_sized_integer_data_type::PointerSizedIntegerDataType::get_c_declaration)'s
-//! identical `None` override -- and its `getCTypeDeclaration(DataOrganization)` calls the other
-//! `BuiltIn.getCTypeDeclaration(BuiltIn, boolean, DataOrganization, boolean)` overload (signed =
-//! `false`) rather than the `(String, String, boolean)` overload
-//! `UnsignedLongDataType`/`UnsignedLongLongDataType` use, so this trait's
-//! `unsigned_pointer_sized_integer_c_type_declaration` reproduces that overload's formula
-//! directly instead, mirroring
-//! [`PointerSizedIntegerDataType::pointer_sized_integer_get_c_type_declaration`](crate::program::model::data::pointer_sized_integer_data_type::PointerSizedIntegerDataType::pointer_sized_integer_get_c_type_declaration).
-//!
-//! Static state not translated: the `dataType` singleton (needs a concrete struct).
+//! Port of `ghidra.program.model.data.UnsignedPointerSizedIntegerDataType`.
 
-use crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType;
-use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
-use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
 use crate::program::model::data::pointer_sized_integer_data_type::PointerSizedIntegerDataType;
 
-/// Pointer-sized unsigned integer.
-///
-/// Port of `ghidra.program.model.data.UnsignedPointerSizedIntegerDataType`. See the module-level
-/// documentation for the naming conventions used to resolve clashes with
-/// [`DataType`]/[`AbstractIntegerDataType`](crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType).
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait UnsignedPointerSizedIntegerDataType: AbstractUnsignedIntegerDataType {
-    /// Port of `UnsignedPointerSizedIntegerDataType.getLength()`, which overrides the default
-    /// `DataType.getLength()`. Derived from `self.get_data_organization().get_pointer_size()`,
-    /// matching the Java override's compiler-specific, language-dependant width.
-    fn unsigned_pointer_sized_integer_length(&self) -> i32 {
-        self.get_data_organization().get_pointer_size()
-    }
-
-    /// Port of `UnsignedPointerSizedIntegerDataType.hasLanguageDependantLength()`, which
-    /// overrides the default `DataType.hasLanguageDependantLength()`. Always `true`.
-    fn unsigned_pointer_sized_integer_has_language_dependant_length(&self) -> bool {
-        true
-    }
-
-    /// Port of `UnsignedPointerSizedIntegerDataType.getDescription()`, which overrides the
-    /// default `DataType.getDescription()`.
-    fn unsigned_pointer_sized_integer_description(&self) -> String {
-        "Unsigned Pointer-Sized Integer (compiler-specific size)".to_string()
-    }
-
-    /// Port of `UnsignedPointerSizedIntegerDataType.getCDeclaration()`, which overrides the
-    /// default `AbstractIntegerDataType.getCDeclaration()`. Always `None`, matching the Java
-    /// override which unconditionally returns `null` -- see the module docs for why this differs
-    /// from `UnsignedLongDataType`/`UnsignedLongLongDataType`.
-    fn unsigned_pointer_sized_integer_c_declaration(&self) -> Option<String> {
-        None
-    }
-
-    /// Returns the data-type with the opposite signedness from this data-type (a signed
-    /// pointer-sized integer type).
+integer_data_type! {
+    /// An unsigned integer the size of a pointer (C99 uintptr_t).
     ///
-    /// Port of `UnsignedPointerSizedIntegerDataType.getOppositeSignednessDataType()`, which
-    /// overrides the required `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as
-    /// a required method (no default) since the real implementation clones the
-    /// `PointerSizedIntegerDataType.dataType` singleton -- see the module docs for why this can
-    /// point at the already-ported [`PointerSizedIntegerDataType`] directly rather than a
-    /// seam-stub placeholder.
-    fn unsigned_pointer_sized_integer_opposite_signedness_data_type(&self) -> Box<dyn PointerSizedIntegerDataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
-    ///
-    /// Port of `UnsignedPointerSizedIntegerDataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractUnsignedIntegerDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a
-    /// required method (no default); see
-    /// [`ByteDataType::byte_clone`](super::byte_data_type::ByteDataType::byte_clone) for why.
-    fn unsigned_pointer_sized_integer_clone(
-        &self,
-        dtm: Option<Box<dyn DataTypeManager>>,
-    ) -> Box<dyn UnsignedPointerSizedIntegerDataType>;
-
-    /// Port of `UnsignedPointerSizedIntegerDataType.getCTypeDeclaration(DataOrganization)`, which
-    /// overrides the abstract `BuiltInDataType.getCTypeDeclaration(DataOrganization)`. Reproduces
-    /// `BuiltIn.getCTypeDeclaration(this, false, dataOrganization, false)`: a `typedef` line
-    /// naming this type's fixed display name (`uintptr_t`) after the organization's *unsigned*
-    /// pointer-sized C-type approximation -- see the module docs for why `signed = false` here
-    /// unlike the signed `PointerSizedIntegerDataType` counterpart.
-    fn unsigned_pointer_sized_integer_c_type_declaration(
-        &self,
-        data_organization: &DataOrganizationImpl,
-    ) -> Option<String> {
-        Some(format!(
-            "typedef {}    uintptr_t;",
-            data_organization.get_integer_c_type_approximation(data_organization.get_pointer_size(), false)
-        ))
+    /// Port of `ghidra.program.model.data.UnsignedPointerSizedIntegerDataType`.
+    UnsignedPointerSizedIntegerDataType {
+        name: "uintptr_t",
+        sign: unsigned,
+        length: get_pointer_size,
+        description: "Unsigned Pointer-Sized Integer (compiler-specific size)",
+        assembly_mnemonic: default,
+        c_declaration: none,
+        c_type_declaration: this_unsigned,
+        java_display_name: default,
+        opposite: PointerSizedIntegerDataType,
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
-    use crate::program::model::data::array_stringable::ArrayStringable;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings, Lp64Manager};
+    use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
+    use crate::program::model::data::built_in::BuiltIn;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::model::data::string_data_instance::StringDataInstance;
-    use crate::program::model::mem::MemBuffer;
-
-            /// A real [`DataOrganizationImpl`] configured as this test expects.
-    fn mock_data_organization(pointer_size: i32) -> DataOrganizationImpl {
-        let mut org = DataOrganizationImpl::get_default_organization(None);
-        org.set_big_endian(false);
-        org.set_pointer_size(pointer_size);
-        org.set_pointer_shift(0);
-        org.set_char_is_signed(true);
-        org.set_char_size(1);
-        org.set_wide_char_size(2);
-        org.set_short_size(2);
-        org.set_integer_size(4);
-        org.set_long_size(8);
-        org.set_long_long_size(8);
-        org.set_float_size(4);
-        org.set_double_size(8);
-        org.set_long_double_size(8);
-        org.set_absolute_max_alignment(0);
-        org.set_machine_alignment(8);
-        org.set_default_alignment(1);
-        org.set_default_pointer_alignment(8);
-        org.clear_size_alignment_map();
-        org
-    }
-
-    struct MockPointerSizedIntegerDataType;
-    impl DataType for MockPointerSizedIntegerDataType {
-        fn get_name(&self) -> String {
-            "intptr_t".to_string()
-        }
-    }
-    impl BuiltInDataType for MockPointerSizedIntegerDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
-    }
-    impl PointerSizedIntegerDataType for MockPointerSizedIntegerDataType {
-        fn get_opposite_signedness_data_type(
-            &self,
-        ) -> Box<dyn crate::program::seam_stubs::UnsignedPointerSizedIntegerDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-        fn pointer_sized_integer_clone(
-            &self,
-            _dtm: Option<Box<dyn DataTypeManager>>,
-        ) -> Box<dyn PointerSizedIntegerDataType> {
-            Box::new(MockPointerSizedIntegerDataType)
-        }
-    }
-
-    struct MockUnsignedPointerSizedIntegerDataType {
-        pointer_size: i32,
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockUnsignedPointerSizedIntegerDataType {
-        fn get_name(&self) -> String {
-            "uintptr_t".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.unsigned_pointer_sized_integer_length()
-        }
-        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
-            Arc::new(mock_data_organization(self.pointer_size))
-        }
-    }
-
-    impl BuiltInDataType for MockUnsignedPointerSizedIntegerDataType {
-        fn get_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            data_organization.and_then(|org| self.unsigned_pointer_sized_integer_c_type_declaration(org))
-        }
-        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
-    }
-
-    impl ArrayStringable for MockUnsignedPointerSizedIntegerDataType {
-        fn has_string_value(&self, _settings: &dyn crate::docking::settings::settings::Settings) -> bool {
-            false
-        }
-        fn string_data_instance(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn crate::docking::settings::settings::Settings,
-            _length: i32,
-        ) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
-        fn get_array_default_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn crate::docking::settings::settings::Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-        ) -> Option<String> {
-            None
-        }
-        fn get_array_default_offcut_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn crate::docking::settings::settings::Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-            _offcut_length: i32,
-        ) -> Option<String> {
-            None
-        }
-    }
-
-    impl crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType
-        for MockUnsignedPointerSizedIntegerDataType
-    {
-        fn is_signed(&self) -> bool {
-            self.unsigned_is_signed()
-        }
-        fn get_opposite_signedness_data_type(
-            &self,
-        ) -> Box<dyn crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-    }
-
-    impl AbstractUnsignedIntegerDataType for MockUnsignedPointerSizedIntegerDataType {}
-
-    impl UnsignedPointerSizedIntegerDataType for MockUnsignedPointerSizedIntegerDataType {
-        fn unsigned_pointer_sized_integer_opposite_signedness_data_type(
-            &self,
-        ) -> Box<dyn PointerSizedIntegerDataType> {
-            Box::new(MockPointerSizedIntegerDataType)
-        }
-
-        fn unsigned_pointer_sized_integer_clone(
-            &self,
-            dtm: Option<Box<dyn DataTypeManager>>,
-        ) -> Box<dyn UnsignedPointerSizedIntegerDataType> {
-            match dtm {
-                None => Box::new(MockUnsignedPointerSizedIntegerDataType {
-                    pointer_size: self.pointer_size,
-                    dtm_tag: self.dtm_tag,
-                }),
-                Some(_) => Box::new(MockUnsignedPointerSizedIntegerDataType {
-                    pointer_size: self.pointer_size,
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    use crate::program::model::data::category_path::ROOT;
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockUnsignedPointerSizedIntegerDataType { pointer_size: 8, dtm_tag: None };
-        let dyn_dt: &dyn UnsignedPointerSizedIntegerDataType = &dt;
-        assert_eq!(dyn_dt.unsigned_pointer_sized_integer_length(), 8);
-        assert_eq!(DataType::get_length(dyn_dt), 8);
-        assert!(dyn_dt.unsigned_pointer_sized_integer_has_language_dependant_length());
-        assert_eq!(
-            dyn_dt.unsigned_pointer_sized_integer_description(),
-            "Unsigned Pointer-Sized Integer (compiler-specific size)"
-        );
-        assert_eq!(dyn_dt.unsigned_pointer_sized_integer_c_declaration(), None);
+    fn java_constants() {
+        let dt = UnsignedPointerSizedIntegerDataType::instance();
+        assert_eq!(dt.get_name(), "uintptr_t");
+        assert_eq!(dt.get_length(), 4);
+        assert_eq!(dt.get_description(), "Unsigned Pointer-Sized Integer (compiler-specific size)");
+        assert_eq!(dt.is_signed(), false);
+        assert!(dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "uintptr_t");
+        assert_eq!(dt.get_c_declaration().as_deref(), None);
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("UINTPTR_T"));
+        assert_eq!(dt.get_path_name(), "/uintptr_t");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn length_tracks_data_organization_pointer_size() {
-        let dt32 = MockUnsignedPointerSizedIntegerDataType { pointer_size: 4, dtm_tag: None };
-        let dt64 = MockUnsignedPointerSizedIntegerDataType { pointer_size: 8, dtm_tag: None };
-        assert_eq!(dt32.unsigned_pointer_sized_integer_length(), 4);
-        assert_eq!(dt64.unsigned_pointer_sized_integer_length(), 8);
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = UnsignedPointerSizedIntegerDataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "uintptr_t");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "uintptr_t");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "uintptr_t");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "uintptr_t");
     }
 
     #[test]
-    fn c_type_declaration_uses_unsigned_pointer_size_approximation() {
-        let dt = MockUnsignedPointerSizedIntegerDataType { pointer_size: 8, dtm_tag: None };
-        let org = mock_data_organization(8);
-        assert_eq!(
-            dt.unsigned_pointer_sized_integer_c_type_declaration(&org),
-            Some("typedef unsigned long    uintptr_t;".to_string())
-        );
+    fn c_type_declaration() {
+        let dt = UnsignedPointerSizedIntegerDataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef unsigned int    uintptr_t;"));
     }
 
     #[test]
-    fn opposite_signedness_returns_pointer_sized_integer_data_type() {
-        let dt = MockUnsignedPointerSizedIntegerDataType { pointer_size: 8, dtm_tag: None };
-        let opposite = dt.unsigned_pointer_sized_integer_opposite_signedness_data_type();
+    fn decompiler_display_name() {
+        let dt = UnsignedPointerSizedIntegerDataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "uintptr_t");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "uintptr_t");
+    }
+
+    #[test]
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = UnsignedPointerSizedIntegerDataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255, 255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 4).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), false);
+        assert_eq!(scalar.bit_length(), 32);
+        assert_eq!(scalar.get_big_integer(), 4294967295i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 4), "FFFFFFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 4), "4294967295");
+
+        let mut first_one = vec![0u8; 4];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 4).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 4).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 16777216i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 4).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 16777216i128);
+        assert!(dt.get_value(&buf(&first_one[..3], false), &s, 4).is_none());
+    }
+
+    #[test]
+    fn encode_value_checks_range() {
+        let dt = UnsignedPointerSizedIntegerDataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 4], false);
+        let mut one = vec![0u8; 4];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(4294967295i128), &b, &s, 4).unwrap().len(), 4);
+        assert!(dt.encode_value(&(4294967295i128 + 1), &b, &s, 4).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 4).is_ok(), false);
+        assert!(dt.encode_value(&1i64, &b, &s, 5).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 4).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 4).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 4).is_err());
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = UnsignedPointerSizedIntegerDataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
         assert_eq!(opposite.get_name(), "intptr_t");
+        assert_eq!(opposite.is_signed(), true);
+        assert!(dt.is_equivalent(UnsignedPointerSizedIntegerDataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(PointerSizedIntegerDataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&UnsignedPointerSizedIntegerDataType::new(None)));
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockUnsignedPointerSizedIntegerDataType { pointer_size: 8, dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_pointer_sized_integer_clone(None);
-        assert_eq!(cloned.unsigned_pointer_sized_integer_length(), 8);
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = UnsignedPointerSizedIntegerDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &UnsignedPointerSizedIntegerDataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), false);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockUnsignedPointerSizedIntegerDataType { pointer_size: 8, dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_pointer_sized_integer_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.unsigned_pointer_sized_integer_length(), 8);
+    fn length_follows_the_manager_data_organization() {
+        let dt = UnsignedPointerSizedIntegerDataType::new(Some(&Lp64Manager));
+        assert_eq!(dt.get_length(), 8);
+        assert_eq!(dt.get_opposite_signedness_data_type().get_length(), 8);
+        let cloned = UnsignedPointerSizedIntegerDataType::instance().clone_data_type(&Lp64Manager);
+        assert_eq!(cloned.get_length(), 8);
+        assert_eq!(UnsignedPointerSizedIntegerDataType::instance().get_length(), 4);
     }
 }

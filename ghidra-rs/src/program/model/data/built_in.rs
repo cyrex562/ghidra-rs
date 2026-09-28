@@ -75,12 +75,20 @@
 //! Static state not translated: the private `settingDefs` cache field (see above) and the
 //! `serialVersionUID` field (Java serialization has no Rust equivalent).
 
+use std::any::{Any, TypeId};
+use std::collections::BTreeMap;
+use std::sync::{Arc, OnceLock};
+
+use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::{concat, SettingsDefinition};
+use crate::program::model::data::abstract_data_type::check_new_abstract_data_type_args;
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
+use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_impl::DataTypeImpl;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::data_utilities::DataUtilities;
 use crate::program::model::data::mutability_settings_definition::MutabilitySettingsDefinition;
 use crate::program::model::lang::decompiler_language::DecompilerLanguage;
 use crate::util::UniversalID;
@@ -218,6 +226,369 @@ pub trait BuiltIn: DataTypeImpl + BuiltInDataType {
             .map(|org| self.built_in_get_c_type_declaration_for_self(false, org, false))
     }
 }
+
+/// Stands in for the bare `DataUtilities` statics used by the `AbstractDataType` constructor's
+/// name validation (see [`check_new_abstract_data_type_args`]).
+struct NameValidation;
+impl DataUtilities for NameValidation {}
+
+/// The shared default [`DataOrganizationImpl`] (`DataOrganizationImpl.getDefaultOrganization()`),
+/// built once and shared by every built-in that is not bound to a data type manager.
+pub fn shared_default_organization() -> Arc<DataOrganizationImpl> {
+    static DEFAULT: OnceLock<Arc<DataOrganizationImpl>> = OnceLock::new();
+    DEFAULT
+        .get_or_init(|| Arc::new(DataOrganizationImpl::get_default_organization(None)))
+        .clone()
+}
+
+/// A by-value copy of the settings a data type manager installs as a built-in's default settings
+/// (`BuiltIn.setDefaultSettings(Settings)`), or the empty, immutable `SettingsImpl.NO_SETTINGS`
+/// every built-in starts with (`DataTypeImpl`'s constructor).
+///
+/// Java stores a live reference to the manager's settings object. A [`DataType`] must be
+/// `Send + Sync` and the [`Settings`] trait objects are neither, so this port copies the long
+/// and string values present when [`BuiltInDataType::set_default_settings`] is called; a manager
+/// that later changes its settings re-installs them. Like `NO_SETTINGS`, the copy is immutable.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DefaultSettingsSnapshot {
+    longs: BTreeMap<String, i64>,
+    strings: BTreeMap<String, String>,
+}
+
+impl DefaultSettingsSnapshot {
+    /// Copies every long/string value `settings` currently holds (including values it inherits
+    /// from its own default settings, since lookups through the copy must answer the same).
+    pub fn capture(settings: &dyn Settings) -> Self {
+        let mut snapshot = Self::default();
+        let mut names = settings.get_names();
+        if let Some(defaults) = settings.get_default_settings() {
+            names.extend(defaults.get_names());
+        }
+        for name in names {
+            if let Some(value) = settings.get_long(&name) {
+                snapshot.longs.insert(name, value);
+            } else if let Some(value) = settings.get_string(&name) {
+                snapshot.strings.insert(name, value);
+            }
+        }
+        snapshot
+    }
+}
+
+impl Settings for DefaultSettingsSnapshot {
+    fn is_immutable_settings(&self) -> bool {
+        true
+    }
+
+    fn is_change_allowed(&self, _settings_definition: &dyn SettingsDefinition) -> bool {
+        false
+    }
+
+    fn get_long(&self, name: &str) -> Option<i64> {
+        self.longs.get(name).copied()
+    }
+
+    fn get_string(&self, name: &str) -> Option<String> {
+        self.strings.get(name).cloned()
+    }
+
+    fn get_value(&self, name: &str) -> Option<Box<dyn Any>> {
+        if let Some(value) = self.longs.get(name) {
+            return Some(Box::new(*value));
+        }
+        self.strings.get(name).map(|value| Box::new(value.clone()) as Box<dyn Any>)
+    }
+
+    fn get_names(&self) -> Vec<String> {
+        self.longs.keys().chain(self.strings.keys()).cloned().collect()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.longs.is_empty() && self.strings.is_empty()
+    }
+}
+
+/// The instance state every `BuiltIn` datatype carries: the `name`/`categoryPath` fields of
+/// `AbstractDataType`, the `defaultSettings` field of `DataTypeImpl`, and the data organization
+/// of the data type manager the instance was created for.
+///
+/// This is the shared-state half of the `BuiltIn` port (the [`BuiltIn`] trait is the behaviour
+/// half); each concrete built-in embeds one.
+///
+/// Java keeps a reference to the `DataTypeManager` itself (`dataMgr`) and consults it only for
+/// `getDataOrganization()`. [`DataTypeManager`] is not `Send + Sync`, so a built-in here records
+/// the manager's [`DataOrganizationImpl`] when it is created; [`DataType::get_data_type_manager`]
+/// therefore stays `None` for built-ins.
+#[derive(Debug, Clone)]
+pub struct BuiltInBase {
+    name: String,
+    category_path: CategoryPath,
+    data_organization: Option<Arc<DataOrganizationImpl>>,
+    default_settings: DefaultSettingsSnapshot,
+}
+
+impl BuiltInBase {
+    /// Port of the `BuiltIn(CategoryPath, String, DataTypeManager)` constructor: a missing
+    /// category path becomes [`ROOT`].
+    ///
+    /// # Panics
+    /// Panics, as the `AbstractDataType` constructor throws `IllegalArgumentException`, if `name`
+    /// is empty or not a valid data type name.
+    pub fn new(path: Option<CategoryPath>, name: &str, dtm: Option<&dyn DataTypeManager>) -> Self {
+        check_new_abstract_data_type_args(name, &NameValidation);
+        Self {
+            name: name.to_string(),
+            category_path: path.unwrap_or_else(|| ROOT.clone()),
+            data_organization: dtm.map(|dtm| dtm.get_data_organization()),
+            default_settings: DefaultSettingsSnapshot::default(),
+        }
+    }
+
+    /// The state of a different built-in named `name` (in the root category) created for the same
+    /// data type manager as this one. Stands in for `Other.dataType.clone(getDataTypeManager())`.
+    pub fn rebound(&self, name: &str) -> Self {
+        check_new_abstract_data_type_args(name, &NameValidation);
+        Self {
+            name: name.to_string(),
+            category_path: ROOT.clone(),
+            data_organization: self.data_organization.clone(),
+            default_settings: DefaultSettingsSnapshot::default(),
+        }
+    }
+
+    /// The `name` field.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// The `categoryPath` field.
+    pub fn category_path(&self) -> &CategoryPath {
+        &self.category_path
+    }
+
+    /// Port of the `final` `AbstractDataType.getDataOrganization()`: the bound manager's
+    /// organization, or the default organization when there is no manager.
+    pub fn data_organization(&self) -> Arc<DataOrganizationImpl> {
+        self.data_organization.clone().unwrap_or_else(shared_default_organization)
+    }
+
+    /// Whether this instance was created for a data type manager (Java: `dataMgr != null`).
+    pub fn is_bound(&self) -> bool {
+        self.data_organization.is_some()
+    }
+
+    /// The `defaultSettings` field.
+    pub fn default_settings(&self) -> &DefaultSettingsSnapshot {
+        &self.default_settings
+    }
+
+    /// Port of `BuiltIn.setDefaultSettings(Settings)`; see [`DefaultSettingsSnapshot`] for why the
+    /// values are copied.
+    pub fn set_default_settings(&mut self, settings: &dyn Settings) {
+        self.default_settings = DefaultSettingsSnapshot::capture(settings);
+    }
+}
+
+/// Implements [`DataTypeImpl`], [`BuiltInDataType`] and [`BuiltIn`] for a concrete built-in whose
+/// shared state lives in a `base: BuiltInBase` field.
+///
+/// The type must provide these inherent methods, which carry its own overrides:
+/// `c_type_declaration(&self, Option<&DataOrganizationImpl>) -> Option<String>`
+/// (`getCTypeDeclaration(DataOrganization)`), `built_in_settings_definitions(&self)`
+/// (`getBuiltInSettingsDefinitions()`), and `decompiler_display_name(&self, DecompilerLanguage)`
+/// (`getDecompilerDisplayName(DecompilerLanguage)`).
+macro_rules! impl_built_in {
+    ($ty:ty) => {
+        impl $crate::program::model::data::data_type_impl::DataTypeImpl for $ty {
+            fn stored_default_settings(
+                &self,
+            ) -> Box<dyn $crate::docking::settings::settings::Settings> {
+                Box::new(self.base.default_settings().clone())
+            }
+            fn set_stored_default_settings(
+                &mut self,
+                settings: Box<dyn $crate::docking::settings::settings::Settings>,
+            ) {
+                self.base.set_default_settings(settings.as_ref());
+            }
+            fn stored_source_archive(
+                &self,
+            ) -> Option<Box<dyn $crate::program::model::data::source_archive::SourceArchive>> {
+                Some(Box::new(
+                    $crate::app::plugin::core::datamgr::archive::built_in_source_archive::INSTANCE,
+                ))
+            }
+            // A built-in's source archive is always `BuiltInSourceArchive.INSTANCE`.
+            fn set_stored_source_archive(
+                &mut self,
+                _archive: Option<Box<dyn $crate::program::model::data::source_archive::SourceArchive>>,
+            ) {
+            }
+            fn stored_universal_id(&self) -> $crate::util::UniversalID {
+                $crate::util::UniversalID::new(0)
+            }
+            // `BuiltIn.getLastChangeTime()` is always 0; the setters of `AbstractDataType`
+            // that `BuiltIn` inherits are no-ops.
+            fn stored_last_change_time(&self) -> i64 {
+                0
+            }
+            fn set_stored_last_change_time(&mut self, _last_change_time: i64) {}
+            fn stored_last_change_time_in_source_archive(&self) -> i64 {
+                0
+            }
+            fn set_stored_last_change_time_in_source_archive(&mut self, _last_change_time: i64) {}
+            // `BuiltIn.addParent`/`removeParent` are final no-ops: built-ins never track parents.
+            fn stored_parent_refs(
+                &self,
+            ) -> Vec<std::sync::Weak<dyn $crate::program::model::data::data_type::DataType>> {
+                Vec::new()
+            }
+            fn set_stored_parent_refs(
+                &mut self,
+                _parents: Vec<std::sync::Weak<dyn $crate::program::model::data::data_type::DataType>>,
+            ) {
+            }
+        }
+
+        impl $crate::program::model::data::built_in_data_type::BuiltInDataType for $ty {
+            fn get_c_type_declaration(
+                &self,
+                data_organization: Option<
+                    &$crate::program::model::data::data_organization_impl::DataOrganizationImpl,
+                >,
+            ) -> Option<String> {
+                self.c_type_declaration(data_organization)
+            }
+            fn set_default_settings(
+                &mut self,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+            ) {
+                self.base.set_default_settings(settings);
+            }
+        }
+
+        impl $crate::program::model::data::built_in::BuiltIn for $ty {
+            fn get_built_in_settings_definitions(
+                &self,
+            ) -> Vec<Box<dyn $crate::docking::settings::settings_definition::SettingsDefinition>>
+            {
+                self.built_in_settings_definitions()
+            }
+            fn built_in_is_equivalent(
+                &self,
+                dt: &dyn $crate::program::model::data::data_type::DataType,
+            ) -> bool {
+                $crate::program::model::data::built_in::same_class(self, dt)
+            }
+            fn get_decompiler_display_name(
+                &self,
+                language: $crate::program::model::lang::decompiler_language::DecompilerLanguage,
+            ) -> String {
+                self.decompiler_display_name(language)
+            }
+        }
+    };
+}
+pub(crate) use impl_built_in;
+
+/// The [`DataType`] methods every built-in implements the same way (from `AbstractDataType`,
+/// `DataTypeImpl` and `BuiltIn`). Expands to impl items; invoke inside `impl DataType for T`,
+/// where `T` has a `base: BuiltInBase` field, a `new(Option<&dyn DataTypeManager>)` constructor,
+/// and the [`impl_built_in!`] impls.
+macro_rules! built_in_data_type_methods {
+    () => {
+        fn get_name(&self) -> String {
+            self.base.name().to_string()
+        }
+        fn get_category_path(&self) -> $crate::program::model::data::category_path::CategoryPath {
+            self.base.category_path().clone()
+        }
+        fn get_data_organization(
+            &self,
+        ) -> std::sync::Arc<$crate::program::model::data::data_organization_impl::DataOrganizationImpl>
+        {
+            self.base.data_organization()
+        }
+        fn get_settings_definitions(
+            &self,
+        ) -> Vec<Box<dyn $crate::docking::settings::settings_definition::SettingsDefinition>> {
+            $crate::program::model::data::built_in::BuiltIn::built_in_get_settings_definitions(self)
+        }
+        fn get_default_settings(&self) -> Box<dyn $crate::docking::settings::settings::Settings> {
+            $crate::program::model::data::data_type_impl::DataTypeImpl::data_type_impl_get_default_settings(self)
+        }
+        fn clone_data_type(
+            &self,
+            dtm: &dyn $crate::program::model::data::data_type_manager::DataTypeManager,
+        ) -> Box<dyn $crate::program::model::data::data_type::DataType> {
+            Box::new(Self::new(Some(dtm)))
+        }
+        // `BuiltIn.copy(DataTypeManager)` is final and returns `clone(dtm)`.
+        fn copy_data_type(
+            &self,
+            dtm: &dyn $crate::program::model::data::data_type_manager::DataTypeManager,
+        ) -> Box<dyn $crate::program::model::data::data_type::DataType> {
+            Box::new(Self::new(Some(dtm)))
+        }
+        fn get_aligned_length(&self) -> i32 {
+            $crate::program::model::data::data_type_impl::DataTypeImpl::data_type_impl_get_aligned_length(self)
+        }
+        fn get_alignment(&self) -> i32 {
+            $crate::program::model::data::data_type_impl::DataTypeImpl::data_type_impl_get_alignment(self)
+        }
+        fn get_source_archive(
+            &self,
+        ) -> Option<Box<dyn $crate::program::model::data::source_archive::SourceArchive>> {
+            $crate::program::model::data::data_type_impl::DataTypeImpl::data_type_impl_get_source_archive(self)
+        }
+        fn get_default_abbreviated_label_prefix(&self) -> Option<String> {
+            self.get_default_label_prefix()
+        }
+        fn runtime_class(&self) -> Option<std::any::TypeId> {
+            Some(std::any::TypeId::of::<Self>())
+        }
+        fn as_built_in(&self) -> Option<&dyn $crate::program::model::data::built_in::BuiltIn> {
+            Some(self)
+        }
+        fn as_built_in_data_type(
+            &self,
+        ) -> Option<&dyn $crate::program::model::data::built_in_data_type::BuiltInDataType> {
+            Some(self)
+        }
+    };
+}
+pub(crate) use built_in_data_type_methods;
+
+/// Port of `getClass() == dt.getClass()` as used by `BuiltIn.isEquivalent(DataType)`: `dt` is the
+/// same object, or an instance of the same concrete type.
+pub fn same_class<T: DataType + 'static>(this: &T, dt: &dyn DataType) -> bool {
+    if std::ptr::eq(dt as *const dyn DataType as *const (), this as *const T as *const ()) {
+        return true;
+    }
+    dt.runtime_class() == Some(TypeId::of::<T>())
+}
+
+/// Declares the Java `dataType` singleton of a built-in: `ty::data_type()` hands out the shared
+/// instance (created without a data type manager) as an `Arc<dyn DataType>`, and
+/// `ty::instance()` returns the same instance with its concrete type.
+macro_rules! built_in_singleton {
+    ($ty:ident) => {
+        impl $ty {
+            /// The shared instance with no data type manager (Java's static `dataType` field).
+            pub fn instance() -> &'static std::sync::Arc<$ty> {
+                static INSTANCE: std::sync::OnceLock<std::sync::Arc<$ty>> =
+                    std::sync::OnceLock::new();
+                INSTANCE.get_or_init(|| std::sync::Arc::new($ty::new(None)))
+            }
+
+            /// The shared instance as a `DataType` handle (Java's static `dataType` field).
+            pub fn data_type() -> std::sync::Arc<dyn $crate::program::model::data::data_type::DataType> {
+                $ty::instance().clone()
+            }
+        }
+    };
+}
+pub(crate) use built_in_singleton;
 
 #[cfg(test)]
 mod tests {

@@ -1,259 +1,141 @@
-//! Port of `ghidra.program.model.data.SignedWordDataType`, promoted straight to a trait because
-//! it was selected as a dependency-cycle cut-point (mirrors
-//! [`Integer5DataType`](crate::program::model::data::integer5_data_type::Integer5DataType), which
-//! documents the same set of design decisions in more detail).
-//!
-//! The Java class `extends AbstractSignedIntegerDataType`, itself a subclass of
-//! `AbstractIntegerDataType`. Neither is yet ported, but every member `SignedWordDataType`
-//! actually calls on them (`getDataOrganization()` from [`DataType`], and the final
-//! `AbstractSignedIntegerDataType.isSigned()`) is already covered by an already-ported trait or
-//! reproducible here directly, so no `seam_stubs` placeholder is needed for either supertype.
-//!
-//! Unlike `Integer5DataType`/`Int8TDataType` (whose opposite-signedness singleton is not yet
-//! ported), `SignedWordDataType.getOppositeSignednessDataType()` clones `WordDataType.dataType`,
-//! an already-ported trait
-//! ([`WordDataType`](crate::program::model::data::word_data_type::WordDataType)), so this trait's
-//! `signed_word_opposite_signedness_data_type` returns `Box<dyn WordDataType>` directly with no
-//! seam-stub placeholder needed.
-//!
-//! `WordDataType` itself still declares its own opposite-signedness method
-//! (`WordDataType::get_opposite_signedness_data_type`) against
-//! `crate::program::seam_stubs::SignedWordDataType` (an empty marker trait), not this new real
-//! trait -- switching that import to this trait is not a mechanical drop-in, since the seam-stub
-//! is an empty marker (`pub trait SignedWordDataType {}`) while this trait declares several
-//! required methods, so any existing mock implementing the seam-stub trivially would stop
-//! compiling. Left as documented deferred reconciliation, matching how earlier `Unsigned*`
-//! cut-points in this crate were left pointed at their own now-real-but-unswapped counterparts
-//! (e.g. `IntegerDataType::get_opposite_signedness_data_type` still returns
-//! `Box<dyn crate::program::seam_stubs::UnsignedIntegerDataType>` even though
-//! `UnsignedIntegerDataType` is itself now a real, ported trait).
-//!
-//! Methods that only *override* an already-ported supertrait method with
-//! SignedWordDataType-specific behavior (`getLength`, `getDescription`) cannot be redeclared
-//! here without creating an ambiguous method name with [`DataType`] (Rust does not allow a
-//! subtrait to "override" a supertrait's default method by re-declaring it). Instead, the real
-//! SignedWordDataType-specific values for those overrides are exposed here under distinct
-//! `signed_word_*` names; a future concrete implementation (once
-//! `AbstractSignedIntegerDataType`/`AbstractIntegerDataType` are ported) should implement
-//! `DataType`/`BuiltInDataType` directly and delegate to these helpers. Unlike
-//! `SignedByteDataType` (which also overrides `getDecompilerDisplayName(DecompilerLanguage)`),
-//! the Java source for this class has no such override, so this trait adds none either.
-//! `getAssemblyMnemonic()` (unprefixed, since it is not declared by any already-ported
-//! supertrait) mirrors [`WordDataType::get_assembly_mnemonic`](crate::program::model::data::word_data_type::WordDataType::get_assembly_mnemonic)'s
-//! own precedent for the same reason.
-//!
-//! Static state not translated: the `dataType` singleton (needs a concrete struct) and the
-//! `serialVersionUID` field (Java serialization has no Rust equivalent).
+//! Port of `ghidra.program.model.data.SignedWordDataType`.
 
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
 use crate::program::model::data::word_data_type::WordDataType;
-use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
-use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
 
-/// Provides a basic implementation of a signed word datatype.
-///
-/// Port of `ghidra.program.model.data.SignedWordDataType`. See the module-level documentation for
-/// the naming conventions used to resolve clashes with [`DataType`].
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait SignedWordDataType: DataType + BuiltInDataType {
-    /// Determine if this type is signed.
+integer_data_type! {
+    /// Provides a basic implementation of a signed word datatype.
     ///
-    /// Port of the `final` `AbstractSignedIntegerDataType.isSigned()`, which `SignedWordDataType`
-    /// inherits unchanged.
-    fn is_signed(&self) -> bool {
-        true
-    }
-
-    /// A brief description of this data-type.
-    ///
-    /// Port of `SignedWordDataType.getDescription()`, which overrides the abstract
-    /// `DataType.getDescription()`. Exposed under a distinct name since [`DataType`] already
-    /// declares `get_description`; see the module docs for why it cannot be redeclared here.
-    fn signed_word_description(&self) -> String {
-        "Signed Word (sdw, 2-bytes)".to_string()
-    }
-
-    /// The length of this data-type, in bytes.
-    ///
-    /// Port of `SignedWordDataType.getLength()`, which overrides the abstract
-    /// `DataType.getLength()`. Exposed under a distinct name since [`DataType`] already declares
-    /// `get_length`; see the module docs for why it cannot be redeclared here.
-    fn signed_word_length(&self) -> i32 {
-        2
-    }
-
-    /// The Assembly style data-type declaration for this data-type.
-    ///
-    /// Port of `SignedWordDataType.getAssemblyMnemonic()`, which overrides
-    /// `AbstractIntegerDataType.getAssemblyMnemonic()`. That method is not part of any
-    /// already-ported trait, so it is exposed here directly with no naming conflict.
-    fn get_assembly_mnemonic(&self) -> String {
-        "sdw".to_string()
-    }
-
-    /// Returns the data-type with the opposite signedness from this data-type (an unsigned word
-    /// type).
-    ///
-    /// Port of `SignedWordDataType.getOppositeSignednessDataType()`, which overrides the abstract
-    /// `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required method (no
-    /// default) since the real implementation clones the `WordDataType.dataType` singleton -- see
-    /// the module docs for why this can point at the already-ported [`WordDataType`] directly
-    /// rather than a seam-stub placeholder.
-    fn signed_word_opposite_signedness_data_type(&self) -> Box<dyn WordDataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
-    ///
-    /// Port of `SignedWordDataType.clone(DataTypeManager)`, which overrides
-    /// `BuiltIn.clone(DataTypeManager)`. Left as a required method (no default) since the real
-    /// implementation returns `self` when `dtm` already matches this instance's manager, which
-    /// requires manager-identity comparison a mock cannot provide generically.
-    fn signed_word_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn SignedWordDataType>;
-
-    /// The C style data-type declaration for this data-type, given a specific `DataOrganization`.
-    ///
-    /// Port of `SignedWordDataType.getCTypeDeclaration(DataOrganization)`, which overrides the
-    /// abstract `BuiltInDataType.getCTypeDeclaration(DataOrganization)`. Exposed under a distinct
-    /// name since [`BuiltInDataType`] already declares `get_c_type_declaration`; see the module
-    /// docs for why it cannot be redeclared here. Reproduces `BuiltIn.getCTypeDeclaration(this,
-    /// true, dataOrganization, false)`: a `typedef` line naming this type's fixed display name
-    /// (`sword`) after the organization's signed 2-byte C-type approximation.
-    fn signed_word_get_c_type_declaration(&self, data_organization: &DataOrganizationImpl) -> Option<String> {
-        Some(format!(
-            "typedef {}    sword;",
-            data_organization.get_integer_c_type_approximation(2, true)
-        ))
+    /// Port of `ghidra.program.model.data.SignedWordDataType`.
+    SignedWordDataType {
+        name: "sword",
+        sign: signed,
+        length: 2,
+        description: "Signed Word (sdw, 2-bytes)",
+        assembly_mnemonic: "sdw",
+        c_declaration: default,
+        c_type_declaration: this_signed,
+        java_display_name: default,
+        opposite: WordDataType,
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
+    use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
+    use crate::program::model::data::built_in::BuiltIn;
+    use crate::program::model::data::built_in_data_type::BuiltInDataType;
+    use crate::program::model::data::category_path::ROOT;
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
-            /// A real [`DataOrganizationImpl`] configured as this test expects.
-    fn mock_data_organization() -> DataOrganizationImpl {
-        let mut org = DataOrganizationImpl::get_default_organization(None);
-        org.set_big_endian(false);
-        org.set_pointer_size(8);
-        org.set_pointer_shift(0);
-        org.set_char_is_signed(true);
-        org.set_char_size(1);
-        org.set_wide_char_size(2);
-        org.set_short_size(2);
-        org.set_integer_size(4);
-        org.set_long_size(8);
-        org.set_long_long_size(8);
-        org.set_float_size(4);
-        org.set_double_size(8);
-        org.set_long_double_size(8);
-        org.set_absolute_max_alignment(0);
-        org.set_machine_alignment(8);
-        org.set_default_alignment(1);
-        org.set_default_pointer_alignment(8);
-        org.clear_size_alignment_map();
-        org
-    }
-
-    struct MockWordDataType;
-    impl DataType for MockWordDataType {
-        fn get_name(&self) -> String {
-            "word".to_string()
-        }
-    }
-    impl BuiltInDataType for MockWordDataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
-    }
-    impl WordDataType for MockWordDataType {
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn crate::program::seam_stubs::SignedWordDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-        fn word_clone(&self, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn WordDataType> {
-            Box::new(MockWordDataType)
-        }
-    }
-
-    struct MockSignedWordDataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockSignedWordDataType {
-        fn get_name(&self) -> String {
-            "sword".to_string()
-        }
-    }
-
-    impl BuiltInDataType for MockSignedWordDataType {
-        fn get_c_type_declaration(
-            &self,
-            data_organization: Option<&DataOrganizationImpl>,
-        ) -> Option<String> {
-            data_organization.and_then(|org| self.signed_word_get_c_type_declaration(org))
-        }
-        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
-    }
-
-    impl SignedWordDataType for MockSignedWordDataType {
-        fn signed_word_opposite_signedness_data_type(&self) -> Box<dyn WordDataType> {
-            Box::new(MockWordDataType)
-        }
-
-        fn signed_word_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn SignedWordDataType> {
-            match dtm {
-                None => Box::new(MockSignedWordDataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockSignedWordDataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
+    #[test]
+    fn java_constants() {
+        let dt = SignedWordDataType::instance();
+        assert_eq!(dt.get_name(), "sword");
+        assert_eq!(dt.get_length(), 2);
+        assert_eq!(dt.get_description(), "Signed Word (sdw, 2-bytes)");
+        assert_eq!(dt.is_signed(), true);
+        assert!(!dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "sdw");
+        assert_eq!(dt.get_c_declaration().as_deref(), Some("short"));
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("SWORD"));
+        assert_eq!(dt.get_path_name(), "/sword");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockSignedWordDataType { dtm_tag: None };
-        let dyn_dt: &dyn SignedWordDataType = &dt;
-        assert!(dyn_dt.is_signed());
-        assert_eq!(dyn_dt.signed_word_length(), 2);
-        assert_eq!(dyn_dt.signed_word_description(), "Signed Word (sdw, 2-bytes)");
-        assert_eq!(dyn_dt.get_assembly_mnemonic(), "sdw");
-        assert_eq!(DataType::get_name(dyn_dt), "sword");
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = SignedWordDataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "sdw");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "sword");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "sdw");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "short");
     }
 
     #[test]
-    fn c_type_declaration_uses_signed_2byte_approximation() {
-        let dt = MockSignedWordDataType { dtm_tag: None };
-        let org = mock_data_organization();
-        assert_eq!(
-            dt.signed_word_get_c_type_declaration(&org),
-            Some("typedef short    sword;".to_string())
-        );
+    fn c_type_declaration() {
+        let dt = SignedWordDataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef short    sword;"));
     }
 
     #[test]
-    fn opposite_signedness_returns_word_data_type() {
-        let dt = MockSignedWordDataType { dtm_tag: None };
-        let opposite = dt.signed_word_opposite_signedness_data_type();
-        assert!(!opposite.is_signed());
+    fn decompiler_display_name() {
+        let dt = SignedWordDataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "sword");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "sword");
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockSignedWordDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.signed_word_clone(None);
-        assert_eq!(cloned.signed_word_length(), 2);
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = SignedWordDataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 2).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), true);
+        assert_eq!(scalar.bit_length(), 16);
+        assert_eq!(scalar.get_big_integer(), -1i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 2), "FFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 2), "-1");
+
+        let mut first_one = vec![0u8; 2];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 2).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 2).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 256i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 2).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 256i128);
+        assert!(dt.get_value(&buf(&first_one[..1], false), &s, 2).is_none());
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockSignedWordDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.signed_word_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.signed_word_length(), 2);
+    fn encode_value_checks_range() {
+        let dt = SignedWordDataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 2], false);
+        let mut one = vec![0u8; 2];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(32767i128), &b, &s, 2).unwrap().len(), 2);
+        assert!(dt.encode_value(&(32767i128 + 1), &b, &s, 2).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 2).is_ok(), true);
+        assert!(dt.encode_value(&1i64, &b, &s, 3).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 2).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 2).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 2).is_err());
     }
 
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = SignedWordDataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "word");
+        assert_eq!(opposite.is_signed(), false);
+        assert!(dt.is_equivalent(SignedWordDataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(WordDataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&SignedWordDataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = SignedWordDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &SignedWordDataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), true);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
+    }
 }

@@ -1,171 +1,141 @@
-use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::seam_stubs::SignedQWordDataType;
+//! Port of `ghidra.program.model.data.QWordDataType`.
 
-/// Provides a definition of a Quad Word within a program.
-///
-/// Port of `ghidra.program.model.data.QWordDataType`, promoted straight to a trait because it was
-/// selected as a dependency-cycle cut-point.
-///
-/// The Java class `extends AbstractUnsignedIntegerDataType`, itself a subclass of
-/// `AbstractIntegerDataType`. Neither is yet ported, but every member `QWordDataType` actually
-/// calls on them (`getLength()`/`getDescription()` from [`DataType`], and the final
-/// `AbstractUnsignedIntegerDataType.isSigned()`) is already covered by an already-ported trait or
-/// reproducible here directly, so no `seam_stubs` placeholder is needed for either supertype.
-///
-/// Methods that only *override* an already-ported supertrait method with QWordDataType-specific
-/// behavior (`getDescription`, `getLength`) cannot be redeclared here without creating an
-/// ambiguous method name with [`DataType`] (Rust does not allow a subtrait to "override" a
-/// supertrait's default method by re-declaring it). Instead, the real QWordDataType-specific
-/// values for those overrides are exposed here under distinct `qword_*` names; a future concrete
-/// implementation (once `AbstractUnsignedIntegerDataType`/`AbstractIntegerDataType` are ported)
-/// should implement `DataType`/`BuiltInDataType` directly and delegate to these helpers.
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct) and the
-/// `serialVersionUID` field (Java serialization has no Rust equivalent).
-pub trait QWordDataType: DataType + BuiltInDataType {
-    /// Determine if this type is signed.
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
+use crate::program::model::data::signed_qword_data_type::SignedQWordDataType;
+
+integer_data_type! {
+    /// Provides a definition of a Quad Word within a program.
     ///
-    /// Port of the `final` `AbstractUnsignedIntegerDataType.isSigned()`, which `QWordDataType`
-    /// inherits unchanged.
-    fn is_signed(&self) -> bool {
-        false
+    /// Port of `ghidra.program.model.data.QWordDataType`.
+    QWordDataType {
+        name: "qword",
+        sign: unsigned,
+        length: 8,
+        description: "Unsigned Quad-Word (dq, 8-bytes)",
+        assembly_mnemonic: "dq",
+        c_declaration: default,
+        c_type_declaration: this_unsigned,
+        java_display_name: default,
+        opposite: SignedQWordDataType,
     }
-
-    /// A brief description of this data-type.
-    ///
-    /// Port of `QWordDataType.getDescription()`, which overrides the abstract
-    /// `DataType.getDescription()`. Exposed under a distinct name since [`DataType`] already
-    /// declares `get_description`; see the module docs for why it cannot be redeclared here.
-    fn qword_description(&self) -> String {
-        "Unsigned Quad-Word (dq, 8-bytes)".to_string()
-    }
-
-    /// The length of this data-type, in bytes.
-    ///
-    /// Port of `QWordDataType.getLength()`, which overrides the abstract `DataType.getLength()`.
-    /// Exposed under a distinct name since [`DataType`] already declares `get_length`; see the
-    /// module docs for why it cannot be redeclared here.
-    fn qword_length(&self) -> i32 {
-        8
-    }
-
-    /// The Assembly style data-type declaration for this data-type.
-    ///
-    /// Port of `QWordDataType.getAssemblyMnemonic()`, which overrides
-    /// `AbstractIntegerDataType.getAssemblyMnemonic()`. That method is not part of any
-    /// already-ported trait, so it is exposed here directly with no naming conflict.
-    fn get_assembly_mnemonic(&self) -> String {
-        "dq".to_string()
-    }
-
-    /// Returns the data-type with the opposite signedness from this data-type (a signed
-    /// quad-word type).
-    ///
-    /// Port of `QWordDataType.getOppositeSignednessDataType()`, which overrides the abstract
-    /// `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required method (no
-    /// default) since the real implementation clones the `SignedQWordDataType.dataType`
-    /// singleton, which is not ported yet (see [`SignedQWordDataType`] placeholder).
-    fn get_opposite_signedness_data_type(&self) -> Box<dyn SignedQWordDataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
-    ///
-    /// Port of `QWordDataType.clone(DataTypeManager)`, which overrides
-    /// `BuiltIn.clone(DataTypeManager)`. Left as a required method (no default) since the real
-    /// implementation returns `self` when `dtm` already matches this instance's manager, which
-    /// requires manager-identity comparison a mock cannot provide generically.
-    fn qword_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn QWordDataType>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
+    use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
+    use crate::program::model::data::built_in::BuiltIn;
+    use crate::program::model::data::built_in_data_type::BuiltInDataType;
+    use crate::program::model::data::category_path::ROOT;
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
-    struct MockSignedQWordDataType;
-    impl SignedQWordDataType for MockSignedQWordDataType {}
-
-    struct MockQWordDataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockQWordDataType {
-        fn get_name(&self) -> String {
-            "qword".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            8
-        }
-        fn get_description(&self) -> String {
-            "Unsigned Quad-Word (dq, 8-bytes)".to_string()
-        }
-    }
-
-    impl BuiltInDataType for MockQWordDataType {
-        fn get_c_type_declaration(
-            &self,
-            _data_organization: Option<&crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
-        ) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
-    }
-
-    impl QWordDataType for MockQWordDataType {
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn SignedQWordDataType> {
-            Box::new(MockSignedQWordDataType)
-        }
-
-        fn qword_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn QWordDataType> {
-            // Mirrors `QWordDataType.clone(DataTypeManager)`: return an equivalent instance tied
-            // to the requested manager (`None` here stands in for "already matches").
-            match dtm {
-                None => Box::new(MockQWordDataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockQWordDataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
+    #[test]
+    fn java_constants() {
+        let dt = QWordDataType::instance();
+        assert_eq!(dt.get_name(), "qword");
+        assert_eq!(dt.get_length(), 8);
+        assert_eq!(dt.get_description(), "Unsigned Quad-Word (dq, 8-bytes)");
+        assert_eq!(dt.is_signed(), false);
+        assert!(!dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "dq");
+        assert_eq!(dt.get_c_declaration().as_deref(), Some("unsigned long long"));
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("QWORD"));
+        assert_eq!(dt.get_path_name(), "/qword");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockQWordDataType { dtm_tag: None };
-        let dyn_dt: &dyn QWordDataType = &dt;
-        assert!(!dyn_dt.is_signed());
-        assert_eq!(dyn_dt.qword_length(), 8);
-        assert_eq!(dyn_dt.qword_description(), "Unsigned Quad-Word (dq, 8-bytes)");
-        assert_eq!(dyn_dt.get_assembly_mnemonic(), "dq");
-        // The DataType supertrait's own get_length/get_description are independently reachable.
-        assert_eq!(DataType::get_length(dyn_dt), 8);
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = QWordDataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "dq");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "qword");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "dq");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "unsigned long long");
     }
 
     #[test]
-    fn opposite_signedness_returns_distinct_placeholder() {
-        let dt = MockQWordDataType { dtm_tag: Some("a") };
-        let _opposite = dt.get_opposite_signedness_data_type();
+    fn c_type_declaration() {
+        let dt = QWordDataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef unsigned long long    qword;"));
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockQWordDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.qword_clone(None);
-        assert_eq!(cloned.qword_description(), dt.qword_description());
-        assert_eq!(cloned.get_assembly_mnemonic(), "dq");
+    fn decompiler_display_name() {
+        let dt = QWordDataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "qword");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "qword");
     }
 
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    #[test]
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = QWordDataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255, 255, 255, 255, 255, 255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 8).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), false);
+        assert_eq!(scalar.bit_length(), 64);
+        assert_eq!(scalar.get_big_integer(), 18446744073709551615i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 8), "FFFFFFFFFFFFFFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 8), "18446744073709551615");
+
+        let mut first_one = vec![0u8; 8];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 8).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 8).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 72057594037927936i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 8).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 72057594037927936i128);
+        assert!(dt.get_value(&buf(&first_one[..7], false), &s, 8).is_none());
+    }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockQWordDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.qword_clone(Some(Box::new(MockDataTypeManager)));
-        // Mirrors the real `clone(DataTypeManager)` returning a distinct instance bound to the
-        // requested manager when it differs from the current one, while remaining a fully
-        // functional QWordDataType.
-        assert_eq!(cloned.get_assembly_mnemonic(), "dq");
-        assert_eq!(cloned.qword_length(), 8);
+    fn encode_value_checks_range() {
+        let dt = QWordDataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 8], false);
+        let mut one = vec![0u8; 8];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(18446744073709551615i128), &b, &s, 8).unwrap().len(), 8);
+        assert!(dt.encode_value(&(18446744073709551615i128 + 1), &b, &s, 8).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 8).is_ok(), false);
+        assert!(dt.encode_value(&1i64, &b, &s, 9).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 8).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 8).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 8).is_err());
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = QWordDataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "sqword");
+        assert_eq!(opposite.is_signed(), true);
+        assert!(dt.is_equivalent(QWordDataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(SignedQWordDataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&QWordDataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = QWordDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &QWordDataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), false);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
     }
 }

@@ -1,210 +1,113 @@
-//! Port of `ghidra.program.model.data.UnsignedInteger16DataType`, promoted to a trait because it
-//! was selected as a dependency-cycle cut-point.
-//!
-//! The Java class `extends AbstractUnsignedIntegerDataType`, already ported as a trait
-//! ([`AbstractUnsignedIntegerDataType`]), so this trait extends it directly.
-//!
-//! `getDescription()`/`getLength()` each override an already-provided default method on
-//! [`DataType`]; `getOppositeSignednessDataType()` overrides the required
-//! `AbstractIntegerDataType.getOppositeSignednessDataType()`. Rust does not allow a subtrait to
-//! override a supertrait's method (default or required) by redeclaring it under the same name --
-//! see this crate's other `Abstract*`/leaf cut-point traits for the same restriction -- so all
-//! three are exposed here under distinct `unsigned_integer16_*` names. A concrete `impl DataType +
-//! AbstractIntegerDataType for ...` should delegate to these.
-//!
-//! No `getCTypeDeclaration(DataOrganization)` override exists in Java for this class (unlike its
-//! `UnsignedInteger`/`UnsignedShort`/`UnsignedChar` siblings), so this trait adds nothing for it;
-//! [`AbstractUnsignedIntegerDataType`]'s own supertrait chain provides no default either, so a
-//! concrete `BuiltInDataType::get_c_type_declaration` implementation is expected to supply its own
-//! (matching the Java class's inherited `AbstractIntegerDataType` behavior, not reproduced by any
-//! cut-point trait here).
+//! Port of `ghidra.program.model.data.UnsignedInteger16DataType`.
 
-use crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
 use crate::program::model::data::integer16_data_type::Integer16DataType;
 
-/// A fixed size 16 byte unsigned integer.
-///
-/// Port of `ghidra.program.model.data.UnsignedInteger16DataType`. See the module-level
-/// documentation for the naming conventions used to resolve clashes with
-/// [`DataType`](crate::program::model::data::data_type::DataType).
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait UnsignedInteger16DataType: AbstractUnsignedIntegerDataType {
-    /// Port of `UnsignedInteger16DataType.getDescription()`, which overrides the default
-    /// `DataType.getDescription()`.
-    fn unsigned_integer16_description(&self) -> String {
-        "Unsigned 16-Byte Integer".to_string()
-    }
-
-    /// Port of `UnsignedInteger16DataType.getLength()`, which overrides the default
-    /// `DataType.getLength()`. Always `16`.
-    fn unsigned_integer16_length(&self) -> i32 {
-        16
-    }
-
-    /// Port of `UnsignedInteger16DataType.getOppositeSignednessDataType()`, which overrides the
-    /// required `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required
-    /// method (no default); see
-    /// [`UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type`](super::unsigned_integer_data_type::UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type)
-    /// for why.
-    fn unsigned_integer16_opposite_signedness_data_type(&self) -> Box<dyn Integer16DataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
+integer_data_type! {
+    /// An unsigned 16-byte integer.
     ///
-    /// Port of `UnsignedInteger16DataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractUnsignedIntegerDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a
-    /// required method (no default); see
-    /// [`ByteDataType::byte_clone`](super::byte_data_type::ByteDataType::byte_clone) for why.
-    fn unsigned_integer16_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedInteger16DataType>;
+    /// Port of `ghidra.program.model.data.UnsignedInteger16DataType`.
+    UnsignedInteger16DataType {
+        name: "uint16",
+        sign: unsigned,
+        length: 16,
+        description: "Unsigned 16-Byte Integer",
+        assembly_mnemonic: default,
+        c_declaration: default,
+        c_type_declaration: this_unsigned,
+        java_display_name: default,
+        opposite: Integer16DataType,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::settings::settings::Settings;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
     use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
-    use crate::program::model::data::array_stringable::ArrayStringable;
+    use crate::program::model::data::built_in::BuiltIn;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use crate::program::model::data::category_path::ROOT;
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::model::data::string_data_instance::StringDataInstance;
-    use crate::program::model::mem::MemBuffer;
-
-    struct MockInteger16DataType;
-    impl DataType for MockInteger16DataType {
-        fn get_name(&self) -> String {
-            "int3".to_string()
-        }
-    }
-    impl BuiltInDataType for MockInteger16DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-    impl Integer16DataType for MockInteger16DataType {
-        fn get_opposite_signedness_data_type(
-            &self,
-        ) -> Box<dyn crate::program::seam_stubs::UnsignedInteger16DataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-        fn integer16_clone(&self, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn Integer16DataType> {
-            Box::new(MockInteger16DataType)
-        }
-    }
-
-    struct MockUnsignedInteger16DataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockUnsignedInteger16DataType {
-        fn get_name(&self) -> String {
-            "uint16".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.unsigned_integer16_length()
-        }
-    }
-
-    impl BuiltInDataType for MockUnsignedInteger16DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-
-    impl ArrayStringable for MockUnsignedInteger16DataType {
-        fn has_string_value(&self, _settings: &dyn Settings) -> bool {
-            false
-        }
-        fn string_data_instance(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _length: i32,
-        ) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
-        fn get_array_default_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-        ) -> Option<String> {
-            None
-        }
-        fn get_array_default_offcut_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-            _offcut_length: i32,
-        ) -> Option<String> {
-            None
-        }
-    }
-
-    impl AbstractIntegerDataType for MockUnsignedInteger16DataType {
-        fn is_signed(&self) -> bool {
-            self.unsigned_is_signed()
-        }
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn AbstractIntegerDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-    }
-
-    impl AbstractUnsignedIntegerDataType for MockUnsignedInteger16DataType {}
-
-    impl UnsignedInteger16DataType for MockUnsignedInteger16DataType {
-        fn unsigned_integer16_opposite_signedness_data_type(&self) -> Box<dyn Integer16DataType> {
-            Box::new(MockInteger16DataType)
-        }
-
-        fn unsigned_integer16_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedInteger16DataType> {
-            match dtm {
-                None => Box::new(MockUnsignedInteger16DataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockUnsignedInteger16DataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockUnsignedInteger16DataType { dtm_tag: None };
-        let dyn_dt: &dyn UnsignedInteger16DataType = &dt;
-        assert_eq!(dyn_dt.unsigned_integer16_description(), "Unsigned 16-Byte Integer");
-        assert_eq!(dyn_dt.unsigned_integer16_length(), 16);
-        assert_eq!(DataType::get_length(dyn_dt), 16);
-        assert!(!dt.is_signed());
+    fn java_constants() {
+        let dt = UnsignedInteger16DataType::instance();
+        assert_eq!(dt.get_name(), "uint16");
+        assert_eq!(dt.get_length(), 16);
+        assert_eq!(dt.get_description(), "Unsigned 16-Byte Integer");
+        assert_eq!(dt.is_signed(), false);
+        assert!(!dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "uint16");
+        assert_eq!(dt.get_c_declaration().as_deref(), None);
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("UINT16"));
+        assert_eq!(dt.get_path_name(), "/uint16");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn opposite_signedness_returns_integer16_data_type() {
-        let dt = MockUnsignedInteger16DataType { dtm_tag: None };
-        let _opposite = dt.unsigned_integer16_opposite_signedness_data_type();
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = UnsignedInteger16DataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "uint16");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "uint16");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "uint16");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "uint16");
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockUnsignedInteger16DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_integer16_clone(None);
-        assert_eq!(cloned.unsigned_integer16_length(), 16);
+    fn c_type_declaration() {
+        let dt = UnsignedInteger16DataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef unsigned long long    uint16;"));
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockUnsignedInteger16DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_integer16_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.unsigned_integer16_length(), 16);
+    fn decompiler_display_name() {
+        let dt = UnsignedInteger16DataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "uint16");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "uint16");
+    }
+
+    #[test]
+    fn value_is_big_integer_beyond_eight_bytes() {
+        let dt = UnsignedInteger16DataType::new(None);
+        let s = LongSettings::default();
+        let mut max = vec![0xffu8; 16];
+        max[15] = 0x7f;
+        let value = dt.get_value(&buf(&max, false), &s, 16).unwrap();
+        assert_eq!(*value.downcast_ref::<i128>().unwrap(), i128::MAX);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<i128>()));
+        assert_eq!(dt.get_representation(&buf(&max, false), &s, 16), "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFh");
+        let mut last_one = vec![0u8; 16];
+        last_one[15] = 1;
+        let big = dt.get_value(&buf(&last_one, true), &s, 16).unwrap();
+        assert_eq!(*big.downcast_ref::<i128>().unwrap(), 1);
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = UnsignedInteger16DataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "int16");
+        assert_eq!(opposite.is_signed(), true);
+        assert!(dt.is_equivalent(UnsignedInteger16DataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(Integer16DataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&UnsignedInteger16DataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = UnsignedInteger16DataType::data_type();
+        assert!(Arc::ptr_eq(&a, &UnsignedInteger16DataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), false);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
     }
 }

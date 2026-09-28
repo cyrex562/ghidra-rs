@@ -100,7 +100,7 @@ use crate::program::model::data::charset_settings_definition::CharsetSettingsDef
 use crate::program::model::data::string_data_instance::{StringDataInstance, DEFAULT_CHARSET_NAME};
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::scalar::Scalar;
-use crate::program::model::mem::MemBuffer;
+use crate::program::model::mem::{ByteMemBufferImpl, MemBuffer};
 use crate::util::StringFormat;
 
 /// Package-private `AbstractIntegerDataType.C_SIGNED_CHAR`.
@@ -254,8 +254,86 @@ struct IntegerCharView<'a> {
     charset_name: String,
     char_size: i32,
     length: i32,
-    buf: &'a dyn MemBuffer,
+    buf: CharViewBuffer<'a>,
     endian_setting: Option<Endian>,
+}
+
+/// The memory an [`IntegerCharView`] reads: the caller's buffer, or (for the `'static` view that
+/// [`ArrayStringable::string_data_instance`] must return) an owned copy of the bytes it covers.
+enum CharViewBuffer<'a> {
+    Borrowed(&'a dyn MemBuffer),
+    Owned(ByteMemBufferImpl),
+}
+
+impl CharViewBuffer<'_> {
+    fn as_dyn(&self) -> &dyn MemBuffer {
+        match self {
+            CharViewBuffer::Borrowed(buf) => *buf,
+            CharViewBuffer::Owned(buf) => buf,
+        }
+    }
+}
+
+/// Resolves the charset, char size and endian setting an integer char-array view uses, standing
+/// in for the relevant parts of the `StringDataInstance(DataType, Settings, MemBuffer, int,
+/// boolean)` constructor.
+fn char_view_settings(settings: &dyn Settings) -> (String, i32, Option<Endian>) {
+    let charset_name = CharsetSettingsDefinition::charset().get_charset(settings, DEFAULT_CHARSET_NAME);
+    let char_size = charset_char_size(&charset_name);
+    let endian_setting = match EndianSettingsDefinition::DEF.get_choice(settings) {
+        endian_settings_definition::BIG => Some(Endian::Big),
+        endian_settings_definition::LITTLE => Some(Endian::Little),
+        _ => None,
+    };
+    (charset_name, char_size, endian_setting)
+}
+
+/// Builds an owned (`'static`) char-array view over the first `len` bytes of `buf`, for
+/// [`ArrayStringable::string_data_instance`] implementations of integer data types (Java:
+/// `new StringDataInstance(this, settings, buf, length, true)`). The bytes are copied because the
+/// returned instance may not borrow `buf`; bytes that cannot be read are simply absent, exactly
+/// as a short read of the original buffer would report.
+pub fn owned_char_view(buf: &dyn MemBuffer, settings: &dyn Settings, len: i32) -> Box<dyn StringDataInstance> {
+    let (charset_name, char_size, endian_setting) = char_view_settings(settings);
+    let mut bytes = vec![0u8; len.max(0) as usize];
+    let read = buf.get_bytes(&mut bytes, 0);
+    bytes.truncate(read);
+    Box::new(IntegerCharView {
+        charset_name,
+        char_size,
+        length: len,
+        buf: CharViewBuffer::Owned(ByteMemBufferImpl::new(buf.get_address(), bytes, buf.is_big_endian())),
+        endian_setting,
+    })
+}
+
+/// Converts the `Object value` accepted by `AbstractIntegerDataType.encodeValue` into an
+/// [`IntegerEncodeValue`]: an [`IntegerEncodeValue`] itself, a [`Scalar`], an `i128` (standing in
+/// for `BigInteger`), a `char` (`Character`), or an `i8`/`i16`/`i32`/`i64` (`Byte`/`Short`/
+/// `Integer`/`Long`). Anything else is Java's "Unsupported value type".
+pub fn integer_encode_value_from_any(value: &dyn std::any::Any) -> Option<IntegerEncodeValue> {
+    if let Some(v) = value.downcast_ref::<IntegerEncodeValue>() {
+        return Some(*v);
+    }
+    if let Some(v) = value.downcast_ref::<Scalar>() {
+        return Some(IntegerEncodeValue::Scalar(*v));
+    }
+    if let Some(v) = value.downcast_ref::<i128>() {
+        return Some(IntegerEncodeValue::BigInt(*v));
+    }
+    if let Some(v) = value.downcast_ref::<char>() {
+        return Some(IntegerEncodeValue::Char(*v));
+    }
+    if let Some(v) = value.downcast_ref::<i8>() {
+        return Some(IntegerEncodeValue::I8(*v));
+    }
+    if let Some(v) = value.downcast_ref::<i16>() {
+        return Some(IntegerEncodeValue::I16(*v));
+    }
+    if let Some(v) = value.downcast_ref::<i32>() {
+        return Some(IntegerEncodeValue::I32(*v));
+    }
+    value.downcast_ref::<i64>().map(|v| IntegerEncodeValue::I64(*v))
 }
 
 impl StringDataInstance for IntegerCharView<'_> {
@@ -284,7 +362,7 @@ impl StringDataInstance for IntegerCharView<'_> {
     }
 
     fn mem_buffer(&self) -> Option<&dyn MemBuffer> {
-        Some(self.buf)
+        Some(self.buf.as_dyn())
     }
 
     fn endian_setting(&self) -> Option<Endian> {
@@ -597,18 +675,12 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
     /// `buf`'s lifetime (`'a`) rather than being `'static`, so a concrete
     /// `impl ArrayStringable::string_data_instance` cannot delegate to this directly.
     fn build_char_view<'a>(&self, buf: &'a dyn MemBuffer, settings: &dyn Settings, len: i32) -> Box<dyn StringDataInstance + 'a> {
-        let charset_name = CharsetSettingsDefinition::charset().get_charset(settings, DEFAULT_CHARSET_NAME);
-        let char_size = charset_char_size(&charset_name);
-        let endian_setting = match EndianSettingsDefinition::DEF.get_choice(settings) {
-            endian_settings_definition::BIG => Some(Endian::Big),
-            endian_settings_definition::LITTLE => Some(Endian::Little),
-            _ => None,
-        };
+        let (charset_name, char_size, endian_setting) = char_view_settings(settings);
         Box::new(IntegerCharView {
             charset_name,
             char_size,
             length: len,
-            buf,
+            buf: CharViewBuffer::Borrowed(buf),
             endian_setting,
         })
     }
@@ -661,7 +733,397 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
     /// this approximates Java's `getClass().equals(getClass())` comparison. A concrete `impl
     /// DataType for ...` should delegate `is_equivalent` to this.
     fn integer_is_equivalent(&self, dt: &dyn DataType) -> bool {
-        dt.is_integer_type() && dt.is_signed_integer_type() == self.is_signed() && dt.get_name() == self.get_name()
+        match self.runtime_class() {
+            // A concrete integer type exposes its class: compare it exactly, like Java.
+            Some(class) => dt.runtime_class() == Some(class),
+            None => {
+                dt.is_integer_type() && dt.is_signed_integer_type() == self.is_signed() && dt.get_name() == self.get_name()
+            }
+        }
+    }
+}
+
+/// Defines a concrete integer built-in: a struct embedding a
+/// [`BuiltInBase`](super::built_in::BuiltInBase), its `dataType` singleton, and its
+/// `DataType`/`DataTypeImpl`/`BuiltInDataType`/`BuiltIn`/`ArrayStringable`/
+/// `AbstractIntegerDataType`/`Abstract{Signed,Unsigned}IntegerDataType` impls.
+///
+/// Every concrete Java `AbstractIntegerDataType` subclass differs only in the overrides listed
+/// as the macro's fields:
+/// - `name`: the name passed to the Java constructor.
+/// - `sign`: `signed` (`extends AbstractSignedIntegerDataType`) or `unsigned`.
+/// - `length`: a literal (`getLength()` returns a constant), or a `DataOrganizationImpl` getter
+///   such as `get_integer_size` (`getLength()` reads the data organization, and
+///   `hasLanguageDependantLength()` is `true`).
+/// - `description`: `getDescription()`.
+/// - `assembly_mnemonic`: a literal override of `getAssemblyMnemonic()`, or `default`.
+/// - `c_declaration`: `default` (inherited `getCDeclaration()`), `none` (overridden to return
+///   `null`), or one of the `C_*` constants.
+/// - `c_type_declaration`: `none` (overridden to return `null`), `this_signed` /
+///   `this_unsigned` (`getCTypeDeclaration(this, signed, dataOrganization, false)`; the
+///   inherited `BuiltIn` behaviour is `this_unsigned`), or a literal C type name
+///   (`getCTypeDeclaration(getName(), "<ctype>", false)`).
+/// - `java_display_name`: the `getDecompilerDisplayName(JAVA_LANGUAGE)` override, or `default`.
+/// - `opposite`: the type `getOppositeSignednessDataType()` returns.
+macro_rules! integer_data_type {
+    (
+        $(#[$meta:meta])*
+        $ty:ident {
+            name: $name:literal,
+            sign: $sign:ident,
+            length: $len:tt,
+            description: $desc:literal,
+            assembly_mnemonic: $asm:tt,
+            c_declaration: $cdecl:tt,
+            c_type_declaration: $ctd:tt,
+            java_display_name: $java:tt,
+            opposite: $opp:ident,
+        }
+    ) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone)]
+        pub struct $ty {
+            base: $crate::program::model::data::built_in::BuiltInBase,
+        }
+
+        impl $ty {
+            /// Creates an instance bound to `dtm`'s data organization (Java: `new T(dtm)`; `None`
+            /// is the no-argument constructor).
+            pub fn new(
+                dtm: Option<&dyn $crate::program::model::data::data_type_manager::DataTypeManager>,
+            ) -> Self {
+                Self {
+                    base: $crate::program::model::data::built_in::BuiltInBase::new(None, $name, dtm),
+                }
+            }
+
+            /// An instance sharing `base`'s data organization binding (Java:
+            /// `T.dataType.clone(getDataTypeManager())`).
+            pub fn bound_like(base: &$crate::program::model::data::built_in::BuiltInBase) -> Self {
+                Self { base: base.rebound($name) }
+            }
+
+            fn c_type_declaration(
+                &self,
+                data_organization: Option<
+                    &$crate::program::model::data::data_organization_impl::DataOrganizationImpl,
+                >,
+            ) -> Option<String> {
+                $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@ctype self, data_organization, $ctd)
+            }
+
+            fn built_in_settings_definitions(
+                &self,
+            ) -> Vec<Box<dyn $crate::docking::settings::settings_definition::SettingsDefinition>>
+            {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::get_built_in_settings_definitions(self)
+            }
+
+            fn decompiler_display_name(
+                &self,
+                language: $crate::program::model::lang::decompiler_language::DecompilerLanguage,
+            ) -> String {
+                $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@java self, language, $java)
+            }
+        }
+
+        $crate::program::model::data::built_in::built_in_singleton!($ty);
+        $crate::program::model::data::built_in::impl_built_in!($ty);
+
+        impl std::fmt::Display for $ty {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(&$crate::program::model::data::data_type::DataType::get_display_name(self))
+            }
+        }
+
+        impl $crate::program::model::data::data_type::DataType for $ty {
+            $crate::program::model::data::built_in::built_in_data_type_methods!();
+
+            fn has_language_dependant_length(&self) -> bool {
+                $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@lang_dep $len)
+            }
+            fn get_length(&self) -> i32 {
+                $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@length self, $len)
+            }
+            fn get_description(&self) -> String {
+                $desc.to_string()
+            }
+            fn get_mnemonic(&self, settings: &dyn $crate::docking::settings::settings::Settings) -> String {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_mnemonic(self, settings)
+            }
+            fn get_default_label_prefix(&self) -> Option<String> {
+                Some($crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_default_label_prefix(self))
+            }
+            fn get_value(
+                &self,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                length: i32,
+            ) -> Option<Box<dyn std::any::Any>> {
+                $crate::program::model::data::abstract_integer_data_type::integer_value_as_any(
+                    $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_value(self, buf, settings, length),
+                )
+            }
+            fn is_encodable(&self) -> bool {
+                true
+            }
+            fn encode_value(
+                &self,
+                value: &dyn std::any::Any,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                length: i32,
+            ) -> Result<Vec<u8>, $crate::program::model::data::data_type_with_charset::DataTypeEncodeError> {
+                $crate::program::model::data::abstract_integer_data_type::encode_any_value(self, value, buf, settings, length)
+            }
+            fn get_value_class(
+                &self,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+            ) -> Option<std::any::TypeId> {
+                Some($crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_value_type_id(self, settings))
+            }
+            fn get_representation(
+                &self,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                length: i32,
+            ) -> String {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_representation(self, buf, settings, length)
+            }
+            fn encode_representation(
+                &self,
+                repr: &str,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                length: i32,
+            ) -> Result<Vec<u8>, $crate::program::model::data::data_type_with_charset::DataTypeEncodeError> {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_encode_representation(self, repr, buf, settings, length)
+                    .map_err(|e| $crate::program::model::data::data_type_with_charset::DataTypeEncodeError(e.to_string()))
+            }
+            fn is_equivalent(&self, dt: &dyn $crate::program::model::data::data_type::DataType) -> bool {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_is_equivalent(self, dt)
+            }
+            fn is_integer_type(&self) -> bool {
+                true
+            }
+            fn is_signed_integer_type(&self) -> bool {
+                $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@signed $sign)
+            }
+            fn is_array_stringable_type(&self) -> bool {
+                true
+            }
+            fn as_abstract_integer(
+                &self,
+            ) -> Option<&dyn $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType> {
+                Some(self)
+            }
+        }
+
+        impl $crate::program::model::data::array_stringable::ArrayStringable for $ty {
+            fn has_string_value(&self, settings: &dyn $crate::docking::settings::settings::Settings) -> bool {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_has_string_value(self, settings)
+            }
+            fn string_data_instance(
+                &self,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                length: i32,
+            ) -> Box<dyn $crate::program::model::data::string_data_instance::StringDataInstance> {
+                $crate::program::model::data::abstract_integer_data_type::owned_char_view(buf, settings, length)
+            }
+            fn get_array_default_label_prefix(
+                &self,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                len: i32,
+                options: &dyn $crate::program::model::data::data_type_display_options::DataTypeDisplayOptions,
+            ) -> Option<String> {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_array_default_label_prefix(self, buf, settings, len, options)
+            }
+            fn get_array_default_offcut_label_prefix(
+                &self,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                len: i32,
+                options: &dyn $crate::program::model::data::data_type_display_options::DataTypeDisplayOptions,
+                offcut_length: i32,
+            ) -> Option<String> {
+                $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_array_default_offcut_label_prefix(self, buf, settings, len, options, offcut_length)
+            }
+        }
+
+        impl $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType for $ty {
+            fn is_signed(&self) -> bool {
+                $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@signed $sign)
+            }
+            fn get_opposite_signedness_data_type(
+                &self,
+            ) -> Box<dyn $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType> {
+                Box::new($opp::bound_like(&self.base))
+            }
+            $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@asm_item $asm);
+            $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@cdecl_item $cdecl);
+        }
+
+        $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@sign_impl $ty, $sign);
+    };
+
+    (@signed signed) => { true };
+    (@signed unsigned) => { false };
+
+    (@sign_impl $ty:ident, signed) => {
+        impl $crate::program::model::data::abstract_signed_integer_data_type::AbstractSignedIntegerDataType for $ty {}
+    };
+    (@sign_impl $ty:ident, unsigned) => {
+        impl $crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType for $ty {}
+    };
+
+    (@lang_dep $n:literal) => { false };
+    (@lang_dep $getter:ident) => { true };
+
+    (@length $self:ident, $n:literal) => { $n };
+    (@length $self:ident, $getter:ident) => { $self.base.data_organization().$getter() };
+
+    (@asm_item default) => {};
+    (@asm_item $asm:literal) => {
+        fn get_assembly_mnemonic(&self) -> String {
+            $asm.to_string()
+        }
+    };
+
+    (@cdecl_item default) => {};
+    (@cdecl_item none) => {
+        fn get_c_declaration(&self) -> Option<String> {
+            None
+        }
+    };
+    (@cdecl_item $c:ident) => {
+        fn get_c_declaration(&self) -> Option<String> {
+            Some($crate::program::model::data::abstract_integer_data_type::$c.to_string())
+        }
+    };
+
+    (@ctype $self:ident, $org:ident, none) => {{
+        let _ = $org;
+        None
+    }};
+    (@ctype $self:ident, $org:ident, this_signed) => {
+        $org.map(|org| {
+            $crate::program::model::data::built_in::BuiltIn::built_in_get_c_type_declaration_for_self($self, true, org, false)
+        })
+    };
+    (@ctype $self:ident, $org:ident, this_unsigned) => {
+        $org.map(|org| {
+            $crate::program::model::data::built_in::BuiltIn::built_in_get_c_type_declaration_for_self($self, false, org, false)
+        })
+    };
+    (@ctype $self:ident, $org:ident, $ctype:literal) => {{
+        let _ = $org;
+        Some($crate::program::model::data::built_in::BuiltIn::get_c_type_declaration_str(
+            $self,
+            &$crate::program::model::data::data_type::DataType::get_name($self),
+            $ctype,
+            false,
+        ))
+    }};
+
+    (@java $self:ident, $lang:ident, default) => {{
+        let _ = $lang;
+        $crate::program::model::data::data_type::DataType::get_name($self)
+    }};
+    (@java $self:ident, $lang:ident, $java:literal) => {
+        if $lang == $crate::program::model::lang::decompiler_language::DecompilerLanguage::JavaLanguage {
+            $java.to_string()
+        } else {
+            $crate::program::model::data::data_type::DataType::get_name($self)
+        }
+    };
+}
+pub(crate) use integer_data_type;
+
+/// Boxes an [`IntegerValue`] as the `Object` `AbstractIntegerDataType.getValue` returns: a
+/// [`Scalar`], or an `i128` standing in for `BigInteger` (matching
+/// [`AbstractIntegerDataType::integer_value_type_id`]).
+pub fn integer_value_as_any(value: Option<IntegerValue>) -> Option<Box<dyn std::any::Any>> {
+    value.map(|value| match value {
+        IntegerValue::Scalar(scalar) => Box::new(scalar) as Box<dyn std::any::Any>,
+        IntegerValue::Big(big) => Box::new(big) as Box<dyn std::any::Any>,
+    })
+}
+
+/// Port of `AbstractIntegerDataType.encodeValue(Object, MemBuffer, Settings, int)` over a
+/// type-erased value (see [`integer_encode_value_from_any`]).
+pub fn encode_any_value<T: AbstractIntegerDataType + ?Sized>(
+    data_type: &T,
+    value: &dyn std::any::Any,
+    buf: &dyn MemBuffer,
+    settings: &dyn Settings,
+    length: i32,
+) -> Result<Vec<u8>, crate::program::model::data::data_type_with_charset::DataTypeEncodeError> {
+    let to_error = |e: DataTypeEncodeException| {
+        crate::program::model::data::data_type_with_charset::DataTypeEncodeError(e.to_string())
+    };
+    let Some(value) = integer_encode_value_from_any(value) else {
+        return Err(to_error(DataTypeEncodeException::new(
+            "Unsupported value type",
+            "<value>",
+            data_type.get_name(),
+        )));
+    };
+    data_type.integer_encode_value(&value, buf, settings, length).map_err(to_error)
+}
+
+/// Shared fixtures for the concrete integer built-ins' tests.
+#[cfg(test)]
+pub(crate) mod test_support {
+    use std::collections::HashMap;
+
+    use crate::docking::settings::settings::Settings;
+    use crate::program::model::address::SpecialAddress;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use crate::program::model::mem::ByteMemBufferImpl;
+    use std::sync::Arc;
+
+    /// A memory buffer over `bytes` with the given byte order.
+    pub(crate) fn buf(bytes: &[u8], big_endian: bool) -> ByteMemBufferImpl {
+        ByteMemBufferImpl::new(SpecialAddress::no_address(), bytes.to_vec(), big_endian)
+    }
+
+    /// Settings holding only long values, keyed by storage key.
+    #[derive(Default)]
+    pub(crate) struct LongSettings(HashMap<String, i64>);
+
+    impl LongSettings {
+        /// Settings with `key = value` pairs.
+        pub(crate) fn of(pairs: &[(&str, i64)]) -> Self {
+            Self(pairs.iter().map(|(k, v)| (k.to_string(), *v)).collect())
+        }
+    }
+
+    impl Settings for LongSettings {
+        fn get_long(&self, name: &str) -> Option<i64> {
+            self.0.get(name).copied()
+        }
+        fn get_names(&self) -> Vec<String> {
+            self.0.keys().cloned().collect()
+        }
+        fn is_empty(&self) -> bool {
+            self.0.is_empty()
+        }
+    }
+
+    /// A data type manager whose only behaviour is its data organization (an LP64 layout:
+    /// short 2, int 4, long 8, long long 8, pointer 8).
+    pub(crate) struct Lp64Manager;
+
+    impl DataTypeManager for Lp64Manager {
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            let mut org = DataOrganizationImpl::get_default_organization(None);
+            org.set_long_size(8);
+            org.set_pointer_size(8);
+            Arc::new(org)
+        }
     }
 }
 

@@ -1,224 +1,151 @@
-use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::seam_stubs::UnsignedIntegerDataType;
+//! Port of `ghidra.program.model.data.IntegerDataType`.
 
-/// Basic implementation for a signed Integer dataType.
-///
-/// Port of `ghidra.program.model.data.IntegerDataType`, promoted straight to a trait because it
-/// was selected as a dependency-cycle cut-point.
-///
-/// The Java class `extends AbstractSignedIntegerDataType`, itself a subclass of
-/// `AbstractIntegerDataType`. Neither is yet ported, but every member `IntegerDataType` actually
-/// calls on them (`getDataOrganization()` from [`DataType`], and the final
-/// `AbstractSignedIntegerDataType.isSigned()`) is already covered by an already-ported trait or
-/// reproducible here directly, so no `seam_stubs` placeholder is needed for either supertype.
-///
-/// Methods that only *override* an already-ported supertrait method with IntegerDataType-specific
-/// behavior (`hasLanguageDependantLength`, `getLength`, `getDescription`, `getCTypeDeclaration`)
-/// cannot be redeclared here without creating an ambiguous method name with [`DataType`]/
-/// [`BuiltInDataType`] (Rust does not allow a subtrait to "override" a supertrait's default method
-/// by re-declaring it). Instead, the real IntegerDataType-specific values for those overrides are
-/// exposed here under distinct `integer_*` names; a future concrete implementation (once
-/// `AbstractSignedIntegerDataType`/`AbstractIntegerDataType` are ported) should implement
-/// `DataType`/`BuiltInDataType` directly and delegate to these helpers.
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct) and the
-/// `serialVersionUID` field (Java serialization has no Rust equivalent).
-pub trait IntegerDataType: DataType + BuiltInDataType {
-    /// Determine if this type is signed.
-    ///
-    /// Port of the `final` `AbstractSignedIntegerDataType.isSigned()`, which `IntegerDataType`
-    /// inherits unchanged.
-    fn is_signed(&self) -> bool {
-        true
-    }
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
+use crate::program::model::data::unsigned_integer_data_type::UnsignedIntegerDataType;
 
-    /// Indicates if the length of this data-type is determined based upon the
-    /// `DataOrganization` obtained from the associated `DataTypeManager`.
+integer_data_type! {
+    /// Basic implementation for a signed Integer datatype.
     ///
-    /// Port of `IntegerDataType.hasLanguageDependantLength()`, which overrides the abstract
-    /// `DataType.hasLanguageDependantLength()`. Exposed under a distinct name since [`DataType`]
-    /// already declares `has_language_dependant_length`; see the module docs for why it cannot be
-    /// redeclared here.
-    fn integer_has_language_dependant_length(&self) -> bool {
-        true
-    }
-
-    /// The length of this data-type, in bytes.
-    ///
-    /// Port of `IntegerDataType.getLength()`, which overrides the abstract `DataType.getLength()`.
-    /// Exposed under a distinct name since [`DataType`] already declares `get_length`; see the
-    /// module docs for why it cannot be redeclared here.
-    fn integer_length(&self) -> i32 {
-        self.get_data_organization().get_integer_size()
-    }
-
-    /// A brief description of this data-type.
-    ///
-    /// Port of `IntegerDataType.getDescription()`, which overrides the abstract
-    /// `DataType.getDescription()`. Exposed under a distinct name since [`DataType`] already
-    /// declares `get_description`; see the module docs for why it cannot be redeclared here.
-    fn integer_description(&self) -> String {
-        "Signed Integer (compiler-specific size)".to_string()
-    }
-
-    /// The C style data-type declaration for this data-type.
-    ///
-    /// Port of `IntegerDataType.getCDeclaration()`, which overrides
-    /// `AbstractIntegerDataType.getCDeclaration()`. That method is not part of any already-ported
-    /// trait, so it is exposed here directly with no naming conflict.
-    fn get_c_declaration(&self) -> String {
-        "int".to_string()
-    }
-
-    /// Returns the data-type with the opposite signedness from this data-type (an unsigned
-    /// integer type).
-    ///
-    /// Port of `IntegerDataType.getOppositeSignednessDataType()`, which overrides the abstract
-    /// `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required method (no
-    /// default) since the real implementation clones the `UnsignedIntegerDataType.dataType`
-    /// singleton, which is not ported yet (see [`UnsignedIntegerDataType`] placeholder).
-    fn get_opposite_signedness_data_type(&self) -> Box<dyn UnsignedIntegerDataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
-    ///
-    /// Port of `IntegerDataType.clone(DataTypeManager)`, which overrides
-    /// `BuiltIn.clone(DataTypeManager)`. Left as a required method (no default) since the real
-    /// implementation returns `self` when `dtm` already matches this instance's manager, which
-    /// requires manager-identity comparison a mock cannot provide generically.
-    fn integer_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn IntegerDataType>;
-
-    /// The C style data-type declaration for this data-type, given a specific `DataOrganization`.
-    ///
-    /// Port of `IntegerDataType.getCTypeDeclaration(DataOrganization)`, which overrides the
-    /// abstract `BuiltInDataType.getCTypeDeclaration(DataOrganization)`. Exposed under a distinct
-    /// name since [`BuiltInDataType`] already declares `get_c_type_declaration`; see the module
-    /// docs for why it cannot be redeclared here. Always returns `None`, matching the Java
-    /// original's comment that `int` is a standard C-primitive name and type.
-    fn integer_get_c_type_declaration(&self) -> Option<String> {
-        None
+    /// Port of `ghidra.program.model.data.IntegerDataType`.
+    IntegerDataType {
+        name: "int",
+        sign: signed,
+        length: get_integer_size,
+        description: "Signed Integer (compiler-specific size)",
+        assembly_mnemonic: default,
+        c_declaration: C_SIGNED_INT,
+        c_type_declaration: none,
+        java_display_name: default,
+        opposite: UnsignedIntegerDataType,
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings, Lp64Manager};
+    use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
+    use crate::program::model::data::built_in::BuiltIn;
+    use crate::program::model::data::built_in_data_type::BuiltInDataType;
+    use crate::program::model::data::category_path::ROOT;
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
-            /// A real [`DataOrganizationImpl`] configured as this test expects.
-    fn mock_data_organization(integer_size: i32) -> DataOrganizationImpl {
-        let mut org = DataOrganizationImpl::get_default_organization(None);
-        org.set_big_endian(false);
-        org.set_pointer_size(8);
-        org.set_pointer_shift(0);
-        org.set_char_is_signed(true);
-        org.set_char_size(1);
-        org.set_wide_char_size(2);
-        org.set_short_size(2);
-        org.set_integer_size(integer_size);
-        org.set_long_size(8);
-        org.set_long_long_size(8);
-        org.set_float_size(4);
-        org.set_double_size(8);
-        org.set_long_double_size(8);
-        org.set_absolute_max_alignment(0);
-        org.set_machine_alignment(8);
-        org.set_default_alignment(1);
-        org.set_default_pointer_alignment(8);
-        org.clear_size_alignment_map();
-        org
-    }
-
-    struct MockUnsignedIntegerDataType;
-    impl UnsignedIntegerDataType for MockUnsignedIntegerDataType {}
-
-    struct MockIntegerDataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockIntegerDataType {
-        fn get_name(&self) -> String {
-            "int".to_string()
-        }
-        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
-            Arc::new(mock_data_organization(4))
-        }
-    }
-
-    impl BuiltInDataType for MockIntegerDataType {
-        fn get_c_type_declaration(
-            &self,
-            _data_organization: Option<&DataOrganizationImpl>,
-        ) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
-    }
-
-    impl IntegerDataType for MockIntegerDataType {
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn UnsignedIntegerDataType> {
-            Box::new(MockUnsignedIntegerDataType)
-        }
-
-        fn integer_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn IntegerDataType> {
-            // Mirrors `IntegerDataType.clone(DataTypeManager)`: return an equivalent instance tied
-            // to the requested manager (`None` here stands in for "already matches").
-            match dtm {
-                None => Box::new(MockIntegerDataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockIntegerDataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
+    #[test]
+    fn java_constants() {
+        let dt = IntegerDataType::instance();
+        assert_eq!(dt.get_name(), "int");
+        assert_eq!(dt.get_length(), 4);
+        assert_eq!(dt.get_description(), "Signed Integer (compiler-specific size)");
+        assert_eq!(dt.is_signed(), true);
+        assert!(dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "int");
+        assert_eq!(dt.get_c_declaration().as_deref(), Some("int"));
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("INT"));
+        assert_eq!(dt.get_path_name(), "/int");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockIntegerDataType { dtm_tag: None };
-        let dyn_dt: &dyn IntegerDataType = &dt;
-        assert!(dyn_dt.is_signed());
-        assert!(dyn_dt.integer_has_language_dependant_length());
-        assert_eq!(dyn_dt.integer_description(), "Signed Integer (compiler-specific size)");
-        assert_eq!(dyn_dt.get_c_declaration(), "int");
-        assert_eq!(dyn_dt.integer_get_c_type_declaration(), None);
-        // The DataType supertrait's own get_length is independently reachable and untouched.
-        assert_eq!(DataType::get_length(dyn_dt), 0);
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = IntegerDataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "int");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "int");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "int");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "int");
     }
 
     #[test]
-    fn integer_length_delegates_to_data_organization() {
-        let dt = MockIntegerDataType { dtm_tag: None };
-        assert_eq!(dt.integer_length(), 4);
+    fn c_type_declaration() {
+        let dt = IntegerDataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), None);
     }
 
     #[test]
-    fn opposite_signedness_returns_distinct_placeholder() {
-        let dt = MockIntegerDataType { dtm_tag: Some("a") };
-        let _opposite = dt.get_opposite_signedness_data_type();
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockIntegerDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.integer_clone(None);
-        assert_eq!(cloned.integer_description(), dt.integer_description());
-        assert_eq!(cloned.get_c_declaration(), "int");
+    fn decompiler_display_name() {
+        let dt = IntegerDataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "int");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "int");
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockIntegerDataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.integer_clone(Some(Box::new(MockDataTypeManager)));
-        // Mirrors the real `clone(DataTypeManager)` returning a distinct instance bound to the
-        // requested manager when it differs from the current one, while remaining a fully
-        // functional IntegerDataType.
-        assert_eq!(cloned.get_c_declaration(), "int");
-        assert_eq!(cloned.integer_length(), 4);
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = IntegerDataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255, 255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 4).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), true);
+        assert_eq!(scalar.bit_length(), 32);
+        assert_eq!(scalar.get_big_integer(), -1i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 4), "FFFFFFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 4), "-1");
+
+        let mut first_one = vec![0u8; 4];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 4).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 4).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 16777216i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 4).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 16777216i128);
+        assert!(dt.get_value(&buf(&first_one[..3], false), &s, 4).is_none());
+    }
+
+    #[test]
+    fn encode_value_checks_range() {
+        let dt = IntegerDataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 4], false);
+        let mut one = vec![0u8; 4];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(2147483647i128), &b, &s, 4).unwrap().len(), 4);
+        assert!(dt.encode_value(&(2147483647i128 + 1), &b, &s, 4).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 4).is_ok(), true);
+        assert!(dt.encode_value(&1i64, &b, &s, 5).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 4).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 4).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 4).is_err());
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = IntegerDataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "uint");
+        assert_eq!(opposite.is_signed(), false);
+        assert!(dt.is_equivalent(IntegerDataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(UnsignedIntegerDataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&IntegerDataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = IntegerDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &IntegerDataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), true);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
+    }
+
+    #[test]
+    fn length_follows_the_manager_data_organization() {
+        let dt = IntegerDataType::new(Some(&Lp64Manager));
+        assert_eq!(dt.get_length(), 4);
+        assert_eq!(dt.get_opposite_signedness_data_type().get_length(), 4);
+        let cloned = IntegerDataType::instance().clone_data_type(&Lp64Manager);
+        assert_eq!(cloned.get_length(), 4);
+        assert_eq!(IntegerDataType::instance().get_length(), 4);
     }
 }

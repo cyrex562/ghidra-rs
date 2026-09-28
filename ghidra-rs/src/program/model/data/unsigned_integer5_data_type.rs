@@ -1,210 +1,141 @@
-//! Port of `ghidra.program.model.data.UnsignedInteger5DataType`, promoted to a trait because it
-//! was selected as a dependency-cycle cut-point.
-//!
-//! The Java class `extends AbstractUnsignedIntegerDataType`, already ported as a trait
-//! ([`AbstractUnsignedIntegerDataType`]), so this trait extends it directly.
-//!
-//! `getDescription()`/`getLength()` each override an already-provided default method on
-//! [`DataType`]; `getOppositeSignednessDataType()` overrides the required
-//! `AbstractIntegerDataType.getOppositeSignednessDataType()`. Rust does not allow a subtrait to
-//! override a supertrait's method (default or required) by redeclaring it under the same name --
-//! see this crate's other `Abstract*`/leaf cut-point traits for the same restriction -- so all
-//! three are exposed here under distinct `unsigned_integer5_*` names. A concrete `impl DataType +
-//! AbstractIntegerDataType for ...` should delegate to these.
-//!
-//! No `getCTypeDeclaration(DataOrganization)` override exists in Java for this class (unlike its
-//! `UnsignedInteger`/`UnsignedShort`/`UnsignedChar` siblings), so this trait adds nothing for it;
-//! [`AbstractUnsignedIntegerDataType`]'s own supertrait chain provides no default either, so a
-//! concrete `BuiltInDataType::get_c_type_declaration` implementation is expected to supply its own
-//! (matching the Java class's inherited `AbstractIntegerDataType` behavior, not reproduced by any
-//! cut-point trait here).
+//! Port of `ghidra.program.model.data.UnsignedInteger5DataType`.
 
-use crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
 use crate::program::model::data::integer5_data_type::Integer5DataType;
 
-/// A fixed size 5 byte unsigned integer.
-///
-/// Port of `ghidra.program.model.data.UnsignedInteger5DataType`. See the module-level
-/// documentation for the naming conventions used to resolve clashes with
-/// [`DataType`](crate::program::model::data::data_type::DataType).
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait UnsignedInteger5DataType: AbstractUnsignedIntegerDataType {
-    /// Port of `UnsignedInteger5DataType.getDescription()`, which overrides the default
-    /// `DataType.getDescription()`.
-    fn unsigned_integer5_description(&self) -> String {
-        "Unsigned 5-Byte Integer".to_string()
-    }
-
-    /// Port of `UnsignedInteger5DataType.getLength()`, which overrides the default
-    /// `DataType.getLength()`. Always `5`.
-    fn unsigned_integer5_length(&self) -> i32 {
-        5
-    }
-
-    /// Port of `UnsignedInteger5DataType.getOppositeSignednessDataType()`, which overrides the
-    /// required `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required
-    /// method (no default); see
-    /// [`UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type`](super::unsigned_integer_data_type::UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type)
-    /// for why.
-    fn unsigned_integer5_opposite_signedness_data_type(&self) -> Box<dyn Integer5DataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
+integer_data_type! {
+    /// An unsigned 5-byte integer.
     ///
-    /// Port of `UnsignedInteger5DataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractUnsignedIntegerDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a
-    /// required method (no default); see
-    /// [`ByteDataType::byte_clone`](super::byte_data_type::ByteDataType::byte_clone) for why.
-    fn unsigned_integer5_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedInteger5DataType>;
+    /// Port of `ghidra.program.model.data.UnsignedInteger5DataType`.
+    UnsignedInteger5DataType {
+        name: "uint5",
+        sign: unsigned,
+        length: 5,
+        description: "Unsigned 5-Byte Integer",
+        assembly_mnemonic: default,
+        c_declaration: default,
+        c_type_declaration: this_unsigned,
+        java_display_name: default,
+        opposite: Integer5DataType,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::settings::settings::Settings;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
     use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
-    use crate::program::model::data::array_stringable::ArrayStringable;
+    use crate::program::model::data::built_in::BuiltIn;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use crate::program::model::data::category_path::ROOT;
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::model::data::string_data_instance::StringDataInstance;
-    use crate::program::model::mem::MemBuffer;
-
-    struct MockInteger5DataType;
-    impl DataType for MockInteger5DataType {
-        fn get_name(&self) -> String {
-            "int3".to_string()
-        }
-    }
-    impl BuiltInDataType for MockInteger5DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-    impl Integer5DataType for MockInteger5DataType {
-        fn get_opposite_signedness_data_type(
-            &self,
-        ) -> Box<dyn crate::program::seam_stubs::UnsignedInteger5DataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-        fn integer5_clone(&self, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn Integer5DataType> {
-            Box::new(MockInteger5DataType)
-        }
-    }
-
-    struct MockUnsignedInteger5DataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockUnsignedInteger5DataType {
-        fn get_name(&self) -> String {
-            "uint5".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.unsigned_integer5_length()
-        }
-    }
-
-    impl BuiltInDataType for MockUnsignedInteger5DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-
-    impl ArrayStringable for MockUnsignedInteger5DataType {
-        fn has_string_value(&self, _settings: &dyn Settings) -> bool {
-            false
-        }
-        fn string_data_instance(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _length: i32,
-        ) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
-        fn get_array_default_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-        ) -> Option<String> {
-            None
-        }
-        fn get_array_default_offcut_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-            _offcut_length: i32,
-        ) -> Option<String> {
-            None
-        }
-    }
-
-    impl AbstractIntegerDataType for MockUnsignedInteger5DataType {
-        fn is_signed(&self) -> bool {
-            self.unsigned_is_signed()
-        }
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn AbstractIntegerDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-    }
-
-    impl AbstractUnsignedIntegerDataType for MockUnsignedInteger5DataType {}
-
-    impl UnsignedInteger5DataType for MockUnsignedInteger5DataType {
-        fn unsigned_integer5_opposite_signedness_data_type(&self) -> Box<dyn Integer5DataType> {
-            Box::new(MockInteger5DataType)
-        }
-
-        fn unsigned_integer5_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedInteger5DataType> {
-            match dtm {
-                None => Box::new(MockUnsignedInteger5DataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockUnsignedInteger5DataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockUnsignedInteger5DataType { dtm_tag: None };
-        let dyn_dt: &dyn UnsignedInteger5DataType = &dt;
-        assert_eq!(dyn_dt.unsigned_integer5_description(), "Unsigned 5-Byte Integer");
-        assert_eq!(dyn_dt.unsigned_integer5_length(), 5);
-        assert_eq!(DataType::get_length(dyn_dt), 5);
-        assert!(!dt.is_signed());
+    fn java_constants() {
+        let dt = UnsignedInteger5DataType::instance();
+        assert_eq!(dt.get_name(), "uint5");
+        assert_eq!(dt.get_length(), 5);
+        assert_eq!(dt.get_description(), "Unsigned 5-Byte Integer");
+        assert_eq!(dt.is_signed(), false);
+        assert!(!dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "uint5");
+        assert_eq!(dt.get_c_declaration().as_deref(), None);
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("UINT5"));
+        assert_eq!(dt.get_path_name(), "/uint5");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn opposite_signedness_returns_integer5_data_type() {
-        let dt = MockUnsignedInteger5DataType { dtm_tag: None };
-        let _opposite = dt.unsigned_integer5_opposite_signedness_data_type();
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = UnsignedInteger5DataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "uint5");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "uint5");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "uint5");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "uint5");
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockUnsignedInteger5DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_integer5_clone(None);
-        assert_eq!(cloned.unsigned_integer5_length(), 5);
+    fn c_type_declaration() {
+        let dt = UnsignedInteger5DataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef unsigned long long    uint5;"));
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockUnsignedInteger5DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_integer5_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.unsigned_integer5_length(), 5);
+    fn decompiler_display_name() {
+        let dt = UnsignedInteger5DataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "uint5");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "uint5");
+    }
+
+    #[test]
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = UnsignedInteger5DataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255, 255, 255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 5).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), false);
+        assert_eq!(scalar.bit_length(), 40);
+        assert_eq!(scalar.get_big_integer(), 1099511627775i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 5), "FFFFFFFFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 5), "1099511627775");
+
+        let mut first_one = vec![0u8; 5];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 5).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 5).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 4294967296i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 5).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 4294967296i128);
+        assert!(dt.get_value(&buf(&first_one[..4], false), &s, 5).is_none());
+    }
+
+    #[test]
+    fn encode_value_checks_range() {
+        let dt = UnsignedInteger5DataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 5], false);
+        let mut one = vec![0u8; 5];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(1099511627775i128), &b, &s, 5).unwrap().len(), 5);
+        assert!(dt.encode_value(&(1099511627775i128 + 1), &b, &s, 5).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 5).is_ok(), false);
+        assert!(dt.encode_value(&1i64, &b, &s, 6).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 5).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 5).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 5).is_err());
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = UnsignedInteger5DataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "int5");
+        assert_eq!(opposite.is_signed(), true);
+        assert!(dt.is_equivalent(UnsignedInteger5DataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(Integer5DataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&UnsignedInteger5DataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = UnsignedInteger5DataType::data_type();
+        assert!(Arc::ptr_eq(&a, &UnsignedInteger5DataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), false);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
     }
 }

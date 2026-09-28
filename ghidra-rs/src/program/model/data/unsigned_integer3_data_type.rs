@@ -1,218 +1,141 @@
-//! Port of `ghidra.program.model.data.UnsignedInteger3DataType`, promoted to a trait because it
-//! was selected as a dependency-cycle cut-point.
-//!
-//! The Java class `extends AbstractUnsignedIntegerDataType`, already ported as a trait
-//! ([`AbstractUnsignedIntegerDataType`]), so this trait extends it directly.
-//!
-//! `getDescription()`/`getLength()` each override an already-provided default method on
-//! [`DataType`]; `getOppositeSignednessDataType()` overrides the required
-//! `AbstractIntegerDataType.getOppositeSignednessDataType()`. Rust does not allow a subtrait to
-//! override a supertrait's method (default or required) by redeclaring it under the same name --
-//! see this crate's other `Abstract*`/leaf cut-point traits for the same restriction -- so all
-//! three are exposed here under distinct `unsigned_integer3_*` names. A concrete `impl DataType +
-//! AbstractIntegerDataType for ...` should delegate to these.
-//!
-//! The `static { ClassTranslator.put(...) }` block (registering the legacy class name
-//! `ghidra.program.model.data.ThreeByteDataType`) has no Rust equivalent -- `ClassTranslator` is
-//! not ported -- and is dropped, mirroring every other `ClassTranslator.put` registration already
-//! skipped elsewhere in this crate (e.g.
-//! [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)'s own module docs).
-//!
-//! No `getCTypeDeclaration(DataOrganization)` override exists in Java for this class (unlike its
-//! `UnsignedInteger`/`UnsignedShort`/`UnsignedChar` siblings), so this trait adds nothing for it;
-//! [`AbstractUnsignedIntegerDataType`]'s own supertrait chain provides no default either, so a
-//! concrete `BuiltInDataType::get_c_type_declaration` implementation is expected to supply its own
-//! (matching the Java class's inherited `AbstractIntegerDataType` behavior, not reproduced by any
-//! cut-point trait here).
+//! Port of `ghidra.program.model.data.UnsignedInteger3DataType`.
 
-use crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::abstract_integer_data_type::integer_data_type;
 use crate::program::model::data::integer3_data_type::Integer3DataType;
 
-/// A fixed size 3 byte unsigned integer.
-///
-/// Port of `ghidra.program.model.data.UnsignedInteger3DataType`. See the module-level
-/// documentation for the naming conventions used to resolve clashes with
-/// [`DataType`](crate::program::model::data::data_type::DataType).
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct) and the
-/// `ClassTranslator` legacy-name registration (needs `ClassTranslator`, not yet ported).
-pub trait UnsignedInteger3DataType: AbstractUnsignedIntegerDataType {
-    /// Port of `UnsignedInteger3DataType.getDescription()`, which overrides the default
-    /// `DataType.getDescription()`. The trailing unmatched `)` is copied verbatim from the Java
-    /// source's literal string (`"Unsigned 3-Byte Integer)"`), not a typo introduced by this port.
-    fn unsigned_integer3_description(&self) -> String {
-        "Unsigned 3-Byte Integer)".to_string()
-    }
-
-    /// Port of `UnsignedInteger3DataType.getLength()`, which overrides the default
-    /// `DataType.getLength()`. Always `3`.
-    fn unsigned_integer3_length(&self) -> i32 {
-        3
-    }
-
-    /// Port of `UnsignedInteger3DataType.getOppositeSignednessDataType()`, which overrides the
-    /// required `AbstractIntegerDataType.getOppositeSignednessDataType()`. Left as a required
-    /// method (no default); see
-    /// [`UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type`](super::unsigned_integer_data_type::UnsignedIntegerDataType::unsigned_integer_opposite_signedness_data_type)
-    /// for why.
-    fn unsigned_integer3_opposite_signedness_data_type(&self) -> Box<dyn Integer3DataType>;
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
+integer_data_type! {
+    /// An unsigned 3-byte integer.
     ///
-    /// Port of `UnsignedInteger3DataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractUnsignedIntegerDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a
-    /// required method (no default); see
-    /// [`ByteDataType::byte_clone`](super::byte_data_type::ByteDataType::byte_clone) for why.
-    fn unsigned_integer3_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedInteger3DataType>;
+    /// Port of `ghidra.program.model.data.UnsignedInteger3DataType`.
+    UnsignedInteger3DataType {
+        name: "uint3",
+        sign: unsigned,
+        length: 3,
+        description: "Unsigned 3-Byte Integer)",
+        assembly_mnemonic: default,
+        c_declaration: default,
+        c_type_declaration: this_unsigned,
+        java_display_name: default,
+        opposite: Integer3DataType,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::settings::settings::Settings;
+    use std::sync::Arc;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
     use crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType;
-    use crate::program::model::data::array_stringable::ArrayStringable;
+    use crate::program::model::data::built_in::BuiltIn;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use crate::program::model::data::category_path::ROOT;
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::model::data::string_data_instance::StringDataInstance;
-    use crate::program::model::mem::MemBuffer;
-
-    struct MockInteger3DataType;
-    impl DataType for MockInteger3DataType {
-        fn get_name(&self) -> String {
-            "int3".to_string()
-        }
-    }
-    impl BuiltInDataType for MockInteger3DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-    impl Integer3DataType for MockInteger3DataType {
-        fn get_opposite_signedness_data_type(
-            &self,
-        ) -> Box<dyn crate::program::seam_stubs::UnsignedInteger3DataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-        fn integer3_clone(&self, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn Integer3DataType> {
-            Box::new(MockInteger3DataType)
-        }
-    }
-
-    struct MockUnsignedInteger3DataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockUnsignedInteger3DataType {
-        fn get_name(&self) -> String {
-            "uint3".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.unsigned_integer3_length()
-        }
-    }
-
-    impl BuiltInDataType for MockUnsignedInteger3DataType {
-        fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-            None
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-
-    impl ArrayStringable for MockUnsignedInteger3DataType {
-        fn has_string_value(&self, _settings: &dyn Settings) -> bool {
-            false
-        }
-        fn string_data_instance(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _length: i32,
-        ) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
-        fn get_array_default_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-        ) -> Option<String> {
-            None
-        }
-        fn get_array_default_offcut_label_prefix(
-            &self,
-            _buf: &dyn MemBuffer,
-            _settings: &dyn Settings,
-            _len: i32,
-            _options: &dyn DataTypeDisplayOptions,
-            _offcut_length: i32,
-        ) -> Option<String> {
-            None
-        }
-    }
-
-    impl AbstractIntegerDataType for MockUnsignedInteger3DataType {
-        fn is_signed(&self) -> bool {
-            self.unsigned_is_signed()
-        }
-        fn get_opposite_signedness_data_type(&self) -> Box<dyn AbstractIntegerDataType> {
-            unreachable!("not exercised in this smoke test")
-        }
-    }
-
-    impl AbstractUnsignedIntegerDataType for MockUnsignedInteger3DataType {}
-
-    impl UnsignedInteger3DataType for MockUnsignedInteger3DataType {
-        fn unsigned_integer3_opposite_signedness_data_type(&self) -> Box<dyn Integer3DataType> {
-            Box::new(MockInteger3DataType)
-        }
-
-        fn unsigned_integer3_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn UnsignedInteger3DataType> {
-            match dtm {
-                None => Box::new(MockUnsignedInteger3DataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockUnsignedInteger3DataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
+    use crate::program::model::scalar::Scalar;
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockUnsignedInteger3DataType { dtm_tag: None };
-        let dyn_dt: &dyn UnsignedInteger3DataType = &dt;
-        assert_eq!(dyn_dt.unsigned_integer3_description(), "Unsigned 3-Byte Integer)");
-        assert_eq!(dyn_dt.unsigned_integer3_length(), 3);
-        assert_eq!(DataType::get_length(dyn_dt), 3);
-        assert!(!dt.is_signed());
+    fn java_constants() {
+        let dt = UnsignedInteger3DataType::instance();
+        assert_eq!(dt.get_name(), "uint3");
+        assert_eq!(dt.get_length(), 3);
+        assert_eq!(dt.get_description(), "Unsigned 3-Byte Integer)");
+        assert_eq!(dt.is_signed(), false);
+        assert!(!dt.has_language_dependant_length());
+        assert_eq!(dt.get_assembly_mnemonic(), "uint3");
+        assert_eq!(dt.get_c_declaration().as_deref(), None);
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("UINT3"));
+        assert_eq!(dt.get_path_name(), "/uint3");
+        assert_eq!(dt.get_category_path(), ROOT.clone());
     }
 
     #[test]
-    fn opposite_signedness_returns_integer3_data_type() {
-        let dt = MockUnsignedInteger3DataType { dtm_tag: None };
-        let _opposite = dt.unsigned_integer3_opposite_signedness_data_type();
+    fn mnemonic_follows_mnemonic_setting() {
+        let dt = UnsignedInteger3DataType::new(None);
+        // With no mnemonic setting the style is ASSEMBLY.
+        assert_eq!(dt.get_mnemonic(&LongSettings::default()), "uint3");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 0)])), "uint3");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 1)])), "uint3");
+        assert_eq!(dt.get_mnemonic(&LongSettings::of(&[("mnemonic", 2)])), "uint3");
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockUnsignedInteger3DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_integer3_clone(None);
-        assert_eq!(cloned.unsigned_integer3_length(), 3);
+    fn c_type_declaration() {
+        let dt = UnsignedInteger3DataType::new(None);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef unsigned int    uint3;"));
     }
 
     #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockUnsignedInteger3DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.unsigned_integer3_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.unsigned_integer3_length(), 3);
+    fn decompiler_display_name() {
+        let dt = UnsignedInteger3DataType::new(None);
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::CLanguage), "uint3");
+        assert_eq!(dt.get_decompiler_display_name(DecompilerLanguage::JavaLanguage), "uint3");
+    }
+
+    #[test]
+    fn value_and_representation_honor_signedness_and_endianness() {
+        let dt = UnsignedInteger3DataType::new(None);
+        let s = LongSettings::default();
+        let all_ones = buf(&[255, 255, 255], false);
+        let value = dt.get_value(&all_ones, &s, 3).unwrap();
+        let scalar = value.downcast_ref::<Scalar>().unwrap();
+        assert_eq!(scalar.is_signed(), false);
+        assert_eq!(scalar.bit_length(), 24);
+        assert_eq!(scalar.get_big_integer(), 16777215i128);
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<Scalar>()));
+        assert_eq!(dt.get_representation(&all_ones, &s, 3), "FFFFFFh");
+        assert_eq!(dt.get_representation(&all_ones, &LongSettings::of(&[("format", 1)]), 3), "16777215");
+
+        let mut first_one = vec![0u8; 3];
+        first_one[0] = 1;
+        let little = dt.get_value(&buf(&first_one, false), &s, 3).unwrap();
+        assert_eq!(little.downcast_ref::<Scalar>().unwrap().get_big_integer(), 1);
+        let big = dt.get_value(&buf(&first_one, true), &s, 3).unwrap();
+        assert_eq!(big.downcast_ref::<Scalar>().unwrap().get_big_integer(), 65536i128);
+        // An explicit endian setting (2 = big) overrides the buffer's byte order.
+        let forced = dt.get_value(&buf(&first_one, false), &LongSettings::of(&[("endian", 2)]), 3).unwrap();
+        assert_eq!(forced.downcast_ref::<Scalar>().unwrap().get_big_integer(), 65536i128);
+        assert!(dt.get_value(&buf(&first_one[..2], false), &s, 3).is_none());
+    }
+
+    #[test]
+    fn encode_value_checks_range() {
+        let dt = UnsignedInteger3DataType::new(None);
+        let s = LongSettings::default();
+        let b = buf(&[0u8; 3], false);
+        let mut one = vec![0u8; 3];
+        one[0] = 1;
+        assert_eq!(dt.encode_value(&1i64, &b, &s, -1).unwrap(), one);
+        assert_eq!(dt.encode_value(&(16777215i128), &b, &s, 3).unwrap().len(), 3);
+        assert!(dt.encode_value(&(16777215i128 + 1), &b, &s, 3).is_err());
+        assert_eq!(dt.encode_value(&-1i128, &b, &s, 3).is_ok(), false);
+        assert!(dt.encode_value(&1i64, &b, &s, 4).is_err());
+        assert!(dt.encode_value(&1.5f64, &b, &s, 3).is_err());
+        assert_eq!(dt.encode_representation("1h", &b, &s, 3).unwrap(), one);
+        assert!(dt.encode_representation("1", &b, &s, 3).is_err());
+    }
+
+    #[test]
+    fn opposite_signedness_and_class_equivalence() {
+        let dt = UnsignedInteger3DataType::new(None);
+        let opposite = dt.get_opposite_signedness_data_type();
+        assert_eq!(opposite.get_name(), "int3");
+        assert_eq!(opposite.is_signed(), true);
+        assert!(dt.is_equivalent(UnsignedInteger3DataType::instance().as_ref()));
+        assert!(!dt.is_equivalent(Integer3DataType::instance().as_ref()));
+        assert!(dt.built_in_is_equivalent(&UnsignedInteger3DataType::new(None)));
+    }
+
+    #[test]
+    fn singleton_is_shared_and_exposes_built_in_views() {
+        let a = UnsignedInteger3DataType::data_type();
+        assert!(Arc::ptr_eq(&a, &UnsignedInteger3DataType::data_type()));
+        assert!(a.as_built_in().is_some());
+        assert!(a.as_abstract_integer().is_some());
+        assert!(a.is_integer_type());
+        assert_eq!(a.is_signed_integer_type(), false);
+        // Mutability + format, padding, endian and mnemonic.
+        assert_eq!(a.get_settings_definitions().len(), 5);
+        assert!(a.get_source_archive().is_some());
     }
 }
