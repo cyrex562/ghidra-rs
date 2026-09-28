@@ -9,11 +9,10 @@
 //!
 //! * **The bound language.** Java's field is a `SleighLanguage`, from which it uses exactly five
 //!   members: `getProgramCounter`, `getDefaultSpace`, `getAddressFactory`,
-//!   `getNumberOfUserDefinedOpNames`, and `getUserDefinedOpName`. This crate's
-//!   [`SleighLanguage`](crate::program::model::lang::sleigh::SleighLanguage) is a partial,
-//!   `.sla`-only port: it does not implement [`Language`] and exposes none of those five. All five
-//!   *are* on [`Language`], so the executor binds to `Arc<dyn Language>`, which is also exactly
-//!   what [`PcodeFrame::new`] wants. Only `execute_sleigh` genuinely needs the Sleigh-specific
+//!   `getNumberOfUserDefinedOpNames`, and `getUserDefinedOpName`. All five are on [`Language`],
+//!   which [`SleighLanguage`](crate::program::model::lang::sleigh::SleighLanguage) implements, so
+//!   the executor binds to `Arc<dyn Language>` (letting tests supply lightweight languages), which
+//!   is also exactly what [`PcodeFrame::new`] wants. Only `execute_sleigh` genuinely needs the Sleigh-specific
 //!   language (to compile against); it recovers it through [`Language::as_sleigh`] and fails with
 //!   [`ExecuteSleighError::NotSleigh`] for any other language, a case Java's static typing rules
 //!   out.
