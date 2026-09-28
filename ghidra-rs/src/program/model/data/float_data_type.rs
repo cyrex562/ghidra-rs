@@ -1,156 +1,90 @@
-use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+//! Port of `ghidra.program.model.data.FloatDataType`.
 
-/// Provides a definition of a compiler-defined `float` within a program.
-///
-/// Port of `ghidra.program.model.data.FloatDataType`, promoted straight to a trait because it was
-/// selected as a dependency-cycle cut-point.
-///
-/// The Java class `extends AbstractFloatDataType`, already ported as a trait
-/// ([`AbstractFloatDataType`]). Unlike the fixed-length siblings
-/// ([`Float4DataType`](super::float4_data_type::Float4DataType) etc.), `FloatDataType`'s encoded
-/// length is data-organization-dependent (`getDataOrganization(dtm).getFloatSize()`, computed
-/// once in the constructor); as with every other `Abstract*DataType` cut-point trait, that
-/// constructor logic is left to a concrete implementation to perform and store itself (see
-/// [`AbstractFloatDataType`]'s own module docs), so this trait adds nothing for
-/// `AbstractFloatDataType::encoded_length` beyond what is already documented there.
-///
-/// `buildDescription()` overrides the *default* (not required) `AbstractFloatDataType.build_description`,
-/// and `hasLanguageDependantLength()` overrides the *default* `DataType.has_language_dependant_length`.
-/// Rust does not allow a subtrait to override a supertrait's default method by redeclaring it (see
-/// [`AbstractFloatDataType`]'s own module docs on the same restriction), so both are exposed here
-/// under distinct `float_data_type_*` names; a concrete implementation should have its own
-/// `AbstractFloatDataType::build_description`/`DataType::has_language_dependant_length` overrides
-/// delegate to these.
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait FloatDataType: AbstractFloatDataType {
-    /// Port of `FloatDataType.buildDescription()`, which overrides the default
-    /// `AbstractFloatDataType.buildDescription()` by prefixing the inherited IEEE-754 standard
-    /// wording (`super.buildDescription()`, ported as
-    /// [`AbstractFloatDataType::build_ieee754_standard_description`]) with `"Compiler-defined
-    /// 'float' "`.
-    fn float_data_type_description(&self) -> String {
-        format!(
-            "Compiler-defined 'float' {}",
-            self.build_ieee754_standard_description()
-        )
-    }
+use crate::program::model::data::abstract_float_data_type::float_data_type;
 
-    /// Port of `FloatDataType.hasLanguageDependantLength()`, which overrides the default
-    /// `DataType.hasLanguageDependantLength()`. Always `true`, since this type's length is
-    /// resolved from the associated `DataTypeManager`'s `DataOrganization` at construction time.
-    fn float_data_type_has_language_dependant_length(&self) -> bool {
-        true
-    }
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
+float_data_type! {
+    /// Provides a definition of the compiler-defined `float` within a program.
     ///
-    /// Port of `FloatDataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractFloatDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a required
-    /// method (no default); see [`Float4DataType::float4_clone`](super::float4_data_type::Float4DataType::float4_clone)
-    /// for why.
-    fn float_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn FloatDataType>;
+    /// Port of `ghidra.program.model.data.FloatDataType`.
+    FloatDataType {
+        name: "float",
+        length: get_float_size,
+        description_prefix: "Compiler-defined 'float' ",
+        c_type_declaration: default,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::settings::settings::Settings;
+    use std::sync::Arc;
+    use crate::pcode::floatformat::{get_float_format, BigFloat};
+    use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
-    use crate::pcode::floatformat::{get_float_format, FloatFormat};
+    use crate::program::model::data::float8_data_type::Float8DataType;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
 
-    struct MockFloatDataType {
-        length: i32,
-        dtm_tag: Option<&'static str>,
+    #[test]
+    fn java_constants() {
+        let dt = FloatDataType::instance();
+        let s = LongSettings::default();
+        assert_eq!(dt.get_name(), "float");
+        assert_eq!(dt.get_length(), 4);
+        assert_eq!(dt.get_aligned_length(), 4);
+        assert_eq!(dt.get_description(), "Compiler-defined 'float' IEEE 754 floating-point type (32-bit / 4-byte format, aligned-length is 4-bytes)");
+        assert!(dt.has_language_dependant_length());
+        assert_eq!(dt.get_mnemonic(&s), "float");
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("FLOAT"));
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<BigFloat>()));
+        assert!(dt.is_encodable());
+        assert!(dt.is_floating_point());
+        // Only the BuiltIn mutability setting (AbstractFloatDataType.SETTINGS_DEFS is empty).
+        assert_eq!(dt.get_settings_definitions().len(), 1);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), None);
     }
 
-    impl DataType for MockFloatDataType {
-        fn get_name(&self) -> String {
-            "float".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.encoded_length()
-        }
-        fn has_language_dependant_length(&self) -> bool {
-            self.float_data_type_has_language_dependant_length()
-        }
+    #[test]
+    fn value_representation_and_encoding() {
+        let dt = FloatDataType::new(None);
+        let s = LongSettings::default();
+        assert_eq!(dt.get_representation(&buf(&[65, 16, 0, 0], true), &s, 4), "9.0");
+        assert_eq!(dt.get_representation(&buf(&[0, 0, 16, 65], false), &s, 4), "9.0");
+        let encoded = dt.encode_representation("9.0", &buf(&[], true), &s, 4);
+        assert_eq!(encoded.unwrap(), vec![65, 16, 0, 0]);
+        assert_eq!(dt.encode_value(&9.0f64, &buf(&[], false), &s, 4).unwrap(), vec![0, 0, 16, 65]);
+        assert!(dt.get_value(&buf(&[0], true), &s, 4).is_none());
+        assert_eq!(dt.get_representation(&buf(&[0], true), &s, 4), "??");
     }
 
-    impl BuiltInDataType for MockFloatDataType {
-        fn get_c_type_declaration(
-            &self,
-            data_organization: Option<&DataOrganizationImpl>,
-        ) -> Option<String> {
-            self.float_c_type_declaration(data_organization)
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
+    #[test]
+    fn singleton_and_class_equivalence() {
+        let a = FloatDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &FloatDataType::data_type()));
+        assert!(a.is_equivalent(&FloatDataType::new(None)));
+        assert!(!a.is_equivalent(Float8DataType::instance().as_ref()));
+        assert!(a.as_built_in().is_some());
     }
 
-    impl AbstractFloatDataType for MockFloatDataType {
-        fn encoded_length(&self) -> i32 {
-            self.length
-        }
-        fn float_format(&self) -> Option<&FloatFormat> {
-            get_float_format(self.encoded_length()).ok()
-        }
-        fn build_description(&self) -> String {
-            self.float_data_type_description()
-        }
-    }
-
-    impl FloatDataType for MockFloatDataType {
-        fn float_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn FloatDataType> {
-            match dtm {
-                None => Box::new(MockFloatDataType {
-                    length: self.length,
-                    dtm_tag: self.dtm_tag,
-                }),
-                Some(_) => Box::new(MockFloatDataType {
-                    length: self.length,
-                    dtm_tag: Some("new-manager"),
-                }),
+    #[test]
+    fn length_follows_the_manager_data_organization() {
+        struct WideFloats;
+        impl DataTypeManager for WideFloats {
+            fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+                let mut org = DataOrganizationImpl::get_default_organization(None);
+                org.set_float_size(8);
+                org.set_double_size(10);
+                org.set_long_double_size(16);
+                Arc::new(org)
             }
         }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    #[test]
-    fn usable_as_trait_object() {
-        let dt = MockFloatDataType { length: 4, dtm_tag: None };
-        let dyn_dt: &dyn FloatDataType = &dt;
-        assert_eq!(dyn_dt.encoded_length(), 4);
-        assert!(dyn_dt.float_data_type_has_language_dependant_length());
-        assert!(DataType::has_language_dependant_length(dyn_dt));
-    }
-
-    #[test]
-    fn description_prefixes_compiler_defined_wording() {
-        let dt = MockFloatDataType { length: 8, dtm_tag: None };
-        let description = dt.float_data_type_description();
-        assert!(description.starts_with("Compiler-defined 'float' "));
-        assert!(description.contains("64-bit"));
-        // The AbstractFloatDataType-level accessor picks up the same override transitively.
-        assert_eq!(dt.float_description(), description);
-    }
-
-    #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockFloatDataType { length: 4, dtm_tag: Some("mgr-a") };
-        let cloned = dt.float_clone(None);
-        assert_eq!(cloned.encoded_length(), 4);
-        assert_eq!(cloned.float_data_type_description(), dt.float_data_type_description());
-    }
-
-    #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockFloatDataType { length: 4, dtm_tag: Some("mgr-a") };
-        let cloned = dt.float_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.encoded_length(), 4);
+        let dt = FloatDataType::new(Some(&WideFloats));
+        let expected = 8;
+        assert_eq!(dt.get_length(), expected);
+        assert!(dt.float_format().is_some());
+        assert_eq!(FloatDataType::instance().clone_data_type(&WideFloats).get_length(), expected);
     }
 }

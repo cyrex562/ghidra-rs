@@ -1,112 +1,69 @@
-use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+//! Port of `ghidra.program.model.data.Float8DataType`.
 
-/// Fixed encoded length (in bytes) for a [`Float8DataType`], standing in for the literal `8`
-/// passed to the `AbstractFloatDataType(String, int, DataTypeManager)` superclass constructor.
-pub const FLOAT8_ENCODED_LENGTH: i32 = 8;
+use crate::program::model::data::abstract_float_data_type::float_data_type;
 
-/// Provides a definition of an 8-byte Float within a program.
-///
-/// Port of `ghidra.program.model.data.Float8DataType`, promoted straight to a trait because it
-/// was selected as a dependency-cycle cut-point. See
-/// [`Float4DataType`](super::float4_data_type::Float4DataType) for the full rationale this
-/// mirrors: `Float8DataType` overrides nothing beyond its constructor and
-/// `clone(DataTypeManager)`, so this trait only adds that one override.
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait Float8DataType: AbstractFloatDataType {
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
+float_data_type! {
+    /// Provides a definition of a Float8 (IEEE 754 double precision) within a program.
     ///
-    /// Port of `Float8DataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractFloatDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a required
-    /// method (no default); see [`Float4DataType::float4_clone`](super::float4_data_type::Float4DataType::float4_clone)
-    /// for why.
-    fn float8_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn Float8DataType>;
+    /// Port of `ghidra.program.model.data.Float8DataType`.
+    Float8DataType {
+        name: "float8",
+        length: 8,
+        description_prefix: "",
+        c_type_declaration: default,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::settings::settings::Settings;
+    use std::sync::Arc;
+    use crate::pcode::floatformat::{get_float_format, BigFloat};
+    use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
-    use crate::pcode::floatformat::{get_float_format, FloatFormat};
-
-    struct MockFloat8DataType {
-        dtm_tag: Option<&'static str>,
-    }
-
-    impl DataType for MockFloat8DataType {
-        fn get_name(&self) -> String {
-            "float8".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.encoded_length()
-        }
-    }
-
-    impl BuiltInDataType for MockFloat8DataType {
-        fn get_c_type_declaration(
-            &self,
-            data_organization: Option<&DataOrganizationImpl>,
-        ) -> Option<String> {
-            self.float_c_type_declaration(data_organization)
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-    }
-
-    impl AbstractFloatDataType for MockFloat8DataType {
-        fn encoded_length(&self) -> i32 {
-            FLOAT8_ENCODED_LENGTH
-        }
-        fn float_format(&self) -> Option<&FloatFormat> {
-            get_float_format(self.encoded_length()).ok()
-        }
-    }
-
-    impl Float8DataType for MockFloat8DataType {
-        fn float8_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn Float8DataType> {
-            match dtm {
-                None => Box::new(MockFloat8DataType { dtm_tag: self.dtm_tag }),
-                Some(_) => Box::new(MockFloat8DataType {
-                    dtm_tag: Some("new-manager"),
-                }),
-            }
-        }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
+    use crate::program::model::data::float4_data_type::Float4DataType;
 
     #[test]
-    fn usable_as_trait_object() {
-        let dt = MockFloat8DataType { dtm_tag: None };
-        let dyn_dt: &dyn Float8DataType = &dt;
-        assert_eq!(dyn_dt.encoded_length(), 8);
-        assert_eq!(DataType::get_length(dyn_dt), 8);
-        assert_eq!(dyn_dt.get_name(), "float8");
+    fn java_constants() {
+        let dt = Float8DataType::instance();
+        let s = LongSettings::default();
+        assert_eq!(dt.get_name(), "float8");
+        assert_eq!(dt.get_length(), 8);
+        assert_eq!(dt.get_aligned_length(), 8);
+        assert_eq!(dt.get_description(), "IEEE 754 floating-point type (64-bit / 8-byte format, aligned-length is 8-bytes)");
+        assert!(!dt.has_language_dependant_length());
+        assert_eq!(dt.get_mnemonic(&s), "float8");
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("FLOAT8"));
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<BigFloat>()));
+        assert!(dt.is_encodable());
+        assert!(dt.is_floating_point());
+        // Only the BuiltIn mutability setting (AbstractFloatDataType.SETTINGS_DEFS is empty).
+        assert_eq!(dt.get_settings_definitions().len(), 1);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("float8"));
     }
 
     #[test]
-    fn description_uses_ieee754_standard_wording() {
-        let dt = MockFloat8DataType { dtm_tag: None };
-        assert!(dt.float_description().contains("64-bit"));
-        assert!(dt.float_description().contains("8-byte"));
+    fn value_representation_and_encoding() {
+        let dt = Float8DataType::new(None);
+        let s = LongSettings::default();
+        assert_eq!(dt.get_representation(&buf(&[191, 224, 0, 0, 0, 0, 0, 0], true), &s, 8), "-0.5");
+        assert_eq!(dt.get_representation(&buf(&[0, 0, 0, 0, 0, 0, 224, 191], false), &s, 8), "-0.5");
+        let encoded = dt.encode_representation("-0.5", &buf(&[], true), &s, 8);
+        assert_eq!(encoded.unwrap(), vec![191, 224, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(dt.encode_value(&-0.5f64, &buf(&[], false), &s, 8).unwrap(), vec![0, 0, 0, 0, 0, 0, 224, 191]);
+        assert!(dt.get_value(&buf(&[0], true), &s, 8).is_none());
+        assert_eq!(dt.get_representation(&buf(&[0], true), &s, 8), "??");
     }
 
     #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockFloat8DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.float8_clone(None);
-        assert_eq!(cloned.encoded_length(), 8);
-    }
-
-    #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockFloat8DataType { dtm_tag: Some("mgr-a") };
-        let cloned = dt.float8_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.encoded_length(), 8);
+    fn singleton_and_class_equivalence() {
+        let a = Float8DataType::data_type();
+        assert!(Arc::ptr_eq(&a, &Float8DataType::data_type()));
+        assert!(a.is_equivalent(&Float8DataType::new(None)));
+        assert!(!a.is_equivalent(Float4DataType::instance().as_ref()));
+        assert!(a.as_built_in().is_some());
     }
 }

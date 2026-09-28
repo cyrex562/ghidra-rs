@@ -1,168 +1,90 @@
-use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
-use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
-use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_manager::DataTypeManager;
+//! Port of `ghidra.program.model.data.LongDoubleDataType`.
 
-/// Provides a definition of a compiler-defined `long double` within a program.
-///
-/// Port of `ghidra.program.model.data.LongDoubleDataType`, promoted straight to a trait because
-/// it was selected as a dependency-cycle cut-point. Structurally similar to
-/// [`FloatDataType`](super::float_data_type::FloatDataType)/[`DoubleDataType`](super::double_data_type::DoubleDataType)
-/// -- see those traits' module docs for the shared rationale -- but `LongDoubleDataType`
-/// additionally overrides `getCTypeDeclaration(DataOrganization)` itself (rather than inheriting
-/// `AbstractFloatDataType`'s `float_c_type_declaration` default), always emitting a `typedef`
-/// naming this type `"long double"` regardless of `hasLanguageDependantLength()`. That override
-/// calls the protected `BuiltIn.getCTypeDeclaration(String, String, boolean)` helper; since
-/// `AbstractFloatDataType` does not extend `BuiltIn` (only `DataType`/`BuiltInDataType`, per its
-/// own module docs), that helper's trivial formula is reproduced directly here rather than
-/// stubbed, mirroring the same precedent already set by
-/// [`Integer3DataType`](super::integer3_data_type::Integer3DataType)'s own `getCTypeDeclaration`
-/// override.
-///
-/// Static state not translated: the `dataType` singleton (needs a concrete struct).
-pub trait LongDoubleDataType: AbstractFloatDataType {
-    /// Port of `LongDoubleDataType.buildDescription()`, which overrides the default
-    /// `AbstractFloatDataType.buildDescription()` by prefixing the inherited IEEE-754 standard
-    /// wording with `"Compiler-defined 'long double' "`.
-    fn long_double_data_type_description(&self) -> String {
-        format!(
-            "Compiler-defined 'long double' {}",
-            self.build_ieee754_standard_description()
-        )
-    }
+use crate::program::model::data::abstract_float_data_type::float_data_type;
 
-    /// Port of `LongDoubleDataType.hasLanguageDependantLength()`, which overrides the default
-    /// `DataType.hasLanguageDependantLength()`. Always `true`.
-    fn long_double_data_type_has_language_dependant_length(&self) -> bool {
-        true
-    }
-
-    /// Returns an instance of this DataType using the specified `DataTypeManager` to allow its
-    /// use of the corresponding `DataOrganization` while retaining its unique identity.
+float_data_type! {
+    /// Provides a definition of the compiler-defined `long double` within a program.
     ///
-    /// Port of `LongDoubleDataType.clone(DataTypeManager)`, which overrides
-    /// `AbstractFloatDataType`'s inherited `BuiltIn.clone(DataTypeManager)`. Left as a required
-    /// method (no default); see [`Float4DataType::float4_clone`](super::float4_data_type::Float4DataType::float4_clone)
-    /// for why.
-    fn long_double_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn LongDoubleDataType>;
-
-    /// Port of `LongDoubleDataType.getCTypeDeclaration(DataOrganization)`, which overrides the
-    /// abstract `BuiltInDataType.getCTypeDeclaration(DataOrganization)` directly (bypassing
-    /// `AbstractFloatDataType::float_c_type_declaration`'s `hasLanguageDependantLength()` check).
-    /// `data_organization` is unused, matching the Java original. Exposed under a distinct name
-    /// since `BuiltInDataType::get_c_type_declaration` is a required (no-default) method; a
-    /// concrete `impl BuiltInDataType for ...` should delegate `get_c_type_declaration` to this
-    /// instead of `float_c_type_declaration`.
-    fn long_double_c_type_declaration(&self, data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-        let _ = data_organization;
-        Some(format!("typedef long double    {};", self.get_name()))
+    /// Port of `ghidra.program.model.data.LongDoubleDataType`.
+    LongDoubleDataType {
+        name: "longdouble",
+        length: get_long_double_size,
+        description_prefix: "Compiler-defined 'long double' ",
+        c_type_declaration: "long double",
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::settings::settings::Settings;
+    use std::sync::Arc;
+    use crate::pcode::floatformat::{get_float_format, BigFloat};
+    use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
+    use crate::program::model::data::abstract_integer_data_type::test_support::{buf, LongSettings};
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::pcode::floatformat::{get_float_format, FloatFormat};
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::data::float8_data_type::Float8DataType;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
 
-    struct MockLongDoubleDataType {
-        length: i32,
-        dtm_tag: Option<&'static str>,
+    #[test]
+    fn java_constants() {
+        let dt = LongDoubleDataType::instance();
+        let s = LongSettings::default();
+        assert_eq!(dt.get_name(), "longdouble");
+        assert_eq!(dt.get_length(), 8);
+        assert_eq!(dt.get_aligned_length(), 8);
+        assert_eq!(dt.get_description(), "Compiler-defined 'long double' IEEE 754 floating-point type (64-bit / 8-byte format, aligned-length is 8-bytes)");
+        assert!(dt.has_language_dependant_length());
+        assert_eq!(dt.get_mnemonic(&s), "longdouble");
+        assert_eq!(dt.get_default_label_prefix().as_deref(), Some("LONGDOUBLE"));
+        assert_eq!(dt.get_value_class(&s), Some(std::any::TypeId::of::<BigFloat>()));
+        assert!(dt.is_encodable());
+        assert!(dt.is_floating_point());
+        // Only the BuiltIn mutability setting (AbstractFloatDataType.SETTINGS_DEFS is empty).
+        assert_eq!(dt.get_settings_definitions().len(), 1);
+        let org = dt.get_data_organization();
+        assert_eq!(dt.get_c_type_declaration(Some(&org)).as_deref(), Some("typedef long double    longdouble;"));
     }
 
-    impl DataType for MockLongDoubleDataType {
-        fn get_name(&self) -> String {
-            "longdouble".to_string()
-        }
-        fn get_length(&self) -> i32 {
-            self.encoded_length()
-        }
-        fn has_language_dependant_length(&self) -> bool {
-            self.long_double_data_type_has_language_dependant_length()
-        }
+    #[test]
+    fn value_representation_and_encoding() {
+        let dt = LongDoubleDataType::new(None);
+        let s = LongSettings::default();
+        assert_eq!(dt.get_representation(&buf(&[191, 224, 0, 0, 0, 0, 0, 0], true), &s, 8), "-0.5");
+        assert_eq!(dt.get_representation(&buf(&[0, 0, 0, 0, 0, 0, 224, 191], false), &s, 8), "-0.5");
+        let encoded = dt.encode_representation("-0.5", &buf(&[], true), &s, 8);
+        assert_eq!(encoded.unwrap(), vec![191, 224, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(dt.encode_value(&-0.5f64, &buf(&[], false), &s, 8).unwrap(), vec![0, 0, 0, 0, 0, 0, 224, 191]);
+        assert!(dt.get_value(&buf(&[0], true), &s, 8).is_none());
+        assert_eq!(dt.get_representation(&buf(&[0], true), &s, 8), "??");
     }
 
-    impl BuiltInDataType for MockLongDoubleDataType {
-        fn get_c_type_declaration(
-            &self,
-            data_organization: Option<&DataOrganizationImpl>,
-        ) -> Option<String> {
-            self.long_double_c_type_declaration(data_organization)
-        }
-        fn set_default_settings(&mut self, _settings: &dyn Settings) {}
+    #[test]
+    fn singleton_and_class_equivalence() {
+        let a = LongDoubleDataType::data_type();
+        assert!(Arc::ptr_eq(&a, &LongDoubleDataType::data_type()));
+        assert!(a.is_equivalent(&LongDoubleDataType::new(None)));
+        assert!(!a.is_equivalent(Float8DataType::instance().as_ref()));
+        assert!(a.as_built_in().is_some());
     }
 
-    impl AbstractFloatDataType for MockLongDoubleDataType {
-        fn encoded_length(&self) -> i32 {
-            self.length
-        }
-        fn float_format(&self) -> Option<&FloatFormat> {
-            get_float_format(self.encoded_length()).ok()
-        }
-        fn build_description(&self) -> String {
-            self.long_double_data_type_description()
-        }
-    }
-
-    impl LongDoubleDataType for MockLongDoubleDataType {
-        fn long_double_clone(&self, dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn LongDoubleDataType> {
-            match dtm {
-                None => Box::new(MockLongDoubleDataType {
-                    length: self.length,
-                    dtm_tag: self.dtm_tag,
-                }),
-                Some(_) => Box::new(MockLongDoubleDataType {
-                    length: self.length,
-                    dtm_tag: Some("new-manager"),
-                }),
+    #[test]
+    fn length_follows_the_manager_data_organization() {
+        struct WideFloats;
+        impl DataTypeManager for WideFloats {
+            fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+                let mut org = DataOrganizationImpl::get_default_organization(None);
+                org.set_float_size(8);
+                org.set_double_size(10);
+                org.set_long_double_size(16);
+                Arc::new(org)
             }
         }
-    }
-
-    struct MockDataTypeManager;
-    impl DataTypeManager for MockDataTypeManager {}
-
-    #[test]
-    fn usable_as_trait_object() {
-        let dt = MockLongDoubleDataType { length: 10, dtm_tag: None };
-        let dyn_dt: &dyn LongDoubleDataType = &dt;
-        assert_eq!(dyn_dt.encoded_length(), 10);
-        assert!(dyn_dt.long_double_data_type_has_language_dependant_length());
-        assert!(DataType::has_language_dependant_length(dyn_dt));
-    }
-
-    #[test]
-    fn description_prefixes_compiler_defined_wording() {
-        let dt = MockLongDoubleDataType { length: 10, dtm_tag: None };
-        let description = dt.long_double_data_type_description();
-        assert!(description.starts_with("Compiler-defined 'long double' "));
-        assert_eq!(dt.float_description(), description);
-    }
-
-    #[test]
-    fn c_type_declaration_ignores_data_organization() {
-        let dt = MockLongDoubleDataType { length: 10, dtm_tag: None };
-        assert_eq!(
-            dt.long_double_c_type_declaration(None),
-            Some("typedef long double    longdouble;".to_string())
-        );
-        // Via the BuiltInDataType supertrait, matching the direct call.
-        let via_trait: &dyn BuiltInDataType = &dt;
-        assert_eq!(via_trait.get_c_type_declaration(None), dt.long_double_c_type_declaration(None));
-    }
-
-    #[test]
-    fn clone_with_no_manager_preserves_identity_tag() {
-        let dt = MockLongDoubleDataType { length: 10, dtm_tag: Some("mgr-a") };
-        let cloned = dt.long_double_clone(None);
-        assert_eq!(cloned.encoded_length(), 10);
-    }
-
-    #[test]
-    fn clone_with_new_manager_rebinds_instance() {
-        let dt = MockLongDoubleDataType { length: 10, dtm_tag: Some("mgr-a") };
-        let cloned = dt.long_double_clone(Some(Box::new(MockDataTypeManager)));
-        assert_eq!(cloned.encoded_length(), 10);
+        let dt = LongDoubleDataType::new(Some(&WideFloats));
+        let expected = 16;
+        assert_eq!(dt.get_length(), expected);
+        assert!(dt.float_format().is_some());
+        assert_eq!(LongDoubleDataType::instance().clone_data_type(&WideFloats).get_length(), expected);
     }
 }
