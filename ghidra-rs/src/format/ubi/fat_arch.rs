@@ -3,7 +3,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 /// Represents a `fat_arch` structure.
 ///
@@ -22,7 +22,7 @@ impl FatArch {
     /// Reads a [`FatArch`] from `reader`.
     ///
     /// Port of `FatArch(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         Ok(FatArch {
             cputype: reader.read_next_int()?,
             cpusubtype: reader.read_next_int()?,
@@ -91,65 +91,6 @@ impl fmt::Display for FatArch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    /// Minimal in-memory [`BinaryReader`] sufficient for this module's tests: sequential
-    /// big-endian 32-bit reads (matching Mach-O universal binaries, which are always big-endian
-    /// at the fat-header level).
-    struct MockReader {
-        bytes: Vec<u8>,
-        pos: u64,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            MockReader { bytes, pos: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.bytes.len() as u64
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.pos
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.pos;
-            self.pos = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not needed by FatArch tests")
-        }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by FatArch tests")
-        }
-    }
 
     fn write_i32_be(buf: &mut Vec<u8>, value: i32) {
         buf.extend_from_slice(&value.to_be_bytes());
@@ -172,7 +113,7 @@ mod tests {
 
     #[test]
     fn parses_all_five_fields_in_order() {
-        let mut reader = MockReader::new(sample_bytes());
+        let mut reader = BinaryReader::from_bytes(sample_bytes(), false);
         let arch = FatArch::new(&mut reader).unwrap();
 
         assert_eq!(arch.get_cpu_type(), CPU_TYPE_X86_64);
@@ -186,7 +127,7 @@ mod tests {
     fn advances_reader_by_twenty_bytes() {
         let mut buf = sample_bytes();
         buf.extend(sample_bytes());
-        let mut reader = MockReader::new(buf);
+        let mut reader = BinaryReader::from_bytes(buf, false);
 
         FatArch::new(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), 20);
@@ -198,7 +139,7 @@ mod tests {
 
     #[test]
     fn display_matches_java_tostring_format() {
-        let mut reader = MockReader::new(sample_bytes());
+        let mut reader = BinaryReader::from_bytes(sample_bytes(), false);
         let arch = FatArch::new(&mut reader).unwrap();
 
         let expected = "CPU Type: 0x1000007\n\
@@ -220,7 +161,7 @@ mod tests {
         write_i32_be(&mut buf, 0);
         write_i32_be(&mut buf, 0);
         write_i32_be(&mut buf, 0);
-        let mut reader = MockReader::new(buf);
+        let mut reader = BinaryReader::from_bytes(buf, false);
         let arch = FatArch::new(&mut reader).unwrap();
 
         assert!(arch.to_string().starts_with("CPU Type: 0xffffffff\n"));

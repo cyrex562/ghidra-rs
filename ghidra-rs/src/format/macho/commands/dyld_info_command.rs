@@ -22,7 +22,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::export_trie::ExportTrie;
 use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase};
@@ -65,8 +65,8 @@ impl DyldInfoCommand {
     ///
     /// Port of `DyldInfoCommand(BinaryReader, BinaryReader, MachHeader)`.
     pub fn new(
-        load_command_reader: &mut dyn LegacyBinaryReader,
-        data_reader: &mut dyn LegacyBinaryReader,
+        load_command_reader: &mut BinaryReader,
+        data_reader: &mut BinaryReader,
         header: &dyn MachHeader,
     ) -> io::Result<Self> {
         let base = LoadCommandBase::new(load_command_reader)?;
@@ -331,85 +331,10 @@ impl LoadCommand for DyldInfoCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::macho::commands::dyld::opcode_table::OpcodeTable;
     use crate::format::macho::commands::load_command_types::LC_DYLD_INFO;
     use crate::format::seam_stubs::SegmentCommand;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0.get(index as usize).copied().ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0.get(start..end).map(|s| s.to_vec()).ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader { provider: Rc::new(RefCell::new(VecProvider(data))), little_endian: true, current_index: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader { provider: Rc::clone(&self.provider), little_endian: self.little_endian, current_index: new_index })
-        }
-    }
 
     struct MockMachHeader;
     impl MachHeader for MockMachHeader {
@@ -458,8 +383,8 @@ mod tests {
     #[test]
     fn parses_all_offsets_and_sizes_with_zero_tables() {
         let data = command_bytes(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        let mut lc_reader = MockReader::new(data);
-        let mut data_reader = MockReader::new(Vec::new());
+        let mut lc_reader = BinaryReader::from_bytes(data, true);
+        let mut data_reader = BinaryReader::from_bytes(Vec::new(), true);
         let header = MockMachHeader;
 
         let cmd = DyldInfoCommand::new(&mut lc_reader, &mut data_reader, &header).expect("should parse");
@@ -475,12 +400,12 @@ mod tests {
     #[test]
     fn parses_nonzero_offsets_and_sizes() {
         let data = command_bytes(100, 10, 110, 20, 130, 5, 135, 15, 150, 8);
-        let mut lc_reader = MockReader::new(data);
+        let mut lc_reader = BinaryReader::from_bytes(data, true);
         // Data reader must be long enough that set_pointer_index'ing to each offset succeeds when
         // the (stub) table parsers touch it; they don't read, but is_valid_index isn't checked by
         // set_pointer_index itself so an empty data reader is fine too. Keep it non-trivial for
         // realism.
-        let mut data_reader = MockReader::new(vec![0u8; 200]);
+        let mut data_reader = BinaryReader::from_bytes(vec![0u8; 200], true);
         let header = MockMachHeader;
 
         let cmd = DyldInfoCommand::new(&mut lc_reader, &mut data_reader, &header).expect("should parse");

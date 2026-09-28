@@ -11,7 +11,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::format::macho::commands::load_command_types::get_load_command_name;
 use crate::format::macho::commands::segment_names;
@@ -36,7 +36,7 @@ pub struct LoadCommandBase {
 
 impl LoadCommandBase {
     /// Java: `LoadCommand(BinaryReader reader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let start_index = reader.get_pointer_index();
         let cmd = reader.read_next_int()?;
         let cmdsize = reader.read_next_int()?;
@@ -258,107 +258,9 @@ pub trait LoadCommand: StructConverter + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::macho::commands::load_command_types::LC_SEGMENT;
     use crate::program::model::data::data_type::DataType;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     struct DummyDataType;
     impl DataType for DummyDataType {}
@@ -395,7 +297,7 @@ mod tests {
 
     #[test]
     fn constructor_reads_start_index_cmd_and_cmdsize() {
-        let mut reader = TestReader::new(command_bytes(LC_SEGMENT, 56));
+        let mut reader = BinaryReader::from_bytes(command_bytes(LC_SEGMENT, 56), true);
         let cmd = TestLoadCommand { base: LoadCommandBase::new(&mut reader).unwrap() };
         assert_eq!(cmd.get_start_index(), 0);
         assert_eq!(cmd.get_command_type(), LC_SEGMENT as i32);
@@ -406,7 +308,7 @@ mod tests {
     fn constructor_captures_start_index_mid_stream() {
         let mut bytes = vec![0u8; 4];
         bytes.extend(command_bytes(LC_SEGMENT, 56));
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         reader.set_pointer_index(4);
         let cmd = TestLoadCommand { base: LoadCommandBase::new(&mut reader).unwrap() };
         assert_eq!(cmd.get_start_index(), 4);

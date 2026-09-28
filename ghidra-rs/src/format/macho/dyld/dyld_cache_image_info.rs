@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::mach_constants::DATA_TYPE_CATEGORY;
@@ -33,7 +33,7 @@ impl DyldCacheImageInfo {
     /// NUL-terminated path at `pathFileOffset` (without moving the reader).
     ///
     /// Port of `DyldCacheImageInfo(BinaryReader)`.
-    pub fn from_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut BinaryReader) -> io::Result<Self> {
         let address = reader.read_next_long()? as u64;
         let mod_time = reader.read_next_long()?;
         let inode = reader.read_next_long()?;
@@ -103,7 +103,6 @@ impl StructConverter for DyldCacheImageInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macho::dyld::test_support::VecReader;
 
     /// An image-info record at offset 0 whose path string lives at offset 0x20.
     fn bytes(path_offset: u32) -> Vec<u8> {
@@ -119,7 +118,7 @@ mod tests {
 
     #[test]
     fn parses_record_and_path() {
-        let mut reader = VecReader::new(bytes(0x20), true);
+        let mut reader = BinaryReader::from_bytes(bytes(0x20), true);
         let info = DyldCacheImageInfo::from_reader(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), DyldCacheImageInfo::SIZE as u64);
         assert_eq!(info.get_address(), 0x1_8010_0000);
@@ -134,7 +133,7 @@ mod tests {
 
     #[test]
     fn path_offset_out_of_range_errors() {
-        let mut reader = VecReader::new(bytes(0x1000), true);
+        let mut reader = BinaryReader::from_bytes(bytes(0x1000), true);
         assert!(DyldCacheImageInfo::from_reader(&mut reader).is_err());
     }
 

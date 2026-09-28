@@ -1,5 +1,5 @@
-use std::cell::RefCell;
 use std::io;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -7,9 +7,9 @@ use thiserror::Error;
 
 use crate::app::util::importer::message_log::MessageLog;
 use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::bin::struct_converter::StructConverter;
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
@@ -78,7 +78,7 @@ impl DyldCacheSlideInfoCommonBase {
     /// `slide_info_offset` starts at `0` here; [`parse_slide_info`] sets the real value on the
     /// returned info after construction, matching Java's `parseSlideInfo` doing the same via a
     /// direct field write after the version-specific constructor returns.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, mapping_info: DyldCacheMappingInfo) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, mapping_info: DyldCacheMappingInfo) -> io::Result<Self> {
         Ok(DyldCacheSlideInfoCommonBase {
             version: reader.read_next_int()?,
             slide_info_offset: 0,
@@ -87,14 +87,12 @@ impl DyldCacheSlideInfoCommonBase {
     }
 }
 
-/// A `GByteStore` over a range of program memory starting at a base address, sufficient for
-/// [`DyldCacheSlideInfoCommon::fixup_slide_pointers`] to build a `BinaryReader` the way Java's
+/// A [`ByteProvider`] over a range of program memory starting at a base address, sufficient for
+/// [`DyldCacheSlideInfoCommon::fixup_slide_pointers`] to build a [`BinaryReader`] the way Java's
 /// version builds one from a `MemoryByteProvider`.
 ///
 /// `ghidra.app.util.bin.MemoryByteProvider` is not itself ported yet (a much larger, general
-/// purpose class), so this is a local, minimal stand-in scoped to sequential reads relative to
-/// `base`, mirroring the crate's established pattern for filling this gap (e.g.
-/// `ElfInfoItem`'s `ProviderBinaryReader`, `JavaLoader`'s `JavaClassBinaryReader`).
+/// purpose class), so this is a local, minimal stand-in scoped to reads relative to `base`.
 struct MemoryRangeByteProvider {
     memory: Arc<dyn Memory>,
     base: Address,
@@ -108,91 +106,52 @@ impl MemoryRangeByteProvider {
     }
 }
 
-impl GByteStore for MemoryRangeByteProvider {
-    fn length(&mut self) -> io::Result<u64> {
+impl ByteProvider for MemoryRangeByteProvider {
+    fn get_file(&self) -> Option<PathBuf> {
+        None
+    }
+
+    fn get_name(&self) -> Option<String> {
+        None
+    }
+
+    fn get_absolute_path(&self) -> Option<String> {
+        None
+    }
+
+    fn length(&self) -> u64 {
         match self.memory.get_block(&self.base) {
-            Some(block) => Ok((block.get_end().subtract(&self.base) as u64) + 1),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "address not mapped in any memory block")),
+            Some(block) => (block.get_end().subtract(&self.base) as u64) + 1,
+            None => 0,
         }
     }
 
-    fn is_valid_index(&mut self, index: u64) -> bool {
+    fn is_valid_index(&self, index: u64) -> bool {
         match self.resolve(index) {
             Ok(addr) => self.memory.contains(&addr),
             Err(_) => false,
         }
     }
 
-    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
+    fn close(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn read_byte(&self, index: u64) -> io::Result<u8> {
         let addr = self.resolve(index)?;
         self.memory
             .get_byte(&addr)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
-    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
+    fn read_bytes(&self, index: u64, length: u64) -> io::Result<Vec<u8>> {
         let addr = self.resolve(index)?;
-        let mut buf = vec![0u8; length];
+        let mut buf = vec![0u8; length as usize];
         let n = self.memory.get_bytes(&addr, &mut buf);
-        if n < length {
+        if n < buf.len() {
             return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
         }
         Ok(buf)
-    }
-
-    fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-        Err(io::Error::from(io::ErrorKind::Unsupported))
-    }
-
-    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-        Err(io::Error::from(io::ErrorKind::Unsupported))
-    }
-}
-
-/// A [`BinaryReader`] over a [`MemoryRangeByteProvider`], mirroring the crate's established
-/// `GByteStore`-backed reader adapters (see that type's own docs).
-struct MemoryRangeBinaryReader {
-    provider: Rc<RefCell<dyn GByteStore>>,
-    little_endian: bool,
-    current_index: u64,
-}
-
-impl LegacyBinaryReader for MemoryRangeBinaryReader {
-    fn length(&self) -> io::Result<u64> {
-        self.provider.borrow_mut().length()
-    }
-    fn is_valid_index(&self, index: u64) -> bool {
-        self.provider.borrow_mut().is_valid_index(index)
-    }
-    fn get_pointer_index(&self) -> u64 {
-        self.current_index
-    }
-    fn set_pointer_index(&mut self, index: u64) -> u64 {
-        let old = self.current_index;
-        self.current_index = index;
-        old
-    }
-    fn is_little_endian(&self) -> bool {
-        self.little_endian
-    }
-    fn set_little_endian(&mut self, is_little_endian: bool) {
-        self.little_endian = is_little_endian;
-    }
-    fn read_byte(&self, index: u64) -> io::Result<u8> {
-        self.provider.borrow_mut().read_byte(index)
-    }
-    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-        self.provider.borrow_mut().read_bytes(index, n_elements)
-    }
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-        Rc::clone(&self.provider)
-    }
-    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-        Box::new(MemoryRangeBinaryReader {
-            provider: Rc::clone(&self.provider),
-            little_endian: self.little_endian,
-            current_index: new_index,
-        })
     }
 }
 
@@ -244,7 +203,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
     /// Port of the abstract `getSlideFixups(BinaryReader, int, MessageLog, TaskMonitor)`.
     fn get_slide_fixups(
         &self,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         pointer_size: i32,
         log: &MessageLog,
         monitor: &dyn TaskMonitor,
@@ -275,15 +234,11 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
             .ok_or_else(|| MemoryAccessException::new("program has no default address space"))?;
         let data_page_addr = Address::new(space, self.base().mapping_info.get_address());
 
-        let provider: Rc<RefCell<dyn GByteStore>> = Rc::new(RefCell::new(MemoryRangeByteProvider {
+        let provider = Rc::new(MemoryRangeByteProvider {
             memory: Arc::clone(&memory),
             base: data_page_addr.clone(),
-        }));
-        let mut reader = MemoryRangeBinaryReader {
-            provider,
-            little_endian: !memory.is_big_endian(),
-            current_index: 0,
-        };
+        });
+        let mut reader = BinaryReader::new(provider, !memory.is_big_endian());
 
         let fixups = self.get_slide_fixups(
             &mut reader,
@@ -355,7 +310,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
 /// still faithfully reads and validates the version field first, matching Java's behavior up to
 /// that point.
 pub fn parse_slide_info(
-    reader: &mut dyn LegacyBinaryReader,
+    reader: &mut BinaryReader,
     slide_info_offset: i64,
     _mapping_info: &DyldCacheMappingInfo,
     log: &MessageLog,
@@ -389,96 +344,10 @@ pub fn parse_slide_info(
 mod tests {
     use super::*;
 
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>, little_endian: bool) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
-
     #[test]
     fn base_new_reads_version() {
         let data = 3i32.to_le_bytes().to_vec();
-        let mut reader = MockReader::new(data, true);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let mapping_info = DyldCacheMappingInfo::new(0x1000, 0x2000, 0, 3, 3);
         let base = DyldCacheSlideInfoCommonBase::new(&mut reader, mapping_info).expect("should parse");
         assert_eq!(base.version, 3);
@@ -511,7 +380,7 @@ mod tests {
 
     #[test]
     fn parse_slide_info_zero_offset_returns_none_without_reading() {
-        let mut reader = MockReader::new(Vec::new(), true);
+        let mut reader = BinaryReader::from_bytes(Vec::new(), true);
         let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, 0, 0);
         let log = MessageLog::new();
         let result = parse_slide_info(&mut reader, 0, &mapping_info, &log, &NoopMonitor);
@@ -525,7 +394,7 @@ mod tests {
         // `default -> throw new IOException()` branch (versions 1-5 all currently hit it too).
         let mut data = vec![0u8; 0x100];
         data.extend_from_slice(&2i32.to_le_bytes());
-        let mut reader = MockReader::new(data, true);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, 0, 0);
         let log = MessageLog::new();
         let result = parse_slide_info(&mut reader, 0x100, &mapping_info, &log, &NoopMonitor);
@@ -718,7 +587,7 @@ mod tests {
         }
         fn get_slide_fixups(
             &self,
-            _reader: &mut dyn LegacyBinaryReader,
+            _reader: &mut BinaryReader,
             _pointer_size: i32,
             _log: &MessageLog,
             _monitor: &dyn TaskMonitor,

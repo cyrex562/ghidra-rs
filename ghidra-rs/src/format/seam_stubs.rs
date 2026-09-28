@@ -1481,7 +1481,7 @@ impl RebaseTable {
     /// Port of `RebaseTable(BinaryReader, MachHeader, long)`. See the struct's own docs: the
     /// REBASE-opcode state machine is not ported, so this does not actually read `reader`.
     pub fn parse(
-        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
         header: &dyn MachHeader,
         table_size: i64,
     ) -> std::io::Result<Self> {
@@ -1523,7 +1523,7 @@ impl BindingTable {
     /// Port of `BindingTable(BinaryReader, MachHeader, long, boolean)`. See [`RebaseTable::parse`]:
     /// the opcode state machine is not ported, so this does not actually read `reader`.
     pub fn parse(
-        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
         header: &dyn MachHeader,
         table_size: i64,
         is_lazy: bool,
@@ -1866,8 +1866,8 @@ pub struct LinkEditDataCommand {
 impl LinkEditDataCommand {
     /// `LinkEditDataCommand(BinaryReader, BinaryReader)`.
     pub fn new(
-        load_command_reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
-        data_reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        load_command_reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
+        data_reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
     ) -> std::io::Result<Self> {
         let base = crate::format::macho::commands::load_command::LoadCommandBase::new(
             load_command_reader,
@@ -1939,7 +1939,7 @@ pub struct DyldChainedFixupHeader {
 impl DyldChainedFixupHeader {
     /// `DyldChainedFixupHeader(BinaryReader)`.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
     ) -> std::io::Result<Self> {
         let ptr_index = reader.get_pointer_index();
 
@@ -2066,7 +2066,7 @@ pub struct DyldChainedStartsInImage {
 impl DyldChainedStartsInImage {
     /// `DyldChainedStartsInImage(BinaryReader)`.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
     ) -> std::io::Result<Self> {
         let ptr_index = reader.get_pointer_index();
 
@@ -2134,7 +2134,7 @@ pub struct DyldChainedStartsInSegment {
 impl DyldChainedStartsInSegment {
     /// `DyldChainedStartsInSegment(BinaryReader)`.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
     ) -> std::io::Result<Self> {
         let size = reader.read_next_int()?;
         let page_size = reader.read_next_short()?;

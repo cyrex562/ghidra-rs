@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::segment_constants::{PROTECTION_R, PROTECTION_W, PROTECTION_X};
 use crate::format::macho::mach_constants::DATA_TYPE_CATEGORY;
@@ -36,7 +36,7 @@ impl DyldCacheMappingInfo {
     /// Reads a `dyld_cache_mapping_info` at the reader's current position.
     ///
     /// Port of `DyldCacheMappingInfo(BinaryReader)`.
-    pub fn from_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut BinaryReader) -> io::Result<Self> {
         Ok(DyldCacheMappingInfo {
             address: reader.read_next_long()?,
             size: reader.read_next_long()?,
@@ -120,7 +120,6 @@ impl StructConverter for DyldCacheMappingInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macho::dyld::test_support::VecReader;
 
     fn bytes() -> Vec<u8> {
         let mut b = Vec::new();
@@ -134,7 +133,7 @@ mod tests {
 
     #[test]
     fn parses_little_endian_structure() {
-        let mut reader = VecReader::new(bytes(), true);
+        let mut reader = BinaryReader::from_bytes(bytes(), true);
         let m = DyldCacheMappingInfo::from_reader(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), DyldCacheMappingInfo::SIZE as u64);
         assert_eq!(m.get_address(), 0x1_8000_0000);
@@ -149,7 +148,7 @@ mod tests {
 
     #[test]
     fn truncated_input_errors() {
-        let mut reader = VecReader::new(bytes()[..30].to_vec(), true);
+        let mut reader = BinaryReader::from_bytes(bytes()[..30].to_vec(), true);
         assert!(DyldCacheMappingInfo::from_reader(&mut reader).is_err());
     }
 

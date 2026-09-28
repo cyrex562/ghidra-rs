@@ -6,7 +6,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 /// `DYLD_CHAINED_PTR_START_NONE`: sentinel meaning a page has no chain start.
 pub const DYLD_CHAINED_PTR_START_NONE: u32 = 0xFFFF;
@@ -139,7 +139,7 @@ impl DyldChainType {
     /// Reads the raw chain entry value at `chain_loc` for this pointer format.
     pub fn chain_value(
         self,
-        reader: &dyn LegacyBinaryReader,
+        reader: &BinaryReader,
         chain_loc: u64,
     ) -> io::Result<i64> {
         match self {

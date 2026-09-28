@@ -7,7 +7,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::macho::dyld::dyld_chained_ptr::DyldChainType;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::app::util::importer::message_log::MessageLog;
@@ -73,7 +73,7 @@ impl From<CancelledException> for ChainedFixupError {
 /// * `monitor` - a cancellable monitor
 #[allow(clippy::too_many_arguments)]
 pub fn get_chained_fixups(
-    reader: &dyn LegacyBinaryReader,
+    reader: &BinaryReader,
     chained_imports: Option<&dyn DyldChainedImports>,
     pointer_format: DyldChainType,
     page: i64,
@@ -329,7 +329,7 @@ pub fn fixup_chained_pointers(
 ///
 /// Returns the fixups performed.
 pub fn process_pointer_chain(
-    reader: &dyn LegacyBinaryReader,
+    reader: &BinaryReader,
     chain_start: i64,
     next_off_size: i64,
     imagebase: i64,
@@ -389,98 +389,9 @@ pub fn process_pointer_chain(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::seam_stubs::DyldChainedImport;
     use crate::program::model::symbol::Symbol;
     use crate::util::task::DummyMonitor;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     fn le_long(v: i64) -> [u8; 8] {
         v.to_le_bytes()
@@ -495,7 +406,7 @@ mod tests {
     fn get_chained_fixups_unbound_ptr64_rebase() {
         // A single Ptr64 chain entry with target=0x1000, next=0 (end of chain).
         let chain_value: i64 = 0x1000;
-        let reader = TestReader::new(le_long(chain_value).to_vec());
+        let reader = BinaryReader::from_bytes(le_long(chain_value).to_vec(), true);
         let log = MessageLog::new();
         let monitor = DummyMonitor;
 
@@ -523,7 +434,7 @@ mod tests {
     #[test]
     fn get_chained_fixups_relative_target_adds_imagebase() {
         let chain_value: i64 = 0x2000;
-        let reader = TestReader::new(le_long(chain_value).to_vec());
+        let reader = BinaryReader::from_bytes(le_long(chain_value).to_vec(), true);
         let log = MessageLog::new();
         let monitor = DummyMonitor;
 
@@ -549,7 +460,7 @@ mod tests {
     fn get_chained_fixups_bound_without_imports_logs_and_returns_empty() {
         // Ptr64 bind bit (bit 63) set.
         let chain_value: i64 = 1i64 << 63;
-        let reader = TestReader::new(le_long(chain_value).to_vec());
+        let reader = BinaryReader::from_bytes(le_long(chain_value).to_vec(), true);
         let log = MessageLog::new();
         let monitor = DummyMonitor;
 
@@ -691,7 +602,7 @@ mod tests {
     #[test]
     fn get_chained_fixups_bound_resolves_via_symbol_table() {
         let chain_value: i64 = (1i64 << 63) | 5; // bound, ordinal 5
-        let reader = TestReader::new(le_long(chain_value).to_vec());
+        let reader = BinaryReader::from_bytes(le_long(chain_value).to_vec(), true);
         let log = MessageLog::new();
         let monitor = DummyMonitor;
         let space = test_address_space();
@@ -724,7 +635,7 @@ mod tests {
     fn process_pointer_chain_single_entry_high_bit_set() {
         // BIT63 set: fixedPointerValue = imagebase + (chainValue & 0xffffffff).
         let chain_value: i64 = (1i64 << 63) | 0x2000;
-        let reader = TestReader::new(le_long(chain_value).to_vec());
+        let reader = BinaryReader::from_bytes(le_long(chain_value).to_vec(), true);
         let log = MessageLog::new();
         let monitor = DummyMonitor;
 
@@ -740,7 +651,7 @@ mod tests {
     #[test]
     fn process_pointer_chain_stops_when_next_offset_is_zero() {
         let chain_value: i64 = (1i64 << 63) | 0x42;
-        let reader = TestReader::new(le_long(chain_value).to_vec());
+        let reader = BinaryReader::from_bytes(le_long(chain_value).to_vec(), true);
         let log = MessageLog::new();
         let monitor = DummyMonitor;
 

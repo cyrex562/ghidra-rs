@@ -22,7 +22,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::chained::dyld_chained_fixups::{self, ChainedFixupError};
 use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase};
@@ -75,8 +75,8 @@ impl DyldChainedFixupsCommand {
     ///
     /// Port of `DyldChainedFixupsCommand(BinaryReader, BinaryReader)`.
     pub fn new(
-        load_command_reader: &mut dyn LegacyBinaryReader,
-        data_reader: &mut dyn LegacyBinaryReader,
+        load_command_reader: &mut BinaryReader,
+        data_reader: &mut BinaryReader,
     ) -> io::Result<Self> {
         let link_edit = LinkEditDataCommand::new(load_command_reader, data_reader)?;
         let chain_header = DyldChainedFixupHeader::new(data_reader)?;
@@ -100,7 +100,7 @@ impl DyldChainedFixupsCommand {
     /// MessageLog, TaskMonitor)`.
     pub fn get_chained_fixups(
         &self,
-        reader: &dyn LegacyBinaryReader,
+        reader: &BinaryReader,
         imagebase: i64,
         symbol_table: Option<&dyn SymbolTable>,
         log: &MessageLog,
@@ -312,98 +312,9 @@ impl LoadCommand for DyldChainedFixupsCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::macho::commands::load_command_types::LC_DYLD_CHAINED_FIXUPS;
     use crate::format::seam_stubs::{DyldChainedImport, DyldChainedImports};
     use crate::util::task::DummyMonitor;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     fn command_bytes(cmd: u32, cmdsize: i32, dataoff: u32, datasize: u32) -> Vec<u8> {
         let mut v = Vec::new();
@@ -448,8 +359,8 @@ mod tests {
 
     fn build_command() -> DyldChainedFixupsCommand {
         let mut load_command_reader =
-            TestReader::new(command_bytes(LC_DYLD_CHAINED_FIXUPS, 16, 0, 0));
-        let mut data_reader = TestReader::new(chain_data_bytes());
+            BinaryReader::from_bytes(command_bytes(LC_DYLD_CHAINED_FIXUPS, 16, 0, 0), true);
+        let mut data_reader = BinaryReader::from_bytes(chain_data_bytes(), true);
         DyldChainedFixupsCommand::new(&mut load_command_reader, &mut data_reader)
             .expect("well-formed chain data parses")
     }
@@ -482,7 +393,7 @@ mod tests {
         // segment offset (0x2000) recorded in the starts-in-segment structure above.
         let mut image = vec![0u8; 0x2000];
         image.extend_from_slice(&0x5000i64.to_le_bytes());
-        let reader = TestReader::new(image);
+        let reader = BinaryReader::from_bytes(image, true);
         let log = MessageLog::new();
         let monitor = DummyMonitor;
 
@@ -509,7 +420,7 @@ mod tests {
         v.extend_from_slice(&1i16.to_le_bytes()); // page_count
         v.extend_from_slice(&(DYLD_CHAINED_PTR_START_NONE as i16).to_le_bytes());
 
-        let mut reader = TestReader::new(v);
+        let mut reader = BinaryReader::from_bytes(v, true);
         let starts_in_seg = crate::format::seam_stubs::DyldChainedStartsInSegment::new(&mut reader)
             .expect("parses");
         assert_eq!(starts_in_seg.get_page_count(), 1);
