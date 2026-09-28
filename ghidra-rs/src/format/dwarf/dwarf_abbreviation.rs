@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_attribute_id::{AttrDef, DWARFAttributeId};
 use crate::format::dwarf::dwarf_children::DWARFChildren;
@@ -64,7 +64,7 @@ impl DWARFAbbreviation {
     /// end-of-list marker. Mirrors the static `DWARFAbbreviation.read(BinaryReader,
     /// DIEContainer)`.
     pub fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         die_container: &dyn DIEContainer,
     ) -> io::Result<Option<DWARFAbbreviation>> {
         let _ = die_container;
@@ -95,7 +95,7 @@ impl DWARFAbbreviation {
     /// encountered. Mirrors the static `DWARFAbbreviation.readAbbreviations(BinaryReader,
     /// DIEContainer)`.
     pub fn read_abbreviations(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         die_container: &dyn DIEContainer,
     ) -> io::Result<HashMap<i32, DWARFAbbreviation>> {
         let mut result = HashMap::new();
@@ -225,7 +225,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -253,14 +253,14 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index })
         }
     }
 
     struct MockDIEContainer;
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn BinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
             None
         }
     }

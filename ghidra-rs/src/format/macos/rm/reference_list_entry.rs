@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -31,7 +31,7 @@ impl ReferenceListEntry {
     /// Reads a 12-byte reference list entry and resolves its name through `map`'s name list.
     ///
     /// Port of the package-private `ReferenceListEntry(BinaryReader, ResourceMap)` constructor.
-    pub fn new(reader: &mut dyn BinaryReader, map: &ResourceMap) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, map: &ResourceMap) -> io::Result<Self> {
         let id = reader.read_next_short()?;
         let name_offset = reader.read_next_short()?;
         let attributes = reader.read_next_byte()? as i8;
@@ -76,7 +76,7 @@ impl ReferenceListEntry {
 /// Reads an unsigned 24-bit value in the reader's byte order.
 ///
 /// Port of the private `read3ByteValue(BinaryReader)`.
-fn read_3_byte_value(reader: &mut dyn BinaryReader) -> io::Result<i32> {
+fn read_3_byte_value(reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
     let value1 = i32::from(reader.read_next_byte()?);
     let value2 = i32::from(reader.read_next_byte()?);
     let value3 = i32::from(reader.read_next_byte()?);

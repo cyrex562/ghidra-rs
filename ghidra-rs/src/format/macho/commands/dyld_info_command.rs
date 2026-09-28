@@ -22,7 +22,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::export_trie::ExportTrie;
 use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase};
@@ -65,8 +65,8 @@ impl DyldInfoCommand {
     ///
     /// Port of `DyldInfoCommand(BinaryReader, BinaryReader, MachHeader)`.
     pub fn new(
-        load_command_reader: &mut dyn BinaryReader,
-        data_reader: &mut dyn BinaryReader,
+        load_command_reader: &mut dyn LegacyBinaryReader,
+        data_reader: &mut dyn LegacyBinaryReader,
         header: &dyn MachHeader,
     ) -> io::Result<Self> {
         let base = LoadCommandBase::new(load_command_reader)?;
@@ -376,7 +376,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -406,7 +406,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader { provider: Rc::clone(&self.provider), little_endian: self.little_endian, current_index: new_index })
         }
     }

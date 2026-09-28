@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::elf::info::elf_info_item::{read_item_from_section, ElfInfoItem, ItemWithAddress};
 use crate::framework::options::Options;
 use crate::program::model::address::Address;
@@ -50,7 +50,7 @@ impl ElfComment {
     /// [`read_item_from_section`].
     ///
     /// Mirrors `ElfComment.read(BinaryReader, Program)`.
-    pub fn read(br: &mut dyn BinaryReader, _program: &dyn Program) -> io::Result<ElfComment> {
+    pub fn read(br: &mut dyn LegacyBinaryReader, _program: &dyn Program) -> io::Result<ElfComment> {
         let mut comment_strings = Vec::new();
         let mut comment_string_lengths = Vec::new();
         while br.has_next() {
@@ -257,7 +257,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -287,7 +287,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,

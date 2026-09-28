@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava;
 use crate::format::javaclass::constantpool::constant_pool_tags_java::CONSTANT_UTF8;
 use crate::format::seam_stubs::{AbstractAttributeInfo, AttributeInfoKind, ConstantPoolUtf8Info};
@@ -20,7 +20,7 @@ use crate::util::msg::Msg;
 /// Returns an error if `attribute_name_index` is out of range for `constant_pool`, or if the
 /// constant pool entry at that index is not a `CONSTANT_Utf8_info` entry.
 pub fn get(
-    reader: &mut dyn BinaryReader,
+    reader: &mut dyn LegacyBinaryReader,
     constant_pool: &[AbstractConstantPoolInfoJava],
 ) -> io::Result<AbstractAttributeInfo> {
     let attribute_name_index = reader.read_short(reader.get_pointer_index())?;
@@ -100,7 +100,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -147,7 +147,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader { data: self.data.clone(), pos: new_index })
         }
     }

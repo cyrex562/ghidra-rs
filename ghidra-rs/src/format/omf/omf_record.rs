@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// The common data held by every OMF record.
 ///
@@ -14,7 +14,7 @@ pub struct OmfRecord {
     data: Vec<u8>,
     check_sum: i8,
     record_offset: u64,
-    data_reader: Option<Box<dyn BinaryReader>>,
+    data_reader: Option<Box<dyn LegacyBinaryReader>>,
     data_end: u64,
 }
 
@@ -24,7 +24,7 @@ impl OmfRecord {
     ///
     /// # Errors
     /// Returns `Err` if there was an IO-related error.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let record_offset = reader.get_pointer_index();
 
         let record_type = reader.read_next_unsigned_byte()? as i32;
@@ -73,7 +73,7 @@ impl OmfRecord {
 
     /// Returns a reader positioned at the start of the record's type-specific data, if one is
     /// set.
-    pub fn data_reader_mut(&mut self) -> Option<&mut (dyn BinaryReader + 'static)> {
+    pub fn data_reader_mut(&mut self) -> Option<&mut (dyn LegacyBinaryReader + 'static)> {
         self.data_reader.as_deref_mut()
     }
 
@@ -188,7 +188,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -218,7 +218,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

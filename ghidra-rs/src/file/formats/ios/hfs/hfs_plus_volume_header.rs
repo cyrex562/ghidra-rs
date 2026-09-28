@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// Magic value `'H+'` (`0x482b`) identifying an HFS+ volume header.
@@ -68,7 +68,7 @@ impl HfsPlusVolumeHeader {
     ///
     /// Mirrors Java's `probe`, which swallows I/O errors and reports `false` instead of
     /// propagating them.
-    pub fn probe(reader: &mut dyn BinaryReader) -> bool {
+    pub fn probe(reader: &mut dyn LegacyBinaryReader) -> bool {
         let length = match reader.length() {
             Ok(l) => l,
             Err(_) => return false,
@@ -93,7 +93,7 @@ impl HfsPlusVolumeHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from `reader` fails.
-    pub fn read(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Self::read_at(reader, DEFAULT_OFFSET)
     }
 
@@ -102,7 +102,7 @@ impl HfsPlusVolumeHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from `reader` fails.
-    pub fn read_at(reader: &mut dyn BinaryReader, offset: u64) -> io::Result<Self> {
+    pub fn read_at(reader: &mut dyn LegacyBinaryReader, offset: u64) -> io::Result<Self> {
         reader.set_little_endian(false);
         reader.set_pointer_index(offset);
 
@@ -248,7 +248,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -287,7 +287,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

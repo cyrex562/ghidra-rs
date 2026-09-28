@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::dwarf::dwarf_exception::DWARFException;
 use crate::format::dwarf::dwarf_length_value::DWARFLengthValue;
 
@@ -44,7 +44,7 @@ impl DWARFLocationListHeader {
 
     /// Mirrors `DWARFLocationListHeader.read(BinaryReader, int)`.
     pub fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         default_int_size: i32,
     ) -> io::Result<Option<DWARFLocationListHeader>> {
         // length : dwarf_length
@@ -118,7 +118,7 @@ impl DWARFLocationListHeader {
     }
 
     /// Mirrors `DWARFLocationListHeader.getOffset(int, BinaryReader)`.
-    pub fn get_offset(&self, index: i32, reader: &dyn BinaryReader) -> io::Result<u64> {
+    pub fn get_offset(&self, index: i32, reader: &dyn LegacyBinaryReader) -> io::Result<u64> {
         if index < 0 || index as u32 >= self.offset_entry_count {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -184,7 +184,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -214,7 +214,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
         }
     }

@@ -3,7 +3,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 
@@ -22,7 +22,7 @@ pub struct FieldContext<'a, T: 'static> {
     instance: &'a T,
     field_info: &'a FieldMappingInfo<T>,
     dtc: DtcInfo,
-    reader: Option<Box<dyn BinaryReader>>,
+    reader: Option<Box<dyn LegacyBinaryReader>>,
 }
 
 impl<'a, T: StructureMapped> FieldContext<'a, T> {
@@ -32,7 +32,7 @@ impl<'a, T: StructureMapped> FieldContext<'a, T> {
         instance: &'a T,
         field_info: &'a FieldMappingInfo<T>,
         dtc: DtcInfo,
-        reader: Option<Box<dyn BinaryReader>>,
+        reader: Option<Box<dyn LegacyBinaryReader>>,
     ) -> Self {
         FieldContext { structure_context, instance, field_info, dtc, reader }
     }
@@ -58,13 +58,13 @@ impl<'a, T: StructureMapped> FieldContext<'a, T> {
     }
 
     /// `reader()`: the reader positioned at the field, present only while deserializing.
-    pub fn reader(&self) -> Option<&dyn BinaryReader> {
+    pub fn reader(&self) -> Option<&dyn LegacyBinaryReader> {
         self.reader.as_deref()
     }
 
     /// The field reader, mutably; an error when the context was created without one (Java
     /// would throw a `NullPointerException`).
-    pub fn reader_mut(&mut self) -> io::Result<&mut dyn BinaryReader> {
+    pub fn reader_mut(&mut self) -> io::Result<&mut dyn LegacyBinaryReader> {
         match self.reader.as_deref_mut() {
             Some(r) => Ok(r),
             None => Err(io::Error::other(format!(

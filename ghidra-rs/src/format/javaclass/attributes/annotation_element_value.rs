@@ -27,7 +27,7 @@
 use std::io;
 
 use crate::app::seam_stubs::descriptor_decoder;
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::AnnotationJava;
 use crate::program::model::data::data_type::DataType;
@@ -48,7 +48,7 @@ pub struct AnnotationElementValue {
 impl AnnotationElementValue {
     /// Reads an `element_value` structure starting at the reader's current position, dispatching
     /// on `tag` exactly like `AnnotationElementValue(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let tag = reader.read_next_byte()?;
 
         let mut constant_value_index = 0;
@@ -207,7 +207,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -254,7 +254,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader { data: self.data.clone(), pos: new_index })
         }
     }

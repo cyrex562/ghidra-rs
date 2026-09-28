@@ -36,7 +36,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::seam_stubs::{ElfDynamicType, ElfHeader};
 use crate::util::string_utilities::StringUtilities;
 
@@ -56,7 +56,7 @@ impl ElfDynamic {
     ///
     /// # Errors
     /// Returns `Err` if an IO error occurs during parse.
-    pub fn parse(reader: &mut impl BinaryReader, elf: Arc<dyn ElfHeader>) -> io::Result<Self> {
+    pub fn parse(reader: &mut impl LegacyBinaryReader, elf: Arc<dyn ElfHeader>) -> io::Result<Self> {
         let (d_tag, d_val) = if elf.is32_bit() {
             let d_tag = reader.read_next_int()?;
             let d_val = reader.read_next_unsigned_int()?;
@@ -175,7 +175,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -205,7 +205,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

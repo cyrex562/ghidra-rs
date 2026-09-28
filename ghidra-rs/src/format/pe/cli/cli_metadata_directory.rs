@@ -9,7 +9,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_metadata_root::CliMetadataRoot;
 use crate::format::pe::pe_markupable::PeMarkupable;
@@ -35,7 +35,7 @@ impl CliMetadataDirectory {
     /// subclasses, this constructor does NOT run `processDataDirectory` -- Java's constructor
     /// reads `virtualAddress`/`size` directly and defers everything else (including RVA
     /// validation) to `parse()`.
-    pub fn new(_nt_header: &dyn NTHeader, reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(_nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let virtual_address = reader.read_next_int()?;
         let size = reader.read_next_int()?;
         Ok(CliMetadataDirectory { virtual_address, size, has_parsed: false, metadata_root: None })
@@ -62,7 +62,7 @@ impl CliMetadataDirectory {
     }
 
     /// Port of `CliMetadataDirectory.parse()`.
-    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn BinaryReader) -> io::Result<bool> {
+    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<bool> {
         let ptr = self.get_pointer(nt_header);
         if ptr < 0 || self.size == 0 {
             return Ok(false);
@@ -200,7 +200,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -230,7 +230,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

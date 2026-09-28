@@ -16,7 +16,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::seam_stubs::CliAbstractStream;
 use crate::format::pe::pe_markupable::PeMarkupable;
@@ -51,7 +51,7 @@ pub struct CliStreamHeader {
 impl CliStreamHeader {
     /// Port of `CliStreamHeader(CliMetadataRoot, BinaryReader)`, minus the dropped `metadataRoot`
     /// back-reference (see this module's docs).
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let header_start_index = reader.get_pointer_index();
 
         let offset = reader.read_next_int()?;
@@ -195,7 +195,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -225,7 +225,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

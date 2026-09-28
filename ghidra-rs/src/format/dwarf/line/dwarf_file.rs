@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
 use crate::format::dwarf::line::dwarf_line::DWARFLine;
@@ -45,7 +45,7 @@ impl DWARFFile {
     /// program charset to decode the name; that charset plumbing isn't ported yet, so this reads
     /// the name as UTF-8, which covers the overwhelmingly common ASCII/UTF-8 case.
     pub fn read_v4(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         _cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<Option<DWARFFile>> {
         let name = reader.read_next_utf8_string()?;
@@ -64,7 +64,7 @@ impl DWARFFile {
     /// Reads a DWARFFile entry from a DWARF v5 line program header, using `defs` to describe how
     /// each field is serialized.
     pub fn read_v5(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         defs: &[DWARFLineContentTypeDef],
         dwarf_int_size: i32,
         cu: &dyn DWARFCompilationUnit,
@@ -223,7 +223,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -253,7 +253,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
         }
     }

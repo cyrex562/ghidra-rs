@@ -7,7 +7,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::macho::dyld::dyld_chained_ptr::DyldChainType;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::app::util::importer::message_log::MessageLog;
@@ -73,7 +73,7 @@ impl From<CancelledException> for ChainedFixupError {
 /// * `monitor` - a cancellable monitor
 #[allow(clippy::too_many_arguments)]
 pub fn get_chained_fixups(
-    reader: &dyn BinaryReader,
+    reader: &dyn LegacyBinaryReader,
     chained_imports: Option<&dyn DyldChainedImports>,
     pointer_format: DyldChainType,
     page: i64,
@@ -329,7 +329,7 @@ pub fn fixup_chained_pointers(
 ///
 /// Returns the fixups performed.
 pub fn process_pointer_chain(
-    reader: &dyn BinaryReader,
+    reader: &dyn LegacyBinaryReader,
     chain_start: i64,
     next_off_size: i64,
     imagebase: i64,
@@ -443,7 +443,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -473,7 +473,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,

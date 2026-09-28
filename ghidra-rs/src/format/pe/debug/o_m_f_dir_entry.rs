@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// Represents an Object Module Format (OMF) directory entry.
 ///
@@ -33,7 +33,7 @@ impl OmfDirEntry {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
-    pub fn new(reader: &dyn BinaryReader, index: u64) -> io::Result<Self> {
+    pub fn new(reader: &dyn LegacyBinaryReader, index: u64) -> io::Result<Self> {
         let subsection = reader.read_short(index)?;
         let imod = reader.read_short(index + 2)?;
         let lfo = reader.read_int(index + 4)?;
@@ -128,7 +128,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -167,7 +167,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

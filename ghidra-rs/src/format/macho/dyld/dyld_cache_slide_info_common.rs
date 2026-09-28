@@ -7,7 +7,7 @@ use thiserror::Error;
 
 use crate::app::util::importer::message_log::MessageLog;
 use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
@@ -78,7 +78,7 @@ impl DyldCacheSlideInfoCommonBase {
     /// `slide_info_offset` starts at `0` here; [`parse_slide_info`] sets the real value on the
     /// returned info after construction, matching Java's `parseSlideInfo` doing the same via a
     /// direct field write after the version-specific constructor returns.
-    pub fn new(reader: &mut dyn BinaryReader, mapping_info: DyldCacheMappingInfo) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, mapping_info: DyldCacheMappingInfo) -> io::Result<Self> {
         Ok(DyldCacheSlideInfoCommonBase {
             version: reader.read_next_int()?,
             slide_info_offset: 0,
@@ -157,7 +157,7 @@ struct MemoryRangeBinaryReader {
     current_index: u64,
 }
 
-impl BinaryReader for MemoryRangeBinaryReader {
+impl LegacyBinaryReader for MemoryRangeBinaryReader {
     fn length(&self) -> io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -187,7 +187,7 @@ impl BinaryReader for MemoryRangeBinaryReader {
     fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(MemoryRangeBinaryReader {
             provider: Rc::clone(&self.provider),
             little_endian: self.little_endian,
@@ -244,7 +244,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
     /// Port of the abstract `getSlideFixups(BinaryReader, int, MessageLog, TaskMonitor)`.
     fn get_slide_fixups(
         &self,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         pointer_size: i32,
         log: &MessageLog,
         monitor: &dyn TaskMonitor,
@@ -355,7 +355,7 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
 /// still faithfully reads and validates the version field first, matching Java's behavior up to
 /// that point.
 pub fn parse_slide_info(
-    reader: &mut dyn BinaryReader,
+    reader: &mut dyn LegacyBinaryReader,
     slide_info_offset: i64,
     _mapping_info: &DyldCacheMappingInfo,
     log: &MessageLog,
@@ -436,7 +436,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -466,7 +466,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
@@ -718,7 +718,7 @@ mod tests {
         }
         fn get_slide_fixups(
             &self,
-            _reader: &mut dyn BinaryReader,
+            _reader: &mut dyn LegacyBinaryReader,
             _pointer_size: i32,
             _log: &MessageLog,
             _monitor: &dyn TaskMonitor,

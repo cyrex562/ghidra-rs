@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_locator_kind::CFragLocatorKind;
 use crate::format::macos::cfm::c_frag_usage::CFragUsage;
@@ -62,7 +62,7 @@ impl CFragResourceMember {
     /// `ArrayIndexOutOfBoundsException`; see [`CFragUsage::get`]), and
     /// [`io::ErrorKind::InvalidData`] "Reserved fields contain invalid value(s)." when either
     /// reserved field is non-zero (checked after the whole member is read, as in Java).
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let architecture = reader.read_next_ascii_string_fixed(4)?;
         let reserved_a = reader.read_next_short()?;
         let reserved_b = reader.read_next_byte()? as i8;

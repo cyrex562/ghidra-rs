@@ -27,7 +27,7 @@ const MAX_SANE_BUFFER: usize = usize::MAX - 1024;
 /// Implementors need only supply the small set of required methods below; every other
 /// `BinaryReader` method (peeking, `read_next_*`, string decoding, arrays, ...) is provided as a
 /// default method built on top of them.
-pub trait BinaryReader {
+pub trait LegacyBinaryReader {
     /// Returns the length of the underlying byte provider.
     fn length(&self) -> io::Result<u64>;
 
@@ -58,7 +58,7 @@ pub trait BinaryReader {
 
     /// Returns an independent clone of this reader, sharing the same provider, positioned at
     /// `new_index`.
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader>;
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader>;
 
     // ── default methods ──────────────────────────────────────────────────────
 
@@ -68,19 +68,19 @@ pub trait BinaryReader {
     }
 
     /// Returns an independent clone of this reader positioned at the same index.
-    fn clone_reader(&self) -> Box<dyn BinaryReader> {
+    fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
         self.clone_at(self.get_pointer_index())
     }
 
     /// Returns a clone of this reader forced into big-endian mode.
-    fn as_big_endian(&self) -> Box<dyn BinaryReader> {
+    fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
         let mut clone = self.clone_at(self.get_pointer_index());
         clone.set_little_endian(false);
         clone
     }
 
     /// Returns a clone of this reader forced into little-endian mode.
-    fn as_little_endian(&self) -> Box<dyn BinaryReader> {
+    fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
         let mut clone = self.clone_at(self.get_pointer_index());
         clone.set_little_endian(true);
         clone
@@ -607,7 +607,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -637,7 +637,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
@@ -646,7 +646,7 @@ mod tests {
         }
     }
 
-    fn boxed_reader(data: Vec<u8>, little_endian: bool) -> Box<dyn BinaryReader> {
+    fn boxed_reader(data: Vec<u8>, little_endian: bool) -> Box<dyn LegacyBinaryReader> {
         Box::new(MockReader::new(data, little_endian))
     }
 

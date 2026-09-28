@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use std::io;
 
 /// Represents an entry in a partition table.
@@ -20,7 +20,7 @@ impl PartitionTableEntry {
     ///
     /// # Errors
     /// Returns an I/O error if reading from the reader fails.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let name = reader.read_next_byte_array(16)?;
         let start = reader.read_next_int()?;
         let length = reader.read_next_int()?;
@@ -72,7 +72,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockBinaryReader {
+    impl LegacyBinaryReader for MockBinaryReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -122,7 +122,7 @@ mod tests {
             panic!("not implemented for mock")
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,

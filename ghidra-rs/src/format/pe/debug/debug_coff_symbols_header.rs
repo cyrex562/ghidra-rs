@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::{BinaryReader, SIZEOF_INT};
+use crate::app::util::bin::binary_reader::{LegacyBinaryReader, SIZEOF_INT};
 use crate::format::pe::debug::debug_coff_line_number::DebugCOFFLineNumber;
 use crate::format::pe::debug::debug_coff_symbol_table::DebugCOFFSymbolTable;
 use crate::format::pe::offset_validator::OffsetValidator;
@@ -52,7 +52,7 @@ impl DebugCOFFSymbolsHeader {
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         debug_dir: &dyn DebugDirectory,
         validator: &dyn OffsetValidator,
     ) -> io::Result<Self> {
@@ -231,7 +231,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -270,7 +270,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

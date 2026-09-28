@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_resource_member::CFragResourceMember;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -38,7 +38,7 @@ impl CFragResource {
     ///
     /// Read errors, member errors, and [`io::ErrorKind::InvalidData`] "Reserved fields contain
     /// invalid value(s)." when any reserved word is non-zero.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let reserved_a = reader.read_next_int()?;
         let reserved_b = reader.read_next_int()?;
         let version = reader.read_next_int()?;

@@ -11,7 +11,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::format::macho::commands::load_command_types::get_load_command_name;
 use crate::format::macho::commands::segment_names;
@@ -36,7 +36,7 @@ pub struct LoadCommandBase {
 
 impl LoadCommandBase {
     /// Java: `LoadCommand(BinaryReader reader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let start_index = reader.get_pointer_index();
         let cmd = reader.read_next_int()?;
         let cmdsize = reader.read_next_int()?;
@@ -312,7 +312,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -351,7 +351,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,

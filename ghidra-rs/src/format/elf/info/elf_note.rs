@@ -55,7 +55,7 @@ use std::io;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::elf::info::elf_info_item::{read_item_from_section, ElfInfoItem};
 use crate::framework::options::Options;
@@ -243,7 +243,7 @@ struct ByteArrayBinaryReader {
     current_index: u64,
 }
 
-impl BinaryReader for ByteArrayBinaryReader {
+impl LegacyBinaryReader for ByteArrayBinaryReader {
     fn length(&self) -> io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -273,7 +273,7 @@ impl BinaryReader for ByteArrayBinaryReader {
     fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider) as Rc<RefCell<dyn GByteStore>>
     }
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(ByteArrayBinaryReader {
             provider: Rc::clone(&self.provider),
             is_little_endian: self.is_little_endian,
@@ -308,7 +308,7 @@ impl ElfNoteBase {
     /// Reads a generic [`ElfNoteBase`] instance from the supplied [`BinaryReader`].
     ///
     /// Port of the static `ElfNote.read(BinaryReader)`.
-    pub fn read(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let mut name_len = reader.read_next_unsigned_int_exact()?;
         let desc_len = reader.read_next_unsigned_int_exact()?;
         let vendor_type = reader.read_next_int()?;
@@ -380,7 +380,7 @@ impl ElfNoteBase {
     /// Returns a [`BinaryReader`] that reads from this note's description blob.
     ///
     /// Port of `ElfNote.getDescriptionReader(boolean)`.
-    pub fn get_description_reader(&self, is_little_endian: bool) -> Box<dyn BinaryReader> {
+    pub fn get_description_reader(&self, is_little_endian: bool) -> Box<dyn LegacyBinaryReader> {
         let provider = VecByteProvider(self.description.clone().unwrap_or_default());
         Box::new(ByteArrayBinaryReader {
             provider: Rc::new(RefCell::new(provider)),

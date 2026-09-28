@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use std::io;
 
 /// A relocation entry for an internal fixed or moveable segment reference.
@@ -21,7 +21,7 @@ impl RelocationInternalRef {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let segment = reader.read_next_byte()? as i8;
         let zeropad = reader.read_next_byte()? as i8;
         let offset = reader.read_next_short()?;
@@ -116,7 +116,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -146,7 +146,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

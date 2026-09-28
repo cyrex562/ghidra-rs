@@ -13,7 +13,7 @@ use crate::format::golang::rtti::types::go_slice_type::GoSliceType;
 use crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType;
 use crate::format::golang::structmapping::test_support::{byte_reader, simple, structure, test_mapper, TagContext};
 use crate::format::golang::structmapping::{DataTypeMapper, StructureMapped};
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::golang::go_ver::GoVer;
 use crate::format::seam_stubs::{GoModuledata, GoName, GoRttiMapper, GoSlice, GoSymbolName, GoTypeManager};
 use crate::program::database::sourcemap::SourceFile;
@@ -259,7 +259,7 @@ impl GoRttiMapper for VersionOnlyRtti {
     fn get_data_address(&self, _offset: i64) -> Address {
         unimplemented!("unused by VersionOnlyRtti callers")
     }
-    fn get_reader(&self, _position: i64) -> Box<dyn BinaryReader> {
+    fn get_reader(&self, _position: i64) -> Box<dyn LegacyBinaryReader> {
         unimplemented!("unused by VersionOnlyRtti callers")
     }
     fn find_containing_module_by_func_data(&self, _offset: i64) -> Option<Box<dyn GoModuledata>> {

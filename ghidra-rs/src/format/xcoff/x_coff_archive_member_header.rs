@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 const AR_SIZE_LEN: usize = 20;
 const AR_NXTMEM_LEN: usize = 20;
@@ -38,7 +38,7 @@ impl XCoffArchiveMemberHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let ar_size = reader.read_next_byte_array(AR_SIZE_LEN)?;
         let ar_nxtmem = reader.read_next_byte_array(AR_NXTMEM_LEN)?;
         let ar_prvmem = reader.read_next_byte_array(AR_PRVMEM_LEN)?;
@@ -198,7 +198,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -237,7 +237,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

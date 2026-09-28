@@ -46,7 +46,7 @@ impl DWARFExpression {
     ) -> Result<DWARFExpression, DWARFExpressionException> {
         Err(DWARFExpressionException::new(
             "DWARFExpression.read is not yet implemented (DWARFExpressionInstruction::read and a \
-             concrete BinaryReader have not been ported)",
+             concrete LegacyBinaryReader have not been ported)",
         ))
     }
 

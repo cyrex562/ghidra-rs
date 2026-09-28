@@ -35,7 +35,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::elf::elf_section_header_constants::{
     SHN_HIPROC, SHN_LOPROC, SHN_LORESERVE, SHN_UNDEF,
 };
@@ -139,7 +139,7 @@ impl ElfSymbol {
     /// # Errors
     /// Returns `Err` if an IO error occurs during parse.
     pub fn parse(
-        reader: &mut impl BinaryReader,
+        reader: &mut impl LegacyBinaryReader,
         symbol_index: u32,
         header: &impl ElfHeader,
     ) -> io::Result<Self> {
@@ -199,7 +199,7 @@ impl ElfSymbol {
     /// # Arguments
     /// * `reader` - reader to read from (position remains unchanged)
     /// * `string_table` - string table used to resolve the name
-    pub fn init_symbol_name(&mut self, reader: &dyn BinaryReader, string_table: &impl ElfStringTable) {
+    pub fn init_symbol_name(&mut self, reader: &dyn LegacyBinaryReader, string_table: &impl ElfStringTable) {
         if self.name_as_string.is_none() {
             self.name_as_string = Some(string_table.read_string(reader, self.st_name as i64));
         }
@@ -478,7 +478,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -508,7 +508,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
@@ -563,7 +563,7 @@ mod tests {
     }
 
     impl ElfStringTable for MockStringTable {
-        fn read_string(&self, reader: &dyn BinaryReader, string_offset: i64) -> String {
+        fn read_string(&self, reader: &dyn LegacyBinaryReader, string_offset: i64) -> String {
             reader.read_ascii_string(self.offset + string_offset as u64).unwrap()
         }
     }

@@ -47,7 +47,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::debug::debug_coff_symbol::DebugCOFFSymbol;
 use crate::format::pe::machine_constants::{
@@ -121,7 +121,7 @@ pub struct FileHeader {
 impl FileHeader {
     /// Port of `FileHeader(BinaryReader, int, NTHeader)` + `parse()`. See this module's docs for
     /// why `process_symbols` is called here rather than externally by `NTHeader`.
-    pub fn new(reader: &mut dyn BinaryReader, start_index: i64, nt_header: &dyn NTHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, start_index: i64, nt_header: &dyn NTHeader) -> io::Result<Self> {
         reader.set_pointer_index(start_index as u64);
 
         let machine = reader.read_next_short()?;
@@ -266,7 +266,7 @@ impl FileHeader {
     }
 
     /// Port of `FileHeader.processSymbols()`.
-    fn process_symbols(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn BinaryReader) -> io::Result<()> {
+    fn process_symbols(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<()> {
         if nt_header.is_rva_resoltion_section_aligned() {
             // Symbol table offsets are only valid when parsing from file, not memory.
             return Ok(());
@@ -331,7 +331,7 @@ impl FileHeader {
     }
 
     /// Port of `FileHeader.getStringTableOffset()`.
-    fn get_string_table_offset(&self, nt_header: &dyn NTHeader, reader: &dyn BinaryReader) -> io::Result<i64> {
+    fn get_string_table_offset(&self, nt_header: &dyn NTHeader, reader: &dyn LegacyBinaryReader) -> io::Result<i64> {
         if nt_header.is_rva_resoltion_section_aligned() {
             // String table offsets are only valid when parsing from file, not memory.
             return Ok(-1);
@@ -419,7 +419,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -449,7 +449,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

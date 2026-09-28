@@ -314,7 +314,7 @@ mod tests {
         fn get_reader(
             &self,
             _position: i64,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+        ) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
             unimplemented!()
         }
 

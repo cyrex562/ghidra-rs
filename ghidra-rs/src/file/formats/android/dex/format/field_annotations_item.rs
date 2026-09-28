@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::dex_header::DexHeader;
 use crate::file::seam_stubs::{AnnotationSetItem, DexUtil};
@@ -25,7 +25,7 @@ impl FieldAnnotationsItem {
     ///
     /// # Errors
     /// Returns an I/O error if reading from the reader fails.
-    pub fn new(reader: &mut dyn BinaryReader, dex_header: &DexHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, dex_header: &DexHeader) -> io::Result<Self> {
         let field_index = reader.read_next_int()?;
         let annotations_offset = reader.read_next_int()?;
 
@@ -89,7 +89,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockBinaryReader {
+    impl LegacyBinaryReader for MockBinaryReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -136,7 +136,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,
@@ -147,14 +147,14 @@ mod tests {
             !self.is_little_endian()
         }
 
-        fn clone_reader(&self) -> Box<dyn BinaryReader> {
+        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: self.position,
             })
         }
 
-        fn as_big_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
             let mut cloned = Self {
                 bytes: self.bytes.clone(),
                 position: self.position,
@@ -163,7 +163,7 @@ mod tests {
             Box::new(cloned)
         }
 
-        fn as_little_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
             let mut cloned = Self {
                 bytes: self.bytes.clone(),
                 position: self.position,

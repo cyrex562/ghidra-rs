@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::format::dwarf::dwarf_location::DWARFLocation;
@@ -42,7 +42,7 @@ impl DWARFLocationList {
     ///
     /// Mirrors `DWARFLocationList.readV4(BinaryReader, DWARFCompilationUnit)`.
     pub fn read_v4(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<DWARFLocationList> {
         let mut results = Vec::new();
@@ -89,7 +89,7 @@ impl DWARFLocationList {
     ///
     /// Mirrors `DWARFLocationList.readV5(BinaryReader, DWARFCompilationUnit)`.
     pub fn read_v5(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<DWARFLocationList> {
         let mut base_addr = cu.get_pc_range().from();
@@ -198,7 +198,7 @@ impl DWARFLocationList {
     /// Reader func that reads a uleb128-length prefixed byte array.
     ///
     /// Mirrors `DWARFLocationList.uleb128SizedByteArray(BinaryReader)`.
-    fn uleb128_sized_byte_array(reader: &mut dyn BinaryReader) -> io::Result<Vec<u8>> {
+    fn uleb128_sized_byte_array(reader: &mut dyn LegacyBinaryReader) -> io::Result<Vec<u8>> {
         let len = LEB128Info::unsigned(reader)?.as_u_int32()?;
         if len > DWARFExpression::MAX_SANE_EXPR as u32 {
             return Err(io::Error::new(
@@ -272,7 +272,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -302,7 +302,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
         }
     }
@@ -310,7 +310,7 @@ mod tests {
     struct MockDIEContainer;
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn BinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
             None
         }
 

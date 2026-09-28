@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::ne::resource_string_table::ResourceStringTable;
 use crate::format::seam_stubs::Resource;
 
@@ -99,7 +99,7 @@ impl ResourceType {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn BinaryReader, alignment_shift_count: i16) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, alignment_shift_count: i16) -> io::Result<Self> {
         let type_id = reader.read_next_short()?;
         if type_id == 0 {
             // not a valid resource type...
@@ -231,7 +231,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -261,7 +261,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 current_index: new_index,

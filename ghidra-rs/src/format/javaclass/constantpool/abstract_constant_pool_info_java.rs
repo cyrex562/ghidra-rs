@@ -4,7 +4,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// Base class for all constant pool entries in Java class files.
 ///
@@ -43,7 +43,7 @@ impl AbstractConstantPoolInfoJava {
     ///
     /// # Errors
     /// Returns an IO error if reading from the reader fails.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let offset = reader.get_pointer_index();
         let tag = reader.read_next_byte()?;
         Ok(AbstractConstantPoolInfoJava { offset, tag })
@@ -75,7 +75,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -127,7 +127,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             let mut clone = MockReader {
                 data: self.data.clone(),
                 pos: new_index,

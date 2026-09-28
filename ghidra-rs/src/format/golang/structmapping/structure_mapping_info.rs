@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure::Structure;
 use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
@@ -153,7 +153,7 @@ impl<T: StructureMapped> StructureMappingInfo<T> {
         context: &StructureContext<T>,
         instance: &mut T,
         mapper: &DataTypeMapper,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
     ) -> io::Result<()> {
         if let Some(read_self) = self.descriptor.read_structure {
             read_self(instance, reader, mapper)?;

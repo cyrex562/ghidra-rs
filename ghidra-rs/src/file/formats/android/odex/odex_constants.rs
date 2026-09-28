@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// ODEX (OAT DEX) file format constants.
 ///
@@ -27,7 +27,7 @@ impl OdexConstants {
     /// Checks if the given reader starts with an ODEX magic number.
     ///
     /// Returns true if the reader's contents start with ODEX_MAGIC_35 or ODEX_MAGIC_36.
-    pub fn is_odex_file(reader: &dyn BinaryReader) -> bool {
+    pub fn is_odex_file(reader: &dyn LegacyBinaryReader) -> bool {
         match reader.read_byte_array(0, Self::ODEX_MAGIC_LENGTH) {
             Ok(bytes) => {
                 let magic = String::from_utf8_lossy(&bytes).into_owned();
@@ -59,7 +59,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -100,7 +100,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             panic!("not implemented for mock")
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,

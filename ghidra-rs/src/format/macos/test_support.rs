@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// A big-endian (by default) reader over an owned byte vector.
@@ -25,7 +25,7 @@ impl VecReader {
     }
 }
 
-impl BinaryReader for VecReader {
+impl LegacyBinaryReader for VecReader {
     fn length(&self) -> io::Result<u64> {
         Ok(self.bytes.len() as u64)
     }
@@ -70,7 +70,7 @@ impl BinaryReader for VecReader {
         panic!("VecReader has no byte provider")
     }
 
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(Self { bytes: self.bytes.clone(), position: new_index, little_endian: self.little_endian })
     }
 }

@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::coff::coff_constants;
 use crate::format::coff::coff_symbol_aux::CoffSymbolAux;
@@ -47,7 +47,7 @@ impl CoffSymbol {
     /// [`CoffFileHeader::parse`](crate::format::coff::coff_file_header::CoffFileHeader::parse)
     /// calls this constructor.
     pub fn new(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         symbol_table_pointer: i32,
         symbol_table_entries: i32,
     ) -> io::Result<Self> {
@@ -256,7 +256,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -286,7 +286,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

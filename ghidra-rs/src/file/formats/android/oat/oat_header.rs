@@ -23,7 +23,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::file::formats::android::oat::bundle::OatBundle;
 use crate::file::formats::android::oat::oat_constants::OatConstants;
@@ -72,7 +72,7 @@ impl OatHeaderBase {
     /// Reads the MAGIC and VERSION fields.
     ///
     /// Port of the protected `OatHeader(BinaryReader)` constructor.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let magic_bytes = reader.read_next_byte_array(OatConstants::MAGIC.len())?;
         let magic = String::from_utf8_lossy(&magic_bytes).into_owned();
         let version = reader.read_next_ascii_string_fixed(4)?;
@@ -102,7 +102,7 @@ pub trait OatHeader: StructConverter {
     /// Returns the binary offset to the DEX files.
     ///
     /// Port of `getOatDexFilesOffset(BinaryReader)`.
-    fn get_oat_dex_files_offset(&self, reader: &dyn BinaryReader) -> i32;
+    fn get_oat_dex_files_offset(&self, reader: &dyn LegacyBinaryReader) -> i32;
 
     /// Returns the number of DEX files embedded inside this OAT file.
     ///
@@ -156,7 +156,7 @@ pub trait OatHeader: StructConverter {
     /// `UnsupportedOatVersionException`, but nothing in this method's body can actually raise
     /// one -- only `OatDexFileFactory.getOatDexFile` is called, and it only throws
     /// `IOException` -- so this returns a plain [`io::Result`].
-    fn parse(&mut self, reader: &mut dyn BinaryReader, bundle: &dyn OatBundle) -> io::Result<()> {
+    fn parse(&mut self, reader: &mut dyn LegacyBinaryReader, bundle: &dyn OatBundle) -> io::Result<()> {
         let target = self.get_key_value_store_size();
         let mut count = 0i32;
         while count < target {
@@ -214,7 +214,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for BytesReader {
+    impl LegacyBinaryReader for BytesReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -254,7 +254,7 @@ mod tests {
         ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not needed for this test")
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(BytesReader {
                 bytes: self.bytes.clone(),
                 position: new_index,
@@ -304,7 +304,7 @@ mod tests {
         fn base_mut(&mut self) -> &mut OatHeaderBase {
             &mut self.base
         }
-        fn get_oat_dex_files_offset(&self, _reader: &dyn BinaryReader) -> i32 {
+        fn get_oat_dex_files_offset(&self, _reader: &dyn LegacyBinaryReader) -> i32 {
             self.dex_files_offset
         }
         fn get_dex_file_count(&self) -> i32 {

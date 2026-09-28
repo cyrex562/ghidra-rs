@@ -7,7 +7,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::objc::objc_method_type::ObjcMethodType;
 use crate::format::objc::objc_state::ObjcState;
 use crate::format::seam_stubs::ObjcUtils;
@@ -27,7 +27,7 @@ impl ObjcMethodBase {
     /// Java: `ObjcMethod(Program program, ObjcState state, BinaryReader reader,
     /// ObjcMethodType methodType)` constructor. Constructs an ObjcMethodBase, reading the
     /// method type from the provided parameters.
-    pub fn new(_program: &dyn Program, _state: &ObjcState, _reader: &mut dyn BinaryReader,
+    pub fn new(_program: &dyn Program, _state: &ObjcState, _reader: &mut dyn LegacyBinaryReader,
         method_type: ObjcMethodType) -> io::Result<Self> {
         Ok(ObjcMethodBase {
             method_type,

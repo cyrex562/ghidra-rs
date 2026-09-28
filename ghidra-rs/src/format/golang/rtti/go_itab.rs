@@ -353,7 +353,7 @@ mod tests {
             &self,
             _element_size: i32,
             _element_index: i32,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+        ) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
             unimplemented!()
         }
     }
@@ -509,7 +509,7 @@ mod tests {
         fn get_reader(
             &self,
             _position: i64,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+        ) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
             unimplemented!()
         }
 

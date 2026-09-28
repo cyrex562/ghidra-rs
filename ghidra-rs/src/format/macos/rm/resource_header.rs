@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry::{Entry, EntryBase};
 use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
@@ -35,7 +35,7 @@ impl ResourceHeader {
     /// Port of `ResourceHeader(ByteProvider)`, which wraps the provider in a fresh big-endian
     /// `BinaryReader`. Here the caller passes the reader over the provider; it is switched to
     /// big-endian and repositioned to 0 to match.
-    pub fn from_reader(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         reader.set_little_endian(false);
         reader.set_pointer_index(0);
         let length = reader.length()? as i32;
@@ -46,7 +46,7 @@ impl ResourceHeader {
     /// points to. The reader is left just past the 16-byte header.
     ///
     /// Port of `ResourceHeader(BinaryReader, EntryDescriptor)`.
-    pub fn new(reader: &mut dyn BinaryReader, entry: EntryDescriptor) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, entry: EntryDescriptor) -> io::Result<Self> {
         Self::read(reader, entry, false)
     }
 
@@ -56,7 +56,7 @@ impl ResourceHeader {
     /// Port of the package-private `ResourceHeader(BinaryReader, EntryDescriptor, boolean)`
     /// constructor (the shallow form is what a [`ResourceMap`] uses for its header copy).
     pub(crate) fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         entry: EntryDescriptor,
         only_do_shallow_parsing: bool,
     ) -> io::Result<Self> {

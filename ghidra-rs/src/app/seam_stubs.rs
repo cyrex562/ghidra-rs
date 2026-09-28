@@ -37,7 +37,7 @@ use crate::trace::model::trace_location::TraceLocation;
 use crate::util::task::TaskMonitor;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 use crate::util::seam_stubs::ResourceFile;
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::program::model::address::AddressSpace;
@@ -5350,7 +5350,7 @@ struct MemoryBinaryReader {
     little_endian: bool,
 }
 
-impl BinaryReader for MemoryBinaryReader {
+impl LegacyBinaryReader for MemoryBinaryReader {
     fn length(&self) -> io::Result<u64> {
         Ok(u64::MAX)
     }
@@ -5395,7 +5395,7 @@ impl BinaryReader for MemoryBinaryReader {
         }))
     }
 
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(MemoryBinaryReader {
             memory: self.memory.clone(),
             space: self.space.clone(),

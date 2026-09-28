@@ -31,7 +31,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::class_def_item::ClassDefItem;
 use crate::file::formats::android::dex::format::dex_constants::DexConstants;
@@ -101,7 +101,7 @@ pub struct DexHeader {
 
 impl DexHeader {
     /// Port of `DexHeader(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Self::new_with_magic_check(reader, Self::check_magic)
     }
 
@@ -113,7 +113,7 @@ impl DexHeader {
     /// not-yet-constructed subclass, so this hook is the equivalent seam: `CDexHeader::new`
     /// calls this with its own magic check instead of [`check_magic`](Self::check_magic).
     pub fn new_with_magic_check(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         check_magic: impl FnOnce(&[u8]) -> io::Result<()>,
     ) -> io::Result<Self> {
         let magic = reader.read_next_byte_array(DexConstants::DEX_MAGIC_BASE.len())?;
@@ -186,7 +186,7 @@ impl DexHeader {
 
     /// Port of `DexHeader.parse(BinaryReader)`. See the module docs for what is and isn't
     /// populated.
-    pub fn parse(&mut self, reader: &mut dyn BinaryReader) -> io::Result<()> {
+    pub fn parse(&mut self, reader: &mut dyn LegacyBinaryReader) -> io::Result<()> {
         if self.parsed {
             return Ok(());
         }
@@ -352,7 +352,7 @@ impl DexHeader {
             bytes: Vec<u8>,
             position: usize,
         }
-        impl BinaryReader for BytesReader {
+        impl LegacyBinaryReader for BytesReader {
             fn length(&self) -> io::Result<u64> {
                 Ok(self.bytes.len() as u64)
             }
@@ -388,7 +388,7 @@ impl DexHeader {
             fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
                 unimplemented!("not exercised by this fixture")
             }
-            fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+            fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
                 Box::new(BytesReader { bytes: self.bytes.clone(), position: new_index as usize })
             }
         }
@@ -471,7 +471,7 @@ mod tests {
         bytes: Vec<u8>,
         position: usize,
     }
-    impl BinaryReader for BytesReader {
+    impl LegacyBinaryReader for BytesReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -507,7 +507,7 @@ mod tests {
         fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not exercised by these tests")
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(BytesReader { bytes: self.bytes.clone(), position: new_index as usize })
         }
     }

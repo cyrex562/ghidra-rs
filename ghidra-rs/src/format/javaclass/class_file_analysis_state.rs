@@ -12,7 +12,7 @@ use std::io;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::seam_stubs::{
     ClassFileJava, JavaClassUtil, MemoryByteProvider, MethodInfoJava, TransientPropertyScope,
@@ -41,7 +41,7 @@ impl ProviderBinaryReader {
     }
 }
 
-impl BinaryReader for ProviderBinaryReader {
+impl LegacyBinaryReader for ProviderBinaryReader {
     fn length(&self) -> io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -80,7 +80,7 @@ impl BinaryReader for ProviderBinaryReader {
         Rc::clone(&self.provider)
     }
 
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(ProviderBinaryReader {
             provider: Rc::clone(&self.provider),
             is_little_endian: self.is_little_endian,

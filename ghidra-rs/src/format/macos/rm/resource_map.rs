@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry::Entry;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -43,7 +43,7 @@ impl ResourceMap {
     /// type list. The reader is left just past the map's fixed 30-byte header.
     ///
     /// Port of the package-private `ResourceMap(BinaryReader, ResourceHeader)` constructor.
-    pub fn new(reader: &mut dyn BinaryReader, header: &ResourceHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, header: &ResourceHeader) -> io::Result<Self> {
         let map_start_index = reader.get_pointer_index();
 
         let copy =
@@ -85,7 +85,7 @@ impl ResourceMap {
     /// prefixed by its own count).
     fn parse_resource_type_list(
         &self,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         header: &ResourceHeader,
     ) -> io::Result<Vec<ResourceType>> {
         let start = self.map_start_index as i64 + i64::from(self.resource_type_list_offset) + 2;
@@ -98,7 +98,7 @@ impl ResourceMap {
     /// names until the end of the input, keyed by their offset from the start of the name list.
     fn parse_resource_name_list(
         &self,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
     ) -> io::Result<HashMap<i16, String>> {
         let start = self.map_start_index as i64 + i64::from(self.resource_name_list_offset);
         reader.set_pointer_index(start as u64);

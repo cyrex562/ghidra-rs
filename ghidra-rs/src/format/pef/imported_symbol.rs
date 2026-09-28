@@ -3,7 +3,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pef::abstract_symbol::{AbstractSymbol, PEF_WEAK_IMPORT_SYM_MASK};
 use crate::format::pef::loader_info_header::LoaderInfoHeader;
@@ -30,7 +30,7 @@ impl ImportedSymbol {
     /// `loader`'s loader string table.
     ///
     /// Port of `ImportedSymbol(BinaryReader, LoaderInfoHeader)`.
-    pub fn new(reader: &mut dyn BinaryReader, loader: &LoaderInfoHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, loader: &LoaderInfoHeader) -> io::Result<Self> {
         let value = reader.read_next_int()?;
 
         // `((value & 0xff000000) >> 24) & 0xff` in Java: the intermediate `>>` is an *arithmetic*
@@ -114,7 +114,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -152,7 +152,7 @@ mod tests {
         ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not needed by ImportedSymbol tests")
         }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by ImportedSymbol tests")
         }
     }

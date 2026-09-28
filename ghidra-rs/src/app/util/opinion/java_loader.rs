@@ -109,7 +109,7 @@ impl JavaClassBinaryReader {
     }
 }
 
-impl crate::app::util::bin::binary_reader::BinaryReader for JavaClassBinaryReader {
+impl crate::app::util::bin::binary_reader::LegacyBinaryReader for JavaClassBinaryReader {
     fn length(&self) -> io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -148,7 +148,7 @@ impl crate::app::util::bin::binary_reader::BinaryReader for JavaClassBinaryReade
         Rc::clone(&self.provider)
     }
 
-    fn clone_at(&self, new_index: u64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
         Box::new(JavaClassBinaryReader {
             provider: Rc::clone(&self.provider),
             is_little_endian: self.is_little_endian,
@@ -216,7 +216,7 @@ impl JavaLoader {
     /// `JavaLoader.checkClass(GByteStore)`.
     fn check_class(provider: &Rc<RefCell<dyn GByteStore>>) -> io::Result<bool> {
         let mut reader = JavaClassBinaryReader::new(Rc::clone(provider), false);
-        let magic = crate::app::util::bin::binary_reader::BinaryReader::peek_next_int(&reader)?;
+        let magic = crate::app::util::bin::binary_reader::LegacyBinaryReader::peek_next_int(&reader)?;
         if magic != MAGIC as i32 {
             return Ok(false);
         }
@@ -314,7 +314,7 @@ impl JavaLoader {
         &self,
         program: &dyn Program,
         provider: &Rc<RefCell<dyn GByteStore>>,
-        reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         class_file: &ClassFileJava,
         monitor: &dyn TaskMonitor,
     ) {
@@ -409,7 +409,7 @@ impl JavaLoader {
     /// unchecked cast to `ConstantPoolUtf8Info` would throw (bad index or a read failure),
     /// aborting the caller's loop exactly as an uncaught `ClassCastException`/`IOException` would.
     fn method_display_name(
-        reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         constant_pool: &[AbstractConstantPoolInfoJava],
         method: &MethodInfoJava,
     ) -> Option<String> {
@@ -617,7 +617,7 @@ mod tests {
 
         let provider = provider_with(data.clone());
         let mut reader = JavaClassBinaryReader::new(provider, false);
-        crate::app::util::bin::binary_reader::BinaryReader::set_pointer_index(
+        crate::app::util::bin::binary_reader::LegacyBinaryReader::set_pointer_index(
             &mut reader,
             offset as u64,
         );

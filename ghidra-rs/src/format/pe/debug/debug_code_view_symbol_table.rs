@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 use super::debug_code_view_constants as cv;
 use super::o_m_f_dir_entry::OmfDirEntry;
@@ -50,7 +50,7 @@ impl DebugCodeViewSymbolTable {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
-    pub fn is_match(reader: &dyn BinaryReader, ptr: u64) -> io::Result<bool> {
+    pub fn is_match(reader: &dyn LegacyBinaryReader, ptr: u64) -> io::Result<bool> {
         // Read the value out as big endian, mirroring the Java implementation's
         // byte-by-byte reconstruction (including its signed-byte promotion).
         let b0 = reader.read_byte(ptr)? as i8 as i32;
@@ -79,7 +79,7 @@ impl DebugCodeViewSymbolTable {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
-    pub fn new(reader: &dyn BinaryReader, _size: i32, base: i32, ptr: i32) -> io::Result<Self> {
+    pub fn new(reader: &dyn LegacyBinaryReader, _size: i32, base: i32, ptr: i32) -> io::Result<Self> {
         let magic = reader.read_byte_array(ptr as u32 as u64, 4)?;
         let ptr = ptr.wrapping_add(4);
 
@@ -260,7 +260,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -299,7 +299,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

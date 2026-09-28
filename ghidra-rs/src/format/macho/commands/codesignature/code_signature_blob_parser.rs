@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::seam_stubs::CodeSignatureGenericBlob;
 use std::io;
 
@@ -10,7 +10,7 @@ use super::code_signature_constants::*;
 /// Based on the magic value, it determines the blob type and constructs the appropriate instance.
 ///
 /// See <https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/kern/cs_blobs.h>
-pub fn parse(reader: &mut dyn BinaryReader) -> io::Result<Box<dyn CodeSignatureGenericBlob>> {
+pub fn parse(reader: &mut dyn LegacyBinaryReader) -> io::Result<Box<dyn CodeSignatureGenericBlob>> {
     let magic = reader.peek_next_int()? as u32;
     match magic {
         CSMAGIC_EMBEDDED_SIGNATURE => {
@@ -48,7 +48,7 @@ mod tests {
         magic: i32,
     }
 
-    impl BinaryReader for MockBinaryReader {
+    impl LegacyBinaryReader for MockBinaryReader {
         fn length(&self) -> io::Result<u64> {
             Ok(1024)
         }
@@ -86,7 +86,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!()
         }
 
@@ -94,15 +94,15 @@ mod tests {
             false
         }
 
-        fn clone_reader(&self) -> Box<dyn BinaryReader> {
+        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!()
         }
 
-        fn as_big_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!()
         }
 
-        fn as_little_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!()
         }
 

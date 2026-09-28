@@ -367,7 +367,7 @@ mod tests {
         }
     }
 
-    impl crate::app::util::bin::binary_reader::BinaryReader for VecReader {
+    impl crate::app::util::bin::binary_reader::LegacyBinaryReader for VecReader {
         fn length(&self) -> std::io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -396,7 +396,7 @@ mod tests {
         {
             std::rc::Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
             Box::new(VecReader { provider: std::rc::Rc::clone(&self.provider), current_index: new_index })
         }
     }

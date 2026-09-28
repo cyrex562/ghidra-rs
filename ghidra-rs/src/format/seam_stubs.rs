@@ -6,7 +6,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
@@ -338,7 +338,7 @@ impl Resource {
     pub const FLAG_PRELOAD: i16 = 0x0040;
 
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         alignment_shift_count: i16,
     ) -> std::io::Result<Self> {
         let file_offset = reader.read_next_short()?;
@@ -423,7 +423,7 @@ pub struct SegmentTable {
 
 impl SegmentTable {
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         base_addr: Option<&crate::program::model::address::segmented_address::SegmentedAddress>,
         index: u64,
         segment_count: i16,
@@ -917,7 +917,7 @@ impl ElfDefaultGotPltMarkup {
 pub trait ElfStringTable: Send + Sync {
     fn read_string(
         &self,
-        reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         string_offset: i64,
     ) -> String;
 }
@@ -1481,7 +1481,7 @@ impl RebaseTable {
     /// Port of `RebaseTable(BinaryReader, MachHeader, long)`. See the struct's own docs: the
     /// REBASE-opcode state machine is not ported, so this does not actually read `reader`.
     pub fn parse(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         header: &dyn MachHeader,
         table_size: i64,
     ) -> std::io::Result<Self> {
@@ -1523,7 +1523,7 @@ impl BindingTable {
     /// Port of `BindingTable(BinaryReader, MachHeader, long, boolean)`. See [`RebaseTable::parse`]:
     /// the opcode state machine is not ported, so this does not actually read `reader`.
     pub fn parse(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         header: &dyn MachHeader,
         table_size: i64,
         is_lazy: bool,
@@ -1866,8 +1866,8 @@ pub struct LinkEditDataCommand {
 impl LinkEditDataCommand {
     /// `LinkEditDataCommand(BinaryReader, BinaryReader)`.
     pub fn new(
-        load_command_reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
-        data_reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        load_command_reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        data_reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> std::io::Result<Self> {
         let base = crate::format::macho::commands::load_command::LoadCommandBase::new(
             load_command_reader,
@@ -1939,7 +1939,7 @@ pub struct DyldChainedFixupHeader {
 impl DyldChainedFixupHeader {
     /// `DyldChainedFixupHeader(BinaryReader)`.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> std::io::Result<Self> {
         let ptr_index = reader.get_pointer_index();
 
@@ -2066,7 +2066,7 @@ pub struct DyldChainedStartsInImage {
 impl DyldChainedStartsInImage {
     /// `DyldChainedStartsInImage(BinaryReader)`.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> std::io::Result<Self> {
         let ptr_index = reader.get_pointer_index();
 
@@ -2134,7 +2134,7 @@ pub struct DyldChainedStartsInSegment {
 impl DyldChainedStartsInSegment {
     /// `DyldChainedStartsInSegment(BinaryReader)`.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> std::io::Result<Self> {
         let size = reader.read_next_int()?;
         let page_size = reader.read_next_short()?;
@@ -2253,7 +2253,7 @@ pub struct ImportedLibrary {
 impl ImportedLibrary {
     /// Port of `ImportedLibrary(BinaryReader, LoaderInfoHeader)`, minus the name lookup.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         _loader: &crate::format::pef::loader_info_header::LoaderInfoHeader,
     ) -> std::io::Result<Self> {
         Ok(ImportedLibrary {
@@ -2317,7 +2317,7 @@ impl ExportedSymbol {
     /// Port of `ExportedSymbol(BinaryReader, LoaderInfoHeader, ExportedSymbolKey)`, minus the
     /// name lookup.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         _loader: &crate::format::pef::loader_info_header::LoaderInfoHeader,
         _key: &crate::format::pef::exported_symbol_key::ExportedSymbolKey,
     ) -> std::io::Result<Self> {
@@ -2361,7 +2361,7 @@ impl RelocationFactory {
     /// Always panics: none of the ten `Reloc*` relocation-opcode subclasses this dispatches to
     /// are ported yet, so there is nothing to construct/match against.
     pub fn get_relocation(
-        _reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        _reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> crate::program::model::reloc::relocation::Relocation {
         unimplemented!("RelocationFactory.getRelocation: PEF Reloc* opcode subclasses not yet ported")
     }
@@ -2688,7 +2688,7 @@ impl AbstractAttributeInfo {
     /// skips over it directly so the reader ends up correctly positioned at the start of the next
     /// attribute, matching where a real subclass constructor would have left it.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         kind: AttributeInfoKind,
     ) -> std::io::Result<Self> {
         let offset = reader.get_pointer_index();
@@ -2746,7 +2746,7 @@ impl ConstantPoolUtf8Info {
     /// byte). Caller must have already verified `entry.get_tag() ==
     /// constant_pool_tags_java::CONSTANT_UTF8`.
     pub fn from_entry(
-        reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
         entry: &crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava,
     ) -> std::io::Result<Self> {
         let length = reader.read_unsigned_short(entry.get_offset() + 1)? as usize;
@@ -2779,7 +2779,7 @@ pub struct AnnotationJava {
 impl AnnotationJava {
     /// Reads the `annotation` header, mirroring `AnnotationJava(BinaryReader)`.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> std::io::Result<Self> {
         let type_index = reader.read_next_unsigned_short()?;
         let number_of_element_value_pairs = reader.read_next_unsigned_short()?;
@@ -2984,7 +2984,7 @@ impl ClassFileJava {
     /// Mirrors `ClassFileJava(BinaryReader)`. See the type-level doc for why this does not yet
     /// parse the class file format.
     pub fn new(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> std::io::Result<Self> {
         let _ = reader;
         Ok(ClassFileJava { constant_pool: Vec::new(), methods: Vec::new() })
@@ -3139,7 +3139,7 @@ pub trait DWARFCompilationUnit: Send + Sync {
 /// `DWARFCompilationUnit` is ported and this call site is updated to its real factory method.
 pub fn dwarf_compilation_unit_read_v4(
     partial: crate::format::dwarf::dwarf_unit_header::DWARFUnitHeader,
-    _reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    _reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
 ) -> std::io::Result<Box<dyn DWARFCompilationUnit>> {
     let _ = partial;
     Err(std::io::Error::new(
@@ -3152,7 +3152,7 @@ pub fn dwarf_compilation_unit_read_v4(
 /// counterpart of [`dwarf_compilation_unit_read_v4`].
 pub fn dwarf_compilation_unit_read_v5(
     partial: crate::format::dwarf::dwarf_unit_header::DWARFUnitHeader,
-    _reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    _reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
 ) -> std::io::Result<Box<dyn DWARFCompilationUnit>> {
     let _ = partial;
     Err(std::io::Error::new(
@@ -3255,7 +3255,7 @@ impl DWARFImportSummary {
 pub trait DIEContainer: Send + Sync {
     /// Mirrors `DIEContainer.getDebugLineReader()`, which returns `null` when the binary has no
     /// `.debug_line` section.
-    fn get_debug_line_reader(&self) -> Option<Box<dyn crate::app::util::bin::binary_reader::BinaryReader>>;
+    fn get_debug_line_reader(&self) -> Option<Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader>>;
 
     /// Mirrors `DIEContainer.getLine(long, DWARFCompilationUnit, boolean)`, referenced by
     /// `DWARFMacroHeader::read_v5`.
@@ -3307,7 +3307,7 @@ pub trait DIEContainer: Send + Sync {
     fn get_reader_for_comp_unit(
         &self,
         _cu: &dyn DWARFCompilationUnit,
-    ) -> Option<Box<dyn crate::app::util::bin::binary_reader::BinaryReader>> {
+    ) -> Option<Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader>> {
         None
     }
 
@@ -3536,7 +3536,7 @@ impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue
 /// constructor arguments (so callers -- and their tests -- can verify what the line table header
 /// hands the executor) and reports row extraction as unsupported.
 pub struct DWARFLineProgramExecutor {
-    pub reader: Box<dyn crate::app::util::bin::binary_reader::BinaryReader>,
+    pub reader: Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader>,
     pub end_offset: u64,
     pub pointer_size: i8,
     pub opcode_base: i32,
@@ -3550,7 +3550,7 @@ pub struct DWARFLineProgramExecutor {
 impl DWARFLineProgramExecutor {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        reader: Box<dyn crate::app::util::bin::binary_reader::BinaryReader>,
+        reader: Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader>,
         end_offset: u64,
         pointer_size: i8,
         opcode_base: i32,
@@ -3635,7 +3635,7 @@ impl DWARFLineContentTypeDef {
     /// would go on to throw a `NullPointerException` reading a value through an unrecognized
     /// form; this reports the unrecognized code instead.
     pub fn read(
-        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        reader: &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
     ) -> std::io::Result<Self> {
         let content_type_code =
             crate::app::util::bin::leb128_info::LEB128Info::unsigned(reader)?.as_u_int32()?;
@@ -4250,7 +4250,7 @@ pub trait GoSlice: Send + Sync {
         &self,
         element_size: i32,
         element_index: i32,
-    ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
+    ) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoRttiMapper`, referenced by
@@ -4289,7 +4289,7 @@ pub trait GoRttiMapper: Send + Sync {
     /// Mirrors `DataTypeMapper.getDataAddress(long)`, inherited by `GoRttiMapper`.
     fn get_data_address(&self, offset: i64) -> Address;
     /// Mirrors `DataTypeMapper.getReader(long)`, inherited by `GoRttiMapper`.
-    fn get_reader(&self, position: i64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
+    fn get_reader(&self, position: i64) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader>;
     /// Mirrors `GoRttiMapper.findContainingModuleByFuncData(long)`. The Java method returns
     /// `null` when no module contains the offset, which every caller checks for.
     fn find_containing_module_by_func_data(&self, offset: i64) -> Option<Box<dyn GoModuledata>>;
@@ -4593,7 +4593,7 @@ impl DebugDirectoryEntry {
     /// rather than saving/restoring the reader's pointer index around a `setPointerIndex` call,
     /// since [`BinaryReader`]'s indexed reads don't mutate reader state.
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         index: u64,
         validator: &dyn crate::format::pe::offset_validator::OffsetValidator,
     ) -> std::io::Result<Self> {
@@ -4771,7 +4771,7 @@ impl DebugMiscEntry {
 
     /// Port of `DebugMisc(BinaryReader, DebugDirectory, OffsetValidator)`.
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         debug_dir: DebugDirectoryEntry,
         validator: &dyn crate::format::pe::offset_validator::OffsetValidator,
     ) -> std::io::Result<Self> {
@@ -4889,7 +4889,7 @@ impl DebugCodeViewEntry {
     /// Port of `DebugCodeView(BinaryReader, DebugDirectory, OffsetValidator)`, minus the
     /// `DebugCodeViewSymbolTable` detection described in the struct-level doc comment.
     pub fn new(
-        _reader: &dyn BinaryReader,
+        _reader: &dyn LegacyBinaryReader,
         debug_dir: DebugDirectoryEntry,
         validator: &dyn crate::format::pe::offset_validator::OffsetValidator,
     ) -> std::io::Result<Self> {
@@ -4942,7 +4942,7 @@ pub struct DebugDirectoryParser {
 }
 
 struct DebugDirectoryParserValidator<'a> {
-    reader: &'a dyn BinaryReader,
+    reader: &'a dyn LegacyBinaryReader,
     size_of_image: i64,
 }
 
@@ -4972,7 +4972,7 @@ impl DebugDirectoryParser {
 
     /// Port of `DebugDirectoryParser(BinaryReader, long, int, long)`.
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         ptr: u64,
         size: i32,
         size_of_image: i64,
@@ -5054,7 +5054,7 @@ impl PeByteProviderReader {
     }
 }
 
-impl BinaryReader for PeByteProviderReader {
+impl LegacyBinaryReader for PeByteProviderReader {
     fn length(&self) -> std::io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -5093,7 +5093,7 @@ impl BinaryReader for PeByteProviderReader {
         Rc::clone(&self.provider)
     }
 
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(PeByteProviderReader {
             provider: Rc::clone(&self.provider),
             is_little_endian: self.is_little_endian,
@@ -5242,7 +5242,7 @@ pub struct ImageRuntimeFunctionEntriesX86;
 impl ImageRuntimeFunctionEntriesX86 {
     /// Port of `ImageRuntimeFunctionEntries_X86(BinaryReader, int, NTHeader)`.
     pub fn new(
-        _reader: &mut dyn BinaryReader,
+        _reader: &mut dyn LegacyBinaryReader,
         _size: i32,
         _nt_header: &dyn NTHeader,
     ) -> std::io::Result<Self> {
@@ -5273,7 +5273,7 @@ pub struct ImageRuntimeFunctionEntriesArm;
 impl ImageRuntimeFunctionEntriesArm {
     /// Port of `ImageRuntimeFunctionEntries_ARM(BinaryReader, int, NTHeader)`.
     pub fn new(
-        _reader: &mut dyn BinaryReader,
+        _reader: &mut dyn LegacyBinaryReader,
         _size: i32,
         _nt_header: &dyn NTHeader,
     ) -> std::io::Result<Self> {
@@ -5312,8 +5312,8 @@ pub trait ObjcTypeMetadataStructure: Send + Sync {
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait ObjcUtils: Send + Sync {
-    fn read_next_index(&self, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader, is32bit: bool) -> std::io::Result<i64>;
-    fn dereference_ascii_string(&self, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader, is32bit: bool) -> std::io::Result<String>;
+    fn read_next_index(&self, reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader, is32bit: bool) -> std::io::Result<i64>;
+    fn dereference_ascii_string(&self, reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader, is32bit: bool) -> std::io::Result<String>;
     fn is_thumb(&self, program: &dyn crate::program::model::listing::program::Program, address: i64) -> bool;
     fn set_thumb_bit(&self, program: &dyn crate::program::model::listing::program::Program, state: &crate::format::objc::objc_state::ObjcState, address: &crate::program::model::address::Address);
     fn to_address(&self, program: &dyn crate::program::model::listing::program::Program, offset: i64) -> crate::program::model::address::Address;
@@ -5436,7 +5436,7 @@ impl ResourceDirectoryEntry {
     /// Port of `ResourceDirectoryEntry(BinaryReader, int, int, boolean, boolean, NTHeader)`,
     /// minus the recursive `subDirectory`/`data`/`dirString` construction (see struct doc).
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         index: u64,
         resource_base: u64,
         _is_name_entry: bool,

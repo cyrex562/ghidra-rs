@@ -14,7 +14,7 @@
 use std::collections::HashSet;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::{NTHeader, ResourceDirectoryEntry};
 use crate::program::model::data::data_type::DataType;
@@ -61,7 +61,7 @@ impl ResourceDirectory {
     /// `reader`, never for the "this directory is malformed" case, which yields a
     /// `ResourceDirectory` with fewer (possibly zero) entries instead.
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         mut index: u64,
         resource_base: u64,
         is_first_level: bool,
@@ -226,7 +226,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for BufReader {
+    impl LegacyBinaryReader for BufReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -265,7 +265,7 @@ mod tests {
         ) -> std::rc::Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not needed by ResourceDirectory tests")
         }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by ResourceDirectory tests")
         }
     }

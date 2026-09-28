@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 use super::debug_symbol::{DebugSymbol, DebugSymbolBase};
 
@@ -39,7 +39,7 @@ impl SLabel32 {
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         length: i16,
         symbol_type: i16,
         ptr: u64,
@@ -154,7 +154,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -193,7 +193,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

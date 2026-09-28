@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::file::formats::android::dex::format::debug_state_machine_op_codes::DebugStateMachineOpCodes;
 
@@ -17,7 +17,7 @@ impl DebugInfoStateMachineReader {
     /// until a `DBG_END_SEQUENCE` opcode is found, returning the number of bytes consumed.
     ///
     /// Returns `0` if `DBG_END_SEQUENCE` is not found within [`MAX_SIZE`] bytes.
-    pub(crate) fn compute_length(reader: &mut dyn BinaryReader) -> io::Result<i32> {
+    pub(crate) fn compute_length(reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
         let start = reader.get_pointer_index();
 
         while reader.get_pointer_index() - start < MAX_SIZE {
@@ -118,7 +118,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -148,7 +148,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

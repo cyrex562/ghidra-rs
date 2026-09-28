@@ -15,7 +15,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnum;
 use crate::file::formats::android::oat::oat_constants::OatConstants;
@@ -53,7 +53,7 @@ impl OatClassBase {
     /// Reads the class status and selects the version-appropriate status enum family.
     ///
     /// Port of the protected `OatClass(BinaryReader, String)` constructor.
-    pub fn new(reader: &mut dyn BinaryReader, oat_version: &str) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, oat_version: &str) -> io::Result<Self> {
         let status = reader.read_next_short()?;
 
         let status_enum: Box<dyn OatClassStatusEnum> = if oat_version == OatConstants::OAT_VERSION_007 {
@@ -224,7 +224,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -254,7 +254,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

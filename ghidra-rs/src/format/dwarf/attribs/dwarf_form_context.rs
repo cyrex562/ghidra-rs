@@ -16,14 +16,14 @@
 //! mirror the two package-private accessor methods Java declares for use by `DWARFForm`'s enum
 //! constants.
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::seam_stubs::{DIEContainer, DWARFCompilationUnit, DWARFProgram};
 
 /// Context given to a `DWARFForm`'s `read_value` method to enable it to create
 /// `DWARFAttributeValue`s.
 pub struct DWARFFormContext<'r, 'a> {
-    pub reader: &'r mut dyn BinaryReader,
+    pub reader: &'r mut dyn LegacyBinaryReader,
     pub comp_unit: &'a dyn DWARFCompilationUnit,
     pub def: &'a dyn DWARFAttributeDef,
     /// Size of dwarf serialization ints, either 4 (32 bit dwarf) or 8 (64 bit dwarf). Can be
@@ -36,7 +36,7 @@ impl<'r, 'a> DWARFFormContext<'r, 'a> {
     /// Mirrors the canonical `DWARFFormContext(BinaryReader, DWARFCompilationUnit,
     /// DWARFAttributeDef, int)` constructor.
     pub fn new(
-        reader: &'r mut dyn BinaryReader,
+        reader: &'r mut dyn LegacyBinaryReader,
         comp_unit: &'a dyn DWARFCompilationUnit,
         def: &'a dyn DWARFAttributeDef,
         dwarf_int_size: i32,
@@ -47,7 +47,7 @@ impl<'r, 'a> DWARFFormContext<'r, 'a> {
     /// Mirrors the compact `DWARFFormContext(BinaryReader, DWARFCompilationUnit,
     /// DWARFAttributeDef)` constructor, which uses `comp_unit`'s own int size.
     pub fn with_comp_unit_int_size(
-        reader: &'r mut dyn BinaryReader,
+        reader: &'r mut dyn LegacyBinaryReader,
         comp_unit: &'a dyn DWARFCompilationUnit,
         def: &'a dyn DWARFAttributeDef,
     ) -> Self {
@@ -111,7 +111,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -139,7 +139,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader { provider: Rc::clone(&self.provider), current_index: new_index })
         }
     }

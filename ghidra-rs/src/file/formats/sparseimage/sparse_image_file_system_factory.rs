@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
 use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::filesystem::gfilesystem::factory::g_file_system_factory::GFileSystemFactory;

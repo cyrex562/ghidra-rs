@@ -13,7 +13,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::StructConverterUtilDataType;
 use crate::program::model::data::data_type::DataType;
@@ -43,7 +43,7 @@ impl ExportedSymbolHashSlot {
     /// the hex mask for `indexOfFirstExportKey` instead. The upshot: `getIndexOfFirstExportKey()`
     /// returns 0 for the vast majority of real `countAndStart` values (only bits 1 and 4 of the
     /// mask survive), so this accessor is effectively unusable in the original Ghidra too.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let count_and_start = reader.read_next_int()?;
 
         Ok(ExportedSymbolHashSlot {
@@ -93,7 +93,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -131,7 +131,7 @@ mod tests {
         ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not needed by ExportedSymbolHashSlot tests")
         }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by ExportedSymbolHashSlot tests")
         }
     }

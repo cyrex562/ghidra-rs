@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 use super::data_type_mapper::DataTypeMapper;
 
@@ -21,13 +21,13 @@ pub trait StructureReader {
     /// positioned at the start of the structure.
     ///
     /// Returning an error aborts the overall read operation.
-    fn read_structure(&mut self, reader: &mut dyn BinaryReader, mapper: &DataTypeMapper) -> io::Result<()>;
+    fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, mapper: &DataTypeMapper) -> io::Result<()>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::StructureReader;
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::format::golang::structmapping::test_support::{byte_reader, test_mapper};
     use crate::format::golang::structmapping::DataTypeMapper;
     use std::io;
@@ -38,7 +38,7 @@ mod tests {
     }
 
     impl StructureReader for Fixed {
-        fn read_structure(&mut self, reader: &mut dyn BinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
             self.read_called = true;
             self.data.push(reader.read_next_byte()? as u8);
             Ok(())
@@ -59,7 +59,7 @@ mod tests {
     struct Fallible;
 
     impl StructureReader for Fallible {
-        fn read_structure(&mut self, _reader: &mut dyn BinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, _reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
             Err(io::Error::other("failed to deserialise structure"))
         }
     }
@@ -75,7 +75,7 @@ mod tests {
     struct Noop;
 
     impl StructureReader for Noop {
-        fn read_structure(&mut self, _reader: &mut dyn BinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, _reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
             Ok(())
         }
     }

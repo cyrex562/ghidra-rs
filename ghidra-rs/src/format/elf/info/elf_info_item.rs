@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::seam_stubs::MemoryByteProvider;
 use crate::program::model::address::Address;
@@ -48,7 +48,7 @@ impl ProviderBinaryReader {
     }
 }
 
-impl BinaryReader for ProviderBinaryReader {
+impl LegacyBinaryReader for ProviderBinaryReader {
     fn length(&self) -> io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -87,7 +87,7 @@ impl BinaryReader for ProviderBinaryReader {
         Rc::clone(&self.provider)
     }
 
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(ProviderBinaryReader {
             provider: Rc::clone(&self.provider),
             is_little_endian: self.is_little_endian,
@@ -103,7 +103,7 @@ impl BinaryReader for ProviderBinaryReader {
 pub fn markup_elf_info_item_section<T: ElfInfoItem>(
     program: &mut dyn Program,
     section_name: &str,
-    read_func: impl FnOnce(&mut dyn BinaryReader, &dyn Program) -> io::Result<T>,
+    read_func: impl FnOnce(&mut dyn LegacyBinaryReader, &dyn Program) -> io::Result<T>,
 ) {
     if let Some(wrapped) = read_item_from_section(&*program, section_name, read_func) {
         wrapped.item.markup_program(program, &wrapped.address);
@@ -116,7 +116,7 @@ pub fn markup_elf_info_item_section<T: ElfInfoItem>(
 pub fn read_item_from_section<T: ElfInfoItem>(
     program: &dyn Program,
     section_name: &str,
-    read_func: impl FnOnce(&mut dyn BinaryReader, &dyn Program) -> io::Result<T>,
+    read_func: impl FnOnce(&mut dyn LegacyBinaryReader, &dyn Program) -> io::Result<T>,
 ) -> Option<ItemWithAddress<T>> {
     let block = program.get_memory()?.get_block_by_name(section_name)?;
     read_item_from_block(program, block.as_ref(), read_func)
@@ -128,7 +128,7 @@ pub fn read_item_from_section<T: ElfInfoItem>(
 pub fn read_item_from_block<T: ElfInfoItem>(
     program: &dyn Program,
     mem_block: &dyn MemoryBlock,
-    read_func: impl FnOnce(&mut dyn BinaryReader, &dyn Program) -> io::Result<T>,
+    read_func: impl FnOnce(&mut dyn LegacyBinaryReader, &dyn Program) -> io::Result<T>,
 ) -> Option<ItemWithAddress<T>> {
     let memory = program.get_memory()?;
     let is_little_endian = !memory.is_big_endian();

@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::rich::comp_id::CompId;
 use crate::format::pe::rich::RichHeaderRecord;
@@ -28,7 +28,7 @@ impl RichHeader {
     /// directly after the DOS header.
     ///
     /// Port of `RichHeader(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> Self {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> Self {
         let curr_pos = reader.get_pointer_index();
 
         let table = RichTable::new_from_reader(&*reader);
@@ -154,7 +154,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> std::io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -184,7 +184,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 big_endian: self.big_endian,

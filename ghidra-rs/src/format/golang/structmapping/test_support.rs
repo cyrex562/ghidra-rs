@@ -6,7 +6,7 @@ use std::io;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::elf::info::elf_info_item::ProviderBinaryReader;
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
@@ -50,7 +50,7 @@ impl GByteStore for VecStore {
 }
 
 /// A reader over `bytes`, positioned at 0.
-pub fn byte_reader(bytes: Vec<u8>, little_endian: bool) -> Box<dyn BinaryReader> {
+pub fn byte_reader(bytes: Vec<u8>, little_endian: bool) -> Box<dyn LegacyBinaryReader> {
     Box::new(ProviderBinaryReader::new(Rc::new(RefCell::new(VecStore(bytes))), little_endian))
 }
 

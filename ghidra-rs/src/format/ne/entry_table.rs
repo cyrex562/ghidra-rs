@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::ne::entry_table_bundle::EntryTableBundle;
 use std::io;
 
@@ -21,7 +21,7 @@ impl EntryTable {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn BinaryReader, index: u64, _byte_count: i16) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, index: u64, _byte_count: i16) -> io::Result<Self> {
         let old_index = reader.get_pointer_index();
         reader.set_pointer_index(index);
 
@@ -100,7 +100,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -130,7 +130,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

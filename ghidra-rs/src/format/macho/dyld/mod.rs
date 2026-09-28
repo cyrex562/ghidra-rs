@@ -15,7 +15,7 @@ pub(crate) mod test_support {
     use std::io;
     use std::rc::Rc;
 
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
     struct VecStore(Vec<u8>);
@@ -58,7 +58,7 @@ pub(crate) mod test_support {
         }
     }
 
-    impl BinaryReader for VecReader {
+    impl LegacyBinaryReader for VecReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -86,7 +86,7 @@ pub(crate) mod test_support {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(VecReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

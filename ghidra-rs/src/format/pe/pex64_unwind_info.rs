@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::{ImageRuntimeFunctionEntryX86, NTHeader, PEx64UnwindInfoDataType};
 use crate::program::model::data::data_type::DataType;
@@ -143,7 +143,7 @@ impl PEx64UnwindInfo {
     ///
     /// Port of `PEx64UnwindInfo.readUnwindInfo(BinaryReader, long, NTHeader)`.
     pub fn read_unwind_info(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         offset: i64,
         nt_header: &dyn NTHeader,
     ) -> io::Result<PEx64UnwindInfo> {
@@ -276,7 +276,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -306,7 +306,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

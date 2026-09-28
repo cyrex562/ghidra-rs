@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::composite::Composite;
@@ -25,7 +25,7 @@ impl CFragUsage1Union {
     /// Reads the 4-byte union.
     ///
     /// Port of the `CFragUsage1Union(BinaryReader)` constructor.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Ok(Self { app_stack_size: reader.read_next_int()? })
     }
 

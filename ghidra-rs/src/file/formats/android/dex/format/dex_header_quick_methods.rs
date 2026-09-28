@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 use super::dex_constants::DexConstants;
 
@@ -19,7 +19,7 @@ impl DexHeaderQuickMethods {
     ///
     /// Returns an error if the magic bytes don't match [`DexConstants::DEX_MAGIC_BASE`]
     /// or if reading from the reader fails.
-    pub fn get_dex_length(reader: &mut dyn BinaryReader) -> io::Result<i32> {
+    pub fn get_dex_length(reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
         let magic = reader.read_next_byte_array(DexConstants::DEX_MAGIC_BASE.len())?;
 
         if String::from_utf8_lossy(&magic) != DexConstants::DEX_MAGIC_BASE {
@@ -58,7 +58,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -108,7 +108,7 @@ mod tests {
             panic!("not implemented for mock")
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,

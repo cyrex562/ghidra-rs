@@ -52,7 +52,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_metadata_directory::CliMetadataDirectory;
 use crate::format::pe::default_data_directory::DefaultDataDirectory;
@@ -91,7 +91,7 @@ pub struct ImageCor20Header {
 impl ImageCor20Header {
     /// Port of `ImageCor20Header(BinaryReader, long, NTHeader)`.
     pub fn new(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         index: u64,
         nt_header: &dyn NTHeader,
     ) -> io::Result<Self> {
@@ -134,7 +134,7 @@ impl ImageCor20Header {
     /// (rather than stored on `self`, as Java's `CliMetadataDirectory` does) for the same reason
     /// documented on `CliMetadataDirectory::parse` -- they are only needed transiently, to
     /// re-seek to the metadata root's RVA.
-    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn BinaryReader) -> io::Result<bool> {
+    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<bool> {
         let mut success = true;
         success &= self.metadata.parse(nt_header, reader)?;
         success &= self.resources.parse();
@@ -393,7 +393,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -423,7 +423,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

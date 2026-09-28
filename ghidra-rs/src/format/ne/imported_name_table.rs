@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::ne::length_string_set::LengthStringSet;
 use std::io;
 
@@ -9,7 +9,7 @@ use std::io;
 ///
 /// Mirrors `ImportedNameTable` from the original Ghidra Java source.
 pub struct ImportedNameTable {
-    reader: Box<dyn BinaryReader>,
+    reader: Box<dyn LegacyBinaryReader>,
     index: u64,
 }
 
@@ -19,7 +19,7 @@ impl ImportedNameTable {
     /// # Arguments
     /// * `reader` - The binary reader used to read from the underlying data
     /// * `index` - The absolute file offset where the table begins
-    pub fn new(reader: Box<dyn BinaryReader>, index: u64) -> Self {
+    pub fn new(reader: Box<dyn LegacyBinaryReader>, index: u64) -> Self {
         ImportedNameTable { reader, index }
     }
 
@@ -93,7 +93,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -123,7 +123,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

@@ -4,7 +4,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::file_header::FileHeader;
 use crate::format::pe::seam_stubs::{ImageArm64ecMetadata, ImageChpeMetadataX86, ImageDynamicRelocationTable};
@@ -91,7 +91,7 @@ pub struct LoadConfigDirectory {
 
 impl LoadConfigDirectory {
     /// Port of the package-private `LoadConfigDirectory(BinaryReader, int, NTHeader)`.
-    pub fn new(reader: &mut dyn BinaryReader, index: u64, nt: &dyn NTHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, index: u64, nt: &dyn NTHeader) -> io::Result<Self> {
         let optional_header = nt.get_optional_header();
         let is64bit = optional_header.is64bit();
 
@@ -126,7 +126,7 @@ impl LoadConfigDirectory {
 
         // If the structure size indicates there are more fields, we are dealing with a newer
         // version of the structure. Each size check represents a new version of the structure.
-        let has_more = |reader: &dyn BinaryReader| (reader.get_pointer_index() - index) < lc.size as u64;
+        let has_more = |reader: &dyn LegacyBinaryReader| (reader.get_pointer_index() - index) < lc.size as u64;
 
         if has_more(reader) {
             lc.security_cookie = read_pointer(reader, is64bit)?;
@@ -349,7 +349,7 @@ impl StructConverter for LoadConfigDirectory {
 }
 
 /// Port of `LoadConfigDirectory.readPointer(BinaryReader)`.
-fn read_pointer(reader: &mut dyn BinaryReader, is64bit: bool) -> io::Result<i64> {
+fn read_pointer(reader: &mut dyn LegacyBinaryReader, is64bit: bool) -> io::Result<i64> {
     if is64bit {
         reader.read_next_long()
     } else {
@@ -423,7 +423,7 @@ impl CodeIntegrity {
     pub const NAME: &'static str = "IMAGE_LOAD_CONFIG_CODE_INTEGRITY";
 
     /// Port of `CodeIntegrity(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Ok(CodeIntegrity {
             flags: reader.read_next_short()?,
             catalog: reader.read_next_short()?,
@@ -512,7 +512,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -551,7 +551,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

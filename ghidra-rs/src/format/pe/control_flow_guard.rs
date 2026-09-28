@@ -337,7 +337,7 @@ mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
 
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::format::pe::file_header::FileHeader;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::listing::Listing;
@@ -367,7 +367,7 @@ mod tests {
         bytes: Vec<u8>,
         current_index: u64,
     }
-    impl BinaryReader for MinimalReader {
+    impl LegacyBinaryReader for MinimalReader {
         fn length(&self) -> std::io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -405,7 +405,7 @@ mod tests {
         ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not needed by these fixtures")
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MinimalReader { bytes: self.bytes.clone(), current_index: new_index })
         }
     }

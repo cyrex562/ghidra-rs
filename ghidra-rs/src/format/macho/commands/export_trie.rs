@@ -9,7 +9,7 @@ use std::collections::{HashSet, VecDeque};
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::macho::commands::dyld_info_command_constants::{
     EXPORT_SYMBOL_FLAGS_REEXPORT, EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER,
@@ -99,7 +99,7 @@ impl ExportTrie {
 
     /// Creates and parses a new `ExportTrie` from `reader`, positioned at the start of the
     /// export trie.
-    pub fn from_reader(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let mut trie = Self::new();
         let base = reader.get_pointer_index();
         trie.parse_trie(reader, base)?;
@@ -127,7 +127,7 @@ impl ExportTrie {
     }
 
     /// Parses the export trie.
-    fn parse_trie(&mut self, reader: &mut dyn BinaryReader, base: u64) -> io::Result<()> {
+    fn parse_trie(&mut self, reader: &mut dyn LegacyBinaryReader, base: u64) -> io::Result<()> {
         let mut visited: HashSet<u64> = HashSet::new();
         visited.insert(0);
         let mut remaining_nodes = self.parse_node(reader, base, String::new(), 0)?;
@@ -149,7 +149,7 @@ impl ExportTrie {
     /// Parses a node of the export trie, returning its child nodes.
     fn parse_node(
         &mut self,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         base: u64,
         name: String,
         offset: u64,
@@ -249,7 +249,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -288,7 +288,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,

@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::mach_constants::DATA_TYPE_CATEGORY;
@@ -33,7 +33,7 @@ impl DyldCacheImageInfo {
     /// NUL-terminated path at `pathFileOffset` (without moving the reader).
     ///
     /// Port of `DyldCacheImageInfo(BinaryReader)`.
-    pub fn from_reader(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let address = reader.read_next_long()? as u64;
         let mod_time = reader.read_next_long()?;
         let inode = reader.read_next_long()?;

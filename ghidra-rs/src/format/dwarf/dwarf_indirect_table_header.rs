@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// Base structure holding the shared state of indirect table headers (DWARFAddressListHeader,
 /// DWARFLocationListHeader, etc).
@@ -46,7 +46,7 @@ impl DWARFIndirectTableHeaderBase {
 /// this trait to define the offset lookup behavior specific to their header type.
 pub trait DWARFIndirectTableHeader {
     /// Mirrors `DWARFIndirectTableHeader.getOffset(int, BinaryReader)`.
-    fn get_offset(&self, index: i32, reader: &dyn BinaryReader) -> io::Result<i64>;
+    fn get_offset(&self, index: i32, reader: &dyn LegacyBinaryReader) -> io::Result<i64>;
 }
 
 #[cfg(test)]
@@ -104,7 +104,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -134,7 +134,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,

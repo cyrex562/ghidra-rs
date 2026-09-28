@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use std::io;
 
 /// Format of resource data for a single resource.
@@ -17,7 +17,7 @@ impl SingleResourceData {
     ///
     /// # Errors
     /// Returns an error if reading from the reader fails.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let length = reader.read_next_int()?;
         let data = if length > 0 {
             reader.read_next_byte_array(length as usize)?
@@ -59,7 +59,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -108,7 +108,7 @@ mod tests {
             panic!("not implemented for mock")
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,

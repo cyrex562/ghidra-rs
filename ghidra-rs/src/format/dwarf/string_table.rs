@@ -1,7 +1,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::util::datastruct::abstract_weak_value_map::AbstractWeakValueMap;
 use crate::util::datastruct::weak_value_hash_map::WeakValueHashMap;
 
@@ -33,7 +33,7 @@ impl StringTableCharset {
 ///
 /// Mirrors `ghidra.app.util.bin.format.dwarf.StringTable`.
 pub struct StringTable {
-    reader: Option<Box<dyn BinaryReader>>,
+    reader: Option<Box<dyn LegacyBinaryReader>>,
     cache: WeakValueHashMap<u64, String>,
     charset: StringTableCharset,
 }
@@ -41,14 +41,14 @@ pub struct StringTable {
 impl StringTable {
     /// Creates a `StringTable` instance, if the supplied reader is `Some`.
     pub fn of(
-        reader: Option<Box<dyn BinaryReader>>,
+        reader: Option<Box<dyn LegacyBinaryReader>>,
         charset: StringTableCharset,
     ) -> Option<StringTable> {
         reader.map(|reader| StringTable::new(reader, charset))
     }
 
     /// Creates a `StringTable` backed by `.debug_str` or `.debug_line_str`.
-    pub fn new(reader: Box<dyn BinaryReader>, charset: StringTableCharset) -> StringTable {
+    pub fn new(reader: Box<dyn LegacyBinaryReader>, charset: StringTableCharset) -> StringTable {
         StringTable {
             reader: Some(reader),
             cache: WeakValueHashMap::new(),
@@ -150,7 +150,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -180,7 +180,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn of_returns_some_for_some_reader() {
-        let reader: Box<dyn BinaryReader> = Box::new(MockReader::new(vec![0]));
+        let reader: Box<dyn LegacyBinaryReader> = Box::new(MockReader::new(vec![0]));
         assert!(StringTable::of(Some(reader), StringTableCharset::Utf8).is_some());
     }
 

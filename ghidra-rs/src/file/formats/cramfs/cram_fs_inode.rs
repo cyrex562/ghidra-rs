@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
@@ -56,7 +56,7 @@ impl CramFsInode {
     ///
     /// # Errors
     /// Returns `Err` if any read fails.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         // Before reader reads anything and progresses, get addr for start of inode.
         let address = reader.get_pointer_index() as i64;
         let mut mode_uid = reader.read_next_int()?;
@@ -241,7 +241,7 @@ mod tests {
         little_endian: bool,
     }
 
-    impl BinaryReader for SimpleReader {
+    impl LegacyBinaryReader for SimpleReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -271,7 +271,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             self.provider.clone()
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(SimpleReader {
                 provider: self.provider.clone(),
                 pointer: new_index,

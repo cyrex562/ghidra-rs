@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::program::database::program_db::ProgramDB;
 use crate::program::model::listing::Program;
 use crate::program::model::mem::Memory;
@@ -17,7 +17,7 @@ impl BootImageUtil {
     }
 
     /// Determines whether the given reader's contents start with the boot image magic.
-    pub fn is_boot_image_reader(reader: &dyn BinaryReader) -> bool {
+    pub fn is_boot_image_reader(reader: &dyn LegacyBinaryReader) -> bool {
         Self::reader_starts_with(reader, BootImageConstants::BOOT_MAGIC)
     }
 
@@ -27,7 +27,7 @@ impl BootImageUtil {
     }
 
     /// Determines whether the given reader's contents start with the vendor boot image magic.
-    pub fn is_vendor_boot_image_reader(reader: &dyn BinaryReader) -> bool {
+    pub fn is_vendor_boot_image_reader(reader: &dyn LegacyBinaryReader) -> bool {
         Self::reader_starts_with(reader, BootImageConstants::VENDOR_BOOT_MAGIC)
     }
 
@@ -74,7 +74,7 @@ impl BootImageUtil {
         false
     }
 
-    fn reader_starts_with(reader: &dyn BinaryReader, magic: &str) -> bool {
+    fn reader_starts_with(reader: &dyn LegacyBinaryReader, magic: &str) -> bool {
         reader
             .read_ascii_string_fixed(0, magic.len())
             .map(|read_magic| read_magic == magic)
@@ -133,7 +133,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -183,7 +183,7 @@ mod tests {
             panic!("not implemented for mock")
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,

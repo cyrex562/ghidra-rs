@@ -1,7 +1,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::dwarf::dwarf_exception::DWARFException;
 use crate::format::dwarf::dwarf_length_value::DWARFLengthValue;
 use crate::format::dwarf::dwarf_unit_type::DWARFUnitType;
@@ -60,7 +60,7 @@ impl DWARFUnitHeader {
     /// the end-of-list.
     pub fn read(
         die_container: Arc<dyn DIEContainer>,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         unit_number: i32,
     ) -> io::Result<Option<Box<dyn DWARFCompilationUnit>>> {
         // unit_length : dwarf_length
@@ -217,7 +217,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -247,7 +247,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,
@@ -280,7 +280,7 @@ mod tests {
     }
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn BinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
             None
         }
         fn get_program(&self) -> Option<Arc<dyn DWARFProgram>> {

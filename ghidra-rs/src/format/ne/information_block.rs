@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::ne::invalid_windows_header_exception::InvalidWindowsHeaderException;
 use crate::format::ne::windows_header::WindowsHeader;
 use std::io;
@@ -151,7 +151,7 @@ impl InformationBlock {
     /// Note: mirroring the Java constructor exactly, the reader's pointer index is only restored
     /// to its pre-call value on a *successful* parse. If the magic number check fails, the
     /// reader is left positioned just past the two magic-number bytes it already consumed.
-    pub fn new(reader: &mut dyn BinaryReader, index: u64) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, index: u64) -> io::Result<Self> {
         let old_index = reader.get_pointer_index();
         reader.set_pointer_index(index);
 
@@ -577,7 +577,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -607,7 +607,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

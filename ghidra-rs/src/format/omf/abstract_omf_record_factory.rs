@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 use super::OmfRecord;
 
@@ -9,10 +9,10 @@ use super::OmfRecord;
 /// and validation.
 pub trait AbstractOmfRecordFactory {
     /// Returns a mutable reference to the underlying reader.
-    fn reader_mut(&mut self) -> &mut dyn BinaryReader;
+    fn reader_mut(&mut self) -> &mut dyn LegacyBinaryReader;
 
     /// Returns an immutable reference to the underlying reader.
-    fn reader(&self) -> &dyn BinaryReader;
+    fn reader(&self) -> &dyn LegacyBinaryReader;
 
     /// Reads the next [`OmfRecord`] pointed to by the reader.
     ///
@@ -88,7 +88,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -118,7 +118,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
@@ -128,7 +128,7 @@ mod tests {
     }
 
     struct TestFactory {
-        reader: Box<dyn BinaryReader>,
+        reader: Box<dyn LegacyBinaryReader>,
         start_types: Vec<i32>,
         end_type: i32,
     }
@@ -144,10 +144,10 @@ mod tests {
     }
 
     impl AbstractOmfRecordFactory for TestFactory {
-        fn reader_mut(&mut self) -> &mut dyn BinaryReader {
+        fn reader_mut(&mut self) -> &mut dyn LegacyBinaryReader {
             &mut *self.reader
         }
-        fn reader(&self) -> &dyn BinaryReader {
+        fn reader(&self) -> &dyn LegacyBinaryReader {
             &*self.reader
         }
         fn read_next_record(&mut self) -> Result<OmfRecord, Box<dyn std::error::Error>> {

@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::pe::debug::debug_coff_symbol::DebugCOFFSymbol;
 use crate::format::pe::debug::debug_coff_symbols_header::DebugCOFFSymbolsHeader;
 use crate::format::seam_stubs::{DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL, NT_HEADER_MAX_SANE_COUNT};
@@ -38,7 +38,7 @@ impl DebugCOFFSymbolTable {
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
     pub fn new(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         coff_header: &DebugCOFFSymbolsHeader,
         offset: i32,
     ) -> io::Result<Self> {
@@ -142,7 +142,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -181,7 +181,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

@@ -3,7 +3,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::data_type::DataType;
 
@@ -52,7 +52,7 @@ impl XCoffOptionalHeader {
     /// `XCoffFileHeaderMagic.is32bit/is64bit`) -- and does so while the file header is still
     /// being constructed -- so the magic is passed directly. For a magic that is neither 32- nor
     /// 64-bit the size-dependent fields are left `0`, as in Java.
-    pub(crate) fn new(reader: &mut dyn BinaryReader, file_header_magic: i16) -> io::Result<Self> {
+    pub(crate) fn new(reader: &mut dyn LegacyBinaryReader, file_header_magic: i16) -> io::Result<Self> {
         let magic = file_header_magic as u16;
         let is32 = x_coff_file_header_magic::is_32bit(magic);
         let is64 = x_coff_file_header_magic::is_64bit(magic);

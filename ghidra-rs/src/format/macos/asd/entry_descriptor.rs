@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry_factory;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -36,7 +36,7 @@ impl EntryDescriptor {
     /// Java's `EntryFactory` hands the descriptor under construction itself to the entry it
     /// builds; here the entry receives a copy of the descriptor's ID/offset/length, whose own
     /// `entry` is empty (a value cannot contain itself).
-    pub fn read(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let entry_id = reader.read_next_int()?;
         let offset = reader.read_next_int()?;
         let length = reader.read_next_int()?;

@@ -29,7 +29,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pef::exported_symbol_hash_slot::ExportedSymbolHashSlot;
 use crate::format::pef::exported_symbol_key::ExportedSymbolKey;
@@ -80,7 +80,7 @@ impl LoaderInfoHeader {
     /// pointer index before returning (matching Java's `try`/`finally`).
     ///
     /// Port of `LoaderInfoHeader(BinaryReader, SectionHeader)`.
-    pub fn new(reader: &mut dyn BinaryReader, section: Box<dyn SectionHeader>) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, section: Box<dyn SectionHeader>) -> io::Result<Self> {
         let old_index = reader.get_pointer_index();
         let container_offset = section.get_container_offset();
 
@@ -353,7 +353,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -392,16 +392,16 @@ mod tests {
         {
             unimplemented!("not needed by LoaderInfoHeader tests")
         }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderInfoHeader tests")
         }
-        fn clone_reader(&self) -> Box<dyn BinaryReader> {
+        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderInfoHeader tests")
         }
-        fn as_big_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderInfoHeader tests")
         }
-        fn as_little_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderInfoHeader tests")
         }
     }

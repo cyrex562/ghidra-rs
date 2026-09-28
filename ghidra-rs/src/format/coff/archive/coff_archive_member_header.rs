@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::LongNamesMember;
 use crate::program::model::data::composite::Composite;
@@ -99,7 +99,7 @@ impl CoffArchiveMemberHeader {
     /// needed.
     ///
     /// Port of the private `CoffArchiveMemberHeader.align(BinaryReader)`.
-    fn align(reader: &mut dyn BinaryReader) {
+    fn align(reader: &mut dyn LegacyBinaryReader) {
         if reader.get_pointer_index() % 2 != 0 {
             reader.set_pointer_index(reader.get_pointer_index() + 1);
         }
@@ -112,7 +112,7 @@ impl CoffArchiveMemberHeader {
     /// present.
     ///
     /// Port of `CoffArchiveMemberHeader.read(BinaryReader, LongNamesMember)`.
-    pub fn read(reader: &mut dyn BinaryReader, long_names: Option<&dyn LongNamesMember>) -> std::io::Result<Self> {
+    pub fn read(reader: &mut dyn LegacyBinaryReader, long_names: Option<&dyn LongNamesMember>) -> std::io::Result<Self> {
         Self::align(reader);
 
         let header_offset = reader.get_pointer_index();
@@ -291,7 +291,7 @@ impl From<String> for ToDataTypeError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::BinaryReader as _;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader as _;
     use crate::filesystem::ghidra::g_binary_reader::GByteStore as LegacyByteProvider;
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -336,7 +336,7 @@ mod tests {
         pointer: u64,
     }
 
-    impl BinaryReader for SimpleReader {
+    impl LegacyBinaryReader for SimpleReader {
         fn length(&self) -> std::io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -364,7 +364,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn LegacyByteProvider>> {
             self.provider.clone()
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(SimpleReader { provider: self.provider.clone(), pointer: new_index })
         }
     }

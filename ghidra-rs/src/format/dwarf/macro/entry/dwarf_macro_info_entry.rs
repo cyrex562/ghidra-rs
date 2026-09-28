@@ -42,7 +42,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue;
 use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
@@ -97,7 +97,7 @@ impl DWARFMacroInfoEntryBase {
     /// Reads a DWARF macro info entry from `reader`, or `Ok(None)` if the element was the
     /// end-of-list marker. Mirrors `DWARFMacroInfoEntry.read(BinaryReader, DWARFMacroHeader)`.
     pub fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         macro_header: Arc<DWARFMacroHeader>,
     ) -> io::Result<Option<Box<dyn DWARFMacroInfoEntry>>> {
         let mut opcode_map = macro_header.get_opcode_map();
@@ -313,7 +313,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -343,7 +343,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
         }
     }

@@ -21,7 +21,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pef::loader_info_header::LoaderInfoHeader;
 use crate::format::seam_stubs::{RelocationFactory, StructConverterUtilDataType};
@@ -43,7 +43,7 @@ impl LoaderRelocationHeader {
     /// Reads a [`LoaderRelocationHeader`] and its relocation stream from `reader`.
     ///
     /// Port of `LoaderRelocationHeader(BinaryReader, LoaderInfoHeader)`.
-    pub fn new(reader: &mut dyn BinaryReader, loader: &LoaderInfoHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader, loader: &LoaderInfoHeader) -> io::Result<Self> {
         let section_index = reader.read_next_short()?;
         let reserved_a = reader.read_next_short()?;
         let reloc_count = reader.read_next_int()?;
@@ -141,7 +141,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -180,16 +180,16 @@ mod tests {
         {
             unimplemented!("not needed by LoaderRelocationHeader tests")
         }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderRelocationHeader tests")
         }
-        fn clone_reader(&self) -> Box<dyn BinaryReader> {
+        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderRelocationHeader tests")
         }
-        fn as_big_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderRelocationHeader tests")
         }
-        fn as_little_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by LoaderRelocationHeader tests")
         }
     }

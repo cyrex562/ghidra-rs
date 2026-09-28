@@ -2,7 +2,7 @@
 //! ported type in this module before the real Rust port of that class exists yet. See
 //! `STUBS.tsv` for provenance.
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::pe::pe_markupable::PeMarkupable;
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.cli.streams.CliAbstractStream`, referenced by
@@ -19,7 +19,7 @@ pub trait CliAbstractStream: PeMarkupable {}
 /// the blob's (already-computed, `getContentsName() + "_" + streamIndex`) display name.
 pub trait CliBlob: Send + Sync {
     /// `CliBlob.getContentsReader()`.
-    fn get_contents_reader(&self) -> Box<dyn BinaryReader>;
+    fn get_contents_reader(&self) -> Box<dyn LegacyBinaryReader>;
     /// `CliBlob.getName()`.
     fn get_name(&self) -> String;
 }

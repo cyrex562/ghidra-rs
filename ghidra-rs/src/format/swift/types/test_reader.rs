@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 struct VecStore(Vec<u8>);
@@ -52,7 +52,7 @@ impl VecReader {
     }
 }
 
-impl BinaryReader for VecReader {
+impl LegacyBinaryReader for VecReader {
     fn length(&self) -> io::Result<u64> {
         self.store.borrow_mut().length()
     }
@@ -80,7 +80,7 @@ impl BinaryReader for VecReader {
     fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         self.store.clone()
     }
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(VecReader {
             store: self.store.clone(),
             index: new_index,

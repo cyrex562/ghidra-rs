@@ -13,7 +13,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::ext4::ext4_constants;
 use crate::program::model::data::byte_data_type::ByteDataType;
@@ -252,16 +252,16 @@ const FIELDS: &[(&str, FieldKind)] = &[
 
 /// Reads an unsigned 32-bit value that must fit in an `i32` (Java's `readNextUnsignedIntExact()`,
 /// whose `ensureInt32u` range check guarantees the cast is lossless).
-fn read_u32_exact(reader: &mut dyn BinaryReader) -> io::Result<i32> {
+fn read_u32_exact(reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
     Ok(reader.read_next_unsigned_int_exact()? as i32)
 }
 
-fn read_bytes<const N: usize>(reader: &mut dyn BinaryReader) -> io::Result<[u8; N]> {
+fn read_bytes<const N: usize>(reader: &mut dyn LegacyBinaryReader) -> io::Result<[u8; N]> {
     let bytes = reader.read_next_byte_array(N)?;
     bytes.try_into().map_err(|_| io::Error::new(io::ErrorKind::UnexpectedEof, "short read"))
 }
 
-fn read_ints<const N: usize>(reader: &mut dyn BinaryReader) -> io::Result<[i32; N]> {
+fn read_ints<const N: usize>(reader: &mut dyn LegacyBinaryReader) -> io::Result<[i32; N]> {
     let ints = reader.read_next_int_array(N)?;
     ints.try_into().map_err(|_| io::Error::new(io::ErrorKind::UnexpectedEof, "short read"))
 }
@@ -272,7 +272,7 @@ impl Ext4SuperBlock {
     /// Port of `Ext4SuperBlock(ByteProvider)`, which wraps the provider in a fresh little-endian
     /// `BinaryReader`. Here the caller passes a reader over the provider; it is switched to
     /// little-endian and repositioned to index 0 to match.
-    pub fn from_provider_reader(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn from_provider_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         reader.set_little_endian(true);
         reader.set_pointer_index(0);
         Self::new(reader)
@@ -285,7 +285,7 @@ impl Ext4SuperBlock {
     /// # Errors
     /// Any read error, or `InvalidData` if `s_inodes_count`, `s_log_block_size` or
     /// `s_blocks_per_group` does not fit in an `i32`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Ok(Self {
             s_inodes_count: read_u32_exact(reader)?,
             s_blocks_count_lo: reader.read_next_int()?,

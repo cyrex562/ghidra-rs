@@ -11,7 +11,7 @@
 //! [`CliRepresentable`] directly, inlining the trivial `getRepresentationCommon` forwarding
 //! `CliAbstractSig` would otherwise have provided.
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::pe::cli::cli_representable::CliRepresentable;
 use crate::format::pe::cli::seam_stubs::CliBlob;
 use crate::format::seam_stubs::CliStreamMetadata;
@@ -176,7 +176,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> std::io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -206,7 +206,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
@@ -220,7 +220,7 @@ mod tests {
         bytes: Vec<u8>,
     }
     impl CliBlob for FixtureBlob {
-        fn get_contents_reader(&self) -> Box<dyn BinaryReader> {
+        fn get_contents_reader(&self) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader::new(self.bytes.clone()))
         }
         fn get_name(&self) -> String {

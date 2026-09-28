@@ -26,7 +26,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_form::{self, DWARFForm};
 
@@ -55,7 +55,7 @@ impl<E: Copy> DWARFAttributeDefBase<E> {
     /// Reads a `DWARFAttributeDefBase` from `reader`, or `Ok(None)` for an end-of-list marker.
     /// Mirrors the static `DWARFAttributeDef.read(BinaryReader, Function<Integer, E>)`.
     pub fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         mapper: impl FnOnce(i32) -> Option<E>,
     ) -> io::Result<Option<Self>> {
         let raw_attribute_id = LEB128Info::unsigned(reader)?.as_u_int32()? as i32;

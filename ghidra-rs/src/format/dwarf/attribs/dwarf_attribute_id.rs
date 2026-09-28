@@ -22,7 +22,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::dwarf::attribs::dwarf_attribute_class::DWARFAttributeClass;
 use crate::format::dwarf::attribs::dwarf_attribute_def::{DWARFAttributeDef, DWARFAttributeDefBase};
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
@@ -746,7 +746,7 @@ impl AttrDef {
     /// Mirrors `DWARFAttributeId.AttrDef.read(BinaryReader)`, which delegates to the generic
     /// `DWARFAttributeDef.read(BinaryReader, Function)` (specialized to `DWARFAttributeId::of` as
     /// the id mapper).
-    pub fn read(reader: &mut dyn BinaryReader) -> io::Result<Option<AttrDef>> {
+    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Option<AttrDef>> {
         Ok(DWARFAttributeDefBase::read(reader, DWARFAttributeId::of)?.map(|base| AttrDef { base }))
     }
 
@@ -812,7 +812,7 @@ impl DWARFAttributeDef for AttrDef {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -859,7 +859,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -887,7 +887,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index })
         }
     }

@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
 use crate::format::macos::asd::entry_descriptor_id::ENTRY_RESOURCE_FORK;
 use crate::format::macos::rm::resource_header::ResourceHeader;
@@ -19,7 +19,7 @@ use crate::format::macos::rm::resource_header::ResourceHeader;
 ///
 /// Port of `EntryFactory.getEntry(BinaryReader, EntryDescriptor)`.
 pub fn get_entry(
-    reader: &mut dyn BinaryReader,
+    reader: &mut dyn LegacyBinaryReader,
     descriptor: &EntryDescriptor,
 ) -> io::Result<Option<ResourceHeader>> {
     let old_index = reader.get_pointer_index();

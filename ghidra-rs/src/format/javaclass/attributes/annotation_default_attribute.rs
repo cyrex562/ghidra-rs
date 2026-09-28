@@ -12,7 +12,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::javaclass::attributes::annotation_element_value::AnnotationElementValue;
 use crate::program::model::data::data_type::DataType;
@@ -31,7 +31,7 @@ pub struct AnnotationDefaultAttribute {
 impl AnnotationDefaultAttribute {
     /// Reads an `AnnotationDefault_attribute` structure starting at the reader's current position,
     /// mirroring `AnnotationDefaultAttribute(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let offset = reader.get_pointer_index();
         let attribute_name_index = reader.read_next_unsigned_short()?;
         let attribute_length = reader.read_next_int()?;
@@ -102,7 +102,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }
@@ -149,7 +149,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader { data: self.data.clone(), pos: new_index })
         }
     }

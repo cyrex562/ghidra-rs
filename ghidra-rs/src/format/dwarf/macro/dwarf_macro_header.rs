@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::line::dwarf_line::DWARFLine;
 use crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntry;
@@ -89,7 +89,7 @@ impl DWARFMacroHeader {
 
     /// Reads a `DWARFMacroHeader` from a stream. Mirrors `DWARFMacroHeader.readV5(BinaryReader,
     /// DWARFCompilationUnit)`.
-    pub fn read_v5(reader: &mut dyn BinaryReader, cu: Arc<dyn DWARFCompilationUnit>) -> io::Result<DWARFMacroHeader> {
+    pub fn read_v5(reader: &mut dyn LegacyBinaryReader, cu: Arc<dyn DWARFCompilationUnit>) -> io::Result<DWARFMacroHeader> {
         let start_offset = reader.get_pointer_index();
         let version = reader.read_next_unsigned_short()? as i32;
         if version != 5 {
@@ -135,7 +135,7 @@ impl DWARFMacroHeader {
     /// Mirrors the private `DWARFMacroHeader.readMacroOpcodeTable(BinaryReader, Map)`.
     ///
     /// TODO: needs testing with actual data emitted from toolchain (matches a Java comment).
-    fn read_macro_opcode_table(reader: &mut dyn BinaryReader, opcode_map: &mut HashMap<i32, Vec<DWARFForm>>) -> io::Result<()> {
+    fn read_macro_opcode_table(reader: &mut dyn LegacyBinaryReader, opcode_map: &mut HashMap<i32, Vec<DWARFForm>>) -> io::Result<()> {
         let num_opcodes = reader.read_next_unsigned_byte()?;
         for _ in 0..num_opcodes {
             let opcode = reader.read_next_unsigned_byte()? as i32;
@@ -159,7 +159,7 @@ impl DWARFMacroHeader {
     /// Reads consecutive macro info entries until the end-of-list marker. Mirrors
     /// `DWARFMacroHeader.readMacroEntries(BinaryReader, DWARFMacroHeader)`.
     pub fn read_macro_entries(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         macro_header: Arc<DWARFMacroHeader>,
     ) -> io::Result<Vec<Box<dyn DWARFMacroInfoEntry>>> {
         use crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntryBase;
@@ -280,7 +280,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -310,7 +310,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
         }
     }
@@ -318,7 +318,7 @@ mod tests {
     struct MockDIEContainer;
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn BinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
             None
         }
 

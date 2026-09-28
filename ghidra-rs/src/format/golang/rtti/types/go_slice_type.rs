@@ -504,7 +504,7 @@ mod tests {
         fn get_data_address(&self, _offset: i64) -> Address {
             unimplemented!()
         }
-        fn get_reader(&self, _position: i64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+        fn get_reader(&self, _position: i64) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
             unimplemented!()
         }
         fn find_containing_module_by_func_data(

@@ -1,14 +1,14 @@
 use std::fmt;
 use std::io::{self, Read};
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::invalid_data_exception::InvalidDataException;
 use crate::program::model::data::leb128::Leb128;
 
 /// Adapts a [`BinaryReader`] into a [`Read`] stream, advancing the reader's pointer index one
 /// byte at a time. Used to feed [`Leb128::read`], which only knows how to read from a stream.
 struct ReaderAdapter<'a> {
-    reader: &'a mut dyn BinaryReader,
+    reader: &'a mut dyn LegacyBinaryReader,
 }
 
 impl<'a> Read for ReaderAdapter<'a> {
@@ -34,19 +34,19 @@ pub struct LEB128Info {
 impl LEB128Info {
     /// Reads an unsigned LEB128 value from `reader` and returns a `LEB128Info` instance
     /// that contains the value along with size and position metadata.
-    pub fn unsigned(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn unsigned(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Self::read_value(reader, false)
     }
 
     /// Reads a signed LEB128 value from `reader` and returns a `LEB128Info` instance
     /// that contains the value along with size and position metadata.
-    pub fn signed(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn signed(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Self::read_value(reader, true)
     }
 
     /// Reads a LEB128 value from `reader` and returns a `LEB128Info` instance that contains the
     /// value along with size and position metadata.
-    pub fn read_value(reader: &mut dyn BinaryReader, is_signed: bool) -> io::Result<Self> {
+    pub fn read_value(reader: &mut dyn LegacyBinaryReader, is_signed: bool) -> io::Result<Self> {
         let offset = reader.get_pointer_index();
         let value = Leb128::read(&mut ReaderAdapter { reader }, is_signed)?;
         let byte_length = (reader.get_pointer_index() - offset) as i32;
@@ -162,7 +162,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -201,7 +201,7 @@ mod tests {
             Rc::clone(&self.provider)
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,

@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
@@ -21,7 +21,7 @@ impl CFragWhere2Union {
     /// Reads the 2-byte union.
     ///
     /// Port of the `CFragWhere2Union(BinaryReader)` constructor.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Ok(Self { reserved: reader.read_next_short()? })
     }
 

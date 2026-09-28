@@ -26,7 +26,7 @@ use std::hash::{Hash, Hasher};
 use std::io;
 use std::sync::{Arc, OnceLock};
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_attribute::DWARFAttribute;
 use crate::format::dwarf::attribs::dwarf_attribute_id::{AttrDef, DWARFAttributeId};
@@ -58,7 +58,7 @@ impl DebugInfoEntry {
     /// Read a DIE record from `reader`, positioned at the start of the record. Mirrors the static
     /// `DebugInfoEntry.read(BinaryReader, DWARFCompilationUnit, int)`.
     pub fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         cu: Arc<dyn DWARFCompilationUnit>,
         die_index: i32,
     ) -> io::Result<DebugInfoEntry> {
@@ -427,7 +427,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -455,7 +455,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader { provider: Rc::clone(&self.provider), current_index: new_index })
         }
     }
@@ -469,10 +469,10 @@ mod tests {
     }
 
     impl DIEContainer for MockContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn BinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
             None
         }
-        fn get_reader_for_comp_unit(&self, _cu: &dyn DWARFCompilationUnit) -> Option<Box<dyn BinaryReader>> {
+        fn get_reader_for_comp_unit(&self, _cu: &dyn DWARFCompilationUnit) -> Option<Box<dyn LegacyBinaryReader>> {
             Some(Box::new(MockReader::new(self.debug_info.clone())))
         }
         fn get_children_of(&self, _die_index: i32) -> Vec<&DebugInfoEntry> {

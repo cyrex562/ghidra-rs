@@ -3,7 +3,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// Represents a `fat_arch` structure.
 ///
@@ -22,7 +22,7 @@ impl FatArch {
     /// Reads a [`FatArch`] from `reader`.
     ///
     /// Port of `FatArch(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Ok(FatArch {
             cputype: reader.read_next_int()?,
             cpusubtype: reader.read_next_int()?,
@@ -108,7 +108,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -146,7 +146,7 @@ mod tests {
         ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not needed by FatArch tests")
         }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed by FatArch tests")
         }
     }

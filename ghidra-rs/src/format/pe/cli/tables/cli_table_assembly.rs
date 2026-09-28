@@ -29,7 +29,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::tables::cli_type_table::CliTypeTable;
 use crate::format::pe::cli::tables::flags::cli_flags;
@@ -99,7 +99,7 @@ impl CliTableAssembly {
     /// Port of `CliTableAssembly(BinaryReader, CliStreamMetadata, CliTypeTable)` (which chains
     /// through `CliAbstractTable`'s constructor first, folded in here -- see module docs).
     pub fn new(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         metadata_stream: Arc<dyn CliStreamMetadata>,
         table_type: CliTypeTable,
     ) -> io::Result<Self> {
@@ -183,7 +183,7 @@ impl CliTableAssembly {
     /// `metadataStream.getBlobIndexDataType()` against the `DWordDataType.dataType` singleton by
     /// identity; this port compares the returned `DataType`'s length instead (4 bytes for a
     /// DWORD-width index, 2 otherwise), which is equivalent and does not need that singleton.
-    fn read_blob_index(&self, reader: &mut dyn BinaryReader) -> io::Result<i32> {
+    fn read_blob_index(&self, reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
         if self.metadata_stream.get_blob_index_data_type().get_length() == 4 {
             reader.read_next_int()
         } else {
@@ -192,7 +192,7 @@ impl CliTableAssembly {
     }
 
     /// Port of the protected `CliAbstractTable.readStringIndex(BinaryReader)`.
-    fn read_string_index(&self, reader: &mut dyn BinaryReader) -> io::Result<i32> {
+    fn read_string_index(&self, reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
         if self.metadata_stream.get_string_index_data_type().get_length() == 4 {
             reader.read_next_int()
         } else {
@@ -338,7 +338,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -368,7 +368,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

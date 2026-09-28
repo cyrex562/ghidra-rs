@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::swift::swift_type_metadata_structure::{
     SwiftTypeMetadataStructure, SwiftTypeMetadataStructureBase, CATEGORY_PATH,
@@ -46,7 +46,7 @@ impl MethodDescriptorFlags {
 
     /// Creates a new `MethodDescriptorFlags` from a reader positioned at the start of the
     /// structure.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let base = SwiftTypeMetadataStructureBase::new(reader.get_pointer_index() as i64);
         let flags = reader.read_next_int()?;
         Ok(MethodDescriptorFlags { base, flags })

@@ -55,7 +55,7 @@ mod tests {
     use super::*;
     use crate::format::golang::structmapping::test_support::{byte_reader, simple, test_program, TagContext};
     use crate::format::golang::structmapping::{StructureMapped as DeriveStructureMapped, StructureReader};
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::program::model::data::category_path::ROOT;
     use std::sync::Arc;
 
@@ -102,14 +102,14 @@ mod tests {
     }
 
     impl StructureReader for Custom {
-        fn read_structure(&mut self, r: &mut dyn BinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, r: &mut dyn LegacyBinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
             self.value = r.read_next_byte()?;
             Ok(())
         }
     }
 
     impl StructureReader for Failing {
-        fn read_structure(&mut self, r: &mut dyn BinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, r: &mut dyn LegacyBinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
             self.value = r.read_next_byte()?;
             Ok(())
         }

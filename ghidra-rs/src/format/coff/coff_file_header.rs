@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use thiserror::Error;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::coff::aout_header_factory::create_aout_header;
@@ -46,7 +46,7 @@ impl CoffBinaryReader {
     }
 }
 
-impl BinaryReader for CoffBinaryReader {
+impl LegacyBinaryReader for CoffBinaryReader {
     fn length(&self) -> io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -85,7 +85,7 @@ impl BinaryReader for CoffBinaryReader {
         Rc::clone(&self.provider)
     }
 
-    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
         Box::new(CoffBinaryReader {
             provider: Rc::clone(&self.provider),
             is_little_endian: self.is_little_endian,
@@ -121,7 +121,7 @@ pub struct CoffFileHeader {
     f_opthdr: i16,
     f_flags: i16,
     f_target_id: i16,
-    reader: Box<dyn BinaryReader>,
+    reader: Box<dyn LegacyBinaryReader>,
     aout_header: Option<Box<dyn AoutHeader>>,
     sections: Vec<Box<dyn CoffSectionHeader>>,
     symbols: Vec<CoffSymbol>,
@@ -134,7 +134,7 @@ impl CoffFileHeader {
     /// Port of `CoffFileHeader(GByteStore)`.
     pub fn new(provider: Rc<RefCell<dyn GByteStore>>) -> Result<Self, CoffFileHeaderError> {
         // Probe for matches using both little and big endian.
-        let mut reader: Box<dyn BinaryReader> =
+        let mut reader: Box<dyn LegacyBinaryReader> =
             Box::new(CoffBinaryReader::new(Rc::clone(&provider), true));
         if !Self::probe_valid(reader.as_ref())? {
             reader.set_little_endian(false);
@@ -368,7 +368,7 @@ impl CoffFileHeader {
         self.aout_header.as_deref()
     }
 
-    fn probe_valid(reader: &dyn BinaryReader) -> io::Result<bool> {
+    fn probe_valid(reader: &dyn LegacyBinaryReader) -> io::Result<bool> {
         const MIN_BYTE_LENGTH: u64 = 22;
         const COFF_NULL_SANITY_CHECK_LEN: usize = 64;
 

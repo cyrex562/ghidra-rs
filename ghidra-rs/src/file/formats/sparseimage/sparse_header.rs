@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::word_data_type::WordDataType;
@@ -41,7 +41,7 @@ impl SparseHeader {
     /// Reads the header from `reader`'s current position.
     ///
     /// Mirrors `SparseHeader(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Ok(SparseHeader {
             magic: reader.read_next_int()?,
             major_version: reader.read_next_short()?,

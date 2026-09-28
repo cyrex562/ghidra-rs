@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::dwarf_exception::DWARFException;
 use crate::format::dwarf::dwarf_length_value::DWARFLengthValue;
@@ -102,7 +102,7 @@ impl DWARFLine {
 
     /// Reads a line table header (and its directory / file tables) from the stream.
     pub fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         default_int_size: i32,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<DWARFLine> {
@@ -136,7 +136,7 @@ impl DWARFLine {
 
     fn read_v4(
         result: &mut DWARFLine,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<()> {
         // length : dwarf_length (already)
@@ -186,7 +186,7 @@ impl DWARFLine {
 
     fn read_v5(
         result: &mut DWARFLine,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<()> {
         // length : dwarf_length (already)
@@ -241,7 +241,7 @@ impl DWARFLine {
 
     /// Reads the `opcode_base - 1` standard opcode operand counts. Element 0 is never used by the
     /// line program and is set to 1, as in the Java code.
-    fn read_standard_opcode_lengths(&mut self, reader: &mut dyn BinaryReader) -> io::Result<()> {
+    fn read_standard_opcode_lengths(&mut self, reader: &mut dyn LegacyBinaryReader) -> io::Result<()> {
         self.standard_opcode_length = vec![0; self.opcode_base.max(0) as usize];
         if let Some(first) = self.standard_opcode_length.first_mut() {
             *first = 1; /* Should never be used */
@@ -492,7 +492,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -522,7 +522,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,
@@ -549,10 +549,10 @@ mod tests {
     }
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn BinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
             self.debug_line_bytes
                 .as_ref()
-                .map(|bytes| Box::new(TestReader::new(bytes.clone())) as Box<dyn BinaryReader>)
+                .map(|bytes| Box::new(TestReader::new(bytes.clone())) as Box<dyn LegacyBinaryReader>)
         }
     }
 

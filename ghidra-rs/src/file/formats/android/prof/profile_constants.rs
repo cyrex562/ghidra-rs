@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// Android Profiling (.PROF) files.
 ///
@@ -40,7 +40,7 @@ impl ProfileConstants {
 
     /// Checks if the reader contains a profile file signature.
     /// Returns true if the reader starts with the profile magic and version 010.
-    pub fn is_profile(reader: &dyn BinaryReader) -> bool {
+    pub fn is_profile(reader: &dyn LegacyBinaryReader) -> bool {
         if let Ok(magic_bytes) = reader.read_byte_array(0, Self::K_PROFILE_MAGIC_LENGTH) {
             if magic_bytes == Self::K_PROFILE_MAGIC {
                 if let Ok(version_bytes) = reader.read_byte_array(
@@ -78,7 +78,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -119,7 +119,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             panic!("not implemented for mock")
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,

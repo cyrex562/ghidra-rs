@@ -9,7 +9,7 @@
 //! without a name collision. Keep any future PE-only placeholder that would collide with an
 //! existing `format::seam_stubs` name in this file instead. See `STUBS.tsv` for provenance.
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::seam_stubs::NTHeader;
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.SectionHeader`, referenced by
@@ -39,7 +39,7 @@ pub struct ImageDynamicRelocationTable {
 impl ImageDynamicRelocationTable {
     /// Port of `ImageDynamicRelocationTable(BinaryReader, long, boolean)`, minus the actual
     /// relocation-block parsing.
-    pub fn new(_reader: &mut dyn BinaryReader, rva: i64, is64bit: bool) -> std::io::Result<Self> {
+    pub fn new(_reader: &mut dyn LegacyBinaryReader, rva: i64, is64bit: bool) -> std::io::Result<Self> {
         Ok(ImageDynamicRelocationTable { rva, is64bit })
     }
 }
@@ -56,7 +56,7 @@ impl ImageChpeMetadataX86 {
     /// Port of `ImageChpeMetadataX86(BinaryReader, NTHeader, long)`, minus the actual CHPE range
     /// table parsing.
     pub fn new(
-        _reader: &mut dyn BinaryReader,
+        _reader: &mut dyn LegacyBinaryReader,
         _nt: &dyn NTHeader,
         chpe_metadata_pointer: i64,
     ) -> std::io::Result<Self> {
@@ -76,7 +76,7 @@ impl ImageArm64ecMetadata {
     /// Port of `ImageArm64ecMetadata(BinaryReader, NTHeader, long)`, minus the actual ARM64EC
     /// metadata table parsing.
     pub fn new(
-        _reader: &mut dyn BinaryReader,
+        _reader: &mut dyn LegacyBinaryReader,
         _nt: &dyn NTHeader,
         chpe_metadata_pointer: i64,
     ) -> std::io::Result<Self> {

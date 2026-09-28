@@ -4,7 +4,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::format::pe::image_cor20_header::ImageCor20Header;
 use crate::format::pe::pe_markupable::PeMarkupable;
@@ -35,7 +35,7 @@ pub struct COMDescriptorDataDirectory {
 impl COMDescriptorDataDirectory {
     /// Port of `COMDescriptorDataDirectory(NTHeader, BinaryReader)`, which also runs
     /// `DataDirectory.processDataDirectory`.
-    pub fn new(nt_header: &dyn NTHeader, reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let mut directory = COMDescriptorDataDirectory {
             virtual_address: 0,
             size: 0,
@@ -50,7 +50,7 @@ impl COMDescriptorDataDirectory {
     fn process_data_directory(
         &mut self,
         nt_header: &dyn NTHeader,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
     ) -> io::Result<()> {
         self.virtual_address = reader.read_next_int()?;
         self.size = reader.read_next_int()?;
@@ -104,7 +104,7 @@ impl COMDescriptorDataDirectory {
     pub fn parse(
         &mut self,
         nt_header: &dyn NTHeader,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
     ) -> io::Result<bool> {
         let ptr = self.get_pointer(nt_header);
         if ptr < 0 {
@@ -279,7 +279,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -309,7 +309,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

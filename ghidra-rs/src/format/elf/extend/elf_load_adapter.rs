@@ -497,7 +497,7 @@ mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::elf::elf_section_header_constants::SHN_UNDEF;
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC};
@@ -1009,7 +1009,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for VecReader {
+    impl LegacyBinaryReader for VecReader {
         fn length(&self) -> std::io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -1035,7 +1035,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(VecReader {
                 provider: Rc::clone(&self.provider),
                 current_index: new_index,

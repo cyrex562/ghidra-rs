@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 use super::data_sym32::DataSym32;
 use super::data_sym32_new::DataSym32New;
@@ -41,7 +41,7 @@ use super::unknown_symbol::UnknownSymbol;
 /// `Ok(None)` if the symbol is invalid (length == 0 or type < 0).
 /// `Err` if reading from the reader fails.
 pub fn select_symbol(
-    reader: &dyn BinaryReader,
+    reader: &dyn LegacyBinaryReader,
     ptr: u64,
 ) -> io::Result<Option<Box<dyn DebugSymbol>>> {
     let length = reader.read_short(ptr)?;
@@ -163,7 +163,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -193,7 +193,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

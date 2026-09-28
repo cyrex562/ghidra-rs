@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::pe::rich::RichHeaderRecord;
 use crate::format::pe::rich_header::RichHeader;
 use crate::format::seam_stubs::PERichTableDataType;
@@ -21,7 +21,7 @@ pub struct RichTable {
 /// captures that same dispatch without needing an `Object`-style trait object.
 enum RichTableSource<'a> {
     Mem(&'a dyn MemBuffer),
-    Reader(&'a dyn BinaryReader),
+    Reader(&'a dyn LegacyBinaryReader),
 }
 
 impl<'a> RichTableSource<'a> {
@@ -45,7 +45,7 @@ impl RichTable {
         table
     }
 
-    pub fn new_from_reader(reader: &dyn BinaryReader) -> Self {
+    pub fn new_from_reader(reader: &dyn LegacyBinaryReader) -> Self {
         let base = reader.get_pointer_index() as i64;
         let mut table = RichTable { mask: 0, image_offset: 0, size: 0, records: Vec::new() };
         table.parse(RichTableSource::Reader(reader), base);

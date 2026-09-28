@@ -1,13 +1,13 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// Reads pointer values (32-bit or 64-bit) from a binary data source.
 ///
 /// Extends the capabilities of `BinaryReader` to handle architecture-dependent pointer sizes.
 /// Mirrors `ghidra.file.formats.dump.DumpFileReader` from the original Ghidra source.
 pub struct DumpFileReader {
-    reader: Box<dyn BinaryReader>,
+    reader: Box<dyn LegacyBinaryReader>,
     size: u32,
 }
 
@@ -17,7 +17,7 @@ impl DumpFileReader {
     /// # Arguments
     /// * `reader` - The underlying binary reader
     /// * `size` - Pointer size in bits (32 or 64)
-    pub fn new(reader: Box<dyn BinaryReader>, size: u32) -> Self {
+    pub fn new(reader: Box<dyn LegacyBinaryReader>, size: u32) -> Self {
         Self { reader, size }
     }
 
@@ -143,7 +143,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -182,7 +182,7 @@ mod tests {
             self.provider.clone()
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             let mut clone = TestReader {
                 provider: self.provider.clone(),
                 index: new_index,

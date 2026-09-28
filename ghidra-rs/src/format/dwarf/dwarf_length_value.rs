@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 
 /// A tuple of length (of a thing in a dwarf stream) and size of integers used in the dwarf
 /// section.
@@ -28,7 +28,7 @@ impl DWARFLengthValue {
     ///
     /// Returns `Ok(None)` if the stream was just zero-padded data.
     pub fn read(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         default_pointer_size: i32,
     ) -> io::Result<Option<DWARFLengthValue>> {
         let start_offset = reader.get_pointer_index();
@@ -79,7 +79,7 @@ impl DWARFLengthValue {
     }
 }
 
-fn is_all_zeros_until_eof(reader: &mut dyn BinaryReader) -> io::Result<bool> {
+fn is_all_zeros_until_eof(reader: &mut dyn LegacyBinaryReader) -> io::Result<bool> {
     let mut clone = reader.clone_reader();
     while clone.has_next() {
         if clone.read_next_byte()? != 0 {
@@ -146,7 +146,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -176,7 +176,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

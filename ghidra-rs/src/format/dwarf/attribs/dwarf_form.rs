@@ -661,7 +661,7 @@ impl fmt::Display for DWARFForm {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
     use crate::format::seam_stubs::{DIEContainer, DWARFCompilationUnit};
@@ -710,7 +710,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -738,7 +738,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index })
         }
     }
@@ -750,7 +750,7 @@ mod tests {
     }
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn BinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
             None
         }
         fn get_string(

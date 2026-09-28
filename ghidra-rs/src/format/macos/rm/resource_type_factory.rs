@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::macos::asd::entry::Entry;
 use crate::format::macos::cfm::c_frag_resource::CFragResource;
 use crate::format::macos::rm::resource_header::ResourceHeader;
@@ -26,7 +26,7 @@ use crate::format::macos::rm::resource_types::TYPE_CFRG;
 /// Besides read errors, a `'cfrg'` type with an empty reference list is reported as
 /// [`io::ErrorKind::InvalidData`] (Java's `List.get(0)` throws `IndexOutOfBoundsException`).
 pub fn get_resource_object(
-    reader: &mut dyn BinaryReader,
+    reader: &mut dyn LegacyBinaryReader,
     header: &ResourceHeader,
     resource_type: &ResourceType,
 ) -> io::Result<Option<CFragResource>> {
@@ -52,7 +52,7 @@ pub fn get_resource_object(
 
 #[cfg(test)]
 mod tests {
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
     use crate::format::macos::asd::entry_descriptor_id::ENTRY_RESOURCE_FORK;
     use crate::format::macos::cfm::c_frag_usage::CFragUsage;

@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::{BinaryReader, SIZEOF_BYTE, SIZEOF_INT, SIZEOF_SHORT};
+use crate::app::util::bin::binary_reader::{LegacyBinaryReader, SIZEOF_BYTE, SIZEOF_INT, SIZEOF_SHORT};
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::debug::debug_coff_symbol_table::DebugCOFFSymbolTable;
 use crate::format::seam_stubs::DebugCOFFSymbolAux;
@@ -133,7 +133,7 @@ impl DebugCOFFSymbol {
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
     pub fn new_with_table(
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         index: u64,
         symbol_table: &DebugCOFFSymbolTable,
     ) -> io::Result<Self> {
@@ -147,7 +147,7 @@ impl DebugCOFFSymbol {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
-    pub fn new(reader: &dyn BinaryReader, mut index: u64, string_table_index: u64) -> io::Result<Self> {
+    pub fn new(reader: &dyn LegacyBinaryReader, mut index: u64, string_table_index: u64) -> io::Result<Self> {
         // Read the union first.
         let mut name = None;
         let short_val = reader.read_int(index)?;
@@ -363,7 +363,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -393,7 +393,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

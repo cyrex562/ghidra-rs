@@ -116,7 +116,7 @@ impl GoFunctabEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::format::golang::rtti::test_support::{go_mapper, read_at, Image};
     use crate::format::seam_stubs::{GoName, GoPcValueEvaluator, GoSlice, GoSymbolName, GoTypeManager};
     use crate::program::database::sourcemap::SourceFile;
@@ -222,7 +222,7 @@ mod tests {
         fn get_data_address(&self, offset: i64) -> Address {
             test_address(offset)
         }
-        fn get_reader(&self, _position: i64) -> Box<dyn BinaryReader> {
+        fn get_reader(&self, _position: i64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!()
         }
         fn find_containing_module_by_func_data(

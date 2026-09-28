@@ -15,7 +15,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::seam_stubs::{EncodedAnnotation, EncodedArray};
 use crate::file::formats::android::dex::format::value_formats::ValueFormats;
@@ -42,7 +42,7 @@ pub struct EncodedValue {
 
 impl EncodedValue {
     /// Port of `EncodedValue(BinaryReader)`.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let value = reader.read_next_byte()?;
         let value_type = value & 0x1f;
         let value_args = (value & 0xe0) >> 5;
@@ -213,7 +213,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockBinaryReader {
+    impl LegacyBinaryReader for MockBinaryReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -251,16 +251,16 @@ mod tests {
         fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
             unimplemented!("not exercised by these tests")
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: new_index as usize, little_endian: self.little_endian })
         }
-        fn clone_reader(&self) -> Box<dyn BinaryReader> {
+        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: self.little_endian })
         }
-        fn as_big_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: false })
         }
-        fn as_little_endian(&self) -> Box<dyn BinaryReader> {
+        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: true })
         }
     }

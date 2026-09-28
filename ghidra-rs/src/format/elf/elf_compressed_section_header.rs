@@ -20,7 +20,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::seam_stubs::ElfHeader;
 
 /// Compression algorithm identifier for the zlib algorithm.
@@ -50,7 +50,7 @@ impl ElfCompressedSectionHeader {
     ///
     /// # Errors
     /// Returns `Err` if an IO error occurs during parse.
-    pub fn read(reader: &mut impl BinaryReader, elf: &impl ElfHeader) -> io::Result<Self> {
+    pub fn read(reader: &mut impl LegacyBinaryReader, elf: &impl ElfHeader) -> io::Result<Self> {
         if elf.is32_bit() {
             Self::read32(reader)
         } else {
@@ -80,7 +80,7 @@ impl ElfCompressedSectionHeader {
         self.header_size
     }
 
-    fn read32(reader: &mut impl BinaryReader) -> io::Result<Self> {
+    fn read32(reader: &mut impl LegacyBinaryReader) -> io::Result<Self> {
         let ch_type = reader.read_next_int()?;
         let ch_size = reader.read_next_unsigned_int()? as i64;
         let ch_addralign = reader.read_next_unsigned_int()? as i64;
@@ -93,7 +93,7 @@ impl ElfCompressedSectionHeader {
         })
     }
 
-    fn read64(reader: &mut impl BinaryReader) -> io::Result<Self> {
+    fn read64(reader: &mut impl LegacyBinaryReader) -> io::Result<Self> {
         let ch_type = reader.read_next_int()?;
         let _unused_reserved = reader.read_next_unsigned_int()?;
         let ch_size = reader.read_next_long()?;
@@ -152,7 +152,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -198,11 +198,11 @@ mod tests {
             unimplemented!("not needed for this test")
         }
 
-        fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed for this test")
         }
 
-        fn clone_reader(&self) -> Box<dyn BinaryReader> {
+        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
             unimplemented!("not needed for this test")
         }
     }

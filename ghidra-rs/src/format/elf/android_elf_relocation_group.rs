@@ -63,7 +63,7 @@ use std::io;
 use std::rc::Rc;
 use std::sync::{Arc, Weak};
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::app::util::bin::mem_buffer_byte_provider::MemBufferByteProvider;
 use crate::docking::settings::settings::Settings;
@@ -109,7 +109,7 @@ impl<'a> MemBufferBinaryReader<'a> {
     }
 }
 
-impl<'a> BinaryReader for MemBufferBinaryReader<'a> {
+impl<'a> LegacyBinaryReader for MemBufferBinaryReader<'a> {
     fn length(&self) -> io::Result<u64> {
         self.provider.borrow_mut().length()
     }
@@ -155,7 +155,7 @@ impl<'a> BinaryReader for MemBufferBinaryReader<'a> {
         unimplemented!("not needed for LEB128 decoding")
     }
 
-    fn clone_at(&self, _new_index: u64) -> Box<dyn BinaryReader> {
+    fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
         unimplemented!("not needed for LEB128 decoding")
     }
 }

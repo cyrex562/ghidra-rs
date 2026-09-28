@@ -88,7 +88,7 @@ mod tests {
         }
     }
 
-    impl crate::app::util::bin::binary_reader::BinaryReader for TestReader {
+    impl crate::app::util::bin::binary_reader::LegacyBinaryReader for TestReader {
         fn length(&self) -> std::io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -121,7 +121,7 @@ mod tests {
         fn clone_at(
             &self,
             new_index: u64,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+        ) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,

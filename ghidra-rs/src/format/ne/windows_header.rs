@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::format::ne::entry_table::EntryTable;
 use crate::format::ne::imported_name_table::ImportedNameTable;
 use crate::format::ne::information_block::InformationBlock;
@@ -40,7 +40,7 @@ impl WindowsHeader {
     /// constitute a valid Windows header, or if there is an IO-related error reading the header
     /// bytes.
     pub fn new(
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
         base_addr: Option<&SegmentedAddress>,
         index: u64,
     ) -> io::Result<Self> {
@@ -217,7 +217,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -247,7 +247,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

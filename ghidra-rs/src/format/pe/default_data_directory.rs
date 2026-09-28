@@ -10,7 +10,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::pe_markupable::PeMarkupable;
 use crate::app::util::importer::message_log::MessageLog;
@@ -33,7 +33,7 @@ pub struct DefaultDataDirectory {
 impl DefaultDataDirectory {
     /// Port of `DefaultDataDirectory(NTHeader, BinaryReader)`, which just runs
     /// `DataDirectory.processDataDirectory`.
-    pub fn new(nt_header: &dyn NTHeader, reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let mut directory = DefaultDataDirectory { virtual_address: 0, size: 0, has_parsed: false };
         directory.process_data_directory(nt_header, reader)?;
         Ok(directory)
@@ -43,7 +43,7 @@ impl DefaultDataDirectory {
     fn process_data_directory(
         &mut self,
         nt_header: &dyn NTHeader,
-        reader: &mut dyn BinaryReader,
+        reader: &mut dyn LegacyBinaryReader,
     ) -> io::Result<()> {
         self.virtual_address = reader.read_next_int()?;
         self.size = reader.read_next_int()?;
@@ -190,7 +190,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for FixtureReader {
+    impl LegacyBinaryReader for FixtureReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -220,7 +220,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(FixtureReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,

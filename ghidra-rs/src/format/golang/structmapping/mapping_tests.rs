@@ -7,7 +7,7 @@ use std::sync::Arc;
 use super::structure_mapped::{FieldValueKind, OutputDataType, PrimitiveKind, StructureMapped};
 use super::test_support::{byte_reader, simple, structure, test_program, TagContext};
 use super::{DataTypeMapper, Signedness, StructureContext, StructureMapped as DeriveStructureMapped};
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::category_path::ROOT;
 use crate::program::model::data::data_type::DataType;
@@ -358,7 +358,7 @@ impl TestVarlen {
 }
 
 impl super::StructureReader for TestVarlen {
-    fn read_structure(&mut self, reader: &mut dyn BinaryReader, _mapper: &DataTypeMapper) -> std::io::Result<()> {
+    fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> std::io::Result<()> {
         self.len = reader.read_next_byte()?;
         self.tag = reader.read_next_byte()?;
         self.data = reader.read_next_byte_array(self.len as usize)?;
@@ -415,7 +415,7 @@ fn primitive_output_needs_a_matching_integer_type() {
         value: u8,
     }
     impl super::StructureReader for Prim {
-        fn read_structure(&mut self, reader: &mut dyn BinaryReader, _m: &DataTypeMapper) -> std::io::Result<()> {
+        fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, _m: &DataTypeMapper) -> std::io::Result<()> {
             self.value = reader.read_next_byte()?;
             Ok(())
         }
@@ -443,7 +443,7 @@ fn nested_output_uses_the_nested_structure_data_type() {
         inner: Option<TestVarlen>,
     }
     impl super::StructureReader for Outer {
-        fn read_structure(&mut self, reader: &mut dyn BinaryReader, m: &DataTypeMapper) -> std::io::Result<()> {
+        fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, m: &DataTypeMapper) -> std::io::Result<()> {
             self.inner = Some(m.read_structure(reader)?);
             Ok(())
         }

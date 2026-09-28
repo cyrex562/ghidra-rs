@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use std::io;
 
 /// Usage type for a Code Fragment Manager (CFM) fragment.
@@ -26,7 +26,7 @@ impl CFragUsage {
     /// # Errors
     /// Returns `Err` if reading from the reader fails, or if the byte value
     /// does not correspond to a valid `CFragUsage` variant.
-    pub fn get(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn get(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         let value = reader.read_next_byte()? & 0xff;
         Self::find(value).ok_or_else(|| {
             io::Error::new(
@@ -80,7 +80,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> io::Result<u64> {
             Ok(self.bytes.len() as u64)
         }
@@ -129,7 +129,7 @@ mod tests {
             panic!("not implemented for mock")
         }
 
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             let mut clone = Self {
                 bytes: self.bytes.clone(),
                 position: new_index as usize,

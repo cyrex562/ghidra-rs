@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::segment_constants::{PROTECTION_R, PROTECTION_W, PROTECTION_X};
 use crate::format::macho::mach_constants::DATA_TYPE_CATEGORY;
@@ -36,7 +36,7 @@ impl DyldCacheMappingInfo {
     /// Reads a `dyld_cache_mapping_info` at the reader's current position.
     ///
     /// Port of `DyldCacheMappingInfo(BinaryReader)`.
-    pub fn from_reader(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Ok(DyldCacheMappingInfo {
             address: reader.read_next_long()?,
             size: reader.read_next_long()?,

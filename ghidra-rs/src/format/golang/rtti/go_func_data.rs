@@ -805,7 +805,7 @@ impl std::fmt::Display for RecoveredSignature {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
     use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::golang::rtti::test_support::{go118_tags, go_mapper_with_tags, read_at, Image};
     use crate::format::golang::structmapping::test_support::TagContext;
@@ -860,7 +860,7 @@ mod tests {
     }
 
     impl MockReader {
-        fn boxed(data: Vec<u8>, start: u64) -> Box<dyn BinaryReader> {
+        fn boxed(data: Vec<u8>, start: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::new(RefCell::new(VecProvider(data))),
                 current_index: start,
@@ -868,7 +868,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for MockReader {
+    impl LegacyBinaryReader for MockReader {
         fn length(&self) -> std::io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -894,7 +894,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 current_index: new_index,
@@ -971,7 +971,7 @@ mod tests {
             &self,
             element_size: i32,
             element_index: i32,
-        ) -> Box<dyn BinaryReader> {
+        ) -> Box<dyn LegacyBinaryReader> {
             MockReader::boxed(self.0.bytes.clone(), (element_size * element_index) as u64)
         }
     }
@@ -1186,7 +1186,7 @@ mod tests {
         fn get_data_address(&self, offset: i64) -> Address {
             test_address(offset)
         }
-        fn get_reader(&self, position: i64) -> Box<dyn BinaryReader> {
+        fn get_reader(&self, position: i64) -> Box<dyn LegacyBinaryReader> {
             MockReader::boxed(self.readers.get(&position).cloned().unwrap_or_default(), 0)
         }
         fn find_containing_module_by_func_data(

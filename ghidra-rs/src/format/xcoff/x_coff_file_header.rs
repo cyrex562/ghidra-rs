@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use thiserror::Error;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::coff::coff_file_header::CoffBinaryReader;
@@ -63,7 +63,7 @@ impl XCoffFileHeader {
     }
 
     /// Reads the header at the reader's current position; the reader must be big endian.
-    fn read(reader: &mut dyn BinaryReader) -> Result<Self, XCoffFileHeaderError> {
+    fn read(reader: &mut dyn LegacyBinaryReader) -> Result<Self, XCoffFileHeaderError> {
         if !x_coff_file_header_magic::is_match(reader.peek_next_short()? as u16) {
             return Err(XCoffException::new("Invalid XCOFF: incorrect magic value.").into());
         }

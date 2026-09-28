@@ -22,7 +22,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::chained::dyld_chained_fixups::{self, ChainedFixupError};
 use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase};
@@ -75,8 +75,8 @@ impl DyldChainedFixupsCommand {
     ///
     /// Port of `DyldChainedFixupsCommand(BinaryReader, BinaryReader)`.
     pub fn new(
-        load_command_reader: &mut dyn BinaryReader,
-        data_reader: &mut dyn BinaryReader,
+        load_command_reader: &mut dyn LegacyBinaryReader,
+        data_reader: &mut dyn LegacyBinaryReader,
     ) -> io::Result<Self> {
         let link_edit = LinkEditDataCommand::new(load_command_reader, data_reader)?;
         let chain_header = DyldChainedFixupHeader::new(data_reader)?;
@@ -100,7 +100,7 @@ impl DyldChainedFixupsCommand {
     /// MessageLog, TaskMonitor)`.
     pub fn get_chained_fixups(
         &self,
-        reader: &dyn BinaryReader,
+        reader: &dyn LegacyBinaryReader,
         imagebase: i64,
         symbol_table: Option<&dyn SymbolTable>,
         log: &MessageLog,
@@ -366,7 +366,7 @@ mod tests {
         }
     }
 
-    impl BinaryReader for TestReader {
+    impl LegacyBinaryReader for TestReader {
         fn length(&self) -> io::Result<u64> {
             self.provider.borrow_mut().length()
         }
@@ -396,7 +396,7 @@ mod tests {
         fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
             Rc::clone(&self.provider)
         }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
             Box::new(TestReader {
                 provider: Rc::clone(&self.provider),
                 index: new_index,
