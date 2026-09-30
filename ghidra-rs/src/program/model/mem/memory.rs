@@ -10,6 +10,15 @@ use crate::program::model::mem::{MemoryAccessException, MemoryBlock, MemoryConfl
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
+/// Validate the given block name: cannot be empty and cannot contain a control character
+/// (`< 0x20`).
+///
+/// Port of the static `Memory.isValidMemoryBlockName(String)`; `None` stands in for Java's `null`
+/// argument at call sites that have one.
+pub fn is_valid_memory_block_name(name: &str) -> bool {
+    !name.is_empty() && name.encode_utf16().all(|c| c >= 0x20)
+}
+
 pub trait Memory: Send + Sync {
     fn is_big_endian(&self) -> bool;
     fn get_byte(&self, addr: &Address) -> Result<u8, MemoryAccessException>;
@@ -171,4 +180,19 @@ pub enum CreateBlockError {
     /// The request was rejected outright (Java's `IllegalArgumentException`).
     #[error("{0}")]
     IllegalArgument(String),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_valid_memory_block_name;
+
+    #[test]
+    fn valid_memory_block_names_match_java() {
+        assert!(is_valid_memory_block_name("__TEXT"));
+        assert!(is_valid_memory_block_name(" "));
+        assert!(!is_valid_memory_block_name(""));
+        assert!(!is_valid_memory_block_name("a\0b"));
+        assert!(!is_valid_memory_block_name("tab\there"));
+        assert!(is_valid_memory_block_name("\u{7f}"));
+    }
 }

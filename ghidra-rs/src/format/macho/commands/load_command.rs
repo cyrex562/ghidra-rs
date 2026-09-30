@@ -16,7 +16,9 @@ use crate::app::util::bin::struct_converter::StructConverter;
 use crate::format::macho::commands::load_command_types::get_load_command_name;
 use crate::format::macho::commands::segment_names;
 use crate::app::util::importer::message_log::MessageLog;
-use crate::format::seam_stubs::{FlatProgramAPI, MachHeader, SegmentCommand};
+use crate::format::macho::commands::segment_command::SegmentCommand;
+use crate::format::macho::mach_header::MachHeader;
+use crate::format::seam_stubs::FlatProgramAPI;
 use crate::program::model::address::Address;
 use crate::program::model::listing::comment_type::CommentType;
 use crate::program::model::listing::program::Program;
@@ -28,6 +30,7 @@ use crate::util::task::TaskMonitor;
 /// The shared state every [`LoadCommand`] implementor carries.
 ///
 /// Java: the private `startIndex`/`cmd`/`cmdsize` fields on the abstract `LoadCommand` class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LoadCommandBase {
     start_index: u64,
     cmd: i32,
@@ -99,7 +102,7 @@ pub trait LoadCommand: StructConverter + Send + Sync {
     fn markup(
         &self,
         program: &mut dyn Program,
-        header: &dyn MachHeader,
+        header: &MachHeader,
         source: Option<&str>,
         monitor: &dyn TaskMonitor,
         log: &MessageLog,
@@ -152,7 +155,7 @@ pub trait LoadCommand: StructConverter + Send + Sync {
     fn file_offset_to_address(
         &self,
         program: &dyn Program,
-        header: &dyn MachHeader,
+        header: &MachHeader,
         file_offset: i64,
         size: i64,
     ) -> Option<Address> {
@@ -169,7 +172,7 @@ pub trait LoadCommand: StructConverter + Send + Sync {
             segment = self.get_containing_segment(header, file_offset);
         }
         segment.map(|seg| {
-            space.address(seg.get_v_maddress() + (file_offset - seg.get_file_offset()))
+            space.address(seg.get_vm_address().wrapping_add(file_offset - seg.get_file_offset()))
         })
     }
 
@@ -190,11 +193,11 @@ pub trait LoadCommand: StructConverter + Send + Sync {
 
     /// Java: `getContainingSegment(MachHeader, long)`. The segment that contains the given file
     /// offset, or `None` if one was not found.
-    fn get_containing_segment(
+    fn get_containing_segment<'h>(
         &self,
-        header: &dyn MachHeader,
+        header: &'h MachHeader,
         file_offset: i64,
-    ) -> Option<Box<dyn SegmentCommand>> {
+    ) -> Option<&'h SegmentCommand> {
         header.get_all_segments().into_iter().find(|segment| {
             file_offset >= segment.get_file_offset()
                 && file_offset < segment.get_file_offset() + segment.get_file_size()
@@ -206,26 +209,14 @@ pub trait LoadCommand: StructConverter + Send + Sync {
     /// program was imported as a Raw Binary. Legacy code to support Raw Binary markup.
     fn markup_raw_binary(
         &self,
-        header: &dyn MachHeader,
+        header: &MachHeader,
         api: &dyn FlatProgramAPI,
         base_address: &Address,
         parent_module: &mut dyn ProgramModule,
         monitor: &dyn TaskMonitor,
         log: &MessageLog,
     ) {
-        let _ = header;
-        self.update_monitor(monitor);
-        let result: Result<(), String> = (|| {
-            self.create_fragment(api, base_address, parent_module).map_err(|e| e.to_string())?;
-            let addr = base_address.space().address(self.get_start_index() as i64);
-            let data_type = self.to_data_type().map_err(|e| e.to_string())?;
-            api.create_data(&addr, data_type).map_err(|e| e.to_string())?;
-            self.create_plate_comment(api, &addr);
-            Ok(())
-        })();
-        if let Err(message) = result {
-            log.append_msg(&format!("Unable to create {} - {message}", self.get_command_name()));
-        }
+        markup_raw_binary_base(self, header, api, base_address, parent_module, monitor, log);
     }
 
     /// Java: `createFragment(FlatProgramAPI, Address, ProgramModule)`.
@@ -252,6 +243,33 @@ pub trait LoadCommand: StructConverter + Send + Sync {
     /// Java: `updateMonitor(TaskMonitor)`.
     fn update_monitor(&self, monitor: &dyn TaskMonitor) {
         monitor.set_message(&format!("Processing {}...", self.get_command_name()));
+    }
+}
+
+/// The body of Java's `LoadCommand.markupRawBinary`, callable from overriding implementations
+/// the way Java's `super.markupRawBinary(...)` is (a Rust trait's default method cannot be invoked
+/// from the method that overrides it). Failures are logged, never propagated.
+pub fn markup_raw_binary_base<C: LoadCommand + ?Sized>(
+    cmd: &C,
+    header: &MachHeader,
+    api: &dyn FlatProgramAPI,
+    base_address: &Address,
+    parent_module: &mut dyn ProgramModule,
+    monitor: &dyn TaskMonitor,
+    log: &MessageLog,
+) {
+    let _ = header;
+    cmd.update_monitor(monitor);
+    let result: Result<(), String> = (|| {
+        cmd.create_fragment(api, base_address, parent_module).map_err(|e| e.to_string())?;
+        let addr = base_address.space().address(cmd.get_start_index() as i64);
+        let data_type = cmd.to_data_type().map_err(|e| e.to_string())?;
+        api.create_data(&addr, data_type).map_err(|e| e.to_string())?;
+        cmd.create_plate_comment(api, &addr);
+        Ok(())
+    })();
+    if let Err(message) = result {
+        log.append_msg(&format!("Unable to create {} - {message}", cmd.get_command_name()));
     }
 }
 
@@ -344,52 +362,24 @@ mod tests {
         assert!(cmd.check_count(i32::MAX as i64 + 1).is_err());
     }
 
-    struct MockSegment {
-        v_maddress: i64,
-        file_offset: i64,
-        file_size: i64,
-    }
-
-    impl SegmentCommand for MockSegment {
-        fn get_v_maddress(&self) -> i64 {
-            self.v_maddress
-        }
-        fn get_file_offset(&self) -> i64 {
-            self.file_offset
-        }
-        fn get_file_size(&self) -> i64 {
-            self.file_size
-        }
-    }
-
-    struct MockMachHeader {
-        segments: Vec<(i64, i64, i64)>,
-    }
-
-    impl MachHeader for MockMachHeader {
-        fn get_segment(&self, _segment_name: &str) -> Option<Box<dyn SegmentCommand>> {
-            None
-        }
-        fn get_all_segments(&self) -> Vec<Box<dyn SegmentCommand>> {
-            self.segments
-                .iter()
-                .map(|&(v_maddress, file_offset, file_size)| {
-                    Box::new(MockSegment { v_maddress, file_offset, file_size })
-                        as Box<dyn SegmentCommand>
-                })
-                .collect()
-        }
-    }
-
     #[test]
     fn containing_segment_finds_the_segment_holding_the_offset() {
-        let header = MockMachHeader {
-            segments: vec![(0x1000, 0, 0x100), (0x2000, 0x100, 0x200)],
-        };
+        use crate::format::macho::commands::load_command_types::LC_SEGMENT_64;
+        use crate::format::macho::mach_constants::MH_CIGAM_64;
+        use crate::format::macho::mach_header::test_support::{provider, Bytes};
+
+        let mut b = Bytes::new(true);
+        b.u32(MH_CIGAM_64.swap_bytes()).u32(0x0100_0007).u32(3).u32(2).u32(2).u32(144).u32(0).u32(0);
+        for (name, vm, off, size) in [("__A", 0x1000u64, 0u64, 0x100u64), ("__B", 0x2000, 0x100, 0x200)] {
+            b.u32(LC_SEGMENT_64).u32(72).name(name, 16).u64(vm).u64(size).u64(off).u64(size);
+            b.u32(0).u32(0).u32(0).u32(0);
+        }
+        let mut header = MachHeader::new(provider(b.buf)).unwrap();
+        header.parse().unwrap();
         let cmd = TestLoadCommand { base: LoadCommandBase { start_index: 0, cmd: 0, cmdsize: 0 } };
 
         let found = cmd.get_containing_segment(&header, 0x150).unwrap();
-        assert_eq!(found.get_v_maddress(), 0x2000);
+        assert_eq!(found.get_vm_address(), 0x2000);
 
         assert!(cmd.get_containing_segment(&header, 0x9999).is_none());
     }

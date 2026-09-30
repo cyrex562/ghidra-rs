@@ -27,7 +27,8 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::export_trie::ExportTrie;
 use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase};
 use crate::app::util::importer::message_log::MessageLog;
-use crate::format::seam_stubs::{BindingTable, FlatProgramAPI, MachHeader, RebaseTable};
+use crate::format::macho::mach_header::MachHeader;
+use crate::format::seam_stubs::{BindingTable, FlatProgramAPI, RebaseTable};
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::program::Program;
@@ -67,7 +68,7 @@ impl DyldInfoCommand {
     pub fn new(
         load_command_reader: &mut BinaryReader,
         data_reader: &mut BinaryReader,
-        header: &dyn MachHeader,
+        header: &MachHeader,
     ) -> io::Result<Self> {
         let base = LoadCommandBase::new(load_command_reader)?;
 
@@ -198,30 +199,30 @@ impl DyldInfoCommand {
         &self.export_trie
     }
 
-    fn markup_rebase_info(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_rebase_info(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
         let addr = self.file_offset_to_address(program, header, self.rebase_off as i64, self.rebase_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("rebase"));
         // See this module's own docs: the opcode-table markup loop is not performed.
     }
 
-    fn markup_bindings(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
         let addr = self.file_offset_to_address(program, header, self.bind_off as i64, self.bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("bind"));
     }
 
-    fn markup_weak_bindings(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_weak_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
         let addr =
             self.file_offset_to_address(program, header, self.weak_bind_off as i64, self.weak_bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("weak bind"));
     }
 
-    fn markup_lazy_bindings(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_lazy_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
         let addr =
             self.file_offset_to_address(program, header, self.lazy_bind_off as i64, self.lazy_bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("lazy bind"));
     }
 
-    fn markup_export_info(&self, program: &dyn Program, header: &dyn MachHeader, source: Option<&str>) {
+    fn markup_export_info(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
         let Some(addr) =
             self.file_offset_to_address(program, header, self.export_off as i64, self.export_size as i64)
         else {
@@ -255,7 +256,7 @@ impl LoadCommand for DyldInfoCommand {
     fn markup(
         &self,
         program: &mut dyn Program,
-        header: &dyn MachHeader,
+        header: &MachHeader,
         source: Option<&str>,
         _monitor: &dyn TaskMonitor,
         _log: &MessageLog,
@@ -270,7 +271,7 @@ impl LoadCommand for DyldInfoCommand {
 
     fn markup_raw_binary(
         &self,
-        header: &dyn MachHeader,
+        header: &MachHeader,
         api: &dyn FlatProgramAPI,
         base_address: &Address,
         parent_module: &mut dyn ProgramModule,
@@ -334,17 +335,7 @@ mod tests {
 
     use crate::format::macho::commands::dyld::opcode_table::OpcodeTable;
     use crate::format::macho::commands::load_command_types::LC_DYLD_INFO;
-    use crate::format::seam_stubs::SegmentCommand;
-
-    struct MockMachHeader;
-    impl MachHeader for MockMachHeader {
-        fn get_segment(&self, _segment_name: &str) -> Option<Box<dyn SegmentCommand>> {
-            None
-        }
-        fn get_all_segments(&self) -> Vec<Box<dyn SegmentCommand>> {
-            Vec::new()
-        }
-    }
+    use crate::format::macho::mach_header::test_support::empty_header64;
 
     /// Builds a `dyld_info_command` load-command header (cmd, cmdsize, then the 10 unsigned-int
     /// fields), all little-endian.
@@ -385,7 +376,7 @@ mod tests {
         let data = command_bytes(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         let mut lc_reader = BinaryReader::from_bytes(data, true);
         let mut data_reader = BinaryReader::from_bytes(Vec::new(), true);
-        let header = MockMachHeader;
+        let header = empty_header64();
 
         let cmd = DyldInfoCommand::new(&mut lc_reader, &mut data_reader, &header).expect("should parse");
         assert_eq!(cmd.rebase_offset(), 0);
@@ -406,7 +397,7 @@ mod tests {
         // set_pointer_index itself so an empty data reader is fine too. Keep it non-trivial for
         // realism.
         let mut data_reader = BinaryReader::from_bytes(vec![0u8; 200], true);
-        let header = MockMachHeader;
+        let header = empty_header64();
 
         let cmd = DyldInfoCommand::new(&mut lc_reader, &mut data_reader, &header).expect("should parse");
         assert_eq!(cmd.rebase_offset(), 100);

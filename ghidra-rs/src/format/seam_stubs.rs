@@ -1482,7 +1482,7 @@ impl RebaseTable {
     /// REBASE-opcode state machine is not ported, so this does not actually read `reader`.
     pub fn parse(
         reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
-        header: &dyn MachHeader,
+        header: &crate::format::macho::mach_header::MachHeader,
         table_size: i64,
     ) -> std::io::Result<Self> {
         let _ = (reader, header, table_size);
@@ -1524,7 +1524,7 @@ impl BindingTable {
     /// the opcode state machine is not ported, so this does not actually read `reader`.
     pub fn parse(
         reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
-        header: &dyn MachHeader,
+        header: &crate::format::macho::mach_header::MachHeader,
         table_size: i64,
         is_lazy: bool,
     ) -> std::io::Result<Self> {
@@ -1748,6 +1748,25 @@ pub trait FlatProgramAPI: Send + Sync {
     /// `FlatProgramAPI.setPlateComment(Address, String)`.
     fn set_plate_comment(&self, address: &crate::program::model::address::Address, comment: &str) -> bool;
 
+    /// `FlatProgramAPI.createAsciiString(Address, int)`, needed by the Mach-O string-carrying load
+    /// commands' raw-binary markup (`DynamicLibraryCommand`, `RunPathCommand`, ...).
+    fn create_ascii_string(
+        &self,
+        address: &crate::program::model::address::Address,
+        length: i32,
+    ) -> std::io::Result<Box<dyn crate::program::model::listing::data::Data>>;
+
+    /// `FlatProgramAPI.createLabel(Address, String, boolean, SourceType)`, needed by
+    /// `SegmentCommand`'s raw-binary markup. Java returns the new `Symbol`; the Mach-O callers
+    /// ignore it, so this placeholder does not model it.
+    fn create_label(
+        &self,
+        address: &crate::program::model::address::Address,
+        name: &str,
+        make_primary: bool,
+        source_type: crate::program::model::symbol::SourceType,
+    ) -> std::io::Result<()>;
+
     /// `FlatProgramAPI.getCurrentProgram()`, needed by
     /// [`DyldChainedFixupsCommand::markup_raw_binary`](crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand::markup_raw_binary)
     /// to resolve the file-offset-relative address of the chained-fixups header data. Grown
@@ -1768,14 +1787,14 @@ pub trait CodeSignatureBlobIndex: Send + Sync {
 pub trait CodeSignatureGenericBlob: Send + Sync {
     fn get_magic(&self) -> i32;
     fn get_length(&self) -> i64;
-    fn markup(&self, program: &dyn ListingProgram, address: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, address: &crate::program::model::address::Address, header: &crate::format::macho::mach_header::MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureCodeDirectory`,
 /// referenced by `CodeSignatureBlobParser` before the real class is ported.
 pub trait CodeSignatureCodeDirectory: Send + Sync {
-    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &crate::format::macho::mach_header::MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
@@ -1785,7 +1804,7 @@ pub trait CodeSignatureSuperBlob: Send + Sync {
     fn get_count(&self) -> i32;
     fn get_index_entries(&self) -> Vec<Box<dyn CodeSignatureBlobIndex>>;
     fn get_index_blobs(&self) -> Vec<Box<dyn CodeSignatureGenericBlob>>;
-    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
+    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &crate::format::macho::mach_header::MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
@@ -1987,7 +2006,7 @@ impl DyldChainedFixupHeader {
         &self,
         _program: &dyn crate::program::model::listing::Program,
         _address: &crate::program::model::address::Address,
-        _header: &dyn MachHeader,
+        _header: &crate::format::macho::mach_header::MachHeader,
         _monitor: &dyn crate::util::task::TaskMonitor,
         _log: &MessageLog,
     ) -> Result<(), crate::util::exception::CancelledException> {

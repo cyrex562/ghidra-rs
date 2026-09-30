@@ -30,7 +30,8 @@ use crate::format::macho::commands::load_command_types::get_load_command_name;
 use crate::format::macho::dyld::dyld_chained_ptr::{DyldChainType, DYLD_CHAINED_PTR_START_NONE};
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::app::util::importer::message_log::MessageLog;
-use crate::format::seam_stubs::{DyldChainedFixupHeader, FlatProgramAPI, LinkEditDataCommand, MachHeader};
+use crate::format::macho::mach_header::MachHeader;
+use crate::format::seam_stubs::{DyldChainedFixupHeader, FlatProgramAPI, LinkEditDataCommand};
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
@@ -194,7 +195,7 @@ impl LoadCommand for DyldChainedFixupsCommand {
     fn markup(
         &self,
         program: &mut dyn Program,
-        header: &dyn MachHeader,
+        header: &MachHeader,
         source: Option<&str>,
         monitor: &dyn TaskMonitor,
         log: &MessageLog,
@@ -230,7 +231,7 @@ impl LoadCommand for DyldChainedFixupsCommand {
 
     fn markup_raw_binary(
         &self,
-        header: &dyn MachHeader,
+        header: &MachHeader,
         api: &dyn FlatProgramAPI,
         base_address: &Address,
         parent_module: &mut dyn ProgramModule,
