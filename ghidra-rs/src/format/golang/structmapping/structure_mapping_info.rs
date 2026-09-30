@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::structure::Structure;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 use crate::program::model::listing::CommentType;
 
 use super::data_type_mapper::DataTypeMapper;
@@ -196,7 +196,7 @@ impl<T: StructureMapped> StructureMappingInfo<T> {
         instance: &T,
         mapper: &DataTypeMapper,
     ) -> io::Result<Box<dyn DataType>> {
-        let mut new_struct = StructureDataTypeImpl::new_in_category(
+        let mut new_struct = StructureDataType::new_in_category(
             mapper.get_default_variable_length_struct_category_path().clone(),
             self.structure_name.clone(),
             0,

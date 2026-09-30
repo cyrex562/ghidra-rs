@@ -90,7 +90,7 @@
 //!     No concrete datatype in Java (or this crate) is simultaneously a `Dynamic` and a
 //!     `Structure`/`Union`, so this reordering is behaviorally invisible. Two small, real
 //!     `DataType::into_composite` overrides were added to
-//!     [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)/
+//!     [`StructureDataType`](super::structure_data_type::StructureDataType)/
 //!     [`UnionDataTypeImpl`](super::union_data_type::UnionDataTypeImpl) to make this possible (the
 //!     trait default returns `None`), and a `SharedComposite` wrapper was added to
 //!     `program::seam_stubs` (mirroring its pre-existing `SharedArray`) so a composite field read
@@ -1334,11 +1334,11 @@ impl DataTypeComponent for NullDataTypeComponent {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+    use crate::program::model::data::structure_data_type::StructureDataType;
     use crate::util::task::DummyMonitor;
 
     fn leaf_struct(name: &str) -> Arc<dyn Composite> {
-        Arc::new(StructureDataTypeImpl::new(name, 4))
+        Arc::new(StructureDataType::new(name, 4))
     }
 
     #[test]
@@ -1358,12 +1358,12 @@ mod tests {
 
         // "Outer" embeds "Inner" by value (via the already-real `Composite::add`), so the
         // dependency graph must order "Inner" before "Outer".
-        let mut outer_struct = StructureDataTypeImpl::new("Outer", 0);
-        let inner_member: Box<dyn DataType> = Box::new(StructureDataTypeImpl::new("Inner", 4));
+        let mut outer_struct = StructureDataType::new("Outer", 0);
+        let inner_member: Box<dyn DataType> = Box::new(StructureDataType::new("Inner", 4));
         outer_struct.add(inner_member).expect("add should succeed");
         let outer: Arc<dyn Composite> = Arc::new(outer_struct);
 
-        let inner_composite: Arc<dyn Composite> = Arc::new(StructureDataTypeImpl::new("Inner", 4));
+        let inner_composite: Arc<dyn Composite> = Arc::new(StructureDataType::new("Inner", 4));
 
         writer.add_composite_to_dependency_graph(outer.clone(), &DummyMonitor).unwrap();
         writer.add_composite_to_dependency_graph(inner_composite, &DummyMonitor).unwrap();
@@ -1470,7 +1470,7 @@ mod tests {
         use crate::program::model::data::enum_data_type::EnumDataType;
         use crate::program::model::data::union_data_type::UnionDataTypeImpl;
 
-        let s: Box<dyn DataType> = Box::new(StructureDataTypeImpl::new("S", 4));
+        let s: Box<dyn DataType> = Box::new(StructureDataType::new("S", 4));
         assert_eq!(DataTypeWriter::<Vec<u8>>::get_data_type_prefix(s), "struct ");
 
         let u: Box<dyn DataType> = Box::new(UnionDataTypeImpl::new("U"));
@@ -1494,7 +1494,7 @@ mod tests {
 
         // `ArrayDataType::new` rejects a length-0 element type, so the leaf here needs a real
         // reported length (unlike a `DataType` default's `get_length() -> 0`).
-        let element: Box<dyn DataType> = Box::new(StructureDataTypeImpl::new("Elem", 4));
+        let element: Box<dyn DataType> = Box::new(StructureDataType::new("Elem", 4));
         let inner = ArrayDataType::new(element, 3).unwrap();
         let outer = ArrayDataType::new(Box::new(inner), 2).unwrap();
 
@@ -1590,7 +1590,7 @@ mod tests {
 
     #[test]
     fn write_simple_struct_emits_pre_declaration_and_body() {
-        let mut point = StructureDataTypeImpl::new("Point", 0);
+        let mut point = StructureDataType::new("Point", 0);
         point.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("x".to_string()), None).unwrap();
         point.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("y".to_string()), None).unwrap();
 
@@ -1607,10 +1607,10 @@ mod tests {
 
     #[test]
     fn write_nested_struct_orders_inner_body_before_outer_body() {
-        let mut inner = StructureDataTypeImpl::new("Inner", 0);
+        let mut inner = StructureDataType::new("Inner", 0);
         inner.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("value".to_string()), None).unwrap();
 
-        let mut outer = StructureDataTypeImpl::new("Outer", 0);
+        let mut outer = StructureDataType::new("Outer", 0);
         outer.add_with_name(Box::new(inner), Some("inner".to_string()), None).unwrap();
 
         let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
@@ -1642,8 +1642,8 @@ mod tests {
     fn write_conflicting_same_name_different_category_emits_warning() {
         use crate::program::model::data::category_path::ROOT;
 
-        let a = StructureDataTypeImpl::new_in_category(ROOT.extend(&["ArchiveA"]), "Dup", 4);
-        let mut b = StructureDataTypeImpl::new_in_category(ROOT.extend(&["ArchiveB"]), "Dup", 0);
+        let a = StructureDataType::new_in_category(ROOT.extend(&["ArchiveA"]), "Dup", 4);
+        let mut b = StructureDataType::new_in_category(ROOT.extend(&["ArchiveB"]), "Dup", 0);
         b.add_with_length_and_name(Box::new(SizedLeaf("int", 4)), 4, Some("field".to_string()), None).unwrap();
 
         let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
@@ -1656,10 +1656,10 @@ mod tests {
 
     #[test]
     fn write_same_struct_twice_is_written_only_once() {
-        let point = StructureDataTypeImpl::new("Point", 4);
+        let point = StructureDataType::new("Point", 4);
 
         let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());
-        writer.write(Box::new(StructureDataTypeImpl::new("Point", 4)), &DummyMonitor).unwrap();
+        writer.write(Box::new(StructureDataType::new("Point", 4)), &DummyMonitor).unwrap();
         writer.write(Box::new(point), &DummyMonitor).unwrap();
 
         let text = written_text(writer);
@@ -2199,7 +2199,7 @@ mod tests {
         });
         let pointer = FuncPtrPointer(fd);
 
-        let mut s = StructureDataTypeImpl::new("HasCallback", 0);
+        let mut s = StructureDataType::new("HasCallback", 0);
         s.add_with_length_and_name(Box::new(pointer), 4, Some("cb".to_string()), None).unwrap();
 
         let mut writer = DataTypeWriter::new(None, Vec::<u8>::new());

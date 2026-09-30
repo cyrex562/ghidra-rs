@@ -23,7 +23,7 @@ use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// Maximum number of blocks per block group accepted by [`Ext4SuperBlock::get_num_groups`].
 ///
@@ -491,7 +491,7 @@ impl StructConverter for Ext4SuperBlock {
     /// Port of `toDataType()`: an `ext4_super_block` structure with one component per member,
     /// in on-disk order (1024 bytes in total).
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut structure = StructureDataTypeImpl::new("ext4_super_block", 0);
+        let mut structure = StructureDataType::new("ext4_super_block", 0);
         for &(name, kind) in FIELDS {
             let dt: Box<dyn DataType> = match kind {
                 FieldKind::Byte => Box::new(ByteDataType::new(None)),

@@ -108,208 +108,347 @@ impl VariableStorage for HashVariableStorage {
 /// underlying value.
 struct SharedDataType(Arc<dyn DataType>);
 
-impl DataType for SharedDataType {
-    fn get_name(&self) -> String {
-        self.0.get_name()
-    }
+// Every `&self` method of `DataType` is forwarded (generated from the trait declaration), so a
+// shared handle is indistinguishable from the wrapped value for any borrowing caller -- including
+// `runtime_class()`, `get_value()` and every `as_*` downcast. Partial forwarding silently fell back
+// to the trait defaults for the missing methods.
+mod shared_data_type_forwarding {
+    use std::any::{Any, TypeId};
+    use std::sync::Arc;
 
-    fn get_length(&self) -> i32 {
-        self.0.get_length()
-    }
+    use super::{SharedArray, SharedComposite, SharedDataType};
+    use crate::docking::settings::settings::Settings;
+    use crate::docking::settings::settings_definition::SettingsDefinition;
+    use crate::program::model::data::category_path::CategoryPath;
+    use crate::program::model::data::composite::Composite;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
+    use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
+    use crate::program::model::data::enum_::Enum;
+    use crate::program::model::data::source_archive::SourceArchive;
+    use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
+    use crate::program::model::mem::MemBuffer;
+    use crate::program::seam_stubs::DataTypePath;
+    use crate::util::UniversalID;
 
-    fn is_void_type(&self) -> bool {
-        self.0.is_void_type()
-    }
-
-    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
-        self.0.is_equivalent(dt)
-    }
-
-    fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
-        self.0.clone_data_type(dtm)
-    }
-
-    fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
-        self.0.copy_data_type(dtm)
-    }
-
-    fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
-        self.0.get_category_path()
-    }
-
-    fn get_display_name(&self) -> String {
-        self.0.get_display_name()
-    }
-
-    fn get_description(&self) -> String {
-        self.0.get_description()
-    }
-
-    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
-        self.0.get_mnemonic(settings)
-    }
-
-    fn has_language_dependant_length(&self) -> bool {
-        self.0.has_language_dependant_length()
-    }
-
-    fn is_zero_length(&self) -> bool {
-        self.0.is_zero_length()
-    }
-
-    fn get_aligned_length(&self) -> i32 {
-        self.0.get_aligned_length()
-    }
-
-    fn is_default_data_type(&self) -> bool {
-        self.0.is_default_data_type()
-    }
-
-    fn is_deleted(&self) -> bool {
-        self.0.is_deleted()
-    }
-
-    fn depends_on(&self, dt: &dyn DataType) -> bool {
-        self.0.depends_on(dt)
-    }
-
-    fn get_data_type_manager(&self) -> Option<Box<dyn DataTypeManager>> {
-        self.0.get_data_type_manager()
-    }
-
-    fn get_default_settings(&self) -> Box<dyn Settings> {
-        self.0.get_default_settings()
-    }
-
-    fn get_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
-        self.0.get_settings_definitions()
-    }
-
-    fn get_type_def_settings_definitions(
-        &self,
-    ) -> Vec<Box<dyn crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition>>
-    {
-        self.0.get_type_def_settings_definitions()
-    }
-
-    fn is_pointer(&self) -> bool {
-        self.0.is_pointer()
-    }
-
-    fn as_pointer(&self) -> Option<&dyn crate::program::model::data::pointer::Pointer> {
-        self.0.as_pointer()
-    }
-
-    fn is_typedef(&self) -> bool {
-        self.0.is_typedef()
-    }
-
-    fn as_typedef(&self) -> Option<&dyn crate::program::model::data::typedef::TypeDef> {
-        self.0.as_typedef()
-    }
-
-    fn typedef_base_data_type(&self) -> Option<Box<dyn DataType>> {
-        self.0.typedef_base_data_type()
-    }
-
-    fn is_array(&self) -> bool {
-        self.0.is_array()
-    }
-
-    fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
-        self.0.as_array()
-    }
-
-    fn into_array(self: Box<Self>) -> Option<Box<dyn crate::program::model::data::array::Array>> {
-        if self.0.as_array().is_some() {
-            Some(Box::new(SharedArray(self.0)))
-        } else {
-            None
+    impl DataType for SharedDataType {
+        fn has_language_dependant_length(&self) -> bool {
+            self.0.has_language_dependant_length()
         }
-    }
 
-    fn into_composite(self: Box<Self>) -> Option<Box<dyn Composite>> {
-        if self.0.as_composite().is_some() {
-            Some(Box::new(SharedComposite(self.0)))
-        } else {
-            None
+        fn get_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
+            self.0.get_settings_definitions()
         }
-    }
 
-    fn is_structure(&self) -> bool {
-        self.0.is_structure()
-    }
+        fn get_type_def_settings_definitions(&self) -> Vec<Box<dyn TypeDefSettingsDefinition>> {
+            self.0.get_type_def_settings_definitions()
+        }
 
-    fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
-        self.0.as_structure()
-    }
+        fn get_default_settings(&self) -> Box<dyn Settings> {
+            self.0.get_default_settings()
+        }
 
-    fn is_union(&self) -> bool {
-        self.0.is_union()
-    }
+        fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+            self.0.clone_data_type(dtm)
+        }
 
-    fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
-        self.0.as_union()
-    }
+        fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+            self.0.copy_data_type(dtm)
+        }
 
-    fn as_composite(&self) -> Option<&dyn crate::program::model::data::composite::Composite> {
-        self.0.as_composite()
-    }
+        fn get_category_path(&self) -> CategoryPath {
+            self.0.get_category_path()
+        }
 
-    fn as_enum(&self) -> Option<&dyn crate::program::model::data::enum_::Enum> {
-        self.0.as_enum()
-    }
+        fn get_data_type_path(&self) -> DataTypePath {
+            self.0.get_data_type_path()
+        }
 
-    fn as_function_definition(
-        &self,
-    ) -> Option<&dyn crate::program::model::data::function_definition::FunctionDefinition> {
-        self.0.as_function_definition()
-    }
+        fn get_data_type_manager(&self) -> Option<Box<dyn DataTypeManager>> {
+            self.0.get_data_type_manager()
+        }
 
-    fn as_built_in_data_type(
-        &self,
-    ) -> Option<&dyn crate::program::model::data::built_in_data_type::BuiltInDataType> {
-        self.0.as_built_in_data_type()
-    }
+        fn get_display_name(&self) -> String {
+            self.0.get_display_name()
+        }
 
-    fn as_built_in(&self) -> Option<&dyn crate::program::model::data::built_in::BuiltIn> {
-        self.0.as_built_in()
-    }
+        fn get_name(&self) -> String {
+            self.0.get_name()
+        }
 
-    fn is_integer_type(&self) -> bool {
-        self.0.is_integer_type()
-    }
+        fn get_path_name(&self) -> String {
+            self.0.get_path_name()
+        }
 
-    fn is_signed_integer_type(&self) -> bool {
-        self.0.is_signed_integer_type()
-    }
+        fn get_mnemonic(&self, settings: &dyn Settings) -> String {
+            self.0.get_mnemonic(settings)
+        }
 
-    fn get_alignment(&self) -> i32 {
-        self.0.get_alignment()
-    }
+        fn get_length(&self) -> i32 {
+            self.0.get_length()
+        }
 
-    // The three overrides below were found missing (like the three above) while porting
-    // `StructureDataType`'s `dataType*Changed`/`dataTypeReplaced`/`replace` bitfield-handling
-    // paths: `DataTypeComponentImpl::get_data_type()` hands back a `share_data_type`-wrapped
-    // handle, so any caller trying to downcast a *bitfield* component's data type after going
-    // through that handle (e.g. via `as_bit_field_data_type()`) would otherwise silently see
-    // `None` even when the underlying shared value really is a `BitFieldDataType`. A strict
-    // completeness fix, not a behavior change, for this shared crate-wide utility. (`as_bit_field`
-    // was itself once left unforwarded on the theory that no call site reached it through a
-    // `SharedDataType` handle -- `StructureDataType`'s `compare_component_to_bit_offset` helper
-    // proved that wrong: `structure_data_type_replace`'s bit-field overlap consolidation calls it
-    // against a second bit-field component's `get_data_type()`-returned handle while binary
-    // searching `insertBitFieldAt`'s own bit-offset ordering, panicking without this forward.)
-    fn is_bit_field_type(&self) -> bool {
-        self.0.is_bit_field_type()
-    }
+        fn get_aligned_length(&self) -> i32 {
+            self.0.get_aligned_length()
+        }
 
-    fn as_bit_field_data_type(&self) -> Option<&crate::program::model::data::bit_field_data_type::BitFieldDataType> {
-        self.0.as_bit_field_data_type()
-    }
+        fn is_zero_length(&self) -> bool {
+            self.0.is_zero_length()
+        }
 
-    fn as_bit_field(&self) -> Option<&dyn crate::program::seam_stubs::BitFieldDataType> {
-        self.0.as_bit_field()
+        fn is_not_yet_defined(&self) -> bool {
+            self.0.is_not_yet_defined()
+        }
+
+        fn get_description(&self) -> String {
+            self.0.get_description()
+        }
+
+        fn get_value(&self, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32) -> Option<Box<dyn Any>> {
+            self.0.get_value(buf, settings, length)
+        }
+
+        fn is_encodable(&self) -> bool {
+            self.0.is_encodable()
+        }
+
+        fn encode_value( &self, value: &dyn Any, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32, ) -> Result<Vec<u8>, DataTypeEncodeError> {
+            self.0.encode_value(value, buf, settings, length)
+        }
+
+        fn get_value_class(&self, settings: &dyn Settings) -> Option<TypeId> {
+            self.0.get_value_class(settings)
+        }
+
+        fn get_default_label_prefix(&self) -> Option<String> {
+            self.0.get_default_label_prefix()
+        }
+
+        fn get_default_abbreviated_label_prefix(&self) -> Option<String> {
+            self.0.get_default_abbreviated_label_prefix()
+        }
+
+        fn get_default_label_prefix_for_data( &self, buf: &dyn MemBuffer, settings: &dyn Settings, len: i32, options: &dyn DataTypeDisplayOptions, ) -> Option<String> {
+            self.0.get_default_label_prefix_for_data(buf, settings, len, options)
+        }
+
+        fn get_default_offcut_label_prefix( &self, buf: &dyn MemBuffer, settings: &dyn Settings, len: i32, options: &dyn DataTypeDisplayOptions, offcut_offset: i32, ) -> Option<String> {
+            self.0.get_default_offcut_label_prefix(buf, settings, len, options, offcut_offset)
+        }
+
+        fn get_representation(&self, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32) -> String {
+            self.0.get_representation(buf, settings, length)
+        }
+
+        fn encode_representation( &self, repr: &str, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32, ) -> Result<Vec<u8>, DataTypeEncodeError> {
+            self.0.encode_representation(repr, buf, settings, length)
+        }
+
+        fn is_deleted(&self) -> bool {
+            self.0.is_deleted()
+        }
+
+        fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+            self.0.is_equivalent(dt)
+        }
+
+        fn get_parents(&self) -> Vec<Box<dyn DataType>> {
+            self.0.get_parents()
+        }
+
+        fn get_alignment(&self) -> i32 {
+            self.0.get_alignment()
+        }
+
+        fn depends_on(&self, dt: &dyn DataType) -> bool {
+            self.0.depends_on(dt)
+        }
+
+        fn get_source_archive(&self) -> Option<Box<dyn SourceArchive>> {
+            self.0.get_source_archive()
+        }
+
+        fn get_last_change_time(&self) -> i64 {
+            self.0.get_last_change_time()
+        }
+
+        fn get_last_change_time_in_source_archive(&self) -> i64 {
+            self.0.get_last_change_time_in_source_archive()
+        }
+
+        fn get_universal_id(&self) -> UniversalID {
+            self.0.get_universal_id()
+        }
+
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            self.0.get_data_organization()
+        }
+
+        fn is_structure(&self) -> bool {
+            self.0.is_structure()
+        }
+
+        fn is_union(&self) -> bool {
+            self.0.is_union()
+        }
+
+        fn is_typedef(&self) -> bool {
+            self.0.is_typedef()
+        }
+
+        fn typedef_base_data_type(&self) -> Option<Box<dyn DataType>> {
+            self.0.typedef_base_data_type()
+        }
+
+        fn is_array(&self) -> bool {
+            self.0.is_array()
+        }
+
+        fn is_pointer(&self) -> bool {
+            self.0.is_pointer()
+        }
+
+        fn is_floating_point(&self) -> bool {
+            self.0.is_floating_point()
+        }
+
+        fn is_integer_type(&self) -> bool {
+            self.0.is_integer_type()
+        }
+
+        fn is_signed_integer_type(&self) -> bool {
+            self.0.is_signed_integer_type()
+        }
+
+        fn runtime_class(&self) -> Option<TypeId> {
+            self.0.runtime_class()
+        }
+
+        fn is_default_data_type(&self) -> bool {
+            self.0.is_default_data_type()
+        }
+
+        fn is_undefined_type(&self) -> bool {
+            self.0.is_undefined_type()
+        }
+
+        fn is_void_type(&self) -> bool {
+            self.0.is_void_type()
+        }
+
+        fn is_bit_field_type(&self) -> bool {
+            self.0.is_bit_field_type()
+        }
+
+        fn is_dynamic_type(&self) -> bool {
+            self.0.is_dynamic_type()
+        }
+
+        fn is_factory_type(&self) -> bool {
+            self.0.is_factory_type()
+        }
+
+        fn is_function_definition_type(&self) -> bool {
+            self.0.is_function_definition_type()
+        }
+
+        fn is_boolean_type(&self) -> bool {
+            self.0.is_boolean_type()
+        }
+
+        fn is_wide_char_type(&self) -> bool {
+            self.0.is_wide_char_type()
+        }
+
+        fn is_array_stringable_type(&self) -> bool {
+            self.0.is_array_stringable_type()
+        }
+
+        fn is_string_type(&self) -> bool {
+            self.0.is_string_type()
+        }
+
+        fn as_enum(&self) -> Option<&dyn Enum> {
+            self.0.as_enum()
+        }
+
+        fn as_pointer(&self) -> Option<&dyn crate::program::model::data::pointer::Pointer> {
+            self.0.as_pointer()
+        }
+
+        fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
+            self.0.as_structure()
+        }
+
+        fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
+            self.0.as_array()
+        }
+
+        fn as_partial_union( &self, ) -> Option<&dyn crate::program::model::pcode::partial_union::PartialUnion> {
+            self.0.as_partial_union()
+        }
+
+        fn as_dynamic(&self) -> Option<&dyn crate::program::model::data::dynamic::Dynamic> {
+            self.0.as_dynamic()
+        }
+
+        fn as_factory(&self) -> Option<&dyn crate::program::model::data::factory_data_type::FactoryDataType> {
+            self.0.as_factory()
+        }
+
+        fn as_typedef(&self) -> Option<&dyn crate::program::model::data::typedef::TypeDef> {
+            self.0.as_typedef()
+        }
+
+        fn as_composite(&self) -> Option<&dyn crate::program::model::data::composite::Composite> {
+            self.0.as_composite()
+        }
+
+        fn as_abstract_integer( &self, ) -> Option<&dyn crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType> {
+            self.0.as_abstract_integer()
+        }
+
+        fn as_union(&self) -> Option<&dyn crate::program::model::data::union::Union> {
+            self.0.as_union()
+        }
+
+        fn as_function_definition( &self, ) -> Option<&dyn crate::program::model::data::function_definition::FunctionDefinition> {
+            self.0.as_function_definition()
+        }
+
+        fn as_built_in_data_type( &self, ) -> Option<&dyn crate::program::model::data::built_in_data_type::BuiltInDataType> {
+            self.0.as_built_in_data_type()
+        }
+
+        fn as_built_in(&self) -> Option<&dyn crate::program::model::data::built_in::BuiltIn> {
+            self.0.as_built_in()
+        }
+
+        fn as_bit_field(&self) -> Option<&dyn crate::program::seam_stubs::BitFieldDataType> {
+            self.0.as_bit_field()
+        }
+
+        fn as_bit_field_data_type( &self, ) -> Option<&crate::program::model::data::bit_field_data_type::BitFieldDataType> {
+            self.0.as_bit_field_data_type()
+        }
+
+        fn into_array(self: Box<Self>) -> Option<Box<dyn crate::program::model::data::array::Array>> {
+            if self.0.as_array().is_some() {
+                Some(Box::new(SharedArray(self.0)))
+            } else {
+                None
+            }
+        }
+
+        fn into_composite(self: Box<Self>) -> Option<Box<dyn Composite>> {
+            if self.0.as_composite().is_some() {
+                Some(Box::new(SharedComposite(self.0)))
+            } else {
+                None
+            }
+        }
     }
 }
 

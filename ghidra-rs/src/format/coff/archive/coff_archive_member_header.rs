@@ -3,7 +3,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::LongNamesMember;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 use crate::util::msg::Msg;
 
 const CAMH_NAME_OFF: u64 = 0;
@@ -270,7 +270,7 @@ fn is_long_name_reference(name: &str) -> bool {
 
 impl StructConverter for CoffArchiveMemberHeader {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut strukt = StructureDataTypeImpl::new("CoffArchiveMemberHeader", 0);
+        let mut strukt = StructureDataType::new("CoffArchiveMemberHeader", 0);
         strukt.add_with_length_and_name(Box::new(StringDt), CAMH_NAME_LEN as i32, Some("name".to_string()), None)?;
         strukt.add_with_length_and_name(Box::new(StringDt), CAMH_DATE_LEN as i32, Some("date".to_string()), None)?;
         strukt.add_with_length_and_name(Box::new(StringDt), CAMH_USERID_LEN as i32, Some("userID".to_string()), None)?;

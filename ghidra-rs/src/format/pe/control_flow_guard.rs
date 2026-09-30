@@ -29,7 +29,7 @@ use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::ibo32_data_type::IBO32DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 use crate::program::model::listing::data::Data;
 use crate::program::model::listing::program::Program;
 use crate::program::model::symbol::source_type::SourceType;
@@ -104,7 +104,7 @@ pub fn markup(
 ///
 /// Java looks up (and caches) a previously-registered `GuardCfgTableEntryName` structure in the
 /// program's `DataTypeManager` before building a new one; that lookup returns a `Box<dyn
-/// DataType>` in this port (not a concrete, further-mutable `StructureDataTypeImpl`), so instead
+/// DataType>` in this port (not a concrete, further-mutable `StructureDataType`), so instead
 /// of downcasting, a fresh structure is built every call. Functionally equivalent (the two would
 /// be `isEquivalent`), just without the caching.
 fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &dyn Program, log: &MessageLog) {
@@ -139,7 +139,7 @@ fn markup_cfg_function_table(lcd: &LoadConfigDirectory, program: &dyn Program, l
 
     let category_path = CategoryPath::new(ROOT.clone(), &["CFG"]).expect("static path is valid");
     let mut entry_type =
-        StructureDataTypeImpl::new_in_category(category_path, GUARD_CFG_TABLE_ENTRY_NAME, 0);
+        StructureDataType::new_in_category(category_path, GUARD_CFG_TABLE_ENTRY_NAME, 0);
     entry_type.set_packing_enabled(false);
     let _ = entry_type.add_with_name(Box::new(IBO32DataType::new()), Some("Offset".to_string()), Some(String::new()));
     if n > 0 {

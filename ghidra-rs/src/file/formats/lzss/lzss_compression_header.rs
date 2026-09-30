@@ -9,7 +9,7 @@ use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 use super::lzss_constants::{HEADER_LENGTH, PADDING_LENGTH, SIGNATURE_COMPRESSION, SIGNATURE_LZSS};
 
@@ -98,7 +98,7 @@ impl StructConverter for LzssCompressionHeader {
     /// named as the Java fields are.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let invalid = |e: String| ToDataTypeError::Io(io::Error::new(io::ErrorKind::InvalidInput, e));
-        let mut structure = StructureDataTypeImpl::new("LzssCompressionHeader", 0);
+        let mut structure = StructureDataType::new("LzssCompressionHeader", 0);
         for name in ["signature", "compressionType", "checksum", "decompressedLength", "compressedLength"] {
             structure
                 .add_with_name(Box::new(DWordDataType::new(None)), Some(name.to_string()), None)

@@ -336,6 +336,49 @@ impl DataTypeComponentImpl {
     /// [`StructureDataType`](super::structure_data_type::StructureDataType) to hand back an owned
     /// component from `getComponent`-style queries without exposing a full `Clone` impl.
     pub(crate) fn snapshot(&self) -> DataTypeComponentImpl {
+        self.snapshot_inner()
+    }
+
+    /// This component with its parent replaced by `parent`. Used by composites that store their
+    /// components without a back-reference (see
+    /// [`StructureDataType`](super::structure_data_type::StructureDataType)) to attach one to the
+    /// snapshots they hand out.
+    pub fn with_parent(mut self, parent: Option<Arc<dyn CompositeDataTypeImpl>>) -> DataTypeComponentImpl {
+        self.parent = parent;
+        self
+    }
+
+    /// The stored data type handle itself (rather than the forwarding `Box` returned by
+    /// [`DataTypeComponent::get_data_type`]).
+    pub fn data_type_arc(&self) -> &Arc<dyn DataType> {
+        &self.data_type
+    }
+
+    /// Port of `DataTypeComponentImpl.isEquivalent(DataTypeComponent)` with the parent's
+    /// `isPackingEnabled()` supplied by the caller: offsets are only compared when the parent is
+    /// not packed. [`DataTypeComponent::is_equivalent`] derives `parent_packed` from this
+    /// component's own parent; a composite comparing its stored (parent-less) components passes
+    /// its own packing state.
+    pub fn is_equivalent_within(&self, dtc: &dyn DataTypeComponent, parent_packed: bool) -> bool {
+        let my_dt = self.get_data_type();
+        let other_dt = dtc.get_data_type();
+
+        if (!parent_packed && (self.offset != dtc.get_offset()))
+            || self.get_field_name() != dtc.get_field_name()
+            || self.get_comment() != dtc.get_comment()
+        {
+            return false;
+        }
+
+        // Component lengths need only be checked for dynamic types.
+        if self.get_length() != dtc.get_length() && my_dt.as_dynamic().is_some() {
+            return false;
+        }
+
+        Utils.is_same_or_equivalent_data_type(my_dt.as_ref(), other_dt.as_ref())
+    }
+
+    fn snapshot_inner(&self) -> DataTypeComponentImpl {
         DataTypeComponentImpl {
             data_type: self.data_type.clone(),
             parent: self.parent.clone(),
@@ -504,27 +547,12 @@ impl DataTypeComponent for DataTypeComponentImpl {
     }
 
     fn is_equivalent(&self, dtc: &dyn DataTypeComponent) -> bool {
-        let my_dt = self.get_data_type();
-        let other_dt = dtc.get_data_type();
-        let my_parent = self.get_parent();
-        let aligned = my_parent
-            .as_composite()
-            .map(Composite::is_packing_enabled)
+        let aligned = self
+            .parent
+            .as_ref()
+            .map(|parent| parent.is_packing_enabled())
             .unwrap_or(false);
-
-        if (!aligned && (self.offset != dtc.get_offset()))
-            || self.get_field_name() != dtc.get_field_name()
-            || self.get_comment() != dtc.get_comment()
-        {
-            return false;
-        }
-
-        // Component lengths need only be checked for dynamic types.
-        if self.get_length() != dtc.get_length() && my_dt.as_dynamic().is_some() {
-            return false;
-        }
-
-        Utils.is_same_or_equivalent_data_type(my_dt.as_ref(), other_dt.as_ref())
+        self.is_equivalent_within(dtc, aligned)
     }
 
     fn is_undefined(&self) -> bool {
@@ -676,14 +704,6 @@ mod tests {
             data_type: Box<dyn DataType>,
         ) -> Result<Box<dyn DataType>, String> {
             Ok(data_type)
-        }
-        fn composite_impl_update_bit_field_data_type(
-            &mut self,
-            _bitfield_component: Box<dyn DataTypeComponent>,
-            _old_dt: &dyn DataType,
-            _new_dt: Option<&dyn DataType>,
-        ) -> Result<bool, String> {
-            Err("not exercised by these tests".to_string())
         }
     }
 

@@ -7,7 +7,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// The first locator-dependent union of a CFM fragment resource member: the space ID.
 ///
@@ -35,7 +35,7 @@ impl StructConverter for CFragWhere1Union {
     /// Port of `toDataType()`, which delegates to `StructConverterUtil.toDataType`: a single
     /// `spaceID` component.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("CFragWhere1Union", 0);
+        let mut s = StructureDataType::new("CFragWhere1Union", 0);
         s.add_with_name(Box::new(DWordDataType::new(None)), Some("spaceID".to_string()), None)?;
         Ok(Box::new(s))
     }

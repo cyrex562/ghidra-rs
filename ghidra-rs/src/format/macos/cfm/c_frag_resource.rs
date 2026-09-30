@@ -8,7 +8,7 @@ use crate::format::macos::cfm::c_frag_resource_member::CFragResourceMember;
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// The contents of a `'cfrg'` (code fragment) resource: a header followed by one
 /// [`CFragResourceMember`] per code fragment.
@@ -100,7 +100,7 @@ impl StructConverter for CFragResource {
     /// Port of `toDataType()`, which delegates to `StructConverterUtil.toDataType`: one DWORD per
     /// `int` field in declaration order (the `_members` list is skipped for its underscore).
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("CFragResource", 0);
+        let mut s = StructureDataType::new("CFragResource", 0);
         for field in [
             "reservedA",
             "reservedB",

@@ -17,7 +17,7 @@ use crate::format::macos::rm::resource_map::ResourceMap;
 use crate::format::macos::rm::resource_type_factory;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// One entry of a resource map's type list: a four-character resource type, the resources of
 /// that type, and (for types this crate understands) the parsed resource object.
@@ -137,7 +137,7 @@ impl ResourceType {
 impl StructConverter for ResourceType {
     /// Port of `toDataType()`.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("ResourceType", 0);
+        let mut s = StructureDataType::new("ResourceType", 0);
         if self.is_ascii() {
             s.add_with_length_and_name(PrimitiveDt::STRING.boxed(), 4, Some("type".to_string()), None)?;
         } else {

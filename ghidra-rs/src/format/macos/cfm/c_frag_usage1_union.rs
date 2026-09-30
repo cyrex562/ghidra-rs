@@ -7,7 +7,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// Port of `kDefaultStackSize`.
 pub const K_DEFAULT_STACK_SIZE: i32 = 0;
@@ -39,7 +39,7 @@ impl StructConverter for CFragUsage1Union {
     /// Port of `toDataType()`, which delegates to `StructConverterUtil.toDataType`: a single
     /// `appStackSize` component.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("CFragUsage1Union", 0);
+        let mut s = StructureDataType::new("CFragUsage1Union", 0);
         s.add_with_name(Box::new(DWordDataType::new(None)), Some("appStackSize".to_string()), None)?;
         Ok(Box::new(s))
     }

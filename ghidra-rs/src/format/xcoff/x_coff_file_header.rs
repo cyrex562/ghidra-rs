@@ -16,7 +16,7 @@ use crate::program::model::data::qword_data_type::QWordDataType;
 use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 use super::x_coff_exception::XCoffException;
 use super::x_coff_file_header_magic;
@@ -152,7 +152,7 @@ impl StructConverter for XCoffFileHeader {
     /// Port of `toDataType()`, which delegates to `StructConverterUtil.toDataType`: one component
     /// per non-static private field, skipping `_optionalHeader` (leading underscore).
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("XCoffFileHeader", 0);
+        let mut s = StructureDataType::new("XCoffFileHeader", 0);
         for (dt, name) in [
             (Box::new(WordDataType::new(None)) as Box<dyn DataType>, "f_magic"),
             (Box::new(WordDataType::new(None)) as Box<dyn DataType>, "f_nscns"),

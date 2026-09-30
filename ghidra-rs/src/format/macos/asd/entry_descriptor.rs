@@ -9,7 +9,7 @@ use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::format::macos::rm::resource_header::ResourceHeader;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// One entry of an AppleSingle/AppleDouble header: which kind of entry it is and where its data
 /// lives in the file.
@@ -80,7 +80,7 @@ impl StructConverter for EntryDescriptor {
     /// Port of `toDataType()`, which delegates to `StructConverterUtil.toDataType`: one component
     /// per private non-underscore field (`entryID`, `offset`, `length`, all `int` -> DWORD).
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("EntryDescriptor", 0);
+        let mut s = StructureDataType::new("EntryDescriptor", 0);
         for field in ["entryID", "offset", "length"] {
             s.add_with_name(Box::new(DWordDataType::new(None)), Some(field.to_string()), None)?;
         }

@@ -1,304 +1,25 @@
-//! Port of `ghidra.program.model.data.StructureDataType`, promoted to a trait because it was
-//! selected as a dependency-cycle cut-point.
+//! Port of `ghidra.program.model.data.StructureDataType`: the in-memory (non-database-backed)
+//! `Structure` implementation.
 //!
-//! The Java class is a concrete, in-memory (non-database-backed) `Structure` implementation:
-//! `StructureDataType extends CompositeDataTypeImpl implements StructureInternal`. Both
-//! [`CompositeDataTypeImpl`](super::composite_data_type_impl::CompositeDataTypeImpl) and
-//! [`StructureInternal`](super::structure_internal::StructureInternal) (which itself pulls in
-//! [`Structure`](super::structure::Structure), [`Composite`](super::composite::Composite) and
-//! [`DataType`](super::data_type::DataType)) are already real, richly-defaulted ported traits, so
-//! -- mirroring the precedent set by
-//! [`StructureDb`](crate::program::database::data::structure_db::StructureDb) for the sibling
-//! database-backed implementation `StructureDB` -- this trait only adds what genuinely differs
-//! about *this* concrete class; every public method it overrides that already belongs to one of
-//! those ancestor contracts is intentionally not repeated here:
-//!   - The entire component-manipulation surface (`getComponent`, `insertAtOffset`, `add`,
-//!     `insert`, `delete`(s), `deleteAtOffset`, `clearAtOffset`, `clearComponent`, `replace`,
-//!     `replaceAtOffset`, `addBitField`, `insertBitField(At)`, `getDefinedComponents`,
-//!     `getComponents`, `getNumComponents`, `getNumDefinedComponents`, `deleteAll`,
-//!     `growStructure`, `setLength`, `getDefinedComponentAtOrAfterOffset`,
-//!     `getComponentContaining`, `getComponentsContaining`, `getDataTypeAt`) already exists,
-//!     method-for-method, as a (placeholder-default) [`Structure`](super::structure::Structure) or
-//!     [`Composite`](super::composite::Composite) trait method.
-//!   - `forEachDefinedComponent` and `repack(boolean)` already exist as required
-//!     [`CompositeDataTypeImpl`](super::composite_data_type_impl::CompositeDataTypeImpl) methods
-//!     (`for_each_defined_component`, `repack_with_notify`).
-//!   - `getAlignment()` already exists as the required
-//!     [`CompositeDataTypeImpl::composite_impl_alignment`](super::composite_data_type_impl::CompositeDataTypeImpl::composite_impl_alignment).
-//!     Its real Java body calls `AlignedStructureInspector.packComponents(this)` for the
-//!     packing-enabled case, a helper class that is not yet ported; rather than adding a
-//!     placeholder stub for a method this trait does not otherwise need, that computation is left
-//!     to whatever concrete type eventually backs `composite_impl_alignment` (which already has no
-//!     default for the same reason -- it is `abstract` in `CompositeDataTypeImpl` too).
-//!   - `isEquivalent`, `dataTypeSizeChanged`, `dataTypeAlignmentChanged`, `dataTypeDeleted`,
-//!     `dataTypeReplaced`, and `replaceWith` already exist as (placeholder-default)
-//!     [`DataType`](super::data_type::DataType) methods of the same name/shape.
-//!   - `copy(DataTypeManager)`/`clone(DataTypeManager)` are covariant-return overrides of
-//!     [`DataType::copy_data_type`]/[`DataType::clone_data_type`], which already return the
-//!     necessary `Box<dyn DataType>` (a concrete `StructureDataType` impl already narrows to a
-//!     `Structure` internally; the trait-object return type is unchanged).
-//!   - The five public constructors have no trait-method equivalent (traits cannot return `Self`
-//!     as a sized, constructible value); a concrete implementation supplies its own `new`.
+//! [`StructureDataType`] is a concrete struct (Java: a concrete class extending
+//! `CompositeDataTypeImpl`). Its `Composite`/`Structure`/`DataType` trait impls delegate to the
+//! inherent `structure_data_type_*` methods below, which port the Java method bodies one for one
+//! (binary searches over the defined-component list by offset, ordinal and normalized bit
+//! offset; non-packed offset/ordinal bookkeeping; packed layout via
+//! [`AlignedStructurePacker`] and the real
+//! [`AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)).
 //!
-//! A handful of small methods have real Java bodies that differ from the generic default already
-//! sitting on an ancestor trait (so Rust requires a distinct name to avoid an ambiguous override,
-//! per the `composite_impl_*`/`structure_db_*` naming precedent already used by sibling traits):
-//!   - [`structure_data_type_is_zero_length`](StructureDataType::structure_data_type_is_zero_length) /
-//!     [`length`](StructureDataType::length), which need the private `structLength` field --
-//!     exposed via the required [`stored_struct_length`](StructureDataType::stored_struct_length)/
-//!     [`set_stored_struct_length`](StructureDataType::set_stored_struct_length) accessors,
-//!     mirroring [`CompositeDataTypeImpl`]'s `stored_description`-style convention for private
-//!     field storage.
-//!   - [`structure_data_type_has_language_dependant_length`](StructureDataType::structure_data_type_has_language_dependant_length), which
-//!     answers the required `CompositeDataTypeImpl::composite_impl_has_language_dependant_length`
-//!     with real logic (`isPackingEnabled()`) needing no new state.
-//!   - [`representation`](StructureDataType::representation), which returns
-//!     `"<Empty-Structure>"` when not yet defined instead of [`DataType::get_representation`]'s
-//!     empty-string default, built on the already-real
-//!     [`CompositeDataTypeImpl::composite_impl_is_not_yet_defined`].
-//!   - [`default_label_prefix`](StructureDataType::default_label_prefix), which returns the
-//!     structure's own name instead of [`DataType::get_default_label_prefix`]'s `None` default.
-//!
-//! ## Component-management surface (2026-09 extension)
-//!
-//! The original skeleton left the entire component-manipulation surface
-//! (`getComponent`/`add`/`insert`/`delete`(s)/`replace`/etc.) to the ancestor
-//! [`Structure`](super::structure::Structure)/[`Composite`](super::composite::Composite) traits'
-//! *placeholder* defaults (they return `Err`/empty/`None` -- see those traits' own doc comments).
-//! Nobody had actually written the real, stateful bodies anywhere, which is the load-bearing part
-//! of this class. This extension adds that real logic here, as new `structure_data_type_*`
-//! methods (the same naming convention as the small delta above) backed by four new required
-//! accessors -- [`components`](StructureDataType::components)/
-//! [`components_mut`](StructureDataType::components_mut) for the private `List<DataTypeComponentImpl>
-//! components` field, and [`stored_num_components`](StructureDataType::stored_num_components)/
-//! [`set_stored_num_components`](StructureDataType::set_stored_num_components) for the private
-//! `int numComponents` field. A concrete `impl Structure`/`impl Composite for ...` is expected to
-//! delegate its real method bodies to these, exactly as documented for the pre-existing delta
-//! methods above.
-//!
-//! Ported so far, faithfully translating the Java algorithms (binary search over `components` by
-//! offset/ordinal via [`compare_component_to_offset`]/[`compare_component_to_ordinal`]):
-//! `getNumComponents`, `getNumDefinedComponents`, `getDefinedComponents`, `getComponents`,
-//! `getComponent(int)` (including undefined-filler synthesis), `add(DataType, int, String,
-//! String)` (`doAdd`), `insert(int, DataType, int, String, String)`, `insertAtOffset(int,
-//! DataType, int, String, String)`, `delete(int)`, `delete(Set<Integer>)`, `deleteAtOffset`,
-//! `clearAtOffset`, `clearComponent`, `deleteAll`, `growStructure`, `setLength`,
-//! `getComponentContaining`, `getComponentsContaining`, `getDefinedComponentAtOrAfterOffset`,
-//! `getDataTypeAt`, `isEquivalent`, and the non-packed half of `repack`/
-//! `adjustNonPackedComponents` (plus their shared private helpers: `shiftOffsets`,
-//! `backupToFirstComponentContainingOffset`, `afterNonZeroComponentsAtOffset`,
-//! `advanceToLastComponentContainingOffset`, `doDelete`, `doDeleteWithComponentShift`,
-//! `generateUndefinedComponent`, `indexOfFirstNonZeroLenComponentContainingOffset`). Rust's
-//! `Vec::binary_search_by` returns a plain `Result<usize, usize>` rather than `Collections
-//! .binarySearch`'s single negative-encoded `int` (`-insertionPoint - 1` when absent), so callers
-//! below never need Java's encode/decode dance; a couple of Java call sites round-trip through it
-//! pointlessly (encoding an already-in-hand index just to immediately decode it back inside
-//! `generateUndefinedComponent`/`getComponentsContaining`), which is elided here as a no-op.
-//!
-//! ## Packed-structure layout and bitfield support (2026-09 extension, continued)
-//!
-//! Two of the previously-open gaps above are now closed:
-//!
-//! - **Packed-structure (`isPackingEnabled() == true`) layout is now computed** via a real
-//!   [`AlignedStructurePacker`](AlignedStructurePacker) integration: this trait now requires
-//!   `Self: AlignedStructurePacker` (a new supertrait bound), and
-//!   [`structure_data_type_pack`](StructureDataType::structure_data_type_pack) (called from the
-//!   packed branch of [`structure_data_type_repack`](StructureDataType::structure_data_type_repack),
-//!   mirroring Java's `repack(boolean)`) converts this structure's `Vec<DataTypeComponentImpl>`
-//!   to and from the `Box<dyn InternalDataTypeComponent>` shape
-//!   [`AlignedStructurePacker::pack_components`] requires via the [`PackableComponent`] adapter
-//!   (an `Arc<dyn DataType>`-backed proxy, needed since `dyn DataType` has no `Clone` bound and
-//!   [`DataTypeComponent::get_data_type`] must be answerable repeatedly from `&self`; no downcast
-//!   back to the concrete adapter is ever needed since every mutated field is read back out
-//!   through ordinary trait methods -- see [`PackableComponent`]'s own doc comment). **The wiring
-//!   is real, and (2026-09, continued) so is the packer**:
-//!   [`StructureDataTypeImpl::create_component_packer`] now returns the genuine, bitfield-aware
-//!   [`aligned_component_packer::AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)
-//!   port rather than the simplistic sequential `BasicComponentPacker` stand-in this doc comment
-//!   used to describe (deleted; its role is now filled for real). Unlike Java, no `structAlignment`
-//!   field is cached/compared for the "changed" return value (see
-//!   [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)'s own doc
-//!   comment for why this only matters for the no-op `notify` path).
-//! - **`addBitField`/`insertBitField`/`insertBitFieldAt` are now ported** as
-//!   [`structure_data_type_add_bit_field`](StructureDataType::structure_data_type_add_bit_field)/
-//!   [`structure_data_type_insert_bit_field`](StructureDataType::structure_data_type_insert_bit_field)/
-//!   [`structure_data_type_insert_bit_field_at`](StructureDataType::structure_data_type_insert_bit_field_at),
-//!   including the `BitOffsetComparator`-based overlap/conflict detection across bit-granular
-//!   ranges (ported as the private [`compare_component_to_bit_offset`] helper, building on
-//!   [`get_normalized_bitfield_offset`](super::structure::get_normalized_bitfield_offset), which
-//!   was already ported). `structure_data_type_insert_bit_field_at`'s own doc comment flags one
-//!   Java quirk ported verbatim rather than "fixed": calling it directly against a
-//!   packing-enabled structure triggers a nested insertion whose return value is discarded, after
-//!   which the method still unconditionally inserts its own component. `structure_data_type_insert`'s
-//!   separate bitfield-overlap shift adjustment (Java's `existingDtc.isBitFieldComponent()` branch
-//!   inside plain, non-bitfield `insert`) remains unported -- it is independent of the three
-//!   bitfield entry points above.
-//!
-//! While porting the above, [`crate::program::seam_stubs::SharedDataType`] (backing
-//! [`crate::program::seam_stubs::share_data_type`], used by [`PackableComponent`] and by the
-//! bitfield methods' internal re-sharing of a caller-supplied base data type) was found to not
-//! forward `is_integer_type`/`is_signed_integer_type`/`get_alignment`, silently breaking bitfield
-//! base-type validation for any base type reached only through a shared handle; those three
-//! methods were added to its forwarded set (a strict completeness fix, not a behavior change, for
-//! that shared crate-wide utility).
-//!
-//! `replaceWith(DataType)` is also now ported, as
-//! [`structure_data_type_replace_with`](StructureDataType::structure_data_type_replace_with)
-//! (same `&dyn StructureDataType` convention as `structure_data_type_is_equivalent`, standing in
-//! for Java's `instanceof StructureInternal` downcast): clears this structure's components and
-//! packing/alignment settings and repopulates them from `other`, delegating to
-//! [`structure_data_type_add`](StructureDataType::structure_data_type_add) for the packed case
-//! (`doReplaceWithPacked`) and constructing components directly (preserving `other`'s
-//! offsets/ordinals/field names verbatim) for the non-packed case (`doReplaceWithNonPacked`).
-//!
-//! `DataTypeUtilities.checkAncestry` (cyclic-dependency rejection) is now ported too, as
-//! [`structure_data_type_check_ancestry`](StructureDataType::structure_data_type_check_ancestry),
-//! and wired into `structure_data_type_add`/`_insert`/`_insert_at_offset`/`_replace_with` at the
-//! same call sites Java's `checkAncestry(this, dataType)` occupies: adding a data type that would
-//! create a cyclic composite is now rejected here, matching Java. It reuses the walk already
-//! ported for [`CompositeDataTypeImpl::composite_impl_is_part_of`] (`isSecondPartOfFirst`) in the
-//! opposite direction, via a new borrowing-only sibling helper
-//! ([`is_part_of_data_type_by_ref`]) rather than that method's own ownership-consuming one, since
-//! every caller here still needs its `data_type` afterward.
-//!
-//! ## `copy`/`clone` now real (2026-09, concrete `StructureDataTypeImpl`)
-//!
-//! [`StructureDataTypeImpl`] is now this crate's first real, production concrete implementation
-//! of this trait (previously every test exercised these default methods against a
-//! `#[cfg(test)]`-scoped `MockStructureDataType` double). It supplies the real constructors this
-//! module's first doc paragraph said a trait default method cannot provide, and wires
-//! `copy`/`clone` for real ([`DataType::copy_data_type`]/[`DataType::clone_data_type`]: construct
-//! a fresh `StructureDataTypeImpl` and call [`structure_data_type_replace_with`] on it, matching
-//! `StructureDataType.copy`/`.clone`'s actual Java bodies) -- see [`StructureDataTypeImpl`]'s own
-//! doc comment for exactly what it does and does not cover.
-//!
-//! ## `dataType*Changed`/`dataTypeDeleted`/`dataTypeReplaced` now real (2026-09, continued)
-//!
-//! `dataTypeSizeChanged`/`dataTypeAlignmentChanged`/`dataTypeDeleted`/`dataTypeReplaced` are now
-//! ported, as [`structure_data_type_data_type_size_changed`](StructureDataType::structure_data_type_data_type_size_changed)/
-//! [`structure_data_type_data_type_alignment_changed`](StructureDataType::structure_data_type_data_type_alignment_changed)/
-//! [`structure_data_type_data_type_deleted`](StructureDataType::structure_data_type_data_type_deleted)/
-//! [`structure_data_type_data_type_replaced`](StructureDataType::structure_data_type_data_type_replaced),
-//! backed by two new small private helpers ([`structure_data_type_get_available_component_space`](StructureDataType::structure_data_type_get_available_component_space)/
-//! [`structure_data_type_consume_bytes_after`](StructureDataType::structure_data_type_consume_bytes_after))
-//! and one new "update a bitfield in place" helper
-//! ([`structure_data_type_update_bit_field_data_type`](StructureDataType::structure_data_type_update_bit_field_data_type),
-//! which operates directly on this structure's own `Vec<DataTypeComponentImpl>` rather than
-//! through the pre-existing but object-unsafe-in-practice
-//! [`CompositeDataTypeImpl::composite_impl_update_bit_field_data_type`], which stays stubbed at
-//! `Ok(false)`). The first three are wired all the way into `StructureDataTypeImpl`'s own `impl
-//! DataType` ([`DataType::data_type_size_changed`]/[`data_type_alignment_changed`]/
-//! [`data_type_deleted`]) since they only ever need to *compare against* the notified data type
-//! (via [`DataType::get_data_type_path`] equality, this crate's established reference-identity
-//! approximation); `dataTypeReplaced` cannot be wired the same way since it needs to *store* an
-//! owned copy of the replacement, which the generic `data_type_replaced(&mut self, old_dt, new_dt:
-//! &dyn DataType)` placeholder has no way to hand over without a `Clone` bound on [`DataType`] --
-//! see [`structure_data_type_data_type_replaced`]'s own doc comment for the full explanation and
-//! for why `StructureDataTypeImpl` therefore leaves that one override at its inherited default.
-//!
-//! Two singleton stand-ins were added, mirroring [`UndefinedFillerDataType`]'s existing precedent
-//! for `DataType.DEFAULT`: [`BadDataTypeStandIn`]/[`bad_data_type_stand_in`] for
-//! `BadDataType.dataType` (used by `dataTypeDeleted`) and [`Undefined1StandIn`]/
-//! [`undefined1_stand_in`] for `Undefined1DataType.dataType` (used by `dataTypeReplaced`'s
-//! packed-structure fallback) -- both traits remain concrete-singleton-less in this crate (see
-//! their own module docs), and a previous session's attempt at this same porting task had flagged
-//! that gap as a hard blocker; it is not, once a minimal local stand-in (matching every property
-//! its own call sites actually read) is written the same way [`UndefinedFillerDataType`] already
-//! was for `DataType.DEFAULT`.
-//!
-//! While porting this, [`crate::program::seam_stubs::SharedDataType`] (the same shared utility
-//! flagged once already above for a different forwarding gap) was found *again* to not forward
-//! `is_bit_field_type`/`as_bit_field_data_type`: any caller downcasting a bitfield component's data
-//! type after routing it through [`DataTypeComponent::get_data_type`] (which returns a
-//! `share_data_type`-wrapped handle) would silently see "not a bitfield" even when the underlying
-//! shared value really is one. Both were added to its forwarded set (again a strict completeness
-//! fix, not a behavior change).
-//!
-//! ## `replace`/`replaceAtOffset` now real (2026-09, final gap closed)
-//!
-//! `replace(int, DataType, int[, String, String])` and `replaceAtOffset(int, DataType, int,
-//! String, String)` -- the one gap the rest of this trait's own doc comment used to flag as
-//! blocking `DONE` -- are now ported for real, as
-//! [`structure_data_type_replace`](StructureDataType::structure_data_type_replace)/
-//! [`structure_data_type_replace_at_offset`](StructureDataType::structure_data_type_replace_at_offset),
-//! wired into `StructureDataTypeImpl`'s `impl Structure` (`replace`/`replace_with_name`/
-//! `replace_at_offset`). Every private helper in Java's call graph is ported alongside them:
-//! [`structure_data_type_do_component_replacement`](StructureDataType::structure_data_type_do_component_replacement)
-//! (the "quick update" fast path -- mutate a single matching-length/offset/(packed-)alignment
-//! component in place via [`DataTypeComponentImpl::update_special`] rather than a full
-//! delete-and-reinsert),
-//! [`structure_data_type_replace_components`](StructureDataType::structure_data_type_replace_components)
-//! (the general sequence-replacement algorithm; Java's `LinkedList<DataTypeComponentImpl>`
-//! parameter becomes a plain `&[DataTypeComponentImpl]` slice of owned
-//! [`DataTypeComponentImpl::snapshot`]s here, since nothing below needs list-splicing, only
-//! ordered iteration and a `get(0)`/`getLast()`-equivalent),
-//! [`structure_data_type_check_undefined_space_availability_after`](StructureDataType::structure_data_type_check_undefined_space_availability_after),
-//! [`structure_data_type_get_num_undefined_bytes`](StructureDataType::structure_data_type_get_num_undefined_bytes),
-//! and
-//! [`structure_data_type_get_last_defined_component_ordinal`](StructureDataType::structure_data_type_get_last_defined_component_ordinal).
-//!
-//! A subtlety worth flagging for future readers: `replace_components`'s own `shiftOffsets`-based
-//! ordinal bookkeeping (`deltaOrdinal = -origComponents.size() + origLength - length`) is only
-//! ever an intermediate, sometimes-inexact adjustment for a non-packed structure -- verified by
-//! hand-tracing it against `StructureDBTest.testReplace3`'s real expected output, where the
-//! formula alone does not yet land on the right final ordinal. What actually guarantees
-//! correctness is that
-//! [`structure_data_type_do_component_replacement`](StructureDataType::structure_data_type_do_component_replacement)
-//! *always* calls [`structure_data_type_repack`](StructureDataType::structure_data_type_repack)
-//! immediately afterward on its non-quick-update path, and a non-packed `repack` fully
-//! recomputes every ordinal and `numComponents` from scratch
-//! ([`structure_data_type_adjust_non_packed_components`](StructureDataType::structure_data_type_adjust_non_packed_components),
-//! already ported) by walking the actual post-mutation `components` list and counting real
-//! byte-offset gaps -- exactly mirroring Java's own `repack(false)` call at the same call site.
-//! This crate's tests below therefore assert final post-repack state (as the Java JUnit fixtures
-//! they are ported from do too), not the intermediate `shiftOffsets` result.
-//!
-//! Two more `PORT_MANIFEST`-relevant fixes fell out of writing the bit-field-overlap-consolidation
-//! test (case 3 of `replace`/case 2 of `replaceAtOffset`, which -- like Java's own `replace`/
-//! `replaceAtOffset` bit-field handling -- detects overlap at byte granularity via `containsOffset`,
-//! not bit granularity): [`crate::program::seam_stubs::SharedDataType`] (flagged twice already
-//! above for other forwarding gaps) was found a third time to not forward
-//! [`DataType::as_bit_field`] -- unlike the two fixes above, this one was a genuine *reachable*
-//! bug, not a completeness nicety: the private [`compare_component_to_bit_offset`] helper (already
-//! ported, used by `insertBitFieldAt`'s own bit-offset binary search) calls
-//! `dtc.get_data_type().as_bit_field()` on an *existing* component's data type, and
-//! `get_data_type()` always returns a `share_data_type`-wrapped handle; inserting a second
-//! bit-field adjacent to (or sharing a byte with) an already-inserted one therefore panicked
-//! before this fix. `as_bit_field` was added to `SharedDataType`'s forwarded set.
-//!
-//! Explicitly and intentionally **not yet ported** (do not flip `StructureDataType.java`'s
-//! `PORT_MANIFEST.tsv` row to `DONE` until these are addressed or a narrower definition of "done"
-//! is agreed) -- a 2026-09 method-by-method re-read of the full 1958-line Java source against
-//! this file's current state, done specifically to decide whether `replace`/`replaceAtOffset`
-//! landing above was enough to flip the manifest, confirmed every item below is still real and
-//! accurate (none are stale), and found no *additional* gaps beyond them; the manifest row is
-//! therefore intentionally left `TODO` rather than `DONE`:
-//!   - Within `dataTypeDeleted`, the case where a *bitfield's* base type (rather than a plain
-//!     component's data type) is deleted -- which Java reverts to the base type's own primitive
-//!     integer type via `BitFieldDataType.getPrimitiveBaseDataType()` (walking through
-//!     `TypeDef`/`Enum` down to an `AbstractIntegerDataType`) -- is not ported, since that method
-//!     does not exist in this crate yet; such a bitfield is left unchanged instead of reverted.
-//!   - `dataType.clone(dataMgr)` (deep-cloning an inserted data type against this structure's own
-//!     `DataTypeManager`) is skipped; the data type is stored as given.
-//!   - `data_type.addParent(this)`/`removeParent(this)` (the child `DataType`'s own
-//!     parent-notification list, used for size/alignment-change fan-out) is **not** wired from
-//!     `structure_data_type_add`/`_insert`/`_insert_at_offset`: doing so from a default trait
-//!     method would need to upcast `&mut self` (typed as `&mut Self: StructureDataType`) to
-//!     `&dyn DataType`, which is not attempted this session to avoid depending on trait-object
-//!     upcasting support; a concrete implementor's own `impl Composite for ...`/`impl Structure
-//!     for ...` wrapper is free to call it itself after delegating here.
-//!   - `DataTypeComponentImpl`'s `parent` back-reference is always `None` for every component
-//!     constructed by the methods above, rather than an `Arc` to the owning structure, since
-//!     wiring a genuine self-referential `Arc<Self>` would require every concrete
-//!     `StructureDataType` implementor to be constructed via `Arc::new_cyclic`, a much bigger
-//!     architectural change than this session's scope. This only affects
-//!     [`DataTypeComponent::get_parent`]/parent-dependent settings lookups on a *component*
-//!     (e.g. `getDefaultSettings()`'s `DataTypeManager`-based immutability check always falls back
-//!     to "immutable" since no parent is found); it does not affect any of the offset/ordinal/
-//!     length bookkeeping ported above.
-//!   - `notifySizeChanged()`/`notifyAlignmentChanged()` (walking the *composite's own* parent
-//!     chain to fan out change notifications, plus `DataTypeManager` notification) are no-ops
-//!     here: nothing in this crate yet tracks a `StructureDataType` composite's own parents.
+//! Divergences from Java, all following from the build-then-share convention for composites
+//! (2026-09-27) or from Rust ownership:
+//!   - Parent tracking (`addParent`/`removeParent`) and `notifySizeChanged`/
+//!     `notifyAlignmentChanged` are not performed: an in-memory structure is an owned value that
+//!     nothing registers as a parent; a data type manager copies it on resolve.
+//!   - The associated manager is recorded only as its data organization, so inserted data types
+//!     are not `clone(dataMgr)`-rebound; they are shared as given.
+//!   - Data type identity (Java `==`) in `dataTypeDeleted`/`dataTypeReplaced`/
+//!     `dataTypeSizeChanged` is compared by data type path.
+//!   - `BadDataType` is represented by the local [`BadDataTypeStandIn`] until `BadDataType` is
+//!     ported (it needs `Dynamic::get_replacement_base_type` to become `Option`-returning; parked).
 
 use crate::docking::settings::settings::Settings;
 use crate::program::model::data::aligned_component_packer::AlignedComponentPacker as RealAlignedComponentPacker;
@@ -313,14 +34,17 @@ use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::composite_data_type_impl::CompositeDataTypeImpl;
 use crate::program::model::data::composite_internal::{
-    compare_component_to_offset, compare_component_to_ordinal, CompositeInternal, DEFAULT_ALIGNMENT,
-    NO_PACKING,
+    compare_component_to_offset, compare_component_to_ordinal, stored_minimum_alignment_of, stored_packing_value_of,
+    CompositeInternal, DEFAULT_ALIGNMENT, NO_PACKING,
 };
 use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::{DataType, SetDataTypeNameError, UnsupportedOperationError};
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::data_type_component_impl::DataTypeComponentImpl;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::default_data_type::DefaultDataType;
+use crate::program::model::data::undefined1_data_type::Undefined1DataType;
+use crate::program::model::data::built_in::shared_default_organization;
 use crate::program::model::data::internal_data_type_component::InternalDataTypeComponent;
 use crate::program::model::data::packing_type::PackingType;
 use crate::program::model::data::source_archive::SourceArchive;
@@ -329,36 +53,11 @@ use crate::program::model::data::structure_internal::StructureInternal;
 use crate::program::model::mem::MemBuffer;
 use crate::program::seam_stubs::{share_data_type, AlignedComponentPacker};
 use crate::util::exception::DuplicateNameException;
+use crate::util::universal_id_generator::next_id;
 use crate::util::UniversalID;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::sync::Arc;
-
-/// Local stand-in for Ghidra's `DataType.DEFAULT` singleton (an instance of
-/// `ghidra.program.model.data.DefaultDataType`), used only to synthesize the implicit "undefined"
-/// filler components a non-packed structure reports between/after its explicitly defined
-/// components. [`DefaultDataType`](super::default_data_type::DefaultDataType) is itself only a
-/// mixin trait in this crate with no ready-made concrete singleton instance (see its module
-/// docs), so this minimal local type exists purely so the component-management methods below have
-/// something concrete to hand back; it is not itself the subject of this port.
-#[derive(Debug, Clone, Copy)]
-struct UndefinedFillerDataType;
-
-impl DataType for UndefinedFillerDataType {
-    fn get_name(&self) -> String {
-        "undefined".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn is_default_data_type(&self) -> bool {
-        true
-    }
-}
-
-fn undefined_filler_data_type() -> Box<dyn DataType> {
-    Box::new(UndefinedFillerDataType)
-}
 
 /// Local stand-in for Ghidra's `BadDataType.dataType` singleton (an instance of the private
 /// `ghidra.program.model.data.BadDataType`), used by
@@ -366,7 +65,7 @@ fn undefined_filler_data_type() -> Box<dyn DataType> {
 /// in place of a deleted (non-bitfield) component's data type, matching Java's
 /// `setComponentDataType(dtc, BadDataType.dataType, i)`. [`BadDataType`](super::bad_data_type::BadDataType)
 /// is itself only a trait in this crate with no ready-made concrete singleton instance (see its
-/// module docs, which flag this exact gap), so -- mirroring [`UndefinedFillerDataType`] above --
+/// module docs, which flag this exact gap), so -- mirroring `DataType.DEFAULT` ([`DefaultDataType`]) above --
 /// this minimal local type stands in for just the two properties every call site actually needs:
 /// `getName()` (`"-BAD-"`) and `getLength()` (`-1`, real Java's documented "unknown length"
 /// sentinel). Since `-1` is not `> 0`, [`preferred_component_length_for_data_type`](super::composite_data_type_impl::preferred_component_length_for_data_type)
@@ -394,33 +93,6 @@ impl DataType for BadDataTypeStandIn {
 
 fn bad_data_type_stand_in() -> Box<dyn DataType> {
     Box::new(BadDataTypeStandIn)
-}
-
-/// Local stand-in for Ghidra's `Undefined1DataType.dataType` singleton, used by
-/// [`structure_data_type_data_type_replaced`](StructureDataType::structure_data_type_data_type_replaced)
-/// as the packed-structure fallback replacement when validation/ancestry-checking the real
-/// replacement data type fails, matching Java's `replacementDt = isPackingEnabled() ?
-/// Undefined1DataType.dataType : DataType.DEFAULT`. [`Undefined1DataType`](super::undefined1_data_type)
-/// is itself only a trait in this crate with no ready-made concrete singleton instance (see its
-/// module docs, which flag this exact gap) -- this minimal local type stands in for the one
-/// property every call site actually needs: a fixed, positive `getLength() == 1`.
-#[derive(Debug, Clone, Copy)]
-struct Undefined1StandIn;
-
-impl DataType for Undefined1StandIn {
-    fn get_name(&self) -> String {
-        "undefined1".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        1
-    }
-    fn is_undefined_type(&self) -> bool {
-        true
-    }
-}
-
-fn undefined1_stand_in() -> Box<dyn DataType> {
-    Box::new(Undefined1StandIn)
 }
 
 /// Port of `DataTypeComponentImpl.isUndefined()`'s test, applied to a freshly-constructed
@@ -681,24 +353,36 @@ fn compare_component_to_bit_offset(dtc: &DataTypeComponentImpl, bit_offset: i32,
 /// what was ported, defaulted, and intentionally omitted.
 ///
 /// NOTE: Implementation is not thread safe (matches the Java class's documented contract).
-pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + AlignedStructurePacker {
-    /// Backing storage for the private `structLength` field.
-    fn stored_struct_length(&self) -> i32;
+impl StructureDataType {
+    /// The private `structLength` field.
+    fn stored_struct_length(&self) -> i32 {
+        self.struct_length
+    }
 
-    /// Mutator for the private `structLength` field's backing storage.
-    fn set_stored_struct_length(&mut self, length: i32);
+    /// Sets the private `structLength` field.
+    fn set_stored_struct_length(&mut self, length: i32) {
+        self.struct_length = length;
+    }
 
-    /// Backing storage for the private `components` field (`List<DataTypeComponentImpl>`).
-    fn components(&self) -> &Vec<DataTypeComponentImpl>;
+    /// The private `components` field (`List<DataTypeComponentImpl>`), in offset/ordinal order.
+    fn components(&self) -> &Vec<DataTypeComponentImpl> {
+        &self.components
+    }
 
-    /// Mutator for the private `components` field's backing storage.
-    fn components_mut(&mut self) -> &mut Vec<DataTypeComponentImpl>;
+    /// Mutable access to the private `components` field.
+    fn components_mut(&mut self) -> &mut Vec<DataTypeComponentImpl> {
+        &mut self.components
+    }
 
-    /// Backing storage for the private `numComponents` field.
-    fn stored_num_components(&self) -> i32;
+    /// The private `numComponents` field.
+    fn stored_num_components(&self) -> i32 {
+        self.num_components
+    }
 
-    /// Mutator for the private `numComponents` field's backing storage.
-    fn set_stored_num_components(&mut self, num_components: i32);
+    /// Sets the private `numComponents` field.
+    fn set_stored_num_components(&mut self, num_components: i32) {
+        self.num_components = num_components;
+    }
 
     /// Port of `StructureDataType.isZeroLength()`. Exposed under a distinct name since
     /// [`DataType::is_zero_length`](crate::program::model::data::data_type::DataType::is_zero_length)
@@ -781,7 +465,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
 
     /// Port of `StructureDataType.getComponent(int)`: returns the defined component at `ordinal`
     /// if one exists there, or else synthesizes a fresh 1-byte "undefined" filler component (see
-    /// [`UndefinedFillerDataType`]) at the appropriate offset. Exposed under a distinct name since
+    /// `DataType.DEFAULT` ([`DefaultDataType`])) at the appropriate offset. Exposed under a distinct name since
     /// [`Composite::get_component`](crate::program::model::data::composite::Composite::get_component)
     /// already provides a (placeholder) default.
     ///
@@ -808,7 +492,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
                     offset
                 };
                 Ok(DataTypeComponentImpl::new(
-                    undefined_filler_data_type(),
+                    DefaultDataType::boxed(),
                     None,
                     1,
                     ordinal,
@@ -843,10 +527,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// # Errors
     /// Returns `Err` if `component_data_type` has this structure within it (mirrors
     /// `DataTypeDependencyException`).
-    fn structure_data_type_check_ancestry(&self, component_data_type: &dyn DataType) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_check_ancestry(&self, component_data_type: &dyn DataType) -> Result<(), String> {
         if is_part_of_data_type_by_ref(component_data_type, self) {
             return Err(format!(
                 "DataTypeDependencyException: Data type {} has {} within it.",
@@ -857,26 +538,40 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         Ok(())
     }
 
-    /// Port of the private `StructureDataType.doAdd(DataType, int, String, String, boolean)`,
-    /// called with `packAndNotify = true` (matching the public
-    /// `add(DataType, int, String, String)` entry point; see the module docs for what is skipped
-    /// -- `dataType.clone(dataMgr)`/`data_type.add_parent(self)`/real packed-structure
-    /// repacking).
+    /// Port of `StructureDataType.add(DataType, int, String, String)`: `doAdd` with
+    /// `packAndNotify = true`.
     ///
     /// # Errors
-    /// Returns `Err` if a positive length cannot be determined for the specified data type
-    /// (mirrors `IllegalArgumentException`), or if `data_type` would create a cyclic composite
-    /// (mirrors `DataTypeDependencyException`).
+    /// See [`structure_data_type_do_add`](Self::structure_data_type_do_add).
     fn structure_data_type_add(
         &mut self,
         data_type: Box<dyn DataType>,
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
+        self.structure_data_type_do_add(data_type, length, component_name, comment, true)
+    }
+
+    /// Port of the private `StructureDataType.doAdd(DataType, int, String, String, boolean)`:
+    /// adds a new component to the end of this structure. Unlike an insert at the end, a
+    /// non-packed structure always grows by a positive `length` when one is given.
+    ///
+    /// The returned component reflects the layout after any repack (Java returns the live
+    /// component object, which the repack updates in place).
+    ///
+    /// # Errors
+    /// Returns `Err` if the data type is not allowed in a composite or a positive length cannot be
+    /// determined for it (mirrors `IllegalArgumentException`), or if `data_type` would create a
+    /// cyclic composite (mirrors `DataTypeDependencyException`).
+    fn structure_data_type_do_add(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        length: i32,
+        component_name: Option<String>,
+        comment: Option<String>,
+        pack_and_notify: bool,
+    ) -> Result<DataTypeComponentImpl, String> {
         let data_type = self.composite_impl_validate_data_type(data_type)?;
         self.structure_data_type_check_ancestry(data_type.as_ref())?;
 
@@ -884,27 +579,16 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         let struct_length = self.stored_struct_length();
 
         if data_type.is_default_data_type() {
-            // Assume non-packed structure growth by 1 byte; not added to `components` (matches
-            // Java's `dataType == DataType.DEFAULT` branch, which never touches the list).
+            // assume non-packed structure - will grow by 1-byte; DEFAULT components are never
+            // stored in the defined-component list
             self.set_stored_num_components(num_components + 1);
             self.set_stored_struct_length(struct_length + 1);
-            return Ok(DataTypeComponentImpl::new(
-                data_type,
-                None,
-                1,
-                num_components,
-                struct_length,
-                None,
-                None,
-            ));
+            return Ok(DataTypeComponentImpl::new(data_type, None, 1, num_components, struct_length, None, None));
         }
 
         let dynamic_specifiable = is_dynamic_with_specifiable_length(data_type.as_ref());
-        let component_length = self.composite_impl_preferred_component_length_default(
-            data_type.as_ref(),
-            dynamic_specifiable,
-            length,
-        )?;
+        let component_length =
+            self.composite_impl_preferred_component_length_default(data_type.as_ref(), dynamic_specifiable, length)?;
 
         let dtc = DataTypeComponentImpl::new(
             data_type,
@@ -916,13 +600,8 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
             comment,
         );
         self.components_mut().push(dtc);
-        let stored = self
-            .components()
-            .last()
-            .expect("just pushed")
-            .snapshot();
 
-        let mut structure_growth = stored.get_length();
+        let mut structure_growth = component_length;
         if structure_growth != 0 && !self.is_packing_enabled() && length > 0 {
             structure_growth = length;
         }
@@ -930,12 +609,11 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         self.set_stored_num_components(num_components + 1);
         self.set_stored_struct_length(struct_length + structure_growth);
 
-        if self.is_packing_enabled() {
+        if pack_and_notify && self.is_packing_enabled() {
             self.structure_data_type_repack(false);
         }
-        // notifySizeChanged(): no-op, see module docs.
 
-        Ok(stored)
+        Ok(self.component_snapshot(self.components().len() - 1))
     }
 
     /// Port of `StructureDataType.shiftOffsets(int, int, int)`: shift every defined component
@@ -1013,10 +691,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
         if offset < 0 {
             return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
         }
@@ -1107,10 +782,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
         if ordinal < 0 || ordinal > self.stored_num_components() {
             return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
         }
@@ -1177,10 +849,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         bit_size: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
         check_base_data_type(base_data_type.as_ref())
             .map_err(|e| format!("InvalidDataTypeException: {}", e.message()))?;
         // baseDataType.clone(dataMgr) skipped, see module docs.
@@ -1206,10 +875,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         bit_size: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
         if ordinal < 0 || ordinal > self.stored_num_components() {
             return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
         }
@@ -1270,10 +936,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         bit_size: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
         if byte_offset < 0 || bit_size < 0 {
             return Err(
                 "IllegalArgumentException: Negative values not permitted when defining bitfield".to_string(),
@@ -1415,10 +1078,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// alignment-only change with an unchanged length/component-count is not separately detected
     /// as "changed" -- this only matters for the `notify` path, which is a no-op in this port
     /// regardless (see the module docs on `notifySizeChanged`/`notifyAlignmentChanged`).
-    fn structure_data_type_repack(&mut self, notify: bool) -> bool
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_repack(&mut self, notify: bool) -> bool {
         let old_length = self.stored_struct_length();
         let changed = if !self.is_packing_enabled() {
             self.structure_data_type_adjust_non_packed_components()
@@ -1444,14 +1104,11 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// NOTE: the quality of the computed layout depends entirely on whatever
     /// [`AlignedStructurePacker::create_component_packer`] a concrete `StructureDataType`
-    /// implementor supplies; [`StructureDataTypeImpl`] (this crate's real, production
+    /// implementor supplies; [`StructureDataType`] (this crate's real, production
     /// implementation) supplies the genuine, bitfield-aware
     /// [`aligned_component_packer::AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)
     /// port (2026-09).
-    fn structure_data_type_pack(&mut self) -> bool
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_pack(&mut self) -> bool {
         let old_length = self.stored_struct_length();
         let old_num_components = self.stored_num_components();
 
@@ -1508,89 +1165,89 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         changed
     }
 
-    /// Port of `StructureDataType.isEquivalent(DataType)`, generalized over any other
-    /// `StructureDataType` implementor (Java's `dataType instanceof StructureInternal` downcast
-    /// has no direct `dyn Trait` equivalent, so callers compare against a known
-    /// `&dyn StructureDataType` rather than a `&dyn DataType`).
-    fn structure_data_type_is_equivalent(&self, other: &dyn StructureDataType) -> bool {
-        let other_length = if other.structure_data_type_is_zero_length() {
-            0
-        } else {
-            other.length()
+    /// Port of `StructureDataType.isEquivalent(DataType)`. Java's `instanceof StructureInternal`
+    /// test is [`DataType::as_structure`]; the other structure's stored packing and minimum
+    /// alignment values are recovered from its public packing/alignment API
+    /// ([`stored_packing_value_of`]/[`stored_minimum_alignment_of`]).
+    fn structure_data_type_is_equivalent(&self, data_type: &dyn DataType) -> bool {
+        if std::ptr::addr_eq(data_type as *const dyn DataType, self as *const Self) {
+            return true;
+        }
+        let Some(other) = data_type.as_structure() else {
+            return false;
         };
-        if self.get_stored_packing_value() != other.get_stored_packing_value()
-            || self.get_stored_minimum_alignment() != other.get_stored_minimum_alignment()
-            || (self.get_stored_packing_value() == crate::program::model::data::composite_internal::NO_PACKING
-                && self.stored_struct_length() != other_length)
+        let other_length = if other.is_zero_length() { 0 } else { other.get_length() };
+        let packing = self.stored_packing_value();
+        if packing != stored_packing_value_of(other)
+            || self.stored_minimum_alignment_value() != stored_minimum_alignment_of(other)
+            || (packing == NO_PACKING && self.stored_struct_length() != other_length)
         {
             return false;
         }
 
-        let my_components = self.components();
-        let other_components = other.components();
-        if my_components.len() != other_components.len() {
+        let my_num_comps = self.components().len();
+        if my_num_comps as i32 != other.get_num_defined_components() {
             return false;
         }
-        my_components
+        let other_defined_components = other.get_defined_components();
+        if other_defined_components.len() != my_num_comps {
+            // safety check
+            return false;
+        }
+        let packed = self.is_packing_enabled();
+        self.components()
             .iter()
-            .zip(other_components.iter())
-            .all(|(a, b)| a.is_equivalent(b))
+            .zip(other_defined_components.iter())
+            .all(|(mine, theirs)| mine.is_equivalent_within(theirs.as_ref(), packed))
     }
 
-    /// Port of `StructureDataType.replaceWith(DataType)`, generalized over any other
-    /// `StructureDataType` implementor (same `&dyn StructureDataType` convention as
-    /// [`structure_data_type_is_equivalent`](StructureDataType::structure_data_type_is_equivalent),
-    /// standing in for Java's `instanceof StructureInternal` downcast). Replaces this structure's
-    /// internal components with those of `other`, including packing and alignment settings.
+    /// Port of `StructureDataType.replaceWith(DataType)`: replaces this structure's components
+    /// with those of `data_type` (which must be a structure), including its packing and alignment
+    /// settings.
     ///
     /// NOTE: unlike adding new components (which guarantees field-name uniqueness), this preserves
-    /// `other`'s component names verbatim, matching Java. See the module docs for what is skipped
-    /// (`dataType.clone(dataMgr)`, `data_type.removeParent(this)`/`addParent(this)`, and the
-    /// `structAlignment = -1` reset, since no such field is tracked by this port).
+    /// the other structure's component names verbatim, matching Java.
     ///
     /// # Errors
-    /// Returns `Err` if any of `other`'s (non-packed) component data types would create a cyclic
-    /// composite (mirrors `DataTypeDependencyException`), or if the underlying
-    /// [`structure_data_type_add`](StructureDataType::structure_data_type_add) call fails for the
-    /// packed case.
-    fn structure_data_type_replace_with(&mut self, other: &dyn StructureDataType) -> Result<(), String>
-    where
-        Self: Sized,
-    {
-        // dtc.getDataType().removeParent(this) for each existing component: skipped, see module
-        // docs re: parent-notification wiring.
+    /// Returns `Err` if `data_type` is not a structure (mirrors Java's bare
+    /// `IllegalArgumentException`), or if a component data type would create a cyclic composite
+    /// (mirrors the `DataTypeDependencyException` Java rethrows as `IllegalArgumentException`).
+    fn structure_data_type_replace_with(&mut self, data_type: &dyn DataType) -> Result<(), String> {
+        let Some(other) = data_type.as_structure() else {
+            return Err("IllegalArgumentException".to_string());
+        };
+
         self.components_mut().clear();
         self.set_stored_num_components(0);
         self.set_stored_struct_length(0);
+        self.struct_alignment = -1;
 
-        self.set_stored_packing_value_raw(other.get_stored_packing_value());
-        self.set_stored_minimum_alignment_value(other.get_stored_minimum_alignment());
+        self.set_stored_packing_value_raw(stored_packing_value_of(other));
+        self.set_stored_minimum_alignment_value(stored_minimum_alignment_of(other));
 
         if other.is_packing_enabled() {
-            for dtc in other.components() {
+            // doReplaceWithPacked
+            for dtc in other.get_defined_components() {
                 let dt = dtc.get_data_type();
                 let length = if dt.as_dynamic().is_some() { dtc.get_length() } else { -1 };
-                self.structure_data_type_add(dt, length, dtc.get_field_name(), dtc.get_comment())?;
+                self.structure_data_type_do_add(dt, length, dtc.get_field_name(), dtc.get_comment(), false)?;
             }
-        } else if !other.composite_impl_is_not_yet_defined() {
-            let new_length = if other.structure_data_type_is_zero_length() {
-                0
-            } else {
-                other.length()
-            };
+        } else if !other.is_not_yet_defined() {
+            // doReplaceWithNonPacked
+            let new_length = if other.is_zero_length() { 0 } else { other.get_length() };
             self.set_stored_struct_length(new_length);
             self.set_stored_num_components(new_length);
 
-            let other_components = other.components();
+            let other_components = other.get_defined_components();
             let count = other_components.len();
             for (i, dtc) in other_components.iter().enumerate() {
                 let dt = dtc.get_data_type();
-                // dt.clone(dataMgr): skipped, see module docs.
                 self.structure_data_type_check_ancestry(dt.as_ref())?;
                 let is_dynamic = dt.as_dynamic().is_some();
                 let length = if dtc.is_bit_field_component() || is_dynamic {
                     dtc.get_length()
                 } else {
+                    // determine maxLength for fixed-length types
                     let max_offset = if i + 1 < count {
                         other_components[i + 1].get_offset()
                     } else {
@@ -1604,6 +1261,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
                         max_length,
                     )?
                 };
+                // Note: original component name is preserved
                 let new_dtc = DataTypeComponentImpl::new(
                     dt,
                     None,
@@ -1618,7 +1276,6 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         }
 
         self.structure_data_type_repack(false);
-        // notifySizeChanged(): no-op, see module docs.
         Ok(())
     }
 
@@ -1651,10 +1308,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// # Errors
     /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`).
-    fn structure_data_type_delete(&mut self, ordinal: i32) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_delete(&mut self, ordinal: i32) -> Result<(), String> {
         if ordinal < 0 || ordinal >= self.stored_num_components() {
             return Err(format!("IndexOutOfBoundsException: ordinal {ordinal} out of bounds"));
         }
@@ -1687,10 +1341,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// # Errors
     /// Returns `Err` if any ordinal is out of bounds (mirrors `IndexOutOfBoundsException`).
-    fn structure_data_type_delete_ordinals(&mut self, ordinals: &HashSet<i32>) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_delete_ordinals(&mut self, ordinals: &HashSet<i32>) -> Result<(), String> {
         if ordinals.is_empty() {
             return Ok(());
         }
@@ -1797,10 +1448,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// # Errors
     /// Returns `Err` if `offset` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_delete_at_offset(&mut self, offset: i32) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_delete_at_offset(&mut self, offset: i32) -> Result<(), String> {
         if offset < 0 {
             return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
         }
@@ -1840,10 +1488,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// # Errors
     /// Returns `Err` if `offset` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_clear_at_offset(&mut self, offset: i32) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_clear_at_offset(&mut self, offset: i32) -> Result<(), String> {
         if offset < 0 {
             return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
         }
@@ -1870,10 +1515,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// # Errors
     /// Returns `Err` if `ordinal` is out of bounds (mirrors `IndexOutOfBoundsException`).
-    fn structure_data_type_clear_component(&mut self, ordinal: i32) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_clear_component(&mut self, ordinal: i32) -> Result<(), String> {
         if self.is_packing_enabled() {
             return self.structure_data_type_delete(ordinal);
         }
@@ -1909,10 +1551,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// # Errors
     /// Returns `Err` if `amount` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_grow_structure(&mut self, amount: i32) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_grow_structure(&mut self, amount: i32) -> Result<(), String> {
         if amount < 0 {
             return Err(format!("IllegalArgumentException: Invalid growth amount: {amount}"));
         }
@@ -1932,10 +1571,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     ///
     /// # Errors
     /// Returns `Err` if `len` is negative (mirrors `IllegalArgumentException`).
-    fn structure_data_type_set_length(&mut self, len: i32) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_set_length(&mut self, len: i32) -> Result<(), String> {
         if len < 0 {
             return Err(format!("IllegalArgumentException: Invalid length: {len}"));
         }
@@ -1989,7 +1625,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
                 ordinal += 1;
             }
         }
-        DataTypeComponentImpl::new(undefined_filler_data_type(), None, 1, ordinal, offset, None, None)
+        DataTypeComponentImpl::new(DefaultDataType::boxed(), None, 1, ordinal, offset, None, None)
     }
 
     /// Port of the private `StructureDataType.indexOfFirstNonZeroLenComponentContainingOffset(int,
@@ -2124,7 +1760,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// caller-populated `LinkedList` -- every caller below always populates at least one entry).
     /// The quick-update path is only ever reachable when `replaced_components[0]` is a genuine
     /// defined component already present in [`components`](StructureDataType::components) (a
-    /// synthesized undefined-filler placeholder's data type is always the [`UndefinedFillerDataType`]
+    /// synthesized undefined-filler placeholder's data type is always the `DataType.DEFAULT` ([`DefaultDataType`])
     /// stand-in, which trips the `oldDt != DEFAULT` check below and forces the full path) -- its
     /// exact list slot is relocated by ordinal (stable at this point, since nothing has been
     /// mutated yet) rather than threaded through as a separate index parameter, since Java relies on
@@ -2142,10 +1778,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         length: i32,
         field_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<Option<DataTypeComponentImpl>, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<Option<DataTypeComponentImpl>, String> {
         let old_component = &replaced_components[0];
         let old_dt = old_component.get_data_type();
 
@@ -2204,10 +1837,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
         if ordinal < 0 || ordinal >= self.stored_num_components() {
             return Err(format!(
                 "IndexOutOfBoundsException: ordinal {ordinal} out of bounds"
@@ -2295,7 +1925,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
                 }
                 offset = off;
                 let orig_dtc = DataTypeComponentImpl::new(
-                    undefined_filler_data_type(),
+                    DefaultDataType::boxed(),
                     None,
                     1,
                     ordinal,
@@ -2348,10 +1978,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         length: i32,
         component_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<DataTypeComponentImpl, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<DataTypeComponentImpl, String> {
         if offset < 0 {
             return Err("IllegalArgumentException: Offset cannot be negative.".to_string());
         }
@@ -2393,7 +2020,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
                     // if non-packed: replace undefined component which immediately follows the
                     // zero-length component
                     replaced_components.push(DataTypeComponentImpl::new(
-                        undefined_filler_data_type(),
+                        DefaultDataType::boxed(),
                         None,
                         1,
                         orig_dtc.get_ordinal() + 1,
@@ -2441,7 +2068,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
                     ordinal = dtc.get_ordinal() + offset - dtc.get_end_offset();
                 }
                 let orig_dtc = DataTypeComponentImpl::new(
-                    undefined_filler_data_type(),
+                    DefaultDataType::boxed(),
                     None,
                     1,
                     ordinal,
@@ -2494,10 +2121,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         bytes_needed: i32,
         new_data_type: &dyn DataType,
         offset: i32,
-    ) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<(), String> {
         if bytes_needed <= 0 {
             return Ok(());
         }
@@ -2522,7 +2146,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// Port of the private `StructureDataType.replaceComponents(LinkedList<DataTypeComponentImpl>,
     /// DataType, int, int, String, String)`: replace an ordered, adjacent run of components
     /// (`orig_components`) with a single new component (or, if `data_type` is the
-    /// [`UndefinedFillerDataType`] `DataType.DEFAULT` stand-in, perform a clear-only operation with
+    /// `DataType.DEFAULT` ([`DefaultDataType`]) `DataType.DEFAULT` stand-in, perform a clear-only operation with
     /// no replacement component). For a non-packed structure, only the replaced run's own defined
     /// list entries are removed/inserted -- every *other* defined component's absolute byte offset
     /// is left untouched, and only its ordinal shifts (by `deltaOrdinal`) to reflect how many
@@ -2544,10 +2168,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         length: i32,
         field_name: Option<String>,
         comment: Option<String>,
-    ) -> Result<Option<DataTypeComponentImpl>, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<Option<DataTypeComponentImpl>, String> {
         let clear_only = data_type.is_default_data_type();
         let length = if clear_only { 0 } else { length };
 
@@ -2681,10 +2302,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// defined component or the end of the structure. Returns `-1` if packing is enabled
     /// (matching Java), or `i32::MAX` (Java's `Integer.MAX_VALUE`) if `index` is the last defined
     /// component of a non-packed structure.
-    fn structure_data_type_get_available_component_space(&self, index: usize) -> i32
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_get_available_component_space(&self, index: usize) -> i32 {
         if self.is_packing_enabled() {
             return -1;
         }
@@ -2703,10 +2321,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// point, the growth performed here is the bare field update only, matching Java's private
     /// `doGrowStructure` exactly -- every caller below already performs its own repack
     /// afterward). Returns the number of bytes actually consumed.
-    fn structure_data_type_consume_bytes_after(&mut self, index: usize, num_bytes: i32) -> i32
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_consume_bytes_after(&mut self, index: usize, num_bytes: i32) -> i32 {
         let this_len = self.components()[index].get_length();
         let this_offset = self.components()[index].get_offset();
         let next_offset = this_offset + this_len;
@@ -2743,10 +2358,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// Returns `Err` if a positive preferred length cannot be determined for `dt` at some matching
     /// component (mirrors `IllegalArgumentException`, propagated unguarded exactly as Java leaves
     /// it uncaught).
-    fn structure_data_type_data_type_size_changed(&mut self, dt: &dyn DataType) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_data_type_size_changed(&mut self, dt: &dyn DataType) -> Result<(), String> {
         if dt.is_bit_field_type() {
             return Ok(());
         }
@@ -2791,10 +2403,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
 
     /// Port of `StructureDataType.dataTypeAlignmentChanged(DataType)`: only a packing-enabled
     /// structure's layout can depend on a component's alignment, so this is a no-op otherwise.
-    fn structure_data_type_data_type_alignment_changed(&mut self, dt: &dyn DataType)
-    where
-        Self: Sized,
-    {
+    fn structure_data_type_data_type_alignment_changed(&mut self, dt: &dyn DataType) {
         let _ = dt;
         if self.is_packing_enabled() {
             self.structure_data_type_repack(true);
@@ -2822,10 +2431,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         index: usize,
         old_dt: &dyn DataType,
         new_dt: Option<&Arc<dyn DataType>>,
-    ) -> Result<bool, String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<bool, String> {
         if !self.components()[index].is_bit_field_component() {
             return Err("AssertException: expected bitfield component".to_string());
         }
@@ -2880,10 +2486,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         &mut self,
         index: usize,
         new_dt: Box<dyn DataType>,
-    ) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<(), String> {
         // comp.getDataType().removeParent(this)/newDt.addParent(this): no-op, see module docs.
         self.components_mut()[index].set_data_type(new_dt);
         if self.is_packing_enabled() {
@@ -2907,32 +2510,35 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         Ok(())
     }
 
-    /// Port of `StructureDataType.dataTypeDeleted(DataType)`. See the module docs for what is
-    /// skipped: the bitfield-base-type-deleted "revert to primitive type" case (Java's
-    /// `updateBitFieldDataType(dtc, dt, bitfieldDt.getPrimitiveBaseDataType())` branch), which
-    /// needs `BitFieldDataType.getPrimitiveBaseDataType()` (walking through `TypeDef`/`Enum` down
-    /// to a primitive `AbstractIntegerDataType`), not yet ported in this crate -- a bitfield whose
-    /// base type is deleted is therefore left unchanged here rather than reverted, and does not
-    /// contribute to `changed` below.
+    /// Port of `StructureDataType.dataTypeDeleted(DataType)`: a component of the deleted type
+    /// becomes `BadDataType`; a bitfield whose base type was deleted reverts to its primitive
+    /// integer base type. Data type identity (Java `==`) is compared by data type path.
     ///
     /// # Errors
-    /// Returns `Err` if [`structure_data_type_set_component_data_type`](StructureDataType::structure_data_type_set_component_data_type)
-    /// fails for some matching component (see its own doc comment; unreachable in practice here
-    /// since the substituted [`bad_data_type_stand_in`] always succeeds).
-    fn structure_data_type_data_type_deleted(&mut self, dt: &dyn DataType) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    /// Returns `Err` if [`structure_data_type_set_component_data_type`](Self::structure_data_type_set_component_data_type)
+    /// fails for some matching component.
+    fn structure_data_type_data_type_deleted(&mut self, dt: &dyn DataType) -> Result<(), String> {
         let target_path = dt.get_data_type_path();
         let mut changed = false;
         let n = self.components().len();
         for i in (0..n).rev() {
             if self.components()[i].is_bit_field_component() {
-                // Bitfield-base-type-deleted revert-to-primitive-type case: not ported, see this
-                // method's own doc comment.
-                continue;
-            }
-            if self.components()[i].get_data_type().get_data_type_path() == target_path {
+                // Do not allow bitfield to be destroyed: if its base type is removed, revert to
+                // the primitive integer type.
+                let primitive = {
+                    let bitfield = self.components()[i]
+                        .data_type_arc()
+                        .as_bit_field_data_type()
+                        .expect("is_bit_field_component() implies a BitFieldDataType");
+                    (bitfield.referenced_base_data_type().get_data_type_path() == target_path)
+                        .then(|| bitfield.get_primitive_base_data_type())
+                };
+                if let Some(primitive) = primitive {
+                    if self.structure_data_type_update_bit_field_data_type(i, dt, Some(&primitive))? {
+                        changed = true;
+                    }
+                }
+            } else if self.components()[i].get_data_type().get_data_type_path() == target_path {
                 self.structure_data_type_set_component_data_type(i, bad_data_type_stand_in())?;
                 changed = true;
             }
@@ -2954,10 +2560,10 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
     /// [`structure_data_type_data_type_deleted`](StructureDataType::structure_data_type_data_type_deleted)
     /// (all three of which only ever need to *compare against* the notified data type, and so keep
     /// the generic default's `&dyn DataType` shape and are wired into
-    /// [`StructureDataTypeImpl`]'s own `impl DataType`), this method cannot be reached from a
+    /// [`StructureDataType`]'s own `impl DataType`), this method cannot be reached from a
     /// concrete implementor's `DataType::data_type_replaced` override without that implementor
     /// separately tracking its own way to reconstruct an owned replacement (e.g. its own
-    /// `DataTypeManager` handle) -- out of scope here, so `StructureDataTypeImpl` leaves
+    /// `DataTypeManager` handle) -- out of scope here, so `StructureDataType` leaves
     /// `DataType::data_type_replaced` at its inherited placeholder default.
     ///
     /// See the module docs for what is skipped (`dataType.clone(dataMgr)`, parent-notification
@@ -2973,10 +2579,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
         &mut self,
         old_dt: &dyn DataType,
         new_dt: Box<dyn DataType>,
-    ) -> Result<(), String>
-    where
-        Self: Sized,
-    {
+    ) -> Result<(), String> {
         check_valid_replacement(old_dt, new_dt.as_ref())?;
 
         let replacement_dt: Box<dyn DataType> = {
@@ -2990,9 +2593,9 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
                 Ok(dt) => dt,
                 Err(_) => {
                     if self.is_packing_enabled() {
-                        undefined1_stand_in()
+                        share_data_type(&Undefined1DataType::data_type())
                     } else {
-                        undefined_filler_data_type()
+                        DefaultDataType::boxed()
                     }
                 }
             }
@@ -3022,7 +2625,7 @@ pub trait StructureDataType: StructureInternal + CompositeDataTypeImpl + Aligned
 
 /// Port of `DataUtilities.isValidDataTypeName(String)`'s check as applied by the
 /// `GenericDataType` constructor chain (`StructureDataType`'s Java superclass), used by
-/// [`StructureDataTypeImpl::new_in_category`]. A local duplicate of
+/// [`StructureDataType::new_in_category`]. A local duplicate of
 /// [`composite_data_type_impl::check_valid_name`](super::composite_data_type_impl)'s identical
 /// logic (that helper is private to its own module and used for the checked-exception `setName`
 /// path rather than this panic-based constructor path).
@@ -3030,54 +2633,37 @@ fn is_valid_structure_name(name: &str) -> bool {
     !name.trim().is_empty() && !name.chars().any(|c| c.is_control())
 }
 
-/// The first real, concrete, production implementation of [`StructureDataType`] in this crate.
+/// Basic in-memory (non-database-backed) implementation of a structure data type.
 ///
-/// Port of `ghidra.program.model.data.StructureDataType` itself (the trait of the same name in
-/// this module exists only because it was promoted to a trait as a dependency-cycle cut-point --
-/// see this module's top-level doc comment). Every previous test of [`StructureDataType`]'s
-/// default methods exercised them against a `#[cfg(test)]`-scoped `MockStructureDataType` double;
-/// this type is the real thing, meant for actual use, with real Java-faithful constructors and a
-/// real `copy`/`clone` (both of which have no home as trait default methods at all, since a trait
-/// default method cannot return a sized, constructible `Self` -- see the module docs).
+/// Port of `ghidra.program.model.data.StructureDataType`.
 ///
-/// Field layout mirrors the Java class directly: `category_path`/`name`/`description` stand in
-/// for the inherited `GenericDataType`/`CompositeDataTypeImpl` fields, `minimum_alignment_value`/
-/// `packing_value` are the raw `CompositeDataTypeImpl.minimumAlignment`/`.packing` fields (the
-/// `composite_impl_*` default methods on [`CompositeDataTypeImpl`] already contain all the real
-/// logic that interprets these two raw values -- this struct only needs to store and expose them),
-/// and `struct_length`/`num_components`/`components` are `StructureDataType`'s own
-/// `structLength`/`numComponents`/`components` fields.
+/// Composites follow the build-then-share convention (decided 2026-09-27): a structure is an
+/// owned value edited through `&mut self`; to change one that is already shared as an
+/// `Arc<dyn DataType>`, clone it, edit the clone and resolve it into the data type manager
+/// (Java's `resolve()` copies too). There is no interior locking.
 ///
-/// Known, intentional gaps (beyond the ones already documented for the [`StructureDataType`] trait
-/// itself, which all still apply verbatim -- `replace`/`replaceAtOffset`/`dataType*Changed`/
-/// `dataType.clone(dataMgr)`/parent tracking):
-///   - [`get_data_organization`](DataType::get_data_organization) returns
-///     `DataOrganizationImpl.getDefaultOrganization()` (Java's answer for a type with no data type
-///     manager) rather than one derived from an associated `DataTypeManager`, since `dataMgr` is
-///     not tracked at all.
-///   - [`AlignedStructurePacker::create_component_packer`] returns the real
-///     [`aligned_component_packer::AlignedComponentPacker`](super::aligned_component_packer::AlignedComponentPacker)
-///     port (2026-09; previously a simplistic sequential, non-bitfield-aware stand-in).
-///   - [`DataType::is_equivalent`]/[`DataType::replace_with`] are left at their generic
-///     placeholder defaults (matching `MockStructureDataType`'s own precedent): both would need to
-///     downcast an arbitrary `&dyn DataType` to `&dyn StructureDataType` specifically (not just
-///     `&dyn Structure`, since [`structure_data_type_is_equivalent`](StructureDataType::structure_data_type_is_equivalent)/
-///     [`structure_data_type_replace_with`](StructureDataType::structure_data_type_replace_with)
-///     need direct access to the other side's `components()`), and no such downcast hook exists on
-///     [`DataType`] (adding one would invert the dependency direction this trait was split out to
-///     cut). Callers who already have two `StructureDataTypeImpl` values (or anything else
-///     implementing [`StructureDataType`]) can call
-///     [`structure_data_type_is_equivalent`](StructureDataType::structure_data_type_is_equivalent)/
-///     [`structure_data_type_replace_with`](StructureDataType::structure_data_type_replace_with)
-///     directly, exactly as [`copy_data_type`](DataType::copy_data_type)/
-///     [`clone_data_type`](DataType::clone_data_type) below do.
-pub struct StructureDataTypeImpl {
+/// Field layout mirrors the Java class: `category_path`/`name`/`description` are the inherited
+/// `GenericDataType`/`CompositeDataTypeImpl` fields, `minimum_alignment_value`/`packing_value` the
+/// raw `CompositeDataTypeImpl.minimumAlignment`/`.packing` fields, and `struct_length`/
+/// `struct_alignment`/`num_components`/`components` this class's own fields.
+///
+/// The associated `DataTypeManager` is recorded only as its [`DataOrganizationImpl`] (the
+/// manager itself is not `Send + Sync`), the same convention as
+/// [`BuiltInBase`](super::built_in::BuiltInBase). Consequently `dataType.clone(dataMgr)` on
+/// inserted components is not performed: component data types are shared as given.
+///
+/// Components handed out through [`Composite`]/[`Structure`] are snapshots whose parent is a
+/// snapshot of this structure, so parent-dependent component behaviour (default field names,
+/// packed equivalence) matches Java; editing such a snapshot does not edit the structure.
+pub struct StructureDataType {
     category_path: CategoryPath,
     name: String,
     description: Option<String>,
+    data_organization: Option<Arc<DataOrganizationImpl>>,
     minimum_alignment_value: i32,
     packing_value: i32,
     struct_length: i32,
+    struct_alignment: i32,
     num_components: i32,
     components: Vec<DataTypeComponentImpl>,
     universal_id: UniversalID,
@@ -3086,13 +2672,47 @@ pub struct StructureDataTypeImpl {
     last_change_time_in_source_archive: i64,
 }
 
-impl StructureDataTypeImpl {
+/// Transitional name for [`StructureDataType`], kept while in-flight branches still import the
+/// old `StructureDataTypeImpl` struct name.
+#[deprecated(note = "renamed to StructureDataType")]
+pub type StructureDataTypeImpl = StructureDataType;
+
+impl Clone for StructureDataType {
+    /// A value copy with the same identity (universal ID, source archive and change times) and
+    /// components that share their data types with the original.
+    fn clone(&self) -> Self {
+        StructureDataType {
+            category_path: self.category_path.clone(),
+            name: self.name.clone(),
+            description: self.description.clone(),
+            data_organization: self.data_organization.clone(),
+            minimum_alignment_value: self.minimum_alignment_value,
+            packing_value: self.packing_value,
+            struct_length: self.struct_length,
+            struct_alignment: self.struct_alignment,
+            num_components: self.num_components,
+            components: self.components.iter().map(DataTypeComponentImpl::snapshot).collect(),
+            universal_id: self.universal_id,
+            source_archive_id: self.source_archive_id,
+            last_change_time: self.last_change_time,
+            last_change_time_in_source_archive: self.last_change_time_in_source_archive,
+        }
+    }
+}
+
+impl std::fmt::Debug for StructureDataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&crate::program::model::data::composite_internal::to_string(self))
+    }
+}
+
+impl StructureDataType {
     /// Construct a new structure with the given name and length. The root category is used.
     ///
-    /// Port of the 2-arg Java constructor `StructureDataType(String, int)` (the 3-arg overload
-    /// additionally taking a `DataTypeManager` collapses into this one, matching
-    /// [`EnumDataType::new`](super::enum_data_type::EnumDataType::new)'s identical
-    /// simplification: `dataMgr` is not tracked).
+    /// A `length` of 0 makes the structure report a length of 1 and
+    /// [`is_not_yet_defined`](DataType::is_not_yet_defined) `true`.
+    ///
+    /// Port of `StructureDataType(String, int)`.
     ///
     /// # Panics
     /// Panics (standing in for `IllegalArgumentException`) if `length` is negative, or if `name`
@@ -3103,30 +2723,47 @@ impl StructureDataTypeImpl {
 
     /// Construct a new structure with the given name and length within the specified category.
     ///
-    /// Port of the 4-arg Java constructor `StructureDataType(CategoryPath, String, int,
-    /// DataTypeManager)` (collapsed with its 3-arg `dataMgr`-less overload, same simplification as
-    /// [`new`](Self::new)).
+    /// Port of `StructureDataType(CategoryPath, String, int)`.
     ///
     /// # Panics
     /// See [`new`](Self::new).
     pub fn new_in_category(category_path: CategoryPath, name: impl Into<String>, length: i32) -> Self {
+        Self::with_manager(category_path, name, length, None)
+    }
+
+    /// Construct a new structure associated with a data type manager, whose data organization
+    /// then governs packing, alignment and endianness.
+    ///
+    /// Port of `StructureDataType(CategoryPath, String, int, DataTypeManager)` (and, with
+    /// [`ROOT`], of `StructureDataType(String, int, DataTypeManager)`).
+    ///
+    /// # Panics
+    /// See [`new`](Self::new).
+    pub fn with_manager(
+        category_path: CategoryPath,
+        name: impl Into<String>,
+        length: i32,
+        dtm: Option<&dyn DataTypeManager>,
+    ) -> Self {
         let name = name.into();
-        if length < 0 {
-            panic!("IllegalArgumentException: Length can't be negative");
-        }
         if !is_valid_structure_name(&name) {
             panic!("IllegalArgumentException: Invalid DataType name: {name}");
         }
-        StructureDataTypeImpl {
+        if length < 0 {
+            panic!("IllegalArgumentException: Length can't be negative");
+        }
+        StructureDataType {
             category_path,
             name,
             description: None,
+            data_organization: dtm.map(|dtm| dtm.get_data_organization()),
             minimum_alignment_value: DEFAULT_ALIGNMENT,
             packing_value: NO_PACKING,
             struct_length: length,
+            struct_alignment: 0,
             num_components: length,
             components: Vec::new(),
-            universal_id: UniversalID::new(0),
+            universal_id: next_id(),
             source_archive_id: None,
             last_change_time: 0,
             last_change_time_in_source_archive: 0,
@@ -3135,13 +2772,13 @@ impl StructureDataTypeImpl {
 
     /// Construct a new structure with an explicit archive identity.
     ///
-    /// Port of the 8-arg Java constructor taking `universalID`/`sourceArchive`/`lastChangeTime`/
-    /// `lastChangeTimeInSourceArchive`. `source_archive` is tracked only by ID, matching
-    /// [`EnumDataType::with_archive_identity`](super::enum_data_type::EnumDataType::with_archive_identity)'s
-    /// identical simplification.
+    /// Port of the 8-argument constructor taking `universalID`/`sourceArchive`/`lastChangeTime`/
+    /// `lastChangeTimeInSourceArchive`/`dtm`. `source_archive` is tracked only by ID, matching
+    /// [`EnumDataType::with_archive_identity`](super::enum_data_type::EnumDataType::with_archive_identity).
     ///
     /// # Panics
-    /// See [`new`](Self::new).
+    /// Panics if `name` is not a valid data-type name. (Unlike the other constructors, the Java
+    /// original does not reject a negative length here, and neither does this port.)
     #[allow(clippy::too_many_arguments)]
     pub fn with_archive_identity(
         category_path: CategoryPath,
@@ -3151,17 +2788,64 @@ impl StructureDataTypeImpl {
         source_archive: Option<&dyn SourceArchive>,
         last_change_time: i64,
         last_change_time_in_source_archive: i64,
+        dtm: Option<&dyn DataTypeManager>,
     ) -> Self {
-        let mut s = Self::new_in_category(category_path, name, length);
+        let mut s = Self::with_manager(category_path, name, length.max(0), dtm);
+        s.struct_length = length;
+        s.num_components = length;
         s.universal_id = universal_id;
         s.source_archive_id = source_archive.map(|a| a.source_archive_id());
         s.last_change_time = last_change_time;
         s.last_change_time_in_source_archive = last_change_time_in_source_archive;
         s
     }
+
+    /// A snapshot of the defined component at `index` of the components list.
+    fn component_snapshot(&self, index: usize) -> DataTypeComponentImpl {
+        self.components()[index].snapshot()
+    }
+
+    /// Port of `StructureDataType.replaceWith(DataType)` returning the error Java throws as an
+    /// `IllegalArgumentException` (`data_type` is not a structure, or would create a cycle).
+    ///
+    /// # Errors
+    /// See above.
+    pub fn try_replace_with(&mut self, data_type: &dyn DataType) -> Result<(), String> {
+        self.structure_data_type_replace_with(data_type)
+    }
+
+    /// Port of `StructureDataType.dataTypeReplaced(DataType, DataType)` with an owned replacement:
+    /// every component (and bitfield base type) of type `old_dt` switches to `new_dt`. An invalid
+    /// replacement becomes `undefined1` (packed) or `DataType.DEFAULT` (non-packed).
+    ///
+    /// # Errors
+    /// Returns `Err` if `old_dt`/`new_dt` fail `DataTypeUtilities.checkValidReplacement`.
+    pub fn replace_data_type(&mut self, old_dt: &dyn DataType, new_dt: Arc<dyn DataType>) -> Result<(), String> {
+        self.structure_data_type_data_type_replaced(old_dt, share_data_type(&new_dt))
+    }
+
+    /// A snapshot of this structure, used as the parent of the components handed out by one
+    /// public call.
+    fn parent_snapshot(&self) -> Arc<dyn CompositeDataTypeImpl> {
+        Arc::new(self.clone())
+    }
+
+    /// A component handed out through the public API, with this structure as its parent.
+    fn handed_out(&self, dtc: DataTypeComponentImpl) -> Box<dyn DataTypeComponent> {
+        Box::new(dtc.with_parent(Some(self.parent_snapshot())))
+    }
+
+    /// Several components handed out by one public call, sharing one parent snapshot.
+    fn handed_out_all(&self, components: Vec<DataTypeComponentImpl>) -> Vec<Box<dyn DataTypeComponent>> {
+        let parent = self.parent_snapshot();
+        components
+            .into_iter()
+            .map(|dtc| Box::new(dtc.with_parent(Some(parent.clone()))) as Box<dyn DataTypeComponent>)
+            .collect()
+    }
 }
 
-impl DataType for StructureDataTypeImpl {
+impl DataType for StructureDataType {
     fn get_name(&self) -> String {
         self.name.clone()
     }
@@ -3180,8 +2864,10 @@ impl DataType for StructureDataTypeImpl {
         Ok(())
     }
 
+    /// The associated manager's data organization, or the default organization when the
+    /// structure was created without one (Java `AbstractDataType.getDataOrganization()`).
     fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
-        Arc::new(DataOrganizationImpl::get_default_organization(None))
+        self.data_organization.clone().unwrap_or_else(shared_default_organization)
     }
 
     fn get_mnemonic(&self, settings: &dyn Settings) -> String {
@@ -3189,6 +2875,11 @@ impl DataType for StructureDataTypeImpl {
     }
 
     fn get_length(&self) -> i32 {
+        StructureDataType::length(self)
+    }
+
+    /// Java `CompositeDataTypeImpl.getAlignedLength()` is final and returns `getLength()`.
+    fn get_aligned_length(&self) -> i32 {
         StructureDataType::length(self)
     }
 
@@ -3225,6 +2916,46 @@ impl DataType for StructureDataTypeImpl {
         self.composite_impl_is_not_yet_defined()
     }
 
+    fn get_universal_id(&self) -> UniversalID {
+        self.universal_id
+    }
+
+    fn get_last_change_time(&self) -> i64 {
+        self.last_change_time
+    }
+
+    fn set_last_change_time(&mut self, last_change_time: i64) {
+        self.last_change_time = last_change_time;
+    }
+
+    fn get_last_change_time_in_source_archive(&self) -> i64 {
+        self.last_change_time_in_source_archive
+    }
+
+    fn set_last_change_time_in_source_archive(&mut self, last_change_time_in_source_archive: i64) {
+        self.last_change_time_in_source_archive = last_change_time_in_source_archive;
+    }
+
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        self.structure_data_type_is_equivalent(dt)
+    }
+
+    /// Port of `StructureDataType.replaceWith(DataType)`.
+    ///
+    /// # Panics
+    /// Panics (Java throws `IllegalArgumentException`) if `data_type` is not a structure or
+    /// contains this structure. Use [`StructureDataType::try_replace_with`] to receive the error
+    /// instead.
+    fn replace_with(&mut self, data_type: &dyn DataType) {
+        if let Err(e) = self.structure_data_type_replace_with(data_type) {
+            panic!("{e}");
+        }
+    }
+
+    fn runtime_class(&self) -> Option<std::any::TypeId> {
+        Some(std::any::TypeId::of::<StructureDataType>())
+    }
+
     fn is_structure(&self) -> bool {
         true
     }
@@ -3237,41 +2968,31 @@ impl DataType for StructureDataTypeImpl {
         Some(self)
     }
 
-    /// Stands in for `(Composite) this` where the caller needs to *consume* ownership rather
-    /// than merely borrow (see [`DataType::into_composite`]'s own doc comment). Added for
-    /// [`DataTypeWriter`](crate::program::model::data::data_type_writer::DataTypeWriter)'s port
-    /// of `doWrite`, which needs to convert an owned `Box<dyn DataType>` known (via
-    /// [`as_structure`](Self::as_structure)) to be a `Structure` into an owned `Box<dyn
-    /// Composite>` for its dependency-graph bookkeeping, without cloning the underlying data.
+    fn as_composite_mut(&mut self) -> Option<&mut dyn Composite> {
+        Some(self)
+    }
+
     fn into_composite(self: Box<Self>) -> Option<Box<dyn Composite>> {
         Some(self)
     }
 
-    /// Port of `StructureDataType.copy(DataTypeManager)`: constructs a brand-new
-    /// `StructureDataTypeImpl` (new identity, no source archive) and repopulates it from `self` via
-    /// [`structure_data_type_replace_with`](StructureDataType::structure_data_type_replace_with).
+    /// Port of `StructureDataType.copy(DataTypeManager)`: a new structure (new identity, no
+    /// source archive) associated with `dtm`, repopulated from this one.
     fn copy_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
-        let _ = dtm;
-        let mut copy = StructureDataTypeImpl::new_in_category(
-            self.get_category_path(),
-            self.get_name(),
-            self.stored_struct_length(),
-        );
+        let mut copy =
+            StructureDataType::with_manager(self.get_category_path(), self.get_name(), self.stored_struct_length(), Some(dtm));
         copy.composite_impl_set_description(Some(&self.get_description()));
         copy.structure_data_type_replace_with(self)
-            .expect("replaceWith from a well-formed StructureDataTypeImpl cannot fail");
+            .expect("replaceWith from a structure cannot fail on a fresh structure");
         Box::new(copy)
     }
 
     /// Port of `StructureDataType.clone(DataTypeManager)`: like
-    /// [`copy_data_type`](Self::copy_data_type) but preserves this structure's archive identity
-    /// (`universalID`/`sourceArchive`/change-time fields) on the clone. Java short-circuits and
-    /// returns `this` when `dataMgr == dataMgr`; since `dataMgr` is not tracked here at all (see
-    /// the struct docs), that identity check can never apply and this always produces a fresh
-    /// clone.
+    /// [`copy_data_type`](Self::copy_data_type) but preserving this structure's universal ID,
+    /// source archive and change times. Java returns `this` when `dtm` is already the associated
+    /// manager; the manager itself is not recorded (see the type docs), so a clone is always made.
     fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
-        let _ = dtm;
-        let mut clone = StructureDataTypeImpl::with_archive_identity(
+        let mut clone = StructureDataType::with_archive_identity(
             self.get_category_path(),
             self.get_name(),
             self.stored_struct_length(),
@@ -3279,20 +3000,19 @@ impl DataType for StructureDataTypeImpl {
             None,
             self.last_change_time,
             self.last_change_time_in_source_archive,
+            Some(dtm),
         );
         clone.source_archive_id = self.source_archive_id;
         clone.composite_impl_set_description(Some(&self.get_description()));
         clone
             .structure_data_type_replace_with(self)
-            .expect("replaceWith from a well-formed StructureDataTypeImpl cannot fail");
+            .expect("replaceWith from a structure cannot fail on a fresh structure");
         Box::new(clone)
     }
 
-    /// Port of `StructureDataType.dataTypeSizeChanged(DataType)`. See
-    /// [`structure_data_type_data_type_size_changed`](StructureDataType::structure_data_type_data_type_size_changed)'s
-    /// own doc comment for the ported algorithm; a genuinely invalid preferred length (mirroring
-    /// Java's uncaught `IllegalArgumentException`) is treated here as "nothing to do" rather than
-    /// panicking, since this override's signature has no `Result` to propagate through.
+    /// Port of `StructureDataType.dataTypeSizeChanged(DataType)`. Java lets an
+    /// `IllegalArgumentException` for an invalid preferred length escape; this signature has no
+    /// error channel, so the structure is left as it was at the point of failure.
     fn data_type_size_changed(&mut self, dt: &dyn DataType) {
         let _ = self.structure_data_type_data_type_size_changed(dt);
     }
@@ -3302,19 +3022,18 @@ impl DataType for StructureDataTypeImpl {
         self.structure_data_type_data_type_alignment_changed(dt);
     }
 
-    /// Port of `StructureDataType.dataTypeDeleted(DataType)`. See
-    /// [`structure_data_type_data_type_deleted`](StructureDataType::structure_data_type_data_type_deleted)'s
-    /// own doc comment for what is skipped (the bitfield-base-type-deleted revert case).
+    /// Port of `StructureDataType.dataTypeDeleted(DataType)`.
     fn data_type_deleted(&mut self, dt: &dyn DataType) {
         let _ = self.structure_data_type_data_type_deleted(dt);
     }
 
-    // `data_type_replaced` is intentionally left at its inherited placeholder default: see
-    // `structure_data_type_data_type_replaced`'s own doc comment for why it cannot be reached
-    // generically from this override's borrowed `new_dt: &dyn DataType`.
+    // `data_type_replaced(&dyn DataType, &dyn DataType)` keeps the trait default: storing the
+    // replacement needs an owned handle, which a borrowed `&dyn DataType` cannot provide. The
+    // in-memory structure is not registered as a parent of anything (build-then-share), so no
+    // manager calls it; `StructureDataType::replace_data_type` is the owned-handle entry point.
 }
 
-impl Composite for StructureDataTypeImpl {
+impl Composite for StructureDataType {
     fn get_num_components(&self) -> i32 {
         self.structure_data_type_get_num_components()
     }
@@ -3325,21 +3044,15 @@ impl Composite for StructureDataTypeImpl {
 
     fn get_component(&self, ordinal: i32) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_get_component(ordinal)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn get_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
-        self.structure_data_type_get_components()
-            .into_iter()
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
-            .collect()
+        self.handed_out_all(self.structure_data_type_get_components())
     }
 
     fn get_defined_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
-        self.structure_data_type_get_defined_components()
-            .into_iter()
-            .map(|c| Box::new(c.snapshot()) as Box<dyn DataTypeComponent>)
-            .collect()
+        self.handed_out_all(self.components().iter().map(DataTypeComponentImpl::snapshot).collect())
     }
 
     fn add(&mut self, data_type: Box<dyn DataType>) -> Result<Box<dyn DataTypeComponent>, String> {
@@ -3377,7 +3090,7 @@ impl Composite for StructureDataTypeImpl {
         comment: Option<String>,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_add_bit_field(base_data_type, bit_size, component_name, comment)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn insert(&mut self, ordinal: i32, data_type: Box<dyn DataType>) -> Result<Box<dyn DataTypeComponent>, String> {
@@ -3465,7 +3178,7 @@ impl Composite for StructureDataTypeImpl {
     }
 }
 
-impl CompositeInternal for StructureDataTypeImpl {
+impl CompositeInternal for StructureDataType {
     fn get_stored_packing_value(&self) -> i32 {
         self.composite_impl_stored_packing_value()
     }
@@ -3475,27 +3188,24 @@ impl CompositeInternal for StructureDataTypeImpl {
     }
 }
 
-impl Structure for StructureDataTypeImpl {
+impl Structure for StructureDataType {
     fn get_component(&self, ordinal: i32) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_get_component(ordinal)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn get_defined_component_at_or_after_offset(&self, offset: i32) -> Option<Box<dyn DataTypeComponent>> {
         self.structure_data_type_get_defined_component_at_or_after_offset(offset)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn get_component_containing(&self, offset: i32) -> Option<Box<dyn DataTypeComponent>> {
         self.structure_data_type_get_component_containing(offset)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn get_components_containing(&self, offset: i32) -> Vec<Box<dyn DataTypeComponent>> {
-        self.structure_data_type_get_components_containing(offset)
-            .into_iter()
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
-            .collect()
+        self.handed_out_all(self.structure_data_type_get_components_containing(offset))
     }
 
     fn get_data_type_at(&self, offset: i32) -> Option<Box<dyn DataTypeComponent>> {
@@ -3521,7 +3231,7 @@ impl Structure for StructureDataTypeImpl {
             component_name,
             comment,
         )
-        .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+        .map(|c| self.handed_out(c))
     }
 
     fn insert_bit_field_at(
@@ -3543,7 +3253,7 @@ impl Structure for StructureDataTypeImpl {
             component_name,
             comment,
         )
-        .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+        .map(|c| self.handed_out(c))
     }
 
     fn insert_at_offset(
@@ -3553,7 +3263,7 @@ impl Structure for StructureDataTypeImpl {
         length: i32,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_insert_at_offset(offset, data_type, length, None, None)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn insert_at_offset_with_name(
@@ -3565,7 +3275,7 @@ impl Structure for StructureDataTypeImpl {
         comment: Option<String>,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_insert_at_offset(offset, data_type, length, component_name, comment)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn delete_at_offset(&mut self, offset: i32) -> Result<(), String> {
@@ -3599,7 +3309,7 @@ impl Structure for StructureDataTypeImpl {
         length: i32,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_replace(ordinal, data_type, length, None, None)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn replace_with_name(
@@ -3611,7 +3321,7 @@ impl Structure for StructureDataTypeImpl {
         comment: Option<String>,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_replace(ordinal, data_type, length, component_name, comment)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn replace_at_offset(
@@ -3623,13 +3333,13 @@ impl Structure for StructureDataTypeImpl {
         comment: Option<String>,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_replace_at_offset(offset, data_type, length, component_name, comment)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 }
 
-impl StructureInternal for StructureDataTypeImpl {}
+impl StructureInternal for StructureDataType {}
 
-impl CompositeDataTypeImpl for StructureDataTypeImpl {
+impl CompositeDataTypeImpl for StructureDataType {
     fn stored_description(&self) -> String {
         self.description.clone().unwrap_or_default()
     }
@@ -3666,13 +3376,13 @@ impl CompositeDataTypeImpl for StructureDataTypeImpl {
         self.structure_data_type_repack(notify)
     }
 
-    /// Port of `StructureDataType.getAlignment()`. Unlike Java, this does not cache into a
-    /// `structAlignment`-equivalent field (this struct has none -- see the module docs on why
-    /// [`StructureDataType`] tracks no such field), so a packing-enabled structure recomputes its
-    /// alignment from scratch on every call; this is a harmless performance-only divergence
-    /// (identical to the one already documented for [`UnionDataType::union_data_type_alignment`](super::union_data_type::UnionDataType::union_data_type_alignment)),
-    /// not a correctness one.
+    /// Port of `StructureDataType.getAlignment()`: the alignment recorded by the last repack,
+    /// or else computed on demand. (Java caches the computed value in `structAlignment`; a `&self`
+    /// getter cannot, so an unrepacked structure recomputes.)
     fn composite_impl_alignment(&self) -> i32 {
+        if self.struct_alignment > 0 {
+            return self.struct_alignment;
+        }
         if self.is_packing_enabled() {
             self.pack_components_readonly(self).alignment
         } else {
@@ -3694,7 +3404,7 @@ impl CompositeDataTypeImpl for StructureDataTypeImpl {
         comment: Option<String>,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_add(data_type, length, field_name, comment)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
     fn composite_impl_insert_with_length_and_name(
@@ -3706,18 +3416,17 @@ impl CompositeDataTypeImpl for StructureDataTypeImpl {
         comment: Option<String>,
     ) -> Result<Box<dyn DataTypeComponent>, String> {
         self.structure_data_type_insert(ordinal, data_type, length, field_name, comment)
-            .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
+            .map(|c| self.handed_out(c))
     }
 
-    /// Port of `CompositeDataTypeImpl.validateDataType(DataType)`, real but for one skip: Java's
-    /// `dataType == DataType.DEFAULT` branch additionally substitutes `Undefined1DataType.dataType`
-    /// when packing is enabled (or always, for a `Union`); this crate has no constructible
-    /// `Undefined1DataType` singleton (see [`super::undefined1_data_type`]'s own module docs), so
-    /// the substitution is skipped and the `DEFAULT`-like value is passed through unchanged. The
-    /// `instanceof FactoryDataType` check is also skipped, matching this trait's own module docs on
-    /// why [`DataType`] exposes no `FactoryDataType` downcast hook yet.
+    /// Port of `CompositeDataTypeImpl.validateDataType(DataType)`: `DataType.DEFAULT` becomes
+    /// `Undefined1DataType` in a packed structure; dynamic types must allow a specified length;
+    /// factory types and types without a positive length are rejected.
     fn composite_impl_validate_data_type(&self, data_type: Box<dyn DataType>) -> Result<Box<dyn DataType>, String> {
         if data_type.is_default_data_type() {
+            if self.is_packing_enabled() {
+                return Ok(share_data_type(&Undefined1DataType::data_type()));
+            }
             return Ok(data_type);
         }
         if let Some(dynamic) = data_type.as_dynamic() {
@@ -3727,7 +3436,7 @@ impl CompositeDataTypeImpl for StructureDataTypeImpl {
                     data_type.get_name()
                 ));
             }
-        } else if data_type.get_length() <= 0 {
+        } else if data_type.is_factory_type() || data_type.get_length() <= 0 {
             return Err(format!(
                 "IllegalArgumentException: The \"{}\" data type is not allowed in a composite data type.",
                 data_type.get_name()
@@ -3735,53 +3444,15 @@ impl CompositeDataTypeImpl for StructureDataTypeImpl {
         }
         Ok(data_type)
     }
-
-    /// Not wired: the only Java caller, `dataTypeReplaced`, is not ported (see the module docs'
-    /// "explicitly and intentionally not yet ported" list).
-    fn composite_impl_update_bit_field_data_type(
-        &mut self,
-        bitfield_component: Box<dyn DataTypeComponent>,
-        old_dt: &dyn DataType,
-        new_dt: Option<&dyn DataType>,
-    ) -> Result<bool, String> {
-        let (_, _, _) = (bitfield_component, old_dt, new_dt);
-        Ok(false)
-    }
 }
 
-impl AlignedStructurePacker for StructureDataTypeImpl {
+impl AlignedStructurePacker for StructureDataType {
     fn create_component_packer(
         &self,
         pack_value: i32,
         data_organization: &DataOrganizationImpl,
     ) -> Box<dyn AlignedComponentPacker> {
         Box::new(RealAlignedComponentPacker::new(pack_value, data_organization))
-    }
-}
-
-impl StructureDataType for StructureDataTypeImpl {
-    fn stored_struct_length(&self) -> i32 {
-        self.struct_length
-    }
-
-    fn set_stored_struct_length(&mut self, length: i32) {
-        self.struct_length = length;
-    }
-
-    fn components(&self) -> &Vec<DataTypeComponentImpl> {
-        &self.components
-    }
-
-    fn components_mut(&mut self) -> &mut Vec<DataTypeComponentImpl> {
-        &mut self.components
-    }
-
-    fn stored_num_components(&self) -> i32 {
-        self.num_components
-    }
-
-    fn set_stored_num_components(&mut self, num_components: i32) {
-        self.num_components = num_components;
     }
 }
 
@@ -3793,241 +3464,12 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_component::DataTypeComponent;
     use crate::program::model::data::packing_type::PackingType;
+    use crate::program::model::data::byte_data_type::ByteDataType;
+    use crate::program::model::data::dword_data_type::DWordDataType;
     use crate::program::model::mem::MemoryAccessException;
 
-    /// Minimal mock proving object-safety and exercising real (non-trivially-true) behavior: a
-    /// structure's zero-length/length/representation/label-prefix all track its stored length and
-    /// name, `has_language_dependant_length` tracks its packing state, and (as of the 2026-09
-    /// component-management extension) `components`/`num_components` back the real add/get/repack
-    /// logic ported above -- exactly the Java semantics this trait ports. Plain fields (not
-    /// `Cell`) since every mutator already takes `&mut self`; `Cell`/`RefCell` would also make this
-    /// type `!Sync`, which [`DataType`]'s `Send + Sync` supertrait bound forbids.
-    struct MockStructureDataType {
-        name: String,
-        struct_length: i32,
-        num_components: i32,
-        packing_type: PackingType,
-        components: Vec<DataTypeComponentImpl>,
-    }
-
-    /// A real [`DataOrganizationImpl`] configured as this test expects.
-    fn mock_data_organization() -> DataOrganizationImpl {
-        let mut org = DataOrganizationImpl::get_default_organization(None);
-        org.set_big_endian(false);
-        org.set_pointer_size(8);
-        org.set_pointer_shift(0);
-        org.set_char_is_signed(true);
-        org.set_char_size(1);
-        org.set_wide_char_size(2);
-        org.set_short_size(2);
-        org.set_integer_size(4);
-        org.set_long_size(8);
-        org.set_long_long_size(8);
-        org.set_float_size(4);
-        org.set_double_size(8);
-        org.set_long_double_size(8);
-        org.set_absolute_max_alignment(0);
-        org.set_machine_alignment(8);
-        org.set_default_alignment(1);
-        org.set_default_pointer_alignment(8);
-        org.clear_size_alignment_map();
-        org
-    }
-
-    impl DataType for MockStructureDataType {
-        fn get_name(&self) -> String {
-            self.name.clone()
-        }
-        fn get_data_organization(&self) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
-            Arc::new(mock_data_organization())
-        }
-        fn as_composite(&self) -> Option<&dyn Composite> {
-            Some(self)
-        }
-        fn get_length(&self) -> i32 {
-            StructureDataType::length(self)
-        }
-    }
-
-    impl Composite for MockStructureDataType {
-        fn get_num_components(&self) -> i32 {
-            self.num_components
-        }
-        fn get_packing_type(&self) -> PackingType {
-            self.packing_type
-        }
-        // Bridges the placeholder `Composite::get_defined_components` default to this mock's
-        // real `components` storage -- needed so `is_part_of_data_type_by_ref`'s recursive walk
-        // (used by `structure_data_type_check_ancestry`) can actually see nested components when
-        // a `MockStructureDataType` itself appears as another structure's component data type,
-        // exactly as the module docs describe a real concrete `impl Composite for ...` doing.
-        fn get_defined_components(&self) -> Vec<Box<dyn DataTypeComponent>> {
-            self.components
-                .iter()
-                .map(|dtc| Box::new(dtc.snapshot()) as Box<dyn DataTypeComponent>)
-                .collect()
-        }
-    }
-
-    impl CompositeInternal for MockStructureDataType {
-        fn get_stored_packing_value(&self) -> i32 {
-            if self.packing_type == PackingType::Disabled {
-                crate::program::model::data::composite_internal::NO_PACKING
-            } else {
-                crate::program::model::data::composite_internal::DEFAULT_PACKING
-            }
-        }
-    }
-
-    impl crate::program::model::data::structure::Structure for MockStructureDataType {}
-
-    impl StructureInternal for MockStructureDataType {}
-
-    impl CompositeDataTypeImpl for MockStructureDataType {
-        fn stored_description(&self) -> String {
-            String::new()
-        }
-        fn set_stored_description(&mut self, _description: String) {}
-        fn stored_minimum_alignment_value(&self) -> i32 {
-            0
-        }
-        fn set_stored_minimum_alignment_value(&mut self, _minimum_alignment: i32) {}
-        fn stored_packing_value(&self) -> i32 {
-            // Mirrors `get_stored_packing_value` below -- both derive from the single
-            // `packing_type` field so a `structure_data_type_replace_with` (which only ever
-            // writes through this raw setter) is observable via `is_packing_enabled()`/
-            // `get_packing_type()` too, exactly as a real concrete implementor would wire it.
-            if self.packing_type == PackingType::Disabled {
-                crate::program::model::data::composite_internal::NO_PACKING
-            } else {
-                crate::program::model::data::composite_internal::DEFAULT_PACKING
-            }
-        }
-        fn set_stored_packing_value_raw(&mut self, packing: i32) {
-            self.packing_type = if packing < crate::program::model::data::composite_internal::DEFAULT_PACKING {
-                PackingType::Disabled
-            } else if packing == crate::program::model::data::composite_internal::DEFAULT_PACKING {
-                PackingType::Default
-            } else {
-                PackingType::Explicit
-            };
-        }
-        fn set_stored_name(&mut self, name: String) {
-            self.name = name;
-        }
-        fn composite_impl_has_language_dependant_length(&self) -> bool {
-            StructureDataType::structure_data_type_has_language_dependant_length(self)
-        }
-        fn repack_with_notify(&mut self, _notify: bool) -> bool {
-            false
-        }
-        fn composite_impl_alignment(&self) -> i32 {
-            1
-        }
-        fn for_each_defined_component(&self, _consumer: &mut dyn FnMut(&dyn DataTypeComponent)) {}
-        fn composite_impl_add_with_length_and_name(
-            &mut self,
-            _data_type: Box<dyn DataType>,
-            _length: i32,
-            _field_name: Option<String>,
-            _comment: Option<String>,
-        ) -> Result<Box<dyn DataTypeComponent>, String> {
-            Err("not needed for this smoke test".to_string())
-        }
-        fn composite_impl_insert_with_length_and_name(
-            &mut self,
-            _ordinal: i32,
-            _data_type: Box<dyn DataType>,
-            _length: i32,
-            _field_name: Option<String>,
-            _comment: Option<String>,
-        ) -> Result<Box<dyn DataTypeComponent>, String> {
-            Err("not needed for this smoke test".to_string())
-        }
-        fn composite_impl_validate_data_type(
-            &self,
-            data_type: Box<dyn DataType>,
-        ) -> Result<Box<dyn DataType>, String> {
-            Ok(data_type)
-        }
-        fn composite_impl_update_bit_field_data_type(
-            &mut self,
-            _bitfield_component: Box<dyn DataTypeComponent>,
-            _old_dt: &dyn DataType,
-            _new_dt: Option<&dyn DataType>,
-        ) -> Result<bool, String> {
-            Ok(false)
-        }
-    }
-
-    /// Sequential, non-bitfield-aware stand-in for the real (not-yet-ported) `AlignedComponentPacker`
-    /// algorithm, matching the identical test double already used by
-    /// [`aligned_structure_packer`](crate::program::model::data::aligned_structure_packer)'s own
-    /// tests: packs each component immediately after the previous one, aligned to its own length.
-    struct SequentialComponentPacker {
-        next_offset: i32,
-        max_length: i32,
-    }
-
-    impl crate::program::seam_stubs::AlignedComponentPacker for SequentialComponentPacker {
-        fn add_component(&mut self, dtc: &mut dyn InternalDataTypeComponent, _is_last_component: bool) {
-            let length = dtc.get_length().max(1);
-            self.max_length = self.max_length.max(length);
-            let offset = crate::program::model::data::data_organization_impl::get_aligned_offset(length, self.next_offset);
-            let component_length = dtc.get_length();
-            dtc.update(dtc.get_ordinal(), offset, component_length);
-            self.next_offset = offset + component_length;
-        }
-        fn get_default_alignment(&self) -> i32 {
-            self.max_length
-        }
-        fn get_length(&self) -> i32 {
-            self.next_offset
-        }
-        fn components_changed(&self) -> bool {
-            false
-        }
-    }
-
-    impl AlignedStructurePacker for MockStructureDataType {
-        fn create_component_packer(
-            &self,
-            _pack_value: i32,
-            _data_organization: &crate::program::model::data::data_organization_impl::DataOrganizationImpl,
-        ) -> Box<dyn crate::program::seam_stubs::AlignedComponentPacker> {
-            Box::new(SequentialComponentPacker { next_offset: 0, max_length: 1 })
-        }
-    }
-
-    impl StructureDataType for MockStructureDataType {
-        fn stored_struct_length(&self) -> i32 {
-            self.struct_length
-        }
-        fn set_stored_struct_length(&mut self, length: i32) {
-            self.struct_length = length;
-        }
-        fn components(&self) -> &Vec<DataTypeComponentImpl> {
-            &self.components
-        }
-        fn components_mut(&mut self) -> &mut Vec<DataTypeComponentImpl> {
-            &mut self.components
-        }
-        fn stored_num_components(&self) -> i32 {
-            self.num_components
-        }
-        fn set_stored_num_components(&mut self, num_components: i32) {
-            self.num_components = num_components;
-        }
-    }
-
-    fn sample() -> MockStructureDataType {
-        MockStructureDataType {
-            name: "MyStruct".to_string(),
-            struct_length: 0,
-            num_components: 0,
-            packing_type: PackingType::Disabled,
-            components: Vec::new(),
-        }
+    fn sample() -> StructureDataType {
+        StructureDataType::new("MyStruct", 0)
     }
 
     fn byte_data_type(name: &str, length: i32) -> Box<dyn DataType> {
@@ -4081,14 +3523,6 @@ mod tests {
     }
 
     #[test]
-    fn usable_as_trait_object() {
-        let s = sample();
-        let dyn_struct: &dyn StructureDataType = &s;
-        assert!(dyn_struct.structure_data_type_is_zero_length());
-        assert_eq!(dyn_struct.length(), 1);
-    }
-
-    #[test]
     fn zero_length_structure_reports_length_one_and_empty_representation() {
         let s = sample();
         assert!(s.structure_data_type_is_zero_length());
@@ -4113,7 +3547,7 @@ mod tests {
     fn has_language_dependant_length_tracks_packing() {
         let mut s = sample();
         assert!(!s.structure_data_type_has_language_dependant_length());
-        s.packing_type = PackingType::Default;
+        s.packing_value = crate::program::model::data::composite_internal::DEFAULT_PACKING;
         assert!(s.structure_data_type_has_language_dependant_length());
     }
 
@@ -4261,16 +3695,14 @@ mod tests {
     #[test]
     fn packed_repack_computes_layout_via_aligned_structure_packer() {
         let mut s = sample();
-        s.packing_type = PackingType::Default;
+        s.packing_value = crate::program::model::data::composite_internal::DEFAULT_PACKING;
 
-        // The test-double `SequentialComponentPacker` places each component immediately after
-        // the previous one, aligned to its own length (matching
-        // `aligned_structure_packer`'s own test module's identical packer).
-        s.structure_data_type_add(byte_data_type("byte", 1), -1, Some("a".to_string()), None)
+        // Default data organization: byte aligns to 1, dword to 4.
+        s.structure_data_type_add(share_data_type(&ByteDataType::data_type()), -1, Some("a".to_string()), None)
             .unwrap();
         assert_eq!(s.stored_struct_length(), 1);
 
-        s.structure_data_type_add(byte_data_type("int", 4), -1, Some("b".to_string()), None)
+        s.structure_data_type_add(share_data_type(&DWordDataType::data_type()), -1, Some("b".to_string()), None)
             .unwrap();
 
         // "a" (len 1) stays at offset 0; "b" (len 4) is aligned up from next_offset=1 to offset
@@ -4357,12 +3789,12 @@ mod tests {
     #[test]
     fn replace_with_packed_source_uses_add_and_computes_layout() {
         let mut source = sample();
-        source.packing_type = PackingType::Default;
+        source.packing_value = crate::program::model::data::composite_internal::DEFAULT_PACKING;
         source
-            .structure_data_type_add(byte_data_type("byte", 1), -1, Some("a".to_string()), None)
+            .structure_data_type_add(share_data_type(&ByteDataType::data_type()), -1, Some("a".to_string()), None)
             .unwrap();
         source
-            .structure_data_type_add(byte_data_type("int", 4), -1, Some("b".to_string()), None)
+            .structure_data_type_add(share_data_type(&DWordDataType::data_type()), -1, Some("b".to_string()), None)
             .unwrap();
 
         let mut target = sample();
@@ -4370,7 +3802,7 @@ mod tests {
 
         assert!(target.is_packing_enabled());
         assert_eq!(target.structure_data_type_get_num_defined_components(), 2);
-        assert_eq!(target.stored_struct_length(), 8); // matches the sequential test packer's layout
+        assert_eq!(target.stored_struct_length(), 8); // dword aligned to 4
         let b = target.structure_data_type_get_component(1).unwrap();
         assert_eq!(b.get_offset(), 4);
     }
@@ -4464,7 +3896,7 @@ mod tests {
 
     /// Builds a 3-component non-packed structure: int@0 (ordinal 0), short@4 (ordinal 1),
     /// byte@6 (ordinal 2), structLength=7.
-    fn three_component_sample() -> MockStructureDataType {
+    fn three_component_sample() -> StructureDataType {
         let mut s = sample();
         s.structure_data_type_add(byte_data_type("int", 4), -1, Some("a".to_string()), None)
             .unwrap();
@@ -4688,7 +4120,7 @@ mod tests {
     #[test]
     fn insert_bit_field_packed_delegates_to_insert() {
         let mut s = sample();
-        s.packing_type = PackingType::Default;
+        s.packing_value = crate::program::model::data::composite_internal::DEFAULT_PACKING;
         s.structure_data_type_add(byte_data_type("byte", 1), -1, Some("a".to_string()), None)
             .unwrap();
 
@@ -4708,8 +4140,8 @@ mod tests {
     }
 
     // ------------------------------------------------------------------------------------------
-    // `StructureDataTypeImpl`: the first real, production concrete `StructureDataType` (as
-    // opposed to the `#[cfg(test)]`-scoped `MockStructureDataType` above). These tests exercise
+    // `StructureDataType`: the first real, production concrete `StructureDataType` (as
+    // opposed to the `#[cfg(test)]`-scoped `StructureDataType` above). These tests exercise
     // construction, `copy`/`clone`, and the ancestor `Composite`/`Structure`/`DataType` trait
     // surface (`add`/`insert`/`delete`/`get_component`/etc., not just the `structure_data_type_*`
     // methods directly) to prove the whole trait stack genuinely composes on a real struct.
@@ -4717,7 +4149,7 @@ mod tests {
 
     #[test]
     fn new_creates_empty_root_category_structure() {
-        let s = StructureDataTypeImpl::new("Foo", 0);
+        let s = StructureDataType::new("Foo", 0);
         assert_eq!(s.get_name(), "Foo");
         assert_eq!(s.get_category_path(), ROOT.clone());
         assert!(s.structure_data_type_is_zero_length());
@@ -4727,7 +4159,7 @@ mod tests {
 
     #[test]
     fn new_with_length_reports_that_length_and_num_components() {
-        let s = StructureDataTypeImpl::new("Foo", 4);
+        let s = StructureDataType::new("Foo", 4);
         assert_eq!(DataType::get_length(&s), 4);
         assert_eq!(Composite::get_num_components(&s), 4);
         assert_eq!(Composite::get_num_defined_components(&s), 0);
@@ -4737,25 +4169,25 @@ mod tests {
     #[test]
     #[should_panic(expected = "Length can't be negative")]
     fn new_rejects_negative_length() {
-        StructureDataTypeImpl::new("Foo", -1);
+        StructureDataType::new("Foo", -1);
     }
 
     #[test]
     #[should_panic(expected = "Invalid DataType name")]
     fn new_rejects_invalid_name() {
-        StructureDataTypeImpl::new("   ", 0);
+        StructureDataType::new("   ", 0);
     }
 
     #[test]
     fn new_in_category_uses_specified_category() {
         let path = CategoryPath::new(ROOT.clone(), &["cat"]).expect("valid category path");
-        let s = StructureDataTypeImpl::new_in_category(path.clone(), "Foo", 0);
+        let s = StructureDataType::new_in_category(path.clone(), "Foo", 0);
         assert_eq!(s.get_category_path(), path);
     }
 
     #[test]
     fn with_archive_identity_preserves_universal_id_and_change_times() {
-        let s = StructureDataTypeImpl::with_archive_identity(
+        let s = StructureDataType::with_archive_identity(
             ROOT.clone(),
             "Foo",
             0,
@@ -4763,6 +4195,7 @@ mod tests {
             None,
             100,
             200,
+            None,
         );
         assert_eq!(s.universal_id, UniversalID::new(42));
         assert_eq!(s.last_change_time, 100);
@@ -4791,7 +4224,7 @@ mod tests {
 
     #[test]
     fn add_insert_delete_via_composite_trait_object() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         let composite: &mut dyn Composite = &mut s;
         composite.add(dt("int", 4)).expect("add int");
         composite.add_with_name(dt("short", 2), Some("field1".to_string()), None).expect("add short");
@@ -4809,7 +4242,7 @@ mod tests {
 
     #[test]
     fn get_components_and_defined_components_via_structure_trait_object() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.add(dt("int", 4)).expect("add int");
         s.add(dt("short", 2)).expect("add short");
 
@@ -4832,10 +4265,10 @@ mod tests {
 
     #[test]
     fn is_equivalent_between_two_real_structures() {
-        let mut a = StructureDataTypeImpl::new("A", 0);
+        let mut a = StructureDataType::new("A", 0);
         a.structure_data_type_add(dt("int", 4), -1, Some("x".to_string()), None).unwrap();
 
-        let mut b = StructureDataTypeImpl::new("B", 0);
+        let mut b = StructureDataType::new("B", 0);
         b.structure_data_type_add(dt("int", 4), -1, Some("x".to_string()), None).unwrap();
 
         assert!(a.structure_data_type_is_equivalent(&b));
@@ -4847,9 +4280,13 @@ mod tests {
     #[test]
     fn copy_data_type_produces_independent_equivalent_structure() {
         struct NoopDtm;
-        impl DataTypeManager for NoopDtm {}
+        impl DataTypeManager for NoopDtm {
+            fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+                shared_default_organization()
+            }
+        }
 
-        let mut original = StructureDataTypeImpl::new("Original", 0);
+        let mut original = StructureDataType::new("Original", 0);
         original.add_with_name(dt("int", 4), Some("field0".to_string()), None).unwrap();
         original.set_description("a description").unwrap();
 
@@ -4872,9 +4309,13 @@ mod tests {
     #[test]
     fn clone_data_type_preserves_archive_identity() {
         struct NoopDtm;
-        impl DataTypeManager for NoopDtm {}
+        impl DataTypeManager for NoopDtm {
+            fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+                shared_default_organization()
+            }
+        }
 
-        let mut original = StructureDataTypeImpl::with_archive_identity(
+        let mut original = StructureDataType::with_archive_identity(
             ROOT.clone(),
             "Original",
             0,
@@ -4882,6 +4323,7 @@ mod tests {
             None,
             10,
             20,
+            None,
         );
         original.add_with_name(dt("int", 4), Some("field0".to_string()), None).unwrap();
 
@@ -4893,17 +4335,17 @@ mod tests {
 
     #[test]
     fn non_packed_alignment_defaults_to_one_and_machine_alignment_uses_data_organization() {
-        let s = StructureDataTypeImpl::new("Foo", 0);
+        let s = StructureDataType::new("Foo", 0);
         assert_eq!(DataType::get_alignment(&s), 1);
 
-        let mut machine_aligned = StructureDataTypeImpl::new("Bar", 0);
+        let mut machine_aligned = StructureDataType::new("Bar", 0);
         machine_aligned.set_to_machine_aligned();
         assert_eq!(DataType::get_alignment(&machine_aligned), 8); // DataOrganizationImpl::DEFAULT_MACHINE_ALIGNMENT
     }
 
     #[test]
     fn packing_enabled_structure_computes_alignment_without_panicking() {
-        let mut s = StructureDataTypeImpl::new("Packed", 0);
+        let mut s = StructureDataType::new("Packed", 0);
         s.set_packing_enabled(true);
         s.add(dt("int", 4)).expect("add int");
         s.add(dt("byte", 1)).expect("add byte");
@@ -4915,7 +4357,7 @@ mod tests {
 
     #[test]
     fn data_type_size_changed_shrinks_component_and_opens_undefined_gap() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.structure_data_type_add(dt("wide", 8), -1, None, None).unwrap();
         s.structure_data_type_add(dt("short", 2), -1, None, None).unwrap();
         assert_eq!(s.stored_struct_length(), 10);
@@ -4932,7 +4374,7 @@ mod tests {
 
     #[test]
     fn data_type_size_changed_grows_last_component_and_grows_structure() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.structure_data_type_add(dt("small", 2), -1, None, None).unwrap();
         assert_eq!(s.stored_struct_length(), 2);
 
@@ -4948,7 +4390,7 @@ mod tests {
 
     #[test]
     fn data_type_alignment_changed_is_no_op_when_non_packed() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.structure_data_type_add(dt("int", 4), -1, None, None).unwrap();
         let length_before = s.stored_struct_length();
         s.structure_data_type_data_type_alignment_changed(dt("int", 4).as_ref());
@@ -4957,7 +4399,7 @@ mod tests {
 
     #[test]
     fn data_type_alignment_changed_repacks_when_packing_enabled() {
-        let mut s = StructureDataTypeImpl::new("Packed", 0);
+        let mut s = StructureDataType::new("Packed", 0);
         s.set_packing_enabled(true);
         s.add(dt("int", 4)).expect("add int");
         // Must not panic reaching into the data organization/`AlignedComponentPacker`, and must
@@ -4969,7 +4411,7 @@ mod tests {
 
     #[test]
     fn data_type_deleted_substitutes_bad_data_type_stand_in_preserving_length() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.structure_data_type_add(dt("int", 4), -1, Some("a".to_string()), None).unwrap();
         s.structure_data_type_add(dt("short", 2), -1, Some("b".to_string()), None).unwrap();
 
@@ -4983,7 +4425,7 @@ mod tests {
 
     #[test]
     fn data_type_replaced_swaps_component_and_grows_to_new_length() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.structure_data_type_add(dt("int", 4), -1, Some("a".to_string()), None).unwrap();
 
         s.structure_data_type_data_type_replaced(dt("int", 4).as_ref(), dt("long", 8)).unwrap();
@@ -4996,13 +4438,13 @@ mod tests {
 
     #[test]
     fn data_type_replaced_falls_back_to_default_on_ancestry_rejection() {
-        let mut outer = StructureDataTypeImpl::new("Outer", 0);
+        let mut outer = StructureDataType::new("Outer", 0);
         outer.structure_data_type_add(dt("int", 4), -1, Some("x".to_string()), None).unwrap();
 
         // "Inner" contains a field path-equal to "Outer" itself, so replacing Outer's "int"
         // component with an Inner instance would create a cyclic composite; checkAncestry should
         // reject it, falling back to the non-packed `DataType.DEFAULT` stand-in.
-        let mut inner = StructureDataTypeImpl::new("Inner", 0);
+        let mut inner = StructureDataType::new("Inner", 0);
         inner.structure_data_type_add(dt("Outer", 4), -1, Some("back".to_string()), None).unwrap();
 
         outer
@@ -5018,7 +4460,7 @@ mod tests {
 
     #[test]
     fn data_type_replaced_updates_bitfield_base_type() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.structure_data_type_add_bit_field(int_data_type("int", 4), 5, Some("flags".to_string()), None)
             .unwrap();
 
@@ -5043,8 +4485,8 @@ mod tests {
 
     /// Matches `StructureDBTest.setUp()`'s fixture: four real (non-packed) components with no
     /// gaps -- offsets 0/1/3/7, lengths 1/2/4/1, total length 8.
-    fn byte_word_dword_byte_struct() -> StructureDataTypeImpl {
-        let mut s = StructureDataTypeImpl::new("Test", 0);
+    fn byte_word_dword_byte_struct() -> StructureDataType {
+        let mut s = StructureDataType::new("Test", 0);
         s.structure_data_type_add(dt("byte1", 1), -1, Some("field1".to_string()), None)
             .unwrap();
         s.structure_data_type_add(dt("word", 2), -1, None, None).unwrap();
@@ -5110,7 +4552,7 @@ mod tests {
 
     #[test]
     fn replace_growing_into_available_trailing_undefined_space_fits_exactly() {
-        let mut s = StructureDataTypeImpl::new("Foo", 4); // 4 bytes, entirely undefined
+        let mut s = StructureDataType::new("Foo", 4); // 4 bytes, entirely undefined
         let dtc = s
             .structure_data_type_replace(0, dt("small", 1), 1, Some("a".to_string()), None)
             .unwrap();
@@ -5132,7 +4574,7 @@ mod tests {
 
     #[test]
     fn replace_growing_beyond_available_space_grows_the_structure() {
-        let mut s = StructureDataTypeImpl::new("Foo", 4); // 4 bytes, entirely undefined
+        let mut s = StructureDataType::new("Foo", 4); // 4 bytes, entirely undefined
         s.structure_data_type_replace(0, dt("small", 1), 1, Some("a".to_string()), None)
             .unwrap();
         assert_eq!(s.stored_struct_length(), 4);
@@ -5152,7 +4594,7 @@ mod tests {
 
     #[test]
     fn replace_consolidates_overlapping_bitfields_sharing_a_byte() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         // Two 4-bit fields packed into the same single byte (offset 0), occupying disjoint bit
         // ranges (bits 0-3 and 4-7) but the same byte-level footprint.
         s.structure_data_type_insert_bit_field_at(0, 1, 0, int_data_type("byte", 1), 4, Some("lo".to_string()), None)
@@ -5179,7 +4621,7 @@ mod tests {
 
     #[test]
     fn replace_in_packed_structure_quick_updates_when_length_and_alignment_match() {
-        let mut s = StructureDataTypeImpl::new("Packed", 0);
+        let mut s = StructureDataType::new("Packed", 0);
         s.set_packing_enabled(true);
         s.structure_data_type_add(dt("byte1", 1), -1, Some("a".to_string()), None).unwrap();
         s.structure_data_type_add(dt("byte2", 1), -1, Some("b".to_string()), None).unwrap();
@@ -5201,7 +4643,7 @@ mod tests {
 
     #[test]
     fn replace_in_packed_structure_falls_back_to_full_replacement_when_size_differs() {
-        let mut s = StructureDataTypeImpl::new("Packed", 0);
+        let mut s = StructureDataType::new("Packed", 0);
         s.set_packing_enabled(true);
         s.structure_data_type_add(dt("byte1", 1), -1, Some("a".to_string()), None).unwrap();
         s.structure_data_type_add(dt("byte2", 1), -1, Some("b".to_string()), None).unwrap();
@@ -5224,7 +4666,7 @@ mod tests {
         assert_eq!(s.stored_struct_length(), 8);
         assert_eq!(s.structure_data_type_get_num_defined_components(), 4);
 
-        s.structure_data_type_replace_at_offset(0, undefined_filler_data_type(), -1, Some("a".to_string()), None)
+        s.structure_data_type_replace_at_offset(0, DefaultDataType::boxed(), -1, Some("a".to_string()), None)
             .unwrap();
         s.structure_data_type_replace_at_offset(1, dt("byteb", 1), -1, Some("b".to_string()), None)
             .unwrap();
@@ -5268,7 +4710,7 @@ mod tests {
 
     #[test]
     fn replace_and_replace_with_name_via_structure_trait_object() {
-        let mut s = StructureDataTypeImpl::new("Foo", 0);
+        let mut s = StructureDataType::new("Foo", 0);
         s.add(dt("int", 4)).expect("add int");
         s.add(dt("short", 2)).expect("add short");
 

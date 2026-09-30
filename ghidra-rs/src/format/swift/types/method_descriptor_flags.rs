@@ -11,14 +11,14 @@ use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::boolean_data_type::BooleanDataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 use super::method_descriptor_kind::MethodDescriptorKind;
 
 /// Adds a bitfield to `struct_`, mapping Java's `InvalidDataTypeException` to the
 /// `IOException` that `toDataType()` rethrows it as.
 pub(super) fn add_bit_field(
-    struct_: &mut StructureDataTypeImpl,
+    struct_: &mut StructureDataType,
     base: Box<dyn DataType>,
     bit_size: i32,
     name: &str,
@@ -100,7 +100,7 @@ impl SwiftTypeMetadataStructure for MethodDescriptorFlags {
 
 impl StructConverter for MethodDescriptorFlags {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut struct_ = StructureDataTypeImpl::new_in_category(
+        let mut struct_ = StructureDataType::new_in_category(
             CATEGORY_PATH.clone(),
             self.get_structure_name(),
             Self::SIZE,

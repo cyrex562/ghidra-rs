@@ -95,7 +95,7 @@
 //! [`UnionDataTypeImpl`] is now this crate's first real, production concrete implementation of
 //! this trait (previously every test exercised these default methods against a
 //! `#[cfg(test)]`-scoped `MockUnionDataType` double), mirroring
-//! [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s identical
+//! [`StructureDataType`](super::structure_data_type::StructureDataType)'s identical
 //! precedent. It supplies real constructors and wires `copy`/`clone`/[`Union::clone_union`] for
 //! real (construct a fresh `UnionDataTypeImpl` and call
 //! [`union_data_type_replace_with`](UnionDataType::union_data_type_replace_with) on it, matching
@@ -1189,7 +1189,7 @@ fn is_valid_union_name(name: &str) -> bool {
 /// Port of `ghidra.program.model.data.UnionDataType` itself (the trait of the same name in this
 /// module exists only because it was promoted to a trait as a dependency-cycle cut-point -- see
 /// this module's top-level doc comment). Mirrors
-/// [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s identical
+/// [`StructureDataType`](super::structure_data_type::StructureDataType)'s identical
 /// precedent: every previous test of [`UnionDataType`]'s default methods exercised them against a
 /// `#[cfg(test)]`-scoped `MockUnionDataType` double; this type is the real thing, with real
 /// Java-faithful constructors and a real `copy`/`clone` (via
@@ -1197,7 +1197,7 @@ fn is_valid_union_name(name: &str) -> bool {
 /// which have a home as trait default methods, since a trait default method cannot return a
 /// sized, constructible `Self`).
 ///
-/// Unlike [`StructureDataTypeImpl`], a union has no `length` constructor parameter at all (its
+/// Unlike [`StructureDataType`], a union has no `length` constructor parameter at all (its
 /// length is always computed from its components -- see [`UnionDataType::length`]), matching
 /// `UnionDataType.java`'s own constructors.
 ///
@@ -1205,11 +1205,11 @@ fn is_valid_union_name(name: &str) -> bool {
 /// itself -- `dataType*Changed`/`dataType.clone(dataMgr)`/parent tracking):
 ///   - [`get_data_organization`](DataType::get_data_organization) returns
 ///     `DataOrganizationImpl.getDefaultOrganization()`, matching
-///     [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl) (no
+///     [`StructureDataType`](super::structure_data_type::StructureDataType) (no
 ///     `DataTypeManager` is tracked).
 ///   - [`DataType::is_equivalent`]/[`DataType::replace_with`] are left at their generic
 ///     placeholder defaults, for the identical reason
-///     [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s own doc
+///     [`StructureDataType`](super::structure_data_type::StructureDataType)'s own doc
 ///     comment gives (no `&dyn DataType` -> `&dyn UnionDataType` downcast hook exists). Callers
 ///     with two [`UnionDataType`] implementors in hand can call
 ///     [`union_data_type_is_equivalent`](UnionDataType::union_data_type_is_equivalent)/
@@ -1247,7 +1247,7 @@ impl UnionDataTypeImpl {
     ///
     /// Port of the 3-arg Java constructor `UnionDataType(CategoryPath, String, DataTypeManager)`
     /// (collapsed with its 2-arg `dataMgr`-less overload, matching
-    /// [`StructureDataTypeImpl::new_in_category`](super::structure_data_type::StructureDataTypeImpl::new_in_category)'s
+    /// [`StructureDataType::new_in_category`](super::structure_data_type::StructureDataType::new_in_category)'s
     /// identical simplification: `dataMgr` is not tracked).
     ///
     /// # Panics
@@ -1277,7 +1277,7 @@ impl UnionDataTypeImpl {
     ///
     /// Port of the 7-arg Java constructor taking `universalID`/`sourceArchive`/`lastChangeTime`/
     /// `lastChangeTimeInSourceArchive`. `source_archive` is tracked only by ID, matching
-    /// [`StructureDataTypeImpl::with_archive_identity`](super::structure_data_type::StructureDataTypeImpl::with_archive_identity)'s
+    /// [`StructureDataType::with_archive_identity`](super::structure_data_type::StructureDataType::with_archive_identity)'s
     /// identical simplification.
     ///
     /// # Panics
@@ -1707,7 +1707,7 @@ impl CompositeDataTypeImpl for UnionDataTypeImpl {
             .map(|c| Box::new(c) as Box<dyn DataTypeComponent>)
     }
 
-    /// See [`StructureDataTypeImpl`](super::structure_data_type::StructureDataTypeImpl)'s
+    /// See [`StructureDataType`](super::structure_data_type::StructureDataType)'s
     /// identical `composite_impl_validate_data_type` for what is skipped (the
     /// `DataType.DEFAULT`/`Undefined1DataType.dataType`/`FactoryDataType` cases).
     fn composite_impl_validate_data_type(&self, data_type: Box<dyn DataType>) -> Result<Box<dyn DataType>, String> {
@@ -1730,17 +1730,6 @@ impl CompositeDataTypeImpl for UnionDataTypeImpl {
         Ok(data_type)
     }
 
-    /// Not wired: the only Java caller, `dataTypeReplaced`, is not ported (see the module docs'
-    /// "explicitly and intentionally not yet ported" list).
-    fn composite_impl_update_bit_field_data_type(
-        &mut self,
-        bitfield_component: Box<dyn DataTypeComponent>,
-        old_dt: &dyn DataType,
-        new_dt: Option<&dyn DataType>,
-    ) -> Result<bool, String> {
-        let (_, _, _) = (bitfield_component, old_dt, new_dt);
-        Ok(false)
-    }
 }
 
 impl UnionDataType for UnionDataTypeImpl {
@@ -1942,14 +1931,6 @@ mod tests {
             data_type: Box<dyn DataType>,
         ) -> Result<Box<dyn DataType>, String> {
             Ok(data_type)
-        }
-        fn composite_impl_update_bit_field_data_type(
-            &mut self,
-            _bitfield_component: Box<dyn DataTypeComponent>,
-            _old_dt: &dyn DataType,
-            _new_dt: Option<&dyn DataType>,
-        ) -> Result<bool, String> {
-            Ok(false)
         }
     }
 
@@ -2329,7 +2310,7 @@ mod tests {
     // ------------------------------------------------------------------------------------------
     // `UnionDataTypeImpl`: the first real, production concrete `UnionDataType` (as opposed to the
     // `#[cfg(test)]`-scoped `MockUnionDataType` above). Mirrors
-    // `structure_data_type`'s identical `StructureDataTypeImpl` test coverage.
+    // `structure_data_type`'s identical `StructureDataType` test coverage.
     // ------------------------------------------------------------------------------------------
 
     #[test]

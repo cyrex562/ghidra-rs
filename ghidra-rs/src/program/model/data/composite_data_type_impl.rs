@@ -188,20 +188,6 @@ pub trait CompositeDataTypeImpl: CompositeInternal {
         data_type: Box<dyn DataType>,
     ) -> Result<Box<dyn DataType>, String>;
 
-    /// Port of `CompositeDataTypeImpl.updateBitFieldDataType(DataTypeComponentImpl, DataType,
-    /// DataType)`. See the module-level documentation for why this is left required rather than
-    /// defaulted. Returns `Ok(true)` if the bitfield component was modified.
-    ///
-    /// # Errors
-    /// Returns `Err` if `bitfield_component` is not actually a bitfield component (mirrors the
-    /// `AssertException` thrown in that case).
-    fn composite_impl_update_bit_field_data_type(
-        &mut self,
-        bitfield_component: Box<dyn DataTypeComponent>,
-        old_dt: &dyn DataType,
-        new_dt: Option<&dyn DataType>,
-    ) -> Result<bool, String>;
-
     /// Port of the protected `CompositeDataTypeImpl.createComponent(DataType, int, int, int,
     /// String, String)`. See the module-level documentation for why the returned component's
     /// [`DataTypeComponent::get_data_type`]/[`DataTypeComponent::get_parent`] are left at their
@@ -821,14 +807,6 @@ mod tests {
             data_type: Box<dyn DataType>,
         ) -> Result<Box<dyn DataType>, String> {
             Ok(data_type)
-        }
-        fn composite_impl_update_bit_field_data_type(
-            &mut self,
-            _bitfield_component: Box<dyn DataTypeComponent>,
-            _old_dt: &dyn DataType,
-            _new_dt: Option<&dyn DataType>,
-        ) -> Result<bool, String> {
-            Ok(false)
         }
     }
 

@@ -11,7 +11,7 @@ use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::format::macos::rm::resource_map::ResourceMap;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// The header of a Macintosh resource fork, and (unless read shallowly) the fork's parsed
 /// [`ResourceMap`].
@@ -123,7 +123,7 @@ impl StructConverter for ResourceHeader {
     /// `int` fields (the inherited `_entryDescriptor` and the `_map` field are skipped for their
     /// leading underscore).
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("ResourceHeader", 0);
+        let mut s = StructureDataType::new("ResourceHeader", 0);
         for field in
             ["resourceDataOffset", "resourceMapOffset", "resourceDataLength", "resourceMapLength"]
         {

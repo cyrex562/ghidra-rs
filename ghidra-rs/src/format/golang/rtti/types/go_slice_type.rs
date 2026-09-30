@@ -8,7 +8,7 @@ use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::structure::Structure;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// Go type information about a specific slice type.
 ///
@@ -106,7 +106,7 @@ impl GoSliceType {
     /// port:
     /// - Java pre-sizes `sliceDT` to `genericSliceDT`'s length and then calls
     ///   `sliceDT.replaceWith(genericSliceDT)` to bulk-copy every component in place. The
-    ///   ported [`StructureDataTypeImpl`] doesn't yet implement `replace_with` (its default is a
+    ///   ported [`StructureDataType`] doesn't yet implement `replace_with` (its default is a
     ///   no-op), and a structure pre-sized with implicit undefined filler bytes can't have real
     ///   components appended into that filler with `add`. Instead, this builds `slice_dt` from
     ///   zero length, appending each of `genericSliceDT`'s real components in order -- the void*
@@ -128,7 +128,7 @@ impl GoSliceType {
 
         let category_path = go_types.get_cp(self);
         let type_name = go_types.get_type_name(self)?;
-        let mut slice_dt = StructureDataTypeImpl::new_in_category(category_path, type_name, 0);
+        let mut slice_dt = StructureDataType::new_in_category(category_path, type_name, 0);
 
         let element_type = self.get_element()?;
         let element_dt = go_types.get_data_type_for_type(element_type.as_ref())?;

@@ -6,7 +6,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 use super::cram_fs_constants::{CRAMFS_NAMELEN_WIDTH, CRAMFS_SIZE_WIDTH, CRAMFS_UID_WIDTH};
 
@@ -87,10 +87,10 @@ impl CramFsInode {
     }
 
     /// Builds the `cramfs_inode_<len>` structure returned by [`StructConverter::to_data_type`].
-    fn build_structure(&self) -> Result<StructureDataTypeImpl, String> {
+    fn build_structure(&self) -> Result<StructureDataType, String> {
         let length = self.namelen * 4;
 
-        let mut strukt = StructureDataTypeImpl::new(format!("cramfs_inode_{length}"), 0);
+        let mut strukt = StructureDataType::new(format!("cramfs_inode_{length}"), 0);
         strukt.add_with_name(Box::new(DWordDataType::new(None)), Some("modeUID".to_string()), None)?;
         strukt.add_with_name(Box::new(DWordDataType::new(None)), Some("sizeGID".to_string()), None)?;
         strukt.add_with_name(Box::new(DWordDataType::new(None)), Some("namelenOffset".to_string()), None)?;

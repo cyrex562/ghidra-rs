@@ -11,7 +11,7 @@ use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::boolean_data_type::BooleanDataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 use super::method_descriptor_flags::add_bit_field;
 use super::protocol_requirement_kind::ProtocolRequirementKind;
@@ -91,7 +91,7 @@ impl StructConverter for ProtocolRequirementFlags {
                 format!("unknown ProtocolRequirementKind value {}", self.flags & 0x0f),
             ))
         })?;
-        let mut struct_ = StructureDataTypeImpl::new_in_category(
+        let mut struct_ = StructureDataType::new_in_category(
             CATEGORY_PATH.clone(),
             self.get_structure_name(),
             Self::SIZE,

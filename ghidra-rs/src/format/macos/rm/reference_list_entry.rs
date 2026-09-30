@@ -11,7 +11,7 @@ use crate::program::model::data::word_data_type::WordDataType;
 use crate::format::macos::rm::resource_map::ResourceMap;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// One entry of a resource type's reference list: a single resource's ID, name, attributes and
 /// the location of its data.
@@ -89,7 +89,7 @@ fn read_3_byte_value(reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
 impl StructConverter for ReferenceListEntry {
     /// Port of `toDataType()`.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("ReferenceListEntry", 0);
+        let mut s = StructureDataType::new("ReferenceListEntry", 0);
         s.add_with_name(Box::new(WordDataType::new(None)), Some("id".to_string()), None)?;
         s.add_with_name(Box::new(WordDataType::new(None)), Some("nameOffset".to_string()), None)?;
         s.add_with_name(Box::new(ByteDataType::new(None)), Some("attributes".to_string()), None)?;

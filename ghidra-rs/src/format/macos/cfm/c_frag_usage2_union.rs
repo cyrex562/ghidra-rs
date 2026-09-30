@@ -7,7 +7,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// Port of `kNoAppSubFolder`.
 pub const K_NO_APP_SUB_FOLDER: i16 = 0;
@@ -39,7 +39,7 @@ impl StructConverter for CFragUsage2Union {
     /// Port of `toDataType()`, which delegates to `StructConverterUtil.toDataType`: a single
     /// `appSubdirID` component.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("CFragUsage2Union", 0);
+        let mut s = StructureDataType::new("CFragUsage2Union", 0);
         s.add_with_name(Box::new(WordDataType::new(None)), Some("appSubdirID".to_string()), None)?;
         Ok(Box::new(s))
     }

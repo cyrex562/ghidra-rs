@@ -3,6 +3,8 @@ use std::cmp::Ordering;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
+use crate::program::model::data::alignment_type::AlignmentType;
+use crate::program::model::data::packing_type::PackingType;
 
 /// Port of `CompositeInternal.ALIGN_NAME`.
 pub const ALIGN_NAME: &str = "aligned";
@@ -51,6 +53,29 @@ pub trait CompositeInternal: Composite {
     /// value to indicate either [`DEFAULT_ALIGNMENT`] or [`MACHINE_ALIGNMENT`].
     fn get_stored_minimum_alignment(&self) -> i32 {
         DEFAULT_ALIGNMENT
+    }
+}
+
+/// The raw `CompositeInternal.getStoredPackingValue()` of any composite, recovered from its
+/// public packing API: [`NO_PACKING`], [`DEFAULT_PACKING`] or the explicit pack value. Lets code
+/// holding only a `&dyn Composite` (Java's `instanceof StructureInternal` downcast target) read
+/// the stored value.
+pub fn stored_packing_value_of(composite: &dyn Composite) -> i32 {
+    match composite.get_packing_type() {
+        PackingType::Disabled => NO_PACKING,
+        PackingType::Default => DEFAULT_PACKING,
+        PackingType::Explicit => composite.get_explicit_packing_value(),
+    }
+}
+
+/// The raw `CompositeInternal.getStoredMinimumAlignment()` of any composite, recovered from its
+/// public alignment API: [`DEFAULT_ALIGNMENT`], [`MACHINE_ALIGNMENT`] or the explicit minimum
+/// alignment. See [`stored_packing_value_of`].
+pub fn stored_minimum_alignment_of(composite: &dyn Composite) -> i32 {
+    match composite.get_alignment_type() {
+        AlignmentType::Default => DEFAULT_ALIGNMENT,
+        AlignmentType::Machine => MACHINE_ALIGNMENT,
+        AlignmentType::Explicit => composite.get_explicit_minimum_alignment(),
     }
 }
 

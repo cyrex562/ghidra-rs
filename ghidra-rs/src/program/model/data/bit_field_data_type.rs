@@ -240,6 +240,25 @@ impl BitFieldDataType {
         self.base_data_type.as_ref()
     }
 
+    /// Port of `BitFieldDataType.getPrimitiveBaseDataType()`: the base type with typedefs
+    /// resolved, and an enum base replaced by the unsigned integer type of the enum's size.
+    pub fn get_primitive_base_data_type(&self) -> Arc<dyn DataType> {
+        let mut dt = self.base_data_type.clone();
+        while dt.is_typedef() {
+            match dt.typedef_base_data_type() {
+                Some(base) => dt = Arc::from(base),
+                None => break,
+            }
+        }
+        if let Some(enum_dt) = dt.as_enum() {
+            return crate::program::model::data::abstract_integer_data_type::get_unsigned_data_type(
+                enum_dt.get_length(),
+                None,
+            );
+        }
+        dt
+    }
+
     /// Port of `BitFieldDataType.getPrimitiveBaseDataType()`, narrowed to just the signedness bit
     /// every real call site actually needs -- see the module docs for why the full `Enum ->
     /// synthesized unsigned integer` substitution isn't performed.

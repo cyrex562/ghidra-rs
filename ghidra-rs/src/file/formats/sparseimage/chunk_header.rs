@@ -8,7 +8,7 @@ use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::word_data_type::WordDataType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// The 12-byte header preceding each chunk of an Android sparse image.
 ///
@@ -49,7 +49,7 @@ impl StructConverter for ChunkHeader {
             ("chunk_sz", Box::new(DWordDataType::new(None))),
             ("total_sz", Box::new(DWordDataType::new(None))),
         ];
-        let mut structure = StructureDataTypeImpl::new("chunk_header", 0);
+        let mut structure = StructureDataType::new("chunk_header", 0);
         for (name, dt) in fields {
             structure
                 .add_with_name(dt, Some(name.to_string()), None)

@@ -13,7 +13,7 @@ use crate::format::macos::rm::resource_header::ResourceHeader;
 use crate::format::macos::rm::resource_type::ResourceType;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// The resource map of a resource fork: a copy of the fork header, the resource type list, and
 /// the resource name list.
@@ -180,7 +180,7 @@ impl StructConverter for ResourceMap {
     /// Port of `toDataType()`, which delegates to `StructConverterUtil.toDataType`: one component
     /// per private non-underscore field, the `copy` header becoming a nested structure.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        let mut s = StructureDataTypeImpl::new("ResourceMap", 0);
+        let mut s = StructureDataType::new("ResourceMap", 0);
         s.add_with_name(self.copy.to_data_type()?, Some("copy".to_string()), None)?;
         s.add_with_name(Box::new(DWordDataType::new(None)), Some("handleToNextResourceMap".to_string()), None)?;
         for field in [

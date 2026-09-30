@@ -20,12 +20,12 @@ use crate::program::database::sourcemap::SourceFile;
 use crate::program::model::address::Address;
 use crate::program::model::listing::function::Function;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 type TypeFactory = Arc<dyn Fn() -> Box<dyn DataType> + Send + Sync>;
 
 /// A structure whose components are plain integers of the given byte lengths.
-fn int_struct(name: &str, fields: &[(&str, i32)]) -> StructureDataTypeImpl {
+fn int_struct(name: &str, fields: &[(&str, i32)]) -> StructureDataType {
     structure(
         name,
         fields
@@ -45,7 +45,7 @@ fn int_struct(name: &str, fields: &[(&str, i32)]) -> StructureDataTypeImpl {
 
 /// `runtime._type`, 48 bytes: `size`@0, `ptrdata`@8, `tflag`@20, `kind`@23, `str`@40,
 /// `ptrToThis`@44.
-pub fn base_type_struct() -> StructureDataTypeImpl {
+pub fn base_type_struct() -> StructureDataType {
     int_struct(
         "runtime._type",
         &[
@@ -65,7 +65,7 @@ pub fn base_type_struct() -> StructureDataTypeImpl {
 }
 
 /// A `GoType` specialization: the `typ` base type followed by `fields`.
-fn go_type_struct(name: &str, fields: &[(&str, i32)]) -> StructureDataTypeImpl {
+fn go_type_struct(name: &str, fields: &[(&str, i32)]) -> StructureDataType {
     let mut components: Vec<(&str, Box<dyn DataType>)> = vec![("typ", Box::new(base_type_struct()))];
     for (n, len) in fields {
         components.push((*n, simple("uint64", *len)));
@@ -74,29 +74,29 @@ fn go_type_struct(name: &str, fields: &[(&str, i32)]) -> StructureDataTypeImpl {
 }
 
 /// `runtime.arraytype`, 72 bytes: `typ`@0, `elem`@48, `slice`@56, `len`@64.
-pub fn array_type_struct() -> StructureDataTypeImpl {
+pub fn array_type_struct() -> StructureDataType {
     go_type_struct("runtime.arraytype", &[("elem", 8), ("slice", 8), ("len", 8)])
 }
 
 /// `runtime.slicetype`, 56 bytes: `typ`@0, `elem`@48.
-pub fn slice_type_struct() -> StructureDataTypeImpl {
+pub fn slice_type_struct() -> StructureDataType {
     go_type_struct("runtime.slicetype", &[("elem", 8)])
 }
 
 /// `runtime.uncommontype`, 16 bytes: `pkgpath`@0, `mcount`@4, `xcount`@6, `moff`@8.
-pub fn uncommon_type_struct() -> StructureDataTypeImpl {
+pub fn uncommon_type_struct() -> StructureDataType {
     int_struct("runtime.uncommontype", &[("pkgpath", 4), ("mcount", 2), ("xcount", 2), ("moff", 4), ("_", 4)])
 }
 
 /// `runtime.itab`, 32 bytes: `inter`@0, `_type`@8, `fun`@24.
-pub fn itab_struct() -> StructureDataTypeImpl {
+pub fn itab_struct() -> StructureDataType {
     int_struct("runtime.itab", &[("inter", 8), ("_type", 8), ("hash", 4), ("_", 4), ("fun", 8)])
 }
 
 /// `runtime._func` (Go 1.18+), 44 bytes: `entryOff`@0, `nameOff`@4, `deferreturn`@12,
 /// `pcsp`@16, `pcfile`@20, `pcln`@24, `npcdata`@28, `cuOffset`@32, `funcID`@40, `flag`@41,
 /// `nfuncdata`@43.
-pub fn func_struct() -> StructureDataTypeImpl {
+pub fn func_struct() -> StructureDataType {
     int_struct(
         "runtime._func",
         &[
@@ -119,7 +119,7 @@ pub fn func_struct() -> StructureDataTypeImpl {
 }
 
 /// `runtime.functab` (Go 1.18+), 8 bytes: `entryoff`@0, `funcoff`@4.
-pub fn functab_struct() -> StructureDataTypeImpl {
+pub fn functab_struct() -> StructureDataType {
     int_struct("runtime.functab", &[("entryoff", 4), ("funcoff", 4)])
 }
 

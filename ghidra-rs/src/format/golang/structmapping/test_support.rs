@@ -13,7 +13,7 @@ use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::model::data::structure_data_type::StructureDataTypeImpl;
+use crate::program::model::data::structure_data_type::StructureDataType;
 use crate::program::model::listing::Program;
 
 use super::data_type_mapper::DataTypeMapper;
@@ -85,8 +85,8 @@ pub fn simple(name: &'static str, length: i32) -> Box<dyn DataType> {
 }
 
 /// A structure named `name` with the given `(field name, data type)` components.
-pub fn structure(name: &str, fields: Vec<(&str, Box<dyn DataType>)>) -> StructureDataTypeImpl {
-    let mut s = StructureDataTypeImpl::new(name, 0);
+pub fn structure(name: &str, fields: Vec<(&str, Box<dyn DataType>)>) -> StructureDataType {
+    let mut s = StructureDataType::new(name, 0);
     for (field_name, dt) in fields {
         crate::program::model::data::composite::Composite::add_with_name(
             &mut s,
