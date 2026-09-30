@@ -1756,6 +1756,29 @@ pub trait FlatProgramAPI: Send + Sync {
         length: i32,
     ) -> std::io::Result<Box<dyn crate::program::model::listing::data::Data>>;
 
+    /// `FlatProgramAPI.createAsciiString(Address)` (the one-argument, NUL-terminated overload),
+    /// needed by `SymbolTableCommand`'s raw-binary markup.
+    fn create_terminated_ascii_string(
+        &self,
+        address: &crate::program::model::address::Address,
+    ) -> std::io::Result<Box<dyn crate::program::model::listing::data::Data>>;
+
+    /// `FlatProgramAPI.createMemoryReference(Data, Address, RefType)`, needed by
+    /// `SymbolTableCommand`'s raw-binary markup.
+    fn create_memory_reference(
+        &self,
+        from_data: &dyn crate::program::model::listing::data::Data,
+        to_address: &crate::program::model::address::Address,
+        data_ref_type: crate::program::model::symbol::ref_type::RefType,
+    ) -> std::io::Result<std::sync::Arc<dyn crate::program::model::symbol::reference::Reference>>;
+
+    /// `FlatProgramAPI.setReferencePrimary(Reference, boolean)`.
+    fn set_reference_primary(
+        &self,
+        reference: std::sync::Arc<dyn crate::program::model::symbol::reference::Reference>,
+        primary: bool,
+    );
+
     /// `FlatProgramAPI.createLabel(Address, String, boolean, SourceType)`, needed by
     /// `SegmentCommand`'s raw-binary markup. Java returns the new `Symbol`; the Mach-O callers
     /// ignore it, so this placeholder does not model it.

@@ -1142,7 +1142,7 @@ TODO	struct	15	15	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	struct	18	25	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandString.java
 DONE	struct	17	15	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibrary.java
 DONE	struct	17	15	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryCommand.java
-TODO	struct	19	19	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/NList.java
+DONE	struct	19	19	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/NList.java
 TODO	struct	18	18	85	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SymbolTableCommand.java
 TODO	struct	17	15	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryModule.java
 TODO	struct	17	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryReference.java

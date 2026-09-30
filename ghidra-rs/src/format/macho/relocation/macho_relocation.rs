@@ -4,10 +4,6 @@
 //! ported) will use to perform the relocation. In Mach-O, some relocations may be "paired," so
 //! an instance of this type may carry two [`RelocationInfo`]s.
 //!
-//! `MachHeader`, `RelocationInfo`, `Section`, `NList`, and `SymbolTableCommand` are concrete Java
-//! classes on the far side of a dependency cycle and are not ported yet; this file uses the
-//! minimal placeholders in [`crate::format::seam_stubs`] (only the members this type needs).
-//!
 //! Java's constructor calls `program.getSymbolTable()` (a mutable accessor on the ported
 //! [`Program`] trait) while resolving the initial target, then keeps `program` around for
 //! [`MachoRelocation::get_program`]. This port borrows `program`/`macho_header` for the
@@ -17,9 +13,11 @@
 use std::sync::Arc;
 
 use crate::format::relocation_exception::RelocationError;
-use crate::format::seam_stubs::{
-    numeric_utilities, MachHeader, RelocationInfo, Section, SymbolTableCommand,
-};
+use crate::format::macho::commands::symbol_table_command::SymbolTableCommand;
+use crate::format::macho::mach_header::MachHeader;
+use crate::format::macho::relocation_info::RelocationInfo;
+use crate::format::macho::section::Section;
+use crate::format::seam_stubs::numeric_utilities;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::listing::program::Program;
 use crate::program::model::symbol::{DefaultSymbolUtilities, Symbol, SymbolUtilities};
@@ -30,7 +28,7 @@ use crate::program::model::symbol::{DefaultSymbolUtilities, Symbol, SymbolUtilit
 pub struct MachoRelocation<'p> {
     program: &'p mut dyn Program,
     space: Arc<AddressSpace>,
-    macho_header: &'p dyn MachHeader,
+    macho_header: &'p MachHeader,
 
     relocation_address: Address,
     relocation_info: RelocationInfo,
@@ -50,7 +48,7 @@ impl<'p> MachoRelocation<'p> {
     /// Java: `MachoRelocation(Program, MachHeader, Address, RelocationInfo)`.
     pub fn new(
         program: &'p mut dyn Program,
-        macho_header: &'p dyn MachHeader,
+        macho_header: &'p MachHeader,
         relocation_address: Address,
         relocation_info: RelocationInfo,
     ) -> Self {
@@ -83,7 +81,7 @@ impl<'p> MachoRelocation<'p> {
     /// Java: `MachoRelocation(Program, MachHeader, Address, RelocationInfo, RelocationInfo)`.
     pub fn new_paired(
         program: &'p mut dyn Program,
-        macho_header: &'p dyn MachHeader,
+        macho_header: &'p MachHeader,
         relocation_address: Address,
         relocation_info: RelocationInfo,
         relocation_info_extra: RelocationInfo,
@@ -233,7 +231,7 @@ impl<'p> MachoRelocation<'p> {
     /// Java: the `if (relocationInfo.isScattered()) ... else if (relocationInfo.isExternal())
     /// ... else ...` chain in both constructors.
     fn resolve_target(
-        macho_header: &dyn MachHeader,
+        macho_header: &MachHeader,
         program: &dyn Program,
         space: &Arc<AddressSpace>,
         relocation_info: &RelocationInfo,
@@ -252,12 +250,12 @@ impl<'p> MachoRelocation<'p> {
     ///
     /// Java: `findTargetSymbol(RelocationInfo)`.
     fn find_target_symbol(
-        macho_header: &dyn MachHeader,
+        macho_header: &MachHeader,
         program: &dyn Program,
         space: &Arc<AddressSpace>,
         relocation_info: &RelocationInfo,
     ) -> Option<Arc<dyn Symbol>> {
-        let symbol_table_command: SymbolTableCommand = macho_header.get_symbol_table_command()?;
+        let symbol_table_command = macho_header.get_first_load_command::<SymbolTableCommand>()?;
         let nlist = symbol_table_command.get_symbol_at(relocation_info.get_value())?.clone();
         let addr = space.address(nlist.get_value());
 
@@ -279,12 +277,12 @@ impl<'p> MachoRelocation<'p> {
     /// [`RelocationInfo`]. Only useful when `relocation_info` is NOT marked as "external".
     ///
     /// Java: `findTargetSection(RelocationInfo)`.
-    fn find_target_section(macho_header: &dyn MachHeader, relocation_info: &RelocationInfo) -> Option<Section> {
+    fn find_target_section(macho_header: &MachHeader, relocation_info: &RelocationInfo) -> Option<Section> {
         let index = relocation_info.get_value() - 1;
         if index < 0 {
             return None;
         }
-        macho_header.get_all_sections().into_iter().nth(index as usize)
+        macho_header.get_all_sections().into_iter().nth(index as usize).cloned()
     }
 }
 
@@ -327,23 +325,35 @@ mod tests {
     use crate::program::model::address::AddressSpaceType;
     use crate::program::model::listing::Listing;
 
-    struct StubMachHeader {
-        sections: Vec<Section>,
-        symbol_table_command: Option<SymbolTableCommand>,
+    use crate::format::macho::commands::load_command_types::LC_SEGMENT_64;
+    use crate::format::macho::cpu_types::CPU_TYPE_X86_64;
+    use crate::format::macho::mach_constants::MH_CIGAM_64;
+    use crate::format::macho::mach_header::test_support::{provider, Bytes};
+    use crate::format::macho::section::test_support::section_bytes;
+
+    /// A parsed 64-bit header with one `__DATA` segment holding `sections` (address, name).
+    fn header_with_sections(sections: &[(u64, &str)]) -> MachHeader {
+        let n = sections.len() as u32;
+        let seg_len = 72 + 80 * n;
+        let mut b = Bytes::new(true);
+        b.u32(MH_CIGAM_64.swap_bytes()).u32(CPU_TYPE_X86_64 as u32).u32(3).u32(1).u32(1);
+        b.u32(seg_len).u32(0).u32(0);
+        b.u32(LC_SEGMENT_64).u32(seg_len).name("__DATA", 16).u64(0).u64(0).u64(0).u64(0);
+        b.u32(3).u32(3).u32(n).u32(0);
+        for (addr, name) in sections {
+            b.raw(&section_bytes(false, true, name, "__DATA", *addr, 0x10, 0, 0, 0, 0));
+        }
+        let mut h = MachHeader::new(provider(b.buf)).unwrap();
+        h.parse().unwrap();
+        h
     }
 
-    impl MachHeader for StubMachHeader {
-        fn get_segment(&self, _segment_name: &str) -> Option<Box<dyn crate::format::seam_stubs::SegmentCommand>> {
-            None
-        }
-        fn get_all_segments(&self) -> Vec<Box<dyn crate::format::seam_stubs::SegmentCommand>> {
-            Vec::new()
-        }
-        fn get_all_sections(&self) -> Vec<Section> {
-            self.sections.clone()
-        }
-        fn get_symbol_table_command(&self) -> Option<SymbolTableCommand> {
-            self.symbol_table_command.clone()
+    /// A relocation entry with the given `r_value`/`r_symbolnum`, external and scattered bits.
+    fn reloc(value: i32, external: bool, scattered: bool) -> RelocationInfo {
+        if scattered {
+            RelocationInfo::decode(0x8000_0000u32 as i32, value, false)
+        } else {
+            RelocationInfo::decode(0, value | ((external as i32) << 27), false)
         }
     }
 
@@ -379,8 +389,8 @@ mod tests {
     #[test]
     fn scattered_relocation_resolves_to_pointer_target() {
         let mut program = make_program();
-        let header = StubMachHeader { sections: Vec::new(), symbol_table_command: None };
-        let info = RelocationInfo::new(0x1000, false, true);
+        let header = header_with_sections(&[]);
+        let info = reloc(0x1000, false, true);
         let space = program.get_address_factory().unwrap().get_default_address_space().unwrap();
         let addr = space.address(0x2000);
 
@@ -393,10 +403,9 @@ mod tests {
     #[test]
     fn non_external_relocation_resolves_to_target_section() {
         let mut program = make_program();
-        let sections = vec![Section::new(0x4000, "__text"), Section::new(0x5000, "__data")];
-        let header = StubMachHeader { sections, symbol_table_command: None };
+        let header = header_with_sections(&[(0x4000, "__text"), (0x5000, "__data")]);
         // value=2 -> index 1 -> the second section ("__data").
-        let info = RelocationInfo::new(2, false, false);
+        let info = reloc(2, false, false);
         let space = program.get_address_factory().unwrap().get_default_address_space().unwrap();
         let addr = space.address(0x2000);
 
@@ -410,8 +419,8 @@ mod tests {
     #[test]
     fn external_relocation_with_no_symbol_table_has_no_target_and_requires_relocation() {
         let mut program = make_program();
-        let header = StubMachHeader { sections: Vec::new(), symbol_table_command: None };
-        let info = RelocationInfo::new(7, true, false);
+        let header = header_with_sections(&[]);
+        let info = reloc(7, true, false);
 
         let space = program.get_address_factory().unwrap().get_default_address_space().unwrap();
         let addr = space.address(0x2000);
@@ -426,12 +435,11 @@ mod tests {
     #[test]
     fn paired_relocation_tracks_both_infos() {
         let mut program = make_program();
-        let sections = vec![Section::new(0x4000, "__text")];
-        let header = StubMachHeader { sections, symbol_table_command: None };
-        let info = RelocationInfo::new(1, false, false);
+        let header = header_with_sections(&[(0x4000, "__text")]);
+        let info = reloc(1, false, false);
         // value=0x99 -> index 0x98, out of range for a single-section header, so this resolves
         // to no target section (mirrors Java's findTargetSection returning null).
-        let info_extra = RelocationInfo::new(0x99, false, false);
+        let info_extra = reloc(0x99, false, false);
         let space = program.get_address_factory().unwrap().get_default_address_space().unwrap();
         let addr = space.address(0x2000);
 

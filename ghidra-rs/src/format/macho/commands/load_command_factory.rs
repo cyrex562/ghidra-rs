@@ -37,6 +37,7 @@ use crate::format::macho::commands::sub_framework_command::SubFrameworkCommand;
 use crate::format::macho::commands::sub_library_command::SubLibraryCommand;
 use crate::format::macho::commands::sub_umbrella_command::SubUmbrellaCommand;
 use crate::format::macho::commands::symbol_command::SymbolCommand;
+use crate::format::macho::commands::symbol_table_command::SymbolTableCommand;
 use crate::format::macho::commands::two_level_hints_command::TwoLevelHintsCommand;
 use crate::format::macho::commands::unsupported_load_command::UnsupportedLoadCommand;
 use crate::format::macho::commands::uuid_command::UuidCommand;
@@ -76,6 +77,10 @@ fn parse_load_command(
     let is32bit = header.is32bit();
     Ok(match cmd_type {
         LC_SEGMENT | LC_SEGMENT_64 => SegmentCommand::new(reader, is32bit)?.into(),
+        LC_SYMTAB => {
+            let mut linker_reader = get_linker_load_command_reader(reader);
+            SymbolTableCommand::new(reader, &mut linker_reader, header)?.into()
+        }
         LC_SYMSEG => SymbolCommand::new(reader)?.into(),
         LC_LOADFVMLIB | LC_IDFVMLIB => FixedVirtualMemorySharedLibraryCommand::new(reader)?.into(),
         LC_IDENT => IdentCommand::new(reader)?.into(),

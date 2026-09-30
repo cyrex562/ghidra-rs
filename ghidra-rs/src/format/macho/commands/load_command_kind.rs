@@ -38,6 +38,7 @@ use crate::format::macho::commands::sub_framework_command::SubFrameworkCommand;
 use crate::format::macho::commands::sub_library_command::SubLibraryCommand;
 use crate::format::macho::commands::sub_umbrella_command::SubUmbrellaCommand;
 use crate::format::macho::commands::symbol_command::SymbolCommand;
+use crate::format::macho::commands::symbol_table_command::SymbolTableCommand;
 use crate::format::macho::commands::two_level_hints_command::TwoLevelHintsCommand;
 use crate::format::macho::commands::unsupported_load_command::UnsupportedLoadCommand;
 use crate::format::macho::commands::uuid_command::UuidCommand;
@@ -104,6 +105,7 @@ macro_rules! load_command_kinds {
 
 load_command_kinds! {
     Segment(SegmentCommand),
+    SymbolTable(SymbolTableCommand),
     Symbol(SymbolCommand),
     FixedVirtualMemorySharedLibrary(FixedVirtualMemorySharedLibraryCommand),
     Ident(IdentCommand),
