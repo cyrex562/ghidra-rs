@@ -2760,28 +2760,8 @@ impl DyldCacheHeader {
 // `DyldCacheMappingInfo` was a placeholder here; the real port lives in `format::macho::dyld`.
 use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
 
-/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheLocalSymbolsInfo`, referenced
-/// by [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
-/// which turns each nlist into a program label. Only `getNList()` is modeled; the entries table
-/// and the `parse`/`markup` pair are driven from `DyldCacheHeader`, not from that builder.
-///
-/// Reuses the already-placeholdered [`NList`](crate::format::seam_stubs::NList) rather than
-/// introducing a second stand-in for the same Java class.
-#[derive(Debug, Clone, Default)]
-pub struct DyldCacheLocalSymbolsInfo {
-    nlist: Vec<crate::format::seam_stubs::NList>,
-}
-
-impl DyldCacheLocalSymbolsInfo {
-    pub fn new(nlist: Vec<crate::format::seam_stubs::NList>) -> Self {
-        DyldCacheLocalSymbolsInfo { nlist }
-    }
-
-    /// `DyldCacheLocalSymbolsInfo.getNList()`.
-    pub fn get_nlist(&self) -> &[crate::format::seam_stubs::NList] {
-        &self.nlist
-    }
-}
+// `DyldCacheLocalSymbolsInfo` was a placeholder here; the real port lives in `format::macho::dyld`.
+use crate::format::macho::dyld::dyld_cache_local_symbols_info::DyldCacheLocalSymbolsInfo;
 
 // `ghidra.app.util.bin.format.macho.dyld.DyldCacheSlideInfoCommon` is now the real port at
 // `crate::format::macho::dyld::dyld_cache_slide_info_common::DyldCacheSlideInfoCommon` (a trait,

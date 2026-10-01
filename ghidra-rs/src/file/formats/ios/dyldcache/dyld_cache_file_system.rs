@@ -1,154 +1,79 @@
-//! Rust port of `ghidra.file.formats.ios.dyldcache.DyldCacheFileSystem`.
+//! Port of `ghidra.file.formats.ios.dyldcache.DyldCacheFileSystem`.
 //!
-//! A `GFileSystem` implementation for the components of a DYLD Cache: each Mach-O DYLIB and
-//! each unclaimed chunk of a subcache's memory mappings surfaces as its own file.
+//! A [`GFileSystem`] over the components of a (possibly split) DYLD cache: one file per cached
+//! DYLIB, plus one file per stretch of each mapping that no DYLIB claims.
 //!
-//! # Shape
+//! Follows [`CpioFileSystem`](crate::file::formats::cpio::cpio_file_system::CpioFileSystem):
+//! the inherited `AbstractFileSystem` state is an embedded [`AbstractFileSystemBase`], and the
+//! state that is filled lazily or released on close sits behind `RefCell`s because the
+//! filesystem is shared through [`FsHandle`](crate::filesystem::gfilesystem::g_file_system::FsHandle)s.
 //!
-//! The Java class is a concrete leaf (`AbstractFileSystem<DyldCacheEntry>`, nothing extends
-//! it), so this ports directly to a `struct` + `impl`, mirroring
-//! [`SplitDyldCache`](crate::file::seam_stubs::SplitDyldCache)'s sibling stub rather than the
-//! trait-plus-base-struct split used for [`SevenZipFileSystem`](super::super::super::sevenzip)'s
-//! hierarchy.
-//!
-//! # Guava seam
-//!
-//! `mount` builds its index with `com.google.common.collect`'s `Range`/`RangeSet`/`RangeMap`,
-//! none of which are in-repo Ghidra types (so none get a `seam_stubs.rs` placeholder). They are
-//! modeled locally, in the same spirit as
-//! [`SevenZipFileSystem`](super::super::super::sevenzip::seven_zip_file_system)'s in-file
-//! modeling of the third-party `net.sf.sevenzipjbinding` API:
-//!
-//! * [`AddrRange`] stands in for `Range<Long>`, restricted to the one factory this class ever
-//!   calls -- `Range.openClosed(lower, upper)` -- and stored internally as the equivalent
-//!   half-open `[lower+1, upper+1)` interval so the set operations below reduce to ordinary
-//!   half-open interval arithmetic.
-//! * [`AddrRangeSet`] stands in for `RangeSet<Long>` (specifically `TreeRangeSet`): a list of
-//!   disjoint, non-touching (coalesced) ranges supporting `add`/`add_all`/`remove_all`.
-//! * [`AddrRangeMap`] stands in for `RangeMap<Long, DyldCacheEntry>` (specifically
-//!   `TreeRangeMap`): `put`/`get`/`values`. Java's `TreeRangeMap` additionally coalesces
-//!   adjacent map entries that carry `.equals()`-equal values; this port never relies on that
-//!   coalescing (every read here either looks up a single address or is filtered by
-//!   `mappingAndSlideInfo` -- which the DYLIB entries this could affect are always `None` --
-//!   so the extra coalescing pass would only be cosmetic).
-//!
-//! # Unported dependencies
-//!
-//! `mount`'s image/mapping discovery ultimately bottoms out in Mach-O load-command parsing
-//! ([`MachHeader::parse_segments`](crate::file::seam_stubs::MachHeader::parse_segments)) and
-//! `DyldCacheHeader`'s mapping/image tables
-//! ([`DyldCacheHeader::mapping_infos`](crate::file::seam_stubs::DyldCacheHeader::mapping_infos)
-//! etc.), neither of which is ported yet; see `crate::file::seam_stubs` (STUBS.tsv) for the
-//! placeholders, which always report empty. The algorithms here (range coalescing, path
-//! derivation, extraction dispatch) are implemented in full against those placeholders, so a
-//! real `DyldCacheFileSystem` mount today successfully indexes zero files -- and will start
-//! indexing real ones the moment the placeholders are replaced, with no change needed here.
-//! [`SplitDyldCache::new`](crate::file::seam_stubs::SplitDyldCache::new) is similarly narrowed
-//! to the single (non-split) cache file case; see its docs.
+//! Guava's `Range`/`RangeSet`/`RangeMap` (used with open-closed `Range<Long>`s) are replaced by
+//! the small private [`AddrRange`]/[`AddrRangeSet`]/[`AddrRangeMap`] below.
 
 use std::cell::RefCell;
-use std::fmt;
+use std::cmp::Ordering;
 use std::io;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
-use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
-use crate::file::seam_stubs::{
-    DyldCacheExtractor, SlideFixupMap, SplitDyldCache, SplitDyldCacheError,
-};
-use crate::format::macho::dyld::dyld_cache_mapping_and_slide_info::DyldCacheMappingAndSlideInfo;
-use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
+use super::dyld_cache_entry::DyldCacheEntry;
+use super::dyld_cache_extractor::{self, DyldExtractError};
+use super::dyld_cache_slid_provider::SlideFixupMap;
+use crate::app::util::bin::byte_provider::ByteProvider;
+use crate::app::util::importer::message_log::MessageLog;
+use crate::app::util::opinion::dyld_cache_utils::{SplitDyldCache, SplitDyldCacheError};
+use crate::filesystem::gfilesystem::abstract_file_system::{AbstractFileSystemBase, AbstractFsHandle};
+use crate::filesystem::gfilesystem::annotations::file_system_info::{FileSystemInfo, PRIORITY_DEFAULT};
+use crate::filesystem::gfilesystem::file_system_index_helper::copy_file;
+use crate::filesystem::gfilesystem::file_system_ref_manager::FileSystemRefManager;
+use crate::filesystem::gfilesystem::file_system_service::FileSystemService;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
-use crate::filesystem::gfilesystem::g_file::GFile;
-use crate::filesystem::gfilesystem::file_system_index_helper::FileSystemIndexHelper;
-use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::fileinfo::file_attributes::FileAttributes;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
-use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, GFileImpl, HasFsrlRoot};
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::format::macho::mach_exception::MachException;
-use crate::util::exception::CancelledException;
+use crate::filesystem::gfilesystem::g_file::GFile;
+use crate::filesystem::gfilesystem::g_file_system::{GFileSystem, GFileSystemError};
+use crate::format::macho::dyld::dyld_cache_mapping_and_slide_info::DyldCacheMappingAndSlideInfo;
 use crate::util::task::TaskMonitor;
 
-/// Mirrors `DyldCacheFileSystem.DYLD_CACHE_FSTYPE`.
+/// Java: `DYLD_CACHE_FSTYPE`.
 pub const DYLD_CACHE_FSTYPE: &str = "dyldcachev1";
-
-// ─── Filesystem handle ─────────────────────────────────────────────────────────
-
-/// Filesystem handle stored inside each [`GFileImpl`] this filesystem hands out.
-///
-/// Stands in for the Java `GFileImpl.fileSystem` back-reference: it carries the owning
-/// filesystem's [`FsrlRoot`], from which child FSRLs are derived.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct DyldFsHandle {
-    root: FsrlRoot,
-}
-
-impl DyldFsHandle {
-    /// Creates a handle for the filesystem whose FSRL root is `root`.
-    pub fn new(root: FsrlRoot) -> Self {
-        DyldFsHandle { root }
-    }
-}
-
-impl HasFsrlRoot for DyldFsHandle {
-    fn root_fsrl(&self) -> &Fsrl {
-        self.root.as_fsrl()
-    }
-}
-
-impl FsGetListing<DyldFsHandle> for DyldFsHandle {
-    fn fs_get_listing(
-        &self,
-        _file: &dyn GFile<DyldFsHandle>,
-    ) -> io::Result<Vec<Box<dyn GFile<DyldFsHandle>>>> {
-        Ok(vec![])
-    }
-}
-
-/// The concrete [`GFile`] type this filesystem indexes.
-pub type DyldGFile = GFileImpl<DyldFsHandle>;
 
 // ─── Guava `Range`/`RangeSet`/`RangeMap` stand-ins ─────────────────────────────
 
-/// See the [module docs](self) for what this stands in for.
+/// An open-closed `Range<Long>` `(lower, upper]`, stored as the equivalent half-open
+/// `[start, end)` so connected ranges coalesce exactly as Guava's do.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct AddrRange {
-    /// Inclusive lower bound of the equivalent half-open interval.
     start: i64,
-    /// Exclusive upper bound of the equivalent half-open interval.
     end: i64,
 }
 
 impl AddrRange {
-    /// Mirrors `Range.openClosed(lower, upper)`.
+    /// Java `Range.openClosed(lower, upper)`.
     fn open_closed(lower: i64, upper: i64) -> Self {
-        AddrRange { start: lower + 1, end: upper + 1 }
+        AddrRange { start: lower.wrapping_add(1), end: upper.wrapping_add(1) }
     }
 
-    /// Mirrors `Range.lowerEndpoint()`.
+    /// Java `Range.lowerEndpoint()`.
     fn lower_endpoint(&self) -> i64 {
-        self.start - 1
+        self.start.wrapping_sub(1)
     }
 
-    /// Mirrors `Range.upperEndpoint()`.
+    /// Java `Range.upperEndpoint()`.
     fn upper_endpoint(&self) -> i64 {
-        self.end - 1
+        self.end.wrapping_sub(1)
     }
 }
 
-/// See the [module docs](self) for what this stands in for.
+/// Java's `TreeRangeSet<Long>`: sorted, disjoint, coalesced ranges.
 #[derive(Debug, Clone, Default)]
 struct AddrRangeSet {
-    /// Sorted, disjoint, non-touching (coalesced) ranges.
     ranges: Vec<AddrRange>,
 }
 
 impl AddrRangeSet {
-    fn new() -> Self {
-        AddrRangeSet::default()
-    }
-
-    /// Mirrors `RangeSet.add(Range)`, including `TreeRangeSet`'s coalescing of connected
-    /// ranges.
+    /// Java `RangeSet.add(Range)`, coalescing connected ranges.
     fn add(&mut self, range: AddrRange) {
         if range.start >= range.end {
             return;
@@ -175,18 +100,15 @@ impl AddrRangeSet {
         self.ranges = result;
     }
 
-    /// Mirrors `RangeSet.addAll(RangeSet)`.
+    /// Java `RangeSet.addAll(RangeSet)`.
     fn add_all(&mut self, other: &AddrRangeSet) {
         for r in &other.ranges {
             self.add(*r);
         }
     }
 
-    /// Mirrors `RangeSet.removeAll(RangeSet)`.
+    /// Java `RangeSet.removeAll(RangeSet)`.
     fn remove_all(&mut self, other: &AddrRangeSet) {
-        if other.ranges.is_empty() {
-            return;
-        }
         let mut result = Vec::new();
         for r in &self.ranges {
             let mut pieces = vec![*r];
@@ -212,280 +134,188 @@ impl AddrRangeSet {
         self.ranges = result;
     }
 
-    /// Mirrors `RangeSet.asRanges()`.
-    fn as_ranges(&self) -> &[AddrRange] {
-        &self.ranges
+    /// The ranges as `(lowerEndpoint, upperEndpoint)` pairs (what [`DyldCacheEntry`] stores).
+    fn endpoints(&self) -> Vec<(i64, i64)> {
+        self.ranges.iter().map(|r| (r.lower_endpoint(), r.upper_endpoint())).collect()
     }
 }
 
-/// See the [module docs](self) for what this stands in for.
+/// Java's `TreeRangeMap<Long, DyldCacheEntry>`. Every range put by this class is disjoint from
+/// the others, so no splitting of existing entries is needed.
 #[derive(Debug, Default)]
 struct AddrRangeMap {
     entries: Vec<(AddrRange, Rc<DyldCacheEntry>)>,
 }
 
 impl AddrRangeMap {
-    fn new() -> Self {
-        AddrRangeMap::default()
-    }
-
-    /// Mirrors `RangeMap.put(Range, V)`. Every caller in this class inserts already-disjoint
-    /// ranges, so (unlike `TreeRangeMap`) this never needs to split an existing entry's span.
     fn put(&mut self, range: AddrRange, value: Rc<DyldCacheEntry>) {
-        self.entries.push((range, value));
+        let pos = self.entries.partition_point(|(r, _)| r < &range);
+        self.entries.insert(pos, (range, value));
     }
 
-    /// Mirrors `RangeMap.get(Long)`.
+    /// Java `RangeMap.get(Long)`.
     fn get(&self, addr: i64) -> Option<&Rc<DyldCacheEntry>> {
         self.entries.iter().find(|(r, _)| addr >= r.start && addr < r.end).map(|(_, v)| v)
     }
 
-    /// Mirrors `RangeMap.asMapOfRanges().values()`.
+    /// Java `RangeMap.asMapOfRanges().values()` (in range order).
     fn values(&self) -> impl Iterator<Item = &Rc<DyldCacheEntry>> {
         self.entries.iter().map(|(_, v)| v)
     }
+}
 
-    /// Mirrors `RangeMap.clear()`.
-    fn clear(&mut self) {
-        self.entries.clear();
-    }
+/// Guava's `RangeSet.toString()` for open-closed ranges, e.g. `[(4096..8192]]`.
+fn range_set_string(ranges: &[(i64, i64)]) -> String {
+    let parts: Vec<String> = ranges.iter().map(|(lo, hi)| format!("({lo}..{hi}]")).collect();
+    format!("[{}]", parts.join(", "))
 }
 
 // ─── DyldCacheFileSystem ───────────────────────────────────────────────────────
 
-/// A `GFileSystem` implementation for the components of a DYLD Cache.
-///
-/// Mirrors `ghidra.file.formats.ios.dyldcache.DyldCacheFileSystem`.
+/// Port of `ghidra.file.formats.ios.dyldcache.DyldCacheFileSystem`.
 pub struct DyldCacheFileSystem {
-    /// Mirrors the inherited `AbstractFileSystem.fsFSRL`.
-    fs_fsrl: FsrlRoot,
-    /// Mirrors `provider`. `None` once [`close`](Self::close) has run, matching Java's
-    /// `provider == null` after close.
-    provider: Option<Rc<RefCell<dyn GByteStore>>>,
-    /// Mirrors `splitDyldCache`.
-    split_dyld_cache: Option<SplitDyldCache>,
-    /// Mirrors `parsedLocalSymbols`.
-    parsed_local_symbols: bool,
-    /// Mirrors `slideFixupMap`.
-    slide_fixup_map: Option<SlideFixupMap>,
-    /// Mirrors `rangeMap`.
-    range_map: AddrRangeMap,
-    /// Mirrors the inherited `AbstractFileSystem.fsIndex`. `AbstractFileSystem.refManager` is
-    /// not modeled: this port has no arena-backed `FileSystemRefManager` yet (see
-    /// `crate::filesystem::gfilesystem::file_system_ref_manager`'s docs), and nothing in this
-    /// class other than `close()`'s `refManager.onClose()` -- itself a no-op absent listeners --
-    /// touches it.
-    fs_index: FileSystemIndexHelper<DyldFsHandle, Rc<DyldCacheEntry>>,
+    base: AbstractFileSystemBase<Rc<DyldCacheEntry>>,
+    provider: RefCell<Option<Rc<dyn ByteProvider>>>,
+    split_dyld_cache: RefCell<Option<SplitDyldCache>>,
+    parsed_local_symbols: RefCell<bool>,
+    slide_fixup_map: RefCell<Option<Rc<SlideFixupMap>>>,
+    range_map: RefCell<AddrRangeMap>,
 }
 
 impl DyldCacheFileSystem {
-    /// Creates a new [`DyldCacheFileSystem`].
-    ///
-    /// Mirrors `DyldCacheFileSystem(FSRLRoot, GByteStore)`.
-    pub fn new(fs_fsrl: FsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
-        let fs_index = FileSystemIndexHelper::from_fsrl_root(DyldFsHandle::new(fs_fsrl.clone()), &fs_fsrl);
+    /// `@FileSystemInfo(type = "dyldcachev1")`.
+    pub const FS_TYPE: &'static str = DYLD_CACHE_FSTYPE;
+    /// `@FileSystemInfo(description = "iOS DYLD Cache Version 1")`.
+    pub const DESCRIPTION: &'static str = "iOS DYLD Cache Version 1";
+    /// The `@FileSystemInfo` annotation (default priority).
+    pub const INFO: FileSystemInfo = FileSystemInfo::with(Self::FS_TYPE, Self::DESCRIPTION, PRIORITY_DEFAULT);
+
+    /// Java `DyldCacheFileSystem(FSRLRoot, ByteProvider)` (Java takes the service from
+    /// `FileSystemService.getInstance()`).
+    pub fn new(fs_fsrl: FsrlRoot, provider: Rc<dyn ByteProvider>, fs_service: &FileSystemService) -> Self {
         DyldCacheFileSystem {
-            fs_fsrl,
-            provider: Some(provider),
-            split_dyld_cache: None,
-            parsed_local_symbols: false,
-            slide_fixup_map: None,
-            range_map: AddrRangeMap::new(),
-            fs_index,
+            base: AbstractFileSystemBase::new(fs_fsrl, fs_service),
+            provider: RefCell::new(Some(provider)),
+            split_dyld_cache: RefCell::new(None),
+            parsed_local_symbols: RefCell::new(false),
+            slide_fixup_map: RefCell::new(None),
+            range_map: RefCell::new(AddrRangeMap::default()),
         }
     }
 
-    /// Mirrors the inherited `AbstractFileSystem.getFSRL()`.
-    pub fn get_fsrl(&self) -> &FsrlRoot {
-        &self.fs_fsrl
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.getName()`: the container file's name.
-    pub fn get_name(&self) -> String {
-        self.fs_fsrl.container().and_then(Fsrl::name).unwrap_or_default()
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.getRootDir()`.
-    pub fn get_root_dir(&self) -> &DyldGFile {
-        self.fs_index.get_root_dir()
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.getFileCount()`.
-    pub fn get_file_count(&self) -> i32 {
-        self.fs_index.get_file_count()
-    }
-
-    /// Mounts this file system.
+    /// Java `mount(TaskMonitor)`: opens the (split) cache, adds every DYLIB as a file, then every
+    /// stretch of each mapping not covered by a DYLIB.
     ///
-    /// Mirrors `mount(TaskMonitor)`.
-    pub fn mount(&mut self, monitor: &dyn TaskMonitor) -> Result<(), MountError> {
-        let provider = self.provider.clone().ok_or_else(|| MountError::Io(closed_error()))?;
-        let split = SplitDyldCache::new(provider, false, monitor).map_err(MountError::from_split)?;
+    /// # Errors
+    /// I/O errors (including a `MachException`, which Java's factory wraps the same way),
+    /// missing sub-caches, or cancellation.
+    pub fn mount(&mut self, monitor: &dyn TaskMonitor) -> Result<(), GFileSystemError> {
+        let provider = self.provider.borrow().clone().ok_or_else(|| io::Error::other("filesystem is closed"))?;
+        let fs_service = self.base.fs_service().get()?;
+        let split = SplitDyldCache::new(provider, false, &MessageLog::new(), monitor, &fs_service)
+            .map_err(|e| match e {
+                SplitDyldCacheError::Io(e) => GFileSystemError::Io(e),
+                SplitDyldCacheError::Cancelled(c) => GFileSystemError::Cancelled(c),
+            })?;
 
-        let mut all_dylib_ranges = AddrRangeSet::new();
+        let mut range_map = AddrRangeMap::default();
+        let mut all_dylib_ranges = AddrRangeSet::default();
 
         // Find the DYLIB's and add them as files
-        let image_records = split.image_records();
-        monitor.set_message("Find DYLD DYLIBs...");
+        let image_records = split.get_image_records();
         monitor.initialize(image_records.len() as i64);
+        monitor.set_message("Find DYLD DYLIBs...");
         for image_record in &image_records {
-            if monitor.is_cancelled() {
-                return Err(MountError::Cancelled(CancelledException::default()));
-            }
             monitor.increment_progress(1);
-
-            let image = image_record.image();
-            let mach_header = split.macho(image_record).map_err(MountError::Mach)?;
-
-            let mut range_set = AddrRangeSet::new();
-            for segment in mach_header.parse_segments().map_err(MountError::Io)? {
-                let range = AddrRange::open_closed(
-                    segment.vm_address(),
-                    segment.vm_address() + segment.vm_size(),
-                );
-                range_set.add(range);
+            let mut mach_header = split
+                .get_macho(image_record)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+            let mut range_set = AddrRangeSet::default();
+            for segment in mach_header
+                .parse_segments()
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
+            {
+                range_set.add(AddrRange::open_closed(
+                    segment.get_vm_address(),
+                    segment.get_vm_address() + segment.get_vm_size(),
+                ));
             }
-
+            let path = image_record.image.get_path().to_string();
             let entry = Rc::new(DyldCacheEntry::new(
-                image.path().to_string(),
-                image_record.split_cache_index(),
-                range_set.as_ranges().iter().map(|r| (r.start, r.end)).collect(),
+                path.clone(),
+                image_record.split_cache_index as i32,
+                range_set.endpoints(),
                 None,
                 None,
                 -1,
             ));
-            for r in range_set.as_ranges() {
-                self.range_map.put(*r, Rc::clone(&entry));
+            for r in &range_set.ranges {
+                range_map.put(*r, Rc::clone(&entry));
             }
             all_dylib_ranges.add_all(&range_set);
-
-            let file_index = self.fs_index.get_file_count() as i64;
-            self.fs_index.store_file(image.path(), file_index, false, -1, entry);
+            let index = self.base.fs_index_mut();
+            let file_count = index.get_file_count() as i64;
+            index.store_file(&path, file_count, false, -1, entry);
         }
 
-        // Find and store all the mappings for all of the subcaches. We need to remove the
-        // DYLIB's that we just found so we don't account for any bytes more than once. This
-        // will result in the mappings being broken up into a lot of small chunks, each being
-        // its own file.
-        monitor.set_message("Find DYLD mapping ranges...");
+        // Find and store all the mappings for all of the subcaches, minus the DYLIB's just found
+        // so no bytes are accounted for more than once. This breaks the mappings up into a lot
+        // of small chunks, each its own file.
         monitor.initialize(split.size() as i64);
+        monitor.set_message("Find DYLD mapping ranges...");
         for i in 0..split.size() {
-            if monitor.is_cancelled() {
-                return Err(MountError::Cancelled(CancelledException::default()));
-            }
             monitor.increment_progress(1);
-
-            let header = split.dyld_cache_header(i);
-            let name = split.name(i).to_string();
-            let mapping_infos = header.mapping_infos().to_vec();
-            let mapping_and_slide_infos = header.cache_mapping_and_slide_infos().to_vec();
+            let header = split.get_dyld_cache_header(i);
+            let name = split.get_name(i);
+            let mapping_infos = header.get_mapping_infos();
+            let mapping_and_slide_infos = header.get_cache_mapping_and_slide_infos();
             for (j, mapping_info) in mapping_infos.iter().enumerate() {
-                let mapping_and_slide_info = mapping_and_slide_infos.get(j).copied();
-                let mapping_range = AddrRange::open_closed(
+                let mapping_and_slide_info =
+                    if mapping_and_slide_infos.is_empty() { None } else { mapping_and_slide_infos.get(j).copied() };
+                let mut reduced_range_set = AddrRangeSet::default();
+                reduced_range_set.add(AddrRange::open_closed(
                     mapping_info.get_address(),
                     mapping_info.get_address() + mapping_info.get_size(),
-                );
-                let mut reduced_range_set = AddrRangeSet::new();
-                reduced_range_set.add(mapping_range);
+                ));
                 reduced_range_set.remove_all(&all_dylib_ranges);
-
-                for range in reduced_range_set.as_ranges() {
-                    let path = component_path(&name, mapping_and_slide_info.as_ref(), j, range);
+                for range in reduced_range_set.ranges.clone() {
+                    let path = get_component_path(name, mapping_and_slide_info.as_ref(), j, range);
                     let entry = Rc::new(DyldCacheEntry::new(
                         path.clone(),
                         i as i32,
-                        vec![(range.start, range.end)],
+                        vec![(range.lower_endpoint(), range.upper_endpoint())],
                         Some(*mapping_info),
                         mapping_and_slide_info,
                         j as i32,
                     ));
-                    self.range_map.put(*range, Rc::clone(&entry));
-
-                    let file_index = self.fs_index.get_file_count() as i64;
-                    self.fs_index.store_file(&path, file_index, false, -1, entry);
+                    range_map.put(range, Rc::clone(&entry));
+                    let index = self.base.fs_index_mut();
+                    let file_count = index.get_file_count() as i64;
+                    index.store_file(&path, file_count, false, -1, entry);
                 }
             }
         }
 
-        self.split_dyld_cache = Some(split);
+        *self.split_dyld_cache.borrow_mut() = Some(split);
+        *self.range_map.borrow_mut() = range_map;
         Ok(())
     }
 
-    /// Mirrors `getByteProvider(GFile, TaskMonitor)`.
-    pub fn get_byte_provider(
-        &mut self,
-        file: &DyldGFile,
-        monitor: &dyn TaskMonitor,
-    ) -> Result<Option<Box<dyn GByteStore>>, GetByteProviderError> {
-        let Some(entry) = self.fs_index.get_metadata(file).map(Rc::clone) else {
-            return Ok(None);
-        };
-
-        if self.slide_fixup_map.is_none() {
-            let split = self
-                .split_dyld_cache
-                .as_ref()
-                .ok_or_else(|| GetByteProviderError::Io(not_mounted_error()))?;
-            let fixups = DyldCacheExtractor::get_slide_fixups(split, monitor)
-                .map_err(GetByteProviderError::Io)?;
-            self.slide_fixup_map = Some(fixups);
-        }
-
-        if !self.parsed_local_symbols {
-            let split = self
-                .split_dyld_cache
-                .as_mut()
-                .ok_or_else(|| GetByteProviderError::Io(not_mounted_error()))?;
-            for i in 0..split.size() {
-                split
-                    .dyld_cache_header_mut(i)
-                    .parse_local_symbols_info()
-                    .map_err(GetByteProviderError::Io)?;
-            }
-            self.parsed_local_symbols = true;
-        }
-
-        let split = self
-            .split_dyld_cache
-            .as_ref()
-            .ok_or_else(|| GetByteProviderError::Io(not_mounted_error()))?;
-        let slide_fixup_map = self.slide_fixup_map.as_ref().expect("populated above");
-
-        let result = if entry.mapping_info.is_some() {
-            DyldCacheExtractor::extract_mapping(
-                &entry,
-                component_name(entry.mapping_and_slide_info.as_ref()),
-                split,
-                slide_fixup_map,
-                monitor,
-            )
-        } else {
-            DyldCacheExtractor::extract_dylib(&entry, split, slide_fixup_map, monitor)
-        };
-
-        result.map(Some).map_err(GetByteProviderError::Io)
-    }
-
-    /// Attempts to find the given address in the DYLD Cache.
-    ///
-    /// Returns the path of the file within this file system that contains the given address, or
-    /// `None` if the address was not found.
-    ///
-    /// Mirrors `findAddress(long)`.
+    /// Java `findAddress(long)`: the path of the file containing `addr`, if any.
     pub fn find_address(&self, addr: i64) -> Option<String> {
-        self.range_map.get(addr).map(|e| e.path.clone())
+        self.range_map.borrow().get(addr).map(|e| e.path().to_string())
     }
 
-    /// Gets the files that have the given mapping flags.
-    ///
-    /// Mirrors `getFiles(long)`.
-    pub fn get_files(&self, flags: i64) -> Vec<DyldGFile> {
+    /// Java `getFiles(long)`: the mapping files whose `dyld_cache_mapping_and_slide_info` flags
+    /// intersect `flags`, in address order.
+    pub fn get_files(&self, flags: i64) -> Vec<Box<dyn GFile<AbstractFsHandle>>> {
+        let range_map = self.range_map.borrow();
         let mut files = Vec::new();
-        for entry in self.range_map.values() {
-            if let Some(info) = entry.mapping_and_slide_info.as_ref() {
-                if flags & info.get_flags() != 0 {
-                    if let Some(file) = self.lookup(&entry.path) {
-                        files.push(file);
+        for entry in range_map.values() {
+            if let Some(info) = entry.mapping_and_slide_info() {
+                if (flags & info.get_flags()) != 0 {
+                    if let Some(f) = self.base.lookup(Some(entry.path())) {
+                        files.push(Self::owned(f));
                     }
                 }
             }
@@ -493,309 +323,372 @@ impl DyldCacheFileSystem {
         files
     }
 
-    /// Mirrors `getFileAttributes(GFile, TaskMonitor)`.
-    pub fn get_file_attributes(&self, file: &DyldGFile, _monitor: &dyn TaskMonitor) -> FileAttributes {
-        let mut result = FileAttributes::new();
-        if let Some(entry) = self.fs_index.get_metadata(file) {
-            result.add(FileAttributeType::NameAttr, Some(FileAttributeValue::Str(entry.path.clone())));
-            result.add(FileAttributeType::PathAttr, Some(FileAttributeValue::Str(entry.path.clone())));
-            result.add_named(
-                "Cache Index",
-                Some(FileAttributeValue::Long(entry.split_cache_index as i64)),
-            );
-            // TODO: display as hex (carried from the Java source, which has the same TODO)
-            result.add_named("Address Range", Some(FileAttributeValue::Str(format_range_set(&entry.range_set))));
-        }
-        result
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.isClosed()`.
-    pub fn is_closed(&self) -> bool {
-        self.provider.is_none()
-    }
-
-    /// Mirrors `close()`.
-    pub fn close(&mut self) {
-        // `refManager.onClose()` -- see the `fs_index` field docs for why it is not modeled.
-        self.fs_index.clear();
-        if let Some(mut split) = self.split_dyld_cache.take() {
-            split.close();
-        }
-        // `GByteStore` has no explicit close in this port (see
-        // `crate::file::formats::zip::zip_file_system_factory`'s module docs for the same
-        // substitution elsewhere in this crate); releasing it is just dropping it.
-        self.provider = None;
-        self.slide_fixup_map = None;
-        self.parsed_local_symbols = false;
-        self.range_map.clear();
-    }
-
-    /// Rebuilds a detached [`DyldGFile`] for `path`, mirroring the inherited
-    /// `AbstractFileSystem.lookup(String)` this class's `getFiles` calls.
-    fn lookup(&self, path: &str) -> Option<DyldGFile> {
-        let file = self.fs_index.lookup(path)?;
-        Some(GFileImpl::from_fsrl(
-            file.get_filesystem().clone(),
-            None,
-            file.get_fsrl().clone(),
-            file.is_directory(),
-            file.get_length(),
-        ))
+    fn owned(f: &dyn GFile<AbstractFsHandle>) -> Box<dyn GFile<AbstractFsHandle>> {
+        Box::new(copy_file(f))
     }
 }
 
-/// Mirrors `getComponentName(DyldCacheMappingAndSlideInfo)`.
-fn component_name(mapping_and_slide_info: Option<&DyldCacheMappingAndSlideInfo>) -> &'static str {
-    let Some(info) = mapping_and_slide_info else {
+/// Java's private `getComponentName(DyldCacheMappingAndSlideInfo)`.
+fn get_component_name(mapping_and_slide_info: Option<&DyldCacheMappingAndSlideInfo>) -> &'static str {
+    let Some(m) = mapping_and_slide_info else {
         return "DYLD";
     };
-    if info.is_dirty_data() {
+    if m.is_dirty_data() {
         "DATA_DIRTY"
-    } else if info.is_const_data() {
-        if info.is_auth_data() { "AUTH_CONST" } else { "DATA_CONST" }
-    } else if info.is_text_stubs() {
+    } else if m.is_const_data() {
+        if m.is_auth_data() {
+            "AUTH_CONST"
+        } else {
+            "DATA_CONST"
+        }
+    } else if m.is_text_stubs() {
         "TEXT_STUBS"
-    } else if info.is_config_data() {
+    } else if m.is_config_data() {
         "DATA_CONFIG"
-    } else if info.is_auth_data() {
+    } else if m.is_auth_data() {
         "AUTH"
-    } else if info.is_read_only_data() {
+    } else if m.is_read_only_data() {
         "DATA_RO"
-    } else if info.is_const_tpro_data() {
+    } else if m.is_const_tpro_data() {
         "DATA_CONST_TPRO"
     } else {
         "DYLD"
     }
 }
 
-/// Mirrors `getComponentPath(String, DyldCacheMappingInfo, DyldCacheMappingAndSlideInfo, int,
-/// Range<Long>)`. The `mappingInfo` parameter is dropped: the Java method never reads it either.
-fn component_path(
+/// Java's private `getComponentPath(String, DyldCacheMappingInfo, DyldCacheMappingAndSlideInfo,
+/// int, Range)` (the mapping info argument is unused in Java).
+fn get_component_path(
     dyld_cache_name: &str,
     mapping_and_slide_info: Option<&DyldCacheMappingAndSlideInfo>,
     mapping_index: usize,
-    range: &AddrRange,
+    range: AddrRange,
 ) -> String {
     format!(
         "/DYLD/{}/{}.{}.0x{:x}-0x{:x}",
         dyld_cache_name,
-        component_name(mapping_and_slide_info),
+        get_component_name(mapping_and_slide_info),
         mapping_index,
         range.lower_endpoint(),
         range.upper_endpoint()
     )
 }
 
-/// Renders a `DyldCacheEntry.rangeSet()`-equivalent list for the "Address Range" file
-/// attribute, in the same open-closed-interval notation Guava's `RangeSet.toString()` uses.
-fn format_range_set(range_set: &[(i64, i64)]) -> String {
-    let parts: Vec<String> = range_set
-        .iter()
-        .map(|(start, end)| format!("(0x{:x}, 0x{:x}]", start - 1, end - 1))
-        .collect();
-    format!("[{}]", parts.join(", "))
-}
+impl GFileSystem for DyldCacheFileSystem {
+    type Fs = AbstractFsHandle;
 
-fn closed_error() -> io::Error {
-    io::Error::new(io::ErrorKind::Other, "DyldCacheFileSystem is closed")
-}
+    fn get_name(&self) -> String {
+        self.base.get_name()
+    }
 
-fn not_mounted_error() -> io::Error {
-    io::Error::new(io::ErrorKind::Other, "DyldCacheFileSystem has not been mounted")
-}
+    fn get_type(&self) -> String {
+        Self::FS_TYPE.to_string()
+    }
 
-/// The failure modes of [`DyldCacheFileSystem::mount`], mirroring Java's `throws IOException,
-/// MachException, CancelledException`.
-#[derive(Debug)]
-pub enum MountError {
-    Io(io::Error),
-    Mach(MachException),
-    Cancelled(CancelledException),
-}
+    fn get_description(&self) -> String {
+        Self::DESCRIPTION.to_string()
+    }
 
-impl MountError {
-    fn from_split(e: SplitDyldCacheError) -> Self {
-        match e {
-            SplitDyldCacheError::Io(e) => MountError::Io(e),
-            SplitDyldCacheError::Cancelled(e) => MountError::Cancelled(e),
+    fn get_fsrl(&self) -> &FsrlRoot {
+        self.base.get_fsrl()
+    }
+
+    /// Java `isClosed()`.
+    fn is_closed(&self) -> bool {
+        self.provider.borrow().is_none()
+    }
+
+    fn get_ref_manager(&self) -> &FileSystemRefManager {
+        self.base.get_ref_manager()
+    }
+
+    fn get_file_count(&self) -> i32 {
+        self.base.get_file_count()
+    }
+
+    fn lookup(&self, path: Option<&str>) -> io::Result<Option<Box<dyn GFile<AbstractFsHandle>>>> {
+        Ok(self.base.lookup(path).map(|f| Self::owned(f)))
+    }
+
+    fn lookup_with_comparator(
+        &self,
+        path: Option<&str>,
+        name_comp: Option<&dyn Fn(&str, &str) -> Ordering>,
+    ) -> io::Result<Option<Box<dyn GFile<AbstractFsHandle>>>> {
+        Ok(self.base.lookup_with_comparator(path, name_comp).map(|f| Self::owned(f)))
+    }
+
+    /// Java `getByteProvider(GFile, TaskMonitor)`: a mapping chunk wrapped as a Mach-O, or a
+    /// DYLIB extracted as a packed Mach-O, both read slid; `None` if `file` has no entry. The
+    /// slide fixups and local symbols are computed on first use.
+    fn get_byte_provider(
+        &self,
+        file: &dyn GFile<AbstractFsHandle>,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Option<Box<dyn ByteProvider>>, GFileSystemError> {
+        let Some(entry) = self.base.fs_index().get_metadata(file).cloned() else {
+            return Ok(None);
+        };
+        let convert = |e: DyldExtractError| -> GFileSystemError {
+            match e {
+                DyldExtractError::Io(e) => GFileSystemError::Io(e),
+                DyldExtractError::Cancelled(c) => GFileSystemError::Cancelled(c),
+                DyldExtractError::Mach(_) => GFileSystemError::Io(io::Error::other(format!(
+                    "Invalid Mach-O header detected at: {}",
+                    entry.path()
+                ))),
+            }
+        };
+
+        let slide_fixup_map = {
+            let existing = self.slide_fixup_map.borrow().clone();
+            match existing {
+                Some(map) => map,
+                None => {
+                    let split = self.split_dyld_cache.borrow();
+                    let split = split.as_ref().ok_or_else(|| io::Error::other("DYLD cache filesystem is not mounted"))?;
+                    let map = Rc::new(dyld_cache_extractor::get_slide_fixups(split, monitor).map_err(convert)?);
+                    *self.slide_fixup_map.borrow_mut() = Some(Rc::clone(&map));
+                    map
+                }
+            }
+        };
+        if !*self.parsed_local_symbols.borrow() {
+            let mut split = self.split_dyld_cache.borrow_mut();
+            let split = split.as_mut().ok_or_else(|| io::Error::other("DYLD cache filesystem is not mounted"))?;
+            for i in 0..split.size() {
+                split.get_dyld_cache_header_mut(i).parse_local_symbols_info(true, &MessageLog::new(), monitor)?;
+            }
+            *self.parsed_local_symbols.borrow_mut() = true;
         }
+
+        let split = self.split_dyld_cache.borrow();
+        let split = split.as_ref().ok_or_else(|| io::Error::other("DYLD cache filesystem is not mounted"))?;
+        let fsrl = Some(file.get_fsrl().clone());
+        let provider = if entry.mapping_info().is_some() {
+            dyld_cache_extractor::extract_mapping(
+                &entry,
+                get_component_name(entry.mapping_and_slide_info()),
+                split,
+                &slide_fixup_map,
+                fsrl,
+                monitor,
+            )
+        } else {
+            dyld_cache_extractor::extract_dylib(&entry, split, &slide_fixup_map, fsrl, monitor)
+        }
+        .map_err(convert)?;
+        Ok(Some(Box::new(provider)))
+    }
+
+    fn get_listing(
+        &self,
+        directory: Option<&dyn GFile<AbstractFsHandle>>,
+    ) -> io::Result<Vec<Box<dyn GFile<AbstractFsHandle>>>> {
+        Ok(self.base.get_listing(directory).into_iter().map(|f| Self::owned(f)).collect())
+    }
+
+    /// Java `getFileAttributes(GFile, TaskMonitor)`.
+    fn get_file_attributes(&self, file: &dyn GFile<AbstractFsHandle>, _monitor: &dyn TaskMonitor) -> FileAttributes {
+        let mut result = FileAttributes::new();
+        if let Some(entry) = self.base.fs_index().get_metadata(file) {
+            result.add(FileAttributeType::NameAttr, Some(entry.path().into()));
+            result.add(FileAttributeType::PathAttr, Some(entry.path().into()));
+            result.add_named("Cache Index", Some((entry.split_cache_index() as i64).into()));
+            result.add_named("Address Range", Some(range_set_string(entry.range_set()).into()));
+        }
+        result
+    }
+
+    /// Java `close()`.
+    fn close(&self) -> io::Result<()> {
+        let _ = self.base.get_ref_manager().on_close(self);
+        self.base.fs_index().clear();
+        self.split_dyld_cache.borrow_mut().take();
+        if let Some(mut provider) = self.provider.borrow_mut().take() {
+            if let Some(p) = Rc::get_mut(&mut provider) {
+                p.close()?;
+            }
+        }
+        self.slide_fixup_map.borrow_mut().take();
+        *self.parsed_local_symbols.borrow_mut() = false;
+        *self.range_map.borrow_mut() = AddrRangeMap::default();
+        Ok(())
     }
 }
 
-impl fmt::Display for MountError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MountError::Io(e) => write!(f, "{e}"),
-            MountError::Mach(e) => write!(f, "{e}"),
-            MountError::Cancelled(e) => write!(f, "{e}"),
-        }
+impl Deref for DyldCacheFileSystem {
+    type Target = AbstractFileSystemBase<Rc<DyldCacheEntry>>;
+    fn deref(&self) -> &Self::Target {
+        &self.base
     }
 }
 
-impl std::error::Error for MountError {}
-
-/// The failure modes of [`DyldCacheFileSystem::get_byte_provider`], mirroring Java's `throws
-/// CancelledException, IOException` (collapsed to a single `io::Error`, since none of the
-/// unported extraction seams distinguish cancellation from any other failure yet).
-#[derive(Debug)]
-pub enum GetByteProviderError {
-    Io(io::Error),
-}
-
-impl fmt::Display for GetByteProviderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            GetByteProviderError::Io(e) => write!(f, "{e}"),
-        }
+impl DerefMut for DyldCacheFileSystem {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
     }
 }
 
-impl std::error::Error for GetByteProviderError {}
+#[cfg(test)]
+pub(crate) mod test_support {
+    use crate::file::formats::ios::extracted_macho::test_support::write_macho;
+    use crate::format::macho::mach_header::test_support::Bytes;
+
+    /// The base address of [`dyld_cache`]'s first mapping.
+    pub(crate) const BASE: u64 = 0x7fff_2000_0000;
+
+    /// A single-file, version-1-era x86_64 DYLD cache: mapping 0 `[BASE, BASE+0x2000)` (file 0,
+    /// r-x) holds the cache header and `/usr/lib/libA.dylib` at `BASE+0x1000`; mapping 1
+    /// `[BASE+0x3000, BASE+0x4000)` (file 0x2000, rw-) holds that dylib's `__LINKEDIT`, plus a
+    /// v2 slide info rebasing the pointer at file 0x2900 to `BASE + 0x1234`.
+    pub(crate) fn dyld_cache() -> Vec<u8> {
+        let mut b = Bytes::new(true);
+        b.name("dyld_v1  x86_64", 16).u32(0x78).u32(2).u32(0xb8).u32(1).u64(BASE);
+        b.u64(0).u64(0); // code signature
+        b.u64(0x2a00).u64(0x30); // slide info (v2, for mapping 1)
+        b.u64(0).u64(0); // local symbols
+        b.raw(&[0x22; 16]); // uuid
+        b.u64(0); // cache type
+        b.u32(0).u32(0); // branch pools
+        assert_eq!(b.len(), 0x78);
+        b.u64(BASE).u64(0x2000).u64(0).u32(5).u32(5);
+        b.u64(BASE + 0x3000).u64(0x1000).u64(0x2000).u32(3).u32(3);
+        assert_eq!(b.len(), 0xb8);
+        b.u64(BASE + 0x1000).u64(0).u64(0).u32(0xd8).u32(0);
+        assert_eq!(b.len(), 0xd8);
+        b.name("/usr/lib/libA.dylib", 32);
+        // write_macho puts __LINKEDIT at text_vm + 0x2000 = BASE + 0x3000.
+        write_macho(&mut b, 0x1000, BASE + 0x1000, 0x2000, "_libA_func");
+        // A rebased pointer in mapping 1 (target 0x1234, slid by value_add BASE).
+        b.pad_to(0x2900).u64(0x1234);
+        // dyld_cache_slide_info2: one page whose chain starts at 0x900 (0x240 * 4).
+        b.pad_to(0x2a00).u32(2).u32(0x1000).u32(0x28).u32(1).u32(0x2a).u32(0);
+        b.u64(0x00ff_ff00_0000_0000).u64(BASE).u16(0x240);
+        b.pad_to(0x3000);
+        b.buf
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use super::test_support::{dyld_cache, BASE};
     use super::*;
-    use std::io;
+    use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
+    use crate::file::formats::ios::dyldcache::dyld_cache_extractor::FOOTER_V1;
+    use crate::filesystem::gfilesystem::factory::file_system_factory_mgr::FileSystemFactoryMgr;
+    use crate::filesystem::gfilesystem::fsrl::Fsrl;
+    use crate::format::macho::commands::symbol_table_command::SymbolTableCommand;
+    use crate::format::macho::mach_header::MachHeader;
+    use crate::util::task::DummyMonitor;
 
-    struct MemoryByteProvider {
-        bytes: Vec<u8>,
+    struct Fixture {
+        _dir: tempfile::TempDir,
+        svc: FileSystemService,
     }
 
-    impl GByteStore for MemoryByteProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
+    fn fixture() -> Fixture {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = FileSystemService::new(&dir.path().join("fscache"), FileSystemFactoryMgr::new()).unwrap();
+        Fixture { _dir: dir, svc }
     }
 
-    fn fs_root() -> FsrlRoot {
-        Fsrl::from_string("file:///System/dyld_shared_cache").unwrap().make_nested(DYLD_CACHE_FSTYPE)
-    }
-
-    fn dyld_v1_provider() -> Rc<RefCell<dyn GByteStore>> {
-        // "dyld_v1  x86_64" is one of `DyldArchitecture::ARCHITECTURES`'s real signatures
-        // (from the Java source), padded to the fixed magic length the header reads.
-        let mut bytes = b"dyld_v1  x86_64".to_vec();
-        bytes.resize(4096, 0);
-        Rc::new(RefCell::new(MemoryByteProvider { bytes }))
+    fn mount(fx: &Fixture) -> DyldCacheFileSystem {
+        let container = Fsrl::from_string("file:///dyld_shared_cache_x86_64").unwrap();
+        let provider: Rc<dyn ByteProvider> =
+            Rc::new(ByteArrayProvider::with_fsrl(dyld_cache(), Some(container.clone())));
+        let mut fs = DyldCacheFileSystem::new(container.make_nested(DYLD_CACHE_FSTYPE), provider, &fx.svc);
+        fs.mount(&DummyMonitor).unwrap();
+        fs
     }
 
     #[test]
-    fn fstype_matches_java_constant() {
-        assert_eq!(DYLD_CACHE_FSTYPE, "dyldcachev1");
+    fn range_set_coalesces_and_subtracts_like_guava() {
+        let mut s = AddrRangeSet::default();
+        s.add(AddrRange::open_closed(0, 10));
+        s.add(AddrRange::open_closed(10, 20)); // connected: (0..20]
+        s.add(AddrRange::open_closed(30, 40));
+        assert_eq!(s.endpoints(), [(0, 20), (30, 40)]);
+        let mut m = AddrRangeSet::default();
+        m.add(AddrRange::open_closed(0, 50));
+        m.remove_all(&s);
+        assert_eq!(m.endpoints(), [(20, 30), (40, 50)]);
+        assert_eq!(range_set_string(&s.endpoints()), "[(0..20], (30..40]]");
     }
 
     #[test]
-    fn new_filesystem_is_open_with_empty_root() {
-        let fs = DyldCacheFileSystem::new(fs_root(), dyld_v1_provider());
-        assert!(!fs.is_closed());
-        assert_eq!(fs.get_name(), "dyld_shared_cache");
-        assert_eq!(fs.get_root_dir().get_fsrl().to_string(), "file:///System/dyld_shared_cache|dyldcachev1:///");
-        assert_eq!(fs.get_file_count(), 1); // just the synthetic root dir
+    fn component_names() {
+        assert_eq!(get_component_name(None), "DYLD");
+        let dirty = DyldCacheMappingAndSlideInfo::new(0, 0, 0, 0, 0, 0x2, 0, 0);
+        let auth_const = DyldCacheMappingAndSlideInfo::new(0, 0, 0, 0, 0, 0x1 | 0x4, 0, 0);
+        assert_eq!(get_component_name(Some(&dirty)), "DATA_DIRTY");
+        assert_eq!(get_component_name(Some(&auth_const)), "AUTH_CONST");
+        assert_eq!(
+            get_component_path("c", None, 2, AddrRange::open_closed(0x1000, 0x2000)),
+            "/DYLD/c/DYLD.2.0x1000-0x2000"
+        );
     }
 
     #[test]
-    fn mount_of_stubbed_dependencies_succeeds_with_zero_files() {
-        // With `MachHeader::parse_segments`/`DyldCacheHeader::mapping_infos` always empty (see
-        // the module docs), a real cache mounts successfully but indexes nothing yet.
-        let mut fs = DyldCacheFileSystem::new(fs_root(), dyld_v1_provider());
-        let monitor = crate::util::task::DummyMonitor;
-        fs.mount(&monitor).expect("mount should succeed against the stubbed dependencies");
-        assert_eq!(fs.get_file_count(), 1);
-        assert_eq!(fs.find_address(0x1000), None);
-        assert!(fs.get_files(0x1).is_empty());
+    fn mounts_dylibs_and_unclaimed_mapping_ranges() {
+        let fx = fixture();
+        let fs = mount(&fx);
+        assert_eq!(fs.get_type(), "dyldcachev1");
+        let mut paths = Vec::new();
+        let mut stack = vec![GFileSystem::get_listing(&fs, None).unwrap()];
+        while let Some(list) = stack.pop() {
+            for f in list {
+                if f.is_directory() {
+                    stack.push(GFileSystem::get_listing(&fs, Some(&*f)).unwrap());
+                } else {
+                    paths.push(f.get_path().to_string());
+                }
+            }
+        }
+        paths.sort();
+        let mapping_path = format!("/DYLD/dyld_shared_cache_x86_64/DYLD.0.0x{:x}-0x{:x}", BASE, BASE + 0x1000);
+        assert_eq!(paths, [mapping_path.clone(), "/usr/lib/libA.dylib".to_string()]);
+
+        assert_eq!(fs.find_address((BASE + 0x1800) as i64).as_deref(), Some("/usr/lib/libA.dylib"));
+        assert_eq!(fs.find_address((BASE + 0x3800) as i64).as_deref(), Some("/usr/lib/libA.dylib"));
+        assert_eq!(fs.find_address((BASE + 0x10) as i64).as_deref(), Some(mapping_path.as_str()));
+        assert_eq!(fs.find_address((BASE + 0x2800) as i64), None);
+        assert!(fs.get_files(-1).is_empty(), "old caches have no mapping-and-slide infos");
+
+        let lib = GFileSystem::lookup(&fs, Some("/usr/lib/libA.dylib")).unwrap().unwrap();
+        let attrs = fs.get_file_attributes(&*lib, &DummyMonitor);
+        assert!(attrs.get(FileAttributeType::NameAttr).is_some());
     }
 
     #[test]
-    fn close_resets_to_closed_state() {
-        let mut fs = DyldCacheFileSystem::new(fs_root(), dyld_v1_provider());
-        let monitor = crate::util::task::DummyMonitor;
-        fs.mount(&monitor).expect("mount should succeed");
-        fs.close();
+    fn extracts_dylib_and_mapping() {
+        let fx = fixture();
+        let fs = mount(&fx);
+
+        let lib = GFileSystem::lookup(&fs, Some("/usr/lib/libA.dylib")).unwrap().unwrap();
+        let p = fs.get_byte_provider(&*lib, &DummyMonitor).unwrap().unwrap();
+        let bytes = p.read_bytes(0, p.length()).unwrap();
+        assert!(bytes.ends_with(FOOTER_V1));
+        let mut h = MachHeader::new(Rc::new(ByteArrayProvider::new(bytes))).unwrap();
+        h.parse().unwrap();
+        assert_eq!(h.get_segment("__TEXT").unwrap().get_file_offset(), 0);
+        let symtab = h.get_first_load_command::<SymbolTableCommand>().unwrap();
+        assert_eq!(symtab.get_symbols()[0].get_string(), "_libA_func");
+
+        let mapping = format!("/DYLD/dyld_shared_cache_x86_64/DYLD.0.0x{:x}-0x{:x}", BASE, BASE + 0x1000);
+        let m = GFileSystem::lookup(&fs, Some(&mapping)).unwrap().unwrap();
+        let p = fs.get_byte_provider(&*m, &DummyMonitor).unwrap().unwrap();
+        let bytes = p.read_bytes(0, p.length()).unwrap();
+        assert_eq!(bytes.len(), 32 + 72 + 0x1000 + FOOTER_V1.len());
+        assert_eq!(&bytes[32 + 72..32 + 72 + 15], b"dyld_v1  x86_64");
+        let mut h = MachHeader::new(Rc::new(ByteArrayProvider::new(bytes))).unwrap();
+        h.parse().unwrap();
+        let seg = h.get_segment("DYLD.0.0").unwrap();
+        assert_eq!(seg.get_vm_address() as u64, BASE);
+        assert_eq!(seg.get_vm_size(), 0x1000);
+        assert_eq!(seg.get_max_protection(), 5);
+
+        GFileSystem::close(&fs).unwrap();
         assert!(fs.is_closed());
-        assert_eq!(fs.get_file_count(), 0, "Java's fsIndex.clear() also drops the root dir entry");
-    }
-
-    #[test]
-    fn get_component_name_defaults_to_dyld_for_dylibs() {
-        // Mirrors `getComponentName(null)` returning `"DYLD"` for the plain-DYLIB case.
-        assert_eq!(component_name(None), "DYLD");
-    }
-
-    #[test]
-    fn get_component_name_matches_java_flag_precedence() {
-        use crate::format::macho::dyld::dyld_cache_mapping_and_slide_info::DyldCacheMappingAndSlideInfo as Info;
-        assert_eq!(
-            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_DIRTY_DATA, 0, 0))),
-            "DATA_DIRTY"
-        );
-        assert_eq!(
-            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_CONST_DATA, 0, 0))),
-            "DATA_CONST"
-        );
-        assert_eq!(
-            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_CONST_DATA | Info::DYLD_CACHE_MAPPING_AUTH_DATA, 0, 0))),
-            "AUTH_CONST"
-        );
-        assert_eq!(
-            component_name(Some(&Info::new(0, 0, 0, 0, 0, Info::DYLD_CACHE_MAPPING_AUTH_DATA, 0, 0))),
-            "AUTH"
-        );
-        assert_eq!(component_name(Some(&Info::new(0, 0, 0, 0, 0, 0, 0, 0))), "DYLD");
-    }
-
-    #[test]
-    fn addr_range_set_coalesces_adjacent_open_closed_ranges() {
-        // (0x1000, 0x2000] followed by (0x2000, 0x3000] is contiguous under Guava's
-        // open-closed semantics and should coalesce into a single range.
-        let mut set = AddrRangeSet::new();
-        set.add(AddrRange::open_closed(0x1000, 0x2000));
-        set.add(AddrRange::open_closed(0x2000, 0x3000));
-        let ranges = set.as_ranges();
-        assert_eq!(ranges.len(), 1);
-        assert_eq!(ranges[0].lower_endpoint(), 0x1000);
-        assert_eq!(ranges[0].upper_endpoint(), 0x3000);
-    }
-
-    #[test]
-    fn addr_range_set_remove_all_splits_around_a_hole() {
-        let mut set = AddrRangeSet::new();
-        set.add(AddrRange::open_closed(0x1000, 0x4000));
-        let mut hole = AddrRangeSet::new();
-        hole.add(AddrRange::open_closed(0x2000, 0x3000));
-        set.remove_all(&hole);
-        let ranges = set.as_ranges();
-        assert_eq!(ranges.len(), 2);
-        assert_eq!((ranges[0].lower_endpoint(), ranges[0].upper_endpoint()), (0x1000, 0x2000));
-        assert_eq!((ranges[1].lower_endpoint(), ranges[1].upper_endpoint()), (0x3000, 0x4000));
-    }
-
-    #[test]
-    fn component_path_matches_java_format() {
-        let range = AddrRange::open_closed(0x1000, 0x2000);
-        let path = component_path("dyld_shared_cache_arm64", None, 0, &range);
-        assert_eq!(path, "/DYLD/dyld_shared_cache_arm64/DYLD.0.0x1000-0x2000");
     }
 }

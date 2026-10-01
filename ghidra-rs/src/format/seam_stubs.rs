@@ -1465,25 +1465,6 @@ pub trait MachHeader: Send + Sync {
         0
     }
 
-    /// `MachHeader.getAllSections()`, needed by
-    /// [`MachoRelocation::find_target_section`](crate::format::macho::relocation::macho_relocation::MachoRelocation::find_target_section).
-    ///
-    /// Defaults to empty so existing implementors (e.g. `LoadCommand`'s `MockMachHeader`) are
-    /// unaffected.
-    fn get_all_sections(&self) -> Vec<Section> {
-        Vec::new()
-    }
-
-    /// Stands in for `MachHeader.getFirstLoadCommand(SymbolTableCommand.class)`, narrowed to the
-    /// one load command type [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
-    /// needs -- Rust has no reflection-based generic lookup by `Class`. `None` stands in for
-    /// Java's `null` return when the header has no symbol table command.
-    ///
-    /// Defaults to `None` so existing implementors are unaffected.
-    fn get_symbol_table_command(&self) -> Option<SymbolTableCommand> {
-        None
-    }
-
     /// Stands in for `MachHeader.parse()` *and* for `MachHeader.parse(SplitDyldCache)`, needed by
     /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
     /// which parses each cached DYLIB's header and each branch island's header. The two Java
@@ -1518,49 +1499,6 @@ pub fn mach_header_from_provider(
 ) -> Result<Box<dyn MachHeader>, crate::format::macho::mach_exception::MachException> {
     let _ = (provider, offset);
     unimplemented!("format::seam_stubs::mach_header_from_provider placeholder not overridden")
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.RelocationInfo`, referenced by
-/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
-/// before the real class is ported. Concrete Java class (not an interface); models only the
-/// three accessors `MachoRelocation` needs (`getValue`/`isExternal`/`isScattered`) plus a
-/// `Display` impl standing in for `toString()`, which `MachoRelocation::toString` embeds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct RelocationInfo {
-    value: i32,
-    external: bool,
-    scattered: bool,
-}
-
-impl RelocationInfo {
-    pub fn new(value: i32, external: bool, scattered: bool) -> Self {
-        RelocationInfo { value, external, scattered }
-    }
-
-    /// `RelocationInfo.getValue()`.
-    pub fn get_value(&self) -> i32 {
-        self.value
-    }
-
-    /// `RelocationInfo.isExternal()`.
-    pub fn is_external(&self) -> bool {
-        self.external
-    }
-
-    /// `RelocationInfo.isScattered()`.
-    pub fn is_scattered(&self) -> bool {
-        self.scattered
-    }
-}
-
-impl std::fmt::Display for RelocationInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Value: 0x{:x}, External: {}, Scattered: {}",
-            self.value, self.external, self.scattered
-        )
-    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.Section`, referenced by
@@ -1627,56 +1565,6 @@ impl Section {
 impl std::fmt::Display for Section {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.section_name)
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.commands.NList`, referenced by
-/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
-/// before the real class is ported. Concrete Java class (not an interface); models only the two
-/// accessors `MachoRelocation` needs (`getValue`/`getString`).
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct NList {
-    value: i64,
-    string: String,
-}
-
-impl NList {
-    pub fn new(value: i64, string: impl Into<String>) -> Self {
-        NList { value, string: string.into() }
-    }
-
-    /// `NList.getValue()`.
-    pub fn get_value(&self) -> i64 {
-        self.value
-    }
-
-    /// `NList.getString()`.
-    pub fn get_string(&self) -> &str {
-        &self.string
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.commands.SymbolTableCommand`, referenced by
-/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
-/// before the real class is ported. Concrete Java class (not an interface); models only the one
-/// accessor `MachoRelocation` needs (`getSymbolAt`).
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct SymbolTableCommand {
-    symbols: Vec<NList>,
-}
-
-impl SymbolTableCommand {
-    pub fn new(symbols: Vec<NList>) -> Self {
-        SymbolTableCommand { symbols }
-    }
-
-    /// `SymbolTableCommand.getSymbolAt(int)`. `None` stands in for Java's `null` return on an
-    /// out-of-range index.
-    pub fn get_symbol_at(&self, index: i32) -> Option<&NList> {
-        if index < 0 {
-            return None;
-        }
-        self.symbols.get(index as usize)
     }
 }
 

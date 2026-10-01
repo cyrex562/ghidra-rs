@@ -663,15 +663,8 @@ ts	stub_class	referenced_by
 2026-08-14T04:00:00.000000+00:00	FoundString	FoundStringCallback
 2026-08-14T04:07:22.073932+00:00	Sequence	ByteStreamCharMatcher
 2026-08-14T04:07:22.073932+00:00	AbstractStringDataType	Sequence
-2026-08-14T04:12:03.518087+00:00	MachHeader	LoadCommand
-2026-08-14T04:12:03.518696+00:00	SegmentCommand	LoadCommand
 2026-08-14T04:12:03.522556+00:00	FlatProgramAPI	LoadCommand
 2026-08-14T04:20:58.088700+00:00	Program	CodeSignatureBlobParser
-2026-08-14T05:00:00.000000+00:00	MachHeader	MachoRelocation
-2026-08-14T05:00:00.000000+00:00	RelocationInfo	MachoRelocation
-2026-08-14T05:00:00.000000+00:00	Section	MachoRelocation
-2026-08-14T05:00:00.000000+00:00	NList	MachoRelocation
-2026-08-14T05:00:00.000000+00:00	SymbolTableCommand	MachoRelocation
 2026-08-14T05:00:00.000000+00:00	NumericUtilities	MachoRelocation
 2026-08-14T05:14:01.914796Z	MachoProgramBuilder	DyldChainedFixups
 2026-08-14T05:14:01.914796Z	MemoryBlockUtils	DyldChainedFixups
@@ -709,12 +702,6 @@ ts	stub_class	referenced_by
 2026-08-14T07:54:18.276608+00:00	SevenZipFileSystemFactory	ZipFileSystemFactory
 2026-08-14T07:54:18.276673+00:00	ZipFileSystem	ZipFileSystemFactory
 2026-08-14T07:54:18.276931+00:00	ZipFileSystemBuiltin	ZipFileSystemFactory
-2026-08-14T08:21:17.454938+00:00	SegmentCommand	DyldCacheFileSystem
-2026-08-14T08:21:17.454939+00:00	MachHeader	DyldCacheFileSystem
-2026-08-14T08:21:17.454940+00:00	DyldCacheImageRecord	DyldCacheFileSystem
-2026-08-14T08:21:17.454941+00:00	DyldCacheHeader	DyldCacheFileSystem
-2026-08-14T08:21:17.454942+00:00	SplitDyldCache	DyldCacheFileSystem
-2026-08-14T08:21:17.454943+00:00	DyldCacheExtractor	DyldCacheFileSystem
 2026-08-14T09:20:00.000000+00:00	AbstractAttributeInfo	AttributeFactory
 2026-08-14T09:20:00.000001+00:00	ConstantPoolUtf8Info	AttributeFactory
 2026-08-14T09:15:09.450580+00:00	ConstantPoolJava	ArrayMethods
@@ -1077,7 +1064,6 @@ ts	stub_class	referenced_by
 2026-08-18T09:55:00Z	TaskLauncher	CodeSarifMgr
 2026-08-19T01:00:37Z	SplitDyldCache	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	DyldCacheImageRecord	DyldCacheProgramBuilder
-2026-08-19T01:00:37Z	DyldCacheLocalSymbolsInfo	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	LibObjcDylib	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	MachoProgramBuilder	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	MachHeader	DyldCacheProgramBuilder

@@ -17,11 +17,11 @@ use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
 pub struct DyldCacheEntry {
     /// The path of the entry within the filesystem.
     pub path: String,
-    /// The entry's [`SplitDyldCache`](crate::file::seam_stubs::SplitDyldCache) index.
+    /// The entry's [`SplitDyldCache`](crate::app::util::opinion::dyld_cache_utils::SplitDyldCache) index.
     pub split_cache_index: i32,
-    /// The entry's address ranges. Mirrors `RangeSet<Long>` as a list of half-open `[start, end)`
-    /// intervals, in sorted, non-overlapping order (coalesced), matching the Java Guava
-    /// `TreeRangeSet` behavior.
+    /// The entry's address ranges. Mirrors `RangeSet<Long>` as `(lowerEndpoint, upperEndpoint)`
+    /// pairs in sorted, non-overlapping (coalesced) order, matching Guava's `TreeRangeSet`.
+    /// `DyldCacheFileSystem` builds them from open-closed ranges, so each pair is `(lower, upper]`.
     pub range_set: Vec<(i64, i64)>,
     /// The entry's [`DyldCacheMappingInfo`], or `None` if this entry represents a DYLIB.
     pub mapping_info: Option<DyldCacheMappingInfo>,
@@ -64,8 +64,7 @@ impl DyldCacheEntry {
         self.split_cache_index
     }
 
-    /// Mirrors the record accessor `rangeSet()`. Returns the address ranges as a list of
-    /// half-open `[start, end)` intervals.
+    /// Mirrors the record accessor `rangeSet()`: `(lowerEndpoint, upperEndpoint)` pairs.
     pub fn range_set(&self) -> &[(i64, i64)] {
         &self.range_set
     }
