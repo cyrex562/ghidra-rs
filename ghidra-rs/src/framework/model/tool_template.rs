@@ -1,5 +1,5 @@
 use crate::framework::model::Project;
-use crate::framework::seam_stubs::{ImageIcon, JdomElement, PluginTool, ToolIconURL};
+use crate::framework::seam_stubs::{ImageIcon, PluginTool, ToolIconURL};
 
 /// XML element name used when a tool template is written to/read from XML.
 ///
@@ -47,10 +47,10 @@ pub trait ToolTemplate {
     fn get_supported_data_types(&self) -> Vec<String>;
 
     /// Save this object to an XML element.
-    fn save_to_xml(&self) -> Box<dyn JdomElement>;
+    fn save_to_xml(&self) -> crate::util::xml::element::Element;
 
     /// Restore this object from a saved XML element.
-    fn restore_from_xml(&mut self, root: &dyn JdomElement);
+    fn restore_from_xml(&mut self, root: &crate::util::xml::element::Element);
 
     /// Creates a tool like only this template knows how.
     ///
@@ -59,7 +59,7 @@ pub trait ToolTemplate {
     fn create_tool(&self, project: &dyn Project) -> Box<dyn PluginTool>;
 
     /// Returns the XML element that represents the tool part of the overall XML hierarchy.
-    fn get_tool_element(&self) -> Box<dyn JdomElement>;
+    fn get_tool_element(&self) -> crate::util::xml::element::Element;
 }
 
 #[cfg(test)]
@@ -72,8 +72,6 @@ mod tests {
     struct MockImageIcon;
     impl ImageIcon for MockImageIcon {}
 
-    struct MockJdomElement;
-    impl JdomElement for MockJdomElement {}
 
     struct MockPluginTool;
     impl PluginTool for MockPluginTool {}
@@ -111,18 +109,18 @@ mod tests {
             Vec::new()
         }
 
-        fn save_to_xml(&self) -> Box<dyn JdomElement> {
-            Box::new(MockJdomElement)
+        fn save_to_xml(&self) -> crate::util::xml::element::Element {
+            crate::util::xml::element::Element::new("TOOL")
         }
 
-        fn restore_from_xml(&mut self, _root: &dyn JdomElement) {}
+        fn restore_from_xml(&mut self, _root: &crate::util::xml::element::Element) {}
 
         fn create_tool(&self, _project: &dyn Project) -> Box<dyn PluginTool> {
             Box::new(MockPluginTool)
         }
 
-        fn get_tool_element(&self) -> Box<dyn JdomElement> {
-            Box::new(MockJdomElement)
+        fn get_tool_element(&self) -> crate::util::xml::element::Element {
+            crate::util::xml::element::Element::new("TOOL")
         }
     }
 
@@ -142,7 +140,7 @@ mod tests {
 
         let project = MockProject;
         let _tool = dyn_template.create_tool(&project);
-        dyn_template.restore_from_xml(&MockJdomElement);
+        dyn_template.restore_from_xml(&crate::util::xml::element::Element::new("TOOL"));
         let _saved = dyn_template.save_to_xml();
         let _element = dyn_template.get_tool_element();
         let _icon_url = dyn_template.get_icon_url();

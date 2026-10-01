@@ -109,13 +109,11 @@ mod tests {
             Vec::new()
         }
 
-        fn save_to_xml(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
-            struct Stub;
-            impl crate::framework::seam_stubs::JdomElement for Stub {}
-            Box::new(Stub)
+        fn save_to_xml(&self) -> crate::util::xml::element::Element {
+            crate::util::xml::element::Element::new("TOOL")
         }
 
-        fn restore_from_xml(&mut self, _root: &dyn crate::framework::seam_stubs::JdomElement) {}
+        fn restore_from_xml(&mut self, _root: &crate::util::xml::element::Element) {}
 
         fn create_tool(&self, _project: &dyn crate::framework::model::Project) -> Box<dyn crate::framework::seam_stubs::PluginTool> {
             struct Stub;
@@ -123,10 +121,8 @@ mod tests {
             Box::new(Stub)
         }
 
-        fn get_tool_element(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
-            struct Stub;
-            impl crate::framework::seam_stubs::JdomElement for Stub {}
-            Box::new(Stub)
+        fn get_tool_element(&self) -> crate::util::xml::element::Element {
+            crate::util::xml::element::Element::new("TOOL")
         }
     }
 

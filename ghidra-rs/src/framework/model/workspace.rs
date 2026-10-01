@@ -71,13 +71,11 @@ mod tests {
             Vec::new()
         }
 
-        fn save_to_xml(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
-            struct MockJdomElement;
-            impl crate::framework::seam_stubs::JdomElement for MockJdomElement {}
-            Box::new(MockJdomElement)
+        fn save_to_xml(&self) -> crate::util::xml::element::Element {
+            crate::util::xml::element::Element::new("TOOL")
         }
 
-        fn restore_from_xml(&mut self, _root: &dyn crate::framework::seam_stubs::JdomElement) {}
+        fn restore_from_xml(&mut self, _root: &crate::util::xml::element::Element) {}
 
         fn create_tool(
             &self,
@@ -86,10 +84,8 @@ mod tests {
             Box::new(MockPluginTool)
         }
 
-        fn get_tool_element(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
-            struct MockJdomElement;
-            impl crate::framework::seam_stubs::JdomElement for MockJdomElement {}
-            Box::new(MockJdomElement)
+        fn get_tool_element(&self) -> crate::util::xml::element::Element {
+            crate::util::xml::element::Element::new("TOOL")
         }
     }
 

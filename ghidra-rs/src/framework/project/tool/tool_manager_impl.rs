@@ -12,9 +12,10 @@ use crate::framework::model::{
     WorkspaceChangeListener,
 };
 use crate::framework::seam_stubs::{
-    GhidraTool, JdomElement, PluginTool, PropertyChangeEvent, SharedPluginTool, ToolConnectionImpl,
+    GhidraTool, PluginTool, PropertyChangeEvent, SharedPluginTool, ToolConnectionImpl,
     WorkspaceImpl,
 };
+use crate::util::xml::element::Element;
 use crate::util::exception::DuplicateNameException;
 use crate::util::msg::Msg;
 
@@ -603,19 +604,19 @@ impl ToolManagerImpl {
         self.active_workspace_changed = false;
     }
 
-    /// Writes the manager's workspaces and connections into `root`, which the caller creates as a
-    /// `TOOL_MANAGER` element (Java's `saveToXml()` creates and returns it, but element creation
-    /// goes through a parent in the [`JdomElement`] seam). Resets the changed state.
-    pub fn save_to_xml(&mut self, root: &mut dyn JdomElement) {
+    /// Writes the manager's workspaces and connections as a `TOOL_MANAGER` element, mirroring
+    /// `saveToXml()`. Resets the changed state.
+    pub fn save_to_xml(&mut self) -> Element {
+        let mut root = Element::new("TOOL_MANAGER");
         if let Some(active) = self.active_workspace.clone() {
-            root.set_attribute("ACTIVE_WORKSPACE", &active);
+            root.set_attribute("ACTIVE_WORKSPACE", active);
         }
         for workspace in &self.workspaces {
-            let element = workspace.borrow().save_to_xml(root);
+            let element = workspace.borrow().save_to_xml();
             root.add_content(element);
         }
         for connection in self.connect_map.borrow().values() {
-            let element = connection.save_to_xml(root);
+            let element = connection.save_to_xml();
             root.add_content(element);
             connection.clear_changed();
         }
@@ -623,18 +624,19 @@ impl ToolManagerImpl {
         // reset the changed state back to "unchanged"
         self.changed_workspaces.clear();
         self.active_workspace_changed = false;
+        root
     }
 
     /// Restores the workspaces and connections saved by [`save_to_xml`](Self::save_to_xml). Port
     /// of `restoreFromXml(Element)`.
-    pub fn restore_from_xml(&mut self, root: &dyn JdomElement) {
+    pub fn restore_from_xml(&mut self, root: &Element) {
         self.in_restore_mode = true;
 
-        let active_ws_name = root.attribute_value("ACTIVE_WORKSPACE");
+        let active_ws_name = root.get_attribute_value("ACTIVE_WORKSPACE").map(str::to_string);
         let mut make_me_active: Option<String> = None;
         let mut tool_map: HashMap<String, Arc<dyn PluginTool>> = HashMap::new();
 
-        for element in root.children("WORKSPACE") {
+        for element in root.get_children_named("WORKSPACE") {
             let mut workspace = WorkspaceImpl::new("TEMP");
             workspace.restore_from_xml(element);
             let name = workspace.name().to_string();
@@ -650,9 +652,11 @@ impl ToolManagerImpl {
             self.set_active_workspace(&name);
         }
 
-        for element in root.children("CONNECTION") {
-            let (Some(producer_name), Some(consumer_name)) =
-                (element.attribute_value("PRODUCER"), element.attribute_value("CONSUMER"))
+        for element in root.get_children_named("CONNECTION") {
+            let (Some(producer_name), Some(consumer_name)) = (
+                element.get_attribute_value("PRODUCER").map(str::to_string),
+                element.get_attribute_value("CONSUMER").map(str::to_string),
+            )
             else {
                 continue;
             };
@@ -1057,57 +1061,6 @@ mod tests {
         }
     }
 
-    /// A `JdomElement` with real state, so the save/restore round trip can be exercised.
-    #[derive(Default)]
-    struct TestElement {
-        name: String,
-        attributes: Vec<(String, String)>,
-        children: Vec<Box<TestElement>>,
-    }
-
-    impl TestElement {
-        fn new(name: &str) -> Self {
-            Self { name: name.to_string(), ..Default::default() }
-        }
-    }
-
-    impl JdomElement for TestElement {
-        fn new_child(&self, name: &str) -> Box<dyn JdomElement> {
-            Box::new(TestElement::new(name))
-        }
-
-        fn tag_name(&self) -> String {
-            self.name.clone()
-        }
-
-        fn set_attribute(&mut self, name: &str, value: &str) {
-            self.attributes.retain(|(n, _)| n != name);
-            self.attributes.push((name.to_string(), value.to_string()));
-        }
-
-        fn attribute_value(&self, name: &str) -> Option<String> {
-            self.attributes.iter().find(|(n, _)| n == name).map(|(_, v)| v.clone())
-        }
-
-        fn add_content(&mut self, child: Box<dyn JdomElement>) {
-            let mut copy = TestElement::new(&child.tag_name());
-            for name in ["NAME", "ACTIVE", "PRODUCER", "CONSUMER", "TOOL_NAME"] {
-                if let Some(value) = child.attribute_value(name) {
-                    copy.set_attribute(name, &value);
-                }
-            }
-            self.children.push(Box::new(copy));
-        }
-
-        fn children(&self, name: &str) -> Vec<&dyn JdomElement> {
-            self.children
-                .iter()
-                .filter(|c| c.name == name)
-                .map(|c| c.as_ref() as &dyn JdomElement)
-                .collect()
-        }
-    }
-
     /// Counts the workspace events the manager fires.
     #[derive(Default)]
     struct CountingListener {
@@ -1330,11 +1283,13 @@ mod tests {
         tm.create_workspace("Beta").unwrap();
         assert_eq!(tm.get_active_workspace().get_name(), "Beta");
 
-        let mut root = TestElement::new("TOOL_MANAGER");
-        tm.save_to_xml(&mut root);
+        let root = tm.save_to_xml();
+        assert_eq!(root.get_name(), "TOOL_MANAGER");
+        // Through the persisted text form, as the project file stores it.
+        let root = Element::parse_str(&root.output_string()).unwrap();
 
-        assert_eq!(root.attribute_value("ACTIVE_WORKSPACE").as_deref(), Some("Beta"));
-        assert_eq!(root.children("WORKSPACE").len(), 2);
+        assert_eq!(root.get_attribute_value("ACTIVE_WORKSPACE"), Some("Beta"));
+        assert_eq!(root.get_children_named("WORKSPACE").count(), 2);
         // saving resets the "needs saving" state
         assert!(!tm.has_changed());
 

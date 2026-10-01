@@ -374,57 +374,7 @@ pub trait ToolIconURL {}
 /// `ToolTemplate` only ever returns this type, so no members are needed yet.
 pub trait ImageIcon {}
 
-/// Placeholder for `org.jdom2.Element`, referenced by
-/// [`ToolTemplate`](crate::framework::model::ToolTemplate) and
-/// [`PluginsConfiguration`](crate::framework::plugintool::PluginsConfiguration) before a Rust
-/// equivalent exists. Distinct from [`crate::util::xml::XmlElement`], which mirrors the unrelated
-/// `ghidra.xml.XmlElement` pull-parser interface; `org.jdom2.Element` is a DOM-style tree node.
-///
-/// `ToolTemplate` only ever passes this type through as an opaque value, so all methods default
-/// to inert no-ops; `PluginsConfiguration` is the first port that actually builds/reads an
-/// element tree (`savePluginsToXml`/`getPluginClassNames`), so it overrides all of them. Rust has
-/// no free-standing `new Element(name)` constructor call through a trait object, so
-/// [`new_child`](JdomElement::new_child) doubles as the virtual constructor: implementations
-/// create a detached child of their own concrete type, which the caller then fills in and attaches
-/// with [`add_content`](JdomElement::add_content).
-pub trait JdomElement {
-    /// Creates a new, detached child element with the given tag name, mirroring `new
-    /// Element(String)`. Defaults to an inert placeholder that ignores all further calls.
-    fn new_child(&self, _name: &str) -> Box<dyn JdomElement> {
-        Box::new(NullJdomElement)
-    }
-
-    /// Gets this element's own tag name, mirroring `Element.getName()`. Returns an empty string
-    /// by default.
-    fn tag_name(&self) -> String {
-        String::new()
-    }
-
-    /// Sets an attribute on this element, mirroring `Element.setAttribute(String, String)`.
-    /// No-op by default.
-    fn set_attribute(&mut self, _name: &str, _value: &str) {}
-
-    /// Gets the value of an attribute on this element, mirroring
-    /// `Element.getAttributeValue(String)`. Returns `None` by default.
-    fn attribute_value(&self, _name: &str) -> Option<String> {
-        None
-    }
-
-    /// Adds a child element as content of this element, mirroring `Element.addContent(Content)`.
-    /// No-op by default.
-    fn add_content(&mut self, _child: Box<dyn JdomElement>) {}
-
-    /// Gets this element's direct children with the given tag name, mirroring
-    /// `Element.getChildren(String)`. Returns empty by default.
-    fn children(&self, _name: &str) -> Vec<&dyn JdomElement> {
-        Vec::new()
-    }
-}
-
-/// Inert fallback [`JdomElement`] used by [`JdomElement::new_child`]'s default body. Carries no
-/// state; every method uses the trait's own no-op defaults.
-struct NullJdomElement;
-impl JdomElement for NullJdomElement {}
+// `org.jdom2.Element` is the canonical crate::util::xml::element::Element.
 
 /// Placeholder for `ghidra.framework.plugintool.PluginTool`, referenced by
 /// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real class is ported.
@@ -793,9 +743,8 @@ impl PluginTool for SharedPluginTool {
     }
 }
 
-/// Inert fallback [`PluginTool`] used by [`PluginLike::tool`]'s default body, mirroring how
-/// [`NullJdomElement`] backs [`JdomElement::new_child`]'s default. Carries no state; every method
-/// uses the trait's own no-op defaults.
+/// Inert fallback [`PluginTool`] used by [`PluginLike::tool`]'s default body. Carries no state;
+/// every method uses the trait's own no-op defaults.
 struct NullPluginTool;
 impl PluginTool for NullPluginTool {}
 
@@ -1257,16 +1206,14 @@ impl WorkspaceImpl {
         self.tools.clear();
     }
 
-    /// Writes this workspace as a `WORKSPACE` child of `parent`, mirroring
-    /// `WorkspaceImpl.saveToXml()`. `parent` is only used as the element factory, following the
-    /// [`JdomElement::new_child`] convention.
-    pub fn save_to_xml(&self, parent: &dyn JdomElement) -> Box<dyn JdomElement> {
-        let mut root = parent.new_child("WORKSPACE");
+    /// Writes this workspace as a `WORKSPACE` element, mirroring `WorkspaceImpl.saveToXml()`.
+    pub fn save_to_xml(&self) -> crate::util::xml::element::Element {
+        let mut root = crate::util::xml::element::Element::new("WORKSPACE");
         root.set_attribute("NAME", &self.name);
         root.set_attribute("ACTIVE", &self.active.to_string());
         for tool in &self.tools {
-            let mut elem = root.new_child("RUNNING_TOOL");
-            elem.set_attribute("TOOL_NAME", &tool.get_tool_name());
+            let mut elem = crate::util::xml::element::Element::new("RUNNING_TOOL");
+            elem.set_attribute("TOOL_NAME", tool.get_tool_name());
             root.add_content(elem);
         }
         root
@@ -1275,12 +1222,12 @@ impl WorkspaceImpl {
     /// Reads this workspace's name and active flag back, mirroring
     /// `WorkspaceImpl.restoreFromXml(Element)`. Restoring the running tools themselves needs the
     /// real `PluginTool`, so it is left to the real port.
-    pub fn restore_from_xml(&mut self, root: &dyn JdomElement) {
-        if let Some(name) = root.attribute_value("NAME") {
-            self.name = name;
+    pub fn restore_from_xml(&mut self, root: &crate::util::xml::element::Element) {
+        if let Some(name) = root.get_attribute_value("NAME") {
+            self.name = name.to_string();
         }
         self.active = root
-            .attribute_value("ACTIVE")
+            .get_attribute_value("ACTIVE")
             .is_some_and(|active| active.eq_ignore_ascii_case("true"));
     }
 }
@@ -1410,15 +1357,15 @@ impl ToolConnectionImpl {
         self.state.borrow_mut().changed = false;
     }
 
-    /// Writes this connection as a `CONNECTION` child of `parent`, mirroring
+    /// Writes this connection as a `CONNECTION` element, mirroring
     /// `ToolConnectionImpl.saveToXml()`.
-    pub fn save_to_xml(&self, parent: &dyn JdomElement) -> Box<dyn JdomElement> {
-        let mut root = parent.new_child("CONNECTION");
-        root.set_attribute("PRODUCER", &self.producer.get_name());
-        root.set_attribute("CONSUMER", &self.consumer.get_name());
+    pub fn save_to_xml(&self) -> crate::util::xml::element::Element {
+        let mut root = crate::util::xml::element::Element::new("CONNECTION");
+        root.set_attribute("PRODUCER", self.producer.get_name());
+        root.set_attribute("CONSUMER", self.consumer.get_name());
         for event in &self.state.borrow().connected {
-            let mut elem = root.new_child("EVENT");
-            elem.set_attribute("NAME", event);
+            let mut elem = crate::util::xml::element::Element::new("EVENT");
+            elem.set_attribute("NAME", event.as_str());
             root.add_content(elem);
         }
         root
@@ -1426,11 +1373,10 @@ impl ToolConnectionImpl {
 
     /// Reads the connected event names back, mirroring
     /// `ToolConnectionImpl.restoreFromXml(Element)`.
-    pub fn restore_from_xml(&self, root: &dyn JdomElement) {
+    pub fn restore_from_xml(&self, root: &crate::util::xml::element::Element) {
         let names: Vec<String> = root
-            .children("EVENT")
-            .iter()
-            .filter_map(|child| child.attribute_value("NAME"))
+            .get_children_named("EVENT")
+            .filter_map(|child| child.get_attribute_value("NAME").map(str::to_string))
             .collect();
         let mut state = self.state.borrow_mut();
         for name in names {
@@ -1680,18 +1626,18 @@ impl crate::framework::model::ToolTemplate for NamedToolTemplate {
         Vec::new()
     }
 
-    fn save_to_xml(&self) -> Box<dyn JdomElement> {
-        Box::new(NullJdomElement)
+    fn save_to_xml(&self) -> crate::util::xml::element::Element {
+        crate::util::xml::element::Element::default()
     }
 
-    fn restore_from_xml(&mut self, _root: &dyn JdomElement) {}
+    fn restore_from_xml(&mut self, _root: &crate::util::xml::element::Element) {}
 
     fn create_tool(&self, _project: &dyn crate::framework::model::Project) -> Box<dyn PluginTool> {
         Box::new(NullPluginTool)
     }
 
-    fn get_tool_element(&self) -> Box<dyn JdomElement> {
-        Box::new(NullJdomElement)
+    fn get_tool_element(&self) -> crate::util::xml::element::Element {
+        crate::util::xml::element::Element::default()
     }
 }
 

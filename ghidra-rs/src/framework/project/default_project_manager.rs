@@ -1095,11 +1095,11 @@ mod tests {
             Vec::new()
         }
 
-        fn save_to_xml(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
+        fn save_to_xml(&self) -> crate::util::xml::element::Element {
             unimplemented!("XML is not exercised by these tests")
         }
 
-        fn restore_from_xml(&mut self, _root: &dyn crate::framework::seam_stubs::JdomElement) {}
+        fn restore_from_xml(&mut self, _root: &crate::util::xml::element::Element) {}
 
         fn create_tool(
             &self,
@@ -1108,7 +1108,7 @@ mod tests {
             unimplemented!("tools are not exercised by these tests")
         }
 
-        fn get_tool_element(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
+        fn get_tool_element(&self) -> crate::util::xml::element::Element {
             unimplemented!("XML is not exercised by these tests")
         }
     }

@@ -23,7 +23,8 @@
 use std::collections::HashSet;
 
 use crate::framework::plugintool::util::{PluginDescription, PluginStatus};
-use crate::framework::seam_stubs::{JdomElement, PluginLike, PluginPackageLike};
+use crate::framework::seam_stubs::{PluginLike, PluginPackageLike};
+use crate::util::xml::element::Element;
 
 /// Mirrors `ghidra.framework.plugintool.PluginsConfiguration`. Object-safe, so implementations
 /// can be stored as `Box<dyn PluginsConfiguration>`/`Arc<dyn PluginsConfiguration>`.
@@ -119,7 +120,7 @@ pub trait PluginsConfiguration {
     /// List<Plugin>)`. For each package with at least one plugin present in `plugins`, emits a
     /// `PACKAGE` element listing `Released` plugins that were excluded and non-`Released` plugins
     /// that were explicitly included.
-    fn save_plugins_to_xml(&self, root: &mut dyn JdomElement, plugins: &[Box<dyn PluginLike>]) {
+    fn save_plugins_to_xml(&self, root: &mut Element, plugins: &[Box<dyn PluginLike>]) {
         let mut package_map: Vec<(Box<dyn PluginPackageLike>, Vec<String>)> = Vec::new();
         for plugin in plugins {
             let class_name = plugin.plugin_class_name();
@@ -134,21 +135,21 @@ pub trait PluginsConfiguration {
         }
 
         for (plugin_package, included_classes) in &package_map {
-            let mut package_element = root.new_child("PACKAGE");
-            package_element.set_attribute("NAME", &plugin_package.name());
+            let mut package_element = Element::new("PACKAGE");
+            package_element.set_attribute("NAME", plugin_package.name());
 
             for pd in self.plugin_descriptions_in_package(plugin_package.as_ref()) {
                 let class_name = pd.plugin_class_name();
                 if pd.status() == PluginStatus::Released {
                     if !included_classes.contains(&class_name) {
-                        let mut excluded = package_element.new_child("EXCLUDE");
-                        excluded.set_attribute("CLASS", &class_name);
+                        let mut excluded = Element::new("EXCLUDE");
+                        excluded.set_attribute("CLASS", class_name.as_str());
                         package_element.add_content(excluded);
                     }
                 }
                 else if included_classes.contains(&class_name) {
-                    let mut included = package_element.new_child("INCLUDE");
-                    included.set_attribute("CLASS", &class_name);
+                    let mut included = Element::new("INCLUDE");
+                    included.set_attribute("CLASS", class_name.as_str());
                     package_element.add_content(included);
                 }
             }
@@ -159,23 +160,21 @@ pub trait PluginsConfiguration {
 
     /// Restores the set of plugin class names described by `element`, mirroring
     /// `getPluginClassNames(Element)`.
-    fn plugin_class_names(&self, element: &dyn JdomElement) -> HashSet<String> {
+    fn plugin_class_names(&self, element: &Element) -> HashSet<String> {
         let mut class_names = HashSet::new();
 
-        for package_element in element.children("PACKAGE") {
-            let Some(package_name) = package_element.attribute_value("NAME") else {
+        for package_element in element.get_children_named("PACKAGE") {
+            let Some(package_name) = package_element.get_attribute_value("NAME") else {
                 continue;
             };
 
             let excluded: HashSet<String> = package_element
-                .children("EXCLUDE")
-                .iter()
-                .filter_map(|e| e.attribute_value("CLASS"))
+                .get_children_named("EXCLUDE")
+                .filter_map(|e| e.get_attribute_value("CLASS").map(str::to_string))
                 .collect();
             let included: HashSet<String> = package_element
-                .children("INCLUDE")
-                .iter()
-                .filter_map(|e| e.attribute_value("CLASS"))
+                .get_children_named("INCLUDE")
+                .filter_map(|e| e.get_attribute_value("CLASS").map(str::to_string))
                 .collect();
 
             let Some(plugin_package) =
@@ -296,43 +295,6 @@ mod tests {
     impl PluginLike for MockPlugin {
         fn plugin_class_name(&self) -> String {
             self.class_name.clone()
-        }
-    }
-
-    #[derive(Default)]
-    struct MockJdomElement {
-        tag: String,
-        attributes: Vec<(String, String)>,
-        children: Vec<Box<dyn JdomElement>>,
-    }
-
-    impl JdomElement for MockJdomElement {
-        fn new_child(&self, name: &str) -> Box<dyn JdomElement> {
-            Box::new(MockJdomElement { tag: name.to_string(), ..Default::default() })
-        }
-
-        fn tag_name(&self) -> String {
-            self.tag.clone()
-        }
-
-        fn set_attribute(&mut self, name: &str, value: &str) {
-            self.attributes.push((name.to_string(), value.to_string()));
-        }
-
-        fn attribute_value(&self, name: &str) -> Option<String> {
-            self.attributes.iter().find(|(n, _)| n == name).map(|(_, v)| v.clone())
-        }
-
-        fn add_content(&mut self, child: Box<dyn JdomElement>) {
-            self.children.push(child);
-        }
-
-        fn children(&self, name: &str) -> Vec<&dyn JdomElement> {
-            self.children
-                .iter()
-                .filter(|c| c.tag_name() == name)
-                .map(|c| c.as_ref())
-                .collect()
         }
     }
 
@@ -463,7 +425,7 @@ mod tests {
         let plugins: Vec<Box<dyn PluginLike>> =
             vec![Box::new(MockPlugin { class_name: "com.example.FooPlugin".to_string() })];
 
-        let mut root = MockJdomElement::default();
+        let mut root = Element::new("PLUGINS");
         config.save_plugins_to_xml(&mut root, &plugins);
 
         let restored = config.plugin_class_names(&root);
@@ -482,8 +444,17 @@ mod tests {
         let plugins: Vec<Box<dyn PluginLike>> =
             vec![Box::new(MockPlugin { class_name: "com.example.BarPlugin".to_string() })];
 
-        let mut root = MockJdomElement::default();
+        let mut root = Element::new("PLUGINS");
         config.save_plugins_to_xml(&mut root, &plugins);
+        let package = root.get_child("PACKAGE").unwrap();
+        assert_eq!(
+            package.get_child("EXCLUDE").and_then(|e| e.get_attribute_value("CLASS")),
+            Some("com.example.FooPlugin")
+        );
+        assert_eq!(
+            package.get_child("INCLUDE").and_then(|e| e.get_attribute_value("CLASS")),
+            Some("com.example.BarPlugin")
+        );
 
         let restored = config.plugin_class_names(&root);
         assert!(restored.contains("com.example.BarPlugin"));
