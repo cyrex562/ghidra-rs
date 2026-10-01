@@ -3,7 +3,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::file::formats::android::oat::bundle::OatBundle;
 use crate::file::formats::android::oat::oat_constants::OatConstants;
 
@@ -28,7 +28,7 @@ impl OatDexFileFactory {
     /// constructors (none ported yet) and throws `IOException` for an unrecognized version. This
     /// stub reproduces just the version check so callers see the same success/failure split.
     pub fn get_oat_dex_file(
-        _reader: &mut dyn LegacyBinaryReader,
+        _reader: &mut BinaryReader,
         oat_version: &str,
         _bundle: &dyn OatBundle,
     ) -> io::Result<OatDexFile> {

@@ -1,7 +1,7 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::byte_provider::ByteProvider;
 
 /// Magic value `'H+'` (`0x482b`) identifying an HFS+ volume header.
 const HFSPLUS_SIGNATURE_MAGIC: i16 = 0x482b;
@@ -68,7 +68,7 @@ impl HfsPlusVolumeHeader {
     ///
     /// Mirrors Java's `probe`, which swallows I/O errors and reports `false` instead of
     /// propagating them.
-    pub fn probe(reader: &mut dyn LegacyBinaryReader) -> bool {
+    pub fn probe(reader: &mut BinaryReader) -> bool {
         let length = match reader.length() {
             Ok(l) => l,
             Err(_) => return false,
@@ -83,9 +83,7 @@ impl HfsPlusVolumeHeader {
         if !header.is_valid() {
             return false;
         }
-        let provider = reader.get_byte_provider();
-        let mut bp = provider.borrow_mut();
-        header.has_good_volume_info(&mut *bp).unwrap_or(false)
+        header.has_good_volume_info(reader.get_byte_provider().as_ref()).unwrap_or(false)
     }
 
     /// Reads an [`HfsPlusVolumeHeader`] from the default offset (1024) of `reader`.
@@ -93,7 +91,7 @@ impl HfsPlusVolumeHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from `reader` fails.
-    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut BinaryReader) -> io::Result<Self> {
         Self::read_at(reader, DEFAULT_OFFSET)
     }
 
@@ -102,7 +100,7 @@ impl HfsPlusVolumeHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from `reader` fails.
-    pub fn read_at(reader: &mut dyn LegacyBinaryReader, offset: u64) -> io::Result<Self> {
+    pub fn read_at(reader: &mut BinaryReader, offset: u64) -> io::Result<Self> {
         reader.set_little_endian(false);
         reader.set_pointer_index(offset);
 
@@ -184,117 +182,16 @@ impl HfsPlusVolumeHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading `bp`'s length fails.
-    pub fn has_good_volume_info(&self, bp: &mut dyn GByteStore) -> io::Result<bool> {
+    pub fn has_good_volume_info(&self, bp: &dyn ByteProvider) -> io::Result<bool> {
         let calculated_size = self.block_size.wrapping_mul(self.total_blocks) as i64;
-        Ok(bp.length()? as i64 >= calculated_size)
+        Ok(bp.length() as i64 >= calculated_size)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
+    use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
 
     /// Builds a well-formed 512 byte HFS+ volume header block, big-endian, with the given
     /// block size / total blocks (the fields exercised by [`HfsPlusVolumeHeader::is_valid`] and
@@ -330,7 +227,7 @@ mod tests {
     #[test]
     fn read_at_parses_all_fields_big_endian() {
         let data = valid_header_bytes(0x1000, 10);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).expect("read_at should succeed");
 
@@ -345,7 +242,7 @@ mod tests {
     #[test]
     fn read_at_forces_big_endian_regardless_of_reader_default() {
         let data = valid_header_bytes(0x1000, 10);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         reader.set_little_endian(true);
 
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).expect("read_at should succeed");
@@ -358,7 +255,7 @@ mod tests {
     fn read_reads_from_default_offset() {
         let mut data = vec![0xAAu8; 1024];
         data.extend_from_slice(&valid_header_bytes(0x1000, 10));
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let header = HfsPlusVolumeHeader::read(&mut reader).expect("read should succeed");
 
@@ -369,7 +266,7 @@ mod tests {
     #[test]
     fn is_valid_true_for_correct_signature_version_and_block_size() {
         let data = valid_header_bytes(0x1000, 10);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).unwrap();
 
         assert!(header.is_valid());
@@ -379,7 +276,7 @@ mod tests {
     fn is_valid_false_for_wrong_signature() {
         let mut data = valid_header_bytes(0x1000, 10);
         data[0..2].copy_from_slice(&0x0000i16.to_be_bytes());
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).unwrap();
 
         assert!(!header.is_valid());
@@ -389,7 +286,7 @@ mod tests {
     fn is_valid_false_for_hfsx_version() {
         let mut data = valid_header_bytes(0x1000, 10);
         data[2..4].copy_from_slice(&HFSX_VERSION.to_be_bytes());
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).unwrap();
 
         assert!(!header.is_valid());
@@ -398,7 +295,7 @@ mod tests {
     #[test]
     fn is_valid_false_for_bad_block_size() {
         let data = valid_header_bytes(100, 10); // not a multiple of 512
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).unwrap();
 
         assert!(!header.is_valid());
@@ -407,27 +304,27 @@ mod tests {
     #[test]
     fn has_good_volume_info_true_when_provider_large_enough() {
         let data = valid_header_bytes(0x1000, 2);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).unwrap();
 
-        let mut bp = VecProvider(vec![0u8; 0x1000 * 2]);
-        assert!(header.has_good_volume_info(&mut bp).unwrap());
+        let bp = ByteArrayProvider::new(vec![0u8; 0x1000 * 2]);
+        assert!(header.has_good_volume_info(&bp).unwrap());
     }
 
     #[test]
     fn has_good_volume_info_false_when_provider_too_small() {
         let data = valid_header_bytes(0x1000, 10);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = HfsPlusVolumeHeader::read_at(&mut reader, 0).unwrap();
 
-        let mut bp = VecProvider(vec![0u8; 100]);
-        assert!(!header.has_good_volume_info(&mut bp).unwrap());
+        let bp = ByteArrayProvider::new(vec![0u8; 100]);
+        assert!(!header.has_good_volume_info(&bp).unwrap());
     }
 
     #[test]
     fn probe_false_when_provider_too_short() {
         let data = vec![0u8; 100];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         assert!(!HfsPlusVolumeHeader::probe(&mut reader));
     }
@@ -440,7 +337,7 @@ mod tests {
         // 0x1000 bytes, so the backing provider must be at least that large for
         // has_good_volume_info to succeed.
         data.resize(0x1000, 0);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         assert!(HfsPlusVolumeHeader::probe(&mut reader));
     }
@@ -451,7 +348,7 @@ mod tests {
         header_bytes[0..2].copy_from_slice(&0x0000i16.to_be_bytes());
         let mut data = vec![0xAAu8; 1024];
         data.extend_from_slice(&header_bytes);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         assert!(!HfsPlusVolumeHeader::probe(&mut reader));
     }

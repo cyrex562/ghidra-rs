@@ -15,7 +15,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::seam_stubs::{EncodedAnnotation, EncodedArray};
 use crate::file::formats::android::dex::format::value_formats::ValueFormats;
@@ -42,7 +42,7 @@ pub struct EncodedValue {
 
 impl EncodedValue {
     /// Port of `EncodedValue(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let value = reader.read_next_byte()?;
         let value_type = value & 0x1f;
         let value_args = (value & 0xe0) >> 5;
@@ -201,70 +201,6 @@ impl StructConverter for EncodedValue {
 mod tests {
     use super::*;
 
-    struct MockBinaryReader {
-        bytes: Vec<u8>,
-        position: usize,
-        little_endian: bool,
-    }
-
-    impl MockBinaryReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            MockBinaryReader { bytes, position: 0, little_endian: true }
-        }
-    }
-
-    impl LegacyBinaryReader for MockBinaryReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position as u64;
-            self.position = index as usize;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: new_index as usize, little_endian: self.little_endian })
-        }
-        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: self.little_endian })
-        }
-        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: false })
-        }
-        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: true })
-        }
-    }
-
     fn sleb_unsigned_bytes(mut value: u64) -> Vec<u8> {
         let mut out = Vec::new();
         loop {
@@ -285,7 +221,7 @@ mod tests {
     /// `valueType=VALUE_BYTE, valueArg=0` -> `0x00`, followed by the 1 payload byte.
     #[test]
     fn decodes_value_byte() {
-        let mut reader = MockBinaryReader::new(vec![ValueFormats::VALUE_BYTE, 0x2A]);
+        let mut reader = BinaryReader::from_bytes(vec![ValueFormats::VALUE_BYTE, 0x2A], true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         assert_eq!(ev.get_value_type(), ValueFormats::VALUE_BYTE);
         assert_eq!(ev.get_value_args(), 0);
@@ -300,7 +236,7 @@ mod tests {
     #[test]
     fn decodes_value_int_with_multi_byte_payload() {
         let header = (3u8 << 5) | ValueFormats::VALUE_INT;
-        let mut reader = MockBinaryReader::new(vec![header, 0x01, 0x02, 0x03, 0x04]);
+        let mut reader = BinaryReader::from_bytes(vec![header, 0x01, 0x02, 0x03, 0x04], true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         assert_eq!(ev.get_value_type(), ValueFormats::VALUE_INT);
         assert_eq!(ev.get_value_args(), 3);
@@ -310,13 +246,13 @@ mod tests {
     /// `VALUE_NULL`/`VALUE_BOOLEAN` consume no payload bytes at all.
     #[test]
     fn value_null_and_boolean_consume_no_payload() {
-        let mut reader = MockBinaryReader::new(vec![ValueFormats::VALUE_NULL, 0xFF]);
+        let mut reader = BinaryReader::from_bytes(vec![ValueFormats::VALUE_NULL, 0xFF], true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         assert_eq!(ev.get_value_bytes(), None);
         assert_eq!(reader.get_pointer_index(), 1); // only the header byte was consumed
 
         let header_bool = (1u8 << 5) | ValueFormats::VALUE_BOOLEAN;
-        let mut reader = MockBinaryReader::new(vec![header_bool]);
+        let mut reader = BinaryReader::from_bytes(vec![header_bool], true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         assert!(ev.is_value_boolean());
         assert_eq!(ev.get_value_bytes(), None);
@@ -332,7 +268,7 @@ mod tests {
         bytes.push(0x7B); // nested EncodedValue payload
         bytes.push(0xAA); // trailing sentinel byte, should NOT be consumed
 
-        let mut reader = MockBinaryReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         assert_eq!(ev.get_value_type(), ValueFormats::VALUE_ARRAY);
         let array = ev.get_array().unwrap();
@@ -357,17 +293,17 @@ mod tests {
         bytes.push(ValueFormats::VALUE_BYTE); // element's EncodedValue header
         bytes.push(0x99); // element's EncodedValue payload
 
-        let mut reader = MockBinaryReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         assert_eq!(ev.get_value_type(), ValueFormats::VALUE_ANNOTATION);
         assert!(ev.get_annotation().is_some());
         // Every byte should have been consumed (no trailing bytes in this test's input).
-        assert_eq!(reader.get_pointer_index(), reader.bytes.len() as u64);
+        assert_eq!(reader.get_pointer_index(), reader.length().unwrap());
     }
 
     #[test]
     fn to_data_type_names_primitive_value_by_type_and_length() {
-        let mut reader = MockBinaryReader::new(vec![ValueFormats::VALUE_BYTE, 0x2A]);
+        let mut reader = BinaryReader::from_bytes(vec![ValueFormats::VALUE_BYTE, 0x2A], true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         let dt = ev.to_data_type().unwrap();
         assert_eq!(dt.get_name(), format!("encoded_value_0x{:x}_1", ValueFormats::VALUE_BYTE));
@@ -379,7 +315,7 @@ mod tests {
         bytes.extend(sleb_unsigned_bytes(1));
         bytes.push(ValueFormats::VALUE_BYTE);
         bytes.push(0x7B);
-        let mut reader = MockBinaryReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         let dt = ev.to_data_type().unwrap();
         assert_eq!(dt.get_name(), format!("encoded_value_0x{:x}_2", ValueFormats::VALUE_ARRAY));
@@ -387,7 +323,7 @@ mod tests {
 
     #[test]
     fn to_data_type_is_empty_for_null_and_boolean() {
-        let mut reader = MockBinaryReader::new(vec![ValueFormats::VALUE_NULL]);
+        let mut reader = BinaryReader::from_bytes(vec![ValueFormats::VALUE_NULL], true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         let dt = ev.to_data_type().unwrap();
         assert_eq!(dt.get_name(), format!("encoded_value_0x{:x}", ValueFormats::VALUE_NULL));
@@ -398,7 +334,7 @@ mod tests {
     #[test]
     fn get_value_returns_the_raw_header_byte() {
         let header = (2u8 << 5) | ValueFormats::VALUE_SHORT;
-        let mut reader = MockBinaryReader::new(vec![header, 0x01, 0x02, 0x03]);
+        let mut reader = BinaryReader::from_bytes(vec![header, 0x01, 0x02, 0x03], true);
         let ev = EncodedValue::new(&mut reader).unwrap();
         assert_eq!(ev.get_value(), header);
     }

@@ -31,7 +31,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::class_def_item::ClassDefItem;
 use crate::file::formats::android::dex::format::dex_constants::DexConstants;
@@ -101,7 +101,7 @@ pub struct DexHeader {
 
 impl DexHeader {
     /// Port of `DexHeader(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         Self::new_with_magic_check(reader, Self::check_magic)
     }
 
@@ -113,7 +113,7 @@ impl DexHeader {
     /// not-yet-constructed subclass, so this hook is the equivalent seam: `CDexHeader::new`
     /// calls this with its own magic check instead of [`check_magic`](Self::check_magic).
     pub fn new_with_magic_check(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         check_magic: impl FnOnce(&[u8]) -> io::Result<()>,
     ) -> io::Result<Self> {
         let magic = reader.read_next_byte_array(DexConstants::DEX_MAGIC_BASE.len())?;
@@ -186,7 +186,7 @@ impl DexHeader {
 
     /// Port of `DexHeader.parse(BinaryReader)`. See the module docs for what is and isn't
     /// populated.
-    pub fn parse(&mut self, reader: &mut dyn LegacyBinaryReader) -> io::Result<()> {
+    pub fn parse(&mut self, reader: &mut BinaryReader) -> io::Result<()> {
         if self.parsed {
             return Ok(());
         }
@@ -348,52 +348,7 @@ impl DexHeader {
             bytes.extend(0i32.to_le_bytes()); // remaining 20 header ints (fileSize..dataOffset)
         }
 
-        struct BytesReader {
-            bytes: Vec<u8>,
-            position: usize,
-        }
-        impl LegacyBinaryReader for BytesReader {
-            fn length(&self) -> io::Result<u64> {
-                Ok(self.bytes.len() as u64)
-            }
-            fn is_valid_index(&self, index: u64) -> bool {
-                (index as usize) < self.bytes.len()
-            }
-            fn get_pointer_index(&self) -> u64 {
-                self.position as u64
-            }
-            fn set_pointer_index(&mut self, index: u64) -> u64 {
-                let old = self.position as u64;
-                self.position = index as usize;
-                old
-            }
-            fn is_little_endian(&self) -> bool {
-                true
-            }
-            fn set_little_endian(&mut self, _is_little_endian: bool) {}
-            fn read_byte(&self, index: u64) -> io::Result<u8> {
-                self.bytes
-                    .get(index as usize)
-                    .copied()
-                    .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-            }
-            fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-                let start = index as usize;
-                let end = start + n_elements;
-                self.bytes
-                    .get(start..end)
-                    .map(|s| s.to_vec())
-                    .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-            }
-            fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-                unimplemented!("not exercised by this fixture")
-            }
-            fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-                Box::new(BytesReader { bytes: self.bytes.clone(), position: new_index as usize })
-            }
-        }
-
-        let mut reader = BytesReader { bytes, position: 0 };
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         DexHeader::new(&mut reader).expect("fixture bytes are a valid minimal DexHeader")
     }
 }
@@ -467,51 +422,6 @@ impl StructConverter for DexHeader {
 mod tests {
     use super::*;
 
-    struct BytesReader {
-        bytes: Vec<u8>,
-        position: usize,
-    }
-    impl LegacyBinaryReader for BytesReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position as u64;
-            self.position = index as usize;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(BytesReader { bytes: self.bytes.clone(), position: new_index as usize })
-        }
-    }
-
     /// Builds a full, valid minimal DEX header (108 bytes: 8-byte magic+version, then 25 more
     /// header ints/bytes), with `string_ids`/`proto_ids`/`class_defs_ids` sizes all zero so
     /// `parse()` has nothing to iterate -- matching real dex_file.h layout order.
@@ -546,7 +456,7 @@ mod tests {
 
     #[test]
     fn decodes_header_fields() {
-        let mut reader = BytesReader { bytes: header_bytes(), position: 0 };
+        let mut reader = BinaryReader::from_bytes(header_bytes(), true);
         let header = DexHeader::new(&mut reader).unwrap();
 
         assert_eq!(header.get_magic(), DexConstants::DEX_MAGIC_BASE.as_bytes());
@@ -562,14 +472,14 @@ mod tests {
     fn rejects_bad_magic() {
         let mut bytes = header_bytes();
         bytes[0] = b'X'; // corrupt the magic
-        let mut reader = BytesReader { bytes, position: 0 };
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         assert!(DexHeader::new(&mut reader).is_err());
     }
 
     #[test]
     fn parse_is_idempotent_and_leaves_empty_lists_when_sizes_are_zero() {
         let bytes = header_bytes();
-        let mut reader = BytesReader { bytes, position: 0 };
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let mut header = DexHeader::new(&mut reader).unwrap();
 
         header.parse(&mut reader).unwrap();
@@ -583,7 +493,7 @@ mod tests {
 
     #[test]
     fn to_data_type_matches_java_structure_name_and_length() {
-        let mut reader = BytesReader { bytes: header_bytes(), position: 0 };
+        let mut reader = BinaryReader::from_bytes(header_bytes(), true);
         let header = DexHeader::new(&mut reader).unwrap();
         let dt = header.to_data_type().unwrap();
 

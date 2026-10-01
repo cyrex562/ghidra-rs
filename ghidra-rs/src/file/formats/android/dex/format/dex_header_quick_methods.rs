@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 use super::dex_constants::DexConstants;
 
@@ -19,7 +19,7 @@ impl DexHeaderQuickMethods {
     ///
     /// Returns an error if the magic bytes don't match [`DexConstants::DEX_MAGIC_BASE`]
     /// or if reading from the reader fails.
-    pub fn get_dex_length(reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
+    pub fn get_dex_length(reader: &mut BinaryReader) -> io::Result<i32> {
         let magic = reader.read_next_byte_array(DexConstants::DEX_MAGIC_BASE.len())?;
 
         if String::from_utf8_lossy(&magic) != DexConstants::DEX_MAGIC_BASE {
@@ -43,78 +43,6 @@ impl DexHeaderQuickMethods {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct MockReader {
-        bytes: Vec<u8>,
-        position: usize,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self { bytes, position: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position;
-            self.position = index as usize;
-            old as u64
-        }
-
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "index out of range"))
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start
-                .checked_add(n_elements)
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "overflow"))?;
-            if end > self.bytes.len() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "range out of bounds",
-                ));
-            }
-            Ok(self.bytes[start..end].to_vec())
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            panic!("not implemented for mock")
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(Self {
-                bytes: self.bytes.clone(),
-                position: new_index as usize,
-            })
-        }
-    }
 
     #[test]
     fn get_dex_length_returns_file_size() {
@@ -125,7 +53,7 @@ mod tests {
         data.extend_from_slice(&[0u8; 20]);
         data.extend_from_slice(&0x1000i32.to_le_bytes());
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let result = DexHeaderQuickMethods::get_dex_length(&mut reader);
 
         assert!(result.is_ok());
@@ -138,7 +66,7 @@ mod tests {
         data.extend_from_slice(b"NOTDEX\n");
         data.extend_from_slice(b"035\0");
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let result = DexHeaderQuickMethods::get_dex_length(&mut reader);
 
         assert!(result.is_err());
@@ -151,7 +79,7 @@ mod tests {
     #[test]
     fn get_dex_length_handles_truncated_magic() {
         let data = Vec::from(&b"de"[..]);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let result = DexHeaderQuickMethods::get_dex_length(&mut reader);
 
         assert!(result.is_err());
@@ -166,7 +94,7 @@ mod tests {
         data.extend_from_slice(&[0u8; 20]);
         data.extend_from_slice(&0x1000i32.to_le_bytes());
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         assert_eq!(reader.get_pointer_index(), 0);
 
         let _ = DexHeaderQuickMethods::get_dex_length(&mut reader);
@@ -183,7 +111,7 @@ mod tests {
         data.extend_from_slice(&[0xaa; 20]);
         data.extend_from_slice(&0x7fffffff_i32.to_le_bytes());
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let result = DexHeaderQuickMethods::get_dex_length(&mut reader);
 
         assert!(result.is_ok());

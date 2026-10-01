@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 /// ODEX (OAT DEX) file format constants.
 ///
@@ -27,7 +27,7 @@ impl OdexConstants {
     /// Checks if the given reader starts with an ODEX magic number.
     ///
     /// Returns true if the reader's contents start with ODEX_MAGIC_35 or ODEX_MAGIC_36.
-    pub fn is_odex_file(reader: &dyn LegacyBinaryReader) -> bool {
+    pub fn is_odex_file(reader: &BinaryReader) -> bool {
         match reader.read_byte_array(0, Self::ODEX_MAGIC_LENGTH) {
             Ok(bytes) => {
                 let magic = String::from_utf8_lossy(&bytes).into_owned();
@@ -41,72 +41,7 @@ impl OdexConstants {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
     use std::io;
-    use std::rc::Rc;
-
-    /// Minimal in-memory [`BinaryReader`] used to exercise the byte-array reads that
-    /// [`OdexConstants::is_odex_file`] performs.
-    struct MockReader {
-        bytes: Vec<u8>,
-        position: usize,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self { bytes, position: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position;
-            self.position = index as usize;
-            old as u64
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "index out of range"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start
-                .checked_add(n_elements)
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "overflow"))?;
-            if end > self.bytes.len() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "range out of bounds",
-                ));
-            }
-            Ok(self.bytes[start..end].to_vec())
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            panic!("not implemented for mock")
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(Self {
-                bytes: self.bytes.clone(),
-                position: new_index as usize,
-            })
-        }
-    }
 
     #[test]
     fn magic_35_value() {
@@ -148,7 +83,7 @@ mod tests {
     #[test]
     fn is_odex_file_with_magic_35() {
         let data = b"dey\n035\0extra data".to_vec();
-        let reader = MockReader::new(data);
+        let reader = BinaryReader::from_bytes(data, true);
 
         assert!(OdexConstants::is_odex_file(&reader));
     }
@@ -156,7 +91,7 @@ mod tests {
     #[test]
     fn is_odex_file_with_magic_36() {
         let data = b"dey\n036\0extra data".to_vec();
-        let reader = MockReader::new(data);
+        let reader = BinaryReader::from_bytes(data, true);
 
         assert!(OdexConstants::is_odex_file(&reader));
     }
@@ -164,7 +99,7 @@ mod tests {
     #[test]
     fn is_odex_file_with_magic_37_returns_false() {
         let data = b"dey\n037\0extra data".to_vec();
-        let reader = MockReader::new(data);
+        let reader = BinaryReader::from_bytes(data, true);
 
         assert!(!OdexConstants::is_odex_file(&reader));
     }
@@ -172,7 +107,7 @@ mod tests {
     #[test]
     fn is_odex_file_with_short_data_returns_false() {
         let data = b"dey\n".to_vec();
-        let reader = MockReader::new(data);
+        let reader = BinaryReader::from_bytes(data, true);
 
         assert!(!OdexConstants::is_odex_file(&reader));
     }
@@ -180,7 +115,7 @@ mod tests {
     #[test]
     fn is_odex_file_with_wrong_magic_returns_false() {
         let data = b"DEX\n035\0extra data".to_vec();
-        let reader = MockReader::new(data);
+        let reader = BinaryReader::from_bytes(data, true);
 
         assert!(!OdexConstants::is_odex_file(&reader));
     }

@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
 /// Magic value `'koly'` (`0x6b6f6c79`) marking the start of a valid [`UdifHeader`].
@@ -48,7 +48,7 @@ impl UdifHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from `reader` fails.
-    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut BinaryReader) -> io::Result<Self> {
         let offset = reader.length()? - SIZEOF_UDIF_HEADER;
         Self::read_at(reader, offset)
     }
@@ -59,7 +59,7 @@ impl UdifHeader {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from `reader` fails.
-    pub fn read_at(reader: &mut dyn LegacyBinaryReader, offset: u64) -> io::Result<Self> {
+    pub fn read_at(reader: &mut BinaryReader, offset: u64) -> io::Result<Self> {
         reader.set_little_endian(false);
         reader.set_pointer_index(offset);
 
@@ -146,8 +146,6 @@ impl UdifHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
     struct VecProvider(Vec<u8>);
 
@@ -182,70 +180,6 @@ mod tests {
 
         fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
             Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
         }
     }
 
@@ -286,7 +220,7 @@ mod tests {
     #[test]
     fn read_at_parses_all_fields_big_endian() {
         let data = valid_header_bytes(0, 100, 100, 50);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let header = UdifHeader::read_at(&mut reader, 0).expect("read_at should succeed");
 
@@ -307,7 +241,7 @@ mod tests {
     #[test]
     fn read_at_forces_big_endian_regardless_of_reader_default() {
         let data = valid_header_bytes(0, 100, 100, 50);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         reader.set_little_endian(true);
 
         let header = UdifHeader::read_at(&mut reader, 0).expect("read_at should succeed");
@@ -321,7 +255,7 @@ mod tests {
         let mut data = vec![0xAAu8; 128];
         data.extend_from_slice(&valid_header_bytes(0, 100, 100, 50));
         let total_len = data.len() as u64;
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let header = UdifHeader::read(&mut reader).expect("read should succeed");
 
@@ -332,7 +266,7 @@ mod tests {
     #[test]
     fn is_valid_true_for_correct_signature_and_size() {
         let data = valid_header_bytes(0, 100, 100, 50);
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = UdifHeader::read_at(&mut reader, 0).unwrap();
 
         assert!(header.is_valid());
@@ -342,7 +276,7 @@ mod tests {
     fn is_valid_false_for_wrong_signature() {
         let mut data = valid_header_bytes(0, 100, 100, 50);
         data[0] = 0x00; // corrupt signature
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = UdifHeader::read_at(&mut reader, 0).unwrap();
 
         assert!(!header.is_valid());
@@ -352,7 +286,7 @@ mod tests {
     fn is_valid_false_for_wrong_header_size() {
         let mut data = valid_header_bytes(0, 100, 100, 50);
         data[8..12].copy_from_slice(&256i32.to_be_bytes());
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let header = UdifHeader::read_at(&mut reader, 0).unwrap();
 
         assert!(!header.is_valid());
@@ -363,7 +297,7 @@ mod tests {
         let mut backing = vec![0u8; 1024];
         let header_bytes = valid_header_bytes(0, 100, 100, 50);
         backing[512..].copy_from_slice(&header_bytes);
-        let mut reader = MockReader::new(backing.clone());
+        let mut reader = BinaryReader::from_bytes(backing.clone(), true);
         let header = UdifHeader::read_at(&mut reader, 512).unwrap();
 
         let mut bp = VecProvider(backing);
@@ -374,7 +308,7 @@ mod tests {
     fn has_good_offsets_false_when_data_fork_out_of_bounds() {
         let backing = vec![0u8; 1024];
         let header_bytes = valid_header_bytes(2000, 100, 100, 50);
-        let mut reader = MockReader::new(header_bytes);
+        let mut reader = BinaryReader::from_bytes(header_bytes, true);
         let header = UdifHeader::read_at(&mut reader, 0).unwrap();
 
         let mut bp = VecProvider(backing);
@@ -386,7 +320,7 @@ mod tests {
         let mut backing = vec![0u8; 1024];
         let header_bytes = valid_header_bytes(0, 100, 100, 0);
         backing[512..].copy_from_slice(&header_bytes);
-        let mut reader = MockReader::new(backing.clone());
+        let mut reader = BinaryReader::from_bytes(backing.clone(), true);
         let header = UdifHeader::read_at(&mut reader, 512).unwrap();
 
         let mut bp = VecProvider(backing);
@@ -397,7 +331,7 @@ mod tests {
     fn has_good_offsets_false_when_negative_offset() {
         let backing = vec![0u8; 1024];
         let header_bytes = valid_header_bytes(-1, 100, 100, 50);
-        let mut reader = MockReader::new(header_bytes);
+        let mut reader = BinaryReader::from_bytes(header_bytes, true);
         let header = UdifHeader::read_at(&mut reader, 0).unwrap();
 
         let mut bp = VecProvider(backing);

@@ -5,7 +5,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::encoded_value::EncodedValue;
@@ -36,7 +36,7 @@ pub struct EncodedArray {
 
 impl EncodedArray {
     /// Port of `EncodedArray(BinaryReader)`.
-    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut BinaryReader) -> io::Result<Self> {
         let leb128 = LEB128Info::unsigned(reader)?;
         let size = leb128.as_u_int32().map_err(io::Error::from)?;
         let size_length = leb128.get_length();
@@ -44,7 +44,7 @@ impl EncodedArray {
         let mut ev_reader = reader.clone_reader();
         let start = reader.get_pointer_index();
         for _ in 0..size {
-            EncodedValue::new(&mut *ev_reader)?;
+            EncodedValue::new(&mut ev_reader)?;
         }
         let n_bytes = (ev_reader.get_pointer_index() - start) as usize;
         let values = reader.read_next_byte_array(n_bytes)?;
@@ -97,7 +97,7 @@ pub struct EncodedAnnotation {
 
 impl EncodedAnnotation {
     /// Port of `EncodedAnnotation(BinaryReader)`.
-    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut BinaryReader) -> io::Result<Self> {
         let leb128 = LEB128Info::unsigned(reader)?;
         let type_index_length = leb128.get_length();
 

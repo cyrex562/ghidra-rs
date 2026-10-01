@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
@@ -56,7 +56,7 @@ impl CramFsInode {
     ///
     /// # Errors
     /// Returns `Err` if any read fails.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         // Before reader reads anything and progresses, get addr for start of inode.
         let address = reader.get_pointer_index() as i64;
         let mut mode_uid = reader.read_next_int()?;
@@ -200,88 +200,9 @@ impl fmt::Display for CramFsInode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    struct VecStore(Vec<u8>);
-
-    impl GByteStore for VecStore {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            (index as usize) < self.0.len()
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Ok(())
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Ok(())
-        }
-    }
-
-    struct SimpleReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        pointer: u64,
-        little_endian: bool,
-    }
-
-    impl LegacyBinaryReader for SimpleReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, little_endian: bool) {
-            self.little_endian = little_endian;
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.pointer
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.pointer;
-            self.pointer = index;
-            old
-        }
-        fn read_byte_array(&self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, length)
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            self.provider.clone()
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(SimpleReader {
-                provider: self.provider.clone(),
-                pointer: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
-
-    fn reader(bytes: Vec<u8>, little_endian: bool, start: u64) -> SimpleReader {
-        SimpleReader { provider: Rc::new(RefCell::new(VecStore(bytes))), pointer: start, little_endian }
+    fn reader(bytes: Vec<u8>, little_endian: bool, start: u64) -> BinaryReader {
+        BinaryReader::from_bytes(bytes, little_endian).clone_at(start)
     }
 
     /// Packs an inode the way `mkcramfs` writes it (little-endian words).

@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use std::io;
 
 /// Represents an entry in a partition table.
@@ -20,7 +20,7 @@ impl PartitionTableEntry {
     ///
     /// # Errors
     /// Returns an I/O error if reading from the reader fails.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let name = reader.read_next_byte_array(16)?;
         let start = reader.read_next_int()?;
         let length = reader.read_next_int()?;
@@ -57,78 +57,6 @@ impl PartitionTableEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct MockBinaryReader {
-        bytes: Vec<u8>,
-        position: usize,
-    }
-
-    impl MockBinaryReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self { bytes, position: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockBinaryReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position;
-            self.position = index as usize;
-            old as u64
-        }
-
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "index out of range"))
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start
-                .checked_add(n_elements)
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "overflow"))?;
-            if end > self.bytes.len() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "range out of bounds",
-                ));
-            }
-            Ok(self.bytes[start..end].to_vec())
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            panic!("not implemented for mock")
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(Self {
-                bytes: self.bytes.clone(),
-                position: new_index as usize,
-            })
-        }
-    }
 
     #[test]
     fn test_new_reads_correct_data() {
@@ -145,7 +73,7 @@ mod tests {
         // Set flags = 1
         data[24..28].copy_from_slice(&1i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let entry = PartitionTableEntry::new(&mut reader).expect("Failed to create entry");
 
         assert_eq!(entry.get_name().trim_end_matches('\0'), "testpart");
@@ -160,7 +88,7 @@ mod tests {
         let name_bytes = b"partition\0\0\0\0\0\0\0";
         data[0..16].copy_from_slice(&name_bytes[..16]);
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let entry = PartitionTableEntry::new(&mut reader).unwrap();
 
         assert_eq!(entry.get_name().trim_end_matches('\0'), "partition");
@@ -171,7 +99,7 @@ mod tests {
         let mut data = vec![0u8; 28];
         data[16..20].copy_from_slice(&1000i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let entry = PartitionTableEntry::new(&mut reader).unwrap();
 
         assert_eq!(entry.get_start(), 1000);
@@ -182,7 +110,7 @@ mod tests {
         let mut data = vec![0u8; 28];
         data[20..24].copy_from_slice(&2000i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let entry = PartitionTableEntry::new(&mut reader).unwrap();
 
         assert_eq!(entry.get_length(), 2000);
@@ -193,7 +121,7 @@ mod tests {
         let mut data = vec![0u8; 28];
         data[24..28].copy_from_slice(&5i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let entry = PartitionTableEntry::new(&mut reader).unwrap();
 
         assert_eq!(entry.get_flags(), 5);
@@ -212,7 +140,7 @@ mod tests {
         data[20..24].copy_from_slice(&i32::MIN.to_le_bytes());
         data[24..28].copy_from_slice(&0x12345678i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let entry = PartitionTableEntry::new(&mut reader).unwrap();
 
         assert_eq!(entry.get_start(), i32::MAX);
@@ -223,7 +151,7 @@ mod tests {
     #[test]
     fn test_insufficient_data_error() {
         let data = vec![0u8; 27]; // One byte too short
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let result = PartitionTableEntry::new(&mut reader);
         assert!(result.is_err());
@@ -236,7 +164,7 @@ mod tests {
         data[20..24].copy_from_slice(&200i32.to_le_bytes());
         data[24..28].copy_from_slice(&300i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         assert_eq!(reader.get_pointer_index(), 0);
 
         let _ = PartitionTableEntry::new(&mut reader);
@@ -261,7 +189,7 @@ mod tests {
         data[48..52].copy_from_slice(&4000i32.to_le_bytes());
         data[52..56].copy_from_slice(&2i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let entry1 = PartitionTableEntry::new(&mut reader).unwrap();
         assert_eq!(entry1.get_start(), 1000);
@@ -279,7 +207,7 @@ mod tests {
         data[20..24].copy_from_slice(&600i32.to_le_bytes());
         data[24..28].copy_from_slice(&7i32.to_le_bytes());
 
-        let mut reader = MockBinaryReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let entry = PartitionTableEntry::new(&mut reader).unwrap();
         let entry_clone = entry.clone();
 

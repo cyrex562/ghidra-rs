@@ -10,7 +10,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::encoded_value::EncodedValue;
@@ -33,7 +33,7 @@ pub struct AnnotationElement {
 
 impl AnnotationElement {
     /// Port of `AnnotationElement(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let leb128 = LEB128Info::unsigned(reader)?;
         let name_index = leb128.as_u_int32().map_err(io::Error::from)? as i32;
         let name_index_length = leb128.get_length();
@@ -76,70 +76,6 @@ mod tests {
     use super::*;
     use crate::file::formats::android::dex::format::value_formats::ValueFormats;
 
-    struct MockBinaryReader {
-        bytes: Vec<u8>,
-        position: usize,
-        little_endian: bool,
-    }
-
-    impl MockBinaryReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            MockBinaryReader { bytes, position: 0, little_endian: true }
-        }
-    }
-
-    impl LegacyBinaryReader for MockBinaryReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position as u64;
-            self.position = index as usize;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn get_byte_provider(&self) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not exercised by these tests")
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: new_index as usize, little_endian: self.little_endian })
-        }
-        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: self.little_endian })
-        }
-        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: false })
-        }
-        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockBinaryReader { bytes: self.bytes.clone(), position: self.position, little_endian: true })
-        }
-    }
-
     fn uleb_bytes(mut value: u64) -> Vec<u8> {
         let mut out = Vec::new();
         loop {
@@ -162,13 +98,13 @@ mod tests {
         bytes.push(ValueFormats::VALUE_BYTE); // EncodedValue header
         bytes.push(0x42); // EncodedValue payload
 
-        let mut reader = MockBinaryReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let elem = AnnotationElement::new(&mut reader).unwrap();
 
         assert_eq!(elem.get_name_index(), 300);
         assert_eq!(elem.get_value().get_value_type(), ValueFormats::VALUE_BYTE);
         assert_eq!(elem.get_value().get_value_byte(), 0x42);
-        assert_eq!(reader.get_pointer_index(), reader.bytes.len() as u64);
+        assert_eq!(reader.get_pointer_index(), reader.length().unwrap());
     }
 
     #[test]
@@ -177,7 +113,7 @@ mod tests {
         bytes.push(ValueFormats::VALUE_BYTE);
         bytes.push(0x01);
 
-        let mut reader = MockBinaryReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let elem = AnnotationElement::new(&mut reader).unwrap();
         let dt = elem.to_data_type().unwrap();
 
@@ -192,7 +128,7 @@ mod tests {
         let mut bytes = uleb_bytes(0x4000); // nameIndex, 3-byte uleb128
         bytes.push(ValueFormats::VALUE_NULL); // no payload
 
-        let mut reader = MockBinaryReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let elem = AnnotationElement::new(&mut reader).unwrap();
         let dt = elem.to_data_type().unwrap();
 

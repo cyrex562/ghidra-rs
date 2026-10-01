@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::word_data_type::WordDataType;
@@ -30,7 +30,7 @@ impl ChunkHeader {
     /// Reads a chunk header from `reader`'s current position.
     ///
     /// Mirrors `ChunkHeader(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         Ok(ChunkHeader {
             chunk_type: reader.read_next_short()?,
             reserved1: reader.read_next_short()?,

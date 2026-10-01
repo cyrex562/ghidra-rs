@@ -15,7 +15,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnum;
 use crate::file::formats::android::oat::oat_constants::OatConstants;
@@ -53,7 +53,7 @@ impl OatClassBase {
     /// Reads the class status and selects the version-appropriate status enum family.
     ///
     /// Port of the protected `OatClass(BinaryReader, String)` constructor.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, oat_version: &str) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, oat_version: &str) -> io::Result<Self> {
         let status = reader.read_next_short()?;
 
         let status_enum: Box<dyn OatClassStatusEnum> = if oat_version == OatConstants::OAT_VERSION_007 {
@@ -173,95 +173,6 @@ pub trait OatClass: StructConverter {
 mod tests {
     use super::*;
     use crate::app::util::bin::struct_converter::ToDataTypeError;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>, little_endian: bool) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     struct MockDataType {
         name: String,
@@ -302,7 +213,7 @@ mod tests {
     #[test]
     fn new_reads_status_short_and_stores_oat_version() {
         // 0x0009 little-endian == kStatusInitialized (9) in the KitKat (007) family.
-        let mut reader = MockReader::new(vec![0x09, 0x00], true);
+        let mut reader = BinaryReader::from_bytes(vec![0x09, 0x00], true);
         let base = OatClassBase::new(&mut reader, OatConstants::OAT_VERSION_007).unwrap();
 
         assert_eq!(base.get_status(), 9);
@@ -312,7 +223,7 @@ mod tests {
 
     #[test]
     fn unrecognized_version_falls_back_to_invalid_status_enum() {
-        let mut reader = MockReader::new(vec![0x05, 0x00], true);
+        let mut reader = BinaryReader::from_bytes(vec![0x05, 0x00], true);
         let base = OatClassBase::new(&mut reader, "999").unwrap();
 
         // Falls into the `default` branch of the Java switch, matching `OatClassStatusEnum_Invalid`.
@@ -321,7 +232,7 @@ mod tests {
 
     #[test]
     fn get_type_matches_ordinal_and_falls_back_to_max() {
-        let mut reader = MockReader::new(vec![0x00, 0x00], true);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x00], true);
         let mut base = OatClassBase::new(&mut reader, OatConstants::OAT_VERSION_007).unwrap();
 
         base.type_ = 1;
@@ -333,7 +244,7 @@ mod tests {
 
     #[test]
     fn rename_data_type_uses_prefix_when_no_second_underscore() {
-        let mut reader = MockReader::new(vec![0x00, 0x00], true);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x00], true);
         let base = OatClassBase::new(&mut reader, OatConstants::OAT_VERSION_007).unwrap();
         let mut dt = MockDataType::new("OatClass_KitKat");
 
@@ -343,7 +254,7 @@ mod tests {
 
     #[test]
     fn rename_data_type_keeps_suffix_after_second_underscore() {
-        let mut reader = MockReader::new(vec![0x00, 0x00], true);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x00], true);
         let base = OatClassBase::new(&mut reader, OatConstants::OAT_VERSION_007).unwrap();
         let mut dt = MockDataType::new("OatClass_KitKat_1234");
 
@@ -353,7 +264,7 @@ mod tests {
 
     #[test]
     fn is_method_native_dispatches_through_trait() {
-        let mut reader = MockReader::new(vec![0x00, 0x00], true);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x00], true);
         let base = OatClassBase::new(&mut reader, OatConstants::OAT_VERSION_007).unwrap();
         let oat_class = MockOatClass { base };
 

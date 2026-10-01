@@ -13,7 +13,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::cdex::cdex_constants::CDexConstants;
 use crate::file::formats::android::dex::format::dex_header::DexHeader;
@@ -39,7 +39,7 @@ pub struct CDexHeader {
 
 impl CDexHeader {
     /// Port of `CDexHeader(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let base = DexHeader::new_with_magic_check(reader, Self::check_magic)?;
 
         let feature_flags = reader.read_next_int()?;
@@ -166,54 +166,6 @@ mod tests {
     use super::*;
     use crate::file::formats::android::dex::format::dex_constants::DexConstants;
 
-    struct BytesReader {
-        bytes: Vec<u8>,
-        position: usize,
-    }
-    impl LegacyBinaryReader for BytesReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position as u64;
-            self.position = index as usize;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
-        {
-            unimplemented!("not exercised by this fixture")
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(BytesReader { bytes: self.bytes.clone(), position: new_index as usize })
-        }
-    }
-
     /// Builds the byte stream for a minimal, valid CDEX header: the standard 0x70-byte DEX
     /// `header_item` (with the CDEX magic instead of the DEX magic) followed by the six
     /// CDEX-only `int` fields.
@@ -238,7 +190,7 @@ mod tests {
 
     #[test]
     fn parses_cdex_magic_and_extra_fields() {
-        let mut reader = BytesReader { bytes: minimal_cdex_bytes(), position: 0 };
+        let mut reader = BinaryReader::from_bytes(minimal_cdex_bytes(), true);
         let header = CDexHeader::new(&mut reader).expect("valid minimal CDexHeader");
 
         assert_eq!(header.base().get_magic(), CDexConstants::MAGIC.as_bytes());
@@ -252,7 +204,7 @@ mod tests {
 
     #[test]
     fn is_data_offset_relative_is_true() {
-        let mut reader = BytesReader { bytes: minimal_cdex_bytes(), position: 0 };
+        let mut reader = BinaryReader::from_bytes(minimal_cdex_bytes(), true);
         let header = CDexHeader::new(&mut reader).expect("valid minimal CDexHeader");
         assert!(header.is_data_offset_relative());
     }
@@ -267,7 +219,7 @@ mod tests {
         for _ in 0..20 {
             bytes.extend(0i32.to_le_bytes());
         }
-        let mut reader = BytesReader { bytes, position: 0 };
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let result = CDexHeader::new(&mut reader);
         match result {
             Ok(_) => panic!("plain DEX magic must be rejected"),
@@ -277,7 +229,7 @@ mod tests {
 
     #[test]
     fn to_data_type_has_cdex_name_and_category_and_extra_fields() {
-        let mut reader = BytesReader { bytes: minimal_cdex_bytes(), position: 0 };
+        let mut reader = BinaryReader::from_bytes(minimal_cdex_bytes(), true);
         let header = CDexHeader::new(&mut reader).expect("valid minimal CDexHeader");
 
         let dt = header.to_data_type().expect("toDataType succeeds");

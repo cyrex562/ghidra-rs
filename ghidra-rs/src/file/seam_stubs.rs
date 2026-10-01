@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::program::model::data::data_type::DataType;
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::dex_header::DexHeader;
@@ -117,7 +117,7 @@ impl VdexHeader {
         unimplemented!("VdexHeader.get_version not yet ported")
     }
 
-    pub fn parse(&self, _reader: &dyn LegacyBinaryReader, _monitor: &dyn TaskMonitor) -> std::io::Result<()> {
+    pub fn parse(&self, _reader: &BinaryReader, _monitor: &dyn TaskMonitor) -> std::io::Result<()> {
         unimplemented!("VdexHeader.parse not yet ported")
     }
 

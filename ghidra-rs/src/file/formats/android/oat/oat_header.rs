@@ -23,7 +23,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::StructConverter;
 use crate::file::formats::android::oat::bundle::OatBundle;
 use crate::file::formats::android::oat::oat_constants::OatConstants;
@@ -72,7 +72,7 @@ impl OatHeaderBase {
     /// Reads the MAGIC and VERSION fields.
     ///
     /// Port of the protected `OatHeader(BinaryReader)` constructor.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let magic_bytes = reader.read_next_byte_array(OatConstants::MAGIC.len())?;
         let magic = String::from_utf8_lossy(&magic_bytes).into_owned();
         let version = reader.read_next_ascii_string_fixed(4)?;
@@ -102,7 +102,7 @@ pub trait OatHeader: StructConverter {
     /// Returns the binary offset to the DEX files.
     ///
     /// Port of `getOatDexFilesOffset(BinaryReader)`.
-    fn get_oat_dex_files_offset(&self, reader: &dyn LegacyBinaryReader) -> i32;
+    fn get_oat_dex_files_offset(&self, reader: &BinaryReader) -> i32;
 
     /// Returns the number of DEX files embedded inside this OAT file.
     ///
@@ -156,7 +156,7 @@ pub trait OatHeader: StructConverter {
     /// `UnsupportedOatVersionException`, but nothing in this method's body can actually raise
     /// one -- only `OatDexFileFactory.getOatDexFile` is called, and it only throws
     /// `IOException` -- so this returns a plain [`io::Result`].
-    fn parse(&mut self, reader: &mut dyn LegacyBinaryReader, bundle: &dyn OatBundle) -> io::Result<()> {
+    fn parse(&mut self, reader: &mut BinaryReader, bundle: &dyn OatBundle) -> io::Result<()> {
         let target = self.get_key_value_store_size();
         let mut count = 0i32;
         while count < target {
@@ -199,69 +199,6 @@ mod tests {
     use super::*;
     use crate::app::util::bin::struct_converter::ToDataTypeError;
     use std::any::Any;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct BytesReader {
-        bytes: Vec<u8>,
-        position: u64,
-        little_endian: bool,
-    }
-
-    impl BytesReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            BytesReader { bytes, position: 0, little_endian: true }
-        }
-    }
-
-    impl LegacyBinaryReader for BytesReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.position
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position;
-            self.position = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            if end > self.bytes.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.bytes[start..end].to_vec())
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not needed for this test")
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(BytesReader {
-                bytes: self.bytes.clone(),
-                position: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     struct MockBundle;
 
@@ -304,7 +241,7 @@ mod tests {
         fn base_mut(&mut self) -> &mut OatHeaderBase {
             &mut self.base
         }
-        fn get_oat_dex_files_offset(&self, _reader: &dyn LegacyBinaryReader) -> i32 {
+        fn get_oat_dex_files_offset(&self, _reader: &BinaryReader) -> i32 {
             self.dex_files_offset
         }
         fn get_dex_file_count(&self) -> i32 {
@@ -336,7 +273,7 @@ mod tests {
 
     #[test]
     fn new_reads_magic_and_version() {
-        let mut reader = BytesReader::new(magic_and_version_bytes());
+        let mut reader = BinaryReader::from_bytes(magic_and_version_bytes(), true);
         let base = OatHeaderBase::new(&mut reader).unwrap();
 
         assert_eq!(base.magic, OatConstants::MAGIC);
@@ -349,7 +286,7 @@ mod tests {
 
     #[test]
     fn get_magic_and_version_delegate_to_base() {
-        let mut reader = BytesReader::new(magic_and_version_bytes());
+        let mut reader = BinaryReader::from_bytes(magic_and_version_bytes(), true);
         let base = OatHeaderBase::new(&mut reader).unwrap();
         let header = MockOatHeader { base, key_value_store_size: 0, dex_file_count: 0, dex_files_offset: 8 };
 
@@ -365,7 +302,7 @@ mod tests {
         let kv_size = 4;
         let dex_files_offset = bytes.len() as i32;
 
-        let mut reader = BytesReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let base = OatHeaderBase::new(&mut reader).unwrap();
         let mut header = MockOatHeader {
             base,
@@ -387,7 +324,7 @@ mod tests {
         let dex_files_offset = bytes.len() as i32;
         bytes.truncate(bytes.len()); // no key/value bytes needed, kv_size = 0
 
-        let mut reader = BytesReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let mut base = OatHeaderBase::new(&mut reader).unwrap();
         base.version = "not-a-real-version".to_string();
         let mut header = MockOatHeader {
@@ -403,7 +340,7 @@ mod tests {
 
     #[test]
     fn to_data_type_has_versioned_name_and_oat_category() {
-        let mut reader = BytesReader::new(magic_and_version_bytes());
+        let mut reader = BinaryReader::from_bytes(magic_and_version_bytes(), true);
         let base = OatHeaderBase::new(&mut reader).unwrap();
         let header = MockOatHeader { base, key_value_store_size: 0, dex_file_count: 0, dex_files_offset: 8 };
 

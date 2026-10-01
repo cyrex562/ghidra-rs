@@ -11,7 +11,7 @@ use std::io::{self, Write};
 
 use flate2::Crc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::filesystem::gfilesystem::g_file_system::GFileSystemError;
 use crate::util::task::TaskMonitor;
 
@@ -28,7 +28,7 @@ const BUFFER_SIZE: i32 = 1024 * 1024;
 ///
 /// Mirrors `ghidra.file.formats.sparseimage.SparseImageDecompressor`.
 pub struct SparseImageDecompressor<'a> {
-    reader: &'a mut dyn LegacyBinaryReader,
+    reader: &'a mut BinaryReader,
     crc: Crc,
     buffer_size: i32,
     out: &'a mut dyn Write,
@@ -40,7 +40,7 @@ impl<'a> SparseImageDecompressor<'a> {
     /// at the sparse header) and writing the expanded image to `out`.
     ///
     /// Mirrors `SparseImageDecompressor(ByteProvider, OutputStream)`.
-    pub fn new(reader: &'a mut dyn LegacyBinaryReader, out: &'a mut dyn Write) -> Self {
+    pub fn new(reader: &'a mut BinaryReader, out: &'a mut dyn Write) -> Self {
         SparseImageDecompressor { reader, crc: Crc::new(), buffer_size: BUFFER_SIZE, out, block_size: 0 }
     }
 
