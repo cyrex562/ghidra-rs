@@ -1290,7 +1290,7 @@ TODO	struct	19	1	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	19	1	77	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/info/NoteGnuProperty.java
 TODO	struct	16	4	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/NoteGoBuildId.java
 TODO	struct	15	4	93	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoBuildId.java
-TODO	struct	18	1	6	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/MachoPrelinkParser.java
+DONE	struct	18	1	6	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/MachoPrelinkParser.java
 PARK	struct	17	33	49	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MachoPrelinkUtils.java
 TODO	struct	19	5	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/chained/DyldChainedImport.java
 TODO	struct	19	4	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/chained/DyldChainedImports.java
