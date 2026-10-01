@@ -90,7 +90,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RGB32ColorDataType.java	TODO	none	missing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RepeatCountDataType.java	DONE	ghidra-rs/src/program/model/data/repeat_count_data_type.rs:trait	real
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RepeatedDynamicDataType.java	DONE	ghidra-rs/src/program/model/data/repeated_dynamic_data_type.rs:trait	real
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RepeatedStringDataType.java	DONE	ghidra-rs/src/program/model/data/repeated_string_data_type.rs:trait (trait for concrete Java class; mock-only)	phantom
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/RepeatedStringDataType.java	DONE	ghidra-rs/src/program/model/data/repeated_string_data_type.rs:struct	real
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SegmentedCodePointerDataType.java	DONE	ghidra-rs/src/program/model/data/segmented_code_pointer_data_type.rs:trait (trait for concrete Java class; mock-only)	phantom
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ShiftedAddressDataType.java	DONE	ghidra-rs/src/program/model/data/shifted_address_data_type.rs:trait (trait for concrete Java class; mock-only)	phantom
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ShortDataType.java	DONE	ghidra-rs/src/program/model/data/short_data_type.rs:trait (trait for concrete Java class; mock-only)	phantom

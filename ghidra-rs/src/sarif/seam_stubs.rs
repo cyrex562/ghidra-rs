@@ -1354,36 +1354,6 @@ impl DataType for FunctionDefinitionDataType {
     }
 }
 
-/// Placeholder for the built-in `DataType` singletons `DataTypesSarifMgr.foreignTypedefs` maps
-/// onto (`CharDataType.dataType`, `PascalString255DataType.dataType`, ...). Each of those classes
-/// is a trait in the crate with no constructible instance yet, so this carries just the name and
-/// length the manager's lookups depend on.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BuiltInDataTypePlaceholder {
-    name: String,
-    length: i32,
-}
-
-impl BuiltInDataTypePlaceholder {
-    /// A built-in of the given Ghidra name and length (`-1` for the dynamically-sized strings).
-    pub fn new(name: &str, length: i32) -> Self {
-        Self {
-            name: name.to_string(),
-            length,
-        }
-    }
-}
-
-impl DataType for BuiltInDataTypePlaceholder {
-    fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    fn get_length(&self) -> i32 {
-        self.length
-    }
-}
-
 /// Placeholder for `sarif.managers.DtParser`, which resolves a data type by name against a
 /// `DataTypeManager` (via `DataTypeParser`). Neither class is ported yet, so this always reports
 /// "not found" -- the same answer Java gives for a name the manager does not know.

@@ -20,34 +20,27 @@ use crate::util::task::TaskMonitor;
 
 use crate::app::util::importer::message_log::MessageLog;
 use crate::program::model::data::array_data_type::ArrayDataType;
+use crate::program::model::data::char_data_type::CharDataType;
 use crate::program::model::data::long_double_data_type::LongDoubleDataType;
+use crate::program::model::data::pascal_string255_data_type::PascalString255DataType;
+use crate::program::model::data::pascal_string_data_type::PascalStringDataType;
+use crate::program::model::data::pascal_unicode_data_type::PascalUnicodeDataType;
 use crate::program::model::data::typedef::TypeDef;
 use crate::program::model::data::typedef_data_type::TypedefDataType;
 use crate::program::model::data::unsigned_integer3_data_type::UnsignedInteger3DataType;
-use crate::sarif::seam_stubs::{BuiltInDataTypePlaceholder, CompositePacking, DtParser, EnumDataType, FunctionDefinitionDataType, PointerDataType, SarifDataTypeWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, StructureDataType, TaskLauncher, UnionDataType};
+use crate::sarif::seam_stubs::{CompositePacking, DtParser, EnumDataType, FunctionDefinitionDataType, PointerDataType, SarifDataTypeWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, StructureDataType, TaskLauncher, UnionDataType};
 
-/// `DataTypesSarifMgr.foreignTypedefs`: SARIF-only type names mapped onto the Ghidra built-in
-/// each one stands for (the `dataType` singletons of `CharDataType`, `PascalString255DataType`,
-/// `PascalStringDataType`, `PascalUnicodeDataType`, `LongDoubleDataType` and
-/// `UnsignedInteger3DataType`). `LongDoubleDataType` and `UnsignedInteger3DataType` are the real
-/// singletons (Java's "10-byte float" comment notwithstanding, `LongDoubleDataType.dataType` has
-/// the default organization's long-double size, 8). The char and Pascal-string classes are not
-/// ported yet and are still represented by their Ghidra name and length. The gaps in the
-/// sequence (`string4`, `unicode4`, `oword`, packed real) are the ones Java leaves commented out.
+/// `DataTypesSarifMgr.foreignTypedefs`: SARIF-only type names mapped onto the `dataType`
+/// singleton of the Ghidra built-in each one stands for. (Java's "10-byte float" comment
+/// notwithstanding, `LongDoubleDataType.dataType` has the default organization's long-double
+/// size, 8.) The gaps in the sequence (`string4`, `unicode4`, `oword`, packed real) are the ones
+/// Java leaves commented out.
 static FOREIGN_TYPEDEFS: Lazy<HashMap<&'static str, Arc<dyn DataType>>> = Lazy::new(|| {
-    let placeholders: [(&'static str, &'static str, i32); 4] = [
-        ("ascii", "char", 1),
-        ("string1", "PascalString255", -1),
-        ("string2", "PascalString", -1),
-        ("unicode2", "PascalUnicode", -1),
-    ];
-    let mut map: HashMap<&'static str, Arc<dyn DataType>> = placeholders
-        .into_iter()
-        .map(|(sarif_name, ghidra_name, length)| {
-            let dt: Arc<dyn DataType> = Arc::new(BuiltInDataTypePlaceholder::new(ghidra_name, length));
-            (sarif_name, dt)
-        })
-        .collect();
+    let mut map: HashMap<&'static str, Arc<dyn DataType>> = HashMap::new();
+    map.insert("ascii", CharDataType::data_type());
+    map.insert("string1", PascalString255DataType::data_type());
+    map.insert("string2", PascalStringDataType::data_type());
+    map.insert("unicode2", PascalUnicodeDataType::data_type());
     // 10-byte float
     map.insert("tbyte", LongDoubleDataType::data_type());
     map.insert("3byte", UnsignedInteger3DataType::data_type());
@@ -917,6 +910,10 @@ mod tests {
         assert_eq!(three.get_name(), "uint3");
         assert_eq!(three.get_length(), 3);
         assert_eq!(FOREIGN_TYPEDEFS.len(), 6);
+        assert_eq!(FOREIGN_TYPEDEFS.get("ascii").unwrap().get_name(), "char");
+        assert!(FOREIGN_TYPEDEFS.get("string1").unwrap().is_equivalent(&PascalString255DataType::new(None)));
+        assert_eq!(FOREIGN_TYPEDEFS.get("string2").unwrap().get_name(), "PascalString");
+        assert_eq!(FOREIGN_TYPEDEFS.get("unicode2").unwrap().get_name(), "PascalUnicode");
     }
 
     #[test]

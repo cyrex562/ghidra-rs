@@ -1116,7 +1116,6 @@ ts	stub_class	referenced_by
 2026-08-19T02:40:00+00:00	FunctionDefinitionDataType	DataTypesSarifMgr
 2026-08-19T02:40:00+00:00	CharDataType	DataTypesSarifMgr
 2026-08-19T02:40:00+00:00	PascalString255DataType	DataTypesSarifMgr
-2026-08-19T02:40:00+00:00	PascalStringDataType	DataTypesSarifMgr
 2026-08-19T02:40:00+00:00	PascalUnicodeDataType	DataTypesSarifMgr
 2026-08-19T02:40:00+00:00	LongDoubleDataType	DataTypesSarifMgr
 2026-08-19T02:40:00+00:00	UnsignedInteger3DataType	DataTypesSarifMgr
