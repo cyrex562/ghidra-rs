@@ -1199,7 +1199,7 @@ DONE	struct	19	1	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	struct	19	1	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadStateX86_32.java
 DONE	struct	19	1	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadStateX86_64.java
 DONE	struct	18	2	80	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadCommand.java
-TODO	struct	17	14	38	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandFactory.java
+DONE	struct	17	14	38	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandFactory.java
 TODO	struct	16	4	83	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/AbstractClassicProcessor.java
 TODO	struct	16	3	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/BindOpcode.java
 TODO	struct	16	2	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/BindingTable.java
@@ -1210,7 +1210,7 @@ TODO	struct	16	2	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	struct	14	5	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java
 TODO	struct	15	9	91	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcOptimization.java
 TODO	struct	14	5	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcDylib.java
-PARK	struct	13	35	48	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java
+DONE	struct	13	35	48	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java
 TODO	struct	15	51	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDynamicTable.java
 TODO	struct	15	51	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfProgramHeader.java
 TODO	struct	18	52	93	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationTableDataType.java

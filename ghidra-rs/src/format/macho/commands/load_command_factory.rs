@@ -2,15 +2,13 @@
 //!
 //! The Java class holds only static methods, so it is a module here: [`get_load_command`] creates
 //! and parses one load command.
-//!
-//! Not yet ported: the `SplitDyldCache` parameter of Java's `getLoadCommand(BinaryReader,
-//! MachHeader, SplitDyldCache)` (and the split-cache branch of `getLinkerLoadCommandReader`), which
-//! need the unported `DyldCacheUtils.SplitDyldCache`. [`get_load_command`] is that method's
-//! `splitDyldCache == null` case.
 
+use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::opinion::dyld_cache_utils::SplitDyldCache;
+use crate::format::macho::commands::segment_names;
 use crate::format::macho::commands::build_version_command::BuildVersionCommand;
 use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
 use crate::format::macho::commands::code_signature_command::CodeSignatureCommand;
@@ -52,7 +50,8 @@ use crate::format::macho::mach_exception::MachException;
 use crate::format::macho::mach_header::MachHeader;
 use crate::format::macho::threadcommand::thread_command::ThreadCommand;
 
-/// Java: `getLoadCommand(BinaryReader, MachHeader, SplitDyldCache)` with no split DYLD cache.
+/// Java: `getLoadCommand(BinaryReader, MachHeader, SplitDyldCache)`. `split_dyld_cache` is the
+/// split DYLD cache `header` resides in, or `None`.
 ///
 /// Creates and parses the load command at `reader`'s position. Any failure while parsing the
 /// command yields a [`CorruptLoadCommand`] carrying that failure instead, with the reader reset
@@ -64,9 +63,10 @@ use crate::format::macho::threadcommand::thread_command::ThreadCommand;
 pub fn get_load_command(
     reader: &mut BinaryReader,
     header: &MachHeader,
+    split_dyld_cache: Option<&SplitDyldCache>,
 ) -> Result<LoadCommandKind, MachException> {
     let orig_index = reader.get_pointer_index();
-    match parse_load_command(reader, header) {
+    match parse_load_command(reader, header, split_dyld_cache) {
         Ok(lc) => Ok(lc),
         Err(e) => {
             reader.set_pointer_index(orig_index);
@@ -79,13 +79,14 @@ pub fn get_load_command(
 fn parse_load_command(
     reader: &mut BinaryReader,
     header: &MachHeader,
+    split: Option<&SplitDyldCache>,
 ) -> Result<LoadCommandKind, MachException> {
     let cmd_type = reader.peek_next_int()? as u32;
     let is32bit = header.is32bit();
     Ok(match cmd_type {
         LC_SEGMENT | LC_SEGMENT_64 => SegmentCommand::new(reader, is32bit)?.into(),
         LC_SYMTAB => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             SymbolTableCommand::new(reader, &mut linker_reader, header)?.into()
         }
         LC_THREAD | LC_UNIXTHREAD => ThreadCommand::new(reader, header)?.into(),
@@ -95,7 +96,7 @@ fn parse_load_command(
         LC_FVMFILE => FixedVirtualMemoryFileCommand::new(reader)?.into(),
         LC_PREPAGE => UnsupportedLoadCommand::new(reader)?.into(),
         LC_DYSYMTAB => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             DynamicSymbolTableCommand::new(reader, &mut linker_reader, header)?.into()
         }
         LC_LOAD_DYLIB | LC_ID_DYLIB | LC_LOAD_UPWARD_DYLIB | LC_LOAD_WEAK_DYLIB
@@ -117,27 +118,27 @@ fn parse_load_command(
             EncryptedInformationCommand::new(reader, is32bit)?.into()
         }
         LC_DYLD_INFO | LC_DYLD_INFO_ONLY => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             DyldInfoCommand::new(reader, &mut linker_reader, header)?.into()
         }
         LC_CODE_SIGNATURE => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             CodeSignatureCommand::new(reader, &mut linker_reader)?.into()
         }
         LC_SEGMENT_SPLIT_INFO | LC_OPTIMIZATION_HINT | LC_DYLIB_CODE_SIGN_DRS => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             LinkEditDataCommand::new(reader, &mut linker_reader)?.into()
         }
         LC_FUNCTION_STARTS => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             FunctionStartsCommand::new(reader, &mut linker_reader)?.into()
         }
         LC_DATA_IN_CODE => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             DataInCodeCommand::new(reader, &mut linker_reader)?.into()
         }
         LC_DYLD_EXPORTS_TRIE => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             DyldExportsTrieCommand::new(reader, &mut linker_reader)?.into()
         }
         LC_VERSION_MIN_MACOSX | LC_VERSION_MIN_IPHONEOS | LC_VERSION_MIN_TVOS
@@ -147,7 +148,7 @@ fn parse_load_command(
         LC_LINKER_OPTIONS => LinkerOptionCommand::new(reader)?.into(),
         LC_BUILD_VERSION => BuildVersionCommand::new(reader)?.into(),
         LC_DYLD_CHAINED_FIXUPS => {
-            let mut linker_reader = get_linker_load_command_reader(reader);
+            let mut linker_reader = get_linker_load_command_reader(reader, header, split)?;
             DyldChainedFixupsCommand::new(reader, &mut linker_reader)?.into()
         }
         LC_FILESET_ENTRY => FileSetEntryCommand::new(reader)?.into(),
@@ -155,9 +156,27 @@ fn parse_load_command(
     })
 }
 
-/// Java: the private `getLinkerLoadCommandReader(BinaryReader, MachHeader, SplitDyldCache)` with
-/// no split DYLD cache: a clone of `reader`. Nothing should be assumed about where the returned
-/// reader points.
-fn get_linker_load_command_reader(reader: &BinaryReader) -> BinaryReader {
-    reader.clone_reader()
+/// Java: the private `getLinkerLoadCommandReader(BinaryReader, MachHeader, SplitDyldCache)`: a
+/// reader for the data of commands used by the dynamic linker. Without a split DYLD cache that is
+/// a clone of `reader`; with one, a little-endian reader over whichever cache file maps the
+/// `__LINKEDIT` segment. Nothing should be assumed about where the returned reader points.
+///
+/// Requires the segment commands to have been parsed already.
+fn get_linker_load_command_reader(
+    reader: &BinaryReader,
+    header: &MachHeader,
+    split_dyld_cache: Option<&SplitDyldCache>,
+) -> Result<BinaryReader, MachException> {
+    let Some(split) = split_dyld_cache else {
+        return Ok(reader.clone_reader());
+    };
+    if let Some(link_edit) = header.get_segment(segment_names::LINKEDIT) {
+        for i in 0..split.size() {
+            let mappings = split.get_dyld_cache_header(i).get_mapping_infos();
+            if mappings.iter().any(|m| m.contains(link_edit.get_vm_address(), true)) {
+                return Ok(BinaryReader::new(Rc::clone(split.get_provider(i)), true));
+            }
+        }
+    }
+    Err(MachException::new("__LINKEDIT segment not found in DYLD cache"))
 }

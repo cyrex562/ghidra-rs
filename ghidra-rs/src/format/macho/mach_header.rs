@@ -9,14 +9,12 @@
 //! stores the commands as the [`LoadCommandKind`] enum and filters with the typed
 //! [`get_load_commands_of`](MachHeader::get_load_commands_of)/
 //! [`get_first_load_command`](MachHeader::get_first_load_command) instead of reflection.
-//!
-//! Not yet ported: the `parse(SplitDyldCache)` overload, which needs the (unported)
-//! `DyldCacheUtils.SplitDyldCache`; see [`MachHeader::parse`].
 
 use std::fmt;
 use std::rc::Rc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::opinion::dyld_cache_utils::SplitDyldCache;
 use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::commands::dynamic_library_command::DynamicLibraryCommand;
@@ -151,14 +149,20 @@ impl MachHeader {
     }
 
     /// Java: `parse()`. Parses this header's load commands; a no-op once parsed.
+    pub fn parse(&mut self) -> Result<&mut Self, MachException> {
+        self.parse_split(None)
+    }
+
+    /// Java: `parse(SplitDyldCache)`. `split_dyld_cache` is the split DYLD cache this header
+    /// resides in, or `None` if a split DYLD cache is not being used; with one, commands whose
+    /// data lives in `__LINKEDIT` read it from whichever cache file maps that segment.
     ///
     /// Segment load commands are parsed first, since commands whose data lives in `__LINKEDIT`
     /// need that segment to have been parsed.
-    ///
-    /// Java's `parse(SplitDyldCache)` overload (which lets `__LINKEDIT`-resident commands be read
-    /// from another file of a split DYLD cache) arrives with the `DyldCacheUtils.SplitDyldCache`
-    /// port; this is its `splitDyldCache == null` case.
-    pub fn parse(&mut self) -> Result<&mut Self, MachException> {
+    pub fn parse_split(
+        &mut self,
+        split_dyld_cache: Option<&SplitDyldCache>,
+    ) -> Result<&mut Self, MachException> {
         if self.parsed {
             return Ok(self);
         }
@@ -181,7 +185,7 @@ impl MachHeader {
         }
         for index in segment_indexes.into_iter().chain(non_segment_indexes) {
             reader.set_pointer_index(index);
-            let lc = load_command_factory::get_load_command(&mut reader, self)?;
+            let lc = load_command_factory::get_load_command(&mut reader, self, split_dyld_cache)?;
             self.commands.push(lc);
         }
         self.reader = reader;
@@ -572,6 +576,7 @@ mod tests {
     use super::test_support::{provider, Bytes};
     use super::*;
     use crate::format::macho::commands::load_command_types::{LC_ID_DYLIB, LC_UUID};
+    use std::rc::Rc;
     use crate::format::macho::commands::uuid_command::UuidCommand;
     use crate::format::macho::cpu_types::{CPU_TYPE_ARM_64, CPU_TYPE_POWERPC, CPU_TYPE_X86_64};
     use crate::format::macho::mach_header_file_types::{MH_DYLIB, MH_EXECUTE};
@@ -767,6 +772,61 @@ mod tests {
         let bytes = MachHeader::create(MH_MAGIC_64, CPU_TYPE_ARM_64, 0, 2, 40_000, 0, 0, 0).unwrap();
         let mut h = MachHeader::new(provider(bytes)).unwrap();
         assert_eq!(h.parse().unwrap_err().message(), "Invalid number of load commands (40000)");
+    }
+
+    /// A DYLD-cache file whose only mapping covers `[0x2000_0000, +0x1000)` at file offset 0;
+    /// `linkedit` bytes are placed at file offset 0x800.
+    fn cache_file(linkedit: &[u8]) -> Vec<u8> {
+        let mut b = Bytes::new(true);
+        b.name("dyld_v1  x86_64", 16).u32(0x28).u32(1).u32(0).u32(0).u64(0);
+        b.u64(0x2000_0000).u64(0x1000).u64(0).u32(1).u32(1);
+        b.pad_to(0x800).raw(linkedit);
+        b.pad_to(0x1000);
+        b.buf
+    }
+
+    /// A Mach-O with a `__LINKEDIT` segment at `linkedit_vm` and an `LC_FUNCTION_STARTS` whose
+    /// data is at file offset 0x800 (in whichever file maps `__LINKEDIT`).
+    fn image_with_function_starts(linkedit_vm: u64) -> Vec<u8> {
+        let mut b = Bytes::new(true);
+        b.u32(MH_CIGAM_64.swap_bytes()).u32(CPU_TYPE_X86_64 as u32).u32(3).u32(MH_DYLIB).u32(2);
+        b.u32(72 + 16).u32(0).u32(0);
+        b.u32(LC_SEGMENT_64).u32(72).name("__LINKEDIT", 16).u64(linkedit_vm).u64(0x1000);
+        b.u64(0).u64(0x1000).u32(1).u32(1).u32(0).u32(0);
+        b.u32(crate::format::macho::commands::load_command_types::LC_FUNCTION_STARTS).u32(16).u32(0x800).u32(4);
+        b.pad_to(0x1000);
+        b.buf
+    }
+
+    #[test]
+    fn split_cache_linkedit_comes_from_the_mapping_file() {
+        use crate::app::util::bin::binary_reader::BinaryReader;
+        use crate::app::util::importer::message_log::MessageLog;
+        use crate::app::util::opinion::dyld_cache_utils::SplitDyldCache;
+        use crate::format::macho::commands::function_starts_command::FunctionStartsCommand;
+        use crate::format::macho::dyld::dyld_cache_header::DyldCacheHeader;
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        use crate::util::task::DummyMonitor;
+
+        let cache = provider(cache_file(&[0x10, 0x20, 0x00, 0x00]));
+        let mut ch = DyldCacheHeader::new(&BinaryReader::new(Rc::clone(&cache), true)).unwrap();
+        ch.parse_from_file(false, &MessageLog::new(), &DummyMonitor).unwrap();
+        let split = SplitDyldCache::from_parts(vec![cache], vec![ch], vec!["cache".into()]);
+
+        let mut h = MachHeader::new(provider(image_with_function_starts(0x2000_0000))).unwrap();
+        h.parse_split(Some(&split)).unwrap();
+        let fs = h.get_first_load_command::<FunctionStartsCommand>().expect("function starts parsed");
+        let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
+        let starts = fs.find_function_start_addrs(&space.address(0x1000)).unwrap();
+        let offs: Vec<i64> = starts.iter().map(|a| a.offset()).collect();
+        assert_eq!(offs, [0x1010, 0x1030], "deltas read from the cache file, not the image");
+
+        // __LINKEDIT not mapped by any cache file: the command is corrupt.
+        let mut h = MachHeader::new(provider(image_with_function_starts(0x9000_0000))).unwrap();
+        h.parse_split(Some(&split)).unwrap();
+        let corrupt = h.get_load_commands_of::<crate::format::macho::commands::corrupt_load_command::CorruptLoadCommand>();
+        assert_eq!(corrupt.len(), 1);
+        assert_eq!(corrupt[0].get_problem().to_string(), "__LINKEDIT segment not found in DYLD cache");
     }
 
     #[test]

@@ -3991,7 +3991,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Cpu
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFileTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/ObsoleteException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
@@ -4027,7 +4027,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkEditDataCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkerOptionCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandFactory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandString.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/NList.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
@@ -4694,7 +4694,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DefLoader.ja
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheLoader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheOptions.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheProgramBuilder.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ElfDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ElfLoader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ElfLoaderOptionsFactory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
