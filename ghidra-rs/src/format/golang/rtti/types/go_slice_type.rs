@@ -3,7 +3,8 @@ use std::sync::Arc;
 use super::go_base_type::GoBaseType;
 use crate::app::util::viewer::field::address_annotated_string_handler::AddressAnnotatedStringHandler;
 use crate::format::golang::structmapping::{StructureContext, StructureMapped, StructureMarkup, StructureVerifier};
-use crate::format::seam_stubs::{GoRttiMapper, GoSymbolName, GoType};
+use crate::format::golang::rtti::go_symbol_name::GoSymbolName;
+use crate::format::seam_stubs::{GoRttiMapper, GoType};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
@@ -189,20 +190,9 @@ impl GoType for GoSliceType {
         self.base_name()
     }
 
-    fn get_symbol_name(&self) -> Box<dyn GoSymbolName> {
-        struct Sym {
-            name: String,
-            package_path: String,
-        }
-        impl GoSymbolName for Sym {
-            fn as_string(&self) -> String {
-                self.name.clone()
-            }
-            fn package_path(&self) -> Option<String> {
-                if self.package_path.is_empty() { None } else { Some(self.package_path.clone()) }
-            }
-        }
-        Box::new(Sym { name: self.base_name(), package_path: self.package_path_string() })
+    fn get_symbol_name(&self) -> GoSymbolName {
+        // `GoType.getSymbolName()`
+        GoSymbolName::parse_type_name_in(&self.base_name(), Some(&self.package_path_string()))
     }
 
     fn get_structure_namespace(&self) -> std::io::Result<String> {
@@ -240,11 +230,11 @@ impl StructureVerifier for GoSliceType {
 impl StructureMarkup for GoSliceType {
     /// `GoType.getStructureLabel()`: `"<fully qualified name>___<kind>_type"`.
     fn structure_label(&self) -> std::io::Result<Option<String>> {
-        Ok(Some(format!("{}___{}_type", self.get_symbol_name().as_string(), self.typ().get_kind())))
+        Ok(Some(format!("{}___{}_type", self.get_symbol_name().as_string().to_string(), self.typ().get_kind())))
     }
 
     fn structure_name(&self) -> std::io::Result<Option<String>> {
-        Ok(Some(self.get_symbol_name().as_string()))
+        Ok(Some(self.get_symbol_name().as_string().to_string()))
     }
 
     fn structure_namespace(&self) -> std::io::Result<Option<String>> {
@@ -279,7 +269,7 @@ mod tests {
         fn get_name(&self) -> String {
             self.name.clone()
         }
-        fn get_symbol_name(&self) -> Box<dyn GoSymbolName> {
+        fn get_symbol_name(&self) -> GoSymbolName {
             unimplemented!()
         }
         fn get_structure_namespace(&self) -> std::io::Result<String> {
@@ -511,9 +501,6 @@ mod tests {
             &self,
             _offset: i64,
         ) -> Option<Box<dyn crate::format::seam_stubs::GoModuledata>> {
-            unimplemented!()
-        }
-        fn parse_symbol_name(&self, _s: &str) -> Box<dyn crate::format::seam_stubs::GoSymbolName> {
             unimplemented!()
         }
         fn get_function_at(

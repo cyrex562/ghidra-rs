@@ -1477,7 +1477,7 @@ TODO	struct	20	6	5	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 TODO	struct	19	3	65	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/ExternalDebugFileSectionProvider.java
 TODO	struct	18	7	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/DWARFSectionProviderFactory.java
 TODO	struct	18	3	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/NullSectionProvider.java
-TODO	struct	18	14	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoSymbolName.java
+DONE	struct	18	14	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoSymbolName.java
 TODO	struct	18	4	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoRegisterInfo.java
 TODO	struct	18	3	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoRegisterInfoManager.java
 TODO	struct	17	6	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoParamStorageAllocator.java

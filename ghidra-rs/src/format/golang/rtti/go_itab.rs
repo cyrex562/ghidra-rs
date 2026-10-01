@@ -157,7 +157,7 @@ fn placeholder_go_imethod() -> Box<dyn GoIMethod> {
 
 impl StructureMarkup for GoItab {
     fn structure_name(&self) -> std::io::Result<Option<String>> {
-        let type_symbol = self.get_type()?.get_symbol_name().as_string();
+        let type_symbol = self.get_type()?.get_symbol_name().as_string().to_string();
         let iface_name = self
             .get_interface_type()?
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "itab has no interface type"))?
@@ -228,7 +228,8 @@ impl std::fmt::Display for GoItab {
 mod tests {
     use super::*;
     use crate::format::golang::rtti::test_support::{go_mapper, read_at, Image};
-    use crate::format::seam_stubs::{GoSymbolName, GoTypeManager};
+    use crate::format::golang::rtti::go_symbol_name::GoSymbolName;
+    use crate::format::seam_stubs::GoTypeManager;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
     use std::collections::HashSet;
@@ -236,20 +237,6 @@ mod tests {
     fn test_address(offset: i64) -> Address {
         let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         space.address(offset)
-    }
-
-    struct MockGoSymbolName {
-        name: String,
-    }
-
-    impl GoSymbolName for MockGoSymbolName {
-        fn as_string(&self) -> String {
-            self.name.clone()
-        }
-
-        fn package_path(&self) -> Option<String> {
-            None
-        }
     }
 
     #[derive(Clone)]
@@ -265,8 +252,8 @@ mod tests {
             self.name.clone()
         }
 
-        fn get_symbol_name(&self) -> Box<dyn GoSymbolName> {
-            Box::new(MockGoSymbolName { name: self.name.clone() })
+        fn get_symbol_name(&self) -> GoSymbolName {
+            GoSymbolName::parse_type_name(&self.name)
         }
 
         fn get_structure_namespace(&self) -> std::io::Result<String> {
@@ -520,9 +507,6 @@ mod tests {
             unimplemented!()
         }
 
-        fn parse_symbol_name(&self, _s: &str) -> Box<dyn GoSymbolName> {
-            unimplemented!()
-        }
 
         fn get_function_at(
             &self,

@@ -3907,11 +3907,6 @@ pub trait GoRttiMapper: Send + Sync {
     /// Mirrors `GoRttiMapper.findContainingModuleByFuncData(long)`. The Java method returns
     /// `null` when no module contains the offset, which every caller checks for.
     fn find_containing_module_by_func_data(&self, offset: i64) -> Option<Box<dyn GoModuledata>>;
-    /// Static factory `GoSymbolName.parse(String)`, exposed as an instance method because a
-    /// trait object cannot dispatch a Rust associated function. Every current call site already
-    /// holds the `GoRttiMapper`, so routing the parse through it costs nothing and lets the real
-    /// `GoSymbolName` port supply the implementation later.
-    fn parse_symbol_name(&self, s: &str) -> Box<dyn GoSymbolName>;
     /// Simplified stand-in for `getProgram().getFunctionManager().getFunctionAt(addr)`, following
     /// the same precedent as [`is_loaded_and_initialized`](Self::is_loaded_and_initialized): the
     /// call sites want the function, not the `Program`/`FunctionManager` chain that produces it.
@@ -4010,7 +4005,7 @@ pub trait GoType: Send + Sync {
     /// Mirrors `GoType.getName()`.
     fn get_name(&self) -> String;
     /// Mirrors `GoType.getSymbolName()`.
-    fn get_symbol_name(&self) -> Box<dyn GoSymbolName>;
+    fn get_symbol_name(&self) -> crate::format::golang::rtti::go_symbol_name::GoSymbolName;
     /// Mirrors `GoType.getStructureNamespace()`.
     fn get_structure_namespace(&self) -> std::io::Result<String>;
     /// Mirrors `GoType.discoverGoTypes(Set)`.
@@ -4074,16 +4069,6 @@ pub trait GoTypeManager: Send + Sync {
     fn get_cp(&self, typ: &dyn GoType) -> crate::program::model::data::category_path::CategoryPath;
     /// Mirrors `GoTypeManager.getTypeName(GoType)`.
     fn get_type_name(&self, typ: &dyn GoType) -> std::io::Result<String>;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoSymbolName`, referenced by
-/// [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) before the real class is ported.
-pub trait GoSymbolName: Send + Sync {
-    /// Mirrors `GoSymbolName.asString()`.
-    fn as_string(&self) -> String;
-    /// Mirrors the `packagePath()` record accessor (a.k.a. `getPackagePath()`), which is `null`
-    /// for symbols that carry no package path.
-    fn package_path(&self) -> Option<String>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoInterfaceType`, referenced by

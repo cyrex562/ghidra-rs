@@ -256,12 +256,6 @@ mod tests {
             unimplemented!()
         }
 
-        fn parse_symbol_name(
-            &self,
-            _s: &str,
-        ) -> Box<dyn crate::format::seam_stubs::GoSymbolName> {
-            unimplemented!()
-        }
 
         fn get_function_at(
             &self,

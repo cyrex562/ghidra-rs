@@ -118,7 +118,7 @@ mod tests {
     use super::*;
     use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::golang::rtti::test_support::{go_mapper, read_at, Image};
-    use crate::format::seam_stubs::{GoName, GoPcValueEvaluator, GoSlice, GoSymbolName, GoTypeManager};
+    use crate::format::seam_stubs::{GoName, GoPcValueEvaluator, GoSlice, GoTypeManager};
     use crate::program::database::sourcemap::SourceFile;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
@@ -230,9 +230,6 @@ mod tests {
             _offset: i64,
         ) -> Option<Box<dyn GoModuledata>> {
             self.moduledata.clone().map(|m| Box::new(m) as Box<dyn GoModuledata>)
-        }
-        fn parse_symbol_name(&self, _s: &str) -> Box<dyn GoSymbolName> {
-            unimplemented!()
         }
         fn get_function_at(&self, _addr: &Address) -> Option<Arc<dyn Function>> {
             None

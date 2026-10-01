@@ -15,7 +15,7 @@ use crate::format::golang::structmapping::test_support::{byte_reader, simple, st
 use crate::format::golang::structmapping::{DataTypeMapper, StructureMapped};
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::golang::go_ver::GoVer;
-use crate::format::seam_stubs::{GoModuledata, GoName, GoRttiMapper, GoSlice, GoSymbolName, GoTypeManager};
+use crate::format::seam_stubs::{GoModuledata, GoName, GoRttiMapper, GoSlice, GoTypeManager};
 use crate::program::database::sourcemap::SourceFile;
 use crate::program::model::address::Address;
 use crate::program::model::listing::function::Function;
@@ -263,9 +263,6 @@ impl GoRttiMapper for VersionOnlyRtti {
         unimplemented!("unused by VersionOnlyRtti callers")
     }
     fn find_containing_module_by_func_data(&self, _offset: i64) -> Option<Box<dyn GoModuledata>> {
-        unimplemented!("unused by VersionOnlyRtti callers")
-    }
-    fn parse_symbol_name(&self, _s: &str) -> Box<dyn GoSymbolName> {
         unimplemented!("unused by VersionOnlyRtti callers")
     }
     fn get_function_at(&self, _addr: &Address) -> Option<Arc<dyn Function>> {
