@@ -527,7 +527,7 @@ pub trait Option: Send + Sync {
         unimplemented!("Option::get_state_key placeholder not overridden")
     }
 
-    fn get_state(&self) -> Box<dyn crate::framework::seam_stubs::SaveState> {
+    fn get_state(&self) -> crate::framework::options::SaveState {
         unimplemented!("Option::get_state placeholder not overridden")
     }
 
@@ -2286,10 +2286,10 @@ pub trait DecompilerProvider: Navigatable + Send + Sync {
     }
 
     /// Stands in for `DecompilerProvider.writeDataState(SaveState)`.
-    fn write_data_state(&self, _save_state: &mut dyn crate::framework::seam_stubs::SaveState) {}
+    fn write_data_state(&self, _save_state: &mut crate::framework::options::SaveState) {}
 
     /// Stands in for `DecompilerProvider.readDataState(SaveState)`.
-    fn read_data_state(&self, _save_state: &dyn crate::framework::seam_stubs::SaveState) {}
+    fn read_data_state(&self, _save_state: &crate::framework::options::SaveState) {}
 
     /// Stands in for `DecompilerProvider.programClosed(Program)`.
     fn program_closed(&self, _closed_program: &dyn Program) {}

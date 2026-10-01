@@ -23,7 +23,7 @@
 //!   share) don't map onto trait methods; implementors are expected to replicate the relevant
 //!   constructor's behavior themselves.
 //! - `saveState`/`restoreState` and the static `getLocation` factory round-trip a location through
-//!   [`SaveState`](crate::framework::seam_stubs::SaveState) plus a `_CLASSNAME` string that
+//!   [`SaveState`](crate::framework::options::SaveState) plus a `_CLASSNAME` string that
 //!   `getLocation` resolves back to a concrete subclass via `ClassSearcher` reflection, and
 //!   `restoreState` in turn resolves stored address strings via `ProgramUtilities.parseAddress`'s
 //!   external/stack-address fallback logic. Neither `ClassSearcher`

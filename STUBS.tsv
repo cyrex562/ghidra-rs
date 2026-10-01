@@ -95,7 +95,6 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	VarnodeTpl	SpecificSymbol
 2026-07-11T00:00:00Z	LanguageCompilerSpecQuery	LanguageService
 2026-07-11T00:00:00Z	ExternalLanguageCompilerSpecQuery	LanguageService
-2026-07-11T12:00:00Z	SaveState	Project
 2026-08-06T02:12:23.848915+00:00	TraceOverlappedRegionException	TraceMemoryRegion
 2026-07-11T15:30:00Z	TreePath	DataTypeManagerService
 2026-07-17T00:00:00Z	ValueSymbol	ContextSymbol

@@ -18,9 +18,8 @@ use crate::framework::model::tool_services::ToolServices;
 use crate::framework::model::tool_template::ToolTemplate;
 use crate::framework::model::workspace::Workspace;
 use crate::framework::model::workspace_change_listener::WorkspaceChangeListener;
-use crate::framework::seam_stubs::{
-    PluginTool, SaveState, ToolAssociationInfo, ToolChest as StubToolChest,
-};
+use crate::framework::options::SaveState;
+use crate::framework::seam_stubs::{PluginTool, ToolAssociationInfo, ToolChest as StubToolChest};
 use crate::util::exception::DuplicateNameException;
 
 /// Interface to define methods to manage data and tools for users working on a particular
@@ -154,13 +153,13 @@ pub trait Project {
 
     /// Allows the user to store data related to the project. See
     /// [`get_saveable_data`](Self::get_saveable_data) for future retrieval of data.
-    fn set_saveable_data(&mut self, key: &str, save_state: Box<dyn SaveState>) {
+    fn set_saveable_data(&mut self, key: &str, save_state: SaveState) {
         let _ = (key, save_state);
     }
 
     /// Get the user data previously stored to the project. See
     /// [`set_saveable_data`](Self::set_saveable_data).
-    fn get_saveable_data(&self, key: &str) -> Option<Box<dyn SaveState>> {
+    fn get_saveable_data(&self, key: &str) -> Option<SaveState> {
         let _ = key;
         None
     }

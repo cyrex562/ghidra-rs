@@ -56,7 +56,8 @@ use crate::framework::plugintool::util::{
     PluginDescription, PluginEventListener, PluginStatus, ServiceListener,
 };
 use crate::framework::plugintool::{Plugin, PluginEvent};
-use crate::framework::seam_stubs::{PluginPackageLike, PluginTool, SaveState};
+use crate::framework::options::SaveState;
+use crate::framework::seam_stubs::{PluginPackageLike, PluginTool};
 use crate::program::model::listing::Program;
 use crate::program::seam_stubs::SpecExtension;
 use crate::program::util::ProgramLocation;
@@ -405,7 +406,7 @@ impl DecompilePlugin {
     /// window being restored.
     pub fn read_data_state_restoring_providers(
         &self,
-        save_state: &dyn SaveState,
+        save_state: &SaveState,
         program_manager: &mut dyn ProgramManager,
         new_provider: &mut dyn FnMut() -> Arc<dyn DecompilerProvider>,
     ) {
@@ -413,10 +414,12 @@ impl DecompilePlugin {
 
         let num_disconnected = save_state.get_int("Num Disconnected", 0);
         for i in 0..num_disconnected {
-            let Some(provider_save_state) = save_state.get_save_state(&format!("Provider{i}"))
-            else {
+            // Java: new SaveState(saveState.getXmlElement("Provider" + i)), which throws on a
+            // missing element; a missing one is skipped here.
+            let Some(xml_element) = save_state.get_xml_element(&format!("Provider{i}")) else {
                 continue;
             };
+            let provider_save_state = SaveState::from_xml(xml_element);
             let program_path = provider_save_state
                 .get_string("Program Path", Some(""))
                 .unwrap_or_default();
@@ -431,7 +434,7 @@ impl DecompilePlugin {
             };
             let provider = self.create_new_disconnected_provider(new_provider());
             provider.do_set_program(Some(program));
-            provider.read_data_state(provider_save_state.as_ref());
+            provider.read_data_state(&provider_save_state);
         }
     }
 }
@@ -572,21 +575,17 @@ impl Plugin for DecompilePlugin {
 
     /// Port of `writeDataState(SaveState)`.
     ///
-    /// Java writes each disconnected window's state as `putXmlElement("Provider" + i,
-    /// providerSaveState.saveToXml())`; the XML round-trip is an implementation detail of the real
-    /// `SaveState`, so the nested states are stored directly (see
-    /// [`SaveState::put_save_state`]). A window whose program is not contained within the project
+    /// Each disconnected window's state is written as `putXmlElement("Provider" + i,
+    /// providerSaveState.saveToXml())`. A window whose program is not contained within the project
     /// (no parent folder) is skipped without consuming an index, as in Java.
-    fn write_data_state(&self, save_state: &mut dyn SaveState) {
+    fn write_data_state(&self, save_state: &mut SaveState) {
         self.connected_provider.write_data_state(save_state);
 
         let providers = self.disconnected_providers.lock().unwrap();
         save_state.put_int("Num Disconnected", providers.len() as i32);
         let mut i = 0;
         for provider in providers.iter() {
-            let Some(mut provider_save_state) = save_state.new_save_state() else {
-                continue;
-            };
+            let mut provider_save_state = SaveState::new();
             let Some(domain_file) = provider
                 .get_program_handle()
                 .and_then(|program| program.get_domain_file())
@@ -598,8 +597,8 @@ impl Plugin for DecompilePlugin {
             }
             let program_pathname = domain_file.get_pathname();
             provider_save_state.put_string("Program Path", Some(&program_pathname));
-            provider.write_data_state(provider_save_state.as_mut());
-            save_state.put_save_state(&format!("Provider{i}"), provider_save_state);
+            provider.write_data_state(&mut provider_save_state);
+            save_state.put_xml_element(&format!("Provider{i}"), provider_save_state.save_to_xml());
             i += 1;
         }
     }
@@ -610,7 +609,7 @@ impl Plugin for DecompilePlugin {
     /// `DecompilerProvider`, neither of which is reachable from this signature; call
     /// [`read_data_state_restoring_providers`](DecompilePlugin::read_data_state_restoring_providers)
     /// for the full body.
-    fn read_data_state(&self, save_state: &dyn SaveState) {
+    fn read_data_state(&self, save_state: &SaveState) {
         self.connected_provider.read_data_state(save_state);
     }
 
@@ -711,7 +710,6 @@ impl PluginDescription for DecompilePluginDescription {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::{Path, PathBuf};
     use std::sync::atomic::AtomicUsize;
 
     use crate::app::seam_stubs::{DecompilerController, DecompilerPanel, Navigatable};
@@ -1004,7 +1002,7 @@ mod tests {
             self.send_events
         }
 
-        fn write_data_state(&self, _save_state: &mut dyn SaveState) {
+        fn write_data_state(&self, _save_state: &mut SaveState) {
             self.log.data_states_written.fetch_add(1, Ordering::SeqCst);
         }
 
@@ -1060,135 +1058,6 @@ mod tests {
 
         fn remove_component_provider(&self, _provider: Arc<dyn Any + Send + Sync>) {
             self.removed_providers.fetch_add(1, Ordering::SeqCst);
-        }
-    }
-
-    /// A `SaveState` recording the values `DecompilePlugin` writes, and able to hand out nested
-    /// states (which the real class does through its XML round-trip).
-    #[derive(Default)]
-    struct MockSaveState {
-        ints: HashMap<String, i32>,
-        strings: HashMap<String, String>,
-        nested: Vec<String>,
-    }
-
-    impl SaveState for MockSaveState {
-        fn has_value(&self, name: &str) -> bool {
-            self.ints.contains_key(name) || self.strings.contains_key(name)
-        }
-
-        fn get_boolean(&self, _name: &str, default_value: bool) -> bool {
-            default_value
-        }
-        fn put_boolean(&mut self, _name: &str, _value: bool) {}
-
-        fn get_byte(&self, _name: &str, default_value: i8) -> i8 {
-            default_value
-        }
-        fn put_byte(&mut self, _name: &str, _value: i8) {}
-
-        fn get_short(&self, _name: &str, default_value: i16) -> i16 {
-            default_value
-        }
-        fn put_short(&mut self, _name: &str, _value: i16) {}
-
-        fn get_int(&self, name: &str, default_value: i32) -> i32 {
-            self.ints.get(name).copied().unwrap_or(default_value)
-        }
-        fn put_int(&mut self, name: &str, value: i32) {
-            self.ints.insert(name.to_string(), value);
-        }
-
-        fn get_long(&self, _name: &str, default_value: i64) -> i64 {
-            default_value
-        }
-        fn put_long(&mut self, _name: &str, _value: i64) {}
-
-        fn get_float(&self, _name: &str, default_value: f32) -> f32 {
-            default_value
-        }
-        fn put_float(&mut self, _name: &str, _value: f32) {}
-
-        fn get_double(&self, _name: &str, default_value: f64) -> f64 {
-            default_value
-        }
-        fn put_double(&mut self, _name: &str, _value: f64) {}
-
-        fn get_string(&self, name: &str, default_value: Option<&str>) -> Option<String> {
-            self.strings
-                .get(name)
-                .cloned()
-                .or_else(|| default_value.map(|value| value.to_string()))
-        }
-        fn put_string(&mut self, name: &str, value: Option<&str>) {
-            match value {
-                Some(value) => {
-                    self.strings.insert(name.to_string(), value.to_string());
-                }
-                None => {
-                    self.strings.remove(name);
-                }
-            }
-        }
-
-        fn get_booleans(&self, _name: &str, default_value: Option<&[bool]>) -> Option<Vec<bool>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_booleans(&mut self, _name: &str, _value: Option<&[bool]>) {}
-
-        fn get_bytes(&self, _name: &str, default_value: Option<&[u8]>) -> Option<Vec<u8>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_bytes(&mut self, _name: &str, _value: Option<&[u8]>) {}
-
-        fn get_shorts(&self, _name: &str, default_value: Option<&[i16]>) -> Option<Vec<i16>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_shorts(&mut self, _name: &str, _value: Option<&[i16]>) {}
-
-        fn get_ints(&self, _name: &str, default_value: Option<&[i32]>) -> Option<Vec<i32>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_ints(&mut self, _name: &str, _value: Option<&[i32]>) {}
-
-        fn get_longs(&self, _name: &str, default_value: Option<&[i64]>) -> Option<Vec<i64>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_longs(&mut self, _name: &str, _value: Option<&[i64]>) {}
-
-        fn get_floats(&self, _name: &str, default_value: Option<&[f32]>) -> Option<Vec<f32>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_floats(&mut self, _name: &str, _value: Option<&[f32]>) {}
-
-        fn get_doubles(&self, _name: &str, default_value: Option<&[f64]>) -> Option<Vec<f64>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_doubles(&mut self, _name: &str, _value: Option<&[f64]>) {}
-
-        fn get_strings(&self, _name: &str, default_value: Option<&[String]>) -> Option<Vec<String>> {
-            default_value.map(|value| value.to_vec())
-        }
-        fn put_strings(&mut self, _name: &str, _value: Option<&[String]>) {}
-
-        fn get_file(&self, _name: &str, default_value: Option<&Path>) -> Option<PathBuf> {
-            default_value.map(|value| value.to_path_buf())
-        }
-        fn put_file(&mut self, _name: &str, _value: Option<&Path>) {}
-
-        fn get_enum_name(&self, name: &str) -> Option<String> {
-            self.strings.get(name).cloned()
-        }
-        fn put_enum_name(&mut self, name: &str, value: Option<&str>) {
-            self.put_string(name, value);
-        }
-
-        fn new_save_state(&self) -> Option<Box<dyn SaveState>> {
-            Some(Box::new(MockSaveState::default()))
-        }
-
-        fn put_save_state(&mut self, name: &str, _value: Box<dyn SaveState>) {
-            self.nested.push(name.to_string());
         }
     }
 
@@ -1514,12 +1383,17 @@ mod tests {
             outside_project,
         ));
 
-        let mut save_state = MockSaveState::default();
+        let mut save_state = SaveState::new();
         plugin.write_data_state(&mut save_state);
 
         // Both windows are counted, but only the one contained within the project is written out.
         assert_eq!(save_state.get_int("Num Disconnected", -1), 2);
-        assert_eq!(save_state.nested, vec!["Provider0".to_string()]);
+        assert_eq!(save_state.get_names(), vec!["Num Disconnected", "Provider0"]);
+        let provider0 = SaveState::from_xml(save_state.get_xml_element("Provider0").unwrap());
+        assert_eq!(
+            provider0.get_string("Program Path", None).as_deref(),
+            Some("/in-project")
+        );
     }
 
     #[test]

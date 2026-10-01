@@ -22,7 +22,7 @@ pub mod testplugins;
 pub mod tool_event_name;
 pub mod util;
 
-pub use auto_config_state::{ClassStateHandler, ConfigFieldCodec, EnumLike, PathIsDir, PathIsFile};
+pub use auto_config_state::{ClassStateHandler, ConfigFieldCodec, PathIsDir, PathIsFile};
 pub use auto_service::{AutoService, Wiring};
 pub use busy_tool_exception::BusyToolException;
 pub use default_plugin_packaging_provider::DefaultPluginPackagingProvider;

@@ -8,7 +8,7 @@ use crate::app::seam_stubs::{
     AddressSetProgramSelection, ByteBlockChangeManager, MemoryByteBlock,
     ProgramByteViewerComponentProvider, ProgramLocationPluginEvent, ProgramSelectionPluginEvent,
 };
-use crate::framework::seam_stubs::SaveState;
+use crate::framework::options::SaveState;
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView};
 use crate::program::model::listing::Program;
 
@@ -162,15 +162,14 @@ impl ProgramByteBlockSet {
 
     /// Write the state of the change list.
     ///
-    /// Corresponds to the package-private `getUndoRedoState()`, which returns a new `SaveState`;
-    /// this crate has no constructible `SaveState` yet, so the caller supplies one. The
-    /// block-number mapping this needs is why the serialization lives here rather than on
+    /// Corresponds to the package-private `getUndoRedoState()`. The block-number mapping this needs is why the serialization lives here rather than on
     /// [`ByteBlockChangeManager`] as it does in Java.
     ///
     /// Java seeds its entry counter with the change-list size and then increments it once per
     /// entry written, so it records about twice as many entries as it wrote; the surplus indices
     /// restore as no-ops because their byte arrays are missing. This port writes the true count.
-    pub fn get_undo_redo_state(&self, save_state: &mut dyn SaveState) {
+    pub fn get_undo_redo_state(&self) -> SaveState {
+        let mut save_state = SaveState::new();
         let mut change_count = 0;
         for (i, edit) in self.bbcm.changes().iter().enumerate() {
             let block_number = self.get_byte_block_number(edit.block_address());
@@ -187,12 +186,13 @@ impl ProgramByteBlockSet {
             save_state.put_bytes(&format!("{}{i}", Self::NEW_VALUE), Some(edit.new_value()));
         }
         save_state.put_int(Self::NUMBER_OF_CHANGES, change_count);
+        save_state
     }
 
     /// Read the state of the change list.
     ///
     /// Corresponds to the package-private `restoreUndoRedoState(SaveState)`.
-    pub fn restore_undo_redo_state(&mut self, save_state: &dyn SaveState) {
+    pub fn restore_undo_redo_state(&mut self, save_state: &SaveState) {
         let number_of_changes = save_state.get_int(Self::NUMBER_OF_CHANGES, 0);
         let mut changes = Vec::new();
         for i in 0..number_of_changes.max(0) {

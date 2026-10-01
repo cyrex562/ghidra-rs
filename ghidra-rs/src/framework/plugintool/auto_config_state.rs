@@ -18,9 +18,10 @@
 //! implement it by hand (typically by calling each field's codec directly), rather than having an
 //! implementation derived by scanning annotated fields at runtime.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use crate::framework::seam_stubs::{AsyncReferenceLike, SaveState};
+use crate::framework::options::{PersistableEnum, SaveState};
+use crate::framework::seam_stubs::AsyncReferenceLike;
 
 /// Codec for reading/writing a single field's value to/from a [`SaveState`].
 ///
@@ -35,10 +36,10 @@ pub trait ConfigFieldCodec<T> {
     /// Reads the value stored under `name`, mirroring `ConfigFieldCodec.read`. `current` is the
     /// field's present value, consulted by codecs (e.g. the path- and async-based ones) that need
     /// a fallback or an object to mutate in place rather than simply replacing wholesale.
-    fn read(&self, state: &dyn SaveState, name: &str, current: Option<&T>) -> Option<T>;
+    fn read(&self, state: &SaveState, name: &str, current: Option<&T>) -> Option<T>;
 
     /// Writes `value` under `name`, mirroring `ConfigFieldCodec.write`.
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &T);
+    fn write(&self, state: &mut SaveState, name: &str, value: &T);
 }
 
 /// Mirrors `AutoConfigState.BooleanConfigFieldCodec`.
@@ -46,11 +47,11 @@ pub trait ConfigFieldCodec<T> {
 pub struct BooleanConfigFieldCodec;
 
 impl ConfigFieldCodec<bool> for BooleanConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&bool>) -> Option<bool> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&bool>) -> Option<bool> {
         Some(state.get_boolean(name, false))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &bool) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &bool) {
         state.put_boolean(name, *value);
     }
 }
@@ -60,11 +61,11 @@ impl ConfigFieldCodec<bool> for BooleanConfigFieldCodec {
 pub struct ByteConfigFieldCodec;
 
 impl ConfigFieldCodec<i8> for ByteConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&i8>) -> Option<i8> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&i8>) -> Option<i8> {
         Some(state.get_byte(name, 0))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &i8) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &i8) {
         state.put_byte(name, *value);
     }
 }
@@ -74,11 +75,11 @@ impl ConfigFieldCodec<i8> for ByteConfigFieldCodec {
 pub struct ShortConfigFieldCodec;
 
 impl ConfigFieldCodec<i16> for ShortConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&i16>) -> Option<i16> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&i16>) -> Option<i16> {
         Some(state.get_short(name, 0))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &i16) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &i16) {
         state.put_short(name, *value);
     }
 }
@@ -88,11 +89,11 @@ impl ConfigFieldCodec<i16> for ShortConfigFieldCodec {
 pub struct IntConfigFieldCodec;
 
 impl ConfigFieldCodec<i32> for IntConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&i32>) -> Option<i32> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&i32>) -> Option<i32> {
         Some(state.get_int(name, 0))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &i32) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &i32) {
         state.put_int(name, *value);
     }
 }
@@ -102,11 +103,11 @@ impl ConfigFieldCodec<i32> for IntConfigFieldCodec {
 pub struct LongConfigFieldCodec;
 
 impl ConfigFieldCodec<i64> for LongConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&i64>) -> Option<i64> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&i64>) -> Option<i64> {
         Some(state.get_long(name, 0))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &i64) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &i64) {
         state.put_long(name, *value);
     }
 }
@@ -116,11 +117,11 @@ impl ConfigFieldCodec<i64> for LongConfigFieldCodec {
 pub struct FloatConfigFieldCodec;
 
 impl ConfigFieldCodec<f32> for FloatConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&f32>) -> Option<f32> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&f32>) -> Option<f32> {
         Some(state.get_float(name, 0.0))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &f32) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &f32) {
         state.put_float(name, *value);
     }
 }
@@ -130,11 +131,11 @@ impl ConfigFieldCodec<f32> for FloatConfigFieldCodec {
 pub struct DoubleConfigFieldCodec;
 
 impl ConfigFieldCodec<f64> for DoubleConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&f64>) -> Option<f64> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&f64>) -> Option<f64> {
         Some(state.get_double(name, 0.0))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &f64) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &f64) {
         state.put_double(name, *value);
     }
 }
@@ -144,11 +145,11 @@ impl ConfigFieldCodec<f64> for DoubleConfigFieldCodec {
 pub struct StringConfigFieldCodec;
 
 impl ConfigFieldCodec<String> for StringConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&String>) -> Option<String> {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&String>) -> Option<String> {
         state.get_string(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &String) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &String) {
         state.put_string(name, Some(value.as_str()));
     }
 }
@@ -160,14 +161,14 @@ pub struct BooleanArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<bool>> for BooleanArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<bool>>,
     ) -> Option<Vec<bool>> {
         state.get_booleans(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<bool>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<bool>) {
         state.put_booleans(name, Some(value.as_slice()));
     }
 }
@@ -179,14 +180,14 @@ pub struct ByteArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<u8>> for ByteArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<u8>>,
     ) -> Option<Vec<u8>> {
         state.get_bytes(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<u8>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<u8>) {
         state.put_bytes(name, Some(value.as_slice()));
     }
 }
@@ -198,14 +199,14 @@ pub struct ShortArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<i16>> for ShortArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<i16>>,
     ) -> Option<Vec<i16>> {
         state.get_shorts(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<i16>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<i16>) {
         state.put_shorts(name, Some(value.as_slice()));
     }
 }
@@ -217,14 +218,14 @@ pub struct IntArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<i32>> for IntArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<i32>>,
     ) -> Option<Vec<i32>> {
         state.get_ints(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<i32>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<i32>) {
         state.put_ints(name, Some(value.as_slice()));
     }
 }
@@ -236,14 +237,14 @@ pub struct LongArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<i64>> for LongArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<i64>>,
     ) -> Option<Vec<i64>> {
         state.get_longs(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<i64>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<i64>) {
         state.put_longs(name, Some(value.as_slice()));
     }
 }
@@ -255,14 +256,14 @@ pub struct FloatArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<f32>> for FloatArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<f32>>,
     ) -> Option<Vec<f32>> {
         state.get_floats(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<f32>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<f32>) {
         state.put_floats(name, Some(value.as_slice()));
     }
 }
@@ -274,14 +275,14 @@ pub struct DoubleArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<f64>> for DoubleArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<f64>>,
     ) -> Option<Vec<f64>> {
         state.get_doubles(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<f64>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<f64>) {
         state.put_doubles(name, Some(value.as_slice()));
     }
 }
@@ -293,14 +294,14 @@ pub struct StringArrayConfigFieldCodec;
 impl ConfigFieldCodec<Vec<String>> for StringArrayConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<String>>,
     ) -> Option<Vec<String>> {
         state.get_strings(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<String>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<String>) {
         state.put_strings(name, Some(value.as_slice()));
     }
 }
@@ -316,14 +317,14 @@ pub struct BigIntegerConfigFieldCodec;
 impl ConfigFieldCodec<Vec<u8>> for BigIntegerConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         _current: Option<&Vec<u8>>,
     ) -> Option<Vec<u8>> {
         state.get_bytes(name, Some(&[0]))
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Vec<u8>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Vec<u8>) {
         state.put_bytes(name, Some(value.as_slice()));
     }
 }
@@ -336,14 +337,14 @@ impl ConfigFieldCodec<Vec<u8>> for BigIntegerConfigFieldCodec {
 pub struct FileConfigFieldCodec;
 
 impl ConfigFieldCodec<PathBuf> for FileConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, current: Option<&PathBuf>) -> Option<PathBuf> {
+    fn read(&self, state: &SaveState, name: &str, current: Option<&PathBuf>) -> Option<PathBuf> {
         match current {
             Some(c) => state.get_file(name, Some(c.as_path())),
             None => state.get_file(name, None),
         }
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &PathBuf) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &PathBuf) {
         state.put_file(name, Some(value.as_path()));
     }
 }
@@ -353,12 +354,12 @@ impl ConfigFieldCodec<PathBuf> for FileConfigFieldCodec {
 pub struct PathConfigFieldCodec;
 
 impl ConfigFieldCodec<PathBuf> for PathConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, current: Option<&PathBuf>) -> Option<PathBuf> {
+    fn read(&self, state: &SaveState, name: &str, current: Option<&PathBuf>) -> Option<PathBuf> {
         let default = current.map(|c| c.to_string_lossy().into_owned());
         state.get_string(name, default.as_deref()).map(PathBuf::from)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &PathBuf) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &PathBuf) {
         state.put_string(name, Some(&value.to_string_lossy()));
     }
 }
@@ -388,7 +389,7 @@ pub struct PathIsDirConfigFieldCodec;
 impl ConfigFieldCodec<PathIsDir> for PathIsDirConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         current: Option<&PathIsDir>,
     ) -> Option<PathIsDir> {
@@ -396,7 +397,7 @@ impl ConfigFieldCodec<PathIsDir> for PathIsDirConfigFieldCodec {
         PathConfigFieldCodec.read(state, name, current_path).map(PathIsDir)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &PathIsDir) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &PathIsDir) {
         PathConfigFieldCodec.write(state, name, &value.0);
     }
 }
@@ -426,7 +427,7 @@ pub struct PathIsFileConfigFieldCodec;
 impl ConfigFieldCodec<PathIsFile> for PathIsFileConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         current: Option<&PathIsFile>,
     ) -> Option<PathIsFile> {
@@ -434,37 +435,25 @@ impl ConfigFieldCodec<PathIsFile> for PathIsFileConfigFieldCodec {
         PathConfigFieldCodec.read(state, name, current_path).map(PathIsFile)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &PathIsFile) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &PathIsFile) {
         PathConfigFieldCodec.write(state, name, &value.0);
     }
 }
 
-/// Adapts a Rust enum-like type to [`EnumConfigFieldCodec`], replacing the Java codec's use of
-/// reflection (`Enum.valueOf`/`Enum.name()` looked up via the field's runtime `Class`) with an
-/// explicit, hand-implemented name mapping.
-pub trait EnumLike: Sized {
-    /// The constant's name, mirroring `Enum.name()`.
-    fn enum_name(&self) -> &str;
-
-    /// Resolves a constant by name, mirroring `Enum.valueOf(Class, String)`; `None` if `name`
-    /// does not name a constant.
-    fn from_enum_name(name: &str) -> Option<Self>;
-}
-
 /// Mirrors `AutoConfigState.EnumConfigFieldCodec`. Unlike its Java counterpart -- a single
 /// non-generic class handling every enum type via the raw `Enum<?>` type and runtime reflection
-/// -- this is a blanket implementation over any [`EnumLike`] `T`, since Rust generics need the
-/// name/value mapping spelled out per type rather than discovered reflectively.
+/// -- this is a blanket implementation over any [`PersistableEnum`] `T`, since Rust generics need
+/// the name/value mapping spelled out per type rather than discovered reflectively.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct EnumConfigFieldCodec;
 
-impl<T: EnumLike> ConfigFieldCodec<T> for EnumConfigFieldCodec {
-    fn read(&self, state: &dyn SaveState, name: &str, _current: Option<&T>) -> Option<T> {
-        state.get_enum_name(name).and_then(|n| T::from_enum_name(&n))
+impl<T: PersistableEnum> ConfigFieldCodec<T> for EnumConfigFieldCodec {
+    fn read(&self, state: &SaveState, name: &str, _current: Option<&T>) -> Option<T> {
+        state.get_enum(name, None)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &T) {
-        state.put_enum_name(name, Some(value.enum_name()));
+    fn write(&self, state: &mut SaveState, name: &str, value: &T) {
+        state.put_enum(name, value);
     }
 }
 
@@ -491,7 +480,7 @@ impl<T> GenericAsyncConfigFieldCodec<T> {
 impl<T> ConfigFieldCodec<Box<dyn AsyncReferenceLike<T>>> for GenericAsyncConfigFieldCodec<T> {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         current: Option<&Box<dyn AsyncReferenceLike<T>>>,
     ) -> Option<Box<dyn AsyncReferenceLike<T>>> {
@@ -504,7 +493,7 @@ impl<T> ConfigFieldCodec<Box<dyn AsyncReferenceLike<T>>> for GenericAsyncConfigF
         None
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Box<dyn AsyncReferenceLike<T>>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Box<dyn AsyncReferenceLike<T>>) {
         self.codec.write(state, name, &value.get());
     }
 }
@@ -530,14 +519,14 @@ impl Default for BooleanAsyncConfigFieldCodec {
 impl ConfigFieldCodec<Box<dyn AsyncReferenceLike<bool>>> for BooleanAsyncConfigFieldCodec {
     fn read(
         &self,
-        state: &dyn SaveState,
+        state: &SaveState,
         name: &str,
         current: Option<&Box<dyn AsyncReferenceLike<bool>>>,
     ) -> Option<Box<dyn AsyncReferenceLike<bool>>> {
         self.inner.read(state, name, current)
     }
 
-    fn write(&self, state: &mut dyn SaveState, name: &str, value: &Box<dyn AsyncReferenceLike<bool>>) {
+    fn write(&self, state: &mut SaveState, name: &str, value: &Box<dyn AsyncReferenceLike<bool>>) {
         self.inner.write(state, name, value)
     }
 }
@@ -548,171 +537,21 @@ impl ConfigFieldCodec<Box<dyn AsyncReferenceLike<bool>>> for BooleanAsyncConfigF
 /// has no port here. Object-safe, so handlers can be stored as `Box<dyn ClassStateHandler<T>>`.
 pub trait ClassStateHandler<T> {
     /// Writes every handled field of `from` into `into`, mirroring `ClassHandler.writeConfigState`.
-    fn write_config_state(&self, from: &T, into: &mut dyn SaveState);
+    fn write_config_state(&self, from: &T, into: &mut SaveState);
 
     /// Reads every handled field of `into` from `from`, mirroring `ClassHandler.readConfigState`.
-    fn read_config_state(&self, into: &mut T, from: &dyn SaveState);
+    fn read_config_state(&self, into: &mut T, from: &SaveState);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::cell::RefCell;
-    use std::collections::HashMap;
-
-    #[derive(Default)]
-    struct MockSaveState {
-        strings: HashMap<String, String>,
-        bools: HashMap<String, bool>,
-        ints: HashMap<String, i32>,
-        byte_arrays: HashMap<String, Vec<u8>>,
-    }
-
-    impl SaveState for MockSaveState {
-        fn has_value(&self, name: &str) -> bool {
-            self.strings.contains_key(name)
-                || self.bools.contains_key(name)
-                || self.ints.contains_key(name)
-                || self.byte_arrays.contains_key(name)
-        }
-
-        fn get_boolean(&self, name: &str, default_value: bool) -> bool {
-            self.bools.get(name).copied().unwrap_or(default_value)
-        }
-        fn put_boolean(&mut self, name: &str, value: bool) {
-            self.bools.insert(name.to_string(), value);
-        }
-
-        fn get_byte(&self, _name: &str, default_value: i8) -> i8 {
-            default_value
-        }
-        fn put_byte(&mut self, _name: &str, _value: i8) {}
-
-        fn get_short(&self, _name: &str, default_value: i16) -> i16 {
-            default_value
-        }
-        fn put_short(&mut self, _name: &str, _value: i16) {}
-
-        fn get_int(&self, name: &str, default_value: i32) -> i32 {
-            self.ints.get(name).copied().unwrap_or(default_value)
-        }
-        fn put_int(&mut self, name: &str, value: i32) {
-            self.ints.insert(name.to_string(), value);
-        }
-
-        fn get_long(&self, _name: &str, default_value: i64) -> i64 {
-            default_value
-        }
-        fn put_long(&mut self, _name: &str, _value: i64) {}
-
-        fn get_float(&self, _name: &str, default_value: f32) -> f32 {
-            default_value
-        }
-        fn put_float(&mut self, _name: &str, _value: f32) {}
-
-        fn get_double(&self, _name: &str, default_value: f64) -> f64 {
-            default_value
-        }
-        fn put_double(&mut self, _name: &str, _value: f64) {}
-
-        fn get_string(&self, name: &str, default_value: Option<&str>) -> Option<String> {
-            self.strings
-                .get(name)
-                .cloned()
-                .or_else(|| default_value.map(|s| s.to_string()))
-        }
-        fn put_string(&mut self, name: &str, value: Option<&str>) {
-            match value {
-                Some(v) => {
-                    self.strings.insert(name.to_string(), v.to_string());
-                }
-                None => {
-                    self.strings.remove(name);
-                }
-            }
-        }
-
-        fn get_booleans(&self, _name: &str, default_value: Option<&[bool]>) -> Option<Vec<bool>> {
-            default_value.map(|v| v.to_vec())
-        }
-        fn put_booleans(&mut self, _name: &str, _value: Option<&[bool]>) {}
-
-        fn get_bytes(&self, name: &str, default_value: Option<&[u8]>) -> Option<Vec<u8>> {
-            self.byte_arrays
-                .get(name)
-                .cloned()
-                .or_else(|| default_value.map(|v| v.to_vec()))
-        }
-        fn put_bytes(&mut self, name: &str, value: Option<&[u8]>) {
-            match value {
-                Some(v) => {
-                    self.byte_arrays.insert(name.to_string(), v.to_vec());
-                }
-                None => {
-                    self.byte_arrays.remove(name);
-                }
-            }
-        }
-
-        fn get_shorts(&self, _name: &str, default_value: Option<&[i16]>) -> Option<Vec<i16>> {
-            default_value.map(|v| v.to_vec())
-        }
-        fn put_shorts(&mut self, _name: &str, _value: Option<&[i16]>) {}
-
-        fn get_ints(&self, _name: &str, default_value: Option<&[i32]>) -> Option<Vec<i32>> {
-            default_value.map(|v| v.to_vec())
-        }
-        fn put_ints(&mut self, _name: &str, _value: Option<&[i32]>) {}
-
-        fn get_longs(&self, _name: &str, default_value: Option<&[i64]>) -> Option<Vec<i64>> {
-            default_value.map(|v| v.to_vec())
-        }
-        fn put_longs(&mut self, _name: &str, _value: Option<&[i64]>) {}
-
-        fn get_floats(&self, _name: &str, default_value: Option<&[f32]>) -> Option<Vec<f32>> {
-            default_value.map(|v| v.to_vec())
-        }
-        fn put_floats(&mut self, _name: &str, _value: Option<&[f32]>) {}
-
-        fn get_doubles(&self, _name: &str, default_value: Option<&[f64]>) -> Option<Vec<f64>> {
-            default_value.map(|v| v.to_vec())
-        }
-        fn put_doubles(&mut self, _name: &str, _value: Option<&[f64]>) {}
-
-        fn get_strings(&self, _name: &str, default_value: Option<&[String]>) -> Option<Vec<String>> {
-            default_value.map(|v| v.to_vec())
-        }
-        fn put_strings(&mut self, _name: &str, _value: Option<&[String]>) {}
-
-        fn get_file(&self, name: &str, default_value: Option<&Path>) -> Option<PathBuf> {
-            self.strings
-                .get(name)
-                .map(PathBuf::from)
-                .or_else(|| default_value.map(|p| p.to_path_buf()))
-        }
-        fn put_file(&mut self, name: &str, value: Option<&Path>) {
-            match value {
-                Some(v) => {
-                    self.strings.insert(name.to_string(), v.to_string_lossy().into_owned());
-                }
-                None => {
-                    self.strings.remove(name);
-                }
-            }
-        }
-
-        fn get_enum_name(&self, name: &str) -> Option<String> {
-            self.strings.get(name).cloned()
-        }
-        fn put_enum_name(&mut self, name: &str, value: Option<&str>) {
-            self.put_string(name, value);
-        }
-    }
 
     #[test]
     fn boolean_codec_round_trips_through_trait_object() {
         let codec: Box<dyn ConfigFieldCodec<bool>> = Box::new(BooleanConfigFieldCodec);
-        let mut state = MockSaveState::default();
+        let mut state = SaveState::new();
 
         assert_eq!(codec.read(&state, "flag", None), Some(false));
 
@@ -723,7 +562,7 @@ mod tests {
     #[test]
     fn path_is_dir_codec_round_trips() {
         let codec = PathIsDirConfigFieldCodec;
-        let mut state = MockSaveState::default();
+        let mut state = SaveState::new();
         let value = PathIsDir::from_string("/tmp/some/dir");
 
         codec.write(&mut state, "workdir", &value);
@@ -737,27 +576,29 @@ mod tests {
         Slow,
     }
 
-    impl EnumLike for Mode {
-        fn enum_name(&self) -> &str {
+    impl crate::framework::options::EnumValues for Mode {
+        fn all_values() -> &'static [Self] {
+            &[Mode::Fast, Mode::Slow]
+        }
+
+        fn variant_name(&self) -> &'static str {
             match self {
                 Mode::Fast => "Fast",
                 Mode::Slow => "Slow",
             }
         }
+    }
 
-        fn from_enum_name(name: &str) -> Option<Self> {
-            match name {
-                "Fast" => Some(Mode::Fast),
-                "Slow" => Some(Mode::Slow),
-                _ => None,
-            }
+    impl PersistableEnum for Mode {
+        fn java_class_name() -> &'static str {
+            "test.Mode"
         }
     }
 
     #[test]
     fn enum_codec_round_trips_through_trait_object() {
         let codec: Box<dyn ConfigFieldCodec<Mode>> = Box::new(EnumConfigFieldCodec);
-        let mut state = MockSaveState::default();
+        let mut state = SaveState::new();
 
         assert_eq!(codec.read(&state, "mode", None), None);
 
@@ -781,7 +622,7 @@ mod tests {
     fn generic_async_codec_mutates_reference_in_place() {
         let codec: Box<dyn ConfigFieldCodec<Box<dyn AsyncReferenceLike<i32>>>> =
             Box::new(GenericAsyncConfigFieldCodec::new(Box::new(IntConfigFieldCodec)));
-        let mut state = MockSaveState::default();
+        let mut state = SaveState::new();
         state.put_int("counter", 42);
 
         let current: Box<dyn AsyncReferenceLike<i32>> = Box::new(MockAsyncReference(RefCell::new(0)));
@@ -799,12 +640,12 @@ mod tests {
     struct WidgetStateHandler;
 
     impl ClassStateHandler<Widget> for WidgetStateHandler {
-        fn write_config_state(&self, from: &Widget, into: &mut dyn SaveState) {
+        fn write_config_state(&self, from: &Widget, into: &mut SaveState) {
             StringConfigFieldCodec.write(into, "name", &from.name);
             IntConfigFieldCodec.write(into, "count", &from.count);
         }
 
-        fn read_config_state(&self, into: &mut Widget, from: &dyn SaveState) {
+        fn read_config_state(&self, into: &mut Widget, from: &SaveState) {
             if let Some(name) = StringConfigFieldCodec.read(from, "name", Some(&into.name)) {
                 into.name = name;
             }
@@ -817,7 +658,7 @@ mod tests {
     #[test]
     fn class_state_handler_round_trips_through_trait_object() {
         let handler: Box<dyn ClassStateHandler<Widget>> = Box::new(WidgetStateHandler);
-        let mut state = MockSaveState::default();
+        let mut state = SaveState::new();
         let original = Widget { name: "gizmo".to_string(), count: 7 };
 
         handler.write_config_state(&original, &mut state);

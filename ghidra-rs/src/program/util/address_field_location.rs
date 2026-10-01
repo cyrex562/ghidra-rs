@@ -11,7 +11,7 @@
 //! XML-restore default) don't map onto trait methods and are left to implementors.
 //!
 //! `saveState`/`restoreState` are omitted for the same reason [`ProgramLocation`]'s are: they
-//! round-trip through [`SaveState`](crate::framework::seam_stubs::SaveState), which the base trait
+//! round-trip through [`SaveState`](crate::framework::options::SaveState), which the base trait
 //! already doesn't expose a hook for. `equals`/`hashCode`/`toString` are Java `Object`-identity
 //! boilerplate that implementors can derive/implement directly on their concrete type instead of
 //! through this trait.

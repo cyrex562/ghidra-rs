@@ -36,7 +36,8 @@ use std::sync::Arc;
 use crate::framework::model::{DomainFile, DomainObject};
 use crate::framework::plugintool::plugin_event::PluginEvent;
 use crate::framework::plugintool::util::{PluginDescription, PluginEventListener, ServiceListener};
-use crate::framework::seam_stubs::{PluginTool, SaveState};
+use crate::framework::options::SaveState;
+use crate::framework::seam_stubs::PluginTool;
 use crate::util::classfinder::ExtensionPoint;
 
 /// A basic building block used to bundle features or capabilities into a unit that can be
@@ -187,19 +188,19 @@ pub trait Plugin: ExtensionPoint + PluginEventListener + ServiceListener {
 
     /// Reads this plugin's data-independent (preferences) properties, mirroring
     /// `readConfigState(SaveState)`. No-op by default.
-    fn read_config_state(&self, _save_state: &dyn SaveState) {}
+    fn read_config_state(&self, _save_state: &SaveState) {}
 
     /// Writes this plugin's data-independent (preferences) properties, mirroring
     /// `writeConfigState(SaveState)`. No-op by default.
-    fn write_config_state(&self, _save_state: &mut dyn SaveState) {}
+    fn write_config_state(&self, _save_state: &mut SaveState) {}
 
     /// Writes this plugin's data-dependent state, mirroring `writeDataState(SaveState)`. No-op
     /// by default.
-    fn write_data_state(&self, _save_state: &mut dyn SaveState) {}
+    fn write_data_state(&self, _save_state: &mut SaveState) {}
 
     /// Reads this plugin's data-dependent state, mirroring `readDataState(SaveState)`. No-op by
     /// default.
-    fn read_data_state(&self, _save_state: &dyn SaveState) {}
+    fn read_data_state(&self, _save_state: &SaveState) {}
 
     /// Forces this plugin to terminate any running tasks and apply unsaved data, mirroring the
     /// protected `canClose()`. Returns `true` by default.
