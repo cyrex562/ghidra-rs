@@ -118,7 +118,8 @@ mod tests {
     use super::*;
     use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::golang::rtti::test_support::{go_mapper, read_at, Image};
-    use crate::format::seam_stubs::{GoName, GoPcValueEvaluator, GoSlice, GoTypeManager};
+    use crate::format::golang::rtti::go_pc_value_evaluator::GoPcValueEvaluator;
+    use crate::format::seam_stubs::{GoName, GoSlice, GoTypeManager};
     use crate::program::database::sourcemap::SourceFile;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
@@ -164,7 +165,7 @@ mod tests {
             &self,
             _offset: i64,
             _func_entry: i64,
-        ) -> std::io::Result<Box<dyn GoPcValueEvaluator>> {
+        ) -> std::io::Result<GoPcValueEvaluator> {
             unimplemented!()
         }
         fn get_func_data_instance(&self, offset: i64) -> std::io::Result<GoFuncData> {

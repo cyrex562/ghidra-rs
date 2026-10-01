@@ -3647,34 +3647,13 @@ pub trait GoModuledata: Send + Sync {
         &self,
         offset: i64,
         func_entry: i64,
-    ) -> std::io::Result<Box<dyn GoPcValueEvaluator>>;
+    ) -> std::io::Result<crate::format::golang::rtti::go_pc_value_evaluator::GoPcValueEvaluator>;
     /// Mirrors `GoModuledata.getFuncDataInstance(long)`, referenced by
     /// [`GoFunctabEntry`](crate::format::golang::rtti::go_functab_entry::GoFunctabEntry).
     fn get_func_data_instance(
         &self,
         offset: i64,
     ) -> std::io::Result<crate::format::golang::rtti::go_func_data::GoFuncData>;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoPcValueEvaluator`, referenced by
-/// [`GoFuncData`](crate::format::golang::rtti::go_func_data::GoFuncData) before the real class is
-/// ported. Evaluation advances an internal reader cursor, value, and PC, so every stepping method
-/// takes `&mut self`.
-pub trait GoPcValueEvaluator: Send + Sync {
-    /// Mirrors `GoPcValueEvaluator.getPC()`.
-    fn get_pc(&self) -> i64;
-    /// Mirrors `GoPcValueEvaluator.reset()`.
-    fn reset(&mut self);
-    /// Mirrors `GoPcValueEvaluator.getMaxPC()`.
-    fn get_max_pc(&mut self) -> std::io::Result<i64>;
-    /// Mirrors `GoPcValueEvaluator.eval(long)`.
-    fn eval(&mut self, target_pc: i64) -> std::io::Result<i32>;
-    /// Mirrors `GoPcValueEvaluator.evalNext()`.
-    fn eval_next(&mut self) -> std::io::Result<i32>;
-    /// Mirrors `GoPcValueEvaluator.evalAll(long)`.
-    fn eval_all(&mut self, target_pc: i64) -> std::io::Result<Vec<i32>>;
-    /// Mirrors `GoPcValueEvaluator.markup(MarkupSession)`.
-    fn markup(&mut self, session: &mut crate::format::golang::structmapping::MarkupSession<'_>) -> std::io::Result<()>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoType`, referenced by

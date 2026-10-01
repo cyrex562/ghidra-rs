@@ -260,7 +260,7 @@ impl<'a> MarkupSession<'a> {
     /// through the program's shared listing handle: a blank comment, or one the existing comment
     /// already contains, is not added; otherwise it is appended after `sep`
     /// (`AppendCommentCmd`).
-    fn append_comment_at(
+    pub fn append_comment_at(
         &mut self,
         address: &Address,
         comment_type: CommentType,
