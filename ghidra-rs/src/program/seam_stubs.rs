@@ -2893,8 +2893,6 @@ mod share_data_type_tests {
     use crate::program::model::data::pointer::Pointer;
     use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
 
-    struct MockPointerTypedefBuilder;
-    impl PointerTypedefBuilder for MockPointerTypedefBuilder {}
 
     struct MockPointer;
     impl DataType for MockPointer {
@@ -2916,8 +2914,8 @@ mod share_data_type_tests {
             let _ = data_type;
             Box::new(MockPointer)
         }
-        fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
-            Box::new(MockPointerTypedefBuilder)
+        fn typedef_builder(&self) -> crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder {
+            crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer(self)
         }
     }
 

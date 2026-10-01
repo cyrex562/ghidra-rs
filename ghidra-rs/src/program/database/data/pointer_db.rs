@@ -79,8 +79,6 @@ mod tests {
         }
     }
 
-    struct MockPointerTypedefBuilder;
-    impl PointerTypedefBuilder for MockPointerTypedefBuilder {}
 
     struct MockDataTypeManagerDb;
     impl DataTypeManager for MockDataTypeManagerDb {}
@@ -127,8 +125,8 @@ mod tests {
             })
         }
 
-        fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
-            Box::new(MockPointerTypedefBuilder)
+        fn typedef_builder(&self) -> crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder {
+            crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer(self)
         }
     }
 

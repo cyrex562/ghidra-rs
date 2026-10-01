@@ -650,14 +650,11 @@ impl Pointer for EmptyPointer {
         Box::new(EmptyPointer)
     }
 
-    fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
-        Box::new(EmptyPointerTypedefBuilder)
+    fn typedef_builder(&self) -> crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder {
+        crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer(self)
     }
 }
 
-/// Trivial fallback used by [`EmptyPointer::typedef_builder`].
-struct EmptyPointerTypedefBuilder;
-impl PointerTypedefBuilder for EmptyPointerTypedefBuilder {}
 
 #[cfg(test)]
 mod tests {

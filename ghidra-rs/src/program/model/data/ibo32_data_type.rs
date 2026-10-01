@@ -90,7 +90,7 @@ impl IBO32DataType {
     ///
     /// Port of the static `IBO32DataType.createIBO32PointerTypedef(DataType)`.
     pub fn create_ibo32_pointer_typedef(referenced_data_type: Option<Box<dyn DataType>>) -> PointerTypedef {
-        PointerTypedef::new_with_type(None, referenced_data_type, IBO32_LENGTH, &ImageBaseRelativePointerType)
+        PointerTypedef::new_with_type(None, referenced_data_type.map(std::sync::Arc::from), IBO32_LENGTH, &ImageBaseRelativePointerType)
             .expect("IBO32's fixed construction arguments are always valid")
     }
 }

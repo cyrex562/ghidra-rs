@@ -449,8 +449,8 @@ mod tests {
             let name: &'static str = Box::leak(data_type.get_name().into_boxed_str());
             Box::new(MockPointer { name: "PTR", referenced_name: name })
         }
-        fn typedef_builder(&self) -> Box<dyn crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder> {
-            unreachable!("not exercised by this test")
+        fn typedef_builder(&self) -> crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder {
+            crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer(self)
         }
     }
 

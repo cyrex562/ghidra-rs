@@ -10,27 +10,13 @@
 //! [`TypedefDataType`](crate::program::model::data::typedef_data_type::TypedefDataType) field and
 //! forward to it.
 //!
-//! ## No concrete `Pointer` existed yet
-//!
-//! `PointerDataType` (the Java class both wrap) was already ported in this crate, but only as a
-//! cut-point *trait* -- like every other leaf `BuiltIn` datatype ported so far, no concrete,
-//! constructible implementation exists (see that trait's own module docs: "a concrete
-//! implementation satisfies it entirely..."). Since both classes here exist specifically to wrap
-//! a real pointer, this port needed to supply the first one: [`BasicPointer`] (private to this
-//! module), a minimal concrete `DataType + Pointer + PointerDataType` built directly on that
-//! trait's already-real default method bodies.
-//!
-//! ## Collapsed constructor overloads
+//! ## Constructors
 //!
 //! Each Java class has two constructors: one building a fresh `PointerDataType` from a referenced
-//! type + size, and one accepting an already-built `Pointer` (used by `copy()`/`clone()` to avoid
-//! losing an existing pointer's exact size, including its "-1 = dynamically sized" sentinel).
-//! Since [`BasicPointer`] is the only concrete `Pointer` this port has, both collapse to
-//! [`PointerTypedefBuiltInBase::new`]/[`PointerTypedef::new`] taking the referenced type + size
-//! directly. [`PointerTypedef::copy_typedef`]/[`PointerTypedef::clone_typedef`] therefore rebuild
-//! from [`DataType::get_length`] (always resolved/positive) rather than the raw stored length, so
-//! copying a dynamically-sized pointer-typedef produces a fixed-size one instead -- a known,
-//! narrow divergence from Java's exact-preservation behavior.
+//! type + size, and one accepting an already-built `Pointer`. Both collapse to
+//! [`PointerTypedefBuiltInBase::new`]/[`PointerTypedef::new`] taking the referenced type + raw
+//! size (`-1` for a dynamically-sized pointer); [`PointerTypedefBuilder::for_pointer`](crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer)
+//! and [`PointerTypedef::copy_typedef`] pass an existing pointer's raw size through.
 //!
 //! ## No `DataOrganization`-based default pointer size
 //!
@@ -86,12 +72,12 @@ use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::pointer_data_type::PointerDataType;
 use crate::program::model::data::pointer_type::PointerType;
 use crate::program::model::data::pointer_type_settings_definition::PointerTypeSettingsDefinition;
-use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
 use crate::program::model::data::typedef::TypeDef;
 use crate::program::model::data::typedef_data_type::TypedefDataType;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
 use crate::program::model::mem::MemBuffer;
 use crate::program::seam_stubs::share_data_type;
+use crate::util::exception::InvalidNameException;
 use crate::util::UniversalID;
 
 /// Zero-sized marker used purely to call the defaulted trait methods of
@@ -110,122 +96,7 @@ fn next_universal_id() -> UniversalID {
     UniversalID::new(COUNTER.fetch_add(1, Ordering::Relaxed))
 }
 
-/// Minimal concrete `Pointer`, standing in for `new PointerDataType(referencedDataType,
-/// pointerSize, dtm)`. See the module docs for why this port needed to supply one. Not itself a
-/// full port of `PointerDataType` (that trait already carries all the real logic this delegates
-/// to) -- just the storage plus the two `Pointer`-only required methods
-/// ([`Pointer::new_pointer`]/[`Pointer::typedef_builder`]) no cut-point trait can supply
-/// generically.
-struct BasicPointer {
-    referenced_data_type: Option<Arc<dyn DataType>>,
-    length: i32,
-    deleted: bool,
-}
-
-impl BasicPointer {
-    fn new(referenced_data_type: Option<Box<dyn DataType>>, length: i32) -> Self {
-        BasicPointer { referenced_data_type: referenced_data_type.map(Arc::from), length, deleted: false }
-    }
-}
-
-struct BasicPointerTypedefBuilder;
-impl PointerTypedefBuilder for BasicPointerTypedefBuilder {}
-
-impl DataType for BasicPointer {
-    fn has_language_dependant_length(&self) -> bool {
-        self.pointer_data_type_impl_has_language_dependant_length()
-    }
-    fn get_length(&self) -> i32 {
-        self.pointer_data_type_impl_length()
-    }
-    fn get_aligned_length(&self) -> i32 {
-        self.pointer_data_type_impl_aligned_length()
-    }
-    fn get_display_name(&self) -> String {
-        self.pointer_data_type_impl_display_name()
-    }
-    fn get_name(&self) -> String {
-        self.pointer_data_type_impl_name()
-    }
-    fn get_description(&self) -> String {
-        self.pointer_data_type_impl_description()
-    }
-    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
-        self.pointer_data_type_impl_mnemonic(settings)
-    }
-    fn get_type_def_settings_definitions(&self) -> Vec<Box<dyn TypeDefSettingsDefinition>> {
-        self.pointer_data_type_impl_type_def_settings_definitions()
-    }
-    fn get_representation(&self, buf: &dyn MemBuffer, settings: &dyn Settings, _length: i32) -> String {
-        self.pointer_data_type_impl_representation(buf, settings)
-    }
-    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
-        self.pointer_data_type_impl_is_equivalent(dt)
-    }
-    fn data_type_deleted(&mut self, dt: &dyn DataType) {
-        self.pointer_data_type_impl_data_type_deleted(dt);
-    }
-    fn is_deleted(&self) -> bool {
-        self.pointer_data_type_impl_is_deleted()
-    }
-    fn data_type_replaced(&mut self, old_dt: &dyn DataType, new_dt: &dyn DataType) {
-        self.pointer_data_type_impl_data_type_replaced(old_dt, new_dt);
-    }
-    fn get_category_path(&self) -> CategoryPath {
-        self.pointer_data_type_impl_category_path()
-    }
-    fn depends_on(&self, dt: &dyn DataType) -> bool {
-        self.pointer_data_type_impl_depends_on(dt)
-    }
-    fn is_pointer(&self) -> bool {
-        true
-    }
-    fn as_pointer(&self) -> Option<&dyn Pointer> {
-        Some(self)
-    }
-}
-
-impl Pointer for BasicPointer {
-    fn get_data_type(&self) -> Option<Box<dyn DataType>> {
-        self.pointer_data_type_impl_get_data_type()
-    }
-
-    fn new_pointer(&self, data_type: Box<dyn DataType>) -> Box<dyn Pointer> {
-        Box::new(BasicPointer::new(Some(data_type), self.length))
-    }
-
-    fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
-        Box::new(BasicPointerTypedefBuilder)
-    }
-}
-
-impl PointerDataType for BasicPointer {
-    fn stored_referenced_data_type(&self) -> Option<Box<dyn DataType>> {
-        self.referenced_data_type.as_ref().map(share_data_type)
-    }
-
-    fn set_stored_referenced_data_type(&mut self, referenced_data_type: Option<Box<dyn DataType>>) {
-        self.referenced_data_type = referenced_data_type.map(Arc::from);
-    }
-
-    fn stored_length(&self) -> i32 {
-        self.length
-    }
-
-    fn set_stored_length(&mut self, length: i32) {
-        self.length = length;
-    }
-
-    fn stored_deleted(&self) -> bool {
-        self.deleted
-    }
-
-    fn set_stored_deleted(&mut self, deleted: bool) {
-        self.deleted = deleted;
-    }
-}
-
-fn category_path_for(referenced_data_type: &Option<Box<dyn DataType>>) -> CategoryPath {
+fn category_path_for(referenced_data_type: &Option<Arc<dyn DataType>>) -> CategoryPath {
     referenced_data_type.as_ref().map(|dt| dt.get_category_path()).unwrap_or_else(|| ROOT.clone())
 }
 
@@ -233,8 +104,7 @@ fn category_path_for(referenced_data_type: &Option<Box<dyn DataType>>) -> Catego
 /// pointer-typedef datatype.
 ///
 /// Port of `ghidra.program.model.data.AbstractPointerTypedefBuiltIn`. See the module-level
-/// documentation for what was collapsed, dropped, or built fresh (this port's own
-/// [`BasicPointer`]).
+/// documentation for what was collapsed or dropped.
 pub struct PointerTypedefBuiltInBase {
     category_path: CategoryPath,
     /// `None` stands in for the Java `typedefName == null` auto-naming sentinel.
@@ -254,7 +124,7 @@ impl PointerTypedefBuiltInBase {
     /// void/default/bitfield/factory/dynamic).
     pub fn new(
         name: Option<&str>,
-        referenced_data_type: Option<Box<dyn DataType>>,
+        referenced_data_type: Option<Arc<dyn DataType>>,
         pointer_size: i32,
     ) -> Result<Self, String> {
         if let Some(n) = name {
@@ -263,7 +133,7 @@ impl PointerTypedefBuiltInBase {
             }
         }
         let category_path = category_path_for(&referenced_data_type);
-        let pointer = BasicPointer::new(referenced_data_type, pointer_size);
+        let pointer = PointerDataType::new_with(referenced_data_type, pointer_size, None)?;
         let model_typedef = TypedefDataType::new_in_root("TEMP", Box::new(pointer))?;
         Ok(PointerTypedefBuiltInBase {
             category_path,
@@ -428,13 +298,13 @@ impl PointerTypedef {
     /// this).
     pub fn new(
         type_def_name: Option<&str>,
-        referenced_data_type: Option<Box<dyn DataType>>,
+        referenced_data_type: Option<Arc<dyn DataType>>,
         pointer_size: i32,
     ) -> Result<Self, String> {
         let is_auto_named = type_def_name.map(|n| n.trim().is_empty()).unwrap_or(true);
         let category_path = category_path_for(&referenced_data_type);
         let name = if is_auto_named { "TEMP".to_string() } else { type_def_name.unwrap().to_string() };
-        let pointer = BasicPointer::new(referenced_data_type, pointer_size);
+        let pointer = PointerDataType::new_with(referenced_data_type, pointer_size, None)?;
         let model_typedef = TypedefDataType::new_in_root("TEMP", Box::new(pointer))?;
         Ok(PointerTypedef {
             category_path,
@@ -451,7 +321,7 @@ impl PointerTypedef {
     /// See [`PointerTypedef::new`].
     pub fn new_with_type(
         type_def_name: Option<&str>,
-        referenced_data_type: Option<Box<dyn DataType>>,
+        referenced_data_type: Option<Arc<dyn DataType>>,
         pointer_size: i32,
         pointer_type: &dyn PointerType,
     ) -> Result<Self, String> {
@@ -467,7 +337,7 @@ impl PointerTypedef {
     /// See [`PointerTypedef::new`].
     pub fn new_with_component_offset(
         type_def_name: Option<&str>,
-        referenced_data_type: Option<Box<dyn DataType>>,
+        referenced_data_type: Option<Arc<dyn DataType>>,
         pointer_size: i32,
         component_offset: i64,
     ) -> Result<Self, String> {
@@ -486,7 +356,7 @@ impl PointerTypedef {
     /// required. Also see [`PointerTypedef::new`].
     pub fn new_with_space(
         type_def_name: Option<&str>,
-        referenced_data_type: Option<Box<dyn DataType>>,
+        referenced_data_type: Option<Arc<dyn DataType>>,
         pointer_size: i32,
         space: &AddressSpace,
     ) -> Result<Self, String> {
@@ -509,6 +379,22 @@ impl PointerTypedef {
         self.model_typedef.referenced_data_type().as_pointer().and_then(|p| p.get_data_type())
     }
 
+    /// Port of `GenericDataType.setName(String)` as inherited by `PointerTypedef` (used by
+    /// `PointerTypedefBuilder.name`). Like Java, this does not disable auto-naming.
+    ///
+    /// # Errors
+    /// Returns `Err` if `name` is not a valid data type name.
+    pub fn set_typedef_name(&mut self, name: &str) -> Result<(), InvalidNameException> {
+        if self.name == name {
+            return Ok(());
+        }
+        if !Utils.is_valid_data_type_name(name) {
+            return Err(InvalidNameException::with_message(format!("Invalid Name: {name}")));
+        }
+        self.name = name.to_string();
+        Ok(())
+    }
+
     /// Port of `PointerTypedef.clone(DataTypeManager)`. Since this port tracks no `dataMgr`
     /// identity to compare against (see the module docs on dropped `DataTypeImpl` storage), this
     /// always behaves like [`PointerTypedef::copy_typedef`] rather than Java's `dataMgr == dtm`
@@ -521,8 +407,9 @@ impl PointerTypedef {
     /// from the resolved (always-positive) [`DataType::get_length`] rather than the raw stored
     /// pointer length, narrowing fidelity for a dynamically-sized source pointer.
     pub fn copy_typedef(&self) -> PointerTypedef {
-        let referenced = self.get_referenced_data_type();
-        let length = TypeDef::get_data_type(self).get_length();
+        let referenced = self.get_referenced_data_type().map(Arc::from);
+        let pointer = TypeDef::get_data_type(self);
+        let length = if pointer.has_language_dependant_length() { -1 } else { pointer.get_length() };
         let name = if self.is_auto_named { None } else { Some(self.name.as_str()) };
         let mut copied =
             PointerTypedef::new(name, referenced, length).expect("copying an existing valid pointer-typedef cannot fail validation");
@@ -681,7 +568,7 @@ mod tests {
 
     #[test]
     fn builtin_base_wraps_referenced_type_through_pointer() {
-        let base = PointerTypedefBuiltInBase::new(Some("MyPtr"), Some(leaf("int", 4)), 4).unwrap();
+        let base = PointerTypedefBuiltInBase::new(Some("MyPtr"), Some(std::sync::Arc::from(leaf("int", 4))), 4).unwrap();
         assert_eq!(DataType::get_name(&base), "MyPtr");
         assert_eq!(base.get_length(), 4);
         assert_eq!(base.get_referenced_data_type().unwrap().get_name(), "int");
@@ -705,7 +592,7 @@ mod tests {
 
     #[test]
     fn builtin_base_auto_naming_generates_name() {
-        let base = PointerTypedefBuiltInBase::new(None, Some(leaf("int", 4)), 4).unwrap();
+        let base = PointerTypedefBuiltInBase::new(None, Some(std::sync::Arc::from(leaf("int", 4))), 4).unwrap();
         assert!(base.is_auto_named());
         assert!(base.has_generated_name());
         // "int *" is the pointer's own generated name/mnemonic-ish display; just check it's
@@ -737,7 +624,7 @@ mod tests {
 
     #[test]
     fn pointer_typedef_wraps_referenced_type() {
-        let td = PointerTypedef::new(Some("MyPtr"), Some(leaf("int", 4)), 4).unwrap();
+        let td = PointerTypedef::new(Some("MyPtr"), Some(std::sync::Arc::from(leaf("int", 4))), 4).unwrap();
         assert_eq!(DataType::get_name(&td), "MyPtr");
         assert_eq!(td.get_length(), 4);
         assert_eq!(td.get_referenced_data_type().unwrap().get_name(), "int");
@@ -746,13 +633,13 @@ mod tests {
 
     #[test]
     fn pointer_typedef_auto_names_on_blank_name() {
-        let td = PointerTypedef::new(Some("  "), Some(leaf("int", 4)), 4).unwrap();
+        let td = PointerTypedef::new(Some("  "), Some(std::sync::Arc::from(leaf("int", 4))), 4).unwrap();
         assert!(td.is_auto_named());
     }
 
     #[test]
     fn pointer_typedef_with_component_offset_persists_setting() {
-        let td = PointerTypedef::new_with_component_offset(Some("Off"), Some(leaf("int", 4)), 4, 12).unwrap();
+        let td = PointerTypedef::new_with_component_offset(Some("Off"), Some(std::sync::Arc::from(leaf("int", 4))), 4, 12).unwrap();
         let settings = DataType::get_default_settings(&td);
         assert_eq!(
             ComponentOffsetSettingsDefinition::DEF.get_value(settings.as_ref()),
@@ -763,7 +650,7 @@ mod tests {
     #[test]
     fn pointer_typedef_with_space_requires_positive_size() {
         let space = AddressSpace::new("ram", 32, 1, crate::program::model::address::AddressSpaceType::Ram, 1);
-        let err = match PointerTypedef::new_with_space(Some("Sp"), Some(leaf("int", 4)), -1, &space) {
+        let err = match PointerTypedef::new_with_space(Some("Sp"), Some(std::sync::Arc::from(leaf("int", 4))), -1, &space) {
             Err(e) => e,
             Ok(_) => panic!("expected non-positive pointer_size to be rejected"),
         };
@@ -773,14 +660,14 @@ mod tests {
     #[test]
     fn pointer_typedef_with_space_persists_space_name() {
         let space = AddressSpace::new("ram", 32, 1, crate::program::model::address::AddressSpaceType::Ram, 1);
-        let td = PointerTypedef::new_with_space(Some("Sp"), Some(leaf("int", 4)), 4, &space).unwrap();
+        let td = PointerTypedef::new_with_space(Some("Sp"), Some(std::sync::Arc::from(leaf("int", 4))), 4, &space).unwrap();
         let settings = DataType::get_default_settings(&td);
         assert_eq!(AddressSpaceSettingsDefinition::DEF.get_value(settings.as_ref()), Some("ram".to_string()));
     }
 
     #[test]
     fn copy_typedef_preserves_name_and_settings() {
-        let original = PointerTypedef::new_with_component_offset(Some("Off"), Some(leaf("int", 4)), 4, 5).unwrap();
+        let original = PointerTypedef::new_with_component_offset(Some("Off"), Some(std::sync::Arc::from(leaf("int", 4))), 4, 5).unwrap();
         let copied = original.copy_typedef();
         assert_eq!(DataType::get_name(&copied), "Off");
         let settings = DataType::get_default_settings(&copied);
@@ -789,9 +676,9 @@ mod tests {
 
     #[test]
     fn is_equivalent_compares_names_and_referenced_types() {
-        let a = PointerTypedef::new(Some("Foo"), Some(leaf("int", 4)), 4).unwrap();
-        let b = PointerTypedef::new(Some("Foo"), Some(leaf("int", 4)), 4).unwrap();
-        let c = PointerTypedef::new(Some("Bar"), Some(leaf("int", 4)), 4).unwrap();
+        let a = PointerTypedef::new(Some("Foo"), Some(std::sync::Arc::from(leaf("int", 4))), 4).unwrap();
+        let b = PointerTypedef::new(Some("Foo"), Some(std::sync::Arc::from(leaf("int", 4))), 4).unwrap();
+        let c = PointerTypedef::new(Some("Bar"), Some(std::sync::Arc::from(leaf("int", 4))), 4).unwrap();
         assert!(DataType::is_equivalent(&a, &b));
         assert!(!DataType::is_equivalent(&a, &c));
     }

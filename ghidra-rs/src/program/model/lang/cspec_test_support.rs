@@ -521,8 +521,8 @@ impl crate::program::model::data::pointer::Pointer for TestPointer {
     ) -> Box<dyn crate::program::model::data::pointer::Pointer> {
         Box::new(TestPointer { size: self.size })
     }
-    fn typedef_builder(&self) -> Box<dyn crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder> {
-        unimplemented!("not needed for parameter assignment")
+    fn typedef_builder(&self) -> crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder {
+        crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer(self)
     }
 }
 

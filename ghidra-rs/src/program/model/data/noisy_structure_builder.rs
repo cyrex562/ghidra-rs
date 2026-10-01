@@ -556,8 +556,8 @@ mod tests {
             unimplemented!("not exercised by this test")
         }
 
-        fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
-            unimplemented!("not exercised by this test")
+        fn typedef_builder(&self) -> crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder {
+            crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer(self)
         }
     }
 

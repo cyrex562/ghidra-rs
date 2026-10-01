@@ -356,6 +356,19 @@ impl BuiltInBase {
         }
     }
 
+    /// This state under a new category path and name (Java `BuiltIn` subclasses that rename
+    /// themselves, e.g. `PointerDataType.dataTypeReplaced`), keeping the data organization and
+    /// default settings. A missing category path becomes [`ROOT`].
+    pub fn renamed(&self, path: Option<CategoryPath>, name: &str) -> Self {
+        check_new_abstract_data_type_args(name, &NameValidation);
+        Self {
+            name: name.to_string(),
+            category_path: path.unwrap_or_else(|| ROOT.clone()),
+            data_organization: self.data_organization.clone(),
+            default_settings: self.default_settings.clone(),
+        }
+    }
+
     /// The `name` field.
     pub fn name(&self) -> &str {
         &self.name

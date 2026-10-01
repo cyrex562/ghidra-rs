@@ -90,7 +90,7 @@ impl IBO64DataType {
     ///
     /// Port of the static `IBO64DataType.createIBO64PointerTypedef(DataType)`.
     pub fn create_ibo64_pointer_typedef(referenced_data_type: Option<Box<dyn DataType>>) -> PointerTypedef {
-        PointerTypedef::new_with_type(None, referenced_data_type, IBO64_LENGTH, &ImageBaseRelativePointerType)
+        PointerTypedef::new_with_type(None, referenced_data_type.map(std::sync::Arc::from), IBO64_LENGTH, &ImageBaseRelativePointerType)
             .expect("IBO64's fixed construction arguments are always valid")
     }
 }
