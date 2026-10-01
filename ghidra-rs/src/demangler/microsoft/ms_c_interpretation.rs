@@ -39,6 +39,26 @@ impl MsCInterpretation {
     }
 }
 
+impl crate::framework::options::EnumValues for MsCInterpretation {
+    fn all_values() -> &'static [Self] {
+        &[
+            MsCInterpretation::Function,
+            MsCInterpretation::NonFunction,
+            MsCInterpretation::FunctionIfExists,
+        ]
+    }
+
+    fn variant_name(&self) -> &'static str {
+        self.name()
+    }
+}
+
+impl crate::framework::options::PersistableEnum for MsCInterpretation {
+    fn java_class_name() -> &'static str {
+        "ghidra.app.util.demangler.microsoft.MsCInterpretation"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

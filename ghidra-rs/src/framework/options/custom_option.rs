@@ -1,6 +1,6 @@
 //! Port of `ghidra.framework.options.CustomOption`.
 
-use crate::framework::seam_stubs::GProperties;
+use crate::framework::options::g_properties::GProperties;
 
 /// Key which corresponds to the custom option implementation class.
 ///
@@ -15,32 +15,18 @@ pub const CUSTOM_OPTION_CLASS_NAME_KEY: &str = "CUSTOM_OPTION_CLASS";
 ///
 /// Port of `ghidra.framework.options.CustomOption`.
 ///
-/// This trait was promoted from a minimal placeholder (see `framework::seam_stubs`) that had no
-/// methods, so there are no prior implementations to keep compiling as a superset.
 pub trait CustomOption: std::fmt::Display {
     /// Read state from the given properties.
-    fn read_state(&mut self, properties: &dyn GProperties);
+    fn read_state(&mut self, properties: &GProperties);
 
     /// Write state into the given properties.
-    fn write_state(&self, properties: &mut dyn GProperties);
+    fn write_state(&self, properties: &mut GProperties);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::fmt;
-
-    struct FakeProperties;
-    impl GProperties for FakeProperties {
-        fn put_boolean(&mut self, _name: &str, _value: bool) {}
-        fn get_boolean(&self, _name: &str, default_value: bool) -> bool {
-            default_value
-        }
-        fn put_enum(&mut self, _name: &str, _value: &str) {}
-        fn get_enum(&self, _name: &str, default_value: &str) -> String {
-            default_value.to_string()
-        }
-    }
 
     struct IntOption(i32);
 
@@ -51,19 +37,22 @@ mod tests {
     }
 
     impl CustomOption for IntOption {
-        fn read_state(&mut self, _properties: &dyn GProperties) {
-            self.0 = 42;
+        fn read_state(&mut self, properties: &GProperties) {
+            self.0 = properties.get_int("value", -1);
         }
 
-        fn write_state(&self, _properties: &mut dyn GProperties) {}
+        fn write_state(&self, properties: &mut GProperties) {
+            properties.put_int("value", self.0);
+        }
     }
 
     #[test]
     fn object_safe_and_round_trips_via_dyn() {
-        let mut option: Box<dyn CustomOption> = Box::new(IntOption(0));
-        let mut props = FakeProperties;
+        let option: Box<dyn CustomOption> = Box::new(IntOption(42));
+        let mut props = GProperties::new("p");
         option.write_state(&mut props);
-        option.read_state(&props);
-        assert_eq!(option.to_string(), "42");
+        let mut restored: Box<dyn CustomOption> = Box::new(IntOption(0));
+        restored.read_state(&props);
+        assert_eq!(restored.to_string(), "42");
     }
 }

@@ -108,7 +108,6 @@ ts	stub_class	referenced_by
 2026-07-18T22:35:00Z	IntegerAttributeLike	DirectedGraph
 2026-07-18T22:35:00Z	VertexSetLike	DirectedGraph
 2026-07-18T23:00:00Z	Architecture	Platform
-2026-07-18T23:15:00Z	GProperties	CustomOption
 2026-07-18T23:45:00Z	ToolOptions	OptionsChangeListener
 2026-07-18T23:45:00Z	OptionsVetoException	OptionsChangeListener
 2026-07-19T00:10:00Z	WordLocationLike	StringUtilities
@@ -1180,7 +1179,6 @@ ts	stub_class	referenced_by
 2026-09-24T00:36:56.000000+00:00	DataVertexId	DataNGram
 2026-09-24T00:41:35.000000+00:00	DominantPair	DecompilerReducer
 2026-09-24T01:11:17.000000+00:00	VtAttributes	VtLine
-2026-09-24T01:14:13.000000+00:00	GProperties	MsdApplyOption
 2026-09-24T02:04:11.000000+00:00	DiffController	DiffControllerListener
 2026-09-24T02:11:21.000000+00:00	BreakpointActionSet	LogicalBreakpointInternal
 2026-09-24T03:00:00.000000+00:00	Expr	SymZ3PcodeArithmetic

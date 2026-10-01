@@ -8,7 +8,7 @@ use serde::{Serialize, Serializer};
 use crate::demangler::demangler_options::DemanglerOptions;
 use crate::demangler::microsoft::ms_c_interpretation::MsCInterpretation;
 use crate::framework::options::custom_option::CustomOption;
-use crate::framework::seam_stubs::GProperties;
+use crate::framework::options::g_properties::GProperties;
 use crate::generic::json::Json;
 
 const DEMANGLE_USE_KNOWN_PATTERNS: &str = "demangleOnlyKnownMangledSymbols";
@@ -130,7 +130,7 @@ impl CustomOption for MsdApplyOption {
     /// properties do not hold it. An interpretation name that matches no [`MsCInterpretation`]
     /// constant also keeps the current setting, as `GProperties.getEnum` does for a value of the
     /// wrong type.
-    fn read_state(&mut self, properties: &dyn GProperties) {
+    fn read_state(&mut self, properties: &GProperties) {
         let known =
             properties.get_boolean(DEMANGLE_USE_KNOWN_PATTERNS, self.demangle_only_known_patterns());
         self.set_demangle_only_known_patterns(known);
@@ -139,48 +139,25 @@ impl CustomOption for MsdApplyOption {
         let convention =
             properties.get_boolean(APPLY_CALLING_CONVENTION, self.apply_calling_convention());
         self.set_apply_calling_convention(convention);
-        let name = properties.get_enum(MS_C_INTERPRETATION, self.interpretation.name());
-        if let Some(interpretation) = MsCInterpretation::value_of(&name) {
+        if let Some(interpretation) =
+            properties.get_enum(MS_C_INTERPRETATION, Some(self.interpretation))
+        {
             self.interpretation = interpretation;
         }
     }
 
     /// Mirrors `writeState(GProperties)`.
-    fn write_state(&self, properties: &mut dyn GProperties) {
+    fn write_state(&self, properties: &mut GProperties) {
         properties.put_boolean(DEMANGLE_USE_KNOWN_PATTERNS, self.demangle_only_known_patterns());
         properties.put_boolean(APPLY_SIGNATURE, self.apply_signature());
         properties.put_boolean(APPLY_CALLING_CONVENTION, self.apply_calling_convention());
-        properties.put_enum(MS_C_INTERPRETATION, self.interpretation.name());
+        properties.put_enum(MS_C_INTERPRETATION, &self.interpretation);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
-
-    /// Map-backed stand-in for `GProperties`, keeping booleans and enum names apart the way
-    /// Java's typed getters reject a value of the wrong type.
-    #[derive(Default)]
-    struct MapProperties {
-        booleans: HashMap<String, bool>,
-        enums: HashMap<String, String>,
-    }
-
-    impl GProperties for MapProperties {
-        fn put_boolean(&mut self, name: &str, value: bool) {
-            self.booleans.insert(name.to_string(), value);
-        }
-        fn get_boolean(&self, name: &str, default_value: bool) -> bool {
-            self.booleans.get(name).copied().unwrap_or(default_value)
-        }
-        fn put_enum(&mut self, name: &str, value: &str) {
-            self.enums.insert(name.to_string(), value.to_string());
-        }
-        fn get_enum(&self, name: &str, default_value: &str) -> String {
-            self.enums.get(name).cloned().unwrap_or_else(|| default_value.to_string())
-        }
-    }
 
     #[test]
     fn default_constructor_values() {
@@ -205,19 +182,23 @@ mod tests {
     #[test]
     fn write_state_uses_java_keys_and_enum_names() {
         let o = MsdApplyOption::new(true, false, true, MsCInterpretation::Function);
-        let mut props = MapProperties::default();
+        let mut props = GProperties::new("p");
         o.write_state(&mut props);
-        assert_eq!(props.booleans["demangleOnlyKnownMangledSymbols"], true);
-        assert_eq!(props.booleans["applyFunctionSignatures"], false);
-        assert_eq!(props.booleans["applyFunctionCallingConventions"], true);
-        assert_eq!(props.enums["C-StyleSymbolInterpretation"], "FUNCTION");
+        assert!(props.get_boolean("demangleOnlyKnownMangledSymbols", false));
+        assert!(!props.get_boolean("applyFunctionSignatures", true));
+        assert!(props.get_boolean("applyFunctionCallingConventions", false));
+        let e = props.get_enum_value("C-StyleSymbolInterpretation").unwrap();
+        assert_eq!(e.name, "FUNCTION");
+        assert_eq!(e.class_name, "ghidra.app.util.demangler.microsoft.MsCInterpretation");
     }
 
     #[test]
     fn read_state_round_trips_write_state() {
         let original = MsdApplyOption::new(true, true, false, MsCInterpretation::NonFunction);
-        let mut props = MapProperties::default();
+        let mut props = GProperties::new("p");
         original.write_state(&mut props);
+        // ...including through the persisted XML form.
+        let props = GProperties::from_xml(&props.save_to_xml());
         let mut restored = MsdApplyOption::default();
         restored.read_state(&props);
         assert_eq!(restored, original);
@@ -227,9 +208,15 @@ mod tests {
     #[test]
     fn read_state_keeps_current_values_when_absent_or_unknown() {
         let mut o = MsdApplyOption::new(true, false, true, MsCInterpretation::Function);
-        let mut props = MapProperties::default();
+        let mut props = GProperties::new("p");
         props.put_boolean("applyFunctionSignatures", true);
-        props.put_enum("C-StyleSymbolInterpretation", "NOT_A_CONSTANT");
+        props.put_enum_value(
+            "C-StyleSymbolInterpretation",
+            crate::framework::options::EnumOptionValue {
+                class_name: "ghidra.app.util.demangler.microsoft.MsCInterpretation".into(),
+                name: "NOT_A_CONSTANT".into(),
+            },
+        );
         o.read_state(&props);
         assert!(o.demangle_only_known_patterns());
         assert!(o.apply_signature());
