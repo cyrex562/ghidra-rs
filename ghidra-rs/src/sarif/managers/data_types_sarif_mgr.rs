@@ -19,31 +19,39 @@ use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::sarif::seam_stubs::{ArrayDataType, BuiltInDataTypePlaceholder, CompositePacking, DtParser, EnumDataType, FunctionDefinitionDataType, PointerDataType, SarifDataTypeWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, StructureDataType, TaskLauncher, TypedefDataType, UnionDataType};
+use crate::program::model::data::array_data_type::ArrayDataType;
+use crate::program::model::data::long_double_data_type::LongDoubleDataType;
+use crate::program::model::data::typedef::TypeDef;
+use crate::program::model::data::typedef_data_type::TypedefDataType;
+use crate::program::model::data::unsigned_integer3_data_type::UnsignedInteger3DataType;
+use crate::sarif::seam_stubs::{BuiltInDataTypePlaceholder, CompositePacking, DtParser, EnumDataType, FunctionDefinitionDataType, PointerDataType, SarifDataTypeWriter, SarifMgr, SarifProgramOptions, SarifWriterTask, StructureDataType, TaskLauncher, UnionDataType};
 
 /// `DataTypesSarifMgr.foreignTypedefs`: SARIF-only type names mapped onto the Ghidra built-in
-/// each one stands for. Java holds these as the `dataType` singletons of `CharDataType`,
-/// `PascalString255DataType`, `PascalStringDataType`, `PascalUnicodeDataType`,
-/// `LongDoubleDataType` and `UnsignedInteger3DataType`; none of those classes is constructible in
-/// the crate yet, so each is represented by its Ghidra name and length. The gaps in the sequence
-/// (`string4`, `unicode4`, `oword`, packed real) are the ones Java leaves commented out.
+/// each one stands for (the `dataType` singletons of `CharDataType`, `PascalString255DataType`,
+/// `PascalStringDataType`, `PascalUnicodeDataType`, `LongDoubleDataType` and
+/// `UnsignedInteger3DataType`). `LongDoubleDataType` and `UnsignedInteger3DataType` are the real
+/// singletons (Java's "10-byte float" comment notwithstanding, `LongDoubleDataType.dataType` has
+/// the default organization's long-double size, 8). The char and Pascal-string classes are not
+/// ported yet and are still represented by their Ghidra name and length. The gaps in the
+/// sequence (`string4`, `unicode4`, `oword`, packed real) are the ones Java leaves commented out.
 static FOREIGN_TYPEDEFS: Lazy<HashMap<&'static str, Arc<dyn DataType>>> = Lazy::new(|| {
-    let entries: [(&'static str, &'static str, i32); 6] = [
+    let placeholders: [(&'static str, &'static str, i32); 4] = [
         ("ascii", "char", 1),
         ("string1", "PascalString255", -1),
         ("string2", "PascalString", -1),
         ("unicode2", "PascalUnicode", -1),
-        // 10-byte float
-        ("tbyte", "longdouble", 10),
-        ("3byte", "uint3", 3),
     ];
-    entries
+    let mut map: HashMap<&'static str, Arc<dyn DataType>> = placeholders
         .into_iter()
         .map(|(sarif_name, ghidra_name, length)| {
             let dt: Arc<dyn DataType> = Arc::new(BuiltInDataTypePlaceholder::new(ghidra_name, length));
             (sarif_name, dt)
         })
-        .collect()
+        .collect();
+    // 10-byte float
+    map.insert("tbyte", LongDoubleDataType::data_type());
+    map.insert("3byte", UnsignedInteger3DataType::data_type());
+    map
 });
 
 /// Uniform field access over the top-level `HashMap` a SARIF result arrives as and the
@@ -349,7 +357,8 @@ impl DataTypesSarifMgr {
             return Ok(true);
         }
 
-        let mut type_def = TypedefDataType::new(category_path.clone(), &name, data_type);
+        let mut type_def = TypedefDataType::new(category_path.clone(), &name, data_type)
+            .map_err(|e| format!("IllegalArgumentException: {e}"))?;
         Self::process_settings(result, type_def.get_default_settings().as_mut());
         if is_auto_named == Some(true) {
             type_def.enable_auto_naming();
@@ -698,7 +707,11 @@ impl DataTypesSarifMgr {
                 }
                 let count = number(data_type, "count").unwrap_or(0.0) as i32;
                 let element_length = base.get_length();
-                return Some(Arc::new(ArrayDataType::new(base, count, element_length)));
+                // Java's constructor throws IllegalArgumentException for an invalid element type;
+                // the type then stays unresolved for this pass.
+                return ArrayDataType::with_element_length(base, count, element_length)
+                    .ok()
+                    .map(|array| Arc::new(array) as Arc<dyn DataType>);
             }
         }
 
@@ -771,7 +784,9 @@ impl DataTypesSarifMgr {
         if self.data_manager.get_data_type(&format!("/{base_name}")).is_some() {
             return false;
         }
-        let new_typedef = TypedefDataType::new(ROOT.clone(), &base_name, our_type.clone());
+        let Ok(new_typedef) = TypedefDataType::new(ROOT.clone(), &base_name, our_type.clone()) else {
+            return false;
+        };
         // Java passes a `null` conflict handler, which `DataTypeManager.resolve` reads as its
         // default policy.
         self.data_manager.resolve(Box::new(new_typedef), &DEFAULT_HANDLER);
@@ -888,6 +903,20 @@ mod tests {
         assert_eq!(DataTypesSarifMgr::get_path(&demo, "Foo"), "/demo/Foo");
         let nested = CategoryPath::parse("/demo/inner").unwrap();
         assert_eq!(DataTypesSarifMgr::get_path(&nested, "Foo"), "/demo/inner/Foo");
+    }
+
+    #[test]
+    fn foreign_typedefs_use_the_real_long_double_and_uint3_built_ins() {
+        // Java maps "tbyte" to LongDoubleDataType.dataType, whose length is the default
+        // organization's long-double size (8), despite the "10-byte float" comment.
+        let tbyte = FOREIGN_TYPEDEFS.get("tbyte").unwrap();
+        assert_eq!(tbyte.get_name(), "longdouble");
+        assert_eq!(tbyte.get_length(), 8);
+        assert!(tbyte.is_floating_point());
+        let three = FOREIGN_TYPEDEFS.get("3byte").unwrap();
+        assert_eq!(three.get_name(), "uint3");
+        assert_eq!(three.get_length(), 3);
+        assert_eq!(FOREIGN_TYPEDEFS.len(), 6);
     }
 
     #[test]

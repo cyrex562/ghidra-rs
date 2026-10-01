@@ -75,6 +75,7 @@ use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::program::database::data::data_type_utilities::DataTypeUtilities;
 use crate::program::model::data::array::{Array, ARRAY_LABEL_PREFIX};
 use crate::program::model::data::category_path::CategoryPath;
+use crate::program::model::data::data_type::IntoDataTypeArc;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -162,7 +163,7 @@ impl ArrayDataType {
     /// # Errors
     /// Returns `Err` if an invalid datatype is specified or a valid `element_length` is required
     /// (mirrors `IllegalArgumentException`).
-    pub fn new(data_type: Box<dyn DataType>, num_elements: i32) -> Result<Self, String> {
+    pub fn new(data_type: impl IntoDataTypeArc, num_elements: i32) -> Result<Self, String> {
         Self::with_element_length(data_type, num_elements, -1)
     }
 
@@ -180,7 +181,7 @@ impl ArrayDataType {
     /// Returns `Err` if an invalid datatype is specified or a valid `element_length` is required
     /// (mirrors `IllegalArgumentException`).
     pub fn with_element_length(
-        data_type: Box<dyn DataType>,
+        data_type: impl IntoDataTypeArc,
         num_elements: i32,
         element_length: i32,
     ) -> Result<Self, String> {
@@ -200,12 +201,13 @@ impl ArrayDataType {
     /// Returns `Err` if an invalid datatype is specified or a valid `element_length` is required
     /// (mirrors `IllegalArgumentException`).
     pub fn with_manager(
-        data_type: Box<dyn DataType>,
+        data_type: impl IntoDataTypeArc,
         num_elements: i32,
         element_length: i32,
         data_mgr: Option<Box<dyn DataTypeManager>>,
     ) -> Result<Self, String> {
         let _ = data_mgr;
+        let data_type: Arc<dyn DataType> = data_type.into_data_type_arc();
 
         if data_type.as_factory().is_some() {
             return Err("IllegalArgumentException: Factory data type not permitted".to_string());
@@ -233,7 +235,6 @@ impl ArrayDataType {
             data_type.get_aligned_length()
         };
 
-        let data_type: Arc<dyn DataType> = Arc::from(data_type);
         let mut array = ArrayDataType {
             data_type,
             num_elements,
@@ -777,5 +778,17 @@ mod tests {
         let buf = FixedMemBuffer(vec![0x41, 0x42]);
         let _ = arr.get_default_label_prefix_for_data(&buf, &MockSettings, 2, &DEFAULT_DISPLAY_OPTIONS);
         let _ = arr.get_default_offcut_label_prefix(&buf, &MockSettings, 2, &DEFAULT_DISPLAY_OPTIONS, 1);
+    }
+
+    #[test]
+    fn constructors_accept_shared_and_boxed_built_ins() {
+        use crate::program::model::data::byte_data_type::ByteDataType;
+        use crate::program::model::data::dword_data_type::DWordDataType;
+        let shared = ArrayDataType::new(DWordDataType::data_type(), 3).unwrap();
+        assert_eq!(shared.get_name(), "dword[3]");
+        assert_eq!(shared.get_length(), 12);
+        let boxed = ArrayDataType::with_element_length(Box::new(ByteDataType::new(None)), 5, 1).unwrap();
+        assert_eq!(boxed.get_name(), "byte[5]");
+        assert_eq!(boxed.get_length(), 5);
     }
 }

@@ -82,12 +82,14 @@
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use crate::util::universal_id_generator::next_id;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::program::database::data::data_type_utilities::DataTypeUtilities;
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
+use crate::program::model::data::data_type::IntoDataTypeArc;
 use crate::program::model::data::data_type::{
     DataType, SetDataTypeNameError, TYPEDEF_ATTRIBUTE_PREFIX, TYPEDEF_ATTRIBUTE_SUFFIX,
 };
@@ -147,7 +149,7 @@ impl TypedefDataType {
     /// Returns `Err` if `data_type` may not be used as a typedef base (void, default-undefined,
     /// bitfield, factory, or dynamic), mirroring the `IllegalArgumentException` thrown by the
     /// Java constructor's private `validate` helper.
-    pub fn new_in_root(name: impl Into<String>, data_type: Box<dyn DataType>) -> Result<Self, String> {
+    pub fn new_in_root(name: impl Into<String>, data_type: impl IntoDataTypeArc) -> Result<Self, String> {
         Self::new(ROOT.clone(), name, data_type)
     }
 
@@ -163,14 +165,15 @@ impl TypedefDataType {
     pub fn new(
         category_path: CategoryPath,
         name: impl Into<String>,
-        data_type: Box<dyn DataType>,
+        data_type: impl IntoDataTypeArc,
     ) -> Result<Self, String> {
+        let data_type: Arc<dyn DataType> = data_type.into_data_type_arc();
         Utils.check_valid_replacement_data_type(data_type.as_ref())?;
         Ok(Self::new_unchecked(
             category_path,
             name.into(),
-            Arc::from(data_type),
-            UniversalID::new(0),
+            data_type,
+            next_id(),
             None,
             0,
             0,
@@ -189,17 +192,18 @@ impl TypedefDataType {
     pub fn with_archive_identity(
         category_path: CategoryPath,
         name: impl Into<String>,
-        data_type: Box<dyn DataType>,
+        data_type: impl IntoDataTypeArc,
         universal_id: UniversalID,
         source_archive: Option<&dyn SourceArchive>,
         last_change_time: i64,
         last_change_time_in_source_archive: i64,
     ) -> Result<Self, String> {
+        let data_type: Arc<dyn DataType> = data_type.into_data_type_arc();
         Utils.check_valid_replacement_data_type(data_type.as_ref())?;
         Ok(Self::new_unchecked(
             category_path,
             name.into(),
-            Arc::from(data_type),
+            data_type,
             universal_id,
             source_archive.map(|a| a.source_archive_id()),
             last_change_time,
@@ -238,6 +242,11 @@ impl TypedefDataType {
         self.data_type.as_ref()
     }
 
+    /// The shared handle on the referenced data type.
+    pub fn data_type_arc(&self) -> &Arc<dyn DataType> {
+        &self.data_type
+    }
+
     /// The tracked source archive ID, if any. See the module docs for why the full
     /// `SourceArchive` is not reconstructable here.
     pub fn source_archive_id(&self) -> Option<UniversalID> {
@@ -273,9 +282,10 @@ impl TypedefDataType {
     /// # Errors
     /// Returns `Err` if `new_dt` is not a valid replacement for the currently-referenced type,
     /// mirroring `DataTypeUtilities.checkValidReplacement`.
-    pub fn replace_data_type(&mut self, new_dt: Box<dyn DataType>) -> Result<(), String> {
+    pub fn replace_data_type(&mut self, new_dt: impl IntoDataTypeArc) -> Result<(), String> {
+        let new_dt: Arc<dyn DataType> = new_dt.into_data_type_arc();
         Utils.check_valid_replacement(self.data_type.as_ref(), new_dt.as_ref())?;
-        self.data_type = Arc::from(new_dt);
+        self.data_type = new_dt;
         Ok(())
     }
 

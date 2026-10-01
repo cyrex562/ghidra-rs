@@ -1181,72 +1181,8 @@ impl DataType for EnumDataType {
     }
 }
 
-/// Placeholder for `ghidra.program.model.data.TypedefDataType`'s
-/// `TypedefDataType(CategoryPath, String, DataType, DataTypeManager)` constructor. See
-/// [`StructureDataType`].
-///
-/// Not a candidate for consolidating onto the real
-/// [`crate::program::model::data::typedef_data_type::TypedefDataType`], for the same reason as
-/// [`ArrayDataType`]: both real callers in
-/// [`DataTypesSarifMgr`](crate::sarif::managers::data_types_sarif_mgr::DataTypesSarifMgr) only
-/// have an `Arc<dyn DataType>` base type on hand, while the real type's constructors take
-/// `Box<dyn DataType>` and return `Result<Self, String>` -- there is no safe way to unwrap an
-/// `Arc<dyn DataType>` into a `Box<dyn DataType>` in stable Rust.
-#[derive(Clone)]
-pub struct TypedefDataType {
-    category_path: CategoryPath,
-    name: String,
-    settings: SharedSettings,
-    pub base_data_type: Arc<dyn DataType>,
-    pub auto_named: bool,
-}
-
-impl TypedefDataType {
-    /// `new TypedefDataType(CategoryPath path, String name, DataType dt, DataTypeManager dtm)`.
-    pub fn new(category_path: CategoryPath, name: &str, base_data_type: Arc<dyn DataType>) -> Self {
-        Self {
-            category_path,
-            name: name.to_string(),
-            settings: SharedSettings::new(),
-            base_data_type,
-            auto_named: false,
-        }
-    }
-
-    /// `TypeDef.enableAutoNaming()`.
-    pub fn enable_auto_naming(&mut self) {
-        self.auto_named = true;
-    }
-}
-
-impl CompositePacking for TypedefDataType {}
-
-impl DataType for TypedefDataType {
-    fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    fn get_length(&self) -> i32 {
-        self.base_data_type.get_length()
-    }
-
-    fn get_category_path(&self) -> CategoryPath {
-        self.category_path.clone()
-    }
-
-    fn set_category_path(&mut self, path: CategoryPath) -> Result<(), DuplicateNameException> {
-        self.category_path = path;
-        Ok(())
-    }
-
-    fn get_default_settings(&self) -> Box<dyn Settings> {
-        Box::new(self.settings.clone())
-    }
-
-    fn is_typedef(&self) -> bool {
-        true
-    }
-}
+// The real typedef is built by `DataTypesSarifMgr::process_typedef`; packing never applies to it.
+impl CompositePacking for crate::program::model::data::typedef_data_type::TypedefDataType {}
 
 /// Placeholder for `ghidra.program.model.data.PointerDataType`'s
 /// `PointerDataType(DataType, DataTypeManager)` and `PointerDataType(DataType, int,
@@ -1300,62 +1236,6 @@ impl DataType for PointerDataType {
     }
 
     fn is_pointer(&self) -> bool {
-        true
-    }
-}
-
-/// Placeholder for `ghidra.program.model.data.ArrayDataType`'s
-/// `ArrayDataType(DataType, int, int, DataTypeManager)` constructor. See [`StructureDataType`].
-///
-/// Not a candidate for consolidating onto the real
-/// [`crate::program::model::data::array_data_type::ArrayDataType`]: this placeholder's sole
-/// caller ([`DataTypesSarifMgr::find_data_type_in`](crate::sarif::managers::data_types_sarif_mgr::DataTypesSarifMgr::find_data_type_in))
-/// only has an `Arc<dyn DataType>` element type on hand, but the real type's constructors take
-/// `Box<dyn DataType>` -- and there is no safe way to unwrap an `Arc<dyn DataType>` into a
-/// `Box<dyn DataType>` in stable Rust. Falling back to `clone_data_type`/`copy_data_type` is not
-/// an option either: per the real type's own module docs, that default silently substitutes an
-/// `EmptyDataType` placeholder for most element types today, which would corrupt the array.
-#[derive(Clone)]
-pub struct ArrayDataType {
-    settings: SharedSettings,
-    pub base_data_type: Arc<dyn DataType>,
-    pub num_elements: i32,
-    pub element_length: i32,
-}
-
-impl ArrayDataType {
-    /// `new ArrayDataType(DataType dt, int numElements, int elementLength, DataTypeManager dtm)`.
-    pub fn new(base_data_type: Arc<dyn DataType>, num_elements: i32, element_length: i32) -> Self {
-        Self {
-            settings: SharedSettings::new(),
-            base_data_type,
-            num_elements,
-            element_length,
-        }
-    }
-}
-
-impl CompositePacking for ArrayDataType {}
-
-impl DataType for ArrayDataType {
-    /// `ArrayDataType.getName()`, which is the element type's name followed by `[n]`.
-    fn get_name(&self) -> String {
-        format!("{}[{}]", self.base_data_type.get_name(), self.num_elements)
-    }
-
-    fn get_length(&self) -> i32 {
-        self.num_elements * self.element_length
-    }
-
-    fn get_category_path(&self) -> CategoryPath {
-        self.base_data_type.get_category_path()
-    }
-
-    fn get_default_settings(&self) -> Box<dyn Settings> {
-        Box::new(self.settings.clone())
-    }
-
-    fn is_array(&self) -> bool {
         true
     }
 }

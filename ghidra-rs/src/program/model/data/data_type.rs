@@ -62,6 +62,39 @@ impl std::fmt::Display for UnsupportedOperationError {
 
 impl std::error::Error for UnsupportedOperationError {}
 
+/// Conversion into the canonical owned data type handle, `Arc<dyn DataType>` (decided
+/// 2026-09-27). Accepts the handle itself, a `Box<dyn DataType>` (the older owned form, migrated
+/// as call sites are touched), or a boxed/`Arc`ed concrete data type, so constructors such as
+/// [`ArrayDataType::new`](super::array_data_type::ArrayDataType::new) take any of them.
+pub trait IntoDataTypeArc {
+    /// Converts `self` into an `Arc<dyn DataType>` without copying the data type.
+    fn into_data_type_arc(self) -> Arc<dyn DataType>;
+}
+
+impl IntoDataTypeArc for Arc<dyn DataType> {
+    fn into_data_type_arc(self) -> Arc<dyn DataType> {
+        self
+    }
+}
+
+impl IntoDataTypeArc for Box<dyn DataType> {
+    fn into_data_type_arc(self) -> Arc<dyn DataType> {
+        Arc::from(self)
+    }
+}
+
+impl<T: DataType + 'static> IntoDataTypeArc for Arc<T> {
+    fn into_data_type_arc(self) -> Arc<dyn DataType> {
+        self
+    }
+}
+
+impl<T: DataType + 'static> IntoDataTypeArc for Box<T> {
+    fn into_data_type_arc(self) -> Arc<dyn DataType> {
+        Arc::from(self as Box<dyn DataType>)
+    }
+}
+
 /// The interface that all datatypes must implement.
 ///
 /// Port of `ghidra.program.model.data.DataType`.
