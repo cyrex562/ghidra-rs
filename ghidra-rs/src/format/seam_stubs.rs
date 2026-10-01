@@ -1837,6 +1837,18 @@ pub trait FlatProgramAPI: Send + Sync {
         data_ref_type: crate::program::model::symbol::ref_type::RefType,
     ) -> std::io::Result<std::sync::Arc<dyn crate::program::model::symbol::reference::Reference>>;
 
+    /// `FlatProgramAPI.setEOLComment(Address, String)`, needed by `DynamicSymbolTableCommand`'s
+    /// raw-binary markup.
+    fn set_eol_comment(&self, address: &crate::program::model::address::Address, comment: &str) -> bool;
+
+    /// `FlatProgramAPI.createDwords(Address, int)`, needed by `DynamicSymbolTableCommand`'s
+    /// raw-binary markup.
+    fn create_dwords(
+        &self,
+        start: &crate::program::model::address::Address,
+        count: i32,
+    ) -> std::io::Result<()>;
+
     /// `FlatProgramAPI.setReferencePrimary(Reference, boolean)`.
     fn set_reference_primary(
         &self,

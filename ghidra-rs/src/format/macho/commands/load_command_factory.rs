@@ -20,6 +20,7 @@ use crate::format::macho::commands::dyld_exports_trie_command::DyldExportsTrieCo
 use crate::format::macho::commands::dyld_info_command::DyldInfoCommand;
 use crate::format::macho::commands::function_starts_command::FunctionStartsCommand;
 use crate::format::macho::commands::link_edit_data_command::LinkEditDataCommand;
+use crate::format::macho::commands::dynamic_symbol_table_command::DynamicSymbolTableCommand;
 use crate::format::macho::commands::dynamic_library_command::DynamicLibraryCommand;
 use crate::format::macho::commands::dynamic_linker_command::DynamicLinkerCommand;
 use crate::format::macho::commands::encrypted_information_command::EncryptedInformationCommand;
@@ -93,6 +94,10 @@ fn parse_load_command(
         LC_IDENT => IdentCommand::new(reader)?.into(),
         LC_FVMFILE => FixedVirtualMemoryFileCommand::new(reader)?.into(),
         LC_PREPAGE => UnsupportedLoadCommand::new(reader)?.into(),
+        LC_DYSYMTAB => {
+            let mut linker_reader = get_linker_load_command_reader(reader);
+            DynamicSymbolTableCommand::new(reader, &mut linker_reader, header)?.into()
+        }
         LC_LOAD_DYLIB | LC_ID_DYLIB | LC_LOAD_UPWARD_DYLIB | LC_LOAD_WEAK_DYLIB
         | LC_REEXPORT_DYLIB | LC_LAZY_LOAD_DYLIB => DynamicLibraryCommand::new(reader)?.into(),
         LC_LOAD_DYLINKER | LC_ID_DYLINKER | LC_DYLD_ENVIRONMENT => {

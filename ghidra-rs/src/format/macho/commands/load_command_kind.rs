@@ -22,6 +22,7 @@ use crate::format::macho::commands::dyld_exports_trie_command::DyldExportsTrieCo
 use crate::format::macho::commands::dyld_info_command::DyldInfoCommand;
 use crate::format::macho::commands::function_starts_command::FunctionStartsCommand;
 use crate::format::macho::commands::link_edit_data_command::LinkEditDataCommand;
+use crate::format::macho::commands::dynamic_symbol_table_command::DynamicSymbolTableCommand;
 use crate::format::macho::commands::dynamic_library_command::DynamicLibraryCommand;
 use crate::format::macho::commands::dynamic_linker_command::DynamicLinkerCommand;
 use crate::format::macho::commands::encrypted_information_command::EncryptedInformationCommand;
@@ -128,6 +129,7 @@ load_command_kinds! {
     Segment(SegmentCommand),
     SymbolTable(SymbolTableCommand),
     Symbol(SymbolCommand),
+    DynamicSymbolTable(DynamicSymbolTableCommand),
     Thread(ThreadCommand),
     FixedVirtualMemorySharedLibrary(FixedVirtualMemorySharedLibraryCommand),
     Ident(IdentCommand),

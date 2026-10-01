@@ -1144,11 +1144,11 @@ DONE	struct	17	15	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/b
 DONE	struct	17	15	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryCommand.java
 DONE	struct	19	19	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/NList.java
 TODO	struct	18	18	85	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SymbolTableCommand.java
-TODO	struct	17	15	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryModule.java
-TODO	struct	17	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryReference.java
+DONE	struct	17	15	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryModule.java
+DONE	struct	17	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryReference.java
 DONE	struct	17	15	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLinkerCommand.java
-TODO	struct	18	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/TableOfContents.java
-TODO	struct	17	15	91	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicSymbolTableCommand.java
+DONE	struct	18	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/TableOfContents.java
+DONE	struct	17	15	91	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicSymbolTableCommand.java
 DONE	struct	17	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/EncryptedInformationCommand.java
 DONE	struct	17	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/EntryPointCommand.java
 DONE	struct	17	15	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FileSetEntryCommand.java
