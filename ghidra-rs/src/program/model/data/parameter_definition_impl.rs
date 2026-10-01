@@ -109,8 +109,8 @@ pub fn is_default_parameter_name(name: Option<&str>) -> bool {
 /// constructor `ParameterDefinitionImpl(String name, DataType dataType, String comment, int
 /// ordinal)`: `data_type` is validated (and possibly mutated/cloned) against its own data type
 /// manager before being stored. `name` and `comment` are stored as given (unlike
-/// [`ParameterDefinitionImpl::parameter_definition_impl_set_name`]/
-/// [`ParameterDefinitionImpl::parameter_definition_impl_set_comment`], which apply extra
+/// [`ParameterDefinitionImplOps::parameter_definition_impl_set_name`]/
+/// [`ParameterDefinitionImplOps::parameter_definition_impl_set_comment`], which apply extra
 /// normalization only performed by the setters, not the constructor).
 ///
 /// # Errors
@@ -129,7 +129,7 @@ pub fn init_fields(
 /// Field-backed default implementation of the already-ported [`ParameterDefinition`] interface.
 ///
 /// Port of `ghidra.program.model.data.ParameterDefinitionImpl`.
-pub trait ParameterDefinitionImpl: ParameterDefinition {
+pub trait ParameterDefinitionImplOps: ParameterDefinition {
     /// Backing storage for the `ordinal` field.
     fn stored_ordinal(&self) -> i32;
     /// Update the backing storage for the `ordinal` field.
@@ -252,6 +252,141 @@ pub trait ParameterDefinitionImpl: ParameterDefinition {
         )
     }
 }
+
+/// A function parameter definition: the concrete `ParameterDefinitionImpl` class.
+///
+/// Port of `ghidra.program.model.data.ParameterDefinitionImpl`; the method bodies live in the
+/// [`ParameterDefinitionImplOps`] mixin (shared with other field-backed implementors) and this
+/// struct supplies the fields.
+#[derive(Clone)]
+pub struct ParameterDefinitionImpl {
+    ordinal: i32,
+    name: Option<String>,
+    data_type: std::sync::Arc<dyn DataType>,
+    comment: Option<String>,
+}
+
+impl ParameterDefinitionImpl {
+    /// `ParameterDefinitionImpl(String name, DataType dataType, String comment)`: an unassigned
+    /// ordinal; `None` data type becomes `DataType.DEFAULT`.
+    ///
+    /// # Errors
+    /// Returns `Err` if an unacceptable parameter datatype was specified (Java's
+    /// `IllegalArgumentException`).
+    pub fn new(
+        name: Option<String>,
+        data_type: Option<Box<dyn DataType>>,
+        comment: Option<String>,
+    ) -> Result<Self, String> {
+        Self::with_ordinal(name, data_type, comment, crate::program::model::listing::parameter::UNASSIGNED_ORDINAL)
+    }
+
+    /// The protected `ParameterDefinitionImpl(String, DataType, String, int)` constructor.
+    ///
+    /// # Errors
+    /// See [`new`](Self::new).
+    pub fn with_ordinal(
+        name: Option<String>,
+        data_type: Option<Box<dyn DataType>>,
+        comment: Option<String>,
+        ordinal: i32,
+    ) -> Result<Self, String> {
+        let dt_mgr = data_type.as_ref().and_then(|dt| dt.get_data_type_manager());
+        let data_type = validate_data_type(data_type, dt_mgr.as_deref(), false)?;
+        Ok(ParameterDefinitionImpl { ordinal, name, data_type: std::sync::Arc::from(data_type), comment })
+    }
+
+    /// Builds a parameter from an already-validated shared data type, without re-validating.
+    pub(crate) fn from_parts(
+        ordinal: i32,
+        name: Option<String>,
+        data_type: std::sync::Arc<dyn DataType>,
+        comment: Option<String>,
+    ) -> Self {
+        ParameterDefinitionImpl { ordinal, name, data_type, comment }
+    }
+
+    /// The parameter's data type as a shared handle.
+    pub fn data_type_arc(&self) -> &std::sync::Arc<dyn DataType> {
+        &self.data_type
+    }
+}
+
+impl std::fmt::Debug for ParameterDefinitionImpl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.parameter_definition_impl_to_string())
+    }
+}
+
+impl std::fmt::Display for ParameterDefinitionImpl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.parameter_definition_impl_to_string())
+    }
+}
+
+impl ParameterDefinitionImplOps for ParameterDefinitionImpl {
+    fn stored_ordinal(&self) -> i32 {
+        self.ordinal
+    }
+    fn set_stored_ordinal(&mut self, ordinal: i32) {
+        self.ordinal = ordinal;
+    }
+    fn stored_name(&self) -> Option<String> {
+        self.name.clone()
+    }
+    fn set_stored_name(&mut self, name: Option<String>) {
+        self.name = name;
+    }
+    fn stored_data_type(&self) -> Box<dyn DataType> {
+        crate::program::seam_stubs::share_data_type(&self.data_type)
+    }
+    fn set_stored_data_type(&mut self, data_type: Box<dyn DataType>) {
+        self.data_type = std::sync::Arc::from(data_type);
+    }
+    fn stored_comment(&self) -> Option<String> {
+        self.comment.clone()
+    }
+    fn set_stored_comment(&mut self, comment: Option<String>) {
+        self.comment = comment;
+    }
+}
+
+impl ParameterDefinition for ParameterDefinitionImpl {
+    fn get_ordinal(&self) -> i32 {
+        self.parameter_definition_impl_get_ordinal()
+    }
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        self.parameter_definition_impl_get_data_type()
+    }
+    fn set_data_type(&mut self, data_type: Box<dyn DataType>) -> Result<(), String> {
+        self.parameter_definition_impl_set_data_type(data_type)
+    }
+    fn get_name(&self) -> Option<String> {
+        self.parameter_definition_impl_get_name()
+    }
+    fn get_length(&self) -> i32 {
+        self.parameter_definition_impl_get_length()
+    }
+    fn set_name(&mut self, name: Option<String>) {
+        self.parameter_definition_impl_set_name(name)
+    }
+    fn get_comment(&self) -> Option<String> {
+        self.parameter_definition_impl_get_comment()
+    }
+    fn set_comment(&mut self, comment: Option<String>) {
+        self.parameter_definition_impl_set_comment(comment)
+    }
+    fn is_equivalent_variable(&self, variable: &dyn Variable) -> bool {
+        self.parameter_definition_impl_is_equivalent_variable(variable)
+    }
+    fn is_equivalent_parameter(&self, parm: &dyn ParameterDefinition) -> bool {
+        self.parameter_definition_impl_is_equivalent_parameter(parm)
+    }
+    fn compare_to(&self, other: &dyn ParameterDefinition) -> Ordering {
+        self.parameter_definition_impl_compare_to(other)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -451,7 +586,7 @@ mod tests {
         comment: Option<String>,
     }
 
-    impl ParameterDefinitionImpl for MockParameterDefinitionImpl {
+    impl ParameterDefinitionImplOps for MockParameterDefinitionImpl {
         fn stored_ordinal(&self) -> i32 {
             self.ordinal
         }
@@ -595,7 +730,7 @@ mod tests {
 
     #[test]
     fn trait_object_usage_is_object_safe() {
-        let param: Box<dyn ParameterDefinitionImpl> = Box::new(new_param(Some("len"), 8, 2));
+        let param: Box<dyn ParameterDefinitionImplOps> = Box::new(new_param(Some("len"), 8, 2));
         assert_eq!(param.stored_ordinal(), 2);
         assert_eq!(param.parameter_definition_impl_get_length(), 8);
         assert_eq!(

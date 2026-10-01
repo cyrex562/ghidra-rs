@@ -40,8 +40,8 @@
 //!
 //! The private fields `returnType`, `params`, `comment`, `hasVarArgs`, `hasNoReturn`, and
 //! `callingConventionName` have no home on a trait, so they are exposed via required accessor
-//! methods ([`FunctionDefinitionDataType::stored_return_type`]/
-//! [`FunctionDefinitionDataType::set_stored_return_type`], etc.) that implementors are expected to
+//! methods ([`FunctionDefinitionDataTypeOps::stored_return_type`]/
+//! [`FunctionDefinitionDataTypeOps::set_stored_return_type`], etc.) that implementors are expected to
 //! back with real storage, mirroring [`ParameterDefinitionImpl`]'s accessor convention. The Java
 //! constructors (which validate/copy an optional source `FunctionSignature` into those fields) are
 //! not modeled as trait content, exactly as `GenericDataType`'s own constructor logic is left
@@ -49,7 +49,7 @@
 //! to populate the backing fields directly.
 //!
 //! `toString()` delegates to `getPrototypeString(true)`; exposed here as
-//! [`FunctionDefinitionDataType::function_definition_data_type_impl_to_string`] rather than a
+//! [`FunctionDefinitionDataTypeOps::function_definition_data_type_impl_to_string`] rather than a
 //! `Display` impl, mirroring
 //! [`ParameterDefinitionImpl::parameter_definition_impl_to_string`].
 //!
@@ -66,7 +66,7 @@
 //! unmodeled, same as [`DataType::is_equivalent`]'s existing (`false`) default. The related
 //! `isEquivalentSignature(FunctionSignature)` operates on an already-fully-accessorized
 //! [`FunctionSignature`] trait object (no downcast needed) and so *is* modeled, as
-//! [`FunctionDefinitionDataType::function_definition_data_type_impl_is_equivalent_signature`].
+//! [`FunctionDefinitionDataTypeOps::function_definition_data_type_impl_is_equivalent_signature`].
 //!
 //! `dataTypeReplaced`/`dataTypeDeleted` delegate to `DataTypeUtilities.checkValidReplacement` and
 //! compare datatypes by Java reference identity (`==`). Neither `DataTypeUtilities` (a large,
@@ -79,14 +79,14 @@
 //! independent replacement copy for the return type and each matching parameter (Java shares one
 //! `newDt` object reference across every assignment) requires [`DataType::clone_data_type`], which
 //! needs a live `DataTypeManager`; when this function definition has none (`get_data_type_manager`
-//! returns `None`), [`FunctionDefinitionDataType::function_definition_data_type_impl_data_type_replaced`]
+//! returns `None`), [`FunctionDefinitionDataTypeOps::function_definition_data_type_impl_data_type_replaced`]
 //! performs no replacement, since there is no other way in the currently-ported [`DataType`]
 //! surface to duplicate an owned `Box<dyn DataType>` from a borrowed `&dyn DataType`.
 //!
 //! `setArguments`/`replaceArgument` construct new `ParameterDefinitionImpl` instances directly
 //! (`new ParameterDefinitionImpl(name, dataType, comment, ordinal)`), which -- like `copy`/`clone`
 //! above -- names a concrete constructor generically unavailable here. Rather than leaving these
-//! required methods unmodeled, [`BasicParameterDefinition`] (a private, directly-constructible
+//! required methods unmodeled, [`ParameterDefinitionImpl`] (a private, directly-constructible
 //! struct backed by real fields and implementing [`ParameterDefinition`] via
 //! [`ParameterDefinitionImpl`]'s already-ported default bodies, mirroring
 //! [`CompositeDataTypeImpl::composite_impl_create_component`]'s identical `BasicDataTypeComponent`
@@ -103,7 +103,7 @@ use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::data::generic_calling_convention::GenericCallingConvention;
 use crate::program::model::data::parameter_definition::ParameterDefinition;
 use crate::program::model::data::parameter_definition_impl::{
-    is_same_or_equivalent_data_type, validate_data_type, ParameterDefinitionImpl,
+    is_same_or_equivalent_data_type, validate_data_type, ParameterDefinitionImpl, ParameterDefinitionImplOps,
 };
 use crate::program::model::lang::compiler_spec::{
     is_unknown_calling_convention, CALLING_CONVENTION_DEFAULT, CALLING_CONVENTION_UNKNOWN,
@@ -126,7 +126,7 @@ use crate::util::exception::InvalidInputException;
 /// [`FunctionSignature`]/[`FunctionDefinition`], for the required accessors standing in for
 /// private fields, and for what was left required (rather than defaulted) or intentionally
 /// omitted.
-pub trait FunctionDefinitionDataType: FunctionDefinition {
+pub trait FunctionDefinitionDataTypeOps: FunctionDefinition {
     /// Backing storage for the private `returnType` field.
     fn stored_return_type(&self) -> Box<dyn DataType>;
     /// Mutator for the private `returnType` field's backing storage.
@@ -153,7 +153,7 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
     fn set_stored_calling_convention_name(&mut self, calling_convention_name: String);
 
     /// Default body for [`FunctionDefinition::set_arguments`]. Builds a fresh
-    /// [`BasicParameterDefinition`] per argument (renumbering ordinals to match position, exactly
+    /// [`ParameterDefinitionImpl`] per argument (renumbering ordinals to match position, exactly
     /// like the Java source), cloning each argument's data type against this function
     /// definition's own [`DataTypeManager`] when one is available (mirroring `dt.clone(
     /// getDataTypeManager())`); otherwise the data type is reused as-is.
@@ -171,12 +171,8 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
                     Some(m) => dt.clone_data_type(m.as_ref()),
                     None => dt,
                 };
-                Box::new(BasicParameterDefinition {
-                    ordinal: i as i32,
-                    name: arg.get_name(),
-                    data_type: Arc::from(dt),
-                    comment: arg.get_comment(),
-                }) as Box<dyn ParameterDefinition>
+                Box::new(ParameterDefinitionImpl::from_parts(i as i32, arg.get_name(), Arc::from(dt), arg.get_comment()))
+                    as Box<dyn ParameterDefinition>
             })
             .collect();
         self.set_stored_arguments(new_params);
@@ -488,9 +484,9 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
 
     /// Default body for [`FunctionDefinition::replace_argument`]. Builds any newly-required
     /// filler arguments (when `ordinal` is beyond the current argument list) via
-    /// [`BasicParameterDefinition`], exactly mirroring the Java source's
+    /// [`ParameterDefinitionImpl`], exactly mirroring the Java source's
     /// `Function.DEFAULT_PARAM_PREFIX`-named, `DataType.DEFAULT`-typed gap fill (see
-    /// [`FunctionDefinitionDataType::function_definition_data_type_impl_data_type_deleted`]).
+    /// [`FunctionDefinitionDataTypeOps::function_definition_data_type_impl_data_type_deleted`]).
     fn function_definition_data_type_impl_replace_argument(
         &mut self,
         ordinal: i32,
@@ -504,20 +500,15 @@ pub trait FunctionDefinitionDataType: FunctionDefinition {
         let ordinal_index = ordinal.max(0) as usize;
         if params.len() <= ordinal_index {
             for i in params.len()..=ordinal_index {
-                params.push(Box::new(BasicParameterDefinition {
-                    ordinal: i as i32,
-                    name: Some(format!("{DEFAULT_PARAM_PREFIX}{}", i + 1)),
-                    data_type: Arc::from(DefaultDataType::boxed()),
-                    comment: comment.clone(),
-                }));
+                params.push(Box::new(ParameterDefinitionImpl::from_parts(
+                    i as i32,
+                    Some(format!("{DEFAULT_PARAM_PREFIX}{}", i + 1)),
+                    Arc::from(DefaultDataType::boxed()),
+                    comment.clone(),
+                )));
             }
         }
-        params[ordinal_index] = Box::new(BasicParameterDefinition {
-            ordinal,
-            name,
-            data_type: Arc::from(dt),
-            comment,
-        });
+        params[ordinal_index] = Box::new(ParameterDefinitionImpl::from_parts(ordinal, name, Arc::from(dt), comment));
         self.set_stored_arguments(params);
     }
 }
@@ -594,36 +585,229 @@ fn check_for_invalid_function_definition_replacement(
     Ok(())
 }
 
-/// Directly-constructible [`ParameterDefinition`] backed by real fields, standing in for `new
-/// ParameterDefinitionImpl(name, dataType, comment, ordinal)` wherever
-/// [`FunctionDefinitionDataType`]'s default method bodies need to build a fresh parameter (no
-/// concrete `ParameterDefinitionImpl`-implementing struct is available generically). See the
-/// module-level documentation. Not a port of any specific Java class.
-struct BasicParameterDefinition {
-    ordinal: i32,
-    name: Option<String>,
-    data_type: Arc<dyn DataType>,
+/// Definition of a function for things like function pointers: the concrete
+/// `FunctionDefinitionDataType` class.
+///
+/// Port of `ghidra.program.model.data.FunctionDefinitionDataType`. The method bodies live in the
+/// [`FunctionDefinitionDataTypeOps`] mixin; this struct supplies the fields. Like
+/// [`StructureDataType`](crate::program::model::data::structure_data_type::StructureDataType) it
+/// is built then shared: edit an owned value, then hand it out as an `Arc<dyn DataType>`. The
+/// Java constructor's `DataTypeManager` only contributes its data organization here (it is not
+/// retained), so [`DataType::get_data_type_manager`] reports `None`.
+#[derive(Clone)]
+pub struct FunctionDefinitionDataType {
+    category_path: crate::program::model::data::category_path::CategoryPath,
+    name: String,
+    description: Option<String>,
+    return_type: Arc<dyn DataType>,
+    params: Vec<ParameterDefinitionImpl>,
     comment: Option<String>,
+    has_var_args: bool,
+    has_no_return: bool,
+    calling_convention_name: String,
 }
 
-impl ParameterDefinitionImpl for BasicParameterDefinition {
-    fn stored_ordinal(&self) -> i32 {
-        self.ordinal
+impl FunctionDefinitionDataType {
+    /// `FunctionDefinitionDataType(CategoryPath, String, DataTypeManager)`: a function returning
+    /// `DataType.DEFAULT` with no parameters and an unknown calling convention.
+    pub fn new(
+        category_path: crate::program::model::data::category_path::CategoryPath,
+        name: impl Into<String>,
+        _dtm: Option<&dyn DataTypeManager>,
+    ) -> Self {
+        FunctionDefinitionDataType {
+            category_path,
+            name: name.into(),
+            description: None,
+            return_type: Arc::from(DefaultDataType::boxed()),
+            params: Vec::new(),
+            comment: None,
+            has_var_args: false,
+            has_no_return: false,
+            calling_convention_name: CALLING_CONVENTION_UNKNOWN.to_string(),
+        }
     }
-    fn set_stored_ordinal(&mut self, ordinal: i32) {
-        self.ordinal = ordinal;
+
+    /// `FunctionDefinitionDataType(String)`: in the root category.
+    pub fn new_in_root(name: impl Into<String>) -> Self {
+        Self::new(crate::program::model::data::category_path::ROOT.clone(), name, None)
     }
-    fn stored_name(&self) -> Option<String> {
+
+    /// The arguments as their concrete type (Java's `params` field).
+    pub fn get_parameters(&self) -> &[ParameterDefinitionImpl] {
+        &self.params
+    }
+
+    /// The return type as a shared handle.
+    pub fn get_return_type_arc(&self) -> &Arc<dyn DataType> {
+        &self.return_type
+    }
+}
+
+impl std::fmt::Display for FunctionDefinitionDataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.function_definition_data_type_impl_to_string())
+    }
+}
+
+impl std::fmt::Debug for FunctionDefinitionDataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.function_definition_data_type_impl_to_string())
+    }
+}
+
+impl DataType for FunctionDefinitionDataType {
+    fn get_name(&self) -> String {
         self.name.clone()
     }
-    fn set_stored_name(&mut self, name: Option<String>) {
-        self.name = name;
+    fn set_name(&mut self, name: &str) -> Result<(), crate::program::model::data::data_type::SetDataTypeNameError> {
+        self.name = name.to_string();
+        Ok(())
     }
-    fn stored_data_type(&self) -> Box<dyn DataType> {
-        share_data_type(&self.data_type)
+    fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
+        self.category_path.clone()
     }
-    fn set_stored_data_type(&mut self, data_type: Box<dyn DataType>) {
-        self.data_type = Arc::from(data_type);
+    fn set_category_path(
+        &mut self,
+        path: crate::program::model::data::category_path::CategoryPath,
+    ) -> Result<(), crate::util::exception::DuplicateNameException> {
+        self.category_path = path;
+        Ok(())
+    }
+    fn get_mnemonic(&self, settings: &dyn Settings) -> String {
+        self.function_definition_data_type_impl_mnemonic(settings)
+    }
+    fn get_length(&self) -> i32 {
+        self.function_definition_data_type_impl_length()
+    }
+    fn get_description(&self) -> String {
+        match &self.description {
+            Some(d) => d.clone(),
+            None => self.function_definition_data_type_impl_description(),
+        }
+    }
+    fn set_description(&mut self, description: &str) -> Result<(), crate::program::model::data::data_type::UnsupportedOperationError> {
+        self.description = Some(description.to_string());
+        Ok(())
+    }
+    fn get_representation(&self, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32) -> String {
+        self.function_definition_data_type_impl_representation(buf, settings, length)
+    }
+    fn clone_data_type(&self, _dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        Box::new(self.clone())
+    }
+    fn copy_data_type(&self, _dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        Box::new(self.clone())
+    }
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        match dt.as_function_definition() {
+            Some(fd) => self.function_definition_data_type_impl_is_equivalent_signature(fd),
+            None => false,
+        }
+    }
+    fn data_type_replaced(&mut self, old_dt: &dyn DataType, new_dt: &dyn DataType) {
+        self.function_definition_data_type_impl_data_type_replaced(old_dt, new_dt)
+    }
+    fn data_type_deleted(&mut self, dt: &dyn DataType) {
+        self.function_definition_data_type_impl_data_type_deleted(dt)
+    }
+    fn is_function_definition_type(&self) -> bool {
+        true
+    }
+    fn as_function_definition(&self) -> Option<&dyn FunctionDefinition> {
+        Some(self)
+    }
+}
+
+impl FunctionSignature for FunctionDefinitionDataType {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+    fn get_prototype_string_with_calling_convention(&self, include_calling_convention: bool) -> String {
+        self.function_definition_data_type_impl_prototype_string(include_calling_convention)
+    }
+    fn get_arguments(&self) -> Vec<Box<dyn ParameterDefinition>> {
+        self.function_definition_data_type_impl_get_arguments()
+    }
+    fn get_return_type(&self) -> Box<dyn DataType> {
+        self.function_definition_data_type_impl_get_return_type()
+    }
+    fn get_comment(&self) -> Option<String> {
+        self.function_definition_data_type_impl_get_comment()
+    }
+    fn has_var_args(&self) -> bool {
+        self.function_definition_data_type_impl_has_var_args()
+    }
+    fn has_no_return(&self) -> bool {
+        self.function_definition_data_type_impl_has_no_return()
+    }
+    fn get_calling_convention(&self) -> Option<Arc<PrototypeModel>> {
+        self.function_definition_data_type_impl_calling_convention()
+    }
+    fn get_calling_convention_name(&self) -> String {
+        self.function_definition_data_type_impl_calling_convention_name()
+    }
+    fn is_equivalent_signature(&self, signature: &dyn FunctionSignature) -> bool {
+        self.function_definition_data_type_impl_is_equivalent_signature(signature)
+    }
+}
+
+impl FunctionDefinition for FunctionDefinitionDataType {
+    fn set_arguments(&mut self, args: Vec<Box<dyn ParameterDefinition>>) {
+        self.function_definition_data_type_impl_set_arguments(args)
+    }
+    fn set_return_type(&mut self, data_type: Box<dyn DataType>) -> Result<(), String> {
+        self.function_definition_data_type_impl_set_return_type(data_type)
+    }
+    fn set_comment(&mut self, comment: Option<String>) {
+        self.function_definition_data_type_impl_set_comment(comment)
+    }
+    fn set_var_args(&mut self, has_var_args: bool) {
+        self.function_definition_data_type_impl_set_var_args(has_var_args)
+    }
+    fn set_no_return(&mut self, has_no_return: bool) {
+        self.function_definition_data_type_impl_set_no_return(has_no_return)
+    }
+    fn set_generic_calling_convention(&mut self, generic_calling_convention: &dyn GenericCallingConventionPlaceholder) {
+        self.function_definition_data_type_impl_set_generic_calling_convention(generic_calling_convention)
+    }
+    fn set_calling_convention(&mut self, convention_name: Option<String>) -> Result<(), InvalidInputException> {
+        self.function_definition_data_type_impl_set_calling_convention(convention_name)
+    }
+    fn replace_argument(
+        &mut self,
+        ordinal: i32,
+        name: Option<String>,
+        dt: Box<dyn DataType>,
+        comment: Option<String>,
+        source: SourceType,
+    ) {
+        self.function_definition_data_type_impl_replace_argument(ordinal, name, dt, comment, source)
+    }
+}
+
+impl FunctionDefinitionDataTypeOps for FunctionDefinitionDataType {
+    fn stored_return_type(&self) -> Box<dyn DataType> {
+        share_data_type(&self.return_type)
+    }
+    fn set_stored_return_type(&mut self, return_type: Box<dyn DataType>) {
+        self.return_type = Arc::from(return_type);
+    }
+    fn stored_arguments(&self) -> Vec<Box<dyn ParameterDefinition>> {
+        self.params.iter().map(|p| Box::new(p.clone()) as Box<dyn ParameterDefinition>).collect()
+    }
+    fn set_stored_arguments(&mut self, arguments: Vec<Box<dyn ParameterDefinition>>) {
+        self.params = arguments
+            .iter()
+            .map(|p| {
+                ParameterDefinitionImpl::from_parts(
+                    p.get_ordinal(),
+                    p.get_name(),
+                    Arc::from(p.get_data_type()),
+                    p.get_comment(),
+                )
+            })
+            .collect();
     }
     fn stored_comment(&self) -> Option<String> {
         self.comment.clone()
@@ -631,44 +815,25 @@ impl ParameterDefinitionImpl for BasicParameterDefinition {
     fn set_stored_comment(&mut self, comment: Option<String>) {
         self.comment = comment;
     }
-}
-
-impl ParameterDefinition for BasicParameterDefinition {
-    fn get_ordinal(&self) -> i32 {
-        self.parameter_definition_impl_get_ordinal()
+    fn stored_has_var_args(&self) -> bool {
+        self.has_var_args
     }
-    fn get_data_type(&self) -> Box<dyn DataType> {
-        self.parameter_definition_impl_get_data_type()
+    fn set_stored_has_var_args(&mut self, has_var_args: bool) {
+        self.has_var_args = has_var_args;
     }
-    fn set_data_type(&mut self, data_type: Box<dyn DataType>) -> Result<(), String> {
-        self.parameter_definition_impl_set_data_type(data_type)
+    fn stored_has_no_return(&self) -> bool {
+        self.has_no_return
     }
-    fn get_name(&self) -> Option<String> {
-        self.parameter_definition_impl_get_name()
+    fn set_stored_has_no_return(&mut self, has_no_return: bool) {
+        self.has_no_return = has_no_return;
     }
-    fn get_length(&self) -> i32 {
-        self.parameter_definition_impl_get_length()
+    fn stored_calling_convention_name(&self) -> String {
+        self.calling_convention_name.clone()
     }
-    fn set_name(&mut self, name: Option<String>) {
-        self.parameter_definition_impl_set_name(name)
-    }
-    fn get_comment(&self) -> Option<String> {
-        self.parameter_definition_impl_get_comment()
-    }
-    fn set_comment(&mut self, comment: Option<String>) {
-        self.parameter_definition_impl_set_comment(comment)
-    }
-    fn is_equivalent_variable(&self, variable: &dyn crate::program::model::listing::Variable) -> bool {
-        self.parameter_definition_impl_is_equivalent_variable(variable)
-    }
-    fn is_equivalent_parameter(&self, parm: &dyn ParameterDefinition) -> bool {
-        self.parameter_definition_impl_is_equivalent_parameter(parm)
-    }
-    fn compare_to(&self, other: &dyn ParameterDefinition) -> std::cmp::Ordering {
-        self.parameter_definition_impl_compare_to(other)
+    fn set_stored_calling_convention_name(&mut self, calling_convention_name: String) {
+        self.calling_convention_name = calling_convention_name;
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -823,7 +988,7 @@ mod tests {
         }
     }
 
-    impl FunctionDefinitionDataType for MockFunctionDefinitionDataType {
+    impl FunctionDefinitionDataTypeOps for MockFunctionDefinitionDataType {
         fn stored_return_type(&self) -> Box<dyn DataType> {
             Box::new(self.return_type)
         }
@@ -837,12 +1002,7 @@ mod tests {
                 .iter()
                 .enumerate()
                 .map(|(i, (name, dt, comment))| {
-                    Box::new(BasicParameterDefinition {
-                        ordinal: i as i32,
-                        name: name.clone(),
-                        data_type: Arc::new(*dt),
-                        comment: comment.clone(),
-                    }) as Box<dyn ParameterDefinition>
+                    Box::new(ParameterDefinitionImpl::from_parts(i as i32, name.clone(), Arc::new(*dt), comment.clone())) as Box<dyn ParameterDefinition>
                 })
                 .collect()
         }
@@ -895,7 +1055,7 @@ mod tests {
 
     #[test]
     fn trait_object_usage_is_object_safe() {
-        let mut def: Box<dyn FunctionDefinitionDataType> = Box::new(sample());
+        let mut def: Box<dyn FunctionDefinitionDataTypeOps> = Box::new(sample());
         assert_eq!(
             def.get_prototype_string_with_calling_convention(false),
             "int foo(int a, int b)"
@@ -986,18 +1146,8 @@ mod tests {
     fn set_arguments_renumbers_ordinals() {
         let mut def = MockFunctionDefinitionDataType::new("foo");
         let args: Vec<Box<dyn ParameterDefinition>> = vec![
-            Box::new(BasicParameterDefinition {
-                ordinal: 5,
-                name: Some("x".to_string()),
-                data_type: Arc::new(MockDataType { length: 4 }),
-                comment: None,
-            }),
-            Box::new(BasicParameterDefinition {
-                ordinal: 9,
-                name: Some("y".to_string()),
-                data_type: Arc::new(MockDataType { length: 1 }),
-                comment: None,
-            }),
+            Box::new(ParameterDefinitionImpl::from_parts(5, Some("x".to_string()), Arc::new(MockDataType { length: 4 }), None)),
+            Box::new(ParameterDefinitionImpl::from_parts(9, Some("y".to_string()), Arc::new(MockDataType { length: 1 }), None)),
         ];
         def.set_arguments(args);
         let stored = def.get_arguments();
@@ -1071,4 +1221,39 @@ mod tests {
         def.function_definition_data_type_impl_data_type_replaced(&old_dt, &new_dt);
         assert_eq!(def.get_return_type().get_length(), 4);
     }
+
+    #[test]
+    fn concrete_struct_signature_round_trip() {
+        use crate::program::model::data::abstract_integer_data_type::get_unsigned_data_type;
+        use crate::program::model::data::category_path::CategoryPath;
+        let cp = CategoryPath::parse("/golang-recovered/main").unwrap();
+        let mut fd = super::FunctionDefinitionDataType::new(cp.clone(), "main.foo", None);
+        assert_eq!(fd.get_prototype_string_with_calling_convention(false), "undefined main.foo(void)");
+        assert_eq!(DataType::get_length(&fd), -1);
+        assert_eq!(fd.get_category_path(), cp);
+
+        let u4 = get_unsigned_data_type(4, None);
+        let args: Vec<Box<dyn ParameterDefinition>> = vec![
+            Box::new(ParameterDefinitionImpl::new(Some("a".to_string()), Some(share_data_type(&u4)), None).unwrap()),
+            Box::new(ParameterDefinitionImpl::new(Some("b".to_string()), None, Some("c".to_string())).unwrap()),
+        ];
+        fd.set_arguments(args);
+        fd.set_return_type(share_data_type(&u4)).unwrap();
+        fd.set_no_return(true);
+        let stored = fd.get_arguments();
+        assert_eq!(stored.len(), 2);
+        assert_eq!(stored[1].get_ordinal(), 1);
+        assert_eq!(stored[1].get_comment().as_deref(), Some("c"));
+        assert_eq!(fd.get_parameters()[0].data_type_arc().get_name(), "dword");
+        assert_eq!(fd.get_prototype_string_with_calling_convention(false), "dword main.foo(dword a, undefined b)");
+        assert!(fd.has_no_return());
+
+        let copy = fd.clone();
+        assert!(DataType::is_equivalent(&fd, &copy));
+        let mut other = fd.clone();
+        other.set_var_args(true);
+        assert!(!DataType::is_equivalent(&fd, &other));
+        assert!(fd.as_function_definition().is_some());
+    }
+
 }

@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::MemoryByteProvider;
+use crate::app::util::bin::memory_byte_provider::MemoryByteProvider;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::data_type::DataType;

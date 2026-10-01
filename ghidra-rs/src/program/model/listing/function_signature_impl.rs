@@ -16,7 +16,7 @@
 //! `FunctionSignatureImpl` subtype" specifically (e.g. a `Box<dyn FunctionSignatureImpl>` call
 //! site that still wants the narrower, deprecated type) without adding any new trait methods.
 
-use crate::program::model::data::function_definition_data_type::FunctionDefinitionDataType;
+use crate::program::model::data::function_definition_data_type::FunctionDefinitionDataTypeOps;
 
 /// Implementation of a Function Signature. All the information about a function that is portable
 /// from one program to another.
@@ -26,7 +26,7 @@ use crate::program::model::data::function_definition_data_type::FunctionDefiniti
 /// # Deprecated
 /// [`FunctionDefinitionDataType`] should be used for defining a function signature.
 #[deprecated = "FunctionDefinitionDataType should be used for defining a function signature"]
-pub trait FunctionSignatureImpl: FunctionDefinitionDataType {}
+pub trait FunctionSignatureImpl: FunctionDefinitionDataTypeOps {}
 
 #[cfg(test)]
 #[allow(deprecated)]
@@ -164,7 +164,7 @@ mod tests {
         }
     }
 
-    impl FunctionDefinitionDataType for MockSignatureImpl {
+    impl FunctionDefinitionDataTypeOps for MockSignatureImpl {
         fn stored_return_type(&self) -> Box<dyn DataType> {
             Box::new(self.return_type)
         }
