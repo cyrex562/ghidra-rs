@@ -84,11 +84,6 @@ pub const ELF_PRELINKED_PROPERTY: &str = "ELF Prelinked";
 /// `ElfLoader.ELF_SOURCE_FILE_PROPERTY_PREFIX` (followed by `"#]"`).
 pub const ELF_SOURCE_FILE_PROPERTY_PREFIX: &str = "ELF Source File [";
 
-/// Stands in for the unported static `GoBuildInfo.SECTION_NAME`/`GoBuildInfo.MACHO_SECTION_NAME`
-/// constants, used only by [`has_golang_sections`] below.
-const GO_BUILDINFO_SECTION_NAME: &str = "go.buildinfo";
-const GO_BUILDINFO_MACHO_SECTION_NAME: &str = "go_buildinfo";
-
 /// Loader for processing Executable and Linking Format (ELF) files.
 ///
 /// Port of `ghidra.app.util.opinion.ElfLoader`.
@@ -293,17 +288,7 @@ impl ElfLoader {
     }
 }
 
-/// Stands in for the unported static `GoRttiMapper.hasGolangSections(List<String>)`: a pure
-/// predicate over three substrings, so it's ported directly here rather than added to the
-/// [`GoRttiMapper`](crate::format::seam_stubs::GoRttiMapper) trait stub (whose members are all
-/// instance methods).
-fn has_golang_sections(section_names: &[String]) -> bool {
-    section_names.iter().any(|name| {
-        name.contains("gopclntab")
-            || name.contains(GO_BUILDINFO_MACHO_SECTION_NAME)
-            || name.contains(GO_BUILDINFO_SECTION_NAME)
-    })
-}
+use crate::format::golang::rtti::go_rtti_mapper::has_golang_sections;
 
 #[cfg(test)]
 mod tests {
