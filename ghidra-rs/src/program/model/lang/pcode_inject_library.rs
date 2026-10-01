@@ -36,11 +36,26 @@
 //!   method (see that trait's module docs) -- so it can never be called through a trait object.
 //!   [`AllocatedInjectPayload`] stands in for the concrete return type so
 //!   [`PcodeInjectLibrary::restore_xml_inject`] can call each variant's own (non-dyn) `restore_xml`
-//!   method before boxing the result as `Arc<dyn InjectPayloadSleigh>` for storage.
+//!   method before boxing the result as `Arc<dyn InjectPayloadSleigh>` for storage. A derived
+//!   library's own payload types ([`AllocatedInjectPayload::Custom`]) restore from a captured
+//!   copy of the element ([`ElementReplayParser`]), the one concrete parser type a `dyn` method
+//!   can take.
+//!
+//! # Derived libraries (`pcodeInjectLibraryClass`)
+//!
+//! Java processors subclass `PcodeInjectLibrary` (JVM's `PcodeInjectLibraryJava`, Dalvik's
+//! `PcodeInjectLibraryDex`) to override `allocateInject`, `getConstantPool` and `clone`, and
+//! `BasicCompilerSpec` instantiates the subclass named by the language's
+//! `pcodeInjectLibraryClass` property by reflection. Here the library stays one struct carrying
+//! an optional [`PcodeInjectLibraryExtension`] (the overridden methods; `clone` is the derived
+//! [`Clone`], which shares the extension as Java's copy constructors share their immutable
+//! state), and the reflective lookup is a name-keyed registry of constructors
+//! ([`register_pcode_inject_library_class`] / [`lookup_pcode_inject_library_class`]), keyed by
+//! the Java class name the property carries.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, OnceLock, RwLock, Weak};
 
 use crate::app::plugin::processors::sleigh::sleigh_exception::SleighException;
 use crate::app::plugin::processors::sleigh::unique_layout::UniqueLayout;
@@ -59,6 +74,7 @@ use crate::sleigh::grammar::Location;
 use crate::program::model::listing::program::Program;
 use crate::program::model::pcode::Encoder;
 use crate::util::msg::Msg;
+use crate::util::xml::element_replay_parser::ElementReplayParser;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 
@@ -108,6 +124,8 @@ pub enum AllocatedInjectPayload {
     Callfixup(InjectPayloadCallfixupImpl),
     Callother(InjectPayloadCallother),
     Sleigh(InjectPayloadSleighImpl),
+    /// A payload type defined by a derived library's [`PcodeInjectLibraryExtension`].
+    Custom(Box<dyn CustomInjectPayload>),
 }
 
 impl AllocatedInjectPayload {
@@ -118,8 +136,86 @@ impl AllocatedInjectPayload {
             AllocatedInjectPayload::Callfixup(p) => Arc::new(p),
             AllocatedInjectPayload::Callother(p) => Arc::new(p),
             AllocatedInjectPayload::Sleigh(p) => Arc::new(p),
+            AllocatedInjectPayload::Custom(p) => p.into_shared(),
         }
     }
+}
+
+/// A payload type supplied by a derived library (Java: an `InjectPayload` implementation returned
+/// from an overridden `allocateInject`).
+///
+/// Such payloads are stored like every other payload, as `Arc<dyn InjectPayloadSleigh>` (a
+/// payload with no `<body>` returns `None` from `release_parse_string`, so it is never parsed).
+pub trait CustomInjectPayload: InjectPayloadSleigh {
+    /// Port of the payload's own `restoreXml(XmlPullParser, SleighLanguage)`. `parser` replays the
+    /// payload's element (start through matching end).
+    ///
+    /// # Errors
+    /// If the element is not what the payload expects.
+    fn restore_xml_replay(
+        &mut self,
+        parser: &mut ElementReplayParser,
+        language: &SleighLanguage,
+    ) -> Result<(), XmlParseException>;
+
+    /// Converts the boxed payload into the shared form a library stores.
+    fn into_shared(self: Box<Self>) -> Arc<dyn InjectPayloadSleigh>;
+}
+
+/// The methods a derived p-code inject library overrides (Java: a `PcodeInjectLibrary`
+/// subclass). See the module docs.
+pub trait PcodeInjectLibraryExtension: Send + Sync {
+    /// The Java class name this extension ports (the `pcodeInjectLibraryClass` property value).
+    fn class_name(&self) -> &str;
+
+    /// The overridden `allocateInject(String, String, int)`: `Some` for a payload this library
+    /// produces itself, `None` to defer to the base implementation (Java's
+    /// `super.allocateInject(...)`).
+    fn allocate_inject(
+        &self,
+        library: &PcodeInjectLibrary,
+        source_name: &str,
+        name: &str,
+        tp: i32,
+    ) -> Option<AllocatedInjectPayload>;
+
+    /// The overridden `getConstantPool(Program)`. The default is the base library's (none).
+    ///
+    /// # Errors
+    /// As the Java override's `IOException`.
+    fn get_constant_pool(&self, _program: &dyn Program) -> std::io::Result<Option<Box<dyn ConstantPool>>> {
+        Ok(None)
+    }
+}
+
+/// Builds a derived library for a language (Java: the subclass's `(SleighLanguage)` constructor,
+/// found by reflection).
+pub type PcodeInjectLibraryConstructor = fn(&Arc<SleighLanguage>) -> PcodeInjectLibrary;
+
+fn library_class_registry() -> &'static RwLock<HashMap<String, PcodeInjectLibraryConstructor>> {
+    static REGISTRY: OnceLock<RwLock<HashMap<String, PcodeInjectLibraryConstructor>>> = OnceLock::new();
+    REGISTRY.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+/// Makes the derived library `class_name` (a fully qualified Java class name, as a language's
+/// `pcodeInjectLibraryClass` property names it) constructible by
+/// [`lookup_pcode_inject_library_class`]. Replaces any earlier registration of the same name.
+///
+/// Replaces Java's class-path discovery (`ClassSearcher.forNameSafe`).
+pub fn register_pcode_inject_library_class(class_name: &str, constructor: PcodeInjectLibraryConstructor) {
+    library_class_registry()
+        .write()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .insert(class_name.to_string(), constructor);
+}
+
+/// The constructor registered for `class_name`, if any.
+pub fn lookup_pcode_inject_library_class(class_name: &str) -> Option<PcodeInjectLibraryConstructor> {
+    library_class_registry()
+        .read()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .get(class_name)
+        .copied()
 }
 
 /// The manager that owns and dispatches p-code-injection payloads for a [`SleighLanguage`] (and,
@@ -149,6 +245,8 @@ pub struct PcodeInjectLibrary {
     exe_pcode_map: BTreeMap<String, Arc<dyn InjectPayloadSleigh>>,
     /// List of Program-specific payloads.
     program_payload: Option<Vec<Arc<dyn InjectPayloadSleigh>>>,
+    /// The overriding methods of a derived library (Java subclass), if this is one.
+    extension: Option<Arc<dyn PcodeInjectLibraryExtension>>,
 }
 
 impl PcodeInjectLibrary {
@@ -167,6 +265,7 @@ impl PcodeInjectLibrary {
             call_mech_fixup_map: BTreeMap::new(),
             exe_pcode_map: BTreeMap::new(),
             program_payload: None,
+            extension: None,
         }
     }
 
@@ -187,6 +286,7 @@ impl PcodeInjectLibrary {
             call_mech_fixup_map: BTreeMap::new(),
             exe_pcode_map: BTreeMap::new(),
             program_payload: None,
+            extension: None,
         }
     }
 
@@ -367,6 +467,7 @@ impl PcodeInjectLibrary {
     /// not cloned by the caller first) specifically so the mutation [`Self::parse_inject`] performs
     /// can happen while `payload` is still uniquely owned (`Arc::get_mut` requires a strong count
     /// of 1) -- every clone this method itself produces happens only after that mutation step.
+    /// A payload that is already shared is registered without parsing (see the body).
     ///
     /// # Errors
     /// Returns an error if [`Self::parse_inject`] fails, if a payload with the same name is
@@ -376,12 +477,10 @@ impl PcodeInjectLibrary {
         &mut self,
         mut payload: Arc<dyn InjectPayloadSleigh>,
     ) -> Result<Arc<dyn InjectPayloadSleigh>, SleighException> {
-        {
-            let Some(p) = Arc::get_mut(&mut payload) else {
-                return Err(SleighException::with_message(
-                    "register_inject: payload is unexpectedly shared before registration",
-                ));
-            };
+        // A payload that is already shared has been registered before (a language's `.pspec`
+        // payloads go into every compiler spec's library): its body was compiled then, just as
+        // Java's second `parseInject` finds `releaseParseString()` already null.
+        if let Some(p) = Arc::get_mut(&mut payload) {
             self.parse_inject(p)?;
         }
         match payload.get_type() {
@@ -524,9 +623,9 @@ impl PcodeInjectLibrary {
     /// The main `InjectPayload` factory interface, producing a fresh, unattached payload of the
     /// given source/name/type.
     ///
-    /// Port of `allocateInject(String, String, int)`. Java documents this as overloadable by
-    /// derived libraries to produce custom dynamic payloads; this crate has no derived-library
-    /// mechanism (no subclassing), so it is a plain method rather than a virtual one.
+    /// Port of `allocateInject(String, String, int)`. A derived library's
+    /// [`PcodeInjectLibraryExtension::allocate_inject`] is asked first (Java's override), and the
+    /// base allocation applies when it declines.
     pub fn allocate_inject(
         &self,
         source_name: impl Into<String>,
@@ -534,6 +633,12 @@ impl PcodeInjectLibrary {
         tp: i32,
     ) -> AllocatedInjectPayload {
         let source_name = source_name.into();
+        let name = name.into();
+        if let Some(extension) = &self.extension {
+            if let Some(payload) = extension.allocate_inject(self, &source_name, &name, tp) {
+                return payload;
+            }
+        }
         match tp {
             CALLFIXUP_TYPE => AllocatedInjectPayload::Callfixup(InjectPayloadCallfixupImpl::new(source_name)),
             CALLOTHERFIXUP_TYPE => {
@@ -587,24 +692,60 @@ impl PcodeInjectLibrary {
             AllocatedInjectPayload::Callfixup(p) => p.restore_xml(parser)?,
             AllocatedInjectPayload::Callother(p) => p.restore_xml(parser)?,
             AllocatedInjectPayload::Sleigh(p) => p.restore_xml_pcode_element(parser)?,
+            AllocatedInjectPayload::Custom(p) => {
+                let mut replay = ElementReplayParser::capture_subtree(parser)
+                    .map_err(|e| XmlParseException::new(e.to_string()))?;
+                p.restore_xml_replay(&mut replay, &self.language())?;
+            }
         }
         let payload = allocated.into_arc();
         let registered = self.register_inject(payload)?;
         Ok(registered)
     }
 
-    /// Get the constant pool associated with the given Program. The base library never has one.
+    /// Get the constant pool associated with the given Program. The base library never has one;
+    /// a derived library answers through its [`PcodeInjectLibraryExtension::get_constant_pool`].
     ///
     /// Port of `getConstantPool(Program)`.
     ///
     /// # Errors
-    /// Never returns an error in this port; kept fallible to mirror Java's `throws IOException`
-    /// for derived libraries that might.
+    /// As the derived library's `IOException`; the base library never fails.
     pub fn get_constant_pool(
         &self,
-        _program: &dyn Program,
+        program: &dyn Program,
     ) -> std::io::Result<Option<Box<dyn ConstantPool>>> {
-        Ok(None)
+        match &self.extension {
+            Some(extension) => extension.get_constant_pool(program),
+            None => Ok(None),
+        }
+    }
+
+    /// Turns this library into a derived one (Java: constructing the subclass, whose constructor
+    /// first runs `super(language)`).
+    pub fn with_extension(mut self, extension: Arc<dyn PcodeInjectLibraryExtension>) -> Self {
+        self.extension = Some(extension);
+        self
+    }
+
+    /// The derived library's overriding methods, if this is a derived library.
+    pub fn get_extension(&self) -> Option<&Arc<dyn PcodeInjectLibraryExtension>> {
+        self.extension.as_ref()
+    }
+
+    /// Sets the base offset for new temporary registers. Java derived libraries assign
+    /// the protected `uniqueBase` field directly (JVM reserves 0x100 per built-in payload).
+    pub fn set_unique_base(&mut self, unique_base: u64) {
+        self.unique_base = unique_base;
+    }
+
+    /// The language this library was built for, or `None` for a library built
+    /// [`without_language`](Self::without_language). Java derived libraries read the protected
+    /// `language` field.
+    ///
+    /// # Panics
+    /// If the language has been dropped while this library is still in use.
+    pub fn get_language(&self) -> Option<Arc<SleighLanguage>> {
+        self.language_opt()
     }
 
     /// Returns the current base offset for new temporary registers.

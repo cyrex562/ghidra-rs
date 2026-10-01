@@ -570,6 +570,15 @@ pub(crate) fn named_model(name: &str) -> PrototypeModel {
 pub(crate) fn sleigh_x86_64_language(
     description: Option<crate::program::model::lang::sleigh::SharedSleighLanguageDescription>,
 ) -> Arc<crate::program::model::lang::sleigh::SleighLanguage> {
+    sleigh_x86_64_language_with(description, |_| {})
+}
+
+/// [`sleigh_x86_64_language`], with `configure` applied to the language before it is shared (as
+/// the `.pspec` reader would set properties).
+pub(crate) fn sleigh_x86_64_language_with(
+    description: Option<crate::program::model::lang::sleigh::SharedSleighLanguageDescription>,
+    configure: impl FnOnce(&mut crate::program::model::lang::sleigh::SleighLanguage),
+) -> Arc<crate::program::model::lang::sleigh::SleighLanguage> {
     use crate::program::model::pcode::encoder::Encoder;
     use crate::program::model::pcode::ids::*;
     use crate::program::model::pcode::{PackedDecode, PackedEncode};
@@ -662,5 +671,7 @@ pub(crate) fn sleigh_x86_64_language(
         Some(d) => crate::program::model::lang::sleigh::SleighLanguage::decode_with_description(&decoder, d),
         None => crate::program::model::lang::sleigh::SleighLanguage::decode(&decoder, "x86:LE:64:default".to_string()),
     };
-    language.expect("well-formed test .sla").into_shared()
+    let mut language = language.expect("well-formed test .sla");
+    configure(&mut language);
+    language.into_shared()
 }

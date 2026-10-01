@@ -2242,7 +2242,7 @@ TODO	struct	1	3	1	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeI
 TODO	struct	1	3	16	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPayloadJavaParameters.java
 TODO	struct	1	3	1	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPutField.java
 TODO	struct	1	3	1	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPutStatic.java
-TODO	struct	1	2	33	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/PcodeInjectLibraryJava.java
+PARK	struct	1	2	33	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/PcodeInjectLibraryJava.java
 TODO	struct	0	10	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/InstanceUtils.java
 TODO	struct	1	3	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/model/DebuggerSingleObjectPathActionContext.java
 TODO	struct	3	4	1	pcode	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/AbstractPcodeTraceAccess.java
@@ -4168,7 +4168,7 @@ TODO	struct	0	0	15	program	Ghidra/Processors/AARCH64/src/main/java/ghidra/progra
 TODO	struct	0	0	1	program	Ghidra/Processors/ARM/src/main/java/ghidra/program/emulation/ARMEmulateInstructionStateModifier.java
 TODO	struct	0	0	15	program	Ghidra/Processors/ARM/src/main/java/ghidra/program/emulation/ArmPcodeUseropLibraryFactory.java
 TODO	struct	0	0	19	format	Ghidra/Processors/Atmel/src/main/java/ghidra/app/util/bin/format/elf/extend/AVR8_ElfExtension.java
-TODO	struct	0	0	24	format	Ghidra/Processors/Dalvik/src/main/java/ghidra/dalvik/dex/inject/PcodeInjectLibraryDex.java
+PARK	struct	0	0	24	format	Ghidra/Processors/Dalvik/src/main/java/ghidra/dalvik/dex/inject/PcodeInjectLibraryDex.java
 TODO	struct	0	0	19	format	Ghidra/Processors/HCS12/src/main/java/ghidra/app/util/bin/format/elf/extend/HCS12X_ElfExtension.java
 TODO	struct	0	0	19	format	Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/extend/Hexagon_ElfExtension.java
 TODO	struct	0	0	5	program	Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonEmulateInstructionStateModifier.java

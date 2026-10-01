@@ -3,12 +3,10 @@
 //!
 //! # Known gaps
 //! * **Custom inject libraries.** A language naming a `pcodeInjectLibraryClass` property gets its
-//!   class by reflection in Java; this port has only the default library and rejects the spec.
-//!   Java's `language.getAdditionalInject()` payloads come from the unported `.pspec` reader, so
-//!   there are none to register.
-//! * **Schema validation.** Java validates the `.cspec` against its RelaxNG schema
-//!   (`SleighLanguageValidator`, unported) before parsing; this port relies on the parser's own
-//!   checks.
+//!   class by reflection in Java; here the name is looked up in the registry of derived-library
+//!   constructors ([`lookup_pcode_inject_library_class`]).
+//! * **Schema validation.** Java validates the `.cspec` against its RELAX NG schema before
+//!   parsing; [`BasicCompilerSpec::from_file`] does the same through [`SleighLanguageValidator`].
 //! * **Overlay addresses.** [`CompilerSpec::is_global`] translates an overlay address to its
 //!   base space first in Java; this crate's [`AddressSpace`] has no overlay form, so no
 //!   translation applies.
@@ -33,7 +31,9 @@ use crate::program::model::lang::inject_payload::{CALLFIXUP_TYPE, CALLOTHERFIXUP
 use crate::program::model::lang::inject_payload_segment::InjectPayloadSegment;
 use crate::program::model::lang::inject_payload_sleigh::InjectPayloadSleigh;
 use crate::program::model::lang::language::{Language, WeakLanguage};
-use crate::program::model::lang::pcode_inject_library::{PcodeInjectLibrary, PcodeInjectLibraryError};
+use crate::program::model::lang::pcode_inject_library::{
+    lookup_pcode_inject_library_class, PcodeInjectLibrary, PcodeInjectLibraryError,
+};
 use crate::program::model::lang::prototype_model::PrototypeModel;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::register_value::RegisterValue;
@@ -50,6 +50,7 @@ use crate::program::model::pcode::{
     ELEM_INFERPTRBOUNDS, ELEM_NOHIGHPTR, ELEM_PREFERSPLIT, ELEM_PROPERTIES, ELEM_PROPERTY, ELEM_RANGE,
     ELEM_READONLY, ELEM_RETURNADDRESS, ELEM_SPACEBASE, ELEM_STACKPOINTER, ELEM_VARNODE,
 };
+use crate::util::msg::Msg;
 use crate::util::xml::spec_xml_utils::{decode_boolean, decode_int, decode_long};
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
@@ -252,19 +253,44 @@ impl BasicCompilerSpec {
         self.restore_xml(parser)
     }
 
-    /// The default p-code injection library for `language`.
+    /// The p-code injection library for `language`: the derived library its
+    /// `pcodeInjectLibraryClass` property names, or the default one, plus the language's
+    /// additional (`.pspec`) payloads.
     ///
-    /// Port of the private `BasicCompilerSpec.buildInjectLibrary`; see the module docs for the
-    /// custom-class and additional-inject gaps.
+    /// Port of the private `BasicCompilerSpec.buildInjectLibrary`.
+    ///
+    /// # Errors
+    /// If the named library class is not registered (Java: the reflective instantiation fails),
+    /// or an additional payload cannot be registered.
     fn build_inject_library(language: &Arc<SleighLanguage>) -> Result<PcodeInjectLibrary, XmlParseException> {
-        if let Some(classname) = Language::get_property(language.as_ref(), PCODE_INJECT_LIBRARY_CLASS) {
-            return Err(XmlParseException::new(format!(
-                "Failed to instantiate {classname} for language {}: custom p-code inject libraries are \
-                 not supported by this port",
-                language.get_language_id()
-            )));
+        let mut pcode_inject = match Language::get_property(language.as_ref(), PCODE_INJECT_LIBRARY_CLASS) {
+            // This is the default implementation
+            None => PcodeInjectLibrary::new(language),
+            Some(classname) => match lookup_pcode_inject_library_class(&classname) {
+                Some(constructor) => constructor(language),
+                None => {
+                    Msg::error(
+                        "BasicCompilerSpec",
+                        &format!(
+                            "Language {} does not specify a valid {PCODE_INJECT_LIBRARY_CLASS}",
+                            language.get_language_id()
+                        ),
+                    );
+                    return Err(XmlParseException::new(format!(
+                        "Failed to instantiate {classname} for language {}",
+                        language.get_language_id()
+                    )));
+                }
+            },
+        };
+        if let Some(additional_inject) = language.get_additional_inject() {
+            for payload in additional_inject {
+                pcode_inject
+                    .register_inject(payload.clone())
+                    .map_err(|e| XmlParseException::new(e.to_string()))?;
+            }
         }
-        Ok(PcodeInjectLibrary::new(language))
+        Ok(pcode_inject)
     }
 
     /// Record a default context register setting over the given address range.
@@ -1800,6 +1826,202 @@ mod tests {
         let handle = spec.get_language();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| handle.get_language_id()));
         assert!(result.is_err());
+    }
+
+    /// A derived-library payload modeled on Dalvik's `InjectPayloadDexParameters`: a dynamic
+    /// `uponentry` mechanism whose `restoreXml` only checks the `<pcode>` element's attributes.
+    struct UponEntryParameters {
+        name: String,
+        source: String,
+    }
+
+    impl crate::program::model::lang::inject_payload::InjectPayload for UponEntryParameters {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+        fn get_type(&self) -> i32 {
+            CALLMECHANISM_TYPE
+        }
+        fn get_source(&self) -> String {
+            self.source.clone()
+        }
+        fn get_param_shift(&self) -> i32 {
+            0
+        }
+        fn get_input(&self) -> Vec<crate::program::model::lang::inject_payload::InjectParameter> {
+            Vec::new()
+        }
+        fn get_output(&self) -> Vec<crate::program::model::lang::inject_payload::InjectParameter> {
+            Vec::new()
+        }
+        fn is_error_placeholder(&self) -> bool {
+            false
+        }
+        fn inject(
+            &self,
+            _context: &crate::program::model::lang::inject_context::InjectContext,
+            _emit: &mut dyn crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit,
+        ) -> Result<(), crate::program::model::lang::inject_payload::InjectPayloadError> {
+            Ok(())
+        }
+        fn get_pcode(
+            &self,
+            _program: &dyn crate::program::model::listing::program::Program,
+            _context: &crate::program::model::lang::inject_context::InjectContext,
+        ) -> Result<Vec<crate::program::model::pcode::PcodeOp>, crate::program::model::lang::inject_payload::InjectPayloadError> {
+            Ok(Vec::new())
+        }
+        fn is_fall_thru(&self) -> bool {
+            true
+        }
+        fn is_incidental_copy(&self) -> bool {
+            false
+        }
+        fn encode(&self, _encoder: &mut dyn Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn restore_xml<P: XmlPullParser>(&mut self, _parser: &mut P, _language: &SleighLanguage) -> Result<(), XmlParseException> {
+            unreachable!("restored through CustomInjectPayload::restore_xml_replay")
+        }
+        fn is_equivalent(&self, other: &dyn crate::program::model::lang::inject_payload::InjectPayload) -> bool {
+            other.get_name() == self.name && other.get_source() == self.source
+        }
+    }
+
+    impl InjectPayloadSleigh for UponEntryParameters {
+        fn release_parse_string(&mut self) -> Option<String> {
+            None
+        }
+        fn set_template(&mut self, _template: crate::program::model::lang::sleigh::template::ConstructTpl) {}
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+    }
+
+    impl crate::program::model::lang::pcode_inject_library::CustomInjectPayload for UponEntryParameters {
+        fn restore_xml_replay(
+            &mut self,
+            parser: &mut crate::util::xml::element_replay_parser::ElementReplayParser,
+            _language: &SleighLanguage,
+        ) -> Result<(), XmlParseException> {
+            let el = parser.start(&[]).map_err(|e| XmlParseException::new(e.to_string()))?;
+            if el.get_attribute("inject").as_deref() != Some("uponentry") {
+                return Err(XmlParseException::new("Expecting inject=\"uponentry\" attribute"));
+            }
+            if !el.get_attribute("dynamic").is_some_and(|v| decode_boolean(&v)) {
+                return Err(XmlParseException::new("Expecting dynamic attribute"));
+            }
+            parser.end_matching(&el).map_err(|e| XmlParseException::new(e.to_string()))?;
+            Ok(())
+        }
+        fn into_shared(self: Box<Self>) -> Arc<dyn InjectPayloadSleigh> {
+            Arc::new(*self)
+        }
+    }
+
+    /// A derived library modeled on `PcodeInjectLibraryDex`: it allocates its own call-mechanism
+    /// payloads and reserves 0x100 bytes of unique space per built-in payload as JVM's does.
+    struct TestInjectLibrary;
+
+    impl crate::program::model::lang::pcode_inject_library::PcodeInjectLibraryExtension for TestInjectLibrary {
+        fn class_name(&self) -> &str {
+            TEST_LIBRARY_CLASS
+        }
+        fn allocate_inject(
+            &self,
+            _library: &PcodeInjectLibrary,
+            source_name: &str,
+            name: &str,
+            tp: i32,
+        ) -> Option<crate::program::model::lang::pcode_inject_library::AllocatedInjectPayload> {
+            (tp == CALLMECHANISM_TYPE).then(|| {
+                crate::program::model::lang::pcode_inject_library::AllocatedInjectPayload::Custom(Box::new(
+                    UponEntryParameters { name: name.to_string(), source: source_name.to_string() },
+                ))
+            })
+        }
+    }
+
+    const TEST_LIBRARY_CLASS: &str = "ghidra.test.TestInjectLibrary";
+
+    fn test_library(language: &Arc<SleighLanguage>) -> PcodeInjectLibrary {
+        let mut library = PcodeInjectLibrary::new(language);
+        library.set_unique_base(library.get_unique_base() + 0x100);
+        library.with_extension(Arc::new(TestInjectLibrary))
+    }
+
+    fn language_with_inject_class(class: &str) -> &'static Arc<SleighLanguage> {
+        use crate::program::model::lang::cspec_test_support::sleigh_x86_64_language_with;
+        static LANGUAGES: std::sync::OnceLock<std::sync::Mutex<HashMap<String, &'static Arc<SleighLanguage>>>> =
+            std::sync::OnceLock::new();
+        let mut languages = LANGUAGES.get_or_init(Default::default).lock().unwrap();
+        languages.entry(class.to_string()).or_insert_with(|| {
+            let class = class.to_string();
+            Box::leak(Box::new(sleigh_x86_64_language_with(None, move |l| l.set_property(PCODE_INJECT_LIBRARY_CLASS, class))))
+        })
+    }
+
+    const UPON_ENTRY_PROTO: &str = r#"<compiler_spec><default_proto>
+        <prototype name="p" extrapop="0" stackshift="0"><input/><output/>
+          <pcode inject="uponentry" dynamic="true"/>
+        </prototype></default_proto></compiler_spec>"#;
+
+    #[test]
+    fn unregistered_inject_library_class_fails_like_java_reflection() {
+        let language = language_with_inject_class("ghidra.test.NoSuchLibrary");
+        let err = BasicCompilerSpec::from_xml(description(), language, UPON_ENTRY_PROTO).err().unwrap();
+        assert_eq!(err.message(), "Failed to instantiate ghidra.test.NoSuchLibrary for language x86:LE:64:default");
+    }
+
+    #[test]
+    fn registered_inject_library_class_builds_the_derived_library() {
+        crate::program::model::lang::pcode_inject_library::register_pcode_inject_library_class(
+            TEST_LIBRARY_CLASS,
+            test_library,
+        );
+        let language = language_with_inject_class(TEST_LIBRARY_CLASS);
+        let spec = BasicCompilerSpec::from_xml(description(), language, UPON_ENTRY_PROTO).unwrap();
+        let library = spec.get_pcode_inject_library();
+        assert_eq!(library.get_extension().map(|e| e.class_name()), Some(TEST_LIBRARY_CLASS));
+        assert_eq!(library.get_unique_base(), PcodeInjectLibrary::new(language).get_unique_base() + 0x100);
+        // The prototype's uponentry payload was allocated and restored by the derived library.
+        let payload = library.get_payload(CALLMECHANISM_TYPE, Some("p@@inject_uponentry")).unwrap();
+        assert_eq!(payload.get_source(), "Compiler spec=gcc");
+        // Copies (Java's clone()) stay derived.
+        assert!(library.clone().get_extension().is_some());
+
+        // The derived payload's own restoreXml checks apply.
+        let bad = UPON_ENTRY_PROTO.replace(r#"dynamic="true""#, r#"dynamic="false""#);
+        let err = BasicCompilerSpec::from_xml(description(), language, &bad).err().unwrap();
+        assert!(err.message().contains("Expecting dynamic attribute"), "{}", err.message());
+    }
+
+    #[test]
+    fn language_additional_inject_is_registered_into_every_spec() {
+        use crate::program::model::lang::cspec_test_support::sleigh_x86_64_language_with;
+        use crate::program::model::lang::inject_payload::EXECUTABLEPCODE_TYPE;
+        use crate::program::model::lang::inject_payload_sleigh::InjectPayloadSleighImpl;
+        static LANGUAGE: std::sync::OnceLock<Arc<SleighLanguage>> = std::sync::OnceLock::new();
+        let language = LANGUAGE.get_or_init(|| {
+            sleigh_x86_64_language_with(None, |l| {
+                l.set_additional_inject(vec![Arc::new(InjectPayloadSleighImpl::new(
+                    "assist",
+                    EXECUTABLEPCODE_TYPE,
+                    "x86.pspec",
+                ))])
+            })
+        });
+        let proto = r#"<compiler_spec><default_proto><prototype name="p" extrapop="0" stackshift="0"><input/><output/></prototype></default_proto></compiler_spec>"#;
+        for _ in 0..2 {
+            let spec = BasicCompilerSpec::from_xml(description(), language, proto).unwrap();
+            let payload = spec.get_pcode_inject_library().get_payload(EXECUTABLEPCODE_TYPE, Some("assist")).unwrap();
+            assert_eq!(payload.get_source(), "x86.pspec");
+        }
+    }
+
+    #[test]
+    fn default_inject_library_has_no_extension() {
+        assert!(gcc().get_pcode_inject_library().get_extension().is_none());
     }
 
     #[test]

@@ -63,6 +63,7 @@ use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
+use crate::program::model::lang::inject_payload_sleigh::InjectPayloadSleigh;
 use crate::program::model::lang::ghidra_language_property_keys::MAXIMUM_INSTRUCTION_LENGTH;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::{Language, ParseError};
@@ -152,6 +153,9 @@ pub struct SleighLanguage {
     register_manager: RegisterManager,
     /// `compilerSpecs`: the compiler specs loaded so far, by id.
     compiler_specs: Mutex<HashMap<CompilerSpecID, Arc<BasicCompilerSpec>>>,
+    /// `additionalInject`: p-code payloads declared by the `.pspec` (`<jumpassist>`), registered
+    /// into every compiler spec's inject library. Only the `.pspec` reader sets it (not ported).
+    additional_inject: Option<Vec<Arc<dyn InjectPayloadSleigh>>>,
 }
 
 impl fmt::Display for SleighLanguage {
@@ -371,6 +375,7 @@ impl SleighLanguage {
             manual: OnceLock::new(),
             self_ref: Weak::new(),
             compiler_specs: Mutex::new(HashMap::new()),
+            additional_inject: None,
             // Replaced below, once the symbol table the registers come from is decoded.
             register_manager: RegisterBuilder::new().register_manager(),
         };
@@ -615,6 +620,26 @@ impl SleighLanguage {
         self._default_space
             .clone()
             .expect("decode rejects a language without a default space")
+    }
+
+    /// Port of `getAdditionalInject()`: the `.pspec`-declared payloads every compiler spec's
+    /// inject library registers, if any.
+    pub fn get_additional_inject(&self) -> Option<&[Arc<dyn InjectPayloadSleigh>]> {
+        self.additional_inject.as_deref()
+    }
+
+    /// Records a language property, as the `.pspec` `<properties>` reader does (Java
+    /// `properties.put(key, value)` in `read`). Only possible before the language is shared.
+    pub(crate) fn set_property(&mut self, key: impl Into<String>, value: impl Into<String>) {
+        self.properties.insert(key.into(), value.into());
+    }
+
+    /// Records the `.pspec`-declared payloads [`get_additional_inject`](Self::get_additional_inject)
+    /// returns (Java: `additionalInject`, filled while reading `<jumpassist>`). Only possible
+    /// before the language is shared.
+    #[cfg_attr(not(test), allow(dead_code))] // until the `.pspec` reader is ported
+    pub(crate) fn set_additional_inject(&mut self, payloads: Vec<Arc<dyn InjectPayloadSleigh>>) {
+        self.additional_inject = Some(payloads);
     }
 
     /// The compiler spec `compiler_spec_id`, loaded from its `.cspec` file on first request and
