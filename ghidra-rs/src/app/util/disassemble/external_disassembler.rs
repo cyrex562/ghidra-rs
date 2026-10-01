@@ -109,7 +109,8 @@ mod tests {
     };
     use crate::program::model::util::PropertySet;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::util::task::TaskMonitor;
@@ -497,8 +498,6 @@ use crate::program::model::listing::CommentType;
         }
     }
 
-    struct MockAddressLabelInfo;
-    impl AddressLabelInfo for MockAddressLabelInfo {}
 
     struct MockMemoryBlockDefinition;
     impl MemoryBlockDefinition for MockMemoryBlockDefinition {}
@@ -670,8 +669,8 @@ use crate::program::model::listing::CommentType;
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
             vec![Box::new(MockMemoryBlockDefinition)]
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
-            vec![Box::new(MockAddressLabelInfo)]
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
+            Vec::new()
         }
         fn get_segmented_space(&self) -> String {
             String::new()

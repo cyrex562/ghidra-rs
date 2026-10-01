@@ -11,14 +11,14 @@
 //!   factory/spaces, endianness, alignment, user-op names, volatile addresses, properties,
 //!   maximum instruction length, the parallel-instruction helper, and the processor manual index
 //!   (see [`manual`]).
+//! * The processor specification (`.pspec`, when the description names one; see the `pspec` module):
+//!   schema validation, properties, program counter, data space, context settings, volatile
+//!   ranges, register renames/aliases/groups/flags/lane sizes, default symbols and memory
+//!   blocks, jump-assist and segment p-code payloads, and the segmented address space.
 //!
 //! # What is not (yet) ported
-//! * Reading the processor specification (`.pspec`; Java `readInitialDescription`/
-//!   `readRemainingSpecification`/`read`) needs `XmlPullParserFactory`, which is not ported. A
-//!   language is therefore in the state Java's is in for a `.pspec` that declares nothing: no
-//!   properties, no program counter, no context settings, no volatile ranges, no default
-//!   symbols or memory blocks, no register renames/aliases/groups/lane sizes, and no segmented
-//!   space.
+//! * Reading the `.sla` file itself (`SlaFormat.buildDecoder`): callers hand in a decoder.
+//! * Instantiating the `.pspec`'s `parallelInstructionHelperClass` (no helper class is ported).
 //! * [`Language::parse`] builds a [`SleighInstructionPrototype`] but does not cache prototypes
 //!   by hash (Java's `instructProtoMap`), and cannot apply the instruction's global context
 //!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
@@ -47,6 +47,7 @@
 //! used after its language has been dropped.
 
 use super::Endian;
+use crate::app::plugin::processors::generic::memory_block_definition::DefaultMemoryBlockDefinition;
 use crate::app::plugin::processors::generic::MemoryBlockDefinition;
 use crate::app::plugin::processors::sleigh::context_cache::{ContextCache, DefaultContextCache};
 use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::SleighInstructionPrototype;
@@ -54,6 +55,7 @@ use crate::app::plugin::processors::sleigh::sleigh_language_description::SleighL
 use crate::app::plugin::processors::sleigh::sleigh_parser_context::{
     read_context_words, snapshot_mem_buffer,
 };
+use crate::program::model::address::segmented_address::{ProtectedAddressSpace, SegmentedAddressSpace};
 use crate::program::model::address::{
     Address, AddressFactory, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
     DefaultAddressFactory,
@@ -63,6 +65,8 @@ use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
+use crate::program::model::lang::context_setting::ContextSetting;
+use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::lang::inject_payload_sleigh::InjectPayloadSleigh;
 use crate::program::model::lang::ghidra_language_property_keys::MAXIMUM_INSTRUCTION_LENGTH;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
@@ -71,7 +75,7 @@ use crate::program::model::lang::language_description::LanguageDescription;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
 use crate::program::model::lang::processor_context::ProcessorContext;
-use crate::program::model::lang::register::{Register, RegisterRef};
+use crate::program::model::lang::register::{Register, RegisterId, RegisterRef};
 use crate::program::model::lang::register_builder::RegisterBuilder;
 use crate::program::model::lang::register_manager::RegisterManager;
 use crate::program::model::lang::insufficient_bytes_exception::InsufficientBytesException;
@@ -86,7 +90,8 @@ use crate::program::model::pcode::{
     ATTRIB_VERSION, ATTRIB_WORDSIZE, ELEM_SLEIGH, ELEM_SOURCEFILES, ELEM_SPACE, ELEM_SPACES,
     ELEM_SPACE_OTHER, ELEM_SPACE_UNIQUE,
 };
-use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+use crate::program::seam_stubs::Processor;
+use crate::program::model::lang::AddressLabelInfo;
 use crate::util::manual_entry::ManualEntry;
 use crate::util::task::TaskMonitor;
 use std::collections::{HashMap, HashSet};
@@ -99,6 +104,7 @@ pub mod expression;
 pub mod handle;
 pub mod manual;
 pub mod pattern;
+mod pspec;
 pub mod symbol;
 pub mod template;
 pub mod walker;
@@ -109,6 +115,11 @@ pub use walker::{ParserWalker, SleighError};
 use expression::{ContextField, PatternExpression};
 use manual::ManualState;
 use symbol::{ContextSymbol, SleighSymbol, SubtableSymbol, SymbolTable};
+
+/// A `SleighException` while building a language, reported as a decode failure.
+fn sleigh_error(e: crate::app::plugin::processors::sleigh::sleigh_exception::SleighException) -> DecoderError {
+    DecoderError::Generic(e.to_string())
+}
 
 /// The language description a [`SleighLanguage`] is built from, shared so that
 /// [`Language::get_language_description`] can hand out the same description on every call.
@@ -148,14 +159,26 @@ pub struct SleighLanguage {
     /// This language, once shared through [`SleighLanguage::into_shared`]: instruction
     /// prototypes hold their language (Java passes `this`).
     self_ref: Weak<SleighLanguage>,
-    /// `registerManager`: every register of this language, built once from the symbol table
-    /// when the language is decoded.
+    /// `registerManager`: every register of this language, built from the symbol table and the
+    /// `.pspec` when the language is decoded.
     register_manager: RegisterManager,
     /// `compilerSpecs`: the compiler specs loaded so far, by id.
     compiler_specs: Mutex<HashMap<CompilerSpecID, Arc<BasicCompilerSpec>>>,
-    /// `additionalInject`: p-code payloads declared by the `.pspec` (`<jumpassist>`), registered
-    /// into every compiler spec's inject library. Only the `.pspec` reader sets it (not ported).
+    /// `additionalInject`: p-code payloads declared by the `.pspec` (`<jumpassist>`,
+    /// `<segmentop>`), registered into every compiler spec's inject library.
     additional_inject: Option<Vec<Arc<dyn InjectPayloadSleigh>>>,
+    /// `programCounter` (from the `.pspec` `<programcounter>`), as an id into the register store.
+    program_counter: Option<RegisterId>,
+    /// `defaultSymbols` (from the `.pspec` `<default_symbols>`).
+    default_symbols: Vec<AddressLabelInfo>,
+    /// `defaultMemoryBlocks` (from the `.pspec` `<default_memory_blocks>`).
+    default_memory_blocks: Vec<DefaultMemoryBlockDefinition>,
+    /// `ctxsetting` (from the `.pspec` `<context_data>`).
+    ctxsetting: Vec<ContextSetting>,
+    /// `volatileSymbolAddresses`: default symbols marked `volatile="true"`.
+    volatile_symbol_addresses: Option<AddressSet>,
+    /// `nonVolatileSymbolAddresses`: default symbols marked `volatile="false"`.
+    non_volatile_symbol_addresses: Option<AddressSet>,
 }
 
 impl fmt::Display for SleighLanguage {
@@ -273,6 +296,16 @@ impl SleighLanguage {
         if id.is_empty() {
             return Err(DecoderError::Generic("empty language id not allowed".to_string()));
         }
+        // Java `initialize`: the `.pspec` is validated, and its segmented space read, before the
+        // `.sla` is decoded.
+        let spec_file = description.as_ref().and_then(|d| d.get_spec_file().cloned());
+        let (segmented_space, segment_type) = match &spec_file {
+            Some(file) => {
+                pspec::validate(file).map_err(sleigh_error)?;
+                pspec::read_initial_description(file).map_err(sleigh_error)?
+            }
+            None => (String::new(), String::new()),
+        };
         let el = decoder.open_element_with_id(ELEM_SLEIGH)?;
 
         let mut version = 0;
@@ -332,8 +365,13 @@ impl SleighLanguage {
             decoder.close_element_skipping(indexer_el)?;
         }
 
-        let (space_table, default_space) =
-            Self::parse_spaces(decoder, &id, description.as_deref())?;
+        let (space_table, default_space) = Self::parse_spaces(
+            decoder,
+            &id,
+            description.as_deref(),
+            &segmented_space,
+            &segment_type,
+        )?;
 
         let mut all_spaces: Vec<Arc<AddressSpace>> = space_table.values().cloned().collect();
         all_spaces.sort_by_key(|s| s.space_id());
@@ -370,12 +408,18 @@ impl SleighLanguage {
             default_pointer_word_size,
             volatile_addresses: AddressSet::new(),
             properties: HashMap::new(),
-            segmented_space: String::new(),
+            segmented_space,
             max_instruction_length: None,
             manual: OnceLock::new(),
             self_ref: Weak::new(),
             compiler_specs: Mutex::new(HashMap::new()),
             additional_inject: None,
+            program_counter: None,
+            default_symbols: Vec::new(),
+            default_memory_blocks: Vec::new(),
+            ctxsetting: Vec::new(),
+            volatile_symbol_addresses: None,
+            non_volatile_symbol_addresses: None,
             // Replaced below, once the symbol table the registers come from is decoded.
             register_manager: RegisterBuilder::new().register_manager(),
         };
@@ -383,9 +427,27 @@ impl SleighLanguage {
         let mut symbol_table = SymbolTable::new();
         symbol_table.decode(decoder, &sleigh)?;
         sleigh._symbol_table = symbol_table;
-        sleigh.register_manager = sleigh.build_register_manager();
-
         decoder.close_element(el)?;
+
+        let mut builder = RegisterBuilder::new();
+        sleigh.load_registers(&mut builder);
+        // Java builds its register manager lazily, on first use; a `.pspec` `<segmentop>` may
+        // already look registers up while the `.pspec` is read.
+        sleigh.register_manager = builder.register_manager();
+        if let Some(file) = &spec_file {
+            let mut pending_context = Vec::new();
+            sleigh
+                .read_remaining_specification(file, &mut builder, &mut pending_context)
+                .map_err(sleigh_error)?;
+            sleigh.build_volatile_symbol_addresses();
+            // The `.pspec` renamed, aliased, grouped and flagged registers in the builder.
+            sleigh.register_manager = builder.register_manager();
+            let store = sleigh.register_manager.store().clone();
+            sleigh.ctxsetting = pending_context
+                .into_iter()
+                .map(|c| ContextSetting::new(Register::from_store(&store, c.register), c.value, c.start, c.end))
+                .collect();
+        }
 
         // Java: `getPropertyAsInt(MAXIMUM_INSTRUCTION_LENGTH, -1)`, kept only when positive.
         let max_length = sleigh.get_property_as_int(MAXIMUM_INSTRUCTION_LENGTH, -1);
@@ -400,6 +462,8 @@ impl SleighLanguage {
         decoder: &dyn Decoder,
         id: &str,
         description: Option<&(dyn SleighLanguageDescription + Send + Sync)>,
+        segmented_space: &str,
+        segment_type: &str,
     ) -> Result<
         (
             HashMap<String, Arc<AddressSpace>>,
@@ -473,12 +537,24 @@ impl SleighLanguage {
                 ));
             };
 
-            if truncated_space_names.contains(&name) {
-                if space_type != AddressSpaceType::Ram {
-                    return Err(DecoderError::Generic(format!(
-                        "Non-ram space does not support truncation: {name}"
-                    )));
+            let truncate_space = truncated_space_names.contains(&name);
+            if truncate_space && space_type != AddressSpaceType::Ram {
+                return Err(DecoderError::Generic(format!(
+                    "Non-ram space does not support truncation: {name}"
+                )));
+            }
+
+            let spc = if segmented_space == name {
+                // Java builds a `ProtectedAddressSpace`/`SegmentedAddressSpace`; the factory
+                // holds its underlying space (21-bit real mode, 32-bit protected mode), and a
+                // truncation of it is never applied.
+                if segment_type == "protected" {
+                    ProtectedAddressSpace::new(&name, index).as_segmented_space().address_space().clone()
+                } else {
+                    SegmentedAddressSpace::new(&name, index).address_space().clone()
                 }
+            } else {
+                if truncate_space {
                 let truncated_size = description
                     .and_then(|d| d.get_truncated_space_size(&name))
                     .unwrap_or(0);
@@ -489,9 +565,9 @@ impl SleighLanguage {
                 }
                 size = truncated_size;
                 truncated_space_cnt -= 1;
-            }
-
-            let spc = AddressSpace::new(&name, 8 * size, wordsize, space_type, index);
+                }
+                AddressSpace::new(&name, 8 * size, wordsize, space_type, index)
+            };
             space_table.insert(name.clone(), spc);
             decoder.close_element(subel)?;
         }
@@ -505,15 +581,6 @@ impl SleighLanguage {
         decoder.close_element(el)?;
 
         Ok((space_table, default_space))
-    }
-
-    /// Builds this language's registers from the sleigh symbol table. Port of
-    /// `SleighLanguage.loadRegisters(RegisterBuilder)` followed by
-    /// `RegisterBuilder.getRegisterManager()`; called once, at decode time.
-    fn build_register_manager(&self) -> RegisterManager {
-        let mut builder = RegisterBuilder::new();
-        self.load_registers(&mut builder);
-        builder.register_manager()
     }
 
     fn load_registers(&self, builder: &mut RegisterBuilder) {
@@ -635,9 +702,9 @@ impl SleighLanguage {
     }
 
     /// Records the `.pspec`-declared payloads [`get_additional_inject`](Self::get_additional_inject)
-    /// returns (Java: `additionalInject`, filled while reading `<jumpassist>`). Only possible
-    /// before the language is shared.
-    #[cfg_attr(not(test), allow(dead_code))] // until the `.pspec` reader is ported
+    /// returns (Java: `additionalInject`, filled while reading `<jumpassist>`/`<segmentop>`), in
+    /// place of what the `.pspec` declared. Only possible before the language is shared.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn set_additional_inject(&mut self, payloads: Vec<Arc<dyn InjectPayloadSleigh>>) {
         self.additional_inject = Some(payloads);
     }
@@ -836,8 +903,8 @@ impl Language for SleighLanguage {
     }
 
     /// Port of `getParallelInstructionHelper()`. Java instantiates the class named by the
-    /// `parallelInstructionHelperClass` property, which only a `.pspec` can set (not ported), so
-    /// the helper is `null`/`None`.
+    /// `.pspec` `parallelInstructionHelperClass` property; no helper class is ported, so the
+    /// helper is `null`/`None`.
     fn get_parallel_instruction_helper(&self) -> Option<Box<dyn ParallelInstructionLanguageHelper>> {
         None
     }
@@ -966,10 +1033,10 @@ impl Language for SleighLanguage {
         self.register_manager.get_register_at(addr, size)
     }
 
-    /// Port of `getProgramCounter()`. Only a `.pspec` `<programcounter>` sets it (not ported),
-    /// so this is Java's `null`.
+    /// Port of `getProgramCounter()`: the `.pspec` `<programcounter>` register, if any.
     fn get_program_counter(&self) -> Option<RegisterRef> {
-        None
+        self.program_counter
+            .map(|id| Register::from_store(self.register_manager.store(), id))
     }
 
     /// Port of `getContextBaseRegister()`; `None` stands in for `Register.NO_CONTEXT`.
@@ -984,16 +1051,17 @@ impl Language for SleighLanguage {
         self.register_manager.get_context_registers()
     }
 
-    /// Port of `getDefaultMemoryBlocks()`: empty unless a `.pspec` declares
-    /// `<default_memory_blocks>` (not ported).
+    /// Port of `getDefaultMemoryBlocks()`: the `.pspec` `<default_memory_blocks>`.
     fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
-        Vec::new()
+        self.default_memory_blocks
+            .iter()
+            .map(|b| Box::new(b.clone()) as Box<dyn MemoryBlockDefinition>)
+            .collect()
     }
 
-    /// Port of `getDefaultSymbols()`: empty unless a `.pspec` declares `<default_symbols>` (not
-    /// ported).
-    fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
-        Vec::new()
+    /// Port of `getDefaultSymbols()`: the `.pspec` `<default_symbols>`.
+    fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
+        self.default_symbols.clone()
     }
 
     /// Port of `getSegmentedSpace()`.
@@ -1006,9 +1074,14 @@ impl Language for SleighLanguage {
         Box::new(self.volatile_addresses.clone())
     }
 
-    /// Port of `applyContextSettings(DefaultProgramContext)`. Context settings come only from a
-    /// `.pspec` `<context_data>` element (not ported), so there are none to apply.
-    fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
+    /// Port of `applyContextSettings(DefaultProgramContext)`: sets the `.pspec`
+    /// `<context_data>` values as default values over their ranges.
+    fn apply_context_settings(&self, program_context: &mut dyn DefaultProgramContext) {
+        for cs in &self.ctxsetting {
+            let register_value = RegisterValue::with_value(cs.get_register().clone(), cs.get_value());
+            program_context.set_default_value(register_value, cs.get_start_address(), cs.get_end_address());
+        }
+    }
 
     /// Port of `reloadLanguage(TaskMonitor)`. Re-reading the `.sla` file needs
     /// `SlaFormat.buildDecoder` (not ported), so this fails the way a failed Java reload does,

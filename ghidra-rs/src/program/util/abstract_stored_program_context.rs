@@ -529,7 +529,8 @@ pub(crate) mod test_support {
     use crate::program::model::mem::MemBuffer;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
     use crate::program::model::lang::language::ParseError;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::database::register::database_range_map_adapter::DatabaseRangeMapAdapter;
     use std::collections::HashSet as StdHashSet;
 
@@ -595,8 +596,6 @@ pub(crate) mod test_support {
         }
     }
 
-    struct MockAddressLabelInfo;
-    impl AddressLabelInfo for MockAddressLabelInfo {}
 
     struct MockMemoryBlockDefinition;
     impl MemoryBlockDefinition for MockMemoryBlockDefinition {}
@@ -789,7 +788,7 @@ pub(crate) mod test_support {
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
             Vec::new()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
         fn get_segmented_space(&self) -> String {
@@ -934,7 +933,8 @@ mod tests {
     use crate::program::model::mem::MemBuffer;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
     use crate::program::model::lang::language::ParseError;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::database::register::database_range_map_adapter::DatabaseRangeMapAdapter;
     use std::collections::HashSet as StdHashSet;
 

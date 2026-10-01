@@ -537,7 +537,7 @@ mod tests {
             Vec::new()
         }
 
-        fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<crate::program::model::lang::AddressLabelInfo> {
             Vec::new()
         }
 
@@ -835,7 +835,7 @@ mod tests {
         ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
             self.0.get_default_memory_blocks()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<crate::program::model::lang::AddressLabelInfo> {
             self.0.get_default_symbols()
         }
         fn get_segmented_space(&self) -> String {

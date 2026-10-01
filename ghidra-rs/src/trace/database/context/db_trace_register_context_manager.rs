@@ -280,7 +280,8 @@ mod tests {
     use crate::program::model::lang::register::RegisterRef;
     use crate::program::model::listing::context_change_exception::ContextChangeException;
     use crate::program::model::mem::MemBuffer;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::trace::model::lifespan::Lifespan;
     use crate::util::lock_hold::Lock;
     use std::cell::RefCell;
@@ -385,7 +386,7 @@ mod tests {
         ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
             Vec::new()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
         fn get_segmented_space(&self) -> String {

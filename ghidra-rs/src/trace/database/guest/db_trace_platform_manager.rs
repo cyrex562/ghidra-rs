@@ -154,7 +154,8 @@ mod tests {
     use crate::program::model::lang::{ProgramArchitecture, Register};
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::mem::MemBuffer;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::model::lang::register_value::RegisterValue;
     use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
     use crate::trace::model::symbol::trace_label_symbol::TraceLabelSymbol;
@@ -261,7 +262,7 @@ mod tests {
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
             Vec::new()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
         fn get_segmented_space(&self) -> String {

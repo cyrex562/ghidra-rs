@@ -859,7 +859,7 @@ pub(crate) mod testing {
             fn get_default_memory_blocks(&self) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
                 unimplemented!()
             }
-            fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+            fn get_default_symbols(&self) -> Vec<crate::program::model::lang::AddressLabelInfo> {
                 unimplemented!()
             }
             fn get_segmented_space(&self) -> String {

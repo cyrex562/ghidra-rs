@@ -608,7 +608,8 @@ mod tests {
     use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::mem::mem_buffer::MemBuffer;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use std::collections::HashSet;
 
     /// The address spaces every double shares. [`Address`] equality includes the space, and
@@ -912,7 +913,7 @@ mod tests {
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
             Vec::new()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
         fn get_segmented_space(&self) -> String {

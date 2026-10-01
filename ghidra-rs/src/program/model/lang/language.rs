@@ -19,7 +19,8 @@ use crate::program::model::lang::parallel_instruction_language_helper::ParallelI
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+use crate::program::seam_stubs::Processor;
+use crate::program::model::lang::AddressLabelInfo;
 use crate::program::model::mem::MemBuffer;
 use crate::util::task::TaskMonitor;
 
@@ -150,7 +151,7 @@ pub trait Language {
     fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>>;
 
     /// Returns the default symbols for this language. This list does not contain registers.
-    fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>>;
+    fn get_default_symbols(&self) -> Vec<AddressLabelInfo>;
 
     /// Returns the name of the segmented space for this language, or the empty string if the
     /// memory model for this language is not segmented.
@@ -344,7 +345,7 @@ impl<L: Language + ?Sized> Language for Arc<L> {
     fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
         (**self).get_default_memory_blocks()
     }
-    fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+    fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
         (**self).get_default_symbols()
     }
     fn get_segmented_space(&self) -> String {
@@ -555,7 +556,7 @@ impl<L: Language + ?Sized> Language for WeakLanguage<L> {
     fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
         self.strong().get_default_memory_blocks()
     }
-    fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+    fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
         self.strong().get_default_symbols()
     }
     fn get_segmented_space(&self) -> String {
@@ -709,8 +710,6 @@ mod tests {
         }
     }
 
-    struct MockAddressLabelInfo;
-    impl AddressLabelInfo for MockAddressLabelInfo {}
 
     struct MockMemoryBlockDefinition;
     impl MemoryBlockDefinition for MockMemoryBlockDefinition {}
@@ -994,8 +993,8 @@ mod tests {
             vec![Box::new(MockMemoryBlockDefinition)]
         }
 
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
-            vec![Box::new(MockAddressLabelInfo)]
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
+            Vec::new()
         }
 
         fn get_segmented_space(&self) -> String {

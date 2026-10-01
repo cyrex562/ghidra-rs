@@ -1310,7 +1310,8 @@ mod tests {
         use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
         use crate::program::model::listing::default_program_context::DefaultProgramContext;
         use crate::program::model::mem::MemBuffer;
-        use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+        use crate::program::seam_stubs::Processor;
+        use crate::program::model::lang::AddressLabelInfo;
         use crate::util::task::TaskMonitor;
         use std::collections::HashSet;
 
@@ -1408,7 +1409,7 @@ mod tests {
             fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
                 unimplemented!("not exercised by these smoke tests")
             }
-            fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+            fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
                 unimplemented!("not exercised by these smoke tests")
             }
             fn get_segmented_space(&self) -> String {

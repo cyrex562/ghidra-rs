@@ -317,7 +317,8 @@ pub(crate) mod test_support {
     };
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::mem::MemBuffer;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
     use crate::util::task::TaskMonitor;
     use std::collections::HashSet;
@@ -415,7 +416,7 @@ pub(crate) mod test_support {
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
             unreachable_in_this_mock()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             unreachable_in_this_mock()
         }
         fn get_segmented_space(&self) -> String {

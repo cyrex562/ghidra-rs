@@ -118,9 +118,8 @@ mod tests {
     use crate::program::model::pcode::Encoder;
     use crate::program::model::lang::prototype_model::PrototypeModel;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{
-        ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery, AddressLabelInfo, Processor,
-    };
+    use crate::program::seam_stubs::{ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery, Processor};
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 use crate::program::model::mem::MemBuffer;
@@ -264,7 +263,7 @@ use crate::program::model::mem::MemBuffer;
             Vec::new()
         }
 
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
 

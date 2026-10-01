@@ -4,20 +4,12 @@
 //! sleigh language file), including how a constant should be resolved when used to construct a
 //! segmented address (the optional `<constresolve>` child).
 //!
-//! # Gaps
-//!
-//! `AddressXML.restoreXml(XmlElement, Language)` (used by Java's `restoreXml` to parse the
-//! `<constresolve>` address) is not reused here: it requires `&dyn Language`, but this crate's
-//! [`SleighLanguage`] is a partial, `.sla`-only port that does not implement the `Language`
-//! trait (see `address_xml.rs`'s module docs). [`InjectPayloadSegment::restore_xml`] instead
-//! parses the `space`/`offset`/`size` attributes directly against
-//! [`SleighLanguage::get_address_factory`], covering the common (non-register, non-join) case;
-//! the "register name" address form (`AddressXML.restoreXml`'s `<register name="...">` branch)
-//! is not supported, since `SleighLanguage` has no register-name lookup to resolve it against --
-//! attempting to restore a `<constresolve>` using that form returns a precise
-//! [`XmlParseException`] rather than silently producing a wrong address.
+//! The `<constresolve>` address is read with
+//! [`restore_xml_with_language`] (Java's `AddressXML.restoreXml(XmlElement, Language)`), so it may
+//! be given by register name or by space/offset/size.
 
 use crate::program::model::address::factory::AddressFactory;
+use crate::program::model::pcode::address_xml::{restore_xml_with_language, AddressXml};
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::inject_context::InjectContext;
 use crate::program::model::lang::inject_payload::{
@@ -32,7 +24,7 @@ use crate::program::model::pcode::ids::{
     ELEM_SEGMENTOP, ELEM_VARNODE,
 };
 use crate::program::model::pcode::Encoder;
-use crate::util::xml::spec_xml_utils::{decode_boolean, decode_int, decode_long};
+use crate::util::xml::spec_xml_utils::decode_boolean;
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
@@ -106,7 +98,7 @@ impl InjectPayloadSegment {
     ///
     /// # Errors
     /// Returns an error for badly formed XML, an unknown address space, a missing `<pcode>`
-    /// child, or (see the module docs) a `<constresolve>` address given by register name.
+    /// child, or a `<constresolve>` naming an unknown register or space.
     pub fn restore_xml<P: XmlPullParser>(
         &mut self,
         parser: &mut P,
@@ -139,27 +131,18 @@ impl InjectPayloadSegment {
         if parser.peek().is_start() {
             let subel = parser.start(&["constresolve"]).map_err(xml_err)?;
             let subsubel = parser.start(&[]).map_err(xml_err)?;
-            if subsubel.get_name() == "register" {
-                return Err(XmlParseException::new(
-                    "InjectPayloadSegment::restore_xml: <constresolve> by register name is not \
-                     supported by this port (SleighLanguage has no register-name lookup)",
-                ));
-            }
-            let cr_space_name = subsubel.get_attribute("space").unwrap_or_default();
-            let cr_space = language
-                .get_address_factory()
-                .get_address_space_by_name(&cr_space_name)
-                .ok_or_else(|| {
-                    XmlParseException::new(format!("Unknown address space: {cr_space_name}"))
-                })?;
-            let cr_offset = decode_long(subsubel.get_attribute("offset").as_deref());
-            let cr_size = decode_int(subsubel.get_attribute("size").as_deref());
-            // Java also calls `addrSize.getFirstAddress()` here purely to "fail fast" (throws
-            // AddressOutOfBoundsException for an invalid offset); this crate's Address
-            // construction performs no such validation, so there is nothing to replicate.
+            let addr_size = restore_xml_with_language(&subsubel, language)?;
+            let cr_space = addr_size
+                .get_address_space()
+                .ok_or_else(|| XmlParseException::new("Missing address space"))?;
+            // Fail fast, as Java's `addrSize.getFirstAddress()`: an invalid offset is an error
+            // (Java's AddressOutOfBoundsException).
+            cr_space
+                .checked_address(addr_size.get_offset())
+                .map_err(|e| XmlParseException::new(e.to_string()))?;
             self.const_resolve_space = Some(cr_space);
-            self.const_resolve_offset = cr_offset;
-            self.const_resolve_size = cr_size;
+            self.const_resolve_offset = addr_size.get_offset();
+            self.const_resolve_size = addr_size.get_size() as i32;
             parser.end_matching(&subsubel).map_err(xml_err)?;
             parser.end_matching(&subel).map_err(xml_err)?;
         }
@@ -545,7 +528,7 @@ mod tests {
     }
 
     #[test]
-    fn restore_xml_rejects_constresolve_by_register_name() {
+    fn restore_xml_rejects_constresolve_by_unknown_register_name() {
         let lang = test_language();
         let elements = vec![
             MockElement::start("segmentop", 0, &[("space", "ram")]),
@@ -560,7 +543,7 @@ mod tests {
         let mut parser = QueueParser::new(elements);
         let mut payload = InjectPayloadSegment::new("src.pspec");
         let err = payload.restore_xml(&mut parser, &lang).unwrap_err();
-        assert!(err.to_string().contains("not supported"));
+        assert!(err.to_string().contains("Unknown register: SP"), "{err}");
     }
 
     #[test]

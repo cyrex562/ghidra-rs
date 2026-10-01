@@ -129,6 +129,7 @@ pub trait MemoryBlockDefinition {
 
 /// Default, XML-driven memory block specification. Mirrors the concrete Java class
 /// `MemoryBlockDefinition` that the [`MemoryBlockDefinition`] trait was promoted from.
+#[derive(Debug, Clone)]
 pub struct DefaultMemoryBlockDefinition {
     block_name: String,
     address_string: String,
@@ -241,7 +242,6 @@ impl DefaultMemoryBlockDefinition {
     }
 
     /// Stands in for the public `MemoryBlockDefinition(XmlElement)` constructor.
-    #[allow(dead_code)]
     pub(crate) fn from_xml_element(
         element: &impl XmlElement,
     ) -> Result<Self, XmlAttributeException> {

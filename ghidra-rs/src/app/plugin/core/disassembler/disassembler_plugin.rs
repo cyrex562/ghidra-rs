@@ -796,9 +796,8 @@ mod tests {
         ProcessorContextView,
     };
     use crate::program::model::listing::{ContextChangeException, DefaultProgramContext};
-    use crate::program::seam_stubs::{
-        AddressLabelInfo, Processor, RefType as DataRefType, Reference as DataReference,
-    };
+    use crate::program::seam_stubs::{Processor, RefType as DataRefType, Reference as DataReference};
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::model::lang::register_value::RegisterValue;
     use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
     use crate::program::model::listing::code_unit::CodeUnit;
@@ -1044,7 +1043,7 @@ mod tests {
         fn get_program_counter(&self) -> Option<RegisterRef> { unimplemented!() }
         fn get_context_registers(&self) -> Vec<RegisterRef> { unimplemented!() }
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> { unimplemented!() }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> { unimplemented!() }
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> { unimplemented!() }
         fn get_segmented_space(&self) -> String { unimplemented!() }
         fn get_volatile_addresses(&self) -> Box<dyn AddressSetView> { unimplemented!() }
         fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) { unimplemented!() }

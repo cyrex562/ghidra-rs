@@ -203,7 +203,7 @@ mod tests {
 
         fn get_default_symbols(
             &self,
-        ) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+        ) -> Vec<crate::program::model::lang::AddressLabelInfo> {
             Vec::new()
         }
 

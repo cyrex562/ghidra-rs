@@ -4,14 +4,10 @@
 //! alias, within the global namespace established with a `SourceType` of `IMPORTED` within a
 //! program.
 //!
-//! A same-named placeholder already exists at
-//! [`crate::program::seam_stubs::AddressLabelInfo`] -- a bare marker trait (`pub trait
-//! AddressLabelInfo {}`) used opaquely as `Vec<Box<dyn AddressLabelInfo>>` by
-//! [`Language::get_default_symbols`](crate::program::model::lang::language::Language::get_default_symbols),
-//! before this real class was ported. That trait and this concrete struct are independent types;
-//! rewiring `Language::get_default_symbols`'s return type to `Vec<AddressLabelInfo>` (this real
-//! struct) is out of scope for this port (it would ripple through every `Language`
-//! implementor/mock in the crate).
+//! This is what [`Language::get_default_symbols`](crate::program::model::lang::language::Language::get_default_symbols)
+//! returns (the `.pspec` `<default_symbols>` read by
+//! [`SleighLanguage`](crate::program::model::lang::sleigh::SleighLanguage)); the marker-trait
+//! placeholder that stood in for it in `program::seam_stubs` has been retired.
 
 use std::fmt;
 

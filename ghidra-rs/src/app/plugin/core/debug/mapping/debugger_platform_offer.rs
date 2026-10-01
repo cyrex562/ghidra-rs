@@ -100,10 +100,8 @@ mod tests {
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::pcode::Encoder;
-    use crate::program::seam_stubs::{
-        AddressLabelInfo, ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair,
-        LanguageCompilerSpecQuery, LanguageNotFoundException, Processor,
-    };
+    use crate::program::seam_stubs::{ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery, LanguageNotFoundException, Processor};
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 
 
@@ -347,7 +345,7 @@ mod tests {
         ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
             Vec::new()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
         fn get_segmented_space(&self) -> String {

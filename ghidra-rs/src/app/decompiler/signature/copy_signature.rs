@@ -279,7 +279,7 @@ impl crate::program::model::lang::language::Language for UnusedLanguage {
     ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
         unimplemented!("not exercised by this test")
     }
-    fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+    fn get_default_symbols(&self) -> Vec<crate::program::model::lang::AddressLabelInfo> {
         unimplemented!("not exercised by this test")
     }
     fn get_segmented_space(&self) -> String {

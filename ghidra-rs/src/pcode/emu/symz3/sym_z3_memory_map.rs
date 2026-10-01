@@ -797,7 +797,7 @@ mod tests {
             ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
                 unimplemented!("TestLanguage is not meant to be called")
             }
-            fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+            fn get_default_symbols(&self) -> Vec<crate::program::model::lang::AddressLabelInfo> {
                 unimplemented!("TestLanguage is not meant to be called")
             }
             fn get_segmented_space(&self) -> String {

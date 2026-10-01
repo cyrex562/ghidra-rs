@@ -266,7 +266,8 @@ mod tests {
     use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::model::mem::mem_buffer::MemBuffer;
     use crate::program::model::pcode::OpCode;
     use crate::util::task::TaskMonitor;
@@ -370,7 +371,7 @@ mod tests {
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
             Vec::new()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
         fn get_segmented_space(&self) -> String {

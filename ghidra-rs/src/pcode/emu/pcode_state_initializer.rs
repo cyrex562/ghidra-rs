@@ -186,7 +186,7 @@ mod tests {
             unimplemented!("test should not call this")
         }
 
-        fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<crate::program::model::lang::AddressLabelInfo> {
             unimplemented!("test should not call this")
         }
 

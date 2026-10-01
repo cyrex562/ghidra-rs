@@ -1244,18 +1244,6 @@ pub trait Processor {
     }
 }
 
-/// Placeholder for `ghidra.program.model.lang.AddressLabelInfo`, referenced by
-/// [`Language`](crate::program::model::lang::language::Language)
-/// before the real class is ported. `Language` only ever returns this type opaquely, so no
-/// members are needed yet.
-///
-/// A real, concrete port now exists at
-/// [`crate::program::model::lang::address_label_info::AddressLabelInfo`] (a distinct type from
-/// this marker trait, kept independent since rewiring `Language::get_default_symbols`'s return
-/// type would ripple through every `Language` implementor/mock in the crate -- out of scope for
-/// that port).
-pub trait AddressLabelInfo {}
-
 /// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecPair`, referenced by
 /// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)'s
 /// `get_language_compiler_spec_pair` default method, before the real class is ported.

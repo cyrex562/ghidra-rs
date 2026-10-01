@@ -732,7 +732,8 @@ mod tests {
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::mem::mem_buffer::MemBuffer;
     use crate::program::model::pcode::Encoder;
-    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+    use crate::program::seam_stubs::Processor;
+    use crate::program::model::lang::AddressLabelInfo;
     use crate::program::model::lang::pcode_inject_library::PcodeInjectLibrary;
 
     /// The register file shared by the test language and compiler spec.
@@ -905,7 +906,7 @@ mod tests {
         fn get_default_memory_blocks(&self) -> Vec<Box<dyn MemoryBlockDefinition>> {
             Vec::new()
         }
-        fn get_default_symbols(&self) -> Vec<Box<dyn AddressLabelInfo>> {
+        fn get_default_symbols(&self) -> Vec<AddressLabelInfo> {
             Vec::new()
         }
         fn get_segmented_space(&self) -> String {
