@@ -81,6 +81,10 @@ impl DataTypeManager for TestDtm {
         let types = self.types.lock().unwrap();
         types.iter().map(|f| f()).find(|dt| dt.get_name() == name)
     }
+
+    fn get_data_organization(&self) -> Arc<crate::program::model::data::data_organization_impl::DataOrganizationImpl> {
+        crate::program::model::data::built_in::shared_default_organization()
+    }
 }
 
 /// A program with an image base in a 64-bit `ram` space and a [`TestDtm`].
