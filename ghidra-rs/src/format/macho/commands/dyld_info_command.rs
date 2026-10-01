@@ -7,18 +7,9 @@
 //! [`LoadCommandBase`] rather than a supertrait, mirroring
 //! [`DyldChainedFixupsCommand`](crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand).
 //!
-//! `RebaseTable`/`BindingTable` (`ghidra.app.util.bin.format.macho.commands.dyld`) are not
-//! themselves ported: their real job is to run REBASE/BIND/LAZY_BIND opcode state machines
-//! (`AbstractClassicProcessor` and subclasses) over the referenced bytes, none of which are
-//! ported. [`crate::format::seam_stubs::RebaseTable`]/[`crate::format::seam_stubs::BindingTable`]
-//! are minimal placeholders that read nothing and always report empty
-//! [`OpcodeTable`](crate::format::macho::commands::dyld::opcode_table::OpcodeTable) offset lists
-//! (see their own docs). Consequently [`DyldInfoCommand::markup`]'s opcode-table markup loops
-//! (which would call `DataUtilities.createData` with the `ULEB128`/`SLEB128`/`STRING`/opcode
-//! datatype singletons -- also not ported, the same recurring gap as `StructureDataType`
-//! elsewhere in this crate) never have anything to iterate; only the real, always-applicable
-//! plate-comment markup is performed. `markup_raw_binary`'s fragment creation is unaffected by
-//! this gap and is ported in full.
+//! The rebase/bind/weak-bind/lazy-bind byte ranges are decoded by the real
+//! [`RebaseTable`]/[`BindingTable`] opcode state machines, whose recorded opcode/ULEB128/SLEB128/
+//! string offsets drive [`DyldInfoCommand::markup`]'s data markup.
 
 use std::io;
 
@@ -28,13 +19,24 @@ use crate::format::macho::commands::export_trie::ExportTrie;
 use crate::format::macho::commands::load_command::{LoadCommand, LoadCommandBase};
 use crate::app::util::importer::message_log::MessageLog;
 use crate::format::macho::mach_header::MachHeader;
-use crate::format::seam_stubs::{BindingTable, FlatProgramAPI, RebaseTable};
+use crate::format::macho::commands::dyld::bind_opcode::BindOpcode;
+use crate::format::macho::commands::dyld::binding_table::BindingTable;
+use crate::format::macho::commands::dyld::opcode_table::OpcodeTable;
+use crate::format::macho::commands::dyld::rebase_opcode::RebaseOpcode;
+use crate::format::macho::commands::dyld::rebase_table::RebaseTable;
+use crate::format::macho::struct_builder::{fixed_string, sleb128, uleb128, MachStruct};
+use crate::format::seam_stubs::FlatProgramAPI;
+use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::program::Program;
 use crate::program::model::listing::program_module::ProgramModule;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
+
+/// `DataUtilities`' static methods are default methods on a trait in this crate.
+struct Du;
+impl DataUtilities for Du {}
 
 /// A `dyld_info_command` structure.
 ///
@@ -199,48 +201,126 @@ impl DyldInfoCommand {
         &self.export_trie
     }
 
-    fn markup_rebase_info(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
+    fn markup_rebase_info(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>, log: &MessageLog) {
         let addr = self.file_offset_to_address(program, header, self.rebase_off as i64, self.rebase_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("rebase"));
-        // See this module's own docs: the opcode-table markup loop is not performed.
+        self.markup_opcode_table(program, addr.as_ref(), &self.rebase_table, RebaseOpcode::to_data_type, source, "rebase", log);
     }
 
-    fn markup_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
+    fn markup_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>, log: &MessageLog) {
         let addr = self.file_offset_to_address(program, header, self.bind_off as i64, self.bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("bind"));
+        self.markup_opcode_table(program, addr.as_ref(), &self.binding_table, BindOpcode::to_data_type, source, "bind", log);
     }
 
-    fn markup_weak_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
+    fn markup_weak_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>, log: &MessageLog) {
         let addr =
             self.file_offset_to_address(program, header, self.weak_bind_off as i64, self.weak_bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("weak bind"));
+        self.markup_opcode_table(program, addr.as_ref(), &self.weak_binding_table, BindOpcode::to_data_type, source, "weak bind", log);
     }
 
-    fn markup_lazy_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
+    fn markup_lazy_bindings(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>, log: &MessageLog) {
         let addr =
             self.file_offset_to_address(program, header, self.lazy_bind_off as i64, self.lazy_bind_size as i64);
         self.markup_plate_comment(program, addr.as_ref(), source, Some("lazy bind"));
+        self.markup_opcode_table(program, addr.as_ref(), &self.lazy_binding_table, BindOpcode::to_data_type, source, "lazy bind", log);
     }
 
-    fn markup_export_info(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>) {
+    /// Java `markupOpcodeTable(...)`. `opcode_data_type` builds a fresh instance of the opcode
+    /// enum per use (Java shares one `DataType` instance across the loop).
+    #[allow(clippy::too_many_arguments)]
+    fn markup_opcode_table(
+        &self,
+        program: &dyn Program,
+        addr: Option<&Address>,
+        table: &dyn OpcodeTable,
+        opcode_data_type: fn() -> Box<dyn DataType>,
+        source: Option<&str>,
+        additional_description: &str,
+        log: &MessageLog,
+    ) {
+        let Some(addr) = addr else {
+            return;
+        };
+        let result: Result<(), String> = (|| {
+            let at = |offset: u64| addr.add(offset as i64).map_err(|e| e.to_string());
+            for &offset in table.opcode_offsets() {
+                Du.create_data(program, &at(offset)?, opcode_data_type(), -1, ClearDataMode::CheckForSpace)
+                    .map_err(|e| e.to_string())?;
+            }
+            for &offset in table.uleb_offsets() {
+                Du.create_data(program, &at(offset)?, uleb128().map_err(|e| e.to_string())?, -1, ClearDataMode::CheckForSpace)
+                    .map_err(|e| e.to_string())?;
+            }
+            for &offset in table.sleb_offsets() {
+                Du.create_data(program, &at(offset)?, sleb128().map_err(|e| e.to_string())?, -1, ClearDataMode::CheckForSpace)
+                    .map_err(|e| e.to_string())?;
+            }
+            for &offset in table.string_offsets() {
+                Du.create_data(program, &at(offset)?, fixed_string().map_err(|e| e.to_string())?, -1, ClearDataMode::CheckForSpace)
+                    .map_err(|e| e.to_string())?;
+            }
+            Ok(())
+        })();
+        if result.is_err() {
+            log.append_msg_from(
+                Some("DyldInfoCommand"),
+                &format!("Failed to markup: {}", self.get_contextual_name(source, Some(additional_description))),
+            );
+        }
+    }
+
+    fn markup_export_info(&self, program: &dyn Program, header: &MachHeader, source: Option<&str>, log: &MessageLog) {
         let Some(addr) =
             self.file_offset_to_address(program, header, self.export_off as i64, self.export_size as i64)
         else {
             return;
         };
         self.markup_plate_comment(program, Some(&addr), source, Some("export"));
-        // See this module's own docs: the ULEB128/STRING markup loop is not performed.
+        let result: Result<(), String> = (|| {
+            for &offset in self.export_trie.uleb_offsets() {
+                let a = addr.add(offset as i64).map_err(|e| e.to_string())?;
+                Du.create_data(program, &a, uleb128().map_err(|e| e.to_string())?, -1, ClearDataMode::CheckForSpace)
+                    .map_err(|e| e.to_string())?;
+            }
+            for &offset in self.export_trie.string_offsets() {
+                let a = addr.add(offset as i64).map_err(|e| e.to_string())?;
+                Du.create_data(program, &a, fixed_string().map_err(|e| e.to_string())?, -1, ClearDataMode::CheckForSpace)
+                    .map_err(|e| e.to_string())?;
+            }
+            Ok(())
+        })();
+        if result.is_err() {
+            log.append_msg_from(
+                Some("DyldInfoCommand"),
+                &format!("Failed to markup: {}", self.get_contextual_name(source, Some("export"))),
+            );
+        }
     }
 }
 
 impl StructConverter for DyldInfoCommand {
-    /// Mirrors `toDataType()`. Not yet buildable: it requires `StructureDataType` (a mutable,
-    /// constructible `Structure`), which is not ported yet.
+    /// Java `toDataType()`.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        Err(ToDataTypeError::Io(io::Error::new(
-            io::ErrorKind::Unsupported,
-            "DyldInfoCommand::to_data_type requires StructureDataType, which is not yet ported",
-        )))
+        let mut s = MachStruct::new(self.get_command_name());
+        s.dword("cmd")?.dword("cmdsize")?;
+        for (name, comment) in [
+            ("rebase_off", "file offset to rebase info"),
+            ("rebase_size", "size of rebase info"),
+            ("bind_off", "file offset to binding info"),
+            ("bind_size", "size of binding info"),
+            ("weak_bind_off", "file offset to weak binding info"),
+            ("weak_bind_size", "size of weak binding info"),
+            ("lazy_bind_off", "file offset to lazy binding info"),
+            ("lazy_bind_size", "size of lazy binding info"),
+            // (sic) Java reuses the lazy-binding comments for the export fields.
+            ("export_off", "file offset to lazy binding info"),
+            ("export_size", "size of lazy binding info"),
+        ] {
+            s.add(crate::format::macho::struct_builder::dword(), name, Some(comment))?;
+        }
+        Ok(Box::new(s.finish_structure()?))
     }
 }
 
@@ -259,13 +339,13 @@ impl LoadCommand for DyldInfoCommand {
         header: &MachHeader,
         source: Option<&str>,
         _monitor: &dyn TaskMonitor,
-        _log: &MessageLog,
+        log: &MessageLog,
     ) -> Result<(), CancelledException> {
-        self.markup_rebase_info(program, header, source);
-        self.markup_bindings(program, header, source);
-        self.markup_weak_bindings(program, header, source);
-        self.markup_lazy_bindings(program, header, source);
-        self.markup_export_info(program, header, source);
+        self.markup_rebase_info(program, header, source, log);
+        self.markup_bindings(program, header, source, log);
+        self.markup_weak_bindings(program, header, source, log);
+        self.markup_lazy_bindings(program, header, source, log);
+        self.markup_export_info(program, header, source, log);
         Ok(())
     }
 
@@ -410,5 +490,42 @@ mod tests {
         assert_eq!(cmd.lazy_bind_size(), 15);
         assert_eq!(cmd.export_offset(), 150);
         assert_eq!(cmd.export_size(), 8);
+    }
+
+    #[test]
+    fn parses_real_rebase_and_bind_tables() {
+        // rebase @0x10: SET_TYPE_IMM(1); SET_SEGMENT_AND_OFFSET_ULEB(2, 0x18); DO_REBASE_IMM_TIMES(2); DONE
+        // bind @0x20: SET_DYLIB_ORDINAL_IMM(1); SET_SYMBOL "_f"; SET_SEGMENT_AND_OFFSET_ULEB(2, 8); DO_BIND; DONE
+        let mut data = vec![0u8; 0x10];
+        data.extend_from_slice(&[0x11, 0x22, 0x18, 0x52, 0x00]);
+        data.resize(0x20, 0);
+        data.extend_from_slice(&[0x11, 0x40, b'_', b'f', 0, 0x72, 0x08, 0x90, 0x00]);
+        data.resize(0x40, 0);
+        let mut lc_reader = BinaryReader::from_bytes(command_bytes(0x10, 5, 0x20, 9, 0, 0, 0, 0, 0, 0), true);
+        let mut data_reader = BinaryReader::from_bytes(data, true);
+        let header = empty_header64();
+        let cmd = DyldInfoCommand::new(&mut lc_reader, &mut data_reader, &header).unwrap();
+
+        let rebases: Vec<i64> = cmd.rebase_table().get_rebases().iter().map(|r| r.get_segment_offset()).collect();
+        assert_eq!(rebases, vec![0x18, 0x20]);
+        assert_eq!(cmd.rebase_table().uleb_offsets(), &[2]);
+
+        let bindings = cmd.binding_table().get_bindings();
+        assert_eq!(bindings.len(), 1);
+        assert_eq!(bindings[0].get_symbol_name(), Some("_f"));
+        assert_eq!(bindings[0].get_segment_offset(), 8);
+        assert_eq!(cmd.binding_table().string_offsets(), &[2]);
+        assert!(cmd.lazy_binding_table().get_bindings().is_empty());
+    }
+
+    #[test]
+    fn to_data_type_is_twelve_dwords() {
+        let mut lc_reader = BinaryReader::from_bytes(command_bytes(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), true);
+        let mut data_reader = BinaryReader::from_bytes(Vec::new(), true);
+        let cmd = DyldInfoCommand::new(&mut lc_reader, &mut data_reader, &empty_header64()).unwrap();
+        let dt = cmd.to_data_type().unwrap();
+        assert_eq!(dt.get_name(), "dyld_info_command");
+        assert_eq!(dt.get_length(), 48);
+        assert_eq!(dt.get_category_path().to_string(), "/MachO");
     }
 }

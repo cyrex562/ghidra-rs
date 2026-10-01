@@ -357,6 +357,24 @@ pub trait SymbolTable: Send + Sync {
 
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>>;
 
+    /// All symbols with exactly the given name, in any namespace (global namespace first). Stands
+    /// in for `SymbolTable.getSymbols(String)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`AbstractClassicProcessor::get_symbol`](crate::format::macho::commands::dyld::abstract_classic_processor::AbstractClassicProcessor::get_symbol).
+    /// The default filters [`get_symbol_iterator`](Self::get_symbol_iterator)'s case-sensitive
+    /// matches down to exact name matches (so wildcard characters in `name` match literally).
+    fn get_symbols_by_name(&self, name: &str) -> io::Result<Vec<Arc<dyn Symbol>>> {
+        let mut it = self.get_symbol_iterator(name, true);
+        let mut out = Vec::new();
+        while let Some(s) = it.next_symbol() {
+            if s.get_name() == name {
+                out.push(s);
+            }
+        }
+        Ok(out)
+    }
+
     /// Get a global symbol by name and address.
     fn get_global_symbol(&self, name: &str, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
         let symbols = self.get_symbols(addr)?;

@@ -30,7 +30,8 @@ use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::format::macho::mach_header::MachHeader;
 use crate::format::macho::commands::link_edit_data_command::LinkEditDataCommand;
-use crate::format::seam_stubs::{DyldChainedFixupHeader, FlatProgramAPI};
+use crate::format::macho::commands::chained::dyld_chained_fixup_header::DyldChainedFixupHeader;
+use crate::format::seam_stubs::FlatProgramAPI;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
@@ -132,7 +133,7 @@ impl DyldChainedFixupsCommand {
                     }
                     let fixups = dyld_chained_fixups::get_chained_fixups(
                         reader,
-                        self.chain_header.get_chained_imports(),
+                        Some(self.chain_header.get_chained_imports()),
                         ptr_format,
                         page,
                         page_entry as i64,
@@ -318,7 +319,6 @@ impl LoadCommand for DyldChainedFixupsCommand {
 mod tests {
     use super::*;
     use crate::format::macho::commands::load_command_types::LC_DYLD_CHAINED_FIXUPS;
-    use crate::format::seam_stubs::{DyldChainedImport, DyldChainedImports};
     use crate::util::task::DummyMonitor;
 
     fn command_bytes(cmd: u32, cmdsize: i32, dataoff: u32, datasize: u32) -> Vec<u8> {
@@ -426,7 +426,7 @@ mod tests {
         v.extend_from_slice(&(DYLD_CHAINED_PTR_START_NONE as i16).to_le_bytes());
 
         let mut reader = BinaryReader::from_bytes(v, true);
-        let starts_in_seg = crate::format::seam_stubs::DyldChainedStartsInSegment::new(&mut reader)
+        let starts_in_seg = crate::format::macho::commands::chained::dyld_chained_starts_in_segment::DyldChainedStartsInSegment::new(&mut reader)
             .expect("parses");
         assert_eq!(starts_in_seg.get_page_count(), 1);
 
@@ -436,10 +436,4 @@ mod tests {
         assert_eq!(page_entry, DYLD_CHAINED_PTR_START_NONE);
     }
 
-    struct _UnusedImportsRef;
-    impl DyldChainedImports for _UnusedImportsRef {
-        fn get_chained_import(&self, _ordinal: i32) -> Box<dyn DyldChainedImport> {
-            unreachable!()
-        }
-    }
 }

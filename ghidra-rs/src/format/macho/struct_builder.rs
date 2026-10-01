@@ -28,6 +28,7 @@ use crate::program::model::data::qword_data_type::QWordDataType;
 use crate::program::model::data::structure::Structure;
 use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::data::structure_data_type::StructureDataType;
+use crate::program::model::data::signed_leb128_data_type::SignedLeb128DataType;
 use crate::program::model::data::unsigned_leb128_data_type::UnsignedLeb128DataType;
 use crate::program::model::data::word_data_type::WordDataType;
 
@@ -68,6 +69,11 @@ pub(crate) fn fixed_string() -> Result<Box<dyn DataType>, ToDataTypeError> {
 /// Java's `StructConverter.ULEB128` (`UnsignedLeb128DataType.dataType`).
 pub(crate) fn uleb128() -> Result<Box<dyn DataType>, ToDataTypeError> {
     Ok(Box::new(UnsignedLeb128DataType::new(None)))
+}
+
+/// Java's `StructConverter.SLEB128` (`SignedLeb128DataType.dataType`).
+pub(crate) fn sleb128() -> Result<Box<dyn DataType>, ToDataTypeError> {
+    Ok(Box::new(SignedLeb128DataType::new(None)))
 }
 
 /// Java's `new ArrayDataType(elem, count, elementLength)` with an explicit element length (only

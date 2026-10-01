@@ -673,13 +673,8 @@ ts	stub_class	referenced_by
 2026-08-14T05:00:00.000000+00:00	NList	MachoRelocation
 2026-08-14T05:00:00.000000+00:00	SymbolTableCommand	MachoRelocation
 2026-08-14T05:00:00.000000+00:00	NumericUtilities	MachoRelocation
-2026-08-14T05:14:01.914796Z	DyldChainedImport	DyldChainedFixups
-2026-08-14T05:14:01.914796Z	DyldChainedImports	DyldChainedFixups
 2026-08-14T05:14:01.914796Z	MachoProgramBuilder	DyldChainedFixups
 2026-08-14T05:14:01.914796Z	MemoryBlockUtils	DyldChainedFixups
-2026-08-14T05:30:12.951584+00:00	DyldChainedFixupHeader	DyldChainedFixupsCommand
-2026-08-14T05:30:12.951584+00:00	DyldChainedStartsInImage	DyldChainedFixupsCommand
-2026-08-14T05:30:12.951584+00:00	DyldChainedStartsInSegment	DyldChainedFixupsCommand
 2026-08-14T05:51:43.292607+00:00	DyldCacheHeader	DyldCacheLoader
 2026-08-14T05:51:43.292607+00:00	DyldCacheUtils	DyldCacheLoader
 2026-08-14T05:51:43.292607+00:00	MemoryBlockUtils	DyldCacheLoader
@@ -1181,8 +1176,6 @@ ts	stub_class	referenced_by
 2026-08-19T09:54:55.498729+00:00	ProgramAssociatedComponentProviderAdapter	RandomForestFunctionFinderPlugin
 2026-08-19T10:00:00.000000+00:00	MiscellaneousPluginPackage	RandomForestFunctionFinderPlugin
 2026-09-20T16:16:50.612778+00:00	ResourceDirectoryEntry	ResourceDirectory
-2026-09-20T18:37:32.597119Z	RebaseTable	DyldInfoCommand
-2026-09-20T18:37:32.597119Z	BindingTable	DyldInfoCommand
 2026-09-20T19:11:53.411716277Z	AndroidElfRelocationOffset	AndroidElfRelocationGroup
 2026-09-20T19:40:38.525588166Z	EncodedArray	EncodedValue
 2026-09-20T19:40:38.528941783Z	EncodedAnnotation	EncodedValue

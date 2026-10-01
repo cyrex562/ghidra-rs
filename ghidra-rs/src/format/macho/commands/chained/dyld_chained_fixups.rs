@@ -11,7 +11,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::macho::dyld::dyld_chained_ptr::DyldChainType;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::app::util::importer::message_log::MessageLog;
-use crate::format::seam_stubs::{DyldChainedImports, MachoProgramBuilder, MemoryBlockUtils};
+use crate::format::macho::commands::chained::dyld_chained_imports::DyldChainedImports;
+use crate::format::seam_stubs::{MachoProgramBuilder, MemoryBlockUtils};
 use crate::program::model::address::Address;
 use crate::program::model::listing::library;
 use crate::program::model::listing::Program;
@@ -74,7 +75,7 @@ impl From<CancelledException> for ChainedFixupError {
 #[allow(clippy::too_many_arguments)]
 pub fn get_chained_fixups(
     reader: &BinaryReader,
-    chained_imports: Option<&dyn DyldChainedImports>,
+    chained_imports: Option<&DyldChainedImports>,
     pointer_format: DyldChainType,
     page: i64,
     next_off: i64,
@@ -120,9 +121,16 @@ pub fn get_chained_fixups(
             };
             let chain_ordinal = pointer_format.ordinal(chain_value) as i32;
             let addend = pointer_format.addend(chain_value);
-            let chained_import = chained_imports.get_chained_import(chain_ordinal);
+            // Java dereferences the (possibly `null`) import unconditionally; an out-of-range
+            // ordinal is reported as an I/O error here, which the caller logs per segment.
+            let chained_import = chained_imports.get_chained_import(chain_ordinal).ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("chained import ordinal {chain_ordinal} out of range at {chain_loc}"),
+                )
+            })?;
             let sym_name = DefaultSymbolUtilities
-                .replace_invalid_chars(Some(&chained_import.get_name()), true)
+                .replace_invalid_chars(chained_import.get_name(), true)
                 .unwrap_or_default();
             lib_ordinal = Some(chained_import.get_lib_ordinal());
             let global_symbols = symbol_table.get_global_symbols(&sym_name)?;
@@ -389,7 +397,7 @@ pub fn process_pointer_chain(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::DyldChainedImport;
+    use crate::format::macho::commands::dyld::binding_table::Binding;
     use crate::program::model::symbol::Symbol;
     use crate::util::task::DummyMonitor;
 
@@ -539,26 +547,13 @@ mod tests {
         }
     }
 
-    struct StubImport {
-        name: String,
-        lib_ordinal: i32,
-    }
-
-    impl DyldChainedImport for StubImport {
-        fn get_name(&self) -> String {
-            self.name.clone()
-        }
-        fn get_lib_ordinal(&self) -> i32 {
-            self.lib_ordinal
-        }
-    }
-
-    struct StubImports;
-
-    impl DyldChainedImports for StubImports {
-        fn get_chained_import(&self, _ordinal: i32) -> Box<dyn DyldChainedImport> {
-            Box::new(StubImport { name: "_bound_symbol".to_string(), lib_ordinal: 2 })
-        }
+    /// Six imports; ordinal 5 (the one the bound test pointer uses) is `_bound_symbol` from
+    /// library ordinal 2.
+    fn stub_imports() -> DyldChainedImports {
+        let mut bindings: Vec<Binding> =
+            (0..5).map(|i| Binding::with_symbol(Some(format!("_unused{i}")), 1, false)).collect();
+        bindings.push(Binding::with_symbol(Some("_bound_symbol".to_string()), 2, false));
+        DyldChainedImports::from_bindings(&bindings)
     }
 
     struct StubSymbolTable {
@@ -607,7 +602,7 @@ mod tests {
         let monitor = DummyMonitor;
         let space = test_address_space();
         let symtab = StubSymbolTable { addr: Address::new(space, 0x4000) };
-        let imports = StubImports;
+        let imports = stub_imports();
 
         let fixups = get_chained_fixups(
             &reader,
