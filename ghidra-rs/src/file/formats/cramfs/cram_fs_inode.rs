@@ -6,24 +6,10 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::data::structure_data_type::StructureDataType;
 
 use super::cram_fs_constants::{CRAMFS_NAMELEN_WIDTH, CRAMFS_SIZE_WIDTH, CRAMFS_UID_WIDTH};
-
-/// Stand-in for `StructConverter.STRING` (`StringDataType.dataType`), which is not ported yet. The
-/// component length is supplied explicitly at the `add` call, matching Java's
-/// `add(DataType, length, name, comment)` overload.
-struct StringDt;
-
-impl DataType for StringDt {
-    fn get_name(&self) -> String {
-        "string".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        1
-    }
-}
 
 /// A cramfs inode (`struct cramfs_inode`).
 ///
@@ -97,7 +83,7 @@ impl CramFsInode {
 
         if self.namelen > 0 {
             strukt.add_with_length_and_name(
-                Box::new(StringDt),
+                Box::new(StringDataType::new(None)),
                 length,
                 Some("name".to_string()),
                 None,

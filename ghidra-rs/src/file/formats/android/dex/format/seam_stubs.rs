@@ -13,6 +13,7 @@ use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::unsigned_leb128_data_type::UnsignedLeb128DataType;
 use crate::sarif::seam_stubs::StructureDataType;
 
 /// Placeholder for `ghidra.file.formats.android.dex.format.EncodedArray`, referenced by
@@ -62,7 +63,7 @@ impl EncodedArray {
     pub fn to_data_type(&self) -> Box<dyn DataType> {
         let cp = CategoryPath::parse("/dex/encoded_array").expect("valid category path");
         let mut structure = StructureDataType::new(cp, &format!("encoded_array_{}", self.values.len()), 0);
-        structure.add(Arc::new(UlebPlaceholderDataType), self.size_length, Some("size".to_string()), None);
+        structure.add(UnsignedLeb128DataType::data_type(), self.size_length, Some("size".to_string()), None);
         if !self.values.is_empty() {
             structure.add(
                 Arc::new(
@@ -141,7 +142,7 @@ impl EncodedAnnotation {
             let elem_name = format!("annotation_element_{}_{}", name_index_length, value_dt.get_name());
 
             let mut elem_structure = StructureDataType::new(cp.clone(), &elem_name, 0);
-            elem_structure.add(Arc::new(UlebPlaceholderDataType), *name_index_length, Some("nameIndex".to_string()), None);
+            elem_structure.add(UnsignedLeb128DataType::data_type(), *name_index_length, Some("nameIndex".to_string()), None);
             let value_len = value_dt.get_length();
             elem_structure.add(value_dt, value_len, Some("value".to_string()), None);
 
@@ -151,8 +152,8 @@ impl EncodedAnnotation {
         }
 
         let mut structure = StructureDataType::new(cp, &name, 0);
-        structure.add(Arc::new(UlebPlaceholderDataType), self.type_index_length, Some("typeIndex".to_string()), None);
-        structure.add(Arc::new(UlebPlaceholderDataType), self.size_length, Some("size".to_string()), None);
+        structure.add(UnsignedLeb128DataType::data_type(), self.type_index_length, Some("typeIndex".to_string()), None);
+        structure.add(UnsignedLeb128DataType::data_type(), self.size_length, Some("size".to_string()), None);
         for (index, (elem_dt, elem_len)) in built_elements.into_iter().enumerate() {
             structure.add(elem_dt, elem_len, Some(format!("element{index}")), None);
         }
@@ -161,18 +162,4 @@ impl EncodedAnnotation {
     }
 }
 
-/// Minimal stand-in for `ghidra.app.util.bin.StructConverter.ULEB128`
-/// (`UnsignedLeb128DataType.dataType`), used with an explicit override length (mirroring
-/// `Structure.add(DataType, int length, String, String)`). The LEB128 data types are not ported
-/// yet (only the name and override length are observable here).
-pub(crate) struct UlebPlaceholderDataType;
-
-impl DataType for UlebPlaceholderDataType {
-    fn get_name(&self) -> String {
-        "uleb128".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        -1
-    }
-}
 

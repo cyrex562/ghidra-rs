@@ -19,22 +19,41 @@
 //!   [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)),
 //!   so `next_action_address` uses `None` for both "not yet created" and "no next action",
 //!   matching the Java's own null-before-`create()` contract on the getters.
-//! * **`SignedLeb128DataType` is not applied.** `createTypeFilter`/`createNextActionRef` call
-//!   `createAndCommentData(..., SignedLeb128DataType.dataType, ...)`, which both creates a typed
-//!   `Data` unit and a comment. There is no ported `DataType` for `SignedLeb128DataType` yet, so
-//!   -- like [`CreateArrayCmd`](crate::app::seam_stubs::CreateArrayCmd)'s dropped `ByteDataType`
-//!   argument -- only the comment half of that call is performed here.
+//! * **`GccAnalysisClass.createData` is a private helper here.** `createTypeFilter`/
+//!   `createNextActionRef` call `createAndCommentData(..., SignedLeb128DataType.dataType, ...)`;
+//!   [`create_data`] ports the `createData` half (listing first, `CreateDataCmd` fallback) and the
+//!   comment half goes through [`SetCommentCmd`](crate::app::seam_stubs::SetCommentCmd) as before.
 //! * **Command results ignored, same as the Java.** [`SetCommentCmd`](crate::app::seam_stubs::SetCommentCmd)
 //!   isn't ported; its `apply_to` stub no-ops and reports success, matching the Java, which also
 //!   discards `applyTo`'s return value.
 
 use std::sync::{Arc, Mutex};
 
+use crate::app::cmd::data::create_data_cmd::CreateDataCmd;
 use crate::app::seam_stubs::{self, GccAnalysisUtils, SetCommentCmd};
+use crate::framework::cmd::Command;
+use crate::program::model::data::signed_leb128_data_type::SignedLeb128DataType;
 use crate::program::model::address::Address;
 use crate::program::model::listing::{CommentType, Program};
 use crate::program::model::mem::MemoryAccessException;
 use crate::util::task::TaskMonitor;
+
+/// Port of the protected static `GccAnalysisClass.createData(Program, Address, DataType)`: try
+/// creating without clearing (the code units should be clear), falling back to a
+/// [`CreateDataCmd`] when the listing refuses.
+fn create_data(program: &mut (dyn Program + 'static), addr: &Address) {
+    let created = match program.get_listing() {
+        Some(mut listing) => listing
+            .create_data(addr.clone(), Box::new(SignedLeb128DataType::new(None)))
+            .is_ok(),
+        None => false,
+    };
+    if !created {
+        let mut data_cmd =
+            CreateDataCmd::new_default(addr.clone(), Box::new(SignedLeb128DataType::new(None)));
+        data_cmd.apply_to(program);
+    }
+}
 
 /// A record that associates the type info with a catch action.
 ///
@@ -125,6 +144,7 @@ impl LSDAActionRecord {
 
         {
             let mut program = self.program.lock().expect("program lock poisoned");
+            create_data(&mut *program, &addr);
             let comment_cmd = SetCommentCmd::new(addr.clone(), CommentType::Eol, comment);
             comment_cmd.apply_to(&mut *program);
         }
@@ -157,6 +177,7 @@ impl LSDAActionRecord {
 
         {
             let mut program = self.program.lock().expect("program lock poisoned");
+            create_data(&mut *program, &addr);
             let comment_cmd = SetCommentCmd::new(addr.clone(), CommentType::Eol, comment);
             comment_cmd.apply_to(&mut *program);
         }

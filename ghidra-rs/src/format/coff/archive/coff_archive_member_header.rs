@@ -3,6 +3,7 @@ use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::LongNamesMember;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::data::structure_data_type::StructureDataType;
 use crate::util::msg::Msg;
 
@@ -50,26 +51,6 @@ pub struct CoffArchiveMemberHeader {
     size: i64,
     payload_offset: i64,
     member_offset: i64,
-}
-
-/// Stand-in for `StructConverter.STRING` (`StringDataType.dataType`), which this crate has not
-/// yet ported a concrete singleton for (see `string_data_type.rs`'s module docs). Its `get_name`
-/// is the only observable property [`CoffArchiveMemberHeader::to_data_type`] depends on -- the
-/// component length used in the resulting structure is supplied explicitly at each `add` call,
-/// matching how Java's `add(DataType, length, name, comment)` overload ignores the datatype's own
-/// preferred length too. `get_length` only needs to satisfy `Composite`'s "not a zero-length,
-/// non-Dynamic datatype" admission check (real `StringDataType` is `Dynamic`, which this minimal
-/// stand-in isn't); its value is otherwise unused.
-struct StringDt;
-
-impl DataType for StringDt {
-    fn get_name(&self) -> String {
-        "string".to_string()
-    }
-
-    fn get_length(&self) -> i32 {
-        1
-    }
 }
 
 impl CoffArchiveMemberHeader {
@@ -271,13 +252,13 @@ fn is_long_name_reference(name: &str) -> bool {
 impl StructConverter for CoffArchiveMemberHeader {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let mut strukt = StructureDataType::new("CoffArchiveMemberHeader", 0);
-        strukt.add_with_length_and_name(Box::new(StringDt), CAMH_NAME_LEN as i32, Some("name".to_string()), None)?;
-        strukt.add_with_length_and_name(Box::new(StringDt), CAMH_DATE_LEN as i32, Some("date".to_string()), None)?;
-        strukt.add_with_length_and_name(Box::new(StringDt), CAMH_USERID_LEN as i32, Some("userID".to_string()), None)?;
-        strukt.add_with_length_and_name(Box::new(StringDt), CAMH_GROUPID_LEN as i32, Some("groupID".to_string()), None)?;
-        strukt.add_with_length_and_name(Box::new(StringDt), CAMH_MODE_LEN as i32, Some("mode".to_string()), None)?;
-        strukt.add_with_length_and_name(Box::new(StringDt), CAMH_SIZE_LEN as i32, Some("size".to_string()), None)?;
-        strukt.add_with_length_and_name(Box::new(StringDt), CAMH_EOH_LEN as i32, Some("endOfHeader".to_string()), None)?;
+        strukt.add_with_length_and_name(Box::new(StringDataType::new(None)), CAMH_NAME_LEN as i32, Some("name".to_string()), None)?;
+        strukt.add_with_length_and_name(Box::new(StringDataType::new(None)), CAMH_DATE_LEN as i32, Some("date".to_string()), None)?;
+        strukt.add_with_length_and_name(Box::new(StringDataType::new(None)), CAMH_USERID_LEN as i32, Some("userID".to_string()), None)?;
+        strukt.add_with_length_and_name(Box::new(StringDataType::new(None)), CAMH_GROUPID_LEN as i32, Some("groupID".to_string()), None)?;
+        strukt.add_with_length_and_name(Box::new(StringDataType::new(None)), CAMH_MODE_LEN as i32, Some("mode".to_string()), None)?;
+        strukt.add_with_length_and_name(Box::new(StringDataType::new(None)), CAMH_SIZE_LEN as i32, Some("size".to_string()), None)?;
+        strukt.add_with_length_and_name(Box::new(StringDataType::new(None)), CAMH_EOH_LEN as i32, Some("endOfHeader".to_string()), None)?;
         Ok(Box::new(strukt))
     }
 }

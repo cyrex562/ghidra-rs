@@ -14,7 +14,7 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::file::formats::android::dex::format::encoded_value::EncodedValue;
-use crate::file::formats::android::dex::format::seam_stubs::UlebPlaceholderDataType;
+use crate::program::model::data::unsigned_leb128_data_type::UnsignedLeb128DataType;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::sarif::seam_stubs::StructureDataType;
@@ -63,7 +63,7 @@ impl StructConverter for AnnotationElement {
         let cp = CategoryPath::parse("/dex/annotation_element").expect("valid category path");
 
         let mut structure = StructureDataType::new(cp, &name, 0);
-        structure.add(Arc::new(UlebPlaceholderDataType), self.name_index_length, Some("nameIndex".to_string()), None);
+        structure.add(UnsignedLeb128DataType::data_type(), self.name_index_length, Some("nameIndex".to_string()), None);
         let value_len = encoded_value_dt.get_length();
         structure.add(encoded_value_dt, value_len, Some("value".to_string()), None);
 

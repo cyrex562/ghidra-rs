@@ -47,8 +47,7 @@
 //! `AndroidElfRelocationData`/`AndroidElfRelocationGroup`.
 //!
 //! `createNoteStructure`'s field types are the real `DWordDataType` and `ArrayDataType` of
-//! `ByteDataType`, except `StringDataType.dataType`: the string data types are not ported yet, so
-//! the `name` field uses the minimal private [`StringPlaceholderDataType`] (name and length only).
+//! `ByteDataType`, plus the real `StringDataType.dataType` singleton for the `name` field.
 
 use std::io;
 use std::sync::Arc;
@@ -60,9 +59,9 @@ use crate::program::model::address::Address;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::category_path::CategoryPath;
-use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
 use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::listing::{Program, PROGRAM_INFO};
 use crate::sarif::seam_stubs::StructureDataType;
 use crate::util::msg::Msg;
@@ -72,20 +71,6 @@ use crate::util::seam_stubs::NumericUtilities;
 const MAX_SANE_NAME_LEN: u32 = 1024;
 /// Port of `ElfNote.MAX_SANE_DESC_LEN`.
 const MAX_SANE_DESC_LEN: u32 = 1024 * 1024;
-
-/// Minimal stand-in for `ghidra.program.model.data.StringDataType.dataType`, used for the `name`
-/// field of [`create_note_structure`]. See the module docs for why the real (trait-only)
-/// `StringDataType` cut point cannot be constructed generically yet.
-struct StringPlaceholderDataType;
-
-impl DataType for StringPlaceholderDataType {
-    fn get_name(&self) -> String {
-        "string".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        -1
-    }
-}
 
 /// Zero-sized marker used purely to call the defaulted trait methods of [`DataUtilities`],
 /// mirroring the identical marker in `elf_comment.rs`/`read_only_data_type_component.rs`.
@@ -140,7 +125,7 @@ fn create_note_structure(
     );
     if note_name_len > 0 {
         result.add(
-            Arc::new(StringPlaceholderDataType),
+            StringDataType::data_type(),
             note_name_len,
             Some("name".to_string()),
             Some("Vendor name".to_string()),

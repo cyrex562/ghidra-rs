@@ -8,7 +8,7 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_resource::CFragResource;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::word_data_type::WordDataType;
 use crate::format::macos::rm::reference_list_entry::ReferenceListEntry;
@@ -139,7 +139,7 @@ impl StructConverter for ResourceType {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let mut s = StructureDataType::new("ResourceType", 0);
         if self.is_ascii() {
-            s.add_with_length_and_name(PrimitiveDt::STRING.boxed(), 4, Some("type".to_string()), None)?;
+            s.add_with_length_and_name(Box::new(StringDataType::new(None)), 4, Some("type".to_string()), None)?;
         } else {
             s.add_with_name(Box::new(DWordDataType::new(None)), Some("type".to_string()), None)?;
         }

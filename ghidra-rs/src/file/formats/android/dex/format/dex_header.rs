@@ -42,23 +42,9 @@ use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
+use crate::program::model::data::string_utf8_data_type::StringUTF8DataType;
 use crate::sarif::seam_stubs::StructureDataType;
 use std::sync::Arc;
-
-/// Minimal stand-in for `ghidra.app.util.bin.StructConverter.UTF8`
-/// (`StringUTF8DataType.dataType`), used with an explicit override length for the combined
-/// `magic`+`version` header field. The string data types are not ported yet (only the name and
-/// override length are observable here).
-struct Utf8PlaceholderDataType;
-
-impl DataType for Utf8PlaceholderDataType {
-    fn get_name(&self) -> String {
-        "utf8".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        -1
-    }
-}
 
 /// Represents the `header_item` of a DEX file.
 ///
@@ -365,7 +351,7 @@ impl DexHeader {
         let cp = CategoryPath::parse("/dex").expect("valid category path");
         let mut structure = StructureDataType::new(cp, "header_item", 0);
 
-        structure.add(Arc::new(Utf8PlaceholderDataType), 8, Some("magic".to_string()), None);
+        structure.add(StringUTF8DataType::data_type(), 8, Some("magic".to_string()), None);
         structure.add(DWordDataType::data_type(), 4, Some("checksum".to_string()), Some("adler-32".to_string()));
 
         let comment = format!(

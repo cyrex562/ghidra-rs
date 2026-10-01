@@ -10,7 +10,8 @@ use crate::format::macos::cfm::c_frag_usage1_union::CFragUsage1Union;
 use crate::format::macos::cfm::c_frag_usage2_union::CFragUsage2Union;
 use crate::format::macos::cfm::c_frag_where1_union::CFragWhere1Union;
 use crate::format::macos::cfm::c_frag_where2_union::CFragWhere2Union;
-use crate::format::macos::data_type_stand_ins::PrimitiveDt;
+use crate::program::model::data::pascal_string255_data_type::PascalString255DataType;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::word_data_type::WordDataType;
@@ -207,7 +208,7 @@ impl StructConverter for CFragResourceMember {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         let name = |s: &str| Some(s.to_string());
         let mut s = StructureDataType::new("CFragResourceMember", 0);
-        s.add_with_length_and_name(PrimitiveDt::STRING.boxed(), 4, name("architecture"), None)?;
+        s.add_with_length_and_name(Box::new(StringDataType::new(None)), 4, name("architecture"), None)?;
         s.add_with_name(Box::new(WordDataType::new(None)), name("reservedA"), None)?;
         s.add_with_name(Box::new(ByteDataType::new(None)), name("reservedB"), None)?;
         s.add_with_name(Box::new(ByteDataType::new(None)), name("updateLevel"), None)?;
@@ -230,7 +231,7 @@ impl StructConverter for CFragResourceMember {
         s.add_with_name(Box::new(DWordDataType::new(None)), name("extensionCount"), None)?;
         s.add_with_name(Box::new(DWordDataType::new(None)), name("memberSize"), None)?;
         s.add_with_length_and_name(
-            PrimitiveDt::PASCAL_STRING255.boxed(),
+            Box::new(PascalString255DataType::new(None)),
             self.name.len() as i32 + 1,
             name("name"),
             None,

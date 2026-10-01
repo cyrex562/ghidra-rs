@@ -31,23 +31,8 @@ use crate::file::formats::android::oat::oat_instruction_set::OatInstructionSet;
 use crate::file::formats::android::oat::seam_stubs::{OatDexFile, OatDexFileFactory};
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::sarif::seam_stubs::StructureDataType;
-use std::sync::Arc;
-
-/// Minimal stand-in for `ghidra.app.util.bin.StructConverter.STRING` (`StringDataType.dataType`),
-/// used with an explicit override length for the `magic_`/`version_` header fields. See
-/// [`crate::file::formats::android::dex::format::dex_header`]'s `Utf8PlaceholderDataType` for the
-/// identical situation with a different leaf type.
-struct StringPlaceholderDataType;
-
-impl DataType for StringPlaceholderDataType {
-    fn get_name(&self) -> String {
-        "string".to_string()
-    }
-    fn get_length(&self) -> i32 {
-        -1
-    }
-}
 
 /// The shared state and concrete behaviour of an OAT header.
 ///
@@ -188,8 +173,8 @@ pub trait OatHeader: StructConverter {
         let cp = CategoryPath::parse("/oat").expect("valid category path");
         let mut structure =
             StructureDataType::new(cp, &format!("OatHeader_{}", self.base().version), 0);
-        structure.add(Arc::new(StringPlaceholderDataType), 4, Some("magic_".to_string()), None);
-        structure.add(Arc::new(StringPlaceholderDataType), 4, Some("version_".to_string()), None);
+        structure.add(StringDataType::data_type(), 4, Some("magic_".to_string()), None);
+        structure.add(StringDataType::data_type(), 4, Some("version_".to_string()), None);
         Box::new(structure)
     }
 }
