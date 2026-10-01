@@ -1044,6 +1044,58 @@ mod tests {
         );
     }
 
+    /// The generic registers `hexagon.pspec` renames (a failed rename is fatal, as in Java).
+    const HEXAGON_RENAMED: &[&str] = &[
+        "G16", "G17", "G18", "G19", "G24", "G25", "G26", "G27", "G28", "G29", "S0", "S1", "S2", "S3", "S4",
+        "S5", "S6", "S7", "S8", "S9", "S10", "S16", "S17", "S18", "S20", "S21", "S22", "S24", "S26", "S27",
+        "S28", "S29", "S30", "S31", "S32", "S33", "S34", "S36", "S37", "S38", "S39", "S40", "S41", "S42",
+        "S43", "S48", "S49", "S50", "S51", "S52", "S53", "S61", "S62", "S63",
+    ];
+
+    #[test]
+    fn hexagon_pspec_parallel_helper_and_register_space_volatile_ranges() {
+        let fixture = Fixture {
+            big_endian: false,
+            ram: vec![("ram", 4, 1)],
+            registers: [("PC", 4), ("USR", 4), ("FRAMEKEY", 4)]
+                .into_iter()
+                .chain(HEXAGON_RENAMED.iter().map(|name| (*name, 4)))
+                .collect(),
+            context: vec!["packetOffset"],
+        };
+        let lang = load("Hexagon:LE:32:default", "Hexagon/data/languages/hexagon.pspec", &fixture);
+        assert_eq!(lang.get_property("useropLibs").as_deref(), Some("hexagon"));
+        assert!(lang.get_property_as_boolean("resetContextOnUpgrade", false));
+        // parallelInstructionHelperClass names the ported HexagonParallelInstructionHelper.
+        assert!(lang.get_parallel_instruction_helper().is_some());
+
+        let register = lang.get_address_factory().get_address_space_by_name("register").unwrap();
+        assert!(lang.is_volatile(&register.address(0x238)));
+        assert!(lang.is_volatile(&register.address(0x23f)));
+        assert!(!lang.is_volatile(&register.address(0x240)));
+        assert!(lang.is_volatile(&register.address(0x8ff)));
+
+        let mut ctx = RecordingContext::default();
+        lang.apply_context_settings(&mut ctx);
+        let names: Vec<&str> = ctx.set.iter().map(|(n, _, _, _)| n.as_str()).collect();
+        assert_eq!(names, ["packetOffset", "USR", "FRAMEKEY"]);
+
+        // <register name="G16" rename="GPMUCNT4" .../>: only the new name remains.
+        assert!(lang.get_register_by_name("G16").is_none());
+        assert!(lang.get_register_by_name("GPMUCNT4").is_some());
+    }
+
+    #[test]
+    fn an_unknown_parallel_helper_class_is_fatal() {
+        let (_dir, path) = write_temp_pspec(
+            r#"<processor_spec>
+  <properties><property key="parallelInstructionHelperClass" value="com.example.NoSuchHelper"/></properties>
+</processor_spec>"#,
+        );
+        let err = load_file("toy:LE:32:default", path, &toy()).err().unwrap();
+        assert!(err.to_string().contains("Failed to instantiate parallelInstructionHelperClass (com.example.NoSuchHelper)"), "{err}");
+    }
+
     fn write_temp_pspec(xml: &str) -> (tempfile::TempDir, PathBuf) {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("test.pspec");
@@ -1149,6 +1201,7 @@ mod tests {
         assert!(lang.get_program_counter().is_none());
         assert!(lang.get_property_keys().is_empty());
         assert!(lang.get_default_symbols().is_empty());
+        assert!(lang.get_parallel_instruction_helper().is_none());
     }
 }
 

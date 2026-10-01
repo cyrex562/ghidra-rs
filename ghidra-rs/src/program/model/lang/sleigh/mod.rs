@@ -18,7 +18,6 @@
 //!
 //! # What is not (yet) ported
 //! * Reading the `.sla` file itself (`SlaFormat.buildDecoder`): callers hand in a decoder.
-//! * Instantiating the `.pspec`'s `parallelInstructionHelperClass` (no helper class is ported).
 //! * [`Language::parse`] builds a [`SleighInstructionPrototype`] but does not cache prototypes
 //!   by hash (Java's `instructProtoMap`), and cannot apply the instruction's global context
 //!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
@@ -73,7 +72,11 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::{Language, ParseError};
 use crate::program::model::lang::language_description::LanguageDescription;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
+use crate::program::model::lang::ghidra_language_property_keys::PARALLEL_INSTRUCTION_HELPER_CLASS;
+use crate::program::model::lang::parallel_instruction_language_helper::{
+    lookup_parallel_instruction_helper_class, ParallelInstructionHelperConstructor,
+    ParallelInstructionLanguageHelper,
+};
 use crate::program::model::lang::processor_context::ProcessorContext;
 use crate::program::model::lang::register::{Register, RegisterId, RegisterRef};
 use crate::program::model::lang::register_builder::RegisterBuilder;
@@ -179,6 +182,9 @@ pub struct SleighLanguage {
     volatile_symbol_addresses: Option<AddressSet>,
     /// `nonVolatileSymbolAddresses`: default symbols marked `volatile="false"`.
     non_volatile_symbol_addresses: Option<AddressSet>,
+    /// `parallelHelper`: the constructor of the helper class the `.pspec`'s
+    /// `parallelInstructionHelperClass` property names.
+    parallel_helper: Option<ParallelInstructionHelperConstructor>,
 }
 
 impl fmt::Display for SleighLanguage {
@@ -420,6 +426,7 @@ impl SleighLanguage {
             ctxsetting: Vec::new(),
             volatile_symbol_addresses: None,
             non_volatile_symbol_addresses: None,
+            parallel_helper: None,
             // Replaced below, once the symbol table the registers come from is decoded.
             register_manager: RegisterBuilder::new().register_manager(),
         };
@@ -448,6 +455,8 @@ impl SleighLanguage {
                 .map(|c| ContextSetting::new(Register::from_store(&store, c.register), c.value, c.start, c.end))
                 .collect();
         }
+
+        sleigh.init_parallel_helper()?;
 
         // Java: `getPropertyAsInt(MAXIMUM_INSTRUCTION_LENGTH, -1)`, kept only when positive.
         let max_length = sleigh.get_property_as_int(MAXIMUM_INSTRUCTION_LENGTH, -1);
@@ -689,6 +698,30 @@ impl SleighLanguage {
             .expect("decode rejects a language without a default space")
     }
 
+    /// Port of `initParallelHelper()`: looks up the class the `parallelInstructionHelperClass`
+    /// property names (Java: `ClassSearcher.forNameSafe` and its no-argument constructor).
+    ///
+    /// # Errors
+    /// If no helper class of that name is registered (see
+    /// [`register_parallel_instruction_helper_class`](crate::program::model::lang::parallel_instruction_language_helper::register_parallel_instruction_helper_class)).
+    fn init_parallel_helper(&mut self) -> Result<(), DecoderError> {
+        let Some(class_name) = self.get_property(PARALLEL_INSTRUCTION_HELPER_CLASS) else {
+            return Ok(());
+        };
+        let constructor = lookup_parallel_instruction_helper_class(&class_name).ok_or_else(|| {
+            let spec_file = self
+                .description
+                .as_ref()
+                .and_then(|d| d.get_spec_file().map(|f| f.absolute_path()))
+                .unwrap_or_default();
+            DecoderError::Generic(format!(
+                "Failed to instantiate {PARALLEL_INSTRUCTION_HELPER_CLASS} ({class_name}): {spec_file}"
+            ))
+        })?;
+        self.parallel_helper = Some(constructor);
+        Ok(())
+    }
+
     /// Port of `getAdditionalInject()`: the `.pspec`-declared payloads every compiler spec's
     /// inject library registers, if any.
     pub fn get_additional_inject(&self) -> Option<&[Arc<dyn InjectPayloadSleigh>]> {
@@ -902,11 +935,11 @@ impl Language for SleighLanguage {
         Box::new(Arc::clone(d))
     }
 
-    /// Port of `getParallelInstructionHelper()`. Java instantiates the class named by the
-    /// `.pspec` `parallelInstructionHelperClass` property; no helper class is ported, so the
-    /// helper is `null`/`None`.
+    /// Port of `getParallelInstructionHelper()`: the helper named by the `.pspec`
+    /// `parallelInstructionHelperClass` property, if any. Java hands out the one instance it
+    /// built; helpers are stateless, so each call builds a fresh one.
     fn get_parallel_instruction_helper(&self) -> Option<Box<dyn ParallelInstructionLanguageHelper>> {
-        None
+        self.parallel_helper.map(|constructor| constructor())
     }
 
     /// Port of `getProcessor()` (`description.getProcessor()`).

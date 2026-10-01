@@ -1,4 +1,6 @@
 use crate::program::model::listing::Instruction;
+use std::collections::HashMap;
+use std::sync::{OnceLock, RwLock};
 
 /// Provides the ability, via a language specified property, to identify certain parallel
 /// instruction attributes.
@@ -34,6 +36,44 @@ pub trait ParallelInstructionLanguageHelper {
     /// Returns `true` if the instruction is last in a parallel group or if no other instruction
     /// is executed in parallel with the specified instruction.
     fn is_end_of_parallel_instruction_group(&self, instruction: &dyn Instruction) -> bool;
+}
+
+/// Builds a helper (Java: the helper class's no-argument constructor, found by reflection).
+pub type ParallelInstructionHelperConstructor = fn() -> Box<dyn ParallelInstructionLanguageHelper>;
+
+fn helper_class_registry() -> &'static RwLock<HashMap<String, ParallelInstructionHelperConstructor>> {
+    static REGISTRY: OnceLock<RwLock<HashMap<String, ParallelInstructionHelperConstructor>>> = OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        // The ported helper classes, as Java's class path would find them.
+        let mut builtins: HashMap<String, ParallelInstructionHelperConstructor> = HashMap::new();
+        builtins.insert(
+            "ghidra.app.util.viewer.field.HexagonParallelInstructionHelper".to_string(),
+            || Box::new(crate::app::util::viewer::field::hexagon_parallel_instruction_helper::HexagonParallelInstructionHelper::new()),
+        );
+        RwLock::new(builtins)
+    })
+}
+
+/// Makes the helper class `class_name` (a fully qualified Java class name, as a language's
+/// `parallelInstructionHelperClass` property names it) constructible by
+/// [`lookup_parallel_instruction_helper_class`]. Replaces any earlier registration of the same
+/// name.
+///
+/// Replaces Java's class-path discovery (`ClassSearcher.forNameSafe`).
+pub fn register_parallel_instruction_helper_class(class_name: &str, constructor: ParallelInstructionHelperConstructor) {
+    helper_class_registry()
+        .write()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .insert(class_name.to_string(), constructor);
+}
+
+/// The constructor registered for `class_name`, if any.
+pub fn lookup_parallel_instruction_helper_class(class_name: &str) -> Option<ParallelInstructionHelperConstructor> {
+    helper_class_registry()
+        .read()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .get(class_name)
+        .copied()
 }
 
 #[cfg(test)]
