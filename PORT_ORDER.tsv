@@ -1502,7 +1502,7 @@ DONE	struct	16	10	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	struct	15	11	7	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoApiSnapshot.java
 TODO	struct	15	10	10	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoIface.java
 DONE	struct	17	10	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoPcValueEvaluator.java
-TODO	struct	22	10	81	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoVarlenString.java
+DONE	struct	22	10	81	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoVarlenString.java
 TODO	struct	21	11	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoName.java
 TODO	struct	21	5	82	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoChanType.java
 TODO	struct	21	8	83	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoFuncType.java

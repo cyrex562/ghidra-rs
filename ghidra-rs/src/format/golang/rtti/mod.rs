@@ -12,6 +12,7 @@ pub mod go_symbol_name;
 pub mod go_symbol_name_type;
 pub mod json_patch;
 pub mod json_patch_applier;
+pub mod go_varlen_string;
 pub mod method_info;
 pub mod types;
 #[cfg(test)]
