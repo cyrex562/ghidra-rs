@@ -4,9 +4,8 @@
 //! one [`MachoPrelinkMap`] per prelinked kext.
 //!
 //! Java builds a JDOM document with `XmlUtilities.createSecureSAXBuilder`; this port builds the
-//! same minimal element tree (name, attributes, element children, text) from the crate's SAX
-//! layer, [`sax_parser`](crate::util::xml::sax_parser), with `<!DOCTYPE>` disallowed as in the
-//! secure builder (the parser strips the plist's doctype first, as Java does).
+//! crate's canonical JDOM-style [`Element`] tree, with `<!DOCTYPE>` disallowed as in the secure
+//! builder (the parser strips the plist's doctype first, as Java does).
 
 use std::collections::HashMap;
 use std::fmt;
@@ -20,7 +19,7 @@ use crate::format::macho::prelink::macho_prelink_map::MachoPrelinkMap;
 use crate::format::macho::prelink::no_pre_link_section_exception::NoPreLinkSectionException;
 use crate::util::seam_stubs::NumericUtilities;
 use crate::util::task::TaskMonitor;
-use crate::util::xml::sax_parser::{self, SaxConfig, SaxContentHandler, SaxError, SaxLocation};
+use crate::util::xml::element::Element;
 
 const TAG_DATA: &str = "data";
 const TAG_FALSE: &str = "false";
@@ -64,86 +63,6 @@ impl From<std::io::Error> for MachoPrelinkError {
     }
 }
 
-/// The parts of a JDOM `Element` the parser reads.
-#[derive(Debug, Default)]
-struct Element {
-    name: String,
-    attributes: Vec<(String, String)>,
-    children: Vec<Element>,
-    /// Text and child-element content in document order, for [`Element::value`].
-    content: Vec<Content>,
-}
-
-#[derive(Debug)]
-enum Content {
-    Text(String),
-    Child(usize),
-}
-
-impl Element {
-    /// JDOM `getValue()`: the concatenated text of this element and all its descendants.
-    fn value(&self) -> String {
-        let mut out = String::new();
-        self.collect_value(&mut out);
-        out
-    }
-
-    fn collect_value(&self, out: &mut String) {
-        for c in &self.content {
-            match c {
-                Content::Text(t) => out.push_str(t),
-                Content::Child(i) => self.children[*i].collect_value(out),
-            }
-        }
-    }
-
-    /// JDOM `getAttributeValue(String)`.
-    fn attribute(&self, name: &str) -> Option<&str> {
-        self.attributes.iter().find(|(n, _)| n == name).map(|(_, v)| v.as_str())
-    }
-}
-
-/// Builds the [`Element`] tree from SAX events.
-#[derive(Default)]
-struct TreeBuilder {
-    stack: Vec<Element>,
-    root: Option<Element>,
-}
-
-impl SaxContentHandler for TreeBuilder {
-    fn start_element(
-        &mut self,
-        name: &str,
-        attributes: Vec<(String, String)>,
-        _location: SaxLocation,
-    ) -> Result<(), SaxError> {
-        self.stack.push(Element { name: name.to_string(), attributes, ..Default::default() });
-        Ok(())
-    }
-
-    fn end_element(&mut self, _name: &str, _location: SaxLocation) -> Result<(), SaxError> {
-        let element = self.stack.pop().expect("balanced elements");
-        match self.stack.last_mut() {
-            Some(parent) => {
-                parent.content.push(Content::Child(parent.children.len()));
-                parent.children.push(element);
-            }
-            None => self.root = Some(element),
-        }
-        Ok(())
-    }
-
-    fn characters(&mut self, text: &str) -> Result<(), SaxError> {
-        if let Some(e) = self.stack.last_mut() {
-            e.content.push(Content::Text(text.to_string()));
-        }
-        Ok(())
-    }
-
-    fn processing_instruction(&mut self, _target: &str, _data: &str) -> Result<(), SaxError> {
-        Ok(())
-    }
-}
 
 /// Parses the prelink plist of a kernelcache.
 ///
@@ -171,24 +90,21 @@ impl<'h> MachoPrelinkParser<'h> {
     pub fn parse(&mut self, monitor: &dyn TaskMonitor) -> Result<Vec<MachoPrelinkMap>, MachoPrelinkError> {
         let input = self.find_prelink_input_stream()?;
         monitor.set_message("Parsing prelink plist...");
-        let mut builder = TreeBuilder::default();
-        sax_parser::parse(&input, SaxConfig { allow_doctype: false }, &mut builder)
-            .map_err(|e| MachoPrelinkError::Xml(e.to_string()))?;
-        let root = builder.root.ok_or_else(|| MachoPrelinkError::Xml("no root element".into()))?;
+        let root = Element::parse_bytes(&input).map_err(|e| MachoPrelinkError::Xml(e.to_string()))?;
 
         let mut list = Vec::new();
-        if root.name == TAG_ARRAY {
+        if root.get_name() == TAG_ARRAY {
             // iOS version before 4.x
-            self.process(&root.children, &mut list, monitor)?;
+            self.process(root.get_children(), &mut list, monitor)?;
         } else {
-            let mut iter = root.children.iter();
+            let mut iter = root.get_children().iter();
             while let Some(element) = iter.next() {
                 if monitor.is_cancelled() {
                     break;
                 }
-                if element.name == TAG_DICT {
+                if element.get_name() == TAG_DICT {
                     self.process_top_dict(monitor, &mut list, element)?;
-                } else if element.name == TAG_KEY {
+                } else if element.get_name() == TAG_KEY {
                     self.process_key(monitor, &mut list, &mut iter, element)?;
                 }
             }
@@ -202,12 +118,12 @@ impl<'h> MachoPrelinkParser<'h> {
         list: &mut Vec<MachoPrelinkMap>,
         dict_root: &Element,
     ) -> Result<(), MachoPrelinkError> {
-        let mut iter = dict_root.children.iter();
+        let mut iter = dict_root.get_children().iter();
         while let Some(element) = iter.next() {
             if monitor.is_cancelled() {
                 break;
             }
-            if element.name == TAG_KEY {
+            if element.get_name() == TAG_KEY {
                 self.process_key(monitor, list, &mut iter, element)?;
             }
         }
@@ -221,13 +137,13 @@ impl<'h> MachoPrelinkParser<'h> {
         iter: &mut impl Iterator<Item = &'e Element>,
         element: &Element,
     ) -> Result<(), MachoPrelinkError> {
-        let value = element.value();
+        let value = element.get_value();
         if value == constants::K_PRELINK_PERSONALITIES_KEY {
             // Java reads (and ignores) the personalities array.
             iter.next();
         } else if value == constants::K_PRELINK_INFO_DICTIONARY_KEY {
             if let Some(array) = iter.next() {
-                self.process(&array.children, list, monitor)?;
+                self.process(array.get_children(), list, monitor)?;
             }
         }
         Ok(())
@@ -244,7 +160,7 @@ impl<'h> MachoPrelinkParser<'h> {
             if monitor.is_cancelled() {
                 break;
             }
-            if element.name == TAG_DICT {
+            if element.get_name() == TAG_DICT {
                 let map = self.process_element(element, monitor)?;
                 list.push(map);
             }
@@ -258,12 +174,12 @@ impl<'h> MachoPrelinkParser<'h> {
         monitor: &dyn TaskMonitor,
     ) -> Result<MachoPrelinkMap, MachoPrelinkError> {
         let mut map = MachoPrelinkMap::new();
-        let mut iter = parent.children.iter();
+        let mut iter = parent.get_children().iter();
         while let Some(element) = iter.next() {
             if monitor.is_cancelled() {
                 break;
             }
-            if element.name == TAG_KEY {
+            if element.get_name() == TAG_KEY {
                 if let Some(value_element) = iter.next() {
                     self.process_value(element, value_element, &mut map, monitor)?;
                 }
@@ -279,8 +195,8 @@ impl<'h> MachoPrelinkParser<'h> {
         map: &mut MachoPrelinkMap,
         monitor: &dyn TaskMonitor,
     ) -> Result<String, MachoPrelinkError> {
-        let key = key_element.value();
-        Ok(match value_element.name.as_str() {
+        let key = key_element.get_value();
+        Ok(match value_element.get_name() {
             TAG_STRING => self.process_string(map, &key, value_element),
             TAG_INTEGER => self.process_integer(map, &key, value_element)?,
             TAG_TRUE => {
@@ -292,7 +208,7 @@ impl<'h> MachoPrelinkParser<'h> {
                 "false".to_string()
             }
             TAG_DATA => {
-                let v = value_element.value();
+                let v = value_element.get_value();
                 map.put_string(key, v.clone());
                 v
             }
@@ -309,18 +225,18 @@ impl<'h> MachoPrelinkParser<'h> {
             }
             other => {
                 println!("Unhandled value type: {other}");
-                value_element.value()
+                value_element.get_value()
             }
         })
     }
 
     fn process_string(&mut self, map: &mut MachoPrelinkMap, key: &str, value_element: &Element) -> String {
-        let value = value_element.value();
-        if let Some(id) = value_element.attribute("ID") {
+        let value = value_element.get_value();
+        if let Some(id) = value_element.get_attribute_value("ID") {
             self.id_to_strings.insert(id.to_string(), value.clone());
         }
         map.put_string(key, value.clone());
-        if let Some(idref) = value_element.attribute("IDREF") {
+        if let Some(idref) = value_element.get_attribute_value("IDREF") {
             match self.id_to_strings.get(idref) {
                 Some(s) => map.put_string(key, s.clone()),
                 None => map.put_null(key),
@@ -335,13 +251,13 @@ impl<'h> MachoPrelinkParser<'h> {
         key: &str,
         value_element: &Element,
     ) -> Result<String, MachoPrelinkError> {
-        let value = value_element.value();
+        let value = value_element.get_value();
         let numeric_value = NumericUtilities::parse_hex_long(&value).unwrap_or(-1);
-        if let Some(id) = value_element.attribute("ID") {
+        if let Some(id) = value_element.get_attribute_value("ID") {
             self.id_to_integers.insert(id.to_string(), numeric_value);
         }
         map.put_long(key, numeric_value);
-        if let Some(idref) = value_element.attribute("IDREF") {
+        if let Some(idref) = value_element.get_attribute_value("IDREF") {
             let v = *self
                 .id_to_integers
                 .get(idref)
@@ -360,7 +276,7 @@ impl<'h> MachoPrelinkParser<'h> {
         monitor: &dyn TaskMonitor,
     ) -> Result<String, MachoPrelinkError> {
         let mut buffer = String::new();
-        let mut iter = array.children.iter().peekable();
+        let mut iter = array.get_children().iter().peekable();
         while let Some(child) = iter.next() {
             if monitor.is_cancelled() {
                 break;
