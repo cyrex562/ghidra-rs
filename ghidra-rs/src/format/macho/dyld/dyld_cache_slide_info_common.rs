@@ -10,6 +10,11 @@ use crate::format::macho::dyld::dyld_cache_mapping_info::DyldCacheMappingInfo;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::bin::struct_converter::StructConverter;
+use crate::format::macho::dyld::dyld_cache_slide_info1::DyldCacheSlideInfo1;
+use crate::format::macho::dyld::dyld_cache_slide_info2::DyldCacheSlideInfo2;
+use crate::format::macho::dyld::dyld_cache_slide_info3::DyldCacheSlideInfo3;
+use crate::format::macho::dyld::dyld_cache_slide_info4::DyldCacheSlideInfo4;
+use crate::format::macho::dyld::dyld_cache_slide_info5::DyldCacheSlideInfo5;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
@@ -304,15 +309,12 @@ pub trait DyldCacheSlideInfoCommon: StructConverter {
 /// Port of the static `DyldCacheSlideInfoCommon.parseSlideInfo(BinaryReader, long,
 /// DyldCacheMappingInfo, MessageLog, TaskMonitor)`.
 ///
-/// None of `DyldCacheSlideInfo{1..5}` (the version-specific subclasses Java's `switch`
-/// dispatches to) are ported yet, so every version currently fails to construct, exactly like
-/// Java's `default -> throw new IOException()` branch -- this always logs and returns `None`. It
-/// still faithfully reads and validates the version field first, matching Java's behavior up to
-/// that point.
+/// Dispatches on the version field to `DyldCacheSlideInfo1`..`DyldCacheSlideInfo5`; any failure
+/// (including an unknown version) is logged with the version appended and yields `None`.
 pub fn parse_slide_info(
     reader: &mut BinaryReader,
     slide_info_offset: i64,
-    _mapping_info: &DyldCacheMappingInfo,
+    mapping_info: &DyldCacheMappingInfo,
     log: &MessageLog,
     monitor: &dyn TaskMonitor,
 ) -> Option<Box<dyn DyldCacheSlideInfoCommon>> {
@@ -324,20 +326,32 @@ pub fn parse_slide_info(
     monitor.initialize(1);
     let mut error_message = String::from("Failed to parse dyld_cache_slide_info");
 
-    reader.set_pointer_index(slide_info_offset as u64);
-    let version = match reader.read_int(reader.get_pointer_index()) {
-        Ok(v) => v,
-        Err(_) => {
-            log.append_msg(&error_message);
-            return None;
+    let result: io::Result<Box<dyn DyldCacheSlideInfoCommon>> = (|| {
+        reader.set_pointer_index(slide_info_offset as u64);
+        let version = reader.read_int(reader.get_pointer_index())?;
+        error_message.push_str(&version.to_string());
+        let mapping_info = mapping_info.clone();
+        Ok(match version {
+            1 => Box::new(DyldCacheSlideInfo1::new(reader, mapping_info)?) as Box<dyn DyldCacheSlideInfoCommon>,
+            2 => Box::new(DyldCacheSlideInfo2::new(reader, mapping_info)?),
+            3 => Box::new(DyldCacheSlideInfo3::new(reader, mapping_info)?),
+            4 => Box::new(DyldCacheSlideInfo4::new(reader, mapping_info)?),
+            5 => Box::new(DyldCacheSlideInfo5::new(reader, mapping_info)?),
+            // will be caught and version will be added to message
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "unknown slide info version")),
+        })
+    })();
+    match result {
+        Ok(mut info) => {
+            monitor.increment_progress(1);
+            info.base_mut().slide_info_offset = slide_info_offset;
+            Some(info)
         }
-    };
-    error_message.push_str(&version.to_string());
-
-    // No DyldCacheSlideInfo{1..5} implementor is ported yet for any version -- see this
-    // function's own docs.
-    log.append_msg(&error_message);
-    None
+        Err(_) => {
+            log.append_msg_from(Some("DyldCacheSlideInfoCommon"), &error_message);
+            None
+        }
+    }
 }
 
 #[cfg(test)]
@@ -389,18 +403,23 @@ mod tests {
     }
 
     #[test]
-    fn parse_slide_info_logs_version_and_returns_none_for_any_version() {
-        // No DyldCacheSlideInfo{1..5} is ported yet, so parsing always fails, matching Java's
-        // `default -> throw new IOException()` branch (versions 1-5 all currently hit it too).
+    fn parse_slide_info_dispatches_on_version_and_logs_unknown_versions() {
         let mut data = vec![0u8; 0x100];
         data.extend_from_slice(&2i32.to_le_bytes());
+        data.extend_from_slice(&[0u8; 0x24]);
         let mut reader = BinaryReader::from_bytes(data, true);
         let mapping_info = DyldCacheMappingInfo::new(0, 0, 0, 0, 0);
         let log = MessageLog::new();
-        let result = parse_slide_info(&mut reader, 0x100, &mapping_info, &log, &NoopMonitor);
-        assert!(result.is_none());
-        assert!(log.has_messages());
-        assert!(log.messages()[0].ends_with('2'));
+        let info = parse_slide_info(&mut reader, 0x100, &mapping_info, &log, &NoopMonitor).unwrap();
+        assert_eq!(info.get_version(), 2);
+        assert_eq!(info.get_slide_info_offset(), 0x100);
+        assert!(!log.has_messages());
+
+        let mut data = vec![0u8; 0x100];
+        data.extend_from_slice(&9i32.to_le_bytes());
+        let mut reader = BinaryReader::from_bytes(data, true);
+        assert!(parse_slide_info(&mut reader, 0x100, &mapping_info, &log, &NoopMonitor).is_none());
+        assert!(log.messages()[0].ends_with("Failed to parse dyld_cache_slide_info9"));
     }
 
     // ---- fixup_slide_pointers ----
