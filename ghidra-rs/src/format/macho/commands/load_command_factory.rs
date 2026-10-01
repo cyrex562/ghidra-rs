@@ -44,6 +44,7 @@ use crate::format::macho::commands::uuid_command::UuidCommand;
 use crate::format::macho::commands::version_min_command::VersionMinCommand;
 use crate::format::macho::mach_exception::MachException;
 use crate::format::macho::mach_header::MachHeader;
+use crate::format::macho::threadcommand::thread_command::ThreadCommand;
 
 /// Java: `getLoadCommand(BinaryReader, MachHeader, SplitDyldCache)` with no split DYLD cache.
 ///
@@ -81,6 +82,7 @@ fn parse_load_command(
             let mut linker_reader = get_linker_load_command_reader(reader);
             SymbolTableCommand::new(reader, &mut linker_reader, header)?.into()
         }
+        LC_THREAD | LC_UNIXTHREAD => ThreadCommand::new(reader, header)?.into(),
         LC_SYMSEG => SymbolCommand::new(reader)?.into(),
         LC_LOADFVMLIB | LC_IDFVMLIB => FixedVirtualMemorySharedLibraryCommand::new(reader)?.into(),
         LC_IDENT => IdentCommand::new(reader)?.into(),

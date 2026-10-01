@@ -43,6 +43,7 @@ use crate::format::macho::commands::two_level_hints_command::TwoLevelHintsComman
 use crate::format::macho::commands::unsupported_load_command::UnsupportedLoadCommand;
 use crate::format::macho::commands::uuid_command::UuidCommand;
 use crate::format::macho::commands::version_min_command::VersionMinCommand;
+use crate::format::macho::threadcommand::thread_command::ThreadCommand;
 
 /// A concrete load command type that can be picked out of a [`LoadCommandKind`].
 ///
@@ -107,6 +108,7 @@ load_command_kinds! {
     Segment(SegmentCommand),
     SymbolTable(SymbolTableCommand),
     Symbol(SymbolCommand),
+    Thread(ThreadCommand),
     FixedVirtualMemorySharedLibrary(FixedVirtualMemorySharedLibraryCommand),
     Ident(IdentCommand),
     DynamicLibrary(DynamicLibraryCommand),
