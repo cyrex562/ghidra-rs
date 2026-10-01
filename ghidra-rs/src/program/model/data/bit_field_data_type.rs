@@ -55,15 +55,8 @@
 //!   precedent of exposing them only as `data_type_impl_equals`/`data_type_impl_hash_code`), using
 //!   `is_equivalent` in place of the nested `baseDataType.equals(...)` call.
 //! - **CHAR-format representation**: `getRepresentation`'s `FormatSettingsDefinition.CHAR` branch
-//!   (rendering the bitfield's bytes as a character) is simplified away exactly like
-//!   [`AbstractIntegerDataType::integer_representation`](super::abstract_integer_data_type::AbstractIntegerDataType::integer_representation)
-//!   already does, for the identical documented reason: the static
-//!   `StringDataInstance.getCharRepresentation(DataType, byte[], Settings)` factory those branches
-//!   need is not ported, and that gap is *specifically called out* in
-//!   [`string_data_instance`](super::string_data_instance)'s module docs as needing
-//!   "`BitFieldDataType`-aware charset/size derivation from a bare `DataType`" -- i.e. this exact
-//!   class. [`BitFieldDataType::get_representation`] always falls through to the standard numeric
-//!   rendering instead.
+//!   renders the bitfield's bytes through `StringDataInstance.getCharRepresentation`, whose
+//!   charset comes from the bitfield's base data type.
 //!
 //! ## Wiring into the pre-existing `seam_stubs::BitFieldDataType` placeholder
 //!
@@ -568,8 +561,7 @@ impl DataType for BitFieldDataType {
         Some(Box::new(big))
     }
 
-    /// Port of `BitFieldDataType.getRepresentation(MemBuffer, Settings, int)`. See the module docs
-    /// for the dropped CHAR-format special case.
+    /// Port of `BitFieldDataType.getRepresentation(MemBuffer, Settings, int)`.
     fn get_representation(&self, buf: &dyn MemBuffer, settings: &dyn Settings, _length: i32) -> String {
         if self.bit_size == 0 {
             return String::new();
@@ -598,8 +590,21 @@ impl DataType for BitFieldDataType {
             return if big == 0 { "FALSE" } else { "TRUE" }.to_string();
         }
 
-        // Falls through to the standard `AbstractIntegerDataType` numeric formatting for every
-        // other valid base type (plain integers and their typedefs).
+        if let Some(int_dt) = dt.as_abstract_integer() {
+            let format = int_dt.get_format_settings_definition().get_format(Some(settings));
+            if format == crate::docking::settings::format_settings_definition::CHAR {
+                let mut big = big;
+                if big < 0 {
+                    big += 1i128 << self.effective_bit_size;
+                }
+                let bytes_len = get_minimum_storage_size_no_offset(self.effective_bit_size);
+                let bytes = crate::pcode::utils::utils::big_integer_to_bytes(big, bytes_len as usize, buf.is_big_endian());
+                return crate::program::model::data::string_data_instance::get_char_representation(self, &bytes, Some(settings));
+            }
+        }
+
+        // The standard `AbstractIntegerDataType` numeric formatting for every other valid base
+        // type (plain integers and their typedefs).
         crate::program::model::data::abstract_integer_data_type::format_integer_representation(
             big,
             settings,
@@ -1147,5 +1152,15 @@ mod tests {
         assert_eq!(get_minimum_storage_size(8, 1), 2);
         assert_eq!(get_minimum_storage_size(0, 5), 1);
         assert_eq!(BitFieldDataType::effective_bit_size_of(10, 1), 8);
+    }
+
+    #[test]
+    fn char_base_renders_as_a_char() {
+        use crate::program::model::data::char_data_type::CharDataType;
+        use crate::program::model::data::string_data_instance::test_support::{mb, SettingsBuilder};
+        let bf = BitFieldDataType::new_at_offset_zero(Box::new(CharDataType::new(None)), 8).unwrap();
+        assert_eq!(bf.get_representation(&mb(false, b"A"), &SettingsBuilder::new(), 1), "'A'");
+        // Hex format falls back to the numeric rendering.
+        assert_eq!(bf.get_representation(&mb(false, b"A"), &SettingsBuilder::new().long("format", 0), 1), "41h");
     }
 }
