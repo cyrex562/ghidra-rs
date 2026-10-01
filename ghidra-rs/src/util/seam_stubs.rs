@@ -1040,6 +1040,24 @@ impl NumericUtilities {
             .unwrap_or(trimmed);
         u64::from_str_radix(digits, 16).map(|v| v as i64)
     }
+
+    /// `NumericUtilities.getUnsignedAlignedValue(long, long)`: `unsigned_value` rounded up to a
+    /// multiple of `alignment` (negative values are aligned away from zero, as in Java).
+    pub fn get_unsigned_aligned_value(unsigned_value: i64, alignment: i64) -> i64 {
+        if alignment == 0 || unsigned_value % alignment == 0 {
+            return unsigned_value;
+        }
+        let negative = unsigned_value < 0;
+        let mut v = unsigned_value;
+        if negative {
+            v = -(v + alignment);
+        }
+        let mut aligned = ((v + alignment - 1) / alignment) * alignment;
+        if negative {
+            aligned = -aligned;
+        }
+        aligned
+    }
 }
 
 /// Placeholder for the unported Java type `ghidra.features.base.memsearch.bytesource.ProgramByteSource`,

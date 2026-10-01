@@ -1480,8 +1480,8 @@ TODO	struct	18	3	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	struct	18	14	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoSymbolName.java
 DONE	struct	18	4	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoRegisterInfo.java
 DONE	struct	18	3	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoRegisterInfoManager.java
-TODO	struct	17	6	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoParamStorageAllocator.java
-TODO	struct	16	5	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoFunctionMultiReturn.java
+DONE	struct	17	6	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoParamStorageAllocator.java
+DONE	struct	16	5	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoFunctionMultiReturn.java
 TODO	struct	21	29	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/ReflectionHelper.java
 DONE	struct	20	30	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldMappingInfo.java
 TODO	struct	20	27	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldOutputInfo.java
