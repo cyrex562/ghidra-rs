@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry_factory;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -36,7 +36,7 @@ impl EntryDescriptor {
     /// Java's `EntryFactory` hands the descriptor under construction itself to the entry it
     /// builds; here the entry receives a copy of the descriptor's ID/offset/length, whose own
     /// `entry` is empty (a value cannot contain itself).
-    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut BinaryReader) -> io::Result<Self> {
         let entry_id = reader.read_next_int()?;
         let offset = reader.read_next_int()?;
         let length = reader.read_next_int()?;
@@ -93,13 +93,13 @@ mod tests {
     use super::*;
     use crate::format::macos::asd::entry::Entry;
     use crate::format::macos::asd::entry_descriptor_id::{ENTRY_REAL_NAME, ENTRY_RESOURCE_FORK};
-    use crate::format::macos::test_support::{Image, VecReader};
+    use crate::format::macos::test_support::{Image, be_reader};
 
     #[test]
     fn read_non_resource_entry_has_no_parsed_entry() {
         let mut img = Image::default();
         img.u32(ENTRY_REAL_NAME).u32(0x40).u32(7);
-        let mut reader = VecReader::new(img.0);
+        let mut reader = be_reader(img.0);
 
         let d = EntryDescriptor::read(&mut reader).unwrap();
         assert_eq!(d.get_entry_id(), ENTRY_REAL_NAME as i32);
@@ -121,7 +121,7 @@ mod tests {
         // numberOfTypes = -1 (no types).
         img.u32(0x100).u32(0x10).u32(0).u32(0x1e);
         img.u32(0).u16(0).u16(0).u16(0x1c).u16(0x1e).u16(0xffff);
-        let mut reader = VecReader::new(img.0);
+        let mut reader = be_reader(img.0);
 
         let d = EntryDescriptor::read(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), 12);

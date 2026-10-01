@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::ne::entry_table::EntryTable;
 use crate::format::ne::imported_name_table::ImportedNameTable;
 use crate::format::ne::information_block::InformationBlock;
@@ -40,7 +40,7 @@ impl WindowsHeader {
     /// constitute a valid Windows header, or if there is an IO-related error reading the header
     /// bytes.
     pub fn new(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         base_addr: Option<&SegmentedAddress>,
         index: u64,
     ) -> io::Result<Self> {
@@ -77,7 +77,7 @@ impl WindowsHeader {
         let mod_ref_table_index =
             offset_index(info_block.get_module_reference_table_offset(), index);
         let mod_ref_table = ModuleReferenceTable::new(
-            reader.clone_reader(),
+            reader,
             mod_ref_table_index,
             info_block.get_module_reference_table_count(),
             &imp_name_table,
@@ -165,96 +165,7 @@ fn offset_index(table_offset: i16, index: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     /// Builds a minimal, but structurally valid, 75-byte NE image:
     /// - bytes 0..64: the `InformationBlock` (64-byte NE header)
@@ -288,7 +199,7 @@ mod tests {
 
     #[test]
     fn parses_minimal_header() {
-        let mut reader = MockReader::new(minimal_ne_image());
+        let mut reader = BinaryReader::from_bytes(minimal_ne_image(), true);
 
         let header = WindowsHeader::new(&mut reader, None, 0).unwrap();
 
@@ -305,7 +216,7 @@ mod tests {
     fn rejects_bad_magic_number() {
         let mut data = minimal_ne_image();
         data[0..2].copy_from_slice(&0x1234i16.to_le_bytes());
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         match WindowsHeader::new(&mut reader, None, 0) {
             Ok(_) => panic!("expected an error for a bad magic number"),
@@ -315,7 +226,7 @@ mod tests {
 
     #[test]
     fn restores_reader_position_after_construction() {
-        let mut reader = MockReader::new(minimal_ne_image());
+        let mut reader = BinaryReader::from_bytes(minimal_ne_image(), true);
         reader.set_pointer_index(5);
 
         let _ = WindowsHeader::new(&mut reader, None, 0).unwrap();

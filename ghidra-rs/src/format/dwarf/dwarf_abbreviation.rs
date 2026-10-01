@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_attribute_id::{AttrDef, DWARFAttributeId};
 use crate::format::dwarf::dwarf_children::DWARFChildren;
@@ -64,7 +64,7 @@ impl DWARFAbbreviation {
     /// end-of-list marker. Mirrors the static `DWARFAbbreviation.read(BinaryReader,
     /// DIEContainer)`.
     pub fn read(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         die_container: &dyn DIEContainer,
     ) -> io::Result<Option<DWARFAbbreviation>> {
         let _ = die_container;
@@ -95,7 +95,7 @@ impl DWARFAbbreviation {
     /// encountered. Mirrors the static `DWARFAbbreviation.readAbbreviations(BinaryReader,
     /// DIEContainer)`.
     pub fn read_abbreviations(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         die_container: &dyn DIEContainer,
     ) -> io::Result<HashMap<i32, DWARFAbbreviation>> {
         let mut result = HashMap::new();
@@ -178,89 +178,11 @@ fn warn_if_mismatched_forms(attr_spec: &AttrDef) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start.checked_add(length).unwrap_or(usize::MAX);
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader { provider: Rc::new(RefCell::new(VecProvider(bytes))), index: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index })
-        }
-    }
 
     struct MockDIEContainer;
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             None
         }
     }
@@ -269,7 +191,7 @@ mod tests {
 
     #[test]
     fn read_returns_none_at_eol_marker() {
-        let mut reader = TestReader::new(vec![0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00], true);
         let container = MockDIEContainer;
         assert_eq!(DWARFAbbreviation::read(&mut reader, &container).unwrap(), None);
     }
@@ -279,7 +201,7 @@ mod tests {
         // Abbrev code 1, tag DW_TAG_subprogram (0x2e), has_children=1 (DW_CHILDREN_yes),
         // DW_AT_name (0x3) / DW_FORM_string (0x8), then the attrspec EOL marker (0x0, 0x0).
         let mut reader =
-            TestReader::new(vec![0x01, 0x2e, 0x01, 0x03, 0x08, 0x00, 0x00]);
+            BinaryReader::from_bytes(vec![0x01, 0x2e, 0x01, 0x03, 0x08, 0x00, 0x00], true);
         let container = MockDIEContainer;
         let abbrev = DWARFAbbreviation::read(&mut reader, &container).unwrap().unwrap();
 
@@ -299,7 +221,7 @@ mod tests {
         // Two abbreviations (codes 1 and 2, both DW_TAG_subprogram/no children/no attrs), then
         // the list-terminating EOL marker (an abbrev code of 0).
         let mut reader =
-            TestReader::new(vec![0x01, 0x2e, 0x00, 0x00, 0x00, 0x02, 0x2e, 0x00, 0x00, 0x00, 0x00]);
+            BinaryReader::from_bytes(vec![0x01, 0x2e, 0x00, 0x00, 0x00, 0x02, 0x2e, 0x00, 0x00, 0x00, 0x00], true);
         let container = MockDIEContainer;
         let map = DWARFAbbreviation::read_abbreviations(&mut reader, &container).unwrap();
 

@@ -22,7 +22,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::dwarf::attribs::dwarf_attribute_class::DWARFAttributeClass;
 use crate::format::dwarf::attribs::dwarf_attribute_def::{DWARFAttributeDef, DWARFAttributeDefBase};
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
@@ -746,7 +746,7 @@ impl AttrDef {
     /// Mirrors `DWARFAttributeId.AttrDef.read(BinaryReader)`, which delegates to the generic
     /// `DWARFAttributeDef.read(BinaryReader, Function)` (specialized to `DWARFAttributeId::of` as
     /// the id mapper).
-    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Option<AttrDef>> {
+    pub fn read(reader: &mut BinaryReader) -> io::Result<Option<AttrDef>> {
         Ok(DWARFAttributeDefBase::read(reader, DWARFAttributeId::of)?.map(|base| AttrDef { base }))
     }
 
@@ -812,85 +812,7 @@ impl DWARFAttributeDef for AttrDef {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start.checked_add(length).unwrap_or(usize::MAX);
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader { provider: Rc::new(RefCell::new(VecProvider(bytes))), index: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index })
-        }
-    }
+    use crate::app::util::bin::binary_reader::BinaryReader;
 
     #[test]
     fn ids_match_the_dwarf_spec_and_of_round_trips() {
@@ -947,7 +869,7 @@ mod tests {
     #[test]
     fn attr_def_read_recognizes_the_eol_marker() {
         // Both attribute id and form are 0 (EOL/EOL): DWARFAttributeDef.read returns null.
-        let mut reader = TestReader::new(vec![0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x00], true);
         assert_eq!(AttrDef::read(&mut reader).unwrap(), None);
         assert_eq!(reader.get_pointer_index(), 2);
     }
@@ -955,7 +877,7 @@ mod tests {
     #[test]
     fn attr_def_read_decodes_a_known_attribute_and_form() {
         // DW_AT_name (0x3), DW_FORM_string (0x8), both single-byte ULEB128s.
-        let mut reader = TestReader::new(vec![0x03, 0x08]);
+        let mut reader = BinaryReader::from_bytes(vec![0x03, 0x08], true);
         let def = AttrDef::read(&mut reader).unwrap().expect("not an EOL marker");
 
         assert_eq!(def.get_attribute_id(), Some(DWARFAttributeId::DwAtName));
@@ -969,7 +891,7 @@ mod tests {
     #[test]
     fn attr_def_read_reports_unrecognized_forms() {
         // DW_AT_name (0x3) paired with form code 0x02, DWARF v1's unsupported DW_FORM_ref.
-        let mut reader = TestReader::new(vec![0x03, 0x02]);
+        let mut reader = BinaryReader::from_bytes(vec![0x03, 0x02], true);
         let err = AttrDef::read(&mut reader).unwrap_err();
         assert!(err.to_string().contains("0x2"), "{err}");
     }
@@ -977,7 +899,7 @@ mod tests {
     #[test]
     fn attr_def_read_tolerates_an_unknown_attribute_id() {
         // Attribute id 0x1000 isn't a DWARFAttributeId constant, paired with DW_FORM_flag (0xc).
-        let mut reader = TestReader::new(vec![0x80, 0x20, 0x0c]);
+        let mut reader = BinaryReader::from_bytes(vec![0x80, 0x20, 0x0c], true);
         let def = AttrDef::read(&mut reader).unwrap().expect("not an EOL marker");
 
         assert_eq!(def.get_attribute_id(), None);
@@ -989,7 +911,7 @@ mod tests {
     fn attr_def_read_decodes_the_implicit_value_for_implicit_const() {
         // DW_AT_const_value (0x1c), DW_FORM_implicit_const (0x21), then a signed LEB128 implicit
         // value of -1 (0x7f).
-        let mut reader = TestReader::new(vec![0x1c, 0x21, 0x7f]);
+        let mut reader = BinaryReader::from_bytes(vec![0x1c, 0x21, 0x7f], true);
         let def = AttrDef::read(&mut reader).unwrap().expect("not an EOL marker");
 
         assert!(def.is_implicit());

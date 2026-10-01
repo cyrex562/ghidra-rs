@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::ne::resource_string_table::ResourceStringTable;
 use crate::format::seam_stubs::Resource;
 
@@ -99,7 +99,7 @@ impl ResourceType {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, alignment_shift_count: i16) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, alignment_shift_count: i16) -> io::Result<Self> {
         let type_id = reader.read_next_short()?;
         if type_id == 0 {
             // not a valid resource type...
@@ -178,97 +178,7 @@ impl std::fmt::Display for ResourceType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        current_index: u64,
-        little_endian: bool,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                current_index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                current_index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     fn resource_bytes(file_offset: u16, file_length: u16) -> Vec<u8> {
         let mut v = Vec::new();
@@ -287,7 +197,7 @@ mod tests {
         // Java default zero values (no resources array is even allocated). This port represents
         // that as zeroed fields and an empty resource list.
         let data = vec![0x00, 0x00];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let rt = ResourceType::new(&mut reader, 0).unwrap();
 
@@ -308,7 +218,7 @@ mod tests {
         data.extend_from_slice(&resource_bytes(0x10, 0x20));
         data.extend_from_slice(&resource_bytes(0x30, 0x40));
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let rt = ResourceType::new(&mut reader, 0).unwrap();
 
         assert_eq!(rt.get_type_id(), ResourceType::RT_BITMAP | 0x8000u16 as i16);
@@ -329,7 +239,7 @@ mod tests {
         data.extend_from_slice(&0i16.to_le_bytes()); // count = 0
         data.extend_from_slice(&0i32.to_le_bytes()); // reserved
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let rt = ResourceType::new(&mut reader, 0).unwrap();
 
         assert_eq!(rt.to_string(), "Icon");
@@ -345,7 +255,7 @@ mod tests {
         data.extend_from_slice(&0i16.to_le_bytes());
         data.extend_from_slice(&0i32.to_le_bytes());
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let rt = ResourceType::new(&mut reader, 0).unwrap();
 
         assert_eq!(rt.to_string(), "UnknownResourceType_6");
@@ -359,7 +269,7 @@ mod tests {
         data.extend_from_slice(&0i16.to_le_bytes());
         data.extend_from_slice(&0i32.to_le_bytes());
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let rt = ResourceType::new(&mut reader, 0).unwrap();
 
         assert_eq!(rt.to_string(), "Unknown_80");
@@ -386,7 +296,7 @@ mod tests {
         data.extend_from_slice(&resource_bytes(string_table_offset, string_table_length));
         data.extend_from_slice(&string_bytes);
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let rt = ResourceType::new(&mut reader, alignment_shift_count).unwrap();
 
         assert_eq!(rt.get_resources().len(), 1);
@@ -414,7 +324,7 @@ mod tests {
         data.extend_from_slice(&0i32.to_le_bytes());
         data.extend_from_slice(&resource_bytes(0x1, 0x2));
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let rt = ResourceType::new(&mut reader, 0).unwrap();
         assert_eq!(rt.get_resources().len(), 1);
     }
@@ -428,7 +338,7 @@ mod tests {
         // Truncated: only 4 of the 12 required Resource header bytes present.
         data.extend_from_slice(&[0u8; 4]);
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let err = ResourceType::new(&mut reader, 0).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::UnexpectedEof);
     }

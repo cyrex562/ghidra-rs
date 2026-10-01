@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::dwarf_exception::DWARFException;
 use crate::format::dwarf::dwarf_length_value::DWARFLengthValue;
@@ -102,7 +102,7 @@ impl DWARFLine {
 
     /// Reads a line table header (and its directory / file tables) from the stream.
     pub fn read(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         default_int_size: i32,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<DWARFLine> {
@@ -136,7 +136,7 @@ impl DWARFLine {
 
     fn read_v4(
         result: &mut DWARFLine,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<()> {
         // length : dwarf_length (already)
@@ -186,7 +186,7 @@ impl DWARFLine {
 
     fn read_v5(
         result: &mut DWARFLine,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<()> {
         // length : dwarf_length (already)
@@ -241,7 +241,7 @@ impl DWARFLine {
 
     /// Reads the `opcode_base - 1` standard opcode operand counts. Element 0 is never used by the
     /// line program and is set to 1, as in the Java code.
-    fn read_standard_opcode_lengths(&mut self, reader: &mut dyn LegacyBinaryReader) -> io::Result<()> {
+    fn read_standard_opcode_lengths(&mut self, reader: &mut BinaryReader) -> io::Result<()> {
         self.standard_opcode_length = vec![0; self.opcode_base.max(0) as usize];
         if let Some(first) = self.standard_opcode_length.first_mut() {
             *first = 1; /* Should never be used */
@@ -438,98 +438,8 @@ impl fmt::Display for DWARFLine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::seam_stubs::{DIEContainer, DWARFImportSummary, DWARFProgram};
     use crate::program::model::data::leb128::Leb128;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     struct MockProgram {
         summary: DWARFImportSummary,
@@ -549,10 +459,10 @@ mod tests {
     }
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             self.debug_line_bytes
                 .as_ref()
-                .map(|bytes| Box::new(TestReader::new(bytes.clone())) as Box<dyn LegacyBinaryReader>)
+                .map(|bytes| BinaryReader::from_bytes(bytes.clone(), true))
         }
     }
 
@@ -654,7 +564,7 @@ mod tests {
     fn read_v4_parses_header_dirs_and_files() {
         let bytes = encode_v4_header(4, &["/usr/include"], &["main.c", "util.c"]);
         let total_len = bytes.len() as u64;
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = MockCompilationUnit::new(4, Some("/home/user/proj"));
 
         let line = DWARFLine::read(&mut reader, 4, &cu).unwrap();
@@ -693,7 +603,7 @@ mod tests {
     #[test]
     fn read_v2_has_no_max_ops_per_instruction_field() {
         let bytes = encode_v4_header(2, &[], &["a.c"]);
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = MockCompilationUnit::new(2, None);
 
         let line = DWARFLine::read(&mut reader, 4, &cu).unwrap();
@@ -707,7 +617,7 @@ mod tests {
     #[test]
     fn read_v4_makes_relative_include_dirs_absolute() {
         let bytes = encode_v4_header(4, &["include", ".", "/abs/dir", "d:\\win\\dir"], &[]);
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = MockCompilationUnit::new(4, Some("/home/user/proj"));
 
         let line = DWARFLine::read(&mut reader, 4, &cu).unwrap();
@@ -721,7 +631,7 @@ mod tests {
     #[test]
     fn read_v4_leaves_relative_dirs_alone_without_a_compile_directory() {
         let bytes = encode_v4_header(4, &["include", "."], &[]);
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         // A blank compile directory is treated the same as a missing one.
         let cu = MockCompilationUnit::new(4, Some("   "));
 
@@ -764,7 +674,7 @@ mod tests {
         bytes.extend(&header);
         let total_len = bytes.len() as u64;
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = MockCompilationUnit::new(5, Some("/proj"));
 
         let line = DWARFLine::read(&mut reader, 4, &cu).unwrap();
@@ -786,7 +696,7 @@ mod tests {
 
     #[test]
     fn read_rejects_a_zero_length_unit() {
-        let mut reader = TestReader::new(vec![0, 0, 0, 0, 0, 0, 0, 0]);
+        let mut reader = BinaryReader::from_bytes(vec![0, 0, 0, 0, 0, 0, 0, 0], true);
         let cu = MockCompilationUnit::new(4, None);
 
         assert!(DWARFLine::read(&mut reader, 4, &cu).is_err());
@@ -795,7 +705,7 @@ mod tests {
     #[test]
     fn get_all_source_file_infos_joins_dir_and_file_names() {
         let bytes = encode_v4_header(4, &["/usr/include"], &["main.c", "util.c"]);
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = MockCompilationUnit::new(4, Some("/home/user/proj"));
 
         let line = DWARFLine::read(&mut reader, 4, &cu).unwrap();
@@ -819,7 +729,7 @@ mod tests {
     #[test]
     fn line_program_executor_gets_the_header_values() {
         let bytes = encode_v4_header(4, &[], &["main.c"]);
-        let mut reader = TestReader::new(bytes.clone());
+        let mut reader = BinaryReader::from_bytes(bytes.clone(), true);
         let cu = MockCompilationUnit::new(4, None).with_debug_line(Some(bytes));
 
         let line = DWARFLine::read(&mut reader, 4, &cu).unwrap();

@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 /// The common data held by every OMF record.
 ///
@@ -14,7 +14,7 @@ pub struct OmfRecord {
     data: Vec<u8>,
     check_sum: i8,
     record_offset: u64,
-    data_reader: Option<Box<dyn LegacyBinaryReader>>,
+    data_reader: Option<BinaryReader>,
     data_end: u64,
 }
 
@@ -24,7 +24,7 @@ impl OmfRecord {
     ///
     /// # Errors
     /// Returns `Err` if there was an IO-related error.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let record_offset = reader.get_pointer_index();
 
         let record_type = reader.read_next_unsigned_byte()? as i32;
@@ -73,8 +73,8 @@ impl OmfRecord {
 
     /// Returns a reader positioned at the start of the record's type-specific data, if one is
     /// set.
-    pub fn data_reader_mut(&mut self) -> Option<&mut (dyn LegacyBinaryReader + 'static)> {
-        self.data_reader.as_deref_mut()
+    pub fn data_reader_mut(&mut self) -> Option<&mut BinaryReader> {
+        self.data_reader.as_mut()
     }
 
     /// Returns the offset immediately following the record's type-specific data.
@@ -136,96 +136,8 @@ impl fmt::Display for OmfRecord {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
+    use crate::app::util::bin::binary_reader::BinaryReader;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     fn build_record_bytes(record_type: u8, payload: &[u8], check_sum: u8) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -240,7 +152,7 @@ mod tests {
     #[test]
     fn new_reads_common_fields() {
         let bytes = build_record_bytes(0x80, &[0xDE, 0xAD, 0xBE, 0xEF], 0x00);
-        let mut r = MockReader::new(bytes);
+        let mut r = BinaryReader::from_bytes(bytes, true);
 
         let record = OmfRecord::new(&mut r).unwrap();
 
@@ -256,7 +168,7 @@ mod tests {
     fn new_reads_from_nonzero_offset() {
         let mut bytes = vec![0xFF, 0xFF, 0xFF]; // leading padding
         bytes.extend(build_record_bytes(0x01, &[0x42], 0x00));
-        let mut r = MockReader::new(bytes);
+        let mut r = BinaryReader::from_bytes(bytes, true);
         r.set_pointer_index(3);
 
         let record = OmfRecord::new(&mut r).unwrap();
@@ -270,7 +182,7 @@ mod tests {
     #[test]
     fn data_reader_is_positioned_after_header() {
         let bytes = build_record_bytes(0x80, &[0xAA, 0xBB], 0x00);
-        let mut r = MockReader::new(bytes);
+        let mut r = BinaryReader::from_bytes(bytes, true);
 
         let mut record = OmfRecord::new(&mut r).unwrap();
         let data_reader = record.data_reader_mut().unwrap();
@@ -282,19 +194,19 @@ mod tests {
     #[test]
     fn valid_check_sum_true_when_zero() {
         let bytes = build_record_bytes(0x80, &[0x01, 0x02], 0x00);
-        let mut r = MockReader::new(bytes);
+        let mut r = BinaryReader::from_bytes(bytes, true);
         let record = OmfRecord::new(&mut r).unwrap();
         assert!(record.valid_check_sum());
     }
 
     #[test]
     fn valid_check_sum_matches_calculated_checksum() {
-        let mut r = MockReader::new(build_record_bytes(0x80, &[0x01, 0x02], 0x00));
+        let mut r = BinaryReader::from_bytes(build_record_bytes(0x80, &[0x01, 0x02], 0x00), true);
         let record = OmfRecord::new(&mut r).unwrap();
         let calc = record.calc_check_sum();
 
         let checksum_byte = (0u8.wrapping_sub(calc as u8)) as i8;
-        let mut r2 = MockReader::new(build_record_bytes(0x80, &[0x01, 0x02], checksum_byte as u8));
+        let mut r2 = BinaryReader::from_bytes(build_record_bytes(0x80, &[0x01, 0x02], checksum_byte as u8), true);
         let record2 = OmfRecord::new(&mut r2).unwrap();
 
         assert!(record2.valid_check_sum());
@@ -302,25 +214,25 @@ mod tests {
 
     #[test]
     fn invalid_check_sum_detected() {
-        let mut r = MockReader::new(build_record_bytes(0x80, &[0x01, 0x02], 0x05));
+        let mut r = BinaryReader::from_bytes(build_record_bytes(0x80, &[0x01, 0x02], 0x05), true);
         let record = OmfRecord::new(&mut r).unwrap();
         assert!(!record.valid_check_sum());
     }
 
     #[test]
     fn has_big_fields_checks_low_bit() {
-        let mut r = MockReader::new(build_record_bytes(0x01, &[], 0x00));
+        let mut r = BinaryReader::from_bytes(build_record_bytes(0x01, &[], 0x00), true);
         let record = OmfRecord::new(&mut r).unwrap();
         assert!(record.has_big_fields());
 
-        let mut r2 = MockReader::new(build_record_bytes(0x02, &[], 0x00));
+        let mut r2 = BinaryReader::from_bytes(build_record_bytes(0x02, &[], 0x00), true);
         let record2 = OmfRecord::new(&mut r2).unwrap();
         assert!(!record2.has_big_fields());
     }
 
     #[test]
     fn display_formats_type_offset_length() {
-        let mut r = MockReader::new(build_record_bytes(0x0A, &[0x01], 0x00));
+        let mut r = BinaryReader::from_bytes(build_record_bytes(0x0A, &[0x01], 0x00), true);
         let record = OmfRecord::new(&mut r).unwrap();
         assert_eq!(record.to_string(), "type: 0xa, offset: 0x0, length: 0x2");
     }

@@ -13,7 +13,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::StructConverterUtilDataType;
 use crate::program::model::data::data_type::DataType;
@@ -43,7 +43,7 @@ impl ExportedSymbolHashSlot {
     /// the hex mask for `indexOfFirstExportKey` instead. The upshot: `getIndexOfFirstExportKey()`
     /// returns 0 for the vast majority of real `countAndStart` values (only bits 1 and 4 of the
     /// mask survive), so this accessor is effectively unusable in the original Ghidra too.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let count_and_start = reader.read_next_int()?;
 
         Ok(ExportedSymbolHashSlot {
@@ -77,64 +77,6 @@ impl StructConverter for ExportedSymbolHashSlot {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    /// Minimal in-memory [`BinaryReader`] sufficient for this module's tests: sequential
-    /// big-endian 32-bit reads.
-    struct MockReader {
-        bytes: Vec<u8>,
-        pos: u64,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            MockReader { bytes, pos: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.bytes.len() as u64
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.pos
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.pos;
-            self.pos = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not needed by ExportedSymbolHashSlot tests")
-        }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by ExportedSymbolHashSlot tests")
-        }
-    }
 
     fn write_i32_be(buf: &mut Vec<u8>, value: i32) {
         buf.extend_from_slice(&value.to_be_bytes());
@@ -146,7 +88,7 @@ mod tests {
         let count_and_start = 3i32 << 18;
         let mut buf = Vec::new();
         write_i32_be(&mut buf, count_and_start);
-        let mut reader = MockReader::new(buf);
+        let mut reader = BinaryReader::from_bytes(buf, false);
 
         let slot = ExportedSymbolHashSlot::new(&mut reader).unwrap();
 
@@ -160,7 +102,7 @@ mod tests {
         let count_and_start = 0x3_FFFF;
         let mut buf = Vec::new();
         write_i32_be(&mut buf, count_and_start);
-        let mut reader = MockReader::new(buf);
+        let mut reader = BinaryReader::from_bytes(buf, false);
 
         let slot = ExportedSymbolHashSlot::new(&mut reader).unwrap();
 
@@ -174,7 +116,7 @@ mod tests {
         let count_and_start = 5;
         let mut buf = Vec::new();
         write_i32_be(&mut buf, count_and_start);
-        let mut reader = MockReader::new(buf);
+        let mut reader = BinaryReader::from_bytes(buf, false);
 
         let slot = ExportedSymbolHashSlot::new(&mut reader).unwrap();
 
@@ -185,7 +127,7 @@ mod tests {
     fn to_data_type_reports_fixed_length() {
         let mut buf = Vec::new();
         write_i32_be(&mut buf, 0);
-        let mut reader = MockReader::new(buf);
+        let mut reader = BinaryReader::from_bytes(buf, false);
         let slot = ExportedSymbolHashSlot::new(&mut reader).unwrap();
 
         let dt = slot.to_data_type().unwrap();

@@ -1396,6 +1396,38 @@ impl GByteStore for ProviderByteStore {
     }
 }
 
+/// Read-only [`ByteProvider`] view of a legacy [`GByteStore`], for callers (mostly loaders) that
+/// still hand out `Rc<RefCell<dyn GByteStore>>` but need a real [`BinaryReader`]. Transitional,
+/// like [`LegacyBinaryReader`]: it goes away once those callers hold real providers.
+pub struct GByteStoreProvider(pub Rc<RefCell<dyn GByteStore>>);
+
+impl ByteProvider for GByteStoreProvider {
+    fn get_file(&self) -> Option<std::path::PathBuf> {
+        self.0.borrow().get_file()
+    }
+    fn get_name(&self) -> Option<String> {
+        None
+    }
+    fn get_absolute_path(&self) -> Option<String> {
+        None
+    }
+    fn length(&self) -> u64 {
+        self.0.borrow_mut().length().unwrap_or(0)
+    }
+    fn is_valid_index(&self, index: u64) -> bool {
+        self.0.borrow_mut().is_valid_index(index)
+    }
+    fn close(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+    fn read_byte(&self, index: u64) -> io::Result<u8> {
+        self.0.borrow_mut().read_byte(index)
+    }
+    fn read_bytes(&self, index: u64, length: u64) -> io::Result<Vec<u8>> {
+        self.0.borrow_mut().read_bytes(index, length as usize)
+    }
+}
+
 impl LegacyBinaryReader for BinaryReader {
     fn length(&self) -> io::Result<u64> {
         BinaryReader::length(self)
@@ -1932,6 +1964,17 @@ mod tests {
 
     fn legacy_int(r: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
         r.read_next_int()
+    }
+
+    #[test]
+    fn g_byte_store_provider_bridges_legacy_stores() {
+        let store: Rc<RefCell<dyn GByteStore>> =
+            Rc::new(RefCell::new(ByteArrayProvider::new(vec![0u8, 0, 0, 7])));
+        let mut r = BinaryReader::new(Rc::new(GByteStoreProvider(store)), false);
+        assert_eq!(r.length().unwrap(), 4);
+        assert_eq!(r.read_next_int().unwrap(), 7);
+        assert!(!r.has_next());
+        assert!(r.read_next_byte().is_err());
     }
 
     #[test]

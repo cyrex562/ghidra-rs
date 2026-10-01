@@ -321,8 +321,8 @@ mod tests {
             unimplemented!()
         }
 
-        fn typedef_builder(&self) -> crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder {
-            crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder::for_pointer(self)
+        fn typedef_builder(&self) -> Box<dyn crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder> {
+            unimplemented!()
         }
     }
 
@@ -504,7 +504,7 @@ mod tests {
         fn get_data_address(&self, _offset: i64) -> Address {
             unimplemented!()
         }
-        fn get_reader(&self, _position: i64) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
+        fn get_reader(&self, _position: i64) -> crate::app::util::bin::binary_reader::BinaryReader {
             unimplemented!()
         }
         fn find_containing_module_by_func_data(

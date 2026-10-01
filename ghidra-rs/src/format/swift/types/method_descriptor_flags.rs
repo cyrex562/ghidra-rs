@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::swift::swift_type_metadata_structure::{
     SwiftTypeMetadataStructure, SwiftTypeMetadataStructureBase, CATEGORY_PATH,
@@ -46,7 +46,7 @@ impl MethodDescriptorFlags {
 
     /// Creates a new `MethodDescriptorFlags` from a reader positioned at the start of the
     /// structure.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let base = SwiftTypeMetadataStructureBase::new(reader.get_pointer_index() as i64);
         let flags = reader.read_next_int()?;
         Ok(MethodDescriptorFlags { base, flags })
@@ -118,13 +118,13 @@ impl StructConverter for MethodDescriptorFlags {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_reader::VecReader;
+    use super::super::test_reader::le_reader_at;
     use super::*;
 
     fn parse(flags: u32) -> MethodDescriptorFlags {
         let mut bytes = vec![0xAA, 0xBB];
         bytes.extend_from_slice(&flags.to_le_bytes());
-        let mut reader = VecReader::new(bytes, 2);
+        let mut reader = le_reader_at(bytes, 2);
         let f = MethodDescriptorFlags::new(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), 6);
         f
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn short_read_is_error() {
-        let mut reader = VecReader::new(vec![1, 2, 3], 0);
+        let mut reader = le_reader_at(vec![1, 2, 3], 0);
         assert!(MethodDescriptorFlags::new(&mut reader).is_err());
     }
 

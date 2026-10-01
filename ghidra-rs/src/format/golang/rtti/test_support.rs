@@ -13,7 +13,7 @@ use crate::format::golang::rtti::types::go_slice_type::GoSliceType;
 use crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType;
 use crate::format::golang::structmapping::test_support::{byte_reader, simple, structure, test_mapper, TagContext};
 use crate::format::golang::structmapping::{DataTypeMapper, StructureMapped};
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::golang::go_ver::GoVer;
 use crate::format::seam_stubs::{GoModuledata, GoName, GoRttiMapper, GoSlice, GoSymbolName, GoTypeManager};
 use crate::program::database::sourcemap::SourceFile;
@@ -203,7 +203,7 @@ pub fn read_at<T: StructureMapped>(mapper: &DataTypeMapper, image: &Image, offse
 pub fn try_read_at<T: StructureMapped>(mapper: &DataTypeMapper, image: &Image, offset: i64) -> std::io::Result<T> {
     let mut reader = byte_reader(image.0.clone(), true);
     reader.set_pointer_index(offset as u64);
-    mapper.read_structure(reader.as_mut())
+    mapper.read_structure(&mut reader)
 }
 
 /// A `GoBaseType` read from a fresh image (for the base types of mock `GoType`s), with a
@@ -259,7 +259,7 @@ impl GoRttiMapper for VersionOnlyRtti {
     fn get_data_address(&self, _offset: i64) -> Address {
         unimplemented!("unused by VersionOnlyRtti callers")
     }
-    fn get_reader(&self, _position: i64) -> Box<dyn LegacyBinaryReader> {
+    fn get_reader(&self, _position: i64) -> BinaryReader {
         unimplemented!("unused by VersionOnlyRtti callers")
     }
     fn find_containing_module_by_func_data(&self, _offset: i64) -> Option<Box<dyn GoModuledata>> {

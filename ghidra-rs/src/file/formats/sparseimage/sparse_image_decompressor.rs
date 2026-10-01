@@ -176,7 +176,8 @@ impl<'a> SparseImageDecompressor<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::VecReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::format::macos::test_support::le_reader;
     use crate::util::task::DummyMonitor;
 
     const BLK: u32 = 8;
@@ -210,7 +211,7 @@ mod tests {
     }
 
     fn expand(image: Vec<u8>) -> Result<Vec<u8>, GFileSystemError> {
-        let mut reader = VecReader::little_endian(image);
+        let mut reader = le_reader(image);
         let mut out = Vec::new();
         SparseImageDecompressor::new(&mut reader, &mut out).decompress(&DummyMonitor)?;
         Ok(out)

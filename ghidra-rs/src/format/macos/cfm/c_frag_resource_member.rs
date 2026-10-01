@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_locator_kind::CFragLocatorKind;
 use crate::format::macos::cfm::c_frag_usage::CFragUsage;
@@ -62,7 +62,7 @@ impl CFragResourceMember {
     /// `ArrayIndexOutOfBoundsException`; see [`CFragUsage::get`]), and
     /// [`io::ErrorKind::InvalidData`] "Reserved fields contain invalid value(s)." when either
     /// reserved field is non-zero (checked after the whole member is read, as in Java).
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let architecture = reader.read_next_ascii_string_fixed(4)?;
         let reserved_a = reader.read_next_short()?;
         let reserved_b = reader.read_next_byte()? as i8;
@@ -242,7 +242,7 @@ impl StructConverter for CFragResourceMember {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::{cfrag_member, Image, VecReader};
+    use crate::format::macos::test_support::{cfrag_member, Image, be_reader};
 
     fn member_bytes(usage: u8, name: &str) -> Vec<u8> {
         let mut img = Image::default();
@@ -254,7 +254,7 @@ mod tests {
     fn reads_every_field() {
         let bytes = member_bytes(2, "Plugin");
         let len = bytes.len() as u64;
-        let mut reader = VecReader::new(bytes);
+        let mut reader = be_reader(bytes);
         let m = CFragResourceMember::new(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), len);
         assert_eq!(len, 43 + 6);
@@ -279,19 +279,19 @@ mod tests {
     fn non_zero_reserved_field_is_rejected() {
         let mut bytes = member_bytes(1, "A");
         bytes[6] = 1; // reservedB
-        let err = CFragResourceMember::new(&mut VecReader::new(bytes)).unwrap_err();
+        let err = CFragResourceMember::new(&mut be_reader(bytes)).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidData);
         assert_eq!(err.to_string(), "Reserved fields contain invalid value(s).");
     }
 
     #[test]
     fn out_of_range_usage_is_an_error() {
-        assert!(CFragResourceMember::new(&mut VecReader::new(member_bytes(9, "A"))).is_err());
+        assert!(CFragResourceMember::new(&mut be_reader(member_bytes(9, "A"))).is_err());
     }
 
     #[test]
     fn to_data_type_mirrors_javas_component_list() {
-        let m = CFragResourceMember::new(&mut VecReader::new(member_bytes(1, "App"))).unwrap();
+        let m = CFragResourceMember::new(&mut be_reader(member_bytes(1, "App"))).unwrap();
         let dt = m.to_data_type().unwrap();
         assert_eq!(dt.get_name(), "CFragResourceMember");
         // 4+2+1+1 + 4*6 + 1+1 + 4+4 + ("App".len() + 1)

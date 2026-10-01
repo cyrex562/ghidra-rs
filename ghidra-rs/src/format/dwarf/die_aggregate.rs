@@ -646,7 +646,7 @@ impl fmt::Display for DIEAggregate<'_> {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef;
     use crate::format::dwarf::dwarf_abbreviation::DWARFAbbreviation;
     use crate::format::dwarf::line::dwarf_file::DWARFFile;
@@ -682,7 +682,7 @@ pub(crate) mod tests {
     }
 
     impl DIEContainer for MockContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             None
         }
 

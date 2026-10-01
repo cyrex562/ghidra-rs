@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::macos::asd::entry::Entry;
 use crate::format::macos::cfm::c_frag_resource::CFragResource;
 use crate::format::macos::rm::resource_header::ResourceHeader;
@@ -26,7 +26,7 @@ use crate::format::macos::rm::resource_types::TYPE_CFRG;
 /// Besides read errors, a `'cfrg'` type with an empty reference list is reported as
 /// [`io::ErrorKind::InvalidData`] (Java's `List.get(0)` throws `IndexOutOfBoundsException`).
 pub fn get_resource_object(
-    reader: &mut dyn LegacyBinaryReader,
+    reader: &mut BinaryReader,
     header: &ResourceHeader,
     resource_type: &ResourceType,
 ) -> io::Result<Option<CFragResource>> {
@@ -52,17 +52,17 @@ pub fn get_resource_object(
 
 #[cfg(test)]
 mod tests {
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
     use crate::format::macos::asd::entry_descriptor_id::ENTRY_RESOURCE_FORK;
     use crate::format::macos::cfm::c_frag_usage::CFragUsage;
     use crate::format::macos::rm::resource_header::ResourceHeader;
-    use crate::format::macos::test_support::{cfrg_fork_fixture, VecReader};
+    use crate::format::macos::test_support::{cfrg_fork_fixture, be_reader};
 
     #[test]
     fn cfrg_type_parses_the_fragment_resource() {
         // The fork sits at file offset 8, so the data position also adds the descriptor offset.
-        let mut reader = VecReader::new(cfrg_fork_fixture(8));
+        let mut reader = be_reader(cfrg_fork_fixture(8));
         reader.set_pointer_index(8);
         let header =
             ResourceHeader::new(&mut reader, EntryDescriptor::new(ENTRY_RESOURCE_FORK as i32, 8, 0))
@@ -86,7 +86,7 @@ mod tests {
         // numberOfResources - 1 = -1: an empty reference list.
         let type_entry = 0x90 + 4;
         bytes[type_entry..type_entry + 2].copy_from_slice(&0xffffu16.to_be_bytes());
-        let mut reader = VecReader::new(bytes);
+        let mut reader = be_reader(bytes);
         let err = ResourceHeader::new(&mut reader, EntryDescriptor::new(2, 0, 0)).unwrap_err();
         assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
     }

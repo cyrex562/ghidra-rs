@@ -83,7 +83,8 @@ impl StructConverter for SparseHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::VecReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::format::macos::test_support::le_reader;
 
     fn header_bytes(blk_sz: u32, total_blks: u32, total_chunks: u32, crc: u32) -> Vec<u8> {
         let mut b = Vec::new();
@@ -101,7 +102,7 @@ mod tests {
 
     #[test]
     fn reads_little_endian_fields() {
-        let mut reader = VecReader::little_endian(header_bytes(4096, 10, 3, 0xCAFE_BABE));
+        let mut reader = le_reader(header_bytes(4096, 10, 3, 0xCAFE_BABE));
         let h = SparseHeader::new(&mut reader).unwrap();
         assert_eq!(h.magic as u32, 0xED26_FF3A);
         assert_eq!(h.major_version, 1);
@@ -117,13 +118,13 @@ mod tests {
 
     #[test]
     fn short_input_errors() {
-        let mut reader = VecReader::little_endian(vec![0; 10]);
+        let mut reader = le_reader(vec![0; 10]);
         assert!(SparseHeader::new(&mut reader).is_err());
     }
 
     #[test]
     fn data_type_is_28_byte_sparse_header() {
-        let mut reader = VecReader::little_endian(header_bytes(4096, 1, 1, 0));
+        let mut reader = le_reader(header_bytes(4096, 1, 1, 0));
         let dt = SparseHeader::new(&mut reader).unwrap().to_data_type().unwrap();
         assert_eq!(dt.get_name(), "sparse_header");
         assert_eq!(dt.get_length(), 28);

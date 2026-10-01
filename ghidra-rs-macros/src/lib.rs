@@ -702,7 +702,7 @@ fn expand(input: &DeriveInput) -> syn::Result<TokenStream2> {
     };
     let read_structure = if is_reader {
         quote!(::core::option::Option::Some(
-            (|__obj: &mut #name, __reader: &mut dyn __sm::LegacyBinaryReader, __mapper: &__sm::DataTypeMapper|
+            (|__obj: &mut #name, __reader: &mut __sm::BinaryReader, __mapper: &__sm::DataTypeMapper|
                 -> ::std::io::Result<()> {
                 <#name as __sm::StructureReader>::read_structure(__obj, __reader, __mapper)
             }) as __sm::ReadStructureFn<#name>

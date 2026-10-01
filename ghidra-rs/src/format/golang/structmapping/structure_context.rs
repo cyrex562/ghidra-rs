@@ -3,7 +3,7 @@
 use std::io;
 use std::sync::{Arc, OnceLock};
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::data::data_type::DataType;
 
@@ -62,7 +62,7 @@ impl<T: StructureMapped> StructureContext<T> {
         data_type_mapper: &DataTypeMapper,
         mapping_info: Arc<StructureMappingInfo<T>>,
         containing_field_data_type: Option<Arc<dyn DataType>>,
-        reader: Option<&dyn LegacyBinaryReader>,
+        reader: Option<&BinaryReader>,
     ) -> Self {
         let structure_start = reader.map_or(-1, |r| r.get_pointer_index() as i64);
         let structure_data_type = OnceLock::new();
@@ -88,7 +88,7 @@ impl<T: StructureMapped> StructureContext<T> {
     pub fn read_new_instance(
         &self,
         mapper: &DataTypeMapper,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
     ) -> io::Result<T> {
         let mut instance = T::create_instance(self.clone(), mapper)?;
         self.mapping_info.read_structure(self, &mut instance, mapper, reader)?;
@@ -141,12 +141,12 @@ impl<T: StructureMapped> StructureContext<T> {
     }
 
     /// `getReader()`: a reader positioned at the start of the structure.
-    pub fn get_reader(&self, mapper: &DataTypeMapper) -> io::Result<Box<dyn LegacyBinaryReader>> {
+    pub fn get_reader(&self, mapper: &DataTypeMapper) -> io::Result<BinaryReader> {
         mapper.get_reader(self.structure_start)
     }
 
     /// `getFieldReader(long)`: a reader positioned at a field of the structure.
-    pub fn get_field_reader(&self, mapper: &DataTypeMapper, field_offset: i64) -> io::Result<Box<dyn LegacyBinaryReader>> {
+    pub fn get_field_reader(&self, mapper: &DataTypeMapper, field_offset: i64) -> io::Result<BinaryReader> {
         mapper.get_reader(self.structure_start + field_offset)
     }
 
@@ -162,7 +162,7 @@ impl<T: StructureMapped> StructureContext<T> {
         &'a self,
         instance: &'a T,
         fmi: &'a FieldMappingInfo<T>,
-        reader: Option<&dyn LegacyBinaryReader>,
+        reader: Option<&BinaryReader>,
     ) -> io::Result<FieldContext<'a, T>> {
         let structure = self.structure_data_type.get();
         let dtc = fmi

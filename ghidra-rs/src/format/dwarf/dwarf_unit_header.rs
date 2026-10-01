@@ -1,7 +1,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::dwarf::dwarf_exception::DWARFException;
 use crate::format::dwarf::dwarf_length_value::DWARFLengthValue;
 use crate::format::dwarf::dwarf_unit_type::DWARFUnitType;
@@ -60,7 +60,7 @@ impl DWARFUnitHeader {
     /// the end-of-list.
     pub fn read(
         die_container: Arc<dyn DIEContainer>,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         unit_number: i32,
     ) -> io::Result<Option<Box<dyn DWARFCompilationUnit>>> {
         // unit_length : dwarf_length
@@ -165,96 +165,6 @@ fn describe_unit_type(unit_type: u8) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     struct MockProgram;
 
@@ -280,7 +190,7 @@ mod tests {
     }
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             None
         }
         fn get_program(&self) -> Option<Arc<dyn DWARFProgram>> {
@@ -320,7 +230,7 @@ mod tests {
 
     #[test]
     fn read_returns_none_at_end_of_list() {
-        let mut reader = TestReader::new(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
         let container: Arc<dyn DIEContainer> = Arc::new(MockDIEContainer::new());
         let result = DWARFUnitHeader::read(container, &mut reader, 0).unwrap();
         assert!(result.is_none());
@@ -329,7 +239,7 @@ mod tests {
     #[test]
     fn read_rejects_versions_below_2() {
         let bytes = build_v4_header_bytes(1);
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let container: Arc<dyn DIEContainer> = Arc::new(MockDIEContainer::new());
         let err = expect_err(DWARFUnitHeader::read(container, &mut reader, 0));
         assert!(err.to_string().contains("Unsupported DWARF version [1]"));
@@ -342,7 +252,7 @@ mod tests {
         // erroring earlier on version validation.
         for version in [2u16, 3, 4] {
             let bytes = build_v4_header_bytes(version);
-            let mut reader = TestReader::new(bytes);
+            let mut reader = BinaryReader::from_bytes(bytes, true);
             let container: Arc<dyn DIEContainer> = Arc::new(MockDIEContainer::new());
             let err = expect_err(DWARFUnitHeader::read(container, &mut reader, 0));
             assert!(err.to_string().contains("DWARFCompilationUnit.readV4"));
@@ -352,7 +262,7 @@ mod tests {
     #[test]
     fn read_dispatches_v5_compile_unit_to_the_unported_compilation_unit_reader() {
         let bytes = build_v5_header_bytes(DWARFUnitType::Compile as u8);
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let container: Arc<dyn DIEContainer> = Arc::new(MockDIEContainer::new());
         let err = expect_err(DWARFUnitHeader::read(container, &mut reader, 0));
         assert!(err.to_string().contains("DWARFCompilationUnit.readV5"));
@@ -368,7 +278,7 @@ mod tests {
             DWARFUnitType::SplitType as u8,
         ] {
             let bytes = build_v5_header_bytes(unit_type);
-            let mut reader = TestReader::new(bytes);
+            let mut reader = BinaryReader::from_bytes(bytes, true);
             let container: Arc<dyn DIEContainer> = Arc::new(MockDIEContainer::new());
             let err = expect_err(DWARFUnitHeader::read(container, &mut reader, 0));
             assert!(err.to_string().contains("Unsupported unitType"));

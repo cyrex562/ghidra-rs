@@ -805,16 +805,13 @@ impl std::fmt::Display for RecoveredSignature {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::golang::rtti::test_support::{go118_tags, go_mapper_with_tags, read_at, Image};
     use crate::format::golang::structmapping::test_support::TagContext;
     use crate::format::seam_stubs::{GoName, GoSlice, GoType, GoTypeManager};
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
-    use std::cell::RefCell;
     use std::collections::HashMap;
-    use std::rc::Rc;
 
     fn test_address(offset: i64) -> Address {
         let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
@@ -823,84 +820,6 @@ mod tests {
 
     // ---- a minimal in-memory BinaryReader ------------------------------------------------
 
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> std::io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> std::io::Result<()> {
-            Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> std::io::Result<()> {
-            Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn boxed(data: Vec<u8>, start: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                current_index: start,
-            })
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> std::io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            std::mem::replace(&mut self.current_index, index)
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> std::io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                current_index: new_index,
-            })
-        }
-    }
 
     // ---- mock seam implementations -------------------------------------------------------
 
@@ -971,8 +890,8 @@ mod tests {
             &self,
             element_size: i32,
             element_index: i32,
-        ) -> Box<dyn LegacyBinaryReader> {
-            MockReader::boxed(self.0.bytes.clone(), (element_size * element_index) as u64)
+        ) -> BinaryReader {
+            BinaryReader::from_bytes(self.0.bytes.clone(), true).clone_at((element_size * element_index) as u64)
         }
     }
 
@@ -1186,8 +1105,8 @@ mod tests {
         fn get_data_address(&self, offset: i64) -> Address {
             test_address(offset)
         }
-        fn get_reader(&self, position: i64) -> Box<dyn LegacyBinaryReader> {
-            MockReader::boxed(self.readers.get(&position).cloned().unwrap_or_default(), 0)
+        fn get_reader(&self, position: i64) -> BinaryReader {
+            BinaryReader::from_bytes(self.readers.get(&position).cloned().unwrap_or_default(), true).clone_at(0)
         }
         fn find_containing_module_by_func_data(
             &self,

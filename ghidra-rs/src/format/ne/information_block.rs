@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::ne::invalid_windows_header_exception::InvalidWindowsHeaderException;
 use crate::format::ne::windows_header::WindowsHeader;
 use std::io;
@@ -151,7 +151,7 @@ impl InformationBlock {
     /// Note: mirroring the Java constructor exactly, the reader's pointer index is only restored
     /// to its pre-call value on a *successful* parse. If the magic number check fails, the
     /// reader is left positioned just past the two magic-number bytes it already consumed.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, index: u64) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, index: u64) -> io::Result<Self> {
         let old_index = reader.get_pointer_index();
         reader.set_pointer_index(index);
 
@@ -525,96 +525,7 @@ impl InformationBlock {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     /// Builds a full, valid 64-byte NE `InformationBlock`, with every field distinguishable so
     /// tests can catch field-ordering mistakes.
@@ -657,7 +568,7 @@ mod tests {
 
     #[test]
     fn parses_all_fields_in_order() {
-        let mut reader = MockReader::new(build_information_block());
+        let mut reader = BinaryReader::from_bytes(build_information_block(), true);
 
         let ib = InformationBlock::new(&mut reader, 0).unwrap();
 
@@ -709,7 +620,7 @@ mod tests {
     fn rejects_bad_magic_number() {
         let mut data = build_information_block();
         data[0..2].copy_from_slice(&0x1234i16.to_le_bytes());
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let err = InformationBlock::new(&mut reader, 0).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidData);
@@ -723,7 +634,7 @@ mod tests {
         // constructor, after the exception-throwing check.
         let mut data = build_information_block();
         data[0..2].copy_from_slice(&0x1234i16.to_le_bytes());
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         reader.set_pointer_index(5);
 
         let _ = InformationBlock::new(&mut reader, 0).unwrap_err();
@@ -734,7 +645,7 @@ mod tests {
 
     #[test]
     fn restores_reader_position_after_successful_parse() {
-        let mut reader = MockReader::new(build_information_block());
+        let mut reader = BinaryReader::from_bytes(build_information_block(), true);
         reader.set_pointer_index(7);
 
         let _ = InformationBlock::new(&mut reader, 0).unwrap();
@@ -746,7 +657,7 @@ mod tests {
     fn honors_starting_index() {
         let mut data = vec![0xAAu8; 10];
         data.extend_from_slice(&build_information_block());
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ib = InformationBlock::new(&mut reader, 10).unwrap();
 
@@ -756,7 +667,7 @@ mod tests {
     #[test]
     fn errors_on_truncated_data() {
         let data = vec![0x4E, 0x45]; // just the magic number, nothing else
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         assert!(InformationBlock::new(&mut reader, 0).is_err());
     }
@@ -766,7 +677,7 @@ mod tests {
         let mut data = build_information_block();
         data[55] = (InformationBlock::OTHER_FLAGS_GANGLOAD_AREA
             | InformationBlock::OTHER_FLAGS_PROPORTIONAL_FONT) as u8;
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ib = InformationBlock::new(&mut reader, 0).unwrap();
         let s = ib.get_other_flags_as_string();
@@ -784,7 +695,7 @@ mod tests {
         // always 0), preserved here as-is.
         let mut data = build_information_block();
         data[55] = 0; // ne_flagsothers = 0
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ib = InformationBlock::new(&mut reader, 0).unwrap();
         let s = ib.get_other_flags_as_string();
@@ -798,7 +709,7 @@ mod tests {
         let mut data = build_information_block();
         data[13] = (InformationBlock::FLAGS_APP_WINDOWS_PM
             | InformationBlock::FLAGS_APP_LINK_ERRS) as u8;
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ib = InformationBlock::new(&mut reader, 0).unwrap();
         let s = ib.get_application_flags_as_string();
@@ -813,7 +724,7 @@ mod tests {
         let mut data = build_information_block();
         data[12] = (InformationBlock::FLAGS_PROG_80286
             | InformationBlock::FLAGS_PROG_PROTECTED_MODE) as u8;
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ib = InformationBlock::new(&mut reader, 0).unwrap();
         let s = ib.get_program_flags_as_string();
@@ -828,7 +739,7 @@ mod tests {
         let mut data = build_information_block();
 
         data[54] = InformationBlock::EXETYPE_UNKNOWN as u8;
-        let mut reader = MockReader::new(data.clone());
+        let mut reader = BinaryReader::from_bytes(data.clone(), true);
         assert_eq!(
             InformationBlock::new(&mut reader, 0)
                 .unwrap()
@@ -837,7 +748,7 @@ mod tests {
         );
 
         data[54] = InformationBlock::EXETYPE_WINDOWS_386 as u8;
-        let mut reader = MockReader::new(data.clone());
+        let mut reader = BinaryReader::from_bytes(data.clone(), true);
         assert_eq!(
             InformationBlock::new(&mut reader, 0)
                 .unwrap()
@@ -846,7 +757,7 @@ mod tests {
         );
 
         data[54] = InformationBlock::EXETYPE_PHARLAP_286_WIN as u8;
-        let mut reader = MockReader::new(data.clone());
+        let mut reader = BinaryReader::from_bytes(data.clone(), true);
         assert_eq!(
             InformationBlock::new(&mut reader, 0)
                 .unwrap()
@@ -859,7 +770,7 @@ mod tests {
     fn target_op_sys_as_string_is_none_for_unmapped_value() {
         let mut data = build_information_block();
         data[54] = 0x7f; // not any defined EXETYPE_* constant
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ib = InformationBlock::new(&mut reader, 0).unwrap();
         assert_eq!(ib.get_target_op_sys_as_string(), None);
@@ -872,7 +783,7 @@ mod tests {
         // (duplicate `case` label), so this value always reports "Windows 386".
         let mut data = build_information_block();
         data[54] = InformationBlock::EXETYPE_EUROPEAN_DOS_4 as u8;
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ib = InformationBlock::new(&mut reader, 0).unwrap();
         assert_eq!(ib.get_target_op_sys_as_string(), Some("Windows 386"));

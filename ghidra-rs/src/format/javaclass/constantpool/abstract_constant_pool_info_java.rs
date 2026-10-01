@@ -4,7 +4,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 /// Base class for all constant pool entries in Java class files.
 ///
@@ -43,7 +43,7 @@ impl AbstractConstantPoolInfoJava {
     ///
     /// # Errors
     /// Returns an IO error if reading from the reader fails.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let offset = reader.get_pointer_index();
         let tag = reader.read_next_byte()?;
         Ok(AbstractConstantPoolInfoJava { offset, tag })
@@ -64,82 +64,10 @@ impl AbstractConstantPoolInfoJava {
 mod tests {
     use super::*;
 
-    struct MockReader {
-        data: Vec<u8>,
-        pos: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader { data, pos: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.data.len() as u64)
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.data.len() as u64
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.pos
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.pos;
-            self.pos = index;
-            prev
-        }
-
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            if index >= self.data.len() as u64 {
-                return Err(io::Error::new(
-                    io::ErrorKind::UnexpectedEof,
-                    "index out of bounds",
-                ));
-            }
-            Ok(self.data[index as usize])
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            if index as usize + n_elements > self.data.len() {
-                return Err(io::Error::new(
-                    io::ErrorKind::UnexpectedEof,
-                    "not enough data",
-                ));
-            }
-            Ok(self.data[index as usize..index as usize + n_elements].to_vec())
-        }
-
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
-        {
-            unimplemented!()
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            let mut clone = MockReader {
-                data: self.data.clone(),
-                pos: new_index,
-            };
-            Box::new(clone)
-        }
-    }
-
     #[test]
     fn new_reads_tag_and_captures_offset() {
         let data = vec![0x07u8]; // CONSTANT_CLASS tag value
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, false);
 
         let entry = AbstractConstantPoolInfoJava::new(&mut reader).expect("failed to create entry");
 
@@ -150,7 +78,7 @@ mod tests {
     #[test]
     fn new_advances_reader_position() {
         let data = vec![0x09u8, 0x0Au8]; // CONSTANT_FIELDREF and CONSTANT_METHODREF
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, false);
 
         let _entry = AbstractConstantPoolInfoJava::new(&mut reader).expect("failed to create entry");
 
@@ -161,7 +89,7 @@ mod tests {
     fn new_captures_offset_before_reading() {
         let mut data = vec![0u8; 6];
         data[5] = 0x01u8;
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, false);
         reader.set_pointer_index(5);
 
         let entry = AbstractConstantPoolInfoJava::new(&mut reader).expect("failed to create entry");
@@ -175,7 +103,7 @@ mod tests {
     fn get_offset_returns_stored_offset() {
         let mut data = vec![0u8; 101];
         data[100] = 0x03u8;
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, false);
         reader.set_pointer_index(100);
 
         let entry = AbstractConstantPoolInfoJava::new(&mut reader).expect("failed to create entry");
@@ -186,7 +114,7 @@ mod tests {
     #[test]
     fn get_tag_returns_stored_tag() {
         let data = vec![0x12u8];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, false);
 
         let entry = AbstractConstantPoolInfoJava::new(&mut reader).expect("failed to create entry");
 
@@ -197,7 +125,7 @@ mod tests {
     fn get_tag_returns_various_tag_values() {
         for tag_value in [0x01u8, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A] {
             let data = vec![tag_value];
-            let mut reader = MockReader::new(data);
+            let mut reader = BinaryReader::from_bytes(data, false);
 
             let entry = AbstractConstantPoolInfoJava::new(&mut reader).expect("failed to create");
             assert_eq!(entry.get_tag(), tag_value);
@@ -207,7 +135,7 @@ mod tests {
     #[test]
     fn new_returns_error_when_no_data_available() {
         let data: Vec<u8> = vec![];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, false);
 
         let result = AbstractConstantPoolInfoJava::new(&mut reader);
 
@@ -217,7 +145,7 @@ mod tests {
     #[test]
     fn multiple_entries_track_offsets_correctly() {
         let data = vec![0x07u8, 0x09u8, 0x0Au8];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, false);
 
         let entry1 =
             AbstractConstantPoolInfoJava::new(&mut reader).expect("failed to create entry1");

@@ -29,7 +29,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pef::exported_symbol_hash_slot::ExportedSymbolHashSlot;
 use crate::format::pef::exported_symbol_key::ExportedSymbolKey;
@@ -80,7 +80,7 @@ impl LoaderInfoHeader {
     /// pointer index before returning (matching Java's `try`/`finally`).
     ///
     /// Port of `LoaderInfoHeader(BinaryReader, SectionHeader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, section: Box<dyn SectionHeader>) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, section: Box<dyn SectionHeader>) -> io::Result<Self> {
         let old_index = reader.get_pointer_index();
         let container_offset = section.get_container_offset();
 
@@ -340,72 +340,6 @@ impl StructConverter for LoaderInfoHeader {
 mod tests {
     use super::*;
 
-    /// Minimal in-memory [`BinaryReader`] sufficient for this module's tests: sequential
-    /// big-endian 16/32-bit reads and pointer-index manipulation.
-    struct MockReader {
-        bytes: Vec<u8>,
-        pos: u64,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            MockReader { bytes, pos: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.bytes.len() as u64
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.pos
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.pos;
-            self.pos = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
-        {
-            unimplemented!("not needed by LoaderInfoHeader tests")
-        }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderInfoHeader tests")
-        }
-        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderInfoHeader tests")
-        }
-        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderInfoHeader tests")
-        }
-        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderInfoHeader tests")
-        }
-    }
-
     struct MockSectionHeader {
         container_offset: i32,
     }
@@ -432,7 +366,7 @@ mod tests {
 
     #[test]
     fn parses_header_fields_with_all_zero_fixture() {
-        let mut reader = MockReader::new(zero_header_bytes());
+        let mut reader = BinaryReader::from_bytes(zero_header_bytes(), false);
         let section = Box::new(MockSectionHeader { container_offset: 0 });
 
         let header = LoaderInfoHeader::new(&mut reader, section).unwrap();
@@ -453,7 +387,7 @@ mod tests {
         // 8 bytes of leading padding, then the 56-byte zero header at container offset 8.
         let mut bytes = vec![0u8; 8];
         bytes.extend(zero_header_bytes());
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         reader.set_pointer_index(3);
         let section = Box::new(MockSectionHeader { container_offset: 8 });
 
@@ -495,7 +429,7 @@ mod tests {
         write_i32_be(&mut buf, 0);
         assert_eq!(buf.len(), 84);
 
-        let mut reader = MockReader::new(buf);
+        let mut reader = BinaryReader::from_bytes(buf, false);
         let section = Box::new(MockSectionHeader { container_offset: 0 });
 
         let header = LoaderInfoHeader::new(&mut reader, section).unwrap();
@@ -509,7 +443,7 @@ mod tests {
 
     #[test]
     fn to_data_type_reports_fixed_header_length() {
-        let mut reader = MockReader::new(zero_header_bytes());
+        let mut reader = BinaryReader::from_bytes(zero_header_bytes(), false);
         let section = Box::new(MockSectionHeader { container_offset: 0 });
         let header = LoaderInfoHeader::new(&mut reader, section).unwrap();
 

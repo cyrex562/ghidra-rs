@@ -7,7 +7,7 @@ use std::sync::Arc;
 use super::structure_mapped::{FieldValueKind, OutputDataType, PrimitiveKind, StructureMapped};
 use super::test_support::{byte_reader, simple, structure, test_program, TagContext};
 use super::{DataTypeMapper, Signedness, StructureContext, StructureMapped as DeriveStructureMapped};
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::category_path::ROOT;
 use crate::program::model::data::data_type::DataType;
@@ -123,7 +123,7 @@ pub(crate) fn read_test_functab() -> (DataTypeMapper, TestFunctab) {
     let mapper = functab_mapper(vec!["1.18+"]);
     let mut reader = byte_reader(functab_bytes(), true);
     reader.set_pointer_index(4);
-    let ft = mapper.read_structure(reader.as_mut()).unwrap();
+    let ft = mapper.read_structure(&mut reader).unwrap();
     (mapper, ft)
 }
 
@@ -226,7 +226,7 @@ fn reads_a_structure_from_a_byte_buffer() {
     let mapper = functab_mapper(vec!["1.18+"]);
     let mut reader = byte_reader(functab_bytes(), true);
     reader.set_pointer_index(4);
-    let ft: TestFunctab = mapper.read_structure(reader.as_mut()).unwrap();
+    let ft: TestFunctab = mapper.read_structure(&mut reader).unwrap();
 
     assert_eq!(ft.entryoff, 0x1000);
     assert_eq!(ft.entry_plus_one, 0x1001, "setter was used");
@@ -270,7 +270,7 @@ fn big_endian_reads_and_absent_fields() {
     bytes.extend_from_slice(&[0x12, 0x34, 0x00, 0x00]); // shortLen BE, 2 bytes
     bytes.push(0x09);
     let mut reader = byte_reader(bytes, false);
-    let ft: TestFunctab = mapper.read_structure(reader.as_mut()).unwrap();
+    let ft: TestFunctab = mapper.read_structure(&mut reader).unwrap();
     assert_eq!(ft.entryoff, 0);
     assert_eq!(ft.entry_plus_one, 0, "setter not called for an absent field");
     assert_eq!(ft.funcoff, 0x0102);
@@ -286,7 +286,7 @@ fn verifier_rejects_invalid_nested_data() {
     bytes[4 + 20] = 0xff; // TestInner::is_valid fails
     let mut reader = byte_reader(bytes, true);
     reader.set_pointer_index(4);
-    let err = mapper.read_structure::<TestFunctab>(reader.as_mut()).err().unwrap();
+    let err = mapper.read_structure::<TestFunctab>(&mut reader).err().unwrap();
     assert_eq!(err.to_string(), "Invalid data for struct @0x18");
 }
 
@@ -322,14 +322,14 @@ fn registration_errors_match_java() {
 
     // reading an unregistered type
     let mut reader = byte_reader(vec![0; 4], true);
-    let err = mapper.read_structure::<TestInner>(reader.as_mut()).err().unwrap();
+    let err = mapper.read_structure::<TestInner>(&mut reader).err().unwrap();
     assert_eq!(err.to_string(), "Unknown structure mapped class: TestInner");
 
     // a missing context value
     mapper.register_structure::<TestInner>(&ctx).unwrap();
     mapper.register_structure::<TestFunctab>(&TagContext(vec!["1.18+"])).unwrap();
     let mut reader = byte_reader(functab_bytes(), true);
-    let err = mapper.read_structure::<TestFunctab>(reader.as_mut()).err().unwrap();
+    let err = mapper.read_structure::<TestFunctab>(&mut reader).err().unwrap();
     assert!(err.to_string().starts_with("Unsupported context field: TestFunctab.tag"), "{err}");
 }
 
@@ -358,7 +358,7 @@ impl TestVarlen {
 }
 
 impl super::StructureReader for TestVarlen {
-    fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> std::io::Result<()> {
+    fn read_structure(&mut self, reader: &mut BinaryReader, _mapper: &DataTypeMapper) -> std::io::Result<()> {
         self.len = reader.read_next_byte()?;
         self.tag = reader.read_next_byte()?;
         self.data = reader.read_next_byte_array(self.len as usize)?;
@@ -380,7 +380,7 @@ fn variable_length_structure_data_type_matches_java_layout() {
     assert_eq!(order, ["len", "tag", "data"]);
 
     let mut reader = byte_reader(vec![3, 0x42, b'a', b'b', b'c', 0xEE], true);
-    let v: TestVarlen = mapper.read_structure(reader.as_mut()).unwrap();
+    let v: TestVarlen = mapper.read_structure(&mut reader).unwrap();
     assert_eq!((v.len, v.tag, v.data.as_slice()), (3, 0x42, &b"abc"[..]));
     assert_eq!(reader.get_pointer_index(), 5, "self-reading structure positions the reader");
 
@@ -415,7 +415,7 @@ fn primitive_output_needs_a_matching_integer_type() {
         value: u8,
     }
     impl super::StructureReader for Prim {
-        fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, _m: &DataTypeMapper) -> std::io::Result<()> {
+        fn read_structure(&mut self, reader: &mut BinaryReader, _m: &DataTypeMapper) -> std::io::Result<()> {
             self.value = reader.read_next_byte()?;
             Ok(())
         }
@@ -425,7 +425,7 @@ fn primitive_output_needs_a_matching_integer_type() {
     mapper.add_program_search_category_path(&[ROOT.clone()]);
     mapper.register_structure::<Prim>(&TagContext(vec![])).unwrap();
     let mut reader = byte_reader(vec![1], true);
-    let p: Prim = mapper.read_structure(reader.as_mut()).unwrap();
+    let p: Prim = mapper.read_structure(&mut reader).unwrap();
     // "byte" is found but is not an integer data type of the requested signedness, and the
     // built-in fallback is unported: reported, not guessed
     let err = p.structure_context().unwrap().get_structure_data_type_for(&p, &mapper).err().unwrap();
@@ -443,7 +443,7 @@ fn nested_output_uses_the_nested_structure_data_type() {
         inner: Option<TestVarlen>,
     }
     impl super::StructureReader for Outer {
-        fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, m: &DataTypeMapper) -> std::io::Result<()> {
+        fn read_structure(&mut self, reader: &mut BinaryReader, m: &DataTypeMapper) -> std::io::Result<()> {
             self.inner = Some(m.read_structure(reader)?);
             Ok(())
         }
@@ -455,7 +455,7 @@ fn nested_output_uses_the_nested_structure_data_type() {
     mapper.register_structure::<Outer>(&TagContext(vec![])).unwrap();
 
     let mut reader = byte_reader(vec![2, 0x10, b'h', b'i'], true);
-    let outer: Outer = mapper.read_structure(reader.as_mut()).unwrap();
+    let outer: Outer = mapper.read_structure(&mut reader).unwrap();
     let dt = outer.structure_context().unwrap().get_structure_data_type_for(&outer, &mapper).unwrap();
     assert_eq!(dt.get_name(), "Outer_4");
     let s = dt.as_structure().unwrap();
@@ -516,7 +516,7 @@ fn markup_session_labels_structures_in_a_program_db() {
     bytes.extend_from_slice(&[1, 0x42, b'z']);
     let mut reader = byte_reader(bytes, true);
     reader.set_pointer_index(0x40);
-    let v: TestVarlen = mapper.read_structure(reader.as_mut()).unwrap();
+    let v: TestVarlen = mapper.read_structure(&mut reader).unwrap();
 
     let monitor = DummyMonitor;
     let mut session = mapper.create_markup_session(&monitor);
@@ -544,7 +544,7 @@ fn markup_session_runs_field_markup_in_java_order() {
     let mapper = functab_mapper(vec!["1.18+"]);
     let mut reader = byte_reader(functab_bytes(), true);
     reader.set_pointer_index(4);
-    let ft: TestFunctab = mapper.read_structure(reader.as_mut()).unwrap();
+    let ft: TestFunctab = mapper.read_structure(&mut reader).unwrap();
     let monitor = DummyMonitor;
     let mut session = mapper.create_markup_session(&monitor);
     // the first field markup function is entryoff's @MarkupReference, which needs the
@@ -555,7 +555,7 @@ fn markup_session_runs_field_markup_in_java_order() {
     // without the reference field, the next markup function is funcoff's @EOLComment
     let mapper = functab_mapper(vec![]);
     let mut reader = byte_reader(functab_bytes()[4..].to_vec(), true);
-    let ft: TestFunctab = mapper.read_structure(reader.as_mut()).unwrap();
+    let ft: TestFunctab = mapper.read_structure(&mut reader).unwrap();
     let mut session = mapper.create_markup_session(&monitor);
     let err = session.markup(Some(&ft), true).unwrap_err();
     assert_eq!(err.to_string(), "Program has no listing to add comments to");

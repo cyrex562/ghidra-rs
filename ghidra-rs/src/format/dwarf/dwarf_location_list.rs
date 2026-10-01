@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::format::dwarf::dwarf_location::DWARFLocation;
@@ -42,7 +42,7 @@ impl DWARFLocationList {
     ///
     /// Mirrors `DWARFLocationList.readV4(BinaryReader, DWARFCompilationUnit)`.
     pub fn read_v4(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<DWARFLocationList> {
         let mut results = Vec::new();
@@ -89,7 +89,7 @@ impl DWARFLocationList {
     ///
     /// Mirrors `DWARFLocationList.readV5(BinaryReader, DWARFCompilationUnit)`.
     pub fn read_v5(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<DWARFLocationList> {
         let mut base_addr = cu.get_pc_range().from();
@@ -198,7 +198,7 @@ impl DWARFLocationList {
     /// Reader func that reads a uleb128-length prefixed byte array.
     ///
     /// Mirrors `DWARFLocationList.uleb128SizedByteArray(BinaryReader)`.
-    fn uleb128_sized_byte_array(reader: &mut dyn LegacyBinaryReader) -> io::Result<Vec<u8>> {
+    fn uleb128_sized_byte_array(reader: &mut BinaryReader) -> io::Result<Vec<u8>> {
         let len = LEB128Info::unsigned(reader)?.as_u_int32()?;
         if len > DWARFExpression::MAX_SANE_EXPR as u32 {
             return Err(io::Error::new(
@@ -226,91 +226,12 @@ impl fmt::Display for DWARFLocationList {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::seam_stubs::DIEContainer;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0.get(index as usize).copied().ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader { provider: Rc::new(RefCell::new(VecProvider(bytes))), index: 0, little_endian: true }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
-        }
-    }
 
     struct MockDIEContainer;
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             None
         }
 
@@ -383,7 +304,7 @@ mod tests {
         bytes.extend_from_slice(&0u64.to_le_bytes());
         bytes.extend_from_slice(&0u64.to_le_bytes());
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = cu(8, 0);
         let list = DWARFLocationList::read_v4(&mut reader, &cu).unwrap();
 
@@ -407,7 +328,7 @@ mod tests {
         bytes.extend_from_slice(&0u64.to_le_bytes());
         bytes.extend_from_slice(&0u64.to_le_bytes());
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = cu(8, 0);
         let list = DWARFLocationList::read_v4(&mut reader, &cu).unwrap();
         assert!(list.is_empty());
@@ -425,7 +346,7 @@ mod tests {
         bytes.push(0x9c); // expr bytes (DW_OP_call_frame_cfa)
         bytes.push(DWARFLocationListEntry::EndOfList.value() as u8);
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = cu(8, 0x1000);
         let list = DWARFLocationList::read_v5(&mut reader, &cu).unwrap();
 
@@ -447,7 +368,7 @@ mod tests {
         bytes.push(0x50); // expr bytes
         bytes.push(DWARFLocationListEntry::EndOfList.value() as u8);
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = cu(8, 0);
         let list = DWARFLocationList::read_v5(&mut reader, &cu).unwrap();
 
@@ -467,7 +388,7 @@ mod tests {
         bytes.push(0x9f); // expr bytes
         bytes.push(DWARFLocationListEntry::EndOfList.value() as u8);
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = cu(8, 0);
         let list = DWARFLocationList::read_v5(&mut reader, &cu).unwrap();
 
@@ -479,7 +400,7 @@ mod tests {
     #[test]
     fn read_v5_rejects_unsupported_entry_type() {
         let bytes = vec![0xff];
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = cu(8, 0);
         let err = DWARFLocationList::read_v5(&mut reader, &cu).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidData);

@@ -46,7 +46,7 @@ impl DWARFExpression {
     ) -> Result<DWARFExpression, DWARFExpressionException> {
         Err(DWARFExpressionException::new(
             "DWARFExpression.read is not yet implemented (DWARFExpressionInstruction::read and a \
-             concrete LegacyBinaryReader have not been ported)",
+             concrete BinaryReader have not been ported)",
         ))
     }
 
@@ -163,6 +163,7 @@ impl std::fmt::Display for DWARFExpression {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::util::bin::binary_reader::BinaryReader;
 
     fn instr(op: DWARFExpressionOpCode, operands: Vec<i64>, offset: i32) -> DWARFExpressionInstruction {
         DWARFExpressionInstruction::new(op, operands, offset)

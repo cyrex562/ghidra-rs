@@ -21,7 +21,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pef::loader_info_header::LoaderInfoHeader;
 use crate::format::seam_stubs::{RelocationFactory, StructConverterUtilDataType};
@@ -43,7 +43,7 @@ impl LoaderRelocationHeader {
     /// Reads a [`LoaderRelocationHeader`] and its relocation stream from `reader`.
     ///
     /// Port of `LoaderRelocationHeader(BinaryReader, LoaderInfoHeader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, loader: &LoaderInfoHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, loader: &LoaderInfoHeader) -> io::Result<Self> {
         let section_index = reader.read_next_short()?;
         let reserved_a = reader.read_next_short()?;
         let reloc_count = reader.read_next_int()?;
@@ -128,72 +128,6 @@ mod tests {
     use super::*;
     use crate::format::seam_stubs::SectionHeader;
 
-    /// Minimal in-memory [`BinaryReader`] sufficient for this module's tests: it never needs
-    /// anything beyond sequential 16/32-bit big-endian reads and pointer-index manipulation.
-    struct MockReader {
-        bytes: Vec<u8>,
-        pos: u64,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            MockReader { bytes, pos: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.bytes.len() as u64
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.pos
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.pos;
-            self.pos = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
-        {
-            unimplemented!("not needed by LoaderRelocationHeader tests")
-        }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderRelocationHeader tests")
-        }
-        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderRelocationHeader tests")
-        }
-        fn as_big_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderRelocationHeader tests")
-        }
-        fn as_little_endian(&self) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by LoaderRelocationHeader tests")
-        }
-    }
-
     struct MockSectionHeader {
         container_offset: i32,
     }
@@ -212,7 +146,7 @@ mod tests {
         // 14 header fields x 4 bytes each, all zero: relocSectionCount=0 (no nested
         // LoaderRelocationHeaders), exportHashTablePower=0 (one all-zero export hash slot),
         // exportedSymbolCount=0.
-        let mut reader = MockReader::new(vec![0u8; 56]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8; 56], false);
         let section = Box::new(MockSectionHeader { container_offset: 0 });
         LoaderInfoHeader::new(&mut reader, section).unwrap()
     }
@@ -221,7 +155,7 @@ mod tests {
     fn parses_header_fields_with_zero_reloc_count() {
         // sectionIndex=3, reservedA=0, relocCount=0, firstRelocOffset=0x10.
         let bytes = vec![0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10];
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         let loader = zero_loader_info_header();
 
         let header = LoaderRelocationHeader::new(&mut reader, &loader).unwrap();
@@ -236,7 +170,7 @@ mod tests {
     #[test]
     fn restores_pointer_index_after_reading_relocations() {
         let bytes = vec![0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         let loader = zero_loader_info_header();
 
         LoaderRelocationHeader::new(&mut reader, &loader).unwrap();
@@ -249,7 +183,7 @@ mod tests {
     #[test]
     fn to_data_type_reports_fixed_header_length() {
         let bytes = vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         let loader = zero_loader_info_header();
         let header = LoaderRelocationHeader::new(&mut reader, &loader).unwrap();
 

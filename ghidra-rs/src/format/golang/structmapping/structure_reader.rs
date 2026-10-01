@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 use super::data_type_mapper::DataTypeMapper;
 
@@ -21,13 +21,13 @@ pub trait StructureReader {
     /// positioned at the start of the structure.
     ///
     /// Returning an error aborts the overall read operation.
-    fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, mapper: &DataTypeMapper) -> io::Result<()>;
+    fn read_structure(&mut self, reader: &mut BinaryReader, mapper: &DataTypeMapper) -> io::Result<()>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::StructureReader;
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::golang::structmapping::test_support::{byte_reader, test_mapper};
     use crate::format::golang::structmapping::DataTypeMapper;
     use std::io;
@@ -38,7 +38,7 @@ mod tests {
     }
 
     impl StructureReader for Fixed {
-        fn read_structure(&mut self, reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, reader: &mut BinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
             self.read_called = true;
             self.data.push(reader.read_next_byte()? as u8);
             Ok(())
@@ -50,7 +50,7 @@ mod tests {
         let mapper = test_mapper(vec![]);
         let mut reader = byte_reader(vec![9, 8], true);
         let mut s = Fixed { data: vec![1, 2, 3], read_called: false };
-        s.read_structure(reader.as_mut(), &mapper).unwrap();
+        s.read_structure(&mut reader, &mapper).unwrap();
         assert!(s.read_called);
         assert_eq!(s.data, vec![1, 2, 3, 9]);
         assert_eq!(reader.get_pointer_index(), 1);
@@ -59,7 +59,7 @@ mod tests {
     struct Fallible;
 
     impl StructureReader for Fallible {
-        fn read_structure(&mut self, _reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, _reader: &mut BinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
             Err(io::Error::other("failed to deserialise structure"))
         }
     }
@@ -68,14 +68,14 @@ mod tests {
     fn read_propagates_errors() {
         let mapper = test_mapper(vec![]);
         let mut reader = byte_reader(vec![], true);
-        let err = Fallible.read_structure(reader.as_mut(), &mapper).unwrap_err();
+        let err = Fallible.read_structure(&mut reader, &mapper).unwrap_err();
         assert!(err.to_string().contains("failed to deserialise structure"));
     }
 
     struct Noop;
 
     impl StructureReader for Noop {
-        fn read_structure(&mut self, _reader: &mut dyn LegacyBinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, _reader: &mut BinaryReader, _mapper: &DataTypeMapper) -> io::Result<()> {
             Ok(())
         }
     }
@@ -84,6 +84,6 @@ mod tests {
     fn no_op_implementation_succeeds() {
         let mapper = test_mapper(vec![]);
         let mut reader = byte_reader(vec![], true);
-        assert!(Noop.read_structure(reader.as_mut(), &mapper).is_ok());
+        assert!(Noop.read_structure(&mut reader, &mapper).is_ok());
     }
 }

@@ -21,11 +21,10 @@
 //!   their real ported paths. `ClassFileJava`/`MethodInfoJava`/`CodeAttribute`/`JavaClassUtil` were
 //!   grown in [`format::seam_stubs`](crate::format::seam_stubs) (and `LoadSpec` in
 //!   [`app::seam_stubs`](crate::app::seam_stubs)) to carry the extra surface this loader needs;
-//!   see those modules for what is and is not modeled. The crate has no canonical production
-//!   [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader) implementer yet, so this
-//!   module defines its own minimal `GByteStore`-backed one, mirroring the identical local
-//!   helper in
-//!   [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state)/`elf_info_item`.
+//!   see those modules for what is and is not modeled. The loader still receives its bytes as a
+//!   legacy `GByteStore`, so it reads them through a real
+//!   [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader) over a
+//!   [`GByteStoreProvider`](crate::app::util::bin::binary_reader::GByteStoreProvider) bridge.
 //! * `Memory.createInitializedBlock(String, Address, InputStream, long, TaskMonitor, boolean)`
 //!   copies bytes from a stream as part of block creation. The ported
 //!   [`Memory`](crate::program::model::mem::Memory) trait's `create_initialized_block` only fills
@@ -55,6 +54,7 @@
 //!   surrounding loop stops, matching Java's single `catch (Exception e1)` wrapping the whole
 //!   method-processing loop.
 
+use crate::app::util::bin::binary_reader::{BinaryReader, GByteStoreProvider};
 use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
@@ -92,69 +92,6 @@ pub enum DoLoadError {
     Io(#[from] io::Error),
     #[error(transparent)]
     CreateBlock(#[from] CreateBlockError),
-}
-
-/// A minimal [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader) backed by a
-/// [`GByteStore`]. See the module docs for why this crate-wide gap is filled locally here
-/// instead of reused from elsewhere.
-struct JavaClassBinaryReader {
-    provider: Rc<RefCell<dyn GByteStore>>,
-    is_little_endian: bool,
-    current_index: u64,
-}
-
-impl JavaClassBinaryReader {
-    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
-        JavaClassBinaryReader { provider, is_little_endian, current_index: 0 }
-    }
-}
-
-impl crate::app::util::bin::binary_reader::LegacyBinaryReader for JavaClassBinaryReader {
-    fn length(&self) -> io::Result<u64> {
-        self.provider.borrow_mut().length()
-    }
-
-    fn is_valid_index(&self, index: u64) -> bool {
-        self.provider.borrow_mut().is_valid_index(index)
-    }
-
-    fn get_pointer_index(&self) -> u64 {
-        self.current_index
-    }
-
-    fn set_pointer_index(&mut self, index: u64) -> u64 {
-        let previous = self.current_index;
-        self.current_index = index;
-        previous
-    }
-
-    fn is_little_endian(&self) -> bool {
-        self.is_little_endian
-    }
-
-    fn set_little_endian(&mut self, is_little_endian: bool) {
-        self.is_little_endian = is_little_endian;
-    }
-
-    fn read_byte(&self, index: u64) -> io::Result<u8> {
-        self.provider.borrow_mut().read_byte(index)
-    }
-
-    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-        self.provider.borrow_mut().read_bytes(index, n_elements)
-    }
-
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-        Rc::clone(&self.provider)
-    }
-
-    fn clone_at(&self, new_index: u64) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
-        Box::new(JavaClassBinaryReader {
-            provider: Rc::clone(&self.provider),
-            is_little_endian: self.is_little_endian,
-            current_index: new_index,
-        })
-    }
 }
 
 /// Fallback pointer [`DataType`], standing in for `PointerDataType.dataType`. See the module docs
@@ -215,8 +152,8 @@ impl JavaLoader {
 
     /// `JavaLoader.checkClass(GByteStore)`.
     fn check_class(provider: &Rc<RefCell<dyn GByteStore>>) -> io::Result<bool> {
-        let mut reader = JavaClassBinaryReader::new(Rc::clone(provider), false);
-        let magic = crate::app::util::bin::binary_reader::LegacyBinaryReader::peek_next_int(&reader)?;
+        let mut reader = BinaryReader::new(Rc::new(GByteStoreProvider(Rc::clone(provider))), false);
+        let magic = reader.peek_next_int()?;
         if magic != MAGIC as i32 {
             return Ok(false);
         }
@@ -264,7 +201,7 @@ impl JavaLoader {
         })?;
         self.alignment_reg = program.get_register("alignmentPad");
 
-        let mut reader = JavaClassBinaryReader::new(Rc::clone(provider), false);
+        let mut reader = BinaryReader::new(Rc::new(GByteStoreProvider(Rc::clone(provider))), false);
         let class_file = ClassFileJava::new(&mut reader)?;
 
         let address = space.address(0);
@@ -314,7 +251,7 @@ impl JavaLoader {
         &self,
         program: &dyn Program,
         provider: &Rc<RefCell<dyn GByteStore>>,
-        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &BinaryReader,
         class_file: &ClassFileJava,
         monitor: &dyn TaskMonitor,
     ) {
@@ -409,7 +346,7 @@ impl JavaLoader {
     /// unchecked cast to `ConstantPoolUtf8Info` would throw (bad index or a read failure),
     /// aborting the caller's loop exactly as an uncaught `ClassCastException`/`IOException` would.
     fn method_display_name(
-        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &BinaryReader,
         constant_pool: &[AbstractConstantPoolInfoJava],
         method: &MethodInfoJava,
     ) -> Option<String> {
@@ -616,11 +553,8 @@ mod tests {
         data.extend_from_slice(bytes);
 
         let provider = provider_with(data.clone());
-        let mut reader = JavaClassBinaryReader::new(provider, false);
-        crate::app::util::bin::binary_reader::LegacyBinaryReader::set_pointer_index(
-            &mut reader,
-            offset as u64,
-        );
+        let mut reader = BinaryReader::new(Rc::new(GByteStoreProvider(provider)), false);
+        reader.set_pointer_index(offset as u64);
         AbstractConstantPoolInfoJava::new(&mut reader).unwrap()
     }
 
@@ -633,7 +567,7 @@ mod tests {
             write_utf8_entry(&mut data, descriptor_offset, "([Ljava/lang/String;)V");
 
         let provider = provider_with(data);
-        let reader = JavaClassBinaryReader::new(provider, false);
+        let reader = BinaryReader::new(Rc::new(GByteStoreProvider(provider)), false);
         let constant_pool = vec![name_entry, descriptor_entry];
         let method = MethodInfoJava::with_details(0, 0, 1, Some(CodeAttribute::new(0, 0)));
 
@@ -646,7 +580,7 @@ mod tests {
     fn method_display_name_none_for_out_of_range_index() {
         let data = Vec::new();
         let provider = provider_with(data);
-        let reader = JavaClassBinaryReader::new(provider, false);
+        let reader = BinaryReader::new(Rc::new(GByteStoreProvider(provider)), false);
         let method = MethodInfoJava::with_details(0, 5, 6, Some(CodeAttribute::new(0, 0)));
         assert!(JavaLoader::method_display_name(&reader, &[], &method).is_none());
     }

@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::composite::Composite;
@@ -25,7 +25,7 @@ impl CFragUsage1Union {
     /// Reads the 4-byte union.
     ///
     /// Port of the `CFragUsage1Union(BinaryReader)` constructor.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         Ok(Self { app_stack_size: reader.read_next_int()? })
     }
 
@@ -48,11 +48,11 @@ impl StructConverter for CFragUsage1Union {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::VecReader;
+    use crate::format::macos::test_support::be_reader;
 
     #[test]
     fn reads_big_endian_value_and_converts_to_data_type() {
-        let mut reader = VecReader::new(vec![1, 2, 3, 4]);
+        let mut reader = be_reader(vec![1, 2, 3, 4]);
         let u = CFragUsage1Union::new(&mut reader).unwrap();
         assert_eq!(u.get_app_stack_size(), 0x0102_0304);
         assert_eq!(reader.get_pointer_index(), 4);
@@ -63,6 +63,6 @@ mod tests {
 
     #[test]
     fn short_input_is_an_error() {
-        assert!(CFragUsage1Union::new(&mut VecReader::new(vec![1])).is_err());
+        assert!(CFragUsage1Union::new(&mut be_reader(vec![1])).is_err());
     }
 }

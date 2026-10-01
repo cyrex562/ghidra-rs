@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::dwarf::dwarf_exception::DWARFException;
 use crate::format::dwarf::dwarf_length_value::DWARFLengthValue;
 
@@ -41,7 +41,7 @@ impl DWARFAddressListHeader {
 
     /// Mirrors `DWARFAddressListHeader.read(BinaryReader, int)`.
     pub fn read(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         default_int_size: i32,
     ) -> io::Result<Option<DWARFAddressListHeader>> {
         // length : dwarf_length
@@ -102,7 +102,7 @@ impl DWARFAddressListHeader {
     }
 
     /// Mirrors `DWARFAddressListHeader.getOffset(int, BinaryReader)`.
-    pub fn get_offset(&self, index: i32, reader: &dyn LegacyBinaryReader) -> io::Result<i64> {
+    pub fn get_offset(&self, index: i32, reader: &BinaryReader) -> io::Result<i64> {
         if index < 0 || self.addr_count <= index {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -135,88 +135,6 @@ impl DWARFAddressListHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader { provider: Rc::new(RefCell::new(VecProvider(bytes))), index: 0, little_endian: true }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
-        }
-    }
 
     /// A minimal v5 `.debug_addr` header: 4-byte length, version=5, address_size=8,
     /// segment_selector_size=0, followed by two 8-byte addresses.
@@ -237,7 +155,7 @@ mod tests {
     #[test]
     fn read_parses_v5_header_and_skips_to_end_offset() {
         let bytes = build_header_bytes();
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let header = DWARFAddressListHeader::read(&mut reader, 4).unwrap().unwrap();
 
         assert_eq!(header.get_start_offset(), 0);
@@ -253,7 +171,7 @@ mod tests {
     #[test]
     fn get_offset_reads_address_table_entries() {
         let bytes = build_header_bytes();
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let header = DWARFAddressListHeader::read(&mut reader, 4).unwrap().unwrap();
 
         assert_eq!(header.get_offset(0, &reader).unwrap(), 0x1111_1111_2222_2222u64 as i64);
@@ -263,7 +181,7 @@ mod tests {
     #[test]
     fn get_offset_rejects_out_of_range_index() {
         let bytes = build_header_bytes();
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let header = DWARFAddressListHeader::read(&mut reader, 4).unwrap().unwrap();
 
         let err = header.get_offset(2, &reader).unwrap_err();
@@ -285,7 +203,7 @@ mod tests {
         bytes.extend_from_slice(&(body.len() as u32).to_le_bytes());
         bytes.extend_from_slice(&body);
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let err = DWARFAddressListHeader::read(&mut reader, 4).unwrap_err();
         assert!(err.to_string().contains("Unsupported DWARF version"));
     }

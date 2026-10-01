@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::byte_data_type::ByteDataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -31,7 +31,7 @@ impl ReferenceListEntry {
     /// Reads a 12-byte reference list entry and resolves its name through `map`'s name list.
     ///
     /// Port of the package-private `ReferenceListEntry(BinaryReader, ResourceMap)` constructor.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, map: &ResourceMap) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, map: &ResourceMap) -> io::Result<Self> {
         let id = reader.read_next_short()?;
         let name_offset = reader.read_next_short()?;
         let attributes = reader.read_next_byte()? as i8;
@@ -76,7 +76,7 @@ impl ReferenceListEntry {
 /// Reads an unsigned 24-bit value in the reader's byte order.
 ///
 /// Port of the private `read3ByteValue(BinaryReader)`.
-fn read_3_byte_value(reader: &mut dyn LegacyBinaryReader) -> io::Result<i32> {
+fn read_3_byte_value(reader: &mut BinaryReader) -> io::Result<i32> {
     let value1 = i32::from(reader.read_next_byte()?);
     let value2 = i32::from(reader.read_next_byte()?);
     let value3 = i32::from(reader.read_next_byte()?);
@@ -102,15 +102,15 @@ impl StructConverter for ReferenceListEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::VecReader;
+    use crate::format::macos::test_support::{be_reader, le_reader};
 
     #[test]
     fn three_byte_value_honours_byte_order() {
-        let mut be = VecReader::new(vec![0x01, 0x02, 0x03]);
+        let mut be = be_reader(vec![0x01, 0x02, 0x03]);
         assert_eq!(read_3_byte_value(&mut be).unwrap(), 0x010203);
-        let mut le = VecReader::little_endian(vec![0x01, 0x02, 0x03]);
+        let mut le = le_reader(vec![0x01, 0x02, 0x03]);
         assert_eq!(read_3_byte_value(&mut le).unwrap(), 0x030201);
-        let mut high = VecReader::new(vec![0xff, 0xfe, 0xfd]);
+        let mut high = be_reader(vec![0xff, 0xfe, 0xfd]);
         assert_eq!(read_3_byte_value(&mut high).unwrap(), 0x00fffefd);
     }
 

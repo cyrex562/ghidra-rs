@@ -139,7 +139,7 @@ mod tests {
     fn tiny_sparse_image_expands_into_payload() {
         use crate::file::formats::sparseimage::sparse_constants::{CHUNK_TYPE_DONT_CARE, CHUNK_TYPE_RAW};
         use crate::file::formats::sparseimage::sparse_image_decompressor::SparseImageDecompressor;
-        use crate::format::macos::test_support::VecReader;
+        use crate::format::macos::test_support::le_reader;
 
         let mut img = Vec::new();
         for v in [0xED26_FF3Au32] {
@@ -158,7 +158,7 @@ mod tests {
             img.extend_from_slice(&(12 + body.len() as u32).to_le_bytes());
             img.extend_from_slice(body);
         }
-        let mut reader = VecReader::little_endian(img);
+        let mut reader = le_reader(img);
         let mut expanded = Vec::new();
         SparseImageDecompressor::new(&mut reader, &mut expanded).decompress(&DummyMonitor).unwrap();
 

@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_resource::CFragResource;
 use crate::format::macos::data_type_stand_ins::PrimitiveDt;
@@ -43,7 +43,7 @@ impl ResourceType {
     /// constructor. Its trailing `resourceTypeListStartIndex` argument is unused in Java too, so
     /// it is not taken here.
     pub fn new(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         header: &ResourceHeader,
         map: &ResourceMap,
     ) -> io::Result<Self> {
@@ -70,7 +70,7 @@ impl ResourceType {
     /// `numberOfResources + 1` entries from the reference list, restoring the reader afterwards.
     fn parse_reference_list(
         &self,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         map: &ResourceMap,
     ) -> io::Result<Vec<ReferenceListEntry>> {
         let start = map.get_map_start_index() as i64

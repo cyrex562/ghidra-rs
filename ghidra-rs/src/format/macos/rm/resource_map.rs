@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry::Entry;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -43,7 +43,7 @@ impl ResourceMap {
     /// type list. The reader is left just past the map's fixed 30-byte header.
     ///
     /// Port of the package-private `ResourceMap(BinaryReader, ResourceHeader)` constructor.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, header: &ResourceHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, header: &ResourceHeader) -> io::Result<Self> {
         let map_start_index = reader.get_pointer_index();
 
         let copy =
@@ -85,7 +85,7 @@ impl ResourceMap {
     /// prefixed by its own count).
     fn parse_resource_type_list(
         &self,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         header: &ResourceHeader,
     ) -> io::Result<Vec<ResourceType>> {
         let start = self.map_start_index as i64 + i64::from(self.resource_type_list_offset) + 2;
@@ -98,7 +98,7 @@ impl ResourceMap {
     /// names until the end of the input, keyed by their offset from the start of the name list.
     fn parse_resource_name_list(
         &self,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
     ) -> io::Result<HashMap<i16, String>> {
         let start = self.map_start_index as i64 + i64::from(self.resource_name_list_offset);
         reader.set_pointer_index(start as u64);
@@ -200,16 +200,16 @@ impl StructConverter for ResourceMap {
 mod tests {
     use super::*;
     use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
-    use crate::format::macos::test_support::{resource_fork_fixture, VecReader};
+    use crate::format::macos::test_support::{resource_fork_fixture, be_reader};
 
-    fn shallow_header(reader: &mut VecReader) -> ResourceHeader {
+    fn shallow_header(reader: &mut BinaryReader) -> ResourceHeader {
         let d = EntryDescriptor::new(2, 0, reader.length().unwrap() as i32);
         ResourceHeader::read(reader, d, true).unwrap()
     }
 
     #[test]
     fn parses_fixed_fields_names_and_types() {
-        let mut reader = VecReader::new(resource_fork_fixture());
+        let mut reader = be_reader(resource_fork_fixture());
         let header = shallow_header(&mut reader);
         reader.set_pointer_index(0x20);
 
@@ -255,7 +255,7 @@ mod tests {
         let mut bytes = resource_fork_fixture();
         // A name whose length byte promises more than remains.
         bytes.push(0x10);
-        let mut reader = VecReader::new(bytes);
+        let mut reader = be_reader(bytes);
         let header = shallow_header(&mut reader);
         reader.set_pointer_index(0x20);
         assert!(ResourceMap::new(&mut reader, &header).is_err());
@@ -264,7 +264,7 @@ mod tests {
 
     #[test]
     fn to_data_type_nests_the_header_copy() {
-        let mut reader = VecReader::new(resource_fork_fixture());
+        let mut reader = be_reader(resource_fork_fixture());
         let header = shallow_header(&mut reader);
         reader.set_pointer_index(0x20);
         let map = ResourceMap::new(&mut reader, &header).unwrap();

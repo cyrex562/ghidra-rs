@@ -6,14 +6,12 @@
 //! These are parsed directly from the .class file (and so can't really change) and are shared
 //! with any plug-in that needs to do p-code analysis.
 
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::seam_stubs::{
     ClassFileJava, JavaClassUtil, MemoryByteProvider, MethodInfoJava, TransientPropertyScope,
     TransientProgramProperties,
@@ -22,72 +20,6 @@ use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
 use crate::program::model::mem::MemoryAccessException;
 use crate::util::msg::Msg;
-
-/// A minimal [`BinaryReader`] backed by a [`GByteStore`].
-///
-/// The crate does not yet have a canonical production implementer of the [`BinaryReader`] trait,
-/// so this mirrors the `GByteStore`-backed constructor of the original `BinaryReader.java`
-/// class, consistent with the identical local helper in
-/// [`elf_info_item`](crate::format::elf::info::elf_info_item).
-struct ProviderBinaryReader {
-    provider: Rc<RefCell<dyn GByteStore>>,
-    is_little_endian: bool,
-    current_index: u64,
-}
-
-impl ProviderBinaryReader {
-    fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
-        ProviderBinaryReader { provider, is_little_endian, current_index: 0 }
-    }
-}
-
-impl LegacyBinaryReader for ProviderBinaryReader {
-    fn length(&self) -> io::Result<u64> {
-        self.provider.borrow_mut().length()
-    }
-
-    fn is_valid_index(&self, index: u64) -> bool {
-        self.provider.borrow_mut().is_valid_index(index)
-    }
-
-    fn get_pointer_index(&self) -> u64 {
-        self.current_index
-    }
-
-    fn set_pointer_index(&mut self, index: u64) -> u64 {
-        let previous = self.current_index;
-        self.current_index = index;
-        previous
-    }
-
-    fn is_little_endian(&self) -> bool {
-        self.is_little_endian
-    }
-
-    fn set_little_endian(&mut self, is_little_endian: bool) {
-        self.is_little_endian = is_little_endian;
-    }
-
-    fn read_byte(&self, index: u64) -> io::Result<u8> {
-        self.provider.borrow_mut().read_byte(index)
-    }
-
-    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-        self.provider.borrow_mut().read_bytes(index, n_elements)
-    }
-
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-        Rc::clone(&self.provider)
-    }
-
-    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-        Box::new(ProviderBinaryReader {
-            provider: Rc::clone(&self.provider),
-            is_little_endian: self.is_little_endian,
-            current_index: new_index,
-        })
-    }
-}
 
 /// Class for holding the [`ClassFileJava`] and [`MethodInfoJava`] in memory for a particular
 /// .class file `Program`. These describe the objects in the constant pool and signatures of
@@ -203,7 +135,7 @@ pub fn parse_class_file(program: &dyn Program) -> io::Result<ClassFileJava> {
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Not a valid class file"))?;
 
     let provider = MemoryByteProvider::new(memory, &space);
-    let mut reader = ProviderBinaryReader::new(Rc::new(RefCell::new(provider)), false);
+    let mut reader = BinaryReader::new(Rc::new(provider), false);
     ClassFileJava::new(&mut reader)
 }
 

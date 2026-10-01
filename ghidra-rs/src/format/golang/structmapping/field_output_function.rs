@@ -55,7 +55,7 @@ mod tests {
     use super::*;
     use crate::format::golang::structmapping::test_support::{byte_reader, simple, test_program, TagContext};
     use crate::format::golang::structmapping::{StructureMapped as DeriveStructureMapped, StructureReader};
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::program::model::data::category_path::ROOT;
     use std::sync::Arc;
 
@@ -102,14 +102,14 @@ mod tests {
     }
 
     impl StructureReader for Custom {
-        fn read_structure(&mut self, r: &mut dyn LegacyBinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, r: &mut BinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
             self.value = r.read_next_byte()?;
             Ok(())
         }
     }
 
     impl StructureReader for Failing {
-        fn read_structure(&mut self, r: &mut dyn LegacyBinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
+        fn read_structure(&mut self, r: &mut BinaryReader, _m: &DataTypeMapper) -> io::Result<()> {
             self.value = r.read_next_byte()?;
             Ok(())
         }
@@ -129,7 +129,7 @@ mod tests {
         let _func: &dyn FieldOutputFunction<Custom> = &two_byte_output;
         let mapper = mapper();
         let mut reader = byte_reader(vec![7], true);
-        let c: Custom = mapper.read_structure(reader.as_mut()).unwrap();
+        let c: Custom = mapper.read_structure(&mut reader).unwrap();
         let dt = c.context.get_structure_data_type_for(&c, &mapper).unwrap();
         assert_eq!(dt.get_length(), 2, "the custom output function chose the field's type");
     }
@@ -138,7 +138,7 @@ mod tests {
     fn field_output_function_can_return_error() {
         let mapper = mapper();
         let mut reader = byte_reader(vec![7], true);
-        let f: Failing = mapper.read_structure(reader.as_mut()).unwrap();
+        let f: Failing = mapper.read_structure(&mut reader).unwrap();
         let err = f.context.get_structure_data_type_for(&f, &mapper).err().unwrap();
         assert_eq!(err.to_string(), "test error");
         let _ = Arc::new(());

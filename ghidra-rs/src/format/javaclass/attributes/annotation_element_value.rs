@@ -27,7 +27,7 @@
 use std::io;
 
 use crate::app::seam_stubs::descriptor_decoder;
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::AnnotationJava;
 use crate::program::model::data::data_type::DataType;
@@ -48,7 +48,7 @@ pub struct AnnotationElementValue {
 impl AnnotationElementValue {
     /// Reads an `element_value` structure starting at the reader's current position, dispatching
     /// on `tag` exactly like `AnnotationElementValue(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let tag = reader.read_next_byte()?;
 
         let mut constant_value_index = 0;
@@ -196,74 +196,11 @@ impl StructConverter for AnnotationElementValue {
 mod tests {
     use super::*;
 
-    struct MockReader {
-        data: Vec<u8>,
-        pos: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader { data, pos: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.data.len() as u64)
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.data.len() as u64
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.pos
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.pos;
-            self.pos = index;
-            prev
-        }
-
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.data.get(index as usize).copied().ok_or_else(|| {
-                io::Error::new(io::ErrorKind::UnexpectedEof, "index out of bounds")
-            })
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            if end > self.data.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "not enough data"));
-            }
-            Ok(self.data[start..end].to_vec())
-        }
-
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
-        {
-            unimplemented!()
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader { data: self.data.clone(), pos: new_index })
-        }
-    }
-
     /// tag='I' (int), followed by a `const_value_index` of 0x0007, matching JVMS Table 4.24's
     /// "int" case.
     #[test]
     fn primitive_tag_reads_constant_value_index() {
-        let mut reader = MockReader::new(vec![b'I', 0x00, 0x07]);
+        let mut reader = BinaryReader::from_bytes(vec![b'I', 0x00, 0x07], false);
         let value = AnnotationElementValue::new(&mut reader).expect("valid element_value");
 
         assert_eq!(value.get_tag(), b'I');
@@ -276,7 +213,7 @@ mod tests {
     /// tag='e' (enum), followed by `type_name_index` 0x0001 and `const_name_index` 0x0002.
     #[test]
     fn enum_tag_reads_type_and_constant_name_index() {
-        let mut reader = MockReader::new(vec![b'e', 0x00, 0x01, 0x00, 0x02]);
+        let mut reader = BinaryReader::from_bytes(vec![b'e', 0x00, 0x01, 0x00, 0x02], false);
         let value = AnnotationElementValue::new(&mut reader).expect("valid element_value");
 
         assert_eq!(value.get_tag(), b'e');
@@ -288,7 +225,7 @@ mod tests {
     /// `IllegalArgumentException` in Java; ported as `Err`.
     #[test]
     fn non_enum_tag_rejects_enum_accessors() {
-        let mut reader = MockReader::new(vec![b'I', 0x00, 0x07]);
+        let mut reader = BinaryReader::from_bytes(vec![b'I', 0x00, 0x07], false);
         let value = AnnotationElementValue::new(&mut reader).expect("valid element_value");
 
         assert!(value.get_type_name_index().is_err());
@@ -298,7 +235,7 @@ mod tests {
     /// tag='c' (class), followed by `class_info_index` 0x0003.
     #[test]
     fn class_tag_reads_class_info_index() {
-        let mut reader = MockReader::new(vec![b'c', 0x00, 0x03]);
+        let mut reader = BinaryReader::from_bytes(vec![b'c', 0x00, 0x03], false);
         let value = AnnotationElementValue::new(&mut reader).expect("valid element_value");
 
         assert_eq!(value.get_class_info_index(), 3);
@@ -308,7 +245,7 @@ mod tests {
     /// zero element-value pairs (avoiding the not-yet-ported `AnnotationElementValuePair` table).
     #[test]
     fn annotation_tag_reads_nested_annotation_header() {
-        let mut reader = MockReader::new(vec![b'@', 0x00, 0x05, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![b'@', 0x00, 0x05, 0x00, 0x00], false);
         let value = AnnotationElementValue::new(&mut reader).expect("valid element_value");
 
         let annotation = value.get_annotation().expect("annotation tag sets annotation");
@@ -321,7 +258,7 @@ mod tests {
     #[test]
     fn array_tag_reads_nested_values() {
         let mut reader =
-            MockReader::new(vec![b'[', 0x00, 0x02, b'I', 0x00, 0x01, b'I', 0x00, 0x02]);
+            BinaryReader::from_bytes(vec![b'[', 0x00, 0x02, b'I', 0x00, 0x01, b'I', 0x00, 0x02], false);
         let value = AnnotationElementValue::new(&mut reader).expect("valid element_value");
 
         let values = value.get_values().expect("array tag sets values");
@@ -333,7 +270,7 @@ mod tests {
 
     #[test]
     fn to_data_type_returns_a_data_type() {
-        let mut reader = MockReader::new(vec![b'I', 0x00, 0x07]);
+        let mut reader = BinaryReader::from_bytes(vec![b'I', 0x00, 0x07], false);
         let value = AnnotationElementValue::new(&mut reader).expect("valid element_value");
 
         assert!(value.to_data_type().is_ok());

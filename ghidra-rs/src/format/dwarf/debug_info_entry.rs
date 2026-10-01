@@ -26,7 +26,7 @@ use std::hash::{Hash, Hasher};
 use std::io;
 use std::sync::{Arc, OnceLock};
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_attribute::DWARFAttribute;
 use crate::format::dwarf::attribs::dwarf_attribute_id::{AttrDef, DWARFAttributeId};
@@ -58,7 +58,7 @@ impl DebugInfoEntry {
     /// Read a DIE record from `reader`, positioned at the start of the record. Mirrors the static
     /// `DebugInfoEntry.read(BinaryReader, DWARFCompilationUnit, int)`.
     pub fn read(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         cu: Arc<dyn DWARFCompilationUnit>,
         die_index: i32,
     ) -> io::Result<DebugInfoEntry> {
@@ -210,7 +210,7 @@ impl DebugInfoEntry {
             .clone_at(self.offset + self.attr_offsets[attrib_index] as u64);
 
         let mut context = DWARFFormContext::with_comp_unit_int_size(
-            &mut *reader,
+            &mut reader,
             &*self.compilation_unit,
             &def,
         );
@@ -382,83 +382,8 @@ impl fmt::Display for DebugInfoEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
     use crate::format::seam_stubs::{DWARFNumericAttribute, DWARFStringAttribute};
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0.get(index as usize).copied().ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start.checked_add(length).unwrap_or(usize::MAX);
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader { provider: Rc::new(RefCell::new(VecProvider(data))), current_index: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader { provider: Rc::clone(&self.provider), current_index: new_index })
-        }
-    }
 
     /// Models only what `DebugInfoEntry` asks of a container: a `.debug_info` byte image it hands
     /// out fresh readers over, plus a fixed parent/child topology.
@@ -469,11 +394,11 @@ mod tests {
     }
 
     impl DIEContainer for MockContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             None
         }
-        fn get_reader_for_comp_unit(&self, _cu: &dyn DWARFCompilationUnit) -> Option<Box<dyn LegacyBinaryReader>> {
-            Some(Box::new(MockReader::new(self.debug_info.clone())))
+        fn get_reader_for_comp_unit(&self, _cu: &dyn DWARFCompilationUnit) -> Option<BinaryReader> {
+            Some(BinaryReader::from_bytes(self.debug_info.clone(), true))
         }
         fn get_children_of(&self, _die_index: i32) -> Vec<&DebugInfoEntry> {
             self.children.iter().collect()
@@ -543,14 +468,14 @@ mod tests {
             children: Vec::new(),
             depth,
         }));
-        let mut reader = MockReader::new(die_bytes());
+        let mut reader = BinaryReader::from_bytes(die_bytes(), true);
         DebugInfoEntry::read(&mut reader, cu, die_index).expect("DIE should read")
     }
 
     #[test]
     fn read_records_the_offsets_of_each_attribute_and_leaves_the_reader_past_the_record() {
         let cu = comp_unit(None);
-        let mut reader = MockReader::new(die_bytes());
+        let mut reader = BinaryReader::from_bytes(die_bytes(), true);
 
         let die = DebugInfoEntry::read(&mut reader, cu, 5).expect("DIE should read");
 
@@ -567,7 +492,7 @@ mod tests {
     #[test]
     fn read_returns_a_terminator_for_abbreviation_code_zero() {
         let cu = comp_unit(None);
-        let mut reader = MockReader::new(vec![0x00, 0xff]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0xff], true);
 
         let die = DebugInfoEntry::read(&mut reader, cu, 5).expect("terminator should read");
 
@@ -582,7 +507,7 @@ mod tests {
     #[test]
     fn read_rejects_an_unknown_abbreviation_code() {
         let cu = comp_unit(None);
-        let mut reader = MockReader::new(vec![0x09]);
+        let mut reader = BinaryReader::from_bytes(vec![0x09], true);
 
         let err = DebugInfoEntry::read(&mut reader, cu, 0).expect_err("abbrev 9 is not defined");
 
@@ -610,7 +535,7 @@ mod tests {
     fn get_attribute_value_yields_a_missing_value_when_the_read_fails() {
         // No container => no .debug_info reader to deserialize from.
         let cu = comp_unit(None);
-        let mut reader = MockReader::new(die_bytes());
+        let mut reader = BinaryReader::from_bytes(die_bytes(), true);
         let die = DebugInfoEntry::read(&mut reader, cu, 0).expect("DIE should read");
 
         let value = die.get_attribute_value(0);
@@ -665,7 +590,7 @@ mod tests {
             children: vec![subprogram_child, variable_child],
             depth: 0,
         }));
-        let mut reader = MockReader::new(die_bytes());
+        let mut reader = BinaryReader::from_bytes(die_bytes(), true);
         let die = DebugInfoEntry::read(&mut reader, cu, 0).expect("DIE should read");
 
         assert_eq!(die.get_children().len(), 2);

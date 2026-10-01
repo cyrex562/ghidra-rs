@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::asd::entry::{Entry, EntryBase};
 use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
@@ -35,7 +35,7 @@ impl ResourceHeader {
     /// Port of `ResourceHeader(ByteProvider)`, which wraps the provider in a fresh big-endian
     /// `BinaryReader`. Here the caller passes the reader over the provider; it is switched to
     /// big-endian and repositioned to 0 to match.
-    pub fn from_reader(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut BinaryReader) -> io::Result<Self> {
         reader.set_little_endian(false);
         reader.set_pointer_index(0);
         let length = reader.length()? as i32;
@@ -46,7 +46,7 @@ impl ResourceHeader {
     /// points to. The reader is left just past the 16-byte header.
     ///
     /// Port of `ResourceHeader(BinaryReader, EntryDescriptor)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, entry: EntryDescriptor) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, entry: EntryDescriptor) -> io::Result<Self> {
         Self::read(reader, entry, false)
     }
 
@@ -56,7 +56,7 @@ impl ResourceHeader {
     /// Port of the package-private `ResourceHeader(BinaryReader, EntryDescriptor, boolean)`
     /// constructor (the shallow form is what a [`ResourceMap`] uses for its header copy).
     pub(crate) fn read(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         entry: EntryDescriptor,
         only_do_shallow_parsing: bool,
     ) -> io::Result<Self> {
@@ -136,13 +136,13 @@ impl StructConverter for ResourceHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::{resource_fork_fixture, VecReader};
+    use crate::format::macos::test_support::{resource_fork_fixture, be_reader, le_reader};
 
     #[test]
     fn from_reader_parses_whole_fork_big_endian() {
         let bytes = resource_fork_fixture();
         let len = bytes.len() as i32;
-        let mut reader = VecReader::little_endian(bytes);
+        let mut reader = le_reader(bytes);
         reader.set_pointer_index(9);
 
         let header = ResourceHeader::from_reader(&mut reader).unwrap();
@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn shallow_read_skips_the_map() {
-        let mut reader = VecReader::new(resource_fork_fixture());
+        let mut reader = be_reader(resource_fork_fixture());
         let header =
             ResourceHeader::read(&mut reader, EntryDescriptor::new(2, 0, 0), true).unwrap();
         assert!(header.get_map().is_none());
@@ -175,7 +175,7 @@ mod tests {
     fn map_offset_is_relative_to_fork_start() {
         let mut bytes = vec![0xaa; 5];
         bytes.extend(resource_fork_fixture());
-        let mut reader = VecReader::new(bytes);
+        let mut reader = be_reader(bytes);
         reader.set_pointer_index(5);
         // The fixture's map-relative offsets are all relative to the map start, so the whole fork
         // parses the same when shifted.
@@ -190,14 +190,14 @@ mod tests {
     fn bad_map_offset_is_an_error_and_restores_position() {
         let mut bytes = resource_fork_fixture();
         bytes[4..8].copy_from_slice(&0x1000u32.to_be_bytes());
-        let mut reader = VecReader::new(bytes);
+        let mut reader = be_reader(bytes);
         assert!(ResourceHeader::new(&mut reader, EntryDescriptor::new(2, 0, 0)).is_err());
         assert_eq!(reader.get_pointer_index(), 16);
     }
 
     #[test]
     fn to_data_type_is_four_dwords() {
-        let mut reader = VecReader::new(resource_fork_fixture());
+        let mut reader = be_reader(resource_fork_fixture());
         let header =
             ResourceHeader::read(&mut reader, EntryDescriptor::new(2, 0, 0), true).unwrap();
         let dt = header.to_data_type().unwrap();

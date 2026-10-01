@@ -1,78 +1,16 @@
-//! Test-only in-memory [`BinaryReader`] shared by the macOS resource-fork / AppleSingleDouble / CFM
+//! Test-only readers and fixtures shared by the macOS resource-fork / AppleSingleDouble / CFM
 //! tests.
 
-use std::cell::RefCell;
-use std::io;
-use std::rc::Rc;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-/// A big-endian (by default) reader over an owned byte vector.
-pub(crate) struct VecReader {
-    bytes: Vec<u8>,
-    position: u64,
-    little_endian: bool,
+/// A big-endian reader over `bytes` (resource forks and CFM are big-endian).
+pub(crate) fn be_reader(bytes: Vec<u8>) -> BinaryReader {
+    BinaryReader::from_bytes(bytes, false)
 }
 
-impl VecReader {
-    pub(crate) fn new(bytes: Vec<u8>) -> Self {
-        Self { bytes, position: 0, little_endian: false }
-    }
-
-    pub(crate) fn little_endian(bytes: Vec<u8>) -> Self {
-        Self { bytes, position: 0, little_endian: true }
-    }
-}
-
-impl LegacyBinaryReader for VecReader {
-    fn length(&self) -> io::Result<u64> {
-        Ok(self.bytes.len() as u64)
-    }
-
-    fn is_valid_index(&self, index: u64) -> bool {
-        index < self.bytes.len() as u64
-    }
-
-    fn get_pointer_index(&self) -> u64 {
-        self.position
-    }
-
-    fn set_pointer_index(&mut self, index: u64) -> u64 {
-        std::mem::replace(&mut self.position, index)
-    }
-
-    fn is_little_endian(&self) -> bool {
-        self.little_endian
-    }
-
-    fn set_little_endian(&mut self, is_little_endian: bool) {
-        self.little_endian = is_little_endian;
-    }
-
-    fn read_byte(&self, index: u64) -> io::Result<u8> {
-        self.bytes
-            .get(index as usize)
-            .copied()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "index out of range"))
-    }
-
-    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-        let start = index as usize;
-        let end = start
-            .checked_add(n_elements)
-            .filter(|&end| end <= self.bytes.len())
-            .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "range out of bounds"))?;
-        Ok(self.bytes[start..end].to_vec())
-    }
-
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-        panic!("VecReader has no byte provider")
-    }
-
-    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-        Box::new(Self { bytes: self.bytes.clone(), position: new_index, little_endian: self.little_endian })
-    }
+/// A little-endian reader over `bytes`.
+pub(crate) fn le_reader(bytes: Vec<u8>) -> BinaryReader {
+    BinaryReader::from_bytes(bytes, true)
 }
 
 /// Big-endian byte-image builder for the fixtures.

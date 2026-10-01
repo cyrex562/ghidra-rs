@@ -517,7 +517,8 @@ fn array_of(element: Box<dyn DataType>, n: i32) -> Result<ArrayDataType, ToDataT
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::VecReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::format::macos::test_support::{be_reader, le_reader};
 
     /// Standard `ext4_super_block` offsets (Linux `fs/ext4/ext4.h`).
     const OFF_INODES_COUNT: usize = 0x00;
@@ -558,13 +559,13 @@ mod tests {
     }
 
     fn parse(bytes: Vec<u8>) -> io::Result<Ext4SuperBlock> {
-        let mut reader = VecReader::new(bytes);
+        let mut reader = be_reader(bytes);
         Ext4SuperBlock::from_provider_reader(&mut reader)
     }
 
     #[test]
     fn reads_members_at_their_on_disk_offsets() {
-        let mut reader = VecReader::little_endian(sample());
+        let mut reader = le_reader(sample());
         let sb = Ext4SuperBlock::new(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), 1024);
         assert_eq!(sb.s_inodes_count, 65536);

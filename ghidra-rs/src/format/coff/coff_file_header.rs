@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use thiserror::Error;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::coff::aout_header_factory::create_aout_header;
@@ -25,73 +25,6 @@ pub enum CoffFileHeaderError {
     Io(#[from] io::Error),
     #[error(transparent)]
     Coff(#[from] CoffException),
-}
-
-/// A concrete [`BinaryReader`] backed by a [`GByteStore`].
-///
-/// The crate does not yet have a canonical production implementer of the `BinaryReader` trait
-/// (only test mocks exist so far, plus a handful of other per-module private adapters such as
-/// `ElfInfoItem`'s `ProviderBinaryReader`), so [`CoffFileHeader::new`] constructs this minimal
-/// one -- mirroring the `GByteStore`-backed constructor of the original `BinaryReader.java`
-/// class -- and keeps it for the file header's lifetime.
-pub(crate) struct CoffBinaryReader {
-    provider: Rc<RefCell<dyn GByteStore>>,
-    is_little_endian: bool,
-    current_index: u64,
-}
-
-impl CoffBinaryReader {
-    pub(crate) fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
-        CoffBinaryReader { provider, is_little_endian, current_index: 0 }
-    }
-}
-
-impl LegacyBinaryReader for CoffBinaryReader {
-    fn length(&self) -> io::Result<u64> {
-        self.provider.borrow_mut().length()
-    }
-
-    fn is_valid_index(&self, index: u64) -> bool {
-        self.provider.borrow_mut().is_valid_index(index)
-    }
-
-    fn get_pointer_index(&self) -> u64 {
-        self.current_index
-    }
-
-    fn set_pointer_index(&mut self, index: u64) -> u64 {
-        let previous = self.current_index;
-        self.current_index = index;
-        previous
-    }
-
-    fn is_little_endian(&self) -> bool {
-        self.is_little_endian
-    }
-
-    fn set_little_endian(&mut self, is_little_endian: bool) {
-        self.is_little_endian = is_little_endian;
-    }
-
-    fn read_byte(&self, index: u64) -> io::Result<u8> {
-        self.provider.borrow_mut().read_byte(index)
-    }
-
-    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-        self.provider.borrow_mut().read_bytes(index, n_elements)
-    }
-
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-        Rc::clone(&self.provider)
-    }
-
-    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-        Box::new(CoffBinaryReader {
-            provider: Rc::clone(&self.provider),
-            is_little_endian: self.is_little_endian,
-            current_index: new_index,
-        })
-    }
 }
 
 /// A COFF file header.
@@ -121,7 +54,7 @@ pub struct CoffFileHeader {
     f_opthdr: i16,
     f_flags: i16,
     f_target_id: i16,
-    reader: Box<dyn LegacyBinaryReader>,
+    reader: BinaryReader,
     aout_header: Option<Box<dyn AoutHeader>>,
     sections: Vec<Box<dyn CoffSectionHeader>>,
     symbols: Vec<CoffSymbol>,
@@ -134,11 +67,11 @@ impl CoffFileHeader {
     /// Port of `CoffFileHeader(GByteStore)`.
     pub fn new(provider: Rc<RefCell<dyn GByteStore>>) -> Result<Self, CoffFileHeaderError> {
         // Probe for matches using both little and big endian.
-        let mut reader: Box<dyn LegacyBinaryReader> =
-            Box::new(CoffBinaryReader::new(Rc::clone(&provider), true));
-        if !Self::probe_valid(reader.as_ref())? {
+        let mut reader: BinaryReader =
+            BinaryReader::new(std::rc::Rc::new(crate::app::util::bin::binary_reader::GByteStoreProvider(Rc::clone(&provider))), true);
+        if !Self::probe_valid(&reader)? {
             reader.set_little_endian(false);
-            if !Self::probe_valid(reader.as_ref())? {
+            if !Self::probe_valid(&reader)? {
                 return Err(CoffException::new("Not a valid COFF file").into());
             }
         }
@@ -302,7 +235,7 @@ impl CoffFileHeader {
     fn parse_inner(&mut self) -> Result<(), CoffFileHeaderError> {
         self.reader.set_pointer_index(self.sizeof() as u64);
         self.aout_header =
-            create_aout_header(self.reader.as_mut(), self.f_opthdr, self.f_magic)?;
+            create_aout_header(&mut self.reader, self.f_opthdr, self.f_magic)?;
 
         // See parse_section_headers()'s docs: real CoffSectionHeader instances cannot be
         // constructed yet, so the section-header loop (and the per-section `section.parse(...)`
@@ -312,7 +245,7 @@ impl CoffFileHeader {
         let mut i: i32 = 0;
         while i < self.f_nsyms {
             let symbol =
-                CoffSymbol::new(self.reader.as_mut(), self.f_symptr, self.f_nsyms)?;
+                CoffSymbol::new(&mut self.reader, self.f_symptr, self.f_nsyms)?;
             i += 1 + symbol.auxiliary_count() as i32;
             self.symbols.push(symbol);
         }
@@ -368,7 +301,7 @@ impl CoffFileHeader {
         self.aout_header.as_deref()
     }
 
-    fn probe_valid(reader: &dyn LegacyBinaryReader) -> io::Result<bool> {
+    fn probe_valid(reader: &BinaryReader) -> io::Result<bool> {
         const MIN_BYTE_LENGTH: u64 = 22;
         const COFF_NULL_SANITY_CHECK_LEN: usize = 64;
 
@@ -394,7 +327,7 @@ impl CoffFileHeader {
     ///
     /// Port of `isValid()`.
     pub fn is_valid(&self) -> io::Result<bool> {
-        Self::probe_valid(self.reader.as_ref())
+        Self::probe_valid(&self.reader)
     }
 }
 

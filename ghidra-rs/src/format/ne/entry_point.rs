@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use std::io;
 
 /// Represents a new-executable (NE) entry point.
@@ -30,7 +30,7 @@ impl EntryPoint {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, is_moveable: bool) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, is_moveable: bool) -> io::Result<Self> {
         let flagword = reader.read_next_byte()? as i8;
 
         let mut instruction = 0i16;
@@ -85,102 +85,13 @@ impl EntryPoint {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     #[test]
     fn reads_non_moveable_entry_point() {
         // flagword=0x01 (EXPORTED), offset=0x1234; no instruction/segment for non-moveable.
         let data = vec![0x01, 0x34, 0x12];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ep = EntryPoint::new(&mut reader, false).unwrap();
 
@@ -193,7 +104,7 @@ mod tests {
     fn reads_moveable_entry_point() {
         // flagword=0x02 (GLOBAL), instruction=0xBEEF, segment=0x05, offset=0x0010.
         let data = vec![0x02, 0xEF, 0xBE, 0x05, 0x10, 0x00];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let ep = EntryPoint::new(&mut reader, true).unwrap();
 
@@ -208,7 +119,7 @@ mod tests {
     #[should_panic(expected = "Entry point is not moveable!")]
     fn get_instruction_panics_when_not_moveable() {
         let data = vec![0x00, 0x00, 0x00];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let ep = EntryPoint::new(&mut reader, false).unwrap();
         let _ = ep.get_instruction();
     }
@@ -217,7 +128,7 @@ mod tests {
     #[should_panic(expected = "Entry point is not moveable!")]
     fn get_segment_panics_when_not_moveable() {
         let data = vec![0x00, 0x00, 0x00];
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let ep = EntryPoint::new(&mut reader, false).unwrap();
         let _ = ep.get_segment();
     }
@@ -225,7 +136,7 @@ mod tests {
     #[test]
     fn errors_on_truncated_data() {
         let data = vec![0x01]; // missing offset bytes
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         assert!(EntryPoint::new(&mut reader, false).is_err());
     }
 }

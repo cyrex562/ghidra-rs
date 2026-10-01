@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macos::cfm::c_frag_resource_member::CFragResourceMember;
 use crate::program::model::data::dword_data_type::DWordDataType;
@@ -38,7 +38,7 @@ impl CFragResource {
     ///
     /// Read errors, member errors, and [`io::ErrorKind::InvalidData`] "Reserved fields contain
     /// invalid value(s)." when any reserved word is non-zero.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let reserved_a = reader.read_next_int()?;
         let reserved_b = reader.read_next_int()?;
         let version = reader.read_next_int()?;
@@ -120,7 +120,7 @@ impl StructConverter for CFragResource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::{cfrag_member, Image, VecReader};
+    use crate::format::macos::test_support::{cfrag_member, Image, be_reader};
 
     fn resource(members: &[(&str, u16)]) -> Vec<u8> {
         let mut img = Image::default();
@@ -137,7 +137,7 @@ mod tests {
     fn members_are_stepped_by_their_declared_size() {
         let bytes = resource(&[("libA", 0x40), ("libB", 0x38)]);
         let len = bytes.len() as u64;
-        let mut reader = VecReader::new(bytes);
+        let mut reader = be_reader(bytes);
         let r = CFragResource::new(&mut reader).unwrap();
         assert_eq!(r.get_version(), 3);
         assert_eq!(r.get_member_count(), 2);
@@ -151,13 +151,13 @@ mod tests {
     fn non_zero_reserved_word_is_rejected() {
         let mut bytes = resource(&[]);
         bytes[27] = 1; // reservedC, the seventh word
-        let err = CFragResource::new(&mut VecReader::new(bytes)).unwrap_err();
+        let err = CFragResource::new(&mut be_reader(bytes)).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidData);
     }
 
     #[test]
     fn to_data_type_is_eight_dwords() {
-        let r = CFragResource::new(&mut VecReader::new(resource(&[]))).unwrap();
+        let r = CFragResource::new(&mut be_reader(resource(&[]))).unwrap();
         let dt = r.to_data_type().unwrap();
         assert_eq!(dt.get_name(), "CFragResource");
         assert_eq!(dt.get_length(), 32);

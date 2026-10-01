@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::swift::swift_type_metadata_structure::{
     SwiftTypeMetadataStructure, SwiftTypeMetadataStructureBase, CATEGORY_PATH,
@@ -33,7 +33,7 @@ impl ProtocolRequirementFlags {
 
     /// Creates a new `ProtocolRequirementFlags` from a reader positioned at the start of the
     /// structure.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let base = SwiftTypeMetadataStructureBase::new(reader.get_pointer_index() as i64);
         let flags = reader.read_next_int()?;
         Ok(ProtocolRequirementFlags { base, flags })
@@ -108,11 +108,11 @@ impl StructConverter for ProtocolRequirementFlags {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_reader::VecReader;
+    use super::super::test_reader::le_reader_at;
     use super::*;
 
     fn parse(flags: u32) -> ProtocolRequirementFlags {
-        let mut reader = VecReader::new(flags.to_le_bytes().to_vec(), 0);
+        let mut reader = le_reader_at(flags.to_le_bytes().to_vec(), 0);
         let f = ProtocolRequirementFlags::new(&mut reader).unwrap();
         assert_eq!(reader.get_pointer_index(), 4);
         f

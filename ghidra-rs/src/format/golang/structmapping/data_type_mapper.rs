@@ -6,7 +6,6 @@ use std::io;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::seam_stubs::MemoryByteProvider;
 use crate::program::model::address::{Address, AddressSpace};
@@ -274,7 +273,7 @@ impl DataTypeMapper {
 
     /// Reads a structure mapped object from the current position of `reader`, which is left
     /// positioned at the end of the structure (`readStructure(Class, BinaryReader)`).
-    pub fn read_structure<T: StructureMapped>(&self, struct_reader: &mut dyn LegacyBinaryReader) -> io::Result<T> {
+    pub fn read_structure<T: StructureMapped>(&self, struct_reader: &mut BinaryReader) -> io::Result<T> {
         self.read_structure_with::<T>(None, struct_reader)
     }
 
@@ -284,7 +283,7 @@ impl DataTypeMapper {
     pub fn read_structure_with<T: StructureMapped>(
         &self,
         containing_field_data_type: Option<Arc<dyn DataType>>,
-        struct_reader: &mut dyn LegacyBinaryReader,
+        struct_reader: &mut BinaryReader,
     ) -> io::Result<T> {
         let context = self.create_structure_context::<T>(containing_field_data_type, Some(&*struct_reader))?;
         context.read_new_instance(self, struct_reader)
@@ -294,7 +293,7 @@ impl DataTypeMapper {
     /// (`readStructure(Class, long)`).
     pub fn read_structure_at<T: StructureMapped>(&self, position: i64) -> io::Result<T> {
         let mut reader = self.get_reader(position)?;
-        self.read_structure::<T>(reader.as_mut())
+        self.read_structure::<T>(&mut reader)
     }
 
     /// Reads a structure mapped object from the specified address of the program
@@ -304,7 +303,7 @@ impl DataTypeMapper {
     }
 
     /// Creates a reader over the program's memory positioned at `position` (`getReader(long)`).
-    pub fn get_reader(&self, position: i64) -> io::Result<Box<dyn LegacyBinaryReader>> {
+    pub fn get_reader(&self, position: i64) -> io::Result<BinaryReader> {
         let mut reader = self.create_program_reader()?;
         reader.set_pointer_index(position as u64);
         Ok(reader)
@@ -327,14 +326,14 @@ impl DataTypeMapper {
 
     /// `createProgramReader()`: a reader over the program's memory in the data address space,
     /// using the memory's endianness.
-    fn create_program_reader(&self) -> io::Result<Box<dyn LegacyBinaryReader>> {
+    fn create_program_reader(&self) -> io::Result<BinaryReader> {
         let memory = self
             .program
             .get_memory()
             .ok_or_else(|| io::Error::other("Program has no memory to read structures from"))?;
         let little_endian = !memory.is_big_endian();
         let bp = MemoryByteProvider::new(memory, &self.data_space);
-        Ok(Box::new(BinaryReader::new(Rc::new(bp), little_endian)))
+        Ok(BinaryReader::new(Rc::new(bp), little_endian))
     }
 
     /// `createArtificialStructureContext(Class)`: a context for an instance that was not read
@@ -349,7 +348,7 @@ impl DataTypeMapper {
     fn create_structure_context<T: StructureMapped>(
         &self,
         containing_field_data_type: Option<Arc<dyn DataType>>,
-        reader: Option<&dyn LegacyBinaryReader>,
+        reader: Option<&BinaryReader>,
     ) -> io::Result<StructureContext<T>> {
         let smi = self.get_structure_mapping_info::<T>().ok_or_else(|| {
             io::Error::other(format!("Unknown structure mapped class: {}", T::descriptor().type_name))

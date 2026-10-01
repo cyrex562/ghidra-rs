@@ -1,4 +1,4 @@
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use std::io;
 
 use super::length_string_set::LengthStringSet;
@@ -23,7 +23,7 @@ impl ResourceName {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let index = reader.get_pointer_index();
         let lns = LengthStringSet::new(reader)?;
 
@@ -49,100 +49,11 @@ impl ResourceName {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     #[test]
     fn constructs_with_zero_length_name() {
-        let mut r = MockReader::new(vec![0]);
+        let mut r = BinaryReader::from_bytes(vec![0], true);
         let rn = ResourceName::new(&mut r).unwrap();
         assert_eq!(rn.index(), 0);
         assert_eq!(rn.length(), 0);
@@ -152,7 +63,7 @@ mod tests {
     #[test]
     fn constructs_with_nonempty_name() {
         let data = vec![5, b'a', b'l', b'i', b'a', b's'];
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rn = ResourceName::new(&mut r).unwrap();
         assert_eq!(rn.index(), 0);
         assert_eq!(rn.length(), 5);
@@ -162,7 +73,7 @@ mod tests {
     #[test]
     fn constructs_with_single_char_name() {
         let data = vec![1, b'x'];
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rn = ResourceName::new(&mut r).unwrap();
         assert_eq!(rn.index(), 0);
         assert_eq!(rn.length(), 1);
@@ -172,7 +83,7 @@ mod tests {
     #[test]
     fn preserves_index_from_reader_position() {
         let data = vec![0, 0, 0, 3, b'r', b'e', b's'];
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         r.set_pointer_index(3);
         let rn = ResourceName::new(&mut r).unwrap();
         assert_eq!(rn.index(), 3);
@@ -183,7 +94,7 @@ mod tests {
     #[test]
     fn updates_reader_position_after_construction() {
         let data = vec![2, b'n', b'a', 99];
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let _ = ResourceName::new(&mut r).unwrap();
         assert_eq!(r.get_pointer_index(), 3);
     }
@@ -191,7 +102,7 @@ mod tests {
     #[test]
     fn cloning_preserves_data() {
         let data = vec![4, b't', b'e', b's', b't'];
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rn1 = ResourceName::new(&mut r).unwrap();
         let rn2 = rn1.clone();
 

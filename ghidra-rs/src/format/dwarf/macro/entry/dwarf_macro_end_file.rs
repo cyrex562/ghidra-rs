@@ -33,102 +33,11 @@ impl DWARFMacroInfoEntry for DWARFMacroEndFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::dwarf::r#macro::dwarf_macro_header::DWARFMacroHeader;
     use crate::format::dwarf::r#macro::dwarf_macro_opcode::DWARFMacroOpcode;
     use crate::format::seam_stubs::DWARFCompilationUnit;
-    use std::cell::RefCell;
-    use std::rc::Rc;
     use std::sync::Arc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> std::io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> std::io::Result<()> {
-            Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> std::io::Result<()> {
-            Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl crate::app::util::bin::binary_reader::LegacyBinaryReader for TestReader {
-        fn length(&self) -> std::io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> std::io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(
-            &self,
-            new_index: u64,
-        ) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     struct MockCu;
     impl DWARFCompilationUnit for MockCu {
@@ -179,7 +88,7 @@ mod tests {
     #[test]
     fn read_from_reader_produces_a_specialized_end_file_entry() {
         // DW_MACRO_end_file (0x4) has no operands, so the entry is just its one opcode byte.
-        let mut reader = TestReader::new(vec![0x04]);
+        let mut reader = BinaryReader::from_bytes(vec![0x04], true);
         let header = test_header();
 
         let entry = DWARFMacroInfoEntryBase::read(&mut reader, header)

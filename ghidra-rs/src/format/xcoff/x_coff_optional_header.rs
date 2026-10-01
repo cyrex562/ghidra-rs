@@ -3,7 +3,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::program::model::data::data_type::DataType;
 
@@ -52,7 +52,7 @@ impl XCoffOptionalHeader {
     /// `XCoffFileHeaderMagic.is32bit/is64bit`) -- and does so while the file header is still
     /// being constructed -- so the magic is passed directly. For a magic that is neither 32- nor
     /// 64-bit the size-dependent fields are left `0`, as in Java.
-    pub(crate) fn new(reader: &mut dyn LegacyBinaryReader, file_header_magic: i16) -> io::Result<Self> {
+    pub(crate) fn new(reader: &mut BinaryReader, file_header_magic: i16) -> io::Result<Self> {
         let magic = file_header_magic as u16;
         let is32 = x_coff_file_header_magic::is_32bit(magic);
         let is64 = x_coff_file_header_magic::is_64bit(magic);
@@ -289,7 +289,7 @@ impl StructConverter for XCoffOptionalHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::macos::test_support::VecReader;
+    use crate::format::macos::test_support::be_reader;
     use crate::format::xcoff::x_coff_file_header_magic::{MAGIC_XCOFF32, MAGIC_XCOFF64};
 
     fn be16(v: u16) -> [u8; 2] {
@@ -323,7 +323,7 @@ mod tests {
     fn reads_32bit_layout() {
         let data = aout32();
         assert_eq!(data.len(), 69);
-        let mut reader = VecReader::new(data);
+        let mut reader = be_reader(data);
         let h = XCoffOptionalHeader::new(&mut reader, MAGIC_XCOFF32 as i16).unwrap();
         assert_eq!(reader.get_pointer_index(), 69);
         assert_eq!(h.get_magic(), 0x010b);
@@ -377,7 +377,7 @@ mod tests {
         b.extend(be16(10));
         let len = b.len() as u64;
 
-        let mut reader = VecReader::new(b);
+        let mut reader = be_reader(b);
         let h = XCoffOptionalHeader::new(&mut reader, MAGIC_XCOFF64 as i16).unwrap();
         assert_eq!(reader.get_pointer_index(), len);
         assert_eq!(h.get_text_size(), 0x1_0000_0001);
@@ -397,12 +397,12 @@ mod tests {
     fn truncated_input_is_an_error() {
         let mut data = aout32();
         data.truncate(40);
-        assert!(XCoffOptionalHeader::new(&mut VecReader::new(data), MAGIC_XCOFF32 as i16).is_err());
+        assert!(XCoffOptionalHeader::new(&mut be_reader(data), MAGIC_XCOFF32 as i16).is_err());
     }
 
     #[test]
     fn display_matches_java_layout() {
-        let h = XCoffOptionalHeader::new(&mut VecReader::new(aout32()), MAGIC_XCOFF32 as i16).unwrap();
+        let h = XCoffOptionalHeader::new(&mut be_reader(aout32()), MAGIC_XCOFF32 as i16).unwrap();
         let s = h.to_string();
         assert!(s.starts_with("OPTIONAL HEADER VALUES\nmagic      = 267\nvstamp     = 1\n"));
         assert!(s.contains("o_modtype  = 1L\n"));
@@ -412,7 +412,7 @@ mod tests {
 
     #[test]
     fn to_data_type_fails_like_java() {
-        let h = XCoffOptionalHeader::new(&mut VecReader::new(aout32()), MAGIC_XCOFF32 as i16).unwrap();
+        let h = XCoffOptionalHeader::new(&mut be_reader(aout32()), MAGIC_XCOFF32 as i16).unwrap();
         assert!(h.to_data_type().is_err());
     }
 }

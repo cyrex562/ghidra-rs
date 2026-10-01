@@ -180,7 +180,7 @@ pub type ArrayLenFn<T> = fn(&T) -> usize;
 pub type AfterReadFn<T> = fn(&mut T) -> io::Result<()>;
 /// `StructureReader.readStructure()`.
 pub type ReadStructureFn<T> =
-    fn(&mut T, &mut dyn crate::app::util::bin::binary_reader::LegacyBinaryReader, &DataTypeMapper) -> io::Result<()>;
+    fn(&mut T, &mut crate::app::util::bin::binary_reader::BinaryReader, &DataTypeMapper) -> io::Result<()>;
 
 /// The `@FieldMapping` annotation values of one field.
 #[derive(Debug, Clone, Copy)]
@@ -609,7 +609,7 @@ pub mod __private {
         ReadStructureFn, ReferenceGetterFn, ReferenceTarget, StructureMapped,
         StructureMappingDescriptor, StructureMarkupHooks,
     };
-    pub use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+    pub use crate::app::util::bin::binary_reader::BinaryReader;
     pub use crate::program::model::address::Address;
     pub use crate::program::model::data::data_type::DataType;
     pub use super::super::data_type_mapper::DataTypeMapper;

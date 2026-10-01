@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava;
 use crate::format::javaclass::constantpool::constant_pool_tags_java::CONSTANT_UTF8;
 use crate::format::seam_stubs::{AbstractAttributeInfo, AttributeInfoKind, ConstantPoolUtf8Info};
@@ -20,7 +20,7 @@ use crate::util::msg::Msg;
 /// Returns an error if `attribute_name_index` is out of range for `constant_pool`, or if the
 /// constant pool entry at that index is not a `CONSTANT_Utf8_info` entry.
 pub fn get(
-    reader: &mut dyn LegacyBinaryReader,
+    reader: &mut BinaryReader,
     constant_pool: &[AbstractConstantPoolInfoJava],
 ) -> io::Result<AbstractAttributeInfo> {
     let attribute_name_index = reader.read_short(reader.get_pointer_index())?;
@@ -89,69 +89,6 @@ pub fn get(
 mod tests {
     use super::*;
 
-    struct MockReader {
-        data: Vec<u8>,
-        pos: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader { data, pos: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.data.len() as u64)
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.data.len() as u64
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.pos
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.pos;
-            self.pos = index;
-            prev
-        }
-
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.data.get(index as usize).copied().ok_or_else(|| {
-                io::Error::new(io::ErrorKind::UnexpectedEof, "index out of bounds")
-            })
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            if end > self.data.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "not enough data"));
-            }
-            Ok(self.data[start..end].to_vec())
-        }
-
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
-        {
-            unimplemented!()
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader { data: self.data.clone(), pos: new_index })
-        }
-    }
-
     /// Builds a constant pool byte buffer containing a placeholder at index 0 (constant pool
     /// indices are 1-based) followed by a `CONSTANT_Utf8_info` entry for each name in `names`,
     /// then parses each entry (via the real, already-ported `AbstractConstantPoolInfoJava::new`)
@@ -171,7 +108,7 @@ mod tests {
             bytes.extend_from_slice(name_bytes);
         }
 
-        let mut reader = MockReader::new(bytes.clone());
+        let mut reader = BinaryReader::from_bytes(bytes.clone(), false);
         let entries = offsets
             .into_iter()
             .map(|offset| {
@@ -198,7 +135,7 @@ mod tests {
         let (entries, mut bytes) = build_constant_pool(&["Deprecated"]);
         let offset = append_attribute(&mut bytes, 1, &[]);
 
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         reader.set_pointer_index(offset);
 
         let attr = get(&mut reader, &entries).expect("known attribute should dispatch");
@@ -214,7 +151,7 @@ mod tests {
         let (entries, mut bytes) = build_constant_pool(&["TotallyMadeUpAttribute"]);
         let offset = append_attribute(&mut bytes, 1, &[]);
 
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         reader.set_pointer_index(offset);
 
         let attr = get(&mut reader, &entries).expect("unknown attribute should still dispatch");
@@ -229,7 +166,7 @@ mod tests {
         let offset = append_attribute(&mut bytes, 1, &body);
         let next_attribute_offset = bytes.len() as u64;
 
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         reader.set_pointer_index(offset);
 
         let attr = get(&mut reader, &entries).expect("known attribute should dispatch");
@@ -243,7 +180,7 @@ mod tests {
         let (entries, mut bytes) = build_constant_pool(&["Deprecated"]);
         let offset = append_attribute(&mut bytes, 0, &[]);
 
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         reader.set_pointer_index(offset);
 
         assert!(get(&mut reader, &entries).is_err());
@@ -255,7 +192,7 @@ mod tests {
         let out_of_range = entries.len() as u16;
         let offset = append_attribute(&mut bytes, out_of_range, &[]);
 
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         reader.set_pointer_index(offset);
 
         assert!(get(&mut reader, &entries).is_err());
@@ -269,12 +206,12 @@ mod tests {
         let integer_offset = entries[1].get_offset();
         bytes[integer_offset as usize] =
             crate::format::javaclass::constantpool::constant_pool_tags_java::CONSTANT_INTEGER;
-        let mut reader = MockReader::new(bytes.clone());
+        let mut reader = BinaryReader::from_bytes(bytes.clone(), false);
         reader.set_pointer_index(integer_offset);
         entries[1] = AbstractConstantPoolInfoJava::new(&mut reader).expect("tag byte");
 
         let offset = append_attribute(&mut bytes, 1, &[]);
-        let mut reader = MockReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
         reader.set_pointer_index(offset);
 
         assert!(get(&mut reader, &entries).is_err());

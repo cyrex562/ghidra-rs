@@ -4,7 +4,6 @@
 use std::io;
 use std::sync::{Arc, Mutex};
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::data::category_path::CategoryPath;
@@ -17,8 +16,8 @@ use super::data_type_mapper::DataTypeMapper;
 use super::data_type_mapper_context::DataTypeMapperContext;
 
 /// A reader over `bytes`, positioned at 0.
-pub fn byte_reader(bytes: Vec<u8>, little_endian: bool) -> Box<dyn LegacyBinaryReader> {
-    Box::new(BinaryReader::from_bytes(bytes, little_endian))
+pub fn byte_reader(bytes: Vec<u8>, little_endian: bool) -> BinaryReader {
+    BinaryReader::from_bytes(bytes, little_endian)
 }
 
 /// A plain fixed-length data type (an integer, for the tests' purposes).

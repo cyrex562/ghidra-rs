@@ -136,7 +136,7 @@ mod tests {
     #[test]
     fn defaults_have_no_name_label_namespace_or_external_instances() {
         let mapper = mapper();
-        let t: DefaultThing = mapper.read_structure(byte_reader(vec![5], true).as_mut()).unwrap();
+        let t: DefaultThing = mapper.read_structure(&mut byte_reader(vec![5], true)).unwrap();
         assert_eq!(t.structure_name().unwrap(), None);
         assert_eq!(t.structure_label().unwrap(), None);
         assert_eq!(t.structure_namespace().unwrap(), None);
@@ -147,16 +147,16 @@ mod tests {
     #[test]
     fn structure_label_combines_name_and_mapping_structure_name() {
         let mapper = mapper();
-        let t: NamedThing = mapper.read_structure(byte_reader(vec![7], true).as_mut()).unwrap();
+        let t: NamedThing = mapper.read_structure(&mut byte_reader(vec![7], true)).unwrap();
         assert_eq!(t.structure_label().unwrap().as_deref(), Some("thing7___GoThing"));
-        let t: NamedThing = mapper.read_structure(byte_reader(vec![0], true).as_mut()).unwrap();
+        let t: NamedThing = mapper.read_structure(&mut byte_reader(vec![0], true)).unwrap();
         assert_eq!(t.structure_label().unwrap(), None, "no name, no label");
     }
 
     #[test]
     fn label_without_a_structure_context_is_an_error() {
         let mapper = mapper();
-        let t: NoContextThing = mapper.read_structure(byte_reader(vec![1], true).as_mut()).unwrap();
+        let t: NoContextThing = mapper.read_structure(&mut byte_reader(vec![1], true)).unwrap();
         let err = t.structure_label().unwrap_err();
         assert_eq!(err.to_string(), "No StructureContext for NoContextThing");
     }
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn derive_wires_the_hooks_into_the_descriptor() {
         let mapper = mapper();
-        let t: NamedThing = mapper.read_structure(byte_reader(vec![3], true).as_mut()).unwrap();
+        let t: NamedThing = mapper.read_structure(&mut byte_reader(vec![3], true)).unwrap();
         let hooks = NamedThing::descriptor().structure_markup.as_ref().unwrap();
         assert_eq!((hooks.structure_label)(&t).unwrap().as_deref(), Some("thing3___GoThing"));
         assert_eq!((hooks.structure_namespace)(&t).unwrap().as_deref(), Some("pkg"));

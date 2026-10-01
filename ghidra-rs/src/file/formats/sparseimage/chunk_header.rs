@@ -62,8 +62,9 @@ impl StructConverter for ChunkHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::file::formats::sparseimage::sparse_constants::CHUNK_TYPE_FILL;
-    use crate::format::macos::test_support::VecReader;
+    use crate::format::macos::test_support::le_reader;
 
     #[test]
     fn reads_little_endian_fields() {
@@ -72,7 +73,7 @@ mod tests {
         b.extend_from_slice(&0u16.to_le_bytes());
         b.extend_from_slice(&2u32.to_le_bytes());
         b.extend_from_slice(&16u32.to_le_bytes());
-        let mut reader = VecReader::little_endian(b);
+        let mut reader = le_reader(b);
         let h = ChunkHeader::new(&mut reader).unwrap();
         assert_eq!(h.chunk_type as u16, CHUNK_TYPE_FILL);
         assert_eq!(h.reserved1, 0);
@@ -83,7 +84,7 @@ mod tests {
 
     #[test]
     fn data_type_is_12_byte_chunk_header() {
-        let mut reader = VecReader::little_endian(vec![0; 12]);
+        let mut reader = le_reader(vec![0; 12]);
         let dt = ChunkHeader::new(&mut reader).unwrap().to_data_type().unwrap();
         assert_eq!(dt.get_name(), "chunk_header");
         assert_eq!(dt.get_length(), 12);

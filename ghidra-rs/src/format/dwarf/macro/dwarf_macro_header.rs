@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::line::dwarf_line::DWARFLine;
 use crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntry;
@@ -89,7 +89,7 @@ impl DWARFMacroHeader {
 
     /// Reads a `DWARFMacroHeader` from a stream. Mirrors `DWARFMacroHeader.readV5(BinaryReader,
     /// DWARFCompilationUnit)`.
-    pub fn read_v5(reader: &mut dyn LegacyBinaryReader, cu: Arc<dyn DWARFCompilationUnit>) -> io::Result<DWARFMacroHeader> {
+    pub fn read_v5(reader: &mut BinaryReader, cu: Arc<dyn DWARFCompilationUnit>) -> io::Result<DWARFMacroHeader> {
         let start_offset = reader.get_pointer_index();
         let version = reader.read_next_unsigned_short()? as i32;
         if version != 5 {
@@ -135,7 +135,7 @@ impl DWARFMacroHeader {
     /// Mirrors the private `DWARFMacroHeader.readMacroOpcodeTable(BinaryReader, Map)`.
     ///
     /// TODO: needs testing with actual data emitted from toolchain (matches a Java comment).
-    fn read_macro_opcode_table(reader: &mut dyn LegacyBinaryReader, opcode_map: &mut HashMap<i32, Vec<DWARFForm>>) -> io::Result<()> {
+    fn read_macro_opcode_table(reader: &mut BinaryReader, opcode_map: &mut HashMap<i32, Vec<DWARFForm>>) -> io::Result<()> {
         let num_opcodes = reader.read_next_unsigned_byte()?;
         for _ in 0..num_opcodes {
             let opcode = reader.read_next_unsigned_byte()? as i32;
@@ -159,7 +159,7 @@ impl DWARFMacroHeader {
     /// Reads consecutive macro info entries until the end-of-list marker. Mirrors
     /// `DWARFMacroHeader.readMacroEntries(BinaryReader, DWARFMacroHeader)`.
     pub fn read_macro_entries(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         macro_header: Arc<DWARFMacroHeader>,
     ) -> io::Result<Vec<Box<dyn DWARFMacroInfoEntry>>> {
         use crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntryBase;
@@ -234,91 +234,12 @@ impl DWARFMacroHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::seam_stubs::DIEContainer;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0.get(index as usize).copied().ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader { provider: Rc::new(RefCell::new(VecProvider(bytes))), index: 0, little_endian: true }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
-        }
-    }
 
     struct MockDIEContainer;
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             None
         }
 
@@ -345,7 +266,7 @@ mod tests {
     fn read_v5_reads_debug_line_offset_when_flagged() {
         // version=5 (LE u16), flags=0x2 (debug line offset present, 4-byte offsets), then a
         // 4-byte little-endian offset (0x20), mirroring a real `.debug_macro` unit header.
-        let mut reader = TestReader::new(vec![0x05, 0x00, 0x02, 0x20, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x05, 0x00, 0x02, 0x20, 0x00, 0x00, 0x00], true);
         let cu: Arc<dyn DWARFCompilationUnit> = Arc::new(MockCompilationUnit { die_container: MockDIEContainer });
 
         let header = DWARFMacroHeader::read_v5(&mut reader, cu).unwrap();
@@ -362,7 +283,7 @@ mod tests {
 
     #[test]
     fn read_v5_rejects_unsupported_version() {
-        let mut reader = TestReader::new(vec![0x04, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x04, 0x00], true);
         let cu: Arc<dyn DWARFCompilationUnit> = Arc::new(MockCompilationUnit { die_container: MockDIEContainer });
 
         let err = match DWARFMacroHeader::read_v5(&mut reader, cu) {
@@ -383,7 +304,7 @@ mod tests {
     fn default_opcode_operand_map_covers_every_known_opcode() {
         // readV5's default table (no per-unit override) recognizes every `DW_MACRO_*` opcode,
         // e.g. DW_MACRO_end_file (0x4) with zero operands.
-        let mut reader = TestReader::new(vec![0x05, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x05, 0x00, 0x00], true);
         let cu: Arc<dyn DWARFCompilationUnit> = Arc::new(MockCompilationUnit { die_container: MockDIEContainer });
         let header = DWARFMacroHeader::read_v5(&mut reader, cu).unwrap();
 

@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::macos::asd::entry_descriptor::EntryDescriptor;
 use crate::format::macos::asd::entry_descriptor_id::ENTRY_RESOURCE_FORK;
 use crate::format::macos::rm::resource_header::ResourceHeader;
@@ -19,7 +19,7 @@ use crate::format::macos::rm::resource_header::ResourceHeader;
 ///
 /// Port of `EntryFactory.getEntry(BinaryReader, EntryDescriptor)`.
 pub fn get_entry(
-    reader: &mut dyn LegacyBinaryReader,
+    reader: &mut BinaryReader,
     descriptor: &EntryDescriptor,
 ) -> io::Result<Option<ResourceHeader>> {
     let old_index = reader.get_pointer_index();
@@ -37,11 +37,11 @@ pub fn get_entry(
 mod tests {
     use super::*;
     use crate::format::macos::asd::entry_descriptor_id::ENTRY_DATA_FORK;
-    use crate::format::macos::test_support::{Image, VecReader};
+    use crate::format::macos::test_support::{Image, be_reader};
 
     #[test]
     fn non_resource_fork_yields_none_without_moving_reader() {
-        let mut reader = VecReader::new(vec![0; 8]);
+        let mut reader = be_reader(vec![0; 8]);
         reader.set_pointer_index(3);
         let d = EntryDescriptor::new(ENTRY_DATA_FORK as i32, 0, 8);
         assert!(get_entry(&mut reader, &d).unwrap().is_none());
@@ -56,7 +56,7 @@ mod tests {
         img.u32(0x80).u32(0x10).u32(0x20).u32(0x1e);
         img.u32(0x80).u32(0x10).u32(0x20).u32(0x1e);
         img.u32(0).u16(0).u16(0).u16(0x1c).u16(0x1e).u16(0xffff);
-        let mut reader = VecReader::new(img.0);
+        let mut reader = be_reader(img.0);
         reader.set_pointer_index(1);
         let d = EntryDescriptor::new(ENTRY_RESOURCE_FORK as i32, 4, 0x2e);
 
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn errors_still_restore_reader_position() {
         // Resource fork at 0 but only 4 bytes: the header read fails.
-        let mut reader = VecReader::new(vec![0; 4]);
+        let mut reader = be_reader(vec![0; 4]);
         reader.set_pointer_index(2);
         let d = EntryDescriptor::new(ENTRY_RESOURCE_FORK as i32, 0, 4);
         assert!(get_entry(&mut reader, &d).is_err());

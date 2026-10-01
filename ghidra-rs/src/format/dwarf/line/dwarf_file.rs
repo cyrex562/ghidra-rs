@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
 use crate::format::dwarf::line::dwarf_line::DWARFLine;
@@ -45,7 +45,7 @@ impl DWARFFile {
     /// program charset to decode the name; that charset plumbing isn't ported yet, so this reads
     /// the name as UTF-8, which covers the overwhelmingly common ASCII/UTF-8 case.
     pub fn read_v4(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         _cu: &dyn DWARFCompilationUnit,
     ) -> io::Result<Option<DWARFFile>> {
         let name = reader.read_next_utf8_string()?;
@@ -64,7 +64,7 @@ impl DWARFFile {
     /// Reads a DWARFFile entry from a DWARF v5 line program header, using `defs` to describe how
     /// each field is serialized.
     pub fn read_v5(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         defs: &[DWARFLineContentTypeDef],
         dwarf_int_size: i32,
         cu: &dyn DWARFCompilationUnit,
@@ -177,86 +177,7 @@ impl fmt::Display for DWARFFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0.get(index as usize).copied().ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader { provider: Rc::new(RefCell::new(VecProvider(bytes))), index: 0, little_endian: true }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index, little_endian: self.little_endian })
-        }
-    }
 
     struct MockCompilationUnit;
     impl DWARFCompilationUnit for MockCompilationUnit {
@@ -279,7 +200,7 @@ mod tests {
 
     #[test]
     fn read_v4_parses_a_file_entry() {
-        let mut reader = TestReader::new(encode_v4_entry("main.c", 2, 0x1234, 0x5678));
+        let mut reader = BinaryReader::from_bytes(encode_v4_entry("main.c", 2, 0x1234, 0x5678), true);
         let cu = MockCompilationUnit;
 
         let file = DWARFFile::read_v4(&mut reader, &cu).unwrap().unwrap();
@@ -294,7 +215,7 @@ mod tests {
     #[test]
     fn read_v4_returns_none_for_end_of_list_marker() {
         // An empty (null-terminated) name signals end-of-list.
-        let mut reader = TestReader::new(vec![0]);
+        let mut reader = BinaryReader::from_bytes(vec![0], true);
         let cu = MockCompilationUnit;
 
         assert!(DWARFFile::read_v4(&mut reader, &cu).unwrap().is_none());
@@ -334,7 +255,7 @@ mod tests {
         bytes.extend(42u32.to_le_bytes());
         bytes.extend(&md5);
 
-        let mut reader = TestReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let cu = MockCompilationUnit;
 
         let file = DWARFFile::read_v5(&mut reader, &defs, 4, &cu).unwrap();
@@ -352,7 +273,7 @@ mod tests {
             attribute_id: DWARFLineContentType::DwLnctDirectoryIndex,
             attribute_form: DWARFForm::DwFormUdata,
         }];
-        let mut reader = TestReader::new(vec![0x01]);
+        let mut reader = BinaryReader::from_bytes(vec![0x01], true);
         let cu = MockCompilationUnit;
 
         assert!(DWARFFile::read_v5(&mut reader, &defs, 4, &cu).is_err());

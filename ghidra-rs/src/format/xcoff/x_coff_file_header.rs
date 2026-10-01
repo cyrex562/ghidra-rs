@@ -7,10 +7,10 @@ use std::rc::Rc;
 
 use thiserror::Error;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::format::coff::coff_file_header::CoffBinaryReader;
+use crate::app::util::bin::binary_reader::GByteStoreProvider;
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::qword_data_type::QWordDataType;
 use crate::program::model::data::word_data_type::WordDataType;
@@ -58,12 +58,13 @@ impl XCoffFileHeader {
         if provider.borrow_mut().length()? < SIZEOF {
             return Err(XCoffException::new("Invalid XCOFF: file is too small.").into());
         }
-        let mut reader = CoffBinaryReader::new(provider, false /* always big endian */);
+        let mut reader =
+            BinaryReader::new(Rc::new(GByteStoreProvider(provider)), false /* always big endian */);
         Self::read(&mut reader)
     }
 
     /// Reads the header at the reader's current position; the reader must be big endian.
-    fn read(reader: &mut dyn LegacyBinaryReader) -> Result<Self, XCoffFileHeaderError> {
+    fn read(reader: &mut BinaryReader) -> Result<Self, XCoffFileHeaderError> {
         if !x_coff_file_header_magic::is_match(reader.peek_next_short()? as u16) {
             return Err(XCoffException::new("Invalid XCOFF: incorrect magic value.").into());
         }

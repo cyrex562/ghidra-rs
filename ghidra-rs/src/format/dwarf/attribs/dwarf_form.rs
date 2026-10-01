@@ -661,87 +661,9 @@ impl fmt::Display for DWARFForm {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
     use crate::format::seam_stubs::{DIEContainer, DWARFCompilationUnit};
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start.checked_add(length).unwrap_or(usize::MAX);
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader { provider: Rc::new(RefCell::new(VecProvider(bytes))), index: 0 }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader { provider: Rc::clone(&self.provider), index: new_index })
-        }
-    }
 
     /// A DIE container whose string table is a fixed list, indexed/offset by the value the form
     /// read out of the stream.
@@ -750,7 +672,7 @@ mod tests {
     }
 
     impl DIEContainer for MockDIEContainer {
-        fn get_debug_line_reader(&self) -> Option<Box<dyn LegacyBinaryReader>> {
+        fn get_debug_line_reader(&self) -> Option<BinaryReader> {
             None
         }
         fn get_string(
@@ -865,25 +787,25 @@ mod tests {
         let def = MockAttrDef::new(DWARFForm::DwFormData4);
 
         // Static size: no bytes are consumed.
-        let mut reader = TestReader::new(vec![]);
+        let mut reader = BinaryReader::from_bytes(vec![], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormData4.get_size(&mut ctx).unwrap(), 4);
         assert_eq!(DWARFForm::DwFormFlagPresent.get_size(&mut ctx).unwrap(), 0);
 
         // DWARF_INTSIZE forms report the context's int size, not their own.
-        let mut reader = TestReader::new(vec![]);
+        let mut reader = BinaryReader::from_bytes(vec![], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 8);
         assert_eq!(DWARFForm::DwFormStrp.get_size(&mut ctx).unwrap(), 8);
 
         // LEB128_SIZE forms report the *encoded length* of the value in the stream: 0x80 0x01 is
         // a two byte ULEB128.
-        let mut reader = TestReader::new(vec![0x80, 0x01]);
+        let mut reader = BinaryReader::from_bytes(vec![0x80, 0x01], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormUdata.get_size(&mut ctx).unwrap(), 2);
         assert_eq!(reader.get_pointer_index(), 2);
 
         // DW_FORM_addr's size is the compilation unit's pointer size.
-        let mut reader = TestReader::new(vec![]);
+        let mut reader = BinaryReader::from_bytes(vec![], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormAddr.get_size(&mut ctx).unwrap(), 4);
     }
@@ -894,22 +816,22 @@ mod tests {
         let def = MockAttrDef::new(DWARFForm::DwFormBlock2);
 
         // block2: 2 byte length prefix + 3 payload bytes.
-        let mut reader = TestReader::new(vec![0x03, 0x00, 0xaa, 0xbb, 0xcc]);
+        let mut reader = BinaryReader::from_bytes(vec![0x03, 0x00, 0xaa, 0xbb, 0xcc], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormBlock2.get_size(&mut ctx).unwrap(), 5);
 
         // block1: 1 byte length prefix + 3 payload bytes.
-        let mut reader = TestReader::new(vec![0x03, 0xaa, 0xbb, 0xcc]);
+        let mut reader = BinaryReader::from_bytes(vec![0x03, 0xaa, 0xbb, 0xcc], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormBlock1.get_size(&mut ctx).unwrap(), 4);
 
         // block: 1 byte ULEB128 length prefix + 3 payload bytes.
-        let mut reader = TestReader::new(vec![0x03, 0xaa, 0xbb, 0xcc]);
+        let mut reader = BinaryReader::from_bytes(vec![0x03, 0xaa, 0xbb, 0xcc], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormBlock.get_size(&mut ctx).unwrap(), 4);
 
         // string: the size is the whole NUL terminated string.
-        let mut reader = TestReader::new(b"abc\0rest".to_vec());
+        let mut reader = BinaryReader::from_bytes(b"abc\0rest".to_vec(), true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormString.get_size(&mut ctx).unwrap(), 4);
     }
@@ -919,7 +841,7 @@ mod tests {
         let cu = MockCompUnit::new();
         let def = MockAttrDef::new(DWARFForm::DwFormData4);
 
-        let mut reader = TestReader::new(vec![0x78, 0x56, 0x34, 0x12]);
+        let mut reader = BinaryReader::from_bytes(vec![0x78, 0x56, 0x34, 0x12], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormData4.read_value(&mut ctx).unwrap();
         assert_eq!(numeric_value(value.as_ref()), 0x1234_5678);
@@ -927,19 +849,19 @@ mod tests {
 
         // DW_FORM_sec_offset reads dwarfIntSize bytes, so the same 4 bytes read as 8 under a
         // 64-bit-DWARF context would run off the end.
-        let mut reader = TestReader::new(vec![0x04, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x04, 0x00, 0x00, 0x00], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormSecOffset.read_value(&mut ctx).unwrap();
         assert_eq!(numeric_value(value.as_ref()), 4);
 
         // DW_FORM_sdata is a signed LEB128: 0x7f encodes -1.
-        let mut reader = TestReader::new(vec![0x7f]);
+        let mut reader = BinaryReader::from_bytes(vec![0x7f], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormSdata.read_value(&mut ctx).unwrap();
         assert_eq!(numeric_value(value.as_ref()), -1);
 
         // ...while DW_FORM_udata reads the same byte as unsigned 127.
-        let mut reader = TestReader::new(vec![0x7f]);
+        let mut reader = BinaryReader::from_bytes(vec![0x7f], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormUdata.read_value(&mut ctx).unwrap();
         assert_eq!(numeric_value(value.as_ref()), 127);
@@ -950,20 +872,20 @@ mod tests {
         let cu = MockCompUnit::new();
         let def = MockAttrDef::new(DWARFForm::DwFormFlag);
 
-        let mut reader = TestReader::new(vec![0x01]);
+        let mut reader = BinaryReader::from_bytes(vec![0x01], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormFlag.read_value(&mut ctx).unwrap();
         assert!(value.as_any().downcast_ref::<DWARFBooleanAttribute>().unwrap().get_value());
 
         // DW_FORM_flag_present consumes nothing and is always true.
-        let mut reader = TestReader::new(vec![]);
+        let mut reader = BinaryReader::from_bytes(vec![], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormFlagPresent.read_value(&mut ctx).unwrap();
         assert!(value.as_any().downcast_ref::<DWARFBooleanAttribute>().unwrap().get_value());
         assert_eq!(reader.get_pointer_index(), 0);
 
         // DW_FORM_block1: 1 byte length prefix, then that many payload bytes.
-        let mut reader = TestReader::new(vec![0x02, 0xde, 0xad, 0xbe]);
+        let mut reader = BinaryReader::from_bytes(vec![0x02, 0xde, 0xad, 0xbe], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormBlock1.read_value(&mut ctx).unwrap();
         assert_eq!(
@@ -973,7 +895,7 @@ mod tests {
         assert_eq!(reader.get_pointer_index(), 3);
 
         // DW_FORM_string is an inline NUL terminated string.
-        let mut reader = TestReader::new(b"main.c\0".to_vec());
+        let mut reader = BinaryReader::from_bytes(b"main.c\0".to_vec(), true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormString.read_value(&mut ctx).unwrap();
         assert_eq!(
@@ -988,7 +910,7 @@ mod tests {
         let def = MockAttrDef::new(DWARFForm::DwFormStrp);
 
         // DW_FORM_strp reads a dwarfIntSize offset and hands it to the DIE container.
-        let mut reader = TestReader::new(vec![0x10, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x10, 0x00, 0x00, 0x00], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormStrp.read_value(&mut ctx).unwrap();
         assert_eq!(
@@ -997,7 +919,7 @@ mod tests {
         );
 
         // DW_FORM_strx1 reads a single byte index instead.
-        let mut reader = TestReader::new(vec![0x10]);
+        let mut reader = BinaryReader::from_bytes(vec![0x10], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormStrx1.read_value(&mut ctx).unwrap();
         assert_eq!(
@@ -1012,7 +934,7 @@ mod tests {
         let cu = MockCompUnit::new();
         let def = MockAttrDef { form: DWARFForm::DwFormImplicitConst, implicit_value: 42 };
 
-        let mut reader = TestReader::new(vec![]);
+        let mut reader = BinaryReader::from_bytes(vec![], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormImplicitConst.read_value(&mut ctx).unwrap();
 
@@ -1027,19 +949,19 @@ mod tests {
         let def = MockAttrDef::new(DWARFForm::DwFormIndirect);
 
         // ULEB128 0x0b (DW_FORM_data1), then the data1 payload.
-        let mut reader = TestReader::new(vec![0x0b, 0x2a]);
+        let mut reader = BinaryReader::from_bytes(vec![0x0b, 0x2a], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let value = DWARFForm::DwFormIndirect.read_value(&mut ctx).unwrap();
         assert_eq!(numeric_value(value.as_ref()), 42);
         assert_eq!(reader.get_pointer_index(), 2);
 
         // getSize sums the form code's own length and the delegated form's size.
-        let mut reader = TestReader::new(vec![0x0b, 0x2a]);
+        let mut reader = BinaryReader::from_bytes(vec![0x0b, 0x2a], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert_eq!(DWARFForm::DwFormIndirect.get_size(&mut ctx).unwrap(), 2);
 
         // An unrecognized indirect form code is reported rather than silently skipped.
-        let mut reader = TestReader::new(vec![0x02]);
+        let mut reader = BinaryReader::from_bytes(vec![0x02], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         assert!(DWARFForm::DwFormIndirect.read_value(&mut ctx).is_err());
     }
@@ -1050,7 +972,7 @@ mod tests {
         let def = MockAttrDef::new(DWARFForm::DwFormBlock4);
 
         // A block4 declaring more than MAX_BLOCK4_SIZE bytes is refused before any read.
-        let mut reader = TestReader::new(vec![0x00, 0x00, 0xff, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x00, 0xff, 0x00], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let err = DWARFForm::DwFormBlock4
             .read_value(&mut ctx)
@@ -1059,7 +981,7 @@ mod tests {
         assert!(err.to_string().contains("dw_form_block4"), "{err}");
 
         // Ghidra does not implement reading the supplementary-object forms.
-        let mut reader = TestReader::new(vec![0; 8]);
+        let mut reader = BinaryReader::from_bytes(vec![0; 8], true);
         let mut ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
         let err = DWARFForm::DwFormRefSig8
             .read_value(&mut ctx)
