@@ -91,7 +91,7 @@
 //!     `Structure`/`Union`, so this reordering is behaviorally invisible. Two small, real
 //!     `DataType::into_composite` overrides were added to
 //!     [`StructureDataType`](super::structure_data_type::StructureDataType)/
-//!     [`UnionDataTypeImpl`](super::union_data_type::UnionDataTypeImpl) to make this possible (the
+//!     [`UnionDataType`](super::union_data_type::UnionDataType) to make this possible (the
 //!     trait default returns `None`), and a `SharedComposite` wrapper was added to
 //!     `program::seam_stubs` (mirroring its pre-existing `SharedArray`) so a composite field read
 //!     back through `DataTypeComponentImpl::get_data_type()`'s `share_data_type()` handle can
@@ -1468,12 +1468,12 @@ mod tests {
     #[test]
     fn get_data_type_prefix_identifies_struct_union_enum() {
         use crate::program::model::data::enum_data_type::EnumDataType;
-        use crate::program::model::data::union_data_type::UnionDataTypeImpl;
+        use crate::program::model::data::union_data_type::UnionDataType;
 
         let s: Box<dyn DataType> = Box::new(StructureDataType::new("S", 4));
         assert_eq!(DataTypeWriter::<Vec<u8>>::get_data_type_prefix(s), "struct ");
 
-        let u: Box<dyn DataType> = Box::new(UnionDataTypeImpl::new("U"));
+        let u: Box<dyn DataType> = Box::new(UnionDataType::new("U"));
         assert_eq!(DataTypeWriter::<Vec<u8>>::get_data_type_prefix(u), "union ");
 
         let e: Box<dyn DataType> = Box::new(EnumDataType::new("E", 4));

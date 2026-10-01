@@ -8,17 +8,8 @@
 //! `IMAGE_BASE_RELATIVE`/`RELATIVE`/`FILE_OFFSET` unit-struct constants plus [`pointer_type::value_of`]),
 //! since that is the actual (if not yet wired-up) real port of `ghidra.program.model.data.PointerType`.
 //!
-//! A separate, narrower placeholder already exists at
-//! [`seam_stubs::PointerTypeSettingsDefinition`](crate::program::seam_stubs::PointerTypeSettingsDefinition)
-//! (paired with [`seam_stubs::PointerType`](crate::program::seam_stubs::PointerType), a plain
-//! `enum` rather than a trait), and the already-DONE
-//! [`PointerDataType`](crate::program::model::data::pointer_data_type::PointerDataType) is built
-//! against *that* pair, matching on the enum directly rather than a `PointerType::value()` trait
-//! object. Reconciling the two (switching `PointerDataType` over to this real port) would require
-//! rewriting `PointerDataType`'s own settings/address-decoding logic, which is out of scope for
-//! this port and risks an already-verified 1000+ line file; that reconciliation is left to
-//! whenever `PointerDataType` is next substantially touched. This file and the `seam_stubs` pair
-//! coexist under the same class name at different Rust paths in the meantime.
+//! [`PointerDataType`](crate::program::model::data::pointer_data_type::PointerDataType) reads
+//! its pointer type through this definition (the former `seam_stubs` placeholder pair is gone).
 //!
 //! `getType(Settings)` accepts a possibly-`null` `settings` in Java (`if (settings == null) return
 //! PointerType.DEFAULT;`); ported as [`PointerTypeSettingsDefinition::get_type`] taking

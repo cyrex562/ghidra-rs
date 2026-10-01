@@ -608,7 +608,7 @@ fn is_part_of_data_type(data_type: Box<dyn DataType>, target: &dyn DataType) -> 
     if data_type.is_pointer() || target.is_pointer() {
         return false;
     }
-    if data_type.get_data_type_path() == target.get_data_type_path() {
+    if crate::program::model::data::composite_internal::is_same_data_type_identity(data_type.as_ref(), target) {
         return true;
     }
     if data_type.is_typedef() {

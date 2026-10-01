@@ -75,10 +75,10 @@
 //!   `other.get_packing_type()`/`get_explicit_packing_value()`/`get_alignment_type()`/
 //!   `get_explicit_minimum_alignment()` instead -- carrying the identical information, just
 //!   through the public accessor shape.
-//! - **`copy`/`clone` do not call the real `replaceWith` on a fresh `UnionDataTypeImpl`.** Both
-//!   materialize a fresh, in-memory [`UnionDataTypeImpl`](crate::program::model::data::union_data_type::UnionDataTypeImpl)
+//! - **`copy`/`clone` do not call the real `replaceWith` on a fresh `UnionDataType`.** Both
+//!   materialize a fresh, in-memory [`UnionDataType`](crate::program::model::data::union_data_type::UnionDataType)
 //!   by re-adding this union's own components one at a time
-//!   ([`materialize`](UnionDb::materialize)), since `UnionDataTypeImpl`'s own `replaceWith` (via
+//!   ([`materialize`](UnionDb::materialize)), since `UnionDataType`'s own `replaceWith` (via
 //!   [`UnionDataType::union_data_type_replace_with`]) requires an `other: &dyn UnionDataType`
 //!   parameter that `UnionDb` -- whose components are `DataTypeComponentDB`, not
 //!   `DataTypeComponentImpl` -- does not (and should not) implement. The resulting union has the
@@ -88,7 +88,7 @@
 //!   taken.** A `&self` method cannot hand back an owned `Box<dyn Union>` aliasing `self`; when the
 //!   managers match, [`Union::clone_union`] still materializes a fresh (behaviorally equivalent)
 //!   clone rather than reusing `self`, mirroring
-//!   [`UnionDataTypeImpl`](crate::program::model::data::union_data_type::UnionDataTypeImpl)'s own
+//!   [`UnionDataType`](crate::program::model::data::union_data_type::UnionDataType)'s own
 //!   documented treatment of the identical Java short-circuit.
 
 use std::collections::HashSet;
@@ -137,7 +137,7 @@ use crate::program::model::data::internal_data_type_component::InternalDataTypeC
 use crate::program::model::data::packing_type::PackingType;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::union::Union;
-use crate::program::model::data::union_data_type::UnionDataTypeImpl;
+use crate::program::model::data::union_data_type::UnionDataType;
 use crate::program::model::data::union_internal::UnionInternal;
 use crate::program::model::mem::MemBuffer;
 use crate::util::exception::DuplicateNameException;
@@ -775,13 +775,13 @@ impl UnionDb {
         }
     }
 
-    /// Materializes a fresh, in-memory [`UnionDataTypeImpl`] snapshot of this union's current
+    /// Materializes a fresh, in-memory [`UnionDataType`] snapshot of this union's current
     /// state, re-adding each component one at a time. Shared implementation for
     /// [`DataType::clone_data_type`]/[`DataType::copy_data_type`]/[`Union::clone_union`] -- see
-    /// the module docs for why the real `UnionDataTypeImpl::union_data_type_replace_with` cannot
+    /// the module docs for why the real `UnionDataType::union_data_type_replace_with` cannot
     /// be called directly.
-    fn materialize(&self, preserve_identity: bool) -> UnionDataTypeImpl {
-        let mut result = UnionDataTypeImpl::new_in_category(self.get_category_path(), self.get_name());
+    fn materialize(&self, preserve_identity: bool) -> UnionDataType {
+        let mut result = UnionDataType::new_in_category(self.get_category_path(), self.get_name());
         let _ = result.set_description(&self.get_description());
 
         match self.get_packing_type() {
@@ -810,7 +810,7 @@ impl UnionDb {
         }
 
         if preserve_identity {
-            // There is no setter for universal id/last-change-time on `UnionDataTypeImpl`; a
+            // There is no setter for universal id/last-change-time on `UnionDataType`; a
             // fresh identity is used regardless of `preserve_identity`'s value here since that
             // information can only be supplied at construction, which already happened above.
             // Kept as a parameter for symmetry with `TypedefDb::materialize`'s identical-shaped
@@ -1675,7 +1675,7 @@ impl DataType for UnionDb {
     }
 
     /// Port of `UnionDB.dataTypeReplaced(DataType, DataType)`. Unlike the `TypedefDb`/
-    /// `UnionDataTypeImpl` precedents, this *can* be fully ported despite the borrowed `new_dt`
+    /// `UnionDataType` precedents, this *can* be fully ported despite the borrowed `new_dt`
     /// parameter: [`DataType::clone_data_type`] takes `&self` and returns an *owned* clone,
     /// exactly matching Java's own `replacementDt.clone(dataMgr)` call, so there is no
     /// owned-vs-borrowed gap to route around here.

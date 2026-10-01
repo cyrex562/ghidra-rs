@@ -79,6 +79,18 @@ pub fn stored_minimum_alignment_of(composite: &dyn Composite) -> i32 {
     }
 }
 
+/// Stands in for Java reference identity (`a == b`) between two data types when walking a
+/// composition tree: data types carrying a universal ID (composites and other user-defined
+/// types; a value clone keeps its ID) are the same only if the IDs match, and types without one
+/// (built-ins report ID 0) fall back to data type path equality.
+pub fn is_same_data_type_identity(a: &dyn DataType, b: &dyn DataType) -> bool {
+    let (id_a, id_b) = (a.get_universal_id(), b.get_universal_id());
+    if id_a.value() != 0 && id_b.value() != 0 {
+        return id_a == id_b;
+    }
+    a.get_data_type_path() == b.get_data_type_path()
+}
+
 /// Port of `CompositeInternal.ComponentComparator`.
 ///
 /// Compares two components based upon their ordinal, for sorting components by ordinal.

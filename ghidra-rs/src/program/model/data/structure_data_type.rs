@@ -119,7 +119,7 @@ fn is_part_of_data_type_by_ref(data_type: &dyn DataType, target: &dyn DataType) 
     if data_type.is_pointer() || target.is_pointer() {
         return false;
     }
-    if data_type.get_data_type_path() == target.get_data_type_path() {
+    if crate::program::model::data::composite_internal::is_same_data_type_identity(data_type, target) {
         return true;
     }
     if data_type.is_typedef() {
@@ -248,7 +248,7 @@ struct PackableComponent {
 impl PackableComponent {
     fn from_snapshot(dtc: &DataTypeComponentImpl) -> Self {
         PackableComponent {
-            data_type: Arc::from(dtc.get_data_type()),
+            data_type: dtc.data_type_arc().clone(),
             ordinal: dtc.get_ordinal(),
             offset: dtc.get_offset(),
             length: dtc.get_length(),
@@ -283,6 +283,12 @@ impl DataTypeComponent for PackableComponent {
     }
     fn is_bit_field_component(&self) -> bool {
         self.is_bit_field
+    }
+    fn is_zero_bit_field_component(&self) -> bool {
+        self.data_type.as_bit_field().map(|bf| bf.get_bit_size() == 0).unwrap_or(false)
+    }
+    fn bit_field_bit_offset(&self) -> i32 {
+        self.data_type.as_bit_field().map(|bf| bf.get_bit_offset()).unwrap_or(0)
     }
 }
 
@@ -3581,20 +3587,23 @@ mod tests {
 
     #[test]
     fn add_rejects_cyclic_component_via_check_ancestry() {
-        // "Outer" contains "Inner" contains a same-named-and-pathed "Outer" -- adding this
-        // three-level "Inner" (which already has "Outer" within it) to "Outer" itself would be
-        // cyclic, matching Java's `DataTypeUtilities.checkAncestry` rejection.
-        let mut nested_outer = sample();
-        nested_outer.name = "Outer".to_string();
+        // "Inner" contains (a value clone of, i.e. the same data type as) "Outer" -- adding
+        // "Inner" to "Outer" itself would be cyclic, matching Java's
+        // `DataTypeUtilities.checkAncestry` rejection.
+        let mut outer = sample();
+        outer.name = "Outer".to_string();
 
         let mut inner = sample();
         inner.name = "Inner".to_string();
         inner
-            .structure_data_type_add(Box::new(nested_outer), -1, Some("back_ref".to_string()), None)
+            .structure_data_type_add(Box::new(outer.clone()), -1, Some("back_ref".to_string()), None)
             .unwrap();
 
-        let mut outer = sample();
-        outer.name = "Outer".to_string();
+        // A distinct structure that merely shares the name is not the same data type.
+        let mut other_outer = sample();
+        other_outer.name = "Outer".to_string();
+        assert!(other_outer.structure_data_type_add(Box::new(inner.clone()), -1, None, None).is_ok());
+
         let err = match outer.structure_data_type_add(Box::new(inner), -1, None, None) {
             Err(e) => e,
             Ok(_) => panic!("expected a cyclic-dependency rejection"),
@@ -4750,4 +4759,633 @@ mod tests {
 
     struct MockSettings;
     impl Settings for MockSettings {}
+}
+
+/// Ports of `ghidra.program.model.data.StructureDataTypeTest` (Features/Base test sources),
+/// with the Java expected values. Tests that depend on parent change notification
+/// (`testDataTypeSizeChanged`, the second half of `testDeleteAll`/`testAlignmentAndPacking`) are
+/// not ported: under the build-then-share convention a structure is not a registered parent of
+/// its component types. Tests using `CharDataType` wait for that class's port.
+#[cfg(test)]
+mod java_tests {
+    use super::*;
+    use crate::program::model::data::array_data_type::ArrayDataType;
+    use crate::program::model::data::byte_data_type::ByteDataType;
+    use crate::program::model::data::composite_test_utils::assert_expected_composite;
+    use crate::program::model::data::dword_data_type::DWordDataType;
+    use crate::program::model::data::float_data_type::FloatDataType;
+    use crate::program::model::data::integer_data_type::IntegerDataType;
+    use crate::program::model::data::qword_data_type::QWordDataType;
+    use crate::program::model::data::word_data_type::WordDataType;
+    use std::any::TypeId;
+
+    fn boxed(d: Arc<dyn DataType>) -> Box<dyn DataType> {
+        share_data_type(&d)
+    }
+    fn byte() -> Box<dyn DataType> {
+        boxed(ByteDataType::data_type())
+    }
+    fn word() -> Box<dyn DataType> {
+        boxed(WordDataType::data_type())
+    }
+    fn dword() -> Box<dyn DataType> {
+        boxed(DWordDataType::data_type())
+    }
+    fn float() -> Box<dyn DataType> {
+        boxed(FloatDataType::data_type())
+    }
+    fn int() -> Box<dyn DataType> {
+        boxed(IntegerDataType::data_type())
+    }
+    fn s(text: &str) -> Option<String> {
+        Some(text.to_string())
+    }
+
+    /// `StructureDataTypeTest.setUp()`.
+    fn test_struct() -> StructureDataType {
+        let mut st = StructureDataType::new("TestStruct", 0);
+        st.add_with_name(byte(), s("field1"), s("Comment1")).unwrap();
+        st.add_with_name(word(), None, s("Comment2")).unwrap();
+        st.add_with_name(dword(), s("field3"), None).unwrap();
+        st.add_with_name(byte(), s("field4"), s("Comment4")).unwrap();
+        st
+    }
+
+    fn comp(st: &StructureDataType, ordinal: i32) -> Box<dyn DataTypeComponent> {
+        Structure::get_component(st, ordinal).unwrap()
+    }
+
+    fn class_of(dtc: &dyn DataTypeComponent) -> Option<TypeId> {
+        dtc.get_data_type().runtime_class()
+    }
+
+    fn is<T: 'static>(dtc: &dyn DataTypeComponent) -> bool {
+        class_of(dtc) == Some(TypeId::of::<T>())
+    }
+
+    #[test]
+    fn test_empty() {
+        let st = StructureDataType::new("foo", 0);
+        assert!(st.is_not_yet_defined());
+        assert!(st.is_zero_length());
+        assert_eq!(st.get_num_components(), 0);
+        assert_eq!(st.get_num_defined_components(), 0);
+    }
+
+    #[test]
+    fn test_size_one() {
+        let st = StructureDataType::new("foo", 1);
+        assert!(!st.is_not_yet_defined());
+        assert!(!st.is_zero_length());
+        assert_eq!(st.get_num_components(), 1);
+        assert_eq!(st.get_num_defined_components(), 0);
+    }
+
+    #[test]
+    fn test_add() {
+        let mut st = test_struct();
+        assert_eq!(st.get_length(), 8);
+        assert_eq!(st.get_num_components(), 4);
+
+        let dtc = comp(&st, 0);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (0, 0));
+        assert_eq!(dtc.get_field_name(), s("field1"));
+        assert_eq!(dtc.get_comment(), s("Comment1"));
+        assert!(is::<ByteDataType>(dtc.as_ref()));
+
+        let dtc = comp(&st, 1);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (1, 1));
+        assert_eq!(dtc.get_default_field_name(), s("field1_0x1"));
+        assert_eq!(dtc.get_field_name(), None);
+        assert_eq!(dtc.get_comment(), s("Comment2"));
+        assert!(is::<WordDataType>(dtc.as_ref()));
+
+        let dtc = comp(&st, 2);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (3, 2));
+        assert_eq!(dtc.get_field_name(), s("field3"));
+        assert_eq!(dtc.get_comment(), None);
+        assert!(is::<DWordDataType>(dtc.as_ref()));
+
+        let dtc = comp(&st, 3);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (7, 3));
+        assert!(is::<ByteDataType>(dtc.as_ref()));
+
+        let dtc = st.add_with_name(byte(), s("field3"), s("new comment")).unwrap();
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (8, 4));
+        assert_eq!(dtc.get_field_name(), s("field3"));
+        assert!(st.find_component("field3").is_some());
+
+        let dtc = st.add_with_name(byte(), s("field3 1"), s("new comment")).unwrap();
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (9, 5));
+        assert_eq!(dtc.get_field_name(), s("field3_1"));
+    }
+
+    #[test]
+    fn test_add2() {
+        let mut st = StructureDataType::new("Test", 10);
+        assert_eq!(st.get_length(), 10);
+        assert_eq!(st.get_num_components(), 10);
+
+        st.add_with_name(byte(), s("field1"), s("Comment1")).unwrap();
+        st.add_with_name(word(), None, s("Comment2")).unwrap();
+        st.add_with_name(dword(), s("field3"), None).unwrap();
+        st.add_with_name(byte(), s("field4"), s("Comment4")).unwrap();
+        assert_eq!(st.get_length(), 18);
+        assert_eq!(st.get_num_components(), 14);
+
+        let dtc = comp(&st, 0);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (0, 0));
+        assert_eq!(dtc.get_default_field_name(), s("field0_0x0"));
+        assert_eq!(dtc.get_field_name(), None);
+        assert!(dtc.get_data_type().is_default_data_type());
+
+        let dtc = comp(&st, 1);
+        assert_eq!(dtc.get_default_field_name(), s("field1_0x1"));
+        assert!(dtc.get_data_type().is_default_data_type());
+
+        let dtc = comp(&st, 10);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (10, 10));
+        assert_eq!(dtc.get_field_name(), s("field1"));
+        assert!(is::<ByteDataType>(dtc.as_ref()));
+
+        let dtc = comp(&st, 11);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (11, 11));
+        assert_eq!(dtc.get_default_field_name(), s("field11_0xb"));
+        assert!(is::<WordDataType>(dtc.as_ref()));
+
+        let dtc = comp(&st, 12);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (13, 12));
+        assert!(is::<DWordDataType>(dtc.as_ref()));
+    }
+
+    #[test]
+    fn test_insert_beginning() {
+        let mut st = test_struct();
+        st.insert(0, float()).unwrap();
+        assert_eq!(st.get_length(), 12);
+        assert_eq!(st.get_num_components(), 5);
+        let expect = [(0, "float"), (4, "byte"), (5, "word"), (7, "dword"), (11, "byte")];
+        for (i, (offset, name)) in expect.iter().enumerate() {
+            let dtc = comp(&st, i as i32);
+            assert_eq!(dtc.get_offset(), *offset);
+            assert_eq!(dtc.get_ordinal(), i as i32);
+            assert_eq!(dtc.get_data_type().get_name(), *name);
+        }
+        assert_eq!(comp(&st, 0).get_default_field_name(), s("field0_0x0"));
+        assert_eq!(comp(&st, 2).get_default_field_name(), s("field2_0x5"));
+    }
+
+    #[test]
+    fn test_insert_end() {
+        let mut st = test_struct();
+        st.insert(4, float()).unwrap();
+        assert_eq!(st.get_length(), 12);
+        assert_eq!(st.get_num_components(), 5);
+        let dtc = comp(&st, 4);
+        assert_eq!((dtc.get_offset(), dtc.get_ordinal()), (8, 4));
+        assert_eq!(dtc.get_default_field_name(), s("field4_0x8"));
+        assert!(is::<FloatDataType>(dtc.as_ref()));
+    }
+
+    #[test]
+    fn test_insert_middle() {
+        let mut st = test_struct();
+        st.insert(2, float()).unwrap();
+        assert_eq!(st.get_length(), 12);
+        assert_eq!(st.get_num_components(), 5);
+        let expect = [(0, "byte"), (1, "word"), (3, "float"), (7, "dword"), (11, "byte")];
+        for (i, (offset, name)) in expect.iter().enumerate() {
+            let dtc = comp(&st, i as i32);
+            assert_eq!((dtc.get_offset(), dtc.get_data_type().get_name().as_str()), (*offset, *name));
+        }
+        assert_eq!(comp(&st, 2).get_default_field_name(), s("field2_0x3"));
+    }
+
+    #[test]
+    fn test_insert_with_empty_space() {
+        let mut st = StructureDataType::new("Test", 100);
+        st.insert(40, byte()).unwrap();
+        st.insert(20, word()).unwrap();
+        st.insert(10, float()).unwrap();
+        assert_eq!(st.get_length(), 107);
+        assert_eq!(st.get_num_components(), 103);
+        let comps = st.get_defined_components();
+        assert_eq!(comps.len(), 3);
+        assert_eq!((comps[0].get_offset(), comps[0].get_ordinal()), (10, 10));
+        assert!(is::<FloatDataType>(comps[0].as_ref()));
+        assert_eq!((comps[1].get_offset(), comps[1].get_ordinal()), (24, 21));
+        assert!(is::<WordDataType>(comps[1].as_ref()));
+        assert_eq!((comps[2].get_offset(), comps[2].get_ordinal()), (46, 42));
+        assert!(is::<ByteDataType>(comps[2].as_ref()));
+    }
+
+    fn zero_byte_array() -> Box<dyn DataType> {
+        Box::new(ArrayDataType::new(ByteDataType::data_type(), 0).unwrap())
+    }
+
+    #[test]
+    fn test_insert_at_same_offset() {
+        let mut st = StructureDataType::new("Test", 100);
+        assert!(!st.is_packing_enabled());
+        st.insert_at_offset_with_name(0, zero_byte_array(), -1, s("a"), s("comment a")).unwrap();
+        st.insert_at_offset_with_name(0, zero_byte_array(), -1, s("b"), s("comment b")).unwrap();
+        st.insert_at_offset_with_name(0, word(), -1, s("c"), s("comment c")).unwrap();
+        let names: Vec<_> = st.get_defined_components().iter().map(|c| c.get_field_name()).collect();
+        assert_eq!(names, vec![s("a"), s("b"), s("c")]);
+
+        let mut st = StructureDataType::new("Test", 100);
+        st.insert_at_offset_with_name(0, word(), -1, s("c"), s("comment c")).unwrap();
+        st.insert_at_offset_with_name(0, zero_byte_array(), -1, s("a"), s("comment a")).unwrap();
+        st.insert_at_offset_with_name(0, zero_byte_array(), -1, s("b"), s("comment b")).unwrap();
+        let names: Vec<_> = st.get_defined_components().iter().map(|c| c.get_field_name()).collect();
+        assert_eq!(names, vec![s("a"), s("b"), s("c")]);
+    }
+
+    #[test]
+    fn test_insert_at_end_offset() {
+        let mut st = StructureDataType::new("Test2", 100);
+        st.insert_at_offset_with_name(100, zero_byte_array(), -1, s("a"), s("comment a")).unwrap();
+        st.insert_at_offset_with_name(100, zero_byte_array(), -1, s("b"), s("comment b")).unwrap();
+        assert_eq!(
+            crate::program::model::data::composite_internal::to_string(&st),
+            "/Test2\npack(disabled)\nStructure Test2 {\n   100   byte[0]   0   a   \"comment a\"\n   100   byte[0]   0   b   \"comment b\"\n}\nLength: 100 Alignment: 1\n"
+        );
+        // Insert non-zero-length component will increase struct size
+        st.insert_at_offset_with_name(100, word(), -1, s("c"), s("comment c")).unwrap();
+        assert_eq!(
+            crate::program::model::data::composite_internal::to_string(&st),
+            "/Test2\npack(disabled)\nStructure Test2 {\n   100   byte[0]   0   a   \"comment a\"\n   100   byte[0]   0   b   \"comment b\"\n   100   word   2   c   \"comment c\"\n}\nLength: 102 Alignment: 1\n"
+        );
+    }
+
+    #[test]
+    fn test_insert_at_offset_0_1_2() {
+        for (offset, length, float_ordinal, word_offset) in [(0, 12, 0, 5), (1, 12, 1, 5), (2, 13, 2, 6)] {
+            let mut st = test_struct();
+            st.insert_at_offset(offset, float(), 4).unwrap();
+            assert_eq!(st.get_length(), length);
+            let comps = st.get_defined_components();
+            assert_eq!(comps.len(), 5);
+            let f = comps.iter().find(|c| is::<FloatDataType>(c.as_ref())).unwrap();
+            assert_eq!((f.get_offset(), f.get_ordinal()), (offset, float_ordinal));
+            let w = comps.iter().find(|c| is::<WordDataType>(c.as_ref())).unwrap();
+            assert_eq!(w.get_offset(), word_offset);
+        }
+    }
+
+    #[test]
+    fn test_insert_with_zero_array_at_offset2() {
+        let mut st = test_struct();
+        let zero_float = Box::new(ArrayDataType::with_element_length(FloatDataType::data_type(), 0, -1).unwrap());
+        st.insert_at_offset(2, zero_float, -1).unwrap();
+        st.insert_at_offset(2, float(), -1).unwrap();
+        assert_expected_composite(
+            "StructureDataTypeTest",
+            "/TestStruct\npack(disabled)\nStructure TestStruct {\n   0   byte   1   field1   \"Comment1\"\n   2   float[0]   0      \"\"\n   2   float   4      \"\"\n   6   word   2      \"Comment2\"\n   8   dword   4   field3   \"\"\n   12   byte   1   field4   \"Comment4\"\n}\nLength: 13 Alignment: 1",
+            &st,
+        );
+    }
+
+    #[test]
+    fn test_insert_at_offset_past_end() {
+        let mut st = test_struct();
+        st.insert_at_offset(100, float(), 4).unwrap();
+        assert_eq!(st.get_length(), 104);
+    }
+
+    #[test]
+    fn test_zero_bit_fields() {
+        let mut st = test_struct();
+        st.set_packing_enabled(true);
+        Composite::delete(&mut st, 2).unwrap();
+        st.insert_bit_field(0, 0, 0, int(), 3, s("bf2"), s("bf1Comment")).unwrap();
+        st.insert_bit_field(0, 0, 0, int(), 3, s("bf1"), s("bf1Comment")).unwrap();
+        st.insert_bit_field(1, 0, 0, int(), 0, s("z1"), s("zero bitfield 1")).unwrap();
+        assert_expected_composite(
+            "StructureDataTypeTest",
+            "/TestStruct\npack()\nStructure TestStruct {\n   0   int:3(0)   1   bf1   \"bf1Comment\"\n   4   int:0(0)   0      \"zero bitfield 1\"\n   4   int:3(0)   1   bf2   \"bf1Comment\"\n   5   byte   1   field1   \"Comment1\"\n   6   word   2      \"Comment2\"\n   8   byte   1   field4   \"Comment4\"\n}\nLength: 12 Alignment: 4",
+            &st,
+        );
+    }
+
+    #[test]
+    fn test_insert_bit_field_little_endian_append() {
+        let mut st = test_struct();
+        st.insert_bit_field(4, 4, 0, int(), 3, s("bf1"), s("bf1Comment")).unwrap();
+        assert_expected_composite(
+            "StructureDataTypeTest",
+            "/TestStruct\npack(disabled)\nStructure TestStruct {\n   0   byte   1   field1   \"Comment1\"\n   1   word   2      \"Comment2\"\n   3   dword   4   field3   \"\"\n   7   byte   1   field4   \"Comment4\"\n   8   int:3(0)   1   bf1   \"bf1Comment\"\n}\nLength: 12 Alignment: 1",
+            &st,
+        );
+        st.insert_bit_field(4, 4, 3, int(), 3, s("bf2"), s("bf2Comment")).unwrap();
+        assert_expected_composite(
+            "StructureDataTypeTest",
+            "/TestStruct\npack(disabled)\nStructure TestStruct {\n   0   byte   1   field1   \"Comment1\"\n   1   word   2      \"Comment2\"\n   3   dword   4   field3   \"\"\n   7   byte   1   field4   \"Comment4\"\n   8   int:3(0)   1   bf1   \"bf1Comment\"\n   8   int:3(3)   1   bf2   \"bf2Comment\"\n}\nLength: 12 Alignment: 1",
+            &st,
+        );
+    }
+
+    #[test]
+    fn test_insert_bit_field_at_little_endian_append() {
+        let mut st = test_struct();
+        st.insert_bit_field_at(10, 4, 0, int(), 3, s("bf1"), s("bf1Comment")).unwrap();
+        st.insert_bit_field_at(10, 4, 3, int(), 3, s("bf2"), s("bf2Comment")).unwrap();
+        assert_expected_composite(
+            "StructureDataTypeTest",
+            "/TestStruct\npack(disabled)\nStructure TestStruct {\n   0   byte   1   field1   \"Comment1\"\n   1   word   2      \"Comment2\"\n   3   dword   4   field3   \"\"\n   7   byte   1   field4   \"Comment4\"\n   10   int:3(0)   1   bf1   \"bf1Comment\"\n   10   int:3(3)   1   bf2   \"bf2Comment\"\n}\nLength: 14 Alignment: 1",
+            &st,
+        );
+    }
+
+    #[test]
+    fn test_clear_component() {
+        let mut st = test_struct();
+        st.clear_component(0).unwrap();
+        assert_eq!(st.get_length(), 8);
+        assert_eq!(st.get_num_components(), 4);
+        assert!(comp(&st, 0).get_data_type().is_default_data_type());
+        assert!(is::<WordDataType>(comp(&st, 1).as_ref()));
+
+        let mut st = test_struct();
+        st.clear_component(1).unwrap();
+        assert_eq!(st.get_length(), 8);
+        assert_eq!(st.get_num_components(), 5);
+        assert!(comp(&st, 1).get_data_type().is_default_data_type());
+        assert!(comp(&st, 2).get_data_type().is_default_data_type());
+        assert!(is::<ByteDataType>(comp(&st, 0).as_ref()));
+        let dtc = comp(&st, 3);
+        assert!(is::<DWordDataType>(dtc.as_ref()));
+        assert_eq!((dtc.get_ordinal(), dtc.get_offset()), (3, 3));
+    }
+
+    #[test]
+    fn test_replace() {
+        // bigger, no space below
+        let mut st = test_struct();
+        assert!(st.replace(0, boxed(QWordDataType::data_type()), 8).is_err());
+
+        // bigger, space below
+        let mut st = test_struct();
+        st.insert(1, boxed(QWordDataType::data_type())).unwrap();
+        st.clear_component(1).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (16, 12));
+        st.replace(0, boxed(QWordDataType::data_type()), 8).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (16, 5));
+        let comps = st.get_defined_components();
+        assert_eq!((comps[1].get_offset(), comps[1].get_ordinal()), (9, 2));
+
+        // smaller
+        let mut st = test_struct();
+        st.replace(1, byte(), 1).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (8, 5));
+        let comps = st.get_defined_components();
+        assert!(is::<ByteDataType>(comps[1].as_ref()));
+        assert_eq!((comps[1].get_offset(), comps[1].get_ordinal()), (1, 1));
+        assert_eq!((comps[2].get_offset(), comps[2].get_ordinal()), (3, 3));
+        assert!(is::<DWordDataType>(comps[2].as_ref()));
+    }
+
+    #[test]
+    fn test_data_type_replaced() {
+        // bigger, space below
+        let struct2 = StructureDataType::new("struct2", 3);
+        let struct2a: Arc<dyn DataType> = Arc::new(StructureDataType::new("struct2A", 5));
+        let mut st = test_struct();
+        st.insert(0, DefaultDataType::boxed()).unwrap();
+        st.insert(3, Box::new(struct2.clone())).unwrap();
+        st.clear_component(4).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (12, 9));
+        st.replace_data_type(&struct2, struct2a.clone()).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (12, 7));
+        let comps = st.get_defined_components();
+        assert_eq!((comps[2].get_offset(), comps[2].get_ordinal(), comps[2].get_length()), (4, 3, 5));
+        assert_eq!((comps[3].get_offset(), comps[3].get_ordinal()), (11, 6));
+
+        // bigger, no space at end (structure grows)
+        let mut st = test_struct();
+        st.add(Box::new(struct2.clone())).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (11, 5));
+        st.replace_data_type(&struct2, struct2a.clone()).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (13, 5));
+        let comps = st.get_defined_components();
+        assert_eq!((comps[4].get_offset(), comps[4].get_ordinal(), comps[4].get_length()), (8, 4, 5));
+
+        // smaller, create undefineds
+        let struct5 = StructureDataType::new("struct2", 5);
+        let struct3: Arc<dyn DataType> = Arc::new(StructureDataType::new("struct2A", 3));
+        let mut st = test_struct();
+        st.insert(0, DefaultDataType::boxed()).unwrap();
+        st.insert(0, DefaultDataType::boxed()).unwrap();
+        st.insert(4, Box::new(struct5.clone())).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (15, 7));
+        st.replace_data_type(&struct5, struct3).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (15, 9));
+        let comps = st.get_defined_components();
+        assert_eq!((comps[2].get_offset(), comps[2].get_ordinal(), comps[2].get_length()), (5, 4, 3));
+        assert_eq!((comps[3].get_offset(), comps[3].get_ordinal()), (10, 7));
+    }
+
+    #[test]
+    fn test_data_type_component_replaced() {
+        let struct2 = StructureDataType::new("struct2", 3);
+        let struct2a = StructureDataType::new("struct2A", 5);
+        let mut st = test_struct();
+        st.add(Box::new(struct2)).unwrap();
+        st.replace(4, Box::new(struct2a), 5).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (13, 5));
+        let comps = st.get_defined_components();
+        assert_eq!((comps[4].get_offset(), comps[4].get_ordinal(), comps[4].get_length()), (8, 4, 5));
+    }
+
+    #[test]
+    fn test_set_length() {
+        let mut st = test_struct();
+        st.set_length(20).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components(), st.get_num_defined_components()), (20, 16, 4));
+        // new length is offcut within 3rd component at offset 0x3 which should get cleared
+        st.set_length(4).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components(), st.get_num_defined_components()), (4, 3, 2));
+        let len = i32::MAX / 10;
+        st.set_length(len).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components(), st.get_num_defined_components()), (len, len - 1, 2));
+        let len = len / 2;
+        st.replace_at_offset(len - 2, word(), -1, s("x"), None).unwrap();
+        st.replace_at_offset(len + 2, word(), -1, s("y"), None).unwrap();
+        st.set_length(len).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components(), st.get_num_defined_components()), (len, len - 2, 3));
+    }
+
+    #[test]
+    fn test_delete_many_and_delete() {
+        let mut st = test_struct();
+        st.grow_structure(20).unwrap();
+        st.insert_at_offset_with_name(12, word(), -1, s("A"), None).unwrap();
+        st.insert_at_offset_with_name(16, word(), -1, s("B"), None).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components(), st.get_num_defined_components()), (32, 26, 6));
+        st.delete_set(&[1, 4, 5].into_iter().collect()).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components(), st.get_num_defined_components()), (28, 23, 5));
+        let comps = st.get_defined_components();
+        assert!(is::<WordDataType>(comps[3].as_ref()));
+        assert_eq!((comps[3].get_ordinal(), comps[3].get_offset()), (5, 8));
+
+        let mut st = test_struct();
+        assert!(st.find_component("field1").is_some());
+        Composite::delete(&mut st, 0).unwrap();
+        assert!(st.find_component("field1").is_none());
+        assert_eq!((st.get_length(), st.get_num_components()), (7, 3));
+        let comps = st.get_defined_components();
+        assert!(is::<DWordDataType>(comps[1].as_ref()));
+        assert_eq!(comps[1].get_offset(), 2);
+    }
+
+    #[test]
+    fn test_delete_at_offset() {
+        let mut st = test_struct();
+        st.delete_at_offset(2).unwrap();
+        assert_eq!((st.get_length(), st.get_num_components()), (6, 3));
+        let comps = st.get_defined_components();
+        assert!(is::<DWordDataType>(comps[1].as_ref()));
+        assert_eq!(comps[1].get_offset(), 1);
+    }
+
+    #[test]
+    fn test_delete_component_data_type_deleted() {
+        let mut inner = StructureDataType::new("test1", 0);
+        inner.add(byte()).unwrap();
+        inner.add(float()).unwrap();
+        let mut st = test_struct();
+        st.add(Box::new(inner.clone())).unwrap();
+        assert_expected_composite(
+            "StructureDataTypeTest",
+            "/TestStruct\npack(disabled)\nStructure TestStruct {\n   0   byte   1   field1   \"Comment1\"\n   1   word   2      \"Comment2\"\n   3   dword   4   field3   \"\"\n   7   byte   1   field4   \"Comment4\"\n   8   test1   5      \"\"\n}\nLength: 13 Alignment: 1",
+            &st,
+        );
+        st.data_type_deleted(&inner);
+        assert_expected_composite(
+            "StructureDataTypeTest",
+            "/TestStruct\npack(disabled)\nStructure TestStruct {\n   0   byte   1   field1   \"Comment1\"\n   1   word   2      \"Comment2\"\n   3   dword   4   field3   \"\"\n   7   byte   1   field4   \"Comment4\"\n   8   -BAD-   5      \"\"\n}\nLength: 13 Alignment: 1",
+            &st,
+        );
+    }
+
+    #[test]
+    fn test_packing_layout() {
+        // first half of testDeleteAll/testAlignmentAndPacking
+        let mut st = test_struct();
+        st.set_packing_enabled(true);
+        assert_eq!(st.get_length(), 12);
+        assert_eq!(st.get_alignment(), 4);
+
+        let mut inner = StructureDataType::new("test1", 0);
+        inner.add(byte()).unwrap();
+        inner.add(float()).unwrap();
+        assert_eq!(inner.get_alignment(), 1);
+        assert_eq!(inner.get_length(), 5);
+        st.add(Box::new(inner.clone())).unwrap();
+        assert_eq!(st.get_length(), 16);
+
+        inner.set_explicit_minimum_alignment(8).unwrap(); // does not force packing
+        assert_eq!(inner.get_length(), 5);
+        assert!(!inner.is_not_yet_defined());
+        assert_eq!(inner.get_num_components(), 2);
+        // build-then-share: the clone+edit is re-added to see the new alignment
+        let mut st2 = test_struct();
+        st2.set_packing_enabled(true);
+        st2.add(Box::new(inner)).unwrap();
+        assert_eq!(st2.get_length(), 24);
+
+        inner_delete_all();
+        fn inner_delete_all() {
+            let mut s1 = StructureDataType::new("test1", 0);
+            s1.add(Box::new(ByteDataType::new(None))).unwrap();
+            s1.delete_all();
+            assert_eq!(s1.get_length(), 1);
+            assert!(s1.is_not_yet_defined());
+            assert!(s1.is_zero_length());
+            assert_eq!(s1.get_num_components(), 0);
+        }
+    }
+
+    #[test]
+    fn test_replace_with() {
+        let mut st = test_struct();
+        let mut new_struct = StructureDataType::new("Replaced", 8);
+        new_struct.set_description("testReplaceWith()").unwrap();
+        let dtc0 = new_struct.insert_with_length_and_name(2, byte(), 1, s("field3"), s("Comment1")).unwrap();
+        let dtc1 = new_struct.insert_with_length_and_name(5, word(), 2, None, s("Comment2")).unwrap();
+        let dtc2 = new_struct.insert_with_length_and_name(7, dword(), 4, s("field8"), None).unwrap();
+
+        st.replace_with(&new_struct);
+        assert_eq!((st.get_length(), st.get_num_components()), (15, 11));
+        let dtcs = st.get_defined_components();
+        assert_eq!(dtcs.len(), 3);
+        for (mine, theirs) in dtcs.iter().zip([dtc0, dtc1, dtc2].iter()) {
+            assert_eq!(mine.get_offset(), theirs.get_offset());
+            assert_eq!(mine.get_ordinal(), theirs.get_ordinal());
+            assert_eq!(mine.get_field_name(), theirs.get_field_name());
+            assert_eq!(mine.get_comment(), theirs.get_comment());
+            assert_eq!(mine.get_data_type().get_name(), theirs.get_data_type().get_name());
+        }
+        assert_eq!(st.get_name(), "TestStruct");
+        assert_eq!(st.get_description(), "");
+        assert!(st.is_equivalent(&new_struct));
+        assert!(st.try_replace_with(ByteDataType::instance().as_ref()).is_err());
+    }
+
+    #[test]
+    fn test_cyclic_dependency() {
+        let mut st = test_struct();
+        let mut new_struct = StructureDataType::new("TestStruct", 80);
+        new_struct.add_with_name(byte(), s("field0"), s("Comment1")).unwrap();
+        new_struct.add_with_name(Box::new(st.clone()), s("field1"), None).unwrap();
+        new_struct.add_with_name(word(), None, s("Comment2")).unwrap();
+        // the clone shares this structure's path, standing in for Java's object identity
+        assert!(st.add(Box::new(new_struct.clone())).is_err());
+        assert!(st.insert(0, Box::new(new_struct.clone())).is_err());
+        let len = new_struct.get_length();
+        assert!(st.replace(0, Box::new(new_struct), len).is_err());
+        assert!(st.add(Box::new(st.clone())).is_err());
+    }
+
+    #[test]
+    fn test_field_name_whitespace_and_default_field_names() {
+        let mut st = StructureDataType::new("Test", 0);
+        let dtc = st.add_with_name(byte(), s(" name with spaces"), None).unwrap();
+        assert_eq!(dtc.get_field_name(), s("name_with_spaces"));
+        let dtc = st.add_with_name(byte(), s(" another test "), None).unwrap();
+        assert_eq!(dtc.get_field_name(), s("another_test"));
+        st.insert_with_length_and_name(0, byte(), 1, s(" insert test "), s("")).unwrap();
+        assert_eq!(comp(&st, 0).get_field_name(), s("insert_test"));
+        st.replace_with_name(0, byte(), 1, s(" insert test "), s("")).unwrap();
+        assert_eq!(comp(&st, 0).get_field_name(), s("insert_test"));
+
+        let mut st = StructureDataType::new("Test", 0);
+        assert_eq!(st.add_with_name(byte(), s(" "), None).unwrap().get_field_name(), None);
+        assert_eq!(st.add_with_name(byte(), None, None).unwrap().get_field_name(), None);
+        st.insert_with_length_and_name(0, byte(), 1, s(" "), s("")).unwrap();
+        assert_eq!(comp(&st, 0).get_field_name(), None);
+        st.replace_with_name(0, byte(), 1, s(" "), s("")).unwrap();
+        assert_eq!(comp(&st, 0).get_field_name(), None);
+    }
+
+    #[test]
+    fn test_big_endian_clone_keeps_non_packed_bitfields() {
+        // testReplaceWith2's premise: clone to a big-endian manager keeps a pack(disabled) layout
+        struct BigEndianDtm(Arc<DataOrganizationImpl>);
+        impl DataTypeManager for BigEndianDtm {
+            fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+                self.0.clone()
+            }
+        }
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(true);
+        let dtm = BigEndianDtm(Arc::new(org));
+        let st = test_struct();
+        let be = st.clone_data_type(&dtm);
+        assert!(be.get_data_organization().is_big_endian());
+        assert!(be.is_equivalent(&st));
+        assert_eq!(be.get_universal_id(), st.get_universal_id());
+        let copy = st.copy_data_type(&dtm);
+        assert_ne!(copy.get_universal_id(), st.get_universal_id());
+    }
 }

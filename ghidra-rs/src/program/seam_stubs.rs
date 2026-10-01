@@ -969,66 +969,6 @@ pub trait MetaDataType {
     fn is_more_specific(&self, existing: &dyn DataType, candidate: &dyn DataType) -> bool;
 }
 
-/// Placeholder for `ghidra.program.model.data.PointerType`, referenced by
-/// [`PointerTypedefBuilder`](crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder)
-/// before the real enum is ported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum PointerType {
-    /// Normal absolute pointer offset.
-    #[default]
-    Default,
-    /// Pointer offset relative to program image base.
-    ImageBaseRelative,
-    /// Pointer offset relative to pointer storage address.
-    Relative,
-    /// Pointer offset corresponds to file offset within an associated file.
-    FileOffset,
-}
-
-/// Placeholder for `ghidra.program.model.data.PointerTypeSettingsDefinition`, referenced by
-/// [`PointerDataType`](crate::program::model::data::pointer_data_type::PointerDataType) before
-/// the real class is ported. Stores/reads a [`PointerType`] value as an integer setting; only the
-/// `getType` accessor `PointerDataType.getAddressValue` calls is modeled precisely (the settings
-/// definition's `TypeDefSettingsDefinition::get_attribute_specification` is left returning `None`
-/// rather than encoding the pointer type into a generated typedef name, since nothing in
-/// `PointerDataType` reads that specification back).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PointerTypeSettingsDefinition;
-
-impl PointerTypeSettingsDefinition {
-    /// The singleton instance of this settings definition.
-    pub const DEF: PointerTypeSettingsDefinition = PointerTypeSettingsDefinition;
-
-    const SETTING_NAME: &'static str = "ptr_type";
-
-    /// Stands in for `PointerTypeSettingsDefinition.getType(Settings)`.
-    pub fn get_type(&self, settings: &dyn Settings) -> PointerType {
-        match settings.get_long(Self::SETTING_NAME) {
-            Some(1) => PointerType::ImageBaseRelative,
-            Some(2) => PointerType::Relative,
-            Some(3) => PointerType::FileOffset,
-            _ => PointerType::Default,
-        }
-    }
-}
-
-impl SettingsDefinition for PointerTypeSettingsDefinition {
-    fn get_name(&self) -> String {
-        "Pointer Type".to_string()
-    }
-
-    fn get_storage_key(&self) -> String {
-        Self::SETTING_NAME.to_string()
-    }
-}
-
-impl TypeDefSettingsDefinition for PointerTypeSettingsDefinition {
-    fn get_attribute_specification(&self, _settings: &dyn Settings) -> Option<String> {
-        None
-    }
-}
-
-
 /// Placeholder for `ghidra.program.model.mem.DumbMemBufferImpl`, referenced by
 /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities) before the real
 /// class (a `MemoryBufferImpl` subclass adding a small internal read-ahead cache) is ported. This
