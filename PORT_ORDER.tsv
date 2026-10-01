@@ -305,7 +305,7 @@ DONE	struct	6	197	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/B
 TODO	struct	6	181	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FaultTolerantInputStream.java
 DONE	struct	6	191	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileByteProvider.java
 TODO	struct	6	183	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileBytesProvider.java
-TODO	struct	6	208	25	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MemoryByteProvider.java
+DONE	struct	6	208	25	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MemoryByteProvider.java
 TODO	struct	6	181	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MemoryMutableByteProvider.java
 DONE	struct	6	183	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedFileByteProvider.java
 TODO	struct	7	182	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/SynchronizedByteProvider.java
@@ -1208,8 +1208,8 @@ DONE	struct	16	2	48	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	struct	16	3	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseOpcode.java
 DONE	struct	16	2	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseTable.java
 DONE	struct	14	5	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java
-TODO	struct	15	9	91	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcOptimization.java
-TODO	struct	14	5	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcDylib.java
+DONE	struct	15	9	91	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcOptimization.java
+DONE	struct	14	5	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcDylib.java
 DONE	struct	13	35	48	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java
 TODO	struct	15	51	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDynamicTable.java
 TODO	struct	15	51	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfProgramHeader.java

@@ -324,6 +324,11 @@ mod tests {
         fn get_block_by_name(&self, name: &str) -> Option<Arc<dyn MemoryBlock>> {
             if self.block.get_name() == name { Some(self.block.clone()) } else { None }
         }
+        // `MemoryByteProvider::is_valid_index` (as in Java) asks the memory whether the address
+        // is mapped.
+        fn get_block(&self, addr: &Address) -> Option<Arc<dyn MemoryBlock>> {
+            (*addr >= self.block.get_start() && *addr <= self.block.get_end()).then(|| self.block.clone())
+        }
     }
 
     struct FakeMemoryProgram {

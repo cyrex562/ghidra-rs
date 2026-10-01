@@ -12,9 +12,9 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::memory_byte_provider::MemoryByteProvider;
 use crate::format::seam_stubs::{
-    ClassFileJava, JavaClassUtil, MemoryByteProvider, MethodInfoJava, TransientPropertyScope,
-    TransientProgramProperties,
+    ClassFileJava, JavaClassUtil, MethodInfoJava, TransientPropertyScope, TransientProgramProperties,
 };
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;

@@ -22,3 +22,5 @@ pub mod dyld_chained_ptr;
 pub mod dyld_chained_starts_offsets;
 pub mod dyld_fixup;
 pub mod dyld_subcache_entry;
+pub mod lib_objc_dylib;
+pub mod lib_objc_optimization;

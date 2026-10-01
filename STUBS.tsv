@@ -614,7 +614,6 @@ ts	stub_class	referenced_by
 2026-08-13T07:58:49.860962+00:00	ReferenceUtils	GenericDataTypeLocationDescriptor
 2026-08-13T08:14:16.597957+00:00	AbstractProgramBasedDynamicTableColumn	AbstractProgramLocationTableColumn
 2026-08-13T08:19:01.563148+00:00	Option	OptionListener
-2026-08-13T08:46:27.043624+00:00	MemoryByteProvider	ElfInfoItem
 2026-08-13T08:47:45.517380+00:00	ElfHeader	ElfSymbol
 2026-08-13T08:47:45.518061+00:00	ElfSectionHeader	ElfSymbol
 2026-08-13T08:47:45.518262+00:00	ElfStringTable	ElfSymbol
@@ -710,7 +709,6 @@ ts	stub_class	referenced_by
 2026-08-14T09:23:45.780000+00:00	AnnotationJava	AnnotationElementValue
 2026-08-14T09:23:45.780500+00:00	DescriptorDecoder	AnnotationElementValue
 2026-08-14T09:51:38.155189+00:00	TransientProgramProperties	ClassFileAnalysisState
-2026-08-14T09:51:38.155189+00:00	MemoryByteProvider	ClassFileAnalysisState
 2026-08-14T09:51:38.155189+00:00	ClassFileJava	ClassFileAnalysisState
 2026-08-14T09:51:38.155189+00:00	JavaClassUtil	ClassFileAnalysisState
 2026-08-14T09:51:38.155189+00:00	MethodInfoJava	ClassFileAnalysisState
@@ -936,7 +934,6 @@ ts	stub_class	referenced_by
 2026-08-17T06:20:59.513863+00:00	FileUtilities	GhidraScriptUtil
 2026-08-17T06:51:15.648541+00:00	ObjcTypeMetadataStructure	ObjcMethod
 2026-08-17T06:51:15.648541+00:00	ObjcUtils	ObjcMethod
-2026-08-17T06:53:40.266638+00:00	LibObjcOptimization	ObjcState
 2026-08-17T06:53:40.557166+00:00	Objc1TypeEncodings	ObjcState
 2026-08-17T06:53:40.557446+00:00	Objc2Class	ObjcState
 2026-08-17T06:53:40.557619+00:00	Objc2InstanceVariable	ObjcState

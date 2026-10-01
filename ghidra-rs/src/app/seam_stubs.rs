@@ -3009,6 +3009,10 @@ impl SplitDyldCache {
     }
 }
 
+/// The real port is [`crate::format::macho::dyld::lib_objc_dylib::LibObjcDylib`]; this stand-in
+/// remains only because its sole consumer, the parked `DyldCacheProgramBuilder`, still holds
+/// placeholder `format::seam_stubs::MachHeader` trait objects (see DESCENT_PARKED.tsv).
+///
 /// Placeholder for `ghidra.app.util.bin.format.macho.dyld.LibObjcDylib`, referenced by
 /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
 /// which builds one over the cache's `libobjc.` DYLIB and asks it to mark up the Objective-C

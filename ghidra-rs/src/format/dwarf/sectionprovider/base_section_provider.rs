@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::dwarf::sectionprovider::dwarf_section_provider::DWARFSectionProvider;
-use crate::format::seam_stubs::MemoryByteProvider;
+use crate::app::util::bin::memory_byte_provider::MemoryByteProvider;
 use crate::program::model::listing::program::Program;
 use crate::program::model::mem::MemoryBlock;
 use crate::util::task::TaskMonitor;

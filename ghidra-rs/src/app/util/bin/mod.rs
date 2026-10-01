@@ -12,6 +12,7 @@ pub mod input_stream_byte_provider;
 pub mod invalid_data_exception;
 pub mod leb128_info;
 pub mod mem_buffer_byte_provider;
+pub mod memory_byte_provider;
 pub mod mutable_byte_provider;
 pub mod obfuscated_input_stream;
 pub mod obfuscated_output_stream;

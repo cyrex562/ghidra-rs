@@ -7,7 +7,8 @@
 use std::collections::{HashMap, HashSet};
 use std::io;
 
-use crate::format::seam_stubs::{LibObjcOptimization, Objc1TypeEncodings, Objc2Class, Objc2InstanceVariable};
+use crate::format::macho::dyld::lib_objc_optimization::LibObjcOptimization;
+use crate::format::seam_stubs::{Objc1TypeEncodings, Objc2Class, Objc2InstanceVariable};
 use crate::format::objc::objc_method::ObjcMethod;
 use crate::program::model::address::Address;
 use crate::program::model::data::category_path::CategoryPath;
@@ -35,7 +36,7 @@ pub struct ObjcState {
     pub variable_map: HashMap<Address, Box<dyn Objc2InstanceVariable>>,
 
     /// Optional dyld_shared_cache libobjc optimization data.
-    pub lib_objc_optimization: Option<Box<dyn LibObjcOptimization>>,
+    pub lib_objc_optimization: Option<LibObjcOptimization>,
 
     /// Type encodings for Objective-C 1.0 format (handles method signature parsing).
     pub encodings: Box<dyn Objc1TypeEncodings>,

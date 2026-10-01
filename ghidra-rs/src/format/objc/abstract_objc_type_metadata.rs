@@ -129,7 +129,7 @@ pub trait AbstractObjcTypeMetadata {
 mod tests {
     use super::*;
     use crate::format::objc::objc_method::ObjcMethod;
-    use crate::format::seam_stubs::{LibObjcOptimization, Objc1TypeEncodings, Objc2Class, Objc2InstanceVariable};
+    use crate::format::seam_stubs::{Objc1TypeEncodings, Objc2Class, Objc2InstanceVariable};
     use crate::framework::model::DomainObject;
     use crate::util::task::DummyMonitor;
     use std::collections::{HashMap, HashSet};
@@ -183,7 +183,7 @@ mod tests {
             thumb_code_locations: HashSet::new(),
             class_index_map: HashMap::<i64, Box<dyn Objc2Class>>::new(),
             variable_map: HashMap::<crate::program::model::address::Address, Box<dyn Objc2InstanceVariable>>::new(),
-            lib_objc_optimization: None::<Box<dyn LibObjcOptimization>>,
+            lib_objc_optimization: None,
             encodings: Box::new(StubEncodings),
         }))
     }
