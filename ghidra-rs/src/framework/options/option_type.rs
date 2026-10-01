@@ -428,7 +428,7 @@ impl fmt::Display for OptionType {
 }
 
 /// `new Date(millis)`.
-fn date_from_millis(millis: i64) -> SystemTime {
+pub(crate) fn date_from_millis(millis: i64) -> SystemTime {
     if millis >= 0 {
         UNIX_EPOCH + Duration::from_millis(millis as u64)
     } else {
@@ -437,7 +437,7 @@ fn date_from_millis(millis: i64) -> SystemTime {
 }
 
 /// `Date.getTime()`: whole milliseconds since the epoch, rounded toward negative infinity.
-fn date_to_millis(date: SystemTime) -> i64 {
+pub(crate) fn date_to_millis(date: SystemTime) -> i64 {
     match date.duration_since(UNIX_EPOCH) {
         Ok(after) => after.as_millis() as i64,
         Err(before) => {
@@ -452,7 +452,7 @@ fn date_to_millis(date: SystemTime) -> i64 {
 /// `Double.valueOf(String)` for decimal input: surrounding whitespace (chars `<= ' '`) is ignored,
 /// a trailing `f`/`F`/`d`/`D` type suffix is allowed, and the only accepted non-numeric forms are
 /// `NaN` and `[+-]Infinity`. Hexadecimal floating-point literals are not accepted.
-fn java_parse_double(input: &str) -> Option<f64> {
+pub(crate) fn java_parse_double(input: &str) -> Option<f64> {
     let s = input.trim_matches(|c: char| c <= ' ');
     let unsigned = s.strip_prefix(['+', '-']).unwrap_or(s);
     match unsigned {
@@ -476,7 +476,7 @@ fn java_parse_double(input: &str) -> Option<f64> {
 }
 
 /// `Double.toString(double)`.
-fn java_double_to_string(value: f64) -> String {
+pub(crate) fn java_double_to_string(value: f64) -> String {
     if value.is_nan() {
         return "NaN".to_string();
     }
@@ -495,7 +495,7 @@ fn java_double_to_string(value: f64) -> String {
 }
 
 /// `Float.toString(float)`.
-fn java_float_to_string(value: f32) -> String {
+pub(crate) fn java_float_to_string(value: f32) -> String {
     if value.is_nan() {
         return "NaN".to_string();
     }
