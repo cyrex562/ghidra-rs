@@ -1865,37 +1865,6 @@ pub trait FlatProgramAPI: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureBlobIndex`,
-/// referenced by `CodeSignatureSuperBlob` before the real class is ported.
-pub trait CodeSignatureBlobIndex: Send + Sync {
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureGenericBlob`,
-/// referenced by `CodeSignatureBlobParser` before the real class is ported.
-pub trait CodeSignatureGenericBlob: Send + Sync {
-    fn get_magic(&self) -> i32;
-    fn get_length(&self) -> i64;
-    fn markup(&self, program: &dyn ListingProgram, address: &crate::program::model::address::Address, header: &crate::format::macho::mach_header::MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
-    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureCodeDirectory`,
-/// referenced by `CodeSignatureBlobParser` before the real class is ported.
-pub trait CodeSignatureCodeDirectory: Send + Sync {
-    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &crate::format::macho::mach_header::MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
-    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureSuperBlob`,
-/// referenced by `CodeSignatureBlobParser` before the real class is ported.
-pub trait CodeSignatureSuperBlob: Send + Sync {
-    fn get_count(&self) -> i32;
-    fn get_index_entries(&self) -> Vec<Box<dyn CodeSignatureBlobIndex>>;
-    fn get_index_blobs(&self) -> Vec<Box<dyn CodeSignatureGenericBlob>>;
-    fn markup(&self, program: &dyn ListingProgram, addr: &crate::program::model::address::Address, header: &crate::format::macho::mach_header::MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &MessageLog) -> std::io::Result<()>;
-    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedImport`,
 /// referenced by
 /// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups) before
@@ -1952,76 +1921,6 @@ pub trait MemoryBlockUtils: Send + Sync {
         log: &MessageLog,
     ) -> std::io::Result<crate::program::model::address::Address>;
 }
-
-/// Placeholder for `ghidra.app.util.bin.format.macho.commands.LinkEditDataCommand`, referenced by
-/// [`DyldChainedFixupsCommand`](crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand)
-/// before the real class is ported. `LinkEditDataCommand` is a concrete Java class (not an
-/// interface) that itself extends `LoadCommand`, so it is modeled here as a concrete struct
-/// wrapping the already-ported [`LoadCommandBase`](crate::format::macho::commands::load_command::LoadCommandBase)
-/// plus the `dataoff`/`datasize` fields -- the only state the one in-repo consumer needs. Java's
-/// `markup`/`markupRawBinary`/`toDataType` all resolve the *overridden* `getCommandName()` through
-/// virtual dispatch once a subclass like `DyldChainedFixupsCommand` is involved, so those methods
-/// are intentionally not duplicated here: the consumer flattens the inherited
-/// `LoadCommand` -> `LinkEditDataCommand` behaviour into its own `LoadCommand` impl instead, using
-/// only the state this placeholder exposes.
-pub struct LinkEditDataCommand {
-    base: crate::format::macho::commands::load_command::LoadCommandBase,
-    dataoff: i64,
-    datasize: i64,
-}
-
-impl LinkEditDataCommand {
-    /// `LinkEditDataCommand(BinaryReader, BinaryReader)`.
-    pub fn new(
-        load_command_reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
-        data_reader: &mut crate::app::util::bin::binary_reader::BinaryReader,
-    ) -> std::io::Result<Self> {
-        let base = crate::format::macho::commands::load_command::LoadCommandBase::new(
-            load_command_reader,
-        )?;
-        let dataoff = load_command_reader.read_next_unsigned_int()? as i64;
-        let datasize = load_command_reader.read_next_unsigned_int()? as i64;
-        data_reader.set_pointer_index(dataoff as u64);
-        Ok(LinkEditDataCommand { base, dataoff, datasize })
-    }
-
-    /// Accessor to the shared `LoadCommand` state, mirroring how [`LoadCommand`](crate::format::macho::commands::load_command::LoadCommand)
-    /// implementors expose their own [`LoadCommandBase`](crate::format::macho::commands::load_command::LoadCommandBase).
-    pub fn base(&self) -> &crate::format::macho::commands::load_command::LoadCommandBase {
-        &self.base
-    }
-
-    /// `LinkEditDataCommand.getLinkerDataOffset()`.
-    pub fn dataoff(&self) -> i64 {
-        self.dataoff
-    }
-
-    /// `LinkEditDataCommand.getLinkerDataSize()`.
-    pub fn datasize(&self) -> i64 {
-        self.datasize
-    }
-
-    /// `LinkEditDataCommand.toDataType()`. The real Java body builds a `cmd`/`cmdsize`/`dataoff`/
-    /// `datasize` `linkedit_data_command` structure using the (virtual) `getCommandName()`; since
-    /// this placeholder cannot know the most-derived command name, and
-    /// [`StructureDataType`](crate::program::model::data::structure_data_type::StructureDataType)
-    /// has no concrete Rust constructor yet, it stands in with an opaque placeholder
-    /// [`DataType`](crate::program::model::data::data_type::DataType).
-    pub fn to_data_type(
-        &self,
-    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
-        Ok(Box::new(LinkEditDataCommandDataType))
-    }
-}
-
-/// Placeholder [`DataType`](crate::program::model::data::data_type::DataType) returned by
-/// [`LinkEditDataCommand::to_data_type`]. Concrete Java class, not an interface; modeled as an
-/// opaque marker like [`PERichTableDataType`] above, consistent with the other not-yet-ported
-/// `toDataType()` results in this file.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct LinkEditDataCommandDataType;
-
-impl crate::program::model::data::data_type::DataType for LinkEditDataCommandDataType {}
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedFixupHeader`,
 /// referenced by [`DyldChainedFixupsCommand`](crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand)

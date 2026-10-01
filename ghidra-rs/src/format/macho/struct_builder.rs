@@ -70,6 +70,30 @@ pub(crate) fn fixed_string() -> Result<Box<dyn DataType>, ToDataTypeError> {
     )))
 }
 
+/// Java's `StructConverter.ULEB128` (`UnsignedLeb128DataType.dataType`).
+///
+/// Like [`fixed_string`], the unsigned LEB128 built-in is not yet a real, constructible data type
+/// in this crate (only a trait), so this reports that gap; the markups that need it keep their
+/// classes `TODO` until it lands.
+pub(crate) fn uleb128() -> Result<Box<dyn DataType>, ToDataTypeError> {
+    Err(ToDataTypeError::Io(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "UnsignedLeb128DataType is not yet ported as a real built-in data type",
+    )))
+}
+
+/// Java's `new ArrayDataType(elem, count, elementLength)` with an explicit element length (only
+/// meaningful for dynamic element types).
+pub(crate) fn array_with_element_length(
+    elem: Box<dyn DataType>,
+    count: i32,
+    element_length: i32,
+) -> Result<Box<dyn DataType>, ToDataTypeError> {
+    ArrayDataType::with_element_length(elem, count, element_length)
+        .map(|a| Box::new(a) as Box<dyn DataType>)
+        .map_err(invalid)
+}
+
 fn invalid(message: String) -> ToDataTypeError {
     ToDataTypeError::Io(io::Error::new(io::ErrorKind::InvalidInput, message))
 }

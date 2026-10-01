@@ -15,6 +15,7 @@ use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// Port of `ghidra.app.util.bin.format.macho.threadcommand.ThreadStateX86_64`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[allow(non_camel_case_types)]
 pub struct ThreadStateX86_64 {
     /// Java: the public `rax` field.
     pub rax: i64,

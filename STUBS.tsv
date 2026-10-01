@@ -666,10 +666,6 @@ ts	stub_class	referenced_by
 2026-08-14T04:12:03.518087+00:00	MachHeader	LoadCommand
 2026-08-14T04:12:03.518696+00:00	SegmentCommand	LoadCommand
 2026-08-14T04:12:03.522556+00:00	FlatProgramAPI	LoadCommand
-2026-08-14T04:20:58.087917+00:00	CodeSignatureCodeDirectory	CodeSignatureBlobParser
-2026-08-14T04:20:58.088126+00:00	CodeSignatureGenericBlob	CodeSignatureBlobParser
-2026-08-14T04:20:58.088347+00:00	CodeSignatureSuperBlob	CodeSignatureBlobParser
-2026-08-14T04:20:58.088500+00:00	CodeSignatureBlobIndex	CodeSignatureBlobParser
 2026-08-14T04:20:58.088700+00:00	Program	CodeSignatureBlobParser
 2026-08-14T05:00:00.000000+00:00	MachHeader	MachoRelocation
 2026-08-14T05:00:00.000000+00:00	RelocationInfo	MachoRelocation
@@ -681,7 +677,6 @@ ts	stub_class	referenced_by
 2026-08-14T05:14:01.914796Z	DyldChainedImports	DyldChainedFixups
 2026-08-14T05:14:01.914796Z	MachoProgramBuilder	DyldChainedFixups
 2026-08-14T05:14:01.914796Z	MemoryBlockUtils	DyldChainedFixups
-2026-08-14T05:30:12.951584+00:00	LinkEditDataCommand	DyldChainedFixupsCommand
 2026-08-14T05:30:12.951584+00:00	DyldChainedFixupHeader	DyldChainedFixupsCommand
 2026-08-14T05:30:12.951584+00:00	DyldChainedStartsInImage	DyldChainedFixupsCommand
 2026-08-14T05:30:12.951584+00:00	DyldChainedStartsInSegment	DyldChainedFixupsCommand
@@ -941,7 +936,6 @@ ts	stub_class	referenced_by
 2026-08-17T03:52:00.000000+00:00	EmuUnixException	AbstractEmuUnixSyscallUseropLibrary
 2026-08-17T03:52:00.000000+00:00	EmuProcessExitedException	AbstractEmuUnixSyscallUseropLibrary
 2026-08-17T03:52:00.000000+00:00	SettingsImpl	AbstractEmuUnixSyscallUseropLibrary
-2026-08-17T03:52:00.000000+00:00	StringDataType	AbstractEmuUnixSyscallUseropLibrary
 2026-08-17T04:04:38.656206+00:00	AssignStmtType	LValInternal
 2026-08-17T04:04:38.656359+00:00	FieldExprType	LValInternal
 2026-08-17T04:04:38.656484+00:00	IndexExprType	LValInternal

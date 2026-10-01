@@ -15,8 +15,13 @@ use std::ops::Deref;
 
 use crate::format::macho::commands::build_version_command::BuildVersionCommand;
 use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
+use crate::format::macho::commands::code_signature_command::CodeSignatureCommand;
 use crate::format::macho::commands::corrupt_load_command::CorruptLoadCommand;
+use crate::format::macho::commands::data_in_code_command::DataInCodeCommand;
+use crate::format::macho::commands::dyld_exports_trie_command::DyldExportsTrieCommand;
 use crate::format::macho::commands::dyld_info_command::DyldInfoCommand;
+use crate::format::macho::commands::function_starts_command::FunctionStartsCommand;
+use crate::format::macho::commands::link_edit_data_command::LinkEditDataCommand;
 use crate::format::macho::commands::dynamic_library_command::DynamicLibraryCommand;
 use crate::format::macho::commands::dynamic_linker_command::DynamicLinkerCommand;
 use crate::format::macho::commands::encrypted_information_command::EncryptedInformationCommand;
@@ -58,12 +63,19 @@ pub trait LoadCommandVariant: LoadCommand + Sized {
 }
 
 macro_rules! load_command_kinds {
-    ($($variant:ident($ty:ty)),* $(,)?) => {
+    (
+        $($variant:ident($ty:ty)),* $(,)?;
+        manual: $($mvariant:ident($mty:ty)),* $(,)?
+    ) => {
         /// One parsed Mach-O load command, of any concrete type.
         pub enum LoadCommandKind {
             $(
                 #[doc = concat!("A [`", stringify!($ty), "`].")]
                 $variant($ty),
+            )*
+            $(
+                #[doc = concat!("A [`", stringify!($mty), "`].")]
+                $mvariant($mty),
             )*
         }
 
@@ -72,6 +84,7 @@ macro_rules! load_command_kinds {
             pub fn as_load_command(&self) -> &(dyn LoadCommand + 'static) {
                 match self {
                     $(LoadCommandKind::$variant(c) => c,)*
+                    $(LoadCommandKind::$mvariant(c) => c,)*
                 }
             }
         }
@@ -98,6 +111,13 @@ macro_rules! load_command_kinds {
             impl From<$ty> for LoadCommandKind {
                 fn from(c: $ty) -> Self {
                     LoadCommandKind::$variant(c)
+                }
+            }
+        )*
+        $(
+            impl From<$mty> for LoadCommandKind {
+                fn from(c: $mty) -> Self {
+                    LoadCommandKind::$mvariant(c)
                 }
             }
         )*
@@ -135,6 +155,34 @@ load_command_kinds! {
     FixedVirtualMemoryFile(FixedVirtualMemoryFileCommand),
     Unsupported(UnsupportedLoadCommand),
     Corrupt(CorruptLoadCommand),
+    FunctionStarts(FunctionStartsCommand),
+    DataInCode(DataInCodeCommand),
+    DyldExportsTrie(DyldExportsTrieCommand),
+    CodeSignature(CodeSignatureCommand);
+    manual: LinkEditData(LinkEditDataCommand),
+}
+
+/// Java's `getLoadCommands(LinkEditDataCommand.class)` also matches its subclasses, which in this
+/// port embed a [`LinkEditDataCommand`]; those yield the embedded base.
+impl LoadCommandVariant for LinkEditDataCommand {
+    fn from_kind(kind: &LoadCommandKind) -> Option<&Self> {
+        match kind {
+            LoadCommandKind::LinkEditData(c) => Some(c),
+            LoadCommandKind::FunctionStarts(c) => Some(c.link_edit()),
+            LoadCommandKind::DataInCode(c) => Some(c.link_edit()),
+            LoadCommandKind::DyldExportsTrie(c) => Some(c.link_edit()),
+            LoadCommandKind::DyldChainedFixups(c) => Some(c.link_edit()),
+            LoadCommandKind::CodeSignature(c) => Some(c.link_edit()),
+            _ => None,
+        }
+    }
+
+    fn from_kind_mut(kind: &mut LoadCommandKind) -> Option<&mut Self> {
+        match kind {
+            LoadCommandKind::LinkEditData(c) => Some(c),
+            _ => None,
+        }
+    }
 }
 
 impl std::fmt::Debug for LoadCommandKind {

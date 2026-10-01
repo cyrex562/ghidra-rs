@@ -13,8 +13,13 @@ use std::sync::Arc;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::macho::commands::build_version_command::BuildVersionCommand;
 use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
+use crate::format::macho::commands::code_signature_command::CodeSignatureCommand;
 use crate::format::macho::commands::corrupt_load_command::CorruptLoadCommand;
+use crate::format::macho::commands::data_in_code_command::DataInCodeCommand;
+use crate::format::macho::commands::dyld_exports_trie_command::DyldExportsTrieCommand;
 use crate::format::macho::commands::dyld_info_command::DyldInfoCommand;
+use crate::format::macho::commands::function_starts_command::FunctionStartsCommand;
+use crate::format::macho::commands::link_edit_data_command::LinkEditDataCommand;
 use crate::format::macho::commands::dynamic_library_command::DynamicLibraryCommand;
 use crate::format::macho::commands::dynamic_linker_command::DynamicLinkerCommand;
 use crate::format::macho::commands::encrypted_information_command::EncryptedInformationCommand;
@@ -109,6 +114,26 @@ fn parse_load_command(
         LC_DYLD_INFO | LC_DYLD_INFO_ONLY => {
             let mut linker_reader = get_linker_load_command_reader(reader);
             DyldInfoCommand::new(reader, &mut linker_reader, header)?.into()
+        }
+        LC_CODE_SIGNATURE => {
+            let mut linker_reader = get_linker_load_command_reader(reader);
+            CodeSignatureCommand::new(reader, &mut linker_reader)?.into()
+        }
+        LC_SEGMENT_SPLIT_INFO | LC_OPTIMIZATION_HINT | LC_DYLIB_CODE_SIGN_DRS => {
+            let mut linker_reader = get_linker_load_command_reader(reader);
+            LinkEditDataCommand::new(reader, &mut linker_reader)?.into()
+        }
+        LC_FUNCTION_STARTS => {
+            let mut linker_reader = get_linker_load_command_reader(reader);
+            FunctionStartsCommand::new(reader, &mut linker_reader)?.into()
+        }
+        LC_DATA_IN_CODE => {
+            let mut linker_reader = get_linker_load_command_reader(reader);
+            DataInCodeCommand::new(reader, &mut linker_reader)?.into()
+        }
+        LC_DYLD_EXPORTS_TRIE => {
+            let mut linker_reader = get_linker_load_command_reader(reader);
+            DyldExportsTrieCommand::new(reader, &mut linker_reader)?.into()
         }
         LC_VERSION_MIN_MACOSX | LC_VERSION_MIN_IPHONEOS | LC_VERSION_MIN_TVOS
         | LC_VERSION_MIN_WATCHOS => VersionMinCommand::new(reader)?.into(),

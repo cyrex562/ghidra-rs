@@ -4,11 +4,9 @@
 //! <https://github.com/apple-oss-distributions/dyld/blob/main/include/mach-o/fixup-chains.h>.
 //!
 //! Java models this as `DyldChainedFixupsCommand extends LinkEditDataCommand extends LoadCommand`.
-//! Neither `LinkEditDataCommand` nor `DyldChainedFixupHeader` (and the types it in turn owns) are
-//! ported yet -- they are dependency-cycle forward edges -- so this port holds
-//! [`format::seam_stubs::LinkEditDataCommand`](crate::format::seam_stubs::LinkEditDataCommand) and
-//! [`format::seam_stubs::DyldChainedFixupHeader`](crate::format::seam_stubs::DyldChainedFixupHeader)
-//! by composition instead of trait inheritance.
+//! This port holds the real
+//! [`LinkEditDataCommand`](crate::format::macho::commands::link_edit_data_command::LinkEditDataCommand)
+//! and the `DyldChainedFixupHeader` by composition instead of inheritance.
 //!
 //! Because Java's `markup`/`markupRawBinary` rely on virtual dispatch back up through
 //! `LinkEditDataCommand` and `LoadCommand` to this type's own overridden `getCommandName()`, that
@@ -31,7 +29,8 @@ use crate::format::macho::dyld::dyld_chained_ptr::{DyldChainType, DYLD_CHAINED_P
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::format::macho::mach_header::MachHeader;
-use crate::format::seam_stubs::{DyldChainedFixupHeader, FlatProgramAPI, LinkEditDataCommand};
+use crate::format::macho::commands::link_edit_data_command::LinkEditDataCommand;
+use crate::format::seam_stubs::{DyldChainedFixupHeader, FlatProgramAPI};
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
@@ -82,6 +81,11 @@ impl DyldChainedFixupsCommand {
         let link_edit = LinkEditDataCommand::new(load_command_reader, data_reader)?;
         let chain_header = DyldChainedFixupHeader::new(data_reader)?;
         Ok(DyldChainedFixupsCommand { link_edit, chain_header })
+    }
+
+    /// The inherited `LinkEditDataCommand` state.
+    pub fn link_edit(&self) -> &LinkEditDataCommand {
+        &self.link_edit
     }
 
     /// Gets the [`DyldChainedFixupHeader`].
@@ -171,7 +175,7 @@ impl StructConverter for DyldChainedFixupsCommand {
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         // This type doesn't override `toDataType()` in Java, so it inherits
         // `LinkEditDataCommand.toDataType()`.
-        self.link_edit.to_data_type().map_err(ToDataTypeError::from)
+        self.link_edit.to_data_type()
     }
 }
 

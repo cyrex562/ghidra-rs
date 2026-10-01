@@ -13,6 +13,7 @@ use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// Port of `ghidra.app.util.bin.format.macho.threadcommand.ThreadStateX86_32`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[allow(non_camel_case_types)]
 pub struct ThreadStateX86_32 {
     /// Java: the public `eax` field.
     pub eax: i32,
