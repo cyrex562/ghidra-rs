@@ -233,7 +233,7 @@ impl ManualIndex {
 }
 
 /// Port of `FileUtilities.existsAndIsCaseDependent(ResourceFile)`.
-fn exists_and_is_case_dependent(file: &ResourceFile) -> FileResolutionResult {
+pub(crate) fn exists_and_is_case_dependent(file: &ResourceFile) -> FileResolutionResult {
     if !file.exists() {
         return FileResolutionResult::does_not_exist(file);
     }

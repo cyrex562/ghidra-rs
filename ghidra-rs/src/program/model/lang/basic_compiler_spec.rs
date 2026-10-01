@@ -12,8 +12,10 @@
 //!   translation applies.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::error::Error as _;
 use std::sync::{Arc, Weak};
 
+use crate::app::plugin::processors::sleigh::sleigh_language_validator::SleighLanguageValidator;
 use crate::generic::jar::resource_file::ResourceFile;
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView, AddressSpace, AddressSpaceType};
 use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
@@ -168,6 +170,11 @@ impl BasicCompilerSpec {
         let fail = |detail: String, cause: &dyn std::error::Error| {
             CompilerSpecNotFoundException::with_resource_read_error(&language_id, &spec_id, &detail, cause)
         };
+        // Java recovers the validator's own cause (the SAX or I/O failure) as the reported cause.
+        SleighLanguageValidator::validate_cspec_file(cspec_file).map_err(|e| match e.source() {
+            Some(cause) => fail(cspec_file.name(), cause),
+            None => fail(cspec_file.name(), &e),
+        })?;
         let mut spec = Self::uninitialized(description.clone(), language)
             .map_err(|e| fail(cspec_file.name(), &e))?;
         let stream = cspec_file.get_input_stream().map_err(|e| fail(cspec_file.name(), &e))?;
@@ -1651,10 +1658,19 @@ mod tests {
         assert_eq!(spec.get_source_name(), file.absolute_path());
         assert_eq!(spec.get_calling_conventions().len(), 4);
 
-        std::fs::write(&path, "<compiler_spec><stackpointer register=\"NOPE\" space=\"ram\"/></compiler_spec>").unwrap();
+        let proto = r#"<default_proto><prototype name="p" extrapop="0" stackshift="0"><input/><output/></prototype></default_proto>"#;
+        std::fs::write(&path, format!("<compiler_spec><stackpointer register=\"NOPE\" space=\"ram\"/>{proto}</compiler_spec>")).unwrap();
         let err = BasicCompilerSpec::from_file(description(), x86_64_language(), &file).err().unwrap();
         assert!(err.message().contains("x86-64-gcc.cspec"), "{}", err.message());
         assert!(err.message().contains("Unknown register: NOPE"), "{}", err.message());
+
+        // The file is validated against compiler_spec.rxg before it is read: a stack pointer with
+        // no default prototype parses up to the missing prototype, but the schema rejects it first.
+        std::fs::write(&path, "<compiler_spec><stackpointer register=\"NOPE\" space=\"ram\"/></compiler_spec>").unwrap();
+        let err = BasicCompilerSpec::from_file(description(), x86_64_language(), &file).err().unwrap();
+        assert!(err.message().contains("x86-64-gcc.cspec"), "{}", err.message());
+        assert!(!err.message().contains("Unknown register"), "{}", err.message());
+        assert!(err.message().contains("element \"compiler_spec\" is incomplete"), "{}", err.message());
     }
 
     /// The x86-64 test language, shared, with a description offering one compiler spec, `gcc`,

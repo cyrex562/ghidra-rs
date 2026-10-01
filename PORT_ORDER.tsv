@@ -350,7 +350,7 @@ TODO	struct	7	76	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/Pa
 TODO	struct	7	34	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ModuleDefinitionsMap.java
 TODO	struct	7	9	1	sleigh	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/HashMapPreprocessorDefinitionsAdapter.java
 TODO	struct	6	34	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ModuleDefinitionsAdapter.java
-TODO	struct	6	35	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguageValidator.java
+DONE	struct	6	35	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguageValidator.java
 TODO	struct	11	19	10	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/TripleSymbol.java
 TODO	struct	10	12	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/FamilySymbol.java
 TODO	struct	9	16	11	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/ValueSymbol.java
