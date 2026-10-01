@@ -5,12 +5,9 @@ use std::io;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
-use crate::format::macho::mach_constants::DATA_TYPE_CATEGORY;
-use crate::program::model::data::dword_data_type::DWordDataType;
-use crate::program::model::data::qword_data_type::QWordDataType;
-use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
-use crate::sarif::seam_stubs::StructureDataType;
+use crate::format::macho::struct_builder::{dword, qword, MachStruct};
+use crate::program::model::data::structure_data_type::StructureDataType;
 
 /// Represents a `dyld_cache_image_info` structure.
 ///
@@ -70,16 +67,15 @@ impl DyldCacheImageInfo {
     }
 
     /// Builds the concrete `dyld_cache_image_info` structure; see [`StructConverter`].
-    pub fn to_structure(&self) -> StructureDataType {
-        let cp = CategoryPath::parse(DATA_TYPE_CATEGORY).expect("valid Mach-O category path");
-        let mut s = StructureDataType::new(cp, "dyld_cache_image_info", 0);
+    pub fn to_structure(&self) -> Result<StructureDataType, ToDataTypeError> {
+        let mut s = MachStruct::new("dyld_cache_image_info");
         for name in ["address", "modTime", "inode"] {
-            s.add(QWordDataType::data_type(), 8, Some(name.to_string()), Some(String::new()));
+            s.add(qword(), name, Some(""))?;
         }
         for name in ["pathFileOffset", "pad"] {
-            s.add(DWordDataType::data_type(), 4, Some(name.to_string()), Some(String::new()));
+            s.add(dword(), name, Some(""))?;
         }
-        s
+        s.finish_structure()
     }
 }
 
@@ -96,7 +92,7 @@ impl DyldCacheImage for DyldCacheImageInfo {
 impl StructConverter for DyldCacheImageInfo {
     /// Port of `toDataType()`.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        Ok(Box::new(self.to_structure()))
+        Ok(Box::new(self.to_structure()?))
     }
 }
 
@@ -139,11 +135,11 @@ mod tests {
 
     #[test]
     fn data_type_layout() {
-        let s = DyldCacheImageInfo::default().to_structure();
+        let s = DyldCacheImageInfo::default().to_structure().unwrap();
         assert_eq!(s.get_name(), "dyld_cache_image_info");
         assert_eq!(s.get_length(), DyldCacheImageInfo::SIZE as i32);
         assert_eq!(s.get_category_path().to_string(), "/MachO");
-        let names: Vec<_> = s.components.iter().map(|c| c.field_name.clone().unwrap()).collect();
+        let names = crate::format::macho::struct_builder::test_support::names(&s);
         assert_eq!(names, ["address", "modTime", "inode", "pathFileOffset", "pad"]);
     }
 }
