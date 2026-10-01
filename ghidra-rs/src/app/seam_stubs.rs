@@ -46,7 +46,6 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt;
 use std::any::Any;
-use std::cell::RefCell;
 use std::io;
 use std::option::Option as StdOption;
 use std::rc::Rc;
@@ -5300,81 +5299,40 @@ impl SetCommentCmd {
     }
 }
 
-/// [`GByteStore`] over a program's [`Memory`], addressing bytes by the offset within a fixed
-/// [`AddressSpace`]. Backs [`MemoryBinaryReader`], which in turn backs
-/// [`GccAnalysisUtils::read_sleb128_info`].
-struct MemoryByteProvider {
+/// A [`ByteProvider`](crate::app::util::bin::byte_provider::ByteProvider) over a program's
+/// [`Memory`], addressing bytes by their offset within a fixed [`AddressSpace`]: the subset of
+/// `ghidra.app.util.bin.MemoryByteProvider(Memory, AddressSpace)` that
+/// [`GccAnalysisUtils::read_sleb128_info`] needs to drive a real
+/// [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader). Like the reader it
+/// replaced, it reports an unbounded length; reads of unmapped bytes fail.
+struct SpaceMemoryByteProvider {
     memory: Arc<dyn Memory>,
     space: Arc<AddressSpace>,
 }
 
-impl GByteStore for MemoryByteProvider {
-    fn length(&mut self) -> io::Result<u64> {
-        Ok(u64::MAX)
+impl crate::app::util::bin::byte_provider::ByteProvider for SpaceMemoryByteProvider {
+    fn get_file(&self) -> StdOption<std::path::PathBuf> {
+        None
     }
 
-    fn is_valid_index(&mut self, _index: u64) -> bool {
-        true
+    fn get_name(&self) -> StdOption<String> {
+        Some(self.space.name().to_string())
     }
 
-    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-        let addr = Address::new(self.space.clone(), index as i64);
-        self.memory
-            .get_byte(&addr)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+    fn get_absolute_path(&self) -> StdOption<String> {
+        None
     }
 
-    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-        (0..length as u64).map(|i| self.read_byte(index + i)).collect()
+    fn length(&self) -> u64 {
+        u64::MAX
     }
 
-    fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
+    fn is_valid_index(&self, index: u64) -> bool {
+        self.memory.contains(&Address::new(self.space.clone(), index as i64))
     }
 
-    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.MemoryByteProvider` + `ghidra.app.util.bin.BinaryReader`
-/// wired directly over a program's [`Memory`], referenced by
-/// [`GccAnalysisUtils::read_sleb128_info`] before the real `BinaryReader` producer classes are
-/// ported. The reader's index corresponds directly to an [`Address`] offset within `space`,
-/// matching how `GccAnalysisUtils.readLEB128Info` positions its `BinaryReader` at
-/// `addr.getOffset()`.
-struct MemoryBinaryReader {
-    memory: Arc<dyn Memory>,
-    space: Arc<AddressSpace>,
-    index: u64,
-    little_endian: bool,
-}
-
-impl LegacyBinaryReader for MemoryBinaryReader {
-    fn length(&self) -> io::Result<u64> {
-        Ok(u64::MAX)
-    }
-
-    fn is_valid_index(&self, _index: u64) -> bool {
-        true
-    }
-
-    fn get_pointer_index(&self) -> u64 {
-        self.index
-    }
-
-    fn set_pointer_index(&mut self, index: u64) -> u64 {
-        let prev = self.index;
-        self.index = index;
-        prev
-    }
-
-    fn is_little_endian(&self) -> bool {
-        self.little_endian
-    }
-
-    fn set_little_endian(&mut self, is_little_endian: bool) {
-        self.little_endian = is_little_endian;
+    fn close(&mut self) -> io::Result<()> {
+        Ok(())
     }
 
     fn read_byte(&self, index: u64) -> io::Result<u8> {
@@ -5384,24 +5342,8 @@ impl LegacyBinaryReader for MemoryBinaryReader {
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
-    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-        (0..n_elements as u64).map(|i| self.read_byte(index + i)).collect()
-    }
-
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-        Rc::new(RefCell::new(MemoryByteProvider {
-            memory: self.memory.clone(),
-            space: self.space.clone(),
-        }))
-    }
-
-    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-        Box::new(MemoryBinaryReader {
-            memory: self.memory.clone(),
-            space: self.space.clone(),
-            index: new_index,
-            little_endian: self.little_endian,
-        })
+    fn read_bytes(&self, index: u64, length: u64) -> io::Result<Vec<u8>> {
+        (0..length).map(|i| self.read_byte(index + i)).collect()
     }
 }
 
@@ -5412,8 +5354,8 @@ impl LegacyBinaryReader for MemoryBinaryReader {
 /// zero-sized-struct convention for utility classes (see [`DecompilerUtils`]) rather than a
 /// trait. Only `readSLEB128Info` is modeled, since it's the only method the target needs; unlike
 /// the no-op command stubs above, this one is fully implemented -- it decodes a real signed
-/// LEB128 straight from [`Memory`] via [`MemoryBinaryReader`], since [`LEB128Info::signed`] was
-/// already available to drive it.
+/// LEB128 straight from [`Memory`] through a [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader)
+/// over [`SpaceMemoryByteProvider`], since [`LEB128Info::signed`] was already available to drive it.
 pub struct GccAnalysisUtils;
 
 impl GccAnalysisUtils {
@@ -5426,12 +5368,9 @@ impl GccAnalysisUtils {
             .get_memory()
             .ok_or_else(|| MemoryAccessException::new("program has no memory"))?;
         let little_endian = !memory.is_big_endian();
-        let mut reader = MemoryBinaryReader {
-            memory,
-            space: addr.space().clone(),
-            index: addr.unsigned_offset(),
-            little_endian,
-        };
+        let provider = Rc::new(SpaceMemoryByteProvider { memory, space: addr.space().clone() });
+        let mut reader = crate::app::util::bin::binary_reader::BinaryReader::new(provider, little_endian);
+        reader.set_pointer_index(addr.unsigned_offset());
         LEB128Info::signed(&mut reader).map_err(|e| {
             MemoryAccessException::new(format!("Error reading LEB128 value at {}: {}", addr, e))
         })
