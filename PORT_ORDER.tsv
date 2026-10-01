@@ -1134,7 +1134,7 @@ TODO	struct	18	3	5	program	Ghidra/Features/Base/src/main/java/ghidra/program/uti
 TODO	struct	18	3	4	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/string/StringSearcher.java
 DONE	struct	16	20	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkEditDataCommand.java
 DONE	struct	16	4	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureGenericBlob.java
-TODO	struct	15	15	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/CodeSignatureCommand.java
+PARK	struct	15	15	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/CodeSignatureCommand.java
 DONE	struct	15	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/CorruptLoadCommand.java
 DONE	struct	16	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DataInCodeEntry.java
 DONE	struct	15	15	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DataInCodeCommand.java
@@ -3662,7 +3662,7 @@ TODO	struct	0	1	10	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exce
 TODO	struct	0	1	86	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SetEquateTableModel.java
 DONE	struct	0	1	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureBlobIndex.java
 DONE	struct	0	1	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureCodeDirectory.java
-TODO	struct	0	1	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureSuperBlob.java
+PARK	struct	0	1	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureSuperBlob.java
 TODO	struct	0	1	76	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocationTable.java
 TODO	struct	0	1	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/GzfExporter.java
 TODO	struct	0	1	10	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/format/actions/AddAllFieldAction.java
