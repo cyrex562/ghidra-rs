@@ -1,215 +1,154 @@
-//! Rust port of `ghidra.file.formats.ios.fileset.MachoFileSetExtractor`.
+//! Port of `ghidra.file.formats.ios.fileset.MachoFileSetExtractor`.
 //!
-//! # Shape
-//!
-//! The Java class has no fields and only two static methods, so it ports to a plain module of a
-//! `pub const` and free functions rather than a field-less struct: Rust doesn't need a class to
-//! hang statics off of (shape rule R7-statics-holder).
-//!
-//! # Unported dependencies
-//!
-//! `extract_file_set_entry` bottoms out in
-//! [`ExtractedMacho`](crate::file::seam_stubs::ExtractedMacho), whose `pack` degrades to
-//! footer-only output until [`MachHeader::get_all_segments`](crate::file::seam_stubs::MachHeader)
-//! reports real segments -- see that stub's docs. `extract_segment` needs no unported
-//! dependencies: `MachHeader::create` and `SegmentCommand::create` (also added to
-//! `crate::file::seam_stubs` alongside this port) are pure byte-layout helpers with no forward
-//! references, so it is fully functional today.
+//! Extracts the components of a Mach-O file set (a kernel collection). The Java class holds only
+//! a static constant and two static methods, so per the shape rules it is a plain module.
 
-use std::cell::RefCell;
-use std::io;
 use std::rc::Rc;
 
 use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
-use crate::file::seam_stubs::{ExtractedMacho, MachHeader, SegmentCommand};
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+use crate::app::util::bin::byte_provider::ByteProvider;
+use crate::file::formats::ios::extracted_macho::{ExtractError, ExtractedMacho};
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::format::macho::commands::segment_command::SegmentCommand;
 use crate::format::macho::mach_constants::MH_MAGIC_64;
 use crate::format::macho::mach_exception::MachException;
+use crate::format::macho::mach_header::MachHeader;
 use crate::util::task::TaskMonitor;
 
 /// A footer that gets appended to the end of every extracted component so Ghidra can identify
-/// them and treat them special when imported.
-///
-/// Mirrors `FOOTER_V1`.
+/// them and treat them special when imported. Java: `FOOTER_V1`.
 pub const FOOTER_V1: &[u8] = b"Ghidra Mach-O file set extraction v1";
 
-/// Gets a [`GByteStore`] that contains a Mach-O file set entry. The Mach-O's header will be
-/// altered to account for its segment bytes being packed down.
-///
-/// `fsrl_path` mirrors the Java signature but is unused: [`ByteArrayProvider`] (this crate's stub
-/// for Java's `ByteArrayProvider`) doesn't carry an FSRL identity yet.
-///
-/// Mirrors `extractFileSetEntry(GByteStore, long, FSRL, TaskMonitor)`.
-pub fn extract_file_set_entry(
-    provider: Rc<RefCell<dyn GByteStore>>,
-    provider_offset: i64,
-    _fsrl_path: &str,
-    monitor: &dyn TaskMonitor,
-) -> io::Result<Box<dyn GByteStore>> {
-    let mut header = MachHeader::new(Rc::clone(&provider), provider_offset);
-    header.parse().map_err(mach_err)?;
-
-    let mut extracted_macho = ExtractedMacho::new(Rc::clone(&provider), header, FOOTER_V1);
-    extracted_macho.pack(monitor)?;
-    Ok(Box::new(extracted_macho.get_byte_provider()))
+/// Why an extraction failed (Java: `IOException`, `MachException`, `CancelledException`).
+#[derive(Debug, thiserror::Error)]
+pub enum FileSetExtractError {
+    #[error(transparent)]
+    Extract(#[from] ExtractError),
+    #[error(transparent)]
+    Mach(#[from] MachException),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
 }
 
-/// Gets a [`GByteStore`] that contains a single segment from a Mach-O file set.
-///
-/// `fsrl_path` and `monitor` mirror the Java signature but are unused: Java's `extractSegment`
-/// never inspects `monitor` either, and [`ByteArrayProvider`] doesn't carry an FSRL identity yet.
-///
-/// Mirrors `extractSegment(GByteStore, SegmentCommand, FSRL, TaskMonitor)`.
+/// Java `extractFileSetEntry(ByteProvider, long, FSRL, TaskMonitor)`: the file set entry whose
+/// Mach-O header is at `provider_offset`, with its segments packed down and its header altered
+/// to match.
+pub fn extract_file_set_entry(
+    provider: &Rc<dyn ByteProvider>,
+    provider_offset: i64,
+    fsrl: Option<Fsrl>,
+    monitor: &dyn TaskMonitor,
+) -> Result<ByteArrayProvider, FileSetExtractError> {
+    let mut header =
+        MachHeader::with_start_index_relative(Rc::clone(provider), provider_offset as u64, false)?;
+    header.parse()?;
+    let mut extracted = ExtractedMacho::new(Rc::clone(provider), provider_offset, header, FOOTER_V1, monitor);
+    extracted.pack()?;
+    Ok(extracted.get_byte_provider(fsrl))
+}
+
+/// Java `extractSegment(ByteProvider, SegmentCommand, FSRL, TaskMonitor)`: wraps a single
+/// segment in a minimal 64-bit Mach-O (one `LC_SEGMENT_64`, no sections).
 pub fn extract_segment(
-    provider: Rc<RefCell<dyn GByteStore>>,
+    provider: &dyn ByteProvider,
     segment: &SegmentCommand,
-    _fsrl_path: &str,
+    fsrl: Option<Fsrl>,
     _monitor: &dyn TaskMonitor,
-) -> io::Result<Box<dyn GByteStore>> {
+) -> Result<ByteArrayProvider, FileSetExtractError> {
     let magic = MH_MAGIC_64;
-    let all_segments_size = SegmentCommand::size(magic).map_err(mach_err)?;
+    let all_segments_size = SegmentCommand::size(magic)?;
 
     // Mach-O Header
     let header = MachHeader::create(
         magic,
         0x100000c,
-        0x8000_0002u32 as i32,
+        0x80000002u32 as i32,
         6,
         1,
         all_segments_size,
-        0x4210_0085u32 as i32,
+        0x42100085,
         0,
-    )
-    .map_err(mach_err)?;
+    )?;
 
     // Segment command
     let segment_command_bytes = SegmentCommand::create(
         magic,
-        segment.segment_name(),
-        segment.vm_address(),
-        segment.vm_size(),
-        header.len() as i64 + all_segments_size as i64,
-        segment.file_size(),
-        segment.max_protection(),
-        segment.init_protection(),
-        segment.flags(),
-    )
-    .map_err(mach_err)?;
+        segment.get_segment_name(),
+        segment.get_vm_address(),
+        segment.get_vm_size(),
+        (header.len() as i32 + all_segments_size) as i64,
+        segment.get_file_size(),
+        segment.get_max_protection(),
+        segment.get_init_protection(),
+        segment.get_flags(),
+    )?;
 
     // Segment data
     let segment_data_bytes =
-        provider.borrow_mut().read_bytes(segment.file_offset() as u64, segment.file_size() as usize)?;
+        provider.read_bytes(segment.get_file_offset() as u64, segment.get_file_size() as u64)?;
 
-    // Combine pieces
+    // Combine pieces, then add the footer.
     let mut result = Vec::with_capacity(
-        header.len() + segment_command_bytes.len() + segment_data_bytes.len() + FOOTER_V1.len(),
+        header.len() + all_segments_size as usize + segment_data_bytes.len() + FOOTER_V1.len(),
     );
     result.extend_from_slice(&header);
     result.extend_from_slice(&segment_command_bytes);
     result.extend_from_slice(&segment_data_bytes);
-
-    // Add footer
     result.extend_from_slice(FOOTER_V1);
-
-    Ok(Box::new(ByteArrayProvider::new(result)))
-}
-
-fn mach_err(e: MachException) -> io::Error {
-    io::Error::new(io::ErrorKind::Other, e.to_string())
+    Ok(ByteArrayProvider::with_fsrl(result, fsrl))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    struct MemoryByteProvider {
-        bytes: Vec<u8>,
-    }
-
-    impl GByteStore for MemoryByteProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    fn provider_of(bytes: Vec<u8>) -> Rc<RefCell<dyn GByteStore>> {
-        Rc::new(RefCell::new(MemoryByteProvider { bytes }))
-    }
+    use crate::file::formats::ios::extracted_macho::test_support::write_macho;
+    use crate::format::macho::mach_header::test_support::{provider, Bytes};
+    use crate::util::task::DummyMonitor;
 
     #[test]
-    fn footer_v1_matches_java_constant() {
-        assert_eq!(FOOTER_V1, "Ghidra Mach-O file set extraction v1".as_bytes());
-    }
-
-    #[test]
-    fn extract_file_set_entry_rejects_invalid_magic() {
-        let provider = provider_of(vec![0u8; 64]);
-        let monitor = crate::util::task::DummyMonitor;
-        let err = match extract_file_set_entry(provider, 0, "test.entry", &monitor) {
-            Ok(_) => panic!("all-zero bytes are not a valid Mach-O magic"),
-            Err(e) => e,
-        };
-        assert_eq!(err.kind(), io::ErrorKind::Other);
-    }
-
-    #[test]
-    fn extract_file_set_entry_appends_footer_when_no_segments() {
-        // MH_MAGIC_64, big-endian on-disk bytes: MachHeader::parse only validates the magic
-        // (segment parsing is not ported yet, see module docs), so packing degrades to just the
-        // footer.
-        let mut bytes: Vec<u8> = vec![0xfe, 0xed, 0xfa, 0xcf];
-        bytes.resize(32, 0);
-        let provider = provider_of(bytes);
-        let monitor = crate::util::task::DummyMonitor;
-        let mut result =
-            extract_file_set_entry(provider, 0, "test.entry", &monitor).expect("valid magic should pack");
-        let len = result.length().unwrap() as usize;
-        let extracted = result.read_bytes(0, len).unwrap();
-        assert_eq!(extracted, FOOTER_V1);
-    }
-
-    #[test]
-    fn extract_segment_builds_header_plus_segment_plus_data_plus_footer() {
-        let segment_data = vec![0xAAu8; 16];
-        let provider = provider_of(segment_data.clone());
-        let segment = SegmentCommand::full("__TEXT", 0x1000, 0x1000, 0, 16, 7, 5, 0);
-        let monitor = crate::util::task::DummyMonitor;
-
-        let mut result = extract_segment(provider, &segment, "test.segment", &monitor)
-            .expect("extract_segment should succeed");
-        let len = result.length().unwrap() as usize;
-        let bytes = result.read_bytes(0, len).unwrap();
-
-        // Mach-O header (0x20) + segment command (0x48) + 16 bytes of segment data + footer.
-        assert_eq!(len, 0x20 + 0x48 + 16 + FOOTER_V1.len());
+    fn extract_file_set_entry_packs_entry_at_offset() {
+        let mut b = Bytes::new(true);
+        write_macho(&mut b, 0x1000, 0xffff_fe00_0000_0000, 0x3000, "_kmod_start");
+        let p = provider(b.buf);
+        let out = extract_file_set_entry(&p, 0x1000, None, &DummyMonitor).unwrap();
+        let bytes = out.read_bytes(0, out.length()).unwrap();
         assert!(bytes.ends_with(FOOTER_V1));
-        // Segment data lands right after the header + segment command, before the footer.
-        let data_start = 0x20 + 0x48;
-        assert_eq!(&bytes[data_start..data_start + 16], segment_data.as_slice());
-        // Mach-O magic at the very start.
-        assert_eq!(&bytes[0..4], &MH_MAGIC_64.to_le_bytes());
+        let mut h = MachHeader::new(provider(bytes)).unwrap();
+        h.parse().unwrap();
+        assert_eq!(h.get_segment("__TEXT").unwrap().get_file_offset(), 0);
+        assert_eq!(h.get_segment("__LINKEDIT").unwrap().get_file_offset(), 0x1000);
+    }
+
+    #[test]
+    fn extract_file_set_entry_rejects_non_macho() {
+        let p = provider(vec![0u8; 0x100]);
+        assert!(matches!(
+            extract_file_set_entry(&p, 0, None, &DummyMonitor),
+            Err(FileSetExtractError::Mach(_))
+        ));
+    }
+
+    #[test]
+    fn extract_segment_wraps_one_segment() {
+        let mut b = Bytes::new(true);
+        write_macho(&mut b, 0, 0x4000, 0x2000, "_x");
+        let bytes = b.buf;
+        let p = provider(bytes.clone());
+        let mut h = MachHeader::new(Rc::clone(&p)).unwrap();
+        h.parse().unwrap();
+        let text = h.get_segment("__TEXT").unwrap();
+        let out = extract_segment(p.as_ref(), text, None, &DummyMonitor).unwrap();
+        let out_bytes = out.read_bytes(0, out.length()).unwrap();
+        assert_eq!(out_bytes.len(), 32 + 72 + 0x1000 + FOOTER_V1.len());
+        assert_eq!(&out_bytes[32 + 72..32 + 72 + 0x1000], &bytes[..0x1000]);
+
+        let mut wrapped = MachHeader::new(provider(out_bytes)).unwrap();
+        assert_eq!(wrapped.get_cpu_type(), 0x100000c);
+        assert_eq!(wrapped.get_file_type(), 6);
+        wrapped.parse().unwrap();
+        let seg = wrapped.get_segment("__TEXT").unwrap();
+        assert_eq!(seg.get_vm_address(), 0x4000);
+        assert_eq!(seg.get_file_offset(), 32 + 72);
+        assert_eq!(seg.get_file_size(), 0x1000);
     }
 }

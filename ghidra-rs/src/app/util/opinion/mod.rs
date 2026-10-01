@@ -8,6 +8,7 @@ pub mod dyld_cache_loader;
 pub mod dyld_cache_options;
 pub mod dyld_cache_program_builder;
 pub mod dyld_cache_utils;
+pub mod macho_prelink_utils;
 pub mod elf_loader;
 pub mod elf_loader_options_factory;
 pub mod intel_hex_record;

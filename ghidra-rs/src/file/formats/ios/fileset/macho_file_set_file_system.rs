@@ -1,481 +1,408 @@
-//! Rust port of `ghidra.file.formats.ios.fileset.MachoFileSetFileSystem`.
+//! Port of `ghidra.file.formats.ios.fileset.MachoFileSetFileSystem`.
 //!
-//! A `GFileSystem` implementation for Mach-O file set entries: each `LC_FILESET_ENTRY` load
-//! command (plus the `__BRANCH_STUBS`/`__BRANCH_GOTS` segments, if present) surfaces as its own
-//! file, with dyld chained pointers fixed up ahead of time.
+//! A [`GFileSystem`] over a Mach-O file set (kernel collection): each `LC_FILESET_ENTRY` (plus
+//! the `__BRANCH_STUBS`/`__BRANCH_GOTS` segments, if present) is a file, extracted with the
+//! container's dyld chained pointers fixed up ahead of time.
 //!
-//! # Shape
-//!
-//! The Java class is a concrete leaf (`AbstractFileSystem<MachoFileSetEntry>`, nothing extends
-//! it), so this ports directly to a `struct` + `impl`, mirroring
-//! [`DyldCacheFileSystem`](super::super::dyldcache::dyld_cache_file_system::DyldCacheFileSystem)
-//! -- the sibling filesystem in this same `ios` package. `AbstractFileSystem`'s inherited state
-//! (`fsFSRL`, `fsIndex`) is inlined as fields; `fsFSRL` is the real
-//! [`FsrlRoot`](crate::filesystem::gfilesystem::fsrl_root::FsrlRoot) and indexed files carry real
-//! [`Fsrl`](crate::filesystem::gfilesystem::fsrl::Fsrl)s.
-//!
-//! # Unported dependencies
-//!
-//! `mount`'s Mach-O header/load-command parsing bottoms out in
-//! [`MachHeader::parse`](crate::file::seam_stubs::MachHeader::parse) (magic/endianness only) and
-//! [`MachHeader::get_segment`](crate::file::seam_stubs::MachHeader::get_segment)/
-//! [`file_set_entry_commands`](crate::file::seam_stubs::MachHeader::file_set_entry_commands),
-//! neither of which parses real load commands yet; see `crate::file::seam_stubs` (STUBS.tsv) for
-//! the placeholders. Because `mount` requires a `__TEXT` segment to be present (mirroring the
-//! Java `throw new MachException(...)` when it's missing) and `get_segment` always reports "not
-//! found" until real segment parsing lands, a real `mount()` call against this stub always fails
-//! today with the same error Java would report for a Mach-O file set that has no `__TEXT`
-//! segment -- and will start succeeding the moment the placeholders are replaced, with no change
-//! needed here.
-//! [`get_byte_provider`](MachoFileSetFileSystem::get_byte_provider) calls the now-ported
-//! [`macho_file_set_extractor`], which itself bottoms out in the same unported `MachHeader`
-//! segment parsing, so it degrades the same way (packing down to just the extraction footer)
-//! until that lands.
+//! Follows [`CpioFileSystem`](crate::file::formats::cpio::cpio_file_system::CpioFileSystem):
+//! the inherited `AbstractFileSystem` state is an embedded [`AbstractFileSystemBase`], and the
+//! state `close()` releases sits behind `RefCell`s because the filesystem is shared through
+//! [`FsHandle`](crate::filesystem::gfilesystem::g_file_system::FsHandle)s.
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
+use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::fmt;
 use std::io;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 use super::macho_file_set_entry::MachoFileSetEntry;
 use super::macho_file_set_extractor;
+use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
+use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::app::util::importer::message_log::MessageLog;
-use crate::file::seam_stubs::{
-    ExtractedMacho, MachHeader, SegmentCommand,
-};
-use crate::filesystem::gfilesystem::fileinfo::file_attributes::{FileAttributeValue, FileAttributes};
+use crate::file::formats::ios::extracted_macho;
+use crate::filesystem::gfilesystem::abstract_file_system::{AbstractFileSystemBase, AbstractFsHandle};
+use crate::filesystem::gfilesystem::annotations::file_system_info::{FileSystemInfo, PRIORITY_DEFAULT};
+use crate::filesystem::gfilesystem::file_system_index_helper::copy_file;
+use crate::filesystem::gfilesystem::file_system_ref_manager::FileSystemRefManager;
+use crate::filesystem::gfilesystem::file_system_service::FileSystemService;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
-use crate::filesystem::gfilesystem::g_file::GFile;
-use crate::filesystem::gfilesystem::file_system_index_helper::FileSystemIndexHelper;
-use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::fileinfo::file_attributes::FileAttributes;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
-use crate::filesystem::gfilesystem::g_file_impl::{FsGetListing, GFileImpl, HasFsrlRoot};
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+use crate::filesystem::gfilesystem::g_file::GFile;
+use crate::filesystem::gfilesystem::g_file_system::{GFileSystem, GFileSystemError};
 use crate::format::macho::commands::chained::dyld_chained_fixups::ChainedFixupError;
+use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
+use crate::format::macho::commands::file_set_entry_command::FileSetEntryCommand;
+use crate::format::macho::commands::segment_command::SegmentCommand;
 use crate::format::macho::commands::segment_names;
 use crate::format::macho::mach_exception::MachException;
-use crate::util::exception::CancelledException;
+use crate::format::macho::mach_header::MachHeader;
 use crate::util::task::TaskMonitor;
 
-/// Mirrors `MachoFileSetFileSystem.MACHO_FILESET_FSTYPE`.
+/// Java: `MACHO_FILESET_FSTYPE`.
 pub const MACHO_FILESET_FSTYPE: &str = "machofileset";
 
-// ─── Filesystem handle ─────────────────────────────────────────────────────────
-
-/// Filesystem handle stored inside each [`GFileImpl`] this filesystem hands out.
-///
-/// Stands in for the Java `GFileImpl.fileSystem` back-reference: it carries the owning
-/// filesystem's [`FsrlRoot`], from which child FSRLs are derived.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct MfsHandle {
-    root: FsrlRoot,
-}
-
-impl MfsHandle {
-    /// Creates a handle for the filesystem whose FSRL root is `root`.
-    pub fn new(root: FsrlRoot) -> Self {
-        MfsHandle { root }
-    }
-}
-
-impl HasFsrlRoot for MfsHandle {
-    fn root_fsrl(&self) -> &Fsrl {
-        self.root.as_fsrl()
-    }
-}
-
-impl FsGetListing<MfsHandle> for MfsHandle {
-    fn fs_get_listing(
-        &self,
-        _file: &dyn GFile<MfsHandle>,
-    ) -> io::Result<Vec<Box<dyn GFile<MfsHandle>>>> {
-        Ok(vec![])
-    }
-}
-
-/// The concrete [`GFile`] type this filesystem indexes.
-pub type MfsGFile = GFileImpl<MfsHandle>;
-
-// ─── MachoFileSetFileSystem ─────────────────────────────────────────────────
-
-/// A `GFileSystem` implementation for Mach-O file set entries.
-///
-/// Mirrors `ghidra.file.formats.ios.fileset.MachoFileSetFileSystem`.
+/// Port of `ghidra.file.formats.ios.fileset.MachoFileSetFileSystem`.
 pub struct MachoFileSetFileSystem {
-    /// Mirrors the inherited `AbstractFileSystem.fsFSRL`.
-    fs_fsrl: FsrlRoot,
-    /// Mirrors `provider`. `None` once [`close`](Self::close) has run, matching Java's
-    /// `provider == null` after close.
-    provider: Option<Rc<RefCell<dyn GByteStore>>>,
-    /// Mirrors `fixedUpProvider`.
-    fixed_up_provider: Option<Rc<RefCell<dyn GByteStore>>>,
-    /// Mirrors `header`.
-    header: Option<MachHeader>,
-    /// Mirrors `entrySegmentMap`.
-    entry_segment_map: HashMap<Rc<MachoFileSetEntry>, Vec<SegmentCommand>>,
-    /// Mirrors the inherited `AbstractFileSystem.fsIndex`. `AbstractFileSystem.refManager` is
-    /// not modeled: this port has no arena-backed `FileSystemRefManager` yet (see
-    /// `crate::filesystem::gfilesystem::file_system_ref_manager`'s docs), and nothing in this
-    /// class other than `close()`'s `refManager.onClose()` -- itself a no-op absent listeners --
-    /// touches it.
-    fs_index: FileSystemIndexHelper<MfsHandle, Rc<MachoFileSetEntry>>,
+    base: AbstractFileSystemBase<MachoFileSetEntry>,
+    provider: RefCell<Option<Rc<dyn ByteProvider>>>,
+    fixed_up_provider: RefCell<Option<Rc<dyn ByteProvider>>>,
+    header: RefCell<Option<MachHeader>>,
+    entry_segment_map: RefCell<HashMap<MachoFileSetEntry, Vec<SegmentCommand>>>,
 }
 
 impl MachoFileSetFileSystem {
-    /// Creates a new [`MachoFileSetFileSystem`].
-    ///
-    /// Mirrors `MachoFileSetFileSystem(FSRLRoot, GByteStore)`.
-    pub fn new(fs_fsrl: FsrlRoot, provider: Rc<RefCell<dyn GByteStore>>) -> Self {
-        let fs_index = FileSystemIndexHelper::from_fsrl_root(MfsHandle::new(fs_fsrl.clone()), &fs_fsrl);
+    /// `@FileSystemInfo(type = "machofileset")`.
+    pub const FS_TYPE: &'static str = MACHO_FILESET_FSTYPE;
+    /// `@FileSystemInfo(description = "Mach-O file set")`.
+    pub const DESCRIPTION: &'static str = "Mach-O file set";
+    /// The `@FileSystemInfo` annotation (default priority).
+    pub const INFO: FileSystemInfo = FileSystemInfo::with(Self::FS_TYPE, Self::DESCRIPTION, PRIORITY_DEFAULT);
+
+    /// Java `MachoFileSetFileSystem(FSRLRoot, ByteProvider)` (Java takes the service from
+    /// `FileSystemService.getInstance()`).
+    pub fn new(fs_fsrl: FsrlRoot, provider: Rc<dyn ByteProvider>, fs_service: &FileSystemService) -> Self {
         MachoFileSetFileSystem {
-            fs_fsrl,
-            provider: Some(provider),
-            fixed_up_provider: None,
-            header: None,
-            entry_segment_map: HashMap::new(),
-            fs_index,
+            base: AbstractFileSystemBase::new(fs_fsrl, fs_service),
+            provider: RefCell::new(Some(provider)),
+            fixed_up_provider: RefCell::new(None),
+            header: RefCell::new(None),
+            entry_segment_map: RefCell::new(HashMap::new()),
         }
     }
 
-    /// Mirrors the inherited `AbstractFileSystem.getFSRL()`.
-    pub fn get_fsrl(&self) -> &FsrlRoot {
-        &self.fs_fsrl
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.getName()`: the container file's name.
-    pub fn get_name(&self) -> String {
-        self.fs_fsrl.container().and_then(Fsrl::name).unwrap_or_default()
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.getRootDir()`.
-    pub fn get_root_dir(&self) -> &MfsGFile {
-        self.fs_index.get_root_dir()
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.getFileCount()`.
-    pub fn get_file_count(&self) -> i32 {
-        self.fs_index.get_file_count()
-    }
-
-    /// Mounts this file system.
+    /// Java `mount(TaskMonitor)`: indexes the file set entries and branch segments, then builds
+    /// a copy of the container with every chained pointer fixed up.
     ///
-    /// Mirrors `mount(TaskMonitor)`.
-    pub fn mount(&mut self, monitor: &dyn TaskMonitor) -> Result<(), MountError> {
-        let provider = self.provider.clone().ok_or_else(closed_error)?;
+    /// # Errors
+    /// I/O errors (a `MachException` is wrapped as one, as in Java) or cancellation.
+    pub fn mount(&mut self, monitor: &dyn TaskMonitor) -> Result<(), GFileSystemError> {
         let log = MessageLog::new();
-
+        let provider = self.provider.borrow().clone().ok_or_else(|| io::Error::other("filesystem is closed"))?;
         monitor.set_message("Opening Mach-O file set...");
-        let mut header = MachHeader::from_provider(Rc::clone(&provider));
-        header.parse()?;
-
+        let mut header = MachHeader::new(Rc::clone(&provider)).map_err(mach_io)?;
+        header.parse().map_err(mach_io)?;
         let text_segment = header
             .get_segment(segment_names::TEXT)
-            .ok_or_else(|| MachException::new(format!("{} not found!", segment_names::TEXT)))?;
+            .ok_or_else(|| mach_io(MachException::new(format!("{} not found!", segment_names::TEXT))))?;
+        let imagebase = text_segment.get_vm_address();
 
         // File set entries
-        for cmd in header.file_set_entry_commands() {
-            let entry =
-                Rc::new(MachoFileSetEntry::new(cmd.get_file_set_entry_id(), cmd.get_file_offset(), false));
-            let file_index = self.fs_index.get_file_count() as i64;
-            self.fs_index.store_file(entry.id(), file_index, false, -1, Rc::clone(&entry));
-            let entry_header = MachHeader::new(Rc::clone(&provider), entry.offset());
-            let segments = entry_header.parse_segments()?;
-            self.entry_segment_map.insert(entry, segments);
+        let mut entry_segment_map = HashMap::new();
+        for cmd in header.get_load_commands_of::<FileSetEntryCommand>() {
+            let entry = MachoFileSetEntry::new(
+                cmd.get_file_set_entry_id().get_string(),
+                cmd.get_file_offset(),
+                false,
+            );
+            let index = self.base.fs_index_mut();
+            let file_count = index.get_file_count() as i64;
+            index.store_file(entry.id(), file_count, false, -1, entry.clone());
+            let segments = MachHeader::with_start_index(Rc::clone(&provider), entry.offset() as u64)
+                .and_then(|mut h| h.parse_segments())
+                .map_err(mach_io)?;
+            entry_segment_map.insert(entry, segments);
         }
 
         // BRANCH segments, if present
-        if let Some(branch_stubs) = header.get_segment(segment_names::BRANCH_STUBS) {
-            let entry = Rc::new(MachoFileSetEntry::new(&segment_names::BRANCH_STUBS[2..], 0, true));
-            let file_index = self.fs_index.get_file_count() as i64;
-            self.fs_index.store_file(entry.id(), file_index, false, -1, Rc::clone(&entry));
-            self.entry_segment_map.insert(entry, vec![branch_stubs]);
-        }
-        if let Some(branch_gots) = header.get_segment(segment_names::BRANCH_GOTS) {
-            let entry = Rc::new(MachoFileSetEntry::new(&segment_names::BRANCH_GOTS[2..], 0, true));
-            let file_index = self.fs_index.get_file_count() as i64;
-            self.fs_index.store_file(entry.id(), file_index, false, -1, Rc::clone(&entry));
-            self.entry_segment_map.insert(entry, vec![branch_gots]);
-        }
-
-        monitor.set_message("Getting chained pointers...");
-        // Mirrors `getLoadCommands(DyldChainedFixupsCommand.class)`: always empty for now (see
-        // `MachHeader::dyld_chained_fixups_commands`'s docs), so there is nothing to iterate.
-        // When load-command parsing lands, this loop will also need a real
-        // `crate::app::util::bin::binary_reader::BinaryReader` implementation over a
-        // `GByteStore` to pass to `get_chained_fixups` -- only test-only mocks implement that
-        // trait anywhere in this crate today.
-        let _ = &log;
-        let _imagebase = text_segment.vm_address();
-        let fixups: Vec<crate::format::macho::dyld::dyld_fixup::DyldFixup> = Vec::new();
-        debug_assert!(header.dyld_chained_fixups_commands().is_empty());
-
-        monitor.set_message("Fixing chained pointers...");
-        monitor.initialize(fixups.len() as i64);
-        let len = provider.borrow_mut().length()?;
-        let mut bytes = provider.borrow_mut().read_bytes(0, len as usize)?;
-        for fixup in &fixups {
-            let Some(value) = fixup.value else { continue };
-            let new_bytes = ExtractedMacho::to_bytes(value, fixup.size)?;
-            let start = fixup.offset as usize;
-            let end = start + new_bytes.len();
-            if end <= bytes.len() {
-                bytes[start..end].copy_from_slice(&new_bytes);
+        for name in [segment_names::BRANCH_STUBS, segment_names::BRANCH_GOTS] {
+            if let Some(segment) = header.get_segment(name) {
+                let entry = MachoFileSetEntry::new(&name[2..], 0, true);
+                let index = self.base.fs_index_mut();
+                let file_count = index.get_file_count() as i64;
+                index.store_file(entry.id(), file_count, false, -1, entry.clone());
+                entry_segment_map.insert(entry, vec![segment.clone()]);
             }
         }
 
-        self.header = Some(header);
-        self.fixed_up_provider =
-            Some(Rc::new(RefCell::new(crate::app::util::bin::byte_array_provider::ByteArrayProvider::new(bytes))));
+        monitor.set_message("Getting chained pointers...");
+        let reader = BinaryReader::new(Rc::clone(&provider), header.is_little_endian());
+        let mut fixups = Vec::new();
+        for load_command in header.get_load_commands_of::<DyldChainedFixupsCommand>() {
+            match load_command.get_chained_fixups(&reader, imagebase, None, &log, monitor) {
+                Ok(f) => fixups.extend(f),
+                Err(ChainedFixupError::Io(e)) => return Err(e.into()),
+                Err(ChainedFixupError::Cancelled(c)) => return Err(c.into()),
+            }
+        }
+        monitor.initialize(fixups.len() as i64);
+        monitor.set_message("Fixing chained pointers...");
+        let mut bytes = provider.read_bytes(0, provider.length())?;
+        for fixup in &fixups {
+            // Bound fixups (the only ones without a value) need a symbol table, which is not
+            // supplied here, so `get_chained_fixups` never yields them.
+            let Some(value) = fixup.value else { continue };
+            let new_bytes = extracted_macho::to_bytes(value, fixup.size as usize)?;
+            let start = fixup.offset as usize;
+            let dest = bytes.get_mut(start..start + new_bytes.len()).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidData, format!("fixup at 0x{start:x} out of range"))
+            })?;
+            dest.copy_from_slice(&new_bytes);
+        }
+
+        *self.fixed_up_provider.borrow_mut() = Some(Rc::new(ByteArrayProvider::new(bytes)));
+        *self.header.borrow_mut() = Some(header);
+        *self.entry_segment_map.borrow_mut() = entry_segment_map;
         Ok(())
     }
 
-    /// Mirrors `getByteProvider(GFile, TaskMonitor)`.
-    pub fn get_byte_provider(
-        &mut self,
-        file: &MfsGFile,
-        monitor: &dyn TaskMonitor,
-    ) -> Result<Option<Box<dyn GByteStore>>, GetByteProviderError> {
-        let Some(entry) = self.fs_index.get_metadata(file).map(Rc::clone) else {
-            return Ok(None);
-        };
-        let fixed_up = self.fixed_up_provider.clone().ok_or_else(not_mounted_error)?;
-        let fsrl_path = file.get_fsrl().path().unwrap_or_default().to_owned();
-
-        if entry.is_branch_segment() {
-            let segment_name = format!("__{}", entry.id());
-            let segment = self
-                .header
-                .as_ref()
-                .and_then(|h| h.get_segment(&segment_name))
-                .ok_or_else(|| {
-                    GetByteProviderError::Io(io::Error::new(
-                        io::ErrorKind::NotFound,
-                        format!("Invalid Mach-O header detected: segment {segment_name} not found"),
-                    ))
-                })?;
-            return macho_file_set_extractor::extract_segment(fixed_up, &segment, &fsrl_path, monitor)
-                .map(Some)
-                .map_err(GetByteProviderError::Io);
-        }
-
-        macho_file_set_extractor::extract_file_set_entry(fixed_up, entry.offset(), &fsrl_path, monitor)
-            .map(Some)
-            .map_err(GetByteProviderError::Io)
+    /// Java `getMachoFileSetProvider()`.
+    pub fn get_macho_file_set_provider(&self) -> Option<Rc<dyn ByteProvider>> {
+        self.provider.borrow().clone()
     }
 
-    /// Mirrors `getFileAttributes(GFile, TaskMonitor)`.
-    pub fn get_file_attributes(&self, file: &MfsGFile, _monitor: &dyn TaskMonitor) -> FileAttributes {
+    /// Java `getEntrySegmentMap()`.
+    pub fn get_entry_segment_map(&self) -> Ref<'_, HashMap<MachoFileSetEntry, Vec<SegmentCommand>>> {
+        self.entry_segment_map.borrow()
+    }
+
+    fn owned(f: &dyn GFile<AbstractFsHandle>) -> Box<dyn GFile<AbstractFsHandle>> {
+        Box::new(copy_file(f))
+    }
+}
+
+/// Java wraps a `MachException` thrown while mounting in an `IOException`.
+fn mach_io(e: MachException) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, e)
+}
+
+impl GFileSystem for MachoFileSetFileSystem {
+    type Fs = AbstractFsHandle;
+
+    fn get_name(&self) -> String {
+        self.base.get_name()
+    }
+
+    fn get_type(&self) -> String {
+        Self::FS_TYPE.to_string()
+    }
+
+    fn get_description(&self) -> String {
+        Self::DESCRIPTION.to_string()
+    }
+
+    fn get_fsrl(&self) -> &FsrlRoot {
+        self.base.get_fsrl()
+    }
+
+    /// Java `isClosed()`.
+    fn is_closed(&self) -> bool {
+        self.provider.borrow().is_none()
+    }
+
+    fn get_ref_manager(&self) -> &FileSystemRefManager {
+        self.base.get_ref_manager()
+    }
+
+    fn get_file_count(&self) -> i32 {
+        self.base.get_file_count()
+    }
+
+    fn lookup(&self, path: Option<&str>) -> io::Result<Option<Box<dyn GFile<AbstractFsHandle>>>> {
+        Ok(self.base.lookup(path).map(|f| Self::owned(f)))
+    }
+
+    fn lookup_with_comparator(
+        &self,
+        path: Option<&str>,
+        name_comp: Option<&dyn Fn(&str, &str) -> Ordering>,
+    ) -> io::Result<Option<Box<dyn GFile<AbstractFsHandle>>>> {
+        Ok(self.base.lookup_with_comparator(path, name_comp).map(|f| Self::owned(f)))
+    }
+
+    /// Java `getByteProvider(GFile, TaskMonitor)`: the extracted entry (a packed Mach-O, or a
+    /// branch segment wrapped in a minimal Mach-O), carrying the file's FSRL; `None` if `file`
+    /// has no entry.
+    fn get_byte_provider(
+        &self,
+        file: &dyn GFile<AbstractFsHandle>,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Option<Box<dyn ByteProvider>>, GFileSystemError> {
+        let Some(entry) = self.base.fs_index().get_metadata(file).cloned() else {
+            return Ok(None);
+        };
+        let fixed_up = self
+            .fixed_up_provider
+            .borrow()
+            .clone()
+            .ok_or_else(|| io::Error::other("Mach-O file set filesystem is not mounted"))?;
+        let fsrl = Some(file.get_fsrl().clone());
+        let invalid = || io::Error::other(format!("Invalid Mach-O header detected at 0x{:x}", entry.offset()));
+        let result = if entry.is_branch_segment() {
+            let header = self.header.borrow();
+            let segment = header
+                .as_ref()
+                .and_then(|h| h.get_segment(&format!("__{}", entry.id())))
+                .ok_or_else(invalid)?;
+            macho_file_set_extractor::extract_segment(fixed_up.as_ref(), segment, fsrl, monitor)
+        } else {
+            macho_file_set_extractor::extract_file_set_entry(&fixed_up, entry.offset(), fsrl, monitor)
+        };
+        match result {
+            Ok(p) => Ok(Some(Box::new(p))),
+            Err(macho_file_set_extractor::FileSetExtractError::Mach(_)) => Err(invalid().into()),
+            Err(macho_file_set_extractor::FileSetExtractError::Io(e)) => Err(e.into()),
+            Err(macho_file_set_extractor::FileSetExtractError::Extract(e)) => Err(io::Error::from(e).into()),
+        }
+    }
+
+    fn get_listing(
+        &self,
+        directory: Option<&dyn GFile<AbstractFsHandle>>,
+    ) -> io::Result<Vec<Box<dyn GFile<AbstractFsHandle>>>> {
+        Ok(self.base.get_listing(directory).into_iter().map(|f| Self::owned(f)).collect())
+    }
+
+    /// Java `getFileAttributes(GFile, TaskMonitor)`: the entry's id as its name and path.
+    fn get_file_attributes(&self, file: &dyn GFile<AbstractFsHandle>, _monitor: &dyn TaskMonitor) -> FileAttributes {
         let mut result = FileAttributes::new();
-        if let Some(entry) = self.fs_index.get_metadata(file) {
-            result.add(FileAttributeType::NameAttr, Some(FileAttributeValue::Str(entry.id().to_string())));
-            result.add(FileAttributeType::PathAttr, Some(FileAttributeValue::Str(entry.id().to_string())));
+        if let Some(entry) = self.base.fs_index().get_metadata(file) {
+            result.add(FileAttributeType::NameAttr, Some(entry.id().into()));
+            result.add(FileAttributeType::PathAttr, Some(entry.id().into()));
         }
         result
     }
 
-    /// Gets the open Mach-O file set [`GByteStore`]. This is the original `GByteStore` that
-    /// this file system opened.
-    ///
-    /// Mirrors `getMachoFileSetProvider()`.
-    pub fn get_macho_file_set_provider(&self) -> Option<Rc<RefCell<dyn GByteStore>>> {
-        self.provider.clone()
-    }
-
-    /// The map of file set entry segments.
-    ///
-    /// Mirrors `getEntrySegmentMap()`.
-    pub fn get_entry_segment_map(&self) -> &HashMap<Rc<MachoFileSetEntry>, Vec<SegmentCommand>> {
-        &self.entry_segment_map
-    }
-
-    /// Mirrors the inherited `AbstractFileSystem.isClosed()`.
-    pub fn is_closed(&self) -> bool {
-        self.provider.is_none()
-    }
-
-    /// Mirrors `close()`.
-    pub fn close(&mut self) {
-        // `refManager.onClose()` -- see the `fs_index` field docs for why it is not modeled.
-        // `GByteStore` has no explicit close in this port (see
-        // `crate::file::formats::zip::zip_file_system_factory`'s module docs for the same
-        // substitution elsewhere in this crate); releasing it is just dropping it.
-        self.provider = None;
-        self.fixed_up_provider = None;
-        self.header = None;
-        self.fs_index.clear();
-        self.entry_segment_map.clear();
-    }
-}
-
-fn closed_error() -> io::Error {
-    io::Error::new(io::ErrorKind::Other, "MachoFileSetFileSystem is closed")
-}
-
-fn not_mounted_error() -> io::Error {
-    io::Error::new(io::ErrorKind::Other, "MachoFileSetFileSystem has not been mounted")
-}
-
-/// The failure modes of [`MachoFileSetFileSystem::mount`], mirroring Java's `throws IOException,
-/// CancelledException` -- `MachException` never escapes `mount()` in Java (it is always caught
-/// and rewrapped as `IOException`), so it is collapsed into [`MountError::Io`] here too, rather
-/// than kept as a separate variant.
-#[derive(Debug)]
-pub enum MountError {
-    Io(io::Error),
-    Cancelled(CancelledException),
-}
-
-impl From<io::Error> for MountError {
-    fn from(e: io::Error) -> Self {
-        MountError::Io(e)
-    }
-}
-
-impl From<MachException> for MountError {
-    fn from(e: MachException) -> Self {
-        MountError::Io(io::Error::new(io::ErrorKind::Other, e.to_string()))
-    }
-}
-
-impl From<ChainedFixupError> for MountError {
-    fn from(e: ChainedFixupError) -> Self {
-        match e {
-            ChainedFixupError::Io(e) => MountError::Io(e),
-            ChainedFixupError::Cancelled(e) => MountError::Cancelled(e),
+    /// Java `close()`.
+    fn close(&self) -> io::Result<()> {
+        let _ = self.base.get_ref_manager().on_close(self);
+        if let Some(mut provider) = self.provider.borrow_mut().take() {
+            if let Some(p) = Rc::get_mut(&mut provider) {
+                p.close()?;
+            }
         }
+        self.fixed_up_provider.borrow_mut().take();
+        self.header.borrow_mut().take();
+        self.base.fs_index().clear();
+        self.entry_segment_map.borrow_mut().clear();
+        Ok(())
     }
 }
 
-impl fmt::Display for MountError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MountError::Io(e) => write!(f, "{e}"),
-            MountError::Cancelled(e) => write!(f, "{e}"),
-        }
+impl Deref for MachoFileSetFileSystem {
+    type Target = AbstractFileSystemBase<MachoFileSetEntry>;
+    fn deref(&self) -> &Self::Target {
+        &self.base
     }
 }
 
-impl std::error::Error for MountError {}
-
-/// The failure modes of [`MachoFileSetFileSystem::get_byte_provider`], mirroring Java's `throws
-/// CancelledException, IOException` (collapsed to a single `io::Error`, since the unported
-/// `MachoFileSetExtractor` seam doesn't distinguish cancellation from any other failure yet).
-#[derive(Debug)]
-pub enum GetByteProviderError {
-    Io(io::Error),
-}
-
-impl From<io::Error> for GetByteProviderError {
-    fn from(e: io::Error) -> Self {
-        GetByteProviderError::Io(e)
+impl DerefMut for MachoFileSetFileSystem {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
     }
 }
 
-impl fmt::Display for GetByteProviderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            GetByteProviderError::Io(e) => write!(f, "{e}"),
-        }
+#[cfg(test)]
+pub(crate) mod test_support {
+    use crate::file::formats::ios::extracted_macho::test_support::write_macho;
+    use crate::format::macho::commands::load_command_types::{LC_FILESET_ENTRY, LC_SEGMENT_64};
+    use crate::format::macho::mach_constants::MH_MAGIC_64;
+    use crate::format::macho::mach_header::test_support::Bytes;
+
+    /// A little-endian kernel collection: a container header with `__TEXT` and
+    /// `__BRANCH_STUBS` segments and one `LC_FILESET_ENTRY` ("com.example.kext") whose Mach-O
+    /// lives at 0x1000.
+    pub(crate) fn fileset_image() -> Vec<u8> {
+        let mut b = Bytes::new(true);
+        let id = "com.example.kext";
+        let entry_len = 32 + ((id.len() as u32 + 1 + 7) & !7);
+        b.u32(MH_MAGIC_64).u32(0x0100_000c).u32(0).u32(0xc).u32(3).u32(72 * 2 + entry_len).u32(0).u32(0);
+        b.u32(LC_SEGMENT_64).u32(72).name("__TEXT", 16);
+        b.u64(0xffff_fe00_0000_0000).u64(0x1000).u64(0).u64(0x1000).u32(5).u32(5).u32(0).u32(0);
+        b.u32(LC_SEGMENT_64).u32(72).name("__BRANCH_STUBS", 16);
+        b.u64(0xffff_fe00_0000_4000).u64(0x10).u64(0x4000).u64(0x10).u32(5).u32(5).u32(0).u32(0);
+        b.u32(LC_FILESET_ENTRY).u32(entry_len).u64(0xffff_fe00_0000_1000).u64(0x1000).u32(32).u32(0);
+        b.name(id, (entry_len - 32) as usize);
+        write_macho(&mut b, 0x1000, 0xffff_fe00_0000_1000, 0x3000, "_kext_start");
+        b.pad_to(0x4000);
+        b.raw(b"BRANCHSTUBS_0123");
+        b.buf
     }
 }
-
-impl std::error::Error for GetByteProviderError {}
 
 #[cfg(test)]
 mod tests {
+    use super::test_support::fileset_image;
     use super::*;
+    use crate::filesystem::gfilesystem::factory::file_system_factory_mgr::FileSystemFactoryMgr;
+    use crate::filesystem::gfilesystem::fsrl::Fsrl;
+    use crate::util::task::DummyMonitor;
 
-    struct MemoryByteProvider {
-        bytes: Vec<u8>,
+    struct Fixture {
+        _dir: tempfile::TempDir,
+        svc: FileSystemService,
     }
 
-    impl GByteStore for MemoryByteProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
+    fn fixture() -> Fixture {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = FileSystemService::new(&dir.path().join("fscache"), FileSystemFactoryMgr::new()).unwrap();
+        Fixture { _dir: dir, svc }
     }
 
-    fn fs_root() -> FsrlRoot {
-        Fsrl::from_string("file:///tmp/kernelcache.fileset").unwrap().make_nested(MACHO_FILESET_FSTYPE)
-    }
-
-    fn macho_provider() -> Rc<RefCell<dyn GByteStore>> {
-        // MH_MAGIC_64, big-endian on-disk bytes, padded to a plausible header length.
-        let mut bytes: Vec<u8> = vec![0xfe, 0xed, 0xfa, 0xcf];
-        bytes.resize(64, 0);
-        Rc::new(RefCell::new(MemoryByteProvider { bytes }))
+    fn mount(fx: &Fixture, bytes: Vec<u8>) -> Result<MachoFileSetFileSystem, GFileSystemError> {
+        let container = Fsrl::from_string("file:///kernelcache").unwrap();
+        let provider: Rc<dyn ByteProvider> = Rc::new(ByteArrayProvider::with_fsrl(bytes, Some(container.clone())));
+        let mut fs = MachoFileSetFileSystem::new(container.make_nested(MACHO_FILESET_FSTYPE), provider, &fx.svc);
+        fs.mount(&DummyMonitor)?;
+        Ok(fs)
     }
 
     #[test]
-    fn fstype_matches_java_constant() {
-        assert_eq!(MACHO_FILESET_FSTYPE, "machofileset");
+    fn mounts_entries_and_branch_segments() {
+        let fx = fixture();
+        let fs = mount(&fx, fileset_image()).unwrap();
+        assert_eq!(fs.get_type(), "machofileset");
+        assert_eq!(fs.get_description(), "Mach-O file set");
+        let names: Vec<String> =
+            GFileSystem::get_listing(&fs, None).unwrap().iter().map(|f| f.get_name().to_owned()).collect();
+        assert_eq!(names, ["com.example.kext", "BRANCH_STUBS"]);
+
+        let map = fs.get_entry_segment_map();
+        let kext = map.get(&MachoFileSetEntry::new("com.example.kext", 0x1000, false)).unwrap();
+        let seg_names: Vec<&str> = kext.iter().map(|s| s.get_segment_name()).collect();
+        assert_eq!(seg_names, ["__TEXT", "__LINKEDIT"]);
+        assert!(map.contains_key(&MachoFileSetEntry::new("BRANCH_STUBS", 0, true)));
+        drop(map);
+
+        let file = GFileSystem::lookup(&fs, Some("/com.example.kext")).unwrap().unwrap();
+        let attrs = fs.get_file_attributes(&*file, &DummyMonitor);
+        assert!(attrs.get(FileAttributeType::NameAttr).is_some());
     }
 
     #[test]
-    fn new_filesystem_is_open_with_empty_root() {
-        let fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
+    fn extracts_entry_and_branch_segment() {
+        let fx = fixture();
+        let fs = mount(&fx, fileset_image()).unwrap();
+
+        let kext = GFileSystem::lookup(&fs, Some("/com.example.kext")).unwrap().unwrap();
+        let p = fs.get_byte_provider(&*kext, &DummyMonitor).unwrap().unwrap();
+        let bytes = p.read_bytes(0, p.length()).unwrap();
+        assert!(bytes.ends_with(macho_file_set_extractor::FOOTER_V1));
+        assert_eq!(p.get_fsrl(), Some(kext.get_fsrl()));
+        let mut h = MachHeader::new(Rc::new(ByteArrayProvider::new(bytes))).unwrap();
+        h.parse().unwrap();
+        assert_eq!(h.get_segment("__TEXT").unwrap().get_vm_address() as u64, 0xffff_fe00_0000_1000);
+
+        let stubs = GFileSystem::lookup(&fs, Some("/BRANCH_STUBS")).unwrap().unwrap();
+        let p = fs.get_byte_provider(&*stubs, &DummyMonitor).unwrap().unwrap();
+        let bytes = p.read_bytes(0, p.length()).unwrap();
+        assert_eq!(&bytes[32 + 72..32 + 72 + 16], b"BRANCHSTUBS_0123");
+    }
+
+    #[test]
+    fn missing_text_segment_fails_and_close_releases() {
+        let fx = fixture();
+        let mut image = fileset_image();
+        image[0x28..0x2e].copy_from_slice(b"__NOPE");
+        assert!(mount(&fx, image).is_err());
+
+        let fs = mount(&fx, fileset_image()).unwrap();
         assert!(!fs.is_closed());
-        assert_eq!(fs.get_name(), "kernelcache.fileset");
-        assert_eq!(fs.get_root_dir().get_fsrl().to_string(), "file:///tmp/kernelcache.fileset|machofileset:///");
-        assert_eq!(fs.get_file_count(), 1); // just the synthetic root dir
-    }
-
-    #[test]
-    fn mount_fails_without_text_segment_like_java() {
-        // Mirrors Java's `throw new MachException(SegmentNames.SEG_TEXT + " not found!")`,
-        // wrapped into an IOException -- reachable here because segment parsing is not yet
-        // ported (see the module docs), so `__TEXT` is never found.
-        let mut fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
-        let monitor = crate::util::task::DummyMonitor;
-        let err = fs.mount(&monitor).expect_err("mount should fail without a __TEXT segment");
-        match err {
-            MountError::Io(e) => assert!(e.to_string().contains("__TEXT not found!"), "{e}"),
-            other => panic!("expected Io error, got {other:?}"),
-        }
-    }
-
-    #[test]
-    fn close_resets_to_closed_state() {
-        let mut fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
-        fs.close();
+        GFileSystem::close(&fs).unwrap();
         assert!(fs.is_closed());
-        assert!(fs.get_macho_file_set_provider().is_none());
-        assert_eq!(fs.get_file_count(), 0, "Java's fsIndex.clear() also drops the root dir entry");
-    }
-
-    #[test]
-    fn get_byte_provider_before_mount_reports_not_mounted() {
-        let mut fs = MachoFileSetFileSystem::new(fs_root(), macho_provider());
-        let handle = MfsHandle::new(fs.get_fsrl().clone());
-        let file = GFileImpl::from_fsrl(handle, None, fs.get_fsrl().with_path("/entry"), false, -1);
-        let monitor = crate::util::task::DummyMonitor;
-        let err = fs.get_byte_provider(&file, &monitor);
-        // No metadata is indexed for an unrecognized path, so this reports `Ok(None)` --
-        // mirrors `fsIndex.getMetadata(file) == null` returning `null` in Java.
-        assert!(matches!(err, Ok(None)));
+        assert_eq!(GFileSystem::get_file_count(&fs), 0);
     }
 }

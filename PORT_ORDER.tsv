@@ -3754,7 +3754,7 @@ TODO	struct	2	1	25	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 TODO	struct	2	1	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/xar/XARUtil.java
 TODO	struct	1	1	28	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgClientFileSystemFactory.java
 PARK	struct	0	1	5	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dyldcache/DyldCacheFileSystemFactory.java
-PARK	struct	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/fileset/MachoFileSetFileSystemFactory.java
+DONE	struct	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/fileset/MachoFileSetFileSystemFactory.java
 TODO	struct	1	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/hfs/HFSPlusFileSystemFactory.java
 TODO	struct	1	1	27	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img2/Img2FileSystemFactory.java
 TODO	struct	0	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img2/Img2Util.java

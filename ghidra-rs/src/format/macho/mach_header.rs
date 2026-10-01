@@ -372,6 +372,13 @@ impl MachHeader {
         &self.commands
     }
 
+    /// Mutable access to the parsed load commands, for callers that edit them in place the way
+    /// Java code mutates the objects `getLoadCommands()` hands out (e.g. `ExtractedMacho`
+    /// resizing segments and appending symbols).
+    pub fn get_load_commands_mut(&mut self) -> &mut [LoadCommandKind] {
+        &mut self.commands
+    }
+
     /// Java: `getLoadCommands(Class<T>)`.
     pub fn get_load_commands_of<T: LoadCommandVariant>(&self) -> Vec<&T> {
         self.commands.iter().filter_map(T::from_kind).collect()
