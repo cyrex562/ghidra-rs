@@ -337,7 +337,7 @@ mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
 
-    use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::pe::file_header::FileHeader;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::listing::Listing;
@@ -358,55 +358,6 @@ mod tests {
         }
         fn is64bit(&self) -> bool {
             self.is64
-        }
-    }
-
-    /// Minimal `BinaryReader` used only to construct a fixture [`FileHeader`] below -- this
-    /// module's own tests otherwise never need to read bytes through a `BinaryReader`.
-    struct MinimalReader {
-        bytes: Vec<u8>,
-        current_index: u64,
-    }
-    impl LegacyBinaryReader for MinimalReader {
-        fn length(&self) -> std::io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.bytes.len() as u64
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> std::io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            if end > self.bytes.len() {
-                return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.bytes[start..end].to_vec())
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not needed by these fixtures")
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MinimalReader { bytes: self.bytes.clone(), current_index: new_index })
         }
     }
 
@@ -450,7 +401,7 @@ mod tests {
 
         let mut bytes = 0x014ci16.to_le_bytes().to_vec();
         bytes.extend_from_slice(&[0u8; 18]);
-        let mut reader = MinimalReader { bytes, current_index: 0 };
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         FileHeader::new(&mut reader, 0, &DummyNtForConstruction).unwrap()
     }
 

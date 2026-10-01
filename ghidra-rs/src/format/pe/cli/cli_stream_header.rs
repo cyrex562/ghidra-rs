@@ -16,7 +16,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::seam_stubs::CliAbstractStream;
 use crate::format::pe::pe_markupable::PeMarkupable;
@@ -51,7 +51,7 @@ pub struct CliStreamHeader {
 impl CliStreamHeader {
     /// Port of `CliStreamHeader(CliMetadataRoot, BinaryReader)`, minus the dropped `metadataRoot`
     /// back-reference (see this module's docs).
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let header_start_index = reader.get_pointer_index();
 
         let offset = reader.read_next_int()?;
@@ -143,96 +143,7 @@ impl std::fmt::Display for CliStreamHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     /// Builds the bytes for a `#Blob`-named header: offset, size, then the ASCII name
     /// null-terminated and padded to the next 4-byte boundary.
@@ -254,7 +165,7 @@ mod tests {
         // "#Blob" is 5 chars + 1 null terminator = 6 bytes, rounded up to 8.
         let bytes = header_bytes(0x74, 0x10, "#Blob");
         assert_eq!(bytes.len(), 8 + 8); // 2 DWORDs (8) + 8-byte padded name.
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
 
         let header = CliStreamHeader::new(&mut reader).unwrap();
 
@@ -270,7 +181,7 @@ mod tests {
     fn name_length_rounds_up_to_four_byte_boundary() {
         // "#~" is 2 chars + 1 null terminator = 3 bytes, rounded up to 4.
         let bytes = header_bytes(0, 0, "#~");
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
 
         let header = CliStreamHeader::new(&mut reader).unwrap();
 
@@ -281,7 +192,7 @@ mod tests {
     #[test]
     fn display_matches_get_name() {
         let bytes = header_bytes(1, 2, "#Strings");
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let header = CliStreamHeader::new(&mut reader).unwrap();
         assert_eq!(header.to_string(), "#Strings");
     }
@@ -289,7 +200,7 @@ mod tests {
     #[test]
     fn to_data_type_is_not_yet_buildable() {
         let bytes = header_bytes(0, 0, "#GUID");
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let header = CliStreamHeader::new(&mut reader).unwrap();
         assert!(header.to_data_type().is_err());
     }

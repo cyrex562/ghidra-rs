@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::pe::debug::o_m_f_seg_map_desc::OmfSegMapDesc;
 
 /// Represents the Object Module Format (OMF) Segment Map data structure.
@@ -34,7 +34,7 @@ impl OmfSegMap {
     /// # Errors
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
-    pub fn new(reader: &dyn LegacyBinaryReader, ptr: u64) -> io::Result<Self> {
+    pub fn new(reader: &BinaryReader, ptr: u64) -> io::Result<Self> {
         let mut index = ptr;
 
         let c_seg = reader.read_short(index)?;
@@ -76,110 +76,7 @@ impl OmfSegMap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>, little_endian: bool) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     #[test]
     fn read_structure_with_no_segments() {
@@ -188,7 +85,7 @@ mod tests {
             0x00, 0x00, // cSegLog = 0
         ];
 
-        let reader = MockReader::new(data, true);
+        let reader = BinaryReader::from_bytes(data, true);
         let seg_map = OmfSegMap::new(&reader, 0).expect("failed to read");
 
         assert_eq!(seg_map.segment_descriptor_count(), 0);
@@ -225,7 +122,7 @@ mod tests {
             0x40, 0x00, 0x00, 0x00, // cbSeg = 0x40
         ]);
 
-        let reader = MockReader::new(data, true);
+        let reader = BinaryReader::from_bytes(data, true);
         let seg_map = OmfSegMap::new(&reader, 0).expect("failed to read");
 
         assert_eq!(seg_map.segment_descriptor_count(), 2);
@@ -266,7 +163,7 @@ mod tests {
             0x00, 0x00, 0x00, 0x40, // cbSeg = 0x40
         ]);
 
-        let reader = MockReader::new(data, false);
+        let reader = BinaryReader::from_bytes(data, false);
         let seg_map = OmfSegMap::new(&reader, 0).expect("failed to read");
 
         assert_eq!(seg_map.segment_descriptor_count(), 2);
@@ -292,7 +189,7 @@ mod tests {
             0x20, 0x00, 0x00, 0x00, // cbSeg = 0x20
         ]);
 
-        let reader = MockReader::new(data, true);
+        let reader = BinaryReader::from_bytes(data, true);
         let seg_map = OmfSegMap::new(&reader, 4).expect("failed to read");
 
         assert_eq!(seg_map.segment_descriptor_count(), 1);
@@ -316,7 +213,7 @@ mod tests {
             0x20, 0x00, 0x00, 0x00, // cbSeg = 0x20
         ];
 
-        let reader = MockReader::new(data, true);
+        let reader = BinaryReader::from_bytes(data, true);
         let seg_map1 = OmfSegMap::new(&reader, 0).expect("failed to read");
         let seg_map2 = seg_map1.clone();
 

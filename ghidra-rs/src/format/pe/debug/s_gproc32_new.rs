@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 use super::debug_symbol::{DebugSymbol, DebugSymbolBase};
 
@@ -35,7 +35,7 @@ impl SGproc32New {
     ///
     /// Returns an `io::Result::Err` if reading from the reader fails.
     pub fn new(
-        reader: &dyn LegacyBinaryReader,
+        reader: &BinaryReader,
         length: i16,
         symbol_type: i16,
         ptr: u64,
@@ -156,110 +156,7 @@ impl DebugSymbol for SGproc32New {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>, little_endian: bool) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.current_index;
-            self.current_index = index;
-            prev
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     fn build_data() -> Vec<u8> {
         let mut data = Vec::new();
@@ -279,7 +176,7 @@ mod tests {
 
     #[test]
     fn new_reads_fields_correctly() {
-        let reader = MockReader::new(build_data(), true);
+        let reader = BinaryReader::from_bytes(build_data(), true);
         let sym = SGproc32New::new(&reader, 40, 0x0022, 0).unwrap();
 
         assert_eq!(sym.length(), 40);
@@ -302,7 +199,7 @@ mod tests {
         let mut data = build_data();
         data.extend_from_slice(b"extra"); // extra data that shouldn't be read
 
-        let reader = MockReader::new(data, true);
+        let reader = BinaryReader::from_bytes(data, true);
         let sym = SGproc32New::new(&reader, 40, 0x0022, 0).unwrap();
 
         assert_eq!(sym.name(), "main");
@@ -310,7 +207,7 @@ mod tests {
 
     #[test]
     fn trait_object_dispatch() {
-        let reader = MockReader::new(build_data(), true);
+        let reader = BinaryReader::from_bytes(build_data(), true);
         let sym: Box<dyn DebugSymbol> =
             Box::new(SGproc32New::new(&reader, 40, 0x0022, 0).unwrap());
 
@@ -323,7 +220,7 @@ mod tests {
 
     #[test]
     fn clone_equality() {
-        let reader = MockReader::new(build_data(), true);
+        let reader = BinaryReader::from_bytes(build_data(), true);
         let sym = SGproc32New::new(&reader, 40, 0x0022, 0).unwrap();
         let cloned = sym.clone();
 
@@ -345,7 +242,7 @@ mod tests {
         data.extend_from_slice(&0i16.to_le_bytes());
         data.push(0);
 
-        let reader = MockReader::new(data, true);
+        let reader = BinaryReader::from_bytes(data, true);
         let sym = SGproc32New::new(&reader, 10, 0, 0).unwrap();
 
         assert_eq!(sym.offset(), -1);

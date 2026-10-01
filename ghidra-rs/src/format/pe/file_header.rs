@@ -47,7 +47,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::debug::debug_coff_symbol::DebugCOFFSymbol;
 use crate::format::pe::machine_constants::{
@@ -121,7 +121,7 @@ pub struct FileHeader {
 impl FileHeader {
     /// Port of `FileHeader(BinaryReader, int, NTHeader)` + `parse()`. See this module's docs for
     /// why `process_symbols` is called here rather than externally by `NTHeader`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, start_index: i64, nt_header: &dyn NTHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, start_index: i64, nt_header: &dyn NTHeader) -> io::Result<Self> {
         reader.set_pointer_index(start_index as u64);
 
         let machine = reader.read_next_short()?;
@@ -266,7 +266,7 @@ impl FileHeader {
     }
 
     /// Port of `FileHeader.processSymbols()`.
-    fn process_symbols(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<()> {
+    fn process_symbols(&mut self, nt_header: &dyn NTHeader, reader: &mut BinaryReader) -> io::Result<()> {
         if nt_header.is_rva_resoltion_section_aligned() {
             // Symbol table offsets are only valid when parsing from file, not memory.
             return Ok(());
@@ -331,7 +331,7 @@ impl FileHeader {
     }
 
     /// Port of `FileHeader.getStringTableOffset()`.
-    fn get_string_table_offset(&self, nt_header: &dyn NTHeader, reader: &dyn LegacyBinaryReader) -> io::Result<i64> {
+    fn get_string_table_offset(&self, nt_header: &dyn NTHeader, reader: &BinaryReader) -> io::Result<i64> {
         if nt_header.is_rva_resoltion_section_aligned() {
             // String table offsets are only valid when parsing from file, not memory.
             return Ok(-1);
@@ -367,96 +367,7 @@ impl StructConverter for FileHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    pub(crate) struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        pub(crate) fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     pub(crate) struct FakeNtHeader {
         pub(crate) rva_aligned: bool,
@@ -510,7 +421,7 @@ mod tests {
     #[test]
     fn parses_fixed_20_byte_header() {
         let bytes = header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 3, 0xe0, IMAGE_FILE_EXECUTABLE_IMAGE);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FakeNtHeader { rva_aligned: true };
 
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
@@ -526,17 +437,17 @@ mod tests {
 
     #[test]
     fn is_x86_and_is_arm_classify_known_machines() {
-        let mut reader = FixtureReader::new(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0));
+        let mut reader = BinaryReader::from_bytes(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0), true);
         let nt_header = FakeNtHeader { rva_aligned: true };
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
         assert!(fh.is_x86());
         assert!(!fh.is_arm());
 
-        let mut reader = FixtureReader::new(header_bytes(IMAGE_FILE_MACHINE_AMD64 as i16, 0, 0, 0));
+        let mut reader = BinaryReader::from_bytes(header_bytes(IMAGE_FILE_MACHINE_AMD64 as i16, 0, 0, 0), true);
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
         assert!(fh.is_x86());
 
-        let mut reader = FixtureReader::new(header_bytes(IMAGE_FILE_MACHINE_ARM64 as i16, 0, 0, 0));
+        let mut reader = BinaryReader::from_bytes(header_bytes(IMAGE_FILE_MACHINE_ARM64 as i16, 0, 0, 0), true);
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
         assert!(fh.is_arm());
         assert!(!fh.is_x86());
@@ -544,7 +455,7 @@ mod tests {
 
     #[test]
     fn get_machine_name_delegates_to_machine_name_module() {
-        let mut reader = FixtureReader::new(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0));
+        let mut reader = BinaryReader::from_bytes(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0), true);
         let nt_header = FakeNtHeader { rva_aligned: true };
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
         assert_eq!(fh.get_machine_name(), machine_name::get_name_i16(IMAGE_FILE_MACHINE_I386 as i16));
@@ -557,7 +468,7 @@ mod tests {
         let mut bytes = header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0);
         bytes[8..12].copy_from_slice(&100i32.to_le_bytes()); // PointerToSymbolTable
         bytes[12..16].copy_from_slice(&1i32.to_le_bytes()); // NumberOfSymbols
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FakeNtHeader { rva_aligned: true };
 
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
@@ -569,7 +480,7 @@ mod tests {
         let mut bytes = header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0);
         bytes[8..12].copy_from_slice(&LORDPE_SYMBOL_TABLE.to_le_bytes());
         bytes[12..16].copy_from_slice(&LORDPE_NUMBER_OF_SYMBOLS.to_le_bytes());
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FakeNtHeader { rva_aligned: true };
 
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
@@ -578,7 +489,7 @@ mod tests {
 
     #[test]
     fn to_data_type_is_not_yet_buildable() {
-        let mut reader = FixtureReader::new(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0));
+        let mut reader = BinaryReader::from_bytes(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0), true);
         let nt_header = FakeNtHeader { rva_aligned: true };
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
         assert!(fh.to_data_type().is_err());
@@ -586,7 +497,7 @@ mod tests {
 
     #[test]
     fn get_section_header_is_always_none() {
-        let mut reader = FixtureReader::new(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0));
+        let mut reader = BinaryReader::from_bytes(header_bytes(IMAGE_FILE_MACHINE_I386 as i16, 0, 0, 0), true);
         let nt_header = FakeNtHeader { rva_aligned: true };
         let fh = FileHeader::new(&mut reader, 0, &nt_header).unwrap();
         assert!(fh.get_section_header(0).is_none());

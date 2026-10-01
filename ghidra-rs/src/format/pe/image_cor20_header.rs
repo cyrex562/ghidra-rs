@@ -52,7 +52,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_metadata_directory::CliMetadataDirectory;
 use crate::format::pe::default_data_directory::DefaultDataDirectory;
@@ -91,7 +91,7 @@ pub struct ImageCor20Header {
 impl ImageCor20Header {
     /// Port of `ImageCor20Header(BinaryReader, long, NTHeader)`.
     pub fn new(
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         index: u64,
         nt_header: &dyn NTHeader,
     ) -> io::Result<Self> {
@@ -134,7 +134,7 @@ impl ImageCor20Header {
     /// (rather than stored on `self`, as Java's `CliMetadataDirectory` does) for the same reason
     /// documented on `CliMetadataDirectory::parse` -- they are only needed transiently, to
     /// re-seek to the metadata root's RVA.
-    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<bool> {
+    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut BinaryReader) -> io::Result<bool> {
         let mut success = true;
         success &= self.metadata.parse(nt_header, reader)?;
         success &= self.resources.parse();
@@ -341,96 +341,7 @@ impl StructConverter for ImageCor20Flags {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     struct FakeNtHeader {
         rva_ok: bool,
@@ -497,7 +408,7 @@ mod tests {
     #[test]
     fn constructor_reads_fixed_fields_and_restores_pointer() {
         let bytes = cor20_header_bytes(0x48, 2, 5, 0, 0);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         reader.set_pointer_index(0x99);
         let nt_header = FakeNtHeader { rva_ok: true };
 
@@ -515,7 +426,7 @@ mod tests {
     #[test]
     fn parse_aggregates_directory_results() {
         let bytes = cor20_header_bytes(0x48, 2, 5, 0, 0);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FakeNtHeader { rva_ok: true };
 
         let mut header = ImageCor20Header::new(&mut reader, 0, &nt_header).unwrap();
@@ -527,7 +438,7 @@ mod tests {
     #[test]
     fn markup_is_a_no_op_when_metadata_did_not_parse() {
         let bytes = cor20_header_bytes(0x48, 2, 5, 0, 1);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FakeNtHeader { rva_ok: true };
         let header = ImageCor20Header::new(&mut reader, 0, &nt_header).unwrap();
         assert!(!header.get_metadata().has_parsed_correctly());
@@ -561,7 +472,7 @@ mod tests {
     #[test]
     fn to_data_type_is_not_yet_buildable() {
         let bytes = cor20_header_bytes(0x48, 2, 5, 0, 0);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FakeNtHeader { rva_ok: true };
         let header = ImageCor20Header::new(&mut reader, 0, &nt_header).unwrap();
         assert!(header.to_data_type().is_err());

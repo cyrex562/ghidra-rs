@@ -19,7 +19,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_stream_header::CliStreamHeader;
 use crate::format::pe::pe_markupable::PeMarkupable;
@@ -61,7 +61,7 @@ pub struct CliMetadataRoot {
 
 impl CliMetadataRoot {
     /// Port of `CliMetadataRoot(BinaryReader, int)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, rva: i32) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, rva: i32) -> io::Result<Self> {
         let file_offset = reader.get_pointer_index() as i64;
 
         let signature = reader.read_next_int()?;
@@ -236,99 +236,10 @@ impl StructConverter for CliMetadataRoot {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::pe::file_header::FileHeader;
     use crate::format::seam_stubs::OptionalHeader;
     use crate::util::task::DummyMonitor;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     fn stream_header_bytes(offset: i32, size: i32, name: &str) -> Vec<u8> {
         let mut b = Vec::new();
@@ -367,7 +278,7 @@ mod tests {
     fn parses_header_fields_and_stream_headers() {
         let headers = vec![stream_header_bytes(0x6c, 0x1c, "#~"), stream_header_bytes(0x88, 0x40, "#Strings")];
         let bytes = root_bytes("v4.0.30319", &headers);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
 
         let root = CliMetadataRoot::new(&mut reader, 0x2050).unwrap();
 
@@ -392,7 +303,7 @@ mod tests {
     #[test]
     fn parse_reports_success_even_without_streams_subpackage() {
         let bytes = root_bytes("", &[]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let mut root = CliMetadataRoot::new(&mut reader, 0).unwrap();
         assert!(root.parse().unwrap());
         assert!(root.get_stream_header("#~").is_none());
@@ -402,7 +313,7 @@ mod tests {
     fn get_blob_offset_at_index_uses_blob_header_offset() {
         let headers = vec![stream_header_bytes(0x100, 0x40, "#Blob")];
         let bytes = root_bytes("", &headers);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let root = CliMetadataRoot::new(&mut reader, 0).unwrap();
 
         let offset = root.get_blob_offset_at_index(0x10);
@@ -412,7 +323,7 @@ mod tests {
     #[test]
     fn get_blob_offset_at_index_is_negative_one_without_blob_stream() {
         let bytes = root_bytes("", &[]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let root = CliMetadataRoot::new(&mut reader, 0).unwrap();
         assert_eq!(root.get_blob_offset_at_index(5), -1);
     }
@@ -420,7 +331,7 @@ mod tests {
     #[test]
     fn to_data_type_is_not_yet_buildable() {
         let bytes = root_bytes("", &[]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let root = CliMetadataRoot::new(&mut reader, 0).unwrap();
         assert!(root.to_data_type().is_err());
     }
@@ -475,7 +386,7 @@ mod tests {
 
         let mut bytes = 0x014ci16.to_le_bytes().to_vec();
         bytes.extend_from_slice(&[0u8; 18]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         FileHeader::new(&mut reader, 0, &DummyNtForConstruction).unwrap()
     }
 
@@ -539,7 +450,7 @@ mod tests {
             stream_header_bytes(0x30, 0x8, "#GUID"),
         ];
         let bytes = root_bytes("", &headers);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let root = CliMetadataRoot::new(&mut reader, 0x1000).unwrap();
 
         let program = NoImageBaseProgram;

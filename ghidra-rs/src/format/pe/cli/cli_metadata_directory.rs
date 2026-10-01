@@ -9,7 +9,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::cli::cli_metadata_root::CliMetadataRoot;
 use crate::format::pe::pe_markupable::PeMarkupable;
@@ -35,7 +35,7 @@ impl CliMetadataDirectory {
     /// subclasses, this constructor does NOT run `processDataDirectory` -- Java's constructor
     /// reads `virtualAddress`/`size` directly and defers everything else (including RVA
     /// validation) to `parse()`.
-    pub fn new(_nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(_nt_header: &dyn NTHeader, reader: &mut BinaryReader) -> io::Result<Self> {
         let virtual_address = reader.read_next_int()?;
         let size = reader.read_next_int()?;
         Ok(CliMetadataDirectory { virtual_address, size, has_parsed: false, metadata_root: None })
@@ -62,7 +62,7 @@ impl CliMetadataDirectory {
     }
 
     /// Port of `CliMetadataDirectory.parse()`.
-    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<bool> {
+    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut BinaryReader) -> io::Result<bool> {
         let ptr = self.get_pointer(nt_header);
         if ptr < 0 || self.size == 0 {
             return Ok(false);
@@ -148,96 +148,7 @@ impl StructConverter for CliMetadataDirectory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     struct FakeNtHeader {
         rva_ok: bool,
@@ -283,7 +194,7 @@ mod tests {
     #[test]
     fn constructor_reads_virtual_address_and_size() {
         // virtualAddress=0x2000, size=0x48
-        let mut reader = FixtureReader::new(vec![0x00, 0x20, 0x00, 0x00, 0x48, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x20, 0x00, 0x00, 0x48, 0x00, 0x00, 0x00], true);
         let dir = CliMetadataDirectory::new(&FakeNtHeader { rva_ok: true }, &mut reader).unwrap();
         assert_eq!(dir.get_virtual_address(), 0x2000);
         assert_eq!(dir.get_size(), 0x48);
@@ -294,10 +205,10 @@ mod tests {
 
     #[test]
     fn parse_fails_when_pointer_invalid() {
-        let mut reader = FixtureReader::new(vec![0x00, 0x20, 0x00, 0x00, 0x48, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x20, 0x00, 0x00, 0x48, 0x00, 0x00, 0x00], true);
         let mut dir = CliMetadataDirectory::new(&FakeNtHeader { rva_ok: true }, &mut reader).unwrap();
         let nt = FakeNtHeader { rva_ok: false };
-        let mut reader2 = FixtureReader::new(vec![0u8; 0x30]);
+        let mut reader2 = BinaryReader::from_bytes(vec![0u8; 0x30], true);
         assert!(!dir.parse(&nt, &mut reader2).unwrap());
         assert!(dir.get_metadata_root().is_none());
     }
@@ -305,10 +216,10 @@ mod tests {
     #[test]
     fn parse_fails_when_size_zero() {
         // virtualAddress=0x10, size=0
-        let mut reader = FixtureReader::new(vec![0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], true);
         let mut dir = CliMetadataDirectory::new(&FakeNtHeader { rva_ok: true }, &mut reader).unwrap();
         let nt = FakeNtHeader { rva_ok: true };
-        let mut reader2 = FixtureReader::new(vec![0u8; 0x30]);
+        let mut reader2 = BinaryReader::from_bytes(vec![0u8; 0x30], true);
         assert!(!dir.parse(&nt, &mut reader2).unwrap());
     }
 

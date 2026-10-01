@@ -5,7 +5,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntries;
 use crate::format::pe::load_config_directory::LoadConfigDirectory;
 use crate::format::pe::pe_markupable::PeMarkupable;
@@ -39,7 +39,7 @@ impl ExceptionDataDirectory {
     /// runs `DataDirectory.processDataDirectory`.
     pub fn new(
         nt_header: &dyn NTHeader,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
         lc_dir: Option<LoadConfigDirectory>,
     ) -> io::Result<Self> {
         let mut directory = ExceptionDataDirectory {
@@ -57,7 +57,7 @@ impl ExceptionDataDirectory {
     fn process_data_directory(
         &mut self,
         nt_header: &dyn NTHeader,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
     ) -> io::Result<()> {
         self.virtual_address = reader.read_next_int()?;
         self.size = reader.read_next_int()?;
@@ -108,7 +108,7 @@ impl ExceptionDataDirectory {
     /// function-entries table (logging it and falling through to `return false`) rather than
     /// propagating it; that is mirrored here by folding the `Result` into the returned `bool`
     /// instead of `?`-ing it out of this function.
-    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<bool> {
+    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &mut BinaryReader) -> io::Result<bool> {
         let ptr = self.get_pointer(nt_header);
         if ptr < 0 {
             return Ok(false);
@@ -260,101 +260,12 @@ impl PeMarkupable for ExceptionDataDirectory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::pe::file_header::FileHeader;
     use crate::format::seam_stubs::OptionalHeader;
     use crate::format::pe::machine_constants::{
         IMAGE_FILE_MACHINE_AMD64, IMAGE_FILE_MACHINE_ARM64, IMAGE_FILE_MACHINE_I386,
     };
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     /// Builds a real [`FileHeader`] for test fixtures with the given machine (everything else
     /// zeroed), parsed via a throwaway `NTHeader` that skips symbol table parsing.
@@ -395,7 +306,7 @@ mod tests {
 
         let mut bytes = machine.to_le_bytes().to_vec();
         bytes.extend_from_slice(&[0u8; 18]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         FileHeader::new(&mut reader, 0, &DummyNtForConstruction).unwrap()
     }
 
@@ -464,7 +375,7 @@ mod tests {
 
     #[test]
     fn directory_name_matches_java_constant() {
-        let mut reader = FixtureReader::new(vec![0u8; 8]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8; 8], true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
         assert_eq!(directory.get_directory_name(), "IMAGE_DIRECTORY_ENTRY_EXCEPTION");
@@ -473,7 +384,7 @@ mod tests {
     #[test]
     fn zero_virtual_address_skips_parsing() {
         let bytes = directory_bytes(0, 0);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
@@ -486,7 +397,7 @@ mod tests {
     #[test]
     fn invalid_rva_skips_parsing() {
         let bytes = directory_bytes(8, 0x18);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader::new(false, IMAGE_FILE_MACHINE_I386 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
@@ -498,7 +409,7 @@ mod tests {
     #[test]
     fn x86_machine_picks_x86_function_entries() {
         let bytes = directory_bytes(8, 0x18);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_AMD64 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
@@ -510,7 +421,7 @@ mod tests {
     #[test]
     fn arm_machine_picks_arm_function_entries() {
         let bytes = directory_bytes(8, 0x18);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_ARM64 as i16);
 
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
@@ -522,7 +433,7 @@ mod tests {
     #[test]
     fn chpe_load_config_forces_arm_function_entries_even_for_x86_machine() {
         let bytes = directory_bytes(8, 0x18);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_AMD64 as i16);
         let lc_dir = LoadConfigDirectory { chpe_metadata_pointer: 0x2000, ..Default::default() };
 
@@ -539,7 +450,7 @@ mod tests {
     #[test]
     fn unsupported_architecture_leaves_function_entries_none() {
         let bytes = directory_bytes(8, 0x18);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         // Neither x86 nor ARM: the `MIPS16` machine constant, which Java's `isX86`/`isArm`
         // switches both fall through on.
         let nt_header = FixtureNtHeader::new(true, 0x0266);
@@ -553,7 +464,7 @@ mod tests {
     #[test]
     fn get_pointer_matches_nt_header_rva_to_pointer() {
         let bytes = directory_bytes(8, 0x18);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
@@ -562,7 +473,7 @@ mod tests {
 
     #[test]
     fn get_pointer_is_negative_one_when_virtual_address_is_zero() {
-        let mut reader = FixtureReader::new(vec![0u8; 8]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8; 8], true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 
@@ -572,7 +483,7 @@ mod tests {
     #[test]
     fn display_matches_java_to_string_format() {
         let bytes = directory_bytes(8, 0x18);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader::new(true, IMAGE_FILE_MACHINE_I386 as i16);
         let directory = ExceptionDataDirectory::new(&nt_header, &mut reader, None).unwrap();
 

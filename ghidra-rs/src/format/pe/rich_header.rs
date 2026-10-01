@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::rich::comp_id::CompId;
 use crate::format::pe::rich::RichHeaderRecord;
@@ -28,7 +28,7 @@ impl RichHeader {
     /// directly after the DOS header.
     ///
     /// Port of `RichHeader(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> Self {
+    pub fn new(reader: &mut BinaryReader) -> Self {
         let curr_pos = reader.get_pointer_index();
 
         let table = RichTable::new_from_reader(&*reader);
@@ -103,99 +103,11 @@ impl Writeable for RichHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> std::io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
-            self.0.get(index as usize).copied().ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof")
-            })
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> std::io::Result<()> {
-            Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> std::io::Result<()> {
-            Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        big_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                big_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> std::io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            !self.big_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.big_endian = !is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> std::io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                big_endian: self.big_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     /// Builds the bytes of a minimal, valid Rich header: `DanS` XORed with `mask`, three mask
     /// padding dwords, one record (compid/count XORed with mask), then the mask and the `Rich`
-    /// signature. Big-endian to match `FixtureReader`'s default endianness.
+    /// signature. Big-endian to match `BinaryReader`'s default endianness.
     fn build_rich_header_bytes(mask: i32, compid: i32, count: i32) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&(RichHeader::IMAGE_DANS_SIGNATURE ^ mask).to_be_bytes());
@@ -214,7 +126,7 @@ mod tests {
         let mask = 0x1234_5678;
         let bytes = build_rich_header_bytes(mask, 0x0009_0042, 3);
         let len = bytes.len() as u64;
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, false);
 
         let header = RichHeader::new(&mut reader);
 
@@ -229,7 +141,7 @@ mod tests {
 
     #[test]
     fn missing_rich_header_resets_pointer_and_reports_defaults() {
-        let mut reader = FixtureReader::new(vec![0u8; 512]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8; 512], false);
         reader.set_pointer_index(4);
 
         let header = RichHeader::new(&mut reader);
@@ -248,7 +160,7 @@ mod tests {
         let compid = 0x0009_0042;
         let count = 3;
         let bytes = build_rich_header_bytes(mask, compid, count);
-        let mut reader = FixtureReader::new(bytes.clone());
+        let mut reader = BinaryReader::from_bytes(bytes.clone(), false);
         let header = RichHeader::new(&mut reader);
 
         struct BigEndianConverter;
@@ -315,7 +227,7 @@ mod tests {
 
     #[test]
     fn to_data_type_errs_when_no_rich_header_found() {
-        let mut reader = FixtureReader::new(vec![0u8; 512]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8; 512], false);
         let header = RichHeader::new(&mut reader);
 
         assert!(header.to_data_type().is_err());

@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 
 use super::data_sym32::DataSym32;
 use super::data_sym32_new::DataSym32New;
@@ -41,7 +41,7 @@ use super::unknown_symbol::UnknownSymbol;
 /// `Ok(None)` if the symbol is invalid (length == 0 or type < 0).
 /// `Err` if reading from the reader fails.
 pub fn select_symbol(
-    reader: &dyn LegacyBinaryReader,
+    reader: &BinaryReader,
     ptr: u64,
 ) -> io::Result<Option<Box<dyn DebugSymbol>>> {
     let length = reader.read_short(ptr)?;
@@ -104,107 +104,10 @@ pub fn select_symbol(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            Ok(self.0[index as usize])
-        }
-
-        fn read_bytes(&mut self, index: u64, count: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = (index as usize) + count;
-            if end <= self.0.len() {
-                Ok(self.0[start..end].to_vec())
-            } else {
-                Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "Index out of bounds",
-                ))
-            }
-        }
-
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal little-endian [`BinaryReader`] over a `VecProvider`, mirroring the mock reader
-    /// used in `binary_reader.rs`'s own tests.
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     #[test]
     fn select_symbol_with_zero_length_returns_none() {
-        let reader = MockReader::new(vec![0x00, 0x00, 0x07, 0x02]);
+        let reader = BinaryReader::from_bytes(vec![0x00, 0x00, 0x07, 0x02], true);
 
         let result = select_symbol(&reader, 0);
         assert!(result.is_ok());
@@ -213,7 +116,7 @@ mod tests {
 
     #[test]
     fn select_symbol_with_negative_type_returns_none() {
-        let reader = MockReader::new(vec![0x10, 0x00, 0xFF, 0xFF]);
+        let reader = BinaryReader::from_bytes(vec![0x10, 0x00, 0xFF, 0xFF], true);
 
         let result = select_symbol(&reader, 0);
         assert!(result.is_ok());
@@ -222,7 +125,7 @@ mod tests {
 
     #[test]
     fn select_symbol_s_block32() {
-        let reader = MockReader::new(vec![0x08, 0x00, 0x07, 0x02]);
+        let reader = BinaryReader::from_bytes(vec![0x08, 0x00, 0x07, 0x02], true);
 
         let result = select_symbol(&reader, 0);
         assert!(result.is_ok());
@@ -235,7 +138,7 @@ mod tests {
 
     #[test]
     fn select_symbol_s_compile() {
-        let reader = MockReader::new(vec![0x04, 0x00, 0x01, 0x00]);
+        let reader = BinaryReader::from_bytes(vec![0x04, 0x00, 0x01, 0x00], true);
 
         let result = select_symbol(&reader, 0);
         assert!(result.is_ok());
@@ -253,7 +156,7 @@ mod tests {
         // as 0xCDAB would be rejected as None -- see select_symbol_with_negative_type_returns_none.)
         let mut data = vec![0x10, 0x00, 0x00, 0x70];
         data.resize(18, 0); // UnknownSymbol reads `length` (16) bytes from ptr=2, so needs 2+16 bytes
-        let reader = MockReader::new(data);
+        let reader = BinaryReader::from_bytes(data, true);
 
         let result = select_symbol(&reader, 0);
         assert!(result.is_ok());
@@ -266,7 +169,7 @@ mod tests {
 
     #[test]
     fn select_symbol_with_offset() {
-        let reader = MockReader::new(vec![0x00, 0x00, 0x04, 0x00, 0x08, 0x00, 0x07, 0x02]);
+        let reader = BinaryReader::from_bytes(vec![0x00, 0x00, 0x04, 0x00, 0x08, 0x00, 0x07, 0x02], true);
 
         let result = select_symbol(&reader, 4);
         assert!(result.is_ok());

@@ -4,7 +4,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::ghidra_random_access_file::GhidraRandomAccessFile;
 use crate::format::pe::pe_markupable::PeMarkupable;
 use crate::app::util::importer::message_log::MessageLog;
@@ -38,7 +38,7 @@ pub struct DebugDataDirectory {
 impl DebugDataDirectory {
     /// Port of `DebugDataDirectory(NTHeader, BinaryReader)`, which also runs
     /// `DataDirectory.processDataDirectory`.
-    pub fn new(nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(nt_header: &dyn NTHeader, reader: &mut BinaryReader) -> io::Result<Self> {
         let mut directory =
             DebugDataDirectory { virtual_address: 0, size: 0, has_parsed: false, parser: None };
         directory.process_data_directory(nt_header, reader)?;
@@ -49,7 +49,7 @@ impl DebugDataDirectory {
     fn process_data_directory(
         &mut self,
         nt_header: &dyn NTHeader,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
     ) -> io::Result<()> {
         self.virtual_address = reader.read_next_int()?;
         self.size = reader.read_next_int()?;
@@ -95,7 +95,7 @@ impl DebugDataDirectory {
     /// Port of `DebugDataDirectory.parse()`. Java reads `reader`/`ntHeader`/`size` from fields
     /// inherited off `DataDirectory`; this port threads them through explicitly since they are
     /// only needed transiently, during construction.
-    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &dyn LegacyBinaryReader) -> io::Result<bool> {
+    pub fn parse(&mut self, nt_header: &dyn NTHeader, reader: &BinaryReader) -> io::Result<bool> {
         let ptr = self.get_pointer(nt_header);
         if ptr < 0 {
             return Ok(false);
@@ -388,96 +388,7 @@ impl PeMarkupable for DebugDataDirectory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     struct FixtureOptionalHeader {
         size_of_image: i64,
@@ -554,7 +465,7 @@ mod tests {
 
     #[test]
     fn directory_name_matches_java_constant() {
-        let mut reader = FixtureReader::new(vec![0u8; 8]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8; 8], true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
         assert_eq!(directory.get_directory_name(), "IMAGE_DIRECTORY_ENTRY_DEBUG");
@@ -563,7 +474,7 @@ mod tests {
     #[test]
     fn zero_virtual_address_skips_parsing() {
         let bytes = directory_bytes(0, &[]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
 
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
@@ -576,7 +487,7 @@ mod tests {
     #[test]
     fn invalid_rva_skips_parsing() {
         let bytes = directory_bytes(8, &[(DebugDirectoryParser::IMAGE_DEBUG_TYPE_UNKNOWN, 0)]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: false, size_of_image: 0x1000 };
 
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
@@ -597,7 +508,7 @@ mod tests {
                 (DebugDirectoryParser::IMAGE_DEBUG_TYPE_BORLAND, 0),
             ],
         );
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
 
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
@@ -616,7 +527,7 @@ mod tests {
                 (DebugDirectoryParser::IMAGE_DEBUG_TYPE_BORLAND, 4),
             ],
         );
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
 
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
@@ -634,7 +545,7 @@ mod tests {
     #[test]
     fn get_pointer_matches_nt_header_rva_to_pointer() {
         let bytes = directory_bytes(8, &[]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
 
@@ -643,7 +554,7 @@ mod tests {
 
     #[test]
     fn get_pointer_is_negative_one_when_virtual_address_is_zero() {
-        let mut reader = FixtureReader::new(vec![0u8; 8]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8; 8], true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
 
@@ -653,7 +564,7 @@ mod tests {
     #[test]
     fn display_matches_java_to_string_format() {
         let bytes = directory_bytes(8, &[]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
 
@@ -663,7 +574,7 @@ mod tests {
     #[test]
     fn write_bytes_is_noop_when_number_of_rva_and_sizes_too_small() {
         let bytes = directory_bytes(8, &[(DebugDirectoryParser::IMAGE_DEBUG_TYPE_UNKNOWN, 4)]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
         let directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
 
@@ -679,7 +590,7 @@ mod tests {
     #[test]
     fn update_pointers_skips_zero_size_entries() {
         let bytes = directory_bytes(8, &[(DebugDirectoryParser::IMAGE_DEBUG_TYPE_UNKNOWN, 0)]);
-        let mut reader = FixtureReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         let nt_header = FixtureNtHeader { rva_ok: true, size_of_image: 0x1000 };
         let mut directory = DebugDataDirectory::new(&nt_header, &mut reader).unwrap();
 

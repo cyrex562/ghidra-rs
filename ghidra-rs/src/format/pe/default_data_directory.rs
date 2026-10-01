@@ -10,7 +10,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::pe_markupable::PeMarkupable;
 use crate::app::util::importer::message_log::MessageLog;
@@ -33,7 +33,7 @@ pub struct DefaultDataDirectory {
 impl DefaultDataDirectory {
     /// Port of `DefaultDataDirectory(NTHeader, BinaryReader)`, which just runs
     /// `DataDirectory.processDataDirectory`.
-    pub fn new(nt_header: &dyn NTHeader, reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(nt_header: &dyn NTHeader, reader: &mut BinaryReader) -> io::Result<Self> {
         let mut directory = DefaultDataDirectory { virtual_address: 0, size: 0, has_parsed: false };
         directory.process_data_directory(nt_header, reader)?;
         Ok(directory)
@@ -43,7 +43,7 @@ impl DefaultDataDirectory {
     fn process_data_directory(
         &mut self,
         nt_header: &dyn NTHeader,
-        reader: &mut dyn LegacyBinaryReader,
+        reader: &mut BinaryReader,
     ) -> io::Result<()> {
         self.virtual_address = reader.read_next_int()?;
         self.size = reader.read_next_int()?;
@@ -138,96 +138,7 @@ impl StructConverter for DefaultDataDirectory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     struct FakeNtHeader;
     impl NTHeader for FakeNtHeader {
@@ -265,7 +176,7 @@ mod tests {
 
     #[test]
     fn parses_zero_directory_as_absent() {
-        let mut reader = FixtureReader::new(vec![0, 0, 0, 0, 0, 0, 0, 0]);
+        let mut reader = BinaryReader::from_bytes(vec![0, 0, 0, 0, 0, 0, 0, 0], true);
         let dd = DefaultDataDirectory::new(&FakeNtHeader, &mut reader).unwrap();
         assert_eq!(dd.get_virtual_address(), 0);
         assert_eq!(dd.get_size(), 0);
@@ -276,7 +187,7 @@ mod tests {
     #[test]
     fn parses_valid_directory_and_reports_success() {
         // virtualAddress=0x100, size=0x20
-        let mut reader = FixtureReader::new(vec![0x00, 0x01, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0x01, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00], true);
         let dd = DefaultDataDirectory::new(&FakeNtHeader, &mut reader).unwrap();
         assert_eq!(dd.get_virtual_address(), 0x100);
         assert_eq!(dd.get_size(), 0x20);

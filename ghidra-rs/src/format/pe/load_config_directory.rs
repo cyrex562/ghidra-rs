@@ -4,7 +4,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::pe::file_header::FileHeader;
 use crate::format::pe::seam_stubs::{ImageArm64ecMetadata, ImageChpeMetadataX86, ImageDynamicRelocationTable};
@@ -91,7 +91,7 @@ pub struct LoadConfigDirectory {
 
 impl LoadConfigDirectory {
     /// Port of the package-private `LoadConfigDirectory(BinaryReader, int, NTHeader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader, index: u64, nt: &dyn NTHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, index: u64, nt: &dyn NTHeader) -> io::Result<Self> {
         let optional_header = nt.get_optional_header();
         let is64bit = optional_header.is64bit();
 
@@ -126,7 +126,7 @@ impl LoadConfigDirectory {
 
         // If the structure size indicates there are more fields, we are dealing with a newer
         // version of the structure. Each size check represents a new version of the structure.
-        let has_more = |reader: &dyn LegacyBinaryReader| (reader.get_pointer_index() - index) < lc.size as u64;
+        let has_more = |reader: &BinaryReader| (reader.get_pointer_index() - index) < lc.size as u64;
 
         if has_more(reader) {
             lc.security_cookie = read_pointer(reader, is64bit)?;
@@ -205,11 +205,11 @@ impl LoadConfigDirectory {
             let mut r = reader.clone_at(ptr as u64);
             if file_header.is_arm() {
                 lc.arm64ec_metadata =
-                    Some(ImageArm64ecMetadata::new(r.as_mut(), nt, lc.chpe_metadata_pointer)?);
+                    Some(ImageArm64ecMetadata::new(&mut r, nt, lc.chpe_metadata_pointer)?);
             }
             if file_header.is_x86() {
                 lc.chpe_metadata_x86 =
-                    Some(ImageChpeMetadataX86::new(r.as_mut(), nt, lc.chpe_metadata_pointer)?);
+                    Some(ImageChpeMetadataX86::new(&mut r, nt, lc.chpe_metadata_pointer)?);
             }
         }
 
@@ -225,7 +225,7 @@ impl LoadConfigDirectory {
                         section.get_pointer_to_raw_data() as i64 + lc.dynamic_value_reloc_table_offset as i64;
                     let rva = section.get_virtual_address() as i64 + lc.dynamic_value_reloc_table_offset as i64;
                     let mut r = reader.clone_at(file_offset as u64);
-                    lc.dvrt = Some(ImageDynamicRelocationTable::new(r.as_mut(), rva, is64bit)?);
+                    lc.dvrt = Some(ImageDynamicRelocationTable::new(&mut r, rva, is64bit)?);
                 }
                 None => {
                     let msg = format!(
@@ -349,7 +349,7 @@ impl StructConverter for LoadConfigDirectory {
 }
 
 /// Port of `LoadConfigDirectory.readPointer(BinaryReader)`.
-fn read_pointer(reader: &mut dyn LegacyBinaryReader, is64bit: bool) -> io::Result<i64> {
+fn read_pointer(reader: &mut BinaryReader, is64bit: bool) -> io::Result<i64> {
     if is64bit {
         reader.read_next_long()
     } else {
@@ -423,7 +423,7 @@ impl CodeIntegrity {
     pub const NAME: &'static str = "IMAGE_LOAD_CONFIG_CODE_INTEGRITY";
 
     /// Port of `CodeIntegrity(BinaryReader)`.
-    pub fn new(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         Ok(CodeIntegrity {
             flags: reader.read_next_short()?,
             catalog: reader.read_next_short()?,
@@ -460,108 +460,10 @@ impl StructConverter for CodeIntegrity {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::from(io::ErrorKind::Unsupported))
-        }
-    }
-
-    struct FixtureReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl FixtureReader {
-        fn new(data: Vec<u8>) -> Self {
-            FixtureReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for FixtureReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(FixtureReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
-
-    fn reader_for(bytes: Vec<u8>) -> FixtureReader {
-        FixtureReader::new(bytes)
+    fn reader_for(bytes: Vec<u8>) -> BinaryReader {
+        BinaryReader::from_bytes(bytes, true)
     }
 
     struct FixtureOptionalHeader {
