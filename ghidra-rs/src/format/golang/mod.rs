@@ -13,3 +13,4 @@ pub mod go_ver_range;
 pub mod go_ver_set;
 pub mod rtti;
 pub mod structmapping;
+pub mod note_go_build_id;

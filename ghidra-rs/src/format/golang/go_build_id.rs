@@ -21,8 +21,8 @@ use crate::program::model::mem::MemoryBlock;
 use crate::program::seam_stubs::share_data_type;
 use crate::util::msg::Msg;
 
-/// `NoteGoBuildId.PROGRAM_INFO_KEY` (the ELF note class is not ported yet).
-const PROGRAM_INFO_KEY: &str = "Golang BuildId";
+
+use super::note_go_build_id::PROGRAM_INFO_KEY;
 
 /// `"\xff Go build ID: \""`.
 const GO_BUILDID_MAGIC: &[u8; 16] = b"\xff Go build ID: \"";

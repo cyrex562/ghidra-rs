@@ -90,7 +90,7 @@ fn elf_category_path() -> CategoryPath {
 ///
 /// Port of the protected static `ElfNote.createNoteStructure(CategoryPath, String, boolean, int,
 /// int, DataTypeManager)`, minus the dropped `DataTypeManager` parameter (see the module docs).
-fn create_note_structure(
+pub(crate) fn create_note_structure(
     cp: Option<CategoryPath>,
     struct_name: &str,
     templated_name: bool,
