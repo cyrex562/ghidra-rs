@@ -1,14 +1,11 @@
 //! Test fixtures for the structure mapping framework: a byte-array reader, a program whose
 //! data type manager holds hand-built Go structures, and simple data types.
 
-use std::cell::RefCell;
 use std::io;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::format::elf::info::elf_info_item::ProviderBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
@@ -19,39 +16,9 @@ use crate::program::model::listing::Program;
 use super::data_type_mapper::DataTypeMapper;
 use super::data_type_mapper_context::DataTypeMapperContext;
 
-struct VecStore(Vec<u8>);
-
-impl GByteStore for VecStore {
-    fn length(&mut self) -> io::Result<u64> {
-        Ok(self.0.len() as u64)
-    }
-    fn is_valid_index(&mut self, index: u64) -> bool {
-        (index as usize) < self.0.len()
-    }
-    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-        self.0
-            .get(index as usize)
-            .copied()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "past end"))
-    }
-    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-        let start = index as usize;
-        self.0
-            .get(start..start + length)
-            .map(<[u8]>::to_vec)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "past end"))
-    }
-    fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-        Err(io::Error::from(io::ErrorKind::Unsupported))
-    }
-    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-        Err(io::Error::from(io::ErrorKind::Unsupported))
-    }
-}
-
 /// A reader over `bytes`, positioned at 0.
 pub fn byte_reader(bytes: Vec<u8>, little_endian: bool) -> Box<dyn LegacyBinaryReader> {
-    Box::new(ProviderBinaryReader::new(Rc::new(RefCell::new(VecStore(bytes))), little_endian))
+    Box::new(BinaryReader::from_bytes(bytes, little_endian))
 }
 
 /// A plain fixed-length data type (an integer, for the tests' purposes).

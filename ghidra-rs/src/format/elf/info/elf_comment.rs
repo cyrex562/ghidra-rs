@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::elf::info::elf_info_item::{read_item_from_section, ElfInfoItem, ItemWithAddress};
 use crate::framework::options::Options;
 use crate::program::model::address::Address;
@@ -50,7 +50,7 @@ impl ElfComment {
     /// [`read_item_from_section`].
     ///
     /// Mirrors `ElfComment.read(BinaryReader, Program)`.
-    pub fn read(br: &mut dyn LegacyBinaryReader, _program: &dyn Program) -> io::Result<ElfComment> {
+    pub fn read(br: &mut BinaryReader, _program: &dyn Program) -> io::Result<ElfComment> {
         let mut comment_strings = Vec::new();
         let mut comment_string_lengths = Vec::new();
         while br.has_next() {
@@ -201,100 +201,11 @@ impl DataUtilities for Utils {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
     use std::sync::Arc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::mem::{Memory, MemoryAccessException, MemoryBlock};
     use crate::program::model::symbol::{Symbol, SymbolTable, SymbolType};
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            TestReader {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     struct MockProgram;
     impl crate::framework::model::DomainObject for MockProgram {}
@@ -318,7 +229,7 @@ mod tests {
 
     #[test]
     fn read_parses_multiple_null_terminated_strings() {
-        let mut reader = TestReader::new(build_two_comment_bytes());
+        let mut reader = BinaryReader::from_bytes(build_two_comment_bytes(), true);
         let comment = ElfComment::read(&mut reader, &MockProgram).unwrap();
 
         assert_eq!(
@@ -333,7 +244,7 @@ mod tests {
 
     #[test]
     fn read_handles_empty_section() {
-        let mut reader = TestReader::new(Vec::new());
+        let mut reader = BinaryReader::from_bytes(Vec::new(), true);
         let comment = ElfComment::read(&mut reader, &MockProgram).unwrap();
         assert!(comment.get_comment_strings().is_empty());
     }
@@ -341,7 +252,7 @@ mod tests {
     #[test]
     fn read_handles_single_empty_string() {
         // A lone null byte is a valid (empty) string.
-        let mut reader = TestReader::new(vec![0u8]);
+        let mut reader = BinaryReader::from_bytes(vec![0u8], true);
         let comment = ElfComment::read(&mut reader, &MockProgram).unwrap();
         assert_eq!(comment.get_comment_strings(), &["".to_string()]);
         assert_eq!(comment.comment_string_lengths, vec![1]);

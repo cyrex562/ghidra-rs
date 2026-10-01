@@ -50,13 +50,10 @@
 //! `ByteDataType`, except `StringDataType.dataType`: the string data types are not ported yet, so
 //! the `name` field uses the minimal private [`StringPlaceholderDataType`] (name and length only).
 
-use std::cell::RefCell;
 use std::io;
-use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::elf::info::elf_info_item::{read_item_from_section, ElfInfoItem};
 use crate::framework::options::Options;
 use crate::program::model::address::Address;
@@ -190,98 +187,6 @@ fn markup_elf_note(
     }
 }
 
-/// A [`BinaryReader`] backed by an owned `Vec<u8>`, used by
-/// [`ElfNoteBase::get_description_reader`] to mirror Java's `new BinaryReader(new
-/// ByteArrayProvider(description), isLittleEndian)`. Kept private/local: `ByteArrayProvider` has
-/// no concrete production port yet either (see the module docs' `ArrayDataType`/`DWordDataType`
-/// note for the same situation with a different family of types).
-struct VecByteProvider(Vec<u8>);
-
-impl GByteStore for VecByteProvider {
-    fn length(&mut self) -> io::Result<u64> {
-        Ok(self.0.len() as u64)
-    }
-    fn is_valid_index(&mut self, index: u64) -> bool {
-        index < self.0.len() as u64
-    }
-    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-        self.0
-            .get(index as usize)
-            .copied()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "index out of range"))
-    }
-    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-        let start = index as usize;
-        let end = start + length;
-        self.0
-            .get(start..end)
-            .map(|s| s.to_vec())
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "range out of bounds"))
-    }
-    fn write_byte(&mut self, index: u64, value: u8) -> io::Result<()> {
-        *self
-            .0
-            .get_mut(index as usize)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "index out of range"))? = value;
-        Ok(())
-    }
-    fn write_bytes(&mut self, index: u64, values: &[u8]) -> io::Result<()> {
-        let start = index as usize;
-        for (i, &b) in values.iter().enumerate() {
-            *self
-                .0
-                .get_mut(start + i)
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "range out of bounds"))? = b;
-        }
-        Ok(())
-    }
-}
-
-struct ByteArrayBinaryReader {
-    provider: Rc<RefCell<VecByteProvider>>,
-    is_little_endian: bool,
-    current_index: u64,
-}
-
-impl LegacyBinaryReader for ByteArrayBinaryReader {
-    fn length(&self) -> io::Result<u64> {
-        self.provider.borrow_mut().length()
-    }
-    fn is_valid_index(&self, index: u64) -> bool {
-        self.provider.borrow_mut().is_valid_index(index)
-    }
-    fn get_pointer_index(&self) -> u64 {
-        self.current_index
-    }
-    fn set_pointer_index(&mut self, index: u64) -> u64 {
-        let previous = self.current_index;
-        self.current_index = index;
-        previous
-    }
-    fn is_little_endian(&self) -> bool {
-        self.is_little_endian
-    }
-    fn set_little_endian(&mut self, is_little_endian: bool) {
-        self.is_little_endian = is_little_endian;
-    }
-    fn read_byte(&self, index: u64) -> io::Result<u8> {
-        self.provider.borrow_mut().read_byte(index)
-    }
-    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-        self.provider.borrow_mut().read_bytes(index, n_elements)
-    }
-    fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-        Rc::clone(&self.provider) as Rc<RefCell<dyn GByteStore>>
-    }
-    fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-        Box::new(ByteArrayBinaryReader {
-            provider: Rc::clone(&self.provider),
-            is_little_endian: self.is_little_endian,
-            current_index: new_index,
-        })
-    }
-}
-
 /// Shared state and concrete behavior of `ghidra.app.util.bin.format.elf.info.ElfNote`.
 ///
 /// Port of the Java class's fields (`nameLen`/`name`/`vendorType`/`description`) and every
@@ -308,7 +213,7 @@ impl ElfNoteBase {
     /// Reads a generic [`ElfNoteBase`] instance from the supplied [`BinaryReader`].
     ///
     /// Port of the static `ElfNote.read(BinaryReader)`.
-    pub fn read(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
+    pub fn read(reader: &mut BinaryReader) -> io::Result<Self> {
         let mut name_len = reader.read_next_unsigned_int_exact()?;
         let desc_len = reader.read_next_unsigned_int_exact()?;
         let vendor_type = reader.read_next_int()?;
@@ -380,13 +285,8 @@ impl ElfNoteBase {
     /// Returns a [`BinaryReader`] that reads from this note's description blob.
     ///
     /// Port of `ElfNote.getDescriptionReader(boolean)`.
-    pub fn get_description_reader(&self, is_little_endian: bool) -> Box<dyn LegacyBinaryReader> {
-        let provider = VecByteProvider(self.description.clone().unwrap_or_default());
-        Box::new(ByteArrayBinaryReader {
-            provider: Rc::new(RefCell::new(provider)),
-            is_little_endian,
-            current_index: 0,
-        })
+    pub fn get_description_reader(&self, is_little_endian: bool) -> BinaryReader {
+        BinaryReader::from_bytes(self.description.clone().unwrap_or_default(), is_little_endian)
     }
 
     /// Port of `ElfNote.getVendorType()`.
@@ -508,12 +408,8 @@ mod tests {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
     }
 
-    fn bytes_reader(bytes: Vec<u8>) -> ByteArrayBinaryReader {
-        ByteArrayBinaryReader {
-            provider: Rc::new(RefCell::new(VecByteProvider(bytes))),
-            is_little_endian: true,
-            current_index: 0,
-        }
+    fn bytes_reader(bytes: Vec<u8>) -> BinaryReader {
+        BinaryReader::from_bytes(bytes, true)
     }
 
     /// Encodes a minimal GNU-style note record: `namesz`, `descsz`, `type`, the name (padded to a

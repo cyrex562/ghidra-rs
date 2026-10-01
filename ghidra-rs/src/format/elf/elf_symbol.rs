@@ -35,7 +35,7 @@
 use std::fmt;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::elf::elf_section_header_constants::{
     SHN_HIPROC, SHN_LOPROC, SHN_LORESERVE, SHN_UNDEF,
 };
@@ -139,7 +139,7 @@ impl ElfSymbol {
     /// # Errors
     /// Returns `Err` if an IO error occurs during parse.
     pub fn parse(
-        reader: &mut impl LegacyBinaryReader,
+        reader: &mut BinaryReader,
         symbol_index: u32,
         header: &impl ElfHeader,
     ) -> io::Result<Self> {
@@ -199,7 +199,7 @@ impl ElfSymbol {
     /// # Arguments
     /// * `reader` - reader to read from (position remains unchanged)
     /// * `string_table` - string table used to resolve the name
-    pub fn init_symbol_name(&mut self, reader: &dyn LegacyBinaryReader, string_table: &impl ElfStringTable) {
+    pub fn init_symbol_name(&mut self, reader: &BinaryReader, string_table: &impl ElfStringTable) {
         if self.name_as_string.is_none() {
             self.name_as_string = Some(string_table.read_string(reader, self.st_name as i64));
         }
@@ -424,98 +424,9 @@ impl fmt::Display for ElfSymbol {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
     use crate::format::elf::elf_section_header_constants::SHN_XINDEX;
     use crate::format::seam_stubs::ElfSectionHeader;
-
-    struct VecProvider(Vec<u8>);
-
-    impl GByteStore for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn GByteStore>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     struct MockSection(&'static str);
 
@@ -563,7 +474,7 @@ mod tests {
     }
 
     impl ElfStringTable for MockStringTable {
-        fn read_string(&self, reader: &dyn LegacyBinaryReader, string_offset: i64) -> String {
+        fn read_string(&self, reader: &BinaryReader, string_offset: i64) -> String {
             reader.read_ascii_string(self.offset + string_offset as u64).unwrap()
         }
     }
@@ -632,7 +543,7 @@ mod tests {
     #[test]
     fn parses_elf32_entry_field_order() {
         // st_info 0x12 == STB_GLOBAL | STT_FUNC
-        let mut reader = MockReader::new(sym32(0x0d, 0x8048_400, 0x2a, 0x12, 0x02, 1));
+        let mut reader = BinaryReader::from_bytes(sym32(0x0d, 0x8048_400, 0x2a, 0x12, 0x02, 1), true);
         let sym = ElfSymbol::parse(&mut reader, 3, &header32()).unwrap();
 
         assert_eq!(sym.get_name(), 0x0d);
@@ -657,7 +568,7 @@ mod tests {
     fn parses_elf64_entry_field_order() {
         // st_info 0x11 == STB_GLOBAL | STT_OBJECT
         let mut reader =
-            MockReader::new(sym64(7, 0x11, 0x00, 5, 0x0000_7fff_dead_beef, 0x1_0000_0000));
+            BinaryReader::from_bytes(sym64(7, 0x11, 0x00, 5, 0x0000_7fff_dead_beef, 0x1_0000_0000), true);
         let sym = ElfSymbol::parse(&mut reader, 9, &header64()).unwrap();
 
         assert_eq!(sym.get_name(), 7);
@@ -676,7 +587,7 @@ mod tests {
     #[test]
     fn elf32_value_and_size_are_read_unsigned() {
         // Java reads these with readNextUnsignedInt(), so 0xffff_fff0 must not sign-extend.
-        let mut reader = MockReader::new(sym32(1, 0xffff_fff0, 0xffff_ffff, 0x11, 0, 1));
+        let mut reader = BinaryReader::from_bytes(sym32(1, 0xffff_fff0, 0xffff_ffff, 0x11, 0, 1), true);
         let sym = ElfSymbol::parse(&mut reader, 1, &header32()).unwrap();
 
         assert_eq!(sym.get_value(), 0xffff_fff0);
@@ -687,7 +598,7 @@ mod tests {
     fn unnamed_section_symbol_takes_its_section_name() {
         let header = MockHeader { is32: false, section_names: vec!["", ".text", ".data"] };
         // st_name == 0, STT_SECTION (bind STB_LOCAL), shndx 2 -> ".data"
-        let mut reader = MockReader::new(sym64(0, STT_SECTION, 0, 2, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(0, STT_SECTION, 0, 2, 0, 0), true);
         let sym = ElfSymbol::parse(&mut reader, 2, &header).unwrap();
 
         assert!(sym.is_section());
@@ -700,12 +611,12 @@ mod tests {
         let header = MockHeader { is32: false, section_names: vec!["", ".text"] };
 
         // SHN_ABS is >= SHN_LORESERVE: it is not a section table index.
-        let mut reader = MockReader::new(sym64(0, STT_SECTION, 0, SHN_ABS, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(0, STT_SECTION, 0, SHN_ABS, 0, 0), true);
         let abs_sym = ElfSymbol::parse(&mut reader, 1, &header).unwrap();
         assert_eq!(abs_sym.get_name_as_string(), None);
 
         // In range of the u16 index space but past the end of the section list.
-        let mut reader = MockReader::new(sym64(0, STT_SECTION, 0, 40, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(0, STT_SECTION, 0, 40, 0, 0), true);
         let oob_sym = ElfSymbol::parse(&mut reader, 2, &header).unwrap();
         assert_eq!(oob_sym.get_name_as_string(), None);
     }
@@ -713,7 +624,7 @@ mod tests {
     #[test]
     fn unnamed_non_section_symbol_is_not_named_from_sections() {
         let header = MockHeader { is32: false, section_names: vec!["", ".text"] };
-        let mut reader = MockReader::new(sym64(0, STT_FUNC, 0, 1, 0x1000, 4));
+        let mut reader = BinaryReader::from_bytes(sym64(0, STT_FUNC, 0, 1, 0x1000, 4), true);
         let sym = ElfSymbol::parse(&mut reader, 1, &header).unwrap();
 
         assert_eq!(sym.get_name_as_string(), None);
@@ -725,7 +636,7 @@ mod tests {
         let string_table_offset = data.len() as u64;
         data.extend_from_slice(b"\0main\0other\0");
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let mut sym = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         assert_eq!(sym.get_name_as_string(), None);
 
@@ -748,7 +659,7 @@ mod tests {
         let string_table_offset = data.len() as u64;
         data.extend_from_slice(b"\0   \0");
 
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let mut sym = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         sym.init_symbol_name(&reader, &MockStringTable { offset: string_table_offset });
 
@@ -760,27 +671,27 @@ mod tests {
     #[test]
     fn is_external_requires_global_or_weak_undefined_notype() {
         // STB_GLOBAL | STT_NOTYPE, value 0, size 0, SHN_UNDEF
-        let mut reader = MockReader::new(sym64(1, 0x10, 0, SHN_UNDEF, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(1, 0x10, 0, SHN_UNDEF, 0, 0), true);
         let external = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         assert!(external.is_external());
 
         // STB_WEAK | STT_NOTYPE also qualifies.
-        let mut reader = MockReader::new(sym64(1, 0x20, 0, SHN_UNDEF, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(1, 0x20, 0, SHN_UNDEF, 0, 0), true);
         let weak = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         assert!(weak.is_weak() && weak.is_external());
 
         // Defined in a section -> not external.
-        let mut reader = MockReader::new(sym64(1, 0x10, 0, 4, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(1, 0x10, 0, 4, 0, 0), true);
         let defined = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         assert!(!defined.is_external());
 
         // Local binding -> not external.
-        let mut reader = MockReader::new(sym64(1, 0x00, 0, SHN_UNDEF, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(1, 0x00, 0, SHN_UNDEF, 0, 0), true);
         let local = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         assert!(local.is_local() && !local.is_external());
 
         // Non-zero size -> not external.
-        let mut reader = MockReader::new(sym64(1, 0x10, 0, SHN_UNDEF, 0, 8));
+        let mut reader = BinaryReader::from_bytes(sym64(1, 0x10, 0, SHN_UNDEF, 0, 8), true);
         let sized = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         assert!(!sized.is_external());
     }
@@ -843,7 +754,7 @@ mod tests {
 
     #[test]
     fn extended_section_index_is_looked_up_in_the_owning_table() {
-        let mut reader = MockReader::new(sym64(1, 0x10, 0, SHN_XINDEX, 0, 0));
+        let mut reader = BinaryReader::from_bytes(sym64(1, 0x10, 0, SHN_XINDEX, 0, 0), true);
         let sym = ElfSymbol::parse(&mut reader, 4, &header64()).unwrap();
 
         assert_eq!(sym.get_section_header_index(), SHN_XINDEX);
@@ -858,7 +769,7 @@ mod tests {
         let mut data = sym64(1, 0x12, 0, 1, 0x4000, 8);
         let string_table_offset = data.len() as u64;
         data.extend_from_slice(b"\0main\0");
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let plain = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         let mut named = plain.clone();
@@ -884,7 +795,7 @@ mod tests {
         let mut data = sym64(1, 0x12, 0x03, 0xfff1, 0xdead_beef, 0x20);
         let string_table_offset = data.len() as u64;
         data.extend_from_slice(b"\0printf\0");
-        let mut reader = MockReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
 
         let mut sym = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         sym.init_symbol_name(&reader, &MockStringTable { offset: string_table_offset });

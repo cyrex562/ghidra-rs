@@ -1,14 +1,13 @@
 //! Port of `ghidra.app.util.bin.format.golang.structmapping.DataTypeMapper`.
 
 use std::any::{Any, TypeId};
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::LegacyBinaryReader;
-use crate::format::elf::info::elf_info_item::ProviderBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::seam_stubs::MemoryByteProvider;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
@@ -335,7 +334,7 @@ impl DataTypeMapper {
             .ok_or_else(|| io::Error::other("Program has no memory to read structures from"))?;
         let little_endian = !memory.is_big_endian();
         let bp = MemoryByteProvider::new(memory, &self.data_space);
-        Ok(Box::new(ProviderBinaryReader::new(Rc::new(RefCell::new(bp)), little_endian)))
+        Ok(Box::new(BinaryReader::new(Rc::new(bp), little_endian)))
     }
 
     /// `createArtificialStructureContext(Class)`: a context for an instance that was not read

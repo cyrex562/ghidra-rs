@@ -20,7 +20,7 @@
 
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::seam_stubs::ElfHeader;
 
 /// Compression algorithm identifier for the zlib algorithm.
@@ -50,7 +50,7 @@ impl ElfCompressedSectionHeader {
     ///
     /// # Errors
     /// Returns `Err` if an IO error occurs during parse.
-    pub fn read(reader: &mut impl LegacyBinaryReader, elf: &impl ElfHeader) -> io::Result<Self> {
+    pub fn read(reader: &mut BinaryReader, elf: &impl ElfHeader) -> io::Result<Self> {
         if elf.is32_bit() {
             Self::read32(reader)
         } else {
@@ -80,7 +80,7 @@ impl ElfCompressedSectionHeader {
         self.header_size
     }
 
-    fn read32(reader: &mut impl LegacyBinaryReader) -> io::Result<Self> {
+    fn read32(reader: &mut BinaryReader) -> io::Result<Self> {
         let ch_type = reader.read_next_int()?;
         let ch_size = reader.read_next_unsigned_int()? as i64;
         let ch_addralign = reader.read_next_unsigned_int()? as i64;
@@ -93,7 +93,7 @@ impl ElfCompressedSectionHeader {
         })
     }
 
-    fn read64(reader: &mut impl LegacyBinaryReader) -> io::Result<Self> {
+    fn read64(reader: &mut BinaryReader) -> io::Result<Self> {
         let ch_type = reader.read_next_int()?;
         let _unused_reserved = reader.read_next_unsigned_int()?;
         let ch_size = reader.read_next_long()?;
@@ -111,10 +111,7 @@ impl ElfCompressedSectionHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
     struct MockHeader {
         is32: bool,
@@ -136,85 +133,14 @@ mod tests {
         }
     }
 
-    struct MockReader {
-        bytes: Vec<u8>,
-        pos: RefCell<u64>,
-        little_endian: RefCell<bool>,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            MockReader {
-                bytes,
-                pos: RefCell::new(0),
-                little_endian: RefCell::new(true),
-            }
-        }
-    }
-
-    impl LegacyBinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            *self.pos.borrow()
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            *self.pos.borrow_mut() = index;
-            index
-        }
-
-        fn is_little_endian(&self) -> bool {
-            *self.little_endian.borrow()
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            *self.little_endian.borrow_mut() = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
-            unimplemented!("not needed for this test")
-        }
-
-        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed for this test")
-        }
-
-        fn clone_reader(&self) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed for this test")
-        }
-    }
-
     #[test]
     fn read_32bit_header_matches_java_layout() {
         // ch_type = 1 (ELFCOMPRESS_ZLIB), ch_size = 0x100, ch_addralign = 8, little-endian.
-        let mut reader = MockReader::new(vec![
+        let mut reader = BinaryReader::from_bytes(vec![
             0x01, 0x00, 0x00, 0x00, // ch_type
             0x00, 0x01, 0x00, 0x00, // ch_size
             0x08, 0x00, 0x00, 0x00, // ch_addralign
-        ]);
+        ], true);
         let header = MockHeader { is32: true };
 
         let chdr = ElfCompressedSectionHeader::read(&mut reader, &header).unwrap();
@@ -229,12 +155,12 @@ mod tests {
     #[test]
     fn read_64bit_header_skips_reserved_field() {
         // ch_type = 1, ch_reserved (skipped) = 0xDEADBEEF, ch_size = 0x200, ch_addralign = 16.
-        let mut reader = MockReader::new(vec![
+        let mut reader = BinaryReader::from_bytes(vec![
             0x01, 0x00, 0x00, 0x00, // ch_type
             0xEF, 0xBE, 0xAD, 0xDE, // ch_reserved (unused)
             0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // ch_size
             0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // ch_addralign
-        ]);
+        ], true);
         let header = MockHeader { is32: false };
 
         let chdr = ElfCompressedSectionHeader::read(&mut reader, &header).unwrap();

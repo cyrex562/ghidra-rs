@@ -1,11 +1,9 @@
 //! Port of `ghidra.file.formats.sparseimage.SparseImageFileSystemFactory`.
 
-use std::cell::RefCell;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::byte_array_provider::ByteArrayProvider;
 use crate::app::util::bin::byte_provider::ByteProvider;
 use crate::filesystem::gfilesystem::factory::g_file_system_factory::GFileSystemFactory;
@@ -20,8 +18,7 @@ use crate::filesystem::gfilesystem::fileinfo::file_attributes::{
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
 use crate::filesystem::gfilesystem::fsrl_root::FsrlRoot;
 use crate::filesystem::gfilesystem::g_file_system::{FsHandle, GFileSystemError};
-use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-use crate::format::elf::info::elf_info_item::ProviderBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::util::task::TaskMonitor;
 
 use super::sparse_constants::SPARSE_HEADER_MAGIC;
@@ -31,51 +28,6 @@ use super::sparse_image_file_system::SparseImageFileSystem;
 
 /// Size of a [`SparseHeader`] on disk.
 const SPARSE_HEADER_SIZE: u64 = 28;
-
-/// Read-only [`GByteStore`] view of a shared [`ByteProvider`], so the little-endian
-/// [`BinaryReader`] the sparse-image readers take (Java's `new BinaryReader(byteProvider,
-/// true)`) can read the container in place.
-struct SharedProviderStore(Rc<dyn ByteProvider>);
-
-impl GByteStore for SharedProviderStore {
-    fn length(&mut self) -> io::Result<u64> {
-        Ok(self.0.length())
-    }
-
-    fn is_valid_index(&mut self, index: u64) -> bool {
-        self.0.is_valid_index(index)
-    }
-
-    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-        self.0.read_byte(index)
-    }
-
-    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-        self.0.read_bytes(index, length as u64)
-    }
-
-    fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-        Err(io::Error::new(
-            io::ErrorKind::Unsupported,
-            "sparse image container is read-only",
-        ))
-    }
-
-    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-        Err(io::Error::new(
-            io::ErrorKind::Unsupported,
-            "sparse image container is read-only",
-        ))
-    }
-
-    fn get_fsrl(&self) -> Option<&Fsrl> {
-        self.0.get_fsrl()
-    }
-
-    fn get_file(&self) -> Option<PathBuf> {
-        self.0.get_file()
-    }
-}
 
 /// Creates [`SparseImageFileSystem`]s: recognizes an Android sparse image by its header magic
 /// and exposes the expanded raw image (cached by the [`FileSystemService`]) as the single
@@ -96,8 +48,7 @@ impl SparseImageFileSystemFactory {
             .get_fsrl()
             .ok_or_else(|| io::Error::other("sparse image container has no FSRL"))?;
         let mut pusher = |os: &mut dyn Write| -> Result<(), GFileSystemError> {
-            let store = Rc::new(RefCell::new(SharedProviderStore(Rc::clone(byte_provider))));
-            let mut reader = ProviderBinaryReader::new(store, true);
+            let mut reader = BinaryReader::new(Rc::clone(byte_provider), true);
             let mut sid = SparseImageDecompressor::new(&mut reader, os);
             sid.decompress(monitor)
         };
@@ -182,8 +133,7 @@ impl GFileSystemProbeByteProvider for SparseImageFileSystemFactory {
     ) -> Result<bool, GFileSystemError> {
         let len = SPARSE_HEADER_SIZE.min(byte_provider.length());
         let header_bytes = byte_provider.read_bytes(0, len)?;
-        let store = Rc::new(RefCell::new(ByteArrayProvider::new(header_bytes)));
-        let mut reader = ProviderBinaryReader::new(store, true);
+        let mut reader = BinaryReader::from_bytes(header_bytes, true);
         let header = SparseHeader::new(&mut reader)?;
         Ok(header.magic as u32 == SPARSE_HEADER_MAGIC)
     }
@@ -215,16 +165,5 @@ mod tests {
             .is_err());
         assert!(f.as_probe_bytes_only().is_none());
         assert!(f.as_probe_byte_provider().is_some());
-    }
-
-    #[test]
-    fn shared_store_reads_and_refuses_writes() {
-        let mut s = SharedProviderStore(Rc::new(ByteArrayProvider::new(vec![1, 2, 3])));
-        assert_eq!(s.length().unwrap(), 3);
-        assert_eq!(s.read_bytes(1, 2).unwrap(), [2, 3]);
-        assert_eq!(
-            s.write_byte(0, 9).unwrap_err().kind(),
-            io::ErrorKind::Unsupported
-        );
     }
 }

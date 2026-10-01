@@ -116,6 +116,7 @@ impl ElfRelocationContext for RiscvElfRelocationContext {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::app::util::importer::message_log::MessageLog;
     use crate::format::seam_stubs::{ElfHeader, ElfRelocationTable, ElfSymbolTable};
     use crate::program::model::listing::program::Program;
@@ -320,85 +321,8 @@ mod tests {
         bytes.extend_from_slice(&value.to_le_bytes()); // st_value
         bytes.extend_from_slice(&0u64.to_le_bytes()); // st_size
 
-        let mut reader = VecReader::new(bytes);
+        let mut reader = BinaryReader::from_bytes(bytes, true);
         ElfSymbol::parse(&mut reader, 1, &MockElfHeader).expect("symbol entry parses")
-    }
-
-    struct VecProvider(Vec<u8>);
-    impl crate::filesystem::ghidra::g_binary_reader::GByteStore for VecProvider {
-        fn length(&mut self) -> std::io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
-            let start = index as usize;
-            self.0
-                .get(start..start + length)
-                .map(<[u8]>::to_vec)
-                .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> std::io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> std::io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct VecReader {
-        provider: std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>,
-        current_index: u64,
-    }
-
-    impl VecReader {
-        fn new(data: Vec<u8>) -> Self {
-            VecReader {
-                provider: std::rc::Rc::new(std::cell::RefCell::new(VecProvider(data))),
-                current_index: 0,
-            }
-        }
-    }
-
-    impl crate::app::util::bin::binary_reader::LegacyBinaryReader for VecReader {
-        fn length(&self) -> std::io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            std::mem::replace(&mut self.current_index, index)
-        }
-        fn is_little_endian(&self) -> bool {
-            true
-        }
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-        fn read_byte(&self, index: u64) -> std::io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>>
-        {
-            std::rc::Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn crate::app::util::bin::binary_reader::LegacyBinaryReader> {
-            Box::new(VecReader { provider: std::rc::Rc::clone(&self.provider), current_index: new_index })
-        }
     }
 
     #[test]

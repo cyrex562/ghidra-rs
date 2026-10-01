@@ -637,6 +637,71 @@ impl MemoryByteProvider {
     }
 }
 
+impl MemoryByteProvider {
+    fn check_range(&self, index: u64, length: u64) -> std::io::Result<crate::program::model::address::Address> {
+        if index.checked_add(length).is_none_or(|end| end > self.length) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!(
+                    "Range [{index}, {index}+{length}) out of bounds for section '{}'",
+                    self.block_name
+                ),
+            ));
+        }
+        self.start
+            .add(index as i64)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+    }
+}
+
+/// The real [`ByteProvider`](crate::app::util::bin::byte_provider::ByteProvider) view, so this
+/// placeholder can back a [`BinaryReader`](crate::app::util::bin::binary_reader::BinaryReader).
+impl crate::app::util::bin::byte_provider::ByteProvider for MemoryByteProvider {
+    fn get_file(&self) -> Option<std::path::PathBuf> {
+        None
+    }
+
+    fn get_name(&self) -> Option<String> {
+        Some(self.block_name.clone())
+    }
+
+    fn get_absolute_path(&self) -> Option<String> {
+        None
+    }
+
+    fn length(&self) -> u64 {
+        self.length
+    }
+
+    fn is_valid_index(&self, index: u64) -> bool {
+        index < self.length
+    }
+
+    fn close(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+
+    fn read_byte(&self, index: u64) -> std::io::Result<u8> {
+        let addr = self.check_range(index, 1)?;
+        self.memory
+            .get_byte(&addr)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+    }
+
+    fn read_bytes(&self, index: u64, length: u64) -> std::io::Result<Vec<u8>> {
+        let addr = self.check_range(index, length)?;
+        let mut buf = vec![0u8; length as usize];
+        let n_read = self.memory.get_bytes(&addr, &mut buf);
+        if n_read != buf.len() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!("Short read at index {index} in section '{}'", self.block_name),
+            ));
+        }
+        Ok(buf)
+    }
+}
+
 impl crate::filesystem::ghidra::g_binary_reader::GByteStore for MemoryByteProvider {
     fn length(&mut self) -> std::io::Result<u64> {
         Ok(self.length)
@@ -917,7 +982,7 @@ impl ElfDefaultGotPltMarkup {
 pub trait ElfStringTable: Send + Sync {
     fn read_string(
         &self,
-        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &crate::app::util::bin::binary_reader::BinaryReader,
         string_offset: i64,
     ) -> String;
 }
