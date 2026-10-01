@@ -3726,8 +3726,8 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWA
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAddressListHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFChildren.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataInstanceHelper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataTypeConflictHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataInstanceHelper.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataTypeConflictHandler.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataTypeImporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataTypeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFEncoding.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf
@@ -3962,7 +3962,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoUncommonType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/AfterStructureRead.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/ContextField.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapper.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapperContext.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/EOLComment.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldContext.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
@@ -13843,7 +13843,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltIn.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltInDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltInDataTypeClassExclusionFilter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltInDataTypeManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltInDataTypeManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ByteDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Category.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CategoryPath.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 

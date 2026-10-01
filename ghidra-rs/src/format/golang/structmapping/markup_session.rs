@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use std::io;
 use std::sync::Arc;
 
+use crate::format::dwarf::dwarf_data_instance_helper::DWARFDataInstanceHelper;
 use crate::program::model::address::{Address, AddressSet};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_utilities::{ClearDataMode, DataUtilities};
@@ -102,14 +103,13 @@ impl<'a> MarkupSession<'a> {
     /// Applies the specified data type at the specified address, with a length for dynamic data
     /// types (`markupAddress(Address, DataType, int)`).
     ///
-    /// Java first asks `DWARFDataInstanceHelper.isDataTypeCompatibleWithAddress` (with
-    /// truncation disallowed) whether the new data may replace what is there. That class is not
-    /// ported; this port applies the data only in its first, unconditional case -- the whole
-    /// range is still undefined -- and otherwise leaves existing data alone, as Java does for
-    /// every incompatible case.
+    /// The data is applied only when [`DWARFDataInstanceHelper`] (with truncation disallowed)
+    /// finds it compatible with what is already there.
     pub fn markup_address_with_length(&mut self, addr: &Address, dt: &dyn DataType, length: i32) -> io::Result<()> {
-        let end = addr.add_wrap(dt.get_length().max(1) as i64 - 1);
-        if !Utilities.is_undefined_range(self.program.as_ref(), addr, &end) {
+        let compatible = DWARFDataInstanceHelper::new(self.program.as_ref())
+            .set_allow_truncating(false)
+            .is_data_type_compatible_with_address(dt, addr);
+        if !compatible {
             return Ok(());
         }
         let new_type = self.clone_into_program(dt)?;

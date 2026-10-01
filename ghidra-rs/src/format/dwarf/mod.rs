@@ -34,3 +34,5 @@ pub mod dwarf_source_language;
 pub mod dwarf_string_offset_table_header;
 pub mod dwarf_unit_header;
 pub mod dwarf_unit_type;
+pub mod dwarf_data_type_conflict_handler;
+pub mod dwarf_data_instance_helper;

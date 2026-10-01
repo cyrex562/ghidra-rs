@@ -11,7 +11,8 @@ use crate::format::seam_stubs::MemoryByteProvider;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::data::data_type_conflict_handler::ConflictResolutionPolicy;
+use crate::format::dwarf::dwarf_data_type_conflict_handler::DWARFDataTypeConflictHandler;
+use crate::program::model::data::built_in_data_type_manager::BuiltInDataTypeManager;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::listing::Program;
 use crate::util::task::TaskMonitor;
@@ -34,19 +35,12 @@ use super::structure_mapping_info::StructureMappingInfo;
 /// `GoRttiMapper` does); here the specialised mapper composes one, and publishes whatever its
 /// mapped types inject through `@ContextField` with [`set_context_value`](Self::set_context_value).
 ///
-/// Differences from the Java class, all at its edges:
-///
-/// * The archive `.gdt` is passed in already opened (Java opens `archiveGDT` itself with
-///   `FileDataTypeManager.openFileArchive`), and is dropped with the mapper (`close()`).
-/// * Java's final lookup fallback is the `BuiltInDataTypeManager` singleton, which is not ported;
-///   callers that have a built-in data type manager supply it with
-///   [`set_built_in_data_type_manager`](Self::set_built_in_data_type_manager).
-/// * Archive types are resolved into the program's data type manager with the `UseExisting`
-///   conflict policy; Java uses `DWARFDataTypeConflictHandler.INSTANCE`, which is not ported.
+/// Difference from the Java class: the archive `.gdt` is passed in already opened (Java opens
+/// `archiveGDT` itself with `FileDataTypeManager.openFileArchive`), and is dropped with the
+/// mapper (`close()`).
 pub struct DataTypeMapper {
     program: Arc<dyn Program>,
     archive_dtm: Option<Box<dyn DataTypeManager>>,
-    built_in_dtm: Option<Box<dyn DataTypeManager>>,
     program_search_cps: Vec<CategoryPath>,
     archive_search_cps: Vec<CategoryPath>,
     mapping_info: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
@@ -76,7 +70,6 @@ impl DataTypeMapper {
         Ok(DataTypeMapper {
             program,
             archive_dtm,
-            built_in_dtm: None,
             program_search_cps: Vec::new(),
             archive_search_cps: Vec::new(),
             mapping_info: HashMap::new(),
@@ -84,12 +77,6 @@ impl DataTypeMapper {
             data_space,
             default_variable_length_struct_category_path: ROOT.clone(),
         })
-    }
-
-    /// Supplies the built-in data type manager searched last by [`get_data_type`](Self::get_data_type)
-    /// (Java's `BuiltInDataTypeManager.getDataTypeManager()`).
-    pub fn set_built_in_data_type_manager(&mut self, dtm: Box<dyn DataTypeManager>) {
-        self.built_in_dtm = Some(dtm);
     }
 
     /// `getDefaultVariableLengthStructCategoryPath()`: the category of the custom structure
@@ -186,6 +173,25 @@ impl DataTypeMapper {
         Ok(())
     }
 
+    /// Registers each of the specified structure mapped types, in order, stopping at the first
+    /// failure (`registerStructures(List<Class<?>>, DataTypeMapperContext)`).
+    ///
+    /// Java passes a list of `Class` tokens; here each type is named by its
+    /// [`StructureRegistrar`], made with [`structure_registrar`].
+    ///
+    /// # Errors
+    /// The first [`register_structure`](Self::register_structure) error.
+    pub fn register_structures(
+        &mut self,
+        types: &[StructureRegistrar],
+        context: &dyn DataTypeMapperContext,
+    ) -> io::Result<()> {
+        for register in types {
+            register(self, context)?;
+        }
+        Ok(())
+    }
+
     /// `getStructureMappingInfo(Class)`: the mapping info of a registered type.
     pub fn get_structure_mapping_info<T: StructureMapped>(&self) -> Option<Arc<StructureMappingInfo<T>>> {
         self.mapping_info
@@ -218,15 +224,12 @@ impl DataTypeMapper {
             if let Some(archive_dtm) = self.archive_dtm.as_deref() {
                 data_type = find_type(name, &self.archive_search_cps, archive_dtm);
                 if let (Some(dt), Some(mut dtm)) = (data_type.take(), self.program.get_data_type_manager()) {
-                    data_type = Some(dtm.resolve(dt, ConflictResolutionPolicy::UseExisting.get_handler()));
+                    data_type = Some(dtm.resolve(dt, DWARFDataTypeConflictHandler::INSTANCE));
                 }
             }
         }
         if data_type.is_none() {
-            data_type = self
-                .built_in_dtm
-                .as_deref()
-                .and_then(|dtm| dtm.get_data_type_in_category(&ROOT, name));
+            data_type = BuiltInDataTypeManager::get_data_type_manager().get_data_type_in_category(&ROOT, name);
         }
         data_type
     }
@@ -361,6 +364,15 @@ impl std::fmt::Display for DataTypeMapper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "DataTypeMapper {{ program: {} }}", Program::get_name(self.program.as_ref()))
     }
+}
+
+/// Registers one structure mapped type with a mapper: the type-erased stand-in for a Java
+/// `Class<?>` token in [`DataTypeMapper::register_structures`]'s list.
+pub type StructureRegistrar = fn(&mut DataTypeMapper, &dyn DataTypeMapperContext) -> io::Result<()>;
+
+/// The [`StructureRegistrar`] of `T` (Java's `T.class` in a `registerStructures` list).
+pub fn structure_registrar<T: StructureMapped>() -> StructureRegistrar {
+    |mapper, context| mapper.register_structure::<T>(context)
 }
 
 /// `findType(String, List<CategoryPath>, DataTypeManager)`.

@@ -27,6 +27,7 @@ pub mod boolean_data_type;
 pub mod built_in;
 pub mod built_in_data_type;
 pub mod built_in_data_type_class_exclusion_filter;
+pub mod built_in_data_type_manager;
 pub mod byte_data_type;
 pub mod category;
 pub mod category_path;

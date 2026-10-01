@@ -534,6 +534,17 @@ pub trait DataType: Send + Sync {
         None
     }
 
+    /// Stands in for Java reference identity (`dt1 == dt2`, `System.identityHashCode(dt)`): the
+    /// address of the data type object itself.
+    ///
+    /// Shared handles (see [`share_data_type`](crate::program::seam_stubs::share_data_type))
+    /// forward this to the value they wrap, so two handles to one data type report the same key
+    /// even though the handles themselves are distinct allocations. Used where Java compares data
+    /// types by identity, e.g. `DWARFDataTypeConflictHandler`'s visited-pair set.
+    fn identity_key(&self) -> usize {
+        self as *const Self as *const () as usize
+    }
+
     /// Stands in for `instanceof ghidra.program.model.data.DefaultDataType`, used by
     /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Implementors of
     /// [`DefaultDataType`](crate::program::model::data::default_data_type::DefaultDataType) are

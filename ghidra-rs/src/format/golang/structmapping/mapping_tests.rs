@@ -577,3 +577,54 @@ fn comment_values_render_like_java_to_string() {
     let err: std::io::Result<String> = Err(std::io::Error::other("boom"));
     assert!(err.comment_text().is_err());
 }
+
+#[test]
+fn register_structures_registers_in_order_and_stops_at_the_first_failure() {
+    use super::data_type_mapper::structure_registrar;
+
+    #[derive(DeriveStructureMapped)]
+    #[structure_mapping(structure_name = "nope")]
+    struct Unmapped {
+        #[field_mapping]
+        value: u8,
+    }
+
+    let (program, _) = test_program(functab_types());
+    let mut mapper = DataTypeMapper::new(program, None).unwrap();
+    mapper.add_program_search_category_path(&[ROOT.clone()]);
+    let ctx = TagContext(vec!["1.18+"]);
+    mapper
+        .register_structures(&[structure_registrar::<TestInner>(), structure_registrar::<TestFunctab>()], &ctx)
+        .unwrap();
+    assert!(mapper.get_structure_mapping_info::<TestInner>().is_some());
+    assert!(mapper.get_structure_mapping_info::<TestFunctab>().is_some());
+
+    let (program, _) = test_program(functab_types());
+    let mut mapper = DataTypeMapper::new(program, None).unwrap();
+    mapper.add_program_search_category_path(&[ROOT.clone()]);
+    let err = mapper
+        .register_structures(
+            &[structure_registrar::<TestInner>(), structure_registrar::<Unmapped>(), structure_registrar::<TestFunctab>()],
+            &ctx,
+        )
+        .unwrap_err();
+    assert_eq!(err.to_string(), "Missing struct definition for class Unmapped, structure name: [nope]");
+    assert!(mapper.get_structure_mapping_info::<TestInner>().is_some());
+    assert!(mapper.get_structure_mapping_info::<TestFunctab>().is_none());
+}
+
+#[test]
+fn get_data_type_falls_back_to_the_built_in_data_types() {
+    // the test program has no "dword" or "char"; Java's last resort is
+    // BuiltInDataTypeManager.getDataTypeManager().getDataType(CategoryPath.ROOT, name)
+    use super::test_support::test_mapper;
+    let mapper = test_mapper(functab_types());
+    let dword = mapper.get_data_type("dword").expect("built-in dword");
+    assert_eq!(dword.get_length(), 4);
+    assert_eq!(dword.get_path_name(), "/dword");
+    assert_eq!(mapper.get_data_type("char").unwrap().get_length(), 1);
+    assert!(mapper.get_data_type("no_such_type").is_none());
+    // program types still win over built-ins of the same name
+    let mapper = test_mapper(vec![Arc::new(|| simple("dword", 8))]);
+    assert_eq!(mapper.get_data_type("dword").unwrap().get_length(), 8);
+}

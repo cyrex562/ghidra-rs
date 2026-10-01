@@ -39,7 +39,7 @@ DONE	trait	19	3	72	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 DONE	trait	16	34	99	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFUtil.java
 DONE	trait	19	31	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldContext.java
 DONE	trait	18	35	76	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureContext.java
-PARK	trait	17	32	76	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapper.java
+DONE	trait	17	32	76	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapper.java
 PARK	trait	16	35	90	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/MarkupSession.java
 DONE	trait	19	5	82	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoArrayType.java
 DONE	trait	17	6	82	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoSliceType.java
@@ -1453,11 +1453,11 @@ TODO	struct	20	17	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	19	9	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFIndirectAttribute.java
 TODO	struct	19	8	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFMissingAttributeValue.java
 TODO	struct	19	11	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFStringAttribute.java
-TODO	struct	19	18	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataTypeConflictHandler.java
+DONE	struct	19	18	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataTypeConflictHandler.java
 TODO	struct	20	20	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFName.java
 TODO	struct	20	13	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DataTypeGraphComparator.java
 TODO	struct	19	18	80	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataTypeManager.java
-TODO	struct	19	15	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataInstanceHelper.java
+DONE	struct	19	15	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFDataInstanceHelper.java
 TODO	struct	21	6	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionInstruction.java
 TODO	struct	22	5	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionUnsupportedOpException.java
 TODO	struct	21	3	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionTerminalDerefException.java

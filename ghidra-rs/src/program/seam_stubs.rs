@@ -326,6 +326,10 @@ mod shared_data_type_forwarding {
             self.0.runtime_class()
         }
 
+        fn identity_key(&self) -> usize {
+            self.0.identity_key()
+        }
+
         fn is_default_data_type(&self) -> bool {
             self.0.is_default_data_type()
         }
@@ -468,6 +472,9 @@ pub fn share_data_type(data_type: &Arc<dyn DataType>) -> Box<dyn DataType> {
 struct SharedArray(Arc<dyn DataType>);
 
 impl DataType for SharedArray {
+    fn identity_key(&self) -> usize {
+        self.0.identity_key()
+    }
     fn get_name(&self) -> String {
         self.0.get_name()
     }
@@ -564,6 +571,9 @@ impl crate::program::model::data::array::Array for SharedArray {
 struct SharedComposite(Arc<dyn DataType>);
 
 impl DataType for SharedComposite {
+    fn identity_key(&self) -> usize {
+        self.0.identity_key()
+    }
     fn get_name(&self) -> String {
         self.0.get_name()
     }
