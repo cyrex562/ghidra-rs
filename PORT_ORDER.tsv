@@ -1497,9 +1497,9 @@ TODO	struct	18	1	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 TODO	struct	17	2	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/line/DWARFLineProgramExecutor.java
 TODO	struct	16	12	83	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/ExternalDebugFileSymbolImporter.java
 TODO	struct	15	2	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GolangElfInfoProducer.java
-TODO	struct	16	11	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/JsonPatch.java
-TODO	struct	16	10	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/JsonPatchApplier.java
-TODO	struct	15	11	7	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoApiSnapshot.java
+DONE	struct	16	11	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/JsonPatch.java
+DONE	struct	16	10	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/JsonPatchApplier.java
+DONE	struct	15	11	7	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoApiSnapshot.java
 TODO	struct	15	10	10	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoIface.java
 TODO	struct	17	10	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoPcValueEvaluator.java
 TODO	struct	22	10	81	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoVarlenString.java
