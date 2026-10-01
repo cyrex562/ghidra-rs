@@ -162,6 +162,116 @@ pub trait AbstractLeb128DataType: BuiltIn + Dynamic {
     }
 }
 
+/// Defines a concrete LEB128 data type (`SignedLeb128DataType`/`UnsignedLeb128DataType`): a
+/// struct embedding a [`BuiltInBase`](super::built_in::BuiltInBase) -- the `signed` field of the
+/// Java base class is a per-type constant -- with its `dataType` singleton and its
+/// `DataType`/`BuiltIn`/`Dynamic`/[`AbstractLeb128DataType`] impls.
+macro_rules! leb128_data_type {
+    (
+        $(#[$meta:meta])*
+        $ty:ident { name: $name:literal, signed: $signed:literal, description: $desc:literal, }
+    ) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone)]
+        pub struct $ty {
+            base: $crate::program::model::data::built_in::BuiltInBase,
+        }
+
+        impl $ty {
+            /// Creates an instance bound to `dtm`'s data organization (Java: `new T(dtm)`; `None`
+            /// is the no-argument constructor).
+            pub fn new(dtm: Option<&dyn $crate::program::model::data::data_type_manager::DataTypeManager>) -> Self {
+                Self { base: $crate::program::model::data::built_in::BuiltInBase::new(None, $name, dtm) }
+            }
+
+            fn c_type_declaration(
+                &self,
+                data_organization: Option<&$crate::program::model::data::data_organization_impl::DataOrganizationImpl>,
+            ) -> Option<String> {
+                $crate::program::model::data::built_in::BuiltIn::built_in_get_c_type_declaration(self, data_organization)
+            }
+
+            fn built_in_settings_definitions(&self) -> Vec<Box<dyn $crate::docking::settings::settings_definition::SettingsDefinition>> {
+                $crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType::leb128_built_in_settings_definitions(self)
+            }
+
+            fn decompiler_display_name(&self, _language: $crate::program::model::lang::decompiler_language::DecompilerLanguage) -> String {
+                $name.to_string()
+            }
+        }
+
+        $crate::program::model::data::built_in::built_in_singleton!($ty);
+        $crate::program::model::data::built_in::impl_built_in!($ty);
+
+        impl std::fmt::Display for $ty {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(&$crate::program::model::data::data_type::DataType::get_display_name(self))
+            }
+        }
+
+        impl $crate::program::model::data::data_type::DataType for $ty {
+            $crate::program::model::data::built_in::built_in_data_type_methods!();
+
+            fn get_length(&self) -> i32 {
+                -1
+            }
+            fn get_description(&self) -> String {
+                $desc.to_string()
+            }
+            fn get_value_class(&self, settings: &dyn $crate::docking::settings::settings::Settings) -> Option<std::any::TypeId> {
+                $crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType::leb128_value_class(self, settings)
+            }
+            fn get_value(
+                &self,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                max_length: i32,
+            ) -> Option<Box<dyn std::any::Any>> {
+                $crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType::leb128_value(self, buf, settings, max_length)
+            }
+            fn get_representation(
+                &self,
+                buf: &dyn $crate::program::model::mem::MemBuffer,
+                settings: &dyn $crate::docking::settings::settings::Settings,
+                length: i32,
+            ) -> String {
+                $crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType::leb128_representation(self, buf, settings, length)
+            }
+            fn get_default_label_prefix(&self) -> Option<String> {
+                Some($name.to_string())
+            }
+            fn is_equivalent(&self, dt: &dyn $crate::program::model::data::data_type::DataType) -> bool {
+                $crate::program::model::data::built_in::same_class(self, dt)
+            }
+            fn is_dynamic_type(&self) -> bool {
+                true
+            }
+            fn as_dynamic(&self) -> Option<&dyn $crate::program::model::data::dynamic::Dynamic> {
+                Some(self)
+            }
+        }
+
+        impl $crate::program::model::data::dynamic::Dynamic for $ty {
+            fn get_dynamic_length(&self, buf: &dyn $crate::program::model::mem::MemBuffer, max_length: i32) -> i32 {
+                $crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType::leb128_dynamic_length(self, buf, max_length)
+            }
+            fn can_specify_length(&self) -> bool {
+                true
+            }
+            fn get_replacement_base_type(&self) -> Box<dyn $crate::program::model::data::data_type::DataType> {
+                $crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType::leb128_replacement_base_type(self)
+            }
+        }
+
+        impl $crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType for $ty {
+            fn leb128_is_signed(&self) -> bool {
+                $signed
+            }
+        }
+    };
+}
+pub(crate) use leb128_data_type;
+
 #[cfg(test)]
 mod tests {
     use super::*;

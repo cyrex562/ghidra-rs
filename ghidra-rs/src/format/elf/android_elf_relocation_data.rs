@@ -1,12 +1,9 @@
 //! Port of `ghidra.app.util.bin.format.elf.AndroidElfRelocationData`.
 //!
-//! Java's version is a package-private concrete class `extends SignedLeb128DataType`. Per this
-//! crate's trait-stack for that dependency-cycle cut-point (see
-//! [`SignedLeb128DataType`]/[`AbstractLeb128DataType`]/[`BuiltIn`]/[`Dynamic`]/[`DataTypeImpl`]'s
-//! own module docs), a concrete implementor must implement the whole chain:
-//! [`DataType`] + [`DataTypeImpl`] + [`BuiltInDataType`] + [`BuiltIn`] + [`Dynamic`] +
-//! [`AbstractLeb128DataType`] + [`SignedLeb128DataType`]. This is the first concrete, in-repo
-//! production implementor of that chain; the `DataTypeImpl` bookkeeping fields
+//! Java's version is a package-private concrete class `extends SignedLeb128DataType`. The Rust
+//! `SignedLeb128DataType` is a concrete struct, so this type implements the behaviour chain it
+//! extends directly: [`DataType`] + [`DataTypeImpl`] + [`BuiltInDataType`] + [`BuiltIn`] +
+//! [`Dynamic`] + [`AbstractLeb128DataType`] (signed). The `DataTypeImpl` bookkeeping fields
 //! (`universal_id`/`source_archive_id`/`last_change_time*`/`parents`) follow the same shape
 //! [`TypedefDataType`](crate::program::model::data::typedef_data_type::TypedefDataType)
 //! established for its own `DataTypeImpl` storage.
@@ -30,7 +27,6 @@ use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_impl::DataTypeImpl;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::dynamic::Dynamic;
-use crate::program::model::data::signed_leb128_data_type::SignedLeb128DataType;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::util::UniversalID;
 use std::sync::Weak;
@@ -74,6 +70,16 @@ impl AndroidElfRelocationData {
 }
 
 impl DataType for AndroidElfRelocationData {
+    /// Port of `AndroidElfRelocationData.clone(DataTypeManager)`.
+    ///
+    /// # Panics
+    /// Always panics, mirroring Java's `throw new UnsupportedOperationException("may not be
+    /// cloned")`: specific instances are used by `AndroidElfRelocationTableDataType` and must not
+    /// be duplicated.
+    fn clone_data_type(&self, _dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        panic!("may not be cloned")
+    }
+
     fn get_name(&self) -> String {
         "sleb128".to_string()
     }
@@ -187,19 +193,6 @@ impl AbstractLeb128DataType for AndroidElfRelocationData {
     }
 }
 
-impl SignedLeb128DataType for AndroidElfRelocationData {
-    /// Port of `AndroidElfRelocationData.clone(DataTypeManager)`, overriding
-    /// `SignedLeb128DataType.clone(DataTypeManager)`.
-    ///
-    /// # Panics
-    /// Always panics, mirroring Java's `throw new UnsupportedOperationException("may not be
-    /// cloned")`: specific instances are used by `AndroidElfRelocationTableDataType` and must not
-    /// be duplicated.
-    fn signed_leb128_clone(&self, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn SignedLeb128DataType> {
-        panic!("may not be cloned")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -245,8 +238,9 @@ mod tests {
     fn description_overrides_signed_leb128_default() {
         let dt = AndroidElfRelocationData::new(None, 0);
         assert_eq!(dt.get_description(), "Android Packed Relocation Data for ELF");
-        // Confirms the override, not `SignedLeb128DataType`'s own default description.
-        assert_ne!(dt.get_description(), dt.signed_leb128_description());
+        // Confirms the override, not `SignedLeb128DataType`'s own description.
+        let base = crate::program::model::data::signed_leb128_data_type::SignedLeb128DataType::new(None);
+        assert_ne!(dt.get_description(), base.get_description());
     }
 
     #[test]
@@ -270,7 +264,9 @@ mod tests {
     #[should_panic(expected = "may not be cloned")]
     fn clone_is_unsupported() {
         let dt = AndroidElfRelocationData::new(None, 0);
-        let _ = dt.signed_leb128_clone(None);
+        struct NoDtm;
+        impl DataTypeManager for NoDtm {}
+        let _ = dt.clone_data_type(&NoDtm);
     }
 
     #[test]

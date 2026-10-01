@@ -45,11 +45,7 @@
 //!   [`AndroidElfRelocationData`] for the offset-carrying overload), so they are inlined locally
 //!   as [`AndroidElfRelocationGroup::leb128_component`] /
 //!   [`AndroidElfRelocationGroup::leb128_component_with_offset`]. The plain (non-offset-carrying)
-//!   overload constructs `new SignedLeb128DataType(dtm)` -- the Java base class itself, with no
-//!   extra payload -- for which this crate has no concrete production implementor yet (only
-//!   [`AndroidElfRelocationData`], which carries an Android-specific description/offset), so a
-//!   private [`GenericSignedLeb128DataType`] stands in, mirroring `AndroidElfRelocationData`'s own
-//!   `DataTypeImpl`+`BuiltIn` chain precedent minus the extra field.
+//!   overload constructs `new SignedLeb128DataType(dtm)`, the real [`SignedLeb128DataType`].
 //! - `ReadOnlyDataTypeComponent`'s constructor needs an `Arc<dyn DynamicDataType>` for the
 //!   *parent* component; like
 //!   [`RepeatCountDataType`](crate::program::model::data::repeat_count_data_type::RepeatCountDataType)'s
@@ -57,36 +53,29 @@
 //!   plain `&self` borrow, so a private [`GroupComponent`] implementing [`DataTypeComponent`]
 //!   directly stands in instead.
 
-use std::any::TypeId;
 use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::app::util::bin::mem_buffer_byte_provider::MemBufferByteProvider;
 use crate::docking::settings::settings::Settings;
-use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::elf::android_elf_relocation_data::AndroidElfRelocationData;
 use crate::format::seam_stubs::AndroidElfRelocationOffset as AndroidElfRelocationOffsetStub;
-use crate::program::model::data::abstract_leb128_data_type::AbstractLeb128DataType;
-use crate::program::model::data::built_in::BuiltIn;
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
 use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
-use crate::program::model::data::data_type_impl::DataTypeImpl;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::dynamic::Dynamic;
 use crate::program::model::data::dynamic_data_type::DynamicDataType;
 use crate::program::model::data::signed_leb128_data_type::SignedLeb128DataType;
-use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::mem::MemBuffer;
 use crate::program::seam_stubs::share_data_type;
-use crate::util::UniversalID;
 
 /// A [`BinaryReader`] backed by a [`MemBufferByteProvider`], mirroring the Java constructor call
 /// `new BinaryReader(provider, false)`. Kept private/local: this crate has no canonical
@@ -164,142 +153,6 @@ impl<'a> LegacyBinaryReader for MemBufferBinaryReader<'a> {
 /// `reader.readNext(LEB128Info::signed)`.
 fn read_next_sleb128(reader: &mut MemBufferBinaryReader<'_>) -> io::Result<LEB128Info> {
     LEB128Info::signed(reader)
-}
-
-/// Minimal concrete stand-in for a plain `new SignedLeb128DataType(dtm)` instance -- the Java
-/// base class itself, with no extra payload -- needed for [`GroupComponent`]s built from
-/// group-level LEB128 fields (`group_size`, `group_flags`, `group_offsetDelta`, `group_info`,
-/// `group_addend`) that carry no stashed relocation offset. Mirrors
-/// [`AndroidElfRelocationData`]'s `DataTypeImpl`+`BuiltIn` chain precedent, minus the extra
-/// `relocation_offset` field that class needs and this one does not.
-struct GenericSignedLeb128DataType {
-    universal_id: UniversalID,
-    source_archive_id: Option<UniversalID>,
-    last_change_time: i64,
-    last_change_time_in_source_archive: i64,
-    parents: Vec<Weak<dyn DataType>>,
-}
-
-impl GenericSignedLeb128DataType {
-    fn new() -> Self {
-        GenericSignedLeb128DataType {
-            universal_id: UniversalID::new(0),
-            source_archive_id: None,
-            last_change_time: 0,
-            last_change_time_in_source_archive: 0,
-            parents: Vec::new(),
-        }
-    }
-}
-
-impl DataType for GenericSignedLeb128DataType {
-    fn get_name(&self) -> String {
-        "sleb128".to_string()
-    }
-
-    fn get_category_path(&self) -> CategoryPath {
-        ROOT.clone()
-    }
-
-    fn get_length(&self) -> i32 {
-        self.leb128_length()
-    }
-
-    fn get_description(&self) -> String {
-        self.signed_leb128_description()
-    }
-
-    fn get_value_class(&self, settings: &dyn Settings) -> Option<TypeId> {
-        self.leb128_value_class(settings)
-    }
-}
-
-impl DataTypeImpl for GenericSignedLeb128DataType {
-    fn stored_default_settings(&self) -> Box<dyn Settings> {
-        DataType::get_default_settings(self)
-    }
-
-    fn set_stored_default_settings(&mut self, _settings: Box<dyn Settings>) {}
-
-    fn stored_source_archive(&self) -> Option<Box<dyn SourceArchive>> {
-        None
-    }
-
-    fn set_stored_source_archive(&mut self, archive: Option<Box<dyn SourceArchive>>) {
-        self.source_archive_id = archive.map(|a| a.source_archive_id());
-    }
-
-    fn stored_universal_id(&self) -> UniversalID {
-        self.universal_id
-    }
-
-    fn stored_last_change_time(&self) -> i64 {
-        self.last_change_time
-    }
-
-    fn set_stored_last_change_time(&mut self, last_change_time: i64) {
-        self.last_change_time = last_change_time;
-    }
-
-    fn stored_last_change_time_in_source_archive(&self) -> i64 {
-        self.last_change_time_in_source_archive
-    }
-
-    fn set_stored_last_change_time_in_source_archive(&mut self, last_change_time: i64) {
-        self.last_change_time_in_source_archive = last_change_time;
-    }
-
-    fn stored_parent_refs(&self) -> Vec<Weak<dyn DataType>> {
-        self.parents.clone()
-    }
-
-    fn set_stored_parent_refs(&mut self, parents: Vec<Weak<dyn DataType>>) {
-        self.parents = parents;
-    }
-}
-
-impl BuiltInDataType for GenericSignedLeb128DataType {
-    fn get_c_type_declaration(&self, _data_organization: Option<&DataOrganizationImpl>) -> Option<String> {
-        None
-    }
-
-    fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-}
-
-impl BuiltIn for GenericSignedLeb128DataType {
-    fn built_in_is_equivalent(&self, dt: &dyn DataType) -> bool {
-        dt.get_name() == self.get_name()
-    }
-
-    fn get_built_in_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
-        Vec::new()
-    }
-}
-
-impl Dynamic for GenericSignedLeb128DataType {
-    fn get_dynamic_length(&self, buf: &dyn MemBuffer, max_length: i32) -> i32 {
-        self.leb128_dynamic_length(buf, max_length)
-    }
-
-    fn can_specify_length(&self) -> bool {
-        self.leb128_can_specify_length()
-    }
-
-    fn get_replacement_base_type(&self) -> Box<dyn DataType> {
-        self.leb128_replacement_base_type()
-    }
-}
-
-impl AbstractLeb128DataType for GenericSignedLeb128DataType {
-    fn leb128_is_signed(&self) -> bool {
-        true
-    }
-}
-
-impl SignedLeb128DataType for GenericSignedLeb128DataType {
-    fn signed_leb128_clone(&self, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn SignedLeb128DataType> {
-        Box::new(GenericSignedLeb128DataType::new())
-    }
 }
 
 /// Private stand-in for `ghidra.program.model.data.ReadOnlyDataTypeComponent`, used by
@@ -394,7 +247,7 @@ impl AndroidElfRelocationGroup {
 
     fn leb128_component(&self, leb128: &LEB128Info, ordinal: i32, name: &str, comment: Option<String>) -> GroupComponent {
         GroupComponent {
-            data_type: Arc::new(GenericSignedLeb128DataType::new()),
+            data_type: Arc::new(SignedLeb128DataType::new(None)),
             length: leb128.get_length(),
             ordinal,
             offset: leb128.get_offset() as i32,
@@ -608,7 +461,7 @@ impl DynamicDataType for AndroidElfRelocationGroup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{AddressSpace, AddressSpaceType, SpecialAddress};
+    use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::mem::MemoryAccessException;
 
     struct MockSettings;
