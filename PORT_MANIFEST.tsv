@@ -3996,7 +3996,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Mac
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/ObsoleteException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/RelocationInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Section.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Section.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/SectionAttributes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/SectionNames.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/SectionTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
@@ -4006,7 +4006,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DataInCodeCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DataInCodeEntry.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldChainedFixupsCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldExportsTrieCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldExportsTrieCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommandConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibrary.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
@@ -4022,7 +4022,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FileSetEntryCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FixedVirtualMemoryFileCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FixedVirtualMemorySharedLibraryCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FunctionStartsCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FunctionStartsCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/IdentCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkEditDataCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkerOptionCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
@@ -4037,7 +4037,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/PreboundDynamicLibraryCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/RoutinesCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/RunPathCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SegmentCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SegmentCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SegmentConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SegmentNames.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SourceVersionCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
@@ -4046,7 +4046,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SubLibraryCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SubUmbrellaCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SymbolCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SymbolTableCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SymbolTableCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/TableOfContents.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/TwoLevelHint.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/TwoLevelHintsCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
@@ -4062,7 +4062,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/chained/DyldChainedStartsOffsets.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands chained 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureBlobIndex.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands codesignature 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureBlobParser.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands codesignature 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureCodeDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands codesignature 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureCodeDirectory.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands codesignature 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands codesignature
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureGenericBlob.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands codesignature 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureSuperBlob.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands codesignature 
@@ -4084,7 +4084,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyl
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageInfoExtra.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageTextInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsEntry.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingAndSlideInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheRangeEntry.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
@@ -4095,9 +4095,9 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyl
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo5.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfoCommon.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedPtr.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldFixup.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldSubcacheEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldSubcacheEntry.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcDylib.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcOptimization.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/MachoPrelinkConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho prelink

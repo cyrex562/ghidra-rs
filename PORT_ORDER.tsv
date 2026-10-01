@@ -1109,7 +1109,7 @@ TODO	struct	13	32	75	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opin
 TODO	struct	13	31	33	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFunctionManager.java
 TODO	struct	13	32	25	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugXmlLoader.java
 DONE	struct	16	23	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/RelocationInfo.java
-TODO	struct	15	30	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Section.java
+DONE	struct	15	30	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Section.java
 DONE	struct	15	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/BuildVersionCommand.java
 TODO	struct	18	32	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/comments/SetCommentCmd.java
 TODO	struct	18	15	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/DeleteFunctionCmd.java
@@ -1138,12 +1138,12 @@ TODO	struct	15	15	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	struct	15	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/CorruptLoadCommand.java
 DONE	struct	16	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DataInCodeEntry.java
 DONE	struct	15	15	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DataInCodeCommand.java
-TODO	struct	15	15	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldExportsTrieCommand.java
+DONE	struct	15	15	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldExportsTrieCommand.java
 DONE	struct	18	25	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandString.java
 DONE	struct	17	15	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibrary.java
 DONE	struct	17	15	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryCommand.java
 DONE	struct	19	19	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/NList.java
-TODO	struct	18	18	85	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SymbolTableCommand.java
+DONE	struct	18	18	85	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SymbolTableCommand.java
 DONE	struct	17	15	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryModule.java
 DONE	struct	17	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryReference.java
 DONE	struct	17	15	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLinkerCommand.java
@@ -1155,8 +1155,8 @@ DONE	struct	17	15	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/b
 DONE	struct	17	15	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FixedVirtualMemoryFileCommand.java
 DONE	struct	18	17	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/ObsoleteCommand.java
 DONE	struct	17	15	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FixedVirtualMemorySharedLibraryCommand.java
-TODO	struct	18	22	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SegmentCommand.java
-TODO	struct	17	15	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FunctionStartsCommand.java
+DONE	struct	18	22	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/SegmentCommand.java
+DONE	struct	17	15	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FunctionStartsCommand.java
 DONE	struct	17	15	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/IdentCommand.java
 DONE	struct	17	15	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkerOptionCommand.java
 DONE	struct	18	15	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/PrebindChecksumCommand.java
@@ -1183,7 +1183,7 @@ TODO	struct	19	7	79	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	struct	19	8	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageInfo.java
 DONE	struct	19	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheImageTextInfo.java
 DONE	struct	20	6	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsEntry.java
-TODO	struct	19	6	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsInfo.java
+DONE	struct	19	6	75	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheLocalSymbolsInfo.java
 DONE	struct	19	8	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingAndSlideInfo.java
 DONE	struct	19	16	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheMappingInfo.java
 DONE	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo1.java
@@ -1191,7 +1191,7 @@ DONE	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo3.java
 DONE	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo4.java
 DONE	struct	20	6	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldCacheSlideInfo5.java
-TODO	struct	19	6	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldSubcacheEntry.java
+DONE	struct	19	6	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldSubcacheEntry.java
 DONE	struct	19	1	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadStateARM.java
 DONE	struct	19	1	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadStateARM_64.java
 DONE	struct	19	1	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadStateHeader.java
@@ -1207,7 +1207,7 @@ TODO	struct	16	2	48	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	16	2	48	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/ClassicLazyBindProcessor.java
 TODO	struct	16	3	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseOpcode.java
 TODO	struct	16	2	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseTable.java
-TODO	struct	14	5	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java
+DONE	struct	14	5	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldChainedStartsOffsets.java
 TODO	struct	15	9	91	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcOptimization.java
 TODO	struct	14	5	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/LibObjcDylib.java
 PARK	struct	13	35	48	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheUtils.java
@@ -3661,7 +3661,7 @@ TODO	struct	0	1	24	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/debu
 TODO	struct	0	1	10	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/sections/EhFrameHeaderSection.java
 TODO	struct	0	1	86	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SetEquateTableModel.java
 DONE	struct	0	1	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureBlobIndex.java
-TODO	struct	0	1	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureCodeDirectory.java
+DONE	struct	0	1	73	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureCodeDirectory.java
 TODO	struct	0	1	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureSuperBlob.java
 TODO	struct	0	1	76	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocationTable.java
 TODO	struct	0	1	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/GzfExporter.java

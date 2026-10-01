@@ -503,6 +503,20 @@ mod tests {
     }
 
     #[test]
+    fn data_type_layouts_match_java() {
+        use crate::format::macho::struct_builder::test_support::fields;
+        let b64 = SegmentCommand::create(MH_CIGAM_64, "__TEXT", 0, 0, 0, 0, 0, 0, 0).unwrap();
+        let s = SegmentCommand::new(&mut BinaryReader::from_bytes(b64, true), false).unwrap();
+        let dt = s.to_structure().unwrap();
+        assert_eq!(dt.get_name(), "segment_command");
+        assert_eq!(dt.get_length(), 0x48);
+        assert_eq!(fields(&dt)[2], ("segname".to_string(), 8, 16));
+        let b32 = SegmentCommand::create(MH_MAGIC, "__TEXT", 0, 0, 0, 0, 0, 0, 0).unwrap();
+        let s = SegmentCommand::new(&mut BinaryReader::from_bytes(b32, false), true).unwrap();
+        assert_eq!(s.to_structure().unwrap().get_length(), 0x38);
+    }
+
+    #[test]
     fn huge_section_count_is_rejected() {
         let mut b = Bytes::new(true);
         b.u32(LC_SEGMENT_64).u32(72).name("__X", 16).u64(0).u64(0).u64(0).u64(0);

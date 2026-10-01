@@ -19,13 +19,16 @@ use crate::app::util::bin::struct_converter::ToDataTypeError;
 use crate::format::macho::mach_constants::DATA_TYPE_CATEGORY;
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::byte_data_type::ByteDataType;
+use crate::program::model::data::char_data_type::CharDataType;
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::dword_data_type::DWordDataType;
 use crate::program::model::data::qword_data_type::QWordDataType;
 use crate::program::model::data::structure::Structure;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::data::structure_data_type::StructureDataType;
+use crate::program::model::data::unsigned_leb128_data_type::UnsignedLeb128DataType;
 use crate::program::model::data::word_data_type::WordDataType;
 
 /// Java's `StructConverter.BYTE`.
@@ -56,30 +59,15 @@ pub(crate) fn array(elem: Box<dyn DataType>, count: i32) -> Result<Box<dyn DataT
         .map_err(invalid)
 }
 
-/// Java's `new StringDataType()`, the fixed-length string used for the 16-byte `char[]` name
-/// fields (`segname`, `sectname`, ...).
-///
-/// `StringDataType` is not yet a real, constructible built-in in this crate (it is still a
-/// mock-only trait awaiting the built-in data-type layer), so this reports that gap as an error
-/// rather than substituting a different data type. The Mach-O structures that need it keep their
-/// `PORT_MANIFEST.tsv` rows `TODO` until it lands.
+/// Java's `new StringDataType()` / `StructConverter.STRING` (`StringDataType.dataType`), the
+/// fixed-length string used for the 16-byte `char[]` name fields (`segname`, `sectname`, ...).
 pub(crate) fn fixed_string() -> Result<Box<dyn DataType>, ToDataTypeError> {
-    Err(ToDataTypeError::Io(io::Error::new(
-        io::ErrorKind::Unsupported,
-        "StringDataType is not yet ported as a real built-in data type",
-    )))
+    Ok(Box::new(StringDataType::new(None)))
 }
 
 /// Java's `StructConverter.ULEB128` (`UnsignedLeb128DataType.dataType`).
-///
-/// Like [`fixed_string`], the unsigned LEB128 built-in is not yet a real, constructible data type
-/// in this crate (only a trait), so this reports that gap; the markups that need it keep their
-/// classes `TODO` until it lands.
 pub(crate) fn uleb128() -> Result<Box<dyn DataType>, ToDataTypeError> {
-    Err(ToDataTypeError::Io(io::Error::new(
-        io::ErrorKind::Unsupported,
-        "UnsignedLeb128DataType is not yet ported as a real built-in data type",
-    )))
+    Ok(Box::new(UnsignedLeb128DataType::new(None)))
 }
 
 /// Java's `new ArrayDataType(elem, count, elementLength)` with an explicit element length (only
@@ -95,14 +83,8 @@ pub(crate) fn array_with_element_length(
 }
 
 /// Java's `StructConverter.ASCII` (`CharDataType.dataType`).
-///
-/// Like [`fixed_string`], `CharDataType` is not yet a real, constructible built-in in this crate,
-/// so this reports that gap; the structures that need it keep their classes `TODO` until it lands.
 pub(crate) fn ascii() -> Result<Box<dyn DataType>, ToDataTypeError> {
-    Err(ToDataTypeError::Io(io::Error::new(
-        io::ErrorKind::Unsupported,
-        "CharDataType is not yet ported as a real built-in data type",
-    )))
+    Ok(Box::new(CharDataType::new(None)))
 }
 
 fn invalid(message: String) -> ToDataTypeError {
@@ -232,7 +214,9 @@ pub(crate) mod test_support {
     //! Helpers for inspecting the structures the Mach-O `toDataType()` ports build.
 
     use crate::program::model::data::composite::Composite;
-    use crate::program::model::data::structure_data_type::StructureDataType;
+    use crate::program::model::data::string_data_type::StringDataType;
+use crate::program::model::data::structure_data_type::StructureDataType;
+use crate::program::model::data::unsigned_leb128_data_type::UnsignedLeb128DataType;
 
     /// `(field name, offset, length)` for each component of a structure built by
     /// [`super::MachStruct`].

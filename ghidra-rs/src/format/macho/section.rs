@@ -414,6 +414,23 @@ mod tests {
     }
 
     #[test]
+    fn data_type_layouts_match_java() {
+        use crate::format::macho::struct_builder::test_support::fields;
+        let b64 = section_bytes(false, true, "__text", "__TEXT", 0, 0, 0, 0, 0, 0);
+        let s64 = Section::new(&mut BinaryReader::from_bytes(b64, true), false).unwrap().to_structure().unwrap();
+        assert_eq!(s64.get_name(), "section");
+        assert_eq!(s64.get_length(), 80);
+        let f = fields(&s64);
+        assert_eq!(f[0], ("sectname".to_string(), 0, 16));
+        assert_eq!(f[2], ("addr".to_string(), 32, 8));
+        assert_eq!(f.last().unwrap().0, "reserved3");
+        let b32 = section_bytes(true, false, "__text", "__TEXT", 0, 0, 0, 0, 0, 0);
+        let s32 = Section::new(&mut BinaryReader::from_bytes(b32, false), true).unwrap().to_structure().unwrap();
+        assert_eq!(s32.get_length(), 68);
+        assert_eq!(fields(&s32).last().unwrap().0, "reserved2");
+    }
+
+    #[test]
     fn display_matches_java_to_string() {
         let b = section_bytes(
             false, true, "__text", "__TEXT", 0x1000, 0x20, 0x400, 0, 0,

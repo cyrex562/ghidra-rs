@@ -88,6 +88,7 @@ mod tests {
         assert_eq!(e.get_uuid(), "ab".repeat(16));
         assert_eq!(e.get_cache_vm_offset(), 0x400_0000);
         assert_eq!(e.get_cache_extension().as_deref(), Some(".01"));
+        assert_eq!(e.to_structure().unwrap().get_length(), 56);
 
         let mut b = Bytes::new(true);
         b.raw(&[1; 16]).u64(8).u8(0);
