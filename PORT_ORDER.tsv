@@ -420,8 +420,8 @@ TODO	struct	1	22	1	framework	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/fra
 TODO	struct	1	12	2	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/main/DialogProjectDataCollapseAction.java
 TODO	struct	1	12	2	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/main/DialogProjectDataExpandAction.java
 TODO	struct	1	12	2	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/main/DialogProjectDataNewFolderAction.java
-TODO	struct	2	73	3	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/XmlProperties.java
-TODO	struct	1	270	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/SaveState.java
+DONE	struct	2	73	3	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/XmlProperties.java
+DONE	struct	1	270	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/SaveState.java
 TODO	struct	2	66	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/AppInfo.java
 TODO	struct	2	253	41	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectDataUtils.java
 TODO	struct	2	251	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolAssociationInfo.java
@@ -530,7 +530,7 @@ TODO	struct	5	176	3	program	Ghidra/Features/Base/src/main/java/ghidra/program/ut
 TODO	struct	5	183	26	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramMergeManager.java
 TODO	struct	5	178	39	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/SymbolMerge.java
 TODO	struct	5	71	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/AttributedSaveState.java
-TODO	struct	5	73	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/JSonProperties.java
+DONE	struct	5	73	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/JSonProperties.java
 TODO	struct	5	74	1	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EditorStateFactory.java
 TODO	struct	5	79	1	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/PreferenceState.java
 TODO	struct	5	72	3	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedActionTrigger.java

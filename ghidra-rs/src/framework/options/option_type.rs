@@ -11,7 +11,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::framework::options::custom_option::CustomOption;
+use crate::framework::options::custom_option::{
+    new_custom_option, CustomOption, CUSTOM_OPTION_CLASS_NAME_KEY,
+};
+use crate::framework::options::save_state::SaveState;
+use crate::util::msg::Msg;
+use crate::util::xml::element::Element;
 use crate::framework::seam_stubs::{ActionTrigger, Color, Font, KeyStroke};
 
 /// The kind of value an option holds, together with how that value is persisted as a string.
@@ -186,8 +191,8 @@ pub enum OptionConversionError {
         actual: OptionType,
     },
     /// The type's Java adapter delegates to a class that has no Rust port yet
-    /// (`SaveState`, `java.awt.Color`, `java.awt.Font`, `KeyStroke`, `ActionTrigger`), so the
-    /// conversion cannot be performed faithfully.
+    /// (`java.awt.Color`, `java.awt.Font`, `KeyStroke`, `ActionTrigger`), so the conversion
+    /// cannot be performed faithfully.
     UnportedValueClass {
         /// The type whose adapter was used.
         option_type: OptionType,
@@ -346,10 +351,31 @@ impl OptionType {
                 OptionValue::Float(java_parse_double(string).ok_or_else(invalid)? as f32)
             }
             OptionType::FileType => OptionValue::File(PathBuf::from(string)),
-            OptionType::EnumType
-            | OptionType::CustomType
-            | OptionType::ByteArrayType
-            | OptionType::ColorType
+            OptionType::EnumType => {
+                let save_state = save_state_from_xml_string(string);
+                // getEnum("ENUM", null): the stored constant, or null.
+                return Ok(save_state.get_enum_value("ENUM").cloned().map(OptionValue::Enum));
+            }
+            OptionType::CustomType => {
+                let save_state = save_state_from_xml_string(string);
+                let class_name = save_state
+                    .get_string(CUSTOM_OPTION_CLASS_NAME_KEY, None)
+                    .unwrap_or_default();
+                let Some(mut option) = new_custom_option(&class_name) else {
+                    Msg::warn(
+                        "OptionType",
+                        &format!("Ignoring unsupported customOption instance for: {class_name}"),
+                    );
+                    return Ok(None);
+                };
+                option.read_state(&save_state);
+                OptionValue::Custom(Arc::from(option))
+            }
+            OptionType::ByteArrayType => {
+                let save_state = save_state_from_xml_string(string);
+                return Ok(save_state.get_bytes("BYTES", None).map(OptionValue::ByteArray));
+            }
+            OptionType::ColorType
             | OptionType::FontType
             | OptionType::KeystrokeType
             | OptionType::ActionTrigger => return Err(self.unported()),
@@ -393,10 +419,33 @@ impl OptionType {
             | OptionType::BooleanType
             | OptionType::NoType
             | OptionType::FloatType => object.java_to_string().ok_or_else(mismatch)?,
-            OptionType::EnumType
-            | OptionType::CustomType
-            | OptionType::ByteArrayType
-            | OptionType::ColorType
+            OptionType::EnumType => match object {
+                OptionValue::Enum(e) => {
+                    let mut save_state = SaveState::new();
+                    save_state.put_enum_value("ENUM", e.clone());
+                    save_to_xml_string(&save_state)
+                }
+                _ => return Err(mismatch()),
+            },
+            OptionType::CustomType => match object {
+                OptionValue::Custom(custom) => {
+                    let mut save_state = SaveState::new();
+                    save_state
+                        .put_string(CUSTOM_OPTION_CLASS_NAME_KEY, Some(custom.java_class_name()));
+                    custom.write_state(&mut save_state);
+                    save_to_xml_string(&save_state)
+                }
+                _ => return Err(mismatch()),
+            },
+            OptionType::ByteArrayType => match object {
+                OptionValue::ByteArray(bytes) => {
+                    let mut save_state = SaveState::new();
+                    save_state.put_bytes("BYTES", Some(bytes));
+                    save_to_xml_string(&save_state)
+                }
+                _ => return Err(mismatch()),
+            },
+            OptionType::ColorType
             | OptionType::FontType
             | OptionType::KeystrokeType
             | OptionType::ActionTrigger => return Err(self.unported()),
@@ -406,9 +455,6 @@ impl OptionType {
 
     fn unported(self) -> OptionConversionError {
         let java_class = match self {
-            OptionType::EnumType | OptionType::CustomType | OptionType::ByteArrayType => {
-                "ghidra.framework.options.SaveState"
-            }
             OptionType::ColorType => "java.awt.Color",
             OptionType::FontType => "java.awt.Font",
             OptionType::KeystrokeType => "javax.swing.KeyStroke",
@@ -424,6 +470,23 @@ impl OptionType {
 impl fmt::Display for OptionType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.name())
+    }
+}
+
+/// `saveToXmlString(SaveState)`: the state's XML in `GenericXMLOutputter` format.
+fn save_to_xml_string(save_state: &SaveState) -> String {
+    save_state.save_to_xml().output_string()
+}
+
+/// `getSaveStateFromXmlString(String)`: the state parsed from `xml`, or an empty state (after
+/// reporting the error) if it is not well-formed.
+fn save_state_from_xml_string(xml: &str) -> SaveState {
+    match Element::parse_str(xml) {
+        Ok(root) => SaveState::from_xml(&root),
+        Err(e) => {
+            Msg::error("SaveState", &format!("Error in xml in saved property: {e}"));
+            SaveState::new()
+        }
     }
 }
 
@@ -840,12 +903,6 @@ mod tests {
     #[test]
     fn adapters_backed_by_unported_classes_report_it() {
         for (t, class) in [
-            (OptionType::EnumType, "ghidra.framework.options.SaveState"),
-            (OptionType::CustomType, "ghidra.framework.options.SaveState"),
-            (
-                OptionType::ByteArrayType,
-                "ghidra.framework.options.SaveState",
-            ),
             (OptionType::ColorType, "java.awt.Color"),
             (OptionType::FontType, "java.awt.Font"),
             (OptionType::KeystrokeType, "javax.swing.KeyStroke"),
@@ -866,4 +923,68 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn enum_adapter_round_trips_through_save_state_xml() {
+        let value = OptionValue::Enum(EnumOptionValue {
+            class_name: "ghidra.program.model.lang.Endian".into(),
+            name: "BIG".into(),
+        });
+        let xml = OptionType::EnumType.convert_object_to_string(Some(&value)).unwrap().unwrap();
+        assert_eq!(
+            xml,
+            "<SAVE_STATE>\r\n    <ENUM NAME=\"ENUM\" TYPE=\"enum\" \
+             CLASS=\"ghidra.program.model.lang.Endian\" VALUE=\"BIG\" />\r\n</SAVE_STATE>"
+        );
+        match OptionType::EnumType.convert_string_to_object(Some(&xml)).unwrap() {
+            Some(OptionValue::Enum(e)) => {
+                assert_eq!(e.class_name, "ghidra.program.model.lang.Endian");
+                assert_eq!(e.name, "BIG");
+            }
+            other => panic!("{other:?}"),
+        }
+        // A state without the value (or malformed XML, which Java reports) converts to null.
+        assert!(OptionType::EnumType.convert_string_to_object(Some("<SAVE_STATE />")).unwrap().is_none());
+        assert!(OptionType::EnumType.convert_string_to_object(Some("<oops")).unwrap().is_none());
+        assert!(matches!(
+            OptionType::EnumType.convert_object_to_string(Some(&OptionValue::Int(1))),
+            Err(OptionConversionError::TypeMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn byte_array_adapter_round_trips_through_save_state_xml() {
+        let value = OptionValue::ByteArray(vec![0, 5, 0xEE]);
+        let xml =
+            OptionType::ByteArrayType.convert_object_to_string(Some(&value)).unwrap().unwrap();
+        assert_eq!(
+            xml,
+            "<SAVE_STATE>\r\n    <BYTES NAME=\"BYTES\" VALUE=\"0005ee\" />\r\n</SAVE_STATE>"
+        );
+        match OptionType::ByteArrayType.convert_string_to_object(Some(&xml)).unwrap() {
+            Some(OptionValue::ByteArray(b)) => assert_eq!(b, vec![0, 5, 0xEE]),
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn custom_adapter_round_trips_through_registered_class() {
+        use crate::demangler::microsoft::ms_c_interpretation::MsCInterpretation;
+        use crate::demangler::microsoft::options::MsdApplyOption;
+        let option = MsdApplyOption::new(true, false, true, MsCInterpretation::NonFunction);
+        let value = OptionValue::Custom(Arc::new(option.clone()));
+        let xml = OptionType::CustomType.convert_object_to_string(Some(&value)).unwrap().unwrap();
+        assert!(xml.contains(
+            "<STATE NAME=\"CUSTOM_OPTION_CLASS\" TYPE=\"string\" \
+             VALUE=\"ghidra.app.util.demangler.microsoft.options.MsdApplyOption\" />"
+        ));
+        match OptionType::CustomType.convert_string_to_object(Some(&xml)).unwrap() {
+            Some(OptionValue::Custom(c)) => assert_eq!(c.to_string(), option.to_string()),
+            other => panic!("{other:?}"),
+        }
+        // An unknown class is ignored (Java's ClassNotFoundException branch).
+        let unknown = xml.replace("ghidra.app.util.demangler.microsoft.options.MsdApplyOption", "x.Y");
+        assert!(OptionType::CustomType.convert_string_to_object(Some(&unknown)).unwrap().is_none());
+    }
+
 }

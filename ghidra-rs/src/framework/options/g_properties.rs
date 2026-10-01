@@ -932,7 +932,8 @@ fn civil_from_days(z: i64) -> (i64, i64, i64) {
 mod tests {
     //! Ported from `GPropertiesTest` (Features/Base test tree).
     use super::*;
-    use crate::framework::options::save_state::{JSonProperties, XmlProperties};
+    use crate::framework::options::json_properties::JSonProperties;
+    use crate::framework::options::xml_properties::XmlProperties;
     use std::time::Duration;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]

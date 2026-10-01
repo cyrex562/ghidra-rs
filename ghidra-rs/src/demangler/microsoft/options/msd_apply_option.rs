@@ -153,6 +153,10 @@ impl CustomOption for MsdApplyOption {
         properties.put_boolean(APPLY_CALLING_CONVENTION, self.apply_calling_convention());
         properties.put_enum(MS_C_INTERPRETATION, &self.interpretation);
     }
+
+    fn java_class_name(&self) -> &'static str {
+        "ghidra.app.util.demangler.microsoft.options.MsdApplyOption"
+    }
 }
 
 #[cfg(test)]

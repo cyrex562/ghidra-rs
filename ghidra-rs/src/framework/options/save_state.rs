@@ -12,6 +12,7 @@ use std::path::Path;
 use crate::framework::options::g_properties::{
     Flavor, GProperties, GPropertyValue, ATTRIBUTE_KEY, ATTRIBUTE_NAME, ATTRIBUTE_TYPE, STATE,
 };
+use crate::framework::options::xml_properties::read_xml_file;
 use crate::util::xml::element::Element;
 
 /// Port of `ghidra.framework.options.SaveState`: name/value pairs saved as XML or JSON, used by
@@ -164,37 +165,6 @@ impl std::fmt::Display for SaveState {
     /// `toString()`: `XmlUtilities.toString(saveToXml())`.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.save_to_xml().output_string())
-    }
-}
-
-/// `XmlProperties.getXmlElement(File)`: the root element of the XML file.
-pub(crate) fn read_xml_file(file: &Path) -> io::Result<Element> {
-    let bytes = std::fs::read(file)?;
-    Element::parse_bytes(&bytes).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-}
-
-/// Port of `ghidra.framework.options.XmlProperties`: a [`GProperties`] read from a file written
-/// by [`GProperties::save_to_xml_file`].
-pub struct XmlProperties;
-
-impl XmlProperties {
-    /// `new XmlProperties(File)`.
-    pub fn from_file(file: &Path) -> io::Result<GProperties> {
-        Ok(GProperties::from_xml(&read_xml_file(file)?))
-    }
-}
-
-/// Port of `ghidra.framework.options.JSonProperties`: a [`GProperties`] read from a file written
-/// by [`GProperties::save_to_json_file`].
-pub struct JSonProperties;
-
-impl JSonProperties {
-    /// `new JSonProperties(File)`.
-    pub fn from_file(file: &Path) -> io::Result<GProperties> {
-        let text = std::fs::read_to_string(file)?;
-        let value: serde_json::Value = serde_json::from_str(&text)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-        GProperties::from_json(&value).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     }
 }
 
