@@ -1,8 +1,15 @@
 pub mod dyld_architecture;
+pub mod dyld_cache_accelerator_dof;
+pub mod dyld_cache_accelerator_initializer;
 pub mod dyld_cache_image;
 pub mod dyld_cache_image_info;
+pub mod dyld_cache_image_info_extra;
+pub mod dyld_cache_image_text_info;
+pub mod dyld_cache_local_symbols_entry;
 pub mod dyld_cache_mapping_and_slide_info;
 pub mod dyld_cache_mapping_info;
+pub mod dyld_cache_range_entry;
 pub mod dyld_cache_slide_info_common;
 pub mod dyld_chained_ptr;
 pub mod dyld_fixup;
+pub mod dyld_subcache_entry;

@@ -94,6 +94,17 @@ pub(crate) fn array_with_element_length(
         .map_err(invalid)
 }
 
+/// Java's `StructConverter.ASCII` (`CharDataType.dataType`).
+///
+/// Like [`fixed_string`], `CharDataType` is not yet a real, constructible built-in in this crate,
+/// so this reports that gap; the structures that need it keep their classes `TODO` until it lands.
+pub(crate) fn ascii() -> Result<Box<dyn DataType>, ToDataTypeError> {
+    Err(ToDataTypeError::Io(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "CharDataType is not yet ported as a real built-in data type",
+    )))
+}
+
 fn invalid(message: String) -> ToDataTypeError {
     ToDataTypeError::Io(io::Error::new(io::ErrorKind::InvalidInput, message))
 }
