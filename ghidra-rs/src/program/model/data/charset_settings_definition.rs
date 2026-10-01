@@ -4,6 +4,7 @@ use std::sync::OnceLock;
 use crate::docking::settings::enum_settings_definition::EnumSettingsDefinition;
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
+use crate::util::charset::CharsetInfoManager;
 
 const CHARSET_SETTING_NAME: &str = "charset";
 
@@ -16,18 +17,6 @@ const DEPRECATED_ENCODING_SETTING_NAME: &str = "encoding";
 const DEPRECATED_LANGUAGE_SETTING_NAME: &str = "language";
 
 const CHARSET_NAME: &str = "Charset";
-
-/// Best-effort fallback name list used to build the [`CharsetSettingsDefinition::charset`]
-/// singleton until `ghidra.util.charset.CharsetInfoManager` (still `TODO` in
-/// `PORT_MANIFEST.tsv`) is ported and can supply the full, platform-derived charset name list
-/// that the Java constructor pulls from `CharsetInfoManager.getInstance().getCharsetNames()`.
-/// These are the charset names this crate's own ported code already produces or consumes by name
-/// (see [`DEFAULT_CHARSET_NAME`](crate::program::model::data::string_data_instance::DEFAULT_CHARSET_NAME)
-/// and the `CharsetInfoManager.UTF8`/`UTF16`/`UTF32` placeholders in
-/// [`crate::program::seam_stubs`]), so the singleton's ordinal/display-choice list at least
-/// round-trips every name this crate currently uses, even though it is not the exhaustive list
-/// the real `CharsetInfoManager` would provide.
-const FALLBACK_CHARSET_NAMES: &[&str] = &["US-ASCII", "UTF-8", "UTF-16", "UTF-32"];
 
 static CHARSET_SINGLETON: OnceLock<CharsetSettingsDefinition> = OnceLock::new();
 
@@ -43,9 +32,7 @@ fn language_map() -> &'static std::sync::Mutex<HashMap<i64, Vec<String>>> {
 /// [`EnumSettingsDefinition`] for setting the charset of a string instance.
 ///
 /// Charsets control how raw bytes are converted to native string instances. `CharsetInfo`
-/// (`ghidra.util.charset.CharsetInfo`, not yet ported) controls the list of character sets that
-/// the user is shown; see [`FALLBACK_CHARSET_NAMES`] for the gap this leaves in
-/// [`CharsetSettingsDefinition::charset`]'s ordinal list until that dependency lands.
+/// ([`CharsetInfoManager`]) controls the list of character sets that the user is shown.
 ///
 /// Port of `ghidra.program.model.data.CharsetSettingsDefinition`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -70,15 +57,11 @@ impl CharsetSettingsDefinition {
         }
     }
 
-    /// Returns the shared `CharsetSettingsDefinition` singleton, standing in for the Java
-    /// `CharsetSettingsDefinition.CHARSET` static field. Built once from
-    /// [`FALLBACK_CHARSET_NAMES`] -- see that constant's docs for the fidelity gap this implies.
+    /// Returns the shared `CharsetSettingsDefinition` singleton, Java's
+    /// `CharsetSettingsDefinition.CHARSET`, whose choices are
+    /// `CharsetInfoManager.getInstance().getCharsetNames()` at first use.
     pub fn charset() -> &'static CharsetSettingsDefinition {
-        CHARSET_SINGLETON.get_or_init(|| {
-            CharsetSettingsDefinition::new(
-                FALLBACK_CHARSET_NAMES.iter().map(|s| s.to_string()).collect(),
-            )
-        })
+        CHARSET_SINGLETON.get_or_init(|| CharsetSettingsDefinition::new(CharsetInfoManager::get_instance().get_charset_names()))
     }
 
     /// Port of `CharsetSettingsDefinition.getCharset(Settings, String)`.

@@ -274,7 +274,6 @@ mod tests {
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
     use crate::program::model::data::pointer::Pointer;
     use crate::program::model::mem::MemBuffer;
-    use crate::program::model::data::string_data_instance::StringDataInstance;
 
     #[derive(Clone)]
     struct MockDataType {
@@ -511,9 +510,6 @@ mod tests {
         fn has_string_value(&self, _settings: &dyn Settings) -> bool {
             false
         }
-        fn string_data_instance(&self, _buf: &dyn MemBuffer, _settings: &dyn Settings, _length: i32) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
         fn get_array_default_label_prefix(
             &self,
             _buf: &dyn MemBuffer,
@@ -535,6 +531,9 @@ mod tests {
         }
     }
     impl AbstractIntegerDataType for MockOppositeSignedness {
+        fn as_data_type(&self) -> &dyn crate::program::model::data::data_type::DataType {
+            self
+        }
         fn is_signed(&self) -> bool {
             false
         }
@@ -565,9 +564,6 @@ mod tests {
         fn has_string_value(&self, _settings: &dyn Settings) -> bool {
             false
         }
-        fn string_data_instance(&self, _buf: &dyn MemBuffer, _settings: &dyn Settings, _length: i32) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
         fn get_array_default_label_prefix(
             &self,
             _buf: &dyn MemBuffer,
@@ -589,6 +585,9 @@ mod tests {
         }
     }
     impl AbstractIntegerDataType for MockIntDataType {
+        fn as_data_type(&self) -> &dyn crate::program::model::data::data_type::DataType {
+            self
+        }
         fn is_signed(&self) -> bool {
             self.signed
         }

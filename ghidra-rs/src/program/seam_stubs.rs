@@ -2369,7 +2369,7 @@ pub trait FoundString: Send + Sync {
     fn is_partially_defined(&self) -> bool;
     fn conflicts(&self) -> bool;
     fn get_string(&self, memory: &dyn crate::program::model::mem::Memory) -> String;
-    fn get_data_instance(&self, memory: &dyn crate::program::model::mem::Memory) -> Box<dyn crate::program::model::data::string_data_instance::StringDataInstance>;
+    fn get_data_instance<'a>(&self, memory: &'a dyn crate::program::model::mem::Memory) -> crate::program::model::data::string_data_instance::StringDataInstance<'a>;
     fn set_defined_state(&self, new_state: FoundStringDefinedState);
     fn get_defined_state(&self) -> FoundStringDefinedState;
     fn is_pascall(&self) -> bool;

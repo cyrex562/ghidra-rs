@@ -51,9 +51,10 @@ use crate::pcode::exec::pcode_executor::PcodeExecutor;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
 use crate::pcode::seam_stubs::{
-    EmuProcessExitedException, EmuUnixException, SettingsImpl, StringDataType,
+    EmuProcessExitedException, EmuUnixException, SettingsImpl,
 };
 use crate::program::model::data::abstract_string_data_type::AbstractStringDataType;
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::program::model::listing::program::Program;
 use std::sync::Arc;
 
@@ -430,9 +431,9 @@ pub trait AbstractEmuUnixSyscallUseropLibrary<T: Clone + 'static>:
         let buffer = state.get_concrete_buffer(&space.address(pathname_off), Purpose::Other);
         // Java constructs the instance twice: once as a probe (length -1) to find where the string
         // ends, then again over that now-known fixed length to decode it.
-        let probe = StringDataType::DATA_TYPE.get_string_data_instance(&*buffer, &settings, -1);
+        let probe = StringDataType::instance().get_string_data_instance(&*buffer, &settings, -1);
         let length = probe.get_string_length();
-        let sdi = StringDataType::DATA_TYPE.get_string_data_instance(&*buffer, &settings, length);
+        let sdi = StringDataType::instance().get_string_data_instance(&*buffer, &settings, length);
         // TODO: Can NPE here be mapped to a unix error
         let pathname = sdi.get_string_value().expect("no pathname string at the given pointer");
 

@@ -755,6 +755,37 @@ pub trait DataType: Send + Sync {
         None
     }
 
+    /// Stands in for `dt instanceof AbstractStringDataType ? (AbstractStringDataType) dt : null`,
+    /// used by [`StringDataInstance`](crate::program::model::data::string_data_instance::StringDataInstance)
+    /// to recover a string data type's layout. Concrete string data types override this.
+    fn as_abstract_string(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::abstract_string_data_type::AbstractStringDataType> {
+        None
+    }
+
+    /// Stands in for `dt instanceof ArrayStringable ? (ArrayStringable) dt : null` on a borrowed
+    /// data type (see [`into_array_stringable`](Self::into_array_stringable) for the owned form).
+    /// Implementors of
+    /// [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable)
+    /// override this.
+    fn as_array_stringable(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::array_stringable::ArrayStringable> {
+        None
+    }
+
+    /// Stands in for `dt instanceof DataTypeWithCharset ? (DataTypeWithCharset) dt : null`, used
+    /// by [`StringDataInstance`](crate::program::model::data::string_data_instance::StringDataInstance)
+    /// to find the charset of a string or char data type. Implementors of
+    /// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
+    /// override this.
+    fn as_data_type_with_charset(
+        &self,
+    ) -> Option<&dyn crate::program::model::data::data_type_with_charset::DataTypeWithCharset> {
+        None
+    }
+
     /// Stands in for `dt instanceof Union ? (Union) dt : null`, used by
     /// [`DataTypeUtilities::get_merger`](crate::program::database::data::data_type_utilities::DataTypeUtilities::get_merger)
     /// to recover a union operand for merging. See [`as_pointer`](Self::as_pointer) for why this

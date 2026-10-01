@@ -10,17 +10,9 @@
 //! `Box<dyn AbstractStringDataType>`), so [`MinLengthCharSequenceMatcher::get_sequence`] returns a
 //! borrow (`Option<&Sequence>`) instead, the direct Rust analogue.
 //!
-//! `new Sequence(start, end, StringDataType.dataType, nullTerminated)` needs the
-//! `StringDataType.dataType` singleton. `StringDataType` itself is ported only as a trait
-//! ([`program::model::data::string_data_type::StringDataType`](crate::program::model::data::string_data_type::StringDataType)),
-//! with no concrete singleton yet (see that module's docs: it needs `DataTypeManager` wiring not
-//! yet part of this port). This reuses the existing concrete stand-in,
-//! [`pcode::seam_stubs::StringDataType`](crate::pcode::seam_stubs::StringDataType), which already
-//! fully implements the real [`AbstractStringDataType`](crate::program::model::data::abstract_string_data_type::AbstractStringDataType)
-//! trait `Sequence` needs (it exists for exactly this same `StringDataType.dataType` gap, reached
-//! from a different call site) -- the alternative would be to duplicate its `AbstractStringDataType`
-//! impl a second time here for no behavioral difference.
-use crate::pcode::seam_stubs::StringDataType;
+//! `new Sequence(start, end, StringDataType.dataType, nullTerminated)` uses the real
+//! [`StringDataType`] (a fresh instance; built-ins carry no identity).
+use crate::program::model::data::string_data_type::StringDataType;
 use crate::util::ascii::sequence::Sequence;
 use crate::util::ascii::CharSetRecognizer;
 
@@ -127,7 +119,7 @@ impl MinLengthCharSequenceMatcher {
         }
         if length >= self.minimum_sequence_length as i64 {
             self.last_sequence =
-                Some(Sequence::new(start, end, Box::new(StringDataType), null_terminated));
+                Some(Sequence::new(start, end, Box::new(StringDataType::new(None)), null_terminated));
         }
         self.last_sequence.is_some()
     }

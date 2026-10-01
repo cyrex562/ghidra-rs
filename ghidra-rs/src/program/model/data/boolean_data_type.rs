@@ -5,7 +5,7 @@ use std::any::{Any, TypeId};
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::program::model::data::abstract_integer_data_type::{
-    encode_any_value, owned_char_view, AbstractIntegerDataType,
+    encode_any_value, AbstractIntegerDataType,
 };
 use crate::program::model::data::abstract_unsigned_integer_data_type::AbstractUnsignedIntegerDataType;
 use crate::program::model::data::array_stringable::ArrayStringable;
@@ -17,7 +17,6 @@ use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
-use crate::program::model::data::string_data_instance::StringDataInstance;
 use crate::program::model::lang::decompiler_language::DecompilerLanguage;
 use crate::program::model::mem::MemBuffer;
 
@@ -155,15 +154,15 @@ impl DataType for BooleanDataType {
     fn as_abstract_integer(&self) -> Option<&dyn AbstractIntegerDataType> {
         Some(self)
     }
+
+    fn as_array_stringable(&self) -> Option<&dyn ArrayStringable> {
+        Some(self)
+    }
 }
 
 impl ArrayStringable for BooleanDataType {
     fn has_string_value(&self, settings: &dyn Settings) -> bool {
         self.integer_has_string_value(settings)
-    }
-
-    fn string_data_instance(&self, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32) -> Box<dyn StringDataInstance> {
-        owned_char_view(buf, settings, length)
     }
 
     fn get_array_default_label_prefix(
@@ -189,6 +188,12 @@ impl ArrayStringable for BooleanDataType {
 }
 
 impl AbstractIntegerDataType for BooleanDataType {
+
+    fn as_data_type(&self) -> &dyn crate::program::model::data::data_type::DataType {
+
+        self
+
+    }
     fn is_signed(&self) -> bool {
         false
     }

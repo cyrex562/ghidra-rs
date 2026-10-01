@@ -508,8 +508,18 @@ pub(crate) use impl_built_in;
 /// `DataTypeImpl` and `BuiltIn`). Expands to impl items; invoke inside `impl DataType for T`,
 /// where `T` has a `base: BuiltInBase` field, a `new(Option<&dyn DataTypeManager>)` constructor,
 /// and the [`impl_built_in!`] impls.
+///
+/// `built_in_data_type_methods!(own_abbreviated_label_prefix)` leaves out
+/// `get_default_abbreviated_label_prefix`, for a type that overrides
+/// `getDefaultAbbreviatedLabelPrefix()`.
 macro_rules! built_in_data_type_methods {
     () => {
+        $crate::program::model::data::built_in::built_in_data_type_methods!(own_abbreviated_label_prefix);
+        fn get_default_abbreviated_label_prefix(&self) -> Option<String> {
+            self.get_default_label_prefix()
+        }
+    };
+    (own_abbreviated_label_prefix) => {
         fn get_name(&self) -> String {
             self.base.name().to_string()
         }
@@ -553,9 +563,6 @@ macro_rules! built_in_data_type_methods {
             &self,
         ) -> Option<Box<dyn $crate::program::model::data::source_archive::SourceArchive>> {
             $crate::program::model::data::data_type_impl::DataTypeImpl::data_type_impl_get_source_archive(self)
-        }
-        fn get_default_abbreviated_label_prefix(&self) -> Option<String> {
-            self.get_default_label_prefix()
         }
         fn runtime_class(&self) -> Option<std::any::TypeId> {
             Some(std::any::TypeId::of::<Self>())

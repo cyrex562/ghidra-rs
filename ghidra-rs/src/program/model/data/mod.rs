@@ -121,6 +121,10 @@ pub mod uint32_t_data_type;
 pub mod uint64_t_data_type;
 pub mod integer_data_type;
 pub mod integer_data_type_test;
+#[cfg(test)]
+mod string_data_type_test;
+#[cfg(test)]
+mod char_data_types_render_test;
 pub mod internal_data_type_component;
 pub mod invalidated_listener;
 pub mod leb128;

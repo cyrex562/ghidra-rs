@@ -43,21 +43,10 @@
 //! `getUnsignedDataTypes` are the free functions [`get_signed_data_type`],
 //! [`get_signed_data_types`], [`get_unsigned_data_type`] and [`get_unsigned_data_types`].
 //!
-//! The CHAR-format branches of `getRepresentation`/`encodeRepresentation` (rendering/parsing this
-//! integer's bytes as a character instead of a number) are also simplified away:
-//! [`string_data_instance`](super::string_data_instance)'s module docs already note that the
-//! static `StringDataInstance.getCharRepresentation(DataType, byte[], Settings)` factory those
-//! branches need is not ported ("needs `BitFieldDataType`-aware charset/size derivation from a
-//! bare `DataType`"). [`integer_representation`](AbstractIntegerDataType::integer_representation)
-//! always falls through to the standard numeric rendering, and
-//! [`integer_encode_representation`](AbstractIntegerDataType::integer_encode_representation)
-//! returns an error for CHAR-format input. The *array* label helpers
-//! (`getArrayDefaultLabelPrefix`/`getArrayDefaultOffcutLabelPrefix`, which render this integer's
-//! bytes as a char-array label rather than a single char) are still fully ported, via a small
-//! internal [`StringDataInstance`] view ([`build_char_view`](AbstractIntegerDataType::build_char_view))
-//! built the same way [`AbstractStringDataType::get_string_data_instance`] builds its own view.
-//! That view borrows `buf`; [`ArrayStringable::string_data_instance`] must return a `'static`
-//! instance, so the concrete types use [`owned_char_view`], which copies the bytes it covers.
+//! The CHAR-format branches of `getRepresentation`/`encodeRepresentation` render/parse this
+//! integer's bytes as a character through
+//! [`string_data_instance`](super::string_data_instance), as do the array label helpers
+//! (`getArrayDefaultLabelPrefix`/`getArrayDefaultOffcutLabelPrefix`).
 //!
 //! `Utils.bigIntegerToBytes`/`DataConverter` (Java) are replaced by
 //! [`crate::pcode::utils::utils`]'s `bytes_to_long`/`long_to_bytes`/`bytes_to_big_integer`/
@@ -77,7 +66,7 @@ use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::pcode::utils::utils::{big_integer_to_bytes, bytes_to_big_integer, bytes_to_long};
 use crate::program::model::data::abstract_string_data_type::{
-    charset_char_size, DEFAULT_ABBREV_PREFIX, DEFAULT_LABEL, DEFAULT_LABEL_PREFIX,
+    DEFAULT_ABBREV_PREFIX, DEFAULT_LABEL, DEFAULT_LABEL_PREFIX,
 };
 use crate::program::model::data::array_data_type::ArrayDataType;
 use crate::program::model::data::byte_data_type::ByteDataType;
@@ -119,11 +108,9 @@ use crate::program::model::data::data_type_mnemonic_settings_definition::{
 };
 use crate::program::model::data::endian_settings_definition::{self, EndianSettingsDefinition};
 use crate::program::model::data::padding_settings_definition::PaddingSettingsDefinition;
-use crate::program::model::data::charset_settings_definition::CharsetSettingsDefinition;
-use crate::program::model::data::string_data_instance::{StringDataInstance, DEFAULT_CHARSET_NAME};
-use crate::program::model::lang::endian::Endian;
+use crate::program::model::data::string_data_instance::{self as sdi, StringDataInstance};
 use crate::program::model::scalar::Scalar;
-use crate::program::model::mem::{ByteMemBufferImpl, MemBuffer};
+use crate::program::model::mem::MemBuffer;
 use crate::util::StringFormat;
 
 /// Package-private `AbstractIntegerDataType.C_SIGNED_CHAR`.
@@ -270,66 +257,6 @@ pub(crate) fn format_integer_representation(mut big_int: i128, settings: &dyn Se
     }
 }
 
-/// A minimal [`StringDataInstance`] view over this integer's raw bytes treated as a fixed-length
-/// char array, standing in for `new StringDataInstance(this, settings, buf, len, true)`. See the
-/// module docs and [`AbstractIntegerDataType::build_char_view`].
-struct IntegerCharView<'a> {
-    charset_name: String,
-    char_size: i32,
-    length: i32,
-    buf: CharViewBuffer<'a>,
-    endian_setting: Option<Endian>,
-}
-
-/// The memory an [`IntegerCharView`] reads: the caller's buffer, or (for the `'static` view that
-/// [`ArrayStringable::string_data_instance`] must return) an owned copy of the bytes it covers.
-enum CharViewBuffer<'a> {
-    Borrowed(&'a dyn MemBuffer),
-    Owned(ByteMemBufferImpl),
-}
-
-impl CharViewBuffer<'_> {
-    fn as_dyn(&self) -> &dyn MemBuffer {
-        match self {
-            CharViewBuffer::Borrowed(buf) => *buf,
-            CharViewBuffer::Owned(buf) => buf,
-        }
-    }
-}
-
-/// Resolves the charset, char size and endian setting an integer char-array view uses, standing
-/// in for the relevant parts of the `StringDataInstance(DataType, Settings, MemBuffer, int,
-/// boolean)` constructor.
-fn char_view_settings(settings: &dyn Settings) -> (String, i32, Option<Endian>) {
-    let charset_name = CharsetSettingsDefinition::charset().get_charset(settings, DEFAULT_CHARSET_NAME);
-    let char_size = charset_char_size(&charset_name);
-    let endian_setting = match EndianSettingsDefinition::DEF.get_choice(settings) {
-        endian_settings_definition::BIG => Some(Endian::Big),
-        endian_settings_definition::LITTLE => Some(Endian::Little),
-        _ => None,
-    };
-    (charset_name, char_size, endian_setting)
-}
-
-/// Builds an owned (`'static`) char-array view over the first `len` bytes of `buf`, for
-/// [`ArrayStringable::string_data_instance`] implementations of integer data types (Java:
-/// `new StringDataInstance(this, settings, buf, length, true)`). The bytes are copied because the
-/// returned instance may not borrow `buf`; bytes that cannot be read are simply absent, exactly
-/// as a short read of the original buffer would report.
-pub fn owned_char_view(buf: &dyn MemBuffer, settings: &dyn Settings, len: i32) -> Box<dyn StringDataInstance> {
-    let (charset_name, char_size, endian_setting) = char_view_settings(settings);
-    let mut bytes = vec![0u8; len.max(0) as usize];
-    let read = buf.get_bytes(&mut bytes, 0);
-    bytes.truncate(read);
-    Box::new(IntegerCharView {
-        charset_name,
-        char_size,
-        length: len,
-        buf: CharViewBuffer::Owned(ByteMemBufferImpl::new(buf.get_address(), bytes, buf.is_big_endian())),
-        endian_setting,
-    })
-}
-
 /// Converts the `Object value` accepted by `AbstractIntegerDataType.encodeValue` into an
 /// [`IntegerEncodeValue`]: an [`IntegerEncodeValue`] itself, a [`Scalar`], an `i128` (standing in
 /// for `BigInteger`), a `char` (`Character`), or an `i8`/`i16`/`i32`/`i64` (`Byte`/`Short`/
@@ -359,40 +286,6 @@ pub fn integer_encode_value_from_any(value: &dyn std::any::Any) -> Option<Intege
     value.downcast_ref::<i64>().map(|v| IntegerEncodeValue::I64(*v))
 }
 
-impl StringDataInstance for IntegerCharView<'_> {
-    fn encode_replacement_from_char_value(&self, _value: &[char]) -> Result<Vec<u8>, String> {
-        Err("AbstractIntegerDataType's char-array view does not support encoding".to_string())
-    }
-
-    fn encode_replacement_from_char_representation(&self, _repr: &str) -> Result<Vec<u8>, String> {
-        Err("AbstractIntegerDataType's char-array view does not support encoding".to_string())
-    }
-
-    fn charset_name(&self) -> String {
-        self.charset_name.clone()
-    }
-
-    fn char_size(&self) -> i32 {
-        self.char_size
-    }
-
-    fn padded_char_size(&self) -> i32 {
-        self.char_size
-    }
-
-    fn data_length(&self) -> i32 {
-        self.length
-    }
-
-    fn mem_buffer(&self) -> Option<&dyn MemBuffer> {
-        Some(self.buf.as_dyn())
-    }
-
-    fn endian_setting(&self) -> Option<Endian> {
-        self.endian_setting
-    }
-}
-
 /// Base type for integer data types such as chars, ints, and longs.
 ///
 /// Port of `ghidra.program.model.data.AbstractIntegerDataType`. See the module-level
@@ -403,6 +296,10 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
     ///
     /// Port of the abstract `AbstractIntegerDataType.isSigned()`.
     fn is_signed(&self) -> bool;
+
+    /// This data type as a `&dyn DataType` (Java's `this`), for the static `StringDataInstance`
+    /// helpers the CHAR format uses.
+    fn as_data_type(&self) -> &dyn DataType;
 
     /// Returns the data-type with the opposite signedness from this data-type. For example, this
     /// method on an `IntegerDataType`-equivalent implementor would return an instance of the
@@ -611,8 +508,7 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
 
     /// Port of `AbstractIntegerDataType.getRepresentation(MemBuffer, Settings, int)`, exposed
     /// under a distinct name since [`DataType::get_representation`] already provides a default.
-    /// See the module docs for the CHAR-format simplification. A concrete `impl DataType for ...`
-    /// should delegate `get_representation` to this.
+    /// A concrete `impl DataType for ...` should delegate `get_representation` to this.
     fn integer_representation(&self, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32) -> String {
         let mut size = self.get_length();
         if size <= 0 {
@@ -627,14 +523,19 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
         }
         let big_endian = resolve_big_endian(settings, buf);
         let value = bytes_to_big_integer(&bytes, size as usize, big_endian, true);
+
+        let format = self.get_format_settings_definition().get_format(Some(settings));
+        if format == format_settings_definition::CHAR {
+            return sdi::get_char_representation(self.as_data_type(), &bytes, Some(settings));
+        }
+
         format_integer_representation(value, settings, 8 * length, self.is_signed())
     }
 
     /// Port of `AbstractIntegerDataType.encodeRepresentation(String, MemBuffer, Settings, int)`,
     /// exposed under a distinct name since [`DataType::encode_representation`] already provides a
-    /// default. See the module docs for the CHAR-format simplification (returns an error instead
-    /// of decoding a character). A concrete `impl DataType for ...` should delegate
-    /// `encode_representation` to this.
+    /// default. A concrete `impl DataType for ...` should delegate `encode_representation` to
+    /// this.
     fn integer_encode_representation(
         &self,
         repr: &str,
@@ -645,11 +546,10 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
         let format = self.get_format_settings_definition().get_format(Some(settings));
         let (radix, suffix) = match format {
             format_settings_definition::CHAR => {
-                return Err(DataTypeEncodeException::new(
-                    "CHAR format decoding is not supported by this port",
-                    repr,
-                    self.get_name(),
-                ));
+                let sdi = sdi::get_string_data_instance(self.as_data_type(), buf, settings, self.get_length());
+                return sdi
+                    .encode_replacement_from_char_representation(repr)
+                    .map_err(|e| DataTypeEncodeException::with_cause_only(repr, self.get_name(), Box::new(e)));
             }
             format_settings_definition::DECIMAL => (10u32, ""),
             format_settings_definition::BINARY => (2u32, "b"),
@@ -689,25 +589,6 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
         self.get_format_settings_definition().get_format(Some(settings)) == format_settings_definition::CHAR
     }
 
-    /// Builds the [`StringDataInstance`] view over this integer's raw bytes used by
-    /// [`integer_array_default_label_prefix`](Self::integer_array_default_label_prefix)/
-    /// [`integer_array_default_offcut_label_prefix`](Self::integer_array_default_offcut_label_prefix),
-    /// standing in for `new StringDataInstance(this, settings, buf, len, true)`. Also usable to
-    /// implement [`ArrayStringable::string_data_instance`], with the same caveat
-    /// [`AbstractStringDataType::get_string_data_instance`] documents: the returned box borrows
-    /// `buf`'s lifetime (`'a`) rather than being `'static`, so a concrete
-    /// `impl ArrayStringable::string_data_instance` cannot delegate to this directly.
-    fn build_char_view<'a>(&self, buf: &'a dyn MemBuffer, settings: &dyn Settings, len: i32) -> Box<dyn StringDataInstance + 'a> {
-        let (charset_name, char_size, endian_setting) = char_view_settings(settings);
-        Box::new(IntegerCharView {
-            charset_name,
-            char_size,
-            length: len,
-            buf: CharViewBuffer::Borrowed(buf),
-            endian_setting,
-        })
-    }
-
     /// Port of `AbstractIntegerDataType.getArrayDefaultLabelPrefix(MemBuffer, Settings, int,
     /// DataTypeDisplayOptions)`, implementing the abstract
     /// [`ArrayStringable::get_array_default_label_prefix`] but exposed under a distinct name since
@@ -724,7 +605,7 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
             return None;
         }
         let abbrev_prefix = format!("{DEFAULT_ABBREV_PREFIX}_");
-        Some(self.build_char_view(buf, settings, len).get_label(&abbrev_prefix, DEFAULT_LABEL_PREFIX, DEFAULT_LABEL, options))
+        Some(StringDataInstance::new_element(self, settings, buf, len, true).get_label(&abbrev_prefix, DEFAULT_LABEL_PREFIX, DEFAULT_LABEL, options))
     }
 
     /// Port of `AbstractIntegerDataType.getArrayDefaultOffcutLabelPrefix(MemBuffer, Settings, int,
@@ -746,7 +627,7 @@ pub trait AbstractIntegerDataType: DataType + BuiltInDataType + ArrayStringable 
         }
         let abbrev_prefix = format!("{DEFAULT_ABBREV_PREFIX}_");
         Some(
-            self.build_char_view(buf, settings, len)
+            StringDataInstance::new_element(self, settings, buf, len, true)
                 .get_offcut_label_string(&abbrev_prefix, DEFAULT_LABEL_PREFIX, DEFAULT_LABEL, options, offcut_offset),
         )
     }
@@ -940,19 +821,21 @@ macro_rules! integer_data_type {
             ) -> Option<&dyn $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType> {
                 Some(self)
             }
+            fn as_array_stringable(
+                &self,
+            ) -> Option<&dyn $crate::program::model::data::array_stringable::ArrayStringable> {
+                Some(self)
+            }
+            fn into_array_stringable(
+                self: Box<Self>,
+            ) -> Option<Box<dyn $crate::program::model::data::array_stringable::ArrayStringable>> {
+                Some(self)
+            }
         }
 
         impl $crate::program::model::data::array_stringable::ArrayStringable for $ty {
             fn has_string_value(&self, settings: &dyn $crate::docking::settings::settings::Settings) -> bool {
                 $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType::integer_has_string_value(self, settings)
-            }
-            fn string_data_instance(
-                &self,
-                buf: &dyn $crate::program::model::mem::MemBuffer,
-                settings: &dyn $crate::docking::settings::settings::Settings,
-                length: i32,
-            ) -> Box<dyn $crate::program::model::data::string_data_instance::StringDataInstance> {
-                $crate::program::model::data::abstract_integer_data_type::owned_char_view(buf, settings, length)
             }
             fn get_array_default_label_prefix(
                 &self,
@@ -978,6 +861,9 @@ macro_rules! integer_data_type {
         impl $crate::program::model::data::abstract_integer_data_type::AbstractIntegerDataType for $ty {
             fn is_signed(&self) -> bool {
                 $crate::program::model::data::abstract_integer_data_type::integer_data_type!(@signed $sign)
+            }
+            fn as_data_type(&self) -> &dyn $crate::program::model::data::data_type::DataType {
+                self
             }
             fn get_opposite_signedness_data_type(
                 &self,
@@ -1385,9 +1271,6 @@ mod tests {
         fn has_string_value(&self, _settings: &dyn Settings) -> bool {
             false
         }
-        fn string_data_instance(&self, _buf: &dyn MemBuffer, _settings: &dyn Settings, _length: i32) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
         fn get_array_default_label_prefix(
             &self,
             _buf: &dyn MemBuffer,
@@ -1411,6 +1294,9 @@ mod tests {
     impl AbstractIntegerDataType for MockOppositeSignedness {
         fn is_signed(&self) -> bool {
             false
+        }
+        fn as_data_type(&self) -> &dyn DataType {
+            self
         }
         fn get_opposite_signedness_data_type(&self) -> Box<dyn AbstractIntegerDataType> {
             unreachable!("not exercised in this smoke test")
@@ -1461,9 +1347,6 @@ mod tests {
         fn has_string_value(&self, settings: &dyn Settings) -> bool {
             self.integer_has_string_value(settings)
         }
-        fn string_data_instance(&self, _buf: &dyn MemBuffer, _settings: &dyn Settings, _length: i32) -> Box<dyn StringDataInstance> {
-            Box::new(crate::program::model::data::string_data_instance::null_instance())
-        }
         fn get_array_default_label_prefix(
             &self,
             buf: &dyn MemBuffer,
@@ -1488,6 +1371,9 @@ mod tests {
     impl AbstractIntegerDataType for MockIntDataType {
         fn is_signed(&self) -> bool {
             self.signed
+        }
+        fn as_data_type(&self) -> &dyn DataType {
+            self
         }
         fn get_opposite_signedness_data_type(&self) -> Box<dyn AbstractIntegerDataType> {
             Box::new(MockOppositeSignedness)

@@ -434,4 +434,9 @@ mod tests {
     fn java_encode_representation_signed_short_oct_be() {
         RealFixture.test_encode_representation_signed_short_oct_be();
     }
+
+    #[test]
+    fn java_encode_representation_char() {
+        RealFixture.test_encode_representation_char();
+    }
 }

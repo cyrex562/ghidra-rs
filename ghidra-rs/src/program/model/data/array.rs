@@ -83,7 +83,16 @@ pub trait Array: DataType {
         let stringable = get_array_stringable(self.get_data_type());
         let value = stringable.and_then(|s| {
             if s.has_string_value(settings) {
-                s.string_data_instance(buf, settings, length).get_string_value()
+                Some(
+                    crate::program::model::data::string_data_instance::StringDataInstance::new_element(
+                        s.as_ref(),
+                        settings,
+                        buf,
+                        length,
+                        true,
+                    )
+                    .get_string_representation(),
+                )
             } else {
                 None
             }

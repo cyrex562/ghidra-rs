@@ -113,93 +113,12 @@ impl fmt::Display for Sequence {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::settings::settings::Settings;
-    use crate::program::model::data::built_in_data_type::BuiltInDataType;
-    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::data_type_with_charset::DataTypeWithCharset;
-    use crate::program::model::data::dynamic::Dynamic;
-    use crate::program::model::data::string_data_instance::StringDataInstance;
-    use crate::program::model::data::string_layout_enum::StringLayoutEnum;
-    use crate::program::model::mem::MemBuffer;
-
-    /// Fallback used by the mocks' `Dynamic::get_replacement_base_type`, mirroring
-    /// [`AbstractStringDataType`]'s own test module (that method is not optional even though the
-    /// underlying Java field may be `null`).
-    struct NoReplacementDataType;
-    impl DataType for NoReplacementDataType {}
-
-    /// Two minimal, *distinct concrete types* implementing [`AbstractStringDataType`], both
-    /// reporting the same display name -- real Ghidra string types (`StringDataType`,
-    /// `TerminatedStringDataType`, ...) are each their own concrete Rust type too, which is what
-    /// `Sequence::eq`'s `TypeId` comparison actually keys on, not the display name.
-    struct MockStringTypeA;
-    struct MockStringTypeB;
-
-    macro_rules! impl_mock_string_data_type {
-        ($t:ty) => {
-            impl DataType for $t {
-                fn get_name(&self) -> String {
-                    "char".to_string()
-                }
-            }
-            impl BuiltInDataType for $t {
-                fn get_c_type_declaration(
-                    &self,
-                    _data_organization: Option<&DataOrganizationImpl>,
-                ) -> Option<String> {
-                    None
-                }
-                fn set_default_settings(&mut self, _settings: &dyn Settings) {}
-            }
-            impl Dynamic for $t {
-                fn get_dynamic_length(&self, _buf: &dyn MemBuffer, _max_length: i32) -> i32 {
-                    -1
-                }
-                fn get_replacement_base_type(&self) -> Box<dyn DataType> {
-                    Box::new(NoReplacementDataType)
-                }
-            }
-            impl DataTypeWithCharset for $t {
-                fn string_data_instance(
-                    &self,
-                    _settings: &dyn Settings,
-                    _buf: &dyn MemBuffer,
-                ) -> Box<dyn StringDataInstance> {
-                    Box::new(crate::program::model::data::string_data_instance::null_instance())
-                }
-            }
-            impl AbstractStringDataType for $t {
-                fn mnemonic(&self) -> String {
-                    "char".to_string()
-                }
-                fn description(&self) -> String {
-                    "mock string".to_string()
-                }
-                fn default_label(&self) -> String {
-                    "STR".to_string()
-                }
-                fn default_label_prefix(&self) -> String {
-                    "STR_".to_string()
-                }
-                fn default_abbrev_label_prefix(&self) -> String {
-                    "s_".to_string()
-                }
-                fn get_string_layout(&self) -> StringLayoutEnum {
-                    StringLayoutEnum::NullTerminatedUnbounded
-                }
-                fn string_replacement_base_type(&self) -> Option<Box<dyn DataType>> {
-                    None
-                }
-            }
-        };
-    }
-
-    impl_mock_string_data_type!(MockStringTypeA);
-    impl_mock_string_data_type!(MockStringTypeB);
+    use crate::program::model::data::string_data_type::StringDataType;
+    use crate::program::model::data::terminated_string_data_type::TerminatedStringDataType;
 
     fn sequence(start: i64, end: i64, null_terminated: bool) -> Sequence {
-        Sequence::new(start, end, Box::new(MockStringTypeA), null_terminated)
+        Sequence::new(start, end, Box::new(StringDataType::new(None)), null_terminated)
     }
 
     #[test]
@@ -208,7 +127,7 @@ mod tests {
         assert_eq!(seq.get_start(), 10);
         assert_eq!(seq.get_end(), 19);
         assert!(seq.is_null_terminated());
-        assert_eq!(seq.get_string_data_type().get_display_name(), "char");
+        assert_eq!(seq.get_string_data_type().get_display_name(), "string");
     }
 
     #[test]
@@ -230,9 +149,9 @@ mod tests {
     #[test]
     fn display_matches_javas_tostring_format() {
         let seq = sequence(3, 7, true);
-        assert_eq!(seq.to_string(), "(3,7,char,true)");
+        assert_eq!(seq.to_string(), "(3,7,string,true)");
         let seq2 = sequence(0, 0, false);
-        assert_eq!(seq2.to_string(), "(0,0,char,false)");
+        assert_eq!(seq2.to_string(), "(0,0,string,false)");
     }
 
     #[test]
@@ -251,14 +170,12 @@ mod tests {
     }
 
     #[test]
-    fn sequences_with_different_concrete_data_types_are_not_equal_even_with_the_same_display_name() {
-        // Faithful to the Java quirk: equals() compares getClass(), not getDisplayName() or
-        // is_equivalent(); two different concrete AbstractStringDataType implementors that
-        // happen to render the same display name are still unequal.
-        let a = Sequence::new(0, 9, Box::new(MockStringTypeA), true);
-        let b = Sequence::new(0, 9, Box::new(MockStringTypeB), true);
-        assert_eq!(a.get_string_data_type().get_display_name(), b.get_string_data_type().get_display_name());
+    fn sequences_with_different_concrete_data_types_are_not_equal() {
+        // Java's equals() compares the string data types' getClass().
+        let a = Sequence::new(0, 9, Box::new(StringDataType::new(None)), true);
+        let b = Sequence::new(0, 9, Box::new(TerminatedStringDataType::new(None)), true);
         assert_ne!(a, b);
+        assert_eq!(a, Sequence::new(0, 9, Box::new(StringDataType::new(None)), true));
     }
 
     #[test]
@@ -267,7 +184,7 @@ mod tests {
         let debug = format!("{seq:?}");
         assert!(debug.contains("start"));
         assert!(debug.contains('1'));
-        assert!(debug.contains("char"));
+        assert!(debug.contains("string"));
         assert!(debug.contains("true"));
     }
 }
