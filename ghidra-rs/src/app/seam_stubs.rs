@@ -5242,7 +5242,7 @@ pub trait LSDATable: Send + Sync {
 /// `markupCfgFunctionTable`, both of which always construct it with a `DataType` element this
 /// crate cannot yet keep hold of concretely (`ByteDataType` has no concrete singleton -- see
 /// [`ByteDataType`](crate::program::model::data::byte_data_type::ByteDataType)'s module docs;
-/// `control_flow_guard`'s caller does build a concrete `StructureDataTypeImpl`, but there is
+/// `control_flow_guard`'s caller does build a concrete `StructureDataType`, but there is
 /// nothing useful to do with it here since `apply_to` cannot mutate a `Listing` yet either).
 /// So the `dt` constructor argument is dropped; like [`DecompileDebugDataTypeManager`],
 /// `apply_to` no-ops and reports success until the real command class is ported.

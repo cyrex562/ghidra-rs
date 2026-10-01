@@ -197,7 +197,7 @@ impl StructConverter for ResourceDirectory {
     /// singleton datatypes (`ghidra.program.model.data.DWordDataType`/`WordDataType`) are not yet
     /// ported to a concrete, usable instance -- `StructConverter`'s own doc comment notes the same
     /// gap for its `DWORD`/`WORD` constants. Rather than fabricate placeholder field types, this
-    /// reports the gap; replace with the real `StructureDataTypeImpl` construction once
+    /// reports the gap; replace with the real `StructureDataType` construction once
     /// `DWordDataType`/`WordDataType` land.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
         Err(ToDataTypeError::Io(io::Error::new(
