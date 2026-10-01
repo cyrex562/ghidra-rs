@@ -5392,7 +5392,7 @@ impl ResourceDirectoryEntry {
     /// Port of `ResourceDirectoryEntry(BinaryReader, int, int, boolean, boolean, NTHeader)`,
     /// minus the recursive `subDirectory`/`data`/`dirString` construction (see struct doc).
     pub fn new(
-        reader: &dyn crate::app::util::bin::binary_reader::LegacyBinaryReader,
+        reader: &crate::app::util::bin::binary_reader::BinaryReader,
         index: u64,
         resource_base: u64,
         _is_name_entry: bool,

@@ -14,7 +14,7 @@
 use std::collections::HashSet;
 use std::io;
 
-use crate::app::util::bin::binary_reader::LegacyBinaryReader;
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
 use crate::format::seam_stubs::{NTHeader, ResourceDirectoryEntry};
 use crate::program::model::data::data_type::DataType;
@@ -61,7 +61,7 @@ impl ResourceDirectory {
     /// `reader`, never for the "this directory is malformed" case, which yields a
     /// `ResourceDirectory` with fewer (possibly zero) entries instead.
     pub fn new(
-        reader: &dyn LegacyBinaryReader,
+        reader: &BinaryReader,
         mut index: u64,
         resource_base: u64,
         is_first_level: bool,
@@ -192,83 +192,29 @@ impl ResourceDirectory {
 
 impl StructConverter for ResourceDirectory {
     /// Port of `ResourceDirectory.toDataType()`.
-    ///
-    /// Java builds a `StructureDataType` of two `DWORD` and four `WORD` fields. Those builtin
-    /// singleton datatypes (`ghidra.program.model.data.DWordDataType`/`WordDataType`) are not yet
-    /// ported to a concrete, usable instance -- `StructConverter`'s own doc comment notes the same
-    /// gap for its `DWORD`/`WORD` constants. Rather than fabricate placeholder field types, this
-    /// reports the gap; replace with the real `StructureDataType` construction once
-    /// `DWordDataType`/`WordDataType` land.
     fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        Err(ToDataTypeError::Io(io::Error::new(
-            io::ErrorKind::Unsupported,
-            "ResourceDirectory::to_data_type needs DWordDataType/WordDataType, not yet ported",
-        )))
+        use crate::program::model::data::category_path::CategoryPath;
+        use crate::program::model::data::composite::Composite;
+        use crate::program::model::data::dword_data_type::DWordDataType;
+        use crate::program::model::data::structure_data_type::StructureDataType;
+        use crate::program::model::data::word_data_type::WordDataType;
+
+        let invalid = |m: String| ToDataTypeError::Io(io::Error::new(io::ErrorKind::InvalidInput, m));
+        let mut s = StructureDataType::new(NAME, 0);
+        for name in ["Characteristics", "TimeDateStamp"] {
+            s.add_with_name(Box::new(DWordDataType::new(None)), Some(name.to_string()), None).map_err(invalid)?;
+        }
+        for name in ["MajorVersion", "MinorVersion", "NumberOfNamedEntries", "NumberOfIdEntries"] {
+            s.add_with_name(Box::new(WordDataType::new(None)), Some(name.to_string()), None).map_err(invalid)?;
+        }
+        s.set_category_path(CategoryPath::parse("/PE").map_err(invalid)?)?;
+        Ok(Box::new(s))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-
-    /// A tiny in-memory `BinaryReader` over a fixed byte buffer, little-endian, matching the
-    /// on-disk layout `ResourceDirectory` reads.
-    struct BufReader {
-        bytes: Vec<u8>,
-        pointer: RefCell<u64>,
-        little_endian: RefCell<bool>,
-    }
-
-    impl BufReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            BufReader { bytes, pointer: RefCell::new(0), little_endian: RefCell::new(true) }
-        }
-    }
-
-    impl LegacyBinaryReader for BufReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            index < self.bytes.len() as u64
-        }
-        fn get_pointer_index(&self) -> u64 {
-            *self.pointer.borrow()
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            *self.pointer.borrow_mut() = index;
-            index
-        }
-        fn is_little_endian(&self) -> bool {
-            *self.little_endian.borrow()
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            *self.little_endian.borrow_mut() = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + n_elements;
-            self.bytes
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn get_byte_provider(
-            &self,
-        ) -> std::rc::Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::GByteStore>> {
-            unimplemented!("not needed by ResourceDirectory tests")
-        }
-        fn clone_at(&self, _new_index: u64) -> Box<dyn LegacyBinaryReader> {
-            unimplemented!("not needed by ResourceDirectory tests")
-        }
-    }
 
     fn le_u16_bytes(v: u16) -> [u8; 2] {
         v.to_le_bytes()
@@ -344,7 +290,7 @@ mod tests {
     fn parses_header_fields_and_entries_like_java_constructor() {
         // Two ID entries (ids 5 and 7), both pointing at plain data (top bit clear).
         let bytes = directory_bytes(0, 0xDEADBEEF, 0, 0, 0, 2, &[5, 7], &[0x100, 0x200]);
-        let reader = BufReader::new(bytes);
+        let reader = BinaryReader::from_bytes(bytes, true);
         let nt = PermissiveNtHeader;
         let mut seen = HashSet::new();
 
@@ -365,7 +311,7 @@ mod tests {
     #[test]
     fn duplicate_directory_index_is_ignored_like_java() {
         let bytes = directory_bytes(0, 0, 0, 0, 0, 0, &[], &[]);
-        let reader = BufReader::new(bytes);
+        let reader = BinaryReader::from_bytes(bytes, true);
         let nt = PermissiveNtHeader;
         let mut seen = HashSet::new();
         seen.insert(0u64);
@@ -414,7 +360,7 @@ mod tests {
         }
 
         let bytes = directory_bytes(0, 0, 0, 0, 0, 0, &[], &[]);
-        let reader = BufReader::new(bytes);
+        let reader = BinaryReader::from_bytes(bytes, true);
         let nt = RejectAllNtHeader;
         let mut seen = HashSet::new();
 
@@ -427,13 +373,16 @@ mod tests {
     }
 
     #[test]
-    fn to_data_type_reports_missing_dword_word_singletons() {
+    fn to_data_type_matches_java_layout() {
         let bytes = directory_bytes(0, 0, 0, 0, 0, 0, &[], &[]);
-        let reader = BufReader::new(bytes);
+        let reader = BinaryReader::from_bytes(bytes, true);
         let nt = PermissiveNtHeader;
         let mut seen = HashSet::new();
         let dir = ResourceDirectory::new(&reader, 0, 0, true, &nt, &mut seen).unwrap();
 
-        assert!(dir.to_data_type().is_err());
+        let dt = dir.to_data_type().unwrap();
+        assert_eq!(dt.get_name(), NAME);
+        assert_eq!(dt.get_length(), SIZEOF);
+        assert_eq!(dt.get_category_path().to_string(), "/PE");
     }
 }
