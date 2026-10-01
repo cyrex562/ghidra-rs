@@ -1,5 +1,7 @@
+use crate::docking::settings::enum_settings_definition::EnumSettingsDefinition;
 use crate::docking::settings::java_enum_settings_definition::JavaEnumSettingsDefinition;
 use crate::docking::settings::settings::Settings;
+use crate::docking::settings::settings_definition::SettingsDefinition;
 use std::fmt;
 
 /// Translation display preference: show original value or translated value.
@@ -38,10 +40,14 @@ impl TranslationEnum {
 ///
 /// Port of `ghidra.program.model.data.TranslationSettingsDefinition`.
 ///
-/// Note: The property map management methods from the Java class
-/// (hasTranslatedValue, getTranslatedValue, setTranslatedValue) are not included
-/// in this port as they require access to Program.getUsrPropertyManager() which
-/// is not available on the Program trait.
+/// Java extends `JavaEnumSettingsDefinition<TRANSLATION_ENUM>`; the Rust struct wraps one and
+/// implements [`SettingsDefinition`]/[`EnumSettingsDefinition`] by delegating to it. The shared
+/// `TRANSLATION` instance is [`TranslationSettingsDefinition::translation`].
+///
+/// Not yet ported: the property map methods (`hasTranslatedValue`, `getTranslatedValue`,
+/// `setTranslatedValue`), which read the program's user property map through
+/// `Program.getUsrPropertyManager()` -- not available on the Rust `Program` trait.
+#[derive(Debug, Clone)]
 pub struct TranslationSettingsDefinition {
     def: JavaEnumSettingsDefinition<TranslationEnum>,
 }
@@ -63,6 +69,12 @@ impl TranslationSettingsDefinition {
             TranslationEnum::ShowOriginal,
         );
         TranslationSettingsDefinition { def }
+    }
+
+    /// The shared instance, Java's `TranslationSettingsDefinition.TRANSLATION`.
+    pub fn translation() -> &'static TranslationSettingsDefinition {
+        static TRANSLATION: std::sync::OnceLock<TranslationSettingsDefinition> = std::sync::OnceLock::new();
+        TRANSLATION.get_or_init(TranslationSettingsDefinition::new)
     }
 
     /// Determine if translated strings should be shown.
@@ -88,6 +100,54 @@ impl TranslationSettingsDefinition {
     /// Set the underlying enum value in settings.
     pub fn set_enum_value(&self, settings: &mut dyn Settings, value: TranslationEnum) {
         self.def.set_enum_value(settings, value);
+    }
+}
+
+impl EnumSettingsDefinition for TranslationSettingsDefinition {
+    fn get_choice(&self, settings: &dyn Settings) -> i32 {
+        self.def.get_choice(settings)
+    }
+
+    fn set_choice(&self, settings: &mut dyn Settings, value: i32) {
+        self.def.set_choice(settings, value)
+    }
+
+    fn get_display_choice(&self, value: i32, settings: &dyn Settings) -> String {
+        self.def.get_display_choice(value, settings)
+    }
+
+    fn get_display_choices(&self, settings: &dyn Settings) -> Vec<String> {
+        self.def.get_display_choices(settings)
+    }
+}
+
+impl SettingsDefinition for TranslationSettingsDefinition {
+    fn has_value(&self, settings: &dyn Settings) -> bool {
+        self.def.has_value(settings)
+    }
+
+    fn get_value_string(&self, settings: &dyn Settings) -> Option<String> {
+        self.def.get_value_string(settings)
+    }
+
+    fn get_name(&self) -> String {
+        self.def.get_name()
+    }
+
+    fn get_storage_key(&self) -> String {
+        self.def.get_storage_key()
+    }
+
+    fn get_description(&self) -> String {
+        self.def.get_description()
+    }
+
+    fn clear(&self, settings: &mut dyn Settings) {
+        self.def.clear(settings)
+    }
+
+    fn copy_setting(&self, src_settings: &dyn Settings, dest_settings: &mut dyn Settings) {
+        self.def.copy_setting(src_settings, dest_settings)
     }
 }
 
@@ -221,5 +281,22 @@ mod tests {
 
         def.set_enum_value(&mut settings, TranslationEnum::ShowOriginal);
         assert_eq!(def.get_enum_value(&settings), TranslationEnum::ShowOriginal);
+    }
+
+    #[test]
+    fn is_a_settings_definition_with_java_names() {
+        let def = TranslationSettingsDefinition::translation();
+        let as_def: &dyn SettingsDefinition = def;
+        assert_eq!(as_def.get_name(), "Translation");
+        assert_eq!(as_def.get_storage_key(), "translated");
+        assert_eq!(as_def.get_description(), "Selects the display of translated strings");
+        let mut settings = MockSettings::new();
+        assert!(!as_def.has_value(&settings));
+        assert_eq!(as_def.get_value_string(&settings).as_deref(), Some("show original"));
+        def.set_show_translated(&mut settings, true);
+        assert_eq!(def.get_choice(&settings), 1);
+        assert_eq!(as_def.get_value_string(&settings).as_deref(), Some("show translated"));
+        as_def.clear(&mut settings);
+        assert!(!def.is_show_translated(&settings));
     }
 }

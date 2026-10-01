@@ -13,21 +13,12 @@
 //!
 //! ## Differences from the Java original
 //!
-//! - **No `java.nio.charset.Charset`/`CharsetEncoder`, no `CharsetInfoManager`.** Matching
-//!   [`StringRenderBuilder`]'s own established convention (see that module's docs), encoding is
-//!   limited to the same handful of charset names this crate's standard library can handle
-//!   without a full `Charset` registry: `US-ASCII`, `UTF-8`, `UTF-16BE`/`UTF-16LE`,
-//!   `UTF-32BE`/`UTF-32LE`. [`charset_char_size`]/[`is_bom_charset`] are minimal free-function
-//!   stand-ins for the two `CharsetInfoManager` queries `initCharset` needs (character size in
-//!   bytes, and whether a charset needs an endian suffix appended before it can be resolved).
-//! - **No `CharBuffer`/surrogate-pair reconstruction.** Java represents text internally as UTF-16
-//!   `char`s, so a supplementary code point (`encodeCodePoint`) must first be split into a
-//!   high/low surrogate pair and fed through a 2-`char` buffer before the encoder can consume it
-//!   (`encodeBufferedCodePoint`). Rust's `char` already *is* a single Unicode scalar value, so
-//!   `encodeCodePoint`/`encodeChar`/`encodeBufferedCodePoint` collapse into one helper,
-//!   [`encode_scalar`](StringRenderParser::encode_scalar), which encodes a code point directly
-//!   through whichever of the five supported charsets [`init_charset`](StringRenderParser::init_charset)
-//!   resolved.
+//! - **Charsets** are [`JavaCharset`]s looked up through [`CharsetInfoManager`], as in Java.
+//!   Java feeds each char through a persistent `CharsetEncoder` with `endOfInput == false`, so a
+//!   supplementary code point is split into a surrogate pair first, and an escaped lone high
+//!   surrogate (`\uD800`) is swallowed without output while a lone low surrogate is malformed.
+//!   [`encode_scalar`](StringRenderParser::encode_scalar) reproduces those outcomes directly,
+//!   including Java's truncation of an escaped value above `U+10FFFF` to its low 16 bits.
 //! - **No `ByteBuffer` capacity/`BufferOverflowException` retry loop.** Java's public
 //!   `parse(CharBuffer)` overload guesses an initial output capacity, retries with double the
 //!   capacity (and a full [`reset`](StringRenderParser::reset) + re-parse from the start) on
@@ -65,102 +56,25 @@
 //!   Java `HashSet`, so its `toString()` element order is unspecified) becomes a `BTreeSet<char>`
 //!   here for a deterministic, sorted error message -- a minor, intentional improvement over an
 //!   already-nondeterministic Java message, not a behavior change worth preserving.
-//! - Java's `throw new AssertionError()` fallback branches (reached only when a character passes
-//!   a state's `checkAccepts` gate -- which is deliberately looser than what the state's handler
-//!   itself actually recognizes, e.g. `INIT`/`UNIT` accept *either* quote character regardless of
-//!   this instance's configured `quoteChar`) are ported as `panic!`, matching this crate's
-//!   established convention for unchecked Java exceptions that represent "should never happen"
-//!   program errors (e.g. `BitFieldDataType`'s `AssertException` handling) rather than ordinary,
-//!   recoverable parse failures. This is a faithful translation, not a weakening: Java's own
-//!   `AssertionError` is *also* an unchecked `RuntimeException`-family throwable that isn't among
-//!   `parseChar`'s declared checked exceptions, so it likewise propagates uncaught in Java.
+//! - Java's `throw new AssertionError()` in `parseCharUnit` is reachable from input (`INIT`/`UNIT`
+//!   accept *either* quote character whatever `quoteChar` is configured), and every Java caller
+//!   catches it as a `Throwable`; it is [`StringRenderParseError::QuoteMismatch`] here. The other
+//!   `AssertionError` branches cannot be reached past `checkAccepts` and remain `panic!`s.
 
 use std::collections::BTreeSet;
 use std::fmt;
 
 use crate::program::model::lang::endian::Endian;
+use crate::util::charset::charset_info_manager::CharsetInfoManager;
+use crate::util::charset::java_charset::{CharacterCodingException, JavaCharset};
 use crate::util::exception::UsrException;
 use crate::util::string_utilities::UNICODE_BE_BYTE_ORDER_MARK;
 
 const HEX_DIGITS: &str = "0123456789ABCDEFabcdef";
 
-/// Stands in for `ghidra.util.charset.CharsetInfoManager.UTF8`/`UTF16`/`UTF32`/`USASCII`.
+/// `CharsetInfoManager.UTF8`/`UTF16`/`UTF32`/`USASCII`.
 mod charset_names {
-    pub const UTF8: &str = "UTF-8";
-    pub const UTF16: &str = "UTF-16";
-    pub const UTF32: &str = "UTF-32";
-    pub const USASCII: &str = "US-ASCII";
-}
-
-/// Stands in for `CharsetInfoManager.getInstance().getCharsetCharSize(String)`, limited to the
-/// handful of charset names this port supports -- see the module docs.
-fn charset_char_size(name: &str) -> i32 {
-    match name {
-        "UTF-16" | "UTF-16BE" | "UTF-16LE" => 2,
-        "UTF-32" | "UTF-32BE" | "UTF-32LE" => 4,
-        _ => 1,
-    }
-}
-
-/// Stands in for `CharsetInfoManager.isBOMCharset(String)`.
-fn is_bom_charset(name: &str) -> bool {
-    matches!(name, "UTF-16" | "UTF-32")
-}
-
-/// Encodes a single Unicode scalar value into `out` using one of the charsets this port supports
-/// without a full `java.nio.charset.Charset` registry -- see the module docs. Mirrors (the
-/// encoding inverse of) [`StringRenderBuilder`](super::string_render_builder)'s own
-/// `decode_limited_charset`.
-fn encode_limited_charset(
-    charset_name: &str,
-    code_point: u32,
-    out: &mut Vec<u8>,
-) -> Result<(), StringRenderParseError> {
-    match charset_name {
-        "US-ASCII" | "ASCII" => {
-            if code_point > 0x7F {
-                return Err(StringRenderParseError::Unmappable(format!(
-                    "code point U+{code_point:04X} is not representable in US-ASCII"
-                )));
-            }
-            out.push(code_point as u8);
-            Ok(())
-        }
-        "UTF-8" => {
-            let c = char::from_u32(code_point).ok_or_else(|| {
-                StringRenderParseError::Malformed(format!(
-                    "U+{code_point:04X} is not a valid Unicode scalar value"
-                ))
-            })?;
-            let mut buf = [0u8; 4];
-            out.extend_from_slice(c.encode_utf8(&mut buf).as_bytes());
-            Ok(())
-        }
-        "UTF-16BE" | "UTF-16LE" => {
-            let c = char::from_u32(code_point).ok_or_else(|| {
-                StringRenderParseError::Malformed(format!(
-                    "U+{code_point:04X} is not a valid Unicode scalar value"
-                ))
-            })?;
-            let mut units = [0u16; 2];
-            let encoded = c.encode_utf16(&mut units);
-            let big_endian = charset_name.ends_with("BE");
-            for unit in encoded.iter() {
-                out.extend_from_slice(&if big_endian { unit.to_be_bytes() } else { unit.to_le_bytes() });
-            }
-            Ok(())
-        }
-        "UTF-32BE" | "UTF-32LE" => {
-            let big_endian = charset_name.ends_with("BE");
-            out.extend_from_slice(&if big_endian {
-                code_point.to_be_bytes()
-            } else {
-                code_point.to_le_bytes()
-            });
-            Ok(())
-        }
-        other => Err(StringRenderParseError::Unmappable(format!("unsupported charset: {other}"))),
-    }
+    pub use crate::util::charset::charset_info_manager::{USASCII, UTF16, UTF32, UTF8};
 }
 
 /// Port of `StringRenderParser.StringParseException`.
@@ -221,6 +135,11 @@ pub enum StringRenderParseError {
     /// A code point could not be encoded in the charset in use (stands in for
     /// `java.nio.charset.UnmappableCharacterException`).
     Unmappable(String),
+    /// The charset to encode with is not available (`UnsupportedCharsetException`).
+    UnsupportedCharset(String),
+    /// A quote character other than the configured one opened a text run: Java throws an
+    /// `AssertionError`, which its callers catch as a `Throwable` and report as an encode failure.
+    QuoteMismatch(char),
 }
 
 impl fmt::Display for StringRenderParseError {
@@ -229,6 +148,8 @@ impl fmt::Display for StringRenderParseError {
             StringRenderParseError::Parse(e) => e.fmt(f),
             StringRenderParseError::Malformed(msg) => write!(f, "malformed input: {msg}"),
             StringRenderParseError::Unmappable(msg) => write!(f, "unmappable character: {msg}"),
+            StringRenderParseError::UnsupportedCharset(name) => write!(f, "unsupported charset: {name}"),
+            StringRenderParseError::QuoteMismatch(c) => write!(f, "unexpected quote character {c:?}"),
         }
     }
 }
@@ -312,9 +233,9 @@ pub struct StringRenderParser {
     /// comment: "not just of the current buffer").
     pos: i32,
     state: State,
-    /// The concrete charset resolved by [`init_charset`](Self::init_charset) (e.g. `"UTF-16BE"`),
+    /// The concrete charset resolved by [`init_charset`](Self::init_charset) (e.g. `UTF-16BE`),
     /// or `None` before the first character has been processed.
-    charset: Option<String>,
+    charset: Option<JavaCharset>,
     val: u32,
     code_digits: i32,
 }
@@ -355,13 +276,19 @@ impl StringRenderParser {
     }
 
     /// Port of `StringRenderParser.initCharset(ByteBuffer, String)`.
-    fn init_charset(&mut self, out: &mut Vec<u8>, repr_charset_name: &str) {
+    ///
+    /// Fails, as `Charset.forName` throws `UnsupportedCharsetException`, if the charset is not
+    /// supported.
+    fn init_charset(&mut self, out: &mut Vec<u8>, repr_charset_name: &str) -> Result<(), StringRenderParseError> {
         let mut charset_name = self.charset_name.clone().unwrap_or_else(|| repr_charset_name.to_string());
-        let char_size = charset_char_size(&charset_name);
-        if is_bom_charset(&charset_name) {
+        let char_size = CharsetInfoManager::get_instance().get_charset_char_size(&charset_name);
+        if CharsetInfoManager::is_bom_charset(&charset_name) {
             // Take care of the BOM ourselves, because it must be first, before any initial bytes.
-            charset_name.push_str(self.endian.to_short_string());
+            charset_name.push_str(if self.endian.is_big_endian() { "BE" } else { "LE" });
         }
+        let Some(charset) = JavaCharset::for_name(&charset_name) else {
+            return Err(StringRenderParseError::UnsupportedCharset(charset_name));
+        };
         if self.include_bom {
             if char_size == 2 {
                 let bom = UNICODE_BE_BYTE_ORDER_MARK as u16;
@@ -374,18 +301,40 @@ impl StringRenderParser {
                 });
             }
         }
-        self.charset = Some(charset_name);
+        self.charset = Some(charset);
+        Ok(())
     }
 
-    /// Port of `StringRenderParser.encodeCodePoint`/`encodeChar`/`encodeBufferedCodePoint`,
-    /// collapsed into one helper since Rust's `char` needs no surrogate-pair reconstruction --
-    /// see the module docs.
+    /// Port of `StringRenderParser.encodeCodePoint`/`encodeChar`/`encodeBufferedCodePoint`; see
+    /// the module docs for the surrogate cases.
     fn encode_scalar(&mut self, out: &mut Vec<u8>, code_point: u32) -> Result<(), StringRenderParseError> {
         let charset = self
             .charset
-            .as_deref()
             .expect("StringRenderParser: encode_scalar called before a charset was resolved");
-        encode_limited_charset(charset, code_point, out)
+        let units: Vec<u16> = if (0x1_0000..=0x10_FFFF).contains(&code_point) {
+            let v = code_point - 0x1_0000;
+            vec![0xD800 + (v >> 10) as u16, 0xDC00 + (v & 0x3FF) as u16]
+        } else {
+            // `encodeChar(out, (char) cp)`: a BMP value, or the low 16 bits of an invalid one.
+            vec![code_point as u16]
+        };
+        if units.len() == 1 && (0xD800..=0xDBFF).contains(&units[0]) {
+            // A lone high surrogate waits in Java's encoder for a low surrogate that is never
+            // fed to it: nothing is written and nothing is reported.
+            return Ok(());
+        }
+        match charset.encode_units(&units) {
+            Ok(bytes) => {
+                out.extend_from_slice(&bytes);
+                Ok(())
+            }
+            Err(CharacterCodingException::Malformed(_)) => Err(StringRenderParseError::Malformed(format!(
+                "U+{code_point:04X} is malformed for {charset}"
+            ))),
+            Err(CharacterCodingException::Unmappable(_)) => Err(StringRenderParseError::Unmappable(format!(
+                "U+{code_point:04X} is not representable in {charset}"
+            ))),
+        }
     }
 
     /// Port of `StringRenderParser.parseCharInit(ByteBuffer, char)`.
@@ -394,20 +343,20 @@ impl StringRenderParser {
             return Ok(State::Prefix);
         }
         if c == 'U' {
-            self.init_charset(out, charset_names::UTF32);
+            self.init_charset(out, charset_names::UTF32)?;
             return Ok(State::Unit);
         }
-        self.init_charset(out, charset_names::USASCII);
+        self.init_charset(out, charset_names::USASCII)?;
         self.parse_char_unit(out, c)
     }
 
     /// Port of `StringRenderParser.parseCharPrefix(ByteBuffer, char)`.
     fn parse_char_prefix(&mut self, out: &mut Vec<u8>, c: char) -> Result<State, StringRenderParseError> {
         if c == '8' {
-            self.init_charset(out, charset_names::UTF8);
+            self.init_charset(out, charset_names::UTF8)?;
             return Ok(State::Unit);
         }
-        self.init_charset(out, charset_names::UTF16);
+        self.init_charset(out, charset_names::UTF16)?;
         self.parse_char_unit(out, c)
     }
 
@@ -424,7 +373,7 @@ impl StringRenderParser {
         // by the representation being parsed (`INIT`/`UNIT` accept *either* quote character -- see
         // the module docs). A genuine "should never happen given a correctly-paired
         // builder/parser" assertion, matching Java's own uncaught `AssertionError` here.
-        panic!("StringRenderParser: unexpected character {c:?} in UNIT state (quote_char mismatch?)");
+        Err(StringRenderParseError::QuoteMismatch(c))
     }
 
     /// Port of `StringRenderParser.parseCharStr(ByteBuffer, char)`.
@@ -750,7 +699,7 @@ mod tests {
     #[test]
     fn round_trips_plain_ascii_through_builder() {
         let original = b"Hello, world!";
-        let mut builder = StringRenderBuilder::new("US-ASCII", 1);
+        let mut builder = StringRenderBuilder::new(JavaCharset::us_ascii(), 1);
         builder.decode_bytes_using_charset(original, RenderEnum::All, false);
         let rendered = builder.build();
 
@@ -762,7 +711,7 @@ mod tests {
     #[test]
     fn round_trips_ascii_with_control_characters_through_builder() {
         let original = b"a\tb\nc\0d";
-        let mut builder = StringRenderBuilder::new("US-ASCII", 1);
+        let mut builder = StringRenderBuilder::new(JavaCharset::us_ascii(), 1);
         builder.decode_bytes_using_charset(original, RenderEnum::All, false);
         let rendered = builder.build();
 
@@ -774,7 +723,7 @@ mod tests {
     #[test]
     fn round_trips_ascii_with_embedded_quote_through_builder() {
         let original = b"a\"b";
-        let mut builder = StringRenderBuilder::new("US-ASCII", 1);
+        let mut builder = StringRenderBuilder::new(JavaCharset::us_ascii(), 1);
         builder.decode_bytes_using_charset(original, RenderEnum::All, false);
         let rendered = builder.build();
 
@@ -787,7 +736,7 @@ mod tests {
     fn round_trips_utf16be_text_through_builder() {
         // Big-endian UTF-16 code units for "hi".
         let original: &[u8] = &[0x00, b'h', 0x00, b'i'];
-        let mut builder = StringRenderBuilder::new("UTF-16BE", 2);
+        let mut builder = StringRenderBuilder::new(JavaCharset::UTF_16BE, 2);
         builder.decode_bytes_using_charset(original, RenderEnum::All, false);
         let rendered = builder.build();
 
@@ -805,7 +754,7 @@ mod tests {
         // public API only (`add_byte` is private to that module). The representation only encodes
         // a flat byte stream with no run-boundary markers, so the parser reconstructs the
         // concatenation of both calls' original bytes.
-        let mut builder = StringRenderBuilder::new("US-ASCII", 1);
+        let mut builder = StringRenderBuilder::new(JavaCharset::us_ascii(), 1);
         builder.decode_bytes_using_charset(&[0xFF, 0xFE], RenderEnum::All, false);
         builder.decode_bytes_using_charset(b"hi", RenderEnum::All, false);
         let rendered = builder.build();
@@ -814,5 +763,39 @@ mod tests {
         let mut parser = StringRenderParser::new('"', Endian::Little, Some("US-ASCII"), false);
         let parsed = parser.parse(&rendered).unwrap();
         assert_eq!(parsed, vec![0xFF, 0xFE, b'h', b'i']);
+    }
+
+    #[test]
+    fn quote_mismatch_is_an_error_not_a_panic() {
+        let mut p = StringRenderParser::new('"', Endian::Little, None, false);
+        assert_eq!(p.parse("'a'"), Err(StringRenderParseError::QuoteMismatch('\'')));
+    }
+
+    #[test]
+    fn unsupported_charset_is_an_error() {
+        let mut p = StringRenderParser::new('"', Endian::Little, Some("Shift_JIS"), false);
+        assert!(matches!(p.parse("\"a\""), Err(StringRenderParseError::UnsupportedCharset(_))));
+    }
+
+    #[test]
+    fn encodes_through_any_supported_charset() {
+        // IBM-Thai: U+0E01 is byte 66, '[' is byte 73.
+        let mut p = StringRenderParser::new('\'', Endian::Little, Some("IBM-Thai"), false);
+        assert_eq!(p.parse("'\u{0E01}'").unwrap(), vec![66]);
+        let mut p = StringRenderParser::new('\'', Endian::Little, Some("IBM-Thai"), false);
+        assert_eq!(p.parse("'\\u0e01['").unwrap(), vec![66, 73]);
+        let mut p = StringRenderParser::new('"', Endian::Little, Some("US-ASCII"), false);
+        assert!(matches!(p.parse("\"\u{e9}\""), Err(StringRenderParseError::Unmappable(_))));
+    }
+
+    #[test]
+    fn supplementary_and_lone_surrogate_escapes() {
+        let mut p = StringRenderParser::new('"', Endian::Big, Some("UTF-16"), false);
+        assert_eq!(p.parse("u\"\\U00010112\"").unwrap(), vec![0xD8, 0x00, 0xDD, 0x12]);
+        // A lone high surrogate is swallowed by Java's encoder; a lone low one is malformed.
+        let mut p = StringRenderParser::new('"', Endian::Big, Some("UTF-16"), false);
+        assert_eq!(p.parse("u\"\\uD800\"").unwrap(), Vec::<u8>::new());
+        let mut p = StringRenderParser::new('"', Endian::Big, Some("UTF-16"), false);
+        assert!(matches!(p.parse("u\"\\uDC00\""), Err(StringRenderParseError::Malformed(_))));
     }
 }

@@ -14025,7 +14025,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TerminatedStringDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TerminatedUnicode32DataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TerminatedUnicodeDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TranslationSettingsDefinition.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TranslationSettingsDefinition.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TypeDef.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TypeDefSettingsDefinition.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TypedefDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
@@ -14577,7 +14577,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddres
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressSetView.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/XmlProgramUtilities.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfoManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfoManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/CompilerConstraint.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/ExecutableFormatConstraint.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/LanguageConstraint.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
@@ -14678,7 +14678,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/NoisyStructureBuilderTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/SettingsBuilder.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/StringDataTypeTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/StringRenderBuilderTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/StringRenderBuilderTest.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/StubDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/TestDoubleDataTypeManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/TestDummyDataTypeManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
@@ -14711,7 +14711,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/util/MultiIterat
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/util/SymmetricDifferenceAddressSetViewTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/util/TwoWayBreakdownAddressRangeIteratorTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/util/UnionAddressSetViewTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/util/charset/CharsetInfoManagerTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra util charset 
+orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/util/charset/CharsetInfoManagerTest.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra util charset 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/concurrent/GThreadPool.java	TODO	orig_src Ghidra Framework Utility src main java generic concurrent 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/concurrent/NamedDaemonThreadFactory.java	DONE	orig_src Ghidra Framework Utility src main java generic concurrent 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/ClassModuleTree.java	DONE	orig_src Ghidra Framework Utility src main java generic jar 
