@@ -2,6 +2,7 @@ pub mod dyld_architecture;
 pub mod dyld_cache_accelerate_info;
 pub mod dyld_cache_accelerator_dof;
 pub mod dyld_cache_accelerator_initializer;
+pub mod dyld_cache_header;
 pub mod dyld_cache_image;
 pub mod dyld_cache_image_info;
 pub mod dyld_cache_image_info_extra;

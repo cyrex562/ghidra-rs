@@ -98,12 +98,18 @@ impl DyldCacheSlideInfoCommonBase {
 ///
 /// `ghidra.app.util.bin.MemoryByteProvider` is not itself ported yet (a much larger, general
 /// purpose class), so this is a local, minimal stand-in scoped to reads relative to `base`.
-struct MemoryRangeByteProvider {
+pub(crate) struct MemoryRangeByteProvider {
     memory: Arc<dyn Memory>,
     base: Address,
 }
 
 impl MemoryRangeByteProvider {
+    /// A provider whose index 0 is `base` in `memory` (Java: `new MemoryByteProvider(memory,
+    /// baseAddress)`, limited here to the block containing `base`).
+    pub(crate) fn new(memory: Arc<dyn Memory>, base: Address) -> Self {
+        MemoryRangeByteProvider { memory, base }
+    }
+
     fn resolve(&self, index: u64) -> io::Result<Address> {
         self.base
             .add(index as i64)

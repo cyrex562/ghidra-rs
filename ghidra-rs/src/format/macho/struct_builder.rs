@@ -189,19 +189,14 @@ impl MachStruct {
         self.inner.get_length()
     }
 
-    /// Java: `struct.setCategoryPath(new CategoryPath(MachConstants.DATA_TYPE_CATEGORY)); return
-    /// struct;`.
-    pub(crate) fn finish(self) -> Result<Box<dyn DataType>, ToDataTypeError> {
-        Ok(Box::new(self.finish_structure()?))
-    }
-
     /// The structure as built, without setting the `/MachO` category path (for the few Java
     /// `toDataType()`s that omit `setCategoryPath`).
     pub(crate) fn into_structure(self) -> StructureDataType {
         self.inner
     }
 
-    /// As [`finish`](Self::finish), returning the concrete structure.
+    /// Java: `struct.setCategoryPath(new CategoryPath(MachConstants.DATA_TYPE_CATEGORY)); return
+    /// struct;`.
     pub(crate) fn finish_structure(mut self) -> Result<StructureDataType, ToDataTypeError> {
         let path = CategoryPath::parse(DATA_TYPE_CATEGORY).map_err(invalid)?;
         self.inner.set_category_path(path)?;
@@ -214,9 +209,7 @@ pub(crate) mod test_support {
     //! Helpers for inspecting the structures the Mach-O `toDataType()` ports build.
 
     use crate::program::model::data::composite::Composite;
-    use crate::program::model::data::string_data_type::StringDataType;
-use crate::program::model::data::structure_data_type::StructureDataType;
-use crate::program::model::data::unsigned_leb128_data_type::UnsignedLeb128DataType;
+    use crate::program::model::data::structure_data_type::StructureDataType;
 
     /// `(field name, offset, length)` for each component of a structure built by
     /// [`super::MachStruct`].
