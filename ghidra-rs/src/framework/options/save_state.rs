@@ -5,12 +5,14 @@
 //! composition plus `Deref`/`DerefMut` to the inner [`GProperties`], so every typed `put*`/`get*`
 //! accessor is available on a `SaveState` directly.
 
+use std::collections::BTreeMap;
 use std::io;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
 use crate::framework::options::g_properties::{
-    Flavor, GProperties, GPropertyValue, ATTRIBUTE_KEY, ATTRIBUTE_NAME, ATTRIBUTE_TYPE, STATE,
+    GProperties, GPropertyValue, ATTRIBUTE_KEY, ATTRIBUTE_NAME, ATTRIBUTE_TYPE, ATTRIBUTE_VALUE,
+    STATE,
 };
 use crate::framework::options::xml_properties::read_xml_file;
 use crate::util::xml::element::Element;
@@ -18,9 +20,16 @@ use crate::util::xml::element::Element;
 /// Port of `ghidra.framework.options.SaveState`: name/value pairs saved as XML or JSON, used by
 /// classes to persist their state. Getters take a default, so a restoring object is fully
 /// initialized even when a value is missing.
+///
+/// A state restored or created as an `AttributedSaveState` (see
+/// [`AttributedSaveState`](crate::framework::options::AttributedSaveState)) additionally carries
+/// per-property XML attributes; that Java subclass is modeled by
+/// [`property_attributes`](Self::property_attributes) being `Some`, so nested states created while
+/// restoring one are attributed too, as Java's overridden `createSaveState` makes them.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SaveState {
     props: GProperties,
+    pub(crate) property_attributes: Option<BTreeMap<String, BTreeMap<String, String>>>,
 }
 
 impl Default for SaveState {
@@ -56,12 +65,46 @@ impl SaveState {
 
     /// `new SaveState(String)`: the name only hints at what the state represents.
     pub fn with_name(name: impl Into<String>) -> Self {
-        SaveState { props: GProperties::new(name) }
+        SaveState { props: GProperties::new(name), property_attributes: None }
     }
 
     /// `new SaveState(Element)`: restores a state saved by [`save_to_xml`](Self::save_to_xml).
     pub fn from_xml(element: &Element) -> Self {
-        SaveState { props: GProperties::from_xml_flavored(element, Flavor::SaveState) }
+        Self::restore(SaveState::new(), element)
+    }
+
+    /// The `GProperties(Element)` constructor body run on `state` (named for `root`), with this
+    /// class's `processElement` override.
+    pub(crate) fn restore(mut state: SaveState, root: &Element) -> SaveState {
+        state.props = GProperties::new(root.get_name());
+        for e in root.get_children() {
+            state.process_element(e);
+        }
+        state
+    }
+
+    /// `SaveState.processElement(Element)` (and `AttributedSaveState`'s override of it).
+    fn process_element(&mut self, element: &Element) {
+        if element.get_name() == Self::SAVE_STATE_TAG_NAME {
+            self.process_save_state_element(element);
+        } else {
+            self.props.process_element(element);
+        }
+        if let Some(attributes) = &mut self.property_attributes {
+            // AttributedSaveState: keep the non-standard attributes of the element.
+            let Some(name) = element.get_attribute_value(ATTRIBUTE_NAME) else {
+                return; // sub-element; properties not supported
+            };
+            let new_attrs: BTreeMap<String, String> = element
+                .get_attributes()
+                .iter()
+                .filter(|(n, _)| ![ATTRIBUTE_NAME, ATTRIBUTE_TYPE, ATTRIBUTE_VALUE].contains(&n.as_str()))
+                .cloned()
+                .collect();
+            if !new_attrs.is_empty() {
+                attributes.insert(name.to_string(), new_attrs);
+            }
+        }
     }
 
     /// `new SaveState(File)` (via `XmlProperties(File)`): restores a state saved by
@@ -80,7 +123,24 @@ impl SaveState {
 
     /// `saveToXml()`, with nested states written as `<SAVE_STATE>` elements.
     pub fn save_to_xml(&self) -> Element {
-        self.props.save_to_xml_flavored(Flavor::SaveState)
+        let mut root = Element::new(self.get_name());
+        for (key, value) in &self.props.map {
+            let element = match value {
+                GPropertyValue::SaveState(s) => s.create_nested_element(key),
+                _ => {
+                    let mut element = GProperties::create_element(key, value);
+                    // AttributedSaveState.initializeElement
+                    if let Some(attrs) = self.property_attributes.as_ref().and_then(|a| a.get(key)) {
+                        for (n, v) in attrs {
+                            element.set_attribute(n.as_str(), v.as_str());
+                        }
+                    }
+                    element
+                }
+            };
+            root.add_content(element);
+        }
+        root
     }
 
     /// The inherited `GProperties` view of this state.
@@ -101,34 +161,38 @@ impl SaveState {
         }
     }
 
-    /// `createSaveState(String)`: a nested state; `None` (old-style XML without a name) gets the
-    /// default name.
-    fn create_save_state(name: Option<&str>) -> SaveState {
-        name.map_or_else(SaveState::new, SaveState::with_name)
+    /// `createSaveState(String)`: a nested state of this state's class; `None` (old-style XML
+    /// without a name) gets the default name.
+    fn create_save_state(&self, name: Option<&str>) -> SaveState {
+        let mut state = name.map_or_else(SaveState::new, SaveState::with_name);
+        if self.property_attributes.is_some() {
+            state.property_attributes = Some(BTreeMap::new());
+        }
+        state
     }
 
-    /// `SaveState.processElement`'s `<SAVE_STATE>` branch: restores a nested state into `props`.
-    pub(crate) fn process_save_state_element(props: &mut GProperties, element: &Element) {
+    /// `SaveState.processElement`'s `<SAVE_STATE>` branch: restores a nested state.
+    fn process_save_state_element(&mut self, element: &Element) {
         if !element.has_attribute(ATTRIBUTE_KEY) {
-            Self::restore_save_state_without_key_attribute(props, element);
+            self.restore_save_state_without_key_attribute(element);
             return;
         }
         // <SAVE_STATE KEY="Property Key" NAME="Client Name" TYPE="SaveState">
         //     <STATE NAME="a" TYPE="int" VALUE="5" />
         // </SAVE_STATE>
         let key = element.get_attribute_value(ATTRIBUTE_KEY).unwrap_or_default().to_string();
-        let mut save_state = Self::create_save_state(element.get_attribute_value(ATTRIBUTE_NAME));
+        let mut save_state = self.create_save_state(element.get_attribute_value(ATTRIBUTE_NAME));
         for e in element.get_children() {
-            save_state.props.process_element(e, Flavor::SaveState);
+            save_state.process_element(e);
         }
-        props.map.insert(key, GPropertyValue::SaveState(Box::new(save_state)));
+        self.props.map.insert(key, GPropertyValue::SaveState(Box::new(save_state)));
     }
 
     /// `restoreSaveStateWithoutKeyAttribute(Element)`: the old style, keyed by `NAME`, with or
     /// without an intermediate `<SAVE_STATE>` child.
-    fn restore_save_state_without_key_attribute(props: &mut GProperties, element: &Element) {
+    fn restore_save_state_without_key_attribute(&mut self, element: &Element) {
         let key = element.get_attribute_value(ATTRIBUTE_NAME).unwrap_or_default().to_string();
-        let mut save_state = Self::create_save_state(None);
+        let mut save_state = self.create_save_state(None);
         let mut children = element.get_children();
         if let Some(child) = children.first() {
             if child.get_name() != STATE {
@@ -137,9 +201,9 @@ impl SaveState {
             }
         }
         for e in children {
-            save_state.props.process_element(e, Flavor::SaveState);
+            save_state.process_element(e);
         }
-        props.map.insert(key, GPropertyValue::SaveState(Box::new(save_state)));
+        self.props.map.insert(key, GPropertyValue::SaveState(Box::new(save_state)));
     }
 
     /// `SaveState.createElement(String, Object)` for a nested state: the state's own children

@@ -4,9 +4,10 @@
 //! JDOM-style [`Element`]) or JSON. Java stores `Object` values and dispatches on `instanceof`;
 //! here the closed set of supported value classes is the [`GPropertyValue`] enum.
 //!
-//! Java's subclass hooks (`processElement`, `createElement(String, Object)`, used by
-//! [`SaveState`]) are modeled by a private [`Flavor`] passed through the XML (de)serializer: a
-//! `SaveState` restores and writes nested `<SAVE_STATE>` elements, a plain `GProperties` does not.
+//! Java's subclass hooks (`processElement`, `createElement(String, Object)`, `initializeElement`,
+//! overridden by [`SaveState`] and `AttributedSaveState`) are modeled by the subclass driving the
+//! per-element steps exposed here ([`GProperties::process_element`] and
+//! [`GProperties::create_element`]) itself.
 //!
 //! Divergences from Java, all forced by the absence of reflection or of `java.awt` types:
 //! - Enum values are kept as their Java class name plus constant name
@@ -141,8 +142,8 @@ pub enum GPropertyValue {
 }
 
 impl GPropertyValue {
-    /// The Java class name of the value, for type-mismatch diagnostics.
-    fn java_class(&self) -> &'static str {
+    /// The Java class name (`getClass().getName()`) of the value Java would hold.
+    pub fn java_class_name(&self) -> &'static str {
         match self {
             GPropertyValue::Null => "null",
             GPropertyValue::Xml(_) => "org.jdom2.Element",
@@ -172,15 +173,6 @@ impl GPropertyValue {
             GPropertyValue::SaveState(_) => "ghidra.framework.options.SaveState",
         }
     }
-}
-
-/// Which Java class's `processElement`/`createElement` overrides apply.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Flavor {
-    /// `GProperties` (and `XmlProperties`/`JSonProperties`, which do not override them).
-    Plain,
-    /// `SaveState`.
-    SaveState,
 }
 
 /// Why JSON could not be restored into a [`GProperties`] (Java throws `AssertException` or a
@@ -255,13 +247,9 @@ impl GProperties {
     /// `new GProperties(Element root)`: restores the properties saved by
     /// [`save_to_xml`](Self::save_to_xml).
     pub fn from_xml(root: &Element) -> Self {
-        Self::from_xml_flavored(root, Flavor::Plain)
-    }
-
-    pub(crate) fn from_xml_flavored(root: &Element, flavor: Flavor) -> Self {
         let mut props = GProperties::new(root.get_name());
         for elem in root.get_children() {
-            props.process_element(elem, flavor);
+            props.process_element(elem);
         }
         props
     }
@@ -292,13 +280,9 @@ impl GProperties {
         Ok(props)
     }
 
-    /// `processElement(Element)`, including `SaveState`'s override for [`Flavor::SaveState`].
-    pub(crate) fn process_element(&mut self, elem: &Element, flavor: Flavor) {
+    /// `GProperties.processElement(Element)`: restores the one value `elem` describes.
+    pub(crate) fn process_element(&mut self, elem: &Element) {
         let tag = elem.get_name();
-        if flavor == Flavor::SaveState && tag == SaveState::SAVE_STATE_TAG_NAME {
-            SaveState::process_save_state_element(self, elem);
-            return;
-        }
         let name = elem.get_attribute_value(ATTRIBUTE_NAME).unwrap_or_default().to_string();
         let ty = elem.get_attribute_value(ATTRIBUTE_TYPE);
         let value = elem.get_attribute_value(ATTRIBUTE_VALUE);
@@ -491,22 +475,15 @@ impl GProperties {
 
     /// `saveToXml()`: an element named for these properties with one child per value.
     pub fn save_to_xml(&self) -> Element {
-        self.save_to_xml_flavored(Flavor::Plain)
-    }
-
-    pub(crate) fn save_to_xml_flavored(&self, flavor: Flavor) -> Element {
         let mut root = Element::new(self.properties_name.clone());
         for (key, value) in &self.map {
-            root.add_content(Self::create_element(key, value, flavor));
+            root.add_content(Self::create_element(key, value));
         }
         root
     }
 
-    /// `createElement(String, Object)`, including `SaveState`'s override.
-    fn create_element(key: &str, value: &GPropertyValue, flavor: Flavor) -> Element {
-        if let (Flavor::SaveState, GPropertyValue::SaveState(s)) = (flavor, value) {
-            return s.create_nested_element(key);
-        }
+    /// `GProperties.createElement(String, Object)`: the element for one value.
+    pub(crate) fn create_element(key: &str, value: &GPropertyValue) -> Element {
         use GPropertyValue as V;
         match value {
             V::Xml(e) => {
@@ -1083,6 +1060,7 @@ mod tests {
         }
         // getAsType: a value of another type yields the default.
         assert_eq!(p.get_int("L", 7), 7);
+        assert_eq!(p.get_object("L").unwrap().java_class_name(), "java.lang.Long");
     }
 
     #[test]

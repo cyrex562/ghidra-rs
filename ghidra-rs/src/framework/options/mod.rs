@@ -1,4 +1,5 @@
 pub mod annotation;
+pub mod attributed_save_state;
 pub mod custom_option;
 pub mod custom_options_editor;
 pub mod enum_editor;
@@ -12,6 +13,7 @@ pub mod xml_properties;
 pub mod wrapped_option;
 
 pub use annotation::AutoOptionConsumed;
+pub use attributed_save_state::AttributedSaveState;
 pub use annotation::HelpInfo;
 pub use custom_option::{
     new_custom_option, register_custom_option_class, CustomOption, CustomOptionConstructor,

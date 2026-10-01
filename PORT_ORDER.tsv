@@ -529,7 +529,7 @@ TODO	struct	5	178	24	program	Ghidra/Features/Base/src/main/java/ghidra/program/u
 TODO	struct	5	176	3	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/MultiCodeUnitIterator.java
 TODO	struct	5	183	26	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramMergeManager.java
 TODO	struct	5	178	39	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/SymbolMerge.java
-TODO	struct	5	71	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/AttributedSaveState.java
+DONE	struct	5	71	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/AttributedSaveState.java
 DONE	struct	5	73	1	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/JSonProperties.java
 TODO	struct	5	74	1	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EditorStateFactory.java
 TODO	struct	5	79	1	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/PreferenceState.java
