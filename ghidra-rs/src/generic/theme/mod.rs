@@ -1,3 +1,15 @@
+pub mod abstract_theme_reader;
 pub mod application_theme_defaults;
+pub mod color_value;
+pub mod font_value;
+pub mod g_theme_value_map;
+pub mod icon_modifier;
+pub mod icon_resource_locator;
+pub mod icon_value;
+pub mod java_property_value;
+pub mod laf_type;
+pub mod theme_icon_resolver;
 pub mod theme_listener;
+pub mod theme_property_file_reader;
+pub mod theme_value;
 pub mod theme_value_utils;
