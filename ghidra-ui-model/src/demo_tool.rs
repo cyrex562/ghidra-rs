@@ -197,6 +197,7 @@ pub fn build_demo_session() -> UiSession {
     tool.add_local_action(decompiler, Box::new(wrap));
 
     s.set_central_provider(listing_id);
+    s.set_goto_target(listing_id);
     if let Some(theme) = crate::icons::load_default_theme() {
         s.set_icon_resolver(theme);
     }

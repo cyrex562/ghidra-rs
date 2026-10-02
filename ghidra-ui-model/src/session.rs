@@ -34,6 +34,7 @@ pub struct UiSession {
     wake: Option<WakeHandle>,
     central: Option<ProviderId>,
     icons: Option<Box<dyn crate::icons::IconResolver>>,
+    goto_target: Option<ProviderId>,
 }
 
 impl UiSession {
@@ -49,6 +50,7 @@ impl UiSession {
             wake: Some(wake),
             central: None,
             icons: None,
+            goto_target: None,
         }
     }
 
@@ -147,6 +149,41 @@ impl UiSession {
         }
     }
 
+    /// Makes listing provider `id` the target of [`Self::go_to`] (Java's
+    /// default navigatable for the GoToService).
+    pub fn set_goto_target(&mut self, id: ProviderId) {
+        self.goto_target = Some(id);
+    }
+
+    /// Goes to `address` in the go-to target listing (history recorded) and
+    /// tells the renderer.
+    pub fn go_to(&mut self, address: u64) -> Result<(), String> {
+        let target = self.goto_target.ok_or_else(|| "no listing to go to".to_string())?;
+        let Some(ViewModelBox::Listing(h)) = self.models.get(&target) else {
+            return Err(format!("go-to target {} is not a listing", target.0));
+        };
+        crate::listing_controller::lock(h).goto_address(address)?;
+        self.events.post(UiEvent::ViewChanged(target.0));
+        self.events.post(UiEvent::ActionsChanged);
+        Ok(())
+    }
+
+    /// A table row was activated (double-click, Java `GhidraTable.navigate`):
+    /// go to its location; a failure becomes a status message.
+    pub fn table_activate(&mut self, table: ProviderId, row: usize, column: usize) -> Result<(), String> {
+        let location = match self.models.get(&table) {
+            Some(ViewModelBox::Table(t)) => t.location(row, column),
+            Some(_) => return Err(format!("provider {} is not a table", table.0)),
+            None => return Err(format!("no view model for provider {}", table.0)),
+        };
+        if let Some(address) = location {
+            if let Err(message) = self.go_to(address) {
+                self.events.post(UiEvent::Status(message));
+            }
+        }
+        Ok(())
+    }
+
     /// Installs the theme icon resolver.
     pub fn set_icon_resolver(&mut self, resolver: Box<dyn crate::icons::IconResolver>) {
         self.icons = Some(resolver);
@@ -232,5 +269,39 @@ mod tests {
         s.apply_tool_requests();
         assert!(s.tool().provider(symbols).unwrap().state().is_visible());
         assert_eq!(s.events().drain(), vec![crate::events::UiEvent::ProviderShown { id: symbols.0, focus: true }]);
+    }
+
+    fn listing_at(s: &UiSession) -> Option<u128> {
+        let id = s.tool().find_provider("Demo", "Listing").unwrap();
+        match s.model(id) {
+            Some(ViewModelBox::Listing(h)) => crate::listing_controller::lock(h).cursor().map(|c| c.index),
+            _ => None,
+        }
+    }
+
+    #[test]
+    fn go_to_moves_the_target_listing_and_tells_the_renderer() {
+        let mut s = crate::demo_tool::build_demo_session();
+        let listing = s.tool().find_provider("Demo", "Listing").unwrap();
+        s.events().drain();
+        s.go_to(0x402000).unwrap();
+        assert_eq!(listing_at(&s), Some(12));
+        let events = s.events().drain();
+        assert!(events.contains(&UiEvent::ViewChanged(listing.0)) && events.contains(&UiEvent::ActionsChanged));
+        assert!(s.go_to(0x401800).unwrap_err().contains("401800"));
+    }
+
+    #[test]
+    fn activating_a_symbol_row_navigates_the_listing() {
+        let mut s = crate::demo_tool::build_demo_session();
+        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
+        // demo rows: main 401000, _start 400f00 (unmapped), printf 402000, helper 401100
+        s.table_activate(symbols, 2, 0).unwrap();
+        assert_eq!(listing_at(&s), Some(12));
+        s.events().drain();
+        s.table_activate(symbols, 1, 0).unwrap();
+        assert_eq!(listing_at(&s), Some(12));
+        assert_eq!(s.events().drain(), vec![UiEvent::Status("Address not found: 400f00".into())]);
+        assert!(s.table_activate(symbols, 99, 0).is_ok()); // no row: nothing to do
     }
 }

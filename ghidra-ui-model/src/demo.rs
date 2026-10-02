@@ -180,3 +180,24 @@ impl FormModel for MapForm {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::view_models::TableModel;
+
+    #[test]
+    fn a_rows_location_is_the_clicked_address_else_its_first_address() {
+        let t = VecTable::new(
+            vec!["Name".into(), "From".into(), "To".into()],
+            vec![
+                vec![CellValue::Text("a".into()), CellValue::Address(0x10), CellValue::Address(0x20)],
+                vec![CellValue::Text("b".into()), CellValue::Int(3), CellValue::Text("x".into())],
+            ],
+        );
+        assert_eq!(t.location(0, 2), Some(0x20));
+        assert_eq!(t.location(0, 0), Some(0x10));
+        assert_eq!(t.location(1, 1), None);
+        assert_eq!(t.location(5, 0), None);
+    }
+}

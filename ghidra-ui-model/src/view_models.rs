@@ -43,6 +43,18 @@ pub trait TableModel: Send {
     fn cell(&self, row: usize, column: usize) -> CellValue;
     /// Sorts by a column.
     fn sort(&mut self, _column: usize, _ascending: bool) {}
+    /// The address a row navigates to (Java `ProgramTableModel.getProgramLocation`):
+    /// by default the clicked cell's address, else the row's first address cell.
+    fn location(&self, row: usize, column: usize) -> Option<u64> {
+        if row >= self.row_count() {
+            return None;
+        }
+        let address = |c: usize| match self.cell(row, c) {
+            CellValue::Address(a) => Some(a),
+            _ => None,
+        };
+        address(column).or_else(|| (0..self.column_count()).find_map(address))
+    }
     /// Filters rows by text (empty = no filter).
     fn set_filter(&mut self, _text: &str) {}
     /// Whether a cell is editable.

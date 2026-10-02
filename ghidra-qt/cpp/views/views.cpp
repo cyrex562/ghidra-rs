@@ -155,6 +155,13 @@ QWidget* makeTable(uint64_t pid, QStatusBar* status, QWidget* parent) {
     view->setSortingEnabled(true);
     view->horizontalHeader()->setStretchLastSection(true);
     QObject::connect(filter, &QLineEdit::textChanged, model, [model](const QString& t) { model->setFilter(t); });
+    // Java GhidraTable: double-click navigates to the row's program location.
+    QObject::connect(view, &QTableView::doubleClicked, view, [pid, status](const QModelIndex& index) {
+        if (!index.isValid()) return;
+        bridgeCall(status, [&] {
+            table_activate(pid, static_cast<size_t>(index.row()), static_cast<size_t>(index.column()));
+        });
+    });
     layout->addWidget(filter);
     layout->addWidget(view);
     return box;

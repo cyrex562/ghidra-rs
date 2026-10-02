@@ -264,6 +264,8 @@ pub mod ffi {
         fn table_filter(pid: u64, text: &str) -> Result<()>;
         fn table_editable(pid: u64, row: usize, column: usize) -> Result<bool>;
         fn table_edit(pid: u64, row: usize, column: usize, value: &str) -> Result<()>;
+        /// Double-click: navigate to the row's location (Java GhidraTable.navigate).
+        fn table_activate(pid: u64, row: usize, column: usize) -> Result<()>;
 
         fn tree_root(pid: u64) -> Result<u64>;
         fn tree_child_count(pid: u64, node: u64) -> Result<usize>;
@@ -450,6 +452,10 @@ fn form_fields(pid: u64) -> Result<Vec<FieldInfo>, String> {
             })
             .collect())
     })
+}
+
+fn table_activate(pid: u64, row: usize, column: usize) -> Result<(), String> {
+    with("table_activate", |s| s.table_activate(ProviderId(pid), row, column))
 }
 
 fn form_set(pid: u64, key: &str, value: &str) -> Result<(), String> {
@@ -859,6 +865,17 @@ mod tests {
         let bar = tool_bar(-1).unwrap();
         let prev = bar.iter().find(|t| t.tooltip == "Previous Location").expect("Previous Location button");
         assert!(prev.icon_path.ends_with("images/left.png"), "{}", prev.icon_path);
+    }
+
+    #[test]
+    fn double_clicking_a_symbol_navigates_the_listing() {
+        let _g = LISTING_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let symbols = pid("Symbols");
+        let row = (0..table_row_count(symbols).unwrap()).find(|&r| table_cell(symbols, r, 0).unwrap() == "printf").unwrap();
+        drain_events().unwrap();
+        table_activate(symbols, row, 0).unwrap();
+        assert_eq!(listing_frame(pid("Listing")).unwrap().location, "00402000");
+        assert!(drain_events().unwrap().iter().any(|e| e.kind == 7 && e.task == pid("Listing")));
     }
 
     #[test]
