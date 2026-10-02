@@ -548,6 +548,11 @@ enum SimpleOptionValue {
     Bool(bool),
     Str(String),
     Int(i32),
+    /// `Option.newAddress` (`AddressOption`); `None` is Java's `null` address. Read back as a
+    /// `std::option::Option<Address>`.
+    Address(std::option::Option<crate::program::model::address::Address>),
+    /// `Option.newHexLong` (`HexLongOption`).
+    HexLong(crate::app::util::hex_long::HexLong),
 }
 
 /// Minimal constructible implementor of [`Option`], standing in for the
@@ -572,6 +577,8 @@ impl Option for SimpleOption {
             SimpleOptionValue::Bool(v) => Box::new(*v),
             SimpleOptionValue::Str(v) => Box::new(v.clone()),
             SimpleOptionValue::Int(v) => Box::new(*v),
+            SimpleOptionValue::Address(v) => Box::new(v.clone()),
+            SimpleOptionValue::HexLong(v) => Box::new(*v),
         }
     }
 
@@ -622,8 +629,29 @@ impl Builder for SimpleOptionBuilder {
             }
             Err(value) => value,
         };
-        match value.downcast::<i32>() {
-            Ok(v) => self.value = Some(SimpleOptionValue::Int(*v)),
+        let value = match value.downcast::<i32>() {
+            Ok(v) => {
+                self.value = Some(SimpleOptionValue::Int(*v));
+                return self;
+            }
+            Err(value) => value,
+        };
+        let value = match value.downcast::<crate::app::util::hex_long::HexLong>() {
+            Ok(v) => {
+                self.value = Some(SimpleOptionValue::HexLong(*v));
+                return self;
+            }
+            Err(value) => value,
+        };
+        let value = match value.downcast::<crate::program::model::address::Address>() {
+            Ok(v) => {
+                self.value = Some(SimpleOptionValue::Address(Some(*v)));
+                return self;
+            }
+            Err(value) => value,
+        };
+        match value.downcast::<std::option::Option<crate::program::model::address::Address>>() {
+            Ok(v) => self.value = Some(SimpleOptionValue::Address(*v)),
             Err(_) => panic!("SimpleOptionBuilder::value: unsupported option value type"),
         }
         self
@@ -661,6 +689,17 @@ pub fn new_string(name: &str) -> Box<dyn Builder> {
 
 /// Mirrors the static factory `Option.newInteger(String)`.
 pub fn new_integer(name: &str) -> Box<dyn Builder> {
+    Box::new(SimpleOptionBuilder::named(name))
+}
+
+/// Mirrors the static factory `Option.newAddress(String)`. The value is an `Address` or an
+/// `std::option::Option<Address>` (`None` for Java's `null`).
+pub fn new_address(name: &str) -> Box<dyn Builder> {
+    Box::new(SimpleOptionBuilder::named(name))
+}
+
+/// Mirrors the static factory `Option.newHexLong(String)`.
+pub fn new_hex_long(name: &str) -> Box<dyn Builder> {
     Box::new(SimpleOptionBuilder::named(name))
 }
 

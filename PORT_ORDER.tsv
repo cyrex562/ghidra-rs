@@ -820,7 +820,7 @@ TODO	struct	7	29	96	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	11	51	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionUtils.java
 TODO	struct	12	60	79	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/SpecExtension.java
 TODO	struct	11	3	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageService.java
-TODO	struct	10	42	68	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProgramLoader.java
+PARK	struct	10	42	68	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProgramLoader.java
 TODO	struct	9	27	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries_X86.java
 TODO	struct	8	25	74	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries_ARM.java
 TODO	struct	8	25	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImportAddressTableDataDirectory.java
@@ -1076,7 +1076,7 @@ TODO	struct	14	48	6	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/util
 TODO	struct	14	65	1	app	Ghidra/Framework/Project/src/main/java/ghidra/app/util/GenericHelpTopics.java
 TODO	struct	14	46	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoDataComponent.java
 TODO	struct	14	47	22	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoDisassemblerContext.java
-TODO	struct	13	40	91	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BinaryLoader.java
+PARK	struct	13	40	91	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BinaryLoader.java
 TODO	struct	14	14	20	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/AoutHeader.java
 TODO	struct	14	12	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/AoutHeaderMIPS.java
 TODO	struct	16	12	20	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffLineNumber.java

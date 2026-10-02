@@ -1,4 +1,6 @@
 pub mod abstract_ordinal_support_loader;
+pub mod abstract_program_loader;
+pub mod binary_loader;
 pub mod bounded_buffered_reader;
 pub mod dbg_loader;
 pub mod decompile_debug_format_manager;
