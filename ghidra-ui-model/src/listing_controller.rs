@@ -508,4 +508,33 @@ mod tests {
         assert_eq!(c.top(), 1);
         assert_eq!(c.frame().rows[0].row.runs[1].x, 10 * 9);
     }
+
+    /// Spec §5/§7: every UI-path call inside 8 ms on a 1M-unit listing
+    /// (40 ms in unoptimized debug builds). Covers the controller paths the
+    /// renderer drives per keystroke/scroll: an intent plus a full frame with
+    /// selection and highlight decorations.
+    #[test]
+    fn frames_and_intents_stay_inside_the_ui_budget_on_a_million_rows() {
+        let mut c = ListingController::new(Box::new(MemoryListing::new(
+            32,
+            vec![MemoryBlockSnapshot::initialized(0x1000_0000, (0..1u32 << 20).map(|i| i as u8).collect())],
+        )));
+        c.set_metrics(FontMetrics::monospace(7, 11, 3));
+        c.set_viewport(1200);
+        c.middle_click(10 * 7 + 1, 1); // highlight on, decorations in every frame
+        let budget = if cfg!(debug_assertions) { 40 } else { 8 };
+        let max = c.frame().scroll_max;
+        for i in 0..100i32 {
+            let t = std::time::Instant::now();
+            c.set_scroll_value((i * 7919) % (max + 1));
+            c.key(Move::Down, i % 2 == 0);
+            let f = c.frame();
+            assert!(!f.rows.is_empty());
+            assert!(t.elapsed().as_millis() < budget, "intent+frame took {:?}", t.elapsed());
+        }
+        let t = std::time::Instant::now();
+        c.goto_address(0x1000_0000 + 900_000).unwrap();
+        let _ = c.frame();
+        assert!(t.elapsed().as_millis() < budget, "goto+frame took {:?}", t.elapsed());
+    }
 }
