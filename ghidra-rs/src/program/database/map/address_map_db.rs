@@ -40,6 +40,12 @@ impl AddressMapDB {
         })
     }
 
+    /// The address factory this map resolves address spaces against. Mirrors
+    /// `AddressMapDB.getAddressFactory()`.
+    pub fn get_address_factory(&self) -> Arc<dyn AddressFactory> {
+        Arc::clone(&self.addr_factory)
+    }
+
     pub fn get_key(&self, addr: &Address, _create: bool) -> i64 {
         let space_id = addr.space().space_id() as i64;
         let offset = addr.offset() as i64;

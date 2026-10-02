@@ -122,58 +122,9 @@ mod tests {
     use crate::program::model::address::factory::AddressFactory;
     use crate::program::model::address::DefaultAddressFactory;
     use crate::program::model::lang::sleigh::SleighLanguage;
-    use crate::program::model::mem::{MemoryAccessException, MemoryBlock};
     use crate::program::model::pcode::PackedDecode;
-    use std::sync::{Arc, RwLock};
+    use std::sync::Arc;
 
-    struct FakeMemoryBlock {
-        start: Address,
-        data: Vec<u8>,
-    }
-
-    impl MemoryBlock for FakeMemoryBlock {
-        fn get_name(&self) -> &str {
-            "test_block"
-        }
-
-        fn get_start(&self) -> Address {
-            self.start.clone()
-        }
-
-        fn get_end(&self) -> Address {
-            self.start.add(self.data.len() as i64 - 1).unwrap()
-        }
-
-        fn get_size(&self) -> u64 {
-            self.data.len() as u64
-        }
-
-        fn is_initialized(&self) -> bool {
-            true
-        }
-
-        fn get_byte(&self, addr: &Address) -> Result<u8, MemoryAccessException> {
-            let offset = addr.subtract(&self.start) as usize;
-            self.data
-                .get(offset)
-                .copied()
-                .ok_or_else(|| MemoryAccessException::new("out of bounds"))
-        }
-
-        fn get_bytes(&self, addr: &Address, dest: &mut [u8]) -> usize {
-            let offset = addr.subtract(&self.start) as usize;
-            let available = self.data.len().saturating_sub(offset);
-            let n = dest.len().min(available);
-            dest[..n].copy_from_slice(&self.data[offset..offset + n]);
-            n
-        }
-
-        fn set_bytes(&mut self, addr: &Address, source: &[u8]) -> Result<(), MemoryAccessException> {
-            let offset = addr.subtract(&self.start) as usize;
-            self.data[offset..offset + source.len()].copy_from_slice(source);
-            Ok(())
-        }
-    }
 
     fn test_language() -> Arc<SleighLanguage> {
         let mut data = vec![];
@@ -211,8 +162,13 @@ mod tests {
             .get_address_space_by_name("ram")
             .unwrap();
         let start = space.address(0);
-        let block = Arc::new(RwLock::new(FakeMemoryBlock { start, data }));
-        program.get_memory().write().unwrap().add_block(block);
+        let len = data.len() as i64;
+        program
+            .get_memory()
+            .write()
+            .unwrap()
+            .create_initialized_block(name, &start, Some(&mut &data[..]), len, None, false)
+            .unwrap();
         program
     }
 

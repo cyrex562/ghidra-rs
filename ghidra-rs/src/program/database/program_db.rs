@@ -28,11 +28,14 @@ impl ProgramDB {
             db_handle.clone(),
             language.get_address_factory(),
         )?));
-        let memory = Arc::new(RwLock::new(MemoryMapDB::new(
+        let memory = MemoryMapDB::new(
             db_handle.clone(),
             addr_map.clone(),
+            crate::framework::data::OpenMode::Create,
             language.is_big_endian(),
-        )?));
+            &crate::util::task::DummyMonitor,
+        )
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
         let namespace_mgr = Arc::new(RwLock::new(NamespaceManagerDB::new(
             db_handle.clone(),

@@ -13,9 +13,12 @@
 //!
 //! The original two-argument [`new`](MemoryBlockDB::new) constructor is kept unchanged (and its
 //! `Ok(0)`/`0`/`Ok(())` stub behavior preserved when no sub blocks are supplied) for whatever
-//! callers already depend on it -- currently only
-//! [`MemoryMapDB::create_block`](crate::program::database::mem::memory_map_db::MemoryMapDB::create_block),
-//! which does not yet wire in real sub blocks.
+//! callers already depend on it; [`MemoryMapDB`](crate::program::database::mem::memory_map_db::MemoryMapDB)
+//! creates every block through the adapters, i.e. with real sub blocks.
+//!
+//! Permission/attribute flags (`READ`/`WRITE`/`EXECUTE`/`VOLATILE`/`ARTIFICIAL`) are read from and
+//! written to the block record's flags column; Java then persists the record through
+//! `adapter.updateBlockRecord`, which this block (holding no adapter) cannot do yet.
 
 use crate::framework::db::DBRecord;
 use crate::program::database::map::AddressMapDB;
@@ -81,7 +84,71 @@ impl MemoryBlockDB {
     }
 }
 
+/// `MemoryBlock` permission/attribute flag bits, as stored in the block record's flags column.
+const EXECUTE: i8 = 0x1;
+const WRITE: i8 = 0x2;
+const READ: i8 = 0x4;
+const VOLATILE: i8 = 0x8;
+const ARTIFICIAL: i8 = 0x10;
+
+/// The block record's flags column (`MemoryMapDBAdapter.FLAGS_COL`).
+const FLAGS_COL: usize = 3;
+
+impl MemoryBlockDB {
+    fn flags(&self) -> i8 {
+        self.record.get_byte(FLAGS_COL).unwrap_or(0)
+    }
+
+    /// Mirrors the private `setFlagBit(int, boolean)`. Java then calls
+    /// `adapter.updateBlockRecord(record)`; this block holds no adapter, so the change lives in
+    /// the cached record only (the in-memory block the map hands out).
+    fn set_flag_bit(&mut self, bit: i8, enable: bool) {
+        let flags = if enable { self.flags() | bit } else { self.flags() & !bit };
+        self.record.set_byte(FLAGS_COL, flags);
+    }
+}
+
 impl MemoryBlock for MemoryBlockDB {
+    fn is_read(&self) -> bool {
+        self.flags() & READ != 0
+    }
+
+    fn is_write(&self) -> bool {
+        self.flags() & WRITE != 0
+    }
+
+    fn is_execute(&self) -> bool {
+        self.flags() & EXECUTE != 0
+    }
+
+    fn is_volatile(&self) -> bool {
+        self.flags() & VOLATILE != 0
+    }
+
+    fn is_artificial(&self) -> bool {
+        self.flags() & ARTIFICIAL != 0
+    }
+
+    fn set_read(&mut self, read: bool) {
+        self.set_flag_bit(READ, read);
+    }
+
+    fn set_write(&mut self, write: bool) {
+        self.set_flag_bit(WRITE, write);
+    }
+
+    fn set_execute(&mut self, execute: bool) {
+        self.set_flag_bit(EXECUTE, execute);
+    }
+
+    fn set_volatile(&mut self, volatile: bool) {
+        self.set_flag_bit(VOLATILE, volatile);
+    }
+
+    fn set_artificial(&mut self, artificial: bool) {
+        self.set_flag_bit(ARTIFICIAL, artificial);
+    }
+
     fn get_name(&self) -> &str {
         self.record.get_string(0).unwrap_or("")
     }

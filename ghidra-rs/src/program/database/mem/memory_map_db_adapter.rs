@@ -11,15 +11,8 @@
 //! mirroring the identical situation already handled for
 //! [`bookmark_db_adapter::get_adapter`](crate::program::database::bookmark::bookmark_db_adapter::get_adapter)).
 //!
-//! **`MemoryMapDB` does not call this factory.** Unlike `BookmarkDBManager` (which already called
-//! a `get_adapter`-shaped stub before its own versioned adapters existed),
-//! [`MemoryMapDB`](crate::program::database::mem::memory_map_db::MemoryMapDB) has its own
-//! self-contained `new`/`create_block` that builds the "Memory Blocks"/"Sub Memory Blocks" tables
-//! directly and never references `MemoryMapDBAdapter` at all -- there was no analogous
-//! already-stubbed gap to complete here. Rewiring `MemoryMapDB` to route block creation through
-//! this factory (so opening an existing, older-schema database would actually work) is a larger
-//! structural change than this trait's six concrete adapters alone; [`get_adapter`] is provided
-//! and tested standalone so that future work can wire it in without redesigning it first.
+//! [`MemoryMapDB::new`](crate::program::database::mem::memory_map_db::MemoryMapDB::new) obtains
+//! its adapter through [`get_adapter`], handing it a weak [`Memory`] view of itself.
 //!
 //! **`upgrade`'s fidelity limit.** Java's `upgrade` reads `block.getType()`/`isMapped()`/
 //! `getComment()`/`getSourceName()`/`getFlags()` off each old block to recreate it faithfully on

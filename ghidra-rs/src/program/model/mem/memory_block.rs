@@ -78,6 +78,24 @@ pub trait MemoryBlock: Send + Sync {
         let _ = volatile;
     }
 
+    /// Sets the read permission. Stands in for `MemoryBlock.setRead(boolean)`; the default
+    /// discards the request, matching [`is_read`](Self::is_read)'s constant `false`.
+    fn set_read(&mut self, read: bool) {
+        let _ = read;
+    }
+
+    /// Sets the write permission. Stands in for `MemoryBlock.setWrite(boolean)`; the default
+    /// discards the request, matching [`is_write`](Self::is_write)'s constant `false`.
+    fn set_write(&mut self, write: bool) {
+        let _ = write;
+    }
+
+    /// Sets the execute permission. Stands in for `MemoryBlock.setExecute(boolean)`; the default
+    /// discards the request, matching [`is_execute`](Self::is_execute)'s constant `false`.
+    fn set_execute(&mut self, execute: bool) {
+        let _ = execute;
+    }
+
     /// Returns the type of this memory block.
     fn get_type(&self) -> MemoryBlockType {
         MemoryBlockType::Default

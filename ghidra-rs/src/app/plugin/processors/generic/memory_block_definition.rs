@@ -18,6 +18,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::framework::model::DomainObject;
 use crate::framework::store::LockException;
+use crate::program::database::mem::memory_map_db::MemoryMapError;
 use crate::program::database::program_db::ProgramDB;
 use crate::program::model::address::{Address, AddressOverflowException};
 use crate::program::model::listing::Program;
@@ -380,20 +381,35 @@ impl MemoryBlockDefinition for DefaultMemoryBlockDefinition {
                 let addr = parse_address(&self.address_string, program, "block address")?;
                 let memory = program.get_memory();
                 let mut memory = memory.write().unwrap();
-                let block = memory
-                    .create_block(
-                        self.block_name.clone(),
-                        addr,
-                        self.length,
-                        self.access_flags(),
+                let length = self.length as i64;
+                let block = if self.initialized {
+                    memory.create_initialized_block_filled(
+                        &self.block_name,
+                        &addr,
+                        length,
+                        0,
+                        None,
+                        self.overlay,
                     )
-                    .map_err(|e| {
-                        MemoryBlockDefinitionError::Block(MemoryBlockException::with_source(
-                            "Create block failed",
-                            e,
-                        ))
-                    })?;
-                Ok(block as Arc<RwLock<dyn MemoryBlock>>)
+                } else {
+                    memory.create_uninitialized_block(&self.block_name, &addr, length, self.overlay)
+                }
+                .map_err(|e| match e {
+                    MemoryMapError::Conflict(e) => MemoryBlockDefinitionError::Conflict(e),
+                    MemoryMapError::AddressOverflow(e) => MemoryBlockDefinitionError::Overflow(e),
+                    e => MemoryBlockDefinitionError::Block(MemoryBlockException::with_source(
+                        "Create block failed",
+                        e,
+                    )),
+                })?;
+                {
+                    let mut b = block.write().unwrap();
+                    b.set_read(self.read_permission);
+                    b.set_write(self.write_permission);
+                    b.set_execute(self.execute_permission);
+                    b.set_volatile(self.is_volatile);
+                }
+                Ok(block)
             }
         }
     }
