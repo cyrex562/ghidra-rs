@@ -31,4 +31,4 @@ pub use provider_id::ProviderId;
 pub use component_provider::{ComponentProvider, ComponentProviderState, ProviderChange, ProviderViewKind, DEFAULT_WINDOW_GROUP};
 pub use window_position::WindowPosition;
 pub use dock_layout::{DockLayout, LayoutEntry};
-pub use docking_tool::DockingTool;
+pub use docking_tool::{DefaultContextFactory, DockingTool};

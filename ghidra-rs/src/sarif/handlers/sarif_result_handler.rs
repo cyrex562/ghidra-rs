@@ -22,7 +22,7 @@ use serde_json::Value;
 
 use crate::sarif::model::SarifDataFrame;
 use crate::sarif::seam_stubs::{
-    DockingAction, ProgramTask, SarifController, SarifResultsTableProvider,
+    ProgramTask, SarifController, SarifResultsTableProvider,
     TaskLauncher,
 };
 use crate::util::classfinder::extension_point::ExtensionPoint;
@@ -170,7 +170,7 @@ pub trait SarifResultHandler: ExtensionPoint + Send + Sync + 'static {
     /// the same reason `Arc<Self>`-taking builder methods appear elsewhere in this crate (see
     /// [`AbstractDomainObjectListenerBuilder::build`](crate::framework::model::AbstractDomainObjectListenerBuilder::build)
     /// for the analogous `Box<Self>` pattern).
-    fn create_action(self: Arc<Self>, table_provider: Arc<SarifResultsTableProvider>) -> DockingAction {
+    fn create_action(self: Arc<Self>, table_provider: Arc<SarifResultsTableProvider>) -> crate::docking::action::ClosureAction {
         *self.base().provider.lock().unwrap() = Some(Arc::clone(&table_provider));
         let enabled = self.is_enabled(table_provider.get_data_frame());
         *self.base().is_enabled.lock().unwrap() = enabled;
@@ -183,20 +183,17 @@ pub trait SarifResultHandler: ExtensionPoint + Send + Sync + 'static {
         let for_enabled = Arc::clone(&self);
         let for_popup = Arc::clone(&self);
 
-        let mut action = DockingAction::new(
-            action_name.clone(),
-            Some(owner),
-            move |_context| {
-                if let Some(task) = for_perform.get_task(&provider_for_perform) {
-                    TaskLauncher::launch_program_task(task.as_ref());
-                }
-            },
-            move |_context| *for_enabled.base().is_enabled.lock().unwrap(),
-            move |_context| *for_popup.base().is_enabled.lock().unwrap(),
-        );
+        use crate::docking::action::DockingActionIf;
         let item = action_name.unwrap_or_default();
+        let mut action = crate::docking::action::ClosureAction::new(item.clone(), owner, move |_context| {
+            if let Some(task) = for_perform.get_task(&provider_for_perform) {
+                TaskLauncher::launch_program_task(task.as_ref());
+            }
+        });
+        action.state_mut().enabled_when(Box::new(move |_context| *for_enabled.base().is_enabled.lock().unwrap()));
+        action.state_mut().popup_when(Box::new(move |_context| *for_popup.base().is_enabled.lock().unwrap()));
         if let Ok(menu) = crate::docking::action::MenuData::new(&[item.as_str()]) {
-            action.set_popup_menu_data(menu);
+            action.state_mut().set_popup_menu_data(Some(menu));
         }
         action
     }
@@ -388,7 +385,8 @@ mod tests {
         let controller = SarifController::new(Vec::new(), Vec::new(), ProgramSarifMgr::new("/tmp"));
         let table_provider = Arc::new(SarifResultsTableProvider::new(controller, df));
 
-        let action = Arc::clone(&handler).create_action(Arc::clone(&table_provider));
+        use crate::docking::action::DockingActionIf;
+        let mut action = Arc::clone(&handler).create_action(Arc::clone(&table_provider));
         let ctx = MockActionContext;
 
         assert!(!action.is_enabled_for_context(&ctx));

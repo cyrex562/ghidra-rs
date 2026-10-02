@@ -114,6 +114,12 @@ impl DockingAction {
         }
     }
 
+    /// Records a change made outside this struct (e.g. a toggle action's
+    /// selection via [`ToggleState`](super::ToggleState)).
+    pub fn record_change(&mut self, c: ActionChange) {
+        self.changed(c);
+    }
+
     /// Drains the recorded changes (oldest first, each kind once).
     pub fn take_changes(&mut self) -> Vec<ActionChange> {
         std::mem::take(&mut self.pending)
@@ -365,12 +371,11 @@ impl DockingAction {
     }
 }
 
-/// Whether `action` should be offered `ctx` at all: the context's concrete
-/// type matches the action's declared context type, the action accepts any
-/// context, or it supports the default (tool-level) context.
-pub fn is_context_applicable(action: &dyn super::DockingActionIf, ctx: &dyn ActionContext) -> bool {
-    let s = action.state();
-    s.accepts_any_context() || s.supports_default_context() || ctx.as_any().type_id() == s.context_type()
+/// Whether `ctx` is of the action's declared context type (Java
+/// `contextClass.isInstance(ctx)`, installed as the valid-context predicate by
+/// `setContextClass`). Exact type match: Rust has no subtype test.
+pub fn is_context_applicable(s: &DockingAction, ctx: &dyn ActionContext) -> bool {
+    s.accepts_any_context() || ctx.as_any().type_id() == s.context_type()
 }
 
 #[cfg(test)]
@@ -452,13 +457,15 @@ mod tests {
     fn context_type_gates_applicability() {
         struct Special;
         let mut a = action();
-        assert!(is_context_applicable(&a, &DefaultActionContext::new()));
+        assert!(is_context_applicable(a.state(), &DefaultActionContext::new()));
         a.state_mut().set_context_type(TypeId::of::<Special>(), false);
-        assert!(!is_context_applicable(&a, &DefaultActionContext::new()));
+        assert!(!is_context_applicable(a.state(), &DefaultActionContext::new()));
         a.state_mut().set_context_type(TypeId::of::<Special>(), true);
-        assert!(is_context_applicable(&a, &DefaultActionContext::new()));
+        // supporting a default context does not make a foreign context valid
+        assert!(!is_context_applicable(a.state(), &DefaultActionContext::new()));
+        assert!(!a.is_valid_context(&DefaultActionContext::new()));
         a.state_mut().set_context_type(TypeId::of::<DefaultActionContext>(), false);
-        assert!(is_context_applicable(&a, &DefaultActionContext::new()));
+        assert!(is_context_applicable(a.state(), &DefaultActionContext::new()));
     }
 
     #[test]

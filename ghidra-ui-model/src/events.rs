@@ -3,7 +3,6 @@
 //! shell watches with a `QSocketNotifier`.
 
 use std::collections::{BTreeMap, HashMap};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 /// Something the renderer must react to.
@@ -56,13 +55,16 @@ pub enum UiEvent {
 #[derive(Default)]
 struct Pending {
     events: Vec<UiEvent>,
+    /// A wake byte has been written since the last take. Lives under the
+    /// same lock as `events` so post and drain can't interleave between
+    /// "push"/"check" and "take"/"reset" (no lost wakeup).
+    signalled: bool,
 }
 
 /// Thread-safe event queue (cheap to clone; all clones share one queue).
 #[derive(Clone)]
 pub struct UiEventQueue {
     pending: Arc<Mutex<Pending>>,
-    signalled: Arc<AtomicBool>,
     waker: Arc<Waker>,
 }
 
@@ -97,7 +99,8 @@ impl WakeHandle {
         self.reader.as_raw_fd()
     }
 
-    /// Consumes pending wake bytes (call before or after draining).
+    /// Consumes pending wake bytes. Call it **before** draining: clearing
+    /// after a drain could swallow the byte of an event posted in between.
     pub fn clear(&self) {
         #[cfg(unix)]
         {
@@ -121,9 +124,12 @@ impl UiEventQueue {
     pub fn new() -> (UiEventQueue, WakeHandle) {
         #[cfg(unix)]
         let (reader, writer) = std::os::unix::net::UnixStream::pair().expect("socketpair for UI waker");
+        // Never block a worker thread on a full socket buffer; one pending
+        // byte is all the shell needs.
+        #[cfg(unix)]
+        let _ = writer.set_nonblocking(true);
         let q = UiEventQueue {
             pending: Arc::new(Mutex::new(Pending::default())),
-            signalled: Arc::new(AtomicBool::new(false)),
             waker: Arc::new(Waker {
                 #[cfg(unix)]
                 writer: Mutex::new(writer),
@@ -140,25 +146,46 @@ impl UiEventQueue {
 
     /// Posts an event from any thread; wakes the renderer once per drain cycle.
     pub fn post(&self, event: UiEvent) {
-        if let Ok(mut p) = self.pending.lock() {
-            p.events.push(event);
-        }
-        if !self.signalled.swap(true, Ordering::AcqRel) {
+        let need_wake = match self.pending.lock() {
+            Ok(mut p) => {
+                p.events.push(event);
+                !std::mem::replace(&mut p.signalled, true)
+            }
+            Err(_) => false,
+        };
+        if need_wake {
             self.waker.wake();
         }
+    }
+
+    /// Whether no events are pending.
+    pub fn is_empty(&self) -> bool {
+        self.pending.lock().map(|p| p.events.is_empty()).unwrap_or(true)
     }
 
     /// Takes all pending events, coalesced: `DomainChanged` merged per object
     /// (ranges sorted and merged), the latest `TaskProgress` per task,
     /// `ActionsChanged` once. Other events keep their order.
     pub fn drain(&self) -> Vec<UiEvent> {
-        let events = match self.pending.lock() {
-            Ok(mut p) => std::mem::take(&mut p.events),
-            Err(_) => Vec::new(),
-        };
-        self.signalled.store(false, Ordering::Release);
+        let events = self.take_raw();
+        self.after_take();
         coalesce(events)
     }
+
+    /// First half of [`Self::drain`]: take the raw events.
+    fn take_raw(&self) -> Vec<UiEvent> {
+        match self.pending.lock() {
+            Ok(mut p) => {
+                p.signalled = false;
+                std::mem::take(&mut p.events)
+            }
+            Err(_) => Vec::new(),
+        }
+    }
+
+    /// Second half of [`Self::drain`]; nothing left to do now that the
+    /// signal is reset under the lock (kept as the test seam for the race).
+    fn after_take(&self) {}
 }
 
 fn merge_ranges(mut ranges: Vec<(u64, u64)>) -> Vec<(u64, u64)> {
@@ -306,6 +333,72 @@ mod tests {
         q.drain();
         q.post(UiEvent::ActionsChanged);
         assert_eq!(r.read(&mut buf).unwrap(), 1);
+    }
+
+    /// Lost-wakeup regression: whenever events are pending after producers
+    /// and a concurrent drainer stop, a wake byte must be readable (otherwise
+    /// the shell would never drain them, e.g. a final TaskDone).
+    #[cfg(unix)]
+    #[test]
+    fn no_lost_wakeup_under_concurrent_post_and_drain() {
+        use std::io::Read;
+        for _round in 0..200 {
+            let (q, w) = UiEventQueue::new();
+            let mut r = w.reader_clone();
+            r.set_nonblocking(true).unwrap();
+            let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let drainer = {
+                let (q, stop) = (q.clone(), stop.clone());
+                let mut r = w.reader_clone();
+                r.set_nonblocking(true).unwrap();
+                std::thread::spawn(move || {
+                    let mut buf = [0u8; 64];
+                    while !stop.load(std::sync::atomic::Ordering::Acquire) {
+                        // shell protocol: consume wake bytes, then drain
+                        while matches!(r.read(&mut buf), Ok(n) if n > 0) {}
+                        q.drain();
+                    }
+                })
+            };
+            let producers: Vec<_> = (0..3)
+                .map(|t| {
+                    let q = q.clone();
+                    std::thread::spawn(move || {
+                        for i in 0..200u64 {
+                            q.post(UiEvent::DomainChanged { object: t, ranges: vec![(i, i)] });
+                        }
+                    })
+                })
+                .collect();
+            for p in producers {
+                p.join().unwrap();
+            }
+            stop.store(true, std::sync::atomic::Ordering::Release);
+            drainer.join().unwrap();
+            if !q.is_empty() {
+                let mut buf = [0u8; 64];
+                assert!(matches!(r.read(&mut buf), Ok(n) if n > 0), "pending events but no wake byte");
+            }
+        }
+    }
+
+    /// Deterministic form of the lost wakeup: a post landing between the
+    /// drain's take and its signal reset must still leave a wake byte.
+    #[cfg(unix)]
+    #[test]
+    fn post_between_take_and_reset_still_wakes() {
+        use std::io::Read;
+        let (q, w) = UiEventQueue::new();
+        let mut r = w.reader_clone();
+        r.set_nonblocking(true).unwrap();
+        let mut buf = [0u8; 64];
+        q.post(UiEvent::ActionsChanged);
+        let _ = r.read(&mut buf); // shell consumed the first wake byte
+        let _taken = q.take_raw();
+        q.post(UiEvent::Status("late".into())); // races the drain
+        q.after_take();
+        assert!(!q.is_empty());
+        assert!(matches!(r.read(&mut buf), Ok(n) if n > 0), "late event pending but no wake byte");
     }
 
     #[test]

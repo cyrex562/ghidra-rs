@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
+use crate::docking::action::DockingActionIf;
 use crate::app::seam_stubs::{
-    DockingAction, FGColorProvider, FGLayoutProvider, FormatManager, FunctionGraphOptions,
+    FGColorProvider, FGLayoutProvider, FormatManager, FunctionGraphOptions,
     Navigatable, ProgramSelection,
 };
 use crate::framework::seam_stubs::PluginTool;
@@ -32,7 +33,7 @@ pub trait FgEnv {
     /// Adds the given action to the provider used by this environment.
     ///
     /// Port of `FgEnv.addLocalAction(DockingAction)`.
-    fn add_local_action(&self, action: DockingAction);
+    fn add_local_action(&self, action: Box<dyn DockingActionIf>);
 
     /// Returns the graph format manager that can be shared amongst all graphs.
     ///
@@ -150,7 +151,7 @@ mod tests {
             vec![FGLayoutProvider, FGLayoutProvider]
         }
 
-        fn add_local_action(&self, _action: DockingAction) {
+        fn add_local_action(&self, _action: Box<dyn DockingActionIf>) {
             *self.actions_added.borrow_mut() += 1;
         }
 
@@ -202,8 +203,8 @@ mod tests {
         let env = MockFgEnv::default();
         assert_eq!(*env.actions_added.borrow(), 0);
 
-        env.add_local_action(DockingAction);
-        env.add_local_action(DockingAction);
+        env.add_local_action(Box::new(crate::docking::action::ClosureAction::new("A", "FG", |_| {})));
+        env.add_local_action(Box::new(crate::docking::action::ClosureAction::new("B", "FG", |_| {})));
         assert_eq!(*env.actions_added.borrow(), 2);
 
         env.set_selection(&MockSelection);

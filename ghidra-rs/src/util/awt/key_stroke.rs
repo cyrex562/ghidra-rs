@@ -94,10 +94,14 @@ impl KeyStroke {
         self.on_key_release
     }
 
-    /// Ghidra's display/persistence form (`KeyBindingUtils.parseKeyStroke(KeyStroke)`):
-    /// `Ctrl-`, `Alt-`, `Shift-`, `Meta-` prefixes, then the key name.
+    /// Ghidra's display/persistence form (`KeyBindingUtils.parseKeyStroke(KeyStroke)`).
+    /// Java inserts each modifier at the front in the order Shift, Alt, Ctrl,
+    /// Meta, so the printed order is `Meta-`, `Ctrl-`, `Alt-`, `Shift-`.
     pub fn to_ghidra_string(self) -> String {
         let mut out = String::new();
+        if self.modifiers & META_DOWN_MASK != 0 {
+            out.push_str("Meta-");
+        }
         if self.modifiers & CTRL_DOWN_MASK != 0 {
             out.push_str("Ctrl-");
         }
@@ -106,9 +110,6 @@ impl KeyStroke {
         }
         if self.modifiers & SHIFT_DOWN_MASK != 0 {
             out.push_str("Shift-");
-        }
-        if self.modifiers & META_DOWN_MASK != 0 {
-            out.push_str("Meta-");
         }
         match vk::key_name(self.key_code) {
             Some(name) => out.push_str(name),
@@ -194,11 +195,19 @@ mod tests {
 
     #[test]
     fn prints_in_ghidra_modifier_order() {
-        // Java KeyBindingUtils.parseKeyStroke(KeyStroke): Ctrl, Alt, Shift, Meta; '-' separator.
+        // Java KeyBindingUtils.parseKeyStroke(KeyStroke): Meta, Ctrl, Alt, Shift; '-' separator.
         let ks = KeyStroke::new(vk::G, SHIFT_DOWN_MASK | CTRL_DOWN_MASK | ALT_DOWN_MASK);
         assert_eq!(ks.to_ghidra_string(), "Ctrl-Alt-Shift-G");
         assert_eq!(KeyStroke::new(vk::F5, 0).to_ghidra_string(), "F5");
         assert_eq!(KeyStroke::new(vk::DELETE, 0).to_ghidra_string(), "DELETE");
+        let all = KeyStroke::new(vk::G, META_DOWN_MASK | SHIFT_DOWN_MASK | CTRL_DOWN_MASK | ALT_DOWN_MASK);
+        assert_eq!(all.to_ghidra_string(), "Meta-Ctrl-Alt-Shift-G");
+        assert_eq!(KeyStroke::new(vk::C, META_DOWN_MASK | CTRL_DOWN_MASK).to_ghidra_string(), "Meta-Ctrl-C");
+    }
+
+    #[test]
+    fn plus_is_not_a_separator_like_java() {
+        assert_eq!(KeyStroke::parse("CTRL+SHIFT+G"), None);
     }
 
     #[test]

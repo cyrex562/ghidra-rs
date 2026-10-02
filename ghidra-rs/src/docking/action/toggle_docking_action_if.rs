@@ -66,7 +66,9 @@ mod tests {
             self.toggle.is_selected()
         }
         fn set_selected(&mut self, v: bool) {
-            self.toggle.set_selected(v);
+            if let Some(c) = self.toggle.set_selected(v) {
+                self.state.record_change(c);
+            }
         }
     }
 
@@ -76,6 +78,7 @@ mod tests {
         assert!(!t.is_selected());
         t.action_performed(&crate::docking::DefaultActionContext::new());
         assert!(t.is_selected());
+        assert_eq!(t.take_changes(), vec![ActionChange::Selected]);
         let dyn_toggle: &mut dyn ToggleDockingActionIf = &mut t;
         dyn_toggle.set_selected(false);
         assert!(!dyn_toggle.is_selected());

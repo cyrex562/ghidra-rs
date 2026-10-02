@@ -1,4 +1,4 @@
-use crate::app::seam_stubs::DockingAction;
+use crate::docking::action::DockingActionIf;
 use crate::util::disposable::Disposable;
 use crate::util::function::Callback;
 use std::io::{Read, Write};
@@ -36,7 +36,7 @@ pub trait InterpreterConsole: Disposable {
     fn set_transient(&mut self);
 
     /// Port of `InterpreterConsole.addAction(DockingAction)`.
-    fn add_action(&mut self, action: DockingAction);
+    fn add_action(&mut self, action: Box<dyn DockingActionIf>);
 
     /// Adds the given callback which will get called the first time the interpreter console is
     /// activated.
@@ -137,7 +137,7 @@ mod tests {
             self.transient = true;
         }
 
-        fn add_action(&mut self, _action: DockingAction) {}
+        fn add_action(&mut self, _action: Box<dyn DockingActionIf>) {}
 
         fn add_first_activation_callback(&mut self, activation_callback: Callback) {
             self.first_activation_callbacks.push(activation_callback);

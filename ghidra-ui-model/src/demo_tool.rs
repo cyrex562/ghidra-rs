@@ -62,6 +62,9 @@ impl DockingActionIf for WrapAction {
     fn state_mut(&mut self) -> &mut DockingAction {
         &mut self.state
     }
+    fn as_toggle(&self) -> Option<&dyn ToggleDockingActionIf> {
+        Some(self)
+    }
     fn action_performed(&mut self, _context: &dyn ActionContext) {
         let on = !self.is_selected();
         self.set_selected(on);
@@ -74,7 +77,9 @@ impl ToggleDockingActionIf for WrapAction {
         self.toggle.is_selected()
     }
     fn set_selected(&mut self, v: bool) {
-        self.toggle.set_selected(v);
+        if let Some(c) = self.toggle.set_selected(v) {
+            self.state.record_change(c);
+        }
     }
 }
 

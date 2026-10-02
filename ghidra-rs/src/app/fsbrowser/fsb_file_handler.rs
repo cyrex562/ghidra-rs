@@ -1,4 +1,5 @@
-use crate::app::seam_stubs::{DockingAction, FSBFileHandlerContext, FSBFileNode};
+use crate::app::seam_stubs::{FSBFileHandlerContext, FSBFileNode};
+use crate::docking::action::DockingActionIf;
 use crate::util::classfinder::extension_point::ExtensionPoint;
 
 /// Extension point, used by `FSBComponentProvider` to create actions that appear in the fsb
@@ -12,9 +13,9 @@ pub trait FSBFileHandler: ExtensionPoint {
     /// `context` carries references to useful objects and services.
     fn init(&self, context: &FSBFileHandlerContext);
 
-    /// Returns a list of [`DockingAction`]s that should be added to the `FSBComponentProvider`
+    /// Returns a list of [`DockingAction`](crate::docking::action::DockingAction)s that should be added to the `FSBComponentProvider`
     /// tree as local actions.
-    fn create_actions(&self) -> Vec<DockingAction> {
+    fn create_actions(&self) -> Vec<Box<dyn DockingActionIf>> {
         Vec::new()
     }
 
@@ -35,13 +36,13 @@ pub trait FSBFileHandler: ExtensionPoint {
         false
     }
 
-    /// Returns a list of [`DockingAction`]s that should be added to a popup menu. Called each
+    /// Returns a list of [`DockingAction`](crate::docking::action::DockingAction)s that should be added to a popup menu. Called each
     /// time a fsb browser tree popup menu is created.
     ///
     /// Only use this method to provide actions when the actions need to be created freshly for
     /// each popup event. Normal long-lived actions should be published by
     /// [`create_actions`](Self::create_actions).
-    fn get_popup_provider_actions(&self) -> Vec<DockingAction> {
+    fn get_popup_provider_actions(&self) -> Vec<Box<dyn DockingActionIf>> {
         Vec::new()
     }
 }

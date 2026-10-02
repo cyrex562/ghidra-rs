@@ -54,7 +54,7 @@ use std::sync::{Arc, Mutex};
 /// Placeholder for `ghidra.app.plugin.core.byteviewer.ByteViewerConfigOptions`, referenced by
 /// [`DataFormatModel`](crate::app::plugin::core::format::DataFormatModel) before the real class
 /// is ported. Java's version is a concrete class (not an interface), so this is a plain struct
-/// rather than a `dyn`-dispatched trait, matching [`DockingAction`]'s convention.
+/// rather than a `dyn`-dispatched trait, matching [`DockingAction`](crate::docking::action::DockingAction)'s convention.
 /// `DataFormatModel` only ever passes this type through as a parameter, so no fields are needed
 /// yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -345,14 +345,7 @@ impl GhidraSourceBundle {
     }
 }
 
-/// Placeholder for `docking.action.DockingAction`, referenced by
-/// [`InterpreterConsole`](crate::app::plugin::core::interpreter::InterpreterConsole) before the
-/// real class is ported. Java's version is a concrete class (not an interface), so this is a
-/// plain struct rather than a `dyn`-dispatched trait, matching [`LocationMemento`]'s
-/// convention. `InterpreterConsole` only ever passes this type through as a parameter, so no
-/// fields are needed yet.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DockingAction;
+// `docking.action.DockingAction` is ported: crate::docking::action::DockingAction.
 
 
 /// Placeholder for `ghidra.app.plugin.core.programtree.ViewProviderService`, referenced by
@@ -4223,7 +4216,7 @@ impl ClassSearcher {
 /// Placeholder for `ghidra.plugins.fsbrowser.FSBFileHandlerContext`, referenced by
 /// [`FSBFileHandler`](crate::app::fsbrowser::fsb_file_handler::FSBFileHandler) before the real
 /// class is ported. Java's version is a record (not an interface), so this is a plain struct
-/// rather than a `dyn`-dispatched trait, matching [`DockingAction`]'s convention. The Java source
+/// rather than a `dyn`-dispatched trait, matching [`DockingAction`](crate::docking::action::DockingAction)'s convention. The Java source
 /// declares no members yet, so none are modeled here.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FSBFileHandlerContext;
@@ -4231,7 +4224,7 @@ pub struct FSBFileHandlerContext;
 /// Placeholder for `ghidra.plugins.fsbrowser.FSBFileNode`, referenced by
 /// [`FSBFileHandler`](crate::app::fsbrowser::fsb_file_handler::FSBFileHandler) before the real
 /// class is ported. Java's version is a concrete `GTreeNode` subclass (not an interface), so this
-/// is a plain struct rather than a `dyn`-dispatched trait, matching [`DockingAction`]'s
+/// is a plain struct rather than a `dyn`-dispatched trait, matching [`DockingAction`](crate::docking::action::DockingAction)'s
 /// convention. `FSBFileHandler` only ever passes this type through as a parameter, so no fields
 /// are needed yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4292,7 +4285,7 @@ pub trait FGColorProvider: Send + Sync {}
 /// referenced by [`FgEnv`](crate::app::plugin::core::functiongraph::mvc::fg_env::FgEnv) before
 /// the real class is ported. Java's version is a concrete (abstract) class rather than an
 /// interface, so this is a plain struct rather than a `dyn`-dispatched trait, matching
-/// [`DockingAction`]'s convention. `FgEnv` only ever passes this type through as a return value,
+/// [`DockingAction`](crate::docking::action::DockingAction)'s convention. `FgEnv` only ever passes this type through as a return value,
 /// so no fields are needed yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FGLayoutProvider;
@@ -4300,7 +4293,7 @@ pub struct FGLayoutProvider;
 /// Placeholder for `ghidra.app.plugin.core.functiongraph.mvc.FunctionGraphOptions`, referenced by
 /// [`FgEnv`](crate::app::plugin::core::functiongraph::mvc::fg_env::FgEnv) before the real class is
 /// ported. Java's version is a concrete class (not an interface), so this is a plain struct rather
-/// than a `dyn`-dispatched trait, matching [`DockingAction`]'s convention. `FgEnv` only ever
+/// than a `dyn`-dispatched trait, matching [`DockingAction`](crate::docking::action::DockingAction)'s convention. `FgEnv` only ever
 /// passes this type through as a return value, so no fields are needed yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FunctionGraphOptions;

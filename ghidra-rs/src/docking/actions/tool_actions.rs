@@ -2,7 +2,7 @@
 //! `docking.actions.ToolActions`): global and provider-local actions, by id,
 //! with an index from key stroke to bound actions.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use crate::docking::action::{ActionChange, ActionId, DockingActionIf, KeyBindingData};
 use crate::docking::ProviderId;
@@ -22,12 +22,11 @@ struct Entry {
     scope: ActionScope,
 }
 
-/// Registry of a tool's actions with a key-stroke index.
+/// Registry of a tool's actions.
 #[derive(Default)]
 pub struct ToolActions {
     next_id: u64,
     entries: BTreeMap<ActionId, Entry>,
-    by_key: HashMap<KeyStroke, Vec<ActionId>>,
 }
 
 impl ToolActions {
@@ -39,19 +38,8 @@ impl ToolActions {
     fn insert(&mut self, action: Box<dyn DockingActionIf>, scope: ActionScope) -> ActionId {
         self.next_id += 1;
         let id = ActionId(self.next_id);
-        let key = action.key_binding();
         self.entries.insert(id, Entry { action, scope });
-        if let Some(ks) = key {
-            self.by_key.entry(ks).or_default().push(id);
-        }
         id
-    }
-
-    fn unindex(&mut self, id: ActionId) {
-        for ids in self.by_key.values_mut() {
-            ids.retain(|i| *i != id);
-        }
-        self.by_key.retain(|_, ids| !ids.is_empty());
     }
 
     /// Adds a global (tool-level) action.
@@ -66,7 +54,6 @@ impl ToolActions {
 
     /// Removes an action, returning it.
     pub fn remove(&mut self, id: ActionId) -> Option<Box<dyn DockingActionIf>> {
-        self.unindex(id);
         self.entries.remove(&id).map(|e| e.action)
     }
 
@@ -93,9 +80,11 @@ impl ToolActions {
         self.entries.get(&id).map(|e| e.scope)
     }
 
-    /// Actions currently bound to `ks` (registration order).
+    /// Actions currently bound to `ks`, in registration order. Computed from
+    /// the actions' live key bindings, so rebinding through `state_mut()` (or
+    /// an action rebinding itself) can never leave a stale entry.
     pub fn actions_for_key(&self, ks: KeyStroke) -> Vec<ActionId> {
-        self.by_key.get(&ks).cloned().unwrap_or_default()
+        self.entries.iter().filter(|(_, e)| e.action.key_binding() == Some(ks)).map(|(id, _)| *id).collect()
     }
 
     /// All global actions.
@@ -111,14 +100,10 @@ impl ToolActions {
             .map(|(id, _)| *id)
     }
 
-    /// Re-binds an action and keeps the key index in sync.
+    /// Re-binds an action.
     pub fn set_key_binding(&mut self, id: ActionId, data: Option<KeyBindingData>) {
-        let Some(entry) = self.entries.get_mut(&id) else { return };
-        entry.action.state_mut().set_key_binding_data(data);
-        let key = entry.action.key_binding();
-        self.unindex(id);
-        if let Some(ks) = key {
-            self.by_key.entry(ks).or_default().push(id);
+        if let Some(entry) = self.entries.get_mut(&id) {
+            entry.action.state_mut().set_key_binding_data(data);
         }
     }
 

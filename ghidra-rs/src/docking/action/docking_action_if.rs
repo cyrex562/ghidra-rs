@@ -47,11 +47,13 @@ pub trait DockingActionIf: Send {
         }
     }
 
-    /// `isValidContext`: the `validContextWhen` predicate if set, else `true`.
+    /// `isValidContext`: the `validContextWhen` predicate if set; otherwise
+    /// the declared context type must match (Java's `setContextClass`
+    /// installs exactly that predicate); otherwise `true`.
     fn is_valid_context(&self, context: &dyn ActionContext) -> bool {
         match self.state().valid_context_predicate() {
             Some(p) => p(context),
-            None => true,
+            None => super::is_context_applicable(self.state(), context),
         }
     }
 

@@ -1,3 +1,4 @@
+pub mod closure_action;
 pub mod docking_action;
 pub mod docking_action_if;
 pub mod key_binding_data;
@@ -19,3 +20,4 @@ pub use docking_action_if::DockingActionIf;
 pub use toggle_docking_action_if::{ToggleDockingActionIf, ToggleState};
 pub use multi_action_docking_action_if::MultiActionDockingActionIf;
 pub use key_bindings_manager::{DispatchResult, KeyBindingsManager};
+pub use closure_action::ClosureAction;

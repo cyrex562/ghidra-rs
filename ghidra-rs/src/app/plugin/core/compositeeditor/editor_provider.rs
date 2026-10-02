@@ -1,4 +1,3 @@
-use std::sync::Arc;
 
 use crate::docking::ProviderId;
 use crate::program::model::data::data_type_manager::DataTypeManager;

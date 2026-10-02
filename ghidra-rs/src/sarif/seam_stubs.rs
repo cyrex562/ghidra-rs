@@ -386,69 +386,7 @@ impl SarifResultsTableProvider {
 
 // `docking.action.MenuData` is ported: crate::docking::action::MenuData.
 
-/// Placeholder for the unported Java class `docking.action.DockingAction`, referenced by
-/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action).
-/// Java's version is a concrete class, so this is a plain struct rather than a `dyn`-dispatched
-/// trait. `createAction`'s anonymous subclass overrides exactly three methods
-/// (`actionPerformed`/`isEnabledForContext`/`isAddToPopup`); this struct models that override as
-/// three stored closures supplied at construction time rather than a full virtual-dispatch
-/// hierarchy, since there is only ever the one "subclass" to represent.
-pub struct DockingAction {
-    pub name: Option<String>,
-    pub owner: Option<String>,
-    pub popup_menu_data: Option<crate::docking::action::MenuData>,
-    action_performed: Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) + Send + Sync>,
-    is_enabled_for_context:
-        Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) -> bool + Send + Sync>,
-    is_add_to_popup: Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) -> bool + Send + Sync>,
-}
-
-impl DockingAction {
-    /// `new DockingAction(String name, String owner) { ... }`, with its three overrides supplied
-    /// directly instead of through subclassing.
-    pub fn new(
-        name: Option<String>,
-        owner: Option<String>,
-        action_performed: impl Fn(&dyn crate::docking::action_context::ActionContext) + Send + Sync + 'static,
-        is_enabled_for_context: impl Fn(&dyn crate::docking::action_context::ActionContext) -> bool
-            + Send
-            + Sync
-            + 'static,
-        is_add_to_popup: impl Fn(&dyn crate::docking::action_context::ActionContext) -> bool
-            + Send
-            + Sync
-            + 'static,
-    ) -> Self {
-        Self {
-            name,
-            owner,
-            popup_menu_data: None,
-            action_performed: Box::new(action_performed),
-            is_enabled_for_context: Box::new(is_enabled_for_context),
-            is_add_to_popup: Box::new(is_add_to_popup),
-        }
-    }
-
-    /// `DockingAction.actionPerformed(ActionContext)`.
-    pub fn action_performed(&self, context: &dyn crate::docking::action_context::ActionContext) {
-        (self.action_performed)(context)
-    }
-
-    /// `DockingAction.isEnabledForContext(ActionContext)`.
-    pub fn is_enabled_for_context(&self, context: &dyn crate::docking::action_context::ActionContext) -> bool {
-        (self.is_enabled_for_context)(context)
-    }
-
-    /// `DockingAction.isAddToPopup(ActionContext)`.
-    pub fn is_add_to_popup(&self, context: &dyn crate::docking::action_context::ActionContext) -> bool {
-        (self.is_add_to_popup)(context)
-    }
-
-    /// `DockingAction.setPopupMenuData(MenuData)`.
-    pub fn set_popup_menu_data(&mut self, data: crate::docking::action::MenuData) {
-        self.popup_menu_data = Some(data);
-    }
-}
+// `docking.action.DockingAction` is ported: crate::docking::action::{DockingAction, ClosureAction}.
 
 /// Placeholder for `sarif.export.trees.SarifTreeWriter`, referenced by
 /// [`ProgramTreeSarifMgr::write_as_sarif`](crate::sarif::managers::ProgramTreeSarifMgr::write_as_sarif).

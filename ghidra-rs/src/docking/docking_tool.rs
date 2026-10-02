@@ -1,7 +1,8 @@
 //! A toolkit-neutral docking tool: its providers, actions and layout
 //! (the model half of Ghidra's `AbstractDockingTool` + `DockingWindowManager`).
 
-use std::collections::BTreeMap;
+use std::any::TypeId;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::docking::action::{ActionId, DispatchResult, DockingActionIf, KeyBindingsManager};
 use crate::docking::action_context::ActionContext;
@@ -20,7 +21,12 @@ pub struct DockingTool {
     actions: ToolActions,
     layout: DockLayout,
     menu_groups: MenuGroupMap,
+    default_contexts: HashMap<TypeId, DefaultContextFactory>,
 }
+
+/// Builds the tool's default context for one context type
+/// (`DockingWindowManager.getDefaultActionContextMap`).
+pub type DefaultContextFactory = Box<dyn Fn() -> Box<dyn ActionContext> + Send>;
 
 impl DockingTool {
     /// An empty tool.
@@ -32,6 +38,7 @@ impl DockingTool {
             actions: ToolActions::new(),
             layout: DockLayout::default(),
             menu_groups: MenuGroupMap::default(),
+            default_contexts: HashMap::new(),
         }
     }
 
@@ -157,16 +164,24 @@ impl DockingTool {
         }
     }
 
+    /// Registers the default context for actions of `context_type` that
+    /// support a default context (`ComponentProvider.registerDefaultContext`).
+    pub fn set_default_context(&mut self, context_type: TypeId, factory: DefaultContextFactory) {
+        self.default_contexts.insert(context_type, factory);
+    }
+
     /// Dispatches a key stroke given the focused provider.
     pub fn dispatch_key(&mut self, ks: KeyStroke, focused: Option<ProviderId>) -> DispatchResult {
         let providers = &self.providers;
+        let defaults = &self.default_contexts;
         let ctx_for = |p: Option<ProviderId>| -> Box<dyn ActionContext> {
             match p.and_then(|id| providers.get(&id)) {
                 Some(pr) => pr.action_context(),
                 None => Box::new(DefaultActionContext::new()),
             }
         };
-        KeyBindingsManager::dispatch(&mut self.actions, ks, focused, &ctx_for)
+        let default_ctx = |t: TypeId| defaults.get(&t).map(|f| f());
+        KeyBindingsManager::dispatch(&mut self.actions, ks, focused, &ctx_for, &default_ctx)
     }
 
     /// Saves the layout; transient providers are omitted.
@@ -180,19 +195,34 @@ impl DockingTool {
         layout.to_save_state()
     }
 
-    /// Restores a saved layout: entries for current providers are applied
-    /// (visibility, position, group), unknown entries are dropped, and
-    /// providers missing from the save keep their current entry.
+    /// Restores a saved layout. Entries for current providers are applied
+    /// (visibility, position, group); providers missing from the save keep
+    /// their current entry; entries for providers not present are **kept**
+    /// unapplied and written back on save, like Java's `PlaceholderManager`
+    /// keeps placeholders — so a plugin loaded later (or a newer build's
+    /// config) does not lose its placement.
     pub fn restore_layout(&mut self, saved: &SaveState) {
         let restored = DockLayout::from_save_state(saved);
-        let mut layout = DockLayout::default();
-        layout.set_geometry(restored.geometry().map(<[u8]>::to_vec));
+        let mut layout = restored.clone();
         for p in self.providers.values_mut() {
             let key = p.state().layout_key();
-            let entry = restored.entry(&key).or(self.layout.entry(&key)).cloned();
-            if let Some(e) = entry {
-                p.state_mut().set_visible(e.visible);
-                layout.set_entry(key, e);
+            match restored.entry(&key).cloned() {
+                Some(e) => {
+                    let was = p.state().is_visible();
+                    p.state_mut().set_visible(e.visible);
+                    if was != e.visible {
+                        if e.visible {
+                            p.component_shown();
+                        } else {
+                            p.component_hidden();
+                        }
+                    }
+                }
+                None => {
+                    if let Some(e) = self.layout.entry(&key).cloned() {
+                        layout.set_entry(key, e);
+                    }
+                }
             }
         }
         self.layout = layout;
@@ -249,7 +279,13 @@ mod tests {
         t.restore_layout(&saved); // must not error on "Owner.Gone"
         assert!(t.provider(n).unwrap().state().is_visible());
         assert_eq!(t.layout().entry("Owner.New").unwrap().position, WindowPosition::Right);
-        assert!(t.layout().entry("Owner.Gone").is_none());
+        // the absent provider's placement survives a load/save cycle
+        assert_eq!(t.layout().entry("Owner.Gone").unwrap().position, WindowPosition::Top);
+        let resaved = DockLayout::from_save_state(&t.save_layout());
+        assert!(resaved.entry("Owner.Gone").is_some());
+        // and is applied when that provider is added later
+        let g = t.add_provider(p("Gone", WindowPosition::Bottom), false);
+        assert!(t.provider(g).unwrap().state().is_visible());
     }
 
     #[test]
