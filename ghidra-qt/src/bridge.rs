@@ -849,6 +849,16 @@ mod tests {
     }
 
     #[test]
+    fn toolbar_entries_carry_resolved_theme_icon_files() {
+        if ghidra_ui_model::icons::default_theme_root().is_none() {
+            return;
+        }
+        let bar = tool_bar(-1).unwrap();
+        let prev = bar.iter().find(|t| t.tooltip == "Previous Location").expect("Previous Location button");
+        assert!(prev.icon_path.ends_with("images/left.png"), "{}", prev.icon_path);
+    }
+
+    #[test]
     fn the_listing_is_the_central_provider() {
         assert!(provider_info(pid("Listing")).unwrap().central);
         assert!(!provider_info(pid("Symbols")).unwrap().central);

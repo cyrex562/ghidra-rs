@@ -38,3 +38,39 @@ pub(crate) mod tests {
         assert_eq!(s.icon_path("icon.missing"), None);
     }
 }
+
+/// The theme port's resolver behind the seam.
+impl IconResolver for ghidra_rs::generic::theme::theme_icon_resolver::ThemeIconResolver {
+    fn resolve(&self, id: &str) -> Option<PathBuf> {
+        self.resolve_icon_path(id)
+    }
+}
+
+/// Ghidra's theme files and images: `$GHIDRA_RS_THEME_ROOT`, else the
+/// development checkout's `orig_src/Ghidra` (packaging ships them later).
+pub fn default_theme_root() -> Option<PathBuf> {
+    let root = std::env::var_os("GHIDRA_RS_THEME_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../orig_src/Ghidra")));
+    let root = root.canonicalize().ok()?;
+    root.is_dir().then_some(root)
+}
+
+/// Loads the light theme from [`default_theme_root`], if there is one.
+pub fn load_default_theme() -> Option<Box<dyn IconResolver>> {
+    use ghidra_rs::generic::theme::theme_icon_resolver::{ThemeIconResolver, ThemeVariant};
+    let resolver = ThemeIconResolver::from_ghidra_root(&default_theme_root()?, ThemeVariant::Light).ok()?;
+    Some(Box::new(resolver))
+}
+
+#[cfg(test)]
+mod theme_tests {
+    #[test]
+    fn the_demo_resolves_ghidra_navigation_icons() {
+        let Some(root) = super::default_theme_root() else { return };
+        let s = crate::demo_tool::build_demo_session();
+        let path = s.icon_path("icon.plugin.navigation.location.previous").expect("resolved");
+        assert_eq!(path, root.join("Framework/Gui/src/main/resources/images/left.png"));
+        assert!(s.icon_path("icon.search").is_some_and(|p| p.ends_with("images/magnifier.png")));
+    }
+}
