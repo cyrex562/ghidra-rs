@@ -587,4 +587,48 @@ mod tests {
             .unwrap();
         assert!(specs.is_empty());
     }
+
+    /// `ElfLoader.load` end to end on a real language: `/bin/ls` into a fresh `ProgramDB` built
+    /// on the local Ghidra distribution's `x86-64.sla` (skipped when either is absent).
+    #[test]
+    fn load_bin_ls_into_program_db_with_real_language() {
+        use crate::app::seam_stubs::new_string;
+        use crate::app::util::opinion::elf_loader_options_factory::IMAGE_BASE_OPTION_NAME;
+        use crate::pcode::utils::sla_format::{build_decoder, tests::dist_sla};
+        use crate::program::database::program_db::ProgramDB;
+        use crate::program::model::address::DefaultAddressFactory;
+        use crate::program::model::lang::sleigh::SleighLanguage;
+        use crate::util::task::DummyMonitor;
+
+        let Some(sla) = dist_sla("x86", "x86-64.sla") else {
+            return;
+        };
+        let Ok(bytes) = std::fs::read("/bin/ls") else {
+            return;
+        };
+        if bytes.len() < 0x40 || bytes[..4] != [0x7f, b'E', b'L', b'F'] || bytes[18] != 62 {
+            return;
+        }
+        let decoder = build_decoder(&sla, Arc::new(DefaultAddressFactory::new(vec![]))).unwrap();
+        let language =
+            Arc::new(SleighLanguage::decode(&decoder, "x86:LE:64:default".to_string()).unwrap());
+        let program: Arc<dyn Program> = Arc::new(ProgramDB::new("ls".into(), language).unwrap());
+        let options: Vec<Box<dyn Option>> = vec![new_string(IMAGE_BASE_OPTION_NAME)
+            .value(Box::new("100000".to_string()))
+            .build()];
+        let log = Arc::new(MessageLog::new());
+        ElfLoader::new()
+            .load(provider(bytes), &program, &options, &log, &DummyMonitor)
+            .unwrap();
+        let memory = program.get_memory().unwrap();
+        assert!(!memory.is_empty());
+        assert_eq!(program.get_image_base().unwrap().offset(), 0x100000);
+        let text = memory
+            .get_block_handles()
+            .into_iter()
+            .find(|b| b.read().unwrap().get_name() == ".text")
+            .expect(".text block");
+        assert!(text.read().unwrap().is_execute());
+        assert!(text.read().unwrap().get_start().offset() >= 0x100000);
+    }
 }
