@@ -113,6 +113,12 @@ pub trait DockingActionIf: Send {
         self.state().tool_bar_data()
     }
 
+    /// This action as a toggle action, if it is one (Java
+    /// `instanceof ToggleDockingActionIf`).
+    fn as_toggle(&self) -> Option<&dyn super::ToggleDockingActionIf> {
+        None
+    }
+
     /// Drains recorded state changes (replaces property-change events).
     fn take_changes(&mut self) -> Vec<ActionChange> {
         self.state_mut().take_changes()

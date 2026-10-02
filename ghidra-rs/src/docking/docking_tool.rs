@@ -7,6 +7,7 @@ use crate::docking::action::{ActionId, DispatchResult, DockingActionIf, KeyBindi
 use crate::docking::action_context::ActionContext;
 use crate::docking::actions::ToolActions;
 use crate::docking::dock_layout::{DockLayout, LayoutEntry};
+use crate::docking::menu::MenuGroupMap;
 use crate::docking::{ComponentProvider, DefaultActionContext, ProviderId};
 use crate::framework::options::SaveState;
 use crate::util::awt::KeyStroke;
@@ -18,6 +19,7 @@ pub struct DockingTool {
     providers: BTreeMap<ProviderId, Box<dyn ComponentProvider>>,
     actions: ToolActions,
     layout: DockLayout,
+    menu_groups: MenuGroupMap,
 }
 
 impl DockingTool {
@@ -29,6 +31,7 @@ impl DockingTool {
             providers: BTreeMap::new(),
             actions: ToolActions::new(),
             layout: DockLayout::default(),
+            menu_groups: MenuGroupMap::default(),
         }
     }
 
@@ -124,6 +127,16 @@ impl DockingTool {
     /// Mutable action registry.
     pub fn actions_mut(&mut self) -> &mut ToolActions {
         &mut self.actions
+    }
+
+    /// Preferred menu groups (`PluginTool.setMenuGroup`).
+    pub fn menu_groups(&self) -> &MenuGroupMap {
+        &self.menu_groups
+    }
+
+    /// `setMenuGroup(menuPath, group, menuSubGroup)`.
+    pub fn set_menu_group(&mut self, path: &[&str], group: Option<&str>, sub_group: Option<&str>) {
+        self.menu_groups.set_menu_group(path, group, sub_group);
     }
 
     /// The layout.

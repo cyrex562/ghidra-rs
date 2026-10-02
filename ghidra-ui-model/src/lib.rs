@@ -7,6 +7,7 @@
 pub mod demo;
 pub mod demo_tool;
 mod events;
+pub mod menus;
 mod session;
 mod view_kind;
 mod view_models;
