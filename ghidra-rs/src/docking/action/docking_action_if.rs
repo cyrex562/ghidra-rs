@@ -92,7 +92,7 @@ pub trait DockingActionIf: HelpDescriptor {
     fn default_key_binding_data(&self) -> Option<Arc<dyn KeyBindingData>>;
 
     /// Convenience method for getting the keybinding for this action.
-    fn key_binding(&self) -> Option<Arc<dyn KeyStroke>>;
+    fn key_binding(&self) -> Option<KeyStroke>;
 
     /// Returns the full name (the action name combined with the owner name).
     fn full_name(&self) -> String;
@@ -222,7 +222,7 @@ mod tests {
             None
         }
 
-        fn key_binding(&self) -> Option<Arc<dyn KeyStroke>> {
+        fn key_binding(&self) -> Option<KeyStroke> {
             None
         }
 

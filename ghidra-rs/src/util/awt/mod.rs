@@ -3,5 +3,7 @@
 //! Qt or egui types. Decided 2026-10-01.
 
 pub mod color;
+pub mod key_stroke;
 
 pub use color::Color;
+pub use key_stroke::KeyStroke;

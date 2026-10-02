@@ -126,7 +126,7 @@ mod tests {
             None
         }
 
-        fn key_binding(&self) -> Option<Arc<dyn crate::docking::seam_stubs::KeyStroke>> {
+        fn key_binding(&self) -> Option<crate::util::awt::KeyStroke> {
             None
         }
 

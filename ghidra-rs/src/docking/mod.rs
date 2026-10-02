@@ -4,7 +4,9 @@ pub mod actions;
 pub mod docking_context_listener;
 pub mod drop_target_handler;
 pub mod edit_listener;
+pub mod key_binding_precedence;
 pub mod menu;
+pub mod mouse_binding;
 pub mod options;
 pub mod seam_stubs;
 pub mod settings;
@@ -13,3 +15,6 @@ pub mod theme;
 pub mod util;
 pub mod widgets;
 pub mod window_position;
+
+pub use key_binding_precedence::KeyBindingPrecedence;
+pub use mouse_binding::MouseBinding;

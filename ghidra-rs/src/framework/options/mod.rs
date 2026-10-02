@@ -1,3 +1,4 @@
+pub mod action_trigger;
 pub mod annotation;
 pub mod attributed_save_state;
 pub mod custom_option;
@@ -12,6 +13,7 @@ pub mod save_state;
 pub mod xml_properties;
 pub mod wrapped_option;
 
+pub use action_trigger::ActionTrigger;
 pub use annotation::AutoOptionConsumed;
 pub use attributed_save_state::AttributedSaveState;
 pub use annotation::HelpInfo;

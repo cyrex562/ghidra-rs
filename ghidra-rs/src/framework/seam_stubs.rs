@@ -340,10 +340,7 @@ pub trait HelpLocation {}
 
 // `GProperties` is ported: crate::framework::options::GProperties.
 
-/// Placeholder for `ghidra.framework.options.ActionTrigger`, referenced by
-/// [`Options`](crate::framework::options::Options) before the real class is ported. `Options`
-/// only ever passes this type through as an opaque value, so no members are needed yet.
-pub trait ActionTrigger {}
+// `ActionTrigger` is ported: crate::framework::options::ActionTrigger.
 
 /// Placeholder for `java.awt.Color`, referenced by [`Options`](crate::framework::options::Options)
 /// before a Rust equivalent exists. `Options` only ever passes this type through as an opaque
@@ -355,10 +352,7 @@ pub trait Color {}
 /// value, so no members are needed yet.
 pub trait Font {}
 
-/// Placeholder for `javax.swing.KeyStroke`, referenced by
-/// [`Options`](crate::framework::options::Options) before a Rust equivalent exists. `Options`
-/// only ever passes this type through as an opaque value, so no members are needed yet.
-pub trait KeyStroke {}
+// `KeyStroke` is ported: crate::util::awt::KeyStroke.
 
 // `DomainFolderFilter` is ported; this was a placeholder standing in for it. Re-exported so
 // every importer converges on one type instead of two same-named ones.

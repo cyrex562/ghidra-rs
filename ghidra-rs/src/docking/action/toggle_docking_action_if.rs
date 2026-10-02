@@ -85,7 +85,7 @@ mod tests {
             None
         }
 
-        fn key_binding(&self) -> Option<Arc<dyn KeyStroke>> {
+        fn key_binding(&self) -> Option<KeyStroke> {
             None
         }
 

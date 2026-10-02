@@ -2,8 +2,10 @@ use std::any::Any;
 
 use crate::framework::options::custom_option::CustomOption;
 use crate::framework::options::option_type::OptionType;
+use crate::framework::options::ActionTrigger;
+use crate::util::awt::KeyStroke;
 use crate::framework::seam_stubs::{
-    ActionTrigger, Color, Font, HelpLocation, KeyStroke, OptionsEditor, PropertyEditor,
+    Color, Font, HelpLocation, OptionsEditor, PropertyEditor,
 };
 use crate::util::function::Supplier;
 
@@ -280,8 +282,8 @@ pub trait Options {
     fn get_key_stroke(
         &self,
         option_name: &str,
-        default_value: Box<dyn KeyStroke>,
-    ) -> Box<dyn KeyStroke> {
+        default_value: KeyStroke,
+    ) -> KeyStroke {
         let _ = option_name;
         default_value
     }
@@ -290,8 +292,8 @@ pub trait Options {
     fn get_action_trigger(
         &self,
         option_name: &str,
-        default_value: Box<dyn ActionTrigger>,
-    ) -> Box<dyn ActionTrigger> {
+        default_value: ActionTrigger,
+    ) -> ActionTrigger {
         let _ = option_name;
         default_value
     }
@@ -375,12 +377,12 @@ pub trait Options {
     /// Sets the [`KeyStroke`] value for the option.
     ///
     /// Deprecated upstream in favor of [`Self::set_action_trigger`].
-    fn set_key_stroke(&mut self, option_name: &str, value: Box<dyn KeyStroke>) {
+    fn set_key_stroke(&mut self, option_name: &str, value: KeyStroke) {
         let _ = (option_name, value);
     }
 
     /// Sets the [`ActionTrigger`] value for the option.
-    fn set_action_trigger(&mut self, option_name: &str, value: Box<dyn ActionTrigger>) {
+    fn set_action_trigger(&mut self, option_name: &str, value: ActionTrigger) {
         let _ = (option_name, value);
     }
 

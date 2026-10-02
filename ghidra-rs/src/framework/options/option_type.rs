@@ -17,7 +17,9 @@ use crate::framework::options::custom_option::{
 use crate::framework::options::save_state::SaveState;
 use crate::util::msg::Msg;
 use crate::util::xml::element::Element;
-use crate::framework::seam_stubs::{ActionTrigger, Color, Font, KeyStroke};
+use crate::framework::options::ActionTrigger;
+use crate::framework::seam_stubs::{Color, Font};
+use crate::util::awt::KeyStroke;
 
 /// The kind of value an option holds, together with how that value is persisted as a string.
 ///
@@ -104,9 +106,9 @@ pub enum OptionValue {
     /// A `java.awt.Font`.
     Font(Arc<dyn Font + Send + Sync>),
     /// A `javax.swing.KeyStroke`.
-    KeyStroke(Arc<dyn KeyStroke + Send + Sync>),
+    KeyStroke(KeyStroke),
     /// A `ghidra.framework.options.ActionTrigger`.
-    ActionTrigger(Arc<dyn ActionTrigger + Send + Sync>),
+    ActionTrigger(ActionTrigger),
 }
 
 impl fmt::Debug for OptionValue {

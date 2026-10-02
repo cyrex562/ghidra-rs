@@ -42,7 +42,7 @@
 //! `BYTE_CYCLE_GROUP` used `VK_B`, `FLOAT_CYCLE_GROUP` used `VK_F`, and `STRING_CYCLE_GROUP` used
 //! `VK_QUOTE`, all with no modifiers.
 
-use crate::framework::seam_stubs::KeyStroke;
+use crate::util::awt::KeyStroke;
 use crate::program::model::data::data_type::DataType;
 
 /// A [`DataType`] usable as a [`CycleGroup`] entry.
@@ -62,7 +62,7 @@ pub trait CycleDataType: DataType {
 pub struct CycleGroup {
     name: String,
     data_list: Vec<Box<dyn CycleDataType>>,
-    default_key_stroke: Option<Box<dyn KeyStroke>>,
+    default_key_stroke: Option<KeyStroke>,
 }
 
 impl CycleGroup {
@@ -76,7 +76,7 @@ impl CycleGroup {
     pub fn new(
         name: impl Into<String>,
         data_types: Vec<Box<dyn CycleDataType>>,
-        key_stroke: Option<Box<dyn KeyStroke>>,
+        key_stroke: Option<KeyStroke>,
     ) -> Self {
         CycleGroup {
             name: name.into(),
@@ -95,7 +95,7 @@ impl CycleGroup {
     pub fn with_single(
         name: impl Into<String>,
         data_type: Box<dyn CycleDataType>,
-        key_stroke: Option<Box<dyn KeyStroke>>,
+        key_stroke: Option<KeyStroke>,
     ) -> Self {
         Self::new(name, vec![data_type], key_stroke)
     }
@@ -121,15 +121,15 @@ impl CycleGroup {
     }
 
     /// Returns the default key stroke for cycling through this group, if any.
-    pub fn default_key_stroke(&self) -> Option<&dyn KeyStroke> {
-        self.default_key_stroke.as_deref()
+    pub fn default_key_stroke(&self) -> Option<KeyStroke> {
+        self.default_key_stroke
     }
 
     /// Sets the default key stroke for cycling through this group.
     ///
     /// Mirrors direct assignment of the Java `protected` `defaultKeyStroke` field (used by the
     /// built-in singleton subclasses' constructors).
-    pub fn set_default_key_stroke(&mut self, key_stroke: Option<Box<dyn KeyStroke>>) {
+    pub fn set_default_key_stroke(&mut self, key_stroke: Option<KeyStroke>) {
         self.default_key_stroke = key_stroke;
     }
 

@@ -4,11 +4,9 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 pub use crate::docking::settings::string_settings_definition::StringSettingsDefinition;
-/// Placeholder for `javax.swing.KeyStroke`. Already stubbed for
-/// [`Options`](crate::framework::options::Options); re-exported here so
-/// [`crate::docking::action::docking_action_if`] can reference the same placeholder rather than
-/// defining a second, incompatible one.
-pub use crate::framework::seam_stubs::KeyStroke;
+// `javax.swing.KeyStroke` is ported as the toolkit-neutral `crate::util::awt::KeyStroke`;
+// re-exported so existing importers converge on the one real type.
+pub use crate::util::awt::KeyStroke;
 
 /// Placeholder for `docking.ComponentProvider`, referenced by [`crate::docking::action_context`].
 pub trait ComponentProvider {}
