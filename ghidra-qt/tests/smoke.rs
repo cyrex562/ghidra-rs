@@ -304,12 +304,12 @@ fn shift_down_selects_rows_in_the_listing() {
 #[test]
 fn g_goes_to_an_address_and_alt_left_comes_back() {
     let out = listing_state("Down,G", Some("0x402000"));
-    assert!(out.lines().any(|l| l == "prompt: Go To ..."), "{out}");
+    assert!(out.lines().any(|l| l == "dialog: Go To ..."), "{out}");
     assert!(out.lines().any(|l| l.contains("cursor=00402000")), "{out}");
     let out = listing_state("Down,G,Alt-Left", Some("402000h"));
     assert!(out.lines().any(|l| l.contains("cursor=00401001")), "{out}");
     let out = listing_state("G", Some("401800"));
-    assert!(out.lines().any(|l| l == "status: Address not found: 401800"), "{out}");
+    assert!(out.lines().any(|l| l == "dialog status: No results for 401800"), "{out}");
 }
 
 #[test]

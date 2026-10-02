@@ -233,11 +233,31 @@ pub mod ffi {
         pub location: String,
     }
 
+    /// A dialog check box.
+    pub struct CheckInfo {
+        pub key: String,
+        pub label: String,
+        pub tooltip: String,
+        pub checked: bool,
+    }
+
+    /// A Rust-described dialog.
+    pub struct DialogInfo {
+        pub title: String,
+        pub message: String,
+        pub has_combo: bool,
+        pub combo_text: String,
+        pub combo_items: Vec<String>,
+        pub checks: Vec<CheckInfo>,
+        pub status: String,
+    }
+
     /// A drained UI event.
     pub struct EventInfo {
         /// 0 status, 1 task progress, 2 task done, 3 actions changed, 4 domain changed, 5 other,
         /// 6 prompt (task = prompt id, text = title), 7 view changed (task = provider id),
-        /// 8 provider shown (task = provider id, progress = 1 to focus it)
+        /// 8 provider shown (task = provider id, progress = 1 to focus it),
+        /// 9 dialog (task = dialog id)
         pub kind: u8,
         pub text: String,
         pub task: u64,
@@ -286,6 +306,10 @@ pub mod ffi {
         fn listing_intent(pid: u64, kind: u8, a: i64, b: i64, extend: bool) -> Result<()>;
         fn listing_frame(pid: u64) -> Result<FrameInfo>;
         fn prompt_reply(id: u64, accepted: bool, text: &str) -> Result<()>;
+        fn dialog_spec(id: u64) -> Result<DialogInfo>;
+        /// OK; true when the dialog is done (else re-read its spec).
+        fn dialog_ok(id: u64, text: &str, checks: Vec<CheckInfo>) -> Result<bool>;
+        fn dialog_cancel(id: u64) -> Result<()>;
 
         fn menu_bar(focused_pid: i64) -> Result<Vec<MenuItemInfo>>;
         fn popup_menu(pid: u64) -> Result<Vec<MenuItemInfo>>;
@@ -311,7 +335,7 @@ pub mod ffi {
     }
 }
 
-use ffi::{EventInfo, FieldInfo, FrameInfo, FrameRowInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RunInfo, RunPosInfo, SpanInfo, ToolBarInfo};
+use ffi::{CheckInfo, DialogInfo, EventInfo, FieldInfo, FrameInfo, FrameRowInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RunInfo, RunPosInfo, SpanInfo, ToolBarInfo};
 use ghidra_ui_model::listing::{FontMetrics, Move};
 use ghidra_ui_model::listing_controller::ListingController;
 
@@ -552,6 +576,36 @@ fn listing_frame(pid: u64) -> Result<FrameInfo, String> {
     })
 }
 
+fn dialog_spec(id: u64) -> Result<DialogInfo, String> {
+    with("dialog_spec", |s| {
+        let d = s.events().dialog_spec(id)?;
+        let (has_combo, combo_text, combo_items) = match d.combo {
+            Some(c) => (true, c.text, c.items),
+            None => (false, String::new(), Vec::new()),
+        };
+        Ok(DialogInfo {
+            title: d.title,
+            message: d.message,
+            has_combo,
+            combo_text,
+            combo_items,
+            checks: d.checks.into_iter().map(|c| CheckInfo { key: c.key, label: c.label, tooltip: c.tooltip, checked: c.checked }).collect(),
+            status: d.status,
+        })
+    })
+}
+
+fn dialog_ok(id: u64, text: &str, checks: Vec<CheckInfo>) -> Result<bool, String> {
+    with("dialog_ok", |s| {
+        let checks: Vec<(String, bool)> = checks.into_iter().map(|c| (c.key, c.checked)).collect();
+        Ok(s.events().dialog_ok(id, text, &checks)? == ghidra_ui_model::dialogs::DialogReply::Close)
+    })
+}
+
+fn dialog_cancel(id: u64) -> Result<(), String> {
+    with("dialog_cancel", |s| s.events().dialog_cancel(id))
+}
+
 fn prompt_reply(id: u64, accepted: bool, text: &str) -> Result<(), String> {
     with("prompt_reply", |s| s.events().answer_prompt(id, accepted.then(|| text.to_owned())))
 }
@@ -763,6 +817,10 @@ fn drain_events() -> Result<Vec<EventInfo>, String> {
                     UiEvent::Prompt { id, title, label, initial } => {
                         (i.kind, i.task, i.text, i.label, i.initial) = (6, id, title, label, initial);
                     }
+                    UiEvent::Dialog(id) => {
+                        i.kind = 9;
+                        i.task = id;
+                    }
                     UiEvent::ViewChanged(pid) => {
                         i.kind = 7;
                         i.task = pid;
@@ -829,18 +887,21 @@ mod tests {
     }
 
     #[test]
-    fn go_to_prompt_round_trips_through_the_bridge() {
+    fn go_to_dialog_round_trips_through_the_bridge() {
         let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let p = pid("Listing");
         fresh(p, 5);
         drain_events().unwrap();
         assert_eq!(dispatch_key(0x47 /*Key_G*/, 0, p as i64).unwrap().code, 0);
-        let prompt = drain_events().unwrap().into_iter().find(|e| e.kind == 6).expect("prompt event");
-        assert_eq!(prompt.label, "Enter an address:");
-        prompt_reply(prompt.task, true, "402000").unwrap();
+        let dialog = drain_events().unwrap().into_iter().find(|e| e.kind == 9).expect("dialog event");
+        let spec = dialog_spec(dialog.task).unwrap();
+        assert_eq!((spec.title.as_str(), spec.has_combo, spec.checks.len()), ("Go To ...", true, 2));
+        assert!(!dialog_ok(dialog.task, "401800", spec.checks).unwrap());
+        assert_eq!(dialog_spec(dialog.task).unwrap().status, "No results for 401800");
+        assert!(dialog_ok(dialog.task, "402000", Vec::new()).unwrap());
         assert!(drain_events().unwrap().iter().any(|e| e.kind == 7 && e.task == p));
         assert_eq!(listing_frame(p).unwrap().location, "00402000");
-        assert!(prompt_reply(prompt.task, true, "402000").is_err());
+        assert!(dialog_spec(dialog.task).is_err());
     }
 
     #[test]

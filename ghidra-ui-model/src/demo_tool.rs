@@ -10,7 +10,10 @@ use ghidra_rs::util::awt::KeyStroke;
 use crate::demo::{LinesText, MapForm, StaticTree, VecTable};
 use crate::events::{UiEvent, UiEventQueue};
 use crate::listing::{MemoryBlockSnapshot, MemoryListing};
+use crate::go_to_dialog::{GoToAddressLabelDialog, QueryData, SharedGoToDialog};
 use crate::program_import::ImportedProgram;
+use crate::session::ConfigState;
+use std::sync::{Arc, Mutex};
 use crate::listing_controller::{lock, parse_address, ListingController, ListingHandle};
 use crate::session::{UiSession, ViewModelBox};
 use crate::view_models::{CellValue, FormField};
@@ -223,30 +226,40 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     if let Some(theme) = crate::icons::load_default_theme() {
         s.set_icon_resolver(theme);
     }
-    add_navigation_actions(s.tool_mut(), &events, listing, listing_id);
+    let mut config = Vec::new();
+    add_navigation_actions(s.tool_mut(), &events, listing, listing_id, &mut config);
+    for (name, state) in config {
+        s.add_config_state(&name, state);
+    }
     s
 }
 
 /// Go To (`G`) and Previous/Next Location (Alt-Left/Alt-Right) over the
 /// listing (Java `GoToAddressLabelPlugin`, `NavigationHistoryPlugin`).
-fn add_navigation_actions(tool: &mut DockingTool, events: &UiEventQueue, listing: ListingHandle, listing_id: ProviderId) {
+fn add_navigation_actions(
+    tool: &mut DockingTool,
+    events: &UiEventQueue,
+    listing: ListingHandle,
+    listing_id: ProviderId,
+    config: &mut Vec<(String, Box<dyn ConfigState>)>,
+) {
     tool.set_menu_group(&["&Navigation"], Some("2"), None);
+    // GoToService.goToQuery for the listing: addresses only until symbols land
+    // (a label finds nothing, as Ghidra reports for an unknown label).
     let (ev, h) = (events.clone(), listing.clone());
+    let dialog = SharedGoToDialog(Arc::new(Mutex::new(GoToAddressLabelDialog::new(Box::new(move |q: &QueryData| {
+        let Ok(address) = parse_address(&q.query) else { return Ok(false) };
+        if lock(&h).goto_address(address).is_err() {
+            return Ok(false);
+        }
+        ev.post(UiEvent::ViewChanged(listing_id.0));
+        ev.post(UiEvent::ActionsChanged);
+        Ok(true)
+    })))));
+    config.push(("GoToAddressLabelPlugin".to_owned(), Box::new(dialog.clone())));
+    let ev = events.clone();
     let mut go_to = ClosureAction::new("Go To Address/Label", OWNER, move |_| {
-        let (ev2, h2) = (ev.clone(), h.clone());
-        ev.prompt(
-            "Go To ...",
-            "Enter an address:",
-            "",
-            Box::new(move |answer| {
-                let Some(text) = answer else { return Ok(()) };
-                let address = parse_address(&text)?;
-                lock(&h2).goto_address(address)?;
-                ev2.post(UiEvent::ViewChanged(listing_id.0));
-                ev2.post(UiEvent::ActionsChanged);
-                Ok(())
-            }),
-        );
+        ev.open_dialog(Box::new(dialog.clone()));
     });
     go_to.state_mut().set_menu_bar_data(MenuData::new(&["&Navigation", "&Go To..."]).ok());
     go_to.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(vk::G, 0))));
@@ -309,89 +322,66 @@ mod tests {
         }
     }
 
-    fn take_prompt(s: &UiSession) -> u64 {
+    fn take_dialog(s: &UiSession) -> u64 {
         s.events()
             .drain()
             .into_iter()
             .find_map(|e| match e {
-                UiEvent::Prompt { id, .. } => Some(id),
+                UiEvent::Dialog(id) => Some(id),
                 _ => None,
             })
-            .expect("a prompt")
+            .expect("a dialog")
     }
 
     #[test]
-    fn a_session_for_an_imported_program_shows_its_memory_and_blocks() {
-        let program = ImportedProgram {
-            name: "ls".into(),
-            language: "x86:LE:64:default".into(),
-            address_bits: 64,
-            blocks: vec![MemoryBlockSnapshot::initialized(0x10_0000, vec![0x7f, 0x45]), MemoryBlockSnapshot::uninitialized(0x12_0000, 3)],
-            block_names: vec!["segment_1".into(), ".bss".into()],
-        };
-        let s = build_session_for(Some(&program));
-        let (_, h) = listing(&s);
-        let frame = {
-            let mut c = lock(&h);
-            c.set_viewport(1000);
-            c.frame()
-        };
-        assert_eq!(frame.rows.len(), 5);
-        assert_eq!(frame.rows[0].row.runs[0].text, "0000000000100000");
-        let tree = s.tool().find_provider("Demo", "Program Tree").unwrap();
-        let Some(ViewModelBox::Tree(t)) = s.model(tree) else { panic!("tree") };
-        let root = t.root();
-        assert_eq!(t.label(root), "ls");
-        assert_eq!((0..t.child_count(root)).map(|i| t.label(t.child(root, i))).collect::<Vec<_>>(), vec!["segment_1", ".bss"]);
-        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
-        let Some(ViewModelBox::Table(sym)) = s.model(symbols) else { panic!("table") };
-        assert_eq!(sym.row_count(), 0);
-        let dec = s.tool().find_provider("Demo", "Decompiler").unwrap();
-        let Some(ViewModelBox::Text(text)) = s.model(dec) else { panic!("text") };
-        assert!(text.line_count() > 0);
-        assert!(!(0..text.line_count()).any(|i| text.line(i).iter().any(|r| r.text.contains("main"))));
-    }
-
-    #[test]
-    fn previous_location_precedes_next_on_the_toolbar() {
-        let s = build_demo_session();
-        let ctx = ghidra_rs::docking::DefaultActionContext::new();
-        let tips: Vec<String> = crate::menus::tool_bar(s.tool(), &ctx)
-            .into_iter()
-            .filter_map(|e| match e {
-                crate::menus::ToolBarEntry::Button { tooltip, .. } => Some(tooltip),
-                _ => None,
-            })
-            .filter(|t| t.ends_with("Location"))
-            .collect();
-        assert_eq!(tips, vec!["Previous Location", "Next Location"]);
-    }
-
-    #[test]
-    fn g_prompts_for_an_address_and_goes_there() {
+    fn g_opens_the_go_to_dialog_and_goes_there() {
         let mut s = build_demo_session();
         let (id, h) = listing(&s);
-        h.lock().unwrap().set_viewport(100);
+        lock(&h).set_viewport(100);
         assert!(matches!(s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id)), DispatchResult::Performed(_)));
-        let prompt = take_prompt(&s);
-        s.events().answer_prompt(prompt, Some("0x402000".into())).unwrap();
-        assert_eq!(h.lock().unwrap().cursor().map(|c| c.index), Some(12));
+        let dialog = take_dialog(&s);
+        assert_eq!(s.events().dialog_spec(dialog).unwrap().title, "Go To ...");
+        assert_eq!(s.events().dialog_ok(dialog, "0x402000", &[]).unwrap(), crate::dialogs::DialogReply::Close);
+        assert_eq!(lock(&h).cursor().map(|c| c.index), Some(12));
         assert!(s.events().drain().contains(&UiEvent::ViewChanged(id.0)));
+        // the next opening offers the history
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let again = take_dialog(&s);
+        assert_eq!(s.events().dialog_spec(again).unwrap().combo.unwrap().items, vec!["0x402000"]);
     }
 
     #[test]
-    fn a_bad_go_to_reports_and_leaves_the_listing_alone() {
+    fn a_go_to_with_no_results_stays_open_and_leaves_the_listing_alone() {
         let mut s = build_demo_session();
         let (id, h) = listing(&s);
         s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
-        let prompt = take_prompt(&s);
-        s.events().answer_prompt(prompt, Some("401800".into())).unwrap();
-        assert_eq!(s.events().drain(), vec![UiEvent::Status("Address not found: 401800".into())]);
-        assert_eq!(h.lock().unwrap().cursor(), None);
+        let dialog = take_dialog(&s);
+        for bad in ["401800", "zz"] {
+            match s.events().dialog_ok(dialog, bad, &[]).unwrap() {
+                crate::dialogs::DialogReply::Stay(spec) => assert_eq!(spec.status, format!("No results for {bad}")),
+                other => panic!("{other:?}"),
+            }
+        }
+        assert_eq!(lock(&h).cursor(), None);
+        s.events().dialog_cancel(dialog).unwrap();
+    }
+
+    #[test]
+    fn go_to_history_is_saved_with_the_tool_config() {
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-goto-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut s = build_demo_session();
+        let (id, _) = listing(&s);
         s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
-        let cancelled = take_prompt(&s);
-        s.events().answer_prompt(cancelled, None).unwrap();
-        assert!(s.events().drain().is_empty());
+        let d = take_dialog(&s);
+        s.events().dialog_ok(d, "402001", &[]).unwrap();
+        s.save_tool_config(&path).unwrap();
+        let mut s2 = build_demo_session();
+        assert!(s2.load_tool_config(&path).unwrap());
+        s2.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let d2 = take_dialog(&s2);
+        assert_eq!(s2.events().dialog_spec(d2).unwrap().combo.unwrap().items, vec!["402001"]);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

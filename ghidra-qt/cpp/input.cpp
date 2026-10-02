@@ -3,6 +3,12 @@
 #include <QTimer>
 
 #include <QInputDialog>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QHBoxLayout>
+#include <QDialogButtonBox>
+#include <QDialog>
+#include <QCheckBox>
 
 #include <QApplication>
 #include <QAbstractSpinBox>
@@ -131,6 +137,123 @@ void EventPump::showPrompt(uint64_t id, const QString& title, const QString& lab
     dialog->open();
 }
 
+namespace {
+// A dialog drawn from a Rust DialogInfo: message, editable combo (with
+// history), check boxes, status line, OK/Cancel. Rust decides what OK does.
+class RustDialog : public QDialog {
+public:
+    RustDialog(uint64_t id, QStatusBar* status, EventPump* pump, QWidget* parent)
+        : QDialog(parent), m_id(id), m_status(status), m_pump(pump) {
+        setAttribute(Qt::WA_DeleteOnClose);
+        auto* layout = new QVBoxLayout(this);
+        m_message = new QLabel(this);
+        layout->addWidget(m_message);
+        m_combo = new QComboBox(this);
+        m_combo->setEditable(true);
+        m_combo->setInsertPolicy(QComboBox::NoInsert);
+        layout->addWidget(m_combo);
+        m_checkRow = new QHBoxLayout();
+        layout->addLayout(m_checkRow);
+        m_statusLine = new QLabel(this);
+        m_statusLine->setStyleSheet(QStringLiteral("color: palette(link)"));
+        layout->addWidget(m_statusLine);
+        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        layout->addWidget(buttons);
+        connect(buttons, &QDialogButtonBox::accepted, this, [this] { okPressed(); });
+        connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        load(true);
+    }
+
+    bool loaded() const { return m_loaded; }
+
+protected:
+    void reject() override {
+        bridgeCall(m_status, [&] { dialog_cancel(m_id); });
+        QDialog::reject();
+    }
+
+private:
+    void load(bool first) {
+        DialogInfo d;
+        m_loaded = bridgeCall(m_status, [&] { d = dialog_spec(m_id); });
+        if (!m_loaded) return;
+        if (first) {
+            setWindowTitle(qs(d.title));
+            m_message->setText(qs(d.message));
+            for (const CheckInfo& c : d.checks) {
+                auto* box = new QCheckBox(qs(c.label), this);
+                box->setChecked(c.checked);
+                box->setToolTip(qs(c.tooltip));
+                box->setProperty("rustKey", qs(c.key));
+                m_checkRow->addWidget(box);
+                m_checks << box;
+            }
+            m_combo->setVisible(d.has_combo);
+        }
+        const QString typed = m_combo->currentText();
+        m_combo->clear();
+        for (const rust::String& item : d.combo_items) m_combo->addItem(qs(item));
+        m_combo->setEditText(first ? qs(d.combo_text) : typed);
+        m_statusLine->setText(qs(d.status));
+        m_combo->lineEdit()->selectAll();
+        m_combo->setFocus();
+    }
+
+    void okPressed() {
+        rust::Vec<CheckInfo> checks;
+        for (QCheckBox* box : m_checks) {
+            const QByteArray key = box->property("rustKey").toString().toUtf8();
+            checks.push_back(CheckInfo{rust::String(key.constData(), static_cast<size_t>(key.size())), rust::String(), rust::String(), box->isChecked()});
+        }
+        const QByteArray text = m_combo->currentText().toUtf8();
+        bool done = false;
+        if (!bridgeCall(m_status, [&] { done = dialog_ok(m_id, rust::Str(text.constData(), static_cast<size_t>(text.size())), std::move(checks)); })) return;
+        m_pump->pump();
+        if (done) {
+            QDialog::accept();
+        } else {
+            load(false);
+        }
+    }
+
+    uint64_t m_id;
+    QStatusBar* m_status;
+    EventPump* m_pump;
+    QLabel* m_message;
+    QComboBox* m_combo;
+    QHBoxLayout* m_checkRow;
+    QLabel* m_statusLine;
+    QList<QCheckBox*> m_checks;
+    bool m_loaded = false;
+};
+}  // namespace
+
+void EventPump::showDialog(uint64_t id) {
+    if (m_autoAnswer) {
+        DialogInfo d;
+        if (!bridgeCall(m_window->statusBar(), [&] { d = dialog_spec(id); })) return;
+        std::printf("dialog: %s\n", qs(d.title).toUtf8().constData());
+        const QByteArray a = m_promptAnswer.toUtf8();
+        rust::Vec<CheckInfo> checks;
+        bool done = false;
+        bridgeCall(m_window->statusBar(), [&] { done = dialog_ok(id, rust::Str(a.constData(), static_cast<size_t>(a.size())), std::move(checks)); });
+        if (!done) {
+            bridgeCall(m_window->statusBar(), [&] { d = dialog_spec(id); });
+            std::printf("dialog status: %s\n", qs(d.status).toUtf8().constData());
+            bridgeCall(m_window->statusBar(), [&] { dialog_cancel(id); });
+        }
+        std::fflush(stdout);
+        QTimer::singleShot(0, this, [this] { pump(); });
+        return;
+    }
+    auto* dialog = new RustDialog(id, m_window->statusBar(), this, m_window);
+    if (!dialog->loaded()) {
+        delete dialog;
+        return;
+    }
+    dialog->open();
+}
+
 void EventPump::pump() {
     rust::Vec<EventInfo> events;
     if (!bridgeCall(m_window->statusBar(), [&] { events = drain_events(); })) return;
@@ -161,6 +284,9 @@ void EventPump::pump() {
                 break;
             case 7:
                 m_window->viewChanged(static_cast<int64_t>(e.task));
+                break;
+            case 9:
+                showDialog(e.task);
                 break;
             case 8:
                 m_window->showProvider(static_cast<int64_t>(e.task), e.progress != 0);

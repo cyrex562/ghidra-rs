@@ -35,6 +35,16 @@ pub struct UiSession {
     central: Option<ProviderId>,
     icons: Option<Box<dyn crate::icons::IconResolver>>,
     goto_target: Option<ProviderId>,
+    config_states: Vec<(String, Box<dyn ConfigState>)>,
+}
+
+/// Per-plugin state saved with the tool configuration (Java
+/// `Plugin.writeConfigState`/`readConfigState`).
+pub trait ConfigState: Send {
+    /// Writes the state.
+    fn write_config_state(&self, state: &mut ghidra_rs::framework::options::SaveState);
+    /// Restores it.
+    fn read_config_state(&mut self, state: &ghidra_rs::framework::options::SaveState);
 }
 
 impl UiSession {
@@ -51,6 +61,7 @@ impl UiSession {
             central: None,
             icons: None,
             goto_target: None,
+            config_states: Vec::new(),
         }
     }
 
@@ -109,7 +120,13 @@ impl UiSession {
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)?;
         }
-        let xml = self.tool.save_layout().save_to_xml().output_string();
+        let mut state = self.tool.save_layout();
+        for (name, contributor) in &self.config_states {
+            let mut own = ghidra_rs::framework::options::SaveState::new();
+            contributor.write_config_state(&mut own);
+            state.put_xml_element(name, own.save_to_xml());
+        }
+        let xml = state.save_to_xml().output_string();
         std::fs::write(path, xml)
     }
 
@@ -126,6 +143,11 @@ impl UiSession {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{}: {e:?}", path.display())))?;
         let state = ghidra_rs::framework::options::SaveState::from_xml(&element);
         self.tool.restore_layout(&state);
+        for (name, contributor) in &mut self.config_states {
+            if let Some(e) = state.get_xml_element(name) {
+                contributor.read_config_state(&ghidra_rs::framework::options::SaveState::from_xml(e));
+            }
+        }
         Ok(true)
     }
 
@@ -182,6 +204,11 @@ impl UiSession {
             }
         }
         Ok(())
+    }
+
+    /// Saves `state` with the tool configuration under `name` (a plugin name).
+    pub fn add_config_state(&mut self, name: &str, state: Box<dyn ConfigState>) {
+        self.config_states.push((name.to_owned(), state));
     }
 
     /// Installs the theme icon resolver.

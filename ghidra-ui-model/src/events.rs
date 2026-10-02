@@ -55,6 +55,8 @@ pub enum UiEvent {
         /// Initial text.
         initial: String,
     },
+    /// Show open dialog `id` (its spec via [`UiEventQueue::dialog_spec`]).
+    Dialog(u64),
     /// A provider's view state changed outside a renderer call (repaint it).
     ViewChanged(u64),
     /// A hidden provider was shown (Window menu): dock and raise it, and
@@ -97,6 +99,7 @@ struct Prompts {
 pub struct UiEventQueue {
     pending: Arc<Mutex<Pending>>,
     prompts: Arc<Mutex<Prompts>>,
+    dialogs: Arc<Mutex<crate::dialogs::Dialogs>>,
     waker: Arc<Waker>,
 }
 
@@ -163,6 +166,7 @@ impl UiEventQueue {
         let q = UiEventQueue {
             pending: Arc::new(Mutex::new(Pending::default())),
             prompts: Arc::new(Mutex::new(Prompts::default())),
+            dialogs: Arc::new(Mutex::new(crate::dialogs::Dialogs::default())),
             waker: Arc::new(Waker {
                 #[cfg(unix)]
                 writer: Mutex::new(writer),
@@ -220,6 +224,42 @@ impl UiEventQueue {
         if let Err(message) = handler(answer) {
             self.post(UiEvent::Status(message));
         }
+        Ok(())
+    }
+
+    /// Opens a Rust-described dialog and asks the renderer to show it.
+    pub fn open_dialog(&self, model: Box<dyn crate::dialogs::DialogModel>) -> u64 {
+        let id = self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).open(model);
+        self.post(UiEvent::Dialog(id));
+        id
+    }
+
+    /// The spec of open dialog `id`.
+    pub fn dialog_spec(&self, id: u64) -> Result<crate::dialogs::DialogSpec, String> {
+        self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).spec(id)
+    }
+
+    /// OK on dialog `id`. The model runs outside the registry lock (it may
+    /// post events or open another dialog).
+    pub fn dialog_ok(&self, id: u64, text: &str, checks: &[(String, bool)]) -> Result<crate::dialogs::DialogReply, String> {
+        let mut model = self
+            .dialogs
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take(id)
+            .ok_or_else(|| format!("no open dialog {id}"))?;
+        let reply = model.ok(text, checks);
+        if reply != crate::dialogs::DialogReply::Close {
+            self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).put_back(id, model);
+        }
+        Ok(reply)
+    }
+
+    /// Cancel on dialog `id`.
+    pub fn dialog_cancel(&self, id: u64) -> Result<(), String> {
+        let model = self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take(id);
+        let mut model = model.ok_or_else(|| format!("no open dialog {id}"))?;
+        model.cancel();
         Ok(())
     }
 
@@ -390,6 +430,34 @@ mod tests {
                 _ => None,
             })
             .collect()
+    }
+
+    /// OK opens a second dialog from inside the model (re-entrancy).
+    struct Nested(UiEventQueue);
+    impl crate::dialogs::DialogModel for Nested {
+        fn spec(&self) -> crate::dialogs::DialogSpec {
+            crate::dialogs::DialogSpec { title: "n".into(), message: String::new(), combo: None, checks: vec![], status: String::new() }
+        }
+        fn ok(&mut self, _text: &str, _checks: &[(String, bool)]) -> crate::dialogs::DialogReply {
+            self.0.open_dialog(Box::new(Nested(self.0.clone())));
+            crate::dialogs::DialogReply::Close
+        }
+    }
+
+    #[test]
+    fn dialogs_open_with_an_event_and_close_on_ok() {
+        let (q, _w) = UiEventQueue::new();
+        let id = q.open_dialog(Box::new(Nested(q.clone())));
+        assert_eq!(q.drain(), vec![UiEvent::Dialog(id)]);
+        assert_eq!(q.dialog_spec(id).unwrap().title, "n");
+        assert_eq!(q.dialog_ok(id, "", &[]).unwrap(), crate::dialogs::DialogReply::Close);
+        let second = match q.drain().as_slice() {
+            [UiEvent::Dialog(n)] => *n,
+            other => panic!("{other:?}"),
+        };
+        assert!(q.dialog_spec(id).is_err());
+        q.dialog_cancel(second).unwrap();
+        assert!(q.dialog_ok(second, "", &[]).is_err());
     }
 
     #[test]

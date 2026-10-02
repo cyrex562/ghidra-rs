@@ -7,6 +7,8 @@
 pub mod demo;
 pub mod demo_tool;
 mod events;
+pub mod dialogs;
+pub mod go_to_dialog;
 pub mod icons;
 pub mod listing;
 pub mod listing_controller;
@@ -19,6 +21,6 @@ mod view_kind;
 mod view_models;
 
 pub use events::{UiEvent, UiEventQueue, WakeHandle};
-pub use session::{UiSession, ViewModelBox};
+pub use session::{ConfigState, UiSession, ViewModelBox};
 pub use view_kind::ViewKind;
 pub use view_models::{CellValue, FormField, FormFieldKind, FormModel, NodeId, StyledRun, TableModel, TextModel, TreeModel};
