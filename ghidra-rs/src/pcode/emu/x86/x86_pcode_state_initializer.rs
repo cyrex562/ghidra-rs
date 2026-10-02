@@ -323,8 +323,11 @@ mod tests {
         fn debug_with_error(&self, _originator: &str, _message: &dyn Display, _error: &dyn std::error::Error) {}
         fn info(&self, _originator: &str, _message: &dyn Display) {}
         fn info_with_error(&self, _originator: &str, _message: &dyn Display, _error: &dyn std::error::Error) {}
-        fn warn(&self, _originator: &str, message: &dyn Display) {
-            self.messages.lock().unwrap().push(message.to_string());
+        fn warn(&self, originator: &str, message: &dyn Display) {
+            // other tests may log through the global Msg logger concurrently
+            if originator == "X86PcodeStateInitializer" {
+                self.messages.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(message.to_string());
+            }
         }
         fn warn_with_error(&self, _originator: &str, _message: &dyn Display, _error: &dyn std::error::Error) {}
         fn error(&self, _originator: &str, _message: &dyn Display) {}
@@ -333,13 +336,14 @@ mod tests {
 
     #[test]
     fn initialize_thread_logs_segmentation_warning() {
+        let _serial = crate::util::msg::TEST_LOGGER_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let messages = Arc::new(Mutex::new(Vec::new()));
         Msg::set_error_logger(Box::new(RecordingLogger { messages: messages.clone() }));
 
         let initializer = X86PcodeStateInitializer::new();
         initializer.initialize_thread(&MockPcodeThread);
 
-        let logged = messages.lock().unwrap();
+        let logged = messages.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         assert_eq!(
             logged.last().map(String::as_str),
             Some("Segmentation is not emulated. Initializing FS_OFFSET and FS_OFFSET to 0.")

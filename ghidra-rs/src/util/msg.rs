@@ -149,87 +149,107 @@ impl Msg {
     }
 }
 
+/// Serialises tests that install the process-global `Msg` logger, so one
+/// test can't swap the logger out from under another running in parallel.
+#[cfg(test)]
+pub(crate) static TEST_LOGGER_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::sync::Arc;
     use std::sync::Mutex;
 
+    /// Records messages from one originator only. `Msg` has a single
+    /// process-global logger and tests run in parallel, so other tests'
+    /// messages may arrive here; filtering by originator (and tolerating a
+    /// poisoned lock) keeps each test's assertions about its own messages.
     struct TestLogger {
+        originator: &'static str,
         messages: Arc<Mutex<Vec<String>>>,
     }
 
+    impl TestLogger {
+        fn record(&self, originator: &str, message: &dyn Display) {
+            if originator == self.originator {
+                self.messages.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(message.to_string());
+            }
+        }
+    }
+
     impl ErrorLogger for TestLogger {
-        fn trace(&self, _originator: &str, message: &dyn Display) {
-            self.messages.lock().unwrap().push(message.to_string());
+        fn trace(&self, originator: &str, message: &dyn Display) {
+            self.record(originator, message);
         }
         fn trace_with_error(
             &self,
-            _originator: &str,
+            originator: &str,
             message: &dyn Display,
             _error: &dyn std::error::Error,
         ) {
-            self.messages.lock().unwrap().push(message.to_string());
+            self.record(originator, message);
         }
-        fn debug(&self, _originator: &str, message: &dyn Display) {
-            self.messages.lock().unwrap().push(message.to_string());
+        fn debug(&self, originator: &str, message: &dyn Display) {
+            self.record(originator, message);
         }
         fn debug_with_error(
             &self,
-            _originator: &str,
+            originator: &str,
             message: &dyn Display,
             _error: &dyn std::error::Error,
         ) {
-            self.messages.lock().unwrap().push(message.to_string());
+            self.record(originator, message);
         }
-        fn info(&self, _originator: &str, message: &dyn Display) {
-            self.messages.lock().unwrap().push(message.to_string());
+        fn info(&self, originator: &str, message: &dyn Display) {
+            self.record(originator, message);
         }
         fn info_with_error(
             &self,
-            _originator: &str,
+            originator: &str,
             message: &dyn Display,
             _error: &dyn std::error::Error,
         ) {
-            self.messages.lock().unwrap().push(message.to_string());
+            self.record(originator, message);
         }
-        fn warn(&self, _originator: &str, message: &dyn Display) {
-            self.messages.lock().unwrap().push(message.to_string());
+        fn warn(&self, originator: &str, message: &dyn Display) {
+            self.record(originator, message);
         }
         fn warn_with_error(
             &self,
-            _originator: &str,
+            originator: &str,
             message: &dyn Display,
             _error: &dyn std::error::Error,
         ) {
-            self.messages.lock().unwrap().push(message.to_string());
+            self.record(originator, message);
         }
-        fn error(&self, _originator: &str, message: &dyn Display) {
-            self.messages.lock().unwrap().push(message.to_string());
+        fn error(&self, originator: &str, message: &dyn Display) {
+            self.record(originator, message);
         }
         fn error_with_error(
             &self,
-            _originator: &str,
+            originator: &str,
             message: &dyn Display,
             _error: &dyn std::error::Error,
         ) {
-            self.messages.lock().unwrap().push(message.to_string());
+            self.record(originator, message);
         }
     }
 
     #[test]
     fn test_msg_logging() {
+        let _serial = TEST_LOGGER_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let messages = Arc::new(Mutex::new(Vec::new()));
         let logger = TestLogger {
+            originator: "test_msg_logging",
             messages: messages.clone(),
         };
 
         Msg::set_error_logger(Box::new(logger));
 
-        Msg::info("test", &"Hello World");
-        Msg::error("test", &"Error occurred");
+        Msg::info("test_msg_logging", &"Hello World");
+        Msg::error("test_msg_logging", &"Error occurred");
 
-        let msgs = messages.lock().unwrap();
+        let msgs = messages.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         assert_eq!(msgs.len(), 2);
         assert_eq!(msgs[0], "Hello World");
         assert_eq!(msgs[1], "Error occurred");
@@ -237,17 +257,19 @@ mod tests {
 
     #[test]
     fn test_msg_show_error() {
+        let _serial = TEST_LOGGER_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let messages = Arc::new(Mutex::new(Vec::new()));
         let logger = TestLogger {
+            originator: "test_msg_show_error",
             messages: messages.clone(),
         };
 
         Msg::set_error_logger(Box::new(logger));
         Msg::set_error_display(Box::new(ConsoleErrorDisplay));
 
-        Msg::show_error("test", "Title", &"Message");
+        Msg::show_error("test_msg_show_error", "Title", &"Message");
 
-        let msgs = messages.lock().unwrap();
+        let msgs = messages.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         assert_eq!(msgs.len(), 1);
         assert_eq!(msgs[0], "Title: Message");
     }
