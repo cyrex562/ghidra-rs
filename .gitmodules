@@ -1,0 +1,3 @@
+[submodule "ghidra-qt/third_party/ads"]
+	path = ghidra-qt/third_party/ads
+	url = https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System.git

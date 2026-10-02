@@ -3,6 +3,7 @@ members = [
     "ghidra-rs",
     "ghidra-rs-macros",
     "ghidra-ui-model",
+    "ghidra-qt",
 ]
 # ghidra-qt (added in Task 3) links Qt; keep it out of the default build so
 # `cargo build` / `cargo test` at the root never require Qt.
