@@ -11,12 +11,16 @@ the submodule, so users can modify and relink it.
 
 ## Ghidra theme files and icons (https://github.com/NationalSecurityAgency/ghidra)
 `ghidra-ui-model/resources/ghidra-theme` holds Ghidra's `*.theme.properties` files and the
-icon images they reference, copied from Ghidra 12.1.2 by `scripts/vendor_ghidra_theme.py`
-with Ghidra's module layout preserved. Ghidra itself is licensed under the Apache License 2.0
+icon images they reference, copied from a Ghidra source checkout (version recorded in
+`SOURCE_VERSION`, currently Ghidra 12.2 DEV) by `scripts/vendor_ghidra_theme.py`, with
+Ghidra's module layout preserved. Ghidra itself is licensed under the Apache License 2.0
 (`licenses/GHIDRA_LICENSE`, `licenses/GHIDRA_NOTICE`). Several icon sets carry their own
 licences, recorded per file in `ICON_LICENSES.tsv` (taken from Ghidra's
-`certification.manifest` files) with the licence texts in `licenses/`:
-GHIDRA (Apache 2.0), FAMFAMFAM Icons (CC BY 2.5, attribution: Mark James, famfamfam.com),
-FAMFAMFAM Mini Icons (public domain), Oxygen Icons (LGPL 3.0), Nuvola and Modified Nuvola
-Icons (LGPL 2.1), Crystal Clear Icons (LGPL 2.1), Tango Icons (public domain), plus single
-files under MIT and LGPL 3.0.
+`certification.manifest` files), with the full licence texts in `licenses/`:
+- GHIDRA icons: Apache 2.0.
+- FAMFAMFAM Icons: CC BY 2.5, attribution Mark James (famfamfam.com).
+- FAMFAMFAM Mini Icons, Tango Icons: public domain.
+- Oxygen Icons and one other file: LGPL 3.0 (`LGPL_3.0.html` with `GPL_3.html`, as LGPLv3 requires).
+- Nuvola, Modified Nuvola and Crystal Clear Icons: LGPL 2.1 (`LGPL_2.1.txt`). The sources of the
+  Modified Nuvola icons are in `GPL/Icons/ModifiedNuvola`.
+- One file under MIT.

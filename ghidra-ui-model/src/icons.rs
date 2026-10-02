@@ -94,6 +94,52 @@ mod theme_tests {
         assert!(bad.is_empty(), "{bad:?}");
     }
 
+    /// Every licence named in ICON_LICENSES.tsv ships the texts it requires:
+    /// LGPL 2.1 the full LGPL 2.1, LGPL 3.0 the LGPL 3.0 and GPL 3 texts,
+    /// modified LGPL icons their sources, CC BY 2.5 the licence + attribution.
+    #[test]
+    fn vendored_icons_carry_the_licence_texts_they_require() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/ghidra-theme");
+        let tsv = std::fs::read_to_string(root.join("ICON_LICENSES.tsv")).unwrap();
+        let lic = root.join("licenses");
+        let need = |f: &str| assert!(lic.join(f).is_file(), "missing licences/{f}");
+        let mut seen = std::collections::BTreeSet::new();
+        for line in tsv.lines().skip(1) {
+            let cols: Vec<&str> = line.split('\t').collect();
+            assert_eq!(cols.len(), 3, "{line}");
+            assert!(root.join(cols[0]).is_file(), "{}", cols[0]);
+            assert!(!cols[2].contains('|') && !cols[2].contains("END"), "manifest junk in note: {line}");
+            seen.insert(cols[1].to_owned());
+        }
+        for l in &seen {
+            match l.as_str() {
+                "GHIDRA" => {
+                    need("GHIDRA_LICENSE");
+                    need("GHIDRA_NOTICE");
+                }
+                "FAMFAMFAM Icons - CC 2.5" => {
+                    need("FAMFAMFAM_Icons_-_CC_2.5.txt");
+                    need("Creative_Commons_Attribution_2.5.html");
+                }
+                l if l.ends_with("LGPL 2.1") => need("LGPL_2.1.txt"),
+                l if l.ends_with("LGPL 3.0") => {
+                    need("LGPL_3.0.html");
+                    need("GPL_3.html");
+                }
+                "MIT" => need("MIT.txt"),
+                l if l.ends_with("Public Domain") => need(&format!("{}.txt", l.replace(' ', "_"))),
+                other => panic!("unhandled licence {other}"),
+            }
+        }
+        if seen.contains("Modified Nuvola Icons - LGPL 2.1") {
+            let src = root.join("GPL/Icons/ModifiedNuvola");
+            let svgs = std::fs::read_dir(&src).map(|d| d.filter(|e| e.as_ref().is_ok_and(|e| e.path().extension().is_some_and(|x| x == "svg"))).count()).unwrap_or(0);
+            assert!(svgs >= 27, "modified LGPL icons need their sources: {svgs} svgs in {}", src.display());
+        }
+        let version = std::fs::read_to_string(root.join("SOURCE_VERSION")).unwrap();
+        assert!(version.starts_with("Ghidra "), "{version}");
+    }
+
     #[test]
     fn the_demo_resolves_ghidra_navigation_icons() {
         let Some(root) = super::default_theme_root() else { return };

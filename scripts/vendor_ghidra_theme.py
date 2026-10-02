@@ -24,7 +24,8 @@ ghidra = os.path.join(orig, "Ghidra")
 IMAGE = re.compile(r"[\w.+/-]+\.(?:png|gif|svg|jpg|ico)")
 
 props = sorted(glob.glob(os.path.join(ghidra, "**/data/*.theme.properties"), recursive=True))
-roots = sorted(glob.glob(os.path.join(ghidra, "**/src/main/resources"), recursive=True))
+# component-wise, as Rust's PathBuf ordering (Foo/ before Foo-Bar/)
+roots = sorted(glob.glob(os.path.join(ghidra, "**/src/main/resources"), recursive=True), key=lambda p: p.split(os.sep))
 
 
 def referenced_images(path):
@@ -61,7 +62,9 @@ def manifest_licenses(module):
         for line in open(m, encoding="utf-8", errors="replace"):
             parts = line.rstrip("\n").split("||")
             if len(parts) >= 2 and parts[0]:
-                out[parts[0]] = (parts[1], parts[2].strip("|") if len(parts) > 2 else "")
+                # path||LICENSE|||note|END|  → keep only the note text
+                note = " ".join(x for x in "|".join(parts[2:]).split("|") if x and x != "END")
+                out[parts[0]] = (parts[1], note)
     return out
 
 
@@ -99,15 +102,40 @@ os.makedirs(lic_dir)
 for name in ("LICENSE", "NOTICE"):
     shutil.copyfile(os.path.join(orig, name), os.path.join(lic_dir, f"GHIDRA_{name}"))
 unmatched = []
+lic_dirs = [os.path.join(orig, "licenses"), os.path.join(orig, "GPL", "licenses")]
+
+
+def lic_files(stem):
+    return [p for d in lic_dirs for p in glob.glob(os.path.join(d, stem + ".*"))]
+
+
 for lic in sorted(licences - {"GHIDRA"}):
-    stem = lic.replace(" ", "_")
-    found = [p for p in glob.glob(os.path.join(orig, "licenses", stem + ".*"))]
+    found = lic_files(lic.replace(" ", "_"))
+    # the icon-set notices only point at the licence; ship the full texts
     if lic.startswith("FAMFAMFAM Icons - CC"):
-        found += glob.glob(os.path.join(orig, "licenses", "Creative_Commons_Attribution_2.5.*"))
+        found += lic_files("Creative_Commons_Attribution_2.5")
+    if lic.endswith("LGPL 2.1"):
+        found += lic_files("LGPL_2.1")
+    if lic.endswith("LGPL 3.0"):
+        found += lic_files("LGPL_3.0") + lic_files("GPL_3")  # LGPLv3 §4(b): both texts
     for p in found:
         shutil.copyfile(p, os.path.join(lic_dir, os.path.basename(p)))
     if not found:
         unmatched.append(lic)
+
+# Modified LGPL icons ship with their sources (their notice points here).
+if "Modified Nuvola Icons - LGPL 2.1" in licences:
+    src = os.path.join(orig, "GPL", "Icons", "ModifiedNuvola")
+    out = os.path.join(dest, "GPL", "Icons", "ModifiedNuvola")
+    shutil.copytree(src, out)
+    shutil.copyfile(os.path.join(orig, "GPL", "Icons", "certification.manifest"), os.path.join(dest, "GPL", "Icons", "certification.manifest"))
+
+# Which Ghidra source the files came from.
+props_file = dict(
+    line.strip().split("=", 1) for line in open(os.path.join(ghidra, "application.properties")) if "=" in line and not line.startswith("#")
+)
+with open(os.path.join(dest, "SOURCE_VERSION"), "w") as f:
+    f.write(f"Ghidra {props_file.get('application.version', '?')} {props_file.get('application.release.name', '')}".strip() + "\n")
 
 print(f"{len(props)} theme files, {len(rows)} images, {len(missing)} unresolved {missing}")
 print("licences:", sorted(licences), "unmatched:", unmatched)
