@@ -118,6 +118,17 @@ void MainWindow::viewChanged(int64_t pid) {
     }
 }
 
+void MainWindow::showProvider(int64_t pid) {
+    for (auto it = m_providers.cbegin(); it != m_providers.cend(); ++it) {
+        if (it.value() != pid) continue;
+        ads::CDockWidget* dock = it.key();
+        if (dock->isClosed() && !dock->dockAreaWidget()) placeDock(dock, m_positions.value(dock));
+        dock->toggleView(true);
+        dock->setAsCurrentTab();
+        dock->raise();
+    }
+}
+
 bool MainWindow::focusDock(const QString& title) {
     ads::CDockWidget* dock = dockByTitle(title);
     if (!dock || !dock->widget()) return false;

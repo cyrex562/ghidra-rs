@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use ghidra_rs::docking::{ComponentProvider, DockingTool, ProviderId};
 
-use crate::events::{UiEventQueue, WakeHandle};
+use crate::events::{UiEvent, UiEventQueue, WakeHandle};
 use crate::view_models::{FormModel, TableModel, TextModel, TreeModel};
 
 /// The model behind one provider's generic view.
@@ -138,6 +138,14 @@ impl UiSession {
         self.central
     }
 
+    /// Applies provider show requests made by the action just performed
+    /// (Window menu entries) and tells the renderer about each.
+    pub fn apply_tool_requests(&mut self) {
+        for id in self.tool.apply_requests() {
+            self.events.post(UiEvent::ProviderShown(id.0));
+        }
+    }
+
     /// Installs the theme icon resolver.
     pub fn set_icon_resolver(&mut self, resolver: Box<dyn crate::icons::IconResolver>) {
         self.icons = Some(resolver);
@@ -198,5 +206,30 @@ mod tests {
     fn version_is_the_crate_version() {
         assert_eq!(UiSession::default().version(), env!("CARGO_PKG_VERSION"));
         assert_eq!(UiSession::default().app_name(), "Ghidra-rs");
+    }
+
+    #[test]
+    fn a_window_menu_entry_shows_a_hidden_provider_and_tells_the_renderer() {
+        use ghidra_rs::docking::show_component_action::DOCKING_WINDOWS_OWNER;
+        let mut s = crate::demo_tool::build_demo_session();
+        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
+        s.tool_mut().show_provider(symbols, false);
+        let entry = s
+            .tool()
+            .actions()
+            .global_actions()
+            .find(|&id| {
+                s.tool().actions().get(id).is_some_and(|a| {
+                    a.state().owner() == DOCKING_WINDOWS_OWNER
+                        && a.state().menu_bar_data().is_some_and(|m| m.menu_path().last().map(String::as_str) == Some("Symbols"))
+                })
+            })
+            .expect("Window > Symbols");
+        let ctx = ghidra_rs::docking::DefaultActionContext::new();
+        s.tool_mut().actions_mut().get_mut(entry).unwrap().action_performed(&ctx);
+        s.events().drain();
+        s.apply_tool_requests();
+        assert!(s.tool().provider(symbols).unwrap().state().is_visible());
+        assert_eq!(s.events().drain(), vec![crate::events::UiEvent::ProviderShown(symbols.0)]);
     }
 }

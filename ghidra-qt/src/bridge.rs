@@ -234,7 +234,8 @@ pub mod ffi {
     /// A drained UI event.
     pub struct EventInfo {
         /// 0 status, 1 task progress, 2 task done, 3 actions changed, 4 domain changed, 5 other,
-        /// 6 prompt (task = prompt id, text = title), 7 view changed (task = provider id)
+        /// 6 prompt (task = prompt id, text = title), 7 view changed (task = provider id),
+        /// 8 provider shown (task = provider id)
         pub kind: u8,
         pub text: String,
         pub task: u64,
@@ -638,6 +639,7 @@ fn invoke_action(action: u64, focused_pid: i64) -> Result<(), String> {
             return Err(format!("action {} is not enabled here", a.full_name()));
         }
         a.action_performed(ctx.as_ref());
+        s.apply_tool_requests();
         Ok(())
     })
 }
@@ -653,7 +655,9 @@ fn dispatch_key(qt_key: i32, qt_modifiers: u32, focused_pid: i64) -> Result<KeyR
         let Some(ks) = qt_to_key_stroke(qt_key, qt_modifiers) else {
             return Ok(KeyResult { code: 3, candidates: Vec::new() });
         };
-        Ok(match s.tool_mut().dispatch_key(ks, focused(focused_pid)) {
+        let result = s.tool_mut().dispatch_key(ks, focused(focused_pid));
+        s.apply_tool_requests();
+        Ok(match result {
             DispatchResult::Performed(_) => KeyResult { code: 0, candidates: Vec::new() },
             DispatchResult::Disabled(_) => KeyResult { code: 1, candidates: Vec::new() },
             DispatchResult::Ambiguous(ids) => KeyResult { code: 2, candidates: ids.into_iter().map(|i| i.0).collect() },
@@ -754,6 +758,10 @@ fn drain_events() -> Result<Vec<EventInfo>, String> {
                         i.kind = 7;
                         i.task = pid;
                     }
+                    UiEvent::ProviderShown(pid) => {
+                        i.kind = 8;
+                        i.task = pid;
+                    }
                     _ => {}
                 }
                 i
@@ -824,6 +832,22 @@ mod tests {
     }
 
     #[test]
+    fn window_menu_entries_reshow_hidden_providers() {
+        let decompiler = pid("Decompiler");
+        with("test", |s| {
+            s.tool_mut().show_provider(ProviderId(decompiler), false);
+            Ok(())
+        })
+        .unwrap();
+        let menu = menu_bar(-1).unwrap();
+        let entry = menu.iter().find(|m| m.depth == 1 && m.text == "Decompiler").expect("Window > Decompiler");
+        drain_events().unwrap();
+        invoke_action(entry.action, -1).unwrap();
+        assert!(provider_info(decompiler).unwrap().visible);
+        assert!(drain_events().unwrap().iter().any(|e| e.kind == 8 && e.task == decompiler));
+    }
+
+    #[test]
     fn the_listing_is_the_central_provider() {
         assert!(provider_info(pid("Listing")).unwrap().central);
         assert!(!provider_info(pid("Symbols")).unwrap().central);
@@ -866,7 +890,7 @@ mod tests {
         assert_eq!(r.code, 0);
         let menu = menu_bar(-1).unwrap();
         let tops: Vec<&str> = menu.iter().filter(|m| m.depth == 0).map(|m| m.text.as_str()).collect();
-        assert_eq!(tops, vec!["File", "Edit", "Navigation", "Search"]);
+        assert_eq!(tops, vec!["File", "Edit", "Navigation", "Search", "Window"]);
         let copy = menu.iter().find(|m| m.text == "Copy").unwrap();
         assert_eq!(copy.key_text, "Ctrl-C");
         assert!(invoke_action(9_999_999, -1).is_err());

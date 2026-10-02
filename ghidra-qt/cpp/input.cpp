@@ -159,6 +159,9 @@ void EventPump::pump() {
             case 7:
                 m_window->viewChanged(static_cast<int64_t>(e.task));
                 break;
+            case 8:
+                m_window->showProvider(static_cast<int64_t>(e.task));
+                break;
             default:
                 break;
         }

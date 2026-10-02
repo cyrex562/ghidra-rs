@@ -9,6 +9,7 @@ use crate::docking::action_context::ActionContext;
 use crate::docking::actions::ToolActions;
 use crate::docking::dock_layout::{DockLayout, LayoutEntry};
 use crate::docking::menu::MenuGroupMap;
+use crate::docking::show_component_action::{ShowComponentAction, ToolRequests, MENU_WINDOW};
 use crate::docking::{ComponentProvider, DefaultActionContext, ProviderId};
 use crate::framework::options::SaveState;
 use crate::util::awt::KeyStroke;
@@ -22,6 +23,8 @@ pub struct DockingTool {
     layout: DockLayout,
     menu_groups: MenuGroupMap,
     default_contexts: HashMap<TypeId, DefaultContextFactory>,
+    requests: ToolRequests,
+    window_actions: Vec<ActionId>,
 }
 
 /// Builds the tool's default context for one context type
@@ -39,6 +42,8 @@ impl DockingTool {
             layout: DockLayout::default(),
             menu_groups: MenuGroupMap::default(),
             default_contexts: HashMap::new(),
+            requests: ToolRequests::default(),
+            window_actions: Vec::new(),
         }
     }
 
@@ -68,6 +73,7 @@ impl DockingTool {
         };
         provider.state_mut().set_visible(visible);
         self.providers.insert(id, provider);
+        self.rebuild_window_menu();
         id
     }
 
@@ -75,7 +81,9 @@ impl DockingTool {
     /// re-adding it restores its placement (Java placeholders behave alike).
     pub fn remove_provider(&mut self, id: ProviderId) -> Option<Box<dyn ComponentProvider>> {
         self.actions.remove_provider_actions(id);
-        self.providers.remove(&id)
+        let removed = self.providers.remove(&id);
+        self.rebuild_window_menu();
+        removed
     }
 
     /// Shows or hides a provider.
@@ -184,6 +192,66 @@ impl DockingTool {
         KeyBindingsManager::dispatch(&mut self.actions, ks, focused, &ctx_for, &default_ctx)
     }
 
+    /// Recreates the Window menu: one [`ShowComponentAction`] per provider,
+    /// sub-menus for window menu groups with two or more providers (single
+    /// ones are promoted), plus "Show All" per sub-menu
+    /// (Java `DockingWindowManager.updateComponentMenus`).
+    pub fn rebuild_window_menu(&mut self) {
+        for id in self.window_actions.drain(..) {
+            self.actions.remove(id);
+        }
+        let mut by_group: BTreeMap<Option<String>, Vec<ProviderId>> = BTreeMap::new();
+        for (id, p) in &self.providers {
+            by_group.entry(p.state().window_menu_group().map(str::to_owned)).or_default().push(*id);
+        }
+        // promoteSingleMenuGroups: a sub-menu of one is just a top-level entry
+        let singles: Vec<Option<String>> =
+            by_group.iter().filter(|(g, ids)| g.is_some() && ids.len() == 1).map(|(g, _)| g.clone()).collect();
+        for g in singles {
+            let ids = by_group.remove(&g).unwrap_or_default();
+            by_group.entry(None).or_default().extend(ids);
+        }
+        let mut entries = Vec::new();
+        for (group, ids) in &by_group {
+            for id in ids {
+                let st = self.providers[id].state();
+                let full_title = match st.sub_title().filter(|s| !s.trim().is_empty()) {
+                    Some(sub) => format!("{} - {sub}", st.title()),
+                    None => st.title().to_owned(),
+                };
+                entries.push(ShowComponentAction::for_provider(
+                    st.name(),
+                    st.title(),
+                    &full_title,
+                    group.as_deref(),
+                    *id,
+                    self.requests.clone(),
+                ));
+            }
+            if let Some(g) = group {
+                entries.push(ShowComponentAction::show_all(g, ids.clone(), self.requests.clone()));
+                self.menu_groups.set_menu_group(&[MENU_WINDOW, g], Some("Permanent"), None);
+            }
+        }
+        for e in entries {
+            let id = self.actions.add_global(Box::new(e));
+            self.window_actions.push(id);
+        }
+    }
+
+    /// Applies show requests made by actions since the last call; returns the
+    /// providers that were shown, in request order.
+    pub fn apply_requests(&mut self) -> Vec<ProviderId> {
+        let mut shown = Vec::new();
+        for id in self.requests.take() {
+            if self.providers.contains_key(&id) {
+                self.show_provider(id, true);
+                shown.push(id);
+            }
+        }
+        shown
+    }
+
     /// Saves the layout; transient providers are omitted.
     pub fn save_layout(&self) -> SaveState {
         let mut layout = self.layout.clone();
@@ -232,6 +300,54 @@ impl DockingTool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn window_menu(t: &DockingTool) -> Vec<String> {
+        let mut paths: Vec<String> = t
+            .actions()
+            .global_actions()
+            .filter_map(|id| t.actions().get(id))
+            .filter(|a| a.state().owner() == crate::docking::show_component_action::DOCKING_WINDOWS_OWNER)
+            .filter_map(|a| a.state().menu_bar_data().map(|m| m.menu_path()[1..].join(" > ")))
+            .collect();
+        paths.sort();
+        paths
+    }
+
+    #[test]
+    fn the_window_menu_lists_providers_with_sub_menus_for_groups() {
+        let mut t = DockingTool::new("T");
+        let mut grouped = |name: &str, group: Option<&str>| {
+            let mut b = p(name, WindowPosition::Left);
+            b.state_mut().set_window_menu_group(group.map(str::to_owned));
+            b
+        };
+        let (a, b, c, d) = (grouped("A", Some("G")), grouped("B", Some("G")), grouped("C", None), grouped("D", Some("H")));
+        for x in [a, b, c, d] {
+            t.add_provider(x, true);
+        }
+        assert_eq!(window_menu(&t), vec!["C", "D", "G > A", "G > B", "G > Show All"]);
+        let c_id = t.find_provider("Owner", "C").unwrap();
+        t.remove_provider(c_id);
+        assert_eq!(window_menu(&t), vec!["D", "G > A", "G > B", "G > Show All"]);
+    }
+
+    #[test]
+    fn a_window_entry_shows_its_hidden_provider() {
+        let mut t = DockingTool::new("T");
+        let a = t.add_provider(p("A", WindowPosition::Left), false);
+        assert!(!t.provider(a).unwrap().state().is_visible());
+        let entry = t
+            .actions()
+            .global_actions()
+            .find(|&id| t.actions().get(id).is_some_and(|x| x.state().owner() == crate::docking::show_component_action::DOCKING_WINDOWS_OWNER))
+            .unwrap();
+        let ctx = DefaultActionContext::new();
+        t.actions_mut().get_mut(entry).unwrap().action_performed(&ctx);
+        assert_eq!(t.apply_requests(), vec![a]);
+        assert!(t.provider(a).unwrap().state().is_visible());
+        assert!(t.layout().entry("Owner.A").unwrap().visible);
+        assert!(t.apply_requests().is_empty());
+    }
     use crate::docking::action::tests_support::noop_action;
     use crate::docking::{ComponentProviderState, ProviderViewKind, WindowPosition};
 

@@ -57,6 +57,8 @@ pub enum UiEvent {
     },
     /// A provider's view state changed outside a renderer call (repaint it).
     ViewChanged(u64),
+    /// A hidden provider was shown (Window menu): dock and raise it.
+    ProviderShown(u64),
     /// The current location changed.
     LocationChanged {
         /// Domain object id.

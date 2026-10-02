@@ -168,7 +168,7 @@ fn menu_bar_is_built_in_ghidra_order() {
     assert!(out.status.success());
     let text = String::from_utf8_lossy(&out.stdout).to_string();
     let tops: Vec<&str> = text.lines().filter(|l| !l.starts_with(' ')).collect();
-    assert_eq!(tops, vec!["File", "Edit", "Navigation", "Search"]);
+    assert_eq!(tops, vec!["File", "Edit", "Navigation", "Search", "Window"]);
     assert!(text.lines().any(|l| l == "  Copy\tCtrl-C"), "{text}");
     assert!(text.lines().any(|l| l == "  Find...\tCtrl-F"), "{text}");
 }

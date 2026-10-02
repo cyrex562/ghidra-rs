@@ -16,6 +16,7 @@ pub mod options;
 pub mod provider_id;
 pub mod seam_stubs;
 pub mod settings;
+pub mod show_component_action;
 pub mod spy;
 pub mod theme;
 pub mod util;
