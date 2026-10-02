@@ -2759,90 +2759,6 @@ pub mod dyld_cache_utils {
     }
 }
 
-/// Placeholder for `ghidra.app.util.MemoryBlockUtils`, referenced by
-/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
-/// ported. A different, narrower placeholder for this same Java class already exists as a trait
-/// at [`crate::format::seam_stubs::MemoryBlockUtils`] (added for
-/// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups)'s
-/// `addExternalBlock` call, before this crate settled on modeling final-statics classes as free
-/// functions rather than traits -- see [`option_utils`]); this module is scoped to the one method
-/// `DyldCacheLoader` needs instead of growing that trait, to avoid disturbing its existing caller.
-pub mod memory_block_utils {
-    use super::MessageLog;
-    use crate::filesystem::ghidra::g_binary_reader::GByteStore;
-    use crate::program::database::mem::file_bytes::FileBytes;
-    use crate::program::model::address::{Address, AddressOverflowException};
-    use crate::program::model::listing::Program;
-    use crate::program::model::mem::MemoryBlock;
-    use crate::util::task::TaskMonitor;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-    use std::sync::Arc;
-
-    /// Port of `MemoryBlockUtils.createFileBytes(Program, GByteStore, TaskMonitor)`. Not yet
-    /// implemented (see module docs); the real body reads every byte out of `provider` and hands
-    /// them to the program's file-bytes database, which needs far more infrastructure than this
-    /// placeholder models.
-    pub fn create_file_bytes(
-        program: &dyn Program,
-        provider: &Rc<RefCell<dyn GByteStore>>,
-        monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Arc<dyn FileBytes>> {
-        let _ = (program, provider, monitor);
-        unimplemented!("memory_block_utils::create_file_bytes placeholder not overridden")
-    }
-
-    /// Port of `MemoryBlockUtils.createInitializedBlock(Program, boolean isOverlay, String name,
-    /// Address start, FileBytes fileBytes, long offset, long length, String comment, String
-    /// source, boolean r, boolean w, boolean x, MessageLog log)`. `None` stands in for the `null`
-    /// Java returns when the block could not be created (it logs and swallows the reason);
-    /// `AddressOverflowException` is the one failure it propagates. Not yet implemented: the real
-    /// body creates a database-backed block over a file-bytes range.
-    #[allow(clippy::too_many_arguments)]
-    pub fn create_initialized_block(
-        program: &dyn Program,
-        is_overlay: bool,
-        name: &str,
-        start: &Address,
-        file_bytes: &Arc<dyn FileBytes>,
-        offset: i64,
-        length: i64,
-        comment: Option<&str>,
-        source: Option<&str>,
-        r: bool,
-        w: bool,
-        x: bool,
-        log: &MessageLog,
-    ) -> Result<Option<Box<dyn MemoryBlock>>, AddressOverflowException> {
-        let _ = (program, is_overlay, name, start, file_bytes, offset, length);
-        let _ = (comment, source, r, w, x, log);
-        unimplemented!("memory_block_utils::create_initialized_block placeholder not overridden")
-    }
-
-    /// Port of `MemoryBlockUtils.createUninitializedBlock(Program, boolean isOverlay, String name,
-    /// Address start, long length, String comment, String source, boolean r, boolean w, boolean x,
-    /// MessageLog log)`. `None` stands in for the `null` Java returns when the block could not be
-    /// created. Not yet implemented, as for [`create_initialized_block`].
-    #[allow(clippy::too_many_arguments)]
-    pub fn create_uninitialized_block(
-        program: &dyn Program,
-        is_overlay: bool,
-        name: &str,
-        start: &Address,
-        length: i64,
-        comment: Option<&str>,
-        source: Option<&str>,
-        r: bool,
-        w: bool,
-        x: bool,
-        log: &MessageLog,
-    ) -> Option<Box<dyn MemoryBlock>> {
-        let _ = (program, is_overlay, name, start, length);
-        let _ = (comment, source, r, w, x, log);
-        unimplemented!("memory_block_utils::create_uninitialized_block placeholder not overridden")
-    }
-}
-
 /// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils.DyldCacheImageRecord`, the record
 /// pairing a cached image with the index of the split-cache file it lives in. Referenced by
 /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
@@ -3014,7 +2930,7 @@ impl LibObjcDylib {
 /// Rust has no inheritance, so the inherited members that builder calls up into become free
 /// functions here taking the state Java reaches through `this` (the program, its default address
 /// space, the log and the monitor) explicitly. That also matches this crate's convention for
-/// classes reached only through statics (see [`option_utils`], [`memory_block_utils`]).
+/// classes reached only through statics (see [`option_utils`]).
 ///
 /// None of these are implemented yet: each is a substantial subsystem of its own (memory-block
 /// creation, symbol/export processing, load-command mark-up), and `MachoProgramBuilder` is over
@@ -3479,7 +3395,7 @@ pub mod ghidra_program_utilities {
 
 /// The two `AutoAnalysisManager` statics
 /// [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) calls. Java hangs them off the
-/// class itself; Rust has no static trait methods, so -- as with [`memory_block_utils`] -- they
+/// class itself; Rust has no static trait methods, so -- as with [`option_utils`] -- they
 /// become free functions in a module named for the Java class.
 pub mod auto_analysis_manager {
     use super::AutoAnalysisManager;

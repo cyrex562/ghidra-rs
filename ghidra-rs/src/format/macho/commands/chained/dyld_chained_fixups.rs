@@ -12,7 +12,8 @@ use crate::format::macho::dyld::dyld_chained_ptr::DyldChainType;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::format::macho::commands::chained::dyld_chained_imports::DyldChainedImports;
-use crate::format::seam_stubs::{MachoProgramBuilder, MemoryBlockUtils};
+use crate::app::util::memory_block_utils;
+use crate::format::seam_stubs::MachoProgramBuilder;
 use crate::program::model::address::Address;
 use crate::program::model::listing::library;
 use crate::program::model::listing::Program;
@@ -180,7 +181,6 @@ pub fn get_chained_fixups(
 /// * `library_paths` - library paths
 /// * `log` - the log
 /// * `monitor` - a cancellable monitor
-/// * `memory_block_utils` - seam for the not-yet-ported `MemoryBlockUtils`
 /// * `macho_program_builder` - seam for the not-yet-ported `MachoProgramBuilder`
 ///
 /// Returns the list of fixed-up addresses.
@@ -192,7 +192,6 @@ pub fn fixup_chained_pointers(
     library_paths: &[String],
     log: &MessageLog,
     monitor: &dyn TaskMonitor,
-    memory_block_utils: &dyn MemoryBlockUtils,
     macho_program_builder: &dyn MachoProgramBuilder,
 ) -> Result<Vec<Address>, CancelledException> {
     if fixups.is_empty() {
@@ -207,7 +206,7 @@ pub fn fixup_chained_pointers(
         .sum();
     let mut ext_addr: Option<Address> = None;
     if external_size > 0 {
-        match memory_block_utils.add_external_block(program, external_size, log) {
+        match memory_block_utils::add_external_block(program, external_size, log) {
             Ok(addr) => ext_addr = Some(addr),
             Err(e) => log.append_msg(&format!(
                 "Failed to create space in EXTERNAL block for chained fixups: {e}"

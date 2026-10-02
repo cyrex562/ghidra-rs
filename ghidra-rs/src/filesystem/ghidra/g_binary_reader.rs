@@ -41,6 +41,66 @@ pub trait GByteStore {
     }
 }
 
+/// Presents a legacy [`GByteStore`] as the real
+/// [`ByteProvider`](crate::app::util::bin::byte_provider::ByteProvider), so code still reading
+/// through [`GBinaryReader`] can hand its bytes to APIs ported against `ByteProvider` (e.g.
+/// `MemoryBlockUtils.createFileBytes`).
+///
+/// No Java counterpart: Java has one `ByteProvider`. This is the migration bridge the 2026-09-26
+/// decision ("migrate ad-hoc readers onto the real ByteProvider/BinaryReader") calls for, until
+/// the `GBinaryReader` users are moved over. The name is the [`Fsrl`]'s, else the backing file's.
+pub struct GByteStoreByteProvider {
+    store: Rc<RefCell<dyn GByteStore>>,
+}
+
+impl GByteStoreByteProvider {
+    pub fn new(store: Rc<RefCell<dyn GByteStore>>) -> Self {
+        GByteStoreByteProvider { store }
+    }
+}
+
+impl crate::app::util::bin::byte_provider::ByteProvider for GByteStoreByteProvider {
+    fn get_file(&self) -> Option<PathBuf> {
+        self.store.borrow().get_file()
+    }
+
+    fn get_name(&self) -> Option<String> {
+        let store = self.store.borrow();
+        if let Some(name) = store.get_fsrl().and_then(|fsrl| fsrl.name()) {
+            return Some(name);
+        }
+        store
+            .get_file()
+            .and_then(|f| f.file_name().map(|n| n.to_string_lossy().into_owned()))
+    }
+
+    fn get_absolute_path(&self) -> Option<String> {
+        self.store.borrow().get_file().map(|f| f.display().to_string())
+    }
+
+    fn length(&self) -> u64 {
+        self.store.borrow_mut().length().unwrap_or(0)
+    }
+
+    fn is_valid_index(&self, index: u64) -> bool {
+        self.store.borrow_mut().is_valid_index(index)
+    }
+
+    fn close(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn read_byte(&self, index: u64) -> io::Result<u8> {
+        self.store.borrow_mut().read_byte(index)
+    }
+
+    fn read_bytes(&self, index: u64, length: u64) -> io::Result<Vec<u8>> {
+        let length = usize::try_from(length)
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "length too large"))?;
+        self.store.borrow_mut().read_bytes(index, length)
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Endian {
     Little,
@@ -1011,5 +1071,20 @@ mod tests {
         let r = reader(vec![42], false);
         let prov = r.get_byte_provider();
         assert_eq!(prov.borrow_mut().read_byte(0).unwrap(), 42);
+    }
+
+    #[test]
+    fn gbytestore_bridge_reads_through_as_a_byte_provider() {
+        use crate::app::util::bin::byte_provider::ByteProvider;
+        let store: Rc<RefCell<dyn GByteStore>> = Rc::new(RefCell::new(VecProvider(vec![1, 2, 3, 4])));
+        let provider = GByteStoreByteProvider::new(store);
+        assert_eq!(provider.length(), 4);
+        assert!(provider.is_valid_index(3) && !provider.is_valid_index(4));
+        assert_eq!(provider.read_byte(2).unwrap(), 3);
+        assert_eq!(provider.read_bytes(1, 3).unwrap(), vec![2, 3, 4]);
+        let mut all = Vec::new();
+        std::io::Read::read_to_end(&mut provider.get_input_stream(0).unwrap(), &mut all).unwrap();
+        assert_eq!(all, vec![1, 2, 3, 4]);
+        assert_eq!(provider.get_name(), None);
     }
 }

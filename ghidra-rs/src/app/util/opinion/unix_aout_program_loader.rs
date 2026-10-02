@@ -10,23 +10,17 @@
 //!   `UnixAoutSymbolTable`, `UnixAoutRelocationTable`) and `UnixAoutRelocation` are not ported yet
 //!   -- this loader is the reason they come up at all -- so they are modeled as placeholders in
 //!   [`format::seam_stubs`](crate::format::seam_stubs), along with the table constructors
-//!   [`build_tables`](UnixAoutProgramLoader::build_tables) calls. `MemoryBlockUtils`' two
-//!   block-creating statics are likewise placeholders in
-//!   [`app::seam_stubs::memory_block_utils`](crate::app::seam_stubs::memory_block_utils). All of
-//!   those placeholders are `unimplemented!()`, so the block-creating and markup phases panic if
-//!   actually reached today; the loader's own logic (table construction order, `.bss` sizing,
-//!   address arithmetic, relocation evaluation, symbol/alias handling) is ported in full.
+//!   [`build_tables`](UnixAoutProgramLoader::build_tables) calls. Blocks are created through
+//!   the real [`memory_block_utils`]; the header's `GBinaryReader` bytes reach it through the
+//!   [`GByteStoreByteProvider`] bridge.
 //! * `UnixAoutSymbol` is already ported, so its real type is used
 //!   ([`crate::format::unixaout::unix_aout_symbol`]). Its `name` is `Option<String>` there, where
 //!   Java's is a nullable `String`; `createFunction` takes the same nullable name through
 //!   unchanged, while `createLabel` -- whose ported signature takes `&str` -- receives `""` for an
 //!   unnamed symbol, leaving the symbol table to reject it exactly as Java's does for `null`.
 //! * `loadSections` inlines `byteProvider.getInputStream(0)` + `MonitoredInputStream` +
-//!   `Memory.createFileBytes`; the ported [`Memory`] trait has no `createFileBytes`, so this port
-//!   calls [`memory_block_utils::create_file_bytes`], which is the same three steps packaged as
-//!   the `MemoryBlockUtils` static Java offers for exactly this purpose.
-//! * `AddressSpace.OTHER_SPACE` is a Java static on an otherwise-ported class; it is reproduced
-//!   here as the private [`other_space`] singleton (see its docs).
+//!   `Memory.createFileBytes`; this port calls [`memory_block_utils::create_file_bytes`], which
+//!   is the same three steps packaged as the `MemoryBlockUtils` static.
 //! * `DataConverter.getInstance(boolean)` is likewise unported; the two ported unit structs
 //!   [`BigEndianDataConverter`]/[`LittleEndianDataConverter`] stand in for its two singletons.
 //! * `applyRelocations` reads and writes the relocated bytes through [`Memory`] rather than
@@ -53,7 +47,9 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::app::seam_stubs::{memory_block_utils};
+use crate::app::util::memory_block_utils;
+use crate::filesystem::ghidra::g_binary_reader::GByteStoreByteProvider;
+use crate::program::model::mem::memory::CreateBlockError;
 use crate::format::seam_stubs::{
     unix_aout_tables, UnixAoutHeader, UnixAoutRelocation, UnixAoutRelocationTable,
     UnixAoutStringTable, UnixAoutSymbolTable,
@@ -62,7 +58,6 @@ use crate::format::unixaout::unix_aout_symbol::{SymbolKind, SymbolType, UnixAout
 use crate::program::database::mem::file_bytes::FileBytes;
 use crate::program::model::address::{
     Address, AddressOutOfBoundsException, AddressOverflowException, AddressSet, AddressSpace,
-    AddressSpaceType,
 };
 use crate::program::model::listing::listing::CreateFunctionError;
 use crate::program::model::listing::Program;
@@ -146,6 +141,9 @@ pub enum LoadAoutError {
     /// A `Program` component Java reaches for without a null check was absent.
     #[error("program has no {0}")]
     MissingProgramComponent(&'static str),
+    /// A block/file-bytes creation failure `MemoryBlockUtils` lets escape.
+    #[error(transparent)]
+    CreateBlock(#[from] CreateBlockError),
 }
 
 impl From<CreateFunctionError> for LoadAoutError {
@@ -330,7 +328,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
         self.monitor.set_message("Loading FileBytes...");
 
         let provider = self.header.get_reader().get_byte_provider();
-        let file_bytes = memory_block_utils::create_file_bytes(self.program, &provider, self.monitor)?;
+        let file_bytes = memory_block_utils::create_file_bytes(&*self.program, &GByteStoreByteProvider::new(provider), self.monitor)?;
         self.file_bytes = Some(Arc::clone(&file_bytes));
 
         let default_address_space = self
@@ -345,7 +343,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
 
         if header.get_text_offset() != 0 || header.get_text_size() < 32 {
             memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 true,
                 AOUT_HEADER_BLOCK_NAME,
                 &other_address,
@@ -365,7 +363,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
                 default_address_space.checked_address(base_addr + header.get_text_addr())?;
             next_free_address = address.add(header.get_text_size())?;
             memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 false,
                 DOT_TEXT,
                 &address,
@@ -385,7 +383,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
                 default_address_space.checked_address(base_addr + header.get_data_addr())?;
             next_free_address = address.add(header.get_data_size())?;
             memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 false,
                 DOT_DATA,
                 &address,
@@ -405,7 +403,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
                 default_address_space.checked_address(base_addr + header.get_bss_addr())?;
             next_free_address = address.add(header.get_bss_size() + self.extra_bss_size)?;
             memory_block_utils::create_uninitialized_block(
-                self.program,
+                &*self.program,
                 false,
                 DOT_BSS,
                 &address,
@@ -424,7 +422,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
                 external_section_size = EXTERNAL_BLOCK_MIN_SIZE;
             }
             let external_block = memory_block_utils::create_uninitialized_block(
-                self.program,
+                &*self.program,
                 false,
                 EXTERNAL_BLOCK_NAME,
                 &next_free_address,
@@ -436,13 +434,13 @@ impl<'a> UnixAoutProgramLoader<'a> {
                 false,
                 self.log,
             );
-            if let Some(mut external_block) = external_block {
-                external_block.set_artificial(true);
+            if let Some(external_block) = external_block {
+                external_block.write().unwrap().set_artificial(true);
             }
         }
         if header.get_str_size() > 0 {
             memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 true,
                 DOT_STRTAB,
                 &other_address,
@@ -459,7 +457,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
         }
         if header.get_sym_size() > 0 {
             memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 true,
                 DOT_SYMTAB,
                 &other_address,
@@ -476,7 +474,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
         }
         if header.get_text_reloc_size() > 0 {
             memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 true,
                 DOT_REL_TEXT,
                 &other_address,
@@ -493,7 +491,7 @@ impl<'a> UnixAoutProgramLoader<'a> {
         }
         if header.get_data_reloc_size() > 0 {
             memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 true,
                 DOT_REL_DATA,
                 &other_address,

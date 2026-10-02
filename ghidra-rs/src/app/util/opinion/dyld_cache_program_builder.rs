@@ -50,7 +50,9 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::app::seam_stubs::{macho_program_builder, memory_block_utils, DyldCacheHeader, LibObjcDylib, SplitDyldCache};
+use crate::app::seam_stubs::{macho_program_builder, DyldCacheHeader, LibObjcDylib, SplitDyldCache};
+use crate::app::util::memory_block_utils;
+use crate::filesystem::ghidra::g_binary_reader::GByteStoreByteProvider;
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
 use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 use crate::format::macho::commands::segment_names;
@@ -239,14 +241,15 @@ impl<'a> DyldCacheProgramBuilder<'a> {
         self.monitor.set_message("Processing DYLD mapped memory blocks...");
         self.monitor.initialize(mapping_infos.len() as i64);
         let extension = block_name_extension(name);
-        let fb = memory_block_utils::create_file_bytes(self.program, bp, self.monitor)?;
+        let fb = memory_block_utils::create_file_bytes(&*self.program, &GByteStoreByteProvider::new(Rc::clone(bp)), self.monitor)
+            .map_err(to_io)?;
         let mut end_of_mapped_offset: i64 = 0;
         let mut bookmark_set = false;
         for mapping_info in &mapping_infos {
             let offset = mapping_info.get_file_offset();
             let size = mapping_info.get_size();
             let block = memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 false,
                 &format!("DYLD{extension}"),
                 &self.space.address(mapping_info.get_address()),
@@ -278,7 +281,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
                             ""
                         )
                     );
-                    let start = block.get_start();
+                    let start = block.read().unwrap().get_start();
                     if let Some(mut bookmark_manager) = self.program.get_bookmark_manager_mut() {
                         bookmark_manager.set_bookmark(
                             start,
@@ -300,7 +303,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
             self.monitor.set_message("Processing DYLD unmapped memory block...");
             let other = other_space(self.program);
             let file_block = memory_block_utils::create_initialized_block(
-                self.program,
+                &*self.program,
                 true,
                 &format!("FILE{extension}"),
                 &other.address(end_of_mapped_offset),
@@ -316,7 +319,7 @@ impl<'a> DyldCacheProgramBuilder<'a> {
             )
             .map_err(to_io)?;
             if let Some(file_block) = &file_block {
-                dyld_cache_header.set_file_block(&**file_block);
+                dyld_cache_header.set_file_block(&*file_block.read().unwrap());
             }
         }
 

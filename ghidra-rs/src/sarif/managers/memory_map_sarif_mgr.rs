@@ -18,7 +18,10 @@ use crate::util::task::TaskMonitor;
 
 use crate::sarif::managers::memory_map_bytes_file::MemoryMapBytesFile;
 use crate::app::util::importer::message_log::MessageLog;
-use crate::sarif::seam_stubs::{MemoryBlockUtils, ProgramSarifMgr, SarifMemoryMapWriter, SarifMgr, SarifProgramOptions, SarifUtils, SarifWriterTask, TaskLauncher};
+use crate::app::util::memory_block_utils;
+use crate::program::model::mem::memory::CreateBlockError;
+use crate::program::model::mem::MemoryBlockHandle;
+use crate::sarif::seam_stubs::{ProgramSarifMgr, SarifMemoryMapWriter, SarifMgr, SarifProgramOptions, SarifUtils, SarifWriterTask, TaskLauncher};
 
 /// Everything [`MemoryMapSarifMgr::process_memory_block`] can fail with -- both propagated to
 /// [`MemoryMapSarifMgr::read`], which logs and returns `false` for either.
@@ -163,11 +166,11 @@ impl MemoryMapSarifMgr {
         // `location == position of the bytes w/i file (file::pos)`.
         let loc = result.get("location").and_then(Value::as_str);
 
-        let mut block: Option<Arc<dyn MemoryBlock>> = None;
+        let mut block: Option<MemoryBlockHandle> = None;
         match block_type {
             "DEFAULT" => match loc {
                 None => {
-                    block = MemoryBlockUtils::create_uninitialized_block(
+                    block = memory_block_utils::create_uninitialized_block(
                         self.program.as_ref(),
                         false,
                         name,
@@ -187,12 +190,14 @@ impl MemoryMapSarifMgr {
                     let file_offset: i32 = split.next().and_then(|s| s.parse().ok()).unwrap_or(0);
                     match self.set_data(directory, file_name, file_offset, length) {
                         Ok(bytes) => {
-                            block = MemoryBlockUtils::create_initialized_block(
+                            let mut data: &[u8] = &bytes;
+                            match memory_block_utils::create_initialized_block_from_stream(
                                 self.program.as_ref(),
                                 false,
                                 name,
                                 &block_address,
-                                &bytes,
+                                &mut data,
+                                bytes.len() as i64,
                                 comment,
                                 None,
                                 r,
@@ -200,55 +205,70 @@ impl MemoryMapSarifMgr {
                                 x,
                                 &self.log,
                                 monitor,
-                            );
+                            ) {
+                                Ok(created) => block = created,
+                                Err(CreateBlockError::AddressOverflow(e)) => return Err(e.into()),
+                                // Java lets these (unchecked) escape; logged like the other
+                                // swallowed block failures instead (see the error type's docs).
+                                Err(e) => self
+                                    .log
+                                    .append_msg(format!("Failed to create '{name}' memory block: {e}")),
+                            }
                         }
                         Err(SetDataError::FileNotFound(e)) => return Err(ProcessMemoryBlockError::FileNotFound(e)),
                         Err(SetDataError::Other(msg)) => self.log.append_msg(msg),
                     }
                 }
             },
-            "BIT_MAPPED" => {
-                let source_addr = loc.and_then(|l| self.address(l));
-                block = MemoryBlockUtils::create_bit_mapped_block(
-                    self.program.as_ref(),
-                    name,
-                    &block_address,
-                    source_addr.as_ref(),
-                    length,
-                    comment,
-                    comment,
-                    r,
-                    w,
-                    x,
-                    false,
-                    &self.log,
-                );
-            }
-            "BYTE_MAPPED" => {
-                let source_addr = loc.and_then(|l| self.address(l));
-                block = MemoryBlockUtils::create_byte_mapped_block(
-                    self.program.as_ref(),
-                    name,
-                    &block_address,
-                    source_addr.as_ref(),
-                    length,
-                    comment,
-                    comment,
-                    r,
-                    w,
-                    x,
-                    false,
-                    &self.log,
-                );
+            "BIT_MAPPED" | "BYTE_MAPPED" => {
+                let bit_mapped = block_type == "BIT_MAPPED";
+                match loc.and_then(|l| self.address(l)) {
+                    Some(source_addr) if bit_mapped => {
+                        block = memory_block_utils::create_bit_mapped_block(
+                            self.program.as_ref(),
+                            name,
+                            &block_address,
+                            &source_addr,
+                            length,
+                            comment,
+                            comment,
+                            r,
+                            w,
+                            x,
+                            false,
+                            &self.log,
+                        );
+                    }
+                    Some(source_addr) => {
+                        block = memory_block_utils::create_byte_mapped_block(
+                            self.program.as_ref(),
+                            name,
+                            &block_address,
+                            &source_addr,
+                            length,
+                            comment,
+                            comment,
+                            r,
+                            w,
+                            x,
+                            false,
+                            &self.log,
+                        );
+                    }
+                    // Java's null source address throws a NullPointerException inside
+                    // MemoryBlockUtils, whose `catch (Exception e)` logs its (null) message.
+                    None => self.log.append_msg(format!("Failed to create '{name}' mapped memory block: null")),
+                }
             }
             other => {
                 self.log.append_msg(format!("Unexpected type value - {other}"));
             }
         }
 
-        if let Some(block) = block.as_mut().and_then(Arc::get_mut) {
-            block.set_volatile(is_volatile);
-            block.set_artificial(is_artificial);
+        if let Some(block) = &block {
+            let mut b = block.write().unwrap();
+            b.set_volatile(is_volatile);
+            b.set_artificial(is_artificial);
         }
 
         Ok(())

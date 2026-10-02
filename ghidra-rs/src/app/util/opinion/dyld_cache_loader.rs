@@ -32,13 +32,12 @@
 //!   `options` field is `Vec<Box<dyn OptionLike>>` (an opaque marker with no accessors), which
 //!   this method's body cannot work with (it needs `Option::get_name`/`get_value` to read option
 //!   values back out).
-//! * `DyldCacheProgramBuilder.buildProgram`/`MemoryBlockUtils.createFileBytes` -- the two calls
-//!   `load` makes -- are far larger unported subsystems (the former alone drives memory-block,
-//!   symbol, export, and load-command-markup processing for the whole cache); both are stubbed as
-//!   `unimplemented!()` placeholders in `seam_stubs` (see [`dyld_cache_program_builder`] and
-//!   [`memory_block_utils`]) rather than guessed at, so [`load`](DyldCacheLoader::load) panics if
-//!   actually called today. Since neither placeholder can yet report a cancellation, `load` no
-//!   longer distinguishes Java's `catch (CancelledException) { return; }` from
+//! * `MemoryBlockUtils.createFileBytes` is the real [`memory_block_utils`] function (the
+//!   provider's bytes reach it through the [`GByteStoreByteProvider`] bridge).
+//!   `DyldCacheProgramBuilder.buildProgram` drives memory-block, symbol, export and
+//!   load-command-markup processing for the whole cache and still reaches `unimplemented!()`
+//!   placeholders, so [`load`](DyldCacheLoader::load) panics past file-bytes creation today.
+//!   `load` does not distinguish Java's `catch (CancelledException) { return; }` from
 //!   `catch (Exception e) { throw new IOException(...); }`; both collapse into a single
 //!   `io::Result`.
 
@@ -47,7 +46,9 @@ use std::io;
 use std::rc::Rc;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::app::seam_stubs::{dyld_cache_utils, memory_block_utils, new_boolean, option_utils, DyldCacheHeader, LoadSpec, Option, QueryResult};
+use crate::app::util::memory_block_utils;
+use crate::filesystem::ghidra::g_binary_reader::GByteStoreByteProvider;
+use crate::app::seam_stubs::{dyld_cache_utils, new_boolean, option_utils, DyldCacheHeader, LoadSpec, Option, QueryResult};
 use crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder;
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
 use crate::app::util::opinion::loader::COMMAND_LINE_ARG_PREFIX;
@@ -176,7 +177,8 @@ impl DyldCacheLoader {
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
         let dyld_cache_options = self.get_dyld_cache_options(options);
-        let file_bytes = memory_block_utils::create_file_bytes(program, provider, monitor)?;
+        let file_bytes = memory_block_utils::create_file_bytes(&*program, &GByteStoreByteProvider::new(Rc::clone(provider)), monitor)
+            .map_err(|e| io::Error::other(e.to_string()))?;
         DyldCacheProgramBuilder::build_program(
             program,
             provider,
@@ -690,11 +692,9 @@ mod tests {
     }
 
     #[test]
-    fn load_reports_io_error_from_create_file_bytes_stub() {
-        // `memory_block_utils::create_file_bytes`/`dyld_cache_program_builder::build_program` are
-        // unimplemented placeholders (see module docs) pending the real (much larger) ports, so
-        // this only smoke-tests that `DyldCacheLoader::load` is reachable and panics rather than
-        // silently misbehaving.
+    fn load_reports_io_error_when_program_has_no_memory() {
+        // `MemoryBlockUtils.createFileBytes` goes through the program's memory; a program with
+        // none fails there, before the (still placeholder-backed) program builder runs.
         let loader = DyldCacheLoader;
         let p = provider(b"dyld_v1  arm64e ");
         struct MockProgram;
@@ -710,9 +710,7 @@ mod tests {
         let mut program = MockProgram;
         let mut log = MessageLog::new();
         let monitor = DummyMonitor;
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            loader.load(&mut program, &p, &[], &mut log, &monitor)
-        }));
-        assert!(result.is_err());
+        let err = loader.load(&mut program, &p, &[], &mut log, &monitor).unwrap_err();
+        assert!(err.to_string().contains("program has no memory"), "{err}");
     }
 }

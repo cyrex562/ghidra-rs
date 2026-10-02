@@ -1217,19 +1217,6 @@ pub trait MachoProgramBuilder: Send + Sync {
     ) -> std::io::Result<()>;
 }
 
-/// Placeholder for `ghidra.app.util.MemoryBlockUtils`, referenced by
-/// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups) before
-/// the real class is ported. Only the `addExternalBlock` helper chained-pointer fixup needs.
-pub trait MemoryBlockUtils: Send + Sync {
-    /// `MemoryBlockUtils.addExternalBlock(Program, long, MessageLog)`.
-    fn add_external_block(
-        &self,
-        program: &dyn crate::program::model::listing::Program,
-        size: i64,
-        log: &MessageLog,
-    ) -> std::io::Result<crate::program::model::address::Address>;
-}
-
 /// Placeholder for the unported Java type `ClassSearcher`, referenced by `ElfInfoProducer`.
 /// Generated stub: only a shape hint. The method needed by `ElfInfoProducer` is
 /// `get_elf_info_producer_instances`, which returns trait objects of ElfInfoProducer.
