@@ -227,8 +227,8 @@ fn add_navigation_actions(tool: &mut DockingTool, events: &UiEventQueue, listing
     tool.add_action(Box::new(go_to));
 
     for (name, key, icon, sub_group, forward) in [
-        ("Previous Location", vk::LEFT, "icon.left", "1", false),
-        ("Next Location", vk::RIGHT, "icon.right", "2", true),
+        ("Previous Location", vk::LEFT, "icon.plugin.navigation.location.previous", "1", false),
+        ("Next Location", vk::RIGHT, "icon.plugin.navigation.location.next", "2", true),
     ] {
         let (ev, h, enabled) = (events.clone(), listing.clone(), listing.clone());
         let mut a = ClosureAction::new(name, OWNER, move |_| {

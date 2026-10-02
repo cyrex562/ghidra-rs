@@ -172,6 +172,8 @@ pub mod ffi {
         pub kind: u8,
         pub action: u64,
         pub icon: String,
+        /// Resolved image file for `icon`; empty = show the tooltip text.
+        pub icon_path: String,
         pub tooltip: String,
         pub enabled: bool,
     }
@@ -612,11 +614,17 @@ fn tool_bar(focused_pid: i64) -> Result<Vec<ToolBarInfo>, String> {
             .into_iter()
             .map(|e| match e {
                 ToolBarEntry::Button { action, icon, tooltip, enabled } => {
-                    ToolBarInfo { kind: 0, action: action.0, icon, tooltip, enabled }
+                    let icon_path = s.icon_path(&icon).map(|p| p.display().to_string()).unwrap_or_default();
+                    ToolBarInfo { kind: 0, action: action.0, icon, icon_path, tooltip, enabled }
                 }
-                ToolBarEntry::Separator => {
-                    ToolBarInfo { kind: 1, action: 0, icon: String::new(), tooltip: String::new(), enabled: false }
-                }
+                ToolBarEntry::Separator => ToolBarInfo {
+                    kind: 1,
+                    action: 0,
+                    icon: String::new(),
+                    icon_path: String::new(),
+                    tooltip: String::new(),
+                    enabled: false,
+                },
             })
             .collect())
     })

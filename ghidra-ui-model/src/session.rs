@@ -33,6 +33,7 @@ pub struct UiSession {
     events: UiEventQueue,
     wake: Option<WakeHandle>,
     central: Option<ProviderId>,
+    icons: Option<Box<dyn crate::icons::IconResolver>>,
 }
 
 impl UiSession {
@@ -47,6 +48,7 @@ impl UiSession {
             events,
             wake: Some(wake),
             central: None,
+            icons: None,
         }
     }
 
@@ -134,6 +136,16 @@ impl UiSession {
     /// The root component, if any.
     pub fn central_provider(&self) -> Option<ProviderId> {
         self.central
+    }
+
+    /// Installs the theme icon resolver.
+    pub fn set_icon_resolver(&mut self, resolver: Box<dyn crate::icons::IconResolver>) {
+        self.icons = Some(resolver);
+    }
+
+    /// The image file for theme icon `id`, if any.
+    pub fn icon_path(&self, id: &str) -> Option<std::path::PathBuf> {
+        self.icons.as_ref()?.resolve(id)
     }
 
     /// The renderer's wake handle (taken once).

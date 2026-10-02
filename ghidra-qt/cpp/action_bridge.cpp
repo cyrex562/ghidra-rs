@@ -1,6 +1,7 @@
 #include "ghidra-qt/cpp/action_bridge.h"
 
 #include <QAction>
+#include <QIcon>
 #include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -100,8 +101,12 @@ void rebuildToolBar(QToolBar* toolbar, QStatusBar* status, const FocusedProvider
             toolbar->addSeparator();
             continue;
         }
-        // Theme icons are resolved in a later milestone; show the name.
+        // Rust resolves the theme icon to a file; without one, show the name.
         auto* a = toolbar->addAction(qs(t.tooltip));
+        if (!t.icon_path.empty()) {
+            const QIcon icon(qs(t.icon_path));
+            if (!icon.isNull()) a->setIcon(icon);
+        }
         a->setToolTip(qs(t.tooltip));
         a->setEnabled(t.enabled);
         const uint64_t id = t.action;

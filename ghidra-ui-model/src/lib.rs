@@ -7,6 +7,7 @@
 pub mod demo;
 pub mod demo_tool;
 mod events;
+pub mod icons;
 pub mod listing;
 pub mod listing_controller;
 pub mod listing_scroll;
