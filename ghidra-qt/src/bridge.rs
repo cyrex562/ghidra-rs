@@ -452,7 +452,7 @@ fn form_set(pid: u64, key: &str, value: &str) -> Result<(), String> {
 fn with_listing<T>(what: &str, pid: u64, f: impl FnOnce(&mut ListingController) -> Result<T, String>) -> Result<T, String> {
     with(what, |s| {
         let handle = model!(s, pid, Listing, "listing").clone();
-        let mut c = handle.lock().map_err(|_| format!("listing {pid} state poisoned"))?;
+        let mut c = ghidra_ui_model::listing_controller::lock(&handle);
         f(&mut c)
     })
 }

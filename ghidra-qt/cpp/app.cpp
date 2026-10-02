@@ -133,7 +133,10 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
                         const QKeySequence seq = QKeySequence::fromString(QString(key).replace(QLatin1Char('-'), QLatin1Char('+')));
                         if (seq.isEmpty()) return;
                         const QKeyCombination combo = seq[0];
-                        QApplication::postEvent(target, new QKeyEvent(QEvent::KeyPress, combo.key(), combo.keyboardModifiers()));
+                        // Printable unmodified keys carry text so line edits receive them.
+                        const bool printable = combo.key() < 0x7f && !(combo.keyboardModifiers() & (Qt::ControlModifier | Qt::AltModifier));
+                        const QString text = printable ? QString(QChar(static_cast<char16_t>(combo.key()))).toLower() : QString();
+                        QApplication::postEvent(target, new QKeyEvent(QEvent::KeyPress, combo.key(), combo.keyboardModifiers(), text));
                         QTimer::singleShot(100, pump, [pump] { pump->pump(); });
                     });
                 }

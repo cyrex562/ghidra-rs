@@ -2,7 +2,7 @@
 //! selection, the middle-mouse text highlight and back/forward history all
 //! live here, so the renderer only sends intents and paints frames.
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use ghidra_rs::app::plugin::core::navigation::history_list::{HistoryList, MAX_HISTORY_SIZE};
 
@@ -13,6 +13,13 @@ use crate::listing_selection::IndexSelection;
 /// Shared handle: the session's view-model registry and the listing's
 /// actions both hold one. Lock order: session, then controller.
 pub type ListingHandle = Arc<Mutex<ListingController>>;
+
+/// Locks a listing, recovering from poison: a panic in one renderer call
+/// (caught by the bridge's guard) must not blank the listing for the rest of
+/// the session (spec §3: errors, not a dead UI).
+pub fn lock(handle: &ListingHandle) -> MutexGuard<'_, ListingController> {
+    handle.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
 
 /// One painted row with its decorations.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -87,6 +94,11 @@ impl ListingController {
     /// [`Self::new`] behind a shared handle.
     pub fn handle(model: Box<dyn ListingViewModel>) -> ListingHandle {
         Arc::new(Mutex::new(Self::new(model)))
+    }
+
+    /// Gives the view-model back.
+    pub fn into_model(self) -> Box<dyn ListingViewModel> {
+        self.model
     }
 
     /// The view-model.
@@ -166,7 +178,9 @@ impl ListingController {
     /// target when it is off screen. Unlisted addresses change nothing.
     pub fn goto_address(&mut self, address: u64) -> Result<(), String> {
         let index = self.model.goto(address).ok_or_else(|| format!("Address not found: {address:x}"))?;
-        if let Some(c) = self.cursor {
+        // Java's navigatable always has a location: before any click or key
+        // that is the top row, so the first goto is still undoable.
+        if let Some(c) = self.location() {
             self.history.add(Memento(c));
         }
         let target = CursorPos { index, field: 0, col: 0 };
@@ -181,7 +195,7 @@ impl ListingController {
             return false;
         }
         if !self.history.has_next() {
-            if let Some(c) = self.cursor {
+            if let Some(c) = self.location() {
                 self.history.add(Memento(c));
             }
         }
@@ -213,6 +227,11 @@ impl ListingController {
     /// Whether `forward` would move.
     pub fn can_go_forward(&self) -> bool {
         self.history.has_next()
+    }
+
+    /// The current location: the cursor, else the top row (none when empty).
+    fn location(&self) -> Option<CursorPos> {
+        self.cursor.or_else(|| (self.model.index_count() > 0).then_some(CursorPos { index: self.top, field: 0, col: 0 }))
     }
 
     /// Rows that fit entirely in the viewport (at least 1).
@@ -373,6 +392,30 @@ mod tests {
         assert!(c.forward());
         assert_eq!(at(&c), 4);
         assert!(!c.can_go_forward());
+    }
+
+    #[test]
+    fn back_after_a_first_goto_returns_to_the_initial_location() {
+        let mut c = controller(3);
+        c.goto_address(0x402000).unwrap(); // no click or key first
+        assert!(c.can_go_back());
+        assert!(c.back());
+        assert_eq!(at(&c), 0);
+        assert_eq!(c.top(), 0);
+    }
+
+    #[test]
+    fn a_poisoned_listing_lock_still_serves_the_listing() {
+        let h = ListingController::handle(controller(3).into_model());
+        let h2 = h.clone();
+        let _ = std::thread::spawn(move || {
+            let _guard = h2.lock().unwrap();
+            panic!("model bug while locked");
+        })
+        .join();
+        assert!(h.is_poisoned());
+        lock(&h).key(Move::Down, false);
+        assert_eq!(lock(&h).cursor().map(|c| c.index), Some(1));
     }
 
     #[test]

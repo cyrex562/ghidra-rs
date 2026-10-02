@@ -54,6 +54,10 @@ bool KeyForwarder::eventFilter(QObject* watched, QEvent* event) {
     m_lastTimestamp = key->timestamp();
     // Java ignores docking actions while a menu is open (MenuKeyProcessor).
     if (QApplication::activePopupWidget()) return false;
+    // Nor while a dialog is up: tool bindings belong to the tool window only
+    // (Java KeyBindingOverrideKeyEventDispatcher checks the active window).
+    if (QApplication::activeModalWidget()) return false;
+    if (auto* w = qobject_cast<QWidget*>(watched); w && w->window() != m_window) return false;
     if (handledByTextWidget(watched, key)) return false;
     const int64_t pid = m_window->providerOfObject(watched);
     KeyResult r;

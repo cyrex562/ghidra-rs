@@ -280,7 +280,7 @@ fn listing_state(keys: &str, answer: Option<&str>) -> String {
 #[test]
 fn shift_down_selects_rows_in_the_listing() {
     let out = listing_state("Shift-Down,Shift-Down,Shift-Down", None);
-    assert!(out.lines().any(|l| l.ends_with("cursor=00401003 selected=4")), "{out}");
+    assert!(out.lines().any(|l| l.contains("cursor=00401003 selected=4")), "{out}");
 }
 
 #[test]
@@ -292,6 +292,21 @@ fn g_goes_to_an_address_and_alt_left_comes_back() {
     assert!(out.lines().any(|l| l.contains("cursor=00401001")), "{out}");
     let out = listing_state("G", Some("401800"));
     assert!(out.lines().any(|l| l == "status: Address not found: 401800"), "{out}");
+}
+
+#[test]
+fn go_to_updates_the_status_bar_location() {
+    // Typed into the real dialog, so focus is in the dialog when Rust's
+    // ViewChanged arrives.
+    let out = listing_state("G,4,0,2,0,0,3,Return", None);
+    assert!(out.lines().any(|l| l.contains("cursor=00402003") && l.ends_with("status=00402003")), "{out}");
+}
+
+#[test]
+fn keys_typed_in_the_go_to_dialog_do_not_run_tool_actions() {
+    // No --prompt-answer: G opens the real dialog; Ctrl-F then goes to it.
+    let out = listing_state("G,Ctrl-F", None);
+    assert!(!out.lines().any(|l| l.starts_with("status: Find")), "{out}");
 }
 
 #[test]

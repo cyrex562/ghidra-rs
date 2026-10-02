@@ -10,7 +10,7 @@ use ghidra_rs::util::awt::KeyStroke;
 use crate::demo::{LinesText, MapForm, StaticTree, VecTable};
 use crate::events::{UiEvent, UiEventQueue};
 use crate::listing::{MemoryBlockSnapshot, MemoryListing};
-use crate::listing_controller::{parse_address, ListingController, ListingHandle};
+use crate::listing_controller::{lock, parse_address, ListingController, ListingHandle};
 use crate::session::{UiSession, ViewModelBox};
 use crate::view_models::{CellValue, FormField};
 
@@ -214,7 +214,7 @@ fn add_navigation_actions(tool: &mut DockingTool, events: &UiEventQueue, listing
             Box::new(move |answer| {
                 let Some(text) = answer else { return Ok(()) };
                 let address = parse_address(&text)?;
-                h2.lock().map_err(|_| "listing state poisoned".to_string())?.goto_address(address)?;
+                lock(&h2).goto_address(address)?;
                 ev2.post(UiEvent::ViewChanged(listing_id.0));
                 ev2.post(UiEvent::ActionsChanged);
                 Ok(())
@@ -231,14 +231,18 @@ fn add_navigation_actions(tool: &mut DockingTool, events: &UiEventQueue, listing
     ] {
         let (ev, h, enabled) = (events.clone(), listing.clone(), listing.clone());
         let mut a = ClosureAction::new(name, OWNER, move |_| {
-            let moved = h.lock().map(|mut c| if forward { c.forward() } else { c.back() }).unwrap_or(false);
+            let moved = {
+                let mut c = lock(&h);
+                if forward { c.forward() } else { c.back() }
+            };
             if moved {
                 ev.post(UiEvent::ViewChanged(listing_id.0));
                 ev.post(UiEvent::ActionsChanged);
             }
         });
         a.state_mut().enabled_when(Box::new(move |_| {
-            enabled.lock().map(|c| if forward { c.can_go_forward() } else { c.can_go_back() }).unwrap_or(false)
+            let c = lock(&enabled);
+            if forward { c.can_go_forward() } else { c.can_go_back() }
         }));
         a.state_mut().set_tool_bar_data(Some(ToolBarData::new(IconId::new(icon), Some("Navigation"), Some(sub_group))));
         a.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(key, ALT_DOWN_MASK))));

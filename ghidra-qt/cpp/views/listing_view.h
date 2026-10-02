@@ -25,8 +25,9 @@ public:
     QString stateSummary();
     // Sends a listing intent (see the bridge's listing_intent) and refreshes.
     void intent(uint8_t kind, int64_t a, int64_t b, bool extend);
-    // Re-pulls the frame: scrollbar, status location, repaint.
-    void refresh();
+    // Re-pulls the frame: scrollbar, repaint, and (when `announce`) the
+    // cursor location in the status bar.
+    void refresh(bool announce = true);
 
 protected:
     void paintEvent(QPaintEvent* event) override;

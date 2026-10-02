@@ -46,11 +46,11 @@ void ListingView::changeEvent(QEvent* event) {
     if (event->type() == QEvent::FontChange || event->type() == QEvent::StyleChange) {
         // Rows are laid out in Rust from these metrics; the top row stays put.
         reportMetrics();
-        refresh();
+        refresh(false);
     }
 }
 
-void ListingView::refresh() {
+void ListingView::refresh(bool announce) {
     FrameInfo f;
     if (!bridgeCall(m_status, [&] { f = listing_frame(m_pid); })) return;
     m_syncing = true;
@@ -59,7 +59,7 @@ void ListingView::refresh() {
     verticalScrollBar()->setSingleStep(1);
     verticalScrollBar()->setValue(f.scroll_value);
     m_syncing = false;
-    if (hasFocus() && !f.location.empty()) m_status->showMessage(qs(f.location));
+    if (announce && !f.location.empty()) m_status->showMessage(qs(f.location));
     viewport()->update();
 }
 
@@ -83,7 +83,7 @@ void ListingView::wheelEvent(QWheelEvent* event) {
 void ListingView::resizeEvent(QResizeEvent* event) {
     QAbstractScrollArea::resizeEvent(event);
     reportViewport();
-    refresh();
+    refresh(false);
 }
 
 void ListingView::mousePressEvent(QMouseEvent* event) {
@@ -166,7 +166,10 @@ QString ListingView::stateSummary() {
     if (!bridgeCall(m_status, [&] { f = listing_frame(m_pid); })) return {};
     int selected = 0;
     for (const FrameRowInfo& row : f.rows) selected += row.selected ? 1 : 0;
-    return QStringLiteral("top=%1 cursor=%2 selected=%3").arg(qs(f.top), qs(f.location)).arg(selected);
+    return QStringLiteral("top=%1 cursor=%2 selected=%3 status=%4")
+        .arg(qs(f.top), qs(f.location))
+        .arg(selected)
+        .arg(m_status->currentMessage());
 }
 
 QStringList ListingView::dumpRows(int n) {
