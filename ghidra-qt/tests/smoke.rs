@@ -5,10 +5,50 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-fn shell() -> Command {
+fn shell() -> Shell {
     let mut c = Command::new(env!("CARGO_BIN_EXE_ghidra-qt"));
     c.env("QT_QPA_PLATFORM", "offscreen");
-    c
+    Shell(c)
+}
+
+/// The shell binary under a hard deadline: a hang becomes a test failure
+/// instead of blocking the suite.
+struct Shell(Command);
+
+const DEADLINE: std::time::Duration = std::time::Duration::from_secs(20);
+
+impl Shell {
+    fn arg(mut self, a: impl AsRef<std::ffi::OsStr>) -> Self {
+        self.0.arg(a);
+        self
+    }
+    fn args<I, S>(mut self, a: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<std::ffi::OsStr>,
+    {
+        self.0.args(a);
+        self
+    }
+    fn output(mut self) -> std::io::Result<std::process::Output> {
+        use std::process::Stdio;
+        let mut child = self.0.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+        let start = std::time::Instant::now();
+        loop {
+            if child.try_wait()?.is_some() {
+                return child.wait_with_output();
+            }
+            if start.elapsed() > DEADLINE {
+                let _ = child.kill();
+                let out = child.wait_with_output()?;
+                panic!("ghidra-qt timed out after {DEADLINE:?}; stderr: {}", String::from_utf8_lossy(&out.stderr));
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+    }
+    fn status(self) -> std::io::Result<std::process::ExitStatus> {
+        self.output().map(|o| o.status)
+    }
 }
 
 fn tmp(name: &str) -> PathBuf {
@@ -76,4 +116,34 @@ fn unknown_flag_is_usage_error_64_not_2() {
 fn malformed_number_is_usage_error_64() {
     let output = shell().args(["--quit-after-ms", "abc"]).output().expect("spawn");
     assert_eq!(output.status.code(), Some(64));
+}
+
+fn dump_docks(extra: &[&str]) -> Vec<String> {
+    let out = shell().arg("--dump-docks").args(extra).output().expect("spawn");
+    assert!(out.status.success(), "status {:?} stderr {}", out.status, String::from_utf8_lossy(&out.stderr));
+    let mut lines: Vec<String> = String::from_utf8_lossy(&out.stdout).lines().map(str::to_owned).collect();
+    lines.sort();
+    lines
+}
+
+#[test]
+fn demo_docks_are_placed_by_window_position() {
+    assert_eq!(
+        dump_docks(&[]),
+        vec![
+            "Decompiler\tRight\ttext".to_string(),
+            "Options\tBottom\tform".to_string(),
+            "Program Tree\tLeft\ttree".to_string(),
+            "Symbols\tLeft\ttable".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn garbage_geometry_falls_back_to_default_placement() {
+    let f = tmp("garbage_geometry.bin");
+    std::fs::write(&f, b"definitely not an ADS state blob").unwrap();
+    let lines = dump_docks(&["--restore-geometry", f.to_str().unwrap()]);
+    assert_eq!(lines.len(), 4);
+    assert!(lines.iter().any(|l| l.starts_with("Symbols\tLeft")));
 }

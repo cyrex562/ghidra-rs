@@ -1,6 +1,7 @@
 #include "ghidra-qt/cpp/app.h"
 
 #include <QApplication>
+#include <QFile>
 #include <QPixmap>
 #include <QString>
 #include <QTimer>
@@ -31,6 +32,21 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
     }
 
     MainWindow window(title);
+
+    if (options.dump_docks) {
+        if (!options.restore_geometry.empty()) {
+            QFile f(toQString(options.restore_geometry));
+            if (f.open(QIODevice::ReadOnly)) window.restoreDockGeometry(f.readAll());
+        }
+        for (const QString& line : window.dockSummary()) std::printf("%s\n", line.toUtf8().constData());
+        std::fflush(stdout);
+        return 0;
+    }
+
+    if (!options.restore_geometry.empty()) {
+        QFile f(toQString(options.restore_geometry));
+        if (f.open(QIODevice::ReadOnly)) window.restoreDockGeometry(f.readAll());
+    }
     window.show();
 
     if (options.quit_after_ms > 0) {
