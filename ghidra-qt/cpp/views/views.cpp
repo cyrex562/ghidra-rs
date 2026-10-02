@@ -15,6 +15,7 @@
 #include <QVBoxLayout>
 
 #include "ghidra-qt/cpp/bridge_call.h"
+#include "ghidra-qt/cpp/views/listing_view.h"
 #include "ghidra-qt/src/bridge.rs.h"
 
 namespace ghidra_qt {
@@ -236,6 +237,7 @@ QWidget* createProviderView(uint64_t pid, uint8_t kind, QStatusBar* status, QWid
         case 1: return makeTree(pid, status, parent);
         case 2: return makeText(pid, status, parent);
         case 3: return makeForm(pid, status, parent);
+        case 4: return new ListingView(pid, status, parent);
         default: return new QLabel(QStringLiteral("(view not yet implemented)"), parent);
     }
 }

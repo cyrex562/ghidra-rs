@@ -92,6 +92,7 @@ fn main() {
         .file("cpp/app.cpp")
         .file("cpp/main_window.cpp")
         .file("cpp/views/views.cpp")
+        .file("cpp/views/listing_view.cpp")
         .file("cpp/action_bridge.cpp")
         .file("cpp/input.cpp")
         .warnings(false); // third-party ADS; our own files are reviewed instead

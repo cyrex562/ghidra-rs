@@ -13,6 +13,7 @@
 #include "ghidra-qt/cpp/bridge_call.h"
 #include "ghidra-qt/cpp/input.h"
 #include "ghidra-qt/cpp/main_window.h"
+#include "ghidra-qt/cpp/views/listing_view.h"
 #include "ghidra-qt/src/bridge.rs.h"
 
 namespace ghidra_qt {
@@ -59,6 +60,14 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
     }
     if (options.dump_docks) {
         for (const QString& line : window.dockSummary()) std::printf("%s\n", line.toUtf8().constData());
+        std::fflush(stdout);
+        return 0;
+    }
+    if (options.dump_listing > 0) {
+        ads::CDockWidget* dock = window.dockByTitle(QStringLiteral("Listing"));
+        auto* view = dock ? dynamic_cast<ListingView*>(dock->widget()) : nullptr;
+        if (!view) return 5;
+        for (const QString& line : view->dumpRows(static_cast<int>(options.dump_listing))) std::printf("%s\n", line.toUtf8().constData());
         std::fflush(stdout);
         return 0;
     }

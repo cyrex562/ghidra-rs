@@ -40,6 +40,10 @@ pub struct Args {
     #[arg(long, hide = true)]
     pub invoke_missing_action: bool,
 
+    /// Print the first N rows the Listing view would paint, then exit.
+    #[arg(long, value_name = "N", default_value_t = 0)]
+    pub dump_listing: u32,
+
     /// Rebuild menus/toolbar N times, print menubar+toolbar child counts, exit (leak test).
     #[arg(long, hide = true, value_name = "N", default_value_t = 0)]
     pub count_after_rebuilds: u32,

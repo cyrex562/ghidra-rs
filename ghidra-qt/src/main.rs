@@ -36,6 +36,7 @@ fn main() {
         focus: args.focus.unwrap_or_default(),
         invoke_missing_action: args.invoke_missing_action,
         count_after_rebuilds: args.count_after_rebuilds,
+        dump_listing: args.dump_listing,
     };
     std::process::exit(bridge::ffi::run_app(&session, &options));
 }

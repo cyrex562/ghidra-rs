@@ -142,6 +142,7 @@ fn demo_docks_are_placed_by_window_position() {
         dump_docks(&[]),
         vec![
             "Decompiler\tRight\ttext".to_string(),
+            "Listing\tStack\tlisting".to_string(),
             "Options\tBottom\tform".to_string(),
             "Program Tree\tLeft\ttree".to_string(),
             "Symbols\tLeft\ttable".to_string(),
@@ -154,7 +155,7 @@ fn garbage_geometry_falls_back_to_default_placement() {
     let f = tmp("garbage_geometry.bin");
     std::fs::write(&f, b"definitely not an ADS state blob").unwrap();
     let lines = dump_docks(&["--restore-geometry", f.to_str().unwrap()]);
-    assert_eq!(lines.len(), 4);
+    assert_eq!(lines.len(), 5);
     assert!(lines.iter().any(|l| l.starts_with("Symbols\tLeft")));
 }
 
@@ -205,7 +206,7 @@ fn layout_is_saved_on_exit_and_corrupt_config_is_survivable() {
     fs::write(&cfg, "<truncated").unwrap();
     let out = shell_with_config(&dir).arg("--dump-docks").output().expect("spawn");
     assert!(out.status.success());
-    assert_eq!(String::from_utf8_lossy(&out.stdout).lines().count(), 4);
+    assert_eq!(String::from_utf8_lossy(&out.stdout).lines().count(), 5);
 }
 
 #[test]
@@ -219,7 +220,7 @@ fn saved_geometry_from_a_smaller_dock_set_does_not_hide_new_providers() {
     let out = shell_with_config(&dir).env_var("GHIDRA_RS_DEMO_EXTRA_PROVIDER", "1").arg("--dump-docks").output().expect("spawn");
     assert!(out.status.success());
     let text = String::from_utf8_lossy(&out.stdout).to_string();
-    assert_eq!(text.lines().count(), 5, "{text}");
+    assert_eq!(text.lines().count(), 6, "{text}");
     assert!(!text.contains("closed"), "a provider was hidden by stale ADS state:\n{text}");
 }
 
@@ -247,4 +248,15 @@ fn rebuilding_actions_does_not_leak_menus_or_toolbar_actions() {
         String::from_utf8_lossy(&out.stdout).trim().to_string()
     };
     assert_eq!(count("1"), count("50"));
+}
+
+#[test]
+fn listing_dock_renders_undefined_bytes() {
+    let out = shell().args(["--dump-listing", "3"]).output().expect("spawn");
+    assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    assert_eq!(
+        text.lines().collect::<Vec<_>>(),
+        vec!["00401000  55  ??  55h", "00401001  48  ??  48h", "00401002  89  ??  89h"]
+    );
 }

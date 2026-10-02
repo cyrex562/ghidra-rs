@@ -9,6 +9,7 @@ use ghidra_rs::util::awt::KeyStroke;
 
 use crate::demo::{LinesText, MapForm, StaticTree, VecTable};
 use crate::events::{UiEvent, UiEventQueue};
+use crate::listing::{MemoryBlockSnapshot, MemoryListing};
 use crate::session::{UiSession, ViewModelBox};
 use crate::view_models::{CellValue, FormField};
 
@@ -139,6 +140,23 @@ pub fn build_demo_session() -> UiSession {
             FormField::int("max_depth", "Max Call Depth", 5),
             FormField::bool("show_bytes", "Show Bytes", true),
         ])))),
+        true,
+    );
+
+    // The code listing over a small synthetic memory image (a real imported
+    // program replaces this once the ELF loader lands).
+    s.add_provider(
+        provider("Listing", ProviderViewKind::Listing, WindowPosition::Stack),
+        Some(ViewModelBox::Listing(Box::new(MemoryListing::new(
+            32,
+            vec![
+                MemoryBlockSnapshot {
+                    start: 0x0040_1000,
+                    bytes: vec![0x55, 0x48, 0x89, 0xe5, 0x89, 0x7d, 0xfc, 0x8b, 0x45, 0xfc, 0x5d, 0xc3],
+                },
+                MemoryBlockSnapshot { start: 0x0040_2000, bytes: b"done\n\0".to_vec() },
+            ],
+        )))),
         true,
     );
 
