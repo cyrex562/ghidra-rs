@@ -1,7 +1,21 @@
 use std::any::Any;
 use std::sync::Arc;
 
-use crate::docking::seam_stubs::{ActionContextProvider, Component, ComponentProvider, MouseEvent};
+use crate::docking::ProviderId;
+
+/// Lets any `'static` context be inspected by concrete type (Java's
+/// `instanceof` checks on contexts). Blanket-implemented; implementors never
+/// write it.
+pub trait AsAnyContext: Any {
+    /// `self` as `&dyn Any`.
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T: Any> AsAnyContext for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
 
 /// Tool and plugin state information that allows a docking action to operate.
 ///
@@ -9,13 +23,13 @@ use crate::docking::seam_stubs::{ActionContextProvider, Component, ComponentProv
 /// and to determine if they should be enabled, added to a popup menu, or are even valid for the
 /// current context.
 ///
-/// Port of `docking.ActionContext`. The Java interface's fluent `setX(...)` methods return `this`
-/// so callers can chain calls; that pattern isn't object-safe in Rust (a trait method can't
-/// return `Self`/`&mut Self` and still support `dyn ActionContext`), so the setters here return
-/// `()` instead and chaining is left to the caller.
-pub trait ActionContext {
-    /// Returns the component provider to which this context belongs.
-    fn component_provider(&self) -> Option<Arc<dyn ComponentProvider>>;
+/// Port of `docking.ActionContext`, toolkit-neutral: the Swing members (`getMouseEvent`,
+/// `getSourceComponent`, the `ActionContextProvider` back-reference) are not part of the model;
+/// the renderer supplies click modifiers and the provider id instead (Qt6 UI spec §3–4). The
+/// Java fluent setters return `this`; here they return `()` so the trait stays object-safe.
+pub trait ActionContext: AsAnyContext {
+    /// The provider this context belongs to (`getComponentProvider()`), by id.
+    fn component_provider(&self) -> Option<ProviderId>;
 
     /// Returns the client-defined data object included when this context was created.
     fn context_object(&self) -> Option<Arc<dyn Any + Send + Sync>>;
@@ -39,24 +53,6 @@ pub trait ActionContext {
 
     /// Returns the source object from the event that triggered this context to be generated.
     fn source_object(&self) -> Option<Arc<dyn Any + Send + Sync>>;
-
-    /// Sets the context provider that created this context. Used internally by the framework.
-    fn set_context_provider(&mut self, provider: Option<Arc<dyn ActionContextProvider>>);
-
-    /// Returns the context provider used to create this context.
-    fn context_provider(&self) -> Option<Arc<dyn ActionContextProvider>>;
-
-    /// Updates the context's mouse event. Contexts based on key events will have no mouse event.
-    fn set_mouse_event(&mut self, event: Option<Arc<dyn MouseEvent>>);
-
-    /// Returns the context's mouse event; `None` implies a key event-based context.
-    fn mouse_event(&self) -> Option<Arc<dyn MouseEvent>>;
-
-    /// Returns the component that is the target of this context.
-    fn source_component(&self) -> Option<Arc<dyn Component>>;
-
-    /// Sets the source component for this context.
-    fn set_source_component(&mut self, component: Option<Arc<dyn Component>>);
 }
 
 #[cfg(test)]
@@ -71,7 +67,7 @@ mod tests {
     }
 
     impl ActionContext for MockActionContext {
-        fn component_provider(&self) -> Option<Arc<dyn ComponentProvider>> {
+        fn component_provider(&self) -> Option<crate::docking::ProviderId> {
             None
         }
 
@@ -103,23 +99,11 @@ mod tests {
             self.source_object.clone()
         }
 
-        fn set_context_provider(&mut self, _provider: Option<Arc<dyn ActionContextProvider>>) {}
 
-        fn context_provider(&self) -> Option<Arc<dyn ActionContextProvider>> {
-            None
-        }
 
-        fn set_mouse_event(&mut self, _event: Option<Arc<dyn MouseEvent>>) {}
 
-        fn mouse_event(&self) -> Option<Arc<dyn MouseEvent>> {
-            None
-        }
 
-        fn source_component(&self) -> Option<Arc<dyn Component>> {
-            None
-        }
 
-        fn set_source_component(&mut self, _component: Option<Arc<dyn Component>>) {}
     }
 
     #[test]

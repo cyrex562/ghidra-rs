@@ -646,7 +646,7 @@ mod tests {
     }
 
     impl ActionContext for MockNavigatableActionContext {
-        fn component_provider(&self) -> Option<Arc<dyn ComponentProvider>> {
+        fn component_provider(&self) -> Option<crate::docking::ProviderId> {
             None
         }
         fn context_object(&self) -> Option<Arc<dyn Any + Send + Sync>> {
@@ -664,18 +664,6 @@ mod tests {
         fn source_object(&self) -> Option<Arc<dyn Any + Send + Sync>> {
             None
         }
-        fn set_context_provider(&mut self, _provider: Option<Arc<dyn ActionContextProvider>>) {}
-        fn context_provider(&self) -> Option<Arc<dyn ActionContextProvider>> {
-            None
-        }
-        fn set_mouse_event(&mut self, _event: Option<Arc<dyn MouseEvent>>) {}
-        fn mouse_event(&self) -> Option<Arc<dyn MouseEvent>> {
-            None
-        }
-        fn source_component(&self) -> Option<Arc<dyn Component>> {
-            None
-        }
-        fn set_source_component(&mut self, _component: Option<Arc<dyn Component>>) {}
     }
 
     impl crate::app::context::NavigationActionContext for MockNavigatableActionContext {}

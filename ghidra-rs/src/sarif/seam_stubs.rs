@@ -384,28 +384,7 @@ impl SarifResultsTableProvider {
     }
 }
 
-/// Placeholder for `docking.action.MenuData`, referenced by
-/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action).
-/// Its eventual Rust shape is an `enum` (see `STUBS.tsv`), but that enum doesn't exist yet, so
-/// this stays a `dyn`-dispatched marker trait until it lands. [`SimpleMenuData`] is the one
-/// concrete implementor this crate currently needs -- a bare menu path, mirroring the
-/// `new MenuData(String[] menuPath)` constructor `create_action` calls.
-pub trait MenuData: Send + Sync {}
-
-/// `new MenuData(String[] menuPath)`: the single-argument constructor
-/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action)
-/// uses.
-pub struct SimpleMenuData {
-    pub menu_path: Vec<String>,
-}
-
-impl SimpleMenuData {
-    pub fn new(menu_path: Vec<String>) -> Self {
-        Self { menu_path }
-    }
-}
-
-impl MenuData for SimpleMenuData {}
+// `docking.action.MenuData` is ported: crate::docking::action::MenuData.
 
 /// Placeholder for the unported Java class `docking.action.DockingAction`, referenced by
 /// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action).
@@ -417,7 +396,7 @@ impl MenuData for SimpleMenuData {}
 pub struct DockingAction {
     pub name: Option<String>,
     pub owner: Option<String>,
-    pub popup_menu_data: Option<Box<dyn MenuData>>,
+    pub popup_menu_data: Option<crate::docking::action::MenuData>,
     action_performed: Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) + Send + Sync>,
     is_enabled_for_context:
         Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) -> bool + Send + Sync>,
@@ -466,7 +445,7 @@ impl DockingAction {
     }
 
     /// `DockingAction.setPopupMenuData(MenuData)`.
-    pub fn set_popup_menu_data(&mut self, data: Box<dyn MenuData>) {
+    pub fn set_popup_menu_data(&mut self, data: crate::docking::action::MenuData) {
         self.popup_menu_data = Some(data);
     }
 }

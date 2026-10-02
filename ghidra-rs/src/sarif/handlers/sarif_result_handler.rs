@@ -22,7 +22,7 @@ use serde_json::Value;
 
 use crate::sarif::model::SarifDataFrame;
 use crate::sarif::seam_stubs::{
-    DockingAction, ProgramTask, SarifController, SarifResultsTableProvider, SimpleMenuData,
+    DockingAction, ProgramTask, SarifController, SarifResultsTableProvider,
     TaskLauncher,
 };
 use crate::util::classfinder::extension_point::ExtensionPoint;
@@ -194,9 +194,10 @@ pub trait SarifResultHandler: ExtensionPoint + Send + Sync + 'static {
             move |_context| *for_enabled.base().is_enabled.lock().unwrap(),
             move |_context| *for_popup.base().is_enabled.lock().unwrap(),
         );
-        action.set_popup_menu_data(Box::new(SimpleMenuData::new(vec![
-            action_name.unwrap_or_default(),
-        ])));
+        let item = action_name.unwrap_or_default();
+        if let Ok(menu) = crate::docking::action::MenuData::new(&[item.as_str()]) {
+            action.set_popup_menu_data(menu);
+        }
         action
     }
 }
@@ -356,9 +357,7 @@ mod tests {
     struct MockActionContext;
 
     impl crate::docking::action_context::ActionContext for MockActionContext {
-        fn component_provider(
-            &self,
-        ) -> Option<Arc<dyn crate::docking::seam_stubs::ComponentProvider>> {
+        fn component_provider(&self) -> Option<crate::docking::ProviderId> {
             None
         }
         fn context_object(&self) -> Option<Arc<dyn std::any::Any + Send + Sync>> {
@@ -376,22 +375,6 @@ mod tests {
         fn source_object(&self) -> Option<Arc<dyn std::any::Any + Send + Sync>> {
             None
         }
-        fn set_context_provider(
-            &mut self,
-            _provider: Option<Arc<dyn crate::docking::seam_stubs::ActionContextProvider>>,
-        ) {
-        }
-        fn context_provider(&self) -> Option<Arc<dyn crate::docking::seam_stubs::ActionContextProvider>> {
-            None
-        }
-        fn set_mouse_event(&mut self, _event: Option<Arc<dyn crate::docking::seam_stubs::MouseEvent>>) {}
-        fn mouse_event(&self) -> Option<Arc<dyn crate::docking::seam_stubs::MouseEvent>> {
-            None
-        }
-        fn source_component(&self) -> Option<Arc<dyn crate::docking::seam_stubs::Component>> {
-            None
-        }
-        fn set_source_component(&mut self, _component: Option<Arc<dyn crate::docking::seam_stubs::Component>>) {}
     }
 
     #[test]

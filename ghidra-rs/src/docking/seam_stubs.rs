@@ -23,51 +23,6 @@ pub trait MouseEvent {}
 /// [`crate::docking::action::docking_action_if`].
 pub trait Component {}
 
-/// Placeholder for `help.HelpDescriptor`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] (which extends it). That trait
-/// never calls `getHelpObject`/`getHelpInfo` itself, so no members are needed yet.
-pub trait HelpDescriptor {}
-
-/// Placeholder for `java.beans.PropertyChangeListener`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] before a Rust equivalent
-/// exists. `DockingActionIf` only ever registers/unregisters this listener, never calls
-/// `propertyChange` on it, so no members are needed yet.
-pub trait PropertyChangeListener {}
-
-/// Placeholder for `docking.action.MenuData`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] before the real class is
-/// ported. `DockingActionIf` only ever passes this type through as an opaque value, so no
-/// members are needed yet.
-pub trait MenuData {}
-
-/// Placeholder for `docking.action.ToolBarData`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] before the real class is
-/// ported. `DockingActionIf` only ever passes this type through as an opaque value, so no
-/// members are needed yet.
-pub trait ToolBarData {}
-
-/// Placeholder for `docking.action.KeyBindingData`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] before the real class is
-/// ported. `DockingActionIf` only ever passes this type through as an opaque value, so no
-/// members are needed yet.
-pub trait KeyBindingData {}
-
-/// Placeholder for `docking.action.KeyBindingType`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] before the real (Java `enum`)
-/// type is ported. `DockingActionIf` only ever passes this type through as an opaque value, so
-/// no members are needed yet.
-pub trait KeyBindingType {}
-
-/// Placeholder for `javax.swing.JButton`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] before a Rust equivalent
-/// exists. `DockingActionIf` only ever returns this type, so no members are needed yet.
-pub trait JButton {}
-
-/// Placeholder for `javax.swing.JMenuItem`, referenced by
-/// [`crate::docking::action::docking_action_if::DockingActionIf`] before a Rust equivalent
-/// exists. `DockingActionIf` only ever returns this type, so no members are needed yet.
-pub trait JMenuItem {}
-
 /// Placeholder for `java.awt.Color`, referenced by [`AttributedString`] before the real class is
 /// ported. Carries no channel data -- callers only ever pass an existing `Color` value through to
 /// a new `AttributedString`, they never inspect it -- so this is an opaque marker rather than an

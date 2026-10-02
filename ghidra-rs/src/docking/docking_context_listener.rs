@@ -36,7 +36,7 @@ mod tests {
     }
 
     impl ActionContext for MockActionContext {
-        fn component_provider(&self) -> Option<Arc<dyn crate::docking::seam_stubs::ComponentProvider>> {
+        fn component_provider(&self) -> Option<crate::docking::ProviderId> {
             None
         }
 
@@ -68,23 +68,11 @@ mod tests {
             self.source_object.clone()
         }
 
-        fn set_context_provider(&mut self, _provider: Option<Arc<dyn crate::docking::seam_stubs::ActionContextProvider>>) {}
 
-        fn context_provider(&self) -> Option<Arc<dyn crate::docking::seam_stubs::ActionContextProvider>> {
-            None
-        }
 
-        fn set_mouse_event(&mut self, _event: Option<Arc<dyn crate::docking::seam_stubs::MouseEvent>>) {}
 
-        fn mouse_event(&self) -> Option<Arc<dyn crate::docking::seam_stubs::MouseEvent>> {
-            None
-        }
 
-        fn source_component(&self) -> Option<Arc<dyn crate::docking::seam_stubs::Component>> {
-            None
-        }
 
-        fn set_source_component(&mut self, _component: Option<Arc<dyn crate::docking::seam_stubs::Component>>) {}
     }
 
     #[test]

@@ -226,13 +226,7 @@ impl DecompilerActionContext {
 }
 
 impl ActionContext for DecompilerActionContext {
-    /// Java's `ActionContext.getComponentProvider()` returns the same `DecompilerProvider` as
-    /// [`get_component_provider`](Self::get_component_provider), just typed as the base
-    /// `ComponentProvider`. `docking::seam_stubs::ComponentProvider` is currently an empty marker
-    /// with no real implementors, so there is nothing to adapt `provider` into yet; this returns
-    /// `None` until that type is ported, matching every other `ActionContext` implementor in this
-    /// crate today.
-    fn component_provider(&self) -> Option<Arc<dyn ComponentProvider>> {
+    fn component_provider(&self) -> Option<crate::docking::ProviderId> {
         None
     }
 
@@ -264,29 +258,11 @@ impl ActionContext for DecompilerActionContext {
         self.source_object.clone()
     }
 
-    fn set_context_provider(&mut self, provider: Option<Arc<dyn ActionContextProvider>>) {
-        self.context_provider = provider;
-    }
 
-    fn context_provider(&self) -> Option<Arc<dyn ActionContextProvider>> {
-        self.context_provider.clone()
-    }
 
-    fn set_mouse_event(&mut self, event: Option<Arc<dyn MouseEvent>>) {
-        self.mouse_event = event;
-    }
 
-    fn mouse_event(&self) -> Option<Arc<dyn MouseEvent>> {
-        self.mouse_event.clone()
-    }
 
-    fn source_component(&self) -> Option<Arc<dyn Component>> {
-        self.source_component.clone()
-    }
 
-    fn set_source_component(&mut self, component: Option<Arc<dyn Component>>) {
-        self.source_component = component;
-    }
 }
 
 impl NavigationActionContext for DecompilerActionContext {}

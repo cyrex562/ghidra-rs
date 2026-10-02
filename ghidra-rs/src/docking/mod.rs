@@ -1,13 +1,16 @@
 pub mod action;
 pub mod action_context;
 pub mod actions;
+pub mod default_action_context;
 pub mod docking_context_listener;
 pub mod drop_target_handler;
 pub mod edit_listener;
+pub mod icon_id;
 pub mod key_binding_precedence;
 pub mod menu;
 pub mod mouse_binding;
 pub mod options;
+pub mod provider_id;
 pub mod seam_stubs;
 pub mod settings;
 pub mod spy;
@@ -18,3 +21,7 @@ pub mod window_position;
 
 pub use key_binding_precedence::KeyBindingPrecedence;
 pub use mouse_binding::MouseBinding;
+pub use icon_id::IconId;
+pub use action_context::{ActionContext, AsAnyContext};
+pub use default_action_context::DefaultActionContext;
+pub use provider_id::ProviderId;
