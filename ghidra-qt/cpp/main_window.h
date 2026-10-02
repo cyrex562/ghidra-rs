@@ -29,6 +29,8 @@ public:
     // "title<TAB>area<TAB>view" per dock, for smoke tests.
     QStringList dockSummary() const;
     // Restores ADS geometry; false (and default placement kept) if rejected.
+    // Afterwards every provider Rust says is visible is shown again, even if
+    // the saved ADS state (from a different dock set) never mentioned it.
     bool restoreDockGeometry(const QByteArray& state);
     // The dock showing a provider title, or nullptr.
     ads::CDockWidget* dockByTitle(const QString& title) const;
@@ -56,6 +58,10 @@ protected:
 
 private:
     void buildDocks();
+    void placeDock(ads::CDockWidget* dock, uint8_t position);
+    void showDocksRustConsidersVisible();
+    QMap<int, ads::CDockAreaWidget*> m_areas;
+    QMap<ads::CDockWidget*, uint8_t> m_positions;
     void installPopups();
     QToolBar* m_toolBar = nullptr;
     QProgressBar* m_progress = nullptr;

@@ -104,6 +104,8 @@ pub mod ffi {
         pub focus: String,
         /// Invoke a non-existent action from a slot (error-path smoke test).
         pub invoke_missing_action: bool,
+        /// Rebuild actions N times and print child counts (leak test); 0 = off.
+        pub count_after_rebuilds: u32,
     }
 
     /// A provider as the shell needs it.

@@ -1,7 +1,12 @@
 #include "ghidra-qt/cpp/input.h"
 
 #include <QApplication>
+#include <QAbstractSpinBox>
+#include <QComboBox>
 #include <QKeyEvent>
+#include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QTextEdit>
 #include <QMenu>
 #include <QSocketNotifier>
 #include <QStatusBar>
@@ -19,9 +24,33 @@ QString qs(const rust::String& s) { return QString::fromUtf8(s.data(), static_ca
 
 KeyForwarder::KeyForwarder(MainWindow* window) : QObject(window), m_window(window) {}
 
+namespace {
+// Java KeyBindingOverrideKeyEventDispatcher defers to text components for the
+// keys they handle themselves (willBeHandledByTextComponent): standard edit
+// sequences, and plain/shifted typing in editable fields.
+bool handledByTextWidget(QObject* watched, QKeyEvent* key) {
+    const bool textual = qobject_cast<QLineEdit*>(watched) || qobject_cast<QTextEdit*>(watched) ||
+                         qobject_cast<QPlainTextEdit*>(watched) || qobject_cast<QAbstractSpinBox*>(watched);
+    auto* combo = qobject_cast<QComboBox*>(watched);
+    if (!textual && !(combo && combo->isEditable())) return false;
+    for (auto std : {QKeySequence::Copy, QKeySequence::Paste, QKeySequence::Cut, QKeySequence::SelectAll,
+                     QKeySequence::Undo, QKeySequence::Redo}) {
+        if (key->matches(std)) return true;
+    }
+    const auto mods = key->modifiers() & ~(Qt::ShiftModifier | Qt::KeypadModifier);
+    return mods == Qt::NoModifier && !key->text().isEmpty();
+}
+}  // namespace
+
 bool KeyForwarder::eventFilter(QObject* watched, QEvent* event) {
     if (event->type() != QEvent::KeyPress) return false;
     auto* key = static_cast<QKeyEvent*>(event);
+    if (event == m_lastEvent && key->timestamp() == m_lastTimestamp) return false;  // propagation repeat
+    m_lastEvent = event;
+    m_lastTimestamp = key->timestamp();
+    // Java ignores docking actions while a menu is open (MenuKeyProcessor).
+    if (QApplication::activePopupWidget()) return false;
+    if (handledByTextWidget(watched, key)) return false;
     const int64_t pid = m_window->providerOfObject(watched);
     KeyResult r;
     if (!bridgeCall(m_window->statusBar(), [&] {

@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QCloseEvent>
 #include <QContextMenuEvent>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMenuBar>
 #include <QProgressBar>
@@ -108,6 +109,7 @@ bool MainWindow::focusDock(const QString& title) {
     dock->setAsCurrentTab();
     QWidget* target = dock->widget()->findChild<QAbstractItemView*>();
     if (!target) target = dock->widget()->findChild<QTextEdit*>();
+    if (!target) target = dock->widget()->findChild<QLineEdit*>();
     if (!target) target = dock->widget();
     target->setFocus(Qt::OtherFocusReason);
     return true;
@@ -133,38 +135,63 @@ void MainWindow::installPopups() {
 void MainWindow::buildDocks() {
     rust::Vec<uint64_t> ids;
     if (!bridgeCall(statusBar(), [&] { ids = provider_ids(); })) return;
-    QMap<int, ads::CDockAreaWidget*> areas;  // one area per placement; later docks tab into it
     for (uint64_t pid : ids) {
         ProviderInfo info;
         if (!bridgeCall(statusBar(), [&] { info = provider_info(pid); })) continue;
         auto* dock = new ads::CDockWidget(m_dockManager, qs(info.title));
         dock->setWidget(createProviderView(pid, info.kind, statusBar(), dock));
-        const Placement p = placementFor(info.position);
         m_providers.insert(dock, static_cast<int64_t>(pid));
-        m_areaNames.insert(dock, QString::fromLatin1(p.name));
+        m_positions.insert(dock, info.position);
+        m_areaNames.insert(dock, QString::fromLatin1(placementFor(info.position).name));
         m_viewNames.insert(dock, QString::fromLatin1(viewName(info.kind)));
-        if (p.area == ads::NoDockWidgetArea) {
-            m_dockManager->addDockWidgetFloating(dock);
-        } else if (areas.contains(p.area)) {
-            m_dockManager->addDockWidgetTabToArea(dock, areas.value(p.area));
-        } else {
-            areas.insert(p.area, m_dockManager->addDockWidget(p.area, dock));
-        }
+        placeDock(dock, info.position);
         if (!info.visible) dock->toggleView(false);
+    }
+}
+
+// One area per placement; later docks with the same placement tab into it.
+void MainWindow::placeDock(ads::CDockWidget* dock, uint8_t position) {
+    const Placement p = placementFor(position);
+    if (p.area == ads::NoDockWidgetArea) {
+        m_dockManager->addDockWidgetFloating(dock);
+        return;
+    }
+    ads::CDockAreaWidget* area = m_areas.value(p.area, nullptr);
+    if (area && area->dockManager() == m_dockManager && area->isVisible()) {
+        m_dockManager->addDockWidgetTabToArea(dock, area);
+    } else {
+        m_areas.insert(p.area, m_dockManager->addDockWidget(p.area, dock));
+    }
+}
+
+void MainWindow::showDocksRustConsidersVisible() {
+    m_areas.clear();  // areas may have been rebuilt by restoreState
+    for (auto it = m_providers.constBegin(); it != m_providers.constEnd(); ++it) {
+        ads::CDockWidget* dock = it.key();
+        ProviderInfo info;
+        if (!bridgeCall(statusBar(), [&] { info = provider_info(static_cast<uint64_t>(it.value())); })) continue;
+        if (!info.visible || !dock->isClosed()) continue;
+        if (!dock->dockAreaWidget()) {
+            placeDock(dock, m_positions.value(dock));
+        }
+        dock->toggleView(true);
     }
 }
 
 QStringList MainWindow::dockSummary() const {
     QStringList out;
     for (auto it = m_providers.constBegin(); it != m_providers.constEnd(); ++it) {
-        out << QStringLiteral("%1\t%2\t%3").arg(it.key()->windowTitle(), m_areaNames.value(it.key()), m_viewNames.value(it.key()));
+        QString line = QStringLiteral("%1\t%2\t%3").arg(it.key()->windowTitle(), m_areaNames.value(it.key()), m_viewNames.value(it.key()));
+        if (it.key()->isClosed()) line += QStringLiteral("\tclosed");
+        out << line;
     }
     return out;
 }
 
 bool MainWindow::restoreDockGeometry(const QByteArray& state) {
-    if (state.isEmpty()) return false;
-    return m_dockManager->restoreState(state);
+    const bool ok = !state.isEmpty() && m_dockManager->restoreState(state);
+    showDocksRustConsidersVisible();
+    return ok;
 }
 
 ads::CDockWidget* MainWindow::dockByTitle(const QString& title) const {

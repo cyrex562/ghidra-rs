@@ -21,6 +21,10 @@ public:
 
 private:
     MainWindow* m_window;
+    // The app-level filter sees a key event again for every parent it
+    // propagates to; dispatch each event once.
+    const QEvent* m_lastEvent = nullptr;
+    unsigned long m_lastTimestamp = 0;
 };
 
 /// Watches the Rust wake fd; on readiness drains events and applies them.

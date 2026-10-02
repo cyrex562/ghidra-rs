@@ -78,14 +78,21 @@ void dumpMenu(const QList<QAction*>& actions, int depth, QStringList& out) {
 }  // namespace
 
 void rebuildMenuBar(QMenuBar* bar, QStatusBar* status, const FocusedProvider& focused) {
+    // QMenuBar::clear() only deletes actions it owns; sub-menus (and their
+    // menuActions) are children of the bar and must be freed too. deleteLater:
+    // a rebuild can happen while one of these menus' actions is emitting.
+    const QList<QMenu*> oldMenus = bar->findChildren<QMenu*>(QString(), Qt::FindDirectChildrenOnly);
     bar->clear();
+    for (QMenu* m : oldMenus) m->deleteLater();
     rust::Vec<MenuItemInfo> items;
     if (!bridgeCall(status, [&] { items = menu_bar(focused ? focused() : -1); })) return;
     fill(bar, items, status, focused);
 }
 
 void rebuildToolBar(QToolBar* toolbar, QStatusBar* status, const FocusedProvider& focused) {
-    toolbar->clear();
+    const QList<QAction*> oldActions = toolbar->actions();
+    toolbar->clear();  // removes but does not delete
+    for (QAction* a : oldActions) a->deleteLater();
     rust::Vec<ToolBarInfo> items;
     if (!bridgeCall(status, [&] { items = tool_bar(focused ? focused() : -1); })) return;
     for (const ToolBarInfo& t : items) {

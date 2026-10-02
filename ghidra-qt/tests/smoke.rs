@@ -24,6 +24,10 @@ struct Shell(Command);
 const DEADLINE: std::time::Duration = std::time::Duration::from_secs(20);
 
 impl Shell {
+    fn env_var(mut self, k: &str, v: &str) -> Self {
+        self.0.env(k, v);
+        self
+    }
     fn arg(mut self, a: impl AsRef<std::ffi::OsStr>) -> Self {
         self.0.arg(a);
         self
@@ -202,4 +206,45 @@ fn layout_is_saved_on_exit_and_corrupt_config_is_survivable() {
     let out = shell_with_config(&dir).arg("--dump-docks").output().expect("spawn");
     assert!(out.status.success());
     assert_eq!(String::from_utf8_lossy(&out.stdout).lines().count(), 4);
+}
+
+#[test]
+fn saved_geometry_from_a_smaller_dock_set_does_not_hide_new_providers() {
+    let dir = tmp("config-newdock");
+    let _ = fs::remove_dir_all(&dir);
+    // run 1: four providers; layout + ADS state saved on exit
+    let out = shell_with_config(&dir).args(["--quit-after-ms", "500"]).output().expect("spawn");
+    assert!(out.status.success());
+    // run 2: a fifth provider exists that the saved ADS state never heard of
+    let out = shell_with_config(&dir).env_var("GHIDRA_RS_DEMO_EXTRA_PROVIDER", "1").arg("--dump-docks").output().expect("spawn");
+    assert!(out.status.success());
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    assert_eq!(text.lines().count(), 5, "{text}");
+    assert!(!text.contains("closed"), "a provider was hidden by stale ADS state:\n{text}");
+}
+
+#[test]
+fn edit_keys_stay_with_text_widgets() {
+    let run = |focus: &str| {
+        let out = shell()
+            .args(["--press", "Ctrl-C", "--focus", focus, "--quit-after-ms", "1200"])
+            .output()
+            .expect("spawn");
+        assert!(out.status.success());
+        String::from_utf8_lossy(&out.stdout).to_string()
+    };
+    // a line edit owns Ctrl-C (Java: willBeHandledByTextComponent)
+    assert!(!run("Options").lines().any(|l| l == "status: Copy"));
+    // a tree view does not, so the tool's Copy action runs
+    assert!(run("Program Tree").lines().any(|l| l == "status: Copy"));
+}
+
+#[test]
+fn rebuilding_actions_does_not_leak_menus_or_toolbar_actions() {
+    let count = |n: &str| {
+        let out = shell().args(["--count-after-rebuilds", n]).output().expect("spawn");
+        assert!(out.status.success());
+        String::from_utf8_lossy(&out.stdout).trim().to_string()
+    };
+    assert_eq!(count("1"), count("50"));
 }

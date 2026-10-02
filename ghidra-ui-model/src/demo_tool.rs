@@ -142,6 +142,15 @@ pub fn build_demo_session() -> UiSession {
         true,
     );
 
+    // Test hook: a provider an older saved layout has never seen.
+    if std::env::var_os("GHIDRA_RS_DEMO_EXTRA_PROVIDER").is_some() {
+        s.add_provider(
+            provider("Extra", ProviderViewKind::Table, WindowPosition::Right),
+            Some(ViewModelBox::Table(Box::new(VecTable::new(vec!["Value".into()], vec![vec![CellValue::Int(1)]])))),
+            true,
+        );
+    }
+
     let tool = s.tool_mut();
     tool.set_menu_group(&["&File"], Some("0"), None);
     tool.set_menu_group(&["&Edit"], Some("1"), None);

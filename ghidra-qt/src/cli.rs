@@ -39,6 +39,10 @@ pub struct Args {
     /// Invoke a non-existent action from a Qt slot (error-path smoke test).
     #[arg(long, hide = true)]
     pub invoke_missing_action: bool,
+
+    /// Rebuild menus/toolbar N times, print menubar+toolbar child counts, exit (leak test).
+    #[arg(long, hide = true, value_name = "N", default_value_t = 0)]
+    pub count_after_rebuilds: u32,
 }
 
 /// Rejects option combinations the shell cannot honour.

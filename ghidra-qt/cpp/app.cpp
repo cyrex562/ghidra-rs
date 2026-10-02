@@ -41,22 +41,7 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
     bridgeCall(nullptr, [&] { load_tool_config(); });
     MainWindow window(title);
 
-    if (options.dump_menus) {
-        for (const QString& line : window.menuSummary()) std::printf("%s\n", line.toUtf8().constData());
-        std::fflush(stdout);
-        return 0;
-    }
-
-    if (options.dump_docks) {
-        if (!options.restore_geometry.empty()) {
-            QFile f(toQString(options.restore_geometry));
-            if (f.open(QIODevice::ReadOnly)) window.restoreDockGeometry(f.readAll());
-        }
-        for (const QString& line : window.dockSummary()) std::printf("%s\n", line.toUtf8().constData());
-        std::fflush(stdout);
-        return 0;
-    }
-
+    // Geometry: an explicit file (tests) or the layout saved in the tool config.
     if (!options.restore_geometry.empty()) {
         QFile f(toQString(options.restore_geometry));
         if (f.open(QIODevice::ReadOnly)) window.restoreDockGeometry(f.readAll());
@@ -66,6 +51,27 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
             window.restoreDockGeometry(QByteArray(reinterpret_cast<const char*>(saved.data()), static_cast<int>(saved.size())));
         }
     }
+
+    if (options.dump_menus) {
+        for (const QString& line : window.menuSummary()) std::printf("%s\n", line.toUtf8().constData());
+        std::fflush(stdout);
+        return 0;
+    }
+    if (options.dump_docks) {
+        for (const QString& line : window.dockSummary()) std::printf("%s\n", line.toUtf8().constData());
+        std::fflush(stdout);
+        return 0;
+    }
+    if (options.count_after_rebuilds > 0) {
+        for (uint32_t i = 0; i < options.count_after_rebuilds; ++i) {
+            window.rebuildActions();
+            QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        }
+        std::printf("%lld\n", static_cast<long long>(window.findChildren<QObject*>().size()));
+        std::fflush(stdout);
+        return 0;
+    }
+
     auto* keys = new KeyForwarder(&window);
     app.installEventFilter(keys);
     auto* pump = new EventPump(&window, !options.press.empty());

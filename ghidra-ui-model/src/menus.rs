@@ -112,7 +112,7 @@ fn item_entry(tool: &DockingTool, id: ActionId, text: &str, mnemonic: Option<cha
     }
 }
 
-fn insert(tool: &DockingTool, nodes: &mut Vec<Node>, prefix: &[String], data: &MenuData, id: ActionId, depth: usize) {
+fn insert(tool: &DockingTool, nodes: &mut Vec<Node>, prefix: &[String], data: &MenuData, id: ActionId, depth: usize, popup: bool) {
     let path = data.menu_path();
     if depth + 1 == path.len() {
         nodes.push(Node::Item {
@@ -133,32 +133,70 @@ fn insert(tool: &DockingTool, nodes: &mut Vec<Node>, prefix: &[String], data: &M
         None => {
             let keys: Vec<&str> = sub_path.iter().map(String::as_str).collect();
             let groups = tool.menu_groups();
-            let group = groups
-                .menu_group(&keys)
-                .map(str::to_owned)
-                .or_else(|| if depth + 2 == path.len() { data.parent_menu_group().map(str::to_owned) } else { None });
+            // Java MenuManager.getSubMenuGroup: the pull-right group from the
+            // leaf's MenuData (only for the leaf's direct parent), else the
+            // tool's MenuGroupMap, else the menu's own name. Menubar top-level
+            // menus are ordered separately (MenuBarManager) and get no group.
+            let group = if !popup && depth == 0 {
+                None
+            } else {
+                let pull_right = if depth + 2 == path.len() { data.parent_menu_group().map(str::to_owned) } else { None };
+                Some(pull_right.or_else(|| groups.menu_group(&keys).map(str::to_owned)).unwrap_or_else(|| name.clone()))
+            };
             let sub_group = groups.menu_sub_group(&keys).unwrap_or(NO_SUBGROUP).to_owned();
             nodes.push(Node::Menu { name, path: sub_path.clone(), group, sub_group, children: Vec::new() });
             nodes.len() - 1
         }
     };
     if let Node::Menu { children, .. } = &mut nodes[idx] {
-        insert(tool, children, &sub_path, data, id, depth + 1);
+        insert(tool, children, &sub_path, data, id, depth + 1, popup);
     }
 }
 
-fn render(tool: &DockingTool, mut nodes: Vec<Node>, ctx: &dyn ActionContext, null_first: bool, popup: bool, separators: bool) -> Vec<MenuEntry> {
-    nodes.sort_by(|a, b| {
-        cmp_group(a.group(), b.group(), null_first)
-            .then_with(|| a.sub_group().cmp(b.sub_group()))
-            .then_with(|| a.name().cmp(b.name()))
-    });
+/// How separators are inserted (they differ between Java's menus).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Separators {
+    /// The menu bar itself: none (`MenuBarManager`).
+    None,
+    /// `MenuManager.getMenu`: when the previous item's group is non-null and differs.
+    Menu,
+    /// `MenuManager.getPopupMenu` (popup root): null groups compare as a named
+    /// group, separator on any change after the first item.
+    PopupRoot,
+}
+
+/// `MenuBarManager.getMenuBar`: File, Edit, the rest by name, then Window, Help.
+fn menubar_rank(name: &str) -> u8 {
+    match name {
+        "File" => 0,
+        "Edit" => 1,
+        "Window" => 3,
+        "Help" => 4,
+        _ => 2,
+    }
+}
+
+fn render(tool: &DockingTool, mut nodes: Vec<Node>, ctx: &dyn ActionContext, null_first: bool, popup: bool, separators: Separators) -> Vec<MenuEntry> {
+    if separators == Separators::None {
+        nodes.sort_by(|a, b| menubar_rank(a.name()).cmp(&menubar_rank(b.name())).then_with(|| a.name().cmp(b.name())));
+    } else {
+        nodes.sort_by(|a, b| {
+            cmp_group(a.group(), b.group(), null_first)
+                .then_with(|| a.sub_group().cmp(b.sub_group()))
+                .then_with(|| a.name().cmp(b.name()))
+        });
+    }
     let mut out = Vec::new();
     let mut last_group: Option<Option<String>> = None;
     for n in nodes {
         let g = n.group().map(str::to_owned);
         if let Some(prev) = &last_group {
-            if separators && *prev != g {
+            let sep = match separators {
+                Separators::None => false,
+                Separators::Menu => prev.is_some() && *prev != g,
+                Separators::PopupRoot => *prev != g,
+            };
+            if sep {
                 out.push(MenuEntry::Separator);
             }
         }
@@ -178,7 +216,7 @@ fn render(tool: &DockingTool, mut nodes: Vec<Node>, ctx: &dyn ActionContext, nul
                 out.push(MenuEntry::Submenu {
                     title: name,
                     mnemonic,
-                    children: render(tool, children, ctx, null_first, popup, true),
+                    children: render(tool, children, ctx, null_first, popup, Separators::Menu),
                 });
             }
         }
@@ -196,12 +234,10 @@ pub fn menu_bar(tool: &DockingTool, ctx: &dyn ActionContext) -> Vec<MenuEntry> {
             continue;
         }
         if let Some(data) = a.menu_bar_data() {
-            insert(tool, &mut roots, &[], data, id, 0);
+            insert(tool, &mut roots, &[], data, id, 0, false);
         }
     }
-    // Top level: sub-menus ordered by tool group then name; the menu bar
-    // itself has no separators (MenuBarManager).
-    render(tool, roots, ctx, false, false, false)
+    render(tool, roots, ctx, false, false, Separators::None)
 }
 
 /// A provider's popup menu: global and that provider's local actions with
@@ -216,9 +252,9 @@ pub fn popup(tool: &DockingTool, provider: Option<ProviderId>, ctx: &dyn ActionC
     for id in ids {
         let a = tool.actions().get(id).expect("listed action exists");
         let (Some(data), true) = (a.popup_menu_data(), a.is_valid_context(ctx) && a.is_add_to_popup(ctx)) else { continue };
-        insert(tool, &mut roots, &[], data, id, 0);
+        insert(tool, &mut roots, &[], data, id, 0, true);
     }
-    render(tool, roots, ctx, true, true, true)
+    render(tool, roots, ctx, true, true, Separators::PopupRoot)
 }
 
 /// The main toolbar: global actions with toolbar data, by group then sub-group
@@ -333,8 +369,10 @@ mod tests {
         let bar = menu_bar(&t, &DefaultActionContext::new());
         let MenuEntry::Submenu { title, children, .. } = &bar[0] else { panic!() };
         assert_eq!(title, "File");
-        assert_eq!(names(children), vec!["Open", "---", "Recent"]);
-        let MenuEntry::Submenu { children: recent, .. } = &children[2] else { panic!() };
+        // Java: an ungrouped pull-right's group defaults to its own name, and
+        // "Recent" < "a" in String.compareTo
+        assert_eq!(names(children), vec!["Recent", "---", "Open"]);
+        let MenuEntry::Submenu { children: recent, .. } = &children[0] else { panic!() };
         match &recent[0] {
             MenuEntry::Item { text, enabled, .. } => assert_eq!((text.as_str(), *enabled), ("a.out", false)),
             other => panic!("{other:?}"),
@@ -353,6 +391,47 @@ mod tests {
         assert_eq!(names(&bar), vec!["File", "Edit", "Search"]);
         let MenuEntry::Submenu { mnemonic, .. } = &bar[0] else { panic!() };
         assert_eq!(*mnemonic, Some('F'));
+    }
+
+    #[test]
+    fn menubar_order_is_file_edit_alphabetical_window_help() {
+        let mut t = DockingTool::new("T");
+        for top in ["Help", "Window", "Navigation", "&File", "Analysis", "&Edit"] {
+            t.add_action(Box::new(menu_action(top, &[top, "x"], None)));
+        }
+        let bar = menu_bar(&t, &DefaultActionContext::new());
+        assert_eq!(names(&bar), vec!["File", "Edit", "Analysis", "Navigation", "Window", "Help"]);
+    }
+
+    #[test]
+    fn parent_menu_group_wins_over_map_but_not_at_the_menubar_root() {
+        let mut t = DockingTool::new("T");
+        let mut a = DockingAction::new("Deep", "T");
+        let mut md = MenuData::new(&["File", "Sub", "Deep"]).unwrap();
+        md.set_parent_menu_group(Some("aaa")).unwrap();
+        a.set_menu_bar_data(Some(md));
+        t.add_action(Box::new(Act(a)));
+        t.add_action(Box::new(menu_action("Z", &["File", "Z"], Some("m"))));
+        t.set_menu_group(&["File", "Sub"], Some("zzz"), None);
+        let bar = menu_bar(&t, &DefaultActionContext::new());
+        let MenuEntry::Submenu { children, .. } = &bar[0] else { panic!() };
+        // "Sub" uses its parentMenuGroup "aaa" (< "m"), not the map's "zzz"
+        assert_eq!(names(children), vec!["Sub", "---", "Z"]);
+    }
+
+    #[test]
+    fn popup_submenus_have_no_separator_after_null_group_items() {
+        let mut p = DockingTool::new("P");
+        let mut a = DockingAction::new("A", "T");
+        a.set_popup_menu_data(MenuData::full(&["More", "A"], None, None, None, None).ok());
+        let mut b = DockingAction::new("B", "T");
+        b.set_popup_menu_data(MenuData::full(&["More", "B"], None, Some("x"), None, None).ok());
+        p.add_action(Box::new(Act(a)));
+        p.add_action(Box::new(Act(b)));
+        let pop = popup(&p, None, &DefaultActionContext::new());
+        let MenuEntry::Submenu { children, .. } = &pop[0] else { panic!("{pop:?}") };
+        // Java MenuManager.getMenu: no separator when the previous group is null
+        assert_eq!(names(children), vec!["A", "B"]);
     }
 
     #[test]
