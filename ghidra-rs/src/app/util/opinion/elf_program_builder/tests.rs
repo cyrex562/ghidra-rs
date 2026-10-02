@@ -393,3 +393,52 @@ fn original_value_reads_memory_without_relocations() {
     assert_eq!(builder.get_default_address(0x10).offset(), 0x10);
     assert_eq!(builder.get_image_base_word_adjustment_offset(), 0);
 }
+
+/// Robustness sweep over host ELF files (`/usr/bin`, `/usr/lib/x86_64-linux-gnu`): every
+/// 64-bit little-endian image must load without panicking and produce memory. Ignored by default
+/// (host-dependent and slow); run with `--ignored`.
+#[test]
+#[ignore]
+fn host_elf_sweep() {
+    let mut files: Vec<std::path::PathBuf> = Vec::new();
+    for dir in ["/usr/bin", "/usr/lib/x86_64-linux-gnu"] {
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            let mut v: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+            v.sort();
+            files.extend(v.into_iter().step_by(7).take(150));
+        }
+    }
+    let mut failures = Vec::new();
+    let mut loaded = 0;
+    for path in files {
+        let Ok(meta) = std::fs::metadata(&path) else { continue };
+        if !meta.is_file() || meta.len() > 32 << 20 {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(&path) else { continue };
+        if bytes.len() < 0x40 || bytes[..4] != [0x7f, b'E', b'L', b'F'] || bytes[4] != 2 || bytes[5] != 1 {
+            continue;
+        }
+        let result = std::panic::catch_unwind(|| {
+            let probe = ElfHeader::new(provider(bytes.clone()), None).ok()?;
+            let mut image_base = probe.find_image_base();
+            if image_base == 0 && (probe.is_relocatable() || probe.is_shared_object()) {
+                image_base = options_factory::IMAGE64_BASE_DEFAULT;
+            }
+            let program: Arc<dyn Program> =
+                Arc::new(ProgramDB::new("sweep".into(), test_language(8, false)).unwrap());
+            let log = Arc::new(MessageLog::new());
+            let elf = ElfHeader::new(provider(bytes.clone()), None).ok()?;
+            load_elf(elf, Arc::clone(&program), &image_base_option(&format!("{image_base:x}")), &log, &DummyMonitor)
+                .ok()?;
+            Some(program.get_memory().unwrap().get_block_handles().len())
+        });
+        match result {
+            Ok(Some(n)) if n > 0 => loaded += 1,
+            Ok(other) => failures.push(format!("{}: {other:?}", path.display())),
+            Err(_) => failures.push(format!("{}: PANIC", path.display())),
+        }
+    }
+    eprintln!("loaded {loaded}, failures {}: {failures:#?}", failures.len());
+    assert!(failures.is_empty(), "{failures:#?}");
+}
