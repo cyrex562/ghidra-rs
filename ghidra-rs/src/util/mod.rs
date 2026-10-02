@@ -33,6 +33,7 @@ pub mod async_timer;
 pub mod async_utils;
 pub mod disposed_exception;
 pub mod ascii;
+pub mod awt;
 pub mod charset;
 pub mod html;
 pub mod xml;

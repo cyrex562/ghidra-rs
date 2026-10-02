@@ -1,4 +1,4 @@
-use egui::Color32;
+use crate::util::awt::Color;
 
 /// Provides foreground colors for items that may differ from a recorded baseline ("modified").
 ///
@@ -12,19 +12,19 @@ use egui::Color32;
 /// Ported from `ghidra.app.plugin.core.debug.gui.model.ColorsModified`.
 pub trait ColorsModified<C> {
     /// Foreground color for a **modified**, **unselected** item.
-    fn diff_foreground(&self, ctx: &C) -> Color32;
+    fn diff_foreground(&self, ctx: &C) -> Color;
 
     /// Foreground color for a **modified**, **selected** item.
-    fn diff_sel_foreground(&self, ctx: &C) -> Color32;
+    fn diff_sel_foreground(&self, ctx: &C) -> Color;
 
     /// Foreground color for an **unmodified**, **unselected** item.
-    fn foreground(&self, ctx: &C) -> Color32;
+    fn foreground(&self, ctx: &C) -> Color;
 
     /// Foreground color for an **unmodified**, **selected** item.
-    fn sel_foreground(&self, ctx: &C) -> Color32;
+    fn sel_foreground(&self, ctx: &C) -> Color;
 
     /// Returns the appropriate foreground color for the given modification and selection state.
-    fn foreground_for(&self, ctx: &C, is_modified: bool, is_selected: bool) -> Color32 {
+    fn foreground_for(&self, ctx: &C, is_modified: bool, is_selected: bool) -> Color {
         if is_modified {
             if is_selected {
                 self.diff_sel_foreground(ctx)
@@ -46,9 +46,9 @@ pub trait ColorsModified<C> {
 /// fields.
 pub struct TableColors {
     /// Foreground color for unselected rows (analogous to `JTable.getForeground()`).
-    pub foreground: Color32,
+    pub foreground: Color,
     /// Foreground color for selected rows (analogous to `JTable.getSelectionForeground()`).
-    pub selection_foreground: Color32,
+    pub selection_foreground: Color,
 }
 
 /// Extends [`ColorsModified`] for table rendering contexts.
@@ -60,25 +60,25 @@ pub struct TableColors {
 /// Ported from `ghidra.app.plugin.core.debug.gui.model.ColorsModified.InTable`.
 pub trait InTable {
     /// Foreground color for a modified, unselected table cell.
-    fn diff_foreground(&self, ctx: &TableColors) -> Color32;
+    fn diff_foreground(&self, ctx: &TableColors) -> Color;
     /// Foreground color for a modified, selected table cell.
-    fn diff_sel_foreground(&self, ctx: &TableColors) -> Color32;
+    fn diff_sel_foreground(&self, ctx: &TableColors) -> Color;
 }
 
 impl<T: InTable> ColorsModified<TableColors> for T {
-    fn diff_foreground(&self, ctx: &TableColors) -> Color32 {
+    fn diff_foreground(&self, ctx: &TableColors) -> Color {
         InTable::diff_foreground(self, ctx)
     }
 
-    fn diff_sel_foreground(&self, ctx: &TableColors) -> Color32 {
+    fn diff_sel_foreground(&self, ctx: &TableColors) -> Color {
         InTable::diff_sel_foreground(self, ctx)
     }
 
-    fn foreground(&self, ctx: &TableColors) -> Color32 {
+    fn foreground(&self, ctx: &TableColors) -> Color {
         ctx.foreground
     }
 
-    fn sel_foreground(&self, ctx: &TableColors) -> Color32 {
+    fn sel_foreground(&self, ctx: &TableColors) -> Color {
         ctx.selection_foreground
     }
 }
@@ -90,9 +90,9 @@ impl<T: InTable> ColorsModified<TableColors> for T {
 /// Java `TreeCellRenderer` interface are inlined as fields.
 pub struct TreeColors {
     /// Text color for non-selected tree nodes (analogous to `getTextNonSelectionColor()`).
-    pub text_non_selection: Color32,
+    pub text_non_selection: Color,
     /// Text color for selected tree nodes (analogous to `getTextSelectionColor()`).
-    pub text_selection: Color32,
+    pub text_selection: Color,
 }
 
 /// Extends [`ColorsModified`] for tree rendering contexts.
@@ -104,25 +104,25 @@ pub struct TreeColors {
 /// Ported from `ghidra.app.plugin.core.debug.gui.model.ColorsModified.InTree`.
 pub trait InTree {
     /// Foreground color for a modified, unselected tree node.
-    fn diff_foreground(&self, ctx: &TreeColors) -> Color32;
+    fn diff_foreground(&self, ctx: &TreeColors) -> Color;
     /// Foreground color for a modified, selected tree node.
-    fn diff_sel_foreground(&self, ctx: &TreeColors) -> Color32;
+    fn diff_sel_foreground(&self, ctx: &TreeColors) -> Color;
 }
 
 impl<T: InTree> ColorsModified<TreeColors> for T {
-    fn diff_foreground(&self, ctx: &TreeColors) -> Color32 {
+    fn diff_foreground(&self, ctx: &TreeColors) -> Color {
         InTree::diff_foreground(self, ctx)
     }
 
-    fn diff_sel_foreground(&self, ctx: &TreeColors) -> Color32 {
+    fn diff_sel_foreground(&self, ctx: &TreeColors) -> Color {
         InTree::diff_sel_foreground(self, ctx)
     }
 
-    fn foreground(&self, ctx: &TreeColors) -> Color32 {
+    fn foreground(&self, ctx: &TreeColors) -> Color {
         ctx.text_non_selection
     }
 
-    fn sel_foreground(&self, ctx: &TreeColors) -> Color32 {
+    fn sel_foreground(&self, ctx: &TreeColors) -> Color {
         ctx.text_selection
     }
 }
@@ -131,36 +131,36 @@ impl<T: InTree> ColorsModified<TreeColors> for T {
 mod tests {
     use super::*;
 
-    const RED: Color32 = Color32::from_rgb(255, 0, 0);
-    const GREEN: Color32 = Color32::from_rgb(0, 255, 0);
-    const BLUE: Color32 = Color32::from_rgb(0, 0, 255);
-    const WHITE: Color32 = Color32::WHITE;
-    const BLACK: Color32 = Color32::BLACK;
+    const RED: Color = Color::from_rgb(255, 0, 0);
+    const GREEN: Color = Color::from_rgb(0, 255, 0);
+    const BLUE: Color = Color::from_rgb(0, 0, 255);
+    const WHITE: Color = Color::WHITE;
+    const BLACK: Color = Color::BLACK;
 
     struct TableRenderer {
-        diff_fg: Color32,
-        diff_sel_fg: Color32,
+        diff_fg: Color,
+        diff_sel_fg: Color,
     }
 
     impl InTable for TableRenderer {
-        fn diff_foreground(&self, _ctx: &TableColors) -> Color32 {
+        fn diff_foreground(&self, _ctx: &TableColors) -> Color {
             self.diff_fg
         }
-        fn diff_sel_foreground(&self, _ctx: &TableColors) -> Color32 {
+        fn diff_sel_foreground(&self, _ctx: &TableColors) -> Color {
             self.diff_sel_fg
         }
     }
 
     struct TreeRenderer {
-        diff_fg: Color32,
-        diff_sel_fg: Color32,
+        diff_fg: Color,
+        diff_sel_fg: Color,
     }
 
     impl InTree for TreeRenderer {
-        fn diff_foreground(&self, _ctx: &TreeColors) -> Color32 {
+        fn diff_foreground(&self, _ctx: &TreeColors) -> Color {
             self.diff_fg
         }
-        fn diff_sel_foreground(&self, _ctx: &TreeColors) -> Color32 {
+        fn diff_sel_foreground(&self, _ctx: &TreeColors) -> Color {
             self.diff_sel_fg
         }
     }
