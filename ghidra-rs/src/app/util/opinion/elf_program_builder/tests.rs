@@ -371,3 +371,25 @@ fn bin_ls_with_real_x86_64_language() {
         assert!(names.iter().any(|n| n == expected), "missing {expected}: {names:?}");
     }
 }
+
+#[test]
+fn original_value_reads_memory_without_relocations() {
+    let (_, bytes) = typical_image(true, 62, 0x400000);
+    let program: Arc<dyn Program> =
+        Arc::new(ProgramDB::new("elf".into(), test_language(8, false)).unwrap());
+    let log = Arc::new(MessageLog::new());
+    let elf = ElfHeader::new(provider(bytes), None).unwrap();
+    let options = image_base_option("401000");
+    let mut builder = ElfProgramBuilder::new(elf, Arc::clone(&program), &options, log).unwrap();
+    builder.load(&DummyMonitor).unwrap();
+    let ram = program.get_image_base().unwrap().space().clone();
+    // .rodata holds 0x80, 0x81, ... little-endian
+    assert_eq!(builder.get_original_value(ram.address(0x402000), false).unwrap(), 0x8786858483828180u64 as i64);
+    assert_eq!(builder.get_original_value(ram.address(0x402000), true).unwrap(), 0x8786858483828180u64 as i64);
+    assert!(builder.get_original_value(ram.address(0x403020), false).is_err(), "uninitialized .bss");
+    assert_eq!(data_value(&[0xff, 0xfe], true, true), -2);
+    assert_eq!(data_value(&[0xff, 0xfe], true, false), 0xfffe);
+    assert_eq!(data_value(&[0xfe, 0xff, 0xff, 0xff], false, true), -2);
+    assert_eq!(builder.get_default_address(0x10).offset(), 0x10);
+    assert_eq!(builder.get_image_base_word_adjustment_offset(), 0);
+}

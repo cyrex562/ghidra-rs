@@ -849,7 +849,7 @@ impl<'a> ElfProgramBuilder<'a> {
         };
         let mut section_byte_length = self.elf.get_load_adapter().get_adjusted_size(&self.elf.get_sections()[index]);
         let mut load_offset = self.elf.get_sections()[index].get_offset(); // file offset in bytes
-        let mut next_reloc_offset: std::option::Option<(Arc<AddressSpace>, i64)> = None;
+        let mut next_reloc_offset: std::option::Option<i64> = None;
 
         // In a relocatable ELF (object module), the address of all sections is zero.
         // Therefore, we shall assign an arbitrary address that
@@ -861,7 +861,7 @@ impl<'a> ElfProgramBuilder<'a> {
                 let reloc_offset = provider.get_next_relocatable_offset(&space);
                 addr = NumericUtilities::get_unsigned_aligned_value(reloc_offset, alignment);
                 let _ = self.elf.get_sections_mut()[index].set_address(addr);
-                next_reloc_offset = Some((Arc::clone(&space), addr + section_byte_length / space.unit_size() as i64));
+                next_reloc_offset = Some(addr + section_byte_length / space.unit_size() as i64);
             }
         }
 
@@ -952,7 +952,7 @@ impl<'a> ElfProgramBuilder<'a> {
             self.log(&format!("Failed to load section [{name}]: {e}"));
         }
 
-        if let (Some((space, next)), Some(provider)) = (next_reloc_offset, reloc_provider) {
+        if let (Some(next), Some(provider)) = (next_reloc_offset, reloc_provider) {
             provider.set_next_relocatable_offset(&space, next);
         }
     }
@@ -1125,6 +1125,23 @@ fn get_section_comment(
         buf.push_str("[not-loaded]");
     }
     buf
+}
+
+/// `DataConverter.getInstance(bigEndian).getValue/getSignedValue(bytes, bytes.length)` for 1..=8
+/// bytes.
+fn data_value(bytes: &[u8], big_endian: bool, sign_extend: bool) -> i64 {
+    let mut value: u64 = 0;
+    for i in 0..bytes.len() {
+        let b = if big_endian { bytes[i] } else { bytes[bytes.len() - 1 - i] };
+        value = (value << 8) | b as u64;
+    }
+    let bits = bytes.len() as u32 * 8;
+    if sign_extend && bits < 64 {
+        let shift = 64 - bits;
+        ((value << shift) as i64) >> shift
+    } else {
+        value as i64
+    }
 }
 
 fn read_fully(is: &mut dyn io::Read, buf: &mut [u8]) -> io::Result<usize> {
@@ -1488,11 +1505,45 @@ impl ElfLoadHelper for ElfProgramBuilder<'_> {
         None
     }
 
+    /// Mirrors `getOriginalValue(Address, boolean)`: the 4- or 8-byte value at `addr` before
+    /// relocation -- a relocation's saved original bytes when one is recorded there, else the
+    /// bytes in memory. A program without a relocation table has no saved bytes.
     fn get_original_value(&self, addr: Address, sign_extend: bool) -> Result<i64, MemoryAccessException> {
-        let _ = sign_extend;
-        Err(MemoryAccessException::new(format!(
-            "original file bytes lookup at {addr} is not supported by this loader yet"
-        )))
+        let len = if self.elf.is64_bit() { 8 } else { 4 };
+        let mut bytes: std::option::Option<Vec<u8>> = None;
+        if let Some(table) = self.program.get_relocation_table() {
+            for r in table.get_relocations(&addr) {
+                if let Some(b) = r.bytes() {
+                    if b.len() != len {
+                        // unsupported relocation length
+                        return Err(MemoryAccessException::new(format!(
+                            "Failed to identify {len} bytes from relocation at {addr}, was {} bytes instead",
+                            b.len()
+                        )));
+                    }
+                    bytes = Some(b.to_vec());
+                    break;
+                }
+            }
+        }
+        let bytes = match bytes {
+            Some(b) => b,
+            None => {
+                let mut b = vec![0u8; len];
+                let memory = self
+                    .program
+                    .get_memory()
+                    .ok_or_else(|| MemoryAccessException::new("program has no memory"))?;
+                let read = memory.get_bytes(&addr, &mut b);
+                if read != len {
+                    return Err(MemoryAccessException::new(format!(
+                        "Unable to read bytes at {addr}"
+                    )));
+                }
+                b
+            }
+        };
+        Ok(data_value(&bytes, self.elf.is_big_endian(), sign_extend))
     }
 
     fn add_artificial_reloc_table_entry(&self, _address: Address, _length: i32) -> bool {
