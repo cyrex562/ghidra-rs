@@ -3,6 +3,7 @@
 mod bridge;
 mod cli;
 mod guard;
+mod keys;
 
 use clap::Parser;
 
