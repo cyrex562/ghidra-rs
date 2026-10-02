@@ -81,6 +81,10 @@ pub trait ListingViewModel: Send {
     fn goto(&self, address: u64) -> Option<u128>;
     /// The address of a row as text.
     fn address_text(&self, index: u128) -> String;
+    /// Pixel x of the cursor's column, if the cursor is on a listed row.
+    fn cursor_x(&self, cursor: CursorPos) -> Option<i32>;
+    /// Full text of the cursor's field.
+    fn field_text(&self, cursor: CursorPos) -> Option<String>;
 }
 
 /// One memory block's bytes (an immutable snapshot).
@@ -208,7 +212,11 @@ impl ListingViewModel for MemoryListing {
         }
         let last = self.count - 1;
         let clamp_col = |index: u128, field: usize, col: usize| -> CursorPos {
-            let cols = self.layout(index).map(|l| l.fields()[field].num_cols()).unwrap_or(1);
+            // The previous row's field may not exist on this one (U2b rows
+            // differ in field count): clamp to the last field.
+            let Some(l) = self.layout(index) else { return CursorPos { index, field: 0, col: 0 } };
+            let field = field.min(l.fields().len().saturating_sub(1));
+            let cols = l.fields().get(field).map_or(1, |f| f.num_cols());
             CursorPos { index, field, col: col.min(cols - 1) }
         };
         let page = page_rows.max(1) as u128;
@@ -220,6 +228,7 @@ impl ListingViewModel for MemoryListing {
             Move::Home => clamp_col(0, c.field, c.col),
             Move::End => clamp_col(last, c.field, c.col),
             Move::Right => {
+                let c = clamp_col(c.index, c.field, c.col);
                 let Some(l) = self.layout(c.index) else { return c };
                 if c.col + 1 < l.fields()[c.field].num_cols() {
                     CursorPos { col: c.col + 1, ..c }
@@ -230,6 +239,7 @@ impl ListingViewModel for MemoryListing {
                 }
             }
             Move::Left => {
+                let c = clamp_col(c.index, c.field, c.col);
                 if c.col > 0 {
                     CursorPos { col: c.col - 1, ..c }
                 } else if c.field > 0 {
@@ -251,6 +261,14 @@ impl ListingViewModel for MemoryListing {
 
     fn address_text(&self, index: u128) -> String {
         self.locate(index).map(|(a, _)| format!("{:0width$x}", a, width = self.addr_digits)).unwrap_or_default()
+    }
+
+    fn cursor_x(&self, c: CursorPos) -> Option<i32> {
+        Some(self.layout(c.index)?.fields().get(c.field)?.x(c.col))
+    }
+
+    fn field_text(&self, c: CursorPos) -> Option<String> {
+        Some(self.layout(c.index)?.fields().get(c.field)?.text().to_owned())
     }
 }
 
@@ -283,6 +301,16 @@ mod tests {
         assert_eq!(texts(&rows[3]), vec!["00401003", "e5", "??", "E5h"]);
         assert_eq!(texts(&rows[4]), vec!["00402000", "c3", "??", "C3h"]); // gap skipped
         assert!(rows.windows(2).all(|w| w[1].y == w[0].y + w[0].height));
+    }
+
+    #[test]
+    fn a_cursor_field_past_the_row_is_clamped_not_a_panic() {
+        let l = listing();
+        let c = CursorPos { index: 0, field: 9, col: 9 };
+        assert_eq!(l.move_cursor(c, Move::Down, 1), CursorPos { index: 1, field: 3, col: 3 });
+        assert_eq!(l.move_cursor(c, Move::Left, 1), CursorPos { index: 0, field: 3, col: 2 });
+        assert_eq!(l.cursor_x(c), None);
+        assert_eq!(l.field_text(CursorPos { index: 4, field: 1, col: 0 }).as_deref(), Some("c3"));
     }
 
     #[test]
