@@ -227,6 +227,150 @@ impl Memory for MemoryMapView {
         self.map()
             .map_or_else(AddressSet::new, |m| m.read().unwrap().get_address_set().intersect_range(start, end))
     }
+
+    fn get_block(&self, addr: &Address) -> Option<Arc<dyn MemoryBlock>> {
+        self.get_block_handle(addr).map(|b| SharedMemoryBlock::new(&b))
+    }
+
+    fn get_blocks(&self) -> Vec<Arc<dyn MemoryBlock>> {
+        self.get_block_handles().iter().map(SharedMemoryBlock::new).collect()
+    }
+
+    fn get_block_by_name(&self, name: &str) -> Option<Arc<dyn MemoryBlock>> {
+        let map = self.map()?;
+        let m = map.read().unwrap();
+        m.get_block_by_name(name).map(SharedMemoryBlock::new)
+    }
+
+    fn get_loaded_and_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(initialized_set(&self.get_block_handles(), true))
+    }
+
+    fn get_all_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(initialized_set(&self.get_block_handles(), false))
+    }
+}
+
+/// A block of a [`MemoryMapDB`] handed out through [`Memory::get_block`]/[`Memory::get_blocks`],
+/// whose `Arc<dyn MemoryBlock>` return type cannot carry the map's lock.
+///
+/// Every query and mutation goes through the shared [`MemoryBlockHandle`] (Java hands out the
+/// `MemoryBlockDB` itself), except the three borrowed strings `MemoryBlock` returns by reference
+/// (name, comment, source name), which are captured when the view is made -- a rename through
+/// another handle afterwards is not seen by an existing view (the snapshot convention).
+struct SharedMemoryBlock {
+    handle: MemoryBlockHandle,
+    name: String,
+    comment: Option<String>,
+    source_name: Option<String>,
+}
+
+impl SharedMemoryBlock {
+    fn new(handle: &MemoryBlockHandle) -> Arc<dyn MemoryBlock> {
+        let b = handle.read().unwrap();
+        Arc::new(SharedMemoryBlock {
+            name: b.get_name().to_string(),
+            comment: b.get_comment().map(str::to_string),
+            source_name: b.get_source_name().map(str::to_string),
+            handle: Arc::clone(handle),
+        })
+    }
+}
+
+impl MemoryBlock for SharedMemoryBlock {
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+    fn get_start(&self) -> Address {
+        self.handle.read().unwrap().get_start()
+    }
+    fn get_end(&self) -> Address {
+        self.handle.read().unwrap().get_end()
+    }
+    fn get_size(&self) -> u64 {
+        self.handle.read().unwrap().get_size()
+    }
+    fn is_initialized(&self) -> bool {
+        self.handle.read().unwrap().is_initialized()
+    }
+    fn contains(&self, addr: &Address) -> bool {
+        self.handle.read().unwrap().contains(addr)
+    }
+    fn get_byte(&self, addr: &Address) -> Result<u8, MemoryAccessException> {
+        self.handle.read().unwrap().get_byte(addr)
+    }
+    fn get_bytes(&self, addr: &Address, dest: &mut [u8]) -> usize {
+        self.handle.read().unwrap().get_bytes(addr, dest)
+    }
+    fn set_bytes(&mut self, addr: &Address, source: &[u8]) -> Result<(), MemoryAccessException> {
+        self.handle.write().unwrap().set_bytes(addr, source)
+    }
+    fn is_read(&self) -> bool {
+        self.handle.read().unwrap().is_read()
+    }
+    fn is_write(&self) -> bool {
+        self.handle.read().unwrap().is_write()
+    }
+    fn is_execute(&self) -> bool {
+        self.handle.read().unwrap().is_execute()
+    }
+    fn get_comment(&self) -> Option<&str> {
+        self.comment.as_deref()
+    }
+    fn is_volatile(&self) -> bool {
+        self.handle.read().unwrap().is_volatile()
+    }
+    fn is_artificial(&self) -> bool {
+        self.handle.read().unwrap().is_artificial()
+    }
+    fn set_artificial(&mut self, artificial: bool) {
+        self.handle.write().unwrap().set_artificial(artificial);
+    }
+    fn set_volatile(&mut self, volatile: bool) {
+        self.handle.write().unwrap().set_volatile(volatile);
+    }
+    fn set_read(&mut self, read: bool) {
+        self.handle.write().unwrap().set_read(read);
+    }
+    fn set_write(&mut self, write: bool) {
+        self.handle.write().unwrap().set_write(write);
+    }
+    fn set_execute(&mut self, execute: bool) {
+        self.handle.write().unwrap().set_execute(execute);
+    }
+    fn set_comment(&mut self, comment: Option<&str>) {
+        self.handle.write().unwrap().set_comment(comment);
+        self.comment = comment.map(str::to_string);
+    }
+    fn get_source_name(&self) -> Option<&str> {
+        self.source_name.as_deref()
+    }
+    fn set_source_name(&mut self, source_name: Option<&str>) {
+        self.handle.write().unwrap().set_source_name(source_name);
+        self.source_name = source_name.map(str::to_string);
+    }
+    fn is_overlay(&self) -> bool {
+        self.handle.read().unwrap().is_overlay()
+    }
+    fn get_type(&self) -> MemoryBlockType {
+        self.handle.read().unwrap().get_type()
+    }
+    fn get_source_infos(&self) -> Vec<Arc<dyn crate::program::model::mem::MemoryBlockSourceInfo>> {
+        self.handle.read().unwrap().get_source_infos()
+    }
+}
+
+/// `getAllInitializedAddressSet()` / `getLoadedAndInitializedAddressSet()` over `blocks`: the
+/// initialized blocks, optionally only those in loaded memory.
+fn initialized_set(blocks: &[MemoryBlockHandle], loaded_only: bool) -> AddressSet {
+    let mut set = AddressSet::new();
+    for block in blocks {
+        let b = block.read().unwrap();
+        if b.is_initialized() && (!loaded_only || b.get_start().is_loaded_memory_address()) {
+            set.add_range(&b.get_start(), &b.get_end());
+        }
+    }
+    set
 }
 
 impl MemoryMapDB {
@@ -978,6 +1122,26 @@ impl Memory for MemoryMapDB {
         self.blocks.clone()
     }
 
+    fn get_block(&self, addr: &Address) -> Option<Arc<dyn MemoryBlock>> {
+        MemoryMapDB::get_block(self, addr).map(SharedMemoryBlock::new)
+    }
+
+    fn get_blocks(&self) -> Vec<Arc<dyn MemoryBlock>> {
+        self.blocks.iter().map(SharedMemoryBlock::new).collect()
+    }
+
+    fn get_block_by_name(&self, name: &str) -> Option<Arc<dyn MemoryBlock>> {
+        MemoryMapDB::get_block_by_name(self, name).map(SharedMemoryBlock::new)
+    }
+
+    fn get_loaded_and_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(initialized_set(&self.blocks, true))
+    }
+
+    fn get_all_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(initialized_set(&self.blocks, false))
+    }
+
     fn get_block_handle(&self, addr: &Address) -> Option<MemoryBlockHandle> {
         MemoryMapDB::get_block(self, addr).cloned()
     }
@@ -1336,4 +1500,30 @@ mod tests {
         assert!(!c.is_initialized() && c.is_write() && c.is_read());
     }
 
+
+    #[test]
+    fn trait_block_views_read_and_write_through() {
+        let map = new_map(false);
+        {
+            let mut m = map.write().unwrap();
+            let mut a: &[u8] = &[1, 2, 3, 4];
+            m.create_initialized_block(".data", &addr(0x100), Some(&mut a), 4, None, false).unwrap();
+            m.create_uninitialized_block(".bss", &addr(0x200), 0x10, false).unwrap();
+        }
+        let mem = MemoryMapDB::as_memory(&map);
+        let blocks = mem.get_blocks();
+        assert_eq!(blocks.len(), 2);
+        assert_eq!(blocks[0].get_name(), ".data");
+        let block = mem.get_block(&addr(0x102)).unwrap();
+        assert_eq!(block.get_byte(&addr(0x102)).unwrap(), 3);
+        assert_eq!(mem.get_block_by_name(".bss").unwrap().get_size(), 0x10);
+        // a write through a view reaches the map's block
+        let mut view = mem.get_block(&addr(0x100)).unwrap();
+        Arc::get_mut(&mut view).unwrap().set_execute(true);
+        assert!(map.read().unwrap().get_block(&addr(0x100)).unwrap().read().unwrap().is_execute());
+        let init = mem.get_all_initialized_address_set();
+        assert!(init.contains(&addr(0x103)) && !init.contains(&addr(0x200)));
+        assert_eq!(init.num_addresses(), 4);
+        assert_eq!(mem.get_loaded_and_initialized_address_set().num_addresses(), 4);
+    }
 }

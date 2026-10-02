@@ -107,12 +107,14 @@ impl Program for ProgramDB {
         Some(self.language.get_address_factory())
     }
 
+    /// Delegates to the memory map, as Java's `ProgramDB` does.
     fn get_loaded_and_initialized_address_set(&self) -> std::boxed::Box<dyn crate::program::model::address::AddressSetView> {
-        std::boxed::Box::new(crate::program::model::address::AddressSet::new())
+        Memory::get_loaded_and_initialized_address_set(&*self.memory.read().unwrap_or_else(|p| p.into_inner()))
     }
 
+    /// Delegates to the memory map, as Java's `ProgramDB` does.
     fn get_all_initialized_address_set(&self) -> std::boxed::Box<dyn crate::program::model::address::AddressSetView> {
-        std::boxed::Box::new(crate::program::model::address::AddressSet::new())
+        Memory::get_all_initialized_address_set(&*self.memory.read().unwrap_or_else(|p| p.into_inner()))
     }
 
     /// The program's symbol table, write-locked for the life of the returned handle.
