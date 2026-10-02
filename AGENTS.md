@@ -6,7 +6,9 @@
 - Support Python scripts and plugins written in Python, Rust, and WASM.
 - Preserve 1-to-1 functional parity with the original Java source where appropriate.
 - Maintain high test coverage and reliability for all ported behavior.
-- Use `egui` for the UI, with native and WASM support.
+- Desktop UI in **Qt6 Widgets**: a thin C++17 shell (`ghidra-qt/`) over a toolkit-neutral Rust UI
+  model (`ghidra-ui-model/`), joined by a `cxx` bridge. Desktop only (Linux, Windows, macOS); WASM
+  remains a target for scripts/plugins, not the UI. Design: `docs/superpowers/specs/2026-10-01-qt6-ui-design.md`.
 
 ## Autonomous Operation (READ FIRST)
 
@@ -62,9 +64,17 @@ when you would otherwise need approval, you **park** (see below) instead of gues
 
 ### UI / Swing rule
 
-Swing→egui is a redesign, not a mechanical port. Issues labeled `ui` / `needs-design` are
-**out of scope for autonomous runs** — do not pick them, and if an assigned issue turns out
-to be mostly Swing UI, park it with the `ui` label.
+Swing→Qt is a redesign, not a mechanical port. The architecture is fixed by
+`docs/superpowers/specs/2026-10-01-qt6-ui-design.md`:
+- Plugins stay pure Rust and describe panes through `ghidra-ui-model` view-model traits
+  (table/tree/text/form/listing/custom). C++ in `ghidra-qt/` contains no domain logic.
+- `ghidra-rs` and `ghidra-ui-model` must never depend on Qt, egui or any toolkit; `java.awt`
+  values use `ghidra_rs::util::awt` types.
+- UI work is agent-executable **within an approved UI plan** (`docs/superpowers/plans/`). Park
+  (`needs-attention`, label `ui`) for: a new `ViewKind`, any UX deviation from Ghidra's layout/
+  actions/keybindings, or a Swing class with no plan covering it.
+- `ghidra-qt` is excluded from `default-members`; build/test it with `cargo build -p ghidra-qt` /
+  `cargo test -p ghidra-qt` (needs `qt6-base-dev qt6-base-private-dev`).
 
 ### Never
 
@@ -121,7 +131,7 @@ and say so in your commit message, the same as any other correction to `PORT_MAN
 
 - Core workspace and crate setup are present.
 - The Rust crate already includes framework, utility, generic, program model, database, and
-  scripting modules. The UI shell exists but Swing→egui work is human-directed (see UI rule).
+  scripting modules. The Qt6 UI shell lives in ghidra-qt/ (see UI rule).
 - `PORT_MANIFEST.tsv` tracks completed and pending classes. It is authoritative.
 - Remaining high-level areas include ProgramDB, disassembler, decompiler, docking UI, and
   plugin loaders — most are high-dependency and surface later under `--port-order`.
@@ -316,7 +326,7 @@ decided as follows, and the reasoning generalises.
 | a **domain object with identity**, mutated over its lifetime, referenced from everywhere | `Namespace`, `Reference`, `Variable`, `CodeUnit`, `DomainObject` | **ARENA** — convention 1. `CodeUnit` is `Data`'s parent, and `Data` was already an arena type |
 | a hierarchy a parser or lowering pass **builds dynamically** | `PcodeBlock`, `BlockGraph`, `AbstractMsType` (137), `IsfObject` (67) | **GRAPH** — convention 4. Not ENUM: the question is how values are *constructed*, not whether the set is closed |
 | a seam where a **plugin or caller supplies** the implementation | `PcodeUseropLibrary`, `InjectPayload`, `SettingsDefinition`, `Task`, `ProgramLocation` | **ACCEPT** — implementers spread across 2–4 top-level areas |
-| a **`docking.*` / Swing UI** type | `ActionContext`, `DockingActionIf`, `Navigatable` | **PARK** — the UI rule; its Rust shape depends on the undecided egui design |
+| a **`docking.*` / Swing UI** type | `ActionContext`, `DockingActionIf`, `Navigatable` | **PARK** unless a UI plan covers it — the Qt6 spec makes these Rust model types in `ghidra-rs`/`ghidra-ui-model` |
 
 Two shortcuts worth trying before deciding by hand:
 
