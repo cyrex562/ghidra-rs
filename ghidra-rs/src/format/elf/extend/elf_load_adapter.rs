@@ -42,10 +42,13 @@ use crate::format::elf::elf_program_header_constants::{PF_R, PF_W, PF_X};
 use crate::format::elf::elf_section_header_constants::{SHF_ALLOC, SHF_EXECINSTR, SHF_WRITE};
 use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::memory_loadable::MemoryLoadable;
-use crate::format::seam_stubs::{
-    ElfDefaultGotPltMarkup, ElfDynamicType, ElfHeader, ElfProgramHeader, ElfProgramHeaderType,
-    ElfRelocation, ElfSectionHeader, ElfSectionHeaderType,
-};
+use crate::format::elf::elf_dynamic_type::ElfDynamicType;
+use crate::format::elf::elf_header::ElfHeader;
+use crate::format::elf::elf_program_header::ElfProgramHeader;
+use crate::format::elf::elf_program_header_type::ElfProgramHeaderType;
+use crate::format::elf::elf_section_header::ElfSectionHeader;
+use crate::format::elf::elf_section_header_type::ElfSectionHeaderType;
+use crate::format::seam_stubs::{ElfDefaultGotPltMarkup, ElfRelocation};
 use crate::program::model::address::{Address, AddressSpace};
 use crate::util::exception::{CancelledException, NoValueException};
 use crate::util::task::TaskMonitor;
@@ -72,7 +75,7 @@ impl ElfLoadAdapter {
     /// Java reflects over the adapter's own `static ElfDynamicType` fields; the base class
     /// declares none, so this adds nothing. An extension port cannot be reached reflectively and
     /// must insert its own types into `dynamic_type_map` before (or instead of) calling this.
-    pub fn add_dynamic_types(&self, dynamic_type_map: &mut HashMap<i32, Box<dyn ElfDynamicType>>) {
+    pub fn add_dynamic_types(&self, dynamic_type_map: &mut HashMap<i32, ElfDynamicType>) {
         let _ = dynamic_type_map;
     }
 
@@ -81,7 +84,7 @@ impl ElfLoadAdapter {
     /// Adds nothing, for the same reason as [`add_dynamic_types`](Self::add_dynamic_types).
     pub fn add_program_header_types(
         &self,
-        program_header_type_map: &mut HashMap<i32, Box<dyn ElfProgramHeaderType>>,
+        program_header_type_map: &mut HashMap<i32, ElfProgramHeaderType>,
     ) {
         let _ = program_header_type_map;
     }
@@ -91,7 +94,7 @@ impl ElfLoadAdapter {
     /// Adds nothing, for the same reason as [`add_dynamic_types`](Self::add_dynamic_types).
     pub fn add_section_header_types(
         &self,
-        section_header_type_map: &mut HashMap<i32, Box<dyn ElfSectionHeaderType>>,
+        section_header_type_map: &mut HashMap<i32, ElfSectionHeaderType>,
     ) {
         let _ = section_header_type_map;
     }
@@ -107,7 +110,7 @@ impl ElfLoadAdapter {
     pub fn get_preferred_segment_address_space(
         &self,
         elf_load_helper: &dyn ElfLoadHelper,
-        elf_program_header: &dyn ElfProgramHeader,
+        elf_program_header: &ElfProgramHeader,
     ) -> Option<Arc<AddressSpace>> {
         let program = elf_load_helper.get_program();
         if elf_program_header.is_execute() {
@@ -124,7 +127,7 @@ impl ElfLoadAdapter {
     pub fn get_preferred_segment_address(
         &self,
         elf_load_helper: &dyn ElfLoadHelper,
-        elf_program_header: &dyn ElfProgramHeader,
+        elf_program_header: &ElfProgramHeader,
     ) -> Option<Address> {
         let program = elf_load_helper.get_program();
 
@@ -165,7 +168,7 @@ impl ElfLoadAdapter {
     pub fn get_preferred_section_address_space(
         &self,
         elf_load_helper: &dyn ElfLoadHelper,
-        elf_section_header: &dyn ElfSectionHeader,
+        elf_section_header: &ElfSectionHeader,
     ) -> Option<Arc<AddressSpace>> {
         let program = elf_load_helper.get_program();
         if elf_section_header.is_executable() {
@@ -179,7 +182,7 @@ impl ElfLoadAdapter {
     pub fn get_preferred_section_address(
         &self,
         elf_load_helper: &dyn ElfLoadHelper,
-        elf_section_header: &dyn ElfSectionHeader,
+        elf_section_header: &ElfSectionHeader,
     ) -> Option<Address> {
         let space = self.get_preferred_section_address_space(elf_load_helper, elf_section_header)?;
 
@@ -197,7 +200,7 @@ impl ElfLoadAdapter {
     /// used to obtain extended type definitions and to perform additional load processing.
     ///
     /// Ports the `canHandle(ElfHeader)` overload; the base extension handles nothing.
-    pub fn can_handle_header(&self, elf: &dyn ElfHeader) -> bool {
+    pub fn can_handle_header(&self, elf: &ElfHeader) -> bool {
         let _ = elf;
         false
     }
@@ -308,49 +311,49 @@ impl ElfLoadAdapter {
 
     /// The write permission for the specified segment, or `None` to use the standard ELF program
     /// header flags to make the determination.
-    pub fn is_segment_writable(&self, segment: &dyn ElfProgramHeader) -> Option<bool> {
+    pub fn is_segment_writable(&self, segment: &ElfProgramHeader) -> Option<bool> {
         Some((segment.get_flags() & PF_W as i32) != 0)
     }
 
     /// The read permission for the specified segment, or `None` to use the standard ELF program
     /// header flags to make the determination.
-    pub fn is_segment_readable(&self, segment: &dyn ElfProgramHeader) -> Option<bool> {
+    pub fn is_segment_readable(&self, segment: &ElfProgramHeader) -> Option<bool> {
         Some((segment.get_flags() & PF_R as i32) != 0)
     }
 
     /// The execute permission for the specified segment, or `None` to use the standard ELF program
     /// header flags to make the determination.
-    pub fn is_segment_executable(&self, segment: &dyn ElfProgramHeader) -> Option<bool> {
+    pub fn is_segment_executable(&self, segment: &ElfProgramHeader) -> Option<bool> {
         Some((segment.get_flags() & PF_X as i32) != 0)
     }
 
     /// The write permission for the specified section, or `None` to use the standard ELF section
     /// flags to make the determination.
-    pub fn is_section_writable(&self, section: &dyn ElfSectionHeader) -> Option<bool> {
+    pub fn is_section_writable(&self, section: &ElfSectionHeader) -> Option<bool> {
         Some((section.get_flags() & SHF_WRITE as i64) != 0)
     }
 
     /// The execute permission (i.e. instructions permitted) for the specified section, or `None`
     /// to use the standard ELF section flags to make the determination.
-    pub fn is_section_executable(&self, section: &dyn ElfSectionHeader) -> Option<bool> {
+    pub fn is_section_executable(&self, section: &ElfSectionHeader) -> Option<bool> {
         Some((section.get_flags() & SHF_EXECINSTR as i64) != 0)
     }
 
     /// Whether the specified section is "allocated" within memory, or `None` to use the standard
     /// ELF section flags to make the determination.
-    pub fn is_section_allocated(&self, section: &dyn ElfSectionHeader) -> Option<bool> {
+    pub fn is_section_allocated(&self, section: &ElfSectionHeader) -> Option<bool> {
         Some((section.get_flags() & SHF_ALLOC as i64) != 0)
     }
 
     /// The memory bytes to be loaded from the underlying file for the specified program header,
     /// consistent with any byte filtering which may be required.
-    pub fn get_adjusted_load_size(&self, elf_program_header: &dyn ElfProgramHeader) -> i64 {
+    pub fn get_adjusted_load_size(&self, elf_program_header: &ElfProgramHeader) -> i64 {
         elf_program_header.get_file_size()
     }
 
     /// The memory segment size in bytes for the specified program header, consistent with any byte
     /// filtering which may be required.
-    pub fn get_adjusted_memory_size(&self, elf_program_header: &dyn ElfProgramHeader) -> i64 {
+    pub fn get_adjusted_memory_size(&self, elf_program_header: &ElfProgramHeader) -> i64 {
         elf_program_header.get_memory_size()
     }
 
@@ -377,7 +380,7 @@ impl ElfLoadAdapter {
     /// filtering and decompression which may be required.
     ///
     /// Defaults to the section's [logical size](ElfSectionHeader::get_logical_size).
-    pub fn get_adjusted_size(&self, section: &dyn ElfSectionHeader) -> i64 {
+    pub fn get_adjusted_size(&self, section: &ElfSectionHeader) -> i64 {
         section.get_logical_size()
     }
 
@@ -425,7 +428,7 @@ impl ElfLoadAdapter {
     /// `None` for default behaviour.
     ///
     /// `elf_header` is for header field access only.
-    pub fn get_relocation_class(&self, elf_header: &dyn ElfHeader) -> Option<ElfRelocationFactory> {
+    pub fn get_relocation_class(&self, elf_header: &ElfHeader) -> Option<ElfRelocationFactory> {
         let _ = elf_header;
         None
     }
@@ -433,14 +436,14 @@ impl ElfLoadAdapter {
     /// Add extension-specific load options to `options`. The base extension adds none.
     pub fn add_load_options(
         &self,
-        elf: &dyn ElfHeader,
+        elf: &ElfHeader,
         options: &mut Vec<Box<dyn crate::app::seam_stubs::Option>>,
     ) {
         let _ = (elf, options);
     }
 
     /// The default image base to be used when one cannot be determined.
-    pub fn get_default_image_base(&self, elf_header: &dyn ElfHeader) -> i64 {
+    pub fn get_default_image_base(&self, elf_header: &ElfHeader) -> i64 {
         if elf_header.is64_bit() {
             IMAGE64_BASE_DEFAULT
         } else {
@@ -459,12 +462,12 @@ impl ElfLoadAdapter {
     /// [relocatable](ElfHeader::is_relocatable).
     pub fn get_section_symbol_relative_offset(
         &self,
-        section: &dyn ElfSectionHeader,
+        section: &ElfSectionHeader,
         section_base: &Address,
         elf_symbol: &ElfSymbol,
     ) -> Option<i64> {
         let _ = section_base;
-        if section.get_elf_header().is_relocatable() {
+        if section.header_context().is_relocatable {
             return Some(elf_symbol.get_value() as i64);
         }
         None
@@ -496,6 +499,8 @@ mod tests {
 
 
     use crate::app::util::bin::binary_reader::BinaryReader;
+    use crate::format::elf::elf_program_header_constants::PT_LOAD;
+    use crate::format::elf::elf_test_image::{minimal_header, ElfImage, DATA_START};
     use crate::format::elf::elf_section_header_constants::SHN_UNDEF;
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC};
     use crate::program::model::address::factory::DefaultAddressFactory;
@@ -519,27 +524,13 @@ mod tests {
         AddressSpace::new("word", 32, 2, AddressSpaceType::Ram, 2)
     }
 
-    struct MockHeader {
-        is32: bool,
-        relocatable: bool,
+    /// A parsed synthetic header: ELF32 or ELF64, `ET_REL` or `ET_EXEC`.
+    fn header(is64: bool, relocatable: bool) -> ElfHeader {
+        minimal_header(is64, true, if relocatable { 1 } else { 2 })
     }
 
-    impl MockHeader {
-        fn new() -> Self {
-            MockHeader { is32: true, relocatable: false }
-        }
-    }
-
-    impl ElfHeader for MockHeader {
-        fn is32_bit(&self) -> bool {
-            self.is32
-        }
-        fn is_relocatable(&self) -> bool {
-            self.relocatable
-        }
-        fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
-            Vec::new()
-        }
+    fn default_header() -> ElfHeader {
+        header(false, false)
     }
 
     struct MockProgram {
@@ -571,7 +562,7 @@ mod tests {
 
     struct MockLoadHelper {
         program: Arc<MockProgram>,
-        header: Arc<MockHeader>,
+        header: ElfHeader,
         image_base_word_adjustment: i64,
     }
 
@@ -582,7 +573,7 @@ mod tests {
                     default_space: Some(code_space()),
                     data_space: data_space(),
                 }),
-                header: Arc::new(MockHeader::new()),
+                header: default_header(),
                 image_base_word_adjustment: 0,
             }
         }
@@ -605,8 +596,8 @@ mod tests {
         fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
             default_value
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            self.header.clone()
+        fn get_elf_header(&self) -> &ElfHeader {
+            &self.header
         }
         fn get_log(&self) -> Arc<crate::app::util::importer::message_log::MessageLog> {
             unimplemented!("not exercised by these tests")
@@ -700,51 +691,20 @@ mod tests {
         }
     }
 
-    struct MockProgramHeader {
-        flags: i32,
-        virtual_address: i64,
-        file_size: i64,
-        memory_size: i64,
+    /// A real `PT_LOAD` program header with the given `p_flags`/`p_vaddr`/`p_filesz`/`p_memsz`.
+    fn segment(flags: u32, virtual_address: u64, file_size: u64, memory_size: u64) -> ElfProgramHeader {
+        let mut img = ElfImage::new(false, true);
+        img.add_segment(PT_LOAD, flags, DATA_START, virtual_address, file_size, memory_size);
+        img.parse().get_program_headers()[0].clone()
     }
 
-    impl ElfProgramHeader for MockProgramHeader {
-        fn get_flags(&self) -> i32 {
-            self.flags
-        }
-        fn get_virtual_address(&self) -> i64 {
-            self.virtual_address
-        }
-        fn get_file_size(&self) -> i64 {
-            self.file_size
-        }
-        fn get_memory_size(&self) -> i64 {
-            self.memory_size
-        }
-    }
-
-    struct MockSectionHeader {
-        header: Arc<MockHeader>,
-        address: i64,
-        flags: i64,
-        logical_size: i64,
-    }
-
-    impl ElfSectionHeader for MockSectionHeader {
-        fn get_name_as_string(&self) -> String {
-            ".text".to_string()
-        }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            self.header.clone()
-        }
-        fn get_address(&self) -> i64 {
-            self.address
-        }
-        fn get_flags(&self) -> i64 {
-            self.flags
-        }
-        fn get_logical_size(&self) -> i64 {
-            self.logical_size
-        }
+    /// A real `.text` section header of `size` bytes with the given `sh_addr`/`sh_flags`, in an
+    /// image of the given class and type.
+    fn section(is64: bool, relocatable: bool, address: u64, flags: u32, size: usize) -> ElfSectionHeader {
+        let mut img = ElfImage::new(is64, true);
+        img.e_type = if relocatable { 1 } else { 2 };
+        img.add_section(".text", 1, flags as u64, address, &vec![0u8; size]);
+        img.parse().get_sections()[1].clone()
     }
 
     struct MockLanguage {
@@ -957,7 +917,7 @@ mod tests {
         bytes.extend_from_slice(&SHN_UNDEF.to_le_bytes()); // st_shndx
 
         let mut reader = BinaryReader::from_bytes(bytes, true);
-        ElfSymbol::parse(&mut reader, 1, &MockHeader::new()).expect("symbol entry parses")
+        ElfSymbol::parse(&mut reader, 1, &default_header()).expect("symbol entry parses")
     }
 
     // ---------------------------------------------------------------- tests
@@ -973,7 +933,7 @@ mod tests {
     #[test]
     fn base_extension_handles_nothing_and_supplies_no_overrides() {
         let adapter = ElfLoadAdapter::new();
-        let header = MockHeader::new();
+        let header = default_header();
         let helper = MockLoadHelper::new();
 
         assert!(!adapter.can_handle_header(&header));
@@ -996,9 +956,9 @@ mod tests {
 
         // The base class declares no static DT_/PT_/SHT_ constants, so Java's reflective loop
         // adds nothing to any of the three maps.
-        let mut dynamic_types: HashMap<i32, Box<dyn ElfDynamicType>> = HashMap::new();
-        let mut program_header_types: HashMap<i32, Box<dyn ElfProgramHeaderType>> = HashMap::new();
-        let mut section_header_types: HashMap<i32, Box<dyn ElfSectionHeaderType>> = HashMap::new();
+        let mut dynamic_types: HashMap<i32, ElfDynamicType> = HashMap::new();
+        let mut program_header_types: HashMap<i32, ElfProgramHeaderType> = HashMap::new();
+        let mut section_header_types: HashMap<i32, ElfSectionHeaderType> = HashMap::new();
 
         adapter.add_dynamic_types(&mut dynamic_types);
         adapter.add_program_header_types(&mut program_header_types);
@@ -1013,28 +973,23 @@ mod tests {
     fn default_image_base_depends_on_the_elf_class() {
         let adapter = ElfLoadAdapter::new();
 
-        let elf32 = MockHeader { is32: true, relocatable: false };
+        let elf32 = header(false, false);
         assert_eq!(adapter.get_default_image_base(&elf32), 0x10000);
 
-        let elf64 = MockHeader { is32: false, relocatable: false };
+        let elf64 = header(true, false);
         assert_eq!(adapter.get_default_image_base(&elf64), 0x100000);
     }
 
     #[test]
     fn segment_permissions_come_from_the_p_flags_bits() {
         let adapter = ElfLoadAdapter::new();
-        let rx = MockProgramHeader {
-            flags: (PF_R | PF_X) as i32,
-            virtual_address: 0,
-            file_size: 0,
-            memory_size: 0,
-        };
+        let rx = segment(PF_R | PF_X, 0, 0, 0);
 
         assert_eq!(adapter.is_segment_readable(&rx), Some(true));
         assert_eq!(adapter.is_segment_executable(&rx), Some(true));
         assert_eq!(adapter.is_segment_writable(&rx), Some(false));
 
-        let rw = MockProgramHeader { flags: (PF_R | PF_W) as i32, ..rx };
+        let rw = segment(PF_R | PF_W, 0, 0, 0);
         assert_eq!(adapter.is_segment_writable(&rw), Some(true));
         assert_eq!(adapter.is_segment_executable(&rw), Some(false));
     }
@@ -1042,19 +997,13 @@ mod tests {
     #[test]
     fn section_permissions_come_from_the_sh_flags_bits() {
         let adapter = ElfLoadAdapter::new();
-        let header = Arc::new(MockHeader::new());
-        let data = MockSectionHeader {
-            header: header.clone(),
-            address: 0,
-            flags: (SHF_WRITE | SHF_ALLOC) as i64,
-            logical_size: 0,
-        };
+        let data = section(false, false, 0, SHF_WRITE | SHF_ALLOC, 0);
 
         assert_eq!(adapter.is_section_writable(&data), Some(true));
         assert_eq!(adapter.is_section_allocated(&data), Some(true));
         assert_eq!(adapter.is_section_executable(&data), Some(false));
 
-        let text = MockSectionHeader { flags: (SHF_EXECINSTR | SHF_ALLOC) as i64, ..data };
+        let text = section(false, false, 0, SHF_EXECINSTR | SHF_ALLOC, 0);
         assert_eq!(adapter.is_section_executable(&text), Some(true));
         assert_eq!(adapter.is_section_writable(&text), Some(false));
     }
@@ -1062,22 +1011,13 @@ mod tests {
     #[test]
     fn adjusted_sizes_are_the_unfiltered_header_sizes() {
         let adapter = ElfLoadAdapter::new();
-        let segment = MockProgramHeader {
-            flags: PF_R as i32,
-            virtual_address: 0x8000,
-            file_size: 0x120,
-            memory_size: 0x400, // .bss makes memsz exceed filesz
-        };
+        // .bss makes memsz exceed filesz
+        let segment = segment(PF_R, 0x8000, 0x120, 0x400);
 
         assert_eq!(adapter.get_adjusted_load_size(&segment), 0x120);
         assert_eq!(adapter.get_adjusted_memory_size(&segment), 0x400);
 
-        let section = MockSectionHeader {
-            header: Arc::new(MockHeader::new()),
-            address: 0x8000,
-            flags: SHF_ALLOC as i64,
-            logical_size: 0x2a0,
-        };
+        let section = section(false, false, 0x8000, SHF_ALLOC, 0x2a0);
         assert_eq!(adapter.get_adjusted_size(&section), 0x2a0);
     }
 
@@ -1086,18 +1026,13 @@ mod tests {
         let adapter = ElfLoadAdapter::new();
         let helper = MockLoadHelper::new();
 
-        let text = MockProgramHeader {
-            flags: (PF_R | PF_X) as i32,
-            virtual_address: 0x8000,
-            file_size: 0,
-            memory_size: 0,
-        };
+        let text = segment(PF_R | PF_X, 0x8000, 0, 0);
         assert_eq!(
             adapter.get_preferred_segment_address_space(&helper, &text),
             Some(code_space())
         );
 
-        let data = MockProgramHeader { flags: (PF_R | PF_W) as i32, ..text };
+        let data = segment(PF_R | PF_W, 0x8000, 0, 0);
         assert_eq!(
             adapter.get_preferred_segment_address_space(&helper, &data),
             Some(data_space())
@@ -1109,12 +1044,7 @@ mod tests {
         let adapter = ElfLoadAdapter::new();
         let helper = MockLoadHelper { image_base_word_adjustment: 0x1000, ..MockLoadHelper::new() };
 
-        let text = MockProgramHeader {
-            flags: (PF_R | PF_X) as i32,
-            virtual_address: 0x8000,
-            file_size: 0,
-            memory_size: 0,
-        };
+        let text = segment(PF_R | PF_X, 0x8000, 0, 0);
         // Executable segment lands in the default space, so the adjustment is applied.
         assert_eq!(
             adapter.get_preferred_segment_address(&helper, &text),
@@ -1122,7 +1052,7 @@ mod tests {
         );
 
         // The data space is not the default space, so p_vaddr is used verbatim.
-        let data = MockProgramHeader { flags: (PF_R | PF_W) as i32, ..text };
+        let data = segment(PF_R | PF_W, 0x8000, 0, 0);
         assert_eq!(
             adapter.get_preferred_segment_address(&helper, &data),
             Some(Address::new(data_space(), 0x8000))
@@ -1133,14 +1063,7 @@ mod tests {
     fn section_address_follows_sh_addr_with_the_same_image_base_rule() {
         let adapter = ElfLoadAdapter::new();
         let helper = MockLoadHelper { image_base_word_adjustment: 0x40, ..MockLoadHelper::new() };
-        let header = Arc::new(MockHeader::new());
-
-        let text = MockSectionHeader {
-            header: header.clone(),
-            address: 0x8000,
-            flags: (SHF_EXECINSTR | SHF_ALLOC) as i64,
-            logical_size: 0x10,
-        };
+        let text = section(false, false, 0x8000, SHF_EXECINSTR | SHF_ALLOC, 0x10);
         assert_eq!(
             adapter.get_preferred_section_address_space(&helper, &text),
             Some(code_space())
@@ -1150,7 +1073,7 @@ mod tests {
             Some(Address::new(code_space(), 0x8040))
         );
 
-        let data = MockSectionHeader { flags: (SHF_WRITE | SHF_ALLOC) as i64, ..text };
+        let data = section(false, false, 0x8000, SHF_WRITE | SHF_ALLOC, 0x10);
         assert_eq!(
             adapter.get_preferred_section_address(&helper, &data),
             Some(Address::new(data_space(), 0x8000))
@@ -1166,7 +1089,7 @@ mod tests {
         assert_eq!(adapter.get_default_alignment(&elf32), 4);
 
         let elf64 = MockLoadHelper {
-            header: Arc::new(MockHeader { is32: false, relocatable: false }),
+            header: header(true, false),
             ..MockLoadHelper::new()
         };
         assert_eq!(adapter.get_default_alignment(&elf64), 8);
@@ -1177,7 +1100,7 @@ mod tests {
                 default_space: Some(word_space()),
                 data_space: data_space(),
             }),
-            header: Arc::new(MockHeader { is32: false, relocatable: false }),
+            header: header(true, false),
             ..MockLoadHelper::new()
         };
         assert_eq!(adapter.get_default_alignment(&word_addressed), 2);
@@ -1189,22 +1112,14 @@ mod tests {
         let sym = symbol_with_value(0x24);
         let section_base = Address::new(code_space(), 0x8000);
 
-        let relocatable = MockSectionHeader {
-            header: Arc::new(MockHeader { is32: true, relocatable: true }),
-            address: 0,
-            flags: SHF_ALLOC as i64,
-            logical_size: 0x100,
-        };
+        let relocatable = section(false, true, 0, SHF_ALLOC, 0x100);
         assert_eq!(
             adapter.get_section_symbol_relative_offset(&relocatable, &section_base, &sym),
             Some(0x24)
         );
 
         // An executable/shared object carries absolute symbol values, so Java returns null.
-        let executable = MockSectionHeader {
-            header: Arc::new(MockHeader { is32: true, relocatable: false }),
-            ..relocatable
-        };
+        let executable = section(false, false, 0, SHF_ALLOC, 0x100);
         assert_eq!(
             adapter.get_section_symbol_relative_offset(&executable, &section_base, &sym),
             None
@@ -1228,12 +1143,12 @@ mod tests {
                 _elf_load_helper: &dyn ElfLoadHelper,
                 _start: crate::program::model::address::Address,
                 _data_length: i64,
-                _error_consumer: Option<&(dyn Fn(&str, &dyn std::error::Error) + Send)>,
-            ) -> std::io::Result<Box<dyn Read + Send>> {
+                _error_consumer: Option<&dyn Fn(&str, &dyn std::error::Error)>,
+            ) -> std::io::Result<Box<dyn Read>> {
                 unimplemented!()
             }
 
-            fn get_raw_input_stream(&self) -> std::io::Result<Box<dyn Read + Send>> {
+            fn get_raw_input_stream(&self) -> std::io::Result<Box<dyn Read>> {
                 unimplemented!()
             }
         }

@@ -347,12 +347,16 @@ pub trait AbstractElfRelocationHandler<T: ElfRelocationType + Copy> {
 
 #[cfg(test)]
 mod tests {
+
+    fn mock_elf_header() -> crate::format::elf::elf_header::ElfHeader {
+        crate::format::elf::elf_test_image::minimal_header(false, true, 2)
+    }
     use super::*;
     use std::sync::{Arc, Mutex};
 
     use crate::format::elf::elf_load_helper::ElfLoadHelper;
     use crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase;
-    use crate::format::seam_stubs::{ElfHeader, ElfSectionHeader};
+    
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::reloc::RelocationStatus;
 
@@ -395,20 +399,9 @@ mod tests {
         }
     }
 
-    struct MockElfHeader;
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            true
-        }
-        fn is_relocatable(&self) -> bool {
-            false
-        }
-        fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
-            Vec::new()
-        }
-    }
 
     struct MockLoadHelper {
+        elf: crate::format::elf::elf_header::ElfHeader,
         log: Arc<MessageLog>,
     }
 
@@ -429,8 +422,8 @@ mod tests {
         fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
             default_value
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader)
+        fn get_elf_header(&self) -> &crate::format::elf::elf_header::ElfHeader {
+            &self.elf
         }
         fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
@@ -546,7 +539,7 @@ mod tests {
         }
         fn get_associated_symbol_table(
             &self,
-        ) -> Option<Arc<dyn crate::format::seam_stubs::ElfSymbolTable>> {
+        ) -> Option<Arc<crate::format::elf::elf_symbol_table::ElfSymbolTable>> {
             None
         }
     }
@@ -585,7 +578,7 @@ mod tests {
 
     fn context() -> (ElfRelocationContextBase, Arc<MessageLog>) {
         let log = Arc::new(MessageLog::new());
-        let load_helper = Arc::new(MockLoadHelper { log: log.clone() });
+        let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(), log: log.clone() });
         let mut context = ElfRelocationContextBase::new(None, load_helper, Arc::new(HashMap::new()));
         context.start_relocation_table_processing(Arc::new(MockRelocationTable));
         (context, log)

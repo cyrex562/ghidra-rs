@@ -106,7 +106,7 @@ mod tests {
             fn get_option_i32(&self, _: &str, default: i32) -> i32 {
                 default
             }
-            fn get_elf_header(&self) -> Arc<dyn crate::format::seam_stubs::ElfHeader> {
+            fn get_elf_header(&self) -> &crate::format::elf::elf_header::ElfHeader {
                 unimplemented!()
             }
             fn get_log(&self) -> Arc<crate::app::util::importer::message_log::MessageLog> {

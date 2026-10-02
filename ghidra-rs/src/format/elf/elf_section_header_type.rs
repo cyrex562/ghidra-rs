@@ -70,11 +70,6 @@ impl std::fmt::Display for ElfSectionHeaderType {
     }
 }
 
-/// Bridges the real [`ElfSectionHeaderType`] into the pre-existing (empty marker)
-/// [`crate::format::seam_stubs::ElfSectionHeaderType`] placeholder trait, so a value constructed
-/// here can be used anywhere that trait is without any change to the not-yet-migrated call sites
-/// that depend on it.
-impl crate::format::seam_stubs::ElfSectionHeaderType for ElfSectionHeaderType {}
 
 /// `ElfSectionHeaderType.addSectionHeaderType(ElfSectionHeaderType, Map<Integer,
 /// ElfSectionHeaderType>)`.
@@ -284,8 +279,4 @@ mod tests {
         assert_eq!(enum_64_suffixed.get_length(), 8);
     }
 
-    #[test]
-    fn seam_trait_marker_is_implemented() {
-        let _: Box<dyn crate::format::seam_stubs::ElfSectionHeaderType> = Box::new(sht_symtab());
-    }
 }

@@ -259,10 +259,7 @@ impl MipsElfRelocationContext {
 
     /// Allocate the linkage block that backs the fabricated section GOT.
     fn allocate_section_got(&self) {
-        let alignment = self
-            .base
-            .get_load_adapter()
-            .map_or(0x1000, |adapter| adapter.get_linkage_block_alignment());
+        let alignment = self.base.get_load_adapter().get_linkage_block_alignment();
         let section_got_name = self.get_section_got_name();
         let limits = self.base.get_load_helper().allocate_linkage_block(
             alignment,
@@ -616,9 +613,12 @@ mod tests {
     use crate::format::elf::elf_section_header_constants::SHN_UNDEF;
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC};
     use crate::app::util::importer::message_log::MessageLog;
-    use crate::format::seam_stubs::{
-        ElfHeader, ElfRelocationHandler, ElfRelocationTable, ElfSectionHeader, ElfSymbolTable,
-    };
+    use crate::format::elf::elf_header::ElfHeader;
+    use crate::format::elf::elf_section_header::ElfSectionHeader;
+    use crate::format::elf::elf_string_table::ElfStringTable;
+    use crate::format::elf::elf_symbol_table::ElfSymbolTable;
+    use crate::format::elf::elf_test_image::{minimal_header, ElfImage};
+    use crate::format::seam_stubs::{ElfRelocationHandler, ElfRelocationTable};
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::MemoryAccessException;
@@ -637,23 +637,12 @@ mod tests {
     }
 
 
-    struct MockElfHeader {
-        is32_bit: bool,
-    }
-
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            self.is32_bit
-        }
-        fn is_relocatable(&self) -> bool {
-            true
-        }
-        fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
-            Vec::new()
-        }
+    fn mock_elf_header() -> ElfHeader {
+        minimal_header(false, false, 1)
     }
 
     struct MockLoadHelper {
+        elf: ElfHeader,
         log: Arc<MessageLog>,
         /// Messages passed to `ElfLoadHelper.log(...)`, distinct from the import log.
         helper_log: Mutex<Vec<String>>,
@@ -665,6 +654,7 @@ mod tests {
     impl MockLoadHelper {
         fn new() -> Self {
             MockLoadHelper {
+                elf: mock_elf_header(),
                 log: Arc::new(MessageLog::new()),
                 helper_log: Mutex::new(Vec::new()),
                 is32_bit: true,
@@ -690,8 +680,9 @@ mod tests {
         fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
             default_value
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader { is32_bit: self.is32_bit })
+        fn get_elf_header(&self) -> &ElfHeader {
+            assert!(self.is32_bit, "mock header is ELF32");
+            &self.elf
         }
         fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
@@ -814,23 +805,11 @@ mod tests {
         }
     }
 
-    struct MockSection;
-    impl ElfSectionHeader for MockSection {
-        fn get_name_as_string(&self) -> String {
-            ".text".to_string()
-        }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader { is32_bit: true })
-        }
-        fn get_address(&self) -> i64 {
-            0
-        }
-        fn get_flags(&self) -> i64 {
-            0
-        }
-        fn get_logical_size(&self) -> i64 {
-            0
-        }
+    /// A real `.text` section header, parsed from a synthetic ELF32 image.
+    fn text_section() -> ElfSectionHeader {
+        let mut img = ElfImage::new(false, false);
+        img.add_section(".text", 1, 0x6, 0x1000, &[0u8; 4]);
+        img.parse().get_sections()[1].clone()
     }
 
     /// A relocation table holding a fixed list of `(offset, type)` pairs.
@@ -850,7 +829,7 @@ mod tests {
         fn has_addend_relocations(&self) -> bool {
             self.has_addend
         }
-        fn get_associated_symbol_table(&self) -> Option<Arc<dyn ElfSymbolTable>> {
+        fn get_associated_symbol_table(&self) -> Option<Arc<ElfSymbolTable>> {
             None
         }
         fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
@@ -867,8 +846,8 @@ mod tests {
                 })
                 .collect()
         }
-        fn get_section_to_be_relocated(&self) -> Option<Arc<dyn ElfSectionHeader>> {
-            self.with_section.then(|| Arc::new(MockSection) as Arc<dyn ElfSectionHeader>)
+        fn get_section_to_be_relocated(&self) -> Option<ElfSectionHeader> {
+            self.with_section.then(text_section)
         }
     }
 
@@ -886,18 +865,6 @@ mod tests {
         MipsElfRelocationContext::new(None, helper, Arc::new(HashMap::new()))
     }
 
-    /// A string table that answers the same name for every offset.
-    struct FixedStringTable(&'static str);
-
-    impl crate::format::seam_stubs::ElfStringTable for FixedStringTable {
-        fn read_string(
-            &self,
-            _reader: &crate::app::util::bin::binary_reader::BinaryReader,
-            _string_offset: i64,
-        ) -> String {
-            self.0.to_string()
-        }
-    }
 
     /// An `Elf32_Sym` (`st_name`, `st_value`, `st_size`, `st_info`, `st_other`, `st_shndx`,
     /// little endian) parsed and then given `name` through its string table, which is the only
@@ -911,10 +878,17 @@ mod tests {
         bytes.push(0); // st_other
         bytes.extend_from_slice(&SHN_UNDEF.to_le_bytes()); // st_shndx
 
+        // the name follows the 16-byte entry and is the string table's only string
+        let name_offset = bytes.len() as i64;
+        bytes.extend_from_slice(name.as_bytes());
+        bytes.push(0);
+
+        let header = minimal_header(false, true, 1);
         let mut reader = BinaryReader::from_bytes(bytes, true);
-        let mut symbol = ElfSymbol::parse(&mut reader, 1, &MockElfHeader { is32_bit: true })
-            .expect("symbol entry parses");
-        symbol.init_symbol_name(&reader, &FixedStringTable(name));
+        let mut symbol = ElfSymbol::parse(&mut reader, 1, &header).expect("symbol entry parses");
+        let string_table =
+            ElfStringTable::new(header.context(), None, name_offset, 0, name.len() as i64 + 1);
+        symbol.init_symbol_name(&reader, &string_table, &|msg| panic!("{msg}"));
         symbol
     }
 

@@ -40,9 +40,10 @@ use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter;
 use crate::format::memory_loadable::MemoryLoadable;
 use crate::app::util::importer::message_log::MessageLog;
+use crate::format::elf::elf_header::ElfHeader;
+use crate::format::elf::elf_symbol_table::ElfSymbolTable;
 use crate::format::seam_stubs::{
-    elf_relocation_handler, ElfHeader, ElfRelocation, ElfRelocationHandler, ElfRelocationTable,
-    ElfSymbolTable,
+    elf_relocation_handler, ElfRelocation, ElfRelocationHandler, ElfRelocationTable,
 };
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
@@ -107,7 +108,7 @@ pub struct ElfRelocationContextBase {
 
     relocation_table: Option<Arc<dyn ElfRelocationTable>>,
     /// May be `None`: not every relocation table has an associated symbol table.
-    symbol_table: Option<Arc<dyn ElfSymbolTable>>,
+    symbol_table: Option<Arc<ElfSymbolTable>>,
 
     /// Corresponds to `symbolIndex == 0` when there is no symbol table.
     null_symbol: Option<ElfSymbol>,
@@ -184,7 +185,7 @@ impl ElfRelocationContextBase {
 
     /// The symbol table associated with the relocation table currently being processed. `None`
     /// when the table has no associated symbol table (or outside a processing window).
-    pub fn symbol_table(&self) -> Option<&Arc<dyn ElfSymbolTable>> {
+    pub fn symbol_table(&self) -> Option<&Arc<ElfSymbolTable>> {
         self.symbol_table.as_ref()
     }
 
@@ -208,7 +209,7 @@ impl ElfRelocationContextBase {
             .is_some_and(|memory| memory.is_big_endian())
     }
 
-    pub fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
+    pub fn get_elf_header(&self) -> &ElfHeader {
         self.load_helper.get_elf_header()
     }
 
@@ -216,11 +217,8 @@ impl ElfRelocationContextBase {
         &self.load_helper
     }
 
-    /// The ELF extension adapter for this image.
-    ///
-    /// Java's `ElfHeader.getLoadAdapter()` never returns null; the unported `ElfHeader` seam has no
-    /// adapter registry to fall back on, so this can currently answer `None`.
-    pub fn get_load_adapter(&self) -> Option<ElfLoadAdapter> {
+    /// The ELF extension adapter for this image (never absent, as in Java).
+    pub fn get_load_adapter(&self) -> ElfLoadAdapter {
         self.get_elf_header().get_load_adapter()
     }
 
@@ -242,7 +240,7 @@ impl ElfRelocationContextBase {
                     None
                 }
             }
-            Some(symbol_table) => symbol_table.get_symbol(symbol_index),
+            Some(symbol_table) => symbol_table.get_symbol(symbol_index).cloned(),
         }
     }
 
@@ -531,7 +529,6 @@ mod tests {
     use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::format::elf::elf_section_header_constants::SHN_UNDEF;
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC, STT_TLS};
-    use crate::format::seam_stubs::ElfSectionHeader;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::reloc::RelocationStatus;
 
@@ -550,20 +547,12 @@ mod tests {
 
     /// Records every message written to it so tests can assert on the markup text.
 
-    struct MockElfHeader;
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            true
-        }
-        fn is_relocatable(&self) -> bool {
-            false
-        }
-        fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
-            Vec::new()
-        }
+    fn mock_elf_header() -> ElfHeader {
+        crate::format::elf::elf_test_image::minimal_header(false, true, 2)
     }
 
     struct MockLoadHelper {
+        elf: ElfHeader,
         log: Arc<MessageLog>,
         /// Messages passed to `ElfLoadHelper.log(...)`, which is distinct from the import log.
         helper_log: Mutex<Vec<String>>,
@@ -574,6 +563,7 @@ mod tests {
     impl MockLoadHelper {
         fn new() -> Self {
             MockLoadHelper {
+                elf: mock_elf_header(),
                 log: Arc::new(MessageLog::new()),
                 helper_log: Mutex::new(Vec::new()),
                 image_base_word_adjustment: 0,
@@ -599,8 +589,8 @@ mod tests {
         fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
             default_value
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader)
+        fn get_elf_header(&self) -> &ElfHeader {
+            &self.elf
         }
         fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
@@ -709,36 +699,17 @@ mod tests {
         }
     }
 
-    struct MockSymbolTable {
-        symbols: Vec<ElfSymbol>,
-    }
-
-    impl ElfSymbolTable for MockSymbolTable {
-        fn get_extended_section_index(&self, _sym: &ElfSymbol) -> i32 {
-            0
-        }
-        fn get_symbol(&self, symbol_index: i32) -> Option<ElfSymbol> {
-            usize::try_from(symbol_index)
-                .ok()
-                .and_then(|i| self.symbols.get(i))
-                .cloned()
-        }
-        fn get_symbol_name(&self, symbol_index: i32) -> Option<String> {
-            self.get_symbol(symbol_index)
-                .and_then(|s| s.get_name_as_string().map(str::to_string))
-        }
-    }
 
     struct MockRelocationTable {
         has_addend: bool,
-        symbol_table: Option<Arc<dyn ElfSymbolTable>>,
+        symbol_table: Option<Arc<ElfSymbolTable>>,
     }
 
     impl ElfRelocationTable for MockRelocationTable {
         fn has_addend_relocations(&self) -> bool {
             self.has_addend
         }
-        fn get_associated_symbol_table(&self) -> Option<Arc<dyn ElfSymbolTable>> {
+        fn get_associated_symbol_table(&self) -> Option<Arc<ElfSymbolTable>> {
             self.symbol_table.clone()
         }
     }
@@ -846,7 +817,7 @@ mod tests {
         bytes.extend_from_slice(&SHN_UNDEF.to_le_bytes()); // st_shndx
 
         let mut reader = BinaryReader::from_bytes(bytes, true);
-        ElfSymbol::parse(&mut reader, 1, &MockElfHeader).expect("symbol entry parses")
+        ElfSymbol::parse(&mut reader, 1, &mock_elf_header()).expect("symbol entry parses")
     }
 
     fn context_with(
@@ -906,7 +877,7 @@ mod tests {
         let symbols = vec![ElfSymbol::new(), symbol(STB_GLOBAL, STT_FUNC)];
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
-            symbol_table: Some(Arc::new(MockSymbolTable { symbols })),
+            symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
         }));
 
         assert_eq!(context.get_symbol(1).map(|s| s.get_type()), Some(STT_FUNC));
@@ -946,7 +917,7 @@ mod tests {
         let symbols = vec![ElfSymbol::new()];
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
-            symbol_table: Some(Arc::new(MockSymbolTable { symbols })),
+            symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
         }));
         context.end_relocation_table_processing();
 
@@ -1007,7 +978,7 @@ mod tests {
         let symbols = vec![ElfSymbol::new(), symbol(STB_GLOBAL, STT_TLS)];
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
-            symbol_table: Some(Arc::new(MockSymbolTable { symbols })),
+            symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
         }));
 
         let result = context.process_relocation(
@@ -1036,7 +1007,7 @@ mod tests {
         let symbols = vec![ElfSymbol::new(), symbol(STB_GLOBAL, STT_FUNC)];
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
-            symbol_table: Some(Arc::new(MockSymbolTable { symbols })),
+            symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
         }));
 
         let result = context.process_relocation(
@@ -1063,7 +1034,7 @@ mod tests {
         let symbols = vec![ElfSymbol::new(), symbol(STB_GLOBAL, STT_FUNC)];
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
-            symbol_table: Some(Arc::new(MockSymbolTable { symbols })),
+            symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
         }));
 
         let result = context.process_relocation(

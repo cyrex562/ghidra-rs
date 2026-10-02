@@ -25,7 +25,7 @@ use std::sync::Arc;
 use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::memory_loadable::MemoryLoadable;
 use crate::app::util::importer::message_log::MessageLog;
-use crate::format::seam_stubs::ElfHeader;
+use crate::format::elf::elf_header::ElfHeader;
 use crate::program::model::address::range::AddressRange;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
@@ -38,7 +38,7 @@ use crate::program::model::symbol::Symbol;
 use crate::util::exception::InvalidInputException;
 
 /// `ghidra.app.util.bin.format.elf.ElfLoadHelper`.
-pub trait ElfLoadHelper: Send + Sync {
+pub trait ElfLoadHelper {
     /// `ElfLoadHelper.getProgram()`.
     fn get_program(&self) -> Arc<dyn Program>;
 
@@ -58,7 +58,7 @@ pub trait ElfLoadHelper: Send + Sync {
     fn get_option_i32(&self, option_name: &str, default_value: i32) -> i32;
 
     /// `ElfLoadHelper.getElfHeader()`.
-    fn get_elf_header(&self) -> Arc<dyn ElfHeader>;
+    fn get_elf_header(&self) -> &ElfHeader;
 
     /// `ElfLoadHelper.getLog()`.
     fn get_log(&self) -> Arc<MessageLog>;
@@ -166,17 +166,8 @@ mod tests {
         }
     }
 
-    struct MockElfHeader;
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            true
-        }
-        fn is_relocatable(&self) -> bool {
-            false
-        }
-        fn get_sections(&self) -> Vec<Box<dyn crate::format::seam_stubs::ElfSectionHeader>> {
-            Vec::new()
-        }
+    fn elf32() -> ElfHeader {
+        crate::format::elf::elf_test_image::minimal_header(false, true, 2)
     }
 
     /// Routes `get_option_*` through `option_utils`, the same `OptionUtils.getOption` port
@@ -185,6 +176,7 @@ mod tests {
     struct MockLoadHelper {
         options: Vec<Box<dyn Option>>,
         log: Arc<MessageLog>,
+        elf: ElfHeader,
     }
 
     impl ElfLoadHelper for MockLoadHelper {
@@ -204,8 +196,8 @@ mod tests {
         fn get_option_i32(&self, option_name: &str, default_value: i32) -> i32 {
             option_utils::get_int_option(option_name, &self.options, default_value)
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader)
+        fn get_elf_header(&self) -> &ElfHeader {
+            &self.elf
         }
         fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
@@ -305,12 +297,12 @@ mod tests {
     /// present. This is `ElfProgramBuilder.getOption`'s entire (delegated) behavior in Java.
     #[test]
     fn get_option_bool_falls_back_to_default_then_reads_stored_value() {
-        let helper = MockLoadHelper { options: Vec::new(), log: Arc::new(MessageLog::new()) };
+        let helper = MockLoadHelper { options: Vec::new(), log: Arc::new(MessageLog::new()), elf: elf32() };
         assert_eq!(helper.get_option_bool("Perform Symbol Relocations", true), true);
 
         let mut options: Vec<Box<dyn Option>> = Vec::new();
         options.push(new_boolean("Perform Symbol Relocations").value(Box::new(false)).build());
-        let helper = MockLoadHelper { options, log: Arc::new(MessageLog::new()) };
+        let helper = MockLoadHelper { options, log: Arc::new(MessageLog::new()), elf: elf32() };
         assert_eq!(helper.get_option_bool("Perform Symbol Relocations", true), false);
     }
 
@@ -319,6 +311,7 @@ mod tests {
         let helper = MockLoadHelper {
             options: Vec::new(),
             log: Arc::new(MessageLog::new()),
+            elf: elf32(),
         };
         helper.log("hello");
         assert!(helper.get_log().has_messages());

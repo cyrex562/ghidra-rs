@@ -53,11 +53,6 @@ impl std::fmt::Display for ElfProgramHeaderType {
     }
 }
 
-/// Bridges the real [`ElfProgramHeaderType`] into the pre-existing (empty marker)
-/// [`crate::format::seam_stubs::ElfProgramHeaderType`] placeholder trait, so a value constructed
-/// here can be used anywhere that trait is without any change to the not-yet-migrated call sites
-/// that depend on it.
-impl crate::format::seam_stubs::ElfProgramHeaderType for ElfProgramHeaderType {}
 
 /// `ElfProgramHeaderType.addProgramHeaderType(ElfProgramHeaderType, Map<Integer,
 /// ElfProgramHeaderType>)`.
@@ -239,8 +234,4 @@ mod tests {
         assert_eq!(enum_64_suffixed.get_length(), 8);
     }
 
-    #[test]
-    fn seam_trait_marker_is_implemented() {
-        let _: Box<dyn crate::format::seam_stubs::ElfProgramHeaderType> = Box::new(pt_load());
-    }
 }

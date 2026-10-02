@@ -104,9 +104,12 @@ impl ElfRelocationContext for X86_64ElfRelocationContext {
 
 #[cfg(test)]
 mod tests {
+
+    fn mock_elf_header() -> crate::format::elf::elf_header::ElfHeader {
+        crate::format::elf::elf_test_image::minimal_header(true, true, 1)
+    }
     use super::*;
     use crate::app::util::importer::message_log::MessageLog;
-    use crate::format::seam_stubs::ElfHeader;
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::MemoryAccessException;
     use std::sync::Mutex;
@@ -123,20 +126,8 @@ mod tests {
     }
 
 
-    struct MockElfHeader;
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            false
-        }
-        fn is_relocatable(&self) -> bool {
-            true
-        }
-        fn get_sections(&self) -> Vec<Box<dyn crate::format::seam_stubs::ElfSectionHeader>> {
-            Vec::new()
-        }
-    }
-
     struct MockLoadHelper {
+        elf: crate::format::elf::elf_header::ElfHeader,
         log: Arc<MessageLog>,
     }
 
@@ -157,8 +148,8 @@ mod tests {
         fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
             default_value
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader)
+        fn get_elf_header(&self) -> &crate::format::elf::elf_header::ElfHeader {
+            &self.elf
         }
         fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
@@ -263,7 +254,7 @@ mod tests {
     }
 
     fn context() -> X86_64ElfRelocationContext {
-        let load_helper = Arc::new(MockLoadHelper { log: Arc::new(MessageLog::new()) });
+        let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(), log: Arc::new(MessageLog::new()) });
         X86_64ElfRelocationContext::new(None, load_helper, Arc::new(HashMap::new()))
     }
 
@@ -336,7 +327,7 @@ mod tests {
             }
         }
 
-        let load_helper = Arc::new(MockLoadHelper { log: Arc::new(MessageLog::new()) });
+        let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(), log: Arc::new(MessageLog::new()) });
         let context = X86_64ElfRelocationContext::new(
             Some(Arc::new(NoopHandler)),
             load_helper,

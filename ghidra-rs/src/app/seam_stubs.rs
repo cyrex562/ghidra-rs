@@ -831,7 +831,7 @@ impl LoadSpec {
 pub mod elf_program_builder {
     use super::{MessageLog, Option};
     use crate::format::elf::elf_exception::ElfException;
-    use crate::format::seam_stubs::ElfHeader;
+    use crate::format::elf::elf_header::ElfHeader;
     use crate::program::model::listing::Program;
     use crate::util::task::TaskMonitor;
 
@@ -840,7 +840,7 @@ pub mod elf_program_builder {
     /// (memory blocks, symbols, relocations, ...); that subsystem is not ported yet, so this
     /// placeholder always panics until it lands.
     pub fn load_elf(
-        elf: &dyn ElfHeader,
+        elf: &ElfHeader,
         program: &dyn Program,
         options: &[Box<dyn Option>],
         log: &MessageLog,

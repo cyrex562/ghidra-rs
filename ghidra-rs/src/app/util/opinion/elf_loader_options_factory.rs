@@ -13,13 +13,14 @@
 //!   docs), so both functions here take an explicit `&dyn LanguageService` parameter instead,
 //!   mirroring the same substitution already made in `program_architecture_translator`'s
 //!   `resolve_language_by_id`.
-//! * `addOptions` also constructs its own header via `new ElfHeader(provider, null)`. `ElfHeader`
-//!   is not yet ported beyond a placeholder trait with no such constructor, so [`add_options`]
-//!   takes an already-parsed `elf: &dyn ElfHeader` instead of a `ByteProvider`; the (unported)
-//!   `ElfLoader` caller is expected to have parsed one already. Since `ElfHeader::get_load_adapter`
-//!   already stands in for the same lookup `ElfExtensionFactory.getLoadAdapter(elf)` performs (see
-//!   that method's docs), this port calls it directly rather than adding a separate
-//!   `ElfExtensionFactory` seam for the same concept.
+//! * `addOptions` constructs its own (unparsed) header via `new ElfHeader(provider, null)`;
+//!   [`add_options`] takes the [`ElfHeader`] its caller
+//!   ([`ElfLoader::get_default_options`](crate::app::util::opinion::elf_loader::ElfLoader::get_default_options))
+//!   constructed from the same provider, so construction failures surface there.
+//! * `ElfExtensionFactory.getLoadAdapter(elf)` scans for processor `ElfExtension`s that can
+//!   handle the header and returns `null` when none can. No processor extensions are ported, so
+//!   the lookup always yields `None` here: the image base falls back to the 32/64-bit default and
+//!   no extension load options are added -- exactly Java's behaviour with no extension installed.
 //! * `getRecommendedMinimumDataImageBase(ElfHeader, Language)` never reads its `elf` parameter, so
 //!   [`get_recommended_minimum_data_image_base`] drops it.
 //! * `validateOptions` wraps a caught `LanguageNotFoundException` in an unchecked
@@ -31,7 +32,8 @@ use std::sync::Arc;
 
 use crate::app::seam_stubs::{new_boolean, new_integer, new_string, option_utils, LoadSpec, Option};
 use crate::app::util::opinion::loader::COMMAND_LINE_ARG_PREFIX;
-use crate::format::seam_stubs::ElfHeader;
+use crate::format::elf::elf_header::ElfHeader;
+use crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::ghidra_language_property_keys::MINIMUM_DATA_IMAGE_BASE;
 use crate::program::model::lang::language::Language;
@@ -86,7 +88,7 @@ pub const DEFAULT_DISCARDABLE_SEGMENT_SIZE: i32 = 0xff;
 /// NOTE: add-to-program is not supported.
 pub fn add_options(
     options: &mut Vec<Box<dyn Option>>,
-    elf: &dyn ElfHeader,
+    elf: &ElfHeader,
     load_spec: &LoadSpec,
     language_service: &dyn LanguageService,
 ) -> Result<(), LanguageNotFoundException> {
@@ -104,7 +106,8 @@ pub fn add_options(
             .build(),
     );
 
-    let extension_adapter = elf.get_load_adapter();
+    // ElfExtensionFactory.getLoadAdapter(elf): no processor extensions are ported (module docs).
+    let extension_adapter: std::option::Option<ElfLoadAdapter> = None;
 
     let language = load_spec.get_language(language_service)?;
 
@@ -167,7 +170,7 @@ pub fn add_options(
 
 /// `ElfLoaderOptionsFactory.includeDataImageBaseOption(ElfHeader, Language)`: only include the
 /// option if all segments and sections have a `0` address.
-fn include_data_image_base_option(elf: &dyn ElfHeader, language: &dyn Language) -> bool {
+fn include_data_image_base_option(elf: &ElfHeader, language: &dyn Language) -> bool {
     let default_space = language.get_default_space();
     let default_data_space = language.get_default_data_space();
     if default_data_space.as_ref() == default_space.as_ref() {
@@ -347,7 +350,7 @@ pub fn get_max_segment_discard_size(options: &[Box<dyn Option>]) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::ElfSectionHeader;
+    use crate::format::elf::elf_test_image::ElfImage;
     use crate::program::model::address::{Address, AddressSpaceType};
     use crate::program::model::lang::compiler_spec::CompilerSpec;
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
@@ -626,38 +629,15 @@ mod tests {
         }
     }
 
-    struct MockElfHeader {
-        is_64_bit: bool,
-        is_relocatable: bool,
-        is_shared_object: bool,
-        find_image_base: i64,
-        get_image_base: i64,
-    }
-
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            !self.is_64_bit
+    /// A parsed ELF32 header of type `e_type` with one `PT_LOAD` at `load_vaddr` (none if
+    /// `None`).
+    fn elf32(e_type: u16, load_vaddr: std::option::Option<u64>) -> ElfHeader {
+        let mut img = ElfImage::new(false, true);
+        img.e_type = e_type;
+        if let Some(vaddr) = load_vaddr {
+            img.add_segment(1, 5, 0x400, vaddr, 0x10, 0x10);
         }
-
-        fn is_relocatable(&self) -> bool {
-            self.is_relocatable
-        }
-
-        fn is_shared_object(&self) -> bool {
-            self.is_shared_object
-        }
-
-        fn find_image_base(&self) -> i64 {
-            self.find_image_base
-        }
-
-        fn get_image_base(&self) -> i64 {
-            self.get_image_base
-        }
-
-        fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
-            Vec::new()
-        }
+        img.parse()
     }
 
     struct MockLanguageService {
@@ -926,13 +906,10 @@ mod tests {
         let ram_space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let language_service = make_language_service(ram_space);
         let load_spec = make_load_spec();
-        let elf = MockElfHeader {
-            is_64_bit: false,
-            is_relocatable: false,
-            is_shared_object: false,
-            find_image_base: 0x1000,
-            get_image_base: 0x1000,
-        };
+        // ET_EXEC with its only PT_LOAD at 0x1000.
+        let elf = elf32(2, Some(0x1000));
+        assert_eq!(elf.find_image_base(), 0x1000);
+        assert_eq!(elf.get_image_base(), 0x1000);
 
         let mut options = Vec::new();
         add_options(&mut options, &elf, &load_spec, &language_service)
@@ -956,18 +933,14 @@ mod tests {
         let ram_space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let language_service = make_language_service(ram_space);
         let load_spec = make_load_spec();
-        let elf = MockElfHeader {
-            is_64_bit: false,
-            is_relocatable: true,
-            is_shared_object: false,
-            find_image_base: 0,
-            get_image_base: 0,
-        };
+        // ET_REL with no segments: no recorded image base.
+        let elf = elf32(1, None);
+        assert_eq!(elf.find_image_base(), 0);
 
         let mut options = Vec::new();
         add_options(&mut options, &elf, &load_spec, &language_service).unwrap();
 
-        // No extension adapter (elf.get_load_adapter() defaults to None) and is32_bit, so the
+        // No extension adapter (no processor ElfExtension is ported) and is32_bit, so the
         // 32-bit default image base is used, matching `IMAGE32_BASE_DEFAULT`. "10000" is 5 hex
         // chars; minNibbles = 8; the pad amount passed (8-5=3) is less than the source length, so
         // (per the same upstream `pad` quirk locked in above) no padding is actually added.
@@ -999,13 +972,9 @@ mod tests {
             registers: Vec::new(),
             min_data_image_base_property: None,
         };
-        let elf = MockElfHeader {
-            is_64_bit: false,
-            is_relocatable: true,
-            is_shared_object: false,
-            find_image_base: 0,
-            get_image_base: 0,
-        };
+        // ET_REL with no segments: no recorded image base.
+        let elf = elf32(1, None);
+        assert_eq!(elf.find_image_base(), 0);
         assert!(!include_data_image_base_option(&elf, &language));
 
         let data_space = AddressSpace::new("data", 32, 1, AddressSpaceType::Ram, 1);

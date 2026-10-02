@@ -115,10 +115,15 @@ impl ElfRelocationContext for RiscvElfRelocationContext {
 
 #[cfg(test)]
 mod tests {
+
+    fn mock_elf_header() -> crate::format::elf::elf_header::ElfHeader {
+        crate::format::elf::elf_test_image::minimal_header(true, true, 1)
+    }
     use super::*;
     use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::app::util::importer::message_log::MessageLog;
-    use crate::format::seam_stubs::{ElfHeader, ElfRelocationTable, ElfSymbolTable};
+    use crate::format::seam_stubs::ElfRelocationTable;
+    use crate::format::elf::elf_symbol_table::ElfSymbolTable;
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::MemoryAccessException;
     use std::sync::Mutex;
@@ -135,20 +140,8 @@ mod tests {
     }
 
 
-    struct MockElfHeader;
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            false
-        }
-        fn is_relocatable(&self) -> bool {
-            true
-        }
-        fn get_sections(&self) -> Vec<Box<dyn crate::format::seam_stubs::ElfSectionHeader>> {
-            Vec::new()
-        }
-    }
-
     struct MockLoadHelper {
+        elf: crate::format::elf::elf_header::ElfHeader,
         log: Arc<MessageLog>,
     }
 
@@ -169,8 +162,8 @@ mod tests {
         fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
             default_value
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader)
+        fn get_elf_header(&self) -> &crate::format::elf::elf_header::ElfHeader {
+            &self.elf
         }
         fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
@@ -292,7 +285,7 @@ mod tests {
         fn has_addend_relocations(&self) -> bool {
             true
         }
-        fn get_associated_symbol_table(&self) -> Option<Arc<dyn ElfSymbolTable>> {
+        fn get_associated_symbol_table(&self) -> Option<Arc<ElfSymbolTable>> {
             None
         }
         fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
@@ -307,7 +300,7 @@ mod tests {
     }
 
     fn create_context() -> RiscvElfRelocationContext {
-        let load_helper = Arc::new(MockLoadHelper { log: Arc::new(MessageLog::new()) });
+        let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(), log: Arc::new(MessageLog::new()) });
         RiscvElfRelocationContext::new(None, load_helper, Arc::new(HashMap::new()))
     }
 
@@ -322,7 +315,7 @@ mod tests {
         bytes.extend_from_slice(&0u64.to_le_bytes()); // st_size
 
         let mut reader = BinaryReader::from_bytes(bytes, true);
-        ElfSymbol::parse(&mut reader, 1, &MockElfHeader).expect("symbol entry parses")
+        ElfSymbol::parse(&mut reader, 1, &mock_elf_header()).expect("symbol entry parses")
     }
 
     #[test]

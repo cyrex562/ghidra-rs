@@ -21,7 +21,7 @@
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::ElfHeader;
+use crate::format::elf::elf_header::ElfHeader;
 
 /// Compression algorithm identifier for the zlib algorithm.
 pub const ELFCOMPRESS_ZLIB: i32 = 1;
@@ -30,6 +30,7 @@ const SIZEOF_HEADER_32: i32 = 12; // sizeof(word)*3 fields
 const SIZEOF_HEADER_64: i32 = 24; // sizeof(word)*2 fields + sizeof(xword)*2 fields
 
 /// Header at the beginning of an ELF compressed section (`Elf32_Chdr` / `Elf64_Chdr`).
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ElfCompressedSectionHeader {
     /// Compression algorithm, see [`ELFCOMPRESS_ZLIB`].
     ch_type: i32,
@@ -50,8 +51,14 @@ impl ElfCompressedSectionHeader {
     ///
     /// # Errors
     /// Returns `Err` if an IO error occurs during parse.
-    pub fn read(reader: &mut BinaryReader, elf: &impl ElfHeader) -> io::Result<Self> {
-        if elf.is32_bit() {
+    pub fn read(reader: &mut BinaryReader, elf: &ElfHeader) -> io::Result<Self> {
+        Self::read_for_class(reader, elf.is32_bit())
+    }
+
+    /// [`read`](Self::read) given only the header's word size, for use while the header itself
+    /// is still being constructed (Java's `read` consults nothing but `elf.is32Bit()`).
+    pub(crate) fn read_for_class(reader: &mut BinaryReader, is_32_bit: bool) -> io::Result<Self> {
+        if is_32_bit {
             Self::read32(reader)
         } else {
             Self::read64(reader)
@@ -113,25 +120,7 @@ mod tests {
     use super::*;
 
 
-    struct MockHeader {
-        is32: bool,
-    }
-
-    impl ElfHeader for MockHeader {
-        fn is32_bit(&self) -> bool {
-            self.is32
-        }
-
-        fn is_relocatable(&self) -> bool {
-            false
-        }
-
-        fn get_sections(
-            &self,
-        ) -> Vec<Box<dyn crate::format::seam_stubs::ElfSectionHeader>> {
-            Vec::new()
-        }
-    }
+    use crate::format::elf::elf_test_image::minimal_header;
 
     #[test]
     fn read_32bit_header_matches_java_layout() {
@@ -141,7 +130,7 @@ mod tests {
             0x00, 0x01, 0x00, 0x00, // ch_size
             0x08, 0x00, 0x00, 0x00, // ch_addralign
         ], true);
-        let header = MockHeader { is32: true };
+        let header = minimal_header(false, true, 2);
 
         let chdr = ElfCompressedSectionHeader::read(&mut reader, &header).unwrap();
 
@@ -161,7 +150,7 @@ mod tests {
             0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // ch_size
             0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // ch_addralign
         ], true);
-        let header = MockHeader { is32: false };
+        let header = minimal_header(true, true, 2);
 
         let chdr = ElfCompressedSectionHeader::read(&mut reader, &header).unwrap();
 

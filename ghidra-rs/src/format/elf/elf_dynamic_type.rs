@@ -21,15 +21,7 @@
 //! expected to build its own `Vec`/slice of [`ElfDynamicType`] values and register them
 //! explicitly (mirrors the same departure already documented on
 //! [`ElfLoadAdapter::add_dynamic_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_dynamic_types)).
-//!
-//! # Relationship to the pre-existing seam stub
-//!
-//! [`crate::format::seam_stubs::ElfDynamicType`] is an earlier placeholder trait (`value`/`name`
-//! only) that [`ElfDynamic`](crate::format::elf::elf_dynamic::ElfDynamic) and
-//! [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter) depend on via
-//! `Box<dyn ElfDynamicType>` / `HashMap<i32, Box<dyn ElfDynamicType>>`. This module is the real
-//! port of the Java class; [`ElfDynamicType`] implements that seam trait below so a value here can
-//! be boxed straight into those existing call sites without any change to them.
+
 
 use std::collections::HashMap;
 
@@ -90,19 +82,6 @@ impl std::fmt::Display for ElfDynamicType {
     }
 }
 
-/// Bridges the real [`ElfDynamicType`] into the pre-existing
-/// [`crate::format::seam_stubs::ElfDynamicType`] placeholder trait, so a value constructed here
-/// can be used anywhere that trait is (e.g. `Box<dyn seam_stubs::ElfDynamicType>`) without any
-/// change to the not-yet-migrated call sites that depend on it.
-impl crate::format::seam_stubs::ElfDynamicType for ElfDynamicType {
-    fn value(&self) -> i32 {
-        self.value
-    }
-
-    fn name(&self) -> String {
-        self.name.clone()
-    }
-}
 
 /// `ElfDynamicType.addDynamicType(ElfDynamicType, Map<Integer, ElfDynamicType>)`.
 ///
@@ -375,12 +354,6 @@ mod tests {
         assert!(DEFAULT_TYPES.len() > 50);
     }
 
-    #[test]
-    fn seam_trait_bridge_exposes_value_and_name() {
-        let boxed: Box<dyn crate::format::seam_stubs::ElfDynamicType> = Box::new(dt_hash());
-        assert_eq!(boxed.value(), 4);
-        assert_eq!(boxed.name(), "DT_HASH");
-    }
 
     #[test]
     fn df_flag_bits_are_disjoint() {

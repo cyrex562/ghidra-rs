@@ -19,3 +19,4 @@ pub mod obfuscated_output_stream;
 pub mod random_access_mutable_byte_provider;
 pub mod seam_stubs;
 pub mod struct_converter;
+pub mod unlimited_byte_provider_wrapper;

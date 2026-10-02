@@ -561,182 +561,8 @@ pub trait PdbInfoDotNet: Send + Sync {
 // `app::util::bin::memory_byte_provider`. Re-exported for importers not yet repointed.
 pub use crate::app::util::bin::memory_byte_provider::MemoryByteProvider;
 
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfSectionHeader`, referenced by
-/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) and by
-/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter) before the real
-/// class is ported. Only the accessors those two need.
-pub trait ElfSectionHeader: Send + Sync {
-    fn get_name_as_string(&self) -> String;
-
-    /// `ElfSectionHeader.getElfHeader()` -- the header this section belongs to.
-    fn get_elf_header(&self) -> std::sync::Arc<dyn ElfHeader>;
-
-    /// `ElfSectionHeader.getAddress()` -- `sh_addr`, the address of the section in memory, or 0
-    /// if the section is not loaded.
-    fn get_address(&self) -> i64;
-
-    /// `ElfSectionHeader.getFlags()` -- the `sh_flags` bit set (`SHF_*`).
-    fn get_flags(&self) -> i64;
-
-    /// `ElfSectionHeader.getLogicalSize()` -- the uncompressed size of the section's data, which
-    /// differs from `sh_size` only for a `SHF_COMPRESSED` section.
-    fn get_logical_size(&self) -> i64;
-
-    /// `ElfSectionHeader.isExecutable()`, whose Java body is exactly this flag test.
-    fn is_executable(&self) -> bool {
-        (self.get_flags() & crate::format::elf::elf_section_header_constants::SHF_EXECINSTR as i64)
-            != 0
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfProgramHeader`, referenced by
-/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter) before the real
-/// class is ported. Only the segment members the load adapter reads.
-pub trait ElfProgramHeader: Send + Sync {
-    /// `ElfProgramHeader.getFlags()` -- the `p_flags` bit set (`PF_*`).
-    fn get_flags(&self) -> i32;
-
-    /// `ElfProgramHeader.getVirtualAddress()` -- `p_vaddr`, as an addressable word offset.
-    fn get_virtual_address(&self) -> i64;
-
-    /// `ElfProgramHeader.getFileSize()` -- `p_filesz`, the number of bytes backing this segment
-    /// in the file.
-    fn get_file_size(&self) -> i64;
-
-    /// `ElfProgramHeader.getMemorySize()` -- `p_memsz`, the segment's size in memory.
-    fn get_memory_size(&self) -> i64;
-
-    /// `ElfProgramHeader.isExecute()`, whose Java body is exactly this flag test.
-    fn is_execute(&self) -> bool {
-        (self.get_flags() & crate::format::elf::elf_program_header_constants::PF_X as i32) != 0
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfHeader`, referenced by
-/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse),
-/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter), and
-/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) before
-/// the real class is ported: the 32/64-bit discriminator that selects the `Elf32_Sym`/`Elf64_Sym`
-/// field order, the section list used to name a `STT_SECTION` symbol, the `e_type` predicate the
-/// load adapter needs, and the image-base fields `elf_loader_options_factory` reads.
-pub trait ElfHeader: Send + Sync {
-    fn is32_bit(&self) -> bool;
-
-    /// `ElfHeader.is64Bit()`. `EI_CLASS` admits only the two widths, so this is the negation of
-    /// [`is32_bit`](Self::is32_bit).
-    fn is64_bit(&self) -> bool {
-        !self.is32_bit()
-    }
-
-    /// `ElfHeader.isRelocatable()` -- true for an `ET_REL` object file.
-    fn is_relocatable(&self) -> bool;
-
-    /// `ElfHeader.isSharedObject()` -- true for an `ET_DYN` shared object. Defaults to `false`
-    /// so the pre-existing mock implementors elsewhere (none of which exercise this predicate)
-    /// keep compiling unchanged.
-    fn is_shared_object(&self) -> bool {
-        false
-    }
-
-    /// `ElfHeader.findImageBase()` -- the image base recorded/derived from the file, or `0` if
-    /// none could be determined. Defaults to `0`, matching "no image base found", for the same
-    /// reason as [`is_shared_object`](Self::is_shared_object).
-    fn find_image_base(&self) -> i64 {
-        0
-    }
-
-    /// `ElfHeader.getImageBase()` -- the image base as currently set on this header. Defaults to
-    /// `0` for the same reason as [`is_shared_object`](Self::is_shared_object).
-    fn get_image_base(&self) -> i64 {
-        0
-    }
-
-    fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>>;
-
-    /// `ElfHeader.isBigEndian()`, needed by
-    /// [`ElfLoader::find_supported_load_specs`](crate::app::util::opinion::elf_loader::ElfLoader::find_supported_load_specs).
-    /// Defaults to `false`, matching the other endian/width predicates' "not exercised by
-    /// pre-existing mock implementors" default (see [`is_shared_object`](Self::is_shared_object)).
-    fn is_big_endian(&self) -> bool {
-        false
-    }
-
-    /// `ElfHeader.isLittleEndian()`, needed by the same caller as
-    /// [`is_big_endian`](Self::is_big_endian). Unlike Java's independent field check, this
-    /// defaults to the negation of [`is_big_endian`](Self::is_big_endian) (mirroring
-    /// [`is64_bit`](Self::is64_bit)'s derivation from [`is32_bit`](Self::is32_bit)) so a stub
-    /// implementor only needs to override one of the pair.
-    fn is_little_endian(&self) -> bool {
-        !self.is_big_endian()
-    }
-
-    /// `ElfHeader.getMachineName()`, needed by
-    /// [`ElfLoader::find_supported_load_specs`](crate::app::util::opinion::elf_loader::ElfLoader::find_supported_load_specs).
-    /// Defaults to the empty string for the same "not exercised by pre-existing mock
-    /// implementors" reason as [`is_shared_object`](Self::is_shared_object).
-    fn get_machine_name(&self) -> String {
-        String::new()
-    }
-
-    /// `ElfHeader.getFlags()` -- a string rendering of the numeric `e_flags` field, needed by the
-    /// same caller as [`get_machine_name`](Self::get_machine_name). Defaults to the empty string
-    /// for the same reason.
-    fn get_flags(&self) -> String {
-        String::new()
-    }
-
-    /// `ElfHeader.parseSectionHeaders()`, needed by
-    /// [`ElfLoader`](crate::app::util::opinion::elf_loader::ElfLoader)'s Golang-section
-    /// detection. Java re-parses (idempotently; the header already parses its sections during
-    /// construction) and can fail with an `IOException`; this stub holds nothing to (re-)parse,
-    /// so the default is a no-op success.
-    fn parse_section_headers(&self) -> std::io::Result<()> {
-        Ok(())
-    }
-
-    /// Placeholder for `ElfHeader.getLoadAdapter()`, needed by
-    /// [`ElfRelocationContextBase::get_load_adapter`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_load_adapter).
-    ///
-    /// Java never returns null here (an unrecognized machine still gets the default adapter), but
-    /// this stub has no adapter registry to fall back on, so the default answers `None`.
-    fn get_load_adapter(
-        &self,
-    ) -> Option<crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter> {
-        None
-    }
-
-    /// `ElfHeader.getDynamicType(int)` -- looks up the enum-like dynamic type for a `d_tag`
-    /// value, needed by
-    /// [`ElfDynamic::get_tag_type`](crate::format::elf::elf_dynamic::ElfDynamic::get_tag_type).
-    /// Java returns `null` when the type map hasn't been built yet or the tag is unrecognized;
-    /// the stub has no type registry, so the default always answers `None`.
-    fn get_dynamic_type(&self, _type_: i32) -> Option<Box<dyn ElfDynamicType>> {
-        None
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfDynamicType`, referenced by
-/// [`ElfLoadAdapter::add_dynamic_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_dynamic_types)
-/// and by
-/// [`ElfDynamic`](crate::format::elf::elf_dynamic::ElfDynamic) before the real class is ported.
-/// `value`/`name` stand in for the Java class's public `final` fields of the same name.
-pub trait ElfDynamicType: Send + Sync {
-    /// `ElfDynamicType.value` -- the `d_tag` value this type represents.
-    fn value(&self) -> i32;
-
-    /// `ElfDynamicType.name` -- the type's symbolic name, e.g. `"DT_SYMTAB"`.
-    fn name(&self) -> String;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfProgramHeaderType`, referenced by
-/// [`ElfLoadAdapter::add_program_header_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_program_header_types)
-/// before the real class is ported. Only used as the value type of the extension type map.
-pub trait ElfProgramHeaderType: Send + Sync {}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfSectionHeaderType`, referenced by
-/// [`ElfLoadAdapter::add_section_header_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_section_header_types)
-/// before the real class is ported. Only used as the value type of the extension type map.
-pub trait ElfSectionHeaderType: Send + Sync {}
+// `ElfSectionHeader`, `ElfProgramHeader`, `ElfHeader`, `ElfDynamicType`, `ElfProgramHeaderType`
+// and `ElfSectionHeaderType` were placeholders here; the real ports live in `format::elf`.
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfDefaultGotPltMarkup`, referenced by
 /// [`ElfLoadAdapter::process_got_plt`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::process_got_plt)
@@ -767,43 +593,8 @@ impl ElfDefaultGotPltMarkup {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfStringTable`, referenced by
-/// [`ElfSymbol::init_symbol_name`](crate::format::elf::elf_symbol::ElfSymbol::init_symbol_name)
-/// before the real class is ported.
-pub trait ElfStringTable: Send + Sync {
-    fn read_string(
-        &self,
-        reader: &crate::app::util::bin::binary_reader::BinaryReader,
-        string_offset: i64,
-    ) -> String;
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfSymbolTable`, referenced by
-/// [`ElfSymbol::get_extended_section_header_index`](crate::format::elf::elf_symbol::ElfSymbol::get_extended_section_header_index)
-/// before the real class is ported. Only the `SHT_SYMTAB_SHNDX` lookup that resolves an
-/// `SHN_XINDEX` section index.
-pub trait ElfSymbolTable: Send + Sync {
-    fn get_extended_section_index(
-        &self,
-        sym: &crate::format::elf::elf_symbol::ElfSymbol,
-    ) -> i32;
-
-    /// Placeholder for `ElfSymbolTable.getSymbol(int)`, needed by
-    /// [`ElfRelocationContextBase::get_symbol`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_symbol).
-    /// `None` stands in for Java's `null` return on an out-of-range index.
-    fn get_symbol(&self, symbol_index: i32) -> Option<crate::format::elf::elf_symbol::ElfSymbol> {
-        let _ = symbol_index;
-        None
-    }
-
-    /// Placeholder for `ElfSymbolTable.getSymbolName(int)`, needed by
-    /// [`ElfRelocationContextBase::get_symbol_name`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_symbol_name).
-    /// `None` stands in for Java's `null` return on an out-of-range index.
-    fn get_symbol_name(&self, symbol_index: i32) -> Option<String> {
-        let _ = symbol_index;
-        None
-    }
-}
+// `ElfStringTable` and `ElfSymbolTable` were placeholders here; the real ports live in
+// `format::elf::elf_string_table` / `format::elf::elf_symbol_table`.
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocation`, referenced by
 /// [`ElfRelocationContext::process_relocation`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::process_relocation)
@@ -853,7 +644,9 @@ pub trait ElfRelocationTable: Send + Sync {
 
     /// `ElfRelocationTable.getAssociatedSymbolTable()`, which is `null` (here `None`) when the
     /// table has no associated symbol table.
-    fn get_associated_symbol_table(&self) -> Option<std::sync::Arc<dyn ElfSymbolTable>>;
+    fn get_associated_symbol_table(
+        &self,
+    ) -> Option<std::sync::Arc<crate::format::elf::elf_symbol_table::ElfSymbolTable>>;
 
     /// `ElfRelocationTable.getRelocations()` -- every relocation entry, in file order.
     fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
@@ -864,7 +657,9 @@ pub trait ElfRelocationTable: Send + Sync {
     /// which is `null` (here `None`) for a dynamic relocation table. Needed by
     /// [`MipsElfRelocationContext`](crate::format::elf::relocation::mips_elf_relocation_context::MipsElfRelocationContext),
     /// which names its fabricated GOT block after it.
-    fn get_section_to_be_relocated(&self) -> Option<std::sync::Arc<dyn ElfSectionHeader>> {
+    fn get_section_to_be_relocated(
+        &self,
+    ) -> Option<crate::format::elf::elf_section_header::ElfSectionHeader> {
         None
     }
 }

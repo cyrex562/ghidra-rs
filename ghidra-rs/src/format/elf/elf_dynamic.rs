@@ -28,36 +28,39 @@
 //! } Elf64_Dyn;
 //! ```
 //!
-//! `elf` is stored as `Arc<dyn ElfHeader>`, matching the storage convention already used for a
-//! retained `ElfHeader` back-reference elsewhere in this crate (e.g.
-//! [`ElfRelocationContextBase`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase)),
-//! since [`ElfHeader`] is still an unported seam.
+//! Java keeps a back-pointer to the owning `ElfHeader`, used for the entry size and for
+//! looking up the tag's [`ElfDynamicType`]. The header owns its dynamic table, so the port records
+//! the word size at parse time and takes the header as a call-time argument in
+//! [`get_tag_type`](ElfDynamic::get_tag_type) / [`get_tag_as_string`](ElfDynamic::get_tag_as_string).
 
 use std::io;
-use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::{ElfDynamicType, ElfHeader};
+use crate::format::elf::elf_dynamic_type::ElfDynamicType;
+use crate::format::elf::elf_header::ElfHeader;
 use crate::util::string_utilities::StringUtilities;
 
-/// A single ELF dynamic table entry (`Elf32_Dyn`/`Elf64_Dyn`).
-#[derive(Clone)]
+/// One `Elf32_Dyn`/`Elf64_Dyn` entry.
+///
+/// Mirrors `ghidra.app.util.bin.format.elf.ElfDynamic`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ElfDynamic {
-    elf: Arc<dyn ElfHeader>,
+    is_32bit: bool,
 
     d_tag: i32,
     d_val: u64,
 }
 
 impl ElfDynamic {
-    /// Read an ELF dynamic table entry at the reader's current position.
-    ///
-    /// The reader is not retained; its position moves to the next entry.
-    ///
-    /// # Errors
-    /// Returns `Err` if an IO error occurs during parse.
-    pub fn parse(reader: &mut BinaryReader, elf: Arc<dyn ElfHeader>) -> io::Result<Self> {
-        let (d_tag, d_val) = if elf.is32_bit() {
+    /// Reads an entry from the reader's current position. Mirrors
+    /// `ElfDynamic(BinaryReader, ElfHeader)`.
+    pub fn parse(reader: &mut BinaryReader, elf: &ElfHeader) -> io::Result<Self> {
+        Self::parse_for_class(reader, elf.is32_bit())
+    }
+
+    /// [`parse`](Self::parse) given only the header's word size.
+    pub fn parse_for_class(reader: &mut BinaryReader, is_32bit: bool) -> io::Result<Self> {
+        let (d_tag, d_val) = if is_32bit {
             let d_tag = reader.read_next_int()?;
             let d_val = reader.read_next_unsigned_int()?;
             (d_tag, d_val)
@@ -67,17 +70,17 @@ impl ElfDynamic {
             (d_tag, d_val)
         };
 
-        Ok(ElfDynamic { elf, d_tag, d_val })
+        Ok(ElfDynamic { is_32bit, d_tag, d_val })
     }
 
-    /// Construct a new ELF dynamic with the specified tag and value.
-    pub fn new(tag: i32, value: u64, elf: Arc<dyn ElfHeader>) -> Self {
-        ElfDynamic { elf, d_tag: tag, d_val: value }
+    /// Mirrors `ElfDynamic(int, long, ElfHeader)`.
+    pub fn new(tag: i32, value: u64, elf: &ElfHeader) -> Self {
+        ElfDynamic { is_32bit: elf.is32_bit(), d_tag: tag, d_val: value }
     }
 
-    /// Construct a new ELF dynamic with the specified (enum) tag and value.
-    pub fn with_type(tag: &dyn ElfDynamicType, value: u64, elf: Arc<dyn ElfHeader>) -> Self {
-        Self::new(tag.value(), value, elf)
+    /// Mirrors `ElfDynamic(ElfDynamicType, long, ElfHeader)`.
+    pub fn with_type(tag: &ElfDynamicType, value: u64, elf: &ElfHeader) -> Self {
+        Self::new(tag.value, value, elf)
     }
 
     /// The value that controls the interpretation of `d_val`/`d_ptr`.
@@ -85,84 +88,37 @@ impl ElfDynamic {
         self.d_tag
     }
 
-    /// The enum value that controls the interpretation of `d_val`/`d_ptr`, or `None` if unknown.
-    pub fn get_tag_type(&self) -> Option<Box<dyn ElfDynamicType>> {
-        self.elf.get_dynamic_type(self.d_tag)
+    /// The enum-like type of this entry's tag in `elf`'s dynamic type registry, or `None` if
+    /// unknown (or the registry is not built yet).
+    pub fn get_tag_type<'a>(&self, elf: &'a ElfHeader) -> Option<&'a ElfDynamicType> {
+        elf.get_dynamic_type(self.d_tag)
     }
 
-    /// The object whose integer values represent various interpretations.
-    ///
-    /// For example, if `d_tag == DT_SYMTAB`, then `d_val` holds the address of the symbol table.
-    /// But if `d_tag == DT_SYMENT`, then `d_val` holds the size of each symbol entry.
+    /// `d_val`/`d_ptr`.
     pub fn get_value(&self) -> u64 {
         self.d_val
     }
 
-    /// A convenience method for getting a string representing the `d_tag` value.
-    ///
-    /// For example, if `d_tag == DT_SYMTAB`, this returns `"DT_SYMTAB"`.
-    pub fn get_tag_as_string(&self) -> String {
-        match self.get_tag_type() {
-            Some(tag_type) => tag_type.name(),
+    /// The tag's name, or `DT_0x<hex>` if unknown to `elf`'s registry. Mirrors
+    /// `getTagAsString()`.
+    pub fn get_tag_as_string(&self, elf: &ElfHeader) -> String {
+        match self.get_tag_type(elf) {
+            Some(tag_type) => tag_type.name.clone(),
             None => format!("DT_0x{}", format!("{:x}", self.d_tag as u32).pad('0', 8)),
         }
     }
 
-    /// The size in bytes of this object.
+    /// The entry's size in bytes: 8 (ELF32) or 16 (ELF64).
     pub fn sizeof(&self) -> i32 {
-        if self.elf.is32_bit() { 8 } else { 16 }
-    }
-}
-
-impl std::fmt::Display for ElfDynamic {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.get_tag_as_string())
+        if self.is_32bit { 8 } else { 16 }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-
-    struct MockHeader {
-        is32: bool,
-    }
-
-    impl ElfHeader for MockHeader {
-        fn is32_bit(&self) -> bool {
-            self.is32
-        }
-        fn is_relocatable(&self) -> bool {
-            false
-        }
-        fn get_sections(
-            &self,
-        ) -> Vec<Box<dyn crate::format::seam_stubs::ElfSectionHeader>> {
-            Vec::new()
-        }
-        fn get_dynamic_type(&self, type_: i32) -> Option<Box<dyn ElfDynamicType>> {
-            if type_ == 6 {
-                Some(Box::new(MockDynamicType { value: 6, name: "DT_SYMTAB".to_string() }))
-            } else {
-                None
-            }
-        }
-    }
-
-    struct MockDynamicType {
-        value: i32,
-        name: String,
-    }
-
-    impl ElfDynamicType for MockDynamicType {
-        fn value(&self) -> i32 {
-            self.value
-        }
-        fn name(&self) -> String {
-            self.name.clone()
-        }
-    }
+    use crate::format::elf::elf_dynamic_type;
+    use crate::format::elf::elf_test_image::minimal_header;
 
     /// `Elf32_Dyn`: d_tag, d_val.
     fn dyn32(tag: i32, val: u32) -> Vec<u8> {
@@ -183,8 +139,8 @@ mod tests {
     #[test]
     fn parses_elf32_entry_field_order() {
         let mut reader = BinaryReader::from_bytes(dyn32(6, 0x8048_400), true);
-        let header: Arc<dyn ElfHeader> = Arc::new(MockHeader { is32: true });
-        let dynamic = ElfDynamic::parse(&mut reader, header).unwrap();
+        let header = minimal_header(false, true, 2);
+        let dynamic = ElfDynamic::parse(&mut reader, &header).unwrap();
 
         assert_eq!(dynamic.get_tag(), 6);
         assert_eq!(dynamic.get_value(), 0x8048_400);
@@ -196,8 +152,8 @@ mod tests {
     #[test]
     fn parses_elf64_entry_field_order() {
         let mut reader = BinaryReader::from_bytes(dyn64(7, 0xdead_beef), true);
-        let header: Arc<dyn ElfHeader> = Arc::new(MockHeader { is32: false });
-        let dynamic = ElfDynamic::parse(&mut reader, header).unwrap();
+        let header = minimal_header(true, true, 2);
+        let dynamic = ElfDynamic::parse(&mut reader, &header).unwrap();
 
         assert_eq!(dynamic.get_tag(), 7);
         assert_eq!(dynamic.get_value(), 0xdead_beef);
@@ -208,36 +164,36 @@ mod tests {
 
     #[test]
     fn tag_as_string_uses_known_type_name() {
-        let header: Arc<dyn ElfHeader> = Arc::new(MockHeader { is32: true });
-        let dynamic = ElfDynamic::new(6, 0, header);
+        let header = minimal_header(false, true, 2);
+        let dynamic = ElfDynamic::new(6, 0, &header);
 
-        assert_eq!(dynamic.get_tag_as_string(), "DT_SYMTAB");
-        assert_eq!(dynamic.to_string(), "DT_SYMTAB");
+        assert_eq!(dynamic.get_tag_as_string(&header), "DT_SYMTAB");
+        assert_eq!(dynamic.get_tag_type(&header).unwrap().value, 6);
     }
 
     #[test]
     fn tag_as_string_falls_back_to_hex_for_unknown_tag() {
-        let header: Arc<dyn ElfHeader> = Arc::new(MockHeader { is32: true });
-        let dynamic = ElfDynamic::new(0x7fff_fffd, 0, header);
+        let header = minimal_header(false, true, 2);
+        // 0x7ffffffd is DT_AUXILIARY in the real registry; 0x7fff0000 is unassigned.
+        let dynamic = ElfDynamic::new(0x7fff_0000, 0, &header);
 
-        // Integer.toHexString(0x7ffffffd) == "7ffffffd", zero-padded to 8 chars (already 8).
-        assert_eq!(dynamic.get_tag_as_string(), "DT_0x7ffffffd");
-        assert!(dynamic.get_tag_type().is_none());
+        // Integer.toHexString(0x7fff0000) == "7fff0000", zero-padded to 8 chars (already 8).
+        assert_eq!(dynamic.get_tag_as_string(&header), "DT_0x7fff0000");
+        assert!(dynamic.get_tag_type(&header).is_none());
     }
 
     #[test]
     fn tag_as_string_pads_short_hex_values() {
-        let header: Arc<dyn ElfHeader> = Arc::new(MockHeader { is32: true });
-        let dynamic = ElfDynamic::new(0x2a, 0, header);
+        let header = minimal_header(false, true, 2);
+        let dynamic = ElfDynamic::new(0x2a, 0, &header);
 
-        assert_eq!(dynamic.get_tag_as_string(), "DT_0x0000002a");
+        assert_eq!(dynamic.get_tag_as_string(&header), "DT_0x0000002a");
     }
 
     #[test]
     fn with_type_uses_the_enum_tag_value() {
-        let header: Arc<dyn ElfHeader> = Arc::new(MockHeader { is32: true });
-        let tag_type = MockDynamicType { value: 6, name: "DT_SYMTAB".to_string() };
-        let dynamic = ElfDynamic::with_type(&tag_type, 0x1000, header);
+        let header = minimal_header(false, true, 2);
+        let dynamic = ElfDynamic::with_type(&elf_dynamic_type::dt_symtab(), 0x1000, &header);
 
         assert_eq!(dynamic.get_tag(), 6);
         assert_eq!(dynamic.get_value(), 0x1000);

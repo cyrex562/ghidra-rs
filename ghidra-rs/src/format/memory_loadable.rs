@@ -19,7 +19,7 @@ use crate::program::model::address::AddressSpaceType;
 /// Identifies a memory-loadable portion of a binary file and supplies an input stream.
 ///
 /// `ghidra.app.util.bin.format.MemoryLoadable`.
-pub trait MemoryLoadable: Send + Sync {
+pub trait MemoryLoadable {
     /// Determine if the use of input stream decompression or filtering via an extension is necessary.
     ///
     /// If this method returns true, a [`get_filtered_load_input_stream`](Self::get_filtered_load_input_stream)
@@ -45,13 +45,13 @@ pub trait MemoryLoadable: Send + Sync {
         elf_load_helper: &dyn ElfLoadHelper,
         start: Address,
         data_length: i64,
-        error_consumer: Option<&(dyn Fn(&str, &dyn std::error::Error) + Send)>,
-    ) -> io::Result<Box<dyn Read + Send>>;
+        error_consumer: Option<&dyn Fn(&str, &dyn std::error::Error)>,
+    ) -> io::Result<Box<dyn Read>>;
 
     /// Raw data input stream associated with this loadable object.
     ///
     /// Java: `MemoryLoadable.getRawInputStream()`.
-    fn get_raw_input_stream(&self) -> io::Result<Box<dyn Read + Send>>;
+    fn get_raw_input_stream(&self) -> io::Result<Box<dyn Read>>;
 }
 
 #[cfg(test)]
@@ -83,12 +83,12 @@ mod tests {
             _elf_load_helper: &dyn ElfLoadHelper,
             _start: Address,
             _data_length: i64,
-            _error_consumer: Option<&(dyn Fn(&str, &dyn std::error::Error) + Send)>,
-        ) -> io::Result<Box<dyn Read + Send>> {
+            _error_consumer: Option<&dyn Fn(&str, &dyn std::error::Error)>,
+        ) -> io::Result<Box<dyn Read>> {
             Ok(Box::new(std::io::Cursor::new(self.data.clone())))
         }
 
-        fn get_raw_input_stream(&self) -> io::Result<Box<dyn Read + Send>> {
+        fn get_raw_input_stream(&self) -> io::Result<Box<dyn Read>> {
             Ok(Box::new(std::io::Cursor::new(self.data.clone())))
         }
     }
@@ -168,7 +168,7 @@ mod tests {
             default_value
         }
 
-        fn get_elf_header(&self) -> Arc<dyn crate::format::seam_stubs::ElfHeader> {
+        fn get_elf_header(&self) -> &crate::format::elf::elf_header::ElfHeader {
             unimplemented!("Mock ElfLoadHelper")
         }
 

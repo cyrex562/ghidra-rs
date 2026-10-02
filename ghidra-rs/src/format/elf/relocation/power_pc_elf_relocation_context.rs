@@ -207,9 +207,12 @@ impl ElfRelocationContext for PowerPcElfRelocationContext {
 
 #[cfg(test)]
 mod tests {
+
+    fn mock_elf_header() -> crate::format::elf::elf_header::ElfHeader {
+        crate::format::elf::elf_test_image::minimal_header(false, true, 1)
+    }
     use super::*;
     use crate::app::util::importer::message_log::MessageLog;
-    use crate::format::seam_stubs::ElfHeader;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::memory::Memory;
@@ -229,20 +232,8 @@ mod tests {
     }
 
 
-    struct MockElfHeader;
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            true
-        }
-        fn is_relocatable(&self) -> bool {
-            true
-        }
-        fn get_sections(&self) -> Vec<Box<dyn crate::format::seam_stubs::ElfSectionHeader>> {
-            Vec::new()
-        }
-    }
-
     struct MockLoadHelper {
+        elf: crate::format::elf::elf_header::ElfHeader,
         log: Arc<MessageLog>,
     }
 
@@ -263,8 +254,8 @@ mod tests {
         fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
             default_value
         }
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            Arc::new(MockElfHeader)
+        fn get_elf_header(&self) -> &crate::format::elf::elf_header::ElfHeader {
+            &self.elf
         }
         fn get_log(&self) -> Arc<MessageLog> {
             self.log.clone()
@@ -356,7 +347,7 @@ mod tests {
     }
 
     fn create_context() -> PowerPcElfRelocationContext {
-        let load_helper = Arc::new(MockLoadHelper {
+        let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(),
             log: Arc::new(MessageLog::new()),
         });
         PowerPcElfRelocationContext::new(None, load_helper, Arc::new(HashMap::new()))
@@ -401,7 +392,7 @@ mod tests {
             }
         }
 
-        let load_helper = Arc::new(MockLoadHelper {
+        let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(),
             log: Arc::new(MessageLog::new()),
         });
         let context = PowerPcElfRelocationContext::new(
@@ -539,6 +530,7 @@ mod tests {
         // Route the load helper's program through the same mock instance so the test can assert
         // on its log messages.
         struct ProgramLoadHelper {
+        elf: crate::format::elf::elf_header::ElfHeader,
             program: Arc<dyn Program>,
             log: Arc<MessageLog>,
         }
@@ -559,9 +551,9 @@ mod tests {
             fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
                 default_value
             }
-            fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-                Arc::new(MockElfHeader)
-            }
+            fn get_elf_header(&self) -> &crate::format::elf::elf_header::ElfHeader {
+            &self.elf
+        }
             fn get_log(&self) -> Arc<MessageLog> {
                 self.log.clone()
             }
@@ -651,7 +643,7 @@ mod tests {
             }
         }
 
-        let load_helper = Arc::new(ProgramLoadHelper { program, log: log.clone() });
+        let load_helper = Arc::new(ProgramLoadHelper { elf: mock_elf_header(), program, log: log.clone() });
         let mut context =
             PowerPcElfRelocationContext::new(None, load_helper, Arc::new(HashMap::new()));
 

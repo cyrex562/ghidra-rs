@@ -18,17 +18,12 @@
 //!   return value becomes an explicit `base_options` parameter to
 //!   [`get_default_options`](ElfLoader::get_default_options); `super.validateOptions(..)` is not
 //!   modeled at all (see that method's docs).
-//! * `ElfHeader`'s `new ElfHeader(ByteProvider, ErrorConsumer)` constructor is not part of the
-//!   ported [`ElfHeader`](crate::format::seam_stubs::ElfHeader) placeholder trait (which has no
-//!   way to parse bytes). Every method that Java calls `new ElfHeader(..)` from -- and whose
-//!   `catch (ElfException e)` handles the "not actually an ELF" case -- instead takes an
-//!   already-parsed `elf: &dyn ElfHeader`, mirroring the same substitution already made in
-//!   [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) (see
-//!   its module docs): "the (unported) `ElfLoader` caller is expected to have parsed one
-//!   already." Concretely, [`find_supported_load_specs`](ElfLoader::find_supported_load_specs)
-//!   and [`load`](ElfLoader::load) both drop their `ByteProvider` parameter for a pre-parsed
-//!   `ElfHeader`, and the `ElfException`-means-"not an ELF" behavior becomes the caller's problem
-//!   to detect before calling in.
+//! * [`get_default_options`](ElfLoader::get_default_options) constructs the [`ElfHeader`] from
+//!   the provider itself and hands it to
+//!   [`elf_loader_options_factory::add_options`] (Java constructs it inside `addOptions`); an
+//!   `ElfException` is logged and ignored either way, exactly as Java's catch-all does.
+//! * [`load`](ElfLoader::load) takes the log as a shared `Arc<MessageLog>` so the header's error
+//!   consumer (`msg -> settings.log().appendMsg(msg)`) can own a handle to it.
 //! * `QueryOpinionService.query(String, String, String)` and
 //!   `LanguageCompilerSpecPair.getLanguageDescription()` both resolve process-wide singletons
 //!   (`Application`/`DefaultLanguageService`) that were dropped when those classes were ported
@@ -49,6 +44,8 @@
 
 use std::collections::HashSet;
 use std::io;
+use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::app::util::importer::message_log::MessageLog;
 use crate::app::seam_stubs::{elf_program_builder, ExternalSymbolResolver, LoadSpec, Option, QueryResult};
@@ -56,7 +53,8 @@ use crate::app::util::opinion::elf_loader_options_factory;
 use crate::app::util::opinion::loaded::Loaded;
 use crate::app::util::opinion::query_opinion_service;
 use crate::format::golang::go_constants::GOLANG_CSPEC_NAME;
-use crate::format::seam_stubs::ElfHeader;
+use crate::app::util::bin::byte_provider::ByteProvider;
+use crate::format::elf::elf_header::ElfHeader;
 use crate::framework::application::Application;
 use crate::framework::model::Project;
 use crate::framework::options::Options;
@@ -125,24 +123,33 @@ impl ElfLoader {
 
     /// `ElfLoader.getDefaultOptions(ByteProvider, LoadSpec, DomainObject, boolean, boolean)`. See
     /// the module docs for why `base_options` stands in for `super.getDefaultOptions(..)`'s
-    /// return value and `elf` for the `ByteProvider` parameter.
+    /// return value.
     ///
     /// NOTE: add-to-program is not supported.
     pub fn get_default_options(
         &self,
         base_options: Vec<Box<dyn Option>>,
-        elf: &dyn ElfHeader,
+        provider: Rc<dyn ByteProvider>,
         load_spec: &LoadSpec,
         language_service: &dyn LanguageService,
     ) -> Vec<Box<dyn Option>> {
         let mut options = base_options;
-        if let Err(e) =
-            elf_loader_options_factory::add_options(&mut options, elf, load_spec, language_service)
-        {
+        let result = ElfHeader::new(provider, None)
+            .map_err(|e| e.to_string())
+            .and_then(|elf| {
+                elf_loader_options_factory::add_options(
+                    &mut options,
+                    &elf,
+                    load_spec,
+                    language_service,
+                )
+                .map_err(|e| e.to_string())
+            });
+        if let Err(e) = result {
             Msg::error_with_error(
                 "ElfLoader",
                 &"Error while generating Elf import options",
-                &e,
+                &io::Error::new(io::ErrorKind::InvalidData, e),
             );
             // ignore here, will catch later
         }
@@ -162,8 +169,9 @@ impl ElfLoader {
         elf_loader_options_factory::validate_options(load_spec, options, language_service)
     }
 
-    /// `ElfLoader.findSupportedLoadSpecs(ByteProvider)`. See the module docs for why `elf` is
-    /// taken pre-parsed, and `app`/`language_service` are explicit parameters.
+    /// `ElfLoader.findSupportedLoadSpecs(ByteProvider)`. See the module docs for why
+    /// `app`/`language_service` are explicit parameters. A provider that is not an ELF image
+    /// (an `ElfException`) yields no load specs.
     ///
     /// # Errors
     /// Returns `Err` if `elf.parseSectionHeaders()`'s IO failed, or if a query result's
@@ -173,14 +181,20 @@ impl ElfLoader {
     /// uncaught by `LanguageCompilerSpecPair.getLanguageDescription()`, is itself a subclass of).
     pub fn find_supported_load_specs(
         &self,
-        elf: &dyn ElfHeader,
+        provider: Rc<dyn ByteProvider>,
         app: &dyn Application,
         language_service: &dyn LanguageService,
     ) -> io::Result<Vec<LoadSpec>> {
         let mut load_specs = Vec::new();
 
+        let mut elf = match ElfHeader::new(provider, None) {
+            Ok(elf) => elf,
+            // not a problem, it's not an elf
+            Err(_) => return Ok(load_specs),
+        };
+
         let machine = elf.get_machine_name();
-        let compiler = Self::detect_compiler_name(elf)?;
+        let compiler = Self::detect_compiler_name(&mut elf)?;
 
         let mut results: HashSet<QueryResult> = HashSet::new();
         if let Some(compiler) = compiler {
@@ -229,18 +243,23 @@ impl ElfLoader {
         Ok(load_specs)
     }
 
-    /// `ElfLoader.load(Program, ImporterSettings)`. See the module docs for why `elf` is taken
-    /// pre-parsed and the individual `ImporterSettings` fields Java reads are explicit
-    /// parameters.
+    /// `ElfLoader.load(Program, ImporterSettings)`. The individual `ImporterSettings` fields Java
+    /// reads are explicit parameters; the header's error messages go to `log`.
+    ///
+    /// # Errors
+    /// An `ElfException` (not an ELF, or a malformed one) becomes an `io::Error` carrying its
+    /// message, as in Java.
     pub fn load(
         &self,
-        elf: &dyn ElfHeader,
+        provider: Rc<dyn ByteProvider>,
         program: &dyn Program,
         options: &[Box<dyn Option>],
-        log: &MessageLog,
+        log: &Arc<MessageLog>,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
-        elf_program_builder::load_elf(elf, program, options, log, monitor)
+        let sink = Arc::clone(log);
+        ElfHeader::new(provider, Some(Box::new(move |msg: &str| sink.append_msg(msg))))
+            .and_then(|elf| elf_program_builder::load_elf(&elf, program, options, log, monitor))
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))
     }
 
@@ -277,7 +296,7 @@ impl ElfLoader {
     }
 
     /// `ElfLoader.detectCompilerName(ElfHeader)`.
-    fn detect_compiler_name(elf: &dyn ElfHeader) -> io::Result<std::option::Option<String>> {
+    fn detect_compiler_name(elf: &mut ElfHeader) -> io::Result<std::option::Option<String>> {
         elf.parse_section_headers()?;
         let section_names: Vec<String> =
             elf.get_sections().iter().map(|s| s.get_name_as_string()).collect();
@@ -293,7 +312,7 @@ use crate::format::golang::rtti::go_rtti_mapper::has_golang_sections;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::format::seam_stubs::ElfSectionHeader;
+    use crate::format::elf::elf_test_image::{provider, ElfImage};
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
     use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
     use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
@@ -332,69 +351,18 @@ mod tests {
         assert!(!has_golang_sections(&[".text".to_string(), ".data".to_string()]));
     }
 
-    struct MockElfSectionHeader {
-        name: &'static str,
+    /// A synthetic ELF image (`e_machine` 3, `e_flags` 0) with the named sections.
+    fn image(is_64_bit: bool, is_little_endian: bool, sections: &[&str]) -> Vec<u8> {
+        let mut img = ElfImage::new(is_64_bit, is_little_endian);
+        img.e_machine = 3;
+        for name in sections {
+            img.add_section(name, 1, 0, 0, &[0u8; 4]);
+        }
+        img.build()
     }
 
-    impl ElfSectionHeader for MockElfSectionHeader {
-        fn get_name_as_string(&self) -> String {
-            self.name.to_string()
-        }
-
-        fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
-            unimplemented!("not exercised by this smoke test")
-        }
-
-        fn get_address(&self) -> i64 {
-            0
-        }
-
-        fn get_flags(&self) -> i64 {
-            0
-        }
-
-        fn get_logical_size(&self) -> i64 {
-            0
-        }
-    }
-
-    struct MockElfHeader {
-        is_64_bit: bool,
-        is_little_endian: bool,
-        sections: Vec<&'static str>,
-    }
-
-    impl ElfHeader for MockElfHeader {
-        fn is32_bit(&self) -> bool {
-            !self.is_64_bit
-        }
-
-        fn is_relocatable(&self) -> bool {
-            false
-        }
-
-        fn is_big_endian(&self) -> bool {
-            !self.is_little_endian
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.is_little_endian
-        }
-
-        fn get_machine_name(&self) -> String {
-            "3".to_string()
-        }
-
-        fn get_flags(&self) -> String {
-            "0".to_string()
-        }
-
-        fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
-            self.sections
-                .iter()
-                .map(|&name| Box::new(MockElfSectionHeader { name }) as Box<dyn ElfSectionHeader>)
-                .collect()
-        }
+    fn header(is_64_bit: bool, is_little_endian: bool, sections: &[&str]) -> ElfHeader {
+        ElfHeader::new(provider(image(is_64_bit, is_little_endian, sections)), None).unwrap()
     }
 
     /// A `LanguageService` over a single fixed `(language, size, endian)` catalog entry, matching
@@ -569,7 +537,7 @@ mod tests {
     #[test]
     fn find_supported_load_specs_falls_back_when_query_matches_nothing() {
         let loader = ElfLoader::new();
-        let elf = MockElfHeader { is_64_bit: false, is_little_endian: true, sections: vec![] };
+        let elf = provider(image(false, true, &[]));
         let app = MockApplication;
         let language_service = MockLanguageService {
             language_id: LanguageID::new("x86:LE:32:default").unwrap(),
@@ -581,7 +549,7 @@ mod tests {
         // database is populated by parsing them, which is itself unported -- see that module's
         // docs), so `query` always returns empty results and this always takes the "no matches"
         // fallback branch.
-        let specs = loader.find_supported_load_specs(&elf, &app, &language_service).unwrap();
+        let specs = loader.find_supported_load_specs(elf, &app, &language_service).unwrap();
         assert_eq!(specs.len(), 1);
         assert!(specs[0].language_compiler_spec.is_none());
         assert!(specs[0].requires_language_compiler_spec);
@@ -589,21 +557,30 @@ mod tests {
 
     #[test]
     fn detect_compiler_name_recognizes_golang_sections() {
-        let elf = MockElfHeader {
-            is_64_bit: true,
-            is_little_endian: true,
-            sections: vec![".text", ".gopclntab"],
-        };
+        let mut elf = header(true, true, &[".text", ".gopclntab"]);
         assert_eq!(
-            ElfLoader::detect_compiler_name(&elf).unwrap(),
+            ElfLoader::detect_compiler_name(&mut elf).unwrap(),
             Some(GOLANG_CSPEC_NAME.to_string())
         );
     }
 
     #[test]
     fn detect_compiler_name_none_without_golang_sections() {
-        let elf =
-            MockElfHeader { is_64_bit: true, is_little_endian: true, sections: vec![".text"] };
-        assert_eq!(ElfLoader::detect_compiler_name(&elf).unwrap(), None);
+        let mut elf = header(true, true, &[".text"]);
+        assert_eq!(ElfLoader::detect_compiler_name(&mut elf).unwrap(), None);
+    }
+
+    #[test]
+    fn find_supported_load_specs_is_empty_for_a_non_elf() {
+        let loader = ElfLoader::new();
+        let language_service = MockLanguageService {
+            language_id: LanguageID::new("x86:LE:32:default").unwrap(),
+            size: 32,
+            endian: Endian::Little,
+        };
+        let specs = loader
+            .find_supported_load_specs(provider(b"MZ not an elf at all, really".to_vec()), &MockApplication, &language_service)
+            .unwrap();
+        assert!(specs.is_empty());
     }
 }

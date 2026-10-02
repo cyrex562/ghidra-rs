@@ -40,7 +40,9 @@ use crate::format::elf::elf_section_header_constants::{
     SHN_HIPROC, SHN_LOPROC, SHN_LORESERVE, SHN_UNDEF,
 };
 use crate::format::elf::elf_section_header_constants::{SHN_ABS, SHN_COMMON};
-use crate::format::seam_stubs::{ElfHeader, ElfStringTable, ElfSymbolTable};
+use crate::format::elf::elf_header::ElfHeader;
+use crate::format::elf::elf_string_table::ElfStringTable;
+use crate::format::elf::elf_symbol_table::ElfSymbolTable;
 
 /// Name reported by [`ElfSymbol::get_formatted_name`] for a symbol with no usable name.
 pub const FORMATTED_NO_NAME: &str = "<no name>";
@@ -141,7 +143,7 @@ impl ElfSymbol {
     pub fn parse(
         reader: &mut BinaryReader,
         symbol_index: u32,
-        header: &impl ElfHeader,
+        header: &ElfHeader,
     ) -> io::Result<Self> {
         let (st_name, st_value, st_size, st_info, st_other, st_shndx) = if header.is32_bit() {
             let st_name = reader.read_next_int()? as u32;
@@ -199,9 +201,15 @@ impl ElfSymbol {
     /// # Arguments
     /// * `reader` - reader to read from (position remains unchanged)
     /// * `string_table` - string table used to resolve the name
-    pub fn init_symbol_name(&mut self, reader: &BinaryReader, string_table: &impl ElfStringTable) {
+    /// * `log_error` - receives a failed read's message (Java's `header.logError`)
+    pub fn init_symbol_name(
+        &mut self,
+        reader: &BinaryReader,
+        string_table: &ElfStringTable,
+        log_error: &dyn Fn(&str),
+    ) {
         if self.name_as_string.is_none() {
-            self.name_as_string = Some(string_table.read_string(reader, self.st_name as i64));
+            self.name_as_string = string_table.read_string(reader, self.st_name as i64, log_error);
         }
     }
 
@@ -353,7 +361,7 @@ impl ElfSymbol {
     /// This requires a lookup into a table defined by an associated `SHT_SYMTAB_SHNDX` section, so
     /// the owning symbol table must be supplied. Symbols with no owning table (such as the null
     /// symbol from [`ElfSymbol::new`]) have an extended index of 0.
-    pub fn get_extended_section_header_index(&self, symbol_table: &impl ElfSymbolTable) -> i32 {
+    pub fn get_extended_section_header_index(&self, symbol_table: &ElfSymbolTable) -> i32 {
         symbol_table.get_extended_section_index(self)
     }
 
@@ -426,67 +434,25 @@ mod tests {
     use super::*;
 
     use crate::format::elf::elf_section_header_constants::SHN_XINDEX;
-    use crate::format::seam_stubs::ElfSectionHeader;
+    use crate::format::elf::elf_test_image::{minimal_header, ElfImage};
 
-    struct MockSection(&'static str);
-
-    impl ElfSectionHeader for MockSection {
-        fn get_name_as_string(&self) -> String {
-            self.0.to_string()
+    /// A parsed ELF64 header whose section table is the null section followed by `names`
+    /// (then the builder's `.shstrtab`).
+    fn header_with_sections(names: &[&str]) -> ElfHeader {
+        let mut img = ElfImage::new(true, true);
+        for n in names {
+            img.add_section(n, 1, 0, 0, &[0u8; 4]);
         }
-        fn get_elf_header(&self) -> std::sync::Arc<dyn ElfHeader> {
-            std::sync::Arc::new(MockHeader { is32: true, section_names: Vec::new() })
-        }
-        fn get_address(&self) -> i64 {
-            0
-        }
-        fn get_flags(&self) -> i64 {
-            0
-        }
-        fn get_logical_size(&self) -> i64 {
-            0
-        }
+        img.parse()
     }
 
-    struct MockHeader {
-        is32: bool,
-        section_names: Vec<&'static str>,
+    /// A string table at `offset` in the symbol's own reader.
+    fn string_table(offset: u64) -> ElfStringTable {
+        ElfStringTable::new(minimal_header(true, true, 2).context(), None, offset as i64, 0, 0x100)
     }
 
-    impl ElfHeader for MockHeader {
-        fn is32_bit(&self) -> bool {
-            self.is32
-        }
-        fn is_relocatable(&self) -> bool {
-            false
-        }
-        fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
-            self.section_names
-                .iter()
-                .map(|n| Box::new(MockSection(n)) as Box<dyn ElfSectionHeader>)
-                .collect()
-        }
-    }
-
-    /// String table holding NUL-terminated names at byte offsets, read out of the same reader.
-    struct MockStringTable {
-        offset: u64,
-    }
-
-    impl ElfStringTable for MockStringTable {
-        fn read_string(&self, reader: &BinaryReader, string_offset: i64) -> String {
-            reader.read_ascii_string(self.offset + string_offset as u64).unwrap()
-        }
-    }
-
-    struct MockSymbolTable {
-        extended_index: i32,
-    }
-
-    impl ElfSymbolTable for MockSymbolTable {
-        fn get_extended_section_index(&self, _sym: &ElfSymbol) -> i32 {
-            self.extended_index
-        }
+    fn no_errors(msg: &str) {
+        panic!("unexpected string table error: {msg}");
     }
 
     /// `Elf32_Sym`: name, value, size, info, other, shndx.
@@ -513,12 +479,12 @@ mod tests {
         data
     }
 
-    fn header32() -> MockHeader {
-        MockHeader { is32: true, section_names: vec![] }
+    fn header32() -> ElfHeader {
+        minimal_header(false, true, 2)
     }
 
-    fn header64() -> MockHeader {
-        MockHeader { is32: false, section_names: vec![] }
+    fn header64() -> ElfHeader {
+        minimal_header(true, true, 2)
     }
 
     #[test]
@@ -596,7 +562,7 @@ mod tests {
 
     #[test]
     fn unnamed_section_symbol_takes_its_section_name() {
-        let header = MockHeader { is32: false, section_names: vec!["", ".text", ".data"] };
+        let header = header_with_sections(&[".text", ".data"]);
         // st_name == 0, STT_SECTION (bind STB_LOCAL), shndx 2 -> ".data"
         let mut reader = BinaryReader::from_bytes(sym64(0, STT_SECTION, 0, 2, 0, 0), true);
         let sym = ElfSymbol::parse(&mut reader, 2, &header).unwrap();
@@ -608,7 +574,7 @@ mod tests {
 
     #[test]
     fn section_symbol_with_reserved_or_out_of_range_index_stays_unnamed() {
-        let header = MockHeader { is32: false, section_names: vec!["", ".text"] };
+        let header = header_with_sections(&[".text"]);
 
         // SHN_ABS is >= SHN_LORESERVE: it is not a section table index.
         let mut reader = BinaryReader::from_bytes(sym64(0, STT_SECTION, 0, SHN_ABS, 0, 0), true);
@@ -623,7 +589,7 @@ mod tests {
 
     #[test]
     fn unnamed_non_section_symbol_is_not_named_from_sections() {
-        let header = MockHeader { is32: false, section_names: vec!["", ".text"] };
+        let header = header_with_sections(&[".text"]);
         let mut reader = BinaryReader::from_bytes(sym64(0, STT_FUNC, 0, 1, 0x1000, 4), true);
         let sym = ElfSymbol::parse(&mut reader, 1, &header).unwrap();
 
@@ -641,7 +607,7 @@ mod tests {
         assert_eq!(sym.get_name_as_string(), None);
 
         let position_after_parse = reader.get_pointer_index();
-        sym.init_symbol_name(&reader, &MockStringTable { offset: string_table_offset });
+        sym.init_symbol_name(&reader, &string_table(string_table_offset), &no_errors);
 
         assert_eq!(sym.get_name_as_string(), Some("main"));
         assert_eq!(sym.get_formatted_name(), "main");
@@ -649,7 +615,7 @@ mod tests {
         assert_eq!(reader.get_pointer_index(), position_after_parse);
 
         // A second call must not overwrite an already-resolved name.
-        sym.init_symbol_name(&reader, &MockStringTable { offset: string_table_offset + 5 });
+        sym.init_symbol_name(&reader, &string_table(string_table_offset + 5), &no_errors);
         assert_eq!(sym.get_name_as_string(), Some("main"));
     }
 
@@ -661,10 +627,11 @@ mod tests {
 
         let mut reader = BinaryReader::from_bytes(data, true);
         let mut sym = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
-        sym.init_symbol_name(&reader, &MockStringTable { offset: string_table_offset });
+        sym.init_symbol_name(&reader, &string_table(string_table_offset), &no_errors);
 
-        // StringUtils.isBlank() treats an all-whitespace name as blank.
-        assert_eq!(sym.get_name_as_string(), Some("   "));
+        // ElfStringTable.readString() trims, so the all-whitespace name reads back empty, which
+        // StringUtils.isBlank() treats as blank.
+        assert_eq!(sym.get_name_as_string(), Some(""));
         assert_eq!(sym.get_formatted_name(), FORMATTED_NO_NAME);
     }
 
@@ -756,10 +723,14 @@ mod tests {
     fn extended_section_index_is_looked_up_in_the_owning_table() {
         let mut reader = BinaryReader::from_bytes(sym64(1, 0x10, 0, SHN_XINDEX, 0, 0), true);
         let sym = ElfSymbol::parse(&mut reader, 4, &header64()).unwrap();
+        let mut index_table = vec![0; 5];
+        index_table[4] = 66;
+        let table = ElfSymbolTable::from_symbols(vec![], false)
+            .with_symbol_section_index_table(index_table);
 
         assert_eq!(sym.get_section_header_index(), SHN_XINDEX);
         assert_eq!(
-            sym.get_extended_section_header_index(&MockSymbolTable { extended_index: 66 }),
+            sym.get_extended_section_header_index(&table),
             66
         );
     }
@@ -773,7 +744,7 @@ mod tests {
 
         let plain = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
         let mut named = plain.clone();
-        named.init_symbol_name(&reader, &MockStringTable { offset: string_table_offset });
+        named.init_symbol_name(&reader, &string_table(string_table_offset), &no_errors);
 
         assert_eq!(named.get_name_as_string(), Some("main"));
         assert_eq!(plain, named);
@@ -798,7 +769,7 @@ mod tests {
         let mut reader = BinaryReader::from_bytes(data, true);
 
         let mut sym = ElfSymbol::parse(&mut reader, 1, &header64()).unwrap();
-        sym.init_symbol_name(&reader, &MockStringTable { offset: string_table_offset });
+        sym.init_symbol_name(&reader, &string_table(string_table_offset), &no_errors);
 
         assert_eq!(
             sym.to_string(),
