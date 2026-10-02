@@ -27,7 +27,7 @@ pub use mem_buffer_input_stream::MemBufferInputStream;
 pub use mem_buffer::MemBuffer;
 pub use mem_buffer_mixin::MemBufferMixin;
 pub use memory_access_exception::MemoryAccessException;
-pub use memory::Memory;
+pub use memory::{Memory, MemoryBlockHandle};
 pub use memory_block::MemoryBlock;
 pub use memory_block_exception::MemoryBlockException;
 pub use memory_block_impl::MemoryBlockImpl;

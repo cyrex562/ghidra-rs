@@ -1,10 +1,12 @@
-use std::sync::Arc;
+use std::io::Read;
+use std::sync::{Arc, RwLock};
 
 use thiserror::Error;
 
 use crate::framework::store::lock_exception::LockException;
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
-use crate::program::model::address::{Address, AddressSetView, AddressSetViewAdapter};
+use crate::program::database::mem::file_bytes::FileBytes;
+use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView, AddressSetViewAdapter};
 use crate::program::model::listing::Program;
 use crate::program::model::mem::{MemoryAccessException, MemoryBlock, MemoryConflictException};
 use crate::util::exception::CancelledException;
@@ -157,6 +159,127 @@ pub trait Memory: Send + Sync {
     fn set_block_write(&mut self, block_start: &Address, write: bool) {
         let _ = (block_start, write);
     }
+
+    /// Create an initialized block of `length` bytes at `start` whose bytes are read from `is`
+    /// (zero-filled once `is` runs out, or entirely when `is` is `None`).
+    ///
+    /// Stands in for `Memory.createInitializedBlock(String, Address, InputStream, long,
+    /// TaskMonitor, boolean)`. Unlike [`create_initialized_block`](Self::create_initialized_block),
+    /// the new block comes back as a shared, lockable [`MemoryBlockHandle`] -- the form a
+    /// database-backed memory (`MemoryMapDB`) keeps its blocks in -- so a loader can set the
+    /// block's permissions/comment afterwards, as Java's `MemoryBlockUtils` does.
+    ///
+    /// Defaults to refusing the request (see [`create_initialized_block`](Self::create_initialized_block)).
+    fn create_initialized_block_from_stream(
+        &mut self,
+        name: &str,
+        start: &Address,
+        is: Option<&mut dyn Read>,
+        length: i64,
+        monitor: Option<&dyn TaskMonitor>,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        let _ = (name, start, is, length, monitor, overlay);
+        Err(unsupported())
+    }
+
+    /// Create an initialized block of `length` bytes at `start` backed by `file_bytes` starting
+    /// at `offset`. Stands in for `Memory.createInitializedBlock(String, Address, FileBytes,
+    /// long, long, boolean)`. Defaults to refusing the request.
+    fn create_initialized_block_from_file_bytes(
+        &mut self,
+        name: &str,
+        start: &Address,
+        file_bytes: Arc<dyn FileBytes>,
+        offset: i64,
+        length: i64,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        let _ = (name, start, file_bytes, offset, length, overlay);
+        Err(unsupported())
+    }
+
+    /// Create an uninitialized block of `length` bytes at `start`. Stands in for
+    /// `Memory.createUninitializedBlock(String, Address, long, boolean)`. Defaults to refusing
+    /// the request.
+    fn create_uninitialized_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        length: i64,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        let _ = (name, start, length, overlay);
+        Err(unsupported())
+    }
+
+    /// Store `size` bytes read from `is` as the original bytes of the imported file `filename`
+    /// (which started at `offset` within its container). Stands in for
+    /// `Memory.createFileBytes(String, long, long, InputStream, TaskMonitor)`, whose
+    /// `IOException`/`CancelledException` map to [`CreateBlockError::Io`]/
+    /// [`CreateBlockError::Cancelled`]. Defaults to refusing the request.
+    fn create_file_bytes(
+        &mut self,
+        filename: &str,
+        offset: i64,
+        size: i64,
+        is: &mut dyn Read,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Arc<dyn FileBytes>, CreateBlockError> {
+        let _ = (filename, offset, size, is, monitor);
+        Err(unsupported())
+    }
+
+    /// All stored file bytes. Stands in for `Memory.getAllFileBytes()`; defaults to none.
+    fn get_all_file_bytes(&self) -> Vec<Arc<dyn FileBytes>> {
+        Vec::new()
+    }
+
+    /// All blocks as shared handles, sorted on start address. Stands in for
+    /// `Memory.getBlocks()` for a memory that keeps its blocks as [`MemoryBlockHandle`]s (where
+    /// [`get_blocks`](Self::get_blocks) cannot hand them out). Defaults to none.
+    fn get_block_handles(&self) -> Vec<MemoryBlockHandle> {
+        Vec::new()
+    }
+
+    /// The block containing `addr` as a shared handle, or `None`. Stands in for
+    /// `Memory.getBlock(Address)`; see [`get_block_handles`](Self::get_block_handles).
+    fn get_block_handle(&self, addr: &Address) -> Option<MemoryBlockHandle> {
+        self.get_block_handles().into_iter().find(|b| b.read().unwrap().contains(addr))
+    }
+
+    /// True if this memory has no blocks. Stands in for `Memory.isEmpty()` (inherited from
+    /// `AddressSetView`).
+    fn is_empty(&self) -> bool {
+        self.get_block_handles().is_empty() && self.get_blocks().is_empty()
+    }
+
+    /// The addresses of `[start, end]` that lie within a block. Stands in for
+    /// `Memory.intersectRange(Address, Address)` (inherited from `AddressSetView`).
+    fn intersect_range(&self, start: &Address, end: &Address) -> AddressSet {
+        let mut set = AddressSet::new();
+        for block in self.get_block_handles() {
+            let b = block.read().unwrap();
+            if let Some(r) = AddressRange::new(b.get_start(), b.get_end()).intersect_range(start, end) {
+                set.add_range(r.min_address(), r.max_address());
+            }
+        }
+        for b in self.get_blocks() {
+            if let Some(r) = AddressRange::new(b.get_start(), b.get_end()).intersect_range(start, end) {
+                set.add_range(r.min_address(), r.max_address());
+            }
+        }
+        set
+    }
+}
+
+/// A block shared by its owning memory map: [`MemoryBlock`] mutators (`set_read`, `set_comment`,
+/// ...) take `&mut self`, so a block a loader may still need to adjust is handed out behind a
+/// lock, which the memory map keeps the other `Arc` of.
+pub type MemoryBlockHandle = Arc<RwLock<dyn MemoryBlock>>;
+
+fn unsupported() -> CreateBlockError {
+    CreateBlockError::IllegalArgument("block creation is not supported by this memory".to_string())
 }
 
 /// The failure modes of [`Memory::create_initialized_block`], collecting the exceptions Java's
@@ -180,6 +303,16 @@ pub enum CreateBlockError {
     /// The request was rejected outright (Java's `IllegalArgumentException`).
     #[error("{0}")]
     IllegalArgument(String),
+    /// The memory is in a state that forbids the request (Java's `IllegalStateException`, e.g.
+    /// a size limit, or overlay creation where no overlay support exists).
+    #[error("{0}")]
+    IllegalState(String),
+    /// A file-bytes range is out of bounds (Java's `IndexOutOfBoundsException`).
+    #[error("{0}")]
+    IndexOutOfBounds(String),
+    /// A database / input error (Java's `IOException`).
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
 }
 
 #[cfg(test)]

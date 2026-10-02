@@ -221,7 +221,7 @@ pub trait Program: DomainObject + Send + Sync {
     /// Defaults to accepting and discarding the request, matching
     /// [`set_preferred_root_namespace_category_path`](Self::set_preferred_root_namespace_category_path):
     /// no in-repo `Program` implementor tracks an image base it can move yet.
-    fn set_image_base(&mut self, base: Address, commit: bool) -> std::io::Result<()> {
+    fn set_image_base(&self, base: Address, commit: bool) -> std::io::Result<()> {
         let _ = (base, commit);
         Ok(())
     }

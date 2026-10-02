@@ -6,6 +6,8 @@ use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
 use crate::program::database::symbol::SymbolManagerDB;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::{ManagerGuard, Program};
+use crate::program::model::address::factory::AddressFactory;
+use crate::program::model::address::Address;
 use crate::program::model::mem::Memory;
 use crate::program::model::symbol::SymbolTable;
 use std::io;
@@ -19,6 +21,9 @@ pub struct ProgramDB {
     memory: Arc<RwLock<MemoryMapDB>>,
     namespace_mgr: Arc<RwLock<NamespaceManagerDB>>,
     symbol_mgr: Arc<RwLock<SymbolManagerDB>>,
+    /// The program's image base (Java keeps it in `AddressMapDB` and the program's stored
+    /// options). A new program's image base is address 0 of the default space.
+    image_base: RwLock<Address>,
 }
 
 impl ProgramDB {
@@ -49,7 +54,14 @@ impl ProgramDB {
             true,
         )?));
 
+        let image_base = language
+            .get_address_factory()
+            .get_default_address_space()
+            .map(|space| space.address(0))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "language has no default address space"))?;
+
         Ok(Self {
+            image_base: RwLock::new(image_base),
             db_handle,
             name,
             language,
@@ -73,7 +85,14 @@ impl ProgramDB {
     }
 }
 
-impl DomainObject for ProgramDB {}
+impl DomainObject for ProgramDB {
+    /// A `ProgramDB` here is a local, unversioned database the caller owns outright, so -- as
+    /// Java's `DomainObjectAdapterDB.hasExclusiveAccess` answers for a program with no shared
+    /// checkout -- access is always exclusive.
+    fn has_exclusive_access(&self) -> bool {
+        true
+    }
+}
 
 impl Program for ProgramDB {
     fn get_name(&self) -> String {
@@ -110,6 +129,52 @@ impl Program for ProgramDB {
     /// `ProgramDB.getMemory()` where the caller modifies memory.
     fn get_memory_mut(&self) -> Option<ManagerGuard<'_, dyn Memory>> {
         Some(ManagerGuard::write(&*self.memory))
+    }
+
+    /// A read handle on the program's memory that does not keep the memory map alive (see
+    /// [`MemoryMapDB::as_memory`]). Stands in for `ProgramDB.getMemory()` where the caller only
+    /// reads.
+    fn get_memory(&self) -> Option<Arc<dyn Memory>> {
+        Some(MemoryMapDB::as_memory(&self.memory))
+    }
+
+    fn get_language(&self) -> Option<Arc<dyn crate::program::model::lang::Language>> {
+        Some(self.language.clone())
+    }
+
+    fn get_image_base(&self) -> Option<Address> {
+        Some(self.image_base.read().unwrap_or_else(|p| p.into_inner()).clone())
+    }
+
+    /// Mirrors `ProgramDB.setImageBase(Address, boolean)` for a program whose memory is still
+    /// empty -- the case a loader hits, since it sets the image base before creating blocks.
+    ///
+    /// # Errors
+    /// `InvalidInput` if `base` is not in the default address space (Java's
+    /// `IllegalArgumentException`); `Unsupported` if blocks already exist, because relocating
+    /// existing blocks to a new image base (Java's `MemoryMapDB.setImageBase` / key re-encoding
+    /// in `AddressMapDB`) is not ported.
+    fn set_image_base(&self, base: Address, commit: bool) -> io::Result<()> {
+        let _ = commit;
+        let mut image_base = self.image_base.write().unwrap_or_else(|p| p.into_inner());
+        if *image_base == base {
+            return Ok(());
+        }
+        let default_space = self.language.get_address_factory().get_default_address_space();
+        if default_space.as_ref() != Some(base.space()) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Image base must be in the default address space",
+            ));
+        }
+        if !self.memory.read().unwrap_or_else(|p| p.into_inner()).get_blocks().is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "changing the image base of a program with memory blocks is not supported",
+            ));
+        }
+        *image_base = base;
+        Ok(())
     }
 }
 

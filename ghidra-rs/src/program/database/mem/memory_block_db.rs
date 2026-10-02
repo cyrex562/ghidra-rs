@@ -91,6 +91,10 @@ const READ: i8 = 0x4;
 const VOLATILE: i8 = 0x8;
 const ARTIFICIAL: i8 = 0x10;
 
+/// The block record's comments column (`MemoryMapDBAdapter.COMMENTS_COL`).
+const COMMENTS_COL: usize = 1;
+/// The block record's source-name column (`MemoryMapDBAdapter.SOURCE_COL`).
+const SOURCE_COL: usize = 2;
 /// The block record's flags column (`MemoryMapDBAdapter.FLAGS_COL`).
 const FLAGS_COL: usize = 3;
 
@@ -151,6 +155,25 @@ impl MemoryBlock for MemoryBlockDB {
 
     fn get_name(&self) -> &str {
         self.record.get_string(0).unwrap_or("")
+    }
+
+    fn get_comment(&self) -> Option<&str> {
+        self.record.get_string(COMMENTS_COL)
+    }
+
+    /// Mirrors `setComment(String)`; as for the flag setters, the change lives in the cached
+    /// record only (see [`set_flag_bit`](MemoryBlockDB::set_flag_bit)).
+    fn set_comment(&mut self, comment: Option<&str>) {
+        self.record.set_string(COMMENTS_COL, comment.map(str::to_string));
+    }
+
+    fn get_source_name(&self) -> Option<&str> {
+        self.record.get_string(SOURCE_COL)
+    }
+
+    /// Mirrors `setSourceName(String)`; cached-record only, as for [`set_comment`](Self::set_comment).
+    fn set_source_name(&mut self, source_name: Option<&str>) {
+        self.record.set_string(SOURCE_COL, source_name.map(str::to_string));
     }
 
     fn get_start(&self) -> Address {

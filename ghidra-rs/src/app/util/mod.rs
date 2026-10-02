@@ -14,6 +14,7 @@ pub mod help_topics;
 pub mod hex_long;
 pub mod importer;
 pub mod listing_highlight_provider;
+pub mod memory_block_utils;
 pub mod navigation;
 pub mod opinion;
 pub mod option_exception;

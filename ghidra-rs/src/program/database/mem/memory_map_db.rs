@@ -44,8 +44,10 @@ use crate::program::database::mem::memory_map_db_adapter::{
 };
 use crate::program::model::address::address_set::AddressSetView;
 use crate::program::model::address::{Address, AddressOverflowException, AddressSet};
+use crate::program::model::mem::memory::CreateBlockError;
 use crate::program::model::mem::{
-    Memory, MemoryAccessException, MemoryBlock, MemoryBlockType, MemoryConflictException,
+    Memory, MemoryAccessException, MemoryBlock, MemoryBlockHandle, MemoryBlockType,
+    MemoryConflictException,
 };
 use crate::util::exception::{CancelledException, IOCancelledException, VersionException};
 use crate::util::monitored_input_stream::MonitoredInputStream;
@@ -99,6 +101,20 @@ impl From<MemoryMapDBAdapterError> for MemoryMapError {
                 MemoryMapError::Cancelled(CancelledException::default())
             }
             MemoryMapDBAdapterError::Io(e) => MemoryMapError::Io(e),
+        }
+    }
+}
+
+impl From<MemoryMapError> for CreateBlockError {
+    fn from(e: MemoryMapError) -> Self {
+        match e {
+            MemoryMapError::IllegalArgument(m) => CreateBlockError::IllegalArgument(m),
+            MemoryMapError::IllegalState(m) => CreateBlockError::IllegalState(m),
+            MemoryMapError::IndexOutOfBounds(m) => CreateBlockError::IndexOutOfBounds(m),
+            MemoryMapError::Conflict(e) => CreateBlockError::Conflict(e),
+            MemoryMapError::AddressOverflow(e) => CreateBlockError::AddressOverflow(e),
+            MemoryMapError::Cancelled(e) => CreateBlockError::Cancelled(e),
+            MemoryMapError::Io(e) => CreateBlockError::Io(e),
         }
     }
 }
@@ -179,6 +195,31 @@ impl Memory for MemoryMapView {
 
     fn contains(&self, addr: &Address) -> bool {
         self.map().is_some_and(|m| m.read().unwrap().contains(addr))
+    }
+
+    fn get_all_file_bytes(&self) -> Vec<Arc<dyn FileBytes>> {
+        self.map().map_or_else(Vec::new, |m| m.read().unwrap().get_all_file_bytes())
+    }
+
+    fn has_file_bytes(&self) -> bool {
+        !Memory::get_all_file_bytes(self).is_empty()
+    }
+
+    fn get_block_handles(&self) -> Vec<MemoryBlockHandle> {
+        self.map().map_or_else(Vec::new, |m| m.read().unwrap().get_blocks().to_vec())
+    }
+
+    fn get_block_handle(&self, addr: &Address) -> Option<MemoryBlockHandle> {
+        self.map()?.read().unwrap().get_block(addr).cloned()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.map().is_none_or(|m| m.read().unwrap().get_blocks().is_empty())
+    }
+
+    fn intersect_range(&self, start: &Address, end: &Address) -> AddressSet {
+        self.map()
+            .map_or_else(AddressSet::new, |m| m.read().unwrap().get_address_set().intersect_range(start, end))
     }
 }
 
@@ -612,6 +653,77 @@ impl Memory for MemoryMapDB {
 
     fn contains(&self, addr: &Address) -> bool {
         MemoryMapDB::contains(self, addr)
+    }
+
+    fn create_initialized_block_from_stream(
+        &mut self,
+        name: &str,
+        start: &Address,
+        is: Option<&mut dyn io::Read>,
+        length: i64,
+        monitor: Option<&dyn TaskMonitor>,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        Ok(MemoryMapDB::create_initialized_block(self, name, start, is, length, monitor, overlay)?)
+    }
+
+    fn create_initialized_block_from_file_bytes(
+        &mut self,
+        name: &str,
+        start: &Address,
+        file_bytes: Arc<dyn FileBytes>,
+        offset: i64,
+        length: i64,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        Ok(MemoryMapDB::create_initialized_block_from_file_bytes(
+            self, name, start, file_bytes, offset, length, overlay,
+        )?)
+    }
+
+    fn create_uninitialized_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        length: i64,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        Ok(MemoryMapDB::create_uninitialized_block(self, name, start, length, overlay)?)
+    }
+
+    fn create_file_bytes(
+        &mut self,
+        filename: &str,
+        offset: i64,
+        size: i64,
+        is: &mut dyn io::Read,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Arc<dyn FileBytes>, CreateBlockError> {
+        Ok(MemoryMapDB::create_file_bytes(self, filename, offset, size, is, monitor)?)
+    }
+
+    fn get_all_file_bytes(&self) -> Vec<Arc<dyn FileBytes>> {
+        MemoryMapDB::get_all_file_bytes(self)
+    }
+
+    fn has_file_bytes(&self) -> bool {
+        !MemoryMapDB::get_all_file_bytes(self).is_empty()
+    }
+
+    fn get_block_handles(&self) -> Vec<MemoryBlockHandle> {
+        self.blocks.clone()
+    }
+
+    fn get_block_handle(&self, addr: &Address) -> Option<MemoryBlockHandle> {
+        MemoryMapDB::get_block(self, addr).cloned()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.blocks.is_empty()
+    }
+
+    fn intersect_range(&self, start: &Address, end: &Address) -> AddressSet {
+        self.all_addr_set.intersect_range(start, end)
     }
 }
 

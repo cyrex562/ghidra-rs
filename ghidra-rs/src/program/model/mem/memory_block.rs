@@ -96,6 +96,34 @@ pub trait MemoryBlock: Send + Sync {
         let _ = execute;
     }
 
+    /// Sets the comment associated with this block. Stands in for
+    /// `MemoryBlock.setComment(String)`; the default discards the request, matching
+    /// [`get_comment`](Self::get_comment)'s constant `None`.
+    fn set_comment(&mut self, comment: Option<&str>) {
+        let _ = comment;
+    }
+
+    /// Returns the name of the source of this block (e.g. the loader that created it), if any.
+    /// Stands in for `MemoryBlock.getSourceName()`.
+    fn get_source_name(&self) -> Option<&str> {
+        None
+    }
+
+    /// Sets the name of the source of this block. Stands in for
+    /// `MemoryBlock.setSourceName(String)`; the default discards the request, matching
+    /// [`get_source_name`](Self::get_source_name)'s constant `None`.
+    fn set_source_name(&mut self, source_name: Option<&str>) {
+        let _ = source_name;
+    }
+
+    /// Returns whether this block lives in an overlay address space. Stands in for
+    /// `MemoryBlock.isOverlay()`, which is `getStart().getAddressSpace().isOverlaySpace()`; this
+    /// port's [`AddressSpace`](crate::program::model::address::AddressSpace) has no overlay
+    /// variant yet, so the default is `false`.
+    fn is_overlay(&self) -> bool {
+        false
+    }
+
     /// Returns the type of this memory block.
     fn get_type(&self) -> MemoryBlockType {
         MemoryBlockType::Default
