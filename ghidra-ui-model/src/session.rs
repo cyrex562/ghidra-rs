@@ -32,6 +32,7 @@ pub struct UiSession {
     models: BTreeMap<ProviderId, ViewModelBox>,
     events: UiEventQueue,
     wake: Option<WakeHandle>,
+    central: Option<ProviderId>,
 }
 
 impl UiSession {
@@ -45,6 +46,7 @@ impl UiSession {
             models: BTreeMap::new(),
             events,
             wake: Some(wake),
+            central: None,
         }
     }
 
@@ -121,6 +123,17 @@ impl UiSession {
         let state = ghidra_rs::framework::options::SaveState::from_xml(&element);
         self.tool.restore_layout(&state);
         Ok(true)
+    }
+
+    /// Makes `id` the tool's root component: it fills the space the docked
+    /// providers leave (Ghidra's CodeBrowser listing). Only one; later calls win.
+    pub fn set_central_provider(&mut self, id: ProviderId) {
+        self.central = Some(id);
+    }
+
+    /// The root component, if any.
+    pub fn central_provider(&self) -> Option<ProviderId> {
+        self.central
     }
 
     /// The renderer's wake handle (taken once).

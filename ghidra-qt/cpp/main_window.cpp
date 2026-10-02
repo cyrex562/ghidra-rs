@@ -1,6 +1,10 @@
 #include "ghidra-qt/cpp/main_window.h"
 #include "ghidra-qt/cpp/views/listing_view.h"
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QCloseEvent>
@@ -147,15 +151,26 @@ void MainWindow::installPopups() {
 void MainWindow::buildDocks() {
     rust::Vec<uint64_t> ids;
     if (!bridgeCall(statusBar(), [&] { ids = provider_ids(); })) return;
+    std::vector<std::pair<uint64_t, ProviderInfo>> infos;
     for (uint64_t pid : ids) {
         ProviderInfo info;
-        if (!bridgeCall(statusBar(), [&] { info = provider_info(pid); })) continue;
+        if (bridgeCall(statusBar(), [&] { info = provider_info(pid); })) infos.emplace_back(pid, std::move(info));
+    }
+    // ADS takes the central widget only as the first dock added.
+    std::stable_partition(infos.begin(), infos.end(), [](const auto& p) { return p.second.central; });
+    bool haveCentral = false;
+    for (auto& [pid, info] : infos) {
         auto* dock = new ads::CDockWidget(m_dockManager, qs(info.title));
         dock->setWidget(createProviderView(pid, info.kind, statusBar(), dock));
         m_providers.insert(dock, static_cast<int64_t>(pid));
         m_positions.insert(dock, info.position);
-        m_areaNames.insert(dock, QString::fromLatin1(placementFor(info.position).name));
         m_viewNames.insert(dock, QString::fromLatin1(viewName(info.kind)));
+        if (info.central && !haveCentral && m_dockManager->setCentralWidget(dock)) {
+            haveCentral = true;
+            m_areaNames.insert(dock, QStringLiteral("Central"));
+            continue;
+        }
+        m_areaNames.insert(dock, QString::fromLatin1(placementFor(info.position).name));
         placeDock(dock, info.position);
         if (!info.visible) dock->toggleView(false);
     }
@@ -169,7 +184,9 @@ void MainWindow::placeDock(ads::CDockWidget* dock, uint8_t position) {
         return;
     }
     ads::CDockAreaWidget* area = m_areas.value(p.area, nullptr);
-    if (area && area->dockManager() == m_dockManager && area->isVisible()) {
+    // isHidden, not isVisible: before the window is first shown nothing is
+    // "visible", but an area emptied by closing its docks is explicitly hidden.
+    if (area && area->dockManager() == m_dockManager && !area->isHidden()) {
         m_dockManager->addDockWidgetTabToArea(dock, area);
     } else {
         m_areas.insert(p.area, m_dockManager->addDockWidget(p.area, dock));
@@ -194,6 +211,8 @@ QStringList MainWindow::dockSummary() const {
     QStringList out;
     for (auto it = m_providers.constBegin(); it != m_providers.constEnd(); ++it) {
         QString line = QStringLiteral("%1\t%2\t%3").arg(it.key()->windowTitle(), m_areaNames.value(it.key()), m_viewNames.value(it.key()));
+        // Docks sharing one open area are tabs of it (Ghidra stacks same-position providers).
+        if (auto* area = it.key()->dockAreaWidget(); area && area->openDockWidgetsCount() > 1) line += QStringLiteral("\ttabbed");
         if (it.key()->isClosed()) line += QStringLiteral("\tclosed");
         out << line;
     }

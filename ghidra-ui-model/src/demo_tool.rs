@@ -196,6 +196,7 @@ pub fn build_demo_session() -> UiSession {
     wrap.state.set_popup_menu_data(MenuData::new(&["Wrap Lines"]).ok());
     tool.add_local_action(decompiler, Box::new(wrap));
 
+    s.set_central_provider(listing_id);
     add_navigation_actions(s.tool_mut(), &events, listing, listing_id);
     s
 }

@@ -128,6 +128,8 @@ pub mod ffi {
         /// 0 top, 1 bottom, 2 left, 3 right, 4 window, 5 stack
         pub position: u8,
         pub visible: bool,
+        /// The tool's root component (ADS central widget, Ghidra's main listing).
+        pub central: bool,
     }
 
     /// A styled text run.
@@ -328,6 +330,7 @@ fn provider_info(pid: u64) -> Result<ProviderInfo, String> {
             custom_kind,
             position: position_code(position),
             visible: st.is_visible(),
+            central: s.central_provider() == Some(ProviderId(pid)),
         })
     })
 }
@@ -810,6 +813,12 @@ mod tests {
         assert!(drain_events().unwrap().iter().any(|e| e.kind == 7 && e.task == p));
         assert_eq!(listing_frame(p).unwrap().location, "00402000");
         assert!(prompt_reply(prompt.task, true, "402000").is_err());
+    }
+
+    #[test]
+    fn the_listing_is_the_central_provider() {
+        assert!(provider_info(pid("Listing")).unwrap().central);
+        assert!(!provider_info(pid("Symbols")).unwrap().central);
     }
 
     #[test]

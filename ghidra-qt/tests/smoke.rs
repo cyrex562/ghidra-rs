@@ -129,7 +129,10 @@ fn malformed_number_is_usage_error_64() {
 }
 
 fn dump_docks(extra: &[&str]) -> Vec<String> {
-    let out = shell().arg("--dump-docks").args(extra).output().expect("spawn");
+    // A fresh config: other tests save their layouts to the default one.
+    let dir = tmp(&format!("config-docks-{}", extra.join("_").replace(['-', '/'], "")));
+    let _ = std::fs::remove_dir_all(&dir);
+    let out = shell_with_config(&dir).arg("--dump-docks").args(extra).output().expect("spawn");
     assert!(out.status.success(), "status {:?} stderr {}", out.status, String::from_utf8_lossy(&out.stderr));
     let mut lines: Vec<String> = String::from_utf8_lossy(&out.stdout).lines().map(str::to_owned).collect();
     lines.sort();
@@ -142,10 +145,10 @@ fn demo_docks_are_placed_by_window_position() {
         dump_docks(&[]),
         vec![
             "Decompiler\tRight\ttext".to_string(),
-            "Listing\tStack\tlisting".to_string(),
+            "Listing\tCentral\tlisting".to_string(),
             "Options\tBottom\tform".to_string(),
-            "Program Tree\tLeft\ttree".to_string(),
-            "Symbols\tLeft\ttable".to_string(),
+            "Program Tree\tLeft\ttree\ttabbed".to_string(),
+            "Symbols\tLeft\ttable\ttabbed".to_string(),
         ]
     );
 }
