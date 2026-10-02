@@ -334,6 +334,21 @@ mod tests {
     }
 
     #[test]
+    fn previous_location_precedes_next_on_the_toolbar() {
+        let s = build_demo_session();
+        let ctx = ghidra_rs::docking::DefaultActionContext::new();
+        let tips: Vec<String> = crate::menus::tool_bar(s.tool(), &ctx)
+            .into_iter()
+            .filter_map(|e| match e {
+                crate::menus::ToolBarEntry::Button { tooltip, .. } => Some(tooltip),
+                _ => None,
+            })
+            .filter(|t| t.ends_with("Location"))
+            .collect();
+        assert_eq!(tips, vec!["Previous Location", "Next Location"]);
+    }
+
+    #[test]
     fn g_opens_the_go_to_dialog_and_goes_there() {
         let mut s = build_demo_session();
         let (id, h) = listing(&s);

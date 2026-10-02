@@ -33,12 +33,17 @@ pub fn default_ghidra_dist() -> Option<PathBuf> {
     p.is_dir().then_some(p)
 }
 
-/// (processor dir, .sla file, language id) for an ELF `e_machine`.
-fn language_for(machine: u16) -> Option<(&'static str, &'static str, &'static str)> {
-    match machine {
-        62 => Some(("x86", "x86-64.sla", "x86:LE:64:default")),
-        183 => Some(("AARCH64", "AARCH64.sla", "AARCH64:LE:64:v8A")),
-        _ => None,
+/// (processor dir, .sla file, language id) for an ELF's class
+/// (`EI_CLASS`: 1 = 32-bit, 2 = 64-bit), data encoding (`EI_DATA`: 1 = LE,
+/// 2 = BE) and `e_machine`.
+fn language_for(class: u8, data: u8, machine: u16) -> Result<(&'static str, &'static str, &'static str), String> {
+    match (machine, class, data) {
+        (62, 2, 1) => Ok(("x86", "x86-64.sla", "x86:LE:64:default")),
+        (62, 1, _) => Err("unsupported ELF: 32-bit x86-64 (x32)".into()),
+        (183, 2, 1) => Ok(("AARCH64", "AARCH64.sla", "AARCH64:LE:64:v8A")),
+        (183, 2, 2) => Ok(("AARCH64", "AARCH64BE.sla", "AARCH64:BE:64:v8A")),
+        (m @ (62 | 183), c, d) => Err(format!("unsupported ELF machine {m} (class {c}, data encoding {d})")),
+        (m, _, _) => Err(format!("unsupported ELF machine {m}")),
     }
 }
 
@@ -67,7 +72,7 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         return Err(format!("not an ELF file: {}", path.display()));
     }
     let machine = if bytes[5] == 2 { u16::from_be_bytes([bytes[18], bytes[19]]) } else { u16::from_le_bytes([bytes[18], bytes[19]]) };
-    let (processor, sla_file, language) = language_for(machine).ok_or_else(|| format!("unsupported ELF machine {machine}"))?;
+    let (processor, sla_file, language) = language_for(bytes[4], bytes[5], machine)?;
     let sla = dist.join("Ghidra/Processors").join(processor).join("data/languages").join(sla_file);
     if !sla.is_file() {
         return Err(format!(
@@ -147,6 +152,30 @@ mod tests {
         h[18] = 62; // EM_X86_64
         let err = import_elf(&scratch("x64.elf", &h), Path::new("/nonexistent-dist")).unwrap_err();
         assert!(err.contains("x86-64.sla") && err.contains("GHIDRA_RS_GHIDRA_DIST"), "{err}");
+    }
+
+    fn header(class: u8, data: u8, machine: u16) -> Vec<u8> {
+        let mut h = vec![0u8; 64];
+        h[..4].copy_from_slice(b"\x7fELF");
+        h[4] = class;
+        h[5] = data;
+        let m = if data == 2 { machine.to_be_bytes() } else { machine.to_le_bytes() };
+        h[18..20].copy_from_slice(&m);
+        h
+    }
+
+    #[test]
+    fn big_endian_aarch64_needs_the_big_endian_language() {
+        let err = import_elf(&scratch("a64be.elf", &header(2, 2, 183)), Path::new("/nonexistent-dist")).unwrap_err();
+        assert!(err.contains("AARCH64BE.sla"), "{err}");
+    }
+
+    #[test]
+    fn x32_and_big_endian_x86_64_are_refused() {
+        let err = import_elf(&scratch("x32.elf", &header(1, 1, 62)), Path::new("/nonexistent-dist")).unwrap_err();
+        assert!(err.contains("unsupported") && err.contains("x32"), "{err}");
+        let err = import_elf(&scratch("x64be.elf", &header(2, 2, 62)), Path::new("/nonexistent-dist")).unwrap_err();
+        assert!(err.contains("unsupported"), "{err}");
     }
 
     #[test]

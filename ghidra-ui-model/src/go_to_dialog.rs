@@ -37,6 +37,9 @@ pub struct GoToAddressLabelDialog {
     case_sensitive: bool,
     include_dynamic: bool,
     status: String,
+    /// The combo's text on the next opening (Java: after a success the new
+    /// history model selects its first entry; close/cancel clear it).
+    combo_text: String,
     query: GoToQuery,
 }
 
@@ -49,6 +52,7 @@ impl GoToAddressLabelDialog {
             case_sensitive: false,
             include_dynamic: true,
             status: String::new(),
+            combo_text: String::new(),
             query,
         }
     }
@@ -101,7 +105,7 @@ impl DialogModel for GoToAddressLabelDialog {
         DialogSpec {
             title: "Go To ...".into(),
             message: "Enter an address, label, expression, or file offset:".into(),
-            combo: Some(ComboSpec { text: String::new(), items: self.history.clone() }),
+            combo: Some(ComboSpec { text: self.combo_text.clone(), items: self.history.clone() }),
             checks: vec![
                 CheckSpec { key: CASE_SENSITIVE.into(), label: "Case sensitive".into(), tooltip: String::new(), checked: self.case_sensitive },
                 CheckSpec {
@@ -127,6 +131,7 @@ impl DialogModel for GoToAddressLabelDialog {
         let input = text.trim();
         if input.is_empty() {
             self.status.clear();
+            self.combo_text.clear();
             return DialogReply::Close; // escapeCallback
         }
         let data = QueryData { query: input.to_owned(), case_sensitive: self.case_sensitive, include_dynamic: self.include_dynamic };
@@ -134,6 +139,7 @@ impl DialogModel for GoToAddressLabelDialog {
             Ok(true) => {
                 self.status.clear();
                 self.add_to_history(input);
+                self.combo_text = input.to_owned();
                 return DialogReply::Close;
             }
             Ok(false) => format!("No results for {input}"),
@@ -145,6 +151,7 @@ impl DialogModel for GoToAddressLabelDialog {
     /// Java `close` → `clearAll`.
     fn cancel(&mut self) {
         self.status.clear();
+        self.combo_text.clear();
     }
 }
 
@@ -234,6 +241,18 @@ mod tests {
         assert!(d.history().is_empty());
         d.cancel();
         assert_eq!(d.spec().status, "");
+    }
+
+    #[test]
+    fn after_a_success_the_next_opening_offers_the_last_target_and_cancel_clears_it() {
+        let (mut d, _) = dialog();
+        assert_eq!(d.ok("found1", &checks(false, true)), DialogReply::Close);
+        assert_eq!(d.spec().combo.unwrap().text, "found1"); // G + Enter repeats it
+        d.cancel();
+        assert_eq!(d.spec().combo.unwrap().text, "");
+        d.ok("found2", &checks(false, true));
+        assert_eq!(d.ok("  ", &checks(false, true)), DialogReply::Close);
+        assert_eq!(d.spec().combo.unwrap().text, "");
     }
 
     #[test]
