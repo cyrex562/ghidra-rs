@@ -1467,7 +1467,7 @@ mod tests {
 
         // <pair id="0">
         // ELEM_PAIR = 9 -> 0x49
-        data.extend_from_slice(&[0x49, 0xC3, 0x41, 0]);
+        data.extend_from_slice(&[0x49, 0xC3, 0x21, 0]);
         // <instruct_pat>
         // ELEM_INSTRUCT_PAT = 18 -> 0x52
         data.extend_from_slice(&[0x52]);

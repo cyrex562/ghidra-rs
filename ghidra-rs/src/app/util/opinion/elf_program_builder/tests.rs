@@ -315,3 +315,61 @@ fn bin_ls_smoke() {
     assert!(entry_block.init);
     assert!(all.iter().any(|b| b.name == ".text"));
 }
+
+/// End to end with a real language: `/bin/ls` into a `ProgramDB` built on the decoded
+/// `x86-64.sla` from the local Ghidra distribution (both optional on the host). The bytes at the
+/// entry point must be the file's bytes at the entry's file offset.
+#[test]
+fn bin_ls_with_real_x86_64_language() {
+    use crate::pcode::utils::sla_format::{build_decoder, tests::dist_sla};
+    use crate::program::model::address::DefaultAddressFactory;
+    use crate::program::model::lang::sleigh::SleighLanguage;
+
+    let Some(sla) = dist_sla("x86", "x86-64.sla") else {
+        return;
+    };
+    let Ok(bytes) = std::fs::read("/bin/ls") else {
+        return;
+    };
+    if bytes.len() < 0x40 || bytes[..4] != [0x7f, b'E', b'L', b'F'] || bytes[4] != 2 || bytes[5] != 1 || bytes[18] != 62 {
+        return; // not x86-64
+    }
+    let decoder = build_decoder(&sla, Arc::new(DefaultAddressFactory::new(vec![]))).unwrap();
+    let language = Arc::new(SleighLanguage::decode(&decoder, "x86:LE:64:default".to_string()).unwrap());
+    let program: Arc<dyn Program> = Arc::new(ProgramDB::new("ls".into(), language).unwrap());
+
+    let parsed = {
+        let mut h = ElfHeader::new(provider(bytes.clone()), None).unwrap();
+        h.parse().unwrap();
+        h
+    };
+    let mut image_base = parsed.find_image_base();
+    if image_base == 0 && parsed.is_shared_object() {
+        image_base = options_factory::IMAGE64_BASE_DEFAULT;
+    }
+    let adjust = image_base - parsed.get_image_base();
+    let text = parsed.get_section(".text").unwrap().expect(".text");
+    let entry = parsed.e_entry();
+    let entry_file_offset = (entry - text.get_address() + text.get_offset()) as usize;
+
+    let log = Arc::new(MessageLog::new());
+    let elf = ElfHeader::new(provider(bytes.clone()), None).unwrap();
+    load_elf(elf, Arc::clone(&program), &image_base_option(&format!("{image_base:x}")), &log, &DummyMonitor).unwrap();
+
+    let memory = program.get_memory().unwrap();
+    let ram = program.get_image_base().unwrap().space().clone();
+    let entry_addr = ram.address(entry + adjust);
+    let block = memory.get_block_handle(&entry_addr).expect("entry is in memory");
+    {
+        let b = block.read().unwrap();
+        assert_eq!(b.get_name(), ".text");
+        assert!(b.is_execute() && b.is_read() && !b.is_write());
+    }
+    let mut got = [0u8; 16];
+    assert_eq!(memory.get_bytes(&entry_addr, &mut got), 16);
+    assert_eq!(&got[..], &bytes[entry_file_offset..entry_file_offset + 16]);
+    let names: Vec<String> = blocks(program.as_ref()).into_iter().map(|b| b.name).collect();
+    for expected in [".text", ".rodata", ".data", ".bss", ".dynamic", ".got"] {
+        assert!(names.iter().any(|n| n == expected), "missing {expected}: {names:?}");
+    }
+}

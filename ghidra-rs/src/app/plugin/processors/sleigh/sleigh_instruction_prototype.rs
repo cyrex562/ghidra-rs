@@ -2034,7 +2034,7 @@ pub(crate) mod decode_tests {
         e.write_signed_integer(ATTRIB_SIZE, 0).unwrap();
         for &(ct, mask, val) in pairs {
             e.open_element(ELEM_PAIR).unwrap();
-            e.write_unsigned_integer(ATTRIB_ID, ct).unwrap();
+            e.write_signed_integer(ATTRIB_ID, ct as i64).unwrap();
             e.open_element(ELEM_INSTRUCT_PAT).unwrap();
             e.open_element(ELEM_PAT_BLOCK).unwrap();
             e.write_signed_integer(ATTRIB_OFF, 0).unwrap();

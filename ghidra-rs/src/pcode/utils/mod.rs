@@ -1,5 +1,6 @@
 pub mod address_utils;
 pub mod message_formatting_utils;
+pub mod sla_format;
 pub mod utils;
 
 pub use address_utils::{unsigned_add, unsigned_compare, unsigned_subtract};

@@ -3252,7 +3252,7 @@ TODO	struct	0	3	18	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/ap
 DONE	struct	0	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/ConstantTemplate.java
 TODO	struct	1	2	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/OpTemplate.java
 TODO	struct	0	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/InstructionPattern.java
-TODO	struct	0	3	6	pcode	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/utils/SlaFormat.java
+DONE	struct	0	3	6	pcode	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/utils/SlaFormat.java
 TODO	struct	1	1	1	filesystem	GPL/DMG/src/dmg/java/mobiledevices/dmg/btree/BTreeRootNodeDescriptor.java
 TODO	struct	0	2	3	filesystem	GPL/DMG/src/dmg/java/mobiledevices/dmg/hfsplus/AttributesFileParser.java
 TODO	struct	1	1	2	filesystem	GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgInfoGenerator.java

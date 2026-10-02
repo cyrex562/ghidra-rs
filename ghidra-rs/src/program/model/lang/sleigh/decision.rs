@@ -46,7 +46,7 @@ impl DecisionNode {
             let subel = decoder.peek_element()?;
             if subel == ELEM_PAIR.id {
                 let pair_open = decoder.open_element()?;
-                let id = decoder.read_unsigned_integer_with_id(ATTRIB_ID)? as i32;
+                let id = decoder.read_signed_integer_with_id(ATTRIB_ID)? as i32;
                 self.constructors.push(id);
                 self.patterns.push(DisjointPattern::decode(decoder)?);
                 decoder.close_element(pair_open)?;
