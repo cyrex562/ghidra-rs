@@ -16,7 +16,7 @@ namespace ghidra_qt {
 namespace {
 QString qs(const rust::String& s) { return QString::fromUtf8(s.data(), static_cast<qsizetype>(s.size())); }
 constexpr int kTextInset = 4;  // left margin before the first field
-constexpr uint8_t kKey = 0, kClick = 1, kMiddle = 2, kWheel = 3, kScrollValue = 4;
+constexpr uint8_t kKey = 0, kClick = 1, kMiddle = 2, kWheel = 3, kScrollValue = 4, kDrag = 5;
 }  // namespace
 
 ListingView::ListingView(uint64_t pid, QStatusBar* status, QWidget* parent)
@@ -93,6 +93,14 @@ void ListingView::mousePressEvent(QMouseEvent* event) {
         intent(kMiddle, x, y, false);
     } else if (event->button() == Qt::LeftButton) {
         intent(kClick, x, y, event->modifiers() & Qt::ShiftModifier);
+    }
+    event->accept();
+}
+
+void ListingView::mouseMoveEvent(QMouseEvent* event) {
+    // Move events arrive only while a button is held (no mouse tracking).
+    if (event->buttons() & Qt::LeftButton) {
+        intent(kDrag, static_cast<int>(event->position().x()) - kTextInset, static_cast<int>(event->position().y()), true);
     }
     event->accept();
 }

@@ -278,7 +278,7 @@ pub mod ffi {
         fn listing_set_metrics(pid: u64, metrics: MetricsInfo) -> Result<()>;
         fn listing_set_viewport(pid: u64, viewport_px: i32) -> Result<()>;
         /// kind: 0 key (a = direction), 1 click (a, b = x, y), 2 middle click,
-        /// 3 wheel (a = rows), 4 scrollbar value (a); `extend` = shift.
+        /// 3 wheel (a = rows), 4 scrollbar value (a), 5 drag (a, b = x, y); `extend` = shift.
         fn listing_intent(pid: u64, kind: u8, a: i64, b: i64, extend: bool) -> Result<()>;
         fn listing_frame(pid: u64) -> Result<FrameInfo>;
         fn prompt_reply(id: u64, accepted: bool, text: &str) -> Result<()>;
@@ -506,6 +506,7 @@ fn listing_intent(pid: u64, kind: u8, a: i64, b: i64, extend: bool) -> Result<()
             2 => c.middle_click(px(a), px(b)),
             3 => c.wheel(a),
             4 => c.set_scroll_value(px(a)),
+            5 => c.drag(px(a), px(b)),
             k => return Err(format!("bad listing intent {k}")),
         }
         Ok(())

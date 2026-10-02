@@ -155,6 +155,24 @@ impl ListingController {
         self.place(hit, extend, from);
     }
 
+    /// Left-button drag to (`x`, `y`): selects from the press position; past
+    /// the top or bottom edge the view scrolls a row toward the pointer and
+    /// the selection follows the edge row (Java `FieldPanel` drag auto-scroll).
+    pub fn drag(&mut self, x: i32, y: i32) {
+        let line = self.metrics.line_height().max(1);
+        let last_row_y = (self.page_rows() as i32 - 1) * line;
+        let y = if y < 0 {
+            self.wheel(-1);
+            0
+        } else if y > last_row_y + line - 1 {
+            self.wheel(1);
+            last_row_y
+        } else {
+            y
+        };
+        self.click(x, y, true);
+    }
+
     /// Middle click: cursor there, then highlight the word under it (Java
     /// `ListingMiddleMouseHighlightProvider`); the same word again clears.
     pub fn middle_click(&mut self, x: i32, y: i32) {
@@ -476,6 +494,21 @@ mod tests {
         assert_eq!(at(&c), 3);
         c.click(0, 100 * H, false); // below the last row: ignored
         assert_eq!(at(&c), 3);
+    }
+
+    #[test]
+    fn dragging_selects_from_the_press_and_autoscrolls_at_the_edges() {
+        let mut c = controller(3); // rows 0..=4, three visible
+        c.click(0, 1, false); // press on row 0
+        c.drag(0, 2 * H + 1); // row 2, inside
+        assert_eq!(c.selection().ranges(), &[(0, 2)]);
+        c.drag(0, 10 * H); // below the viewport: scroll one row, select to the last visible
+        assert_eq!(c.top(), 1);
+        assert_eq!(c.selection().ranges(), &[(0, 3)]);
+        assert_eq!(at(&c), 3);
+        c.drag(0, -5); // above: scroll back, select to the top row
+        assert_eq!(c.top(), 0);
+        assert_eq!(c.selection().ranges(), &[(0, 0)]);
     }
 
     #[test]
