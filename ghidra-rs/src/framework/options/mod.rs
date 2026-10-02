@@ -1,3 +1,4 @@
+pub mod abstract_options;
 pub mod action_trigger;
 pub mod annotation;
 pub mod attributed_save_state;
@@ -8,11 +9,14 @@ pub mod g_properties;
 pub mod json_properties;
 pub mod option_type;
 pub mod options;
+pub mod option;
 pub mod options_change_listener;
 pub mod save_state;
+pub mod tool_options;
 pub mod xml_properties;
 pub mod wrapped_option;
 
+pub use abstract_options::{AbstractOptions, NoNotify, OptionChangeNotifier, OptionsError};
 pub use action_trigger::ActionTrigger;
 pub use annotation::AutoOptionConsumed;
 pub use attributed_save_state::AttributedSaveState;
@@ -28,7 +32,9 @@ pub use option_type::{EnumOptionValue, OptionConversionError, OptionType, Option
 pub use options::{
     has_same_options_and_values, Options, DELIMITER, DELIMITER_STRING, ILLEGAL_DELIMITER,
 };
+pub use option::{OptionEntry, UNREGISTERED_OPTION};
 pub use options_change_listener::OptionsChangeListener;
+pub use tool_options::{SharedOptionsListener, ToolOptions};
 pub use json_properties::JSonProperties;
 pub use save_state::SaveState;
 pub use xml_properties::XmlProperties;

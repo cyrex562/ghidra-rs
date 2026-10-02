@@ -12291,7 +12291,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EnumEditor.
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/ErrorPropertyEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/FileOptions.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/NoRegisteredEditorPropertyEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/Option.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/Option.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/OptionType.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/Options.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/OptionsChangeListener.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
@@ -12303,7 +12303,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/PropertyTex
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/SubOptions.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/ThemeColorOption.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/ThemeFontOption.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/ToolOptions.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/ToolOptions.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedActionTrigger.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedColor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedCustomOption.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
