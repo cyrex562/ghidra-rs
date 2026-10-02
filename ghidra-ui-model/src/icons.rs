@@ -46,14 +46,18 @@ impl IconResolver for ghidra_rs::generic::theme::theme_icon_resolver::ThemeIconR
     }
 }
 
-/// Ghidra's theme files and images: `$GHIDRA_RS_THEME_ROOT`, else the
-/// development checkout's `orig_src/Ghidra` (packaging ships them later).
+/// Ghidra's theme files and icons (vendored by `scripts/vendor_ghidra_theme.py`,
+/// licences in `ICON_LICENSES.tsv`): `$GHIDRA_RS_THEME_ROOT`, else a
+/// packaged `ghidra-theme` directory beside the executable, else this crate's
+/// `resources/ghidra-theme`.
 pub fn default_theme_root() -> Option<PathBuf> {
-    let root = std::env::var_os("GHIDRA_RS_THEME_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../orig_src/Ghidra")));
-    let root = root.canonicalize().ok()?;
-    root.is_dir().then_some(root)
+    let packaged = std::env::current_exe().ok().and_then(|e| Some(e.parent()?.join("ghidra-theme")));
+    let candidates = [
+        std::env::var_os("GHIDRA_RS_THEME_ROOT").map(PathBuf::from),
+        packaged,
+        Some(PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/ghidra-theme"))),
+    ];
+    candidates.into_iter().flatten().filter_map(|p| p.canonicalize().ok()).find(|p| p.is_dir())
 }
 
 /// Loads the light theme from [`default_theme_root`], if there is one.
@@ -65,6 +69,31 @@ pub fn load_default_theme() -> Option<Box<dyn IconResolver>> {
 
 #[cfg(test)]
 mod theme_tests {
+    #[test]
+    fn the_default_theme_is_the_vendored_copy() {
+        if std::env::var_os("GHIDRA_RS_THEME_ROOT").is_some() {
+            return;
+        }
+        let vendored = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/ghidra-theme").canonicalize().unwrap();
+        assert_eq!(super::default_theme_root(), Some(vendored));
+    }
+
+    #[test]
+    fn every_vendored_theme_icon_resolves_to_a_vendored_file() {
+        use ghidra_rs::generic::theme::theme_icon_resolver::{ThemeIconResolver, ThemeVariant};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/ghidra-theme");
+        let r = ThemeIconResolver::from_ghidra_root(&root, ThemeVariant::Light).unwrap();
+        let ids: Vec<String> = r.values().icon_ids().cloned().collect();
+        assert!(ids.len() > 400, "{}", ids.len());
+        let bad: Vec<String> = ids
+            .iter()
+            .filter(|id| !id.starts_with("laf."))
+            .filter(|id| matches!(r.resolve_icon(id), Err(ghidra_rs::generic::theme::theme_icon_resolver::IconResolveError::ResourceNotFound { .. })))
+            .cloned()
+            .collect();
+        assert!(bad.is_empty(), "{bad:?}");
+    }
+
     #[test]
     fn the_demo_resolves_ghidra_navigation_icons() {
         let Some(root) = super::default_theme_root() else { return };
