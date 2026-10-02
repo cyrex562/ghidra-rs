@@ -149,11 +149,8 @@ pub fn build_demo_session() -> UiSession {
     let listing = ListingController::handle(Box::new(MemoryListing::new(
             32,
             vec![
-                MemoryBlockSnapshot {
-                    start: 0x0040_1000,
-                    bytes: vec![0x55, 0x48, 0x89, 0xe5, 0x89, 0x7d, 0xfc, 0x8b, 0x45, 0xfc, 0x5d, 0xc3],
-                },
-                MemoryBlockSnapshot { start: 0x0040_2000, bytes: b"done\n\0".to_vec() },
+                MemoryBlockSnapshot::initialized(0x0040_1000, vec![0x55, 0x48, 0x89, 0xe5, 0x89, 0x7d, 0xfc, 0x8b, 0x45, 0xfc, 0x5d, 0xc3]),
+                MemoryBlockSnapshot::initialized(0x0040_2000, b"done\n\0".to_vec()),
             ],
     )));
     let listing_id = s.add_provider(

@@ -6,6 +6,7 @@
 pub use ghidra_rs::docking::widgets::fieldpanel::field::FontMetrics;
 use ghidra_rs::docking::widgets::fieldpanel::field::{ClippingTextField, FieldElement, TextStyle};
 use ghidra_rs::docking::widgets::fieldpanel::Layout;
+use ghidra_rs::program::model::mem::memory::Memory;
 
 /// A run of text placed at an x position.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -87,13 +88,67 @@ pub trait ListingViewModel: Send {
     fn field_text(&self, cursor: CursorPos) -> Option<String>;
 }
 
-/// One memory block's bytes (an immutable snapshot).
+/// One memory block (an immutable snapshot): its bytes, or only its length
+/// when the block is uninitialized.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MemoryBlockSnapshot {
     /// First address.
     pub start: u64,
-    /// The block's bytes.
-    pub bytes: Vec<u8>,
+    bytes: Vec<u8>,
+    len: u64,
+}
+
+impl MemoryBlockSnapshot {
+    /// An initialized block holding `bytes`.
+    pub fn initialized(start: u64, bytes: Vec<u8>) -> Self {
+        let len = bytes.len() as u64;
+        Self { start, bytes, len }
+    }
+
+    /// An uninitialized block of `len` bytes (shown as `??`).
+    pub fn uninitialized(start: u64, len: u64) -> Self {
+        Self { start, bytes: Vec::new(), len }
+    }
+
+    /// Length in bytes.
+    pub fn len(&self) -> u64 {
+        self.len
+    }
+
+    /// Whether the block has no bytes.
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// The byte at `offset`; `None` when uninitialized or out of range.
+    pub fn byte(&self, offset: u64) -> Option<u8> {
+        usize::try_from(offset).ok().and_then(|o| self.bytes.get(o).copied())
+    }
+}
+
+/// Snapshots a program memory's blocks for [`MemoryListing`]: the address
+/// size in bits and every non-overlay block, initialized bytes copied.
+pub fn snapshot_memory(memory: &dyn Memory) -> (u32, Vec<MemoryBlockSnapshot>) {
+    let mut handles = memory.get_block_handles();
+    handles.retain(|h| h.read().map(|b| !b.is_overlay()).unwrap_or(false));
+    let mut bits = 32;
+    let mut blocks = Vec::with_capacity(handles.len());
+    for h in handles {
+        let Ok(b) = h.read() else { continue };
+        let start = b.get_start();
+        bits = start.space().size().max(1) as u32;
+        let offset = start.offset() as u64;
+        if b.is_initialized() {
+            // UI paths read snapshots (spec §3); program bytes are copied once.
+            let mut bytes = vec![0u8; b.get_size() as usize];
+            let n = b.get_bytes(&start, &mut bytes);
+            bytes.truncate(n);
+            blocks.push(MemoryBlockSnapshot::initialized(offset, bytes));
+        } else {
+            blocks.push(MemoryBlockSnapshot::uninitialized(offset, b.get_size()));
+        }
+    }
+    (bits, blocks)
 }
 
 /// Every byte of a memory snapshot as an undefined-data row.
@@ -116,20 +171,21 @@ impl MemoryListing {
         let mut count: u128 = 0;
         for b in &blocks {
             starts.push(count);
-            count += b.bytes.len() as u128;
+            count += u128::from(b.len());
         }
         let addr_digits = (address_bits as usize).div_ceil(4).max(1);
         Self { addr_digits, blocks, starts, count, metrics: FontMetrics::monospace(7, 11, 3) }
     }
 
-    fn locate(&self, index: u128) -> Option<(u64, u8)> {
+    /// Address and byte (`None` = uninitialized) of row `index`.
+    fn locate(&self, index: u128) -> Option<(u64, Option<u8>)> {
         if index >= self.count {
             return None;
         }
         let i = self.starts.partition_point(|&s| s <= index) - 1;
-        let off = (index - self.starts[i]) as usize;
+        let off = (index - self.starts[i]) as u64;
         let b = &self.blocks[i];
-        Some((b.start.wrapping_add(off as u64), b.bytes[off]))
+        Some((b.start.wrapping_add(off), b.byte(off)))
     }
 
     fn field_xs(&self) -> [(i32, i32); 4] {
@@ -148,9 +204,9 @@ impl MemoryListing {
         let (addr, byte) = self.locate(index)?;
         let texts = [
             format!("{:0width$x}", addr, width = self.addr_digits),
-            format!("{byte:02x}"),
+            byte.map_or_else(|| "??".to_owned(), |b| format!("{b:02x}")),
             "??".to_owned(),
-            format!("{byte:02X}h"),
+            byte.map_or_else(|| "??".to_owned(), |b| format!("{b:02X}h")),
         ];
         let fields = self
             .field_xs()
@@ -255,7 +311,7 @@ impl ListingViewModel for MemoryListing {
     fn goto(&self, address: u64) -> Option<u128> {
         self.blocks.iter().enumerate().find_map(|(i, b)| {
             let off = address.checked_sub(b.start)?;
-            ((off as usize) < b.bytes.len()).then(|| self.starts[i] + off as u128)
+            (off < b.len()).then(|| self.starts[i] + u128::from(off))
         })
     }
 
@@ -282,7 +338,7 @@ mod tests {
     fn listing() -> MemoryListing {
         let mut l = MemoryListing::new(
             32,
-            vec![MemoryBlockSnapshot { start: 0x401000, bytes: vec![0x55, 0x48, 0x89, 0xe5] }, MemoryBlockSnapshot { start: 0x402000, bytes: vec![0xc3] }],
+            vec![MemoryBlockSnapshot::initialized(0x401000, vec![0x55, 0x48, 0x89, 0xe5]), MemoryBlockSnapshot::initialized(0x402000, vec![0xc3])],
         );
         l.set_metrics(metrics());
         l
@@ -311,6 +367,58 @@ mod tests {
         assert_eq!(l.move_cursor(c, Move::Left, 1), CursorPos { index: 0, field: 3, col: 2 });
         assert_eq!(l.cursor_x(c), None);
         assert_eq!(l.field_text(CursorPos { index: 4, field: 1, col: 0 }).as_deref(), Some("c3"));
+    }
+
+    #[test]
+    fn uninitialized_bytes_show_question_marks() {
+        let mut l = MemoryListing::new(
+            32,
+            vec![MemoryBlockSnapshot::initialized(0x1000, vec![0x90]), MemoryBlockSnapshot::uninitialized(0x2000, 3)],
+        );
+        l.set_metrics(metrics());
+        assert_eq!(l.index_count(), 4);
+        let rows = l.rows(0, 1000);
+        assert_eq!(texts(&rows[0]), vec!["00001000", "90", "??", "90h"]);
+        assert_eq!(texts(&rows[3]), vec!["00002002", "??", "??", "??"]);
+        assert_eq!(l.goto(0x2002), Some(3));
+        assert_eq!(l.goto(0x2003), None);
+    }
+
+    #[test]
+    fn a_memory_map_db_snapshots_into_listing_rows() {
+        use ghidra_rs::framework::data::OpenMode;
+        use ghidra_rs::framework::db::DBHandle;
+        use ghidra_rs::program::database::map::AddressMapDB;
+        use ghidra_rs::program::database::mem::memory_map_db::MemoryMapDB;
+        use ghidra_rs::program::model::address::{Address, AddressSpace, AddressSpaceType, DefaultAddressFactory};
+        use ghidra_rs::util::task::DummyMonitor;
+        use std::sync::{Arc, RwLock};
+
+        let ram = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+        let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+        let factory = DefaultAddressFactory::new(vec![ram.clone()]);
+        let addr_map = Arc::new(RwLock::new(AddressMapDB::new(handle.clone(), Arc::new(factory)).unwrap()));
+        let map = MemoryMapDB::new(handle, addr_map, OpenMode::Create, false, &DummyMonitor).unwrap();
+        {
+            let mut m = map.write().unwrap();
+            let mut text: &[u8] = &[0x55, 0xc3];
+            m.create_initialized_block(".text", &Address::new(ram.clone(), 0x401000), Some(&mut text), 2, None, false).unwrap();
+            m.create_uninitialized_block(".bss", &Address::new(ram.clone(), 0x404000), 2, false).unwrap();
+        }
+        let (bits, blocks) = snapshot_memory(&*map.read().unwrap());
+        assert_eq!(bits, 32);
+        let mut l = MemoryListing::new(bits, blocks);
+        l.set_metrics(metrics());
+        let rows: Vec<Vec<String>> = l.rows(0, 1000).iter().map(texts).collect();
+        assert_eq!(
+            rows,
+            vec![
+                vec!["00401000", "55", "??", "55h"],
+                vec!["00401001", "c3", "??", "C3h"],
+                vec!["00404000", "??", "??", "??"],
+                vec!["00404001", "??", "??", "??"],
+            ]
+        );
     }
 
     #[test]
@@ -357,7 +465,7 @@ mod tests {
 
     #[test]
     fn rows_stay_fast_on_a_megabyte_block() {
-        let mut l = MemoryListing::new(32, vec![MemoryBlockSnapshot { start: 0x1000_0000, bytes: vec![0x90; 1 << 20] }]);
+        let mut l = MemoryListing::new(32, vec![MemoryBlockSnapshot::initialized(0x1000_0000, vec![0x90; 1 << 20])]);
         l.set_metrics(metrics());
         let budget = if cfg!(debug_assertions) { 40 } else { 8 };
         for i in 0..100u128 {

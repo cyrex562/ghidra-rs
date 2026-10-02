@@ -329,8 +329,8 @@ mod tests {
         let mut c = ListingController::new(Box::new(MemoryListing::new(
             32,
             vec![
-                MemoryBlockSnapshot { start: 0x401000, bytes: vec![0x55, 0x48, 0x89, 0x55] },
-                MemoryBlockSnapshot { start: 0x402000, bytes: vec![0xc3] },
+                MemoryBlockSnapshot::initialized(0x401000, vec![0x55, 0x48, 0x89, 0x55]),
+                MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
             ],
         )));
         c.set_metrics(FontMetrics::monospace(7, 11, 3));
