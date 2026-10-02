@@ -40,6 +40,11 @@ pub struct Args {
     #[arg(long, hide = true)]
     pub invoke_missing_action: bool,
 
+    /// Open this ELF (x86-64 or AArch64) in the Listing. Needs a Ghidra 12.1.2
+    /// distribution's compiled languages ($GHIDRA_RS_GHIDRA_DIST or tools/ghidra-dist).
+    #[arg(long, value_name = "ELF")]
+    pub open: Option<std::path::PathBuf>,
+
     /// Print the first N rows the Listing view would paint, then exit.
     #[arg(long, value_name = "N", default_value_t = 0)]
     pub dump_listing: u32,

@@ -22,7 +22,17 @@ fn main() {
         eprintln!("ghidra-qt: {msg}");
         std::process::exit(64);
     }
-    let session = bridge::install(ghidra_ui_model::demo_tool::build_demo_session());
+    let session = match &args.open {
+        None => ghidra_ui_model::demo_tool::build_demo_session(),
+        Some(path) => match open_program(path) {
+            Ok(program) => ghidra_ui_model::demo_tool::build_session_for(Some(&program)),
+            Err(msg) => {
+                eprintln!("ghidra-qt: {msg}");
+                std::process::exit(66); // EX_NOINPUT
+            }
+        },
+    };
+    let session = bridge::install(session);
     let options = bridge::ffi::AppOptions {
         screenshot_path: args
             .screenshot
@@ -44,4 +54,11 @@ fn main() {
         float_dock: args.float_dock.unwrap_or_default(),
     };
     std::process::exit(bridge::ffi::run_app(&session, &options));
+}
+
+fn open_program(path: &std::path::Path) -> Result<ghidra_ui_model::program_import::ImportedProgram, String> {
+    use ghidra_ui_model::program_import::{default_ghidra_dist, import_elf};
+    let dist = default_ghidra_dist()
+        .ok_or("no Ghidra distribution for compiled languages (set GHIDRA_RS_GHIDRA_DIST, or run scripts/fixtures/setup_ghidra.sh)")?;
+    import_elf(path, &dist)
 }

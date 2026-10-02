@@ -10,6 +10,7 @@ use ghidra_rs::util::awt::KeyStroke;
 use crate::demo::{LinesText, MapForm, StaticTree, VecTable};
 use crate::events::{UiEvent, UiEventQueue};
 use crate::listing::{MemoryBlockSnapshot, MemoryListing};
+use crate::program_import::ImportedProgram;
 use crate::listing_controller::{lock, parse_address, ListingController, ListingHandle};
 use crate::session::{UiSession, ViewModelBox};
 use crate::view_models::{CellValue, FormField};
@@ -96,6 +97,13 @@ fn ctrl(code: i32) -> KeyBindingData {
 /// Builds the demo session: Symbols (table, left), Program Tree (tree, left),
 /// Decompiler (text, right), Options (form, bottom) and their actions.
 pub fn build_demo_session() -> UiSession {
+    build_session_for(None)
+}
+
+/// The demo tool showing `program` (`ghidra-qt --open`) in place of the
+/// synthetic image: its memory in the Listing and its blocks in the Program
+/// Tree; Symbols stays empty until ELF symbols are loaded.
+pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     let mut s = UiSession::new();
     let events = s.events().clone();
 
@@ -103,35 +111,45 @@ pub fn build_demo_session() -> UiSession {
         provider("Symbols", ProviderViewKind::Table, WindowPosition::Left),
         Some(ViewModelBox::Table(Box::new(VecTable::new(
             vec!["Name".into(), "Address".into(), "Size".into()],
-            vec![
-                vec![CellValue::Text("main".into()), CellValue::Address(0x401000), CellValue::Int(120)],
-                vec![CellValue::Text("_start".into()), CellValue::Address(0x400f00), CellValue::Int(42)],
-                vec![CellValue::Text("printf".into()), CellValue::Address(0x402000), CellValue::Int(8)],
-                vec![CellValue::Text("helper".into()), CellValue::Address(0x401100), CellValue::Int(64)],
-            ],
+            if program.is_some() {
+                Vec::new() // ELF symbols arrive with ElfProgramBuilder phase 2
+            } else {
+                vec![
+                    vec![CellValue::Text("main".into()), CellValue::Address(0x401000), CellValue::Int(120)],
+                    vec![CellValue::Text("_start".into()), CellValue::Address(0x400f00), CellValue::Int(42)],
+                    vec![CellValue::Text("printf".into()), CellValue::Address(0x402000), CellValue::Int(8)],
+                    vec![CellValue::Text("helper".into()), CellValue::Address(0x401100), CellValue::Int(64)],
+                ]
+            },
         )))),
         true,
     );
     s.add_provider(
         provider("Program Tree", ProviderViewKind::Tree, WindowPosition::Left),
-        Some(ViewModelBox::Tree(Box::new(StaticTree::from_paths(&[
-            "a.out/.text",
-            "a.out/.data",
-            "a.out/.bss",
-            "a.out/.rodata",
-        ])))),
+        Some(ViewModelBox::Tree(Box::new(match program {
+            Some(p) => {
+                // '/' separates tree levels; block names never nest
+                let paths: Vec<String> = p.block_names.iter().map(|b| format!("{}/{}", p.name, b.replace('/', "\u{2215}"))).collect();
+                StaticTree::from_paths(&paths.iter().map(String::as_str).collect::<Vec<_>>())
+            }
+            None => StaticTree::from_paths(&["a.out/.text", "a.out/.data", "a.out/.bss", "a.out/.rodata"]),
+        }))),
         true,
     );
     let decompiler = s.add_provider(
         provider("Decompiler", ProviderViewKind::Text, WindowPosition::Right),
-        Some(ViewModelBox::Text(Box::new(LinesText::new(vec![
-            "int main(int argc, char **argv)".into(),
-            "{".into(),
-            "  helper(argc);".into(),
-            "  printf(\"done\\n\");".into(),
-            "  return 0;".into(),
-            "}".into(),
-        ])))),
+        Some(ViewModelBox::Text(Box::new(LinesText::new(if program.is_some() {
+            vec!["// The decompiler is not ported yet.".into()]
+        } else {
+            vec![
+                "int main(int argc, char **argv)".into(),
+                "{".into(),
+                "  helper(argc);".into(),
+                "  printf(\"done\\n\");".into(),
+                "  return 0;".into(),
+                "}".into(),
+            ]
+        })))),
         true,
     );
     s.add_provider(
@@ -146,13 +164,17 @@ pub fn build_demo_session() -> UiSession {
 
     // The code listing over a small synthetic memory image (a real imported
     // program replaces this once the ELF loader lands).
-    let listing = ListingController::handle(Box::new(MemoryListing::new(
+    let memory = match program {
+        Some(p) => MemoryListing::new(p.address_bits, p.blocks.clone()),
+        None => MemoryListing::new(
             32,
             vec![
                 MemoryBlockSnapshot::initialized(0x0040_1000, vec![0x55, 0x48, 0x89, 0xe5, 0x89, 0x7d, 0xfc, 0x8b, 0x45, 0xfc, 0x5d, 0xc3]),
                 MemoryBlockSnapshot::initialized(0x0040_2000, b"done\n\0".to_vec()),
             ],
-    )));
+        ),
+    };
+    let listing = ListingController::handle(Box::new(memory));
     let listing_id = s.add_provider(
         provider("Listing", ProviderViewKind::Listing, WindowPosition::Stack),
         Some(ViewModelBox::Listing(listing.clone())),
@@ -296,6 +318,38 @@ mod tests {
                 _ => None,
             })
             .expect("a prompt")
+    }
+
+    #[test]
+    fn a_session_for_an_imported_program_shows_its_memory_and_blocks() {
+        let program = ImportedProgram {
+            name: "ls".into(),
+            language: "x86:LE:64:default".into(),
+            address_bits: 64,
+            blocks: vec![MemoryBlockSnapshot::initialized(0x10_0000, vec![0x7f, 0x45]), MemoryBlockSnapshot::uninitialized(0x12_0000, 3)],
+            block_names: vec!["segment_1".into(), ".bss".into()],
+        };
+        let s = build_session_for(Some(&program));
+        let (_, h) = listing(&s);
+        let frame = {
+            let mut c = lock(&h);
+            c.set_viewport(1000);
+            c.frame()
+        };
+        assert_eq!(frame.rows.len(), 5);
+        assert_eq!(frame.rows[0].row.runs[0].text, "0000000000100000");
+        let tree = s.tool().find_provider("Demo", "Program Tree").unwrap();
+        let Some(ViewModelBox::Tree(t)) = s.model(tree) else { panic!("tree") };
+        let root = t.root();
+        assert_eq!(t.label(root), "ls");
+        assert_eq!((0..t.child_count(root)).map(|i| t.label(t.child(root, i))).collect::<Vec<_>>(), vec!["segment_1", ".bss"]);
+        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
+        let Some(ViewModelBox::Table(sym)) = s.model(symbols) else { panic!("table") };
+        assert_eq!(sym.row_count(), 0);
+        let dec = s.tool().find_provider("Demo", "Decompiler").unwrap();
+        let Some(ViewModelBox::Text(text)) = s.model(dec) else { panic!("text") };
+        assert!(text.line_count() > 0);
+        assert!(!(0..text.line_count()).any(|i| text.line(i).iter().any(|r| r.text.contains("main"))));
     }
 
     #[test]

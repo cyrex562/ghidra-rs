@@ -328,6 +328,30 @@ fn keys_typed_in_the_go_to_dialog_do_not_run_tool_actions() {
 }
 
 #[test]
+fn opening_a_non_elf_file_fails_cleanly() {
+    let out = shell().arg("--open").arg(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml")).output().expect("spawn");
+    assert_eq!(out.status.code(), Some(66));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("not an ELF file"), "{}", String::from_utf8_lossy(&out.stderr));
+}
+
+#[test]
+fn opening_bin_ls_lists_its_memory() {
+    let dist = std::env::var("GHIDRA_RS_GHIDRA_DIST")
+        .unwrap_or_else(|_| concat!(env!("CARGO_MANIFEST_DIR"), "/../tools/ghidra-dist/ghidra_12.1.2_PUBLIC").to_string());
+    let Ok(bytes) = std::fs::read("/bin/ls") else { return };
+    if !std::path::Path::new(&dist).is_dir() || bytes.len() < 64 || bytes[..4] != *b"\x7fELF" || bytes[18] != 62 {
+        return; // needs the Ghidra dist and an x86-64 /bin/ls
+    }
+    let out = shell().env_var("GHIDRA_RS_GHIDRA_DIST", &dist).args(["--open", "/bin/ls", "--dump-listing", "2"]).output().expect("spawn");
+    assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), 2, "{text}");
+    // first byte of the image at Ghidra's default 64-bit image base: ELF magic
+    assert_eq!(lines[0], "0000000000100000  7f  ??  7Fh");
+}
+
+#[test]
 fn listing_dock_renders_undefined_bytes() {
     let out = shell().args(["--dump-listing", "3"]).output().expect("spawn");
     assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
