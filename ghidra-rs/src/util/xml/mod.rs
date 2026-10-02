@@ -11,7 +11,7 @@ pub(crate) mod xml_element_impl;
 pub(crate) mod xml_message_log;
 pub(crate) mod xml_pull_parser;
 pub(crate) mod xml_tree_node;
-pub(crate) mod element;
+pub mod element;
 pub(crate) mod element_replay_parser;
 pub(crate) mod relax_ng;
 pub(crate) mod sax_parser;

@@ -94,6 +94,32 @@ impl UiSession {
         &self.events
     }
 
+    /// Writes the tool configuration (layout + renderer geometry) as
+    /// `SaveState` XML, creating parent directories.
+    pub fn save_tool_config(&self, path: &std::path::Path) -> std::io::Result<()> {
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        let xml = self.tool.save_layout().save_to_xml().output_string();
+        std::fs::write(path, xml)
+    }
+
+    /// Restores a tool configuration written by [`Self::save_tool_config`].
+    /// `Ok(false)` if the file does not exist (defaults kept); `Err` if it
+    /// exists but cannot be read or parsed (defaults kept).
+    pub fn load_tool_config(&mut self, path: &std::path::Path) -> std::io::Result<bool> {
+        let bytes = match std::fs::read(path) {
+            Ok(b) => b,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+            Err(e) => return Err(e),
+        };
+        let element = ghidra_rs::util::xml::element::Element::parse_bytes(&bytes)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{}: {e:?}", path.display())))?;
+        let state = ghidra_rs::framework::options::SaveState::from_xml(&element);
+        self.tool.restore_layout(&state);
+        Ok(true)
+    }
+
     /// The renderer's wake handle (taken once).
     pub fn take_wake_handle(&mut self) -> Option<WakeHandle> {
         self.wake.take()
@@ -114,6 +140,30 @@ mod tests {
     fn title_is_app_name_then_version() {
         let s = UiSession::new();
         assert_eq!(s.title(), format!("Ghidra-rs {}", env!("CARGO_PKG_VERSION")));
+    }
+
+    #[test]
+    fn tool_config_round_trips_layout_through_a_file() {
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-cfg-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut a = crate::demo_tool::build_demo_session();
+        a.tool_mut().layout_mut().set_geometry(Some(vec![7, 7, 7]));
+        a.save_tool_config(&path).unwrap();
+        let mut b = crate::demo_tool::build_demo_session();
+        assert!(b.load_tool_config(&path).unwrap());
+        assert_eq!(b.tool().layout().geometry(), Some(&[7u8, 7, 7][..]));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn missing_or_corrupt_tool_config_keeps_defaults() {
+        let mut s = crate::demo_tool::build_demo_session();
+        assert!(!s.load_tool_config(std::path::Path::new("/nonexistent/ghidra-rs/tool.xml")).unwrap());
+        let bad = std::env::temp_dir().join(format!("ghidra-ui-model-bad-{}.xml", std::process::id()));
+        std::fs::write(&bad, "<not xml").unwrap();
+        assert!(s.load_tool_config(&bad).is_err());
+        assert_eq!(s.tool().provider_ids().count(), 4);
+        let _ = std::fs::remove_file(&bad);
     }
 
     #[test]

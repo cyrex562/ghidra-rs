@@ -44,6 +44,10 @@ public:
     void showTaskProgress(const QString& message, uint64_t progress, uint64_t maximum);
     // The built menu bar as text (smoke tests).
     QStringList menuSummary();
+    // Stores ADS geometry in the Rust layout and writes the tool config.
+    void saveLayout();
+    // Whether saveLayout() already ran (close event); app.exit() skips it.
+    bool layoutSaved() const { return m_layoutSaved; }
     // Gives keyboard focus to the main view inside a dock; false if none.
     bool focusDock(const QString& title);
 
@@ -55,6 +59,7 @@ private:
     void installPopups();
     QToolBar* m_toolBar = nullptr;
     QProgressBar* m_progress = nullptr;
+    bool m_layoutSaved = false;
     ads::CDockManager* m_dockManager;
     QMap<ads::CDockWidget*, int64_t> m_providers;
     QMap<ads::CDockWidget*, QString> m_areaNames;

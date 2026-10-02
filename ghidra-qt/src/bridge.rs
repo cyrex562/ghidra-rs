@@ -220,6 +220,9 @@ pub mod ffi {
         fn layout_geometry() -> Result<Vec<u8>>;
         fn set_layout_geometry(bytes: &[u8]) -> Result<()>;
 
+        fn load_tool_config() -> Result<bool>;
+        fn save_tool_config() -> Result<()>;
+
         fn wake_fd() -> Result<i32>;
         fn drain_events() -> Result<Vec<EventInfo>>;
     }
@@ -492,6 +495,31 @@ fn set_layout_geometry(bytes: &[u8]) -> Result<(), String> {
     with("set_layout_geometry", |s| {
         s.tool_mut().layout_mut().set_geometry((!bytes.is_empty()).then(|| bytes.to_vec()));
         Ok(())
+    })
+}
+
+/// `$GHIDRA_RS_CONFIG_DIR`, else `$XDG_CONFIG_HOME/ghidra-rs`, else
+/// `~/.config/ghidra-rs`; the tool config is `<dir>/tools/<tool>.xml`.
+fn tool_config_path(tool_name: &str) -> Result<std::path::PathBuf, String> {
+    let base = std::env::var_os("GHIDRA_RS_CONFIG_DIR")
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::var_os("XDG_CONFIG_HOME").map(|d| std::path::PathBuf::from(d).join("ghidra-rs")))
+        .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config").join("ghidra-rs")))
+        .ok_or_else(|| "no config directory (set GHIDRA_RS_CONFIG_DIR or HOME)".to_owned())?;
+    Ok(base.join("tools").join(format!("{tool_name}.xml")))
+}
+
+fn load_tool_config() -> Result<bool, String> {
+    with("load_tool_config", |s| {
+        let path = tool_config_path(s.tool().name())?;
+        s.load_tool_config(&path).map_err(|e| format!("could not load tool config: {e}"))
+    })
+}
+
+fn save_tool_config() -> Result<(), String> {
+    with("save_tool_config", |s| {
+        let path = tool_config_path(s.tool().name())?;
+        s.save_tool_config(&path).map_err(|e| format!("could not save tool config {}: {e}", path.display()))
     })
 }
 

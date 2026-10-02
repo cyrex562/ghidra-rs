@@ -6,8 +6,14 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn shell() -> Shell {
+    shell_with_config(&tmp("config-default"))
+}
+
+fn shell_with_config(dir: &std::path::Path) -> Shell {
     let mut c = Command::new(env!("CARGO_BIN_EXE_ghidra-qt"));
     c.env("QT_QPA_PLATFORM", "offscreen");
+    // never touch the user's real ~/.config during tests
+    c.env("GHIDRA_RS_CONFIG_DIR", dir);
     Shell(c)
 }
 
@@ -179,4 +185,21 @@ fn bridge_error_from_a_slot_is_reported_not_fatal() {
     let out = shell().args(["--invoke-missing-action", "--quit-after-ms", "800"]).output().expect("spawn");
     assert_eq!(out.status.code(), Some(0));
     assert!(String::from_utf8_lossy(&out.stderr).contains("no action"));
+}
+
+#[test]
+fn layout_is_saved_on_exit_and_corrupt_config_is_survivable() {
+    let dir = tmp("config-persist");
+    let _ = fs::remove_dir_all(&dir);
+    let out = shell_with_config(&dir).args(["--quit-after-ms", "600"]).output().expect("spawn");
+    assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+    let cfg = dir.join("tools").join("Ghidra-rs.xml");
+    let xml = fs::read_to_string(&cfg).expect("tool config written on exit");
+    assert!(xml.contains("GEOMETRY"), "{xml}");
+    assert!(xml.contains("PROVIDER:Demo.Symbols"), "{xml}");
+
+    fs::write(&cfg, "<truncated").unwrap();
+    let out = shell_with_config(&dir).arg("--dump-docks").output().expect("spawn");
+    assert!(out.status.success());
+    assert_eq!(String::from_utf8_lossy(&out.stdout).lines().count(), 4);
 }

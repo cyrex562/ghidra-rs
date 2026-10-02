@@ -176,12 +176,18 @@ ads::CDockWidget* MainWindow::dockByTitle(const QString& title) const {
 
 int64_t MainWindow::providerOf(ads::CDockWidget* dock) const { return m_providers.value(dock, -1); }
 
-void MainWindow::closeEvent(QCloseEvent* event) {
+void MainWindow::saveLayout() {
+    m_layoutSaved = true;
     const QByteArray state = m_dockManager->saveState();
     bridgeCall(statusBar(), [&] {
         set_layout_geometry(rust::Slice<const uint8_t>(reinterpret_cast<const uint8_t*>(state.constData()),
                                                        static_cast<size_t>(state.size())));
     });
+    bridgeCall(statusBar(), [&] { save_tool_config(); });
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    saveLayout();
     QMainWindow::closeEvent(event);
 }
 

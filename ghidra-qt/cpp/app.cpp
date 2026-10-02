@@ -36,6 +36,9 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
         return 3;
     }
 
+    // Restore the tool config (provider visibility/placement + geometry)
+    // before docks are built; a corrupt file is reported and ignored.
+    bridgeCall(nullptr, [&] { load_tool_config(); });
     MainWindow window(title);
 
     if (options.dump_menus) {
@@ -57,6 +60,11 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
     if (!options.restore_geometry.empty()) {
         QFile f(toQString(options.restore_geometry));
         if (f.open(QIODevice::ReadOnly)) window.restoreDockGeometry(f.readAll());
+    } else {
+        rust::Vec<uint8_t> saved;
+        if (bridgeCall(window.statusBar(), [&] { saved = layout_geometry(); }) && !saved.empty()) {
+            window.restoreDockGeometry(QByteArray(reinterpret_cast<const char*>(saved.data()), static_cast<int>(saved.size())));
+        }
     }
     auto* keys = new KeyForwarder(&window);
     app.installEventFilter(keys);
@@ -96,7 +104,9 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
             app.exit(0);
         });
     }
-    return app.exec();
+    const int code = app.exec();
+    if (!window.layoutSaved()) window.saveLayout();  // app.exit() skips closeEvent
+    return code;
 }
 
 }  // namespace ghidra_qt
