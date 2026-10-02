@@ -40,7 +40,8 @@ use crate::format::elf::relocation::aarch64_elf_relocation_type::Aarch64ElfReloc
 use crate::format::elf::relocation::elf_relocation_context::{
     ElfRelocationContext, ElfRelocationContextBase,
 };
-use crate::format::seam_stubs::{ElfRelocation, ElfRelocationHandler};
+use crate::format::elf::elf_relocation::ElfRelocation;
+use crate::format::seam_stubs::ElfRelocationHandler;
 use crate::program::model::address::Address;
 
 /// Relocation types which require a GOT allocation.
@@ -82,7 +83,7 @@ impl Aarch64ElfRelocationContext {
     /// NOTE: It is very important that all relocation types which would invoke
     /// `getGotEntryAddress` result in this method returning true. Failure to do so could result
     /// in an under allocation of the GOT memory block.
-    pub fn requires_got_entry(&self, r: &dyn ElfRelocation) -> bool {
+    pub fn requires_got_entry(&self, r: &ElfRelocation) -> bool {
         let type_id = r.get_type();
         GOT_ENTRY_RELOCATION_TYPES
             .iter()
@@ -242,18 +243,22 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
     struct MockRelocation {
+        symbol_index: i32,
         type_id: i32,
+        offset: i64,
+        relocation_index: i32,
     }
 
-    impl ElfRelocation for MockRelocation {
-        fn get_symbol_index(&self) -> i32 {
-            0
-        }
-        fn get_type(&self) -> i32 {
-            self.type_id
+    impl MockRelocation {
+        /// A real ELF64 relocation entry with this symbol index, type, offset and table index.
+        fn real(self) -> ElfRelocation {
+            let info = ((self.symbol_index as i64) << 32) | (self.type_id as u32 as i64);
+            ElfRelocation::from_values(false, self.relocation_index, false, self.offset, info, 0)
         }
     }
+
 
     fn context() -> Aarch64ElfRelocationContext {
         let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(), log: Arc::new(MessageLog::new()) });
@@ -265,13 +270,13 @@ mod tests {
         let context = context();
 
         // case R_AARCH64_P32_ADR_GOT_PAGE:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 26 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 26, ..Default::default() }.real()));
         // case R_AARCH64_P32_LD32_GOT_LO12_NC:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 27 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 27, ..Default::default() }.real()));
         // case R_AARCH64_ADR_GOT_PAGE:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 311 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 311, ..Default::default() }.real()));
         // case R_AARCH64_LD64_GOT_LO12_NC:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 312 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 312, ..Default::default() }.real()));
     }
 
     #[test]
@@ -279,9 +284,9 @@ mod tests {
         let context = context();
 
         // A resolvable type that isn't in the GOT list (R_AARCH64_ABS64).
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 257 }));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 257, ..Default::default() }.real()));
         // An unresolvable type id.
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 99_999 }));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 99_999, ..Default::default() }.real()));
     }
 
     #[test]
@@ -291,7 +296,7 @@ mod tests {
             fn relocate(
                 &self,
                 _context: &dyn ElfRelocationContext,
-                _relocation: &dyn ElfRelocation,
+                _relocation: &ElfRelocation,
                 _relocation_address: &Address,
             ) -> Result<
                 crate::program::model::reloc::RelocationResult,

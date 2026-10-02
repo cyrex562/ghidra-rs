@@ -43,7 +43,8 @@ use crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext
 use crate::format::elf::relocation::elf_relocation_type::ElfRelocationType;
 use crate::format::memory_loadable::MemoryLoadable;
 use crate::app::util::importer::message_log::MessageLog;
-use crate::format::seam_stubs::{elf_relocation_handler, ElfRelocation};
+use crate::format::elf::elf_relocation::ElfRelocation;
+use crate::format::seam_stubs::elf_relocation_handler;
 use crate::program::model::address::Address;
 use crate::program::model::listing::bookmark_type;
 use crate::program::model::listing::program::Program;
@@ -93,7 +94,7 @@ impl<T: ElfRelocationType + Copy> AbstractElfRelocationHandlerBase<T> {
         &self,
         handler: &H,
         elf_relocation_context: &dyn ElfRelocationContext,
-        relocation: &dyn ElfRelocation,
+        relocation: &ElfRelocation,
         relocation_address: &Address,
     ) -> Result<RelocationResult, MemoryAccessException>
     where
@@ -148,7 +149,7 @@ impl<T: ElfRelocationType + Copy> AbstractElfRelocationHandlerBase<T> {
     pub fn handle_unresolved_symbol(
         &self,
         elf_relocation_context: &dyn ElfRelocationContext,
-        relocation: &dyn ElfRelocation,
+        relocation: &ElfRelocation,
         relocation_address: &Address,
     ) -> bool {
         let base = elf_relocation_context.base();
@@ -335,7 +336,7 @@ pub trait AbstractElfRelocationHandler<T: ElfRelocationType + Copy> {
     fn relocate(
         &self,
         elf_relocation_context: &dyn ElfRelocationContext,
-        relocation: &dyn ElfRelocation,
+        relocation: &ElfRelocation,
         relocation_type: T,
         relocation_address: &Address,
         elf_symbol: &ElfSymbol,
@@ -515,32 +516,35 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
     struct MockRelocation {
         symbol_index: i32,
         type_id: i32,
+        offset: i64,
+        relocation_index: i32,
     }
 
-    impl ElfRelocation for MockRelocation {
-        fn get_symbol_index(&self) -> i32 {
-            self.symbol_index
-        }
-        fn get_type(&self) -> i32 {
-            self.type_id
+    impl MockRelocation {
+        /// A real ELF64 relocation entry with this symbol index, type, offset and table index.
+        fn real(self) -> ElfRelocation {
+            let info = ((self.symbol_index as i64) << 32) | (self.type_id as u32 as i64);
+            ElfRelocation::from_values(false, self.relocation_index, false, self.offset, info, 0)
         }
     }
+
 
     /// A relocation table with no associated symbol table, so that index 0 resolves to the
     /// context's null symbol (see `ElfRelocationContext::start_relocation_table_processing`).
     struct MockRelocationTable;
 
-    impl crate::format::seam_stubs::ElfRelocationTable for MockRelocationTable {
-        fn has_addend_relocations(&self) -> bool {
-            false
-        }
-        fn get_associated_symbol_table(
-            &self,
-        ) -> Option<Arc<crate::format::elf::elf_symbol_table::ElfSymbolTable>> {
-            None
+    impl MockRelocationTable {
+        fn real(self) -> crate::format::elf::elf_relocation_table::ElfRelocationTable {
+            crate::format::elf::elf_relocation_table::ElfRelocationTable::from_relocations(
+                Vec::new(),
+                false,
+                None,
+                None,
+            )
         }
     }
 
@@ -553,7 +557,7 @@ mod tests {
         fn relocate(
             &self,
             _elf_relocation_context: &dyn ElfRelocationContext,
-            _relocation: &dyn ElfRelocation,
+            _relocation: &ElfRelocation,
             relocation_type: DummyRelocationType,
             _relocation_address: &Address,
             _elf_symbol: &ElfSymbol,
@@ -580,7 +584,7 @@ mod tests {
         let log = Arc::new(MessageLog::new());
         let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(), log: log.clone() });
         let mut context = ElfRelocationContextBase::new(None, load_helper, Arc::new(HashMap::new()));
-        context.start_relocation_table_processing(Arc::new(MockRelocationTable));
+        context.start_relocation_table_processing(Arc::new(MockRelocationTable.real()));
         (context, log)
     }
 
@@ -605,7 +609,7 @@ mod tests {
         let result = base.relocate(
             &handler,
             &context,
-            &MockRelocation { symbol_index: 0, type_id: 0 },
+            &MockRelocation { symbol_index: 0, type_id: 0, ..Default::default() }.real(),
             &address(0x1000),
         );
 
@@ -622,7 +626,7 @@ mod tests {
         let result = base.relocate(
             &handler,
             &context,
-            &MockRelocation { symbol_index: 0, type_id: 42 },
+            &MockRelocation { symbol_index: 0, type_id: 42, ..Default::default() }.real(),
             &address(0x1000),
         );
 
@@ -643,7 +647,7 @@ mod tests {
         let result = base.relocate(
             &handler,
             &context,
-            &MockRelocation { symbol_index: 0, type_id: 2 },
+            &MockRelocation { symbol_index: 0, type_id: 2, ..Default::default() }.real(),
             &address(0x2000),
         );
 
@@ -668,7 +672,7 @@ mod tests {
         // Index 0 always resolves to the null symbol, which handleUnresolvedSymbol special-cases.
         let unresolved = base.handle_unresolved_symbol(
             &context,
-            &MockRelocation { symbol_index: 0, type_id: 2 },
+            &MockRelocation { symbol_index: 0, type_id: 2, ..Default::default() }.real(),
             &address(0x1000),
         );
 
@@ -684,7 +688,7 @@ mod tests {
         // No symbol table: any non-zero index is out of range, i.e. unresolved.
         let unresolved = base.handle_unresolved_symbol(
             &context,
-            &MockRelocation { symbol_index: 7, type_id: 5 },
+            &MockRelocation { symbol_index: 7, type_id: 5, ..Default::default() }.real(),
             &address(0x3000),
         );
 

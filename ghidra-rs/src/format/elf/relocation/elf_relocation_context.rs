@@ -42,9 +42,9 @@ use crate::format::memory_loadable::MemoryLoadable;
 use crate::app::util::importer::message_log::MessageLog;
 use crate::format::elf::elf_header::ElfHeader;
 use crate::format::elf::elf_symbol_table::ElfSymbolTable;
-use crate::format::seam_stubs::{
-    elf_relocation_handler, ElfRelocation, ElfRelocationHandler, ElfRelocationTable,
-};
+use crate::format::elf::elf_relocation::ElfRelocation;
+use crate::format::elf::elf_relocation_table::ElfRelocationTable;
+use crate::format::seam_stubs::{elf_relocation_handler, ElfRelocationHandler};
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
 use crate::program::model::mem::MemoryAccessException;
@@ -106,7 +106,7 @@ pub struct ElfRelocationContextBase {
     symbol_map: Arc<HashMap<ElfSymbol, Address>>,
     program: Arc<dyn Program>,
 
-    relocation_table: Option<Arc<dyn ElfRelocationTable>>,
+    relocation_table: Option<Arc<ElfRelocationTable>>,
     /// May be `None`: not every relocation table has an associated symbol table.
     symbol_table: Option<Arc<ElfSymbolTable>>,
 
@@ -179,7 +179,7 @@ impl ElfRelocationContextBase {
     /// The relocation table currently being processed, or `None` outside a
     /// [`start`](ElfRelocationContext::start_relocation_table_processing)/[`end`](ElfRelocationContext::end_relocation_table_processing)
     /// window.
-    pub fn relocation_table(&self) -> Option<&Arc<dyn ElfRelocationTable>> {
+    pub fn relocation_table(&self) -> Option<&Arc<ElfRelocationTable>> {
         self.relocation_table.as_ref()
     }
 
@@ -319,8 +319,8 @@ pub trait ElfRelocationContext {
     /// Invoked at the start of relocation processing for the specified table.
     /// [`end_relocation_table_processing`](Self::end_relocation_table_processing) is invoked after
     /// the last relocation is processed.
-    fn start_relocation_table_processing(&mut self, reloc_table: Arc<dyn ElfRelocationTable>) {
-        let symbol_table = reloc_table.get_associated_symbol_table();
+    fn start_relocation_table_processing(&mut self, reloc_table: Arc<ElfRelocationTable>) {
+        let symbol_table = reloc_table.get_associated_symbol_table().cloned();
         let base = self.base_mut();
         base.null_symbol = symbol_table.is_none().then(ElfSymbol::new);
         base.symbol_table = symbol_table;
@@ -340,7 +340,7 @@ pub trait ElfRelocationContext {
     /// [`process_relocation_for_symbol`](Self::process_relocation_for_symbol).
     fn process_relocation(
         &self,
-        relocation: &dyn ElfRelocation,
+        relocation: &ElfRelocation,
         relocation_address: &Address,
     ) -> RelocationResult {
         let base = self.base();
@@ -412,7 +412,7 @@ pub trait ElfRelocationContext {
     /// collides with the `final` overload above once the parameter lists are erased.
     fn process_relocation_for_symbol(
         &self,
-        relocation: &dyn ElfRelocation,
+        relocation: &ElfRelocation,
         elf_symbol: &ElfSymbol,
         relocation_address: &Address,
     ) -> Result<RelocationResult, RelocationProcessingError> {
@@ -685,19 +685,22 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
     struct MockRelocation {
         symbol_index: i32,
         type_id: i32,
+        offset: i64,
+        relocation_index: i32,
     }
 
-    impl ElfRelocation for MockRelocation {
-        fn get_symbol_index(&self) -> i32 {
-            self.symbol_index
-        }
-        fn get_type(&self) -> i32 {
-            self.type_id
+    impl MockRelocation {
+        /// A real ELF64 relocation entry with this symbol index, type, offset and table index.
+        fn real(self) -> ElfRelocation {
+            let info = ((self.symbol_index as i64) << 32) | (self.type_id as u32 as i64);
+            ElfRelocation::from_values(false, self.relocation_index, false, self.offset, info, 0)
         }
     }
+
 
 
     struct MockRelocationTable {
@@ -705,12 +708,9 @@ mod tests {
         symbol_table: Option<Arc<ElfSymbolTable>>,
     }
 
-    impl ElfRelocationTable for MockRelocationTable {
-        fn has_addend_relocations(&self) -> bool {
-            self.has_addend
-        }
-        fn get_associated_symbol_table(&self) -> Option<Arc<ElfSymbolTable>> {
-            self.symbol_table.clone()
+    impl MockRelocationTable {
+        fn real(self) -> ElfRelocationTable {
+            ElfRelocationTable::from_relocations(Vec::new(), self.has_addend, self.symbol_table, None)
         }
     }
 
@@ -746,7 +746,7 @@ mod tests {
         fn relocate(
             &self,
             context: &dyn ElfRelocationContext,
-            relocation: &dyn ElfRelocation,
+            relocation: &ElfRelocation,
             _relocation_address: &Address,
         ) -> Result<RelocationResult, RelocationProcessingError> {
             // The context must be usable from inside the handler, as it is in Java.
@@ -860,7 +860,7 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: false,
             symbol_table: None,
-        }));
+        }.real()));
 
         // Java installs `new ElfSymbol()` -- the special null symbol -- for index 0 only.
         let null_symbol = context.get_symbol(0).expect("index 0 yields the null symbol");
@@ -878,7 +878,7 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
             symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
-        }));
+        }.real()));
 
         assert_eq!(context.get_symbol(1).map(|s| s.get_type()), Some(STT_FUNC));
         // Out of range, and -- unlike the no-symbol-table case -- index 0 comes from the table.
@@ -898,14 +898,14 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
             symbol_table: None,
-        }));
+        }.real()));
         assert!(!context.extract_addend());
 
         // A REL table does not, so it must be read back from the relocation target.
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: false,
             symbol_table: None,
-        }));
+        }.real()));
         assert!(context.extract_addend());
     }
 
@@ -918,7 +918,7 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
             symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
-        }));
+        }.real()));
         context.end_relocation_table_processing();
 
         assert!(context.relocation_table().is_none());
@@ -932,7 +932,7 @@ mod tests {
         let context = context_with(None, helper, HashMap::new());
 
         let result = context.process_relocation(
-            &MockRelocation { symbol_index: 0, type_id: 3 },
+            &MockRelocation { symbol_index: 0, type_id: 3, ..Default::default() }.real(),
             &address(0x2000),
         );
 
@@ -950,10 +950,10 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: false,
             symbol_table: None,
-        }));
+        }.real()));
 
         let result = context.process_relocation(
-            &MockRelocation { symbol_index: 5, type_id: 3 },
+            &MockRelocation { symbol_index: 5, type_id: 3, ..Default::default() }.real(),
             &address(0x2000),
         );
 
@@ -979,10 +979,10 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
             symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
-        }));
+        }.real()));
 
         let result = context.process_relocation(
-            &MockRelocation { symbol_index: 1, type_id: 7 },
+            &MockRelocation { symbol_index: 1, type_id: 7, ..Default::default() }.real(),
             &address(0x2000),
         );
 
@@ -1008,10 +1008,10 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
             symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
-        }));
+        }.real()));
 
         let result = context.process_relocation(
-            &MockRelocation { symbol_index: 1, type_id: 2 },
+            &MockRelocation { symbol_index: 1, type_id: 2, ..Default::default() }.real(),
             &address(0x2000),
         );
 
@@ -1035,10 +1035,10 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
             symbol_table: Some(Arc::new(ElfSymbolTable::from_symbols(symbols, true))),
-        }));
+        }.real()));
 
         let result = context.process_relocation(
-            &MockRelocation { symbol_index: 1, type_id: 2 },
+            &MockRelocation { symbol_index: 1, type_id: 2, ..Default::default() }.real(),
             &address(0x2000),
         );
 

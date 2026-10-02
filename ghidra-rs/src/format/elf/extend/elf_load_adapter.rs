@@ -48,15 +48,18 @@ use crate::format::elf::elf_program_header::ElfProgramHeader;
 use crate::format::elf::elf_program_header_type::ElfProgramHeaderType;
 use crate::format::elf::elf_section_header::ElfSectionHeader;
 use crate::format::elf::elf_section_header_type::ElfSectionHeaderType;
-use crate::format::seam_stubs::{ElfDefaultGotPltMarkup, ElfRelocation};
+use crate::format::elf::elf_relocation::ElfRelocation;
+use crate::format::seam_stubs::ElfDefaultGotPltMarkup;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::util::exception::{CancelledException, NoValueException};
 use crate::util::task::TaskMonitor;
 
-/// Stands in for Java's `Class<? extends ElfRelocation>`: a constructor for the relocation entry
-/// type a table should be parsed with. Java instantiates the class reflectively through its no-arg
-/// constructor, which is exactly what calling this does.
-pub type ElfRelocationFactory = fn() -> Box<dyn ElfRelocation>;
+/// Stands in for Java's `Class<? extends ElfRelocation>`: what instantiating that subclass adds
+/// to a relocation entry. Java constructs the subclass reflectively and calls its
+/// `initElfRelocation` override after the base initialization; this hook receives the
+/// base-initialized entry and returns it re-decoded (see
+/// [`ElfRelocation`](crate::format::elf::elf_relocation::ElfRelocation)'s module docs).
+pub type ElfRelocationFactory = fn(ElfRelocation, &ElfHeader) -> ElfRelocation;
 
 /// The base ELF load adapter: the default answers to every extension point the ELF loader offers.
 ///

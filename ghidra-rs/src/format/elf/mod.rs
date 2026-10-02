@@ -12,6 +12,8 @@ pub mod elf_load_helper;
 pub mod elf_program_header;
 pub mod elf_program_header_constants;
 pub mod elf_program_header_type;
+pub mod elf_relocation;
+pub mod elf_relocation_table;
 pub mod elf_section_header;
 pub mod elf_section_header_constants;
 pub mod elf_section_header_type;

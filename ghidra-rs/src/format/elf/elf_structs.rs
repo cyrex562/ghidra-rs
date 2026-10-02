@@ -96,6 +96,18 @@ impl ElfStruct {
             .map_err(invalid)
     }
 
+    /// Java: `struct.add(dt, name, comment)`.
+    pub(crate) fn add_with_comment(
+        &mut self,
+        dt: Box<dyn DataType>,
+        name: &str,
+        comment: &str,
+    ) -> Result<(), ToDataTypeError> {
+        Composite::add_with_name(&mut self.inner, dt, Some(name.to_string()), Some(comment.to_string()))
+            .map(|_| ())
+            .map_err(invalid)
+    }
+
     /// Java: `struct.add(dt, length, name, null)`.
     pub(crate) fn add_len(
         &mut self,

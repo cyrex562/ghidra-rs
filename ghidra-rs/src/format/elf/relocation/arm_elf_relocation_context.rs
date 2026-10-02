@@ -298,7 +298,7 @@ mod tests {
             fn relocate(
                 &self,
                 _context: &dyn ElfRelocationContext,
-                _relocation: &dyn crate::format::seam_stubs::ElfRelocation,
+                _relocation: &crate::format::elf::elf_relocation::ElfRelocation,
                 _relocation_address: &Address,
             ) -> Result<
                 crate::program::model::reloc::RelocationResult,

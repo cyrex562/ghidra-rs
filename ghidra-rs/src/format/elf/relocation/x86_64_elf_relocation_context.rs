@@ -41,7 +41,8 @@ use crate::format::elf::relocation::elf_relocation_context::{
     ElfRelocationContext, ElfRelocationContextBase,
 };
 use crate::format::elf::relocation::x86_64_elf_relocation_type::X86_64ElfRelocationType;
-use crate::format::seam_stubs::{ElfRelocation, ElfRelocationHandler};
+use crate::format::elf::elf_relocation::ElfRelocation;
+use crate::format::seam_stubs::ElfRelocationHandler;
 use crate::program::model::address::Address;
 
 /// Relocation types which require a GOT allocation.
@@ -80,7 +81,7 @@ impl X86_64ElfRelocationContext {
     }
 
     /// Returns true if the specified relocation type requires a GOT entry.
-    pub fn requires_got_entry(&self, r: &dyn ElfRelocation) -> bool {
+    pub fn requires_got_entry(&self, r: &ElfRelocation) -> bool {
         let type_id = r.get_type();
         GOT_ENTRY_RELOCATION_TYPES
             .iter()
@@ -240,18 +241,22 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
     struct MockRelocation {
+        symbol_index: i32,
         type_id: i32,
+        offset: i64,
+        relocation_index: i32,
     }
 
-    impl ElfRelocation for MockRelocation {
-        fn get_symbol_index(&self) -> i32 {
-            0
-        }
-        fn get_type(&self) -> i32 {
-            self.type_id
+    impl MockRelocation {
+        /// A real ELF64 relocation entry with this symbol index, type, offset and table index.
+        fn real(self) -> ElfRelocation {
+            let info = ((self.symbol_index as i64) << 32) | (self.type_id as u32 as i64);
+            ElfRelocation::from_values(false, self.relocation_index, false, self.offset, info, 0)
         }
     }
+
 
     fn context() -> X86_64ElfRelocationContext {
         let load_helper = Arc::new(MockLoadHelper { elf: mock_elf_header(), log: Arc::new(MessageLog::new()) });
@@ -263,13 +268,13 @@ mod tests {
         let context = context();
 
         // case R_X86_64_GOTPCREL:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 9 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 9, ..Default::default() }.real()));
         // case R_X86_64_GOTPCREL64:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 28 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 28, ..Default::default() }.real()));
         // case R_X86_64_GOTPCRELX:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 41 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 41, ..Default::default() }.real()));
         // case R_X86_64_REX_GOTPCRELX:
-        assert!(context.requires_got_entry(&MockRelocation { type_id: 42 }));
+        assert!(context.requires_got_entry(&MockRelocation { type_id: 42, ..Default::default() }.real()));
     }
 
     #[test]
@@ -277,15 +282,15 @@ mod tests {
         let context = context();
 
         // A resolvable type that isn't in the GOT list (R_X86_64_64).
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 1 }));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 1, ..Default::default() }.real()));
         // The commented-out Java cases (R_X86_64_GOTOFF64, R_X86_64_GOTPC32, R_X86_64_GOT64,
         // R_X86_64_GOTPC64) must NOT require a GOT entry.
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 25 }));
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 26 }));
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 27 }));
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 29 }));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 25, ..Default::default() }.real()));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 26, ..Default::default() }.real()));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 27, ..Default::default() }.real()));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 29, ..Default::default() }.real()));
         // An unresolvable type id.
-        assert!(!context.requires_got_entry(&MockRelocation { type_id: 99_999 }));
+        assert!(!context.requires_got_entry(&MockRelocation { type_id: 99_999, ..Default::default() }.real()));
     }
 
     #[test]
@@ -295,7 +300,7 @@ mod tests {
             fn relocate(
                 &self,
                 _context: &dyn ElfRelocationContext,
-                _relocation: &dyn ElfRelocation,
+                _relocation: &ElfRelocation,
                 _relocation_address: &Address,
             ) -> Result<
                 crate::program::model::reloc::RelocationResult,

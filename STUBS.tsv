@@ -598,8 +598,6 @@ ts	stub_class	referenced_by
 2026-08-13T07:58:49.860962+00:00	ReferenceUtils	GenericDataTypeLocationDescriptor
 2026-08-13T08:14:16.597957+00:00	AbstractProgramBasedDynamicTableColumn	AbstractProgramLocationTableColumn
 2026-08-13T08:19:01.563148+00:00	Option	OptionListener
-2026-08-13T09:08:55.722518+00:00	ElfRelocation	ElfRelocationContext
-2026-08-13T09:08:55.722519+00:00	ElfRelocationTable	ElfRelocationContext
 2026-08-13T09:08:55.722520+00:00	ElfRelocationHandler	ElfRelocationContext
 2026-08-13T09:10:14.379491+00:00	ElfSymbolNameUtils	AbstractElfRelocationHandler
 2026-08-13T09:10:14.379491+00:00	ElfRelocationHandler	AbstractElfRelocationHandler
@@ -691,8 +689,6 @@ ts	stub_class	referenced_by
 2026-08-15T02:35:00.000000+00:00	MipsElfRelocationHandler	MIPS_ElfRelocationContext
 2026-08-15T02:35:00.000001+00:00	MipsDeferredRelocation	MIPS_ElfRelocationContext
 2026-08-15T02:35:00.000002+00:00	MIPS_Elf64Relocation	MIPS_ElfRelocationContext
-2026-08-15T02:35:00.000003+00:00	ElfRelocationTable	MIPS_ElfRelocationContext
-2026-08-15T02:35:00.000004+00:00	ElfRelocation	MIPS_ElfRelocationContext
 2026-08-15T02:43:57.568501+00:00	LoaderMap	LoadSpecChooser
 2026-08-15T02:51:43.835105+00:00	Option	OptionChooser
 2026-08-15T02:51:43.835873+00:00	ProgramLoader	OptionChooser

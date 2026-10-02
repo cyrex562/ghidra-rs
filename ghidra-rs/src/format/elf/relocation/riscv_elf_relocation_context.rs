@@ -29,7 +29,8 @@ use crate::format::elf::relocation::elf_relocation_context::{
     ElfRelocationContext, ElfRelocationContextBase,
 };
 use crate::format::elf::relocation::riscv_elf_relocation_type::RiscvElfRelocationType;
-use crate::format::seam_stubs::{ElfRelocation, ElfRelocationHandler};
+use crate::format::elf::elf_relocation::ElfRelocation;
+use crate::format::seam_stubs::ElfRelocationHandler;
 use crate::program::model::address::Address;
 
 /// Provides RISC-V-specific relocation context with HI20/LO12 relocation pairing.
@@ -63,11 +64,11 @@ impl RiscvElfRelocationContext {
     ///
     /// Returns `None` if there is no relocation table currently being processed, or no matching
     /// `R_RISCV_PCREL_HI20`/`R_RISCV_GOT_HI20` relocation is found.
-    pub fn get_hi20_relocation(&self, hi20_symbol: &ElfSymbol) -> Option<Box<dyn ElfRelocation>> {
+    pub fn get_hi20_relocation(&self, hi20_symbol: &ElfSymbol) -> Option<ElfRelocation> {
         let sym_value = hi20_symbol.get_value();
 
         let table = self.base.relocation_table()?;
-        let mut relocations = table.get_relocations();
+        let relocations = table.get_relocations();
 
         // Search for first relocation within the table whose offset matches the specified
         // hi20Symbol value.
@@ -91,7 +92,7 @@ impl RiscvElfRelocationContext {
             if type_id == RiscvElfRelocationType::R_RISCV_PCREL_HI20.type_id_value()
                 || type_id == RiscvElfRelocationType::R_RISCV_GOT_HI20.type_id_value()
             {
-                return Some(relocations.remove(rel_index));
+                return Some(relocations[rel_index].clone());
             }
             rel_index += 1;
         }
@@ -122,7 +123,7 @@ mod tests {
     use super::*;
     use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::app::util::importer::message_log::MessageLog;
-    use crate::format::seam_stubs::ElfRelocationTable;
+    use crate::format::elf::elf_relocation_table::ElfRelocationTable;
     use crate::format::elf::elf_symbol_table::ElfSymbolTable;
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::MemoryAccessException;
@@ -254,22 +255,22 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
     struct MockRelocation {
-        offset: i64,
+        symbol_index: i32,
         type_id: i32,
+        offset: i64,
+        relocation_index: i32,
     }
 
-    impl ElfRelocation for MockRelocation {
-        fn get_symbol_index(&self) -> i32 {
-            0
-        }
-        fn get_type(&self) -> i32 {
-            self.type_id
-        }
-        fn get_offset(&self) -> i64 {
-            self.offset
+    impl MockRelocation {
+        /// A real ELF64 relocation entry with this symbol index, type, offset and table index.
+        fn real(self) -> ElfRelocation {
+            let info = ((self.symbol_index as i64) << 32) | (self.type_id as u32 as i64);
+            ElfRelocation::from_values(false, self.relocation_index, false, self.offset, info, 0)
         }
     }
+
 
     struct MockRelocationTable {
         relocations: Vec<MockRelocationSpec>,
@@ -281,21 +282,18 @@ mod tests {
         type_id: i32,
     }
 
-    impl ElfRelocationTable for MockRelocationTable {
-        fn has_addend_relocations(&self) -> bool {
-            true
-        }
-        fn get_associated_symbol_table(&self) -> Option<Arc<ElfSymbolTable>> {
-            None
-        }
-        fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
-            self.relocations
+    impl MockRelocationTable {
+        /// The real (RELA) table holding these entries.
+        fn real(self) -> ElfRelocationTable {
+            let relocs = self
+                .relocations
                 .iter()
                 .map(|spec| {
-                    Box::new(MockRelocation { offset: spec.offset, type_id: spec.type_id })
-                        as Box<dyn ElfRelocation>
+                    MockRelocation { offset: spec.offset, type_id: spec.type_id, ..Default::default() }
+                        .real()
                 })
-                .collect()
+                .collect();
+            ElfRelocationTable::from_relocations(relocs, true, None, None)
         }
     }
 
@@ -321,7 +319,7 @@ mod tests {
     #[test]
     fn finds_pcrel_hi20_relocation_matching_symbol_offset() {
         let mut context = create_context();
-        let table: Arc<dyn ElfRelocationTable> = Arc::new(MockRelocationTable {
+        let table: Arc<ElfRelocationTable> = Arc::new(MockRelocationTable {
             relocations: vec![
                 MockRelocationSpec { offset: 0x1000, type_id: 2 },
                 MockRelocationSpec {
@@ -330,7 +328,7 @@ mod tests {
                 },
                 MockRelocationSpec { offset: 0x3000, type_id: 2 },
             ],
-        });
+        }.real());
         context.base_mut().start_relocation_table_processing(table);
 
         let symbol = symbol_with_value(0x2000);
@@ -342,7 +340,7 @@ mod tests {
     #[test]
     fn finds_got_hi20_relocation_when_multiple_relocations_share_an_offset() {
         let mut context = create_context();
-        let table: Arc<dyn ElfRelocationTable> = Arc::new(MockRelocationTable {
+        let table: Arc<ElfRelocationTable> = Arc::new(MockRelocationTable {
             relocations: vec![
                 MockRelocationSpec { offset: 0x2000, type_id: 99 },
                 MockRelocationSpec {
@@ -351,7 +349,7 @@ mod tests {
                 },
                 MockRelocationSpec { offset: 0x2000, type_id: 100 },
             ],
-        });
+        }.real());
         context.base_mut().start_relocation_table_processing(table);
 
         let symbol = symbol_with_value(0x2000);
@@ -362,9 +360,9 @@ mod tests {
     #[test]
     fn returns_none_when_no_relocation_matches_the_offset() {
         let mut context = create_context();
-        let table: Arc<dyn ElfRelocationTable> = Arc::new(MockRelocationTable {
+        let table: Arc<ElfRelocationTable> = Arc::new(MockRelocationTable {
             relocations: vec![MockRelocationSpec { offset: 0x1000, type_id: 2 }],
-        });
+        }.real());
         context.base_mut().start_relocation_table_processing(table);
 
         let symbol = symbol_with_value(0x9999);
@@ -374,9 +372,9 @@ mod tests {
     #[test]
     fn returns_none_when_offset_matches_but_no_hi20_relocation_present() {
         let mut context = create_context();
-        let table: Arc<dyn ElfRelocationTable> = Arc::new(MockRelocationTable {
+        let table: Arc<ElfRelocationTable> = Arc::new(MockRelocationTable {
             relocations: vec![MockRelocationSpec { offset: 0x2000, type_id: 2 }],
-        });
+        }.real());
         context.base_mut().start_relocation_table_processing(table);
 
         let symbol = symbol_with_value(0x2000);

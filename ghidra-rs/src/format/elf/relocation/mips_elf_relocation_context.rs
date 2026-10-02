@@ -68,8 +68,9 @@ use crate::format::elf::relocation::elf_relocation_context::{
 };
 use crate::format::elf::relocation::elf_relocation_type::ElfRelocationType;
 use crate::format::elf::relocation::mips_elf_relocation_type::MipsElfRelocationType;
+use crate::format::elf::elf_relocation::ElfRelocation;
 use crate::format::seam_stubs::{
-    elf_relocation_handler, ElfRelocation, MipsDeferredRelocation, MipsElfRelocationHandler,
+    elf_relocation_handler, MipsDeferredRelocation, MipsElfRelocationHandler,
 };
 use crate::program::model::address::range::AddressRange;
 use crate::program::model::address::Address;
@@ -196,7 +197,7 @@ impl MipsElfRelocationContext {
     /// Ports Java's private `doRelocate`.
     fn do_relocate(
         &self,
-        relocation: &dyn ElfRelocation,
+        relocation: &ElfRelocation,
         relocation_address: &Address,
         reloc_type: i32,
         symbol_index: i32,
@@ -360,7 +361,7 @@ impl MipsElfRelocationContext {
     ///
     /// If true, the computed value should be stored to [`saved_addend`](Self::saved_addend) and
     /// [`use_saved_addend`](Self::use_saved_addend) set true.
-    pub fn next_relocation_has_same_offset(&self, relocation: &dyn ElfRelocation) -> bool {
+    pub fn next_relocation_has_same_offset(&self, relocation: &ElfRelocation) -> bool {
         let Some(table) = self.base.relocation_table() else {
             return false;
         };
@@ -391,7 +392,7 @@ impl MipsElfRelocationContext {
         let section_name = self
             .base
             .relocation_table()
-            .and_then(|table| table.get_section_to_be_relocated())
+            .and_then(|table| table.get_section_to_be_relocated(self.base.get_elf_header()))
             .map(|section| section.get_name_as_string())
             .unwrap_or_default();
         format!("{}{section_name}", elf_relocation_handler::GOT_BLOCK_NAME)
@@ -500,7 +501,7 @@ impl ElfRelocationContext for MipsElfRelocationContext {
 
     fn process_relocation_for_symbol(
         &self,
-        relocation: &dyn ElfRelocation,
+        relocation: &ElfRelocation,
         _elf_symbol: &ElfSymbol,
         relocation_address: &Address,
     ) -> Result<RelocationResult, RelocationProcessingError> {
@@ -614,11 +615,11 @@ mod tests {
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC};
     use crate::app::util::importer::message_log::MessageLog;
     use crate::format::elf::elf_header::ElfHeader;
-    use crate::format::elf::elf_section_header::ElfSectionHeader;
     use crate::format::elf::elf_string_table::ElfStringTable;
     use crate::format::elf::elf_symbol_table::ElfSymbolTable;
     use crate::format::elf::elf_test_image::{minimal_header, ElfImage};
-    use crate::format::seam_stubs::{ElfRelocationHandler, ElfRelocationTable};
+    use crate::format::elf::elf_relocation_table::ElfRelocationTable;
+    use crate::format::seam_stubs::ElfRelocationHandler;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::program::Program;
     use crate::program::model::mem::MemoryAccessException;
@@ -637,8 +638,12 @@ mod tests {
     }
 
 
+    /// A parsed big-endian ELF32 `ET_REL` header whose section 1 is `.text`.
     fn mock_elf_header() -> ElfHeader {
-        minimal_header(false, false, 1)
+        let mut img = ElfImage::new(false, false);
+        img.e_type = 1;
+        img.add_section(".text", 1, 0x6, 0x1000, &[0u8; 4]);
+        img.parse()
     }
 
     struct MockLoadHelper {
@@ -784,33 +789,21 @@ mod tests {
         relocation_index: i32,
     }
 
+    impl MockRelocation {
+        /// A real ELF64 relocation entry with this symbol index, type, offset and table index.
+        fn real(self) -> ElfRelocation {
+            let info = ((self.symbol_index as i64) << 32) | (self.type_id as u32 as i64);
+            ElfRelocation::from_values(false, self.relocation_index, false, self.offset, info, 0)
+        }
+    }
+
     impl Default for MockRelocation {
         fn default() -> Self {
             MockRelocation { symbol_index: 0, type_id: 0, offset: 0, relocation_index: -1 }
         }
     }
 
-    impl ElfRelocation for MockRelocation {
-        fn get_symbol_index(&self) -> i32 {
-            self.symbol_index
-        }
-        fn get_type(&self) -> i32 {
-            self.type_id
-        }
-        fn get_offset(&self) -> i64 {
-            self.offset
-        }
-        fn get_relocation_index(&self) -> i32 {
-            self.relocation_index
-        }
-    }
 
-    /// A real `.text` section header, parsed from a synthetic ELF32 image.
-    fn text_section() -> ElfSectionHeader {
-        let mut img = ElfImage::new(false, false);
-        img.add_section(".text", 1, 0x6, 0x1000, &[0u8; 4]);
-        img.parse().get_sections()[1].clone()
-    }
 
     /// A relocation table holding a fixed list of `(offset, type)` pairs.
     struct MockRelocationTable {
@@ -825,29 +818,29 @@ mod tests {
         }
     }
 
-    impl ElfRelocationTable for MockRelocationTable {
-        fn has_addend_relocations(&self) -> bool {
-            self.has_addend
-        }
-        fn get_associated_symbol_table(&self) -> Option<Arc<ElfSymbolTable>> {
-            None
-        }
-        fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
-            self.entries
+    impl MockRelocationTable {
+        /// The real table these entries describe; `with_section` relocates section 1 (`.text`).
+        fn real(self) -> ElfRelocationTable {
+            let relocs = self
+                .entries
                 .iter()
                 .enumerate()
                 .map(|(i, (offset, type_id))| {
-                    Box::new(MockRelocation {
+                    MockRelocation {
                         offset: *offset,
                         type_id: *type_id,
                         relocation_index: i as i32,
                         ..MockRelocation::default()
-                    }) as Box<dyn ElfRelocation>
+                    }
+                    .real()
                 })
-                .collect()
-        }
-        fn get_section_to_be_relocated(&self) -> Option<ElfSectionHeader> {
-            self.with_section.then(text_section)
+                .collect();
+            ElfRelocationTable::from_relocations(
+                relocs,
+                self.has_addend,
+                None,
+                self.with_section.then_some(1),
+            )
         }
     }
 
@@ -964,7 +957,7 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             with_section: true,
             ..MockRelocationTable::empty()
-        }));
+        }.real()));
         assert_eq!(context.get_section_got_name(), "%got.text");
     }
 
@@ -987,12 +980,10 @@ mod tests {
                 (0x200, r_mips_none), // 3: last entry
             ],
             ..MockRelocationTable::empty()
-        }));
+        }.real()));
 
-        let at = |index: i32| MockRelocation {
-            relocation_index: index,
-            ..MockRelocation::default()
-        };
+        let at = |index: i32| MockRelocation { relocation_index: index,
+            ..MockRelocation::default() }.real();
         assert!(context.next_relocation_has_same_offset(&at(0)));
         assert!(!context.next_relocation_has_same_offset(&at(1)));
         // Same offset, but the follower is R_MIPS_NONE.
@@ -1009,7 +1000,7 @@ mod tests {
         let helper = Arc::new(MockLoadHelper::new());
         let mut context = context_with(helper);
 
-        context.start_relocation_table_processing(Arc::new(MockRelocationTable::empty()));
+        context.start_relocation_table_processing(Arc::new(MockRelocationTable::empty().real()));
         assert!(context.extract_addend());
 
         context.use_saved_addend.set(true);
@@ -1019,7 +1010,7 @@ mod tests {
         context.start_relocation_table_processing(Arc::new(MockRelocationTable {
             has_addend: true,
             ..MockRelocationTable::empty()
-        }));
+        }.real()));
         assert!(!context.extract_addend());
     }
 
@@ -1057,7 +1048,7 @@ mod tests {
             ..MockLoadHelper::new()
         });
         let mut context = context_with(helper);
-        context.start_relocation_table_processing(Arc::new(MockRelocationTable::empty()));
+        context.start_relocation_table_processing(Arc::new(MockRelocationTable::empty().real()));
 
         context.add_hi16_relocation(MipsDeferredRelocation {
             reloc_type: MipsElfRelocationType::R_MIPS_HI16,
@@ -1103,7 +1094,7 @@ mod tests {
 
         let result = context
             .process_relocation_for_symbol(
-                &MockRelocation::default(),
+                &MockRelocation::default().real(),
                 &ElfSymbol::new(),
                 &address(0x2000),
             )
@@ -1120,7 +1111,7 @@ mod tests {
             fn relocate(
                 &self,
                 _context: &dyn ElfRelocationContext,
-                _relocation: &dyn ElfRelocation,
+                _relocation: &ElfRelocation,
                 _relocation_address: &Address,
             ) -> Result<RelocationResult, RelocationProcessingError> {
                 unimplemented!("not exercised by this test")
@@ -1153,7 +1144,7 @@ mod tests {
             fn relocate(
                 &self,
                 _elf_relocation_context: &dyn ElfRelocationContext,
-                _relocation: &dyn ElfRelocation,
+                _relocation: &ElfRelocation,
                 _relocation_type: MipsElfRelocationType,
                 _relocation_address: &Address,
                 _elf_symbol: &ElfSymbol,

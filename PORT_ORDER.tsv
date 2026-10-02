@@ -1215,7 +1215,7 @@ DONE	struct	15	51	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/b
 DONE	struct	15	51	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfProgramHeader.java
 TODO	struct	18	52	93	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationTableDataType.java
 TODO	struct	17	50	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationOffset.java
-TODO	struct	16	52	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfRelocation.java
+DONE	struct	16	52	72	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfRelocation.java
 TODO	struct	16	50	71	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfRelrRelocationTableDataType.java
 DONE	struct	16	55	92	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfSectionHeader.java
 DONE	struct	17	52	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfStringTable.java

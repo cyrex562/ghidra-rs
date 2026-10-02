@@ -24,10 +24,8 @@
 //! * `ElfExtensionFactory.getLoadAdapter(this)` (a `ClassSearcher` scan for processor
 //!   `ElfExtension`s whose `canHandle(ElfHeader)` accepts this image) has no ported extensions to
 //!   find; with none, Java keeps the default [`ElfLoadAdapter`], which is what this port does.
-//! * **Relocation tables are not parsed yet.** `parseRelocationTables` depends on
-//!   `ElfRelocationTable`/`ElfRelocation`, which are still `format::seam_stubs` placeholders
-//!   (parked); [`get_relocation_tables`](ElfHeader::get_relocation_tables) therefore has nothing
-//!   to return until they are ported. Everything else `parse()` does is ported.
+//! * Relocation tables are shared with relocation processing, so they are held as
+//!   `Arc<ElfRelocationTable>`; they refer to sections by index.
 //! * `Msg.debug` diagnostics are dropped; `errorConsumer` messages are delivered unchanged.
 
 use std::cell::Cell;
@@ -52,10 +50,12 @@ use crate::format::elf::elf_file_section::ElfFileSection;
 use crate::format::elf::elf_program_header::ElfProgramHeader;
 use crate::format::elf::elf_program_header_constants::{PT_DYNAMIC, PT_LOAD, PT_PHDR};
 use crate::format::elf::elf_program_header_type::{self, ElfProgramHeaderType};
+use crate::format::elf::elf_relocation_table::{ElfRelocationTable, TableFormat};
 use crate::format::elf::elf_section_header::ElfSectionHeader;
 use crate::format::elf::elf_section_header_constants::{
-    DOT_DYNSYM, SHN_LORESERVE, SHN_XINDEX, SHT_DYNAMIC, SHT_DYNSYM, SHT_GNU_VERDEF,
-    SHT_GNU_VERNEED, SHT_NULL, SHT_STRTAB, SHT_SYMTAB, SHT_SYMTAB_SHNDX,
+    DOT_DYNSYM, SHN_LORESERVE, SHN_XINDEX, SHT_ANDROID_REL, SHT_ANDROID_RELA, SHT_ANDROID_RELR,
+    SHT_DYNAMIC, SHT_DYNSYM, SHT_GNU_VERDEF, SHT_GNU_VERNEED, SHT_NULL, SHT_REL, SHT_RELA,
+    SHT_RELR, SHT_STRTAB, SHT_SYMTAB, SHT_SYMTAB_SHNDX,
 };
 use crate::format::elf::elf_section_header_type::{self, ElfSectionHeaderType};
 use crate::format::elf::elf_string_table::ElfStringTable;
@@ -146,6 +146,7 @@ pub struct ElfHeader {
     program_headers: Vec<ElfProgramHeader>,
     string_tables: Vec<ElfStringTable>,
     symbol_tables: Vec<Arc<ElfSymbolTable>>,
+    relocation_tables: Vec<Arc<ElfRelocationTable>>,
     dynamic_table: Option<ElfDynamicTable>,
 
     /// Index into `string_tables`.
@@ -283,6 +284,7 @@ impl ElfHeader {
             program_headers: Vec::new(),
             string_tables: Vec::new(),
             symbol_tables: Vec::new(),
+            relocation_tables: Vec::new(),
             dynamic_table: None,
             dynamic_string_table: None,
             dynamic_symbol_table: None,
@@ -422,7 +424,7 @@ impl ElfHeader {
         self.parse_string_tables();
         self.parse_dynamic_library_names();
         self.parse_symbol_tables()?;
-        // parseRelocationTables(): not yet ported -- see the module documentation.
+        self.parse_relocation_tables()?;
 
         self.parse_gnu_d();
         self.parse_gnu_r();
@@ -503,6 +505,256 @@ impl ElfHeader {
             return;
         }
         // Java: "TODO ElfSectionHeader gnuVersionR = sections[0];" -- nothing is parsed.
+    }
+
+    fn parse_relocation_tables(&mut self) -> io::Result<()> {
+        let mut relocation_table_list: Vec<ElfRelocationTable> = Vec::new();
+
+        // Order of parsing and processing dynamic relocation tables can be important to ensure
+        // that GOT/PLT relocations are applied late.
+
+        use elf_dynamic_type as dt;
+        self.parse_dynamic_reloc_table(&mut relocation_table_list, &dt::dt_rel(), Some(&dt::dt_relent()), &dt::dt_relsz(), false)?;
+
+        self.parse_dynamic_reloc_table(&mut relocation_table_list, &dt::dt_rela(), Some(&dt::dt_relaent()), &dt::dt_relasz(), true)?;
+
+        if let Some(dynamic_table) = &self.dynamic_table {
+            if dynamic_table.contains_dynamic_value_of_type(&dt::dt_pltrel()) {
+                if let Ok(pltrel) = dynamic_table.get_dynamic_value_of_type(&dt::dt_pltrel()) {
+                    let is_rela = pltrel == dt::dt_rela().value as i64;
+                    self.parse_dynamic_reloc_table(&mut relocation_table_list, &dt::dt_jmprel(), None, &dt::dt_pltrelsz(), is_rela)?;
+                }
+            }
+        }
+
+        // Android versions
+        self.parse_dynamic_reloc_table(&mut relocation_table_list, &dt::dt_android_rel(), None, &dt::dt_android_relsz(), false)?;
+
+        self.parse_dynamic_reloc_table(&mut relocation_table_list, &dt::dt_android_rela(), None, &dt::dt_android_relasz(), true)?;
+
+        self.parse_dynamic_reloc_table(&mut relocation_table_list, &dt::dt_relr(), Some(&dt::dt_relrent()), &dt::dt_relrsz(), false)?;
+
+        self.parse_dynamic_reloc_table(&mut relocation_table_list, &dt::dt_android_relr(), Some(&dt::dt_android_relrent()), &dt::dt_android_relrsz(), false)?;
+
+        self.parse_jmp_reloc_table(&mut relocation_table_list)?;
+
+        // In general the above dynamic relocation tables should cover most cases, we will check
+        // section headers for possible custom relocation tables
+        for i in 0..self.section_headers.len() {
+            self.parse_section_based_relocation_table(i, &mut relocation_table_list)?;
+        }
+
+        self.relocation_tables = relocation_table_list.into_iter().map(Arc::new).collect();
+        Ok(())
+    }
+
+    fn parse_section_based_relocation_table(
+        &self,
+        section_index: usize,
+        relocation_table_list: &mut Vec<ElfRelocationTable>,
+    ) -> io::Result<()> {
+        let section = &self.section_headers[section_index];
+        let section_header_type = section.get_type();
+        let is_reloc_type = [SHT_REL, SHT_RELA, SHT_RELR, SHT_ANDROID_REL, SHT_ANDROID_RELA, SHT_ANDROID_RELR]
+            .iter()
+            .any(|t| *t as i32 == section_header_type);
+        if !is_reloc_type {
+            return Ok(());
+        }
+
+        if relocation_table_list.iter().any(|t| t.get_file_offset() == section.get_offset()) {
+            return Ok(()); // skip reloc table previously parsed as dynamic entry
+        }
+
+        if section.is_invalid_offset() {
+            // Java: Msg.debug("Skipping Elf relocation table section with invalid offset ...")
+            return Ok(());
+        }
+
+        let result = (|| -> Result<ElfRelocationTable, LinkedSectionError> {
+            // section index of associated symbol table
+            let link = section.get_link();
+            // section index of section to which relocations apply (relocation offset base)
+            let info = section.get_info();
+
+            let section_to_be_relocated =
+                if info != 0 { Some(self.get_linked_section_index(info, &[])?) } else { None };
+
+            let symbol_table_section = if link == 0 {
+                // dynamic symbol table assumed when link section value is 0
+                self.get_section(DOT_DYNSYM).ok().flatten()
+            } else {
+                let idx = self.get_linked_section_index(
+                    link,
+                    &[SHT_DYNSYM as i32, SHT_SYMTAB as i32],
+                )?;
+                Some(&self.section_headers[idx])
+            };
+
+            let symbol_table = self.get_symbol_table(symbol_table_section).cloned();
+
+            let addend_type_reloc = section_header_type == SHT_RELA as i32
+                || section_header_type == SHT_ANDROID_RELA as i32;
+
+            let format = if section_header_type == SHT_ANDROID_REL as i32
+                || section_header_type == SHT_ANDROID_RELA as i32
+            {
+                TableFormat::Android
+            } else if section_header_type == SHT_RELR as i32
+                || section_header_type == SHT_ANDROID_RELR as i32
+            {
+                TableFormat::Relr
+            } else {
+                TableFormat::Default
+            };
+
+            Ok(ElfRelocationTable::new(
+                &self.reader,
+                self,
+                Some(section_index),
+                section.get_offset(),
+                section.get_address(),
+                section.get_size(),
+                section.get_entry_size(),
+                addend_type_reloc,
+                symbol_table,
+                section_to_be_relocated,
+                format,
+            )?)
+        })();
+        match result {
+            Ok(table) => relocation_table_list.push(table),
+            Err(LinkedSectionError::NotFound(e)) => self.log_error(&format!(
+                "Failed to process relocation section {}: {}",
+                section.get_name_as_string(),
+                e.0
+            )),
+            Err(LinkedSectionError::Io(e)) => return Err(e),
+        }
+        Ok(())
+    }
+
+    fn parse_jmp_reloc_table(
+        &self,
+        relocation_table_list: &mut Vec<ElfRelocationTable>,
+    ) -> io::Result<()> {
+        let Some(dynamic_table) = &self.dynamic_table else {
+            return Ok(());
+        };
+        let addend_type_reloc =
+            match dynamic_table.get_dynamic_value_of_type(&elf_dynamic_type::dt_pltrel()) {
+                Ok(table_type) => table_type == elf_dynamic_type::dt_rela().value as i64,
+                Err(_) => return Ok(()), // ignore - skip
+            };
+        let entry_size_type = if addend_type_reloc {
+            elf_dynamic_type::dt_relaent()
+        } else {
+            elf_dynamic_type::dt_relent()
+        };
+        self.parse_dynamic_reloc_table(
+            relocation_table_list,
+            &elf_dynamic_type::dt_jmprel(),
+            Some(&entry_size_type),
+            &elf_dynamic_type::dt_pltrelsz(),
+            addend_type_reloc,
+        )
+    }
+
+    fn parse_dynamic_reloc_table(
+        &self,
+        relocation_table_list: &mut Vec<ElfRelocationTable>,
+        reloc_table_addr_type: &ElfDynamicType,
+        reloc_entry_size_type: Option<&ElfDynamicType>,
+        reloc_table_size_type: &ElfDynamicType,
+        addend_type_reloc: bool,
+    ) -> io::Result<()> {
+        let Some(dynamic_table) = &self.dynamic_table else {
+            return Ok(());
+        };
+
+        // NOTE: Dynamic and Relocation tables are loaded into memory, however, we construct them
+        // without loading so we must map memory addresses back to file offsets.
+        let Ok(addr) = dynamic_table.get_dynamic_value_of_type(reloc_table_addr_type) else {
+            return Ok(()); // ignore - skip (required dynamic table value is missing)
+        };
+        let reloc_table_addr = self.adjust_address_for_prelink(addr);
+
+        if let Some(section) = self.get_section_load_header_containing(reloc_table_addr) {
+            let idx = self
+                .section_headers
+                .iter()
+                .position(|s| std::ptr::eq(s, section))
+                .expect("section comes from this header");
+            return self.parse_section_based_relocation_table(idx, relocation_table_list);
+        }
+
+        let Some(reloc_table_load_header) = self.get_program_load_header_containing(reloc_table_addr)
+        else {
+            self.log_error(&format!(
+                "Failed to locate {} in memory at 0x{:x}",
+                reloc_table_addr_type.name, reloc_table_addr
+            ));
+            return Ok(());
+        };
+        if reloc_table_load_header.is_invalid_offset() {
+            return Ok(());
+        }
+
+        let reloc_table_offset = reloc_table_load_header
+            .get_offset_of(reloc_table_addr)
+            .map_err(|e| io::Error::new(io::ErrorKind::Unsupported, e))?;
+        if relocation_table_list.iter().any(|t| t.get_file_offset() == reloc_table_offset) {
+            return Ok(()); // skip reloc table previously parsed
+        }
+        let table_entry_size = match reloc_entry_size_type {
+            Some(t) => match dynamic_table.get_dynamic_value_of_type(t) {
+                Ok(v) => v,
+                Err(_) => return Ok(()),
+            },
+            None => -1,
+        };
+        let Ok(table_size) = dynamic_table.get_dynamic_value_of_type(reloc_table_size_type) else {
+            return Ok(());
+        };
+
+        let value = reloc_table_addr_type.value;
+        let format = if value == elf_dynamic_type::dt_android_rel().value
+            || value == elf_dynamic_type::dt_android_rela().value
+        {
+            TableFormat::Android
+        } else if value == elf_dynamic_type::dt_relr().value
+            || value == elf_dynamic_type::dt_android_relr().value
+        {
+            TableFormat::Relr
+        } else {
+            TableFormat::Default
+        };
+
+        let reloc_table = ElfRelocationTable::new(
+            &self.reader,
+            self,
+            None,
+            reloc_table_offset,
+            reloc_table_addr,
+            table_size,
+            table_entry_size,
+            addend_type_reloc,
+            self.get_dynamic_symbol_table().cloned(),
+            None,
+            format,
+        )?;
+        relocation_table_list.push(reloc_table);
+        Ok(())
+    }
+
+    /// Index of the linked section at `section_index`, optionally required to be one of
+    /// `expected_types`. Mirrors `getLinkedSection(int, int...)`.
+    fn get_linked_section_index(
+        &self,
+        section_index: i32,
+        expected_types: &[i32],
+    ) -> Result<usize, NotFoundException> {
+        self.get_linked_section(section_index, expected_types).map(|_| section_index as usize)
     }
 
     /// Linked section at `section_index`, optionally required to be one of `expected_types`.
@@ -1470,6 +1722,21 @@ impl ElfHeader {
         self.symbol_tables.iter().find(|t| t.get_file_offset() == section.get_offset())
     }
 
+    /// All relocation tables.
+    pub fn get_relocation_tables(&self) -> &[Arc<ElfRelocationTable>] {
+        &self.relocation_tables
+    }
+
+    /// The relocation table defined by `reloc_section` (matched by file offset), or `None`.
+    pub fn get_relocation_table(&self, reloc_section: &ElfSectionHeader) -> Option<&Arc<ElfRelocationTable>> {
+        self.get_relocation_table_at_offset(reloc_section.get_offset())
+    }
+
+    /// The relocation table located at `file_offset`, or `None`.
+    pub fn get_relocation_table_at_offset(&self, file_offset: i64) -> Option<&Arc<ElfRelocationTable>> {
+        self.relocation_tables.iter().find(|t| t.get_file_offset() == file_offset)
+    }
+
     /// `Short.toString(e_machine)`.
     pub fn get_machine_name(&self) -> String {
         self.e_machine.to_string()
@@ -1493,6 +1760,25 @@ impl ElfHeader {
     /// Ordinal of the `e_shoff` component.
     pub fn get_shoff_component_ordinal(&self) -> i32 {
         13
+    }
+}
+
+/// The two ways locating a relocation table's linked sections can fail: a bad link
+/// (`NotFoundException`, logged and skipped) or an IO error (propagated).
+enum LinkedSectionError {
+    NotFound(NotFoundException),
+    Io(io::Error),
+}
+
+impl From<NotFoundException> for LinkedSectionError {
+    fn from(e: NotFoundException) -> Self {
+        LinkedSectionError::NotFound(e)
+    }
+}
+
+impl From<io::Error> for LinkedSectionError {
+    fn from(e: io::Error) -> Self {
+        LinkedSectionError::Io(e)
     }
 }
 
@@ -1570,6 +1856,7 @@ mod tests {
     use crate::format::elf::elf_section_header_constants::{
         SHF_ALLOC, SHF_EXECINSTR, SHF_WRITE, SHT_HASH, SHT_PROGBITS,
     };
+    use std::sync::Arc;
     use crate::format::elf::elf_symbol::{STB_GLOBAL, STT_FUNC, STT_SECTION};
     use crate::format::elf::elf_test_image::{parse_bytes, provider, ElfImage, StrTab};
 
@@ -1940,6 +2227,194 @@ mod tests {
         assert_eq!(names, ["SECTION0", "SECTION1", "SECTION2", "SECTION3", "SECTION4"]);
     }
 
+    /// `static_image` plus a `.rela.text` section (2 entries) relocating `.text` against
+    /// `.symtab`.
+    #[test]
+    fn parses_section_based_rela_table() {
+        for (is64, le) in [(false, true), (true, false)] {
+            let mut img = static_image(is64, le);
+            let e = img.enc;
+            let mut rela = Vec::new();
+            for (off, sym, ty, addend) in [(0x10u64, 2u64, 1u64, -4i64), (0x18, 1, 2, 0x20)] {
+                rela.extend(e.addr(off));
+                rela.extend(e.addr(if is64 { (sym << 32) | ty } else { (sym << 8) | ty }));
+                rela.extend(e.addr(addend as u64));
+            }
+            let idx = img.add_section(".rela.text", SHT_RELA, 0, 0, &rela);
+            img.section_mut(idx).sh_link = 3; // .symtab
+            img.section_mut(idx).sh_info = 1; // .text
+            img.section_mut(idx).sh_entsize = if is64 { 24 } else { 12 };
+            let elf = img.parse();
+
+            assert_eq!(elf.get_relocation_tables().len(), 1);
+            let section = elf.get_section(".rela.text").unwrap().unwrap();
+            let table = elf.get_relocation_table(section).unwrap();
+            assert!(table.has_addend_relocations());
+            assert!(!table.is_relr_table());
+            assert!(!table.is_missing_required_symbol_table());
+            assert_eq!(table.get_relocation_count(), 2);
+            assert_eq!(table.get_entry_size(), if is64 { 24 } else { 12 });
+            assert_eq!(
+                table.get_section_to_be_relocated(&elf).unwrap().get_name_as_string(),
+                ".text"
+            );
+            assert_eq!(
+                table.get_table_section_header(&elf).unwrap().get_name_as_string(),
+                ".rela.text"
+            );
+            let symtab = table.get_associated_symbol_table().unwrap();
+            assert!(Arc::ptr_eq(symtab, &elf.get_symbol_tables()[0]));
+
+            let r = &table.get_relocations()[0];
+            assert_eq!(r.get_offset(), 0x10);
+            assert_eq!(r.get_symbol_index(), 2);
+            assert_eq!(r.get_type(), 1);
+            assert_eq!(r.get_addend(), if is64 { -4 } else { -4i32 as i64 });
+            assert_eq!(r.get_relocation_index(), 0);
+            assert_eq!(symtab.get_symbol_name(r.get_symbol_index()).as_deref(), Some("main"));
+            let r = &table.get_relocations()[1];
+            assert_eq!((r.get_offset(), r.get_symbol_index(), r.get_type(), r.get_addend()), (0x18, 1, 2, 0x20));
+            assert_eq!(
+                r.to_string(),
+                "Offset: 0x18 - Type: 0x2 - Symbol: 0x1 - Addend: 0x20"
+            );
+
+            let dt = table.to_data_type(&elf).unwrap();
+            assert_eq!(dt.get_length(), 2 * table.get_entry_size());
+        }
+    }
+
+    /// `DT_RELA`/`DT_RELASZ`/`DT_RELAENT` locate a RELA table inside the `PT_LOAD`; with
+    /// section headers it is parsed through its (allocated) section, without them from the
+    /// dynamic table alone, associated with the dynamic symbol table.
+    #[test]
+    fn parses_dynamic_rela_table_with_and_without_sections() {
+        for with_sections in [true, false] {
+            let bytes = dynamic_image_with_rela(with_sections);
+            let elf = parse_bytes(bytes);
+            let tables = elf.get_relocation_tables();
+            assert_eq!(tables.len(), 1, "with_sections={with_sections}");
+            let table = &tables[0];
+            assert_eq!(table.get_relocation_count(), 1);
+            let r = &table.get_relocations()[0];
+            assert_eq!((r.get_offset(), r.get_symbol_index(), r.get_type()), (0x10020, 1, 7));
+            assert_eq!(r.get_addend(), 0);
+            let symtab = table.get_associated_symbol_table().expect("dynamic symbol table");
+            assert!(Arc::ptr_eq(symtab, elf.get_dynamic_symbol_table().unwrap()));
+            assert_eq!(table.get_table_section_header_index().is_some(), with_sections);
+        }
+    }
+
+    /// `dynamic_image` (ELF64 LE) plus one `R_X86_64_JUMP_SLOT`-style RELA entry.
+    fn dynamic_image_with_rela(with_sections: bool) -> Vec<u8> {
+        let mut img = ElfImage::new(true, true);
+        img.e_type = ET_DYN;
+        img.no_sections = !with_sections;
+        let e = img.enc;
+
+        let mut dynstr = StrTab::new();
+        let puts = dynstr.add("puts");
+        let dynstr_bytes = dynstr.bytes();
+        let dynstr_off = img.next_offset();
+        let dynstr_idx = img.add_section(".dynstr", SHT_STRTAB, SHF_ALLOC as u64, BASE + dynstr_off, &dynstr_bytes);
+
+        let mut syms = e.sym(0, 0, 0, 0, 0, 0);
+        syms.extend(e.sym(puts, 0, 0, (STB_GLOBAL << 4) | STT_FUNC, 0, 0));
+        let dynsym_off = img.next_offset();
+        let dynsym_idx = img.add_section(".dynsym", SHT_DYNSYM, SHF_ALLOC as u64, BASE + dynsym_off, &syms);
+        img.section_mut(dynsym_idx).sh_link = dynstr_idx;
+        img.section_mut(dynsym_idx).sh_entsize = 24;
+
+        let mut hash = Vec::new();
+        for w in [1u32, 2, 1, 0, 0] {
+            hash.extend(e.u32(w));
+        }
+        let hash_off = img.next_offset();
+        img.add_section(".hash", SHT_HASH, SHF_ALLOC as u64, BASE + hash_off, &hash);
+
+        let mut rela = e.u64(0x10020);
+        rela.extend(e.u64((1 << 32) | 7));
+        rela.extend(e.u64(0));
+        let rela_off = img.next_offset();
+        let rela_idx = img.add_section(".rela.plt", SHT_RELA, SHF_ALLOC as u64, BASE + rela_off, &rela);
+        img.section_mut(rela_idx).sh_link = dynsym_idx;
+        img.section_mut(rela_idx).sh_entsize = 24;
+
+        let mut dyns = Vec::new();
+        for (tag, val) in [
+            (4i64, BASE + hash_off),
+            (5, BASE + dynstr_off),
+            (6, BASE + dynsym_off),
+            (10, dynstr_bytes.len() as u64),
+            (11, 24),
+            (7, BASE + rela_off), // DT_RELA
+            (8, 24),              // DT_RELASZ
+            (9, 24),              // DT_RELAENT
+            (0, 0),
+        ] {
+            dyns.extend(e.dyn_(tag, val));
+        }
+        let dyn_off = img.next_offset();
+        let dyn_len = dyns.len() as u64;
+        img.add_section(".dynamic", SHT_DYNAMIC, (SHF_ALLOC | SHF_WRITE) as u64, BASE + dyn_off, &dyns);
+
+        let end = img.next_offset();
+        img.add_segment(PT_LOAD, 6, 0, BASE, end, end);
+        img.add_segment(PT_DYNAMIC, 6, dyn_off, BASE + dyn_off, dyn_len, dyn_len);
+        img.build()
+    }
+
+    #[test]
+    fn parses_relr_table() {
+        let mut img = static_image(true, true);
+        let e = img.enc;
+        let mut relr = e.u64(0x10000); // an address: one relocation there
+        relr.extend(e.u64(0b111)); // bitmap: the next two words
+        let idx = img.add_section(".relr.dyn", SHT_RELR, 0, 0, &relr);
+        img.section_mut(idx).sh_entsize = 8;
+        let elf = img.parse();
+        let table = elf.get_relocation_table(&elf.get_sections()[idx as usize]).unwrap();
+        assert!(table.is_relr_table());
+        let offsets: Vec<i64> = table.get_relocations().iter().map(|r| r.get_offset()).collect();
+        assert_eq!(offsets, [0x10000, 0x10008, 0x10010]);
+        assert!(table.get_relocations().iter().all(|r| r.get_type() == 0 && !r.has_addend()));
+        assert!(table.to_data_type(&elf).is_err(), "ElfRelrRelocationTableDataType is unported");
+    }
+
+    #[test]
+    fn parses_android_aps2_table() {
+        use crate::program::model::data::leb128::Leb128;
+        let mut img = static_image(true, true);
+        let mut aps2 = b"APS2".to_vec();
+        // count, base offset, group { size, flags = BY_INFO|BY_OFFSET_DELTA, delta, info }
+        for v in [2i64, 0x1000, 2, 3, 8, 0x17] {
+            aps2.extend(Leb128::encode(v, true));
+        }
+        let idx = img.add_section(".rel.dyn", SHT_ANDROID_REL, 0, 0, &aps2);
+        img.section_mut(idx).sh_link = 3;
+        let elf = img.parse();
+        let table = elf.get_relocation_table(&elf.get_sections()[idx as usize]).unwrap();
+        let got: Vec<(i64, i64)> =
+            table.get_relocations().iter().map(|r| (r.get_offset(), r.get_relocation_info())).collect();
+        assert_eq!(got, [(0x1008, 0x17), (0x1010, 0x17)]);
+        assert_eq!(table.get_relocations()[1].get_relocation_index(), 1);
+    }
+
+    #[test]
+    fn bad_relocation_links_are_reported_and_skipped() {
+        let mut img = static_image(false, true);
+        let idx = img.add_section(".rel.bad", SHT_REL, 0, 0, &[0u8; 8]);
+        img.section_mut(idx).sh_link = 2; // .strtab is not a symbol table
+        let (errors, consumer) = collecting();
+        let mut elf = ElfHeader::new(provider(img.build()), Some(consumer)).unwrap();
+        elf.parse().unwrap();
+        assert!(elf.get_relocation_tables().is_empty());
+        assert_eq!(
+            errors.borrow().as_slice(),
+            ["Failed to process relocation section .rel.bad: unexpected section type for section index 2"]
+        );
+    }
+
     /// Smoke test against a real binary, when the machine has one.
     #[test]
     fn parses_bin_ls_when_present() {
@@ -1966,6 +2441,9 @@ mod tests {
                 "{:?}",
                 elf.get_dynamic_library_names()
             );
+        }
+        if elf.get_dynamic_table().is_some() {
+            assert!(!elf.get_relocation_tables().is_empty(), "a dynamic binary has relocations");
         }
         assert!(errors.borrow().is_empty(), "{:?}", errors.borrow());
     }

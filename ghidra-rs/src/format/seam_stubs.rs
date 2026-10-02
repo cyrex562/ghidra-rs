@@ -596,73 +596,8 @@ impl ElfDefaultGotPltMarkup {
 // `ElfStringTable` and `ElfSymbolTable` were placeholders here; the real ports live in
 // `format::elf::elf_string_table` / `format::elf::elf_symbol_table`.
 
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocation`, referenced by
-/// [`ElfRelocationContext::process_relocation`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::process_relocation)
-/// and by [`RiscvElfRelocationContext::get_hi20_relocation`](crate::format::elf::relocation::riscv_elf_relocation_context::RiscvElfRelocationContext::get_hi20_relocation)
-/// before the real class is ported.
-pub trait ElfRelocation: Send + Sync {
-    /// `ElfRelocation.getSymbolIndex()` -- the symbol table index encoded in `r_info`.
-    fn get_symbol_index(&self) -> i32;
-
-    /// `ElfRelocation.getType()` -- the relocation type ID encoded in `r_info`.
-    fn get_type(&self) -> i32;
-
-    /// `ElfRelocation.getOffset()` -- the relocation's target offset (`r_offset`).
-    fn get_offset(&self) -> i64 {
-        0
-    }
-
-    /// `ElfRelocation.getRelocationIndex()` -- this relocation's index within its table, needed by
-    /// [`MipsElfRelocationContext::next_relocation_has_same_offset`](crate::format::elf::relocation::mips_elf_relocation_context::MipsElfRelocationContext::next_relocation_has_same_offset).
-    /// The default answers `-1` ("index unknown"), which that lookup already treats as "there is
-    /// no next relocation".
-    fn get_relocation_index(&self) -> i32 {
-        -1
-    }
-
-    /// `MIPS_Elf64Relocation.getSpecialSymbolIndex()` -- the `r_ssym` field of the modified ELF-64
-    /// relocation entry MIPS uses, read by the second slot of a packed MIPS-64 relocation.
-    ///
-    /// Java declares this on the `MIPS_Elf64Relocation` subclass and reaches it by downcasting the
-    /// `ElfRelocation` the context was handed. Rust trait objects cannot be downcast, and the
-    /// relocation arrives through [`ElfRelocationContext::process_relocation_for_symbol`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::process_relocation_for_symbol)
-    /// as a `&dyn ElfRelocation`, so the accessor is declared here instead. The default answers
-    /// `0`, the value a non-MIPS-64 entry has no `r_ssym` for.
-    fn get_special_symbol_index(&self) -> i32 {
-        0
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocationTable`, referenced by
-/// [`ElfRelocationContext::start_relocation_table_processing`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::start_relocation_table_processing)
-/// and by [`RiscvElfRelocationContext::get_hi20_relocation`](crate::format::elf::relocation::riscv_elf_relocation_context::RiscvElfRelocationContext::get_hi20_relocation)
-/// before the real class is ported.
-pub trait ElfRelocationTable: Send + Sync {
-    /// `ElfRelocationTable.hasAddendRelocations()` -- true for `RELA`-style tables, whose entries
-    /// carry their own addend.
-    fn has_addend_relocations(&self) -> bool;
-
-    /// `ElfRelocationTable.getAssociatedSymbolTable()`, which is `null` (here `None`) when the
-    /// table has no associated symbol table.
-    fn get_associated_symbol_table(
-        &self,
-    ) -> Option<std::sync::Arc<crate::format::elf::elf_symbol_table::ElfSymbolTable>>;
-
-    /// `ElfRelocationTable.getRelocations()` -- every relocation entry, in file order.
-    fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
-        Vec::new()
-    }
-
-    /// `ElfRelocationTable.getSectionToBeRelocated()` -- the section these relocations apply to,
-    /// which is `null` (here `None`) for a dynamic relocation table. Needed by
-    /// [`MipsElfRelocationContext`](crate::format::elf::relocation::mips_elf_relocation_context::MipsElfRelocationContext),
-    /// which names its fabricated GOT block after it.
-    fn get_section_to_be_relocated(
-        &self,
-    ) -> Option<crate::format::elf::elf_section_header::ElfSectionHeader> {
-        None
-    }
-}
+// `ElfRelocation` and `ElfRelocationTable` were placeholders here; the real ports live in
+// `format::elf::elf_relocation` / `format::elf::elf_relocation_table`.
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.relocation.ElfRelocationHandler`, referenced by
 /// [`ElfRelocationContext`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext)
@@ -696,7 +631,7 @@ pub trait ElfRelocationHandler: Send + Sync {
     fn relocate(
         &self,
         context: &dyn crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext,
-        relocation: &dyn ElfRelocation,
+        relocation: &crate::format::elf::elf_relocation::ElfRelocation,
         relocation_address: &crate::program::model::address::Address,
     ) -> Result<
         crate::program::model::reloc::RelocationResult,
