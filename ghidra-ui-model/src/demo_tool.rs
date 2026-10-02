@@ -143,6 +143,9 @@ pub fn build_demo_session() -> UiSession {
     );
 
     let tool = s.tool_mut();
+    tool.set_menu_group(&["&File"], Some("0"), None);
+    tool.set_menu_group(&["&Edit"], Some("1"), None);
+    tool.set_menu_group(&["&Search"], Some("2"), None);
     let mut exit = status_action("Exit", &events);
     exit.state.set_menu_bar_data(MenuData::full(&["&File", "E&xit"], None, Some("Z"), None, None).ok());
     tool.add_action(Box::new(exit));

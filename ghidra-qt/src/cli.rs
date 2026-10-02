@@ -15,6 +15,30 @@ pub struct Args {
     /// Quit automatically after this many milliseconds (0 = run interactively).
     #[arg(long, value_name = "MS", default_value_t = 0)]
     pub quit_after_ms: u32,
+
+    /// Print one line per dock (`title<TAB>area<TAB>view`) and exit.
+    #[arg(long)]
+    pub dump_docks: bool,
+
+    /// Print the built menu bar and exit.
+    #[arg(long)]
+    pub dump_menus: bool,
+
+    /// Restore ADS geometry from this file before showing.
+    #[arg(long, value_name = "FILE")]
+    pub restore_geometry: Option<PathBuf>,
+
+    /// After showing, send this key press (e.g. `Ctrl-F`) to the focused dock.
+    #[arg(long, value_name = "KEYS")]
+    pub press: Option<String>,
+
+    /// Focus the dock with this title before `--press`.
+    #[arg(long, value_name = "TITLE")]
+    pub focus: Option<String>,
+
+    /// Invoke a non-existent action from a Qt slot (error-path smoke test).
+    #[arg(long, hide = true)]
+    pub invoke_missing_action: bool,
 }
 
 /// Rejects option combinations the shell cannot honour.

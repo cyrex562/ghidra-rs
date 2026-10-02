@@ -22,13 +22,19 @@ fn main() {
         eprintln!("ghidra-qt: {msg}");
         std::process::exit(64);
     }
-    let session = bridge::UiSession::new(ghidra_ui_model::UiSession::new());
+    let session = bridge::install(ghidra_ui_model::demo_tool::build_demo_session());
     let options = bridge::ffi::AppOptions {
         screenshot_path: args
             .screenshot
             .map(|p| p.display().to_string())
             .unwrap_or_default(),
         quit_after_ms: args.quit_after_ms,
+        dump_docks: args.dump_docks,
+        dump_menus: args.dump_menus,
+        restore_geometry: args.restore_geometry.map(|p| p.display().to_string()).unwrap_or_default(),
+        press: args.press.unwrap_or_default(),
+        focus: args.focus.unwrap_or_default(),
+        invoke_missing_action: args.invoke_missing_action,
     };
     std::process::exit(bridge::ffi::run_app(&session, &options));
 }
