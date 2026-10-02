@@ -174,7 +174,11 @@ fn menu_bar_is_built_in_ghidra_order() {
 }
 
 fn press_status(focus: &str) -> String {
-    let out = shell()
+    // A fresh config: the default layout (Symbols and Program Tree tabbed),
+    // not whatever an earlier test saved.
+    let dir = tmp(&format!("config-press-{}", focus.replace(' ', "_")));
+    let _ = std::fs::remove_dir_all(&dir);
+    let out = shell_with_config(&dir)
         .args(["--press", "Ctrl-F", "--focus", focus, "--quit-after-ms", "1500"])
         .output()
         .expect("spawn");

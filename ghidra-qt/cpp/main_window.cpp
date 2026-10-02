@@ -134,10 +134,23 @@ bool MainWindow::focusDock(const QString& title) {
     if (!dock || !dock->widget()) return false;
     dock->toggleView(true);
     dock->setAsCurrentTab();
-    QWidget* target = dock->widget()->findChild<QAbstractItemView*>();
-    if (!target) target = dock->widget()->findChild<QTextEdit*>();
-    if (!target) target = dock->widget()->findChild<QLineEdit*>();
-    if (!target) target = dock->widget();
+    // The provider's main view: the dock's widget itself when it is one (a
+    // QTreeView's own children include its QHeaderView, which takes no focus),
+    // else the first focusable view/editor inside it.
+    QWidget* root = dock->widget();
+    auto focusable = [](QWidget* w) { return w && w->focusPolicy() != Qt::NoFocus; };
+    QWidget* target = nullptr;
+    if ((qobject_cast<QAbstractItemView*>(root) || qobject_cast<QTextEdit*>(root)) && focusable(root)) target = root;
+    for (QAbstractItemView* v : root->findChildren<QAbstractItemView*>()) {
+        if (!target && focusable(v)) target = v;
+    }
+    for (QTextEdit* t : root->findChildren<QTextEdit*>()) {
+        if (!target && focusable(t)) target = t;
+    }
+    for (QLineEdit* e : root->findChildren<QLineEdit*>()) {
+        if (!target && focusable(e)) target = e;
+    }
+    if (!target) target = root;
     target->setFocus(Qt::OtherFocusReason);
     return true;
 }
