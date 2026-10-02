@@ -1,11 +1,20 @@
 #include "ghidra-qt/cpp/main_window.h"
 
+#include <QAbstractItemView>
+#include <QApplication>
 #include <QCloseEvent>
+#include <QContextMenuEvent>
+#include <QMenu>
+#include <QMenuBar>
+#include <QProgressBar>
+#include <QTextEdit>
+#include <QToolBar>
 #include <QStatusBar>
 
 #include "DockAreaWidget.h"
 #include "DockManager.h"
 #include "DockWidget.h"
+#include "ghidra-qt/cpp/action_bridge.h"
 #include "ghidra-qt/cpp/bridge_call.h"
 #include "ghidra-qt/cpp/views/views.h"
 #include "ghidra-qt/src/bridge.rs.h"
@@ -50,7 +59,75 @@ MainWindow::MainWindow(const QString& title, QWidget* parent) : QMainWindow(pare
     // Config flags must be set before the dock manager is created.
     ads::CDockManager::setConfigFlag(ads::CDockManager::OpaqueSplitterResize, true);
     m_dockManager = new ads::CDockManager(this);
+    m_toolBar = addToolBar(QStringLiteral("Main"));
+    m_toolBar->setObjectName(QStringLiteral("MainToolBar"));
+    m_progress = new QProgressBar(this);
+    m_progress->setMaximumWidth(200);
+    m_progress->hide();
+    statusBar()->addPermanentWidget(m_progress);
     buildDocks();
+    installPopups();
+    rebuildActions();
+    connect(qApp, &QApplication::focusChanged, this, [this] { rebuildActions(); });
+}
+
+MainWindow::~MainWindow() { QObject::disconnect(qApp, nullptr, this, nullptr); }
+
+int64_t MainWindow::providerOfObject(QObject* object) const {
+    for (QObject* o = object; o; o = o->parent()) {
+        if (auto* dock = qobject_cast<ads::CDockWidget*>(o)) return providerOf(dock);
+    }
+    return -1;
+}
+
+int64_t MainWindow::focusedProvider() const { return providerOfObject(QApplication::focusWidget()); }
+
+void MainWindow::rebuildActions() {
+    const FocusedProvider focused = [this] { return focusedProvider(); };
+    rebuildMenuBar(menuBar(), statusBar(), focused);
+    rebuildToolBar(m_toolBar, statusBar(), focused);
+}
+
+void MainWindow::showTaskProgress(const QString& message, uint64_t progress, uint64_t maximum) {
+    if (message.isEmpty() && maximum == 0) {
+        m_progress->hide();
+        return;
+    }
+    m_progress->setRange(0, static_cast<int>(maximum));
+    m_progress->setValue(static_cast<int>(progress));
+    m_progress->setFormat(message + QStringLiteral(" %p%"));
+    m_progress->show();
+}
+
+QStringList MainWindow::menuSummary() { return dumpMenuBar(menuBar()); }
+
+bool MainWindow::focusDock(const QString& title) {
+    ads::CDockWidget* dock = dockByTitle(title);
+    if (!dock || !dock->widget()) return false;
+    dock->toggleView(true);
+    dock->setAsCurrentTab();
+    QWidget* target = dock->widget()->findChild<QAbstractItemView*>();
+    if (!target) target = dock->widget()->findChild<QTextEdit*>();
+    if (!target) target = dock->widget();
+    target->setFocus(Qt::OtherFocusReason);
+    return true;
+}
+
+// Popups: a context-menu request inside a dock shows that provider's popup.
+void MainWindow::installPopups() {
+    for (auto it = m_providers.constBegin(); it != m_providers.constEnd(); ++it) {
+        QWidget* content = it.key()->widget();
+        if (!content) continue;
+        const uint64_t pid = static_cast<uint64_t>(it.value());
+        for (QWidget* w : content->findChildren<QWidget*>()) {
+            w->setContextMenuPolicy(Qt::CustomContextMenu);
+            connect(w, &QWidget::customContextMenuRequested, this, [this, w, pid](const QPoint& at) {
+                QMenu* menu = buildPopup(pid, this, statusBar());
+                if (!menu->isEmpty()) menu->exec(w->mapToGlobal(at));
+                menu->deleteLater();
+            });
+        }
+    }
 }
 
 void MainWindow::buildDocks() {

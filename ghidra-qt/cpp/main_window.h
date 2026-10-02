@@ -4,6 +4,9 @@
 #include <QString>
 #include <cstdint>
 
+class QProgressBar;
+class QToolBar;
+
 namespace ads {
 class CDockManager;
 class CDockWidget;
@@ -18,6 +21,9 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(const QString& title, QWidget* parent = nullptr);
+    // Disconnects application-wide signals before children are destroyed
+    // (focusChanged fires during teardown).
+    ~MainWindow() override;
     ads::CDockManager* dockManager() const { return m_dockManager; }
 
     // "title<TAB>area<TAB>view" per dock, for smoke tests.
@@ -28,12 +34,27 @@ public:
     ads::CDockWidget* dockByTitle(const QString& title) const;
     // Provider id of a dock (or -1).
     int64_t providerOf(ads::CDockWidget* dock) const;
+    // Provider id owning a widget/object (walks parents to its dock), or -1.
+    int64_t providerOfObject(QObject* object) const;
+    // Provider of the focused widget, or -1.
+    int64_t focusedProvider() const;
+    // Rebuilds menu bar and toolbar from Rust (focus/action changes).
+    void rebuildActions();
+    // Status-bar task progress; empty message + 0/0 hides it.
+    void showTaskProgress(const QString& message, uint64_t progress, uint64_t maximum);
+    // The built menu bar as text (smoke tests).
+    QStringList menuSummary();
+    // Gives keyboard focus to the main view inside a dock; false if none.
+    bool focusDock(const QString& title);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
     void buildDocks();
+    void installPopups();
+    QToolBar* m_toolBar = nullptr;
+    QProgressBar* m_progress = nullptr;
     ads::CDockManager* m_dockManager;
     QMap<ads::CDockWidget*, int64_t> m_providers;
     QMap<ads::CDockWidget*, QString> m_areaNames;

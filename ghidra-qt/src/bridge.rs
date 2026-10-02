@@ -214,6 +214,7 @@ pub mod ffi {
         fn tool_bar(focused_pid: i64) -> Result<Vec<ToolBarInfo>>;
 
         fn invoke_action(action: u64, focused_pid: i64) -> Result<()>;
+        fn action_name(action: u64) -> Result<String>;
         fn dispatch_key(qt_key: i32, qt_modifiers: u32, focused_pid: i64) -> Result<KeyResult>;
 
         fn layout_geometry() -> Result<Vec<u8>>;
@@ -460,6 +461,12 @@ fn invoke_action(action: u64, focused_pid: i64) -> Result<(), String> {
         }
         a.action_performed(ctx.as_ref());
         Ok(())
+    })
+}
+
+fn action_name(action: u64) -> Result<String, String> {
+    with("action_name", |s| {
+        s.tool().actions().get(ActionId(action)).map(|a| a.name().to_owned()).ok_or_else(|| format!("no action {action}"))
     })
 }
 

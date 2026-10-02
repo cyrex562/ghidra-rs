@@ -92,6 +92,8 @@ fn main() {
         .file("cpp/app.cpp")
         .file("cpp/main_window.cpp")
         .file("cpp/views/views.cpp")
+        .file("cpp/action_bridge.cpp")
+        .file("cpp/input.cpp")
         .warnings(false); // third-party ADS; our own files are reviewed instead
     if linux {
         build.file(ads.join("linux/FloatingWidgetTitleBar.cpp"));

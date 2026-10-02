@@ -147,3 +147,36 @@ fn garbage_geometry_falls_back_to_default_placement() {
     assert_eq!(lines.len(), 4);
     assert!(lines.iter().any(|l| l.starts_with("Symbols\tLeft")));
 }
+
+#[test]
+fn menu_bar_is_built_in_ghidra_order() {
+    let out = shell().arg("--dump-menus").output().expect("spawn");
+    assert!(out.status.success());
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    let tops: Vec<&str> = text.lines().filter(|l| !l.starts_with(' ')).collect();
+    assert_eq!(tops, vec!["File", "Edit", "Search"]);
+    assert!(text.lines().any(|l| l == "  Copy\tCtrl-C"), "{text}");
+    assert!(text.lines().any(|l| l == "  Find...\tCtrl-F"), "{text}");
+}
+
+fn press_status(focus: &str) -> String {
+    let out = shell()
+        .args(["--press", "Ctrl-F", "--focus", focus, "--quit-after-ms", "1500"])
+        .output()
+        .expect("spawn");
+    assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+    String::from_utf8_lossy(&out.stdout).to_string()
+}
+
+#[test]
+fn ctrl_f_runs_the_local_action_in_symbols_and_the_global_elsewhere() {
+    assert!(press_status("Symbols").lines().any(|l| l == "status: Find in Table"));
+    assert!(press_status("Program Tree").lines().any(|l| l == "status: Find"));
+}
+
+#[test]
+fn bridge_error_from_a_slot_is_reported_not_fatal() {
+    let out = shell().args(["--invoke-missing-action", "--quit-after-ms", "800"]).output().expect("spawn");
+    assert_eq!(out.status.code(), Some(0));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("no action"));
+}
