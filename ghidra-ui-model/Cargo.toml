@@ -6,3 +6,4 @@ description = "Toolkit-neutral UI model for ghidra-rs (no Qt/egui types allowed)
 license = "MIT"
 
 [dependencies]
+ghidra-rs = { path = "../ghidra-rs" }

@@ -42,6 +42,8 @@ pub enum UiEvent {
     ProviderRemoved(u64),
     /// Actions or their enablement changed; rebuild menus/toolbars.
     ActionsChanged,
+    /// A status-bar message (never coalesced).
+    Status(String),
     /// The current location changed.
     LocationChanged {
         /// Domain object id.
@@ -275,6 +277,16 @@ mod tests {
         let p = ev.iter().position(|e| matches!(e, UiEvent::TaskProgress { task: 3, .. })).unwrap();
         let d = ev.iter().position(|e| matches!(e, UiEvent::TaskDone { task: 3, .. })).unwrap();
         assert!(p < d);
+    }
+
+    #[test]
+    fn status_messages_are_kept_in_order() {
+        let (q, _w) = UiEventQueue::new();
+        q.post(UiEvent::Status("a".into()));
+        q.post(UiEvent::Status("a".into()));
+        q.post(UiEvent::Status("b".into()));
+        let st: Vec<UiEvent> = q.drain();
+        assert_eq!(st, vec![UiEvent::Status("a".into()), UiEvent::Status("a".into()), UiEvent::Status("b".into())]);
     }
 
     #[cfg(unix)]
