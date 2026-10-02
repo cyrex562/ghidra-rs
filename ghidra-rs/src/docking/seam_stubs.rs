@@ -8,8 +8,7 @@ pub use crate::docking::settings::string_settings_definition::StringSettingsDefi
 // re-exported so existing importers converge on the one real type.
 pub use crate::util::awt::KeyStroke;
 
-/// Placeholder for `docking.ComponentProvider`, referenced by [`crate::docking::action_context`].
-pub trait ComponentProvider {}
+// `docking.ComponentProvider` is ported: crate::docking::ComponentProvider.
 
 /// Placeholder for `docking.action.ActionContextProvider`, referenced by
 /// [`crate::docking::action_context`].

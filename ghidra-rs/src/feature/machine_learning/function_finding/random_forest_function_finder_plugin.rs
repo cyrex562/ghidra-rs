@@ -530,7 +530,7 @@ mod tests {
 
     use crate::app::seam_stubs::Navigatable as NavigatableTrait;
     use crate::docking::action_context::ActionContext;
-    use crate::docking::seam_stubs::{ActionContextProvider, Component, ComponentProvider, MouseEvent};
+    use crate::docking::seam_stubs::{ActionContextProvider, Component, MouseEvent};
     use crate::framework::model::DomainObject;
     use crate::framework::options::options_change_listener::OptionsChangeListener as _;
     use crate::framework::options::Options;

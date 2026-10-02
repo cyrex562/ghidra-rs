@@ -18,7 +18,7 @@ pub trait ProgramLocationSupplierContext: ActionContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::seam_stubs::{ActionContextProvider, Component, ComponentProvider, MouseEvent};
+    use crate::docking::seam_stubs::{ActionContextProvider, Component, MouseEvent};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::listing::Program;
     use std::any::Any;

@@ -22,7 +22,7 @@ mod tests {
     use std::any::Any;
     use std::sync::Arc;
 
-    use crate::docking::seam_stubs::{ActionContextProvider, Component, ComponentProvider, MouseEvent};
+    use crate::docking::seam_stubs::{ActionContextProvider, Component, MouseEvent};
 
     #[derive(Default)]
     struct MockFunctionSupplierContext {

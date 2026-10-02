@@ -31,7 +31,7 @@ mod tests {
     use std::any::Any;
 
     use crate::docking::action_context::ActionContext;
-    use crate::docking::seam_stubs::{ActionContextProvider, Component, ComponentProvider, MouseEvent};
+    use crate::docking::seam_stubs::{ActionContextProvider, Component, MouseEvent};
 
     struct MockNavigatable {
         connected: bool,

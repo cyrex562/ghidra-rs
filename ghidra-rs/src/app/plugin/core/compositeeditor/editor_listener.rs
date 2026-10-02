@@ -16,7 +16,6 @@ pub trait EditorListener {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docking::seam_stubs::ComponentProvider;
     use crate::program::model::data::category_path::ROOT;
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::data::data_type_path::DataTypePath;
@@ -34,10 +33,8 @@ mod tests {
         fn get_dt_path(&self) -> DataTypePath {
             DataTypePath::new(ROOT.clone(), self.name.clone())
         }
-        fn get_component_provider(&self) -> Arc<dyn ComponentProvider> {
-            struct Stub;
-            impl ComponentProvider for Stub {}
-            Arc::new(Stub)
+        fn get_component_provider(&self) -> Option<crate::docking::ProviderId> {
+            None
         }
         fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
             unimplemented!("not exercised by this smoke test")

@@ -30,7 +30,7 @@ use crate::app::context::{NavigatableActionContext, NavigationActionContext, Res
 use crate::app::decompiler::{ClangToken, ClangTokenGroup, ClangTokenKind};
 use crate::app::seam_stubs::{DecompilerPanel, DecompilerProvider, DecompilerUtils, Navigatable};
 use crate::docking::action_context::ActionContext;
-use crate::docking::seam_stubs::{ActionContextProvider, Component, ComponentProvider, MouseEvent};
+use crate::docking::seam_stubs::{ActionContextProvider, Component, MouseEvent};
 use crate::framework::seam_stubs::PluginTool;
 use crate::program::model::address::Address;
 use crate::program::model::listing::{Function, Program};

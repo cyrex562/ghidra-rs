@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::docking::seam_stubs::ComponentProvider;
+use crate::docking::ProviderId;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::data_type_path::DataTypePath;
 
@@ -26,7 +26,7 @@ pub trait EditorProvider {
     fn get_dt_path(&self) -> DataTypePath;
 
     /// Get the component provider for this editor.
-    fn get_component_provider(&self) -> Arc<dyn ComponentProvider>;
+    fn get_component_provider(&self) -> Option<ProviderId>;
 
     /// The edited datatype's original datatype manager.
     fn get_data_type_manager(&self) -> Box<dyn DataTypeManager>;
@@ -77,10 +77,8 @@ mod tests {
             DataTypePath::new(ROOT.clone(), "MyStruct")
         }
 
-        fn get_component_provider(&self) -> Arc<dyn ComponentProvider> {
-            struct Stub;
-            impl ComponentProvider for Stub {}
-            Arc::new(Stub)
+        fn get_component_provider(&self) -> Option<crate::docking::ProviderId> {
+            None
         }
 
         fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {

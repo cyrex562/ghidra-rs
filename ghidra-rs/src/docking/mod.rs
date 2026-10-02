@@ -1,6 +1,7 @@
 pub mod action;
 pub mod action_context;
 pub mod actions;
+pub mod component_provider;
 pub mod default_action_context;
 pub mod docking_context_listener;
 pub mod drop_target_handler;
@@ -25,3 +26,5 @@ pub use icon_id::IconId;
 pub use action_context::{ActionContext, AsAnyContext};
 pub use default_action_context::DefaultActionContext;
 pub use provider_id::ProviderId;
+pub use component_provider::{ComponentProvider, ComponentProviderState, ProviderChange, ProviderViewKind, DEFAULT_WINDOW_GROUP};
+pub use window_position::WindowPosition;

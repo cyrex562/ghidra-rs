@@ -3,7 +3,7 @@
 /// After being shown, a window's location is remembered, so this value is no longer used.
 ///
 /// Corresponds to `docking.WindowPosition`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WindowPosition {
     Top,
     Bottom,
