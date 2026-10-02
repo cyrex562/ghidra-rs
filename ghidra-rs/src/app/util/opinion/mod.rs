@@ -24,6 +24,8 @@ pub mod loader;
 pub mod loader_map;
 pub mod loader_opinion_exception;
 pub mod loader_tier;
+pub mod memory_section;
+pub mod memory_section_resolver;
 pub mod opinion_exception;
 pub mod query_opinion_service;
 pub mod query_result;

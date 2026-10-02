@@ -1233,9 +1233,9 @@ TODO	struct	14	49	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 TODO	struct	15	8	22	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/ElfRelocationHandler.java
 TODO	struct	14	3	83	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/ElfGotRelocationContext.java
 TODO	struct	14	2	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/ElfRelocationHandlerFactory.java
-TODO	struct	15	31	24	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MemorySection.java
+DONE	struct	15	31	24	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MemorySection.java
 TODO	struct	15	15	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CopyOnWriteWeakSet.java
-TODO	struct	14	31	75	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MemorySectionResolver.java
+DONE	struct	14	31	75	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MemorySectionResolver.java
 TODO	struct	14	1	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationUtil.java
 TODO	struct	14	2	21	format	Ghidra/Processors/AARCH64/src/main/java/ghidra/app/util/bin/format/elf/relocation/AARCH64_ElfRelocationHandler.java
 TODO	struct	14	2	21	format	Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/elf/relocation/ARM_ElfRelocationHandler.java
