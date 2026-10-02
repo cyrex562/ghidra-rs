@@ -2,14 +2,15 @@
 //! provider per fixed view kind plus a handful of actions that exercise
 //! menus, toolbars, popups and context-sensitive key dispatch.
 
-use ghidra_rs::docking::action::{DockingAction, DockingActionIf, KeyBindingData, MenuData, ToggleDockingActionIf, ToggleState, ToolBarData};
-use ghidra_rs::docking::{ActionContext, ComponentProvider, ComponentProviderState, IconId, ProviderViewKind, WindowPosition};
-use ghidra_rs::util::awt::key_stroke::{vk, CTRL_DOWN_MASK};
+use ghidra_rs::docking::action::{ClosureAction, DockingAction, DockingActionIf, KeyBindingData, MenuData, ToggleDockingActionIf, ToggleState, ToolBarData};
+use ghidra_rs::docking::{ActionContext, ComponentProvider, DockingTool, ProviderId, ComponentProviderState, IconId, ProviderViewKind, WindowPosition};
+use ghidra_rs::util::awt::key_stroke::{vk, ALT_DOWN_MASK, CTRL_DOWN_MASK};
 use ghidra_rs::util::awt::KeyStroke;
 
 use crate::demo::{LinesText, MapForm, StaticTree, VecTable};
 use crate::events::{UiEvent, UiEventQueue};
 use crate::listing::{MemoryBlockSnapshot, MemoryListing};
+use crate::listing_controller::{parse_address, ListingController, ListingHandle};
 use crate::session::{UiSession, ViewModelBox};
 use crate::view_models::{CellValue, FormField};
 
@@ -145,9 +146,7 @@ pub fn build_demo_session() -> UiSession {
 
     // The code listing over a small synthetic memory image (a real imported
     // program replaces this once the ELF loader lands).
-    s.add_provider(
-        provider("Listing", ProviderViewKind::Listing, WindowPosition::Stack),
-        Some(ViewModelBox::Listing(Box::new(MemoryListing::new(
+    let listing = ListingController::handle(Box::new(MemoryListing::new(
             32,
             vec![
                 MemoryBlockSnapshot {
@@ -156,7 +155,10 @@ pub fn build_demo_session() -> UiSession {
                 },
                 MemoryBlockSnapshot { start: 0x0040_2000, bytes: b"done\n\0".to_vec() },
             ],
-        )))),
+    )));
+    let listing_id = s.add_provider(
+        provider("Listing", ProviderViewKind::Listing, WindowPosition::Stack),
+        Some(ViewModelBox::Listing(listing.clone())),
         true,
     );
 
@@ -172,7 +174,7 @@ pub fn build_demo_session() -> UiSession {
     let tool = s.tool_mut();
     tool.set_menu_group(&["&File"], Some("0"), None);
     tool.set_menu_group(&["&Edit"], Some("1"), None);
-    tool.set_menu_group(&["&Search"], Some("2"), None);
+    tool.set_menu_group(&["&Search"], Some("3"), None);
     let mut exit = status_action("Exit", &events);
     exit.state.set_menu_bar_data(MenuData::full(&["&File", "E&xit"], None, Some("Z"), None, None).ok());
     tool.add_action(Box::new(exit));
@@ -193,11 +195,58 @@ pub fn build_demo_session() -> UiSession {
     find_local.state.set_key_binding_data(Some(ctrl(vk::F)));
     tool.add_local_action(symbols, Box::new(find_local));
 
-    let mut wrap = WrapAction { state: DockingAction::new("Wrap Lines", OWNER), toggle: ToggleState::default(), events };
+    let mut wrap = WrapAction { state: DockingAction::new("Wrap Lines", OWNER), toggle: ToggleState::default(), events: events.clone() };
     wrap.state.set_popup_menu_data(MenuData::new(&["Wrap Lines"]).ok());
     tool.add_local_action(decompiler, Box::new(wrap));
 
+    add_navigation_actions(s.tool_mut(), &events, listing, listing_id);
     s
+}
+
+/// Go To (`G`) and Previous/Next Location (Alt-Left/Alt-Right) over the
+/// listing (Java `GoToAddressLabelPlugin`, `NavigationHistoryPlugin`).
+fn add_navigation_actions(tool: &mut DockingTool, events: &UiEventQueue, listing: ListingHandle, listing_id: ProviderId) {
+    tool.set_menu_group(&["&Navigation"], Some("2"), None);
+    let (ev, h) = (events.clone(), listing.clone());
+    let mut go_to = ClosureAction::new("Go To Address/Label", OWNER, move |_| {
+        let (ev2, h2) = (ev.clone(), h.clone());
+        ev.prompt(
+            "Go To ...",
+            "Enter an address:",
+            "",
+            Box::new(move |answer| {
+                let Some(text) = answer else { return Ok(()) };
+                let address = parse_address(&text)?;
+                h2.lock().map_err(|_| "listing state poisoned".to_string())?.goto_address(address)?;
+                ev2.post(UiEvent::ViewChanged(listing_id.0));
+                ev2.post(UiEvent::ActionsChanged);
+                Ok(())
+            }),
+        );
+    });
+    go_to.state_mut().set_menu_bar_data(MenuData::new(&["&Navigation", "&Go To..."]).ok());
+    go_to.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(vk::G, 0))));
+    tool.add_action(Box::new(go_to));
+
+    for (name, key, icon, sub_group, forward) in [
+        ("Previous Location", vk::LEFT, "icon.left", "1", false),
+        ("Next Location", vk::RIGHT, "icon.right", "2", true),
+    ] {
+        let (ev, h, enabled) = (events.clone(), listing.clone(), listing.clone());
+        let mut a = ClosureAction::new(name, OWNER, move |_| {
+            let moved = h.lock().map(|mut c| if forward { c.forward() } else { c.back() }).unwrap_or(false);
+            if moved {
+                ev.post(UiEvent::ViewChanged(listing_id.0));
+                ev.post(UiEvent::ActionsChanged);
+            }
+        });
+        a.state_mut().enabled_when(Box::new(move |_| {
+            enabled.lock().map(|c| if forward { c.can_go_forward() } else { c.can_go_back() }).unwrap_or(false)
+        }));
+        a.state_mut().set_tool_bar_data(Some(ToolBarData::new(IconId::new(icon), Some("Navigation"), Some(sub_group))));
+        a.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(key, ALT_DOWN_MASK))));
+        tool.add_action(Box::new(a));
+    }
 }
 
 #[cfg(test)]
@@ -221,6 +270,83 @@ mod tests {
         for id in s.tool().provider_ids() {
             assert!(s.model(id).is_some(), "provider {id:?} has a model");
         }
+    }
+
+
+    fn listing(s: &UiSession) -> (ProviderId, crate::listing_controller::ListingHandle) {
+        let id = s.tool().find_provider("Demo", "Listing").unwrap();
+        match s.model(id) {
+            Some(ViewModelBox::Listing(h)) => (id, h.clone()),
+            _ => panic!("listing model"),
+        }
+    }
+
+    fn take_prompt(s: &UiSession) -> u64 {
+        s.events()
+            .drain()
+            .into_iter()
+            .find_map(|e| match e {
+                UiEvent::Prompt { id, .. } => Some(id),
+                _ => None,
+            })
+            .expect("a prompt")
+    }
+
+    #[test]
+    fn previous_location_precedes_next_on_the_toolbar() {
+        let s = build_demo_session();
+        let ctx = ghidra_rs::docking::DefaultActionContext::new();
+        let tips: Vec<String> = crate::menus::tool_bar(s.tool(), &ctx)
+            .into_iter()
+            .filter_map(|e| match e {
+                crate::menus::ToolBarEntry::Button { tooltip, .. } => Some(tooltip),
+                _ => None,
+            })
+            .filter(|t| t.ends_with("Location"))
+            .collect();
+        assert_eq!(tips, vec!["Previous Location", "Next Location"]);
+    }
+
+    #[test]
+    fn g_prompts_for_an_address_and_goes_there() {
+        let mut s = build_demo_session();
+        let (id, h) = listing(&s);
+        h.lock().unwrap().set_viewport(100);
+        assert!(matches!(s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id)), DispatchResult::Performed(_)));
+        let prompt = take_prompt(&s);
+        s.events().answer_prompt(prompt, Some("0x402000".into())).unwrap();
+        assert_eq!(h.lock().unwrap().cursor().map(|c| c.index), Some(12));
+        assert!(s.events().drain().contains(&UiEvent::ViewChanged(id.0)));
+    }
+
+    #[test]
+    fn a_bad_go_to_reports_and_leaves_the_listing_alone() {
+        let mut s = build_demo_session();
+        let (id, h) = listing(&s);
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let prompt = take_prompt(&s);
+        s.events().answer_prompt(prompt, Some("401800".into())).unwrap();
+        assert_eq!(s.events().drain(), vec![UiEvent::Status("Address not found: 401800".into())]);
+        assert_eq!(h.lock().unwrap().cursor(), None);
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let cancelled = take_prompt(&s);
+        s.events().answer_prompt(cancelled, None).unwrap();
+        assert!(s.events().drain().is_empty());
+    }
+
+    #[test]
+    fn alt_arrows_walk_the_history_and_follow_enablement() {
+        let mut s = build_demo_session();
+        let (id, h) = listing(&s);
+        let back = KeyStroke::new(vk::LEFT, ALT_DOWN_MASK);
+        let fwd = KeyStroke::new(vk::RIGHT, ALT_DOWN_MASK);
+        assert!(!matches!(s.tool_mut().dispatch_key(back, Some(id)), DispatchResult::Performed(_)));
+        h.lock().unwrap().key(crate::listing::Move::Down, false);
+        h.lock().unwrap().goto_address(0x402000).unwrap();
+        assert!(matches!(s.tool_mut().dispatch_key(back, Some(id)), DispatchResult::Performed(_)));
+        assert_eq!(h.lock().unwrap().cursor().map(|c| c.index), Some(1));
+        assert!(matches!(s.tool_mut().dispatch_key(fwd, Some(id)), DispatchResult::Performed(_)));
+        assert_eq!(h.lock().unwrap().cursor().map(|c| c.index), Some(12));
     }
 
     #[test]

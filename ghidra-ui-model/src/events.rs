@@ -43,6 +43,20 @@ pub enum UiEvent {
     ActionsChanged,
     /// A status-bar message (never coalesced).
     Status(String),
+    /// Ask the user for a line of text; answer with
+    /// [`UiEventQueue::answer_prompt`] (`None` = cancelled).
+    Prompt {
+        /// Prompt id to answer.
+        id: u64,
+        /// Dialog title.
+        title: String,
+        /// Field label.
+        label: String,
+        /// Initial text.
+        initial: String,
+    },
+    /// A provider's view state changed outside a renderer call (repaint it).
+    ViewChanged(u64),
     /// The current location changed.
     LocationChanged {
         /// Domain object id.
@@ -61,10 +75,20 @@ struct Pending {
     signalled: bool,
 }
 
+/// Runs when a prompt is answered; an `Err` becomes a status message.
+pub type PromptHandler = Box<dyn FnOnce(Option<String>) -> Result<(), String> + Send>;
+
+#[derive(Default)]
+struct Prompts {
+    next_id: u64,
+    handlers: HashMap<u64, PromptHandler>,
+}
+
 /// Thread-safe event queue (cheap to clone; all clones share one queue).
 #[derive(Clone)]
 pub struct UiEventQueue {
     pending: Arc<Mutex<Pending>>,
+    prompts: Arc<Mutex<Prompts>>,
     waker: Arc<Waker>,
 }
 
@@ -130,6 +154,7 @@ impl UiEventQueue {
         let _ = writer.set_nonblocking(true);
         let q = UiEventQueue {
             pending: Arc::new(Mutex::new(Pending::default())),
+            prompts: Arc::new(Mutex::new(Prompts::default())),
             waker: Arc::new(Waker {
                 #[cfg(unix)]
                 writer: Mutex::new(writer),
@@ -156,6 +181,38 @@ impl UiEventQueue {
         if need_wake {
             self.waker.wake();
         }
+    }
+
+    /// Posts a [`UiEvent::Prompt`]; `handler` runs once with the answer.
+    pub fn prompt(&self, title: &str, label: &str, initial: &str, handler: PromptHandler) -> u64 {
+        let id = match self.prompts.lock() {
+            Ok(mut p) => {
+                p.next_id += 1;
+                let id = p.next_id;
+                p.handlers.insert(id, handler);
+                id
+            }
+            Err(_) => return 0,
+        };
+        self.post(UiEvent::Prompt { id, title: title.to_owned(), label: label.to_owned(), initial: initial.to_owned() });
+        id
+    }
+
+    /// Answers prompt `id`, running its handler; a handler error is posted as
+    /// a status message. Unknown or already-answered ids are errors.
+    pub fn answer_prompt(&self, id: u64, answer: Option<String>) -> Result<(), String> {
+        // Take the handler out before running it: it may post or prompt again.
+        let handler = self
+            .prompts
+            .lock()
+            .map_err(|_| "prompt registry poisoned".to_string())?
+            .handlers
+            .remove(&id)
+            .ok_or_else(|| format!("no pending prompt {id}"))?;
+        if let Err(message) = handler(answer) {
+            self.post(UiEvent::Status(message));
+        }
+        Ok(())
     }
 
     /// Whether no events are pending.
@@ -317,6 +374,44 @@ mod tests {
     }
 
     #[cfg(unix)]
+    fn prompt_ids(q: &UiEventQueue) -> Vec<u64> {
+        q.drain()
+            .into_iter()
+            .filter_map(|e| match e {
+                UiEvent::Prompt { id, .. } => Some(id),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_prompt_round_trips_its_answer_once() {
+        let (q, _w) = UiEventQueue::new();
+        let got = Arc::new(Mutex::new(Vec::new()));
+        let g = got.clone();
+        let id = q.prompt("Go To", "Address:", "", Box::new(move |a| {
+            g.lock().unwrap().push(a);
+            Ok(())
+        }));
+        assert_eq!(prompt_ids(&q), vec![id]);
+        q.answer_prompt(id, Some("401000".into())).unwrap();
+        assert_eq!(*got.lock().unwrap(), vec![Some("401000".to_string())]);
+        assert!(q.answer_prompt(id, None).unwrap_err().contains(&id.to_string()));
+        assert!(q.answer_prompt(999, None).is_err());
+        assert_eq!(got.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_failing_prompt_handler_becomes_a_status() {
+        let (q, _w) = UiEventQueue::new();
+        let a = q.prompt("t", "l", "", Box::new(|_| Err("Invalid address: zz".into())));
+        let b = q.prompt("t", "l", "", Box::new(|_| Ok(())));
+        assert_ne!(a, b);
+        q.drain();
+        q.answer_prompt(a, Some("zz".into())).unwrap();
+        assert_eq!(q.drain(), vec![UiEvent::Status("Invalid address: zz".into())]);
+    }
+
     #[test]
     fn waker_signals_once_per_drain_cycle() {
         use std::io::Read;

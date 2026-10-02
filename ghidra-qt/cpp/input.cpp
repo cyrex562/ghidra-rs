@@ -1,5 +1,9 @@
 #include "ghidra-qt/cpp/input.h"
 
+#include <QTimer>
+
+#include <QInputDialog>
+
 #include <QApplication>
 #include <QAbstractSpinBox>
 #include <QComboBox>
@@ -90,6 +94,36 @@ EventPump::EventPump(MainWindow* window, bool echoStatus) : QObject(window), m_w
     }
 }
 
+void EventPump::setPromptAnswer(const QString& answer) {
+    m_autoAnswer = true;
+    m_promptAnswer = answer;
+}
+
+void EventPump::showPrompt(uint64_t id, const QString& title, const QString& label, const QString& initial) {
+    if (m_autoAnswer) {
+        std::printf("prompt: %s\n", title.toUtf8().constData());
+        std::fflush(stdout);
+        const QByteArray a = m_promptAnswer.toUtf8();
+        bridgeCall(m_window->statusBar(), [&] { prompt_reply(id, true, rust::Str(a.constData(), static_cast<size_t>(a.size()))); });
+        QTimer::singleShot(0, this, [this] { pump(); });
+        return;
+    }
+    // Non-modal: the reply arrives through the dialog's signals.
+    auto* dialog = new QInputDialog(m_window);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowTitle(title);
+    dialog->setLabelText(label);
+    dialog->setTextValue(initial);
+    QObject::connect(dialog, &QInputDialog::finished, this, [this, dialog, id](int result) {
+        const QByteArray a = dialog->textValue().toUtf8();
+        bridgeCall(m_window->statusBar(), [&] {
+            prompt_reply(id, result == QDialog::Accepted, rust::Str(a.constData(), static_cast<size_t>(a.size())));
+        });
+        pump();
+    });
+    dialog->open();
+}
+
 void EventPump::pump() {
     rust::Vec<EventInfo> events;
     if (!bridgeCall(m_window->statusBar(), [&] { events = drain_events(); })) return;
@@ -114,6 +148,12 @@ void EventPump::pump() {
                 break;
             case 3:
                 actionsChanged = true;
+                break;
+            case 6:
+                showPrompt(e.task, qs(e.text), qs(e.label), qs(e.initial));
+                break;
+            case 7:
+                m_window->viewChanged(static_cast<int64_t>(e.task));
                 break;
             default:
                 break;

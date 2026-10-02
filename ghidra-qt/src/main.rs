@@ -38,6 +38,9 @@ fn main() {
         count_after_rebuilds: args.count_after_rebuilds,
         dump_listing: args.dump_listing,
         listing_font_change: args.listing_font_change,
+        has_prompt_answer: args.prompt_answer.is_some(),
+        prompt_answer: args.prompt_answer.unwrap_or_default(),
+        print_listing_state: args.print_listing_state,
     };
     std::process::exit(bridge::ffi::run_app(&session, &options));
 }

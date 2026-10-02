@@ -1,8 +1,8 @@
 #pragma once
-// Custom-painted code listing (spec §5). Rust computes every row's layout
-// from the font metrics this view reports; the view only paints the
-// positioned runs and forwards scrolling, clicks and cursor keys. Indices
-// are u128 decimal strings; all index arithmetic happens in Rust.
+// Custom-painted code listing (spec §5). All listing state (top row, cursor,
+// selection, highlight, history) lives in the Rust ListingController; this
+// view reports font metrics and viewport size, forwards input as intents,
+// and paints the frame Rust returns.
 #include <QAbstractScrollArea>
 #include <QString>
 #include <QStringList>
@@ -21,6 +21,12 @@ public:
     void scrollRows(int64_t delta);
     // "index: x0 x1 ..." of the first painted row (smoke tests).
     QString firstRowSummary();
+    // "top=<i> cursor=<addr> selected=<n>" (smoke tests).
+    QString stateSummary();
+    // Sends a listing intent (see the bridge's listing_intent) and refreshes.
+    void intent(uint8_t kind, int64_t a, int64_t b, bool extend);
+    // Re-pulls the frame: scrollbar, status location, repaint.
+    void refresh();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -33,17 +39,13 @@ protected:
 
 private:
     void reportMetrics();
-    void setTop(const QString& top);
-    void syncScrollBar();
-    void ensureCursorVisible();
+    void reportViewport();
+    void ensureViewportRows(int n);
 
     uint64_t m_pid;
     QStatusBar* m_status;
-    QString m_top = QStringLiteral("0");
-    QString m_cursorIndex;
-    uint32_t m_cursorField = 0;
-    uint32_t m_cursorCol = 0;
     bool m_syncing = false;
+    int m_wheelRemainder = 0;
 };
 
 }  // namespace ghidra_qt

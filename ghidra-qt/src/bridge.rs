@@ -110,6 +110,11 @@ pub mod ffi {
         pub dump_listing: u32,
         /// Scroll, change the listing font, print the first row before/after.
         pub listing_font_change: bool,
+        /// Auto-answer prompts with `prompt_answer` (smoke tests).
+        pub has_prompt_answer: bool,
+        pub prompt_answer: String,
+        /// Print the Listing's state line at quit.
+        pub print_listing_state: bool,
     }
 
     /// A provider as the shell needs it.
@@ -194,35 +199,47 @@ pub mod ffi {
         pub bold: bool,
     }
 
-    /// A laid-out listing row; `index` is a decimal u128.
-    pub struct RowInfo {
+    /// A highlighted span on a listing row.
+    pub struct SpanInfo {
+        pub x: i32,
+        pub width: i32,
+    }
+
+    /// A painted listing row; `index` is a decimal u128.
+    pub struct FrameRowInfo {
         pub index: String,
         pub y: i32,
         pub height: i32,
         pub runs: Vec<RunPosInfo>,
+        pub selected: bool,
+        /// Cursor bar x; -1 = the cursor is not on this row.
+        pub cursor_x: i32,
+        pub highlights: Vec<SpanInfo>,
     }
 
-    /// A listing cursor; `index` is a decimal u128; `valid` false = none.
-    pub struct ScrollbarInfo {
-        pub max: i32,
-        pub page_step: i32,
-    }
-
-    pub struct CursorInfo {
-        pub index: String,
-        pub field: u32,
-        pub col: u32,
-        pub valid: bool,
+    /// Everything the listing view paints; `top` is a decimal u128.
+    pub struct FrameInfo {
+        pub top: String,
+        pub rows: Vec<FrameRowInfo>,
+        pub scroll_max: i32,
+        pub scroll_page: i32,
+        pub scroll_value: i32,
+        pub location: String,
     }
 
     /// A drained UI event.
     pub struct EventInfo {
-        /// 0 status, 1 task progress, 2 task done, 3 actions changed, 4 domain changed, 5 other
+        /// 0 status, 1 task progress, 2 task done, 3 actions changed, 4 domain changed, 5 other,
+        /// 6 prompt (task = prompt id, text = title), 7 view changed (task = provider id)
         pub kind: u8,
         pub text: String,
         pub task: u64,
         pub progress: u64,
         pub maximum: u64,
+        /// Prompt field label.
+        pub label: String,
+        /// Prompt initial text.
+        pub initial: String,
     }
 
     extern "Rust" {
@@ -254,16 +271,12 @@ pub mod ffi {
         fn form_set(pid: u64, key: &str, value: &str) -> Result<()>;
 
         fn listing_set_metrics(pid: u64, metrics: MetricsInfo) -> Result<()>;
-        fn listing_index_count(pid: u64) -> Result<String>;
-        fn listing_rows(pid: u64, top: &str, viewport_px: i32) -> Result<Vec<RowInfo>>;
-        fn listing_hit(pid: u64, top: &str, x: i32, y: i32, viewport_px: i32) -> Result<CursorInfo>;
-        fn listing_move(pid: u64, cursor: CursorInfo, direction: u8, viewport_px: i32) -> Result<CursorInfo>;
-        fn listing_goto(pid: u64, address: u64) -> Result<String>;
-        fn listing_scroll(pid: u64, top: &str, delta_rows: i64, viewport_px: i32) -> Result<String>;
-        fn listing_scrollbar(pid: u64, viewport_px: i32) -> Result<ScrollbarInfo>;
-        fn listing_top_for_value(pid: u64, value: i32, viewport_px: i32) -> Result<String>;
-        fn listing_value_for_top(pid: u64, top: &str, viewport_px: i32) -> Result<i32>;
-        fn listing_ensure_visible(pid: u64, top: &str, cursor: &str, viewport_px: i32) -> Result<String>;
+        fn listing_set_viewport(pid: u64, viewport_px: i32) -> Result<()>;
+        /// kind: 0 key (a = direction), 1 click (a, b = x, y), 2 middle click,
+        /// 3 wheel (a = rows), 4 scrollbar value (a); `extend` = shift.
+        fn listing_intent(pid: u64, kind: u8, a: i64, b: i64, extend: bool) -> Result<()>;
+        fn listing_frame(pid: u64) -> Result<FrameInfo>;
+        fn prompt_reply(id: u64, accepted: bool, text: &str) -> Result<()>;
 
         fn menu_bar(focused_pid: i64) -> Result<Vec<MenuItemInfo>>;
         fn popup_menu(pid: u64) -> Result<Vec<MenuItemInfo>>;
@@ -289,9 +302,9 @@ pub mod ffi {
     }
 }
 
-use ffi::{CursorInfo, EventInfo, FieldInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RowInfo, RunInfo, RunPosInfo, ScrollbarInfo, ToolBarInfo};
-use ghidra_ui_model::listing::{CursorPos, FontMetrics, ListingViewModel, Move};
-use ghidra_ui_model::listing_scroll::ScrollModel;
+use ffi::{EventInfo, FieldInfo, FrameInfo, FrameRowInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RunInfo, RunPosInfo, SpanInfo, ToolBarInfo};
+use ghidra_ui_model::listing::{FontMetrics, Move};
+use ghidra_ui_model::listing_controller::ListingController;
 
 fn session_title(session: &UiSession) -> Result<String, String> {
     guard("session_title", || session.0.clone())
@@ -435,13 +448,18 @@ fn form_set(pid: u64, key: &str, value: &str) -> Result<(), String> {
     with("form_set", |s| model!(s, pid, Form, "form").set(key, value))
 }
 
-fn parse_index(s: &str) -> Result<u128, String> {
-    s.parse::<u128>().map_err(|_| format!("bad listing index {s:?}"))
+/// Locks provider `pid`'s listing controller and runs `f` on it.
+fn with_listing<T>(what: &str, pid: u64, f: impl FnOnce(&mut ListingController) -> Result<T, String>) -> Result<T, String> {
+    with(what, |s| {
+        let handle = model!(s, pid, Listing, "listing").clone();
+        let mut c = handle.lock().map_err(|_| format!("listing {pid} state poisoned"))?;
+        f(&mut c)
+    })
 }
 
 fn listing_set_metrics(pid: u64, m: MetricsInfo) -> Result<(), String> {
-    with("listing_set_metrics", |s| {
-        model!(s, pid, Listing, "listing").set_metrics(FontMetrics {
+    with_listing("listing_set_metrics", pid, |c| {
+        c.set_metrics(FontMetrics {
             char_width: m.char_width,
             bold_char_width: m.bold_char_width,
             ascent: m.ascent,
@@ -452,119 +470,75 @@ fn listing_set_metrics(pid: u64, m: MetricsInfo) -> Result<(), String> {
     })
 }
 
-fn listing_index_count(pid: u64) -> Result<String, String> {
-    with("listing_index_count", |s| Ok(model!(s, pid, Listing, "listing").index_count().to_string()))
-}
-
-fn listing_rows(pid: u64, top: &str, viewport_px: i32) -> Result<Vec<RowInfo>, String> {
-    let top = parse_index(top)?;
-    with("listing_rows", |s| {
-        Ok(model!(s, pid, Listing, "listing")
-            .rows(top, viewport_px)
-            .into_iter()
-            .map(|r| RowInfo {
-                index: r.index.to_string(),
-                y: r.y,
-                height: r.height,
-                runs: r
-                    .runs
-                    .into_iter()
-                    .map(|p| RunPosInfo { x: p.x, text: p.text, color_id: p.color_id.unwrap_or_default(), bold: p.bold })
-                    .collect(),
-            })
-            .collect())
+fn listing_set_viewport(pid: u64, viewport_px: i32) -> Result<(), String> {
+    with_listing("listing_set_viewport", pid, |c| {
+        c.set_viewport(viewport_px);
+        Ok(())
     })
 }
 
-fn cursor_info(c: Option<CursorPos>) -> CursorInfo {
-    match c {
-        Some(c) => CursorInfo { index: c.index.to_string(), field: c.field as u32, col: c.col as u32, valid: true },
-        None => CursorInfo { index: String::new(), field: 0, col: 0, valid: false },
-    }
-}
-
-/// Rows that fit entirely in a `viewport_px`-tall viewport (at least 1).
-fn page_rows(m: &dyn ListingViewModel, viewport_px: i32) -> u32 {
-    m.rows(0, viewport_px).iter().filter(|r| r.y + r.height <= viewport_px).count().max(1) as u32
-}
-
-fn scroll_model(m: &dyn ListingViewModel, viewport_px: i32) -> ScrollModel {
-    ScrollModel::new(m.index_count(), page_rows(m, viewport_px))
-}
-
-/// Cursor for a click at (`x`, `y`) in a viewport whose first row is `top`;
-/// invalid below the last row.
-fn listing_hit(pid: u64, top: &str, x: i32, y: i32, viewport_px: i32) -> Result<CursorInfo, String> {
-    with("listing_hit", |s| {
-        let top = parse_index(top)?;
-        let m = model!(s, pid, Listing, "listing");
-        let row = m.rows(top, viewport_px.max(y + 1)).into_iter().find(|r| r.y <= y && y < r.y + r.height);
-        Ok(cursor_info(row.and_then(|r| m.hit_test(r.index, x))))
+fn direction(d: i64) -> Result<Move, String> {
+    Ok(match d {
+        0 => Move::Up,
+        1 => Move::Down,
+        2 => Move::Left,
+        3 => Move::Right,
+        4 => Move::PageUp,
+        5 => Move::PageDown,
+        6 => Move::Home,
+        7 => Move::End,
+        d => return Err(format!("bad cursor direction {d}")),
     })
 }
 
-fn listing_move(pid: u64, cursor: CursorInfo, direction: u8, viewport_px: i32) -> Result<CursorInfo, String> {
-    with("listing_move", |s| {
-        let index = parse_index(&cursor.index)?;
-        let mv = match direction {
-            0 => Move::Up,
-            1 => Move::Down,
-            2 => Move::Left,
-            3 => Move::Right,
-            4 => Move::PageUp,
-            5 => Move::PageDown,
-            6 => Move::Home,
-            7 => Move::End,
-            d => return Err(format!("bad cursor direction {d}")),
-        };
-        let m = model!(s, pid, Listing, "listing");
-        let c = CursorPos { index, field: cursor.field as usize, col: cursor.col as usize };
-        Ok(cursor_info(Some(m.move_cursor(c, mv, page_rows(m.as_ref(), viewport_px)))))
+fn listing_intent(pid: u64, kind: u8, a: i64, b: i64, extend: bool) -> Result<(), String> {
+    with_listing("listing_intent", pid, |c| {
+        let px = |v: i64| v.clamp(i32::MIN as i64, i32::MAX as i64) as i32;
+        match kind {
+            0 => c.key(direction(a)?, extend),
+            1 => c.click(px(a), px(b), extend),
+            2 => c.middle_click(px(a), px(b)),
+            3 => c.wheel(a),
+            4 => c.set_scroll_value(px(a)),
+            k => return Err(format!("bad listing intent {k}")),
+        }
+        Ok(())
     })
 }
 
-fn listing_goto(pid: u64, address: u64) -> Result<String, String> {
-    with("listing_goto", |s| Ok(model!(s, pid, Listing, "listing").goto(address).map(|i| i.to_string()).unwrap_or_default()))
-}
-
-/// `top` moved by `delta_rows`, clamped so the last page stays full (Java
-/// `IndexedScrollPane`).
-fn listing_scroll(pid: u64, top: &str, delta_rows: i64, viewport_px: i32) -> Result<String, String> {
-    with("listing_scroll", |s| {
-        let top = parse_index(top)?;
-        let m = model!(s, pid, Listing, "listing");
-        Ok(scroll_model(m.as_ref(), viewport_px).scroll(top, delta_rows).to_string())
+fn listing_frame(pid: u64) -> Result<FrameInfo, String> {
+    with_listing("listing_frame", pid, |c| {
+        let f = c.frame();
+        Ok(FrameInfo {
+            top: f.top.to_string(),
+            rows: f
+                .rows
+                .into_iter()
+                .map(|r| FrameRowInfo {
+                    index: r.row.index.to_string(),
+                    y: r.row.y,
+                    height: r.row.height,
+                    runs: r
+                        .row
+                        .runs
+                        .into_iter()
+                        .map(|p| RunPosInfo { x: p.x, text: p.text, color_id: p.color_id.unwrap_or_default(), bold: p.bold })
+                        .collect(),
+                    selected: r.selected,
+                    cursor_x: r.cursor_x.unwrap_or(-1),
+                    highlights: r.highlights.into_iter().map(|(x, width)| SpanInfo { x, width }).collect(),
+                })
+                .collect(),
+            scroll_max: f.scroll_max,
+            scroll_page: f.scroll_page,
+            scroll_value: f.scroll_value,
+            location: f.location,
+        })
     })
 }
 
-/// Scrollbar range and page step: exact rows for small listings, a fixed
-/// fraction range for huge ones.
-fn listing_scrollbar(pid: u64, viewport_px: i32) -> Result<ScrollbarInfo, String> {
-    with("listing_scrollbar", |s| {
-        let sm = scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px);
-        Ok(ScrollbarInfo { max: sm.range_max(), page_step: sm.page_step() })
-    })
-}
-
-fn listing_top_for_value(pid: u64, value: i32, viewport_px: i32) -> Result<String, String> {
-    with("listing_top_for_value", |s| {
-        Ok(scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px).top_for_value(value).to_string())
-    })
-}
-
-fn listing_value_for_top(pid: u64, top: &str, viewport_px: i32) -> Result<i32, String> {
-    with("listing_value_for_top", |s| {
-        let top = parse_index(top)?;
-        Ok(scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px).value_for_top(top))
-    })
-}
-
-/// The top index that keeps `cursor` on screen (exact u128 comparison).
-fn listing_ensure_visible(pid: u64, top: &str, cursor: &str, viewport_px: i32) -> Result<String, String> {
-    with("listing_ensure_visible", |s| {
-        let (top, cursor) = (parse_index(top)?, parse_index(cursor)?);
-        Ok(scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px).ensure_visible(top, cursor).to_string())
-    })
+fn prompt_reply(id: u64, accepted: bool, text: &str) -> Result<(), String> {
+    with("prompt_reply", |s| s.events().answer_prompt(id, accepted.then(|| text.to_owned())))
 }
 
 fn flatten(entries: &[MenuEntry], depth: u32, out: &mut Vec<MenuItemInfo>) {
@@ -735,28 +709,39 @@ fn drain_events() -> Result<Vec<EventInfo>, String> {
             .drain()
             .into_iter()
             .map(|e| {
-                let mut i = EventInfo { kind: 5, text: String::new(), task: 0, progress: 0, maximum: 0 };
+                let mut i = EventInfo {
+                    kind: 5,
+                    text: String::new(),
+                    task: 0,
+                    progress: 0,
+                    maximum: 0,
+                    label: String::new(),
+                    initial: String::new(),
+                };
                 match e {
                     UiEvent::Status(m) => {
                         i.kind = 0;
                         i.text = m;
                     }
                     UiEvent::TaskProgress { task, message, progress, maximum } => {
-                        i = EventInfo { kind: 1, text: message, task, progress, maximum };
+                        (i.kind, i.text, i.task, i.progress, i.maximum) = (1, message, task, progress, maximum);
                     }
                     UiEvent::TaskDone { task, cancelled, error } => {
-                        i = EventInfo {
-                            kind: 2,
-                            text: error.unwrap_or_else(|| if cancelled { "cancelled".into() } else { String::new() }),
-                            task,
-                            progress: 0,
-                            maximum: 0,
-                        };
+                        i.kind = 2;
+                        i.text = error.unwrap_or_else(|| if cancelled { "cancelled".into() } else { String::new() });
+                        i.task = task;
                     }
                     UiEvent::ActionsChanged => i.kind = 3,
                     UiEvent::DomainChanged { object, .. } => {
                         i.kind = 4;
                         i.task = object;
+                    }
+                    UiEvent::Prompt { id, title, label, initial } => {
+                        (i.kind, i.task, i.text, i.label, i.initial) = (6, id, title, label, initial);
+                    }
+                    UiEvent::ViewChanged(pid) => {
+                        i.kind = 7;
+                        i.task = pid;
                     }
                     _ => {}
                 }
@@ -770,59 +755,61 @@ fn drain_events() -> Result<Vec<EventInfo>, String> {
 mod tests {
     use super::*;
 
+    /// The listing tests drive the one shared demo listing.
+    static LISTING_TEST_LOCK: Mutex<()> = Mutex::new(());
+
     fn pid(title: &str) -> u64 {
         provider_ids().unwrap().into_iter().find(|p| provider_info(*p).unwrap().title == title).unwrap()
     }
 
-    #[test]
-    fn listing_rows_scroll_and_goto_through_the_bridge() {
-        let p = pid("Listing");
-        assert_eq!(listing_index_count(p).unwrap(), "18");
-        let rows = listing_rows(p, "0", 1000).unwrap();
-        let first: Vec<String> = rows[0].runs.iter().map(|r| r.text.clone()).collect();
-        assert_eq!(first, vec!["00401000", "55", "??", "55h"]);
-        assert_eq!(listing_goto(p, 0x402000).unwrap(), "12");
-        assert_eq!(listing_goto(p, 0x401800).unwrap(), "");
-        assert!(listing_rows(p, "not-a-number", 100).is_err());
+    fn frame_text(p: u64) -> Vec<String> {
+        listing_frame(p).unwrap().rows.iter().map(|r| r.runs.iter().map(|x| x.text.clone()).collect::<Vec<_>>().join(" ")).collect()
     }
 
-    fn row_height(p: u64) -> i32 {
-        let rows = listing_rows(p, "0", 1000).unwrap();
-        rows[1].y - rows[0].y
+    /// Bridge tests share one global session: each uses its own fresh
+    /// listing state by resetting through intents (Home, no selection).
+    fn fresh(p: u64, rows: i32) -> i64 {
+        listing_set_metrics(p, MetricsInfo { char_width: 7, bold_char_width: 7, ascent: 11, descent: 3, leading: 0 }).unwrap();
+        listing_set_viewport(p, rows * 14).unwrap();
+        listing_intent(p, 0, 6, 0, false).unwrap(); // Home
+        listing_intent(p, 4, 0, 0, false).unwrap(); // scrollbar to 0
+        14
     }
 
     #[test]
-    fn scrolling_keeps_the_last_page_full() {
+    fn listing_frames_and_intents_through_the_bridge() {
+        let _g = LISTING_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let p = pid("Listing");
-        let vp = 5 * row_height(p); // 5 rows of 18: max top 13
-        assert_eq!(listing_scroll(p, "0", -5, vp).unwrap(), "0");
-        assert_eq!(listing_scroll(p, "10", 100, vp).unwrap(), "13");
-        assert_eq!(listing_ensure_visible(p, "0", "17", vp).unwrap(), "13");
-        assert_eq!(listing_ensure_visible(p, "4", "3", vp).unwrap(), "3");
-        assert_eq!(listing_ensure_visible(p, "4", "8", vp).unwrap(), "4");
+        let h = fresh(p, 5);
+        assert_eq!(frame_text(p)[0], "00401000 55 ?? 55h");
+        let f = listing_frame(p).unwrap();
+        assert_eq!((f.scroll_max, f.scroll_page, f.top.as_str()), (13, 5, "0"));
+        listing_intent(p, 3, 100, 0, false).unwrap(); // wheel past the end
+        assert_eq!(listing_frame(p).unwrap().top, "13");
+        listing_intent(p, 1, 0, 2 * h + 1, false).unwrap(); // click row 15
+        listing_intent(p, 0, 1, 0, true).unwrap(); // shift-down
+        let f = listing_frame(p).unwrap();
+        let selected: Vec<&str> = f.rows.iter().filter(|r| r.selected).map(|r| r.index.as_str()).collect();
+        assert_eq!(selected, vec!["15", "16"]);
+        assert_eq!(f.location, "00402004");
+        assert!(f.rows.iter().any(|r| r.index == "16" && r.cursor_x == 0));
+        assert!(listing_intent(p, 9, 0, 0, false).is_err());
+        assert!(listing_intent(p, 0, 42, 0, false).is_err());
     }
 
     #[test]
-    fn small_listing_scrollbar_maps_rows_exactly() {
+    fn go_to_prompt_round_trips_through_the_bridge() {
+        let _g = LISTING_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let p = pid("Listing");
-        let vp = 5 * row_height(p);
-        let sb = listing_scrollbar(p, vp).unwrap();
-        assert_eq!((sb.max, sb.page_step), (13, 5));
-        assert_eq!(listing_top_for_value(p, 1, vp).unwrap(), "1");
-        assert_eq!(listing_value_for_top(p, "7", vp).unwrap(), 7);
-        assert!(listing_value_for_top(p, "x", vp).is_err());
-    }
-
-    #[test]
-    fn clicks_hit_the_row_under_the_pointer() {
-        let p = pid("Listing");
-        let h = row_height(p);
-        let c = listing_hit(p, "13", 0, 2 * h + 1, 5 * h).unwrap();
-        assert!(c.valid);
-        assert_eq!(c.index, "15");
-        assert!(!listing_hit(p, "13", 0, 9 * h, 20 * h).unwrap().valid); // below the last row
-        let c = listing_hit(p, "1", 0, 0, 5 * h).unwrap();
-        assert_eq!(listing_move(p, c, 1, 5 * h).unwrap().index, "2");
+        fresh(p, 5);
+        drain_events().unwrap();
+        assert_eq!(dispatch_key(0x47 /*Key_G*/, 0, p as i64).unwrap().code, 0);
+        let prompt = drain_events().unwrap().into_iter().find(|e| e.kind == 6).expect("prompt event");
+        assert_eq!(prompt.label, "Enter an address:");
+        prompt_reply(prompt.task, true, "402000").unwrap();
+        assert!(drain_events().unwrap().iter().any(|e| e.kind == 7 && e.task == p));
+        assert_eq!(listing_frame(p).unwrap().location, "00402000");
+        assert!(prompt_reply(prompt.task, true, "402000").is_err());
     }
 
     #[test]
@@ -862,7 +849,7 @@ mod tests {
         assert_eq!(r.code, 0);
         let menu = menu_bar(-1).unwrap();
         let tops: Vec<&str> = menu.iter().filter(|m| m.depth == 0).map(|m| m.text.as_str()).collect();
-        assert_eq!(tops, vec!["File", "Edit", "Search"]);
+        assert_eq!(tops, vec!["File", "Edit", "Navigation", "Search"]);
         let copy = menu.iter().find(|m| m.text == "Copy").unwrap();
         assert_eq!(copy.key_text, "Ctrl-C");
         assert!(invoke_action(9_999_999, -1).is_err());

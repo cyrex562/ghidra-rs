@@ -34,6 +34,8 @@ public:
     bool restoreDockGeometry(const QByteArray& state);
     // The dock showing a provider title, or nullptr.
     ads::CDockWidget* dockByTitle(const QString& title) const;
+    // Rust changed provider `pid`'s view state: refresh/repaint its view.
+    void viewChanged(int64_t pid);
     // Provider id of a dock (or -1).
     int64_t providerOf(ads::CDockWidget* dock) const;
     // Provider id owning a widget/object (walks parents to its dock), or -1.

@@ -165,7 +165,7 @@ fn menu_bar_is_built_in_ghidra_order() {
     assert!(out.status.success());
     let text = String::from_utf8_lossy(&out.stdout).to_string();
     let tops: Vec<&str> = text.lines().filter(|l| !l.starts_with(' ')).collect();
-    assert_eq!(tops, vec!["File", "Edit", "Search"]);
+    assert_eq!(tops, vec!["File", "Edit", "Navigation", "Search"]);
     assert!(text.lines().any(|l| l == "  Copy\tCtrl-C"), "{text}");
     assert!(text.lines().any(|l| l == "  Find...\tCtrl-F"), "{text}");
 }
@@ -265,6 +265,33 @@ fn listing_font_change_relayouts_and_keeps_the_top_row() {
     assert_eq!(before.0, "3");
     assert_eq!(after.0, "3", "top row must survive a font change");
     assert!(after.1[1] > before.1[1], "columns must widen with the font: {text}");
+}
+
+fn listing_state(keys: &str, answer: Option<&str>) -> String {
+    let mut cmd = shell().args(["--focus", "Listing", "--press", keys, "--print-listing-state", "--quit-after-ms", "2500"]);
+    if let Some(a) = answer {
+        cmd = cmd.args(["--prompt-answer", a]);
+    }
+    let out = cmd.output().expect("spawn");
+    assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+    String::from_utf8_lossy(&out.stdout).to_string()
+}
+
+#[test]
+fn shift_down_selects_rows_in_the_listing() {
+    let out = listing_state("Shift-Down,Shift-Down,Shift-Down", None);
+    assert!(out.lines().any(|l| l.ends_with("cursor=00401003 selected=4")), "{out}");
+}
+
+#[test]
+fn g_goes_to_an_address_and_alt_left_comes_back() {
+    let out = listing_state("Down,G", Some("0x402000"));
+    assert!(out.lines().any(|l| l == "prompt: Go To ..."), "{out}");
+    assert!(out.lines().any(|l| l.contains("cursor=00402000")), "{out}");
+    let out = listing_state("Down,G,Alt-Left", Some("402000h"));
+    assert!(out.lines().any(|l| l.contains("cursor=00401001")), "{out}");
+    let out = listing_state("G", Some("401800"));
+    assert!(out.lines().any(|l| l == "status: Address not found: 401800"), "{out}");
 }
 
 #[test]

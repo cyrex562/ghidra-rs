@@ -15,7 +15,8 @@
 namespace ghidra_qt {
 namespace {
 QString qs(const rust::String& s) { return QString::fromUtf8(s.data(), static_cast<qsizetype>(s.size())); }
-rust::Str rs(const QByteArray& b) { return rust::Str(b.constData(), static_cast<size_t>(b.size())); }
+constexpr int kTextInset = 4;  // left margin before the first field
+constexpr uint8_t kKey = 0, kClick = 1, kMiddle = 2, kWheel = 3, kScrollValue = 4;
 }  // namespace
 
 ListingView::ListingView(uint64_t pid, QStatusBar* status, QWidget* parent)
@@ -35,109 +36,76 @@ void ListingView::reportMetrics() {
     bridgeCall(m_status, [&] { listing_set_metrics(m_pid, m); });
 }
 
+void ListingView::reportViewport() {
+    const int h = viewport()->height();
+    bridgeCall(m_status, [&] { listing_set_viewport(m_pid, h); });
+}
+
 void ListingView::changeEvent(QEvent* event) {
     QAbstractScrollArea::changeEvent(event);
     if (event->type() == QEvent::FontChange || event->type() == QEvent::StyleChange) {
-        // Rows are laid out in Rust from these metrics; the top index stays put.
+        // Rows are laid out in Rust from these metrics; the top row stays put.
         reportMetrics();
-        setTop(m_top);
+        refresh();
     }
 }
 
-void ListingView::setTop(const QString& top) {
-    m_top = top;
-    syncScrollBar();
+void ListingView::refresh() {
+    FrameInfo f;
+    if (!bridgeCall(m_status, [&] { f = listing_frame(m_pid); })) return;
+    m_syncing = true;
+    verticalScrollBar()->setRange(0, f.scroll_max);
+    verticalScrollBar()->setPageStep(f.scroll_page);
+    verticalScrollBar()->setSingleStep(1);
+    verticalScrollBar()->setValue(f.scroll_value);
+    m_syncing = false;
+    if (hasFocus() && !f.location.empty()) m_status->showMessage(qs(f.location));
     viewport()->update();
 }
 
-void ListingView::syncScrollBar() {
-    ScrollbarInfo sb{0, 1};
-    int value = 0;
-    const QByteArray t = m_top.toUtf8();
-    const int vp = viewport()->height();
-    if (!bridgeCall(m_status, [&] {
-            sb = listing_scrollbar(m_pid, vp);
-            value = listing_value_for_top(m_pid, rs(t), vp);
-        }))
-        return;
-    m_syncing = true;
-    verticalScrollBar()->setRange(0, sb.max);
-    verticalScrollBar()->setPageStep(sb.page_step);
-    verticalScrollBar()->setSingleStep(1);
-    verticalScrollBar()->setValue(value);
-    m_syncing = false;
+void ListingView::intent(uint8_t kind, int64_t a, int64_t b, bool extend) {
+    if (bridgeCall(m_status, [&] { listing_intent(m_pid, kind, a, b, extend); })) refresh();
 }
 
 void ListingView::scrollContentsBy(int, int) {
-    if (m_syncing) return;
-    QString top;
-    const int value = verticalScrollBar()->value();
-    if (bridgeCall(m_status, [&] { top = qs(listing_top_for_value(m_pid, value, viewport()->height())); })) {
-        m_top = top;
-        viewport()->update();
-    }
+    if (!m_syncing) intent(kScrollValue, verticalScrollBar()->value(), 0, false);
 }
 
 void ListingView::wheelEvent(QWheelEvent* event) {
-    const int steps = -event->angleDelta().y() / 40;  // ~3 rows per notch
-    QString top;
-    const QByteArray t = m_top.toUtf8();
-    if (bridgeCall(m_status, [&] { top = qs(listing_scroll(m_pid, rs(t), steps, viewport()->height())); })) setTop(top);
+    // Accumulate so smooth-scrolling touchpads (small deltas) still move.
+    m_wheelRemainder += -event->angleDelta().y();
+    const int steps = m_wheelRemainder / 40;  // ~3 rows per 120-unit notch
+    m_wheelRemainder %= 40;
+    if (steps != 0) intent(kWheel, steps, 0, false);
     event->accept();
 }
 
 void ListingView::resizeEvent(QResizeEvent* event) {
     QAbstractScrollArea::resizeEvent(event);
-    // A taller viewport lowers the maximum top; re-clamp and resync.
-    QString top;
-    const QByteArray t = m_top.toUtf8();
-    if (bridgeCall(m_status, [&] { top = qs(listing_scroll(m_pid, rs(t), 0, viewport()->height())); })) setTop(top);
-}
-
-void ListingView::paintEvent(QPaintEvent*) {
-    QPainter p(viewport());
-    p.fillRect(viewport()->rect(), palette().base());
-    p.setFont(font());
-    rust::Vec<RowInfo> rows;
-    const QByteArray t = m_top.toUtf8();
-    if (!bridgeCall(m_status, [&] { rows = listing_rows(m_pid, rs(t), viewport()->height()); })) return;
-    const int ascent = QFontMetrics(font()).ascent();
-    for (const RowInfo& row : rows) {
-        if (qs(row.index) == m_cursorIndex) {
-            p.fillRect(QRect(0, row.y, viewport()->width(), row.height), palette().alternateBase());
-        }
-        for (const RunPosInfo& run : row.runs) {
-            QFont f = font();
-            f.setBold(run.bold);
-            p.setFont(f);
-            p.setPen(palette().text().color());
-            p.drawText(run.x + 4, row.y + ascent, qs(run.text));
-        }
-    }
+    reportViewport();
+    refresh();
 }
 
 void ListingView::mousePressEvent(QMouseEvent* event) {
-    CursorInfo c;
-    const QByteArray t = m_top.toUtf8();
-    const int x = static_cast<int>(event->position().x()) - 4;
+    const int x = static_cast<int>(event->position().x()) - kTextInset;
     const int y = static_cast<int>(event->position().y());
-    if (bridgeCall(m_status, [&] { c = listing_hit(m_pid, rs(t), x, y, viewport()->height()); }) && c.valid) {
-        m_cursorIndex = qs(c.index);
-        m_cursorField = c.field;
-        m_cursorCol = c.col;
-        viewport()->update();
+    if (event->button() == Qt::MiddleButton) {
+        intent(kMiddle, x, y, false);
+    } else if (event->button() == Qt::LeftButton) {
+        intent(kClick, x, y, event->modifiers() & Qt::ShiftModifier);
     }
-}
-
-void ListingView::ensureCursorVisible() {
-    QString top;
-    const QByteArray t = m_top.toUtf8();
-    const QByteArray c = m_cursorIndex.toUtf8();
-    if (bridgeCall(m_status, [&] { top = qs(listing_ensure_visible(m_pid, rs(t), rs(c), viewport()->height())); })) setTop(top);
+    event->accept();
 }
 
 void ListingView::keyPressEvent(QKeyEvent* event) {
-    uint8_t dir;
+    // Only plain or shifted cursor keys belong to the field panel; anything
+    // with Ctrl/Alt/Meta was offered to the actions first and falls through.
+    const Qt::KeyboardModifiers mods = event->modifiers() & ~Qt::KeypadModifier;
+    if (mods & ~Qt::ShiftModifier) {
+        QAbstractScrollArea::keyPressEvent(event);
+        return;
+    }
+    int64_t dir;
     switch (event->key()) {
         case Qt::Key_Up: dir = 0; break;
         case Qt::Key_Down: dir = 1; break;
@@ -149,41 +117,64 @@ void ListingView::keyPressEvent(QKeyEvent* event) {
         case Qt::Key_End: dir = 7; break;
         default: QAbstractScrollArea::keyPressEvent(event); return;
     }
-    if (m_cursorIndex.isEmpty()) m_cursorIndex = m_top;
-    const QByteArray ci = m_cursorIndex.toUtf8();
-    CursorInfo cur{rust::String(ci.constData(), static_cast<size_t>(ci.size())), m_cursorField, m_cursorCol, true};
-    CursorInfo next;
-    if (bridgeCall(m_status, [&] { next = listing_move(m_pid, std::move(cur), dir, viewport()->height()); }) && next.valid) {
-        m_cursorIndex = qs(next.index);
-        m_cursorField = next.field;
-        m_cursorCol = next.col;
-        ensureCursorVisible();
-    }
+    intent(kKey, dir, 0, mods & Qt::ShiftModifier);
     event->accept();
 }
 
+void ListingView::paintEvent(QPaintEvent*) {
+    QPainter p(viewport());
+    p.fillRect(viewport()->rect(), palette().base());
+    FrameInfo f;
+    if (!bridgeCall(m_status, [&] { f = listing_frame(m_pid); })) return;
+    const int ascent = QFontMetrics(font()).ascent();
+    QFont bold = font();
+    bold.setBold(true);
+    const QColor highlight(255, 255, 0, 140);  // Ghidra's middle-mouse highlight is yellow
+    for (const FrameRowInfo& row : f.rows) {
+        if (row.selected) p.fillRect(QRect(0, row.y, viewport()->width(), row.height), palette().highlight().color().lighter(170));
+        for (const SpanInfo& s : row.highlights) p.fillRect(QRect(s.x + kTextInset, row.y, s.width, row.height), highlight);
+        p.setPen(palette().text().color());
+        for (const RunPosInfo& run : row.runs) {
+            p.setFont(run.bold ? bold : font());
+            p.drawText(run.x + kTextInset, row.y + ascent, qs(run.text));
+        }
+        if (row.cursor_x >= 0) p.fillRect(QRect(row.cursor_x + kTextInset, row.y, 2, row.height), palette().text().color());
+    }
+}
+
+void ListingView::ensureViewportRows(int n) {
+    // Smoke hooks may run before the first resize: make the viewport hold n rows.
+    const int need = qMax(viewport()->height(), QFontMetrics(font()).height() * n + 1);
+    bridgeCall(m_status, [&] { listing_set_viewport(m_pid, need); });
+}
+
 void ListingView::scrollRows(int64_t delta) {
-    QString top;
-    const QByteArray t = m_top.toUtf8();
-    if (bridgeCall(m_status, [&] { top = qs(listing_scroll(m_pid, rs(t), delta, viewport()->height())); })) setTop(top);
+    ensureViewportRows(5);
+    intent(kWheel, delta, 0, false);
 }
 
 QString ListingView::firstRowSummary() {
-    rust::Vec<RowInfo> rows;
-    const QByteArray t = m_top.toUtf8();
-    if (!bridgeCall(m_status, [&] { rows = listing_rows(m_pid, rs(t), 1); }) || rows.empty()) return {};
+    FrameInfo f;
+    if (!bridgeCall(m_status, [&] { f = listing_frame(m_pid); }) || f.rows.empty()) return {};
     QStringList xs;
-    for (const RunPosInfo& run : rows[0].runs) xs << QString::number(run.x);
-    return qs(rows[0].index) + QStringLiteral(": ") + xs.join(QLatin1Char(' '));
+    for (const RunPosInfo& run : f.rows[0].runs) xs << QString::number(run.x);
+    return qs(f.rows[0].index) + QStringLiteral(": ") + xs.join(QLatin1Char(' '));
+}
+
+QString ListingView::stateSummary() {
+    FrameInfo f;
+    if (!bridgeCall(m_status, [&] { f = listing_frame(m_pid); })) return {};
+    int selected = 0;
+    for (const FrameRowInfo& row : f.rows) selected += row.selected ? 1 : 0;
+    return QStringLiteral("top=%1 cursor=%2 selected=%3").arg(qs(f.top), qs(f.location)).arg(selected);
 }
 
 QStringList ListingView::dumpRows(int n) {
     QStringList out;
-    rust::Vec<RowInfo> rows;
-    const int h = QFontMetrics(font()).height();
-    const QByteArray t = m_top.toUtf8();
-    if (!bridgeCall(m_status, [&] { rows = listing_rows(m_pid, rs(t), h * n); })) return out;
-    for (const RowInfo& row : rows) {
+    ensureViewportRows(n);
+    FrameInfo f;
+    if (!bridgeCall(m_status, [&] { f = listing_frame(m_pid); })) return out;
+    for (const FrameRowInfo& row : f.rows) {
         if (out.size() >= n) break;
         QStringList parts;
         for (const RunPosInfo& run : row.runs) parts << qs(run.text);

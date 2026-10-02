@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QPixmap>
 #include <QString>
+#include <QStringList>
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <QTimer>
@@ -99,19 +100,20 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
     auto* keys = new KeyForwarder(&window);
     app.installEventFilter(keys);
     auto* pump = new EventPump(&window, !options.press.empty());
+    if (options.has_prompt_answer) pump->setPromptAnswer(toQString(options.prompt_answer));
     window.show();
 
     if (!options.press.empty()) {
         const QString focus = toQString(options.focus);
         QString press = toQString(options.press);
-        QTimer::singleShot(200, &window, [&window, focus, press, pump] {
+        // A comma-separated key sequence ("Shift-Down,Shift-Down"), each key
+        // posted once focus is in the dock, 250ms apart.
+        const QStringList keys = press.split(QLatin1Char(','), Qt::SkipEmptyParts);
+        QTimer::singleShot(200, &window, [&window, focus, keys, pump] {
             window.focusDock(focus);
-            // Post only once focus has really landed in the dock: the key is
-            // dispatched in the focused provider's context, and under load the
-            // window may not be active yet when this timer fires.
             auto* poll = new QTimer(&window);
             auto deadline = std::make_shared<int>(150);  // x20ms = 3s
-            QObject::connect(poll, &QTimer::timeout, &window, [&window, focus, press, pump, poll, deadline] {
+            QObject::connect(poll, &QTimer::timeout, &window, [&window, focus, keys, pump, poll, deadline] {
                 ads::CDockWidget* dock = window.dockByTitle(focus);
                 QWidget* fw = QApplication::focusWidget();
                 const bool landed = !dock || (fw && dock->widget() && dock->widget()->isAncestorOf(fw)) ||
@@ -123,12 +125,18 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
                 poll->stop();
                 poll->deleteLater();
                 if (!landed) std::fprintf(stderr, "ghidra-qt: focus never reached %s\n", focus.toUtf8().constData());
-                QWidget* target = fw ? fw : (dock ? dock->widget() : &window);
-                const QKeySequence seq = QKeySequence::fromString(QString(press).replace(QLatin1Char('-'), QLatin1Char('+')));
-                if (seq.isEmpty()) return;
-                const QKeyCombination combo = seq[0];
-                QApplication::postEvent(target, new QKeyEvent(QEvent::KeyPress, combo.key(), combo.keyboardModifiers()));
-                QTimer::singleShot(300, pump, [pump] { pump->pump(); });
+                for (int i = 0; i < keys.size(); ++i) {
+                    const QString key = keys[i];
+                    QTimer::singleShot(250 * i, &window, [&window, key, pump] {
+                        QWidget* target = QApplication::focusWidget();
+                        if (!target) target = &window;
+                        const QKeySequence seq = QKeySequence::fromString(QString(key).replace(QLatin1Char('-'), QLatin1Char('+')));
+                        if (seq.isEmpty()) return;
+                        const QKeyCombination combo = seq[0];
+                        QApplication::postEvent(target, new QKeyEvent(QEvent::KeyPress, combo.key(), combo.keyboardModifiers()));
+                        QTimer::singleShot(100, pump, [pump] { pump->pump(); });
+                    });
+                }
             });
             poll->start(20);
         });
@@ -142,7 +150,14 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
 
     if (options.quit_after_ms > 0) {
         const QString shot = toQString(options.screenshot_path);
-        QTimer::singleShot(static_cast<int>(options.quit_after_ms), &app, [&app, &window, shot]() {
+        const bool printListing = options.print_listing_state;
+        QTimer::singleShot(static_cast<int>(options.quit_after_ms), &app, [&app, &window, shot, printListing]() {
+            if (printListing) {
+                ads::CDockWidget* dock = window.dockByTitle(QStringLiteral("Listing"));
+                auto* view = dock ? dynamic_cast<ListingView*>(dock->widget()) : nullptr;
+                std::printf("%s\n", view ? view->stateSummary().toUtf8().constData() : "no listing");
+                std::fflush(stdout);
+            }
             if (!shot.isEmpty() && !window.grab().save(shot, "PNG")) {
                 std::fprintf(stderr, "ghidra-qt: could not write screenshot to %s\n",
                              shot.toUtf8().constData());

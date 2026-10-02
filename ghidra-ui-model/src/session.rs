@@ -18,7 +18,8 @@ pub enum ViewModelBox {
     /// A form pane.
     Form(Box<dyn FormModel>),
     /// A listing pane.
-    Listing(Box<dyn crate::listing::ListingViewModel>),
+    /// The listing's state is shared with its navigation actions.
+    Listing(crate::listing_controller::ListingHandle),
 }
 
 /// The application-wide UI session: the root object a renderer is handed at

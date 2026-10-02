@@ -1,4 +1,5 @@
 #include "ghidra-qt/cpp/main_window.h"
+#include "ghidra-qt/cpp/views/listing_view.h"
 
 #include <QAbstractItemView>
 #include <QApplication>
@@ -101,6 +102,17 @@ void MainWindow::showTaskProgress(const QString& message, uint64_t progress, uin
 }
 
 QStringList MainWindow::menuSummary() { return dumpMenuBar(menuBar()); }
+
+void MainWindow::viewChanged(int64_t pid) {
+    for (auto it = m_providers.cbegin(); it != m_providers.cend(); ++it) {
+        if (it.value() != pid || !it.key()->widget()) continue;
+        if (auto* listing = dynamic_cast<ListingView*>(it.key()->widget())) {
+            listing->refresh();
+        } else {
+            it.key()->widget()->update();
+        }
+    }
+}
 
 bool MainWindow::focusDock(const QString& title) {
     ads::CDockWidget* dock = dockByTitle(title);

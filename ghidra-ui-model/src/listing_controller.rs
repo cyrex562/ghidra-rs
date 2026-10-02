@@ -291,6 +291,18 @@ impl ListingController {
     }
 }
 
+/// Parses a Go To address: hex with an optional `0x` prefix or `h` suffix.
+pub fn parse_address(text: &str) -> Result<u64, String> {
+    let t = text.trim();
+    let digits = t
+        .strip_prefix("0x")
+        .or_else(|| t.strip_prefix("0X"))
+        .or_else(|| t.strip_suffix('h'))
+        .or_else(|| t.strip_suffix('H'))
+        .unwrap_or(t);
+    u64::from_str_radix(digits, 16).map_err(|_| format!("Invalid address: {t}"))
+}
+
 /// Java `StringUtilities.findWord(text, pos, UNDERSCORE_AND_PERIOD_OK)`: the
 /// run of letters, digits, `_` and `.` around char `pos`.
 fn find_word(text: &str, pos: usize) -> Option<String> {
@@ -328,6 +340,17 @@ mod tests {
 
     fn at(c: &ListingController) -> u128 {
         c.cursor().expect("cursor").index
+    }
+
+    #[test]
+    fn parse_address_accepts_ghidra_hex_forms() {
+        assert_eq!(parse_address("0x402000"), Ok(0x402000));
+        assert_eq!(parse_address(" 402000 "), Ok(0x402000));
+        assert_eq!(parse_address("402000h"), Ok(0x402000));
+        assert_eq!(parse_address("0X40200A"), Ok(0x40200a));
+        assert_eq!(parse_address("zz"), Err("Invalid address: zz".to_string()));
+        assert!(parse_address("").is_err());
+        assert!(parse_address("1ffffffffffffffff").is_err());
     }
 
     #[test]
