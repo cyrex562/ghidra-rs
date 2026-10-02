@@ -124,6 +124,13 @@ pub trait MemoryBlock: Send + Sync {
         false
     }
 
+    /// Downcast hook for the memory map that owns this block (e.g. `MemoryMapDB.join` needs its
+    /// own concrete block type). Defaults to `None`: a block that is not owned by such a map has
+    /// nothing to expose.
+    fn as_any_mut(&mut self) -> Option<&mut dyn std::any::Any> {
+        None
+    }
+
     /// Returns the type of this memory block.
     fn get_type(&self) -> MemoryBlockType {
         MemoryBlockType::Default

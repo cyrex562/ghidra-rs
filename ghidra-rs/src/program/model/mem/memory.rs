@@ -5,6 +5,7 @@ use thiserror::Error;
 
 use crate::framework::store::lock_exception::LockException;
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
+use crate::program::database::mem::byte_mapping_scheme::ByteMappingScheme;
 use crate::program::database::mem::file_bytes::FileBytes;
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView, AddressSetViewAdapter};
 use crate::program::model::listing::Program;
@@ -227,6 +228,63 @@ pub trait Memory: Send + Sync {
         monitor: &dyn TaskMonitor,
     ) -> Result<Arc<dyn FileBytes>, CreateBlockError> {
         let _ = (filename, offset, size, is, monitor);
+        Err(unsupported())
+    }
+
+    /// Create a bit-mapped block over the bits of the bytes at `mapped_address`. Stands in for
+    /// `Memory.createBitMappedBlock(String, Address, Address, long, boolean)`. Defaults to
+    /// refusing the request.
+    fn create_bit_mapped_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        mapped_address: &Address,
+        length: i64,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        let _ = (name, start, mapped_address, length, overlay);
+        Err(unsupported())
+    }
+
+    /// Create a byte-mapped block over the bytes at `mapped_address` (`None` scheme: 1:1). Stands
+    /// in for `Memory.createByteMappedBlock(String, Address, Address, long, ByteMappingScheme,
+    /// boolean)`. Defaults to refusing the request.
+    fn create_byte_mapped_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        mapped_address: &Address,
+        length: i64,
+        byte_mapping_scheme: Option<ByteMappingScheme>,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        let _ = (name, start, mapped_address, length, byte_mapping_scheme, overlay);
+        Err(unsupported())
+    }
+
+    /// Create a block like `block` (same type, initialization and permissions). Stands in for
+    /// `Memory.createBlock(MemoryBlock, String, Address, long)`. Defaults to refusing the
+    /// request.
+    fn create_block(
+        &mut self,
+        block: &MemoryBlockHandle,
+        name: &str,
+        start: &Address,
+        length: i64,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        let _ = (block, name, start, length);
+        Err(unsupported())
+    }
+
+    /// Join two contiguous blocks into one. Stands in for `Memory.join(MemoryBlock,
+    /// MemoryBlock)` (its `MemoryBlockException` is [`CreateBlockError::IllegalArgument`]).
+    /// Defaults to refusing the request.
+    fn join(
+        &mut self,
+        block_one: &MemoryBlockHandle,
+        block_two: &MemoryBlockHandle,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        let _ = (block_one, block_two);
         Err(unsupported())
     }
 

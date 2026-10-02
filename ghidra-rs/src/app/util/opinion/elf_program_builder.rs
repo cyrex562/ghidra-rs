@@ -29,9 +29,7 @@
 //!   place in an overlay -- all non-loaded (OTHER-space) segments/sections, including
 //!   `unallocated_N`, and loaded chunks displaced by a conflict -- is logged as not created
 //!   instead of aborting the load.
-//! * `expandProgramHeaderBlocks` cannot `join` the zero-filled extension onto the file-backed
-//!   block (`MemoryMapDB.join` is not ported); the extension stays a separate
-//!   `<block>.expand` block carrying the joined block's comment plus `" (zero-extended)"`.
+//! * `joinProgramTreeFragments` is skipped: `ProgramDB` has no program tree.
 //! * There is no program transaction to start/end.
 
 use std::cell::{Cell, RefCell};
@@ -600,12 +598,8 @@ impl<'a> ElfProgramBuilder<'a> {
                 b.set_comment(Some("Zero-initialized segment"));
             }
             Some(block) => {
-                // Expand tail end of segment which had portion loaded from file. Java joins the
-                // expansion onto `block`; `MemoryMapDB.join` is not ported (module docs).
-                let (name, comment) = {
-                    let b = block.read().unwrap();
-                    (b.get_name().to_string(), b.get_comment().map(str::to_string))
-                };
+                // Expand tail end of segment which had portion loaded from file
+                let name = block.read().unwrap().get_name().to_string();
                 let expand_block = mem.create_initialized_block_from_stream(
                     &format!("{name}.expand"),
                     expand_start,
@@ -614,13 +608,11 @@ impl<'a> ElfProgramBuilder<'a> {
                     Some(monitor),
                     false,
                 )?;
-                let mut b = expand_block.write().unwrap();
-                b.set_comment(Some(&format!("{} (zero-extended)", or_null(comment.as_deref()))));
-                let src = block.read().unwrap();
-                b.set_read(src.is_read());
-                b.set_write(src.is_write());
-                b.set_execute(src.is_execute());
-                b.set_source_name(src.get_source_name());
+                let ext_block = mem.join(block, &expand_block)?;
+                let mut b = ext_block.write().unwrap();
+                let comment = format!("{} (zero-extended)", or_null(b.get_comment()));
+                b.set_comment(Some(&comment));
+                // joinProgramTreeFragments: ProgramDB has no program tree (module docs).
             }
         }
         Ok(())

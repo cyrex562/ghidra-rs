@@ -97,6 +97,8 @@ const COMMENTS_COL: usize = 1;
 const SOURCE_COL: usize = 2;
 /// The block record's flags column (`MemoryMapDBAdapter.FLAGS_COL`).
 const FLAGS_COL: usize = 3;
+/// The block record's length column (`MemoryMapDBAdapter.LENGTH_COL`).
+const LENGTH_COL: usize = 5;
 
 impl MemoryBlockDB {
     fn flags(&self) -> i8 {
@@ -112,7 +114,59 @@ impl MemoryBlockDB {
     }
 }
 
+impl MemoryBlockDB {
+    /// The block's database record (Java's package-private `record` field).
+    pub(crate) fn record(&self) -> &DBRecord {
+        &self.record
+    }
+
+    /// The block's id: its record key (Java's `id`).
+    fn id(&self) -> i64 {
+        match self.record.get_key() {
+            crate::framework::db::Field::Long(Some(key)) => *key,
+            _ => 0,
+        }
+    }
+
+    /// Mirrors the package-private `join(MemoryBlockDB)`: appends `other`'s sub blocks (merging
+    /// the two that meet when they can), re-sequences them under this block's id and extends
+    /// this block's length. The caller removes `other` from the adapter and persists this
+    /// block's record, as Java's `join` does through its adapter.
+    pub(crate) fn join(&mut self, other: &mut MemoryBlockDB) -> std::io::Result<()> {
+        let length = self.get_size() as i64 + other.get_size() as i64;
+        self.record.set_long(LENGTH_COL, length);
+        let n = self.sub_blocks.len();
+        self.sub_blocks.append(&mut other.sub_blocks);
+        if n > 0 && n < self.sub_blocks.len() {
+            // possiblyMergeSubBlocks(n - 1, n)
+            let (head, tail) = self.sub_blocks.split_at_mut(n);
+            if head[n - 1].join(tail[0].as_mut())? {
+                self.sub_blocks.remove(n);
+            }
+        }
+        // sequenceSubBlocks()
+        let id = self.id();
+        let mut starting_offset = 0;
+        for sub_block in &mut self.sub_blocks {
+            sub_block.set_parent_id_and_starting_offset(id, starting_offset)?;
+            starting_offset += sub_block.get_length();
+        }
+        Ok(())
+    }
+}
+
 impl MemoryBlock for MemoryBlockDB {
+    /// Mirrors `getType()`: the type of the first sub block.
+    fn get_type(&self) -> crate::program::model::mem::MemoryBlockType {
+        self.sub_blocks
+            .first()
+            .map_or(crate::program::model::mem::MemoryBlockType::Default, |sb| sb.get_type())
+    }
+
+    fn as_any_mut(&mut self) -> Option<&mut dyn std::any::Any> {
+        Some(self)
+    }
+
     fn is_read(&self) -> bool {
         self.flags() & READ != 0
     }

@@ -183,12 +183,10 @@ fn segments_only_image_keeps_execute_and_zero_extends() {
         blocks(program.as_ref()),
         vec![
             b("segment_0", 0x400000, 0x40, "r-x", true, "Loadable segment  [0x400000 - 0x40003f]"),
-            b("segment_1", 0x401000, 0x10, "rw-", true, "Loadable segment  [0x401000 - 0x4010ff]"),
-            // Java joins this onto segment_1 (one 0x100 block); join is not ported.
             b(
-                "segment_1.expand",
-                0x401010,
-                0xf0,
+                "segment_1",
+                0x401000,
+                0x100,
                 "rw-",
                 true,
                 "Loadable segment  [0x401000 - 0x4010ff] (zero-extended)"

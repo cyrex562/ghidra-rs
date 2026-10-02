@@ -45,9 +45,11 @@ use crate::program::database::mem::memory_map_db_adapter::{
 use crate::program::model::address::address_set::AddressSetView;
 use crate::program::model::address::{Address, AddressOverflowException, AddressSet};
 use crate::program::model::mem::memory::CreateBlockError;
+use crate::program::database::mem::byte_mapping_scheme::{ByteMappingScheme, ByteMappingSchemeError};
+use crate::program::database::mem::memory_block_db::MemoryBlockDB;
 use crate::program::model::mem::{
-    Memory, MemoryAccessException, MemoryBlock, MemoryBlockHandle, MemoryBlockType,
-    MemoryConflictException,
+    Memory, MemoryAccessException, MemoryBlock, MemoryBlockException, MemoryBlockHandle,
+    MemoryBlockType, MemoryConflictException,
 };
 use crate::util::exception::{CancelledException, IOCancelledException, VersionException};
 use crate::util::monitored_input_stream::MonitoredInputStream;
@@ -91,6 +93,9 @@ pub enum MemoryMapError {
     /// A database error (Java hands these to `program.dbError`).
     #[error(transparent)]
     Io(#[from] io::Error),
+    /// Blocks cannot be joined (Java's `MemoryBlockException`).
+    #[error(transparent)]
+    Block(#[from] MemoryBlockException),
 }
 
 impl From<MemoryMapDBAdapterError> for MemoryMapError {
@@ -115,6 +120,7 @@ impl From<MemoryMapError> for CreateBlockError {
             MemoryMapError::AddressOverflow(e) => CreateBlockError::AddressOverflow(e),
             MemoryMapError::Cancelled(e) => CreateBlockError::Cancelled(e),
             MemoryMapError::Io(e) => CreateBlockError::Io(e),
+            MemoryMapError::Block(e) => CreateBlockError::IllegalArgument(e.to_string()),
         }
     }
 }
@@ -556,6 +562,215 @@ impl MemoryMapDB {
         })
     }
 
+    /// Creates a bit-mapped block: each byte is one bit of the bytes at `mapped_address`.
+    /// Mirrors `createBitMappedBlock(String, Address, Address, long, boolean)`.
+    pub fn create_bit_mapped_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        mapped_address: &Address,
+        length: i64,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, MemoryMapError> {
+        Self::check_block_name(name)?;
+        self.check_block_size(length)?;
+        // just to check if length fits in address space
+        mapped_address.add_no_wrap((length - 1) / 8)?;
+        Self::reject_overlay(overlay, start)?;
+        self.check_range(start, length)?;
+        let new_block = self.adapter.write().unwrap().create_block(
+            MemoryBlockType::BitMapped,
+            name,
+            start.clone(),
+            length,
+            Some(mapped_address.clone()),
+            false,
+            READ,
+            0,
+        )?;
+        self.block_added(&new_block);
+        Ok(new_block)
+    }
+
+    /// Creates a byte-mapped block over the bytes at `mapped_address` (1:1 unless
+    /// `byte_mapping_scheme` says otherwise). Mirrors `createByteMappedBlock(String, Address,
+    /// Address, long, ByteMappingScheme, boolean)`.
+    pub fn create_byte_mapped_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        mapped_address: &Address,
+        length: i64,
+        byte_mapping_scheme: Option<ByteMappingScheme>,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, MemoryMapError> {
+        Self::check_block_name(name)?;
+        let mut mapping_scheme = 0; // use for 1:1 mapping
+        let scheme = match byte_mapping_scheme {
+            None => ByteMappingScheme::from_encoded(mapping_scheme)
+                .map_err(|e| MemoryMapError::IllegalArgument(e.to_string()))?,
+            Some(scheme) => {
+                if !scheme.is_one_to_one_mapping() {
+                    mapping_scheme = scheme.get_encoded_mapping_scheme();
+                }
+                scheme
+            }
+        };
+        self.check_block_size(length)?;
+        // source fit check
+        scheme.get_mapped_source_address(mapped_address, length - 1).map_err(|e| match e {
+            ByteMappingSchemeError::AddressOverflow(e) => MemoryMapError::AddressOverflow(e),
+            other => MemoryMapError::IllegalArgument(other.to_string()),
+        })?;
+        Self::reject_overlay(overlay, start)?;
+        self.check_range(start, length)?;
+        let new_block = self.adapter.write().unwrap().create_block(
+            MemoryBlockType::ByteMapped,
+            name,
+            start.clone(),
+            length,
+            Some(mapped_address.clone()),
+            false,
+            READ,
+            mapping_scheme,
+        )?;
+        self.block_added(&new_block);
+        Ok(new_block)
+    }
+
+    /// Creates a block of the same type, initialization state and permissions as `block`.
+    /// Mirrors `createBlock(MemoryBlock, String, Address, long)` for non-mapped blocks; a mapped
+    /// `block` needs its source info (mapped range / scheme), which `MemoryBlockDB` does not
+    /// expose yet, so it is rejected.
+    pub fn create_block(
+        &mut self,
+        block: &MemoryBlockHandle,
+        name: &str,
+        start: &Address,
+        length: i64,
+    ) -> Result<MemoryBlockHandle, MemoryMapError> {
+        Self::check_block_name(name)?;
+        let (block_type, initialized, flags) = {
+            let b = block.read().unwrap();
+            let flags = (if b.is_read() { READ } else { 0 })
+                | (if b.is_write() { 0x2 } else { 0 })
+                | (if b.is_execute() { 0x1 } else { 0 })
+                | (if b.is_volatile() { 0x8 } else { 0 })
+                | (if b.is_artificial() { 0x10 } else { 0 });
+            (b.get_type(), b.is_initialized(), flags)
+        };
+        self.check_block_size(length)?;
+        self.check_range(start, length)?;
+        if block_type != MemoryBlockType::Default {
+            return Err(MemoryMapError::IllegalState(
+                "creating a block like a mapped block is not supported yet".to_string(),
+            ));
+        }
+        let new_block = self.adapter.write().unwrap().create_block(
+            block_type,
+            name,
+            start.clone(),
+            length,
+            None,
+            initialized,
+            flags,
+            0,
+        )?;
+        self.block_added(&new_block);
+        Ok(new_block)
+    }
+
+    /// Joins two contiguous, non-mapped blocks that are both initialized or both uninitialized
+    /// into one (the lower block grows; the other is deleted). Mirrors `join(MemoryBlock,
+    /// MemoryBlock)`.
+    ///
+    /// # Errors
+    /// [`MemoryMapError::Block`] if the blocks are not contiguous or differ in initialization;
+    /// [`MemoryMapError::IllegalArgument`] for a mapped block or one not in this memory.
+    pub fn join(
+        &mut self,
+        block_one: &MemoryBlockHandle,
+        block_two: &MemoryBlockHandle,
+    ) -> Result<MemoryBlockHandle, MemoryMapError> {
+        // swap if second block is before first block
+        let (one, two) = if block_one.read().unwrap().get_start() > block_two.read().unwrap().get_start() {
+            (block_two, block_one)
+        } else {
+            (block_one, block_two)
+        };
+        if Arc::ptr_eq(one, two) {
+            return Err(MemoryBlockException::new("Blocks are not contiguous").into());
+        }
+        self.check_preconditions_for_joining(one, two)?;
+        let block1_addr = one.read().unwrap().get_start();
+        {
+            let mut b1 = one.write().unwrap();
+            let mut b2 = two.write().unwrap();
+            let db2 = b2
+                .as_any_mut()
+                .and_then(|a| a.downcast_mut::<MemoryBlockDB>())
+                .ok_or_else(|| MemoryMapError::IllegalArgument("Blocks do not belong to this program".to_string()))?;
+            let db1 = b1
+                .as_any_mut()
+                .and_then(|a| a.downcast_mut::<MemoryBlockDB>())
+                .ok_or_else(|| MemoryMapError::IllegalArgument("Blocks do not belong to this program".to_string()))?;
+            db1.join(db2)?;
+        }
+        // The adapter reads every cached block while deleting, so the block locks above must be
+        // released first.
+        {
+            let mut adapter = self.adapter.write().unwrap();
+            adapter.delete_memory_block(&*two.read().unwrap())?;
+            let record = {
+                let mut b1 = one.write().unwrap();
+                b1.as_any_mut()
+                    .and_then(|a| a.downcast_mut::<MemoryBlockDB>())
+                    .map(|db| db.record().clone())
+                    .expect("checked above")
+            };
+            adapter.update_block_record(&record)?;
+        }
+        self.initialize_blocks();
+        Ok(self
+            .get_block(&block1_addr)
+            .cloned()
+            .expect("the joined block starts where the first block did"))
+    }
+
+    /// `checkPreconditionsForJoining(MemoryBlock, MemoryBlock)`.
+    fn check_preconditions_for_joining(
+        &self,
+        block1: &MemoryBlockHandle,
+        block2: &MemoryBlockHandle,
+    ) -> Result<(), MemoryMapError> {
+        self.check_block_for_joining(block1)?;
+        self.check_block_for_joining(block2)?;
+        let (b1, b2) = (block1.read().unwrap(), block2.read().unwrap());
+        if b1.is_initialized() != b2.is_initialized() {
+            return Err(MemoryBlockException::new(
+                "Both blocks must be either initialized or uninitialized",
+            )
+            .into());
+        }
+        if b1.get_end().add_no_wrap(1).ok().as_ref() != Some(&b2.get_start()) {
+            return Err(MemoryBlockException::new("Blocks are not contiguous").into());
+        }
+        Ok(())
+    }
+
+    /// `checkBlockForJoining(MemoryBlock)` (with `checkBlock`'s ownership test).
+    fn check_block_for_joining(&self, block: &MemoryBlockHandle) -> Result<(), MemoryMapError> {
+        if !self.blocks.iter().any(|b| Arc::ptr_eq(b, block)) {
+            return Err(MemoryMapError::IllegalArgument(
+                "Blocks do not belong to this program".to_string(),
+            ));
+        }
+        if block.read().unwrap().get_type() != MemoryBlockType::Default {
+            return Err(MemoryMapError::IllegalArgument("Cannot join mapped blocks".to_string()));
+        }
+        Ok(())
+    }
+
     /// All stored file bytes. Mirrors `getAllFileBytes()`.
     pub fn get_all_file_bytes(&self) -> Vec<Arc<dyn FileBytes>> {
         self.file_bytes_adapter.read().unwrap().get_all_file_bytes()
@@ -704,6 +919,55 @@ impl Memory for MemoryMapDB {
 
     fn get_all_file_bytes(&self) -> Vec<Arc<dyn FileBytes>> {
         MemoryMapDB::get_all_file_bytes(self)
+    }
+
+    fn create_bit_mapped_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        mapped_address: &Address,
+        length: i64,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        Ok(MemoryMapDB::create_bit_mapped_block(self, name, start, mapped_address, length, overlay)?)
+    }
+
+    fn create_byte_mapped_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        mapped_address: &Address,
+        length: i64,
+        byte_mapping_scheme: Option<ByteMappingScheme>,
+        overlay: bool,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        Ok(MemoryMapDB::create_byte_mapped_block(
+            self,
+            name,
+            start,
+            mapped_address,
+            length,
+            byte_mapping_scheme,
+            overlay,
+        )?)
+    }
+
+    fn create_block(
+        &mut self,
+        block: &MemoryBlockHandle,
+        name: &str,
+        start: &Address,
+        length: i64,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        Ok(MemoryMapDB::create_block(self, block, name, start, length)?)
+    }
+
+    fn join(
+        &mut self,
+        block_one: &MemoryBlockHandle,
+        block_two: &MemoryBlockHandle,
+    ) -> Result<MemoryBlockHandle, CreateBlockError> {
+        Ok(MemoryMapDB::join(self, block_one, block_two)?)
     }
 
     fn has_file_bytes(&self) -> bool {
@@ -999,4 +1263,77 @@ mod tests {
         assert!(!b.is_read() && b.is_write() && b.is_execute() && b.is_volatile());
         assert!(!b.is_artificial());
     }
+
+    #[test]
+    fn join_merges_contiguous_initialized_blocks() {
+        let map = new_map(false);
+        let mut m = map.write().unwrap();
+        let mut a: &[u8] = &[1, 2, 3, 4];
+        let one = m.create_initialized_block("a", &addr(0x100), Some(&mut a), 4, None, false).unwrap();
+        let mut b: &[u8] = &[5, 6];
+        let two = m.create_initialized_block("b", &addr(0x104), Some(&mut b), 2, None, false).unwrap();
+        one.write().unwrap().set_execute(true);
+        // argument order does not matter
+        let joined = m.join(&two, &one).unwrap();
+        assert_eq!(m.get_blocks().len(), 1);
+        let j = joined.read().unwrap();
+        assert_eq!(j.get_name(), "a");
+        assert_eq!(j.get_start(), addr(0x100));
+        assert_eq!(j.get_size(), 6);
+        assert!(j.is_execute());
+        drop(j);
+        let mut out = [0u8; 6];
+        assert_eq!(m.get_bytes(&addr(0x100), &mut out), 6);
+        assert_eq!(out, [1, 2, 3, 4, 5, 6]);
+        assert_eq!(m.get_num_addresses(), 6);
+    }
+
+    #[test]
+    fn join_rejects_gaps_mixed_initialization_and_mapped_blocks() {
+        let map = new_map(false);
+        let mut m = map.write().unwrap();
+        let a = m.create_uninitialized_block("a", &addr(0x100), 4, false).unwrap();
+        let gap = m.create_uninitialized_block("gap", &addr(0x200), 4, false).unwrap();
+        let err = m.join(&a, &gap).err().unwrap();
+        assert_eq!(err.to_string(), "Blocks are not contiguous");
+        let init = m.create_initialized_block("i", &addr(0x104), None, 4, None, false).unwrap();
+        let err = m.join(&a, &init).err().unwrap();
+        assert_eq!(err.to_string(), "Both blocks must be either initialized or uninitialized");
+        let bits = m.create_bit_mapped_block("bits", &addr(0x300), &addr(0x104), 8, false).unwrap();
+        assert_eq!(bits.read().unwrap().get_type(), MemoryBlockType::BitMapped);
+        let next = m.create_uninitialized_block("n", &addr(0x308), 4, false).unwrap();
+        let err = m.join(&bits, &next).err().unwrap();
+        assert_eq!(err.to_string(), "Cannot join mapped blocks");
+        // two uninitialized neighbours do join
+        let b = m.create_uninitialized_block("b", &addr(0xfc), 4, false).unwrap();
+        let joined = m.join(&a, &b).unwrap();
+        assert_eq!(joined.read().unwrap().get_start(), addr(0xfc));
+        assert_eq!(joined.read().unwrap().get_size(), 8);
+    }
+
+    #[test]
+    fn mapped_blocks_read_through_their_source() {
+        let map = new_map(false);
+        let mut m = map.write().unwrap();
+        let mut src: &[u8] = &[0b0000_0101, 0xAB];
+        m.create_initialized_block("src", &addr(0x10), Some(&mut src), 2, None, false).unwrap();
+        m.create_bit_mapped_block("bits", &addr(0x100), &addr(0x10), 8, false).unwrap();
+        let bytes = m.create_byte_mapped_block("bytes", &addr(0x200), &addr(0x10), 2, None, false).unwrap();
+        assert_eq!(bytes.read().unwrap().get_type(), MemoryBlockType::ByteMapped);
+        // mapped blocks read their source back through the map, so read without the write lock
+        drop(m);
+        let mem = MemoryMapDB::as_memory(&map);
+        assert_eq!(mem.get_byte(&addr(0x100)).unwrap(), 1);
+        assert_eq!(mem.get_byte(&addr(0x101)).unwrap(), 0);
+        assert_eq!(mem.get_byte(&addr(0x102)).unwrap(), 1);
+        assert_eq!(mem.get_byte(&addr(0x201)).unwrap(), 0xAB);
+        let mut m = map.write().unwrap();
+        // a like-typed copy of an uninitialized block keeps its permissions
+        let u = m.create_uninitialized_block("u", &addr(0x400), 4, false).unwrap();
+        u.write().unwrap().set_write(true);
+        let copy = m.create_block(&u, "u2", &addr(0x404), 4).unwrap();
+        let c = copy.read().unwrap();
+        assert!(!c.is_initialized() && c.is_write() && c.is_read());
+    }
+
 }

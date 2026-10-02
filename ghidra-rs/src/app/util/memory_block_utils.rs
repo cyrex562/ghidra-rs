@@ -21,8 +21,6 @@
 //!   not applied: the ported [`Listing`](crate::program::model::listing::Listing) hands
 //!   fragments out as shared `Arc`s whose `set_name` needs `&mut`, and `ProgramDB` has no
 //!   program tree yet. See [`adjust_fragment`].
-//! * `createBitMappedBlock`/`createByteMappedBlock`/`addExternalBlock` are not ported:
-//!   `MemoryMapDB` has no mapped-block creation, `createBlock` or `join` yet.
 
 use std::io::{self, Read};
 use std::sync::Arc;
@@ -33,6 +31,7 @@ use crate::program::database::mem::file_bytes::FileBytes;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
 use crate::program::model::mem::memory::CreateBlockError;
+use crate::program::model::mem::memory_block::EXTERNAL_BLOCK_NAME;
 use crate::program::model::mem::MemoryBlockHandle;
 use crate::util::task::{DummyMonitor, TaskMonitor};
 
@@ -262,6 +261,128 @@ pub fn create_initialized_block_from_stream(
     };
     adjust_fragment(program, &block_start, &block_name);
     Ok(Some(block))
+}
+
+/// Port of `createBitMappedBlock(Program, String, Address, Address, int, String, String,
+/// boolean, boolean, boolean, boolean, MessageLog)`: a block whose bytes are the bits of the bytes
+/// at `base`. Every failure is logged and yields `None`, as in Java.
+#[allow(clippy::too_many_arguments)]
+pub fn create_bit_mapped_block(
+    program: &dyn Program,
+    name: &str,
+    start: &Address,
+    base: &Address,
+    length: i32,
+    comment: Option<&str>,
+    source: Option<&str>,
+    r: bool,
+    w: bool,
+    x: bool,
+    overlay: bool,
+    log: &MessageLog,
+) -> Option<MemoryBlockHandle> {
+    let result = match program.get_memory_mut() {
+        Some(mut memory) => memory.create_bit_mapped_block(name, start, base, length as i64, overlay),
+        None => Err(no_memory()),
+    };
+    match result {
+        Ok(block) => {
+            set_block_attributes(&block, comment, source, r, w, x);
+            adjust_fragment(program, start, name);
+            Some(block)
+        }
+        Err(CreateBlockError::Lock(_)) => {
+            log.append_msg(format!(
+                "Failed to create '{name}'bit mapped memory block: exclusive lock/checkout required"
+            ));
+            None
+        }
+        Err(e) => {
+            log.append_msg(format!("Failed to create '{name}' mapped memory block: {e}"));
+            None
+        }
+    }
+}
+
+/// Port of `createByteMappedBlock(Program, String, Address, Address, int, String, String,
+/// boolean, boolean, boolean, boolean, MessageLog)`: a 1:1 byte-mapped block over the bytes at
+/// `base`. Every failure is logged and yields `None`, as in Java.
+#[allow(clippy::too_many_arguments)]
+pub fn create_byte_mapped_block(
+    program: &dyn Program,
+    name: &str,
+    start: &Address,
+    base: &Address,
+    length: i32,
+    comment: Option<&str>,
+    source: Option<&str>,
+    r: bool,
+    w: bool,
+    x: bool,
+    overlay: bool,
+    log: &MessageLog,
+) -> Option<MemoryBlockHandle> {
+    let result = match program.get_memory_mut() {
+        Some(mut memory) => {
+            memory.create_byte_mapped_block(name, start, base, length as i64, None, overlay)
+        }
+        None => Err(no_memory()),
+    };
+    match result {
+        Ok(block) => {
+            set_block_attributes(&block, comment, source, r, w, x);
+            adjust_fragment(program, start, name);
+            Some(block)
+        }
+        Err(CreateBlockError::Lock(_)) => {
+            log.append_msg(format!(
+                "Failed to create '{name}' byte mapped memory block: exclusive lock/checkout required"
+            ));
+            None
+        }
+        Err(e) => {
+            log.append_msg(format!("Failed to create '{name}' mapped memory block: {e}"));
+            None
+        }
+    }
+}
+
+/// Port of `addExternalBlock(Program, long, MessageLog)`: appends `size` bytes to the
+/// `EXTERNAL` block (creating it, uninitialized, writable and artificial, at
+/// [`get_next_available_address`] if there is none) and returns the address of the new piece.
+///
+/// # Errors
+/// Whatever creating or joining the block fails with (Java's `throws Exception`).
+pub fn add_external_block(program: &dyn Program, size: i64, log: &MessageLog) -> Result<Address, CreateBlockError> {
+    let _ = log;
+    let existing = program.get_memory().and_then(|m| {
+        m.get_block_handles()
+            .into_iter()
+            .find(|b| b.read().unwrap().get_name() == EXTERNAL_BLOCK_NAME)
+    });
+    match existing {
+        Some(external_block) => {
+            let ret = external_block.read().unwrap().get_end().add(1)?;
+            let mut mem = program.get_memory_mut().ok_or_else(no_memory)?;
+            let new_block = mem.create_block(&external_block, EXTERNAL_BLOCK_NAME, &ret, size)?;
+            mem.join(&external_block, &new_block)?;
+            Ok(ret)
+        }
+        None => {
+            let ret = get_next_available_address(program)?;
+            let external_block = program
+                .get_memory_mut()
+                .ok_or_else(no_memory)?
+                .create_uninitialized_block(EXTERNAL_BLOCK_NAME, &ret, size, false)?;
+            let mut b = external_block.write().unwrap();
+            b.set_write(true);
+            b.set_artificial(true);
+            b.set_comment(Some(
+                "NOTE: This block is artificial and is used to make relocations work correctly",
+            ));
+            Ok(ret)
+        }
+    }
 }
 
 /// Port of `adjustFragment(Program, Address, String)`: Java renames the fragment containing
@@ -545,4 +666,59 @@ pub(crate) mod tests {
         // max end 0x4233 -> 0x4233 + 0x1000 - 0x233
         assert_eq!(get_next_available_address(&program).unwrap(), space.address(0x5000));
     }
+
+    #[test]
+    fn external_block_is_created_then_extended() {
+        let (program, space) = program();
+        let log = MessageLog::new();
+        create_uninitialized_block(
+            &program, false, ".text", &space.address(0x1000), 0x234, None, None, true, false, true,
+            &log,
+        )
+        .unwrap();
+        let first = add_external_block(&program, 0x10, &log).unwrap();
+        assert_eq!(first, space.address(0x2000));
+        let second = add_external_block(&program, 0x8, &log).unwrap();
+        assert_eq!(second, space.address(0x2010));
+        let memory = Program::get_memory(&program).unwrap();
+        let ext = memory.get_block_handle(&space.address(0x2000)).unwrap();
+        let b = ext.read().unwrap();
+        assert_eq!(b.get_name(), EXTERNAL_BLOCK_NAME);
+        assert_eq!(b.get_size(), 0x18);
+        assert!(b.is_write() && b.is_artificial() && !b.is_initialized());
+        assert_eq!(
+            b.get_comment(),
+            Some("NOTE: This block is artificial and is used to make relocations work correctly")
+        );
+        assert_eq!(memory.get_block_handles().len(), 2);
+    }
+
+    #[test]
+    fn mapped_blocks_get_attributes_and_log_failures() {
+        let (program, space) = program();
+        let log = MessageLog::new();
+        create_zeroed_initialized_block(
+            &program, false, "src", &space.address(0x10), 4, None, None, true, true, false, &log,
+        )
+        .unwrap();
+        let bits = create_bit_mapped_block(
+            &program, "bits", &space.address(0x100), &space.address(0x10), 32, Some("c"), None,
+            true, false, false, false, &log,
+        )
+        .unwrap();
+        assert_eq!(bits.read().unwrap().get_comment(), Some("c"));
+        let bytes = create_byte_mapped_block(
+            &program, "bytes", &space.address(0x200), &space.address(0x10), 4, None, None, true,
+            true, false, false, &log,
+        )
+        .unwrap();
+        assert!(bytes.read().unwrap().is_write());
+        assert!(create_byte_mapped_block(
+            &program, "dup", &space.address(0x200), &space.address(0x10), 4, None, None, true,
+            true, false, false, &log,
+        )
+        .is_none());
+        assert!(log.to_string().contains("Failed to create 'dup' mapped memory block: Part of range"));
+    }
+
 }
