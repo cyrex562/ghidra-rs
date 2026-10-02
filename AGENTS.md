@@ -385,7 +385,7 @@ Two shortcuts worth trying before deciding by hand:
 - Every ported module must include unit or integration tests exercising expected behavior.
 - Cover Java parity, boundary cases, serialization formats, error paths, and concurrency when applicable.
 - Prefer narrow tests near the module for small ports; broader integration tests for cross-module behavior.
-- Run `cargo test --workspace` before declaring code ready when the environment supports it.
+- Run `cargo test --workspace --exclude ghidra-qt` (or plain `cargo test`, which uses `default-members`) before declaring code ready when the environment supports it. Only UI work also runs `cargo test -p ghidra-qt` (needs Qt6 dev packages).
 - The project uses a PyO3 release compatible with the Python 3.14 dev environment. Prefer
   upgrading PyO3 over pinning to an older Python unless compatibility requires otherwise.
 - Report any test command that could not be run, or any environment issue that prevents a

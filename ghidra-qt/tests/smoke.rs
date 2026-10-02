@@ -65,3 +65,15 @@ fn version_flag_reports_crate_version() {
         format!("ghidra-qt {}", env!("CARGO_PKG_VERSION"))
     );
 }
+
+#[test]
+fn unknown_flag_is_usage_error_64_not_2() {
+    let output = shell().arg("--no-such-flag").output().expect("spawn");
+    assert_eq!(output.status.code(), Some(64));
+}
+
+#[test]
+fn malformed_number_is_usage_error_64() {
+    let output = shell().args(["--quit-after-ms", "abc"]).output().expect("spawn");
+    assert_eq!(output.status.code(), Some(64));
+}

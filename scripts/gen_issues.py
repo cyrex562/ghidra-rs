@@ -112,7 +112,7 @@ behaviour of the Java original documented in `orig_src/{java_path}`.
 - Rust implementation covers the full public API of the Java class.
 - Unit tests exercise primary behaviour, edge cases, and error paths present in
   the Java source.
-- `cargo test --workspace` passes with no regressions.
+- `cargo test --workspace --exclude ghidra-qt` passes with no regressions.
 - All public items carry Rustdoc comments.
 - `todo.md` is updated to reflect completion only after implementation, tests,
   and Java-parity review are all done.

@@ -7,7 +7,16 @@ mod guard;
 use clap::Parser;
 
 fn main() {
-    let args = cli::Args::parse();
+    let args = match cli::Args::try_parse() {
+        Ok(args) => args,
+        // --help / --version print and exit 0; every real usage error exits 64
+        // (exit 2 is reserved for "screenshot write failed").
+        Err(e) if !e.use_stderr() => e.exit(),
+        Err(e) => {
+            let _ = e.print();
+            std::process::exit(64);
+        }
+    };
     if let Err(msg) = cli::validate(&args) {
         eprintln!("ghidra-qt: {msg}");
         std::process::exit(64);
