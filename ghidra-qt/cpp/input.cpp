@@ -57,7 +57,10 @@ bool KeyForwarder::eventFilter(QObject* watched, QEvent* event) {
     // Nor while a dialog is up: tool bindings belong to the tool window only
     // (Java KeyBindingOverrideKeyEventDispatcher checks the active window).
     if (QApplication::activeModalWidget()) return false;
-    if (auto* w = qobject_cast<QWidget*>(watched); w && w->window() != m_window) return false;
+    // Floating docks live in their own top-level windows but are still the
+    // tool's: only widgets outside every provider and outside the main
+    // window (other top-levels) are skipped.
+    if (auto* w = qobject_cast<QWidget*>(watched); w && w->window() != m_window && m_window->providerOfObject(watched) < 0) return false;
     if (handledByTextWidget(watched, key)) return false;
     const int64_t pid = m_window->providerOfObject(watched);
     KeyResult r;
@@ -160,7 +163,7 @@ void EventPump::pump() {
                 m_window->viewChanged(static_cast<int64_t>(e.task));
                 break;
             case 8:
-                m_window->showProvider(static_cast<int64_t>(e.task));
+                m_window->showProvider(static_cast<int64_t>(e.task), e.progress != 0);
                 break;
             default:
                 break;

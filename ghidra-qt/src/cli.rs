@@ -53,6 +53,10 @@ pub struct Args {
     #[arg(long, hide = true, value_name = "TEXT")]
     pub prompt_answer: Option<String>,
 
+    /// Float the dock with this title before `--press` (smoke tests).
+    #[arg(long = "float", hide = true, value_name = "TITLE")]
+    pub float_dock: Option<String>,
+
     /// At quit, print the Listing's "top=.. cursor=.. selected=.." (smoke tests).
     #[arg(long, hide = true)]
     pub print_listing_state: bool,

@@ -1,5 +1,7 @@
 #include "ghidra-qt/cpp/views/listing_view.h"
 
+#include <QApplication>
+#include <QTimer>
 #include <QFontDatabase>
 #include <QFontMetrics>
 #include <QKeyEvent>
@@ -23,6 +25,15 @@ ListingView::ListingView(uint64_t pid, QStatusBar* status, QWidget* parent)
     : QAbstractScrollArea(parent), m_pid(pid), m_status(status) {
     setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     setFocusPolicy(Qt::StrongFocus);
+    m_autoScroll = new QTimer(this);
+    m_autoScroll->setInterval(100);
+    connect(m_autoScroll, &QTimer::timeout, this, [this] {
+        if (QApplication::mouseButtons() & Qt::LeftButton) {
+            intent(kDrag, m_dragX, m_dragY, true);
+        } else {
+            m_autoScroll->stop();
+        }
+    });
     reportMetrics();
 }
 
@@ -100,9 +111,19 @@ void ListingView::mousePressEvent(QMouseEvent* event) {
 void ListingView::mouseMoveEvent(QMouseEvent* event) {
     // Move events arrive only while a button is held (no mouse tracking).
     if (event->buttons() & Qt::LeftButton) {
-        intent(kDrag, static_cast<int>(event->position().x()) - kTextInset, static_cast<int>(event->position().y()), true);
+        m_dragX = static_cast<int>(event->position().x()) - kTextInset;
+        m_dragY = static_cast<int>(event->position().y());
+        intent(kDrag, m_dragX, m_dragY, true);
+        const bool outside = m_dragY < 0 || m_dragY >= viewport()->height();
+        if (outside && !m_autoScroll->isActive()) m_autoScroll->start();
+        if (!outside) m_autoScroll->stop();
     }
     event->accept();
+}
+
+void ListingView::mouseReleaseEvent(QMouseEvent* event) {
+    m_autoScroll->stop();
+    QAbstractScrollArea::mouseReleaseEvent(event);
 }
 
 void ListingView::keyPressEvent(QKeyEvent* event) {

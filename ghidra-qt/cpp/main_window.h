@@ -37,7 +37,7 @@ public:
     // Rust changed provider `pid`'s view state: refresh/repaint its view.
     void viewChanged(int64_t pid);
     // Rust showed provider `pid` (Window menu): dock it if needed and raise it.
-    void showProvider(int64_t pid);
+    void showProvider(int64_t pid, bool focus);
     // Provider id of a dock (or -1).
     int64_t providerOf(ads::CDockWidget* dock) const;
     // Provider id owning a widget/object (walks parents to its dock), or -1.

@@ -57,8 +57,14 @@ pub enum UiEvent {
     },
     /// A provider's view state changed outside a renderer call (repaint it).
     ViewChanged(u64),
-    /// A hidden provider was shown (Window menu): dock and raise it.
-    ProviderShown(u64),
+    /// A hidden provider was shown (Window menu): dock and raise it, and
+    /// focus it when `focus` (the first provider an action shows).
+    ProviderShown {
+        /// Provider id.
+        id: u64,
+        /// Give it keyboard focus.
+        focus: bool,
+    },
     /// The current location changed.
     LocationChanged {
         /// Domain object id.

@@ -115,6 +115,8 @@ pub mod ffi {
         pub prompt_answer: String,
         /// Print the Listing's state line at quit.
         pub print_listing_state: bool,
+        /// Float this dock before pressing keys; empty = none.
+        pub float_dock: String,
     }
 
     /// A provider as the shell needs it.
@@ -235,7 +237,7 @@ pub mod ffi {
     pub struct EventInfo {
         /// 0 status, 1 task progress, 2 task done, 3 actions changed, 4 domain changed, 5 other,
         /// 6 prompt (task = prompt id, text = title), 7 view changed (task = provider id),
-        /// 8 provider shown (task = provider id)
+        /// 8 provider shown (task = provider id, progress = 1 to focus it)
         pub kind: u8,
         pub text: String,
         pub task: u64,
@@ -759,9 +761,10 @@ fn drain_events() -> Result<Vec<EventInfo>, String> {
                         i.kind = 7;
                         i.task = pid;
                     }
-                    UiEvent::ProviderShown(pid) => {
+                    UiEvent::ProviderShown { id, focus } => {
                         i.kind = 8;
-                        i.task = pid;
+                        i.task = id;
+                        i.progress = u64::from(focus);
                     }
                     _ => {}
                 }
@@ -845,7 +848,7 @@ mod tests {
         drain_events().unwrap();
         invoke_action(entry.action, -1).unwrap();
         assert!(provider_info(decompiler).unwrap().visible);
-        assert!(drain_events().unwrap().iter().any(|e| e.kind == 8 && e.task == decompiler));
+        assert!(drain_events().unwrap().iter().any(|e| e.kind == 8 && e.task == decompiler && e.progress == 1));
     }
 
     #[test]

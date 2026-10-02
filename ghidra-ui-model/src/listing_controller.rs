@@ -10,6 +10,9 @@ use crate::listing::{CursorPos, FieldRow, FontMetrics, ListingViewModel, Move};
 use crate::listing_scroll::ScrollModel;
 use crate::listing_selection::IndexSelection;
 
+/// Pointer travel (px) before a press becomes a drag (Java `FieldPanel`).
+const DRAG_THRESHOLD: i32 = 3;
+
 /// Shared handle: the session's view-model registry and the listing's
 /// actions both hold one. Lock order: session, then controller.
 pub type ListingHandle = Arc<Mutex<ListingController>>;
@@ -73,6 +76,10 @@ pub struct ListingController {
     selection: IndexSelection,
     highlight: Option<String>,
     history: HistoryList<Memento>,
+    /// Where the left button went down, until a key moves the cursor.
+    press: Option<(i32, i32)>,
+    /// The press has moved past the jitter threshold.
+    dragging: bool,
 }
 
 impl ListingController {
@@ -88,6 +95,8 @@ impl ListingController {
             selection: IndexSelection::default(),
             highlight: None,
             history: HistoryList::new(MAX_HISTORY_SIZE),
+            press: None,
+            dragging: false,
         }
     }
 
@@ -142,6 +151,7 @@ impl ListingController {
     /// Moves the cursor; `extend` grows the selection from its anchor
     /// (shift+key), otherwise the selection is cleared.
     pub fn key(&mut self, mv: Move, extend: bool) {
+        self.press = None;
         let current = self.cursor.unwrap_or(CursorPos { index: self.top, field: 0, col: 0 });
         let next = self.model.move_cursor(current, mv, self.page_rows());
         self.place(next, extend, current.index);
@@ -153,24 +163,43 @@ impl ListingController {
         let Some(hit) = self.hit(x, y) else { return };
         let from = self.cursor.map_or(hit.index, |c| c.index);
         self.place(hit, extend, from);
+        self.press = Some((x, y));
+        self.dragging = false;
     }
 
     /// Left-button drag to (`x`, `y`): selects from the press position; past
     /// the top or bottom edge the view scrolls a row toward the pointer and
     /// the selection follows the edge row (Java `FieldPanel` drag auto-scroll).
     pub fn drag(&mut self, x: i32, y: i32) {
+        let Some((px, py)) = self.press else { return };
+        if !self.dragging {
+            // Java FieldPanel ignores drags within 3px of the press.
+            if (x - px).abs() <= DRAG_THRESHOLD && (y - py).abs() <= DRAG_THRESHOLD {
+                return;
+            }
+            self.dragging = true;
+        }
         let line = self.metrics.line_height().max(1);
-        let last_row_y = (self.page_rows() as i32 - 1) * line;
         let y = if y < 0 {
-            self.wheel(-1);
+            self.wheel(-i64::from(1 + (-y) / line));
             0
-        } else if y > last_row_y + line - 1 {
-            self.wheel(1);
-            last_row_y
+        } else if y >= self.viewport_px {
+            self.wheel(i64::from(1 + (y - self.viewport_px) / line));
+            (self.viewport_px - 1).max(0)
         } else {
             y
         };
-        self.click(x, y, true);
+        // Below the last row (short listing, partial page): its last row.
+        let hit = self.hit(x, y).or_else(|| {
+            let last = self.model.rows(self.top, self.viewport_px).pop()?;
+            self.model.hit_test(last.index, x)
+        });
+        let Some(hit) = hit else { return };
+        let from = self.cursor.map_or(hit.index, |c| c.index);
+        self.place(hit, true, from);
+        if self.anchor == Some(hit.index) {
+            self.selection.clear(); // a drag back to its start selects nothing
+        }
     }
 
     /// Middle click: cursor there, then highlight the word under it (Java
@@ -497,18 +526,38 @@ mod tests {
     }
 
     #[test]
-    fn dragging_selects_from_the_press_and_autoscrolls_at_the_edges() {
-        let mut c = controller(3); // rows 0..=4, three visible
+    fn dragging_selects_past_a_jitter_threshold_and_autoscrolls_by_distance() {
+        let mut c = controller(3); // rows 0..=4, three visible (42px)
         c.click(0, 1, false); // press on row 0
-        c.drag(0, 2 * H + 1); // row 2, inside
+        c.drag(2, 3); // within 3px: still a click
+        assert!(c.selection().is_empty());
+        c.drag(0, 2 * H + 1); // row 2
         assert_eq!(c.selection().ranges(), &[(0, 2)]);
-        c.drag(0, 10 * H); // below the viewport: scroll one row, select to the last visible
+        c.drag(0, 1); // back on the anchor row: nothing selected
+        assert!(c.selection().is_empty());
+        c.drag(0, 10 * H); // 7 rows below the edge: scroll toward the pointer
+        assert_eq!(c.top(), 2);
+        assert_eq!(c.selection().ranges(), &[(0, 4)]);
+        c.drag(0, -5); // just above: one row up, select to the top row
         assert_eq!(c.top(), 1);
-        assert_eq!(c.selection().ranges(), &[(0, 3)]);
-        assert_eq!(at(&c), 3);
-        c.drag(0, -5); // above: scroll back, select to the top row
+        assert_eq!(c.selection().ranges(), &[(0, 1)]);
+    }
+
+    #[test]
+    fn dragging_below_a_short_listing_selects_to_its_last_row() {
+        let mut c = controller(10); // all five rows fit
+        c.click(0, 1, false);
+        c.drag(0, 8 * H); // empty area below the data
         assert_eq!(c.top(), 0);
-        assert_eq!(c.selection().ranges(), &[(0, 0)]);
+        assert_eq!(c.selection().ranges(), &[(0, 4)]);
+    }
+
+    #[test]
+    fn a_drag_without_a_press_does_nothing() {
+        let mut c = controller(3);
+        c.key(Move::Down, false);
+        c.drag(0, 2 * H + 1);
+        assert!(c.selection().is_empty());
     }
 
     #[test]

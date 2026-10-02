@@ -174,12 +174,17 @@ fn menu_bar_is_built_in_ghidra_order() {
 }
 
 fn press_status(focus: &str) -> String {
+    press_status_with(focus, &[])
+}
+
+fn press_status_with(focus: &str, extra: &[&str]) -> String {
     // A fresh config: the default layout (Symbols and Program Tree tabbed),
     // not whatever an earlier test saved.
     let dir = tmp(&format!("config-press-{}", focus.replace(' ', "_")));
     let _ = std::fs::remove_dir_all(&dir);
     let out = shell_with_config(&dir)
         .args(["--press", "Ctrl-F", "--focus", focus, "--quit-after-ms", "1500"])
+        .args(extra)
         .output()
         .expect("spawn");
     assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
@@ -190,6 +195,12 @@ fn press_status(focus: &str) -> String {
 fn ctrl_f_runs_the_local_action_in_symbols_and_the_global_elsewhere() {
     assert!(press_status("Symbols").lines().any(|l| l == "status: Find in Table"));
     assert!(press_status("Program Tree").lines().any(|l| l == "status: Find"));
+}
+
+#[test]
+fn key_bindings_work_in_a_floating_dock() {
+    let out = press_status_with("Symbols", &["--float", "Symbols"]);
+    assert!(out.lines().any(|l| l == "status: Find in Table"), "{out}");
 }
 
 #[test]

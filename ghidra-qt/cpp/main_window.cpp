@@ -118,7 +118,7 @@ void MainWindow::viewChanged(int64_t pid) {
     }
 }
 
-void MainWindow::showProvider(int64_t pid) {
+void MainWindow::showProvider(int64_t pid, bool focus) {
     for (auto it = m_providers.cbegin(); it != m_providers.cend(); ++it) {
         if (it.value() != pid) continue;
         ads::CDockWidget* dock = it.key();
@@ -126,6 +126,8 @@ void MainWindow::showProvider(int64_t pid) {
         dock->toggleView(true);
         dock->setAsCurrentTab();
         dock->raise();
+        // Java ShowComponentAction: showComponent(..., requestFocus = true)
+        if (focus) focusDock(dock->windowTitle());
     }
 }
 

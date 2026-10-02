@@ -35,6 +35,7 @@ protected:
     void wheelEvent(QWheelEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void scrollContentsBy(int dx, int dy) override;
     void changeEvent(QEvent* event) override;
@@ -47,6 +48,10 @@ private:
     uint64_t m_pid;
     QStatusBar* m_status;
     bool m_syncing = false;
+    // Drag auto-scroll (Java FieldPanel scrollTimer): repeats the last drag
+    // position every 100ms while the pointer is outside the viewport.
+    class QTimer* m_autoScroll = nullptr;
+    int m_dragX = 0, m_dragY = 0;
     int m_wheelRemainder = 0;
 };
 

@@ -141,8 +141,9 @@ impl UiSession {
     /// Applies provider show requests made by the action just performed
     /// (Window menu entries) and tells the renderer about each.
     pub fn apply_tool_requests(&mut self) {
-        for id in self.tool.apply_requests() {
-            self.events.post(UiEvent::ProviderShown(id.0));
+        // Java ShowAllComponentsAction focuses only the first provider.
+        for (i, id) in self.tool.apply_requests().into_iter().enumerate() {
+            self.events.post(UiEvent::ProviderShown { id: id.0, focus: i == 0 });
         }
     }
 
@@ -230,6 +231,6 @@ mod tests {
         s.events().drain();
         s.apply_tool_requests();
         assert!(s.tool().provider(symbols).unwrap().state().is_visible());
-        assert_eq!(s.events().drain(), vec![crate::events::UiEvent::ProviderShown(symbols.0)]);
+        assert_eq!(s.events().drain(), vec![crate::events::UiEvent::ProviderShown { id: symbols.0, focus: true }]);
     }
 }

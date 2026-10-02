@@ -6,7 +6,7 @@
 pub use ghidra_rs::docking::widgets::fieldpanel::field::FontMetrics;
 use ghidra_rs::docking::widgets::fieldpanel::field::{ClippingTextField, FieldElement, TextStyle};
 use ghidra_rs::docking::widgets::fieldpanel::Layout;
-use ghidra_rs::program::model::mem::memory::Memory;
+use ghidra_rs::program::model::mem::memory::{Memory, MemoryBlockHandle};
 
 /// A run of text placed at an x position.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -105,6 +105,13 @@ impl MemoryBlockSnapshot {
         Self { start, bytes, len }
     }
 
+    /// An initialized block of `len` bytes of which only the leading `bytes`
+    /// could be read; the rest shows as `??`.
+    pub fn partial(start: u64, mut bytes: Vec<u8>, len: u64) -> Self {
+        bytes.truncate(usize::try_from(len).unwrap_or(usize::MAX));
+        Self { start, bytes, len }
+    }
+
     /// An uninitialized block of `len` bytes (shown as `??`).
     pub fn uninitialized(start: u64, len: u64) -> Self {
         Self { start, bytes: Vec::new(), len }
@@ -129,26 +136,47 @@ impl MemoryBlockSnapshot {
 /// Snapshots a program memory's blocks for [`MemoryListing`]: the address
 /// size in bits and every non-overlay block, initialized bytes copied.
 pub fn snapshot_memory(memory: &dyn Memory) -> (u32, Vec<MemoryBlockSnapshot>) {
-    let mut handles = memory.get_block_handles();
-    handles.retain(|h| h.read().map(|b| !b.is_overlay()).unwrap_or(false));
-    let mut bits = 32;
+    snapshot_blocks(&memory.get_block_handles())
+}
+
+/// Bytes copied per initialized block at most; larger blocks render as `??`
+/// until the listing reads lazily.
+pub const MAX_SNAPSHOT_BYTES: u64 = 256 << 20;
+
+/// [`snapshot_memory`] over block handles: only loaded-memory blocks (the
+/// listing has one address column, no space qualifier); bytes that cannot be
+/// read render as `??` without shrinking the block.
+pub fn snapshot_blocks(handles: &[MemoryBlockHandle]) -> (u32, Vec<MemoryBlockSnapshot>) {
+    let mut bits = None;
     let mut blocks = Vec::with_capacity(handles.len());
     for h in handles {
         let Ok(b) = h.read() else { continue };
         let start = b.get_start();
-        bits = start.space().size().max(1) as u32;
-        let offset = start.offset() as u64;
-        if b.is_initialized() {
-            // UI paths read snapshots (spec §3); program bytes are copied once.
-            let mut bytes = vec![0u8; b.get_size() as usize];
-            let n = b.get_bytes(&start, &mut bytes);
-            bytes.truncate(n);
-            blocks.push(MemoryBlockSnapshot::initialized(offset, bytes));
-        } else {
-            blocks.push(MemoryBlockSnapshot::uninitialized(offset, b.get_size()));
+        if !start.space().is_loaded_memory_space() {
+            continue;
         }
+        bits.get_or_insert(start.space().size().max(1) as u32);
+        let offset = start.offset() as u64;
+        let size = b.get_size();
+        if !b.is_initialized() {
+            blocks.push(MemoryBlockSnapshot::uninitialized(offset, size));
+            continue;
+        }
+        // UI paths read snapshots (spec §3): copy once, bounded, and never
+        // abort on allocation failure.
+        let mut bytes = Vec::new();
+        let copy = (size <= MAX_SNAPSHOT_BYTES)
+            .then(|| usize::try_from(size).ok())
+            .flatten()
+            .filter(|&n| bytes.try_reserve_exact(n).is_ok());
+        if let Some(n) = copy {
+            bytes.resize(n, 0);
+            let read = b.get_bytes(&start, &mut bytes);
+            bytes.truncate(read);
+        }
+        blocks.push(MemoryBlockSnapshot::partial(offset, bytes, size));
     }
-    (bits, blocks)
+    (bits.unwrap_or(32), blocks)
 }
 
 /// Every byte of a memory snapshot as an undefined-data row.
@@ -419,6 +447,91 @@ mod tests {
                 vec!["00404001", "??", "??", "??"],
             ]
         );
+    }
+
+    mod fake {
+        use ghidra_rs::program::model::address::{Address, AddressSpace, AddressSpaceType};
+        use ghidra_rs::program::model::mem::memory::MemoryBlockHandle;
+        use ghidra_rs::program::model::mem::memory_block::MemoryBlock;
+        use ghidra_rs::program::model::mem::MemoryAccessException;
+        use std::sync::{Arc, RwLock};
+
+        pub struct Block {
+            pub start: Address,
+            pub size: u64,
+            pub initialized: bool,
+            pub readable: usize,
+        }
+
+        impl MemoryBlock for Block {
+            fn get_name(&self) -> &str {
+                "b"
+            }
+            fn get_start(&self) -> Address {
+                self.start.clone()
+            }
+            fn get_end(&self) -> Address {
+                self.start.clone()
+            }
+            fn get_size(&self) -> u64 {
+                self.size
+            }
+            fn is_initialized(&self) -> bool {
+                self.initialized
+            }
+            fn get_byte(&self, _addr: &Address) -> Result<u8, MemoryAccessException> {
+                Ok(0xab)
+            }
+            fn get_bytes(&self, _addr: &Address, dest: &mut [u8]) -> usize {
+                let n = self.readable.min(dest.len());
+                dest[..n].fill(0xab);
+                n
+            }
+            fn set_bytes(&mut self, _addr: &Address, _source: &[u8]) -> Result<(), MemoryAccessException> {
+                Ok(())
+            }
+        }
+
+        pub fn ram(offset: i64) -> Address {
+            Address::new(AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0), offset)
+        }
+
+        pub fn other(offset: i64) -> Address {
+            Address::new(AddressSpace::other_space().clone(), offset)
+        }
+
+        pub fn handle(start: Address, size: u64, initialized: bool, readable: usize) -> MemoryBlockHandle {
+            Arc::new(RwLock::new(Block { start, size, initialized, readable }))
+        }
+    }
+
+    #[test]
+    fn a_short_read_keeps_the_block_length_and_shows_question_marks() {
+        let (bits, blocks) = snapshot_blocks(&[fake::handle(fake::ram(0x1000), 4, true, 2)]);
+        let mut l = MemoryListing::new(bits, blocks);
+        l.set_metrics(metrics());
+        let rows: Vec<Vec<String>> = l.rows(0, 1000).iter().map(texts).collect();
+        assert_eq!(rows.len(), 4);
+        assert_eq!(rows[1], vec!["00001001", "ab", "??", "ABh"]);
+        assert_eq!(rows[2], vec!["00001002", "??", "??", "??"]);
+        assert_eq!(l.goto(0x1003), Some(3));
+    }
+
+    #[test]
+    fn non_loaded_spaces_are_left_out_and_do_not_widen_addresses() {
+        let (bits, blocks) =
+            snapshot_blocks(&[fake::handle(fake::ram(0x1000), 1, true, 1), fake::handle(fake::other(0x1000), 8, true, 8)]);
+        assert_eq!(bits, 32);
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0].len(), 1);
+    }
+
+    #[test]
+    fn a_huge_block_is_not_copied() {
+        let size = 1u64 << 40;
+        let (_, blocks) = snapshot_blocks(&[fake::handle(fake::ram(0), size, true, 0)]);
+        assert_eq!(blocks[0].len(), size);
+        assert_eq!(blocks[0].byte(0), None);
     }
 
     #[test]
