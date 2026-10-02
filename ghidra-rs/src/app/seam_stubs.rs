@@ -814,36 +814,6 @@ impl LoadSpec {
     }
 }
 
-/// Placeholder for `ghidra.app.util.opinion.ElfProgramBuilder`, referenced by
-/// [`ElfLoader::load`](crate::app::util::opinion::elf_loader::ElfLoader::load) before the real
-/// class is ported. Java's `loadElf` is the sole static entry point `ElfLoader.load` calls (the
-/// rest of the class -- program creation, memory/symbol/relocation processing -- is a large
-/// unported subsystem), so it is modeled as a free function rather than a trait, the same way
-/// [`option_utils`]/[`query_opinion_service_handler`] stand in for other statics-only Java
-/// classes.
-pub mod elf_program_builder {
-    use super::{MessageLog, Option};
-    use crate::format::elf::elf_exception::ElfException;
-    use crate::format::elf::elf_header::ElfHeader;
-    use crate::program::model::listing::Program;
-    use crate::util::task::TaskMonitor;
-
-    /// Mirrors the static `ElfProgramBuilder.loadElf(ElfHeader, Program, List<Option>,
-    /// MessageLog, TaskMonitor)`. The real method builds an entire `Program` from the parsed ELF
-    /// (memory blocks, symbols, relocations, ...); that subsystem is not ported yet, so this
-    /// placeholder always panics until it lands.
-    pub fn load_elf(
-        elf: &ElfHeader,
-        program: &dyn Program,
-        options: &[Box<dyn Option>],
-        log: &MessageLog,
-        monitor: &dyn TaskMonitor,
-    ) -> Result<(), ElfException> {
-        let _ = (elf, program, options, log, monitor);
-        unimplemented!("elf_program_builder::load_elf placeholder not overridden")
-    }
-}
-
 /// Placeholder for `ghidra.app.util.bin.RandomAccessByteProvider`, referenced by
 /// [`DbgLoader::load`](crate::app::util::opinion::dbg_loader::DbgLoader::load) before the real
 /// class is ported. Java's version wraps a `GhidraRandomAccessFile` over an arbitrary local file
@@ -920,7 +890,7 @@ impl crate::filesystem::ghidra::g_binary_reader::GByteStore for RandomAccessByte
 /// unported) superclass
 /// [`DbgLoader`](crate::app::util::opinion::dbg_loader::DbgLoader) extends. Only `processDebug` is
 /// modeled -- the sole inherited method `DbgLoader.load` calls -- as a free function rather than a
-/// trait, the same way [`elf_program_builder`] stands in for `ElfProgramBuilder`.
+/// trait, the same way `elf_program_builder` once stood in for `ElfProgramBuilder`.
 pub mod abstract_pe_debug_loader {
     use super::Option;
     use crate::format::seam_stubs::DebugDirectoryParser;
@@ -938,7 +908,7 @@ pub mod abstract_pe_debug_loader {
     /// application this method performs once a parser is present) is all one large unported
     /// subsystem with no way to produce a real `NTHeader`/`SectionHeader` tree yet, both halves
     /// are bundled here as a single placeholder that panics unconditionally, the same way
-    /// [`elf_program_builder::load_elf`] stands in for `ElfProgramBuilder.loadElf` -- `nt_header`
+    /// `elf_program_builder::load_elf` once stood in for `ElfProgramBuilder.loadElf` -- `nt_header`
     /// and `section_to_address` are dropped from the signature entirely since nothing can build
     /// them.
     pub fn process_debug(

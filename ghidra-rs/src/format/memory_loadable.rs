@@ -187,7 +187,7 @@ mod tests {
             _name: Option<&str>,
             _address: Address,
             _is_entry: bool,
-        ) -> Arc<dyn crate::program::model::listing::function::Function> {
+        ) -> Option<Arc<dyn crate::program::model::listing::function::Function>> {
             unimplemented!("Mock ElfLoadHelper")
         }
 

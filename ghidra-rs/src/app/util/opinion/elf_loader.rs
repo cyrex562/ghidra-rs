@@ -31,11 +31,11 @@
 //!   [`LoadSpec::get_language`](crate::app::seam_stubs::LoadSpec::get_language)'s docs), so
 //!   [`find_supported_load_specs`](ElfLoader::find_supported_load_specs) takes explicit
 //!   `&dyn Application`/`&dyn LanguageService` parameters instead.
-//! * `ElfProgramBuilder.loadElf(..)`, the sole call `ElfLoader.load` makes, is a large unported
-//!   subsystem (ELF-to-`Program` construction: memory blocks, symbols, relocations, ...). It is
-//!   modeled as the free function
-//!   [`elf_program_builder::load_elf`](crate::app::seam_stubs::elf_program_builder::load_elf),
-//!   which panics until that subsystem lands; see its docs.
+//! * `ElfProgramBuilder.loadElf(..)`, the sole call `ElfLoader.load` makes, is
+//!   [`elf_program_builder::load_elf`](crate::app::util::opinion::elf_program_builder::load_elf);
+//!   it builds the program's memory so far (symbols, relocations and markup are its phase 2 --
+//!   see its docs). It takes the program as an `Arc<dyn Program>` because the
+//!   `ElfLoadHelper` it implements hands the program out that way.
 //! * `postLoadProgramFixups`'s `ImporterSettings settings` parameter belongs to the [`Loader`]
 //!   trait this port doesn't implement (see above), so it is unpacked into the individual pieces
 //!   Java actually reads from it (`project`, `log`, `monitor`). `ExternalSymbolResolver` is a
@@ -48,7 +48,8 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::util::importer::message_log::MessageLog;
-use crate::app::seam_stubs::{elf_program_builder, ExternalSymbolResolver, LoadSpec, Option, QueryResult};
+use crate::app::seam_stubs::{ExternalSymbolResolver, LoadSpec, Option, QueryResult};
+use crate::app::util::opinion::elf_program_builder;
 use crate::app::util::opinion::elf_loader_options_factory;
 use crate::app::util::opinion::loaded::Loaded;
 use crate::app::util::opinion::query_opinion_service;
@@ -252,15 +253,18 @@ impl ElfLoader {
     pub fn load(
         &self,
         provider: Rc<dyn ByteProvider>,
-        program: &dyn Program,
+        program: &Arc<dyn Program>,
         options: &[Box<dyn Option>],
         log: &Arc<MessageLog>,
         monitor: &dyn TaskMonitor,
     ) -> io::Result<()> {
         let sink = Arc::clone(log);
-        ElfHeader::new(provider, Some(Box::new(move |msg: &str| sink.append_msg(msg))))
-            .and_then(|elf| elf_program_builder::load_elf(&elf, program, options, log, monitor))
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))
+        let elf = ElfHeader::new(provider, Some(Box::new(move |msg: &str| sink.append_msg(msg))))
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+        elf_program_builder::load_elf(elf, Arc::clone(program), options, log, monitor).map_err(|e| match e {
+            elf_program_builder::ElfLoadError::Io(e) => e,
+            cancelled => io::Error::new(io::ErrorKind::Interrupted, cancelled.to_string()),
+        })
     }
 
     /// `ElfLoader.postLoadProgramFixups(List<Loaded<Program>>, ImporterSettings)`. See the module

@@ -704,7 +704,7 @@ mod tests {
             _name: Option<&str>,
             _address: Address,
             _is_entry: bool,
-        ) -> Arc<dyn crate::program::model::listing::function::Function> {
+        ) -> Option<Arc<dyn crate::program::model::listing::function::Function>> {
             unimplemented!("not exercised by these tests")
         }
         fn create_external_function_linkage(

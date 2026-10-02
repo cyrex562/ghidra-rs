@@ -120,7 +120,7 @@ mod tests {
                 _: std::option::Option<&str>,
                 _: crate::program::model::address::Address,
                 _: bool,
-            ) -> Arc<dyn crate::program::model::listing::function::Function> {
+            ) -> Option<Arc<dyn crate::program::model::listing::function::Function>> {
                 unimplemented!()
             }
             fn create_external_function_linkage(

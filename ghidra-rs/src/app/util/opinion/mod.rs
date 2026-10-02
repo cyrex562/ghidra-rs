@@ -11,6 +11,7 @@ pub mod dyld_cache_utils;
 pub mod macho_prelink_utils;
 pub mod elf_loader;
 pub mod elf_loader_options_factory;
+pub mod elf_program_builder;
 pub mod intel_hex_record;
 pub mod intel_hex_record_reader;
 pub mod java_loader;

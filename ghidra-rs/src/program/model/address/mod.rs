@@ -148,6 +148,14 @@ impl AddressSpace {
         })
     }
 
+    /// `AddressSpace.OTHER_SPACE`: the shared space for non-loaded data (file headers,
+    /// non-allocated sections), `new GenericAddressSpace("OTHER", 64, TYPE_OTHER, 0)`. A
+    /// singleton, as the Java static is, so every user lands in the same space.
+    pub fn other_space() -> &'static Arc<AddressSpace> {
+        static OTHER_SPACE: std::sync::OnceLock<Arc<AddressSpace>> = std::sync::OnceLock::new();
+        OTHER_SPACE.get_or_init(|| AddressSpace::new("OTHER", 64, 1, AddressSpaceType::Other, 0))
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }

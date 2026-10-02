@@ -670,8 +670,10 @@ mod tests {
         ProgramDB::new("mbd_test_prog".to_string(), language).unwrap()
     }
 
+    /// A freshly created local `ProgramDB` has exclusive access (as Java's unshared program
+    /// does), so `fixupBlock` takes the "block does not yet exist" path and creates it.
     #[test]
-    fn fixup_block_without_exclusive_access_returns_lock_error() {
+    fn fixup_block_creates_missing_initialized_block() {
         let program = build_test_program_db();
         let def = DefaultMemoryBlockDefinition::new(
             Some("RESET"),
@@ -685,8 +687,12 @@ mod tests {
         )
         .unwrap();
 
-        let result = def.fixup_block(&program);
-        assert!(matches!(result, Err(MemoryBlockDefinitionError::Lock(_))));
+        let block = def.fixup_block(&program).expect("block created");
+        let b = block.read().unwrap();
+        assert_eq!(b.get_name(), "RESET");
+        assert_eq!(b.get_start().offset(), 0x1000);
+        assert_eq!(b.get_size(), 0x100);
+        assert!(b.is_initialized());
     }
 
     #[test]

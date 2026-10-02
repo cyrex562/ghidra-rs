@@ -48,7 +48,7 @@
 
 use std::collections::BTreeMap;
 use std::io;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use thiserror::Error;
 
@@ -162,14 +162,9 @@ impl From<CreateFunctionError> for LoadAoutError {
 }
 
 /// The address space non-loaded file structures (the header, string/symbol/relocation tables) are
-/// marked up in.
-///
-/// Stands in for `AddressSpace.OTHER_SPACE`, a static on the otherwise-ported
-/// [`AddressSpace`]: `new GenericAddressSpace("OTHER", 64, TYPE_OTHER, 0)`. Kept a singleton, as
-/// the Java static is, so every block this loader puts there lands in the same space.
+/// marked up in: `AddressSpace.OTHER_SPACE`.
 fn other_space() -> &'static Arc<AddressSpace> {
-    static OTHER_SPACE: OnceLock<Arc<AddressSpace>> = OnceLock::new();
-    OTHER_SPACE.get_or_init(|| AddressSpace::new("OTHER", 64, 1, AddressSpaceType::Other, 0))
+    AddressSpace::other_space()
 }
 
 /// Loads a UNIX a.out executable, described by an already-parsed header, into a `Program`.

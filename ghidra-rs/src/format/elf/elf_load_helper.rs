@@ -80,7 +80,7 @@ pub trait ElfLoadHelper {
         name: Option<&str>,
         address: Address,
         is_entry: bool,
-    ) -> Arc<dyn Function>;
+    ) -> Option<Arc<dyn Function>>;
 
     /// `ElfLoadHelper.createExternalFunctionLinkage(String, Address, Address)`. Returns `None` if
     /// creation failed; `indirect_pointer_addr` of `None` mirrors Java's nullable parameter (no
@@ -212,7 +212,7 @@ mod tests {
             _name: std::option::Option<&str>,
             _address: Address,
             _is_entry: bool,
-        ) -> Arc<dyn Function> {
+        ) -> std::option::Option<Arc<dyn Function>> {
             unimplemented!("not exercised by these tests")
         }
         fn create_external_function_linkage(
